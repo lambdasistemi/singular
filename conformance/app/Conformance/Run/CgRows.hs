@@ -3,7 +3,7 @@ Module      : Conformance.Run.CgRows
 Description : Split out of Conformance.Run (#263); see that module's header
 License     : Apache-2.0
 -}
-module Conformance.Run.CgRows (runCG02, runCG03, runCG04, runCG05, controlFreshCage, sleepUntilMs, runCG07, runCG09, runCG10, runCG11, runCG12, runCG14, runCG15, runCG19, runCG19RejectedFloor, runCG21, runCG22, runSequence, ensurePresentV3, setupDelete, capturePreProofKey, waitPhase3, claimValue, seedDeleteKey, ensurePresentV1) where
+module Conformance.Run.CgRows (runCG02, runCG03, runCG04, runCG05, controlFreshCage, sleepUntilMs, runCG07, runCG09, runCG10, runCG11, runCG12, runCG14, runCG15, runCG19, runCG19RejectedFloor, runCG21, runCG22, runCG23, runSequence, ensurePresentV3, setupDelete, capturePreProofKey, waitPhase3, claimValue, seedDeleteKey, ensurePresentV1) where
 
 import Conformance.Run.Control
 import Conformance.Run.Live
@@ -18,6 +18,7 @@ import Conformance.Run.Environment
 import Conformance.Run.Observe
 
 import Conformance.Story.Live qualified as Live
+import Conformance.Edge.Exit qualified as ExitStory
 import Conformance.Edge.Register qualified as RegistrationStory
 import Conformance.Edge.Retire qualified as RetirementStory
 import Conformance.Edge.Sequence qualified as SequenceStory
@@ -1539,10 +1540,11 @@ runCG19RejectedFloor env cage tid = do
 -- CG21 (#173 A173-EDGE/A173-REFUSALS, completed in #184)
 -- ---------------------------------------------------------
 {- | The live registration program submits two distinct active registrations,
-a duplicate-key request, a redirected delivery beside its untampered control,
+a duplicate-key request, a registration whose delivery is sent to another
+address and one paying it one lovelace short beside their untampered control,
 and a registration carrying one required signer the model does not require.
 Each request runs through the same builder and driver comparison. The receipt
-records all six steps and their chain outcomes. A two-request batch is outside
+records all seven steps and their chain outcomes. A two-request batch is outside
 this program and remains a published gap.
 -}
 runCG21 :: Env -> IO ()
@@ -1559,9 +1561,9 @@ runCG21 env = do
     (_, recipient) <- secondWallet env
     _ <- runLive env (RegistrationStory.story (Live.Context registry recipient))
     -- The generic interpreter writes one record per request. The receipt is
-    -- emitted only after all six outcomes and comparisons have completed.
+    -- emitted only after all seven outcomes and comparisons have completed.
     records <- readIORef (envLiveRecords env)
-    require "CG21 did not compare its six requests" (length records == 6)
+    require "CG21 did not compare its seven requests" (length records == 7)
     require "registration chapter has a disagreement or unsupported step"
         (all (\record -> case record of
             Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
@@ -1592,6 +1594,10 @@ The reason NAMES are not asserted from the node. A phase-2 failure
 carries an empty Plutus log list, so the receipt records honest `null`
 with script-hash attribution; the names live in the compiled Aiken suite
 against `state.terminalRefusal`.
+
+The same session then deletes a registration: its deposit is paid back one
+lovelace short and to another address, each refused, before the untampered
+deletion pays it.
 -}
 runCG22 :: Env -> IO ()
 runCG22 env = do
@@ -1610,12 +1616,52 @@ runCG22 env = do
     _ <- runLive env (RetirementStory.story
         (Live.Context registry genesisAddr) (Live.Context comparison genesisAddr))
     records <- readIORef (envLiveRecords env)
-    require "CG22 did not compare its seven requests" (length records == 7)
+    require "CG22 did not compare its eleven requests" (length records == 11)
     require "retirement chapter has a disagreement or unsupported step"
         (all (\record -> case record of
             Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
             _ -> False) records)
     writeStoryReceipt env "CG22" records
+
+
+-- ---------------------------------------------------------
+-- CG23 (#258): requests that leave the queue unfolded
+-- ---------------------------------------------------------
+
+{- | CG23: a request that is never folded, in two registries of its own: one
+whose requests become rejectable a second after their retract window opens,
+where a reject refunding the owner one lovelace short and to another address is
+refused before the untampered reject; and one whose requests stay retractable
+for thirty seconds, where the owner's return one lovelace short, to another
+address, bound to another output reference and beside a spent state are
+refused before the untampered retraction.
+
+The exits are a row of their own so that each chapter's receipt stays under
+the bound every receipt is written under.
+-}
+runCG23 :: Env -> IO ()
+runCG23 env = do
+    either failWith pure (Live.validateLive (ExitStory.story
+        (Live.Context "rejection" "holder wallet")
+        (Live.Context "retraction" "holder wallet")))
+    writeIORef (envLiveRecords env) []
+    writeIORef (envLiveMeasurements env) []
+    control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
+    require "unknown exit story control"
+        (control `elem` [Nothing, Just "wrong-fee", Just "wrong-timing",
+            Just "wrong-delivery", Just "unknown-identity"])
+    rejection <- ensureRowCage env "story-rejection" 1_000 1_000
+    retraction <- ensureRowCage env "story-retraction" 1_000 30_000
+    _ <- largestWalletUtxo (envProv env)
+    _ <- runLive env (ExitStory.story
+        (Live.Context rejection genesisAddr) (Live.Context retraction genesisAddr))
+    records <- readIORef (envLiveRecords env)
+    require "CG23 did not compare its eight requests" (length records == 8)
+    require "exit chapter has a disagreement or unsupported step"
+        (all (\record -> case record of
+            Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
+            _ -> False) records)
+    writeStoryReceipt env "CG23" records
 
 
 -- | An unnamed seven-edge program using exactly the chapter interpreter.

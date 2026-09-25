@@ -3,7 +3,7 @@ Module      : Conformance.Run.Control
 Description : Split out of Conformance.Run (#263); see that module's header
 License     : Apache-2.0
 -}
-module Conformance.Run.Control (caRows, cgRows, csRows, issue70Rows, issue70AcceptingRows, issue173Rows, issue177Rows, sequenceRows, canonicalRows, Control (..), readControl, cgKey, cgDeleteKey, cgV1, cgV2, cgV3, cgV4, controlKey, controlVal, forgedValue, cgDeposit) where
+module Conformance.Run.Control (caRows, cgRows, csRows, issue70Rows, issue70AcceptingRows, issue173Rows, issue177Rows, issue258Rows, sequenceRows, canonicalRows, Control (..), readControl, cgKey, cgDeleteKey, cgV1, cgV2, cgV3, cgV4, controlKey, controlVal, forgedValue, cgDeposit) where
 
 import Data.ByteString (ByteString)
 import System.Environment (lookupEnv)
@@ -24,7 +24,7 @@ import Conformance.Mirror (failWith)
 -- these lists, never by exclusion: a catch-all partition silently absorbs
 -- the next family of rows (CA01-CA05 were once routed into the CS
 -- session by a notElem-CG catch-all). A row in no family fails loudly.
-caRows, cgRows, csRows, issue70Rows, issue70AcceptingRows, issue173Rows, issue177Rows, sequenceRows :: [String]
+caRows, cgRows, csRows, issue70Rows, issue70AcceptingRows, issue173Rows, issue177Rows, issue258Rows, sequenceRows :: [String]
 caRows = ["CA01", "CA02", "CA03", "CA04", "CA05"]
 cgRows = ["CG02", "CG03", "CG04", "CG05"]
 csRows = ["CS01", "CS02", "CS03", "CS04", "CS05", "CS06", "CS07", "CS08"]
@@ -58,11 +58,16 @@ issue173Rows = ["CG21"]
 -- Absent key (`not-booked`), each with its own accepting control. It
 -- shares no fixture, receipt or assertion with CG21.
 issue177Rows = ["CG22"]
+
+-- The issue #258 row: CG23 is the reject and the retract, each refused when
+-- its refund or return is tampered with beside its untampered control. It
+-- runs apart from CG22 so that each receipt stays under the size bound.
+issue258Rows = ["CG23"]
 sequenceRows = ["sequence"]
 
 canonicalRows :: [String]
 canonicalRows =
-    caRows <> cgRows <> csRows <> issue70Rows <> issue173Rows <> issue177Rows <> sequenceRows
+    caRows <> cgRows <> csRows <> issue70Rows <> issue173Rows <> issue177Rows <> issue258Rows <> sequenceRows
 
 data Control
     = Normal

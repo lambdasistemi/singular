@@ -112,11 +112,19 @@ jobs:
       - name: List the inventory as a packaged app without a dev shell
         working-directory: conformance
         run: nix run --quiet .#conformance -- list
-      # Read all seven model-and-chain step records from the retirement
-      # receipt. The two refusals must carry state-script attribution,
-      # and every accepted step must compare the declared surface and
-      # reject discovered-value perturbations. The separate registry
-      # makes the unknown-key attempt independent of the Absent refusal.
+      # Read all eleven model-and-chain step records from the retirement
+      # receipt. The refusals must carry state-script attribution, and
+      # every accepted step must compare the declared surface and reject
+      # discovered-value perturbations. The separate registry makes the
+      # unknown-key attempt independent of the Absent refusal. The two
+      # tampered deletions, paying the deposit back one lovelace short and
+      # to another address, are refused by the state script and by the
+      # model, whose reason is the one the compiled Aiken suite names for
+      # the shape: onchain/validators/deposit_exits.tests.ak
+      # e5_deposit_one_lovelace_short_refuses and
+      # e5_deposit_diverted_to_another_address_refuses (deposit-returned).
+      # The ledger's own reason is not observed: the deployed validators are
+      # compiled without traces (#287).
       - name: Run the dedicated CG22 retirement row as a packaged app
         run: |
           set -e
@@ -127,9 +135,10 @@ jobs:
           head_sha="$(git rev-parse HEAD)"
           f="$receipts/receipt-CG22.json"
           test -f "$f" || { echo 'FAIL: missing CG22 receipt'; exit 1; }
+          state_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "state.state.spend" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
           # jq expands its own --arg variables inside this program.
           # shellcheck disable=SC2016
-          nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" '
+          nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" --arg state "$state_hash" '
             def txid: type == "string" and test("^[0-9a-f]{64}$");
             def text: type == "string" and length > 0;
             def complete: .comparison == "agrees" and .tamper == null
@@ -138,11 +147,18 @@ jobs:
             and .verdict == "agrees-with-model"
             and .base == $base and .dirty == false
             and (.blueprint | text) and (.node | text)
-            and (.steps | length) == 7
-            and ([.steps[].edge] == ["insertActive","updateTerminal","insertAbsent","updateTerminal","insertActive","updateTerminal","updateTerminal"])
-            and ([.steps[].model.outcome] == ["accepted","accepted","accepted","refused","accepted","accepted","refused"])
-            and ([.steps[].chain.outcome] == ["accepted","accepted","accepted","refused","accepted","accepted","refused"])
-            and all(.steps[]; .comparison == "agrees" and .tamper == null)
+            and (.steps | length) == 11
+            and ([.steps[].edge] == ["insertActive","updateTerminal","insertAbsent","updateTerminal","insertActive","updateTerminal","updateTerminal","insertActive","deleteActive","deleteActive","deleteActive"])
+            and ([.steps[].tamper] == [null,null,null,null,null,null,null,null,"short-by-one","other-address",null])
+            and ([.steps[].model.outcome] == ["accepted","accepted","accepted","refused","accepted","accepted","refused","accepted","refused","refused","accepted"])
+            and ([.steps[].chain.outcome] == ["accepted","accepted","accepted","refused","accepted","accepted","refused","accepted","refused","refused","accepted"])
+            and all(.steps[]; .comparison == "agrees")
+            and .steps[8].model.reason == "deposit-returned"
+            and .steps[9].model.reason == "deposit-returned"
+            and all(.steps[8,9]; (.chain.txid | txid) and (.chain.refusal.hashes | index($state) != null))
+            and ([.steps[8,9,10].request] | unique | length) == 1
+            and .steps[10].registry == .steps[0].registry
+            and .steps[7].registry == .steps[0].registry
             and all(.steps[] | select(.model.outcome == "accepted"); complete and (.chain.txid | txid))
             and all(.steps[] | select(.model.outcome == "refused");
               (.chain.txid | txid) and (.chain.refusal.hashes | length) > 0)
@@ -156,8 +172,77 @@ jobs:
             and .steps[4].registry == .steps[5].registry
             and .steps[5].registry == .steps[6].registry
             and .steps[0].registry != .steps[4].registry
-            and (.transactions | length) == 5
+            and (.transactions | length) == 7
           ' "$f" > /dev/null || { echo 'FAIL: CG22 retirement evidence moved'; exit 1; }
+      # Read the eight step records the exit controls write as a row of
+      # their own, apart from the retirement so that each receipt is
+      # written under the size bound. Requests leave the queue unfolded,
+      # each exit named by the step. In a registry of its own, a reject
+      # refunding the owner one lovelace short and to another key is
+      # refused by the state script and by the model for deposit-returned,
+      # the name onchain/validators/deposit_exits.tests.ak
+      # reject_refund_one_lovelace_short_refuses_by_name and
+      # reject_refund_to_another_key_refuses_by_name assert; the untampered
+      # reject is accepted by both. In another, an insertion only (the chain
+      # admits no other retraction until #239), a retraction returning one
+      # lovelace short, to another key and bound to another output reference
+      # is refused by the request script and by the model for
+      # deposit-returned, as onchain/validators/cage_retract.tests.ak
+      # retract_held_short_by_one_refuses, retract_held_wrong_owner_refuses
+      # and retract_wrong_reference_refuses assert; one spending the
+      # registry's state beside it is refused for retract-state-spent, as
+      # retract_beside_a_fold_refuses asserts; the untampered retraction,
+      # bound to the request's own output reference and signed by its owner,
+      # is accepted by both. The ledger's own reason is not observed: the
+      # deployed validators are compiled without traces (#287).
+      - name: Run the dedicated CG23 exit row as a packaged app
+        run: |
+          set -e
+          cd conformance
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          receipts="$(mktemp -d "$RUNNER_TEMP/cg23-receipts.XXXXXX")"
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG23 --receipts-dir "$receipts"
+          head_sha="$(git rev-parse HEAD)"
+          f="$receipts/receipt-CG23.json"
+          test -f "$f" || { echo 'FAIL: missing CG23 receipt'; exit 1; }
+          state_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "state.state.spend" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
+          # jq expands its own --arg variables inside this program.
+          # shellcheck disable=SC2016
+          nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" --arg state "$state_hash" '
+            def txid: type == "string" and test("^[0-9a-f]{64}$");
+            def text: type == "string" and length > 0;
+            def complete: .comparison == "agrees" and .tamper == null
+              and (.compared | length) == 9 and .perturbation.refused > 0;
+            .row == "CG23"
+            and .verdict == "agrees-with-model"
+            and .base == $base and .dirty == false
+            and (.blueprint | text) and (.node | text)
+            and (.steps | length) == 8
+            and ([.steps[].edge] == ["insertActive","insertActive","insertActive","insertActive","insertActive","insertActive","insertActive","insertActive"])
+            and ([.steps[].exit] == ["reject","reject","reject","retract","retract","retract","retract","retract"])
+            and ([.steps[].tamper] == ["short-by-one","other-address",null,"short-by-one","other-address","other-reference","state-spent",null])
+            and ([.steps[].model.outcome] == ["refused","refused","accepted","refused","refused","refused","refused","accepted"])
+            and ([.steps[].chain.outcome] == ["refused","refused","accepted","refused","refused","refused","refused","accepted"])
+            and all(.steps[]; .comparison == "agrees")
+            and all(.steps[] | select(.model.outcome == "accepted"); complete and (.chain.txid | txid))
+            and all(.steps[] | select(.model.outcome == "refused");
+              (.chain.txid | txid) and (.chain.refusal.hashes | length) > 0)
+            and all(.steps[0,1]; .model.reason == "deposit-returned"
+              and (.chain.refusal.hashes | index($state) != null)
+              and (.chain.refusal.scripts | index("state") != null))
+            and all(.steps[3,4,5]; .model.reason == "deposit-returned"
+              and (.chain.refusal.scripts | index("request") != null))
+            and .steps[6].model.reason == "retract-state-spent"
+            and (.steps[6].chain.refusal.scripts | index("request") != null)
+            and ([.steps[0,1,2].registry] | unique | length) == 1
+            and ([.steps[3,4,5,6,7].registry] | unique | length) == 1
+            and .steps[0].registry != .steps[3].registry
+            and all(.steps[] | select(.exit == "retract");
+              (.edge == "insertAbsent" or .edge == "insertActive" or .edge == "witnessTerminal")
+              and (.request.reference | type) == "number")
+            and ([.steps[3,4,5,6,7].request.reference] | unique | length) == 5
+            and (.transactions | length) == 2
+          ' "$f" > /dev/null || { echo 'FAIL: CG23 exit evidence moved'; exit 1; }
       - name: Run the generic rows as a packaged app without a dev shell
         working-directory: conformance
         run: |
@@ -300,7 +385,15 @@ jobs:
           #    CG21 receipt; this asserts the same promises at the CI
           #    boundary, against the compiled blueprint's own hashes, so a
           #    loader that stopped checking cannot make the row pass here.
-          #    #228's sixth step registers an extra signer and both sides accept it.
+          #    #228's step registers an extra signer and both sides accept it.
+          #    The delivery sent to another address and paid one lovelace short
+          #    is refused by the state script and by the model, whose reason is
+          #    the one the compiled Aiken suite names for the shape:
+          #    onchain/validators/registry_rows.tests.ak
+          #    t6_carrier_at_another_address_refuses (destination) and
+          #    t6_underfunded_destination_refuses (deposit-returned); the same
+          #    request untampered is accepted by both. The ledger's own reason
+          #    is not observed: the validators are compiled without traces (#287).
           open_params="$(nix run --quiet nixpkgs#jq -- -er '[.validators[] | select(.title == "open.open.mint") | (.parameters // []) | length] | first' "$blueprint")"
           [ "$open_params" -eq 0 ] || { echo "FAIL: open.open.mint declares $open_params parameters; CG21 reports a parameterless open application"; exit 1; }
           e="${CONFORMANCE_RECEIPTS}/receipt-CG21.json"
@@ -310,10 +403,11 @@ jobs:
             def txid: type == "string" and test("^[0-9a-f]{64}$");
             def complete: (.compared | length) == 9 and (.unobserved | type) == "array"
               and (.perturbation.refused > 0);
-            ([.steps[] | select(.tamper == "redirect-delivery") | .request][0]) as $tampered |
+            ([.steps[] | select(.tamper == "other-address") | .request][0]) as $tampered |
             .row == "CG21" and .outcome == "accepted"
             and .verdict == "agrees-with-model" and .venue == "node-submit"
-            and (.steps | length) == 6
+            and (.steps | length) == 7
+            and ([.steps[].tamper] == [null,null,null,"other-address","short-by-one",null,"extra-signer"])
             and all(.steps[]; .comparison == "agrees")
             and all(.steps[] | select(.tamper == null and .model.outcome == "accepted"
                     and .chain.outcome == "accepted");
@@ -324,14 +418,21 @@ jobs:
             and any(.steps[]; .tamper == "extra-signer" and .model.outcome == "accepted"
                     and .chain.outcome == "accepted" and (.chain.txid | txid)
                     and .differences == [{"observation":"tx","path":"signers"}])
-            and any(.steps[]; .edge == "insertActive" and .model.outcome == "refused"
+            and any(.steps[]; .edge == "insertActive" and .tamper == null and .model.outcome == "refused"
+                    and .model.reason == "key-exists"
                     and .chain.outcome == "refused" and (.chain.refusal.hashes | index($state) != null))
-            and any(.steps[]; .tamper == "redirect-delivery" and .model.outcome == "accepted"
-                    and .chain.outcome == "refused" and (.chain.refusal.hashes | index($state) != null))
+            and any(.steps[]; .tamper == "other-address" and .model.outcome == "refused"
+                    and .model.reason == "destination"
+                    and .chain.outcome == "refused" and (.chain.txid | txid)
+                    and (.chain.refusal.hashes | index($state) != null))
+            and any(.steps[]; .tamper == "short-by-one" and .model.outcome == "refused"
+                    and .model.reason == "deposit-returned" and .request == $tampered
+                    and .chain.outcome == "refused" and (.chain.txid | txid)
+                    and (.chain.refusal.hashes | index($state) != null))
             and any(.steps[]; .tamper == null and .model.outcome == "accepted"
                     and .chain.outcome == "accepted" and .request == $tampered)
           ' "$e" > /dev/null || { echo 'FAIL: CG21 step evidence missing or incomplete'; exit 1; }
-          echo 'GREEN = expected-debt assertion held: 11 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and redirected-delivery control are recorded, with held debt exactly CG11 CG12 CG19.'
+          echo 'GREEN = expected-debt assertion held: 11 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and the tampered-payment controls are recorded, with held debt exactly CG11 CG12 CG19.'
           echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'
       # Issue #69: canonical identity authentication. CA02 asserts
       # the ledger's acceptance of a rival registry from a second

@@ -9,6 +9,7 @@ import Data.Aeson (eitherDecode)
 import Data.ByteString.Lazy qualified as BSL
 import Data.Either (isLeft)
 import Data.List (isInfixOf, nub)
+import Data.Text qualified as T
 import Test.Hspec (
     Spec,
     describe,
@@ -48,6 +49,15 @@ spec = describe "Appendix: keeping the published requirements complete" $ do
         case filter ((== "CK06") . rowId) rows of
             [ck06] -> rowState ck06 `shouldBe` OutOfScope
             _ -> expectationFailure "inventory has no single checkpoint-policy requirement"
+
+    it "Keeps the reject and retract exit controls a requirement of their own, apart from the retirement" $ do
+        rows <- loadCommitted
+        case filter ((== "CG23") . rowId) rows of
+            [exits] -> do
+                rowGroup exits `shouldBe` "CG"
+                rowRequirement exits
+                    `shouldSatisfy` (\text -> all (`T.isInfixOf` text) ["reject", "retract"])
+            _ -> expectationFailure "inventory has no single exit-controls requirement"
 
     it "Does not store claims of completed tests in the requirements file" $ do
         rows <- loadCommitted

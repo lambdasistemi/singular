@@ -232,10 +232,11 @@ def driver_surface(corpus):
     """The declared boundary: what the driver says it can do and see."""
     surface = corpus['surface']
     for field in ('declaration', 'definitionDigest', 'protocolVersion',
-                  'operations', 'observations', 'unobservable'):
+                  'operations', 'observations', 'unobservable', 'judgements'):
         assert field in surface, f'driver surface omits {field} (D01)'
     assert surface['operations'], 'EMPTY EXTENT: driver declares no operations'
     assert surface['observations'], 'EMPTY EXTENT: driver declares no observations'
+    assert surface['judgements'], 'EMPTY EXTENT: driver declares no judgements'
     return surface
 
 
@@ -517,7 +518,7 @@ TRANSLATION_ROW = re.compile(r'^\| `?([^|`]+?)`? \| (realization|identity|unobse
 
 def check_translation(root, surface):
     """R04 — the constitution states the concrete realization of every declared
-    law and observation, the identity rules, and the named unobservable fields.
+    law, observation and judgement, the identity rules, and the named unobservable fields.
 
     Mechanical reconciliation only, in both directions: a declared name with no
     row fails, and a row naming something the driver does not declare fails.
@@ -533,7 +534,7 @@ def check_translation(root, surface):
         assert body.strip(), f'translation row {name} states nothing'
         rows.setdefault(kind, {})[name] = body.strip()
 
-    declared = set(surface['operations']) | set(surface['observations'])
+    declared = set(surface['operations']) | set(surface['observations']) | set(surface['judgements'])
     stated = set(rows.get('realization', {}))
     assert stated == declared, (
         'constitutional translation does not reconcile with the declared surface; '

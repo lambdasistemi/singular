@@ -475,9 +475,65 @@ liveStepChecks = describe "Checking compared requests in live receipts" $ do
     it "rejects accepted agreement without perturbation evidence" $
         loadLive (changeStep (setField "perturbation" Null) acceptedLive)
             >>= (`shouldSatisfy` isLeft)
-    it "rejects a claimed redirected-delivery agreement without a script hash" $
-        loadLive (changeStep (setField "tamper" ("redirect-delivery" :: String)) acceptedLive)
-            >>= (`shouldSatisfy` isLeft)
+    it "rejects a payment tamper claimed as agreement while both sides accepted it" $
+        loadLive (changeStep (setField "tamper" ("other-address" :: String)) acceptedLive)
+            >>= (`shouldSatisfy` refusedFor "payment tamper agreement does not have model and chain refusal")
+    it "accepts a payment sent elsewhere that the ledger refused and the model refused by name" $
+        loadLive (paymentTamperLive "other-address" "destination") `shouldReturn` Right 1
+    it "accepts a payment one lovelace short that the ledger refused and the model refused by name" $
+        loadLive (paymentTamperLive "short-by-one" "deposit-returned") `shouldReturn` Right 1
+    it "rejects a payment tamper agreement the model accepted" $
+        loadLive (changeStep (setField "model" (object ["outcome" .= ("accepted" :: String)]))
+            (paymentTamperLive "short-by-one" "deposit-returned"))
+            >>= (`shouldSatisfy` refusedFor "payment tamper agreement does not have model and chain refusal")
+    it "rejects a payment tamper whose model refusal names no reason" $
+        loadLive (changeStep (setField "model" (object ["outcome" .= ("refused" :: String), "reason" .= Null]))
+            (paymentTamperLive "short-by-one" "deposit-returned"))
+            >>= (`shouldSatisfy` refusedFor "payment tamper refusal names no model reason")
+    it "rejects a payment tamper refusal attributed to no script" $
+        loadLive (changeStep (setField "chain" (setRefusalField "hashes" ([] :: [String]) (probeRefusalChain "probe-allowance")))
+            (paymentTamperLive "other-address" "destination"))
+            >>= (`shouldSatisfy` refusedFor "tamper refusal has no attributed script hashes")
+    it "accepts an untampered reject and retract compared with the model" $ do
+        loadLive (changeStep (setField "exit" ("reject" :: String)) acceptedLive) `shouldReturn` Right 1
+        loadLive (changeStep (setField "exit" ("retract" :: String)) acceptedLive) `shouldReturn` Right 1
+    it "accepts a retraction bound to another request that the ledger and the model refused by name" $
+        loadLive (retractTamperLive "other-reference" "deposit-returned") `shouldReturn` Right 1
+    it "accepts a retraction beside a state input that the ledger and the model refused by name" $
+        loadLive (retractTamperLive "state-spent" "retract-state-spent") `shouldReturn` Right 1
+    it "accepts a reject refund short and elsewhere that the ledger and the model refused by name" $ do
+        loadLive (changeStep (setField "exit" ("reject" :: String)) (paymentTamperLive "short-by-one" "deposit-returned"))
+            `shouldReturn` Right 1
+        loadLive (changeStep (setField "exit" ("reject" :: String)) (paymentTamperLive "other-address" "deposit-returned"))
+            `shouldReturn` Right 1
+    it "rejects a reference or state tamper on an exit that is not a retraction" $ do
+        loadLive (changeStep (setField "exit" ("reject" :: String)) (retractTamperLive "other-reference" "deposit-returned"))
+            >>= (`shouldSatisfy` refusedFor "only a retraction is bound to its request or refused for what it spends")
+        loadLive (changeStep (setField "exit" ("insertActive" :: String)) (retractTamperLive "state-spent" "retract-state-spent"))
+            >>= (`shouldSatisfy` refusedFor "only a retraction is bound to its request or refused for what it spends")
+    it "rejects a retraction of a request the chain admits no retraction for until #239" $
+        loadLive (changeStep (setField "edge" ("deleteActive" :: String) . setField "exit" ("retract" :: String)) acceptedLive)
+            >>= (`shouldSatisfy` refusedFor "a retraction of a request no retraction is admitted for")
+    it "rejects an exit that is not one of the nine, or a fold of another edge than its request's" $ do
+        loadLive (changeStep (setField "exit" ("burn" :: String)) acceptedLive)
+            >>= (`shouldSatisfy` refusedFor "unknown exit")
+        loadLive (changeStep (setField "exit" ("insertAbsent" :: String)) acceptedLive)
+            >>= (`shouldSatisfy` refusedFor "a fold exit names another edge than its request")
+    it "publishes the chapter where requests leave the queue unfolded, and the retraction admission gap" $ do
+        let book = renderBook [] []
+        book `shouldSatisfy` isInfixOf "## A request that is never folded"
+        book `shouldSatisfy` isInfixOf "withdraw-insert-only"
+        book `shouldSatisfy` isInfixOf "#239"
+    it "accepts the exit controls' receipt, a row of its own, with its compared rejects and retractions" $
+        loadLive exitControlsLive `shouldReturn` Right 1
+    it "rejects the exit controls' receipt when it names no step records" $
+        loadLive exitControlsLive{receiptSteps = Nothing} >>= (`shouldSatisfy` refusedFor "names no live steps")
+    it "publishes the exit controls' comparison under their own row, apart from the retirement's" $ do
+        renderBook [] [exitControlsLive] `shouldSatisfy` isInfixOf "Rejection and retraction compared"
+        renderBook [] [acceptedLive{receiptRow = "CG22"}] `shouldSatisfy` isInfixOf "Retirement compared"
+    it "publishes a refused retraction with the exit and the reason the model gave" $
+        renderBook [] [(retractTamperLive "other-reference" "deposit-returned"){receiptRow = "CG23"}]
+            `shouldSatisfy` isInfixOf "The other-reference retract of insertActive was refused on chain"
     it "rejects a refused live request whose receipt omits the node reason and measured units" $
         loadLive refusedLiveWithoutDetails >>= (`shouldSatisfy` isLeft)
     it "accepts a budget refusal named by per-purpose measurements" $
@@ -552,7 +608,7 @@ field _ _ = Nothing
 refusedLiveWithoutDetails :: Receipt
 refusedLiveWithoutDetails =
     ( changeStep
-        ( setField "tamper" ("redirect-delivery" :: String)
+        ( setField "model" (object ["outcome" .= ("refused" :: String), "reason" .= ("key-exists" :: String)])
             . setField
                 "chain"
                 ( object
@@ -560,7 +616,7 @@ refusedLiveWithoutDetails =
                     , "txid" .= ("abc123" :: String)
                     , "refusal"
                         .= object
-                            [ "trace" .= ("deposit-returned" :: String)
+                            [ "trace" .= (Nothing :: Maybe String)
                             , "hashes" .= (["abcdef"] :: [String])
                             ]
                     ]
@@ -690,3 +746,56 @@ loadLive :: Receipt -> IO (Either String Int)
 loadLive receipt = withSystemTempDirectory "conformance-live-receipt" $ \dir -> do
     BSL.writeFile (dir </> "receipt-CG21.json") (encode receipt)
     fmap length <$> loadReceipts dir
+
+{- | A payment tamper both sides refused: the ledger with its node refusal and
+script attribution, the model for the reason its judgement named.
+-}
+paymentTamperLive :: String -> String -> Receipt
+paymentTamperLive name reason =
+    changeStep
+        ( setField "tamper" name
+            . setField "model" (object ["outcome" .= ("refused" :: String), "reason" .= reason])
+            . setField "chain" (probeRefusalChain "probe-allowance")
+        )
+        refusedLiveWithoutDetails
+
+-- | A retraction tamper both sides refused.
+retractTamperLive :: String -> String -> Receipt
+retractTamperLive name reason =
+    changeStep (setField "exit" ("retract" :: String)) (paymentTamperLive name reason)
+
+{- | The exit controls as a row of their own: a reject refunding one lovelace
+short, the untampered reject, a retraction bound to another request, one
+beside a spent state, and the untampered retraction.
+-}
+exitControlsLive :: Receipt
+exitControlsLive =
+    acceptedLive
+        { receiptRow = "CG23"
+        , receiptTransactions = ["abc123", "def456"]
+        , receiptSteps =
+            Just $
+                concatMap
+                    (concat . receiptSteps)
+                    [ changeStep (setField "exit" ("reject" :: String)) (paymentTamperLive "short-by-one" "deposit-returned")
+                    , changeStep (setField "exit" ("reject" :: String)) acceptedLive
+                    , retractTamperLive "other-reference" "deposit-returned"
+                    , retractTamperLive "state-spent" "retract-state-spent"
+                    , changeStep
+                        ( setField "exit" ("retract" :: String)
+                            . setField "chain" (object ["outcome" .= ("accepted" :: String), "txid" .= ("def456" :: String)])
+                        )
+                        acceptedLive
+                    ]
+        }
+
+-- | Give a chain outcome's refusal this field.
+setRefusalField :: (ToJSON a) => String -> a -> Value -> Value
+setRefusalField name value chain = case chain of
+    Object fields | Just refusal <- KM.lookup "refusal" fields ->
+        setField "refusal" (setField name value refusal) chain
+    _ -> chain
+
+-- | A receipt the loader refused, naming this reason.
+refusedFor :: String -> Either String Int -> Bool
+refusedFor reason = either (reason `isInfixOf`) (const False)

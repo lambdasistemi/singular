@@ -492,7 +492,7 @@ const configSchema={root:[N],maxFee:N,processTime:N,retractTime:N,applicationPol
 const custody={key:N,refundAddress:N,value:N};
 const holding={key:N,kind:{$enum:KINDS},output:N};
 const stateSchema={config:configSchema,trie:[{key:N,leaf}],custody:[custody],held:[holding]};
-const requestSchema={edge:{$enum:EDGES},key:N,owner:N,refundAddress:N,deposit:N,tip:N,output:N,
+const requestSchema={edge:{$enum:EDGES},key:N,owner:N,refundAddress:N,deposit:N,tip:N,reference:N,output:N,
   approval:{$option:approval},claimed:[{kind:{$enum:KINDS},quantity:I}]};
 
 function validate(x,s,p){
@@ -727,6 +727,7 @@ const request=(edge,key,opts={})=>({
   refundAddress:opts.refundAddress??0,
   deposit:opts.deposit??0,
   tip:opts.tip??0,
+  reference:opts.reference??0,
   output:opts.output??0,
   approval:null,
   claimed:opts.claimed??[]});
@@ -1046,6 +1047,7 @@ const STORIES=[
      "refundAddress": 0,
      "deposit": 0,
      "tip": 0,
+     "reference": 0,
      "output": 555,
      "approval": {
       "policy": 7,
@@ -1074,6 +1076,7 @@ const STORIES=[
        "refundAddress": 0,
        "deposit": 0,
        "tip": 0,
+       "reference": 0,
        "output": 555,
        "approval": {
         "policy": 7,
@@ -1106,6 +1109,7 @@ const STORIES=[
      "refundAddress": 91,
      "deposit": 200,
      "tip": 0,
+     "reference": 0,
      "output": 0,
      "approval": {
       "policy": 7,
@@ -1129,6 +1133,7 @@ const STORIES=[
      "refundAddress": 0,
      "deposit": 0,
      "tip": 0,
+     "reference": 0,
      "output": 555,
      "approval": {
       "policy": 7,
@@ -1157,6 +1162,7 @@ const STORIES=[
        "refundAddress": 0,
        "deposit": 0,
        "tip": 0,
+       "reference": 0,
        "output": 0,
        "approval": {
         "policy": 7,
@@ -1189,6 +1195,7 @@ const STORIES=[
      "refundAddress": 0,
      "deposit": 0,
      "tip": 0,
+     "reference": 0,
      "output": 555,
      "approval": {
       "policy": 7,
@@ -1212,6 +1219,7 @@ const STORIES=[
      "refundAddress": 0,
      "deposit": 0,
      "tip": 0,
+     "reference": 0,
      "output": 555,
      "approval": {
       "policy": 7,
@@ -1235,6 +1243,7 @@ const STORIES=[
      "refundAddress": 0,
      "deposit": 0,
      "tip": 0,
+     "reference": 0,
      "output": 700,
      "approval": null,
      "claimed": []
@@ -1250,6 +1259,7 @@ const STORIES=[
      "refundAddress": 0,
      "deposit": 0,
      "tip": 0,
+     "reference": 0,
      "output": 701,
      "approval": null,
      "claimed": []
@@ -1270,6 +1280,7 @@ const STORIES=[
        "refundAddress": 0,
        "deposit": 0,
        "tip": 0,
+       "reference": 0,
        "output": 555,
        "approval": {
         "policy": 7,
@@ -1302,6 +1313,7 @@ const STORIES=[
      "refundAddress": 0,
      "deposit": 0,
      "tip": 0,
+     "reference": 0,
      "output": 700,
      "approval": null,
      "claimed": []
@@ -1317,6 +1329,7 @@ const STORIES=[
      "refundAddress": 0,
      "deposit": 0,
      "tip": 0,
+     "reference": 0,
      "output": 555,
      "approval": {
       "policy": 7,
@@ -1340,6 +1353,7 @@ const STORIES=[
      "refundAddress": 0,
      "deposit": 0,
      "tip": 0,
+     "reference": 0,
      "output": 700,
      "approval": null,
      "claimed": []
@@ -1355,6 +1369,7 @@ const STORIES=[
      "refundAddress": 0,
      "deposit": 0,
      "tip": 0,
+     "reference": 0,
      "output": 555,
      "approval": {
       "policy": 7,
@@ -1383,6 +1398,7 @@ const STORIES=[
        "refundAddress": 0,
        "deposit": 0,
        "tip": 0,
+       "reference": 0,
        "output": 555,
        "approval": {
         "policy": 7,
@@ -1411,6 +1427,7 @@ const STORIES=[
        "refundAddress": 0,
        "deposit": 0,
        "tip": 0,
+       "reference": 0,
        "output": 555,
        "approval": {
         "policy": 99,
@@ -1439,6 +1456,7 @@ const STORIES=[
        "refundAddress": 0,
        "deposit": 0,
        "tip": 0,
+       "reference": 0,
        "output": 555,
        "approval": null,
        "claimed": []
@@ -1463,6 +1481,7 @@ const STORIES=[
      "refundAddress": 0,
      "deposit": 0,
      "tip": 0,
+     "reference": 0,
      "output": 555,
      "approval": {
       "policy": 7,
@@ -1486,6 +1505,7 @@ const STORIES=[
      "refundAddress": 0,
      "deposit": 0,
      "tip": 0,
+     "reference": 0,
      "output": 555,
      "approval": {
       "policy": 7,
@@ -1509,6 +1529,7 @@ const STORIES=[
      "refundAddress": 0,
      "deposit": 0,
      "tip": 0,
+     "reference": 0,
      "output": 555,
      "approval": {
       "policy": 7,
@@ -1560,6 +1581,7 @@ const STORIES=[
         "key": 8,
         "output": 0,
         "owner": 91,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -1667,6 +1689,7 @@ const STORIES=[
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -1754,6 +1777,7 @@ const STORIES=[
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -1852,6 +1876,7 @@ const STORIES=[
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -1944,6 +1969,7 @@ const STORIES=[
         "key": 42,
         "output": 0,
         "owner": 91,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -2031,6 +2057,7 @@ const STORIES=[
         "key": 42,
         "output": 0,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -2110,6 +2137,7 @@ const STORIES=[
         "key": 42,
         "output": 700,
         "owner": 0,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -2202,6 +2230,7 @@ const STORIES=[
         "key": 42,
         "output": 0,
         "owner": 91,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -2266,6 +2295,7 @@ const STORIES=[
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -2330,6 +2360,7 @@ const STORIES=[
         "key": 42,
         "output": 0,
         "owner": 91,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -2388,6 +2419,7 @@ const STORIES=[
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -2446,6 +2478,7 @@ const STORIES=[
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -2510,6 +2543,7 @@ const STORIES=[
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -2563,6 +2597,7 @@ const STORIES=[
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -2627,6 +2662,7 @@ const STORIES=[
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -2685,6 +2721,7 @@ const STORIES=[
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -2738,6 +2775,7 @@ const STORIES=[
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -2802,6 +2840,7 @@ const STORIES=[
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -2860,6 +2899,7 @@ const STORIES=[
         "key": 42,
         "output": 0,
         "owner": 91,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -2913,6 +2953,7 @@ const STORIES=[
         "key": 42,
         "output": 0,
         "owner": 91,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -2977,6 +3018,7 @@ const STORIES=[
         "key": 42,
         "output": 0,
         "owner": 91,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -3035,6 +3077,7 @@ const STORIES=[
         "key": 42,
         "output": 0,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -3088,6 +3131,7 @@ const STORIES=[
         "key": 42,
         "output": 0,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -3152,6 +3196,7 @@ const STORIES=[
         "key": 42,
         "output": 0,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -3210,6 +3255,7 @@ const STORIES=[
         "key": 42,
         "output": 700,
         "owner": 0,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -3274,6 +3320,7 @@ const STORIES=[
         "key": 42,
         "output": 700,
         "owner": 0,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -3338,6 +3385,7 @@ const STORIES=[
         "key": 42,
         "output": 700,
         "owner": 0,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -3383,6 +3431,7 @@ const STORIES=[
         "key": 42,
         "output": 0,
         "owner": 91,
+        "reference": 0,
         "refundAddress": 91,
         "tip": 0
       },
@@ -3436,6 +3485,7 @@ const STORIES=[
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -3489,6 +3539,7 @@ const STORIES=[
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -3534,6 +3585,7 @@ const STORIES=[
         "key": 42,
         "output": 700,
         "owner": 0,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -3618,6 +3670,7 @@ const STORIES=[
         "key": 42,
         "output": 700,
         "owner": 0,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -3671,6 +3724,7 @@ const STORIES=[
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -3729,6 +3783,7 @@ const STORIES=[
         "key": 42,
         "output": 0,
         "owner": 91,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -3787,6 +3842,7 @@ const STORIES=[
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -3885,6 +3941,7 @@ const STORIES=[
         "key": 42,
         "output": 0,
         "owner": 91,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -3972,6 +4029,7 @@ const STORIES=[
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -4030,6 +4088,7 @@ const STORIES=[
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -4134,7 +4193,7 @@ const STORIES=[
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "35900f7b04d9c0be527c5b526ee304ddf634515b3cd4d7bda7212b308e7e1add",
+  "corpusSourceSha256": "561d567c03f106de018c0f70ef81ca50e15dd466ee8ad5fbaecaab419e1c9e0b",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -4263,20 +4322,20 @@ const STORIES=[
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "457d0936c9928f51f4018eda7b50780a54e2cc5141a731ef1aeba6e887bb62d4",
-  "payloadSha256": "70e11d34bba12332f55f4cf6e2c50da6c0b56284fe0b0eafe4dadd973ea69ff5",
+  "modelSha256": "70bea96b1c184cba930f1c8280633ee430af89ba8031ccf3ac03c87ec13149ca",
+  "payloadSha256": "0468c64d055b4027cd1fc7a292382ead3313848fd6ed73e90f59e653d0e1eace",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "35900f7b04d9c0be527c5b526ee304ddf634515b3cd4d7bda7212b308e7e1add",
+    "lean/Main.lean": "561d567c03f106de018c0f70ef81ca50e15dd466ee8ad5fbaecaab419e1c9e0b",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "59cb8f24600e6d501632aa5eeb8df8873ecb4165c74379100eaa83303b818b58",
-    "lean/Singular/Lemmas.lean": "d39db0c50332090555db0d366ae43c83addb5ea08eb23764107795ec44af78aa",
-    "lean/Singular/Model.lean": "457d0936c9928f51f4018eda7b50780a54e2cc5141a731ef1aeba6e887bb62d4",
-    "lean/Singular/Statements.lean": "275d3921990736a406a7ac24ad3a02bf35dc2da24f56821eabc5f1acf8017abe"
+    "lean/Singular/Driver.lean": "f7654d1916f47f070d5d5f2b8cf0574ba7fcd257828133130a6c1c49f155cf38",
+    "lean/Singular/Lemmas.lean": "a149622734c9f3938aa79d3c58499cbabccd72af544d0561b84452ba75ae3d7b",
+    "lean/Singular/Model.lean": "70bea96b1c184cba930f1c8280633ee430af89ba8031ccf3ac03c87ec13149ca",
+    "lean/Singular/Statements.lean": "6c9c7c04c1338c8cad72c894f718f9f0967f351317507006cabd3eca1dbf9c81"
   },
-  "statementsSha256": "275d3921990736a406a7ac24ad3a02bf35dc2da24f56821eabc5f1acf8017abe",
-  "theoremManifestSha256": "c7f59df5a5c16e12fbb5436bcb784443483f91ce5aa08296c55f9099f2439429",
+  "statementsSha256": "6c9c7c04c1338c8cad72c894f718f9f0967f351317507006cabd3eca1dbf9c81",
+  "theoremManifestSha256": "36c69bf4472caa82c53aad1ab7301f4b9c31436562d3d80ac3842f3937f442cf",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
@@ -4310,7 +4369,7 @@ const STORIES=[
         "accepted": false,
         "reason": "key-exists"
       },
-      "statementSha256": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737",
+      "statementSha256": "f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508",
       "theorem": "Singular.Statements.insert_active_transaction_row",
       "tip": 1,
       "transaction": {
@@ -4368,6 +4427,7 @@ const STORIES=[
               "terminalPolicy": 10
             },
             "lovelace": 0,
+            "reference": null,
             "role": "state",
             "stateToken": 1
           },
@@ -4387,11 +4447,17 @@ const STORIES=[
             "datum": "inline",
             "inlineConfig": null,
             "lovelace": 0,
+            "reference": null,
             "role": "destination",
             "stateToken": 0
           }
         ],
-        "refunds": [],
+        "refunds": [
+          {
+            "address": 555,
+            "value": 0
+          }
+        ],
         "signers": []
       }
     },
@@ -4435,11 +4501,12 @@ const STORIES=[
         "key": 42,
         "output": 0,
         "owner": 91,
+        "reference": 0,
         "refundAddress": 91,
         "tip": 0
       },
       "rootMatchesTrie": true,
-      "statementSha256": "cbe444a5bddadef89cba2f1459a597a010531e396a90be4a798fdccc5633fb46",
+      "statementSha256": "8c63e568b81b4e4a81cf3832c88d324ef910925e2733b6593c8e337c81357b3f",
       "theorem": "Singular.Statements.insert_absent_transaction_row",
       "transaction": {
         "inputs": [
@@ -4496,6 +4563,7 @@ const STORIES=[
               "terminalPolicy": 10
             },
             "lovelace": 0,
+            "reference": null,
             "role": "state",
             "stateToken": 1
           },
@@ -4507,6 +4575,7 @@ const STORIES=[
             "datum": "inline",
             "inlineConfig": null,
             "lovelace": 0,
+            "reference": null,
             "role": "destination",
             "stateToken": 0
           },
@@ -4528,11 +4597,17 @@ const STORIES=[
             "datum": "inline",
             "inlineConfig": null,
             "lovelace": 200,
+            "reference": null,
             "role": "cage",
             "stateToken": 0
           }
         ],
-        "refunds": [],
+        "refunds": [
+          {
+            "address": 0,
+            "value": 200
+          }
+        ],
         "signers": []
       }
     },
@@ -4597,7 +4672,7 @@ const STORIES=[
           "quantity": 1
         }
       ],
-      "statementSha256": "c85a4eb0a61907d71a0861658097e7ab839655023e39bfc4e11a8209553e31c2",
+      "statementSha256": "6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068",
       "theorem": "Singular.Statements.update_terminal_transaction_row",
       "tip": 1,
       "transaction": {
@@ -4671,6 +4746,7 @@ const STORIES=[
               "terminalPolicy": 10
             },
             "lovelace": 0,
+            "reference": null,
             "role": "state",
             "stateToken": 1
           },
@@ -4682,11 +4758,29 @@ const STORIES=[
             "datum": "inline",
             "inlineConfig": null,
             "lovelace": 0,
+            "reference": null,
             "role": "destination",
+            "stateToken": 0
+          },
+          {
+            "address": 42,
+            "assets": [],
+            "commitment": 2958227895,
+            "custodyDatum": null,
+            "datum": "none",
+            "inlineConfig": null,
+            "lovelace": 0,
+            "reference": null,
+            "role": "owner",
             "stateToken": 0
           }
         ],
-        "refunds": [],
+        "refunds": [
+          {
+            "address": 42,
+            "value": 0
+          }
+        ],
         "signers": []
       }
     }
@@ -4841,19 +4935,19 @@ const STORIES=[
     "name": "Singular.Statements.insert_absent_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "cbe444a5bddadef89cba2f1459a597a010531e396a90be4a798fdccc5633fb46"
+    "statementSha256": "8c63e568b81b4e4a81cf3832c88d324ef910925e2733b6593c8e337c81357b3f"
   },
   {
     "name": "Singular.Statements.insert_active_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737"
+    "statementSha256": "f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508"
   },
   {
     "name": "Singular.Statements.update_terminal_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "c85a4eb0a61907d71a0861658097e7ab839655023e39bfc4e11a8209553e31c2"
+    "statementSha256": "6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068"
   },
   {
     "name": "Singular.Statements.fold_batch_claimed_mint_by_kind_key",
@@ -4871,7 +4965,7 @@ const STORIES=[
     "name": "Singular.Statements.exit_settles_on_lovelace_received",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "730ae3cbd6d8305333bcb7b796da58891734c34228cb02b73618026df1626e9a"
+    "statementSha256": "28e4e54c3429bd02296aaf609b24ab9defa96458de759eb2e403347ec84afd74"
   },
   {
     "name": "Singular.Statements.no_exit_strands_the_deposit",
@@ -4889,7 +4983,19 @@ const STORIES=[
     "name": "Singular.Statements.obligations_read_only_the_request",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "85882057b050dd48bf10c0f43099a3052eb2b752b349acb23363619894f74044"
+    "statementSha256": "f85c95b87c9edfa7a2e246542784c7b59e6c83642481520fa996747110481ecc"
+  },
+  {
+    "name": "Singular.Statements.built_transaction_settles",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "b5b45e560df2c4d3050466fd00b895dd61280d5b89c834bb2612c52c9b104796"
+  },
+  {
+    "name": "Singular.Statements.retract_pays_exactly_its_obligations",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "a9ec205a3afaf4c62ff1e25f396d035fafbd25b34597e858c5468f6f77403390"
   }
 ]
 ;const IDENTITY={
@@ -4909,12 +5015,12 @@ const STORIES=[
   ],
   "files": {
     "formal/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "formal/Driver.lean": "59cb8f24600e6d501632aa5eeb8df8873ecb4165c74379100eaa83303b818b58",
-    "formal/DriverMain.lean": "dca8094fd3d41e1aabe5b6073f62724fb15df7ad2a9ba96fd0003de31e5b611d",
-    "formal/Lemmas.lean": "d39db0c50332090555db0d366ae43c83addb5ea08eb23764107795ec44af78aa",
+    "formal/Driver.lean": "f7654d1916f47f070d5d5f2b8cf0574ba7fcd257828133130a6c1c49f155cf38",
+    "formal/DriverMain.lean": "366beeab8fd427b9e0220db98e9eb2fac05091f647e4da5e7cb81afcfa1f99e6",
+    "formal/Lemmas.lean": "a149622734c9f3938aa79d3c58499cbabccd72af544d0561b84452ba75ae3d7b",
     "formal/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "formal/Main.lean": "35900f7b04d9c0be527c5b526ee304ddf634515b3cd4d7bda7212b308e7e1add",
-    "formal/Model.lean": "457d0936c9928f51f4018eda7b50780a54e2cc5141a731ef1aeba6e887bb62d4",
+    "formal/Main.lean": "561d567c03f106de018c0f70ef81ca50e15dd466ee8ad5fbaecaab419e1c9e0b",
+    "formal/Model.lean": "70bea96b1c184cba930f1c8280633ee430af89ba8031ccf3ac03c87ec13149ca",
     "formal/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "formal/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "formal/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -4927,19 +5033,19 @@ const STORIES=[
     "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "formal/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
     "formal/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
-    "formal/Statements.lean": "275d3921990736a406a7ac24ad3a02bf35dc2da24f56821eabc5f1acf8017abe",
+    "formal/Statements.lean": "6c9c7c04c1338c8cad72c894f718f9f0967f351317507006cabd3eca1dbf9c81",
     "formal/lifecycle-theorem-debt.json": "4146c8eba1aedae5f40384816b11d3d892ed9632dd4d1838fab51d62eeca8ea3",
     "formal/naming-theorem-debt.json": "968246a3d0f585c5ecaebaa800564dbaa9f51ffd4fb3bad0a08af9cd4324d658",
-    "formal/theorem-debt.json": "c7f59df5a5c16e12fbb5436bcb784443483f91ce5aa08296c55f9099f2439429",
+    "formal/theorem-debt.json": "36c69bf4472caa82c53aad1ab7301f4b9c31436562d3d80ac3842f3937f442cf",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "6d33c40f7c3e95eb86037a91231c718df86a5ec79920c7bbf12d15b9fafeda13"
+    "corpus.json": "83721c76c15c901b62becefee98d5eeb5315e99aa5a5ab02c197b2cff0d97ebb"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 38,
   "corpusFolds": 3,
   "corpusCodec": 7,
   "corpusAda": 2,
-  "theorems": 33,
+  "theorems": 35,
   "namingTheorems": 7
 }
 ;const NAMINGCORPUS={
@@ -4981,9 +5087,9 @@ const STORIES=[
       "id": "NF07-attestation-minted-by-read"
     }
   ],
-  "modelSha256": "457d0936c9928f51f4018eda7b50780a54e2cc5141a731ef1aeba6e887bb62d4",
+  "modelSha256": "70bea96b1c184cba930f1c8280633ee430af89ba8031ccf3ac03c87ec13149ca",
   "namingStatementsSha256": "c96207b951c8566499aa564429f33962535ad0862d18dc1b7484a0a73be0504d",
-  "payloadSha256": "c4bd6ea347683c72e10a921d05171f1aae88ab18ea46072578485cd2bcd904e7",
+  "payloadSha256": "37a4f8ab18fd260dc36e5fafe2eb20347292a88738934e3f6ba8a0412796dbec",
   "queues": [
     {
       "actual": true,
@@ -5073,15 +5179,15 @@ const STORIES=[
   ],
   "schema": "singular-naming-corpus-v2",
   "sourceHashes": {
-    "lean/DriverMain.lean": "dca8094fd3d41e1aabe5b6073f62724fb15df7ad2a9ba96fd0003de31e5b611d",
+    "lean/DriverMain.lean": "366beeab8fd427b9e0220db98e9eb2fac05091f647e4da5e7cb81afcfa1f99e6",
     "lean/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "lean/Main.lean": "35900f7b04d9c0be527c5b526ee304ddf634515b3cd4d7bda7212b308e7e1add",
+    "lean/Main.lean": "561d567c03f106de018c0f70ef81ca50e15dd466ee8ad5fbaecaab419e1c9e0b",
     "lean/NamingMain.lean": "f026113e6b13604012fe817a7c38b4c2f19a469db443c263593b49e5daac8c24",
     "lean/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "59cb8f24600e6d501632aa5eeb8df8873ecb4165c74379100eaa83303b818b58",
-    "lean/Singular/Lemmas.lean": "d39db0c50332090555db0d366ae43c83addb5ea08eb23764107795ec44af78aa",
-    "lean/Singular/Model.lean": "457d0936c9928f51f4018eda7b50780a54e2cc5141a731ef1aeba6e887bb62d4",
+    "lean/Singular/Driver.lean": "f7654d1916f47f070d5d5f2b8cf0574ba7fcd257828133130a6c1c49f155cf38",
+    "lean/Singular/Lemmas.lean": "a149622734c9f3938aa79d3c58499cbabccd72af544d0561b84452ba75ae3d7b",
+    "lean/Singular/Model.lean": "70bea96b1c184cba930f1c8280633ee430af89ba8031ccf3ac03c87ec13149ca",
     "lean/Singular/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -5092,7 +5198,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
-    "lean/Singular/Statements.lean": "275d3921990736a406a7ac24ad3a02bf35dc2da24f56821eabc5f1acf8017abe"
+    "lean/Singular/Statements.lean": "6c9c7c04c1338c8cad72c894f718f9f0967f351317507006cabd3eca1dbf9c81"
   },
   "spellings": [
     {
@@ -5210,7 +5316,7 @@ const STORIES=[
   ],
   "lifecycleStatementsSha256": "4df67ab2a8e6684dbb05524aab68e8cb8dd0391298a62fbb16c247a7987a88cd",
   "modelSha256": "ac2c5ef33d34084c32c37b701e8ec9c4ab5b088cab75190e675b1f1686fb5f56",
-  "payloadSha256": "e90a2114f159eba789a8460c0cbfaf665e758c6d8508c7beae5343942b027729",
+  "payloadSha256": "845d48bbac3416be71e2cf89ea0a0bcba6f821284bf6b69532114baf1a70f08b",
   "recovery": [
     {
       "detail": true,
@@ -5281,15 +5387,15 @@ const STORIES=[
   ],
   "schema": "singular-naming-lifecycle-corpus-v2",
   "sourceHashes": {
-    "lean/DriverMain.lean": "dca8094fd3d41e1aabe5b6073f62724fb15df7ad2a9ba96fd0003de31e5b611d",
+    "lean/DriverMain.lean": "366beeab8fd427b9e0220db98e9eb2fac05091f647e4da5e7cb81afcfa1f99e6",
     "lean/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "lean/Main.lean": "35900f7b04d9c0be527c5b526ee304ddf634515b3cd4d7bda7212b308e7e1add",
+    "lean/Main.lean": "561d567c03f106de018c0f70ef81ca50e15dd466ee8ad5fbaecaab419e1c9e0b",
     "lean/NamingMain.lean": "f026113e6b13604012fe817a7c38b4c2f19a469db443c263593b49e5daac8c24",
     "lean/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "59cb8f24600e6d501632aa5eeb8df8873ecb4165c74379100eaa83303b818b58",
-    "lean/Singular/Lemmas.lean": "d39db0c50332090555db0d366ae43c83addb5ea08eb23764107795ec44af78aa",
-    "lean/Singular/Model.lean": "457d0936c9928f51f4018eda7b50780a54e2cc5141a731ef1aeba6e887bb62d4",
+    "lean/Singular/Driver.lean": "f7654d1916f47f070d5d5f2b8cf0574ba7fcd257828133130a6c1c49f155cf38",
+    "lean/Singular/Lemmas.lean": "a149622734c9f3938aa79d3c58499cbabccd72af544d0561b84452ba75ae3d7b",
+    "lean/Singular/Model.lean": "70bea96b1c184cba930f1c8280633ee430af89ba8031ccf3ac03c87ec13149ca",
     "lean/Singular/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -5300,7 +5406,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
-    "lean/Singular/Statements.lean": "275d3921990736a406a7ac24ad3a02bf35dc2da24f56821eabc5f1acf8017abe"
+    "lean/Singular/Statements.lean": "6c9c7c04c1338c8cad72c894f718f9f0967f351317507006cabd3eca1dbf9c81"
   },
   "steps": [
     {

@@ -66,14 +66,14 @@ def binding_violations(
 
 class RealInventoryTest(unittest.TestCase):
     def test_real_tree_reconciles(self):
-        # The four statements of where every exit's deposit goes add four
-        # manifest-bound obligations and no helper: 97 = 54 + 43, previously
-        # 93 = 50 + 43. The registry has 33 statements; naming, lifecycle and
-        # wire retain 7, 9 and 5.
+        # Three helpers reading a retraction's bound return as its largest
+        # output add three unclassified obligations: 107 = 56 + 51, previously
+        # 104 = 56 + 48 (and before that 97 = 54 + 43). The registry has 35
+        # statements; naming, lifecycle and wire retain 7, 9 and 5.
         inv = build_inventory(REPO_ROOT)
-        self.assertEqual(inv.manifest_bound, 54)
-        self.assertEqual(inv.unclassified, 43)
-        self.assertEqual(inv.manifest_bound + inv.unclassified, 97)
+        self.assertEqual(inv.manifest_bound, 56)
+        self.assertEqual(inv.unclassified, 51)
+        self.assertEqual(inv.manifest_bound + inv.unclassified, 107)
 
     def test_real_manifests_match_extraction_byte_for_byte(self):
         # build_inventory re-runs check_model.statement_inventory and compares

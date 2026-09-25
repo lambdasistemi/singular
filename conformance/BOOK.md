@@ -4,41 +4,65 @@ These are executable stories. The runner supplies fresh registry and wallet cont
 
 ## This run
 
-The runs below predate the current request validator. Their revision and
-blueprint bindings are retained as historical evidence; they do not verify
-the current retraction bound-return or state-input rules.
+Code revision: `12249eac2e90ab79e7991223d1a3cc7546896d22` (clean working tree).
 
-Code revision: `be6a1e525c124a18f46029626c47cec615ff3589` (clean working tree).
+Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428 request:96328bafe9202b20978e19852d7e919d3d68abad34c84be7a414eb96`.
 
-Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:67ef82d1e5f6a4c3fcf95ac3dcd4aeccbdb6f0e9849cc63b0286ab20 request:c404e3bf529fa8a92c9bd32ceceaa58fc48e7274d274a68ea3bfb4aa`.
-
-Registration compared 6 requests: 4 accepted and 2 refused on chain.
+Rejection and retraction compared 8 requests: 2 accepted and 6 refused on chain.
 
 Unsupported chain folds: 0.
 
-The extra-signer registration was accepted on chain (transaction `71606ba3d1ad0cce11fffbbcebf55aeeb0caa09aba48098313624fc5f3f15e42`); the comparison detected the difference at `tx.signers`.
+The short-by-one reject of insertActive was refused on chain (transaction `9b586cde971f2eb3a9f109bb229ccec16a2e97ad2e45af17cfef6a168c7e3022`); the model refused it for `deposit-returned`.
 
-Code revision: `be6a1e525c124a18f46029626c47cec615ff3589` (clean working tree).
+The other-address reject of insertActive was refused on chain (transaction `003568771f5a8d701f42d14008ee9396127b8373eab0c07e6616ca7ff1791114`); the model refused it for `deposit-returned`.
 
-Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:67ef82d1e5f6a4c3fcf95ac3dcd4aeccbdb6f0e9849cc63b0286ab20 request:c404e3bf529fa8a92c9bd32ceceaa58fc48e7274d274a68ea3bfb4aa`.
+The short-by-one retract of insertActive was refused on chain (transaction `03afa97ffdfdcb8fde3b329072c7b6c76a8570c65c294cb97649ff52d35b5d86`); the model refused it for `deposit-returned`.
+
+The other-address retract of insertActive was refused on chain (transaction `ef01d49596aa4e9c2b758576729c9a6c76ff094679e7433a17c1c1028eb59c31`); the model refused it for `deposit-returned`.
+
+The other-reference retract of insertActive was refused on chain (transaction `9e888a51e24fc49d641f4662902c23903017e534df65b2527cf69ab0cbdc3b86`); the model refused it for `deposit-returned`.
+
+The state-spent retract of insertActive was refused on chain (transaction `dcb61350b1c7a1e4e13d2bf0395fae4e1f301d5788fc8ceb56a2c540f76b35ce`); the model refused it for `retract-state-spent`.
+
+Code revision: `12249eac2e90ab79e7991223d1a3cc7546896d22` (clean working tree).
+
+Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428 request:96328bafe9202b20978e19852d7e919d3d68abad34c84be7a414eb96`.
+
+Registration compared 7 requests: 4 accepted and 3 refused on chain.
+
+Unsupported chain folds: 0.
+
+The extra-signer registration was accepted on chain (transaction `c62392f1b49b57306e6d9bfd6ca7d414ae74e8a59c8787247d9e6780373b4592`); the comparison detected the difference at `tx.signers`.
+
+The other-address insertActive was refused on chain (transaction `842702aedfdd1d51acebc2bb96b47db9cdb7b472a7c09895c88b26a7ed1b491d`); the model refused it for `destination`.
+
+The short-by-one insertActive was refused on chain (transaction `d98a76616c4382ef6a6cbadae45e78396d7e34b59cdad2e413e7d35b198e4868`); the model refused it for `deposit-returned`.
+
+Code revision: `12249eac2e90ab79e7991223d1a3cc7546896d22` (clean working tree).
+
+Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428 request:96328bafe9202b20978e19852d7e919d3d68abad34c84be7a414eb96`.
 
 Unnamed sequence compared 8 requests: 8 accepted and 0 refused on chain.
 
 Unsupported chain folds: 0.
 
-Code revision: `be6a1e525c124a18f46029626c47cec615ff3589` (clean working tree).
+Code revision: `12249eac2e90ab79e7991223d1a3cc7546896d22` (clean working tree).
 
-Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:67ef82d1e5f6a4c3fcf95ac3dcd4aeccbdb6f0e9849cc63b0286ab20 request:c404e3bf529fa8a92c9bd32ceceaa58fc48e7274d274a68ea3bfb4aa`.
+Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428 request:96328bafe9202b20978e19852d7e919d3d68abad34c84be7a414eb96`.
 
-Retirement compared 7 requests: 5 accepted and 2 refused on chain.
+Retirement compared 11 requests: 7 accepted and 4 refused on chain.
 
 Unsupported chain folds: 0.
 
+The short-by-one deleteActive was refused on chain (transaction `0673426dd843e58e7b0ae2760b7eb3651e0683e1a5a380b76d321b6365d61ac9`); the model refused it for `deposit-returned`.
+
+The other-address deleteActive was refused on chain (transaction `094f982870f76882e89844d1e096464ed1548d5f1d15992e983a8696155f59fe`); the model refused it for `deposit-returned`.
+
 ## Register a key and receive its active token
 
-A requester submits two distinct active registrations and then repeats one key. A redirected delivery is tried beside the same untampered request. Every step is compared with the executable registry model.
+A requester submits two distinct active registrations and then repeats one key. The delivery is then sent to another address, and paid one lovelace short, beside the same untampered request. Every step is compared with the executable registry model.
 
-Formal specification: `Singular.Statements.insert_active_transaction_row` @ `265c595edd72eab10f3b08a36cb010ad407cf48b`. Statement digest: `bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737`.
+Formal specification: `Singular.Statements.insert_active_transaction_row` @ `265c595edd72eab10f3b08a36cb010ad407cf48b`. Statement digest: `f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508`.
 
 ### Registration delivers one active token to the requested recipient
 
@@ -60,7 +84,13 @@ Formal specification: `Singular.Statements.insert_active_transaction_row` @ `265
 
 - Compare **alice** and its observation with the executable registry model.
 
-- Submit **insertActive** for **redirect** in **registration** with redirect delivery. The same request without redirection is the untampered control.
+- Submit **insertActive** for **redirect** in **registration** with the payment it owes sent to another address. The ledger and the model must both refuse it; the same request untampered is its control.
+
+- Observe the complete registry, token, leaf and transaction boundary after **redirect**.
+
+- Compare **redirect** and its observation with the executable registry model.
+
+- Submit **insertActive** for **redirect** in **registration** with the payment it owes one lovelace short. The ledger and the model must both refuse it; the same request untampered is its control.
 
 - Observe the complete registry, token, leaf and transaction boundary after **redirect**.
 
@@ -80,9 +110,9 @@ Formal specification: `Singular.Statements.insert_active_transaction_row` @ `265
 
 ## Retire a registration and burn its active token
 
-The holder first registers a key in this run. Retirement must consume and burn that very token and change the key to Terminal. A never-registered key and a key recorded as Absent must be refused, each beside a successful retirement in the same registry.
+The holder first registers a key in this run. Retirement must consume and burn that very token and change the key to Terminal. A never-registered key and a key recorded as Absent must be refused, each beside a successful retirement in the same registry. A deletion then owes its owner the deposit back: paid one lovelace short, and paid to another address, it must be refused beside the untampered deletion.
 
-Formal specification: `Singular.Statements.insert_active_transaction_row` @ `265c595edd72eab10f3b08a36cb010ad407cf48b`. Statement digest: `bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737`.
+Formal specification: `Singular.Statements.insert_active_transaction_row` @ `265c595edd72eab10f3b08a36cb010ad407cf48b`. Statement digest: `f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508`.
 
 ### The holder receives the token that will be retired
 
@@ -92,7 +122,7 @@ Formal specification: `Singular.Statements.insert_active_transaction_row` @ `265
 
 - Compare **alice** and its observation with the executable registry model.
 
-Formal specification: `Singular.Statements.update_terminal_transaction_row` @ `88957e41876911a993c5d9a338f8ab006c9f6843`. Statement digest: `c85a4eb0a61907d71a0861658097e7ab839655023e39bfc4e11a8209553e31c2`.
+Formal specification: `Singular.Statements.update_terminal_transaction_row` @ `88957e41876911a993c5d9a338f8ab006c9f6843`. Statement digest: `6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068`.
 
 ### Retirement burns the holder's token and leaves the key Terminal
 
@@ -131,6 +161,82 @@ Formal specification: `Singular.Statements.update_terminal_transaction_row` @ `8
 - Observe the complete registry, token, leaf and transaction boundary after **never-registered**.
 
 - Compare **never-registered** and its observation with the executable registry model.
+
+- Submit **insertActive** for **deleted** in **retirement**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **deleted**.
+
+- Compare **deleted** and its observation with the executable registry model.
+
+- Submit **deleteActive** for **deleted** in **retirement** with the payment it owes one lovelace short. The ledger and the model must both refuse it; the same request untampered is its control.
+
+- Observe the complete registry, token, leaf and transaction boundary after **deleted**.
+
+- Compare **deleted** and its observation with the executable registry model.
+
+- Submit **deleteActive** for **deleted** in **retirement** with the payment it owes sent to another address. The ledger and the model must both refuse it; the same request untampered is its control.
+
+- Observe the complete registry, token, leaf and transaction boundary after **deleted**.
+
+- Compare **deleted** and its observation with the executable registry model.
+
+- Submit **deleteActive** for **deleted** in **retirement**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **deleted**.
+
+- Compare **deleted** and its observation with the executable registry model.
+
+## A request that is never folded
+
+A request can leave the queue without a fold. Once it may no longer be folded, a folder rejects it and must refund its owner the deposit, keeping the tip; while it is still retractable, its owner retracts it and must get back everything it held, deposit and tip, through an output whose inline datum is the retracted request's own output reference. Each refund paid one lovelace short or to another address, a return bound to another request, and a retraction spending the registry's state beside it must be refused, each beside the untampered exit of the same request.
+
+- Reject the **insertActive** for **rejected** in **rejection** once it may no longer be folded with the payment it owes one lovelace short. The ledger and the model must both refuse it; the same request untampered is its control.
+
+- Observe the complete registry, token, leaf and transaction boundary after **rejected**.
+
+- Compare **rejected** and its observation with the executable registry model.
+
+- Reject the **insertActive** for **rejected** in **rejection** once it may no longer be folded with the payment it owes sent to another address. The ledger and the model must both refuse it; the same request untampered is its control.
+
+- Observe the complete registry, token, leaf and transaction boundary after **rejected**.
+
+- Compare **rejected** and its observation with the executable registry model.
+
+- Reject the **insertActive** for **rejected** in **rejection** once it may no longer be folded, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **rejected**.
+
+- Compare **rejected** and its observation with the executable registry model.
+
+- Retract the **insertActive** for **retracted** in **retraction** as its owner with the payment it owes one lovelace short. The ledger and the model must both refuse it; the same request untampered is its control.
+
+- Observe the complete registry, token, leaf and transaction boundary after **retracted**.
+
+- Compare **retracted** and its observation with the executable registry model.
+
+- Retract the **insertActive** for **retracted** in **retraction** as its owner with the payment it owes sent to another address. The ledger and the model must both refuse it; the same request untampered is its control.
+
+- Observe the complete registry, token, leaf and transaction boundary after **retracted**.
+
+- Compare **retracted** and its observation with the executable registry model.
+
+- Retract the **insertActive** for **retracted** in **retraction** as its owner with its return bound to another request's output reference. The ledger and the model must both refuse it; the same request untampered is its control.
+
+- Observe the complete registry, token, leaf and transaction boundary after **retracted**.
+
+- Compare **retracted** and its observation with the executable registry model.
+
+- Retract the **insertActive** for **retracted** in **retraction** as its owner spending the registry's state beside it. The ledger and the model must both refuse it; the same request untampered is its control.
+
+- Observe the complete registry, token, leaf and transaction boundary after **retracted**.
+
+- Compare **retracted** and its observation with the executable registry model.
+
+- Retract the **insertActive** for **retracted** in **retraction** as its owner, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **retracted**.
+
+- Compare **retracted** and its observation with the executable registry model.
 
 ## A sequence no chapter names
 
@@ -186,7 +292,7 @@ This program uses the same live interpreter for each listed request. Each step r
 
 ## What these runs do not establish
 
-Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none, and the comparison reads them from the submitted transaction. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.
+Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none, and the comparison reads them from the submitted transaction. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. Retraction admission is not modelled until #239: the model admits the retraction of any request, while the chain refuses one of an update or a deletion with `withdraw-insert-only`, and one its owner did not sign with `retract-owner`; the live retractions above are therefore of insertions only, signed by their owner, and no run establishes those two refusals against the model. Live refusal reason not observed: the deployed validators are compiled without traces; the same-reason claim is checked against the compiled Aiken suite. Tracked by #287. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.
 
 ## Requirements inventory
 
@@ -196,19 +302,19 @@ The descriptions and planned statuses below are preserved from the committed inv
 
 Expected: accept. Planned evidence status: uncovered.
 
-Source: cardano-keri ruling 3 (aid utxo uniqueness).
+Source: cardano-keri: canonical seed-derived registry identity.
 
 ### A rival registry initialized from a second seed exists and is accepted by the ledger; canonical authentication rejects it on name.
 
 Expected: rival accepted on chain; authentication rejects. Planned evidence status: uncovered.
 
-Source: cardano-keri ruling 3; epic-16 finding LI03.
+Source: cardano-keri: canonical registry authentication distinguishes a rival seeded registry; issue #16.
 
 ### Negative control: an authenticator that checks only policy+address, not the derived name, accepts the rival.
 
 Expected: control must fail. Planned evidence status: uncovered.
 
-Source: CA02 discrimination control.
+Source: Rival-registry authentication discrimination control (CA02).
 
 ### Applied and unapplied validator identity layers stay distinct and derived: applied address = apply(pinned unapplied hash, declared parameters); parameter count published.
 
@@ -226,7 +332,7 @@ Source: ledger output semantics.
 
 Expected: accept. Planned evidence status: bound elsewhere.
 
-Source: cardano-keri R1, R12.
+Source: cardano-keri: registered-key consistency and registry leaves changing only through a fold.
 
 Existing evidence: offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs: boots state and applies a request update
 
@@ -242,7 +348,7 @@ Expected: accept. Planned evidence status: uncovered.
 
 Source: protocol spec; issue #18 Delete preservation.
 
-### After CG03, re-Insert the same key (reincarnation).
+### After deleting a key, re-Insert the same key (reincarnation).
 
 Expected: accept. Planned evidence status: uncovered.
 
@@ -258,7 +364,7 @@ Source: protocol spec: the fold MUST NOT accept Insert for an occupied key.
 
 Expected: accept; root unchanged. Planned evidence status: bound elsewhere.
 
-Source: cardano-keri R9, R6, R11.
+Source: cardano-keri: retraction timing, unchanged registry state and the returned request value.
 
 Existing evidence: offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs: retracts a phase-2 request
 
@@ -342,7 +448,7 @@ Existing evidence: offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs: ends a c
 
 ### Refund routing follows the request: processed value routes to the request's destination minus the folder's tip; refunds go to the refund address recorded in custody; a crossed allocation is refused by the state script (interface, registry mode: no hook). Rejected produces refund owners at the recorded floor.
 
-Expected: observe and report — refused+HeldQ002 (crossed allocation enforced by the state script); rejected-action refund-floor control separate. Planned evidence status: uncovered.
+Expected: observe and report — refused, with the consumer-model conflict unresolved (crossed allocation enforced by the state script); rejected-action refund-floor control separate. Planned evidence status: uncovered.
 
 Source: cardano-keri R11_contribute_value, R11_retract_value; interface gist 2fb03c2e (registry mode).
 
@@ -360,7 +466,7 @@ Source: issue #18 serialization boundary.
 
 ### Each UpdateRedeemer constructor (End 0, Contribute 1, Modify 2, Retract 3, Sweep 4) is exercised by an accepting witness or an action-attributed phase-2 refusal witness with a sound index discriminator.
 
-Expected: partial: accept (Contribute 1, Modify 2, Retract 3 with executing witnesses); End 0 and Sweep 4 unexercised named residuals (no accepting path yet, E18 completes). Planned evidence status: uncovered.
+Expected: partial: accept (Contribute 1, Modify 2, Retract 3 with executing witnesses); End 0 and Sweep 4 unexercised named residuals (no accepting path yet, issue #18 tracks completion). Planned evidence status: uncovered.
 
 Source: issue #18 constructor coverage.
 
@@ -448,7 +554,7 @@ Expected: recorded from the running node and the pinned flakes. Planned evidence
 
 Source: issue #18 acceptance: limits measured.
 
-### Hold a valid fold constant and remove only the state-owner required signer; the observation (accept or refuse) is recorded with its transaction — the regression property the independent verification (F-002) specified.
+### Hold a valid fold constant and remove only the state-owner required signer; the observation (accept or refuse) is recorded with its transaction — the regression property the independent verification specified.
 
 Expected: superseded — observation preserved, conformance claim withdrawn (registry has no owner role; the no-owner-signer property is recorded history, not a live gate). Planned evidence status: bound elsewhere.
 
@@ -458,13 +564,19 @@ Source: Singular.Statements.fold_iff sufficiency direction (Lean); observation h
 
 Expected: accept the fold; refuse the same-key duplicate `key-exists`; refuse the two-key wrong-distribution batch `net-mint-mismatch`; both refusals carry an accepting control. Planned evidence status: uncovered.
 
-Source: Singular.Statements.insert_active_transaction_row and Singular.Statements.fold_batch_claimed_mint_by_kind_key (Lean 854f56f); issue #173; A-001, A-006, NOTE-014.
+Source: Singular.Statements.insert_active_transaction_row and Singular.Statements.fold_batch_claimed_mint_by_kind_key (Lean 854f56f); issue #173; open application, distinct refusal fixtures and the published trace limit.
 
 ### On a real devnet, `insertActive` then `updateTerminal` at one key: the active witness the insert delivered is the exact input the retirement burns, exactly one `(activePolicy, key)` is destroyed, no output carries it afterwards, and the committed trie leaf becomes Terminal. `updateTerminal` on an Unknown key and on an Absent key are refused with their own named reasons, each against an accepting control.
 
 Expected: accept the insert and the retirement; the active quantity goes 1 -> 0 with the exact keyed `-1` mint burned from its token-bearing source input and the committed leaf reading `Terminal`; refuse `updateTerminal` on an Unknown key `key-unknown` and on an Absent key `not-booked`, each with an accepting control. Planned evidence status: uncovered.
 
-Source: Singular.Statements.update_terminal_transaction_row and Singular.Statements.update_terminal_inversion (Lean 871c5df); issue #177; A-002.
+Source: Singular.Statements.update_terminal_transaction_row and Singular.Statements.update_terminal_inversion (Lean 871c5df); issue #177; connected retirement and distinct refusal controls.
+
+### On a real devnet, a request that is never folded leaves the queue by a reject or a retract. A reject once the request may no longer be folded must refund its owner the deposit; a retract by its owner must return everything the request held, through an output whose inline datum is the retracted request's own output reference. Each refund or return one lovelace short or to another key, a return bound to another request, and a retract spending the registry state beside it are refused by the chain and by the model, each beside the untampered exit of the same request, which both accept. The live consumer for the rule that only a retract returns the tip is the reject that keeps the tip beside the retract that returns it; fold consumers are in the fold rows. The guarantee that retract obligations depend only on the request remains a named gap: Lean proves this for every request and registry state, while this live run covers one registry state and no executable consumer varies it.
+
+Expected: refuse a reject refunding the owner one lovelace short and to another key, `deposit-returned`, beside the accepted untampered reject; refuse a retraction returning one lovelace short, to another key and bound to another output reference, `deposit-returned`, and one spending the registry state beside it, `retract-state-spent`, beside the accepted untampered retraction. Planned evidence status: uncovered.
+
+Source: Singular.Statements.exit_settles_on_lovelace_received and Singular.Statements.no_exit_strands_the_deposit; issue #258; Singular.Statements.only_retract_owes_the_tip: consumed by the live reject that keeps the tip and retract that returns it; fold consumers are in the registration (CG21) and retirement (CG22) rows. Singular.Statements.obligations_read_only_the_request: named gap, proved in Lean for every request and registry state, but the live run covers one registry state and no executable consumer varies it.
 
 ## Appendix: checking the evidence machinery
 

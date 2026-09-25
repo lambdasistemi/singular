@@ -1633,7 +1633,23 @@ test t6_underfunded_destination_refuses() {
   refusesDepositReturned(bookingCarrier(fx.deposit - 1))
 }
 
-/// The control the two rows above are measured against: the carrier
+/// The carrier holding the deposit at an address the request did not name
+/// is refused for `destination`, and for nothing else.
+test t6_carrier_at_another_address_refuses() {
+  let stray =
+    [
+      fx.deliveryOutput(
+        fx.activePolicy,
+        fx.keyA,
+        fx.strangerAddress,
+        InlineDatum(fx.recordDatum()),
+        fx.deposit,
+      ),
+    ]
+  bookingRefusal(stray) == Some(@"destination") && !foldEdgeOutputs(1, stray)
+}
+
+/// The control the rows above are measured against: the carrier
 /// holding the deposit folds, with no reason to refuse.
 test t6_funded_carrier_has_no_refusal() {
   bookingRefusal(bookingCarrier(fx.deposit)) == None && foldEdgeOutputs(

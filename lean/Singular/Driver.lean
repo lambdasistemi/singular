@@ -33,6 +33,7 @@ open Lean
 def datumFormName : DatumForm → String
   | .inline => "inline"
   | .hashed => "hashed"
+  | .none => "none"
 
 /-- One keyed asset, spelled with the on-chain identity the model pins: the
 kind's policy and the asset name, which is the key. -/
@@ -70,7 +71,8 @@ def txOutputJson (c : Config) (o : TxOutput) : Json :=
     , ("commitment", match o.commitment with | none => Json.null | some x => toJson x)
     , ("assets", assetsJson c o.assets)
     , ("custodyDatum", toJson o.custodyDatum)
-    , ("lovelace", toJson o.lovelace) ]
+    , ("lovelace", toJson o.lovelace)
+    , ("reference", match o.reference with | none => Json.null | some x => toJson x) ]
 
 /-- The built transaction, serialized. Every field comes from the `Tx` the model
 constructed; nothing here is assembled beside it. -/
@@ -120,15 +122,23 @@ model's `rootOf` is FNV-1a over the sorted (key, leaf byte) list — its own
 commitment function — and is NOT the concrete trie hash a chain would carry.
 
 `outputMinimumAda` is the second of that kind: a ledger requires every output to
-carry a minimum, and this model says nothing about it, so a transaction output's
-`lovelace` here is a logical zero rather than an amount, except where the model
-states a floor (the cage output's deposit, a reject's or a retract's owner
-output). It is named so that a
-consumer compares every other field of a transaction and leaves this one alone,
-rather than quietly reconstructing an equality the model never claimed. -/
+carry a minimum, and this model says nothing about it. A transaction output's
+`lovelace` here is therefore a floor, not an amount: what the exit owes the
+recipient the output pays — the cage output's deposit, the destination output's
+deposit for a fold delivering a token, an owner output's payment — and a logical
+zero on an output that pays no recipient. It is named so that a consumer compares
+that field as a floor, observed at least the model's, and never reconstructs the
+ledger minimum as an equality the model never claimed. -/
 def declaredUnobservable : List String :=
   ["concreteTrieHash", "outputMinimumAda", "registryAddress",
    "scriptExecutionUnits", "transactionId", "utxoReference"]
+
+/-- The declared judgements: questions the driver answers about a transaction a
+caller observed, beside the boundary it reports, in the order it asks them.
+`spend` judges what the observed inputs spend, by `Singular.spendRefusal`;
+`settle` whether the observed outputs pay what the scenario's exit owes, by
+`Singular.settle`. -/
+def declaredJudgements : List String := ["spend", "settle"]
 
 /-- D01: the surface identity a scenario is executed against. -/
 structure SurfaceIdentity where
@@ -137,13 +147,15 @@ structure SurfaceIdentity where
   operations : List String
   observations : List String
   unobservable : List String
+  judgements : List String
 
 def surface : SurfaceIdentity :=
   { declaration := "Singular.Driver.runSurface"
-  , protocolVersion := 2
+  , protocolVersion := 4
   , operations := declaredOperations
   , observations := declaredObservations
-  , unobservable := declaredUnobservable }
+  , unobservable := declaredUnobservable
+  , judgements := declaredJudgements }
 
 def surfaceJson (s : SurfaceIdentity) (definitionDigest : String) : Json :=
   Json.mkObj
@@ -152,7 +164,8 @@ def surfaceJson (s : SurfaceIdentity) (definitionDigest : String) : Json :=
     , ("protocolVersion", toJson s.protocolVersion)
     , ("operations", toJson s.operations)
     , ("observations", toJson s.observations)
-    , ("unobservable", toJson s.unobservable) ]
+    , ("unobservable", toJson s.unobservable)
+    , ("judgements", toJson s.judgements) ]
 
 /-! ## The law premise -/
 
@@ -283,6 +296,14 @@ def runSurface (sc : Scenario) : List SetupStep × DriverResult :=
       | .ok tx =>
         (steps, { outcome := .accepted, reason := none, premiseChecked := true
                 , observations := some (observationsJson s.config sc.request res tx) })
+
+/-- The declared judgements of a transaction a caller observed, in their order:
+`spend`, the refusal `Singular.spendRefusal` gives the scenario's exit for the
+inputs it spends, then `settle`, whether its outputs pay what that exit owes its
+request and if not the reason `Singular.settle` gives. -/
+def judgeSurface (sc : Scenario) (inputs : List TxInput) (outputs : List TxOutput) :
+    Option String :=
+  (spendRefusal sc.exit inputs).orElse fun _ => settle (obligations sc.exit sc.request) outputs
 
 def setupStepJson (stp : SetupStep) : Json :=
   Json.mkObj

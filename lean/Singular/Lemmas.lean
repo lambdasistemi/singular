@@ -994,4 +994,97 @@ theorem reachable_no_stored_unknown (s : RegistryState) (h : Reachable s) :
     subst ht
     exact applyEdge_no_stored_unknown _ _ ih
 
+/-! ### The fold's transaction -/
+
+/-- A fold the step refuses builds no transaction, for the step's reason. -/
+theorem txOf_of_step_error (s : RegistryState) (r : Request) (lovelace : Nat) (why : String)
+    (h : step s r = .error why) : txOf s r lovelace = .error why := by
+  simp [txOf, txOfExit, exitStep, h]
+
+/-- The transaction of an admitted fold, spelled from its step: every field is the
+step's answer or a definition applied to the request, and the payments the fold
+exit owes are carried by the outputs that pay them and listed first among its
+refunds. -/
+theorem txOf_of_step_ok (s : RegistryState) (r : Request) (lovelace : Nat) (t : Result)
+    (h : step s r = .ok t) :
+    txOf s r lovelace =
+      .ok { inputs :=
+              [ { role := .state, datum := registryDatumForm
+                , stateTokens := registryStateTokens, approvals := 0, lovelace := 0 }
+              , { role := .request, datum := registryDatumForm
+                , stateTokens := 0, approvals := approvalsIn r, lovelace := lovelace } ]
+              ++ txBurnInputs t r
+          , outputs := txStateOutput t
+              :: { txDestinationOutput t r with
+                   lovelace := owedTo (.destination (requestDestination r))
+                     (obligations (.fold r.edge) r) }
+              :: txCageOutputs t r
+              ++ ownerOutputs .none (r.approval.map (·.assetName)) (obligations (.fold r.edge) r)
+          , mint := t.mint
+          , signers := requiredSigners r
+          , refunds := (obligations (.fold r.edge) r).map paymentPaid ++ t.paid } := by
+  simp [txOf, txOfExit, exitStep, h, txStateOutput, txBurnInputs, txCageOutputs,
+    routedPayment, mintRoutedTo, txDestinationOutput]
+
+/-! ### Settling one payment -/
+
+/-- Summing lovelace never loses the accumulator. -/
+theorem le_foldl_lovelace (l : List TxOutput) (acc : Nat) :
+    acc ≤ l.foldl (· + ·.lovelace) acc := by
+  induction l generalizing acc with
+  | nil => simp
+  | cons o rest ih => exact Nat.le_trans (Nat.le_add_right _ _) (ih _)
+
+/-- An output's lovelace is part of any sum over a list holding it. -/
+theorem lovelace_le_foldl (l : List TxOutput) (acc : Nat) (o : TxOutput) (h : o ∈ l) :
+    o.lovelace ≤ l.foldl (· + ·.lovelace) acc := by
+  induction l generalizing acc with
+  | nil => simp at h
+  | cons x rest ih =>
+    rcases List.mem_cons.mp h with rfl | h
+    · exact Nat.le_trans (Nat.le_add_left _ _) (le_foldl_lovelace rest _)
+    · exact ih _ h
+
+/-- A running maximum never falls below where it started. -/
+theorem le_foldl_max_lovelace (l : List TxOutput) (acc : Nat) :
+    acc ≤ l.foldl (fun most o => max most o.lovelace) acc := by
+  induction l generalizing acc with
+  | nil => simp
+  | cons o rest ih => exact Nat.le_trans (Nat.le_max_left _ _) (ih _)
+
+/-- An output's lovelace is at most the largest over a list holding it. -/
+theorem lovelace_le_foldl_max (l : List TxOutput) (acc : Nat) (o : TxOutput) (h : o ∈ l) :
+    o.lovelace ≤ l.foldl (fun most o => max most o.lovelace) acc := by
+  induction l generalizing acc with
+  | nil => simp at h
+  | cons x rest ih =>
+    rcases List.mem_cons.mp h with rfl | h
+    · exact Nat.le_trans (Nat.le_max_right _ _) (le_foldl_max_lovelace rest _)
+    · exact ih _ h
+
+/-- An output paying a recipient gives it at least its own lovelace. -/
+theorem lovelace_le_receivedBy (recipient : Recipient) (outputs : List TxOutput)
+    (o : TxOutput) (h : o ∈ outputs) (pays : paysRecipient recipient o = true) :
+    o.lovelace ≤ receivedBy recipient outputs := by
+  have mem : o ∈ outputs.filter (paysRecipient recipient) := List.mem_filter.mpr ⟨h, pays⟩
+  cases recipient <;> simp only [receivedBy]
+  · exact lovelace_le_foldl _ 0 o mem
+  · exact lovelace_le_foldl _ 0 o mem
+  · exact lovelace_le_foldl _ 0 o mem
+  · exact lovelace_le_foldl_max _ 0 o mem
+
+/-- One payment is settled by any output list holding an output that pays its
+recipient at least its floor. -/
+theorem settle_one (p : Payment) (outputs : List TxOutput)
+    (paid : ∃ o ∈ outputs, paysRecipient p.recipient o = true ∧ p.atLeast ≤ o.lovelace) :
+    settle [p] outputs = none := by
+  obtain ⟨o, h, pays, enough⟩ := paid
+  unfold settle
+  rw [List.findSome?_eq_none_iff]
+  intro recipient judged
+  have named : recipient = p.recipient := by
+    simpa [List.eraseDups, List.eraseDupsBy, List.eraseDupsBy.loop] using judged
+  subst named
+  simp [owedTo, Nat.le_trans enough (lovelace_le_receivedBy _ outputs o h pays)]
+
 end Singular

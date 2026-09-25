@@ -18,6 +18,7 @@ extra-doc-files:
 data-files:
   rows.json
   test/fixtures/node-refusals/*.txt
+  test/fixtures/live-steps/overflowed-retirement.txt
   test/fixtures/receipts/receipt-CG02.json
   test/fixtures/receipts/receipt-CG05.json
   test/fixtures/bad-accepted/receipt-CG02.json
@@ -85,10 +86,12 @@ library
     Conformance.Lean.Registration
     Conformance.Lean.Retirement
     Conformance.Lean.Oracle
+    Conformance.Edge.Exit
     Conformance.Edge.Register
     Conformance.Edge.Retire
     Conformance.Edge.Sequence
     Conformance.Fold.KeyedMint
+    Conformance.Observe.Payments
   build-depends:
     , aeson >=2.1 && <2.3
     , base >=4.14 && <5
@@ -115,6 +118,8 @@ common live-runner
     Conformance.Run.CsRows
     Conformance.Run.CaRows
     Conformance.Run.Live
+    Conformance.Run.Retraction
+    Conformance.Run.Step
     Conformance.Run.Receipts
     Conformance.Run.Fold
     Conformance.Run.Book
@@ -175,18 +180,25 @@ executable fold-budget-regression
 test-suite conformance-tests
   import:           warnings
   type:             exitcode-stdio-1.0
-  hs-source-dirs:   test
+  hs-source-dirs:   test app
   main-is:          Main.hs
   other-modules:
+    Conformance.Run.Retraction
+    Conformance.Run.Step
+    Conformance.Support.Retraction
+    Conformance.Support.Step
     Conformance.Fixture.Receipt
     Conformance.Fixture.NodeRejection
     Conformance.Story.Usage
     Conformance.Support.Authenticate
     Conformance.Support.Fixture
     Conformance.Support.RegistrationComparison
+    Conformance.Support.Payments
+    Conformance.Support.Oracle
     Conformance.Support.FixtureChild
     Conformance.Support.Binding
     Conformance.Support.Receipt
+    Conformance.Support.ReceiptBound
     Conformance.Support.Refusal
     Conformance.Support.Rows
     Conformance.Support.Identity
@@ -199,7 +211,16 @@ test-suite conformance-tests
     , bytestring >=0.11 && <0.13
     , conformance
     , cardano-ledger-alonzo
+    , cardano-ledger-api
+    , cardano-ledger-babbage
     , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-strict-containers
+    , cardano-tx-tools:tx-build
+    , microlens
+    , singular-registry
+    , validation-selective
     , ouroboros-consensus:{ouroboros-consensus, cardano}
     , strict-sop-core
     , containers >=0.6 && <0.8

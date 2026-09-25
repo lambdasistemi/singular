@@ -29,8 +29,8 @@ name.
 
 ## The denominator
 
-`conformance/rows.json` carries **42 rows, 41 owned**: CA01–CA05,
-CG01–CG20, CS01–CS08, CK01–CK05, CL01–CL03, plus CK06 (bonds, poison,
+`conformance/rows.json` carries **45 rows, 44 owned**: CA01–CA05,
+CG01–CG23, CS01–CS08, CK01–CK05, CL01–CL03, plus CK06 (bonds, poison,
 the juvenility window `W`, the signature threshold) recorded as
 **out of scope** — it belongs to cardano-keri's checkpoint machine
 and treasury, explicitly never claimed by Singular. `list` prints the

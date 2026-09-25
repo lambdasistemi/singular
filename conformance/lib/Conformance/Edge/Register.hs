@@ -17,8 +17,8 @@ story (Context registry recipient) = do
     checked (EdgeRequest InsertActive "bob" recipient)
     checked (EdgeRequest InsertActive "alice" recipient)
     let redirected = EdgeRequest InsertActive "redirect" recipient
-    tampered <- tamper RedirectDelivery registry redirected
-    compared tampered
+    tamper OtherAddress registry redirected >>= compared
+    tamper ShortByOne registry redirected >>= compared
     checked redirected
     tamper ExtraSigner registry (EdgeRequest InsertActive "cosigned" recipient) >>= compared
   where

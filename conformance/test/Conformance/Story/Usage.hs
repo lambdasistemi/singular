@@ -16,10 +16,11 @@ import Conformance.Story.Specification qualified as Specification
 
 spec :: Spec
 spec = do
-    it "The registration chapter describes redirected delivery beside its untampered control" $ do
+    it "The registration chapter pays its delivery elsewhere and one lovelace short beside its untampered control" $ do
         let rendered = Live.renderLive (Register.story (Live.Context "registry" "recipient"))
-        rendered `shouldSatisfy` isInfixOf "redirect delivery"
-        rendered `shouldSatisfy` isInfixOf "untampered control"
+        rendered `shouldSatisfy` isInfixOf "payment it owes sent to another address"
+        rendered `shouldSatisfy` isInfixOf "payment it owes one lovelace short"
+        rendered `shouldSatisfy` isInfixOf "untampered is its control"
         rendered `shouldSatisfy` (not . isInfixOf "batch")
     it "The book names the extra required signer only where the registration story submits it" $ do
         let phrase = "required signer the model does not require"
@@ -32,6 +33,12 @@ spec = do
         rendered `shouldSatisfy` isInfixOf "Submit **insertActive**"
         rendered `shouldSatisfy` isInfixOf "Submit **updateTerminal**"
         rendered `shouldSatisfy` isInfixOf "Submit **insertAbsent**"
+    it "The retirement chapter pays a deletion's deposit back elsewhere and one lovelace short beside the untampered deletion" $ do
+        let rendered = Live.renderLive (Retire.story
+                (Live.Context "retirement" "holder") (Live.Context "comparison" "holder"))
+        rendered `shouldSatisfy` isInfixOf "Submit **deleteActive** for **deleted** in **retirement** with the payment it owes one lovelace short"
+        rendered `shouldSatisfy` isInfixOf "Submit **deleteActive** for **deleted** in **retirement** with the payment it owes sent to another address"
+        rendered `shouldSatisfy` isInfixOf "Submit **deleteActive** for **deleted** in **retirement**, using the holder."
     it "accepts the complete unnamed sequence before submitting" $ do
         let original :: Live.Story String String String String String ()
             original = Sequence.story (Live.Context "sequence" "holder")
