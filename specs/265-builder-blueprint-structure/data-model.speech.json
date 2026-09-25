@@ -1,0 +1,12 @@
+{
+  "identity-contracts": [
+    {
+      "text": "The existing blueprint, consumer and ledger identities retain their fields, encodings and public paths.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "a49a354ee93db1c1c838c1fef46a5b0c3cfc91882328151cfd863805e4f08762"
+  }
+}

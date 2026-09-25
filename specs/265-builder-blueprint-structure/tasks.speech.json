@@ -1,0 +1,12 @@
+{
+  "completion-sequence": [
+    {
+      "text": "The work advances from intake and gate through extraction, documentation and an exact head audit handback.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "5332d60414200c1bf80a3fe1559fbb8d830414fb6b1e890b86f93b100e4808ca"
+  }
+}

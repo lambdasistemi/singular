@@ -1,0 +1,18 @@
+{
+  "requirements": [
+    {
+      "text": "The extraction preserves a single implementation behind existing public exports, module ownership, results and contributor documentation.",
+      "pause": 400
+    }
+  ],
+  "acceptance-boundary": [
+    {
+      "text": "The overlapping request settlement pull request owns its own test assertions and retraction implementation. This ticket adds only its own Cabal declarations.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "850b148d10870c7b29faa08dadf013d97f09d8b2bb58520187fd241e2c051135"
+  }
+}

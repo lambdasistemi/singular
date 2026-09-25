@@ -1,0 +1,18 @@
+{
+  "ordered-work": [
+    {
+      "text": "Bind the intake surface, extract blueprint and builder responsibilities, then document and verify the actual result.",
+      "pause": 400
+    }
+  ],
+  "gate-and-resource-policy": [
+    {
+      "text": "The active CI commands supply the gate. Cheap and expensive invocations have separate ceilings and receipts.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "d2461f8581904994b66f773b4704bf88e31939167be78f448bd0c9065ba1433d"
+  }
+}
