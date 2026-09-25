@@ -58,7 +58,8 @@ import Singular.Registry.Ledger (
     TokenId,
  )
 import Singular.Registry.Provider (Provider (..))
-import Singular.Registry.TxBuilder.Internal
+import Singular.Registry.TxBuilder.Internal.Identity
+import Singular.Registry.TxBuilder.Internal.Lookup
 import Singular.Registry.Types (
     Edge,
  )

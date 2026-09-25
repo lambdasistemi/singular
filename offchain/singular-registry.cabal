@@ -76,6 +76,9 @@ library
   exposed-modules:
     Singular.Registry.AssetName
     Singular.Registry.Blueprint
+    Singular.Registry.Blueprint.Load
+    Singular.Registry.Blueprint.Params
+    Singular.Registry.Blueprint.Schema
     Singular.Registry.Candidate
     Singular.Registry.Config
     Singular.Registry.Deployment
@@ -91,6 +94,9 @@ library
     Singular.Registry.TxBuilder.Boot
     Singular.Registry.TxBuilder.Edges
     Singular.Registry.TxBuilder.Internal
+    Singular.Registry.TxBuilder.Internal.Edges
+    Singular.Registry.TxBuilder.Internal.Identity
+    Singular.Registry.TxBuilder.Internal.Lookup
     Singular.Registry.TxBuilder.Register
     Singular.Registry.TxBuilder.Reject
     Singular.Registry.TxBuilder.Request

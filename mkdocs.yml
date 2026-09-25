@@ -35,6 +35,7 @@ nav:
   - Protocol specification: specs/protocol/spec.md
   - Building the documentation: docs/building.md
   - Checking off-chain code: docs/offchain-development.md
+  - Builder and blueprint modules: docs/offchain-builder-blueprint.md
 theme:
   name: material
   custom_dir: overrides
