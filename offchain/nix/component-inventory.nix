@@ -144,7 +144,7 @@ let
       name = "connected-verifier";
       issue = "#282";
       reason =
-        "imports the removed stateRepPolicyBytes accessor and expects the removed representative-policy blueprint; not buildable at this revision, repair owned by #282, no required workflow consumes it";
+        "imports the removed stateRepPolicyBytes accessor and expects the removed representative-policy blueprint (both still absent from the library at this head — source-level lead, not a build); full-carrier build RED on record at c4a22d1, pre-rebase source; no passing build evidence at this head; repair owned by #282, no required workflow consumes it";
     }
   ];
 
