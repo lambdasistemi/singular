@@ -1,0 +1,16 @@
+{
+  "responsibilities": [
+    {
+      "text": "The original Node module stays the public facade. Options, wallet, indexer, funding, session and confirmation each own a distinct concern, and dependencies flow in one direction.",
+      "pause": 400
+    },
+    {
+      "text": "The diagram shows every focused module below the facade. Confirmation reads session and indexer state through their owners; those owners do not import confirmation.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "feed6782535e29bac545ef8ba0aecc7936f94d1297a28cb36b02d520b04ec63e"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "signature-families": [
+    {
+      "text": "Existing callers retain every public Node function, constructor and effect through the original facade. Each function family has one focused implementation owner and no new public session API.",
+      "pause": 400
+    },
+    {
+      "text": "The diagram follows an existing caller through the original Node API to one focused implementation.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "4fa5be191e90fc7ab2fea6f145958a68de19576ab6fec867dcad26b52d26c145"
+  }
+}

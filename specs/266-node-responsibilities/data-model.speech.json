@@ -1,0 +1,16 @@
+{
+  "state-contracts": [
+    {
+      "text": "Process mode and process wallet keep their one-time initialization. Open session, chain follower and funding guard are installed for their existing bracketed lifetimes and cleared on normal return or exception. The address-read counter remains one process total.",
+      "pause": 400
+    },
+    {
+      "text": "The diagram traces process mode into wallet and session, session into follower, and both runtime resources into cleanup.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "e191f09bfaf1de4ef6eb9dd0bb102a6affe67b403cc86e279656109c21e18aa4"
+  }
+}
