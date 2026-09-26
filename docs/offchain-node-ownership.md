@@ -110,7 +110,7 @@ The runner keeps six pieces of process state. Each is created once per
 process, owned by exactly one module, and installed and removed at the
 same points as before the split. The nesting is what a contributor
 must hold: the follower is the outer bracket and the open session the
-inner one, and the funding-read guard exists only on the devnet.
+inner one, and the funding-read guard is set only on the devnet.
 
 ```mermaid
 flowchart TD

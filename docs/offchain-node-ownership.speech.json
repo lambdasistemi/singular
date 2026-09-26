@@ -25,7 +25,7 @@
   ],
   "process-state-and-its-lifetimes": [
     {
-      "text": "The runner keeps six pieces of process state, each created once per process, owned by exactly one module, and installed and removed at the same points as before the split. The nesting is what a contributor must hold: the follower is the outer bracket and the open session the inner one, and the funding-read guard exists only on the devnet.",
+      "text": "The runner keeps six pieces of process state, each created once per process, owned by exactly one module, and installed and removed at the same points as before the split. The nesting is what a contributor must hold: the follower is the outer bracket and the open session the inner one, and the funding-read guard is set only on the devnet.",
       "pause": 400
     },
     {
@@ -89,6 +89,6 @@
   ],
   "_source": {
     "file": "offchain-node-ownership.md",
-    "sha256": "46378729a1fce4cf03976619d95a1e8a260fdccd93ffd70d74bc749516b40e21"
+    "sha256": "d4ebd22bd52dd486b6e32801acb82c3cc060d0b696ea2244bd4cb9a5bbe824a2"
   }
 }
