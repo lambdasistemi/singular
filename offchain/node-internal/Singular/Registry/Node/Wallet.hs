@@ -16,7 +16,6 @@ module Singular.Registry.Node.Wallet (
     Wallet (..),
     loadWallet,
     walletForMode,
-    processWallet,
     funderAddr,
     funderSignKey,
 
