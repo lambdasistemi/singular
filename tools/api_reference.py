@@ -186,27 +186,32 @@ def find_haddock_root(haddock_out: Path, extent: list[str]) -> Path:
     return hits[0]
 
 
-def parse_package_db(config_files: Path) -> set[str]:
-    """Positive dependency module ownership from this build's package db.
+def parse_package_db(config_files: Path) -> list[dict]:
+    """Positive, typed module ownership from this build's package db.
 
-    Every *.conf under the Haddock build's package.conf.d declares its
-    package's exposed and hidden modules. Membership in that inventory is
-    the existence-independent evidence a missing generated link is a
-    dependency reference: no href target is ever consulted.
+    Every ``*.conf`` under the Haddock build's package.conf.d declares a
+    package's exposed and hidden modules, and — for sublibrary records —
+    the owning package and library through the typed fields
+    ``package-name`` and ``lib-name``. Each record is returned with its
+    typed identity and its module set; membership in a record is the
+    existence-independent evidence for ownership, and no target href is
+    ever consulted. Callers decide dependency-ness from the record's
+    identity, never by subtracting names from one flat set.
     """
     dbs = sorted(config_files.glob("lib/ghc-*/lib/package.conf.d"))
     if len(dbs) != 1:
         raise SystemExit(
             f"api_reference: expected one package.conf.d under {config_files}, found {dbs}"
         )
-    modules: set[str] = set()
-    field = None
+    records: list[dict] = []
     for conf in sorted(dbs[0].glob("*.conf")):
+        record: dict = {"package": None, "lib": None, "modules": set(), "conf": conf.name}
+        field = None
         for raw in conf.read_text(errors="replace").splitlines():
             if not raw.strip():
                 field = None
                 continue
-            m = re.match(r"^(exposed-modules|hidden-modules):\s*(.*)$", raw)
+            m = re.match(r"^(package-name|lib-name|exposed-modules|hidden-modules):\s*(.*)$", raw)
             if m:
                 field, value = m.group(1), m.group(2).strip()
             elif raw.startswith(" ") or raw.startswith("\t"):
@@ -214,11 +219,17 @@ def parse_package_db(config_files: Path) -> set[str]:
             else:
                 field = None
                 continue
-            if field:
-                modules.update(value.replace(",", " ").split())
-    if not modules:
+            if field == "package-name" and value:
+                record["package"] = value
+            elif field == "lib-name" and value:
+                record["lib"] = value
+            elif field in ("exposed-modules", "hidden-modules") and value:
+                record["modules"].update(value.replace(",", " ").split())
+        if record["modules"]:
+            records.append(record)
+    if not records:
         raise SystemExit("api_reference: package db inventory is empty")
-    return modules
+    return records
 
 
 def _module_of_page(filename: str) -> str:
@@ -545,7 +556,43 @@ def copy_reference(
                 "source_page": source_page.relative_to(api_root).as_posix(),
             }
         )
-    dep_modules = parse_package_db(config_files)
+    db_records = parse_package_db(config_files)
+    candidate_lib = "singular-registry"
+    candidate_sublib = "node-internal"
+
+    def is_candidate_sublib(record: dict) -> bool:
+        return (
+            record["package"] == candidate_lib
+            and record["lib"] == candidate_sublib
+        )
+
+    # Each re-exported module is a same-package public re-export only when
+    # the public stanza names it (the extent's ``reexported``), exactly one
+    # candidate-owned singular-registry/node-internal record owns it, and
+    # no other record — candidate or external — claims it. Anything else is
+    # a missing, ambiguous or externally owned re-export and fails loudly.
+    for module in reexported:
+        owners = [r for r in db_records if module in r["modules"]]
+        same = [r for r in owners if is_candidate_sublib(r)]
+        others = [r for r in owners if not is_candidate_sublib(r)]
+        if len(same) != 1 or others:
+            raise SystemExit(
+                f"api_reference: re-exported module {module} requires exactly one "
+                f"candidate-owned {candidate_lib}/{candidate_sublib} record and no "
+                f"other owner; owners: "
+                f"{[(r['package'], r['lib'], r['conf']) for r in owners]}"
+            )
+
+    # Dependency modules are decided per record, from each record's typed
+    # identity: the one candidate-owned sublibrary record is the same
+    # package, not a dependency; every other record contributes all of its
+    # modules exactly as before. No name is subtracted from a flat set and
+    # no singular-registry-wide exemption exists.
+    dep_modules: set[str] = set()
+    for record in db_records:
+        if is_candidate_sublib(record):
+            continue
+        dep_modules |= record["modules"]
     overlap = sorted(set(modules) & dep_modules)
     if overlap:
         raise SystemExit(
@@ -562,6 +609,7 @@ def copy_reference(
         "modules": records,
         "package_inventory": {
             "source": "library-haddock configFiles package.conf.d",
+            "package_db_records": len(db_records),
             "dependency_module_count": len(dep_modules),
             "dependency_modules": sorted(dep_modules),
         },
