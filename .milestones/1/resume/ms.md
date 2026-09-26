@@ -1,3 +1,5 @@
-# Resume Singular M1 from 2026-09-24 scoped release
+# Resume Singular M1 from 2026-09-26 scoped release
+
+Read `../ledger.md`, `/tmp/projects/singular/milestone-1/STATUS.md`, `/tmp/projects/singular/milestone-1/inbox/NOTE-20260926-scoped-release.md`, and `/tmp/machine/pausa/RELEASE-2026-09-26T0719Z-singular.md` in full. M1 `%1854` may perform desk work under the nine-seat singular-only release. Immediate owners are E199/E209 `%2139` and E272 `%2064`; verify live identities and owner receipts. Preserve Flash `%2127` PARKED and await the bounded `%2128` reasoning verdict before candidate reuse. No M4 or other-session release. Current backup: `/home/paolino/.orch-runtime/singular/m1-release-20260926/`. The older recovery instruction below is historical.
 
 Read ../ledger.md, /tmp/projects/singular/milestone-1/STATUS.md, /tmp/projects/singular/milestone-1/inbox/NOTE-20260924-scoped-release.md, and /tmp/machine/pausa/RELEASE-2026-09-24T0725Z-singular.md. M1 singleton %1854, session singular. Immediate owners: E199 %1903, E209 %1922, demo-path %1960; verify actual identity and owner receipts. %2023 and %2036 lack established child ownership and remain parked pending provenance. Recovery backup: /home/paolino/.orch-runtime/singular/m1-release-20260924/. M4/Scala stay paused. This is no new staffing, merge, deployment or acceptance.
