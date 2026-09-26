@@ -25,20 +25,24 @@
   ],
   "process-state-and-its-lifetimes": [
     {
-      "text": "The runner keeps six pieces of process state, each created once per process, owned by exactly one module, installed and removed at the same points as before the split.",
+      "text": "The runner keeps six pieces of process state, each created once per process, owned by exactly one module, and installed and removed at the same points as before the split. The nesting is what a contributor must hold: the follower is the outer bracket and the open session the inner one, and the funding-read guard exists only on the devnet.",
       "pause": 400
     },
     {
-      "text": "The state diagram walks a runner's lifetime: idle, then the session installs the open session, the follower installs itself, the funding-read guard sets once the devnet funding sweep is indexed, and the body runs. When the body returns or throws, the same unwinding runs: the follower is cleared, the guard cleared with it, and the session restored to nothing, so a later action never sees a torn-down runner.",
+      "text": "The first diagram shows the two mode paths. On the devnet: the devnet node is spawned, the follower bracket is installed from the origin as the outermost bracket, the node client connects inside it, and the session then prepares — protocol parameters, the one funding read that sweeps the genesis wallet and sets the guard, the funding-floor check when a floor is given, and the announcement — before the open session is installed as the innermost bracket and the body runs inside it. Externally: the node client connects first, the follower bracket is installed from the tip, the session prepares with no sweep and no guard, the open session is installed, and the body runs.",
+      "pause": 600
+    },
+    {
+      "text": "The second diagram shows unwinding from the inside out. In both modes the open session is removed first. On the devnet the node client is then cancelled, the follower and guard are cleared together, and the devnet is torn down. Externally the follower is cleared and then the node client cancelled.",
       "pause": 500
     },
     {
-      "text": "The table then gives each piece of state its owner and timing: the mode and the wallet are lazy constants for the process; the session and follower are bracketed; the guard clears with the follower; and the address-read counter never resets, keeping the process total the public read exposes.",
-      "pause": 400
+      "text": "The table gives each piece of state its owner and timing: the mode and the wallet are lazy constants; the open session is installed innermost, after the sweep, the funding check and the announcement, and removed first on unwind; the follower is installed by the follower bracket — outermost on the devnet, inside the node-client bracket externally — and removed after the open session; the guard is set only on the devnet by the followed provider once the genesis sweep is indexed, and cleared with the follower; and the address-read counter never resets, keeping the process total the public read exposes.",
+      "pause": 600
     },
     {
       "text": "Because nothing duplicates them, the facade, the cleanup brackets and the cage test observers share one compiled instance. The focused cleanup suite proves each bracket installs and removes its state through the public readers, and that the funding-read guard refuses node reads while set and lets them through again after a failed body.",
-      "pause": 400
+      "pause": 500
     }
   ],
   "the-independent-evidence-boundary": [
@@ -75,12 +79,16 @@
       "pause": 500
     },
     {
-      "text": "The split is behavior-preserving by construction: every moved declaration kept its body, its export surface travels through the facade, and the process-state lifetimes are unchanged. The evidence bound to that today is the development tree where the split was built — the focused node tests and the full cage suite passed there before the work was committed. The committed head carries its own named checks: the focused cleanup suite runs again at that exact head before acceptance, and the fresh-blueprint end-to-end paths run as exact-head check commands on a devnet after that. Until those pass, this page claims no devnet behavior for the split.",
+      "text": "The split is behavior-preserving by construction and by receipt. Five moved call sites now name the extracted helpers — the session installs the open session through the with-open-session helper, follow chain brackets the follower and the guard through the with-following helper, clearing the follower before the guard, the confirmation and followed-provider reads go through the current-follower reader, and the followed provider sets the guard through the mark-funding-indexed helper — each helper's body equal to the inline code it replaced. Index funding reads the wallet through its accessors instead of a record pattern, equivalent for the devnet wallet it loads, and every other moved declaration is byte-equal to its base.",
+      "pause": 600
+    },
+    {
+      "text": "At candidate revision seven-b-four-a-d-f-three the repository's exact-head checks passed — the full cage suite, the devnet end-to-end paths and the bounded journey — and the focused cleanup brackets' installation, exceptional-exit removal and guard controls are bound to the same code by metered receipts. The external-node mode keeps its limit: nothing here claims public-network behavior, before or after the split.",
       "pause": 500
     }
   ],
   "_source": {
     "file": "offchain-node-ownership.md",
-    "sha256": "fc93d0593655722a624cffc2ff74b0563b139bfd571fa4071fa0884f3a30b9fc"
+    "sha256": "afb8c52506182ca0f6b69e2544a0162e35e3abeb1676bf51f57c22d066a39234"
   }
 }

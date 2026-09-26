@@ -55,7 +55,7 @@ imported `Singular.Registry.Ledger` before the split still does.
 
 | Owner | Responsible for |
 | --- | --- |
-| `Node.Options` | Parsing mode flags and environment into the process mode, the external-node shape, the devnet echo switch, and the shared named-diagnostic helper. No dependency on any runtime module. |
+| `Node.Options` | Parsing mode flags and environment into the process mode, the external-node shape, the external-mode echo diagnostic (a preprod Koios query; a no-op on the devnet), and the shared named-diagnostic helper. No dependency on any runtime module. |
 | `Node.Wallet` | Loading and deriving the process wallet: signing keys, addresses, the funder identity the run pays from, network magic, and bech32 rendering. Key bytes are never logged. |
 | `Node.Indexer` | The chain follower a session reads through: installing it for an action, sweeping the devnet's genesis funding into a block-carried output, answering address reads from the index, refusing node address reads once the funding sweep is done, and counting the node's address queries. |
 | `Node.Funding` | The pre-run funding floor: what the funding wallet must hold before the first transaction, the address-naming diagnostic when it does not, and lovelace rendering. |
@@ -108,34 +108,56 @@ through the owner entries below:
 
 The runner keeps six pieces of process state. Each is created once per
 process, owned by exactly one module, and installed and removed at the
-same points as before the split.
+same points as before the split. The nesting is what a contributor
+must hold: the follower is the outer bracket and the open session the
+inner one, and the funding-read guard exists only on the devnet.
 
 ```mermaid
-stateDiagram-v2
-    [*] --> BodyIdle: runner starts
-    BodyIdle --> SessionInstalled: withNode… installs the open session
-    SessionInstalled --> FollowerInstalled: followChain installs the follower
-    FollowerInstalled --> FundingGuardSet: devnet funding sweep completes
-    FundingGuardSet --> BodyRuns: runner body executes
-    BodyRuns --> FollowerCleared: body returns or throws
-    FollowerCleared --> SessionCleared: brackets unwind, guard cleared
-    SessionCleared --> BodyIdle: nothing left installed
-    note right of BodyRuns
-        On an exceptional body the same
-        unwinding runs: follower and
-        session are removed and the
-        guard cleared, so a later action
-        never sees a torn-down runner.
-    end note
+flowchart TD
+    subgraph DevnetMode [devnet mode]
+        DN[devnet node spawned] --> FO[follower bracket installed — from the origin, outermost]
+        FO --> NC1[node client connected — bracketed]
+        NC1 --> SP1[session prepares — protocol parameters, the one funding read that sweeps the genesis wallet and sets the guard, the funding-floor check when a floor is given, the announcement]
+        SP1 --> OS1[open session installed — innermost bracket]
+        OS1 --> BODY1[runner body]
+    end
+    subgraph ExternalMode [external mode]
+        NC2[node client connected — bracketed] --> FT[follower bracket installed — from the tip]
+        FT --> SP2[session prepares — protocol parameters, no sweep, no guard]
+        SP2 --> OS2[open session installed — innermost bracket]
+        OS2 --> BODY2[runner body]
+    end
 ```
+
+```mermaid
+flowchart LR
+    subgraph DevnetUnwind [unwinding, devnet]
+        U1[open session removed first] --> U2[node client cancelled] --> U3[follower and guard cleared together] --> U4[devnet torn down]
+    end
+    subgraph ExternalUnwind [unwinding, external]
+        E1[open session removed first] --> E2[follower cleared] --> E3[node client cancelled]
+    end
+```
+
+On the devnet the follower bracket wraps the node client and the whole
+session; externally the node client is outermost and the follower wraps
+only the session. In both modes the session prepares before the open
+session is installed — protocol parameters first, then (devnet only)
+the one node address read that sweeps the funding wallet and sets the
+guard, then the funding-floor check when a floor is given, then the
+announcement — and the body runs inside the open-session bracket. When
+the body returns or throws, the brackets unwind from the inside out:
+the open session is removed first, then the follower and — on the
+devnet — the guard with it, then the node client, so a later action
+never sees a torn-down runner.
 
 | Process state | Owner | Installed | Removed |
 | --- | --- | --- | --- |
 | The process mode | `Node.Options` | lazily, once, from arguments and environment | never — constant for the process |
 | The process wallet | `Node.Wallet` | lazily, once, from the mode | never — constant for the process |
-| The open session | `Node.Session` | installed for the runner body | restored to nothing at bracket exit, exceptions included |
-| The chain follower | `Node.Indexer` | installed for the action that follows | cleared at bracket exit, exceptions included |
-| The funding-read guard | `Node.Indexer` | set once the devnet funding sweep is indexed | cleared with the follower at bracket exit |
+| The open session | `Node.Session` | innermost, by the session's `withOpenSession`, after the sweep, the funding check and the announcement | first on unwind — restored to nothing at bracket exit, exceptions included |
+| The chain follower | `Node.Indexer` | by the follower bracket: outermost around the node client on the devnet (from the origin), inside the node-client bracket externally (from the tip) | after the open session on unwind — cleared at bracket exit, exceptions included |
+| The funding-read guard | `Node.Indexer` | only on the devnet: by `followedProvider` through `markFundingIndexed`, once the genesis sweep is indexed; never set on an external node | with the follower at bracket exit, exceptions included |
 | The address-read counter | `Node.Indexer` | starts at zero, counts every node address query | never reset — the public read keeps the process total |
 
 Because these live in the private library and nothing duplicates them,
@@ -187,13 +209,19 @@ before the split.
 | How the cleanup tests reach the private seams | The cage test component depends on the private library explicitly, binding bracket, observer and facade to one compiled instance; the positive installation halves fail if that identity ever breaks. | A test-local duplicate of the state, which would be green while testing nothing a runner executes. |
 | How existing callers keep working | The facade re-exports its exact original export list; ledger and provider keep their import paths by re-export; original callers compile unchanged. | Rewriting callers to import the owners directly: import churn with no behavioral benefit, and it would widen the surface the split is meant to keep closed. |
 
-The split is behavior-preserving by construction: every moved
-declaration kept its body, its export surface travels through the
-facade, and the process-state lifetimes are unchanged. The evidence
-bound to that today is the development tree where the split was built:
-the focused node tests and the full cage suite passed there before the
-work was committed. The committed head carries its own named checks —
-the focused cleanup suite runs again at that exact head before
-acceptance, and the fresh-blueprint end-to-end paths run as exact-head
-check commands on a devnet after that. Until those pass, this page
-claims no devnet behavior for the split.
+The split is behavior-preserving by construction and by receipt. Five
+moved call sites now name the extracted helpers — the session installs
+the open session through `withOpenSession`, `followChain` brackets the
+follower and the guard through `withFollowing` (clearing the follower
+before the guard), `confirmOutputZero` and `followedProvider` read the
+follower through `currentFollower`, and `followedProvider` sets the
+guard through `markFundingIndexed` — each helper's body equal to the
+inline code it replaced; `indexFunding` reads the wallet through its
+accessors instead of a record pattern, equivalent for the devnet
+wallet it loads. Every other moved declaration is byte-equal to its
+base. At candidate revision `7b4adf3` the repository's exact-head
+checks passed — the full cage suite, the devnet end-to-end paths and
+the bounded journey — and the focused cleanup brackets' installation,
+exceptional-exit removal and guard controls are bound to the same code
+by metered receipts. The external-node mode keeps its limit: nothing
+here claims public-network behavior, before or after the split.
