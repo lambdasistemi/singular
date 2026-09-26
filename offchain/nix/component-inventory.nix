@@ -62,6 +62,12 @@ let
       "cage-tests"
       "e2e-tests"
     ];
+    # #266 (epic answer A-005): the package-private ownership core —
+    # ledger, provider and the six Node children in one internal
+    # library. Built here because the public library itself links it;
+    # this is the compiled state-identity carrier for the facade, the
+    # cleanup brackets and the cage test observers.
+    sublibs = [ "node-internal" ];
   };
 
   # Each entry carries its own kind and names the job and its verbatim
@@ -153,6 +159,7 @@ let
     if lib.elem name set.library then "library"
     else if lib.elem name set.exes then "exe"
     else if lib.elem name set.tests then "test"
+    else if lib.elem name set.sublibs then "sublib"
     else throw "component-inventory: unknown kind for ${name}";
 
   rows =
@@ -161,7 +168,7 @@ let
       kind = kindOf builtHere name;
       inherit name;
       detail = "";
-    }) (builtHere.library ++ builtHere.exes ++ builtHere.tests)
+    }) (builtHere.library ++ builtHere.exes ++ builtHere.tests ++ builtHere.sublibs)
     ++ map (row: {
       class = "covered-elsewhere";
       inherit (row) kind name;
@@ -277,7 +284,8 @@ let
   memberPaths =
     [ components.library ]
     ++ map (name: components.exes.${name}) builtHere.exes
-    ++ map (name: components.tests.${name}) builtHere.tests;
+    ++ map (name: components.tests.${name}) builtHere.tests
+    ++ map (name: components.sublibs.${name}.library) builtHere.sublibs;
 in
 {
   inherit memberPaths manifest inventoryGate;
