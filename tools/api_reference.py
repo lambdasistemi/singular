@@ -706,12 +706,47 @@ def copy_reference(
             )
         owner = module.rsplit(".", 1)[-1]
         expected_url = PRIVATE_OWNER_PERMALINK_URL.format(owner=owner)
-        if f'href="{expected_url}"' not in guide_text:
+        private_owners[module] = {
+            "href": "../../" + guide_page_rel + "#" + anchor,
+            "anchor": anchor,
+            "source": None,
+            "source_sha256": None,
+            "permalink": expected_url,
+        }
+
+    # Bind each expected permalink to its own rendered owner entry: the
+    # span between this owner's anchor and the next rendered owner anchor
+    # must carry exactly that owner's source link — no other owner's URL —
+    # so a swapped or duplicated link is refused even though every URL
+    # occurs somewhere on the page. Anchors are ordered by their rendered
+    # position, so the guide's authored entry order is free.
+    located = []
+    for module in private_modules:
+        anchor = private_owners[module]["anchor"]
+        pos = guide_text.find(f'id="{anchor}"')
+        if pos < 0:
+            raise SystemExit(
+                f"api_reference: rendered guide anchor missing for private "
+                f"owner {module}: #{anchor} on {guide_page_rel}"
+            )
+        located.append((pos, module, anchor, private_owners[module]["permalink"]))
+    located.sort()
+    for i, (pos, module, anchor, url) in enumerate(located):
+        end = located[i + 1][0] if i + 1 < len(located) else len(guide_text)
+        entry = guide_text[pos:end]
+        if f'href="{url}"' not in entry:
             raise SystemExit(
                 f"api_reference: owner permalink missing or wrong for private "
-                f"owner {module}: expected exact URL {expected_url} on "
+                f"owner {module}: expected {url} bound to entry #{anchor} on "
                 f"{guide_page_rel}"
             )
+        for _, other_module, _, other_url in located:
+            if other_module != module and f'href="{other_url}"' in entry:
+                raise SystemExit(
+                    f"api_reference: ambiguous owner entry #{anchor} on "
+                    f"{guide_page_rel}: another owner's permalink is bound to "
+                    f"{module}'s entry"
+                )
         source = module_source(offchain_root, module)
         digest = sha256_file(source)
         frozen = PRIVATE_OWNER_SOURCE_SHA256.get(module)
@@ -720,13 +755,8 @@ def copy_reference(
                 f"api_reference: private owner source digest mismatch for "
                 f"{module}: {source} sha256={digest} expected={frozen}"
             )
-        private_owners[module] = {
-            "href": "../../" + guide_page_rel + "#" + anchor,
-            "anchor": anchor,
-            "source": source.relative_to(offchain_root).as_posix(),
-            "source_sha256": digest,
-            "permalink": expected_url,
-        }
+        private_owners[module]["source"] = source.relative_to(offchain_root).as_posix()
+        private_owners[module]["source_sha256"] = digest
     transform = transform_tree(api_root, modules, dep_modules, offchain_root, private_owners)
     for record in records:
         record["module_page_sha256"] = sha256_file(api_root / record["module_page"])
