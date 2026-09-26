@@ -31,12 +31,16 @@ flowchart LR
 4. Update the high-level builder guide, navigation if needed, source/generated
    API links and curated speech in the same candidate as the extraction.
    Compare guide claims to the moved source before the expensive campaign.
-5. Run the frozen Gate S on the settled clean head, obtain an independent
-   exact-candidate audit, bind pushed-head CI, then stamp and hand back the
-   draft PR. The epic owner alone accepts and merges.
+5. After implementation and source-derived documentation are settled, obtain
+   the persistent auditor's product checkpoint. Truthfully complete the
+   implementation task rows and any required speech stamp before the final
+   candidate commit. Run the frozen Gate S once on that clean final head,
+   obtain the auditor's exact-head pre-push report, bind pushed-head CI and
+   hand back the draft PR. The epic owner alone accepts and merges.
 
 One cohesive implementation slice covers code, focused control and docs to
-avoid a documentation-only second product campaign. Finite execution and
-auditor attempt bounds are in the runtime Gate S and worker briefs. Historical
-failed charges remain recorded. `Update`'s public API and Conformance bytes
-must remain unchanged.
+avoid a documentation-only second product campaign. Final gate, audit, CI and
+handback are acceptance receipts, not prematurely completed tracked tasks.
+Finite execution and auditor attempt bounds are in the runtime Gate S and
+worker briefs. Historical failed charges remain recorded. `Update`'s public
+API and Conformance bytes must remain unchanged.
