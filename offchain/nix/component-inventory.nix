@@ -285,7 +285,7 @@ let
     [ components.library ]
     ++ map (name: components.exes.${name}) builtHere.exes
     ++ map (name: components.tests.${name}) builtHere.tests
-    ++ map (name: components.sublibs.${name}.library) builtHere.sublibs;
+    ++ map (name: components.sublibs.${name}) builtHere.sublibs;
 in
 {
   inherit memberPaths manifest inventoryGate;
