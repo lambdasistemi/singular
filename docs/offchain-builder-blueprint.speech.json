@@ -59,18 +59,18 @@
       "pause": 250
     },
     {
-      "text": "A generated, revision-matched Haskell API reference for this library is planned as a separate documentation extension and is not part of this page yet.",
+      "text": "The generated, revision-matched Haskell API reference for this library now ships with this site. Its page links every module of the library stanza to the generated module page and the highlighted source, and the site check binds the generated pages to this candidate's own source bytes.",
       "pause": 300
     }
   ],
   "source": [
     {
-      "text": "The last section lists the facades and the six owner modules as repository paths from the repository root, so a reader can move from a responsibility on this page to the exact source file that owns it. Clickable generated links arrive with the planned API reference extension.",
+      "text": "The last section links the facades and the six owner modules to the generated API reference on this site, so a reader can move from a responsibility on this page to the exact interface and source of the module that owns it. Read from the repository, the same links open the source files themselves. The complete generated reference for the library is the off-chain API reference page.",
       "pause": 250
     }
   ],
   "_source": {
     "file": "offchain-builder-blueprint.md",
-    "sha256": "08ee8ef2dd2fda2d7f7b224b1de090e91958ff307183866308ca4088c79bc5ff"
+    "sha256": "8b4557e171732a3b4db5b3648b8bb303813b6541178d1af643b21ff74edcef0b"
   }
 }

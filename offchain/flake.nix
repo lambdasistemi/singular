@@ -350,6 +350,10 @@
           # ./nix/component-inventory.nix). CI builds it with
           # `nix build --quiet .#component-build` from offchain.
           component-build = componentBuild;
+          # Generated Haddock reference for the library, consumed by the
+          # root documentation build. Same source tree, same lock: the docs
+          # manifest can bind the reference to this candidate's content.
+          library-haddock = components.library.haddock;
           inherit test-vectors test-vectors-json;
           # Issue #56: the wrapped LM/LC row runner exposed as a package
           # too, so `nix build .#naming-rows` and `nix run .#naming-rows`

@@ -95,20 +95,24 @@ A green component build is a compile claim, not transaction correspondence.
 The behavioral rows cover the asserted edges and refusal shapes they cover;
 a change to an uncovered builder path still needs its own check. The
 contributor guide for the check commands and their measured extents is
-[Checking off-chain code](offchain-development.md). A generated,
-revision-matched Haskell API reference for this library is planned as a
-separate documentation extension and is not part of this page yet.
+[Checking off-chain code](offchain-development.md). The generated,
+revision-matched Haskell API reference for this library now ships with
+this site: see the
+[off-chain API reference](offchain-api-reference.md).
 
 ## Source
 
-Repository paths for the facades and owners, from the repository root:
+The facades and owners, linked on this site to the generated API
+reference pages — module page and highlighted source — and, read from the
+repository, to the source files themselves at the revision you are
+viewing:
 
-- Facades: `offchain/lib/Singular/Registry/Blueprint.hs` and
-  `offchain/lib/Singular/Registry/TxBuilder/Internal.hs`.
-- Blueprint owners: `offchain/lib/Singular/Registry/Blueprint/Schema.hs`,
-  `offchain/lib/Singular/Registry/Blueprint/Params.hs`,
-  `offchain/lib/Singular/Registry/Blueprint/Load.hs`.
-- Builder owners:
-  `offchain/lib/Singular/Registry/TxBuilder/Internal/Identity.hs`,
-  `offchain/lib/Singular/Registry/TxBuilder/Internal/Lookup.hs`,
-  `offchain/lib/Singular/Registry/TxBuilder/Internal/Edges.hs`.
+- Facades: <a href="../offchain/lib/Singular/Registry/Blueprint.hs" data-api="module">Singular.Registry.Blueprint</a>, <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal.hs" data-api="module">Singular.Registry.TxBuilder.Internal</a>.
+- Blueprint owners: <a href="../offchain/lib/Singular/Registry/Blueprint/Schema.hs" data-api="module">Singular.Registry.Blueprint.Schema</a>, <a href="../offchain/lib/Singular/Registry/Blueprint/Params.hs" data-api="module">Singular.Registry.Blueprint.Params</a>, <a href="../offchain/lib/Singular/Registry/Blueprint/Load.hs" data-api="module">Singular.Registry.Blueprint.Load</a>.
+- Builder owners: <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Identity.hs" data-api="module">Singular.Registry.TxBuilder.Internal.Identity</a>, <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Lookup.hs" data-api="module">Singular.Registry.TxBuilder.Internal.Lookup</a>, <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Edges.hs" data-api="module">Singular.Registry.TxBuilder.Internal.Edges</a>.
+
+The complete generated reference — every module of the library stanza,
+with its hyperlinked source — is the
+[off-chain API reference](offchain-api-reference.md) page; each entry
+there links both the generated module page and the highlighted source of
+the module it names.

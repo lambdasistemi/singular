@@ -1,5 +1,10 @@
 """Check rendered local links, speech coverage and required documentation surfaces.
 
+The generated off-chain API reference is checked here too: its manifest
+extent must equal the candidate's own Cabal library extent, its recorded
+source digests must match the candidate's source files, and the actual
+generated pages must match the manifest's page digests.
+
 Link inventory (ticket 26): every reader-facing href/src in README and in the
 built HTML is discovered (never hand-listed), resolved the way a browser would
 resolve it under the deployed ``site_url`` prefix — directory URLs both with and
@@ -22,6 +27,8 @@ import sys
 from urllib.error import HTTPError, URLError
 from urllib.parse import unquote, urljoin, urlsplit
 from urllib.request import Request, urlopen
+
+import api_reference
 
 SITE_URL = "https://lambdasistemi.github.io/singular/"
 PREFIX = urlsplit(SITE_URL).path
@@ -146,7 +153,11 @@ class Page(HTMLParser):
 pages = {
     path: Page(path.read_text())
     for path in site.rglob("*.html")
+    # artifacts/ is the runnable review workspace; api/ is the generated
+    # Haddock reference — both ship as files and are checked by their own
+    # sections, not by the MkDocs page/speech rules.
     if not path.is_relative_to(site / "artifacts")
+    and not path.is_relative_to(site.joinpath(*api_reference.API_DIR))
 }
 assert pages, "no rendered pages"
 # Every script and stylesheet a reader loads comes from this site: a CDN fetch at
@@ -379,11 +390,12 @@ production_alias_rows = []
 
 
 def is_repo_source_href(href):
-    """Hrefs into the repository's lean/ sources are GitHub-context links:
-    blob rendering follows the current ref. Their staged, on-host form is the
-    prepare_docs model/ rewrite, proven where it is served — on the built page
-    row, with byte identity to this build's lean/ sources."""
-    return not urlsplit(href).scheme and re.search(r"(?:^|/)lean/", href) is not None
+    """Hrefs into the repository's lean/ or off-chain sources are
+    GitHub-context links: blob rendering follows the current ref. Their
+    staged, on-host forms are the prepare_docs rewrites (model/ bytes and
+    the generated api/ pages), proven where they are served — on the built
+    page row, against this build's own sources."""
+    return not urlsplit(href).scheme and re.search(r"(?:^|/)(?:lean/|offchain/)", href) is not None
 
 
 plans = []
@@ -513,6 +525,58 @@ for url_path, served in sorted(model_rows):
         model_mismatch.append(url_path)
 assert not model_mismatch, f"staged model/ bytes differ from lean/ sources: {model_mismatch}"
 assert not production_alias_rows, f"production model alias is not candidate identity evidence (moving alias): {production_alias_rows}"
+
+# ---------------------------------------------------------------------------
+# Generated off-chain API reference: the manifest's extent and source-file
+# digests must equal this candidate's own off-chain tree, and the actual
+# generated pages must match the manifest's recorded page digests. A ref
+# label proves nothing: the comparison is over content.
+# ---------------------------------------------------------------------------
+api_root = site.joinpath(*api_reference.API_DIR)
+manifest_path = api_root / api_reference.MANIFEST_NAME
+assert manifest_path.is_file(), f"generated API reference missing: {manifest_path}"
+api_manifest = json.loads(manifest_path.read_text())
+root_extent = api_reference.library_modules(root / "offchain")
+manifest_modules = [record["module"] for record in api_manifest["modules"]]
+manifest_only = sorted(set(manifest_modules) - set(root_extent))
+cabal_only = sorted(set(root_extent) - set(manifest_modules))
+assert not manifest_only and not cabal_only, (
+    f"API_EXTENT_MISMATCH manifest-not-in-cabal={manifest_only} cabal-not-in-manifest={cabal_only}"
+)
+api_pages_verified = 0
+for record in api_manifest["modules"]:
+    source = root / "offchain" / record["source"]
+    assert source.is_file(), f"API manifest names a missing candidate source: {record['source']}"
+    if api_reference.sha256_file(source) != record["source_sha256"]:
+        print(f"API_SOURCE_STALE leg=source-digest module={record['module']}", file=sys.stderr)
+        sys.exit(1)
+    for page_field, digest_field in (
+        ("module_page", "module_page_sha256"),
+        ("source_page", "source_page_sha256"),
+    ):
+        page = api_root / record[page_field]
+        if not page.is_file() or api_reference.sha256_file(page) != record[digest_field]:
+            print(f"API_SOURCE_STALE leg=page-digest page={record[page_field]}", file=sys.stderr)
+            sys.exit(1)
+        api_pages_verified += 1
+# Navigability: the reference index page links every manifest module page
+# and source page, so the generated extent is reachable from the nav, and
+# the built-page link inventory above resolves those rewritten anchors
+# against real files. Haddock's own cross-package references (dependency
+# module pages such as PlutusCore.html) are outside this tree by design
+# and are not a local-link obligation of this reference.
+api_index = site / "docs" / "offchain-api-reference" / "index.html"
+assert api_index.is_file(), f"generated API reference index page missing: {api_index}"
+api_index_text = api_index.read_text()
+for record in api_manifest["modules"]:
+    for page_field in ("module_page", "source_page"):
+        assert f"../../api/offchain/{record[page_field]}" in api_index_text, (
+            f"API_NAVIGABLE index page does not link {record[page_field]}"
+        )
+print(
+    f"api-reference modules={len(manifest_modules)} "
+    f"other-modules={len(api_manifest.get('other_modules', []))} pages-verified={api_pages_verified}"
+)
 
 # ---------------------------------------------------------------------------
 # Served routes (INV-29-PREFIX): what a server actually answers, for every
