@@ -9,7 +9,7 @@
       "pause": 400
     },
     {
-      "text": "The module extent is the library stanza of the off-chain Cabal file — every exposed module and every internal module across all declared source directories. The library currently declares no internal modules, so the extent is the public module surface; if one is added, this list and the generated reference grow with it, and the site check fails until they agree. The facades and owners of the registry builder and blueprint extraction are described module by module in the builder and blueprint modules guide.",
+      "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. Ledger and Provider are re-exports: their implementations moved into the package's private ownership core, and the public library re-exports them, so their import paths and their entries in this reference are unchanged. The six node runtime owners in that private core are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in the node module ownership guide. The extent is the public module surface; the site check fails until it and this list agree.",
       "pause": 400
     }
   ],
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "offchain-api-reference.md",
-    "sha256": "5ab3f39364e35a2fe2a1b3c0fe14a72b908dce01341c88bde1a1e2f2f3106a82"
+    "sha256": "40d3d565ed7d56a3206e9656cf59b4ab452cd1a46350ade7e193e71e83dd7ff1"
   }
 }

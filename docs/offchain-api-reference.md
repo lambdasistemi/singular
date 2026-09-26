@@ -21,12 +21,18 @@ site the links open the generated pages; read from the repository, the
 same links open the source files themselves at the revision you are
 viewing.
 
-The module extent is the library stanza of the off-chain Cabal file —
-every exposed module and every internal module across all declared source
-directories. The library currently declares no internal modules, so the
-extent below is the public module surface; if one is added, this list and
-the generated reference grow with it, and the site check fails until they
-agree.
+The module extent is the public library of the off-chain Cabal file — every
+exposed module, every internal module, and every module the library
+re-exports under its own name. `Singular.Registry.Ledger` and
+`Singular.Registry.Provider` are re-exports: their implementations moved
+into the package's private ownership core (`offchain/node-internal/`) and
+the public library re-exports them, so their import paths and their
+entries in this reference are unchanged. The six node runtime owners in
+that private core are deliberately not part of this reference — they are
+not importable from the public library — and are documented with source
+links in [Node module ownership](offchain-node-ownership.md). The extent
+below is the public module surface; the site check fails until it and
+this list agree.
 
 - <a href="../offchain/naming/src/Naming/Datum.hs" data-api="module">Naming.Datum</a> — <a href="../offchain/naming/src/Naming/Datum.hs" data-api="source">source</a>
 - <a href="../offchain/naming/src/Naming/Register.hs" data-api="module">Naming.Register</a> — <a href="../offchain/naming/src/Naming/Register.hs" data-api="source">source</a>
@@ -43,11 +49,11 @@ agree.
 - <a href="../offchain/lib/Singular/Registry/Config.hs" data-api="module">Singular.Registry.Config</a> — <a href="../offchain/lib/Singular/Registry/Config.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Deployment.hs" data-api="module">Singular.Registry.Deployment</a> — <a href="../offchain/lib/Singular/Registry/Deployment.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Driver.hs" data-api="module">Singular.Registry.Driver</a> — <a href="../offchain/lib/Singular/Registry/Driver.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/Ledger.hs" data-api="module">Singular.Registry.Ledger</a> — <a href="../offchain/lib/Singular/Registry/Ledger.hs" data-api="source">source</a>
+- <a href="../offchain/node-internal/Singular/Registry/Ledger.hs" data-api="module">Singular.Registry.Ledger</a> — <a href="../offchain/node-internal/Singular/Registry/Ledger.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Lifecycle.hs" data-api="module">Singular.Registry.Lifecycle</a> — <a href="../offchain/lib/Singular/Registry/Lifecycle.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Node.hs" data-api="module">Singular.Registry.Node</a> — <a href="../offchain/lib/Singular/Registry/Node.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Proof.hs" data-api="module">Singular.Registry.Proof</a> — <a href="../offchain/lib/Singular/Registry/Proof.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/Provider.hs" data-api="module">Singular.Registry.Provider</a> — <a href="../offchain/lib/Singular/Registry/Provider.hs" data-api="source">source</a>
+- <a href="../offchain/node-internal/Singular/Registry/Provider.hs" data-api="module">Singular.Registry.Provider</a> — <a href="../offchain/node-internal/Singular/Registry/Provider.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Trie.hs" data-api="module">Singular.Registry.Trie</a> — <a href="../offchain/lib/Singular/Registry/Trie.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Trie/Pure.hs" data-api="module">Singular.Registry.Trie.Pure</a> — <a href="../offchain/lib/Singular/Registry/Trie/Pure.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Trie/PureManager.hs" data-api="module">Singular.Registry.Trie.PureManager</a> — <a href="../offchain/lib/Singular/Registry/Trie/PureManager.hs" data-api="source">source</a>

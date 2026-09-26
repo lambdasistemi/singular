@@ -54,8 +54,21 @@ def sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _module_name(item: str) -> str:
+    """One cabal list entry as a module name (leading comma forms included)."""
+    return item.strip().lstrip(",").strip()
+
+
 def _parse(cabal_file: Path) -> dict:
-    """Parse the library stanza's extent once; loud on an unusable shape."""
+    """Parse the public library stanza's extent once; loud on an unusable shape.
+
+    The unnamed ``library`` stanza is the public library whose generated
+    reference this tool ships. A named ``library <name>`` stanza is a
+    package-private sublibrary: it never contributes modules to the extent,
+    but its ``hs-source-dirs`` join the resolution roots so a module the
+    public library re-exports — whose implementation file may live inside
+    the sublibrary — still resolves to exactly one source file.
+    """
     lines = cabal_file.read_text(encoding="utf-8").splitlines()
     extent = {"exposed": [], "other": [], "hs_source_dirs": []}
     stanza = None
@@ -67,8 +80,14 @@ def _parse(cabal_file: Path) -> dict:
             # A column-zero line: a stanza header word opens a stanza, and
             # any other top-level line (other stanza header or field)
             # closes the previous one. List items are always indented.
-            head = raw.split()[0].rstrip(":")
-            stanza = head if head in STANZA_HEADERS else None
+            words = raw.split()
+            head = words[0].rstrip(":")
+            if head == "library" and len(words) == 1:
+                stanza = "library"
+            elif head == "library":
+                stanza = "sublibrary"
+            else:
+                stanza = head if head in STANZA_HEADERS else None
             field = None
             continue
         item = raw.strip()
@@ -77,12 +96,28 @@ def _parse(cabal_file: Path) -> dict:
             field, value = m.group(1).lower(), m.group(2).strip()
         else:
             value = item
+        if stanza == "sublibrary":
+            if field == "hs-source-dirs" and value:
+                extent["hs_source_dirs"].extend(value.split())
+            continue
         if stanza != "library" or not value:
             continue
         if field == "exposed-modules":
-            extent["exposed"].append(value)
+            extent["exposed"].append(_module_name(value))
         elif field == "other-modules":
-            extent["other"].append(value)
+            extent["other"].append(_module_name(value))
+        elif field == "reexported-modules":
+            # A re-export keeps a module importable from the public
+            # library, so it stays part of the documented surface even
+            # though its implementation moved into a sublibrary. Comma
+            # list entries may rename (`Orig as Public`); the name a
+            # reader imports and compiles against is the extent's name.
+            for entry in value.split(","):
+                entry = entry.strip()
+                if entry:
+                    extent["exposed"].append(
+                        _module_name(entry.split(" as ")[-1].strip())
+                    )
         elif field == "hs-source-dirs":
             extent["hs_source_dirs"].extend(value.split())
     if not extent["exposed"]:
@@ -103,7 +138,7 @@ def parse_cabal_library(offchain_root: Path) -> dict:
 
 
 def library_modules(offchain_root: Path) -> list[str]:
-    """Sorted complete library module extent (exposed plus other)."""
+    """Sorted complete library module extent (exposed, other, re-exported)."""
     extent = parse_cabal_library(offchain_root)
     modules = sorted(set(extent["exposed"]) | set(extent["other"]))
     if not modules:
