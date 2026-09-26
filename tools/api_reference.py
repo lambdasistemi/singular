@@ -42,6 +42,24 @@ PRIVATE_OWNER_GUIDE_ANCHORS = {
     "Singular.Registry.Node.Confirmation": "confirmation-owner",
     "Singular.Registry.Node.Funding": "funding-owner",
 }
+# The immutable revision the guide's owner permalinks point at (A-013).
+# The six source files are byte-identical between that ancestor and the
+# candidate while the frozen digests below match; a changed source refuses
+# the build instead of silently repointing a permalink.
+PRIVATE_OWNER_PERMALINK_REV = "9a74eae15a3fe75abf7bbdf4969c2d11d7d8e69d"
+PRIVATE_OWNER_PERMALINK_URL = (
+    "https://github.com/lambdasistemi/singular/blob/"
+    + PRIVATE_OWNER_PERMALINK_REV
+    + "/offchain/node-internal/Singular/Registry/Node/{owner}.hs"
+)
+PRIVATE_OWNER_SOURCE_SHA256 = {
+    "Singular.Registry.Node.Options": "93a2dbe505b3c48c161b90666341ded8ea79a2c30afdace68156ae725d1ea9ca",
+    "Singular.Registry.Node.Wallet": "86e041492d80fd9eafeb7257796bfff483aabd892f07a86a2937ab6b5a0cc165",
+    "Singular.Registry.Node.Session": "f0b06d739b99cae43b7891af33f4a580bb1eb2292261843a77f69bac1c810c24",
+    "Singular.Registry.Node.Indexer": "b30ba54a390550fb681bdd62e2c1d9a3939c6334e0207355096a4c8a0470a0a4",
+    "Singular.Registry.Node.Confirmation": "7cbb8c68723b3788b92db002bbb204f95bc35f63cd835b1a077bc02a9564f9a4",
+    "Singular.Registry.Node.Funding": "f6a70bcc695f0762aa2ea73909e73b88d5a7da4815aedb7f541d2069661bb768",
+}
 # Non-module autolinks the A-006 repair may neutralize to visible text when
 # no local target exists; everything else unresolvable stays a library
 # reference and must resolve or fail.
@@ -686,11 +704,28 @@ def copy_reference(
                 f"api_reference: rendered guide anchor missing for private "
                 f"owner {module}: #{anchor} on {guide_page_rel}"
             )
+        owner = module.rsplit(".", 1)[-1]
+        expected_url = PRIVATE_OWNER_PERMALINK_URL.format(owner=owner)
+        if f'href="{expected_url}"' not in guide_text:
+            raise SystemExit(
+                f"api_reference: owner permalink missing or wrong for private "
+                f"owner {module}: expected exact URL {expected_url} on "
+                f"{guide_page_rel}"
+            )
         source = module_source(offchain_root, module)
+        digest = sha256_file(source)
+        frozen = PRIVATE_OWNER_SOURCE_SHA256.get(module)
+        if frozen is None or digest != frozen:
+            raise SystemExit(
+                f"api_reference: private owner source digest mismatch for "
+                f"{module}: {source} sha256={digest} expected={frozen}"
+            )
         private_owners[module] = {
             "href": "../../" + guide_page_rel + "#" + anchor,
             "anchor": anchor,
             "source": source.relative_to(offchain_root).as_posix(),
+            "source_sha256": digest,
+            "permalink": expected_url,
         }
     transform = transform_tree(api_root, modules, dep_modules, offchain_root, private_owners)
     for record in records:
@@ -719,6 +754,8 @@ def copy_reference(
                 "guide_page": guide_page_rel,
                 "anchor": info["anchor"],
                 "source": info["source"],
+                "source_sha256": info["source_sha256"],
+                "permalink": info["permalink"],
                 "rewrites": transform["private_owner"][module],
             }
             for module, info in private_owners.items()
