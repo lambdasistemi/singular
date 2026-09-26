@@ -65,7 +65,7 @@ consequences rather than as separate arguments.
 | `Singular.Statements.only_retract_owes_the_tip` | Only a retract owes the tip: for every exit, what it owes is unchanged by the tip a request holds exactly when the exit is not a retract | `df27296176ea7a88ac2d8fcaf3047e5521838fe9dabe493183ef26ac21dd624f` | PROVED |
 | `Singular.Statements.readAt_true_iff` | — | `69c6c811a286c3436e0b230319f762de5c3c89e977a8a1d075859159e87d5916` | PROVED |
 | `Singular.Statements.read_changes_nothing` | — | `0a53256f91fbd4e8d4de2e8e2b9add39fc6a04ad10327d594d3f74acabdb6120` | PROVED |
-| `Singular.Statements.retract_admitted_iff` | Retraction, when — a pending request's owner can retract it exactly when it inserts a key or reads a terminal one, the owner is among the transaction's signatories, and the validity interval lies inside phase 2: from submission plus the processing time, included, to that plus the retraction time, which the excluded upper bound may reach and not pass. This is the rule the request script's phase-2 refusal is to be named against (#205) | `6c9c65f00e1b9054319ae2151908af4336717df5642f31aace963aa80cb29f57` | PROVED |
+| `Singular.Statements.retract_admitted_iff` | Retraction, when — a pending request's owner can retract it exactly when it inserts a key or reads a terminal one, the owner is among the transaction's signatories, and the validity interval lies inside phase 2: from submission plus the processing time, included, to that plus the retraction time, which the excluded upper bound may reach and not pass. The request script names this rule's refusal `not-phase2`: its exact-outcome tests admit the two endpoints themselves and refuse with that name one unit before the lower bound and one unit past the upper, and for an open interval alike | `6c9c65f00e1b9054319ae2151908af4336717df5642f31aace963aa80cb29f57` | PROVED |
 | `Singular.Statements.retract_pays_exactly_its_obligations` | An executed retract pays exactly what it owes: for every registry state and request, the retract leaves the state as it was, mints nothing, and pays exactly its obligations, the deposit and the tip to the owner through an output bound to the request; nothing the state holds enters its payments | `a9ec205a3afaf4c62ff1e25f396d035fafbd25b34597e858c5468f6f77403390` | PROVED |
 | `Singular.Statements.retract_refusal_first_failing` | Retraction, why not — a refused retraction names the first check it fails, in the request script's order: `withdraw-insert-only` for an update or delete request whoever signed and whenever, then `retract-owner` without the owner's signature inside phase 2 or not, then `not-phase2` | `506966483299dfa897bb988c179646373d3dfcf7a1a20728fdf0cae217197ffc` | PROVED |
 | `Singular.Statements.terminal_attestation_permanent` | S2 — permanence: an attestation holds in every later state | `e133aaa076a248d60fc059e2698069b69485c9ba6f3c5a7aa4a209e224c888e2` | PROVED |
@@ -115,8 +115,19 @@ model fixes the complete preimages.
 
 Retraction admission is stated over a finite validity interval. Its bounds are
 read off the request script's `in_phase2` and the ledger's validity interval,
-whose lower bound is included and upper bound excluded; a transaction with no
-lower or no upper bound is never in phase 2 on chain, and the model's bounds
-cannot express one. The chain refuses a retraction outside phase 2 by a failed
-expectation rather than by name, so no run yet compares `not-phase2` with the
-chain: that is #205, which names the refusal against the rule stated here.
+whose lower bound is included and upper bound excluded. The model's bounds are
+finite, so an interval open at either end is not a case it can be asked: that
+is a named non-goal, not a gap waiting on a ticket, and the chain side is
+pinned by the request validator's Aiken exact-outcome tests — they admit an
+owner-signed retraction at the window's included lower bound and where its
+excluded upper bound reaches the retraction time's end, and refuse it with
+the named `not-phase2` one unit before the lower bound and one unit past the
+upper, and for an interval with no lower or no upper bound alike. The finite
+cases are compared live: the
+retraction-window row (CG07) submits an owner-signed retraction before phase 2
+and one after it on a devnet, both refused by the request script and answered
+`not-phase2` by the model, which agrees on every step. The deployed validators
+are compiled without traces, so this run's live refusals expose no name: they
+are attributed to the applied request script, and the name itself is never
+described as a live observation
+(#287).

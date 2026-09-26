@@ -37,13 +37,13 @@
       "pause": 500
     },
     {
-      "text": "Out-of-window retract rows preserve executable script-failure expectations at the current phase assertion; clean Boolean refusal and its Lean binding move to Issue two hundred five.",
+      "text": "The out-of-window retract rows are no longer script-failure expectations: since the request validator names the phase refusal, they assert the exact outcome — the spend handler returns False and the refusal helper returns not-phase2 — each beside an accepting partner that differs only in the validity interval.",
       "pause": 500
     }
   ],
   "refusal-classification": [
     {
-      "text": "Refusal rows distinguish clean semantic outcomes, malformed input failures, and script-level phase-guard failures; the last prove rejection but do not claim a clean Boolean result.",
+      "text": "Refusal rows distinguish clean semantic outcomes and malformed input failures; the phase-guard class once proved rejection without a clean Boolean result, and its column is empty now that the request validator names the phase refusal.",
       "pause": 500
     },
     {
@@ -81,7 +81,7 @@
   ],
   "lean-bindings": [
     {
-      "text": "Citations to absent Lean files are recorded as missing bindings with no conformance claim, and the citations that do resolve are stated with their exact qualified declarations.",
+      "text": "Citations to absent Lean files are recorded as missing bindings with no conformance claim, and the citations that do resolve are stated with their exact qualified declarations; the retract phase rows are bound since the validator names the refusal, refusals citing the first-failing rule and partners the admission rule.",
       "pause": 500
     }
   ],
@@ -95,12 +95,12 @@
       "pause": 300
     },
     {
-      "text": "The limits are stated: malformed-context rows bound input shape only, retract phase guards remain script-level until Issue two hundred five, and mutation evidence lives outside the repository because mutations are never committed.",
+      "text": "The limits are stated: malformed-context rows bound input shape only, the out-of-window retract rows assert the exact named refusal since the validator names it, and mutation evidence lives outside the repository because mutations are never committed.",
       "pause": 500
     }
   ],
   "_source": {
     "file": "mapping.md",
-    "sha256": "58b853b3c1b2ecbbdc27a93f2592dc846d4130589db045c1cb288e43088a2e89"
+    "sha256": "77edd6e6ab4e64657e0801f61d6aa684d170c6d68532e9f8db3bedb853ee01da"
   }
 }
