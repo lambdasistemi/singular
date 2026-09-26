@@ -146,12 +146,13 @@ keep their import paths through the public library's re-exports. The
 six owners themselves are not importable from the public library: they
 live in the package's private internal library. By Cabal's own rule a
 named library without public visibility can be depended on only by
-components of this same package — the cage test component, which
-observes the cleanup brackets, is the one that does, and that
-dependency links the same compiled instance the facade uses. Nothing
-outside the package can name the private library; a downstream reader
-keeps the facade and the two re-exported modules, exactly as before
-the split.
+components of this same package. Two of them do: the public library,
+whose facade re-exports the owners, and the cage test component, whose
+own dependency binds its observers to the same compiled instance the
+facade re-exports from — one build, one memory, no second copy.
+Nothing outside the package can name the private library; a downstream
+reader keeps the facade and the two re-exported modules, exactly as
+before the split.
 
 ## Decisions this split recorded
 

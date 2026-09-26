@@ -53,7 +53,7 @@
   ],
   "facade-callers-and-the-private-boundary": [
     {
-      "text": "The facade's export list is unchanged, token for token. Modules that imported ledger or provider keep their import paths through the public library's re-exports. The six owners are not importable from the public library: they live in the package's private internal library. By Cabal's own rule, a named library without public visibility can be depended on only by components of this same package — the cage test component, which observes the cleanup brackets, is the one that does, and that dependency links the same compiled instance the facade uses. Nothing outside the package can name the private library; a downstream reader keeps the facade and the two re-exported modules, exactly as before the split.",
+      "text": "The facade's export list is unchanged, token for token. Modules that imported ledger or provider keep their import paths through the public library's re-exports. The six owners are not importable from the public library: they live in the package's private internal library. By Cabal's own rule, a named library without public visibility can be depended on only by components of this same package. Two of them do: the public library, whose facade re-exports the owners, and the cage test component, whose own dependency binds its observers to the same compiled instance the facade re-exports from — one build, one memory, no second copy. Nothing outside the package can name the private library; a downstream reader keeps the facade and the two re-exported modules, exactly as before the split.",
       "pause": 500
     }
   ],
@@ -81,6 +81,6 @@
   ],
   "_source": {
     "file": "offchain-node-ownership.md",
-    "sha256": "0bdfcaa23d681f46589e56e285b4c6400e925d3421a5ea3f426c90ec4d4cd142"
+    "sha256": "99cc81c721ad0e870ebe5e6d0f4e21dff3fcd4a32a079fabe19a5535877cab17"
   }
 }
