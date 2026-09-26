@@ -1,0 +1,90 @@
+{
+  "one-owner-per-runtime-concern": [
+    {
+      "text": "A contributor changing how the runner talks to a cardano node wants one obvious owner per concern, so a change is reviewed in one place and process state can never quietly exist twice.",
+      "pause": 400
+    },
+    {
+      "text": "The diagram shows callers at the top importing the node facade unchanged. The facade owns nothing and re-exports its exact original export list. Below it, six owners in one package-private internal library: options for mode and environment, wallet for keys and addresses, indexer for the chain follower and indexed reads, funding for the pre-run floor, session for the connection lifecycle, and confirmation for waits and deadlines. Ledger and provider sit beside them in the private library and feed the indexer and the funding check. Every arrow points downward: options depends on nothing local, session brackets the indexer and funding, confirmation reads session and indexer, and nothing imports upward.",
+      "pause": 500
+    },
+    {
+      "text": "A second diagram audience: the cage test observers. They depend on the session and the indexer through the same compiled instance the facade uses, and read the public names through the facade.",
+      "pause": 300
+    },
+    {
+      "text": "The table then names each owner's responsibility in one line, from mode parsing through key handling, following, funding, connection and confirmation.",
+      "pause": 300
+    }
+  ],
+  "where-common-changes-land": [
+    {
+      "text": "Common changes each land in exactly one module. Mode flags and environment precedence: options. Wallet derivation, key handling and the funding identity: wallet. Connection setup, sockets and the session bracket: session. Following, the genesis funding sweep, indexed reads and the node-read guard: indexer. What a run must hold before starting and the refusal diagnostic: funding. Confirmation waits, deadlines and windows: confirmation. A shared named failure the runner prints goes to the diagnostic helper in options, the one cross-owner utility.",
+      "pause": 500
+    }
+  ],
+  "process-state-and-its-lifetimes": [
+    {
+      "text": "The runner keeps six pieces of process state, each created once per process, owned by exactly one module, installed and removed at the same points as before the split.",
+      "pause": 400
+    },
+    {
+      "text": "The state diagram walks a runner's lifetime: idle, then the session installs the open session, the follower installs itself, the funding-read guard sets once the devnet funding sweep is indexed, and the body runs. When the body returns or throws, the same unwinding runs: the follower is cleared, the guard cleared with it, and the session restored to nothing, so a later action never sees a torn-down runner.",
+      "pause": 500
+    },
+    {
+      "text": "The table then gives each piece of state its owner and timing: the mode and the wallet are lazy constants for the process; the session and follower are bracketed; the guard clears with the follower; and the address-read counter never resets, keeping the process total the public read exposes.",
+      "pause": 400
+    },
+    {
+      "text": "Because nothing duplicates them, the facade, the cleanup brackets and the cage test observers share one compiled instance. The focused cleanup suite proves each bracket installs and removes its state through the public readers, and that the funding-read guard refuses node reads while set and lets them through again after a failed body.",
+      "pause": 400
+    }
+  ],
+  "the-independent-evidence-boundary": [
+    {
+      "text": "On the devnet the funding wallet's genesis outputs exist in the ledger's initial state, not in any block, so the indexer cannot see them. The follower makes one node address read, moves everything the indexer does not know into one block-carried output, and from then on address reads are answered by the indexer while node reads are refused. That refusal keeps a run's evidence independent of a single filtered view. The split changes none of it.",
+      "pause": 500
+    },
+    {
+      "text": "What is deliberately not claimed: the external-node mode has no executable public-network coverage in this work and remains unverified there, exactly as before the split.",
+      "pause": 400
+    }
+  ],
+  "facade-callers-and-the-private-boundary": [
+    {
+      "text": "The facade's export list is unchanged, token for token. Modules that imported ledger or provider keep their import paths through the public library's re-exports. The six owners are not importable from the public library: they live in the package's private internal library. The cage test component reaches them by an explicit dependency on that library, which links the same compiled instance the facade uses.",
+      "pause": 500
+    },
+    {
+      "text": "A downstream package could name the private library in its own build, just as this package does with a dependency's devnet library. Doing so is an explicit opt into internal seams, never part of the public surface.",
+      "pause": 400
+    }
+  ],
+  "decisions-this-split-recorded": [
+    {
+      "text": "Three decisions, each with the alternative it rejected.",
+      "pause": 250
+    },
+    {
+      "text": "Where the new owners live: one package-private internal library holding the six owners plus the ledger and provider modules they read, re-exported under their original names. Rejected: exposing the owners as public modules, which would publish writable session and follower seams the library never had; and compiling the owners' sources a second time inside the test component, which a compiled trial showed drags the whole library into the test unit and produces a second, non-production copy of every piece of process state.",
+      "pause": 600
+    },
+    {
+      "text": "How the cleanup tests reach the private seams: the cage test component depends on the private library explicitly, binding bracket, observer and facade to one compiled instance; the positive installation halves fail if that identity ever breaks. Rejected: a test-local duplicate of the state, which would be green while testing nothing a runner executes.",
+      "pause": 500
+    },
+    {
+      "text": "How existing callers keep working: the facade re-exports its exact original export list and ledger and provider keep their import paths. Rejected: rewriting callers to import the owners directly, import churn with no behavioral benefit that would widen the surface the split keeps closed.",
+      "pause": 500
+    },
+    {
+      "text": "The split is behavior-preserving: moved declarations kept their bodies, the export surface travels through the facade, the focused node tests and the full cage suite pass on the split tree, and the fresh-blueprint end-to-end paths exercise the moved behavior on a devnet, as before.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "offchain-node-ownership.md",
+    "sha256": "d8a10b022b5cd263e276f39c9914c1d5b67a273e9ca0f06c56f666bacaf75b8d"
+  }
+}
