@@ -1,0 +1,16 @@
+{
+  "completion-sequence": [
+    {
+      "text": "The sequence binds the model and gate, extracts focused owners, documents their architecture, then gathers independent audit and CI evidence for a draft pull request.",
+      "pause": 400
+    },
+    {
+      "text": "The diagram shows that plan, code, documentation and audit follow each other as reviewable steps.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "bbec17f58a13ac068fc59feee090f1c9b67a8f46c5b63b3492b4c715d7022467"
+  }
+}

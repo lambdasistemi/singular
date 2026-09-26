@@ -8,6 +8,10 @@ let
   # can prove the reference describes this candidate (a ref label alone is
   # not a freshness witness).
   apiHaddock = offchain.packages.${pkgs.system}.library-haddock;
+  # The package-private ownership core's own Haddock tree: the only source
+  # of the re-exported Ledger/Provider generated page pairs. The manifest
+  # step takes exactly those two pairs from it and nothing else.
+  apiReexportHaddock = offchain.packages.${pkgs.system}.node-internal-haddock;
   # The build's own package database: positive evidence for which modules a
   # dependency owns, used to neutralize (never merely unlink) the generated
   # references to dependency documentation this site does not bundle.
@@ -25,7 +29,7 @@ let
     buildPhase = ''
       python3 tools/prepare_docs.py
       mkdocs build --strict
-      python3 tools/api_reference.py manifest site ${apiHaddock.doc} ${offchain.outPath} ${apiPackageDb}
+      python3 tools/api_reference.py manifest site ${apiHaddock.doc} ${offchain.outPath} ${apiPackageDb} ${apiReexportHaddock.doc}
       python3 tools/prepare_release.py site
     '';
     installPhase = ''

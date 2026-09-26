@@ -1,0 +1,265 @@
+{- |
+Module      : Singular.Registry.Node.Confirmation
+Description : Waits, deadlines and chain observation for a runner
+License     : Apache-2.0
+
+The one place a runner waits for the chain: confirmations of submitted
+transactions through the session's followed indexer, the deadlines
+that bound those waits (a transaction's own validity window, or the
+historical fixed window), and the settling wait after a submission
+whose transaction the runner does not hold.
+
+Every observation here reads the open session and the installed
+follower through their owners — 'Singular.Registry.Node.Session' and
+'Singular.Registry.Node.Indexer' — and names its error when called
+outside them rather than guessing a chain.
+-}
+module Singular.Registry.Node.Confirmation (
+    -- * Confirmation
+    awaitTx,
+    awaitTxId,
+    awaitTxWindow,
+    confirmDeadline,
+    txUpperBoundSlot,
+    awaitChain,
+    confirmationDelay,
+) where
+
+import Control.Concurrent (threadDelay)
+import Control.Exception (SomeException, try)
+import Data.ByteString.Base16 qualified as B16
+import Data.ByteString.Char8 qualified as BC
+import Data.Foldable (toList)
+import Data.Time.Clock (getCurrentTime)
+import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
+import Lens.Micro ((^.))
+
+import Cardano.Crypto.Hash (hashFromBytes, hashToBytes)
+import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
+import Cardano.Ledger.Api.Tx (bodyTxL, outputsTxBodyL, txIdTx, vldtTxBodyL)
+import Cardano.Ledger.BaseTypes (SlotNo (..), StrictMaybe (..))
+import Cardano.Ledger.Hashes (extractHash, unsafeMakeSafeHash)
+import Cardano.Ledger.TxIn (TxId (..))
+import Cardano.Node.Client.UTxOIndexer.Indexer (
+    awaitTxIn,
+ )
+import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
+import Cardano.Tx.Ledger (ConwayTx)
+import Singular.Registry.Node.Indexer (
+    Following (..),
+    confirmationAttempts,
+    confirmationPollSeconds,
+    currentFollower,
+ )
+import Singular.Registry.Node.Options (NodeMode (..), die, runMode)
+import Singular.Registry.Node.Session (
+    NodeSession (..),
+    sessionFor,
+ )
+import Singular.Registry.Provider qualified as Cage
+
+{- | Wait until a submitted transaction is visible on the chain.
+
+A fixed sleep is a devnet assumption: the factory devnet makes a block
+about every second, a public test network about every twenty, so a
+five-second wait calibrated on the devnet silently becomes a race on
+preprod. This waits for the transaction's first output — the strongest
+evidence the chain carries — and names the transaction when it never
+appears.
+
+The wait is bounded by the transaction's own validity upper bound plus
+a two-minute margin, not by a fixed poll count: a transaction that is
+still valid can still land, and a fixed five-minute window declared a
+healthy preprod fold lost while eight minutes of its validity remained
+(2026-09-14, registry request for spelling "alice"). A transaction
+with no upper bound cannot expire, so the historical fixed window
+stays its only bound.
+-}
+awaitTx :: ConwayTx -> IO ()
+awaitTx tx = do
+    sess <- sessionFor "awaitTx"
+    case toList (tx ^. bodyTxL . outputsTxBodyL) of
+        _ : _ -> pure ()
+        [] ->
+            die
+                ( "cannot confirm transaction "
+                    <> show (txIdTx tx)
+                    <> ": it creates no output to observe"
+                )
+    deadline <- windowDeadlineFor sess tx
+    confirmOutputZero sess (show (txIdTx tx)) (txIdTx tx) deadline
+
+{- | Confirm a just-submitted transaction by observing output zero.
+Call before a dependent transaction spends that output. This supports
+journey helpers that retain a transaction id but not the complete body.
+
+Prefer 'awaitTxWindow' wherever the runner still holds the transaction:
+there the wait is bounded by the transaction's own validity window
+rather than by this fixed window.
+-}
+awaitTxId :: String -> IO ()
+awaitTxId txid = do
+    sess <- sessionFor "awaitTxId"
+    wanted <- txIdFromHex "awaitTxId" txid
+    deadline <- fixedWindowDeadline (nsProvider sess)
+    confirmOutputZero sess txid wanted deadline
+
+{- | Confirm a just-submitted transaction by observing output zero,
+until the transaction's own validity upper bound plus a two-minute
+margin. The runner holds the transaction it just built and signed, so
+the wait can be exactly as long as the transaction can still land —
+and the failure names the expired window instead of a fixed poll
+count. A transaction with no upper bound cannot expire; the fixed
+window of 'awaitTxId' stays its bound.
+-}
+awaitTxWindow :: ConwayTx -> String -> IO ()
+awaitTxWindow tx txid = do
+    sess <- sessionFor "awaitTxWindow"
+    deadline <- windowDeadlineFor sess tx
+    wanted <- txIdFromHex "awaitTxWindow" txid
+    confirmOutputZero sess txid wanted deadline
+
+-- | A transaction id from its hex rendering.
+txIdFromHex :: String -> String -> IO TxId
+txIdFromHex what txid = do
+    raw <- either (const (die (what <> ": transaction id is not hex"))) pure (B16.decode (BC.pack txid))
+    h <- maybe (die (what <> ": transaction id is not 32 bytes")) pure (hashFromBytes raw)
+    pure (TxId (unsafeMakeSafeHash h))
+
+{- | Wait until the indexer following the session's chain reports the
+block that carries output zero of a transaction, or the chain's tip
+passes the deadline. The node is asked only for its tip, and only
+while the output has not appeared.
+-}
+confirmOutputZero :: NodeSession -> String -> TxId -> SlotNo -> IO ()
+confirmOutputZero sess label tid deadline =
+    currentFollower
+        >>= maybe
+            (die (label <> ": no indexer follows this session's chain"))
+            (indexed . followingIndexer)
+  where
+    indexed idx = do
+        let TxId h = tid
+        seen <-
+            awaitTxIn
+                idx
+                (Indexer.TxIn (hashToBytes (extractHash h)) 0)
+                (Just confirmationPollSeconds)
+        case seen of
+            Just _ -> pure ()
+            Nothing -> do
+                tip <- nsTipSlot sess
+                whenExpired label tip deadline (indexed idx)
+
+{- | The poll-until deadline for a transaction: its own validity upper
+bound plus a two-minute margin; the historical fixed window when it
+carries no upper bound. The margin is measured in slots through the
+node's own time-to-slot conversion, so it means two minutes on every
+network. If that conversion fails the run is dying anyway; the fixed
+window restated in slots keeps the deadline total.
+-}
+windowDeadlineFor :: NodeSession -> ConwayTx -> IO SlotNo
+windowDeadlineFor sess tx = do
+    r <- try (confirmDeadline (nsProvider sess) tx) :: IO (Either SomeException SlotNo)
+    case r of
+        Right d -> pure d
+        Left _ -> do
+            tip <- nsTipSlot sess
+            pure (tip + fromIntegral (confirmationAttempts * confirmationPollSeconds))
+
+-- | Two minutes expressed in slots of the chain the provider talks to.
+twoMinutesInSlots :: Cage.Provider IO -> IO SlotNo
+twoMinutesInSlots prov = do
+    now <- getCurrentTime
+    let nowMs = round (utcTimeToPOSIXSeconds now * 1000) :: Integer
+    s0 <- Cage.posixMsToSlot prov nowMs
+    s1 <- Cage.posixMsToSlot prov (nowMs + 120_000)
+    pure (s1 - s0)
+
+{- | The slot after which a submitted transaction can no longer land:
+its validity upper bound plus a two-minute margin. A transaction with
+no upper bound never expires, so the historical fixed window
+('confirmationAttempts' polls) stays its deadline.
+-}
+confirmDeadline :: Cage.Provider IO -> ConwayTx -> IO SlotNo
+confirmDeadline prov tx =
+    case txUpperBoundSlot tx of
+        Just bound -> (bound +) <$> twoMinutesInSlots prov
+        Nothing -> fixedWindowDeadline prov
+
+-- | The slot the historical fixed confirmation window ends at, from now.
+fixedWindowDeadline :: Cage.Provider IO -> IO SlotNo
+fixedWindowDeadline prov = do
+    now <- getCurrentTime
+    let nowMs = round (utcTimeToPOSIXSeconds now * 1000) :: Integer
+    Cage.posixMsToSlot prov (nowMs + fromIntegral (confirmationAttempts * confirmationPollSeconds) * 1000)
+
+{- | The validity upper bound a transaction carries, if any. The fold,
+update and retract builders pin one (request deadline, phase-2 end);
+registration, request and boot transactions leave it open.
+-}
+txUpperBoundSlot :: ConwayTx -> Maybe SlotNo
+txUpperBoundSlot tx =
+    let vldt = tx ^. bodyTxL . vldtTxBodyL
+     in case invalidHereafter vldt of
+            SJust bound -> Just bound
+            SNothing -> Nothing
+
+-- | Die once the chain's tip passes the deadline; run the retry otherwise.
+whenExpired :: (Show a, Ord a) => String -> a -> a -> IO () -> IO ()
+whenExpired txid tip deadline retry
+    | tip >= deadline =
+        die
+            ( "transaction "
+                <> txid
+                <> " was accepted by the node but has not appeared in a block: \
+                   \its confirmation window (the transaction's validity upper \
+                   \bound plus a two-minute polling margin) closed at slot "
+                <> show deadline
+            )
+    | otherwise = retry
+
+{- | Retry a chain observation until it yields, then return it; name
+what never appeared when it does not.
+
+Every "read back what the last transaction created" in a runner is one
+of these. On the factory devnet the first read succeeds, because a
+block lands about every second; on a public test network the same read
+is a race against a twenty-second block, and a one-shot query turns a
+healthy run into a spurious failure. The observation itself is the
+confirmation — there is no separate notion of "confirmed" here beyond
+the node reporting the output.
+-}
+awaitChain :: String -> IO (Maybe a) -> IO a
+awaitChain what observe = go confirmationAttempts
+  where
+    go 0 =
+        die
+            ( what
+                <> " (still not observable after "
+                <> show (confirmationAttempts * confirmationPollSeconds)
+                <> " seconds of polling the node)"
+            )
+    go n = do
+        seen <- observe
+        case seen of
+            Just a -> pure a
+            Nothing -> do
+                threadDelay (confirmationPollSeconds * 1_000_000)
+                go (n - 1)
+
+{- | The settling wait a runner takes after a submission it does not
+carry the transaction for.
+
+Named residual: where a runner holds the submitted transaction,
+'awaitTx' observes it and this constant is not used. Where it holds
+only a label, there is nothing to observe and the wait is calibrated
+per network instead — one second is a devnet block, twenty is a public
+test network's. The assertions that follow such a wait go through
+'awaitChain', so a wait that is still too short retries rather than
+failing the run.
+-}
+confirmationDelay :: Int
+confirmationDelay = case runMode of
+    Devnet -> 5_000_000
+    External _ -> 30_000_000

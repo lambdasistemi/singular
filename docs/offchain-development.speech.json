@@ -1,13 +1,13 @@
 {
   "run-the-checks": [
     {
-      "text": "From the repository root, run the root build gate. From offchain, run the lint app and classified component build. The root gate does not compile every offchain Cabal component. The component carrier compiles the library, tests, and components required by current workflows and supported commands without executing them. Its final measured inventory classifies all nineteen Cabal declarations: ten are compiled here and nine retained commands stay unverified under their owning issues. An included member failure fails the carrier; its green result is not a package-wide build.",
+      "text": "From the repository root, run the root build gate. From offchain, run the lint app and classified component build. The root gate does not compile every offchain Cabal component. The component carrier compiles the library, tests, and components required by current workflows and supported commands without executing them. Its current measured inventory classifies all twenty Cabal declarations: eleven are compiled here — the library, the private node ownership core the library links, and the supported commands and tests — and nine retained commands stay unverified under their owning issues. An included member failure fails the carrier; its green result is not a package-wide build.",
       "pause": 400
     }
   ],
   "where-the-source-list-comes-from": [
     {
-      "text": "The Cabal file declares source directories for lint discovery and components for build classification. Two naming sources compiled directly by scripts join lint discovery. Discovery finds seventy Haskell files; sixty-eight format-eligible files of those reach Fourmolu, and two preserved verifier files remain a formatter gap. HLint runs on fifty-seven files within nine selected directories. Thirteen discovered files do not enter that HLint run because thirteen directory-name exclusions are configured. The component inventory accounts for every library, executable, and test declaration; supported members flow to the carrier and unverified members carry an issue and reason. Each result reaches CI with its own extent.",
+      "text": "The Cabal file declares source directories for lint discovery and components for build classification. Two naming sources compiled directly by scripts join lint discovery. The private node ownership core declares its own source root, node-internal, so its modules are discovered like every other. Discovery finds eighty-five Haskell files in twenty-three source directories; eighty-three format-eligible files of those reach Fourmolu, and two preserved verifier files remain a formatter gap. HLint runs on seventy-two files within ten selected directories. Thirteen discovered files do not enter that HLint run because thirteen directory-name exclusions are configured. The component inventory accounts for every library, sublibrary, executable, and test declaration; supported members flow to the carrier and unverified members carry an issue and reason. Each result reaches CI with its own extent.",
       "pause": 400
     },
     {
@@ -21,18 +21,18 @@
       "pause": 400
     }
   ],
-  "_source": {
-    "file": "offchain-development.md",
-    "sha256": "6a2f248b839070f0eed05bd758ce5b21440247182f77ef4c29a69533a99af18a"
-  },
-  "module-ownership-map": [
+  "module-ownership-maps": [
     {
-      "text": "The builder and blueprint modules now have a contributor map. It states which module owns script identity, lookups, balancing, edge decisions, and blueprint parameter work, where common edits land, and which decisions the extraction recorded.",
-      "pause": 250
+      "text": "Two contributor maps now exist. The builder and blueprint map states which module owns script identity, lookups, balancing, edge decisions, and blueprint parameter work, where common edits land, and which decisions that extraction recorded. The node module ownership map does the same for the node runtime: options, wallet, indexer, funding, session and confirmation, their process state lifetimes, the independent evidence boundary, and the private boundary that keeps the owners out of the public surface.",
+      "pause": 400
     },
     {
-      "text": "The map is linked as Builder and blueprint modules. A generated, revision-matched Haskell API reference for the library is planned separately and is not part of that page yet.",
-      "pause": 300
+      "text": "The maps are linked as Builder and blueprint modules, and Node module ownership.",
+      "pause": 250
     }
-  ]
+  ],
+  "_source": {
+    "file": "offchain-development.md",
+    "sha256": "369ba1291ca52ab063d97eec34b1c5ae2ab286237871a0a804b829dc78552c68"
+  }
 }

@@ -37,10 +37,8 @@ library
   build-depends:
     , aeson                  >=2.1  && <2.3
     , aeson-pretty
-    , async
     , base                   >=4.14 && <5
     , base16-bytestring
-    , bech32
     , bytestring             >=0.11 && <0.13
     , cardano-crypto-class
     , cardano-ledger-allegra
@@ -53,23 +51,20 @@ library
     , cardano-ledger-mary
     , cardano-node-clients
     , cardano-node-clients:devnet
-    , cardano-node-clients:utxo-indexer-lib
     , cardano-slotting
     , cardano-tx-tools:tx-build
     , containers             >=0.6  && <0.8
-    , contra-tracer
     , crypton
     , directory
     , filepath
     , memory
     , microlens
     , mts:mpf-write
-    , ouroboros-consensus
-    , ouroboros-network:api
     , plutus-core
     , plutus-ledger-api
     , plutus-tx
     , process
+    , singular-registry:node-internal
     , text                   >=2.0  && <2.2
     , time
 
@@ -83,11 +78,9 @@ library
     Singular.Registry.Config
     Singular.Registry.Deployment
     Singular.Registry.Driver
-    Singular.Registry.Ledger
     Singular.Registry.Lifecycle
     Singular.Registry.Node
     Singular.Registry.Proof
-    Singular.Registry.Provider
     Singular.Registry.Trie
     Singular.Registry.Trie.Pure
     Singular.Registry.Trie.PureManager
@@ -110,6 +103,62 @@ library
     Naming.Verify
     Naming.Wire
     Naming.Wire.Vectors
+
+  reexported-modules:
+    , Singular.Registry.Ledger
+    , Singular.Registry.Provider
+
+-- The private Node ownership core (issue #266, A-003): the six focused
+-- Node children plus the two modules they read (Ledger, Provider) live in
+-- one package-private internal library so the public facade and the cage
+-- test component link the SAME compiled instance of every process global.
+-- The public library re-exports Ledger and Provider under their original
+-- import paths; the Node children stay reachable only through the facade's
+-- export list.
+library node-internal
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   node-internal
+  exposed-modules:
+    Singular.Registry.Ledger
+    Singular.Registry.Provider
+    Singular.Registry.Node.Options
+    Singular.Registry.Node.Wallet
+    Singular.Registry.Node.Indexer
+    Singular.Registry.Node.Session
+    Singular.Registry.Node.Confirmation
+    Singular.Registry.Node.Funding
+  build-depends:
+    , aeson
+    , async
+    , base                   >=4.14 && <5
+    , base16-bytestring
+    , bech32
+    , bytestring
+    , cardano-crypto-class
+    , cardano-ledger-allegra
+    , cardano-ledger-alonzo
+    , cardano-ledger-api
+    , cardano-ledger-binary
+    , cardano-ledger-conway
+    , cardano-strict-containers
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-node-clients:utxo-indexer-lib
+    , cardano-slotting
+    , cardano-tx-tools:tx-build
+    , containers             >=0.6  && <0.8
+    , contra-tracer
+    , directory
+    , filepath
+    , microlens
+    , ouroboros-consensus
+    , ouroboros-network:api
+    , process
+    , text
+    , time
 
 executable cage-test-vectors
   import:           warnings
@@ -556,6 +605,7 @@ test-suite cage-tests
     Singular.Registry.TxBuilder.BurnSourceSpec
     Singular.Registry.CandidateSpec
     Singular.Registry.FailureMatchSpec
+    Singular.Registry.NodeCleanupSpec
     Singular.Registry.NodeSpec
     Singular.Registry.LifecycleSpec
     Singular.Registry.TypesSpec
@@ -572,15 +622,20 @@ test-suite cage-tests
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
+    , cardano-crypto-class
+    , cardano-node-clients
+    , cardano-node-clients:utxo-indexer-lib
     , cardano-tx-tools:tx-build
     , containers
     , base16-bytestring
     , bytestring
     , singular-registry
+    , singular-registry:node-internal
     , directory
     , filepath
     , hspec
     , microlens
+    , ouroboros-network
     , plutus-core
     , plutus-ledger-api
     , plutus-tx

@@ -1,0 +1,22 @@
+{
+  "requirements": [
+    {
+      "text": "The operator keeps the same node modes, wallet, connection, funding and confirmation behavior. Each moved definition and process global has one owner. The old Node facade and callers remain usable.",
+      "pause": 400
+    },
+    {
+      "text": "The diagram follows a runner through the unchanged public Node API into focused owners, then to the node and indexer, with observed effects returning to the runner.",
+      "pause": 400
+    }
+  ],
+  "evidence-boundary": [
+    {
+      "text": "Lean governs any behavior this extraction reaches. The checks establish bounded local behavior; external public-network operation is not exercised. The separate Conformance cleanup leak remains open.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "c72857cfe1361aa74c6ce01e5102227c0c215a7aca93cab8e11e6ff6142c5a44"
+  }
+}

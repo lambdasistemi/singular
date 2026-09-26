@@ -8,6 +8,7 @@ import Singular.Registry.BlueprintParametersSpec qualified
 import Singular.Registry.CandidateSpec qualified
 import Singular.Registry.FailureMatchSpec qualified
 import Singular.Registry.LifecycleSpec qualified
+import Singular.Registry.NodeCleanupSpec qualified
 import Singular.Registry.NodeSpec qualified
 import Singular.Registry.TxBuilder.BookEdgeSpec qualified
 import Singular.Registry.TxBuilder.BootSpec qualified
@@ -23,6 +24,7 @@ main = hspec $ do
     Singular.Registry.TxBuilder.BurnSourceSpec.spec
     Singular.Registry.CandidateSpec.spec
     Singular.Registry.FailureMatchSpec.spec
+    Singular.Registry.NodeCleanupSpec.spec
     Singular.Registry.NodeSpec.spec
     Singular.Registry.LifecycleSpec.spec
     Singular.Registry.TypesSpec.spec

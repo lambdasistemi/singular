@@ -354,6 +354,11 @@
           # root documentation build. Same source tree, same lock: the docs
           # manifest can bind the reference to this candidate's content.
           library-haddock = components.library.haddock;
+          # The package-private ownership core's generated reference: the
+          # root documentation build takes only the re-exported Ledger and
+          # Provider page pairs from it; the private Node owners stay out
+          # of the public reference.
+          node-internal-haddock = components.sublibs.node-internal.haddock;
           inherit test-vectors test-vectors-json;
           # Issue #56: the wrapped LM/LC row runner exposed as a package
           # too, so `nix build .#naming-rows` and `nix run .#naming-rows`
