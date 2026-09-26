@@ -190,16 +190,6 @@ def _module_of_page(filename: str) -> str:
     return re.sub(r"\.html$", "", filename).replace("-", ".")
 
 
-def _decode_haddock_frag(fragment: str) -> str:
-    """Normalize a Haddock fragment for comparison: percent-decode, then
-    expand the -decimal- operator escapes (e.g. -61--61- and %3D%3D are
-    both (==))."""
-    from urllib.parse import unquote
-
-    decoded = unquote(fragment)
-    return re.sub(r"-(\d+)-", lambda m: chr(int(m.group(1))), decoded)
-
-
 def transform_tree(api_root: Path, extent: list[str], dep_modules: set[str], offchain_root: Path) -> dict:
     """Repair same-library links, neutralize proven dependency links, and
     strip external assets from the copied generated tree.
@@ -330,64 +320,20 @@ def transform_tree(api_root: Path, extent: list[str], dep_modules: set[str], off
             re.fullmatch(r"(?:\s|</td>|</tr>|</table>|</div>|</summary>|</p>|</details>)*", between)
         )
 
-    def row_proven_dependency(page_text: str, match_start: int, component: str) -> bool:
-        """Positive per-identifier dependency origin from the same row.
-
-        Haddock renders an instance-method row with a Source link to the
-        identifier's definition. When that link is a store URL whose module
-        the build's package database owns, the identifier — not merely the
-        row's class — is positively dependency-owned: the same row names its
-        defining module. No target-existence is consulted.
-        """
-        row_start = page_text.rfind("</p>", 0, match_start)
-        row_start = row_start + 4 if row_start >= 0 else max(0, match_start - 600)
-        row_end = page_text.find("</p>", match_start)
-        row = page_text[row_start:row_end if row_end > 0 else match_start + 400]
-        wanted = _decode_haddock_frag(component)
-        for url in re.findall(r'href="(file://[^"]+)"', row):
-            url_path, _, url_frag = url.rpartition("#")
-            module = _module_of_page(url_path.rsplit("/", 1)[-1])
-            if module in dep_modules and _decode_haddock_frag(url_frag) == wanted:
-                return True
-        # Second tier: the anchor sits inside an instance-details block whose
-        # header links a class the build's package database owns. Haddock's
-        # generated structure presents this row as a method of that class, so
-        # the identifier is positively a dependency class method. The header
-        # is read from the original text, before any neutralization rewrote
-        # it in the output.
-        block = page_text.rfind('details id="i:id:', 0, match_start)
-        if block >= 0:
-            block_end = page_text.find("</details>", match_start)
-            header_zone = page_text[max(0, block - 900):block]
-            if block_end < 0 or block_end > match_start:
-                for url in re.findall(r'href="(file://[^"]+)"', header_zone):
-                    module = _module_of_page(url.partition("#")[0].rsplit("/", 1)[-1])
-                    if module in dep_modules:
-                        return True
-        return False
-
     def classify_missing_fragment(page_name: str, href: str, frag: str, plain: str, original: str, page_text: str = "", match_start: int = 0):
-        """A fragment absent from the page that should carry it.
+        """A fragment absent from the page that should carry it, with no
+        positively proven class.
 
-        A unique other library page carrying the fragment is a repair. A
-        row-proven dependency identifier (its own row links its defining
-        module in the build's package database) becomes a visible label.
-        Anything else — including an identifier our sources define, and an
-        unproven reference — fails the build loudly: negative evidence never
-        licenses neutralization.
+        Every authorized disposition happens before this point: the
+        balanced instance-method structural class, the F1 alias and
+        qualified-name resolver, the doc-index module-cell repair, and the
+        dependency-module/store-href inventory classes. A generic
+        unique-owner redirect and dependency-class fallbacks were removed
+        (A-010): they silently transformed outside-class broken fragments.
+        Everything reaching here fails staging loudly.
         """
-        owners = [name for name, ids in page_ids.items() if frag in ids]
-        if len(owners) == 1:
-            replacement = owners[0] + "#" + frag
-            stats["library_repairs"].append({"page": page_name, "from": href, "to": replacement})
-            return original.replace(href, replacement, 1)
-        component = frag.split(":", 1)[1] if ":" in frag else frag
-        if row_proven_dependency(page_text, match_start, component):
-            stats["dependency"] += 1
-            return DEP_SPAN.format(plain)
         raise SystemExit(
-            f"api_reference: fragment reference without positive dependency origin "
-            f"and no library anchor in {page_name}: {href}"
+            f"API_LINK_MISSING scope=library staging {page_name}: {href}"
         )
 
     def rewrite(match: re.Match, page_name: str, page_text: str, intervals: list[tuple[int, int]]) -> str:
