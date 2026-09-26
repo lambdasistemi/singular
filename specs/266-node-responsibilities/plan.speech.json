@@ -1,0 +1,22 @@
+{
+  "ordered-work": [
+    {
+      "text": "First freeze the original exports and state owners. Move options and wallets before the lifetime-sensitive follower, session and confirmation code. Then document and check the candidate.",
+      "pause": 400
+    },
+    {
+      "text": "The diagram places options and wallet below the original facade, with funding and indexing feeding the session and confirmation owners in one direction.",
+      "pause": 400
+    }
+  ],
+  "boundary-and-resource-policy": [
+    {
+      "text": "Only Node implementation, necessary declarations and imports, focused tests and relevant contributor documentation are in scope. Expensive and cheap command invocations and auditor launches have finite ceilings.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "78c7447bd316d61572523961f5afd6f16a98575bb329990ddee8add1006b20dd"
+  }
+}
