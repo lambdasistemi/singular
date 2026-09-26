@@ -70,7 +70,7 @@ def _parse(cabal_file: Path) -> dict:
     the sublibrary — still resolves to exactly one source file.
     """
     lines = cabal_file.read_text(encoding="utf-8").splitlines()
-    extent = {"exposed": [], "other": [], "hs_source_dirs": []}
+    extent = {"exposed": [], "other": [], "reexported": [], "hs_source_dirs": []}
     stanza = None
     field = None
     for raw in lines:
@@ -115,9 +115,9 @@ def _parse(cabal_file: Path) -> dict:
             for entry in value.split(","):
                 entry = entry.strip()
                 if entry:
-                    extent["exposed"].append(
-                        _module_name(entry.split(" as ")[-1].strip())
-                    )
+                    public_name = _module_name(entry.split(" as ")[-1].strip())
+                    extent["exposed"].append(public_name)
+                    extent["reexported"].append(public_name)
         elif field == "hs-source-dirs":
             extent["hs_source_dirs"].extend(value.split())
     if not extent["exposed"]:
@@ -472,10 +472,26 @@ def transform_tree(api_root: Path, extent: list[str], dep_modules: set[str], off
     return stats
 
 
-def copy_reference(site: Path, haddock_out: Path, offchain_root: Path, config_files: Path) -> dict:
-    """Copy the generated tree into the site and build the manifest."""
+def copy_reference(
+    site: Path,
+    haddock_out: Path,
+    offchain_root: Path,
+    config_files: Path,
+    reexport_haddock_out: Path | None = None,
+) -> dict:
+    """Copy the generated tree into the site and build the manifest.
+
+    When the public library re-exports modules whose implementations live
+    in a package-private sublibrary, those re-exports' generated pages come
+    from the sublibrary's own Haddock tree: ``reexport_haddock_out``. Only
+    the re-exported modules' page pairs are taken from it — nothing else —
+    and each must exist there; a missing page fails the build rather than
+    publishing a silent gap. The private owners that are not re-exported
+    never enter the public reference.
+    """
     extent = parse_cabal_library(offchain_root)
     modules = sorted(set(extent["exposed"]) | set(extent["other"]))
+    reexported = sorted(set(extent["reexported"]) & set(modules))
     html_root = find_haddock_root(haddock_out, modules)
     api_root = site.joinpath(*API_DIR)
     if api_root.exists():
@@ -490,6 +506,28 @@ def copy_reference(site: Path, haddock_out: Path, offchain_root: Path, config_fi
     # Haddock store outputs are read-only; the tree below is ours to repair.
     for path in (api_root, *api_root.rglob("*")):
         os.chmod(path, path.stat().st_mode | stat.S_IWUSR)
+    if reexported:
+        if reexport_haddock_out is None:
+            raise SystemExit(
+                f"api_reference: the public library re-exports {reexported} "
+                "but no re-export Haddock tree was given"
+            )
+        sub_html_root = find_haddock_root(reexport_haddock_out, [reexported[0]])
+        for module in reexported:
+            for page in (module_page_name(module), "src/" + source_page_name(module)):
+                origin = sub_html_root / page
+                if not origin.is_file():
+                    raise SystemExit(
+                        f"api_reference: re-export page missing from the sublibrary "
+                        f"Haddock tree for {module}: {origin}"
+                    )
+                target = api_root / page
+                if target.exists():
+                    raise SystemExit(
+                        f"api_reference: refusing to mix trees at {page}: the public "
+                        "library tree already provides it"
+                    )
+                shutil.copyfile(origin, target)
     records = []
     for module in modules:
         source = module_source(offchain_root, module)
@@ -591,13 +629,23 @@ def main(argv: list[str]) -> None:
     manifest.add_argument("haddock_out")
     manifest.add_argument("offchain_root")
     manifest.add_argument("config_files")
+    manifest.add_argument(
+        "reexport_haddock_out",
+        nargs="?",
+        default=None,
+        help="Haddock tree of the sublibrary owning the re-exported implementations",
+    )
     archive = sub.add_parser("archive-check", help="compare the staged archive's API pages with the site")
     archive.add_argument("archive_dir")
     archive.add_argument("site")
     args = parser.parse_args(argv)
     if args.mode == "manifest":
         built = copy_reference(
-            Path(args.site), Path(args.haddock_out), Path(args.offchain_root), Path(args.config_files)
+            Path(args.site),
+            Path(args.haddock_out),
+            Path(args.offchain_root),
+            Path(args.config_files),
+            Path(args.reexport_haddock_out) if args.reexport_haddock_out else None,
         )
         neutral = built["neutralization"]
         print(
