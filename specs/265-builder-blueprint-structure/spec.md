@@ -30,6 +30,7 @@ flowchart LR
 | R265-3 | Script identity, conversion, lookup, balancing and integrity, time, failure attribution, consumer binding and edge decisions have distinct owners where useful. Blueprint schema, parameter and loading work is similarly separated. | Review can identify one coherent owner per concern and a contributor can find where to change it. |
 | R265-4 | Builder and blueprint results, including failures, stay equivalent. | Existing parameter, failure attribution, builder, fresh blueprint E2E, journey and archive commands pass at the exact candidate with meaningful negative controls. |
 | R265-5 | Contributor architecture and module documentation follows the actual dependency and execution paths. | The site navigation, source/API links, diagram and speech companion pass the existing presentation and docs checks. |
+| R265-6 | The affected off-chain library has a generated API reference from the candidate revision, with every Cabal-declared library module and its source discoverable in the built site and future docs archive. | The existing `docs-check` job compares the reference's module and source content with this candidate's Cabal library stanza, including `exposed-modules` and `other-modules`, and fails on a missing or stale page, candidate binding or local link; a disposable content-mismatch control demonstrates that failure. The existing `release-check` job verifies that the staged archive carries the same reference. |
 
 ## Acceptance boundary
 
@@ -39,3 +40,24 @@ adds only declarations needed for extracted modules, leaves its assertions and
 owner. A green build is a compile claim, not transaction correspondence. The
 live workflow observations and independent expected behavior keep their own
 evidence limits.
+
+Epic answers A-001 and A-002 authorize a bounded documentation build extension in this
+child so the generated Haddock reference appears beside the contributor guide.
+They allow one local off-chain root flake input and root lock entries, with
+every existing upstream pin and the off-chain lockfile unchanged. They do not
+authorize release or publication. The Conformance library's
+generated reference remains #276's responsibility; #278 audits integrated
+documentation and all-library coverage. A local site build is not a served
+Pages claim.
+The generated site also feeds the existing root build gate and future
+documentation archive; this ticket changes no release or publication script
+and claims no released archive. The archive must contain the same generated
+API pages, while the existing `release-check` remains a real check.
+
+```mermaid
+flowchart LR
+    C[Cabal library declaration] -->|discovers modules| H[Candidate Haddock]
+    S[Candidate source] -->|documents| H
+    H -->|included with| D[Built documentation site]
+    D -->|checked for links and freshness| G[Existing docs-check CI job]
+```

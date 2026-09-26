@@ -1,12 +1,12 @@
 {
   "identity-contracts": [
     {
-      "text": "The existing blueprint, consumer and ledger identities retain their fields, encodings and public paths.",
+      "text": "Blueprint, consumer and ledger identities keep their fields and encodings. The generated API artifact binds candidate source content and all Cabal library modules, and the future archive carries the same pages.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "a49a354ee93db1c1c838c1fef46a5b0c3cfc91882328151cfd863805e4f08762"
+    "sha256": "2800dd1ebf26dae7f767210c82cddafde9d9494a189320aa99d27c92bd536a65"
   }
 }

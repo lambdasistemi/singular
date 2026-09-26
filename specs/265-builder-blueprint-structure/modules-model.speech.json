@@ -1,6 +1,12 @@
 {
   "_source": {
     "file": "modules-model.md",
-    "sha256": "30dd8ddab27309c8abc58734348c8aa2c953292533d62bec9437213138492b63"
-  }
+    "sha256": "13a1e5d36707c3eb73cf0cbe2ff40d6f38fa385023021fd591563dc5ee46b434"
+  },
+  "responsibilities": [
+    {
+      "text": "Blueprint and builder facades keep old callers. Focused owners implement concerns once. The documentation build derives exposed and other library modules from Cabal and checks source-matched generated pages in the site and future archive.",
+      "pause": 400
+    }
+  ]
 }
