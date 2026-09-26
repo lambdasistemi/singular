@@ -2,8 +2,11 @@
 
 The generated off-chain API reference is checked here too: its manifest
 extent must equal the candidate's own Cabal library extent, its recorded
-source digests must match the candidate's source files, and the actual
-generated pages must match the manifest's page digests.
+source digests must match the candidate's source files, the actual
+generated pages must match the manifest's page digests, and every link
+inside the generated subtree must resolve (same-library) or carry positive
+dependency ownership — dead dependency or store links fail, and neutralized
+dependency labels are visible plain text.
 
 Link inventory (ticket 26): every reader-facing href/src in README and in the
 built HTML is discovered (never hand-listed), resolved the way a browser would
@@ -530,7 +533,11 @@ assert not production_alias_rows, f"production model alias is not candidate iden
 # Generated off-chain API reference: the manifest's extent and source-file
 # digests must equal this candidate's own off-chain tree, and the actual
 # generated pages must match the manifest's recorded page digests. A ref
-# label proves nothing: the comparison is over content.
+# label proves nothing: the comparison is over content. Every link inside
+# the generated subtree is inspected: a same-library target that is missing
+# fails API_LINK_MISSING scope=library, and a clickable dependency or store
+# href fails API_DEPENDENCY_LINK_FORBIDDEN — neutralized labels are visible
+# plain text, never anchors. External assets fail the same-site rule.
 # ---------------------------------------------------------------------------
 api_root = site.joinpath(*api_reference.API_DIR)
 manifest_path = api_root / api_reference.MANIFEST_NAME
@@ -559,12 +566,73 @@ for record in api_manifest["modules"]:
             print(f"API_SOURCE_STALE leg=page-digest page={record[page_field]}", file=sys.stderr)
             sys.exit(1)
         api_pages_verified += 1
+
+# Dependency ownership comes from the manifest's recorded build package-db
+# inventory — positive evidence, independent of any target's existence — and
+# may never claim a module of this library.
+dep_modules = set(api_manifest.get("package_inventory", {}).get("dependency_modules", []))
+assert dep_modules, "API manifest carries no dependency module inventory"
+overlap = sorted(dep_modules & set(root_extent))
+assert not overlap, f"API_DEPENDENCY_INVENTORY_CONTRADICTION library modules claimed as dependencies: {overlap[:5]}"
+
+API_SPAN_DEP = re.compile(r'class="api-dep"')
+API_SPAN_AUTO = re.compile(r'class="api-autolink"')
+library_page_ids = {
+    path.name: set(re.findall(r'id="([^"]+)"', path.read_text(errors="replace")))
+    for path in sorted(api_root.glob("*.html"))
+}
+resolved_library = external_anchors = 0
+spans_dep = spans_auto = 0
+for page in sorted(api_root.rglob("*.html")):
+    text = page.read_text(errors="replace")
+    spans_dep += len(API_SPAN_DEP.findall(text))
+    spans_auto += len(API_SPAN_AUTO.findall(text))
+    parsed = Page(text)
+    for asset in parsed.scripts + parsed.stylesheets:
+        if re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", asset):
+            print(f"API_EXTERNAL_ASSET {page.relative_to(site)} {asset}", file=sys.stderr)
+            sys.exit(1)
+        target = (page.parent / unquote(asset)).resolve()
+        if not target.exists():
+            print(f"API_EXTERNAL_ASSET {page.relative_to(site)} {asset}", file=sys.stderr)
+            sys.exit(1)
+    for href in parsed.links:
+        if href.startswith("file://"):
+            print(f"API_DEPENDENCY_LINK_FORBIDDEN {page.relative_to(site)} {href}", file=sys.stderr)
+            sys.exit(1)
+        if re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", href):
+            external_anchors += 1
+            continue
+        path_part, _, frag = href.partition("#")
+        if not path_part:
+            continue
+        target = (page.parent / unquote(path_part)).resolve()
+        if not target.exists():
+            module = re.sub(r"\.html$", "", path_part.rsplit("/", 1)[-1]).replace("-", ".")
+            if module in dep_modules and module not in set(root_extent):
+                print(f"API_DEPENDENCY_LINK_FORBIDDEN {page.relative_to(site)} {href}", file=sys.stderr)
+                sys.exit(1)
+            print(f"API_LINK_MISSING scope=library {page.relative_to(site)} {href}", file=sys.stderr)
+            sys.exit(1)
+        if frag and target.name in library_page_ids:
+            if unquote(frag) not in library_page_ids[target.name]:
+                print(f"API_LINK_MISSING scope=library {page.relative_to(site)} {href}", file=sys.stderr)
+                sys.exit(1)
+        resolved_library += 1
+neutral = api_manifest.get("neutralization", {})
+recorded_dep = neutral.get("dependency", 0)
+recorded_auto = neutral.get("autolink", 0)
+if spans_dep != recorded_dep or spans_auto != recorded_auto:
+    print(
+        f"API_NEUTRALIZATION_DRIFT spans-dep={spans_dep} recorded={recorded_dep} "
+        f"spans-auto={spans_auto} recorded={recorded_auto}",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 # Navigability: the reference index page links every manifest module page
 # and source page, so the generated extent is reachable from the nav, and
 # the built-page link inventory above resolves those rewritten anchors
-# against real files. Haddock's own cross-package references (dependency
-# module pages such as PlutusCore.html) are outside this tree by design
-# and are not a local-link obligation of this reference.
+# against real files.
 api_index = site / "docs" / "offchain-api-reference" / "index.html"
 assert api_index.is_file(), f"generated API reference index page missing: {api_index}"
 api_index_text = api_index.read_text()
@@ -575,7 +643,13 @@ for record in api_manifest["modules"]:
         )
 print(
     f"api-reference modules={len(manifest_modules)} "
-    f"other-modules={len(api_manifest.get('other_modules', []))} pages-verified={api_pages_verified}"
+    f"other-modules={len(api_manifest.get('other_modules', []))} "
+    f"pages-verified={api_pages_verified}"
+)
+print(
+    f"api-links resolved-library={resolved_library} "
+    f"neutralized-dependency={spans_dep} neutralized-autolink={spans_auto} "
+    f"external-anchors={external_anchors}"
 )
 
 # ---------------------------------------------------------------------------

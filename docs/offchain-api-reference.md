@@ -1,12 +1,15 @@
 # Off-chain API reference
 
 A contributor reading the builder and blueprint guide wants to click a
-module name and land on the real interface — signatures, documentation,
-and the highlighted source — for exactly the code this repository ships.
-This page is the entry point of that reference for the off-chain registry
-library: a generated Haddock reference, rebuilt with the documentation
-site from this same source tree, so what you read here is what you would
-compile against.
+module of this library and land on its real interface — signatures,
+documentation, and the highlighted source — for exactly the code this
+repository ships. This page is the entry point of that reference for the
+off-chain registry library: a generated Haddock reference, rebuilt with
+the documentation site from this same source tree, so what you read here
+is what you would compile against. One boundary on that promise is named
+below: identifiers and modules that belong to other packages are visible
+in the generated pages but are not clickable, because their documentation
+is not bundled with this site.
 
 ## What this reference contains
 
@@ -78,6 +81,26 @@ recorded source digest must match the repository's file, and each
 generated page in the shipped site must match its recorded digest. A
 reference generated from any other source, however its label reads, fails
 that comparison; a page edited after generation fails its own digest.
+
+Every link inside the generated pages is inspected too. A reference from
+one module of this library to another — a type, a function, a module,
+however the tool that generated it spelled it — must resolve to a page of
+this reference and, where it names an anchor, to an anchor that exists.
+The check prints how many same-library links it resolved, and the
+reference's own index and guide links are checked by the site's ordinary
+link inventory.
+
+Dependency documentation is a different matter. The library is built
+against a large Cardano and Plutus dependency closure, and none of those
+packages' Haddock pages are bundled into this site: a type such as a
+ledger address or a Plutus core data value appears in the generated pages
+as a visible label, but it is not a link — following it would leave this
+site for documentation that is not shipped with it. Neutralizing those
+labels is decided from the build's own package database, which positively
+names every module each dependency owns, so a label is only unlinked when
+it provably belongs to a dependency; a dead or store-path link that
+reappears fails the site check, and a same-library reference may never be
+treated as a dependency label to hide a broken link.
 
 The release archive check extends the same discipline to what gets
 shipped: the staged documentation archive must carry the generated

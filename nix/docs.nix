@@ -7,7 +7,11 @@ let
   # input's source digests beside the generated pages', so the docs checker
   # can prove the reference describes this candidate (a ref label alone is
   # not a freshness witness).
-  apiHaddock = offchain.packages.${pkgs.system}.library-haddock.doc;
+  apiHaddock = offchain.packages.${pkgs.system}.library-haddock;
+  # The build's own package database: positive evidence for which modules a
+  # dependency owns, used to neutralize (never merely unlink) the generated
+  # references to dependency documentation this site does not bundle.
+  apiPackageDb = offchain.packages.${pkgs.system}.library-haddock.configFiles;
   # Material fetches Mermaid from unpkg at read time unless `mermaid` is already
   # defined. The shared toolchain pins a copy; serving it from the site keeps
   # every diagram inside the checked, byte-verified build.
@@ -21,7 +25,7 @@ let
     buildPhase = ''
       python3 tools/prepare_docs.py
       mkdocs build --strict
-      python3 tools/api_reference.py manifest site ${apiHaddock} ${offchain.outPath}
+      python3 tools/api_reference.py manifest site ${apiHaddock.doc} ${offchain.outPath} ${apiPackageDb}
       python3 tools/prepare_release.py site
     '';
     installPhase = ''
