@@ -56,7 +56,7 @@ comparison must report the transaction's signers.
 'Unsigned' removes the owner's required signature from a retraction; its
 admission witness tells the model which signatures that transaction requires.
 -}
-data Tamper = OtherAddress | ShortByOne | ExtraSigner | OtherReference | StateSpent | Unsigned
+data Tamper = OtherAddress | ShortByOne | ExtraSigner | OtherReference | StateSpent | Unsigned | BeforePhase2 | AfterPhase2
     deriving stock (Eq, Show, Enum, Bounded)
 
 tamperName :: Tamper -> String
@@ -66,6 +66,8 @@ tamperName ExtraSigner = "extra-signer"
 tamperName OtherReference = "other-reference"
 tamperName StateSpent = "state-spent"
 tamperName Unsigned = "unsigned"
+tamperName BeforePhase2 = "before-phase-2"
+tamperName AfterPhase2 = "after-phase-2"
 
 type Story reg wal step obs cmp = Specification.Story (LiveI reg wal step obs cmp)
 
@@ -184,6 +186,8 @@ renderAction instruction rest = case instruction of
     altered OtherReference = " with its return bound to another request's output reference." <> refused
     altered StateSpent = " spending the registry's state beside it." <> refused
     altered Unsigned = " without requiring its owner's signature; the ledger and the model must refuse it, with the owner-signed retraction of that request as its control."
+    altered BeforePhase2 = " with a finite validity interval before phase 2; the ledger and the model must refuse it, with the same request retracted inside phase 2 as its control."
+    altered AfterPhase2 = " with a finite validity interval after phase 2; the ledger and the model must refuse it, with the earlier in-window retraction of its owner's other request as its control."
     altered ExtraSigner = " with one required signer the model does not require. The ledger accepts it; the comparison must report the difference in the transaction's signers."
 
 prepend :: String -> (String, res) -> (String, res)

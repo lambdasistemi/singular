@@ -512,6 +512,34 @@ liveStepChecks = describe "Checking compared requests in live receipts" $ do
             >>= (`shouldSatisfy` refusedFor "only a retraction is bound to its request or refused for what it spends")
         loadLive (changeStep (setField "exit" ("insertActive" :: String)) (retractTamperLive "state-spent" "retract-state-spent"))
             >>= (`shouldSatisfy` refusedFor "only a retraction is bound to its request or refused for what it spends")
+    forM_ ["before-phase-2", "after-phase-2"] $ \alteration -> do
+        it ("accepts the finite window refusal " <> alteration) $
+            loadLive (admissionRefusalLive "insertActive" (Just alteration) "not-phase2")
+                `shouldReturn` Right 1
+        it ("checks the model reason and request attribution for " <> alteration) $
+            forM_
+                [ setField "model" (object ["outcome" .= ("refused" :: String), "reason" .= ("deposit-returned" :: String)])
+                , setField "model" (object ["outcome" .= ("accepted" :: String)])
+                , setField "requestScript" ("another-validator" :: String)
+                , setField "exit" ("reject" :: String)
+                ] $ \corrupt ->
+                    loadLive (changeStep corrupt (admissionRefusalLive "insertActive" (Just alteration) "not-phase2"))
+                        >>= (`shouldSatisfy` isLeft)
+    it "only publishes both finite timing refusals with their attributed evidence and signed control" $ do
+        renderBook [] [windowReceipt] `shouldSatisfy` isInfixOf "The window chapter compared both finite timing refusals"
+        renderBook [] [] `shouldSatisfy` (not . isInfixOf "The window chapter compared both finite timing refusals")
+        forM_ [take 2 windowSteps, drop 1 windowSteps, reverse windowSteps] $ \steps ->
+            renderBook [] [windowReceipt{receiptSteps = Just steps}]
+                `shouldSatisfy` (not . isInfixOf "The window chapter compared both finite timing refusals")
+        forM_ [setField "requestScript" ("another-script" :: String), setField "comparison" ("disagrees" :: String),
+            setField "witness" (object ["signatories" .= ([] :: [Int])])] $ \corrupt ->
+                renderBook [] [changeStep corrupt windowReceipt]
+                    `shouldSatisfy` (not . isInfixOf "The window chapter compared both finite timing refusals")
+    it "loads the three compared retractions around the finite window as their own chapter" $
+        loadLive windowReceipt `shouldReturn` Right 1
+    it "rejects a window chapter with a missing step or altered order" $
+        forM_ [[], take 2 windowSteps, reverse windowSteps] $ \steps ->
+            loadLive windowReceipt{receiptSteps = Just steps} >>= (`shouldSatisfy` isLeft)
     it "accepts an unsigned retraction refused for its missing owner signature" $
         loadLive (admissionRefusalLive "insertActive" (Just "unsigned") "retract-owner") `shouldReturn` Right 1
     it "accepts an update retraction refused because only insertions and reads are retractable" $
@@ -534,11 +562,11 @@ liveStepChecks = describe "Checking compared requests in live receipts" $ do
             >>= (`shouldSatisfy` refusedFor "unknown exit")
         loadLive (changeStep (setField "exit" ("insertAbsent" :: String)) acceptedLive)
             >>= (`shouldSatisfy` refusedFor "a fold exit names another edge than its request")
-    it "publishes the chapter where requests leave the queue unfolded, and the live retraction window gap" $ do
+    it "publishes the chapter where requests leave the queue unfolded, and the open-interval gap" $ do
         let book = renderBook [] []
         book `shouldSatisfy` isInfixOf "## A request that is never folded"
         book `shouldSatisfy` isInfixOf "the pending request inserts a key or reads a terminal one"
-        book `shouldSatisfy` isInfixOf "No retraction outside phase 2 is run against the chain (#205)"
+        book `shouldSatisfy` isInfixOf "Open validity intervals remain a named gap"
     it "does not claim admission ran without its receipt" $
         renderBook [] [] `shouldSatisfy` (not . isInfixOf "the chain attributes both refusals")
     forM_ ["unsigned refusal", "update refusal", "signed control"] $ \claim ->
@@ -812,6 +840,21 @@ admissionRefusalLive edge alteration reason =
             . setField "chain" (setRefusalField "scripts" (["request"] :: [String]) (probeRefusalChain "probe-allowance"))
         )
         (retractTamperLive "unsigned" reason)
+
+-- | Loader fixture, not evidence of a chain run.
+windowReceipt :: Receipt
+windowReceipt = acceptedLive{receiptRow = "CG07", receiptSteps = Just windowSteps}
+
+windowSteps :: [Value]
+windowSteps = concatMap (concat . receiptSteps)
+    [ signed 1 (admissionRefusalLive "insertActive" (Just "before-phase-2") "not-phase2")
+    , signed 1 (changeStep (setField "exit" ("retract" :: String)) acceptedLive)
+    , signed 2 (admissionRefusalLive "insertActive" (Just "after-phase-2") "not-phase2")
+    ]
+  where
+    signed :: Int -> Receipt -> Receipt
+    signed reference = changeStep (setField "request" (object ["owner" .= (1 :: Int), "reference" .= reference])
+        . setField "witness" (object ["signatories" .= [1 :: Int]]))
 
 -- | Reuse the loader fixtures to exercise rendering, without claiming a live run.
 admissionBookFixture :: Receipt

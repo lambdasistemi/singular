@@ -31,15 +31,13 @@ token: creating an output does not execute the receiving script, and
 the run must show no script executed — not merely that nothing bad
 happened.
 
-The issue #70 rows (CG07, CG09, CG10, CG11, CG12, CG14, CG15,
+The issue #70 rows (CG09, CG10, CG11, CG12, CG14, CG15,
 CG19) run as their own CG session in canonical order, each
 against its own freshly booted cage so a row's odd state (a
 parked request) cannot poison its neighbours.
-CG07, CG09, CG10 and CG15 are refusal rows: the refusing
+CG09, CG10 and CG15 are refusal rows: the refusing
 transaction is hand-built, phase-1 valid, and the node's phase-2
-refusal is attributed to the script that produced it (the request
-script for CG07's retract, the state script
-otherwise). CG11, CG12 and CG19 are the expected consumer
+refusal is attributed to the state script that produced it. CG11, CG12 and CG19 are the expected consumer
 gaps (the 2026-09-03 cardano-keri audit; upstream
 cardano-mpfs-onchain #100 and #101): the run submits what the
 consumer's theorems require the partition to refuse and records the
@@ -162,7 +160,7 @@ runRows rawRows receiptsDir = do
     control <- readControl
     emit "control" (show control)
     let caRequested = any (`elem` caRows) rows
-        cgRequested = any (`elem` (cgRows <> issue70Rows <> issue173Rows <> issue177Rows <> issue258Rows <> sequenceRows)) rows
+        cgRequested = any (`elem` (cgRows <> issue70Rows <> issue173Rows <> issue177Rows <> issue258Rows <> issue205Rows <> sequenceRows)) rows
     -- Armed controls must never pass vacuously: each mode belongs to
     -- one session, and a session it cannot fire in is refused here.
     when (caRequested && control == WrongReason) $
@@ -191,10 +189,10 @@ runRows rawRows receiptsDir = do
     createDirectoryIfMissing True receiptsDir
     let localRows = [r | r <- rows, r `elem` ["CS01", "CS06"]]
         devnetRows = [r | r <- rows, r `notElem` ["CS01", "CS06"]]
-        cgDevnet = [r | r <- devnetRows, r `elem` (cgRows <> issue70Rows <> issue173Rows <> issue177Rows <> issue258Rows <> sequenceRows)]
+        cgDevnet = [r | r <- devnetRows, r `elem` (cgRows <> issue70Rows <> issue173Rows <> issue177Rows <> issue258Rows <> issue205Rows <> sequenceRows)]
         caDevnet = [r | r <- devnetRows, r `elem` caRows]
         csDevnet = [r | r <- devnetRows, r `elem` csRows]
-        unpartitioned = [r | r <- devnetRows, r `notElem` (caRows <> cgRows <> csRows <> issue70Rows <> issue173Rows <> issue177Rows <> issue258Rows <> sequenceRows)]
+        unpartitioned = [r | r <- devnetRows, r `notElem` (caRows <> cgRows <> csRows <> issue70Rows <> issue173Rows <> issue177Rows <> issue258Rows <> issue205Rows <> sequenceRows)]
     unless (null unpartitioned) $
         failWith
             ("rows in no partition: " <> unwords unpartitioned)
@@ -260,7 +258,7 @@ validateRows :: [String] -> IO [String]
 validateRows [] =
     failWith
         "run needs at least one row: run CA01..CA05, CG02..CG05, CS \
-         \families, or the issue #70 rows CG07 CG09 CG10 CG11 CG12 \
+         \families, or the issue #70 rows CG09 CG10 CG11 CG12 \
              \CG14 CG15 CG19"
 validateRows raw = do
     let bad = [r | r <- raw, r `notElem` canonicalRows]
@@ -268,7 +266,7 @@ validateRows raw = do
         failWith ("run cannot execute rows: " <> unwords bad)
     let requested = [r | r <- canonicalRows, r `elem` raw]
         hasCa = any (`elem` caRows) requested
-        hasCg = any (`elem` (cgRows <> issue70Rows <> issue173Rows <> issue177Rows <> issue258Rows <> sequenceRows)) requested
+        hasCg = any (`elem` (cgRows <> issue70Rows <> issue173Rows <> issue177Rows <> issue258Rows <> issue205Rows <> sequenceRows)) requested
     when (hasCa && hasCg) $
         failWith
             ( "CA and CG rows run as separate sessions, one devnet \

@@ -62,24 +62,31 @@ authorization change. Boundary note, stated plainly: a correctly sized key
 hash makes a shape ledger-representable; the harness still executes the
 script struct only, so these rows are script-level evidence, not a built
 ledger transaction. The phase rows `retract_in_phase1` and
-`retract_in_phase3` remain executable script-failure expectations: the current
-production boundary uses `expect in_phase2(...)`, so an out-of-window request
-crashes/exits instead of returning clean `False`. They claim neither a named
-semantic refusal nor Lean correspondence. The user moved model-first clean
-refusal for these two rows to Issue 205.
+`retract_in_phase3` are no longer script-failure expectations: since the
+request validator began naming the phase refusal, they assert the exact
+outcome — the spend handler returns `False` and `retractRefusal` returns
+`Some(@"not-phase2")` — each beside an accepting partner that differs only in
+the validity interval. At this record's base they were `fail` rows at an
+`expect in_phase2(...)` boundary claiming neither a named semantic refusal
+nor Lean correspondence; the re-cut rows, with the window-edge and open-bound
+rows beside them, cite `Singular.Statements.retract_refusal_first_failing`
+for the refusals and `Singular.Statements.retract_admitted_iff` for the
+accepting partners.
 
 ## Refusal classification
 
 Classification of the affected groups; `semantic` means the validator returns
 a named clean refusal (asserted through the executable spend boundary), while
 `malformed` means the input itself cannot be interpreted at the script
-boundary. A `script-level phase guard` is separately classified: the current
-validator rejects at an `expect`, so `fail` proves script rejection but not a
-clean Boolean outcome or named semantic reason.
+boundary. A `script-level phase guard` is separately classified: at this
+record's base the validator rejected the phase at an `expect`, so `fail`
+proved script rejection but not a clean Boolean outcome or named semantic
+reason; that column is now empty because the request validator names the
+phase refusal.
 
 | group | semantic refusals | malformed-context `fail` | script-level phase-guard `fail` |
 |---|---|---|---|
-| retract | `retract_wrong_signer`, `prop_retract_refuses_every_non_owner_signer` (exact `== False`) | — | `retract_in_phase1`, `retract_in_phase3` (`expect in_phase2(...)`; clean refusal follows in Issue 205) |
+| retract | `retract_wrong_signer`, `prop_retract_refuses_every_non_owner_signer` (exact `== False`), `retract_in_phase1`, `retract_in_phase3` (exact `not-phase2`, partner accepting) | — | — |
 | token identity | `quantity_wrong_policy`, `quantity_wrong_asset` (exact `None` units); foreign-policy/foreign-asset properties (exact `None`) | — | — |
 | datum shape | — | `retract_on_state_datum`, `contribute_on_state_datum`, `modify_on_request_datum`, `end_on_request_datum`, `spend_no_datum` (wrong datum TYPE for the redeemer) | — |
 | duplicate registration | `duplicate_insert_active_refuses_cleanly` (`== False`), `duplicate_insert_active_reason_is_key_exists` (named construction site) | — | — |
@@ -419,10 +426,13 @@ Ticket identifiers no longer lead any test name; lowercase row-group tags
   files that do not exist in this repository's Lean tree. Both property
   modules now record the binding as MISSING and claim no conformance; the
   tests stand as behavioral regression properties over the Aiken helpers.
-- Retract timing likewise has no bound declaration in the current Lean tree.
-  The user ruled that Issue 197 preserves the executable script-level phase
-  guards without a clean-refusal or Lean-correspondence claim; Issue 205 owns
-  the model-first clean-refusal follow-up.
+- Retract timing was unbound at this record's base; the user ruled that Issue
+  197 preserve the executable script-level phase guards without a
+  clean-refusal or Lean-correspondence claim. The phase rows are bound since
+  the request validator names the refusal: refusals cite
+  `Singular.Statements.retract_refusal_first_failing` and their accepting
+  partners `Singular.Statements.retract_admitted_iff`, both declared in
+  `lean/Singular/Statements.lean`.
 - `duplicate_insert.tests.ak` cites the keyed-mint fault; the accepted
   qualified declaration is `Singular.assetSame` (declared in
   `lean/Singular/Model.lean` under `namespace Singular`), and it exists.
@@ -449,9 +459,11 @@ Ticket identifiers no longer lead any test name; lowercase row-group tags
   mutations are deliberately never committed; the journal binds each run to
   its command and result.
 - Known limits: malformed-context rows bound only input shape, not a refusal
-  reason. The two out-of-window retract rows prove rejection at the current
-  `expect in_phase2(...)` script boundary, not clean `False`; Issue 205 owns
-  that remaining model-first gap. The full-suite verification of the split is
-  the candidate gate itself, and no focused run substitutes for it.
+  reason. The out-of-window retract rows asserted rejection at the
+  `expect in_phase2(...)` script boundary at this record's base; they now
+  assert the exact outcome — `False` from the spend handler and `not-phase2`
+  from the refusal helper — since the request validator names the refusal.
+  The full-suite verification of the split is the candidate gate itself, and
+  no focused run substitutes for it.
 - Out of scope and untouched: Lean, production validators, blueprints,
   lockfiles, conformance rows, sibling tickets' scopes.

@@ -91,11 +91,12 @@
       "state": "bound-elsewhere"
     },
     {
-      "expected": "refuse",
+      "expected": "refuse the owner-signed retraction before phase 2 and after phase 2, with model reason not-phase2 and request-script attribution, beside the accepted owner-signed retraction inside phase 2",
       "group": "CG",
       "id": "CG07",
+      "note": "The finite-window story runs in its own registry, with thirty seconds for processing and thirty more for retraction. Both requests are booked before either exits. The first is refused before its window then accepted inside it; the second, with the same owner and edge, is refused after its window and shares the first request's accepting control. Evidence is computed from its three-step receipt. The chain's refusal name is not observable live. Open validity intervals remain a named gap: the model has only finite bounds, while the Aiken tests establish the open-interval not-phase2 refusal.",
       "requirement": "Retract outside phase 2.",
-      "source": "cardano-keri R9_retract_needs_phase2",
+      "source": "Singular.Statements.retract_admitted_iff and Singular.Statements.retract_refusal_first_failing; cardano-keri retraction timing",
       "state": "uncovered"
     },
     {

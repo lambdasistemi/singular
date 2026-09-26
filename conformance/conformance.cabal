@@ -89,6 +89,7 @@ library
     Conformance.Edge.Exit
     Conformance.Edge.Register
     Conformance.Edge.Retire
+    Conformance.Edge.RetractionWindow
     Conformance.Edge.Sequence
     Conformance.Fold.KeyedMint
     Conformance.Observe.Payments

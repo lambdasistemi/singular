@@ -468,9 +468,9 @@ paymentTampers :: [Text]
 paymentTampers = map (T.pack . tamperName) [OtherAddress, ShortByOne, OtherReference, StateSpent]
 
 -- | The tampers only a retraction has: its return bound to another request, and
--- a state input spent beside it.
+-- a state input spent beside it, or a validity interval outside phase 2.
 retractionTampers :: [Text]
-retractionTampers = map (T.pack . tamperName) [OtherReference, StateSpent]
+retractionTampers = map (T.pack . tamperName) [OtherReference, StateSpent, BeforePhase2, AfterPhase2]
 
 -- | The requests a retraction is admitted for on chain: insertions and reads.
 retractableEdges :: [Text]
@@ -524,6 +524,7 @@ stepsComplete path receipt steps
             admissionReason
                 | exit == "retract", edge `notElem` retractableEdges = Just "withdraw-insert-only"
                 | tamper == Just (String "unsigned") = Just "retract-owner"
+                | tamper `elem` map (Just . String . T.pack . tamperName) [BeforePhase2, AfterPhase2] = Just "not-phase2"
                 | otherwise = Nothing
         case admissionReason of
             Nothing -> Right ()
@@ -591,7 +592,8 @@ stepsComplete path receipt steps
             (Just Null, _, _, _) -> Right ()
             (Just (String name), _, _, _) | name `elem` paymentTampers -> Right ()
             (Just (String "extra-signer"), _, _, _) -> Right ()
-            (Just (String "unsigned"), _, _, _) -> Right ()
+            (Just (String name), _, _, _)
+                | name `elem` map (T.pack . tamperName) [Unsigned, BeforePhase2, AfterPhase2] -> Right ()
             _ -> failure "unknown tamper"
         case (at "compared" step, at "unobserved" step) of
             (Just (Array names), Just (Array _))
@@ -795,10 +797,22 @@ loadReceipts dir = do
     checkEdge path r = case (receiptRow r, receiptSteps r) of
         ("CG21", Just steps) -> stepsComplete path r steps
         ("CG22", Just steps) -> stepsComplete path r steps
+        ("CG07", Just steps) -> do
+            checked <- stepsComplete path r steps
+            let field name (Object fields) = KM.lookup name fields
+                field _ _ = Nothing
+                outcome name step = field "outcome" =<< field name step
+            if map (field "tamper") steps == map Just [String "before-phase-2", Null, String "after-phase-2"]
+                && all ((== Just (String "retract")) . field "exit") steps
+                && all ((== Just (String "agrees")) . field "comparison") steps
+                && all (\name -> map (outcome name) steps == map (Just . String) ["refused", "accepted", "refused"]) ["model", "chain"]
+                then Right checked
+                else Left (path <> ": retraction window requires before, accepted control, after")
         ("CG23", Just steps) -> stepsComplete path r steps
         ("sequence", Just steps) -> stepsComplete path r steps
         ("CG21", Nothing) -> Left (path <> ": registration names no live steps")
         ("CG22", Nothing) -> Left (path <> ": retirement names no live steps")
+        ("CG07", Nothing) -> Left (path <> ": retraction window names no live steps")
         ("CG23", Nothing) -> Left (path <> ": exit chapter names no live steps")
         ("sequence", Nothing) -> Left (path <> ": sequence names no live steps")
         (_, Nothing) -> Right r

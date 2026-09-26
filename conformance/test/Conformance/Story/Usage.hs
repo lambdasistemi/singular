@@ -12,12 +12,21 @@ import Conformance.Book (renderBook)
 import Conformance.Edge.Exit qualified as Exit
 import Conformance.Edge.Register qualified as Register
 import Conformance.Edge.Retire qualified as Retire
+import Conformance.Edge.RetractionWindow qualified as RetractionWindow
 import Conformance.Edge.Sequence qualified as Sequence
 import Conformance.Story.Live qualified as Live
 import Conformance.Story.Specification qualified as Specification
 
 spec :: Spec
 spec = do
+    it "The finite window story compares all three retractions and refuses a dropped comparison" $ do
+        let program = RetractionWindow.story (Live.Context "retraction window" "owner wallet")
+            rendered = Live.renderLive program
+        Live.validateLive program `shouldBe` Right ()
+        occurrences "Compare **" rendered `shouldBe` 3
+        rendered `shouldSatisfy` isInfixOf "before phase 2"
+        rendered `shouldSatisfy` isInfixOf "after phase 2"
+        Live.validateLive (dropFirstCompare program) `shouldSatisfy` isLeft
     it "The registration chapter pays its delivery elsewhere and one lovelace short beside its untampered control" $ do
         let rendered = Live.renderLive (Register.story (Live.Context "registry" "recipient"))
         rendered `shouldSatisfy` isInfixOf "payment it owes sent to another address"
@@ -39,10 +48,10 @@ spec = do
             ] $ \phrase -> do
                 occurrences phrase story `shouldSatisfy` (>= 1)
                 occurrences phrase (renderBook [] []) `shouldBe` occurrences phrase story
-    it "The book states retraction admission and preserves its unrun window and observation limits" $ do
+    it "The book states retraction admission and preserves its open-interval and observation limits" $ do
         let book = renderBook [] []
         book `shouldSatisfy` isInfixOf "The model admits a retraction only when"
-        book `shouldSatisfy` isInfixOf "No retraction outside phase 2 is run against the chain (#205)"
+        book `shouldSatisfy` isInfixOf "Open validity intervals remain a named gap"
         book `shouldSatisfy` isInfixOf "The model represents only finite validity bounds"
         book `shouldSatisfy` isInfixOf "Live refusal reason not observed"
         book `shouldSatisfy` isInfixOf "checked against the compiled Aiken suite"

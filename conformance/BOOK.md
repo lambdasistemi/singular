@@ -4,63 +4,73 @@ These are executable stories. The runner supplies fresh registry and wallet cont
 
 ## This run
 
-Code revision: `22c736ced9dfaa6cbaddfb1bf5460e16a08816cc` (clean working tree).
+Code revision: `c11ae03f7ddf6d3ca6c883fb7fa5cb04e8fc3c8d` (clean working tree).
 
-Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428 request:96328bafe9202b20978e19852d7e919d3d68abad34c84be7a414eb96`.
+Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428 request:7ce2f0ecec6d6310891f82a84c433f01eaa722f3ea346abd0e231827`.
 
 Rejection and retraction compared 10 requests: 2 accepted and 8 refused on chain.
 
 Unsupported chain folds: 0.
 
-The short-by-one reject of insertActive was refused on chain (transaction `71ac08273d9b1601a864428fae26c750d58fc090bcaf9066b0df0587657c4390`); the model refused it for `deposit-returned`.
+The short-by-one reject of insertActive was refused on chain (transaction `9b2c91daaf04b2fa3af603f0d25fc4aaf6e3150b35eeba742aa25f2780a49b32`); the model refused it for `deposit-returned`.
 
-The other-address reject of insertActive was refused on chain (transaction `7ae171f741a2168d8e1b39baef8431ccd3daa570f7abca83f4c831b8376ca7a0`); the model refused it for `deposit-returned`.
+The other-address reject of insertActive was refused on chain (transaction `8b4e66471f65ac45c4848e8ded152356ef4d19a7e16b7fd3534ef5fdc1bf342f`); the model refused it for `deposit-returned`.
 
-The short-by-one retract of insertActive was refused on chain (transaction `4ebab96baf49c06a66e4c5f5b1f9aecd781e3a2c85b2404feed2e13134df6a07`); the model refused it for `deposit-returned`.
+The short-by-one retract of insertActive was refused on chain (transaction `d3910170198ffd1a5ea29c376441314d7daf3ed9ce1ffb0602da7450ae2e5dc3`); the model refused it for `deposit-returned`.
 
-The other-address retract of insertActive was refused on chain (transaction `ff29b86e5482d8746eb1a64faaffa6b6f5d993570d5986572f6b9cf7e2a49a77`); the model refused it for `deposit-returned`.
+The other-address retract of insertActive was refused on chain (transaction `ed1deca42fa1a965fb495a232ee0da1209ed23c9d07fdcfa425ee6d0c491bcc5`); the model refused it for `deposit-returned`.
 
-The other-reference retract of insertActive was refused on chain (transaction `b13bd3e9b71d68827711025ba0566f5c2f87c28e8133657bde05396e0c026336`); the model refused it for `deposit-returned`.
+The other-reference retract of insertActive was refused on chain (transaction `2cfe727c849f76c3588ea5c416ccd3029b04b2d3fc73504628f55dc5040e15f0`); the model refused it for `deposit-returned`.
 
-The state-spent retract of insertActive was refused on chain (transaction `447c04023b0f8a050d90e68ed9caf5d901645453379eff5342944c7abb91df9c`); the model refused it for `retract-state-spent`.
+The state-spent retract of insertActive was refused on chain (transaction `afcf25a8a327e8f0fbcaa43bc6acdebf3af58d85ca0828f9602c241591863351`); the model refused it for `retract-state-spent`.
 
-The unsigned retract of insertActive was refused on chain (transaction `1c40c88f063aa36c0c150d9508e159b2cda24a701d311684248d41cf2dbecc70`); the model refused it for `retract-owner`.
+The unsigned retract of insertActive was refused on chain (transaction `bf390931f6da060c955b6e34874144acbfa67c8e6404f38a1be270e34651e2a6`); the model refused it for `retract-owner`.
 
-The exit chapter compared both admission refusals: the unsigned insertion retraction (transaction `1c40c88f063aa36c0c150d9508e159b2cda24a701d311684248d41cf2dbecc70`) was refused by the model for `retract-owner`, and the pending update retraction (transaction `5f1801c627f0c4467ac9b27ebee8455d8a2a4a62400eb6efa4afb6b551a7a5e3`) for `withdraw-insert-only`; the chain attributes both refusals to the request validator. The owner-signed insertion control accepted by both is transaction `be6a2902c32962caa7a91d0da222b23a06dab0e5f2b2c9c23a0909457d34a599`.
+The exit chapter compared both admission refusals: the unsigned insertion retraction (transaction `bf390931f6da060c955b6e34874144acbfa67c8e6404f38a1be270e34651e2a6`) was refused by the model for `retract-owner`, and the pending update retraction (transaction `3b6a51e4ae5bc0a64eea24d5c90c3c39ea164d9124cd6cb35f1caf6229d9a0dc`) for `withdraw-insert-only`; the chain attributes both refusals to the request validator. The owner-signed insertion control accepted by both is transaction `bbbae557dcb1bdc963c2e5142b77dc1291de4b48218182c272b28023d7953978`.
 
-Code revision: `22c736ced9dfaa6cbaddfb1bf5460e16a08816cc` (clean working tree).
+Code revision: `c11ae03f7ddf6d3ca6c883fb7fa5cb04e8fc3c8d` (clean working tree).
 
-Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428 request:96328bafe9202b20978e19852d7e919d3d68abad34c84be7a414eb96`.
+Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428 request:7ce2f0ecec6d6310891f82a84c433f01eaa722f3ea346abd0e231827`.
+
+Retraction window compared 3 requests: 1 accepted and 2 refused on chain.
+
+Unsupported chain folds: 0.
+
+The window chapter compared both finite timing refusals: transaction `ef5b5bb3de454402dbd3f35013c89c26e4329b6c4bbf4ff6ac36d4a3cc464650` before phase 2 and transaction `7326c79c6ded2ff344e45f07dec77df15a3cb6b507fb6ebd7e3b0223a6591de2` after phase 2. The model refused both for `not-phase2`; the chain attributes both refusals to the request validator. Their owner-signed in-window control accepted by both is transaction `98c9e5b6797850324a58ff99e27d1b5d2feafa62c21ffbba9afd57bc28a2dedb`.
+
+Code revision: `c11ae03f7ddf6d3ca6c883fb7fa5cb04e8fc3c8d` (clean working tree).
+
+Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428 request:7ce2f0ecec6d6310891f82a84c433f01eaa722f3ea346abd0e231827`.
 
 Registration compared 7 requests: 4 accepted and 3 refused on chain.
 
 Unsupported chain folds: 0.
 
-The extra-signer registration was accepted on chain (transaction `4974f50c37fd8ff5ec9549ea38a09f387f209d945e18a880d879ff9b7fc5f5d4`); the comparison detected the difference at `tx.signers`.
+The extra-signer registration was accepted on chain (transaction `1db01103fd93bbcc125d2f12e3edcfbf382d1bb4a5792b5678587eb4a7a62883`); the comparison detected the difference at `tx.signers`.
 
-The other-address insertActive was refused on chain (transaction `2f0a88b4aa1343f16e4794fdc17dfb8d20fe974b610acddc7410007db43545fc`); the model refused it for `destination`.
+The other-address insertActive was refused on chain (transaction `52542bd6319dd71ea0f30821996707f950bc02312944c8fbe382f237fcee77f0`); the model refused it for `destination`.
 
-The short-by-one insertActive was refused on chain (transaction `7e617c34c79dcd7ee143677490067376fae7287b8e95c647622fef20d58f79ef`); the model refused it for `deposit-returned`.
+The short-by-one insertActive was refused on chain (transaction `2c7c51fbc6570e15923e5993a0e086c4be19fb0014c9df31cde3b87e8b0bc7fe`); the model refused it for `deposit-returned`.
 
-Code revision: `22c736ced9dfaa6cbaddfb1bf5460e16a08816cc` (clean working tree).
+Code revision: `c11ae03f7ddf6d3ca6c883fb7fa5cb04e8fc3c8d` (clean working tree).
 
-Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428 request:96328bafe9202b20978e19852d7e919d3d68abad34c84be7a414eb96`.
+Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428 request:7ce2f0ecec6d6310891f82a84c433f01eaa722f3ea346abd0e231827`.
 
 Unnamed sequence compared 8 requests: 8 accepted and 0 refused on chain.
 
 Unsupported chain folds: 0.
 
-Code revision: `22c736ced9dfaa6cbaddfb1bf5460e16a08816cc` (clean working tree).
+Code revision: `c11ae03f7ddf6d3ca6c883fb7fa5cb04e8fc3c8d` (clean working tree).
 
-Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428 request:96328bafe9202b20978e19852d7e919d3d68abad34c84be7a414eb96`.
+Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428 request:7ce2f0ecec6d6310891f82a84c433f01eaa722f3ea346abd0e231827`.
 
 Retirement compared 11 requests: 7 accepted and 4 refused on chain.
 
 Unsupported chain folds: 0.
 
-The short-by-one deleteActive was refused on chain (transaction `91fd09d791b53ca110847447f87e36601d281eaab14918dfce45a8dba8dffe45`); the model refused it for `deposit-returned`.
+The short-by-one deleteActive was refused on chain (transaction `207e04a00f920e86448093433b743ce2fb52247e25a97b1b94adc5cfa430a2e9`); the model refused it for `deposit-returned`.
 
-The other-address deleteActive was refused on chain (transaction `df55e88f4d0e4330f34941c22cebc5b32b7af6d6a4c5e13e74e5947b8ce8312a`); the model refused it for `deposit-returned`.
+The other-address deleteActive was refused on chain (transaction `dc38fc2b9cf34dfa71a00f7598b6ebc1360b86d5cab496c174b92a1212e6e187`); the model refused it for `deposit-returned`.
 
 ## Register a key and receive its active token
 
@@ -254,6 +264,28 @@ A request can leave the queue without a fold. Once it may no longer be folded, a
 
 - Compare **retracted** and its observation with the executable registry model.
 
+## Retract only inside phase 2
+
+Two insertion requests from the same owner are booked in one registry before either exits. The first is retracted before phase 2, then inside it; the second is retracted after its window closes. Both outside-window retractions must be refused, and the in-window retraction must be accepted. The second request shares the first's accepting control: once its own window is over it cannot have an in-window retry. The registry allows thirty seconds for processing and thirty more for retraction; waits follow each request's recorded submission time.
+
+- Retract the **insertActive** for **window-first** in **retraction window** as its owner with a finite validity interval before phase 2; the ledger and the model must refuse it, with the same request retracted inside phase 2 as its control.
+
+- Observe the complete registry, token, leaf and transaction boundary after **window-first**.
+
+- Compare **window-first** and its observation with the executable registry model.
+
+- Retract the **insertActive** for **window-first** in **retraction window** as its owner, using the owner wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **window-first**.
+
+- Compare **window-first** and its observation with the executable registry model.
+
+- Retract the **insertActive** for **window-second** in **retraction window** as its owner with a finite validity interval after phase 2; the ledger and the model must refuse it, with the earlier in-window retraction of its owner's other request as its control.
+
+- Observe the complete registry, token, leaf and transaction boundary after **window-second**.
+
+- Compare **window-second** and its observation with the executable registry model.
+
 ## A sequence no chapter names
 
 This program uses the same live interpreter for each listed request. Each step records its own model and chain outcome; any unsupported result carries the reason observed at the booking or fold boundary.
@@ -308,7 +340,7 @@ This program uses the same live interpreter for each listed request. Each step r
 
 ## What these runs do not establish
 
-Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none for a fold and the owner for a retraction, and the comparison reads them from the submitted transaction. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. The model admits a retraction only when the pending request inserts a key or reads a terminal one, its owner is among the transaction's required signers, and its validity interval lies inside phase 2. The interval starts no earlier than submission plus the processing time; its excluded upper bound may reach, but not pass, the end of the retraction time that follows. No retraction outside phase 2 is run against the chain (#205), which will name the validator's refusal against the model's window rule. The model represents only finite validity bounds. Live refusal reason not observed: the deployed validators are compiled without traces; the same-reason claim is checked against the compiled Aiken suite. Tracked by #287. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.
+Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none for a fold and the owner for a retraction, and the comparison reads them from the submitted transaction. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. The model admits a retraction only when the pending request inserts a key or reads a terminal one, its owner is among the transaction's required signers, and its validity interval lies inside phase 2. The interval starts no earlier than submission plus the processing time; its excluded upper bound may reach, but not pass, the end of the retraction time that follows. The model represents only finite validity bounds. Open validity intervals remain a named gap: the Aiken tests establish their not-phase2 refusal, but no live model comparison can represent them. Live refusal reason not observed: the deployed validators are compiled without traces; the same-reason claim is checked against the compiled Aiken suite. Tracked by #287. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.
 
 ## Requirements inventory
 
@@ -386,9 +418,9 @@ Existing evidence: offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs: retracts
 
 ### Retract outside phase 2.
 
-Expected: refuse. Planned evidence status: uncovered.
+Expected: refuse the owner-signed retraction before phase 2 and after phase 2, with model reason not-phase2 and request-script attribution, beside the accepted owner-signed retraction inside phase 2. Planned evidence status: uncovered.
 
-Source: cardano-keri R9_retract_needs_phase2.
+Source: Singular.Statements.retract_admitted_iff and Singular.Statements.retract_refusal_first_failing; cardano-keri retraction timing.
 
 ### Rejected when rejectable.
 

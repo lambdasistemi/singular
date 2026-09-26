@@ -133,34 +133,128 @@ test retract_wrong_signer() fail {
   )
 }
 
-/// Retract is forbidden in Phase 1 (the oracle processing window).
-/// The oracle needs time to process the request undisturbed.
-test retract_in_phase1() fail {
-  spend(
-    Some(aRequest),
-    Retract(testStateRef),
-    testRequestRef,
+/// Before phase 2, the owner's retraction is refused with not-phase2.
+/// Singular.Statements.retract_refusal_first_failing; the partner inside the
+/// window is admitted by Singular.Statements.retract_admitted_iff.
+test retract_in_phase1() {
+  refusesPhaseRange(ledgerRange(0, fx.processTime / 2))
+}
+
+/// After phase 2, the owner's retraction is refused with not-phase2.
+/// Singular.Statements.retract_refusal_first_failing; the partner inside the
+/// window is admitted by Singular.Statements.retract_admitted_iff.
+test retract_in_phase3() {
+  refusesPhaseRange(
+    ledgerRange(
+      fx.processTime + fx.retractTime,
+      fx.processTime + fx.retractTime + 1,
+    ),
+  )
+}
+
+// The script receives an included lower bound and an excluded upper bound.
+fn ledgerRange(from: Int, to: Int) -> interval.Interval<Int> {
+  interval.Interval {
+    lower_bound: interval.IntervalBound {
+      bound_type: interval.Finite(from),
+      is_inclusive: True,
+    },
+    upper_bound: interval.IntervalBound {
+      bound_type: interval.Finite(to),
+      is_inclusive: False,
+    },
+  }
+}
+
+fn acceptsPhaseRange(range: interval.Interval<Int>) -> Bool {
+  let input = heldRequest(0, fx.bookerKey, fx.requestLovelace)
+  let tx = retractTx([input], [ownerPayment(fx.bookerKey, fx.requestLovelace)])
+  let accepted = Transaction { ..tx, validity_range: range }
+  retractInput(input, accepted) == True && retractReason(input, accepted) == None
+}
+
+// Each refusal has a fully paid, owner-signed accepting partner. Only the
+// validity interval changes; both production entry points judge both cases.
+fn refusesPhaseRange(range: interval.Interval<Int>) -> Bool {
+  let input = heldRequest(0, fx.bookerKey, fx.requestLovelace)
+  let tx = retractTx([input], [ownerPayment(fx.bookerKey, fx.requestLovelace)])
+  let accepted =
     Transaction {
-      ..transaction.placeholder,
-      validity_range: phase1Range,
-      extra_signatories: ["owner"],
-      reference_inputs: [update],
+      ..tx,
+      validity_range: ledgerRange(
+        fx.processTime,
+        fx.processTime + fx.retractTime,
+      ),
+    }
+  let refused = Transaction { ..accepted, validity_range: range }
+  retractInput(input, accepted) == True && retractReason(input, accepted) == None && retractInput(
+    input,
+    refused,
+  ) == False && retractReason(input, refused) == Some(@"not-phase2")
+}
+
+/// The included lower bound may equal submission time plus processing time.
+/// Singular.Statements.retract_admitted_iff.
+test retract_at_phase2_lower_bound_accepts() {
+  acceptsPhaseRange(ledgerRange(fx.processTime, fx.processTime + 1))
+}
+
+/// The excluded upper bound may reach the end of phase 2.
+/// Singular.Statements.retract_admitted_iff.
+test retract_at_phase2_upper_bound_accepts() {
+  acceptsPhaseRange(
+    ledgerRange(fx.processTime, fx.processTime + fx.retractTime),
+  )
+}
+
+/// One unit before phase 2 is refused, with an otherwise identical partner.
+/// Singular.Statements.retract_refusal_first_failing and
+/// Singular.Statements.retract_admitted_iff.
+test retract_one_unit_before_phase2_refuses() {
+  refusesPhaseRange(
+    ledgerRange(fx.processTime - 1, fx.processTime + fx.retractTime),
+  )
+}
+
+/// One unit beyond the excluded upper bound is refused, with its partner.
+/// Singular.Statements.retract_refusal_first_failing and
+/// Singular.Statements.retract_admitted_iff.
+test retract_one_unit_after_phase2_refuses() {
+  refusesPhaseRange(
+    ledgerRange(fx.processTime, fx.processTime + fx.retractTime + 1),
+  )
+}
+
+/// No lower bound cannot lie inside phase 2; the finite partner is accepted.
+/// Singular.Statements.retract_refusal_first_failing supplies the refusal
+/// name, but its finite witness cannot express this open interval.
+/// The partner instantiates Singular.Statements.retract_admitted_iff.
+test retract_without_lower_bound_refuses() {
+  let range = ledgerRange(fx.processTime, fx.processTime + fx.retractTime)
+  refusesPhaseRange(
+    interval.Interval {
+      ..range,
+      lower_bound: interval.IntervalBound {
+        bound_type: interval.NegativeInfinity,
+        is_inclusive: True,
+      },
     },
   )
 }
 
-/// Retract is forbidden in Phase 3 (after the retract window expires).
-/// Once Phase 3 begins, the request becomes rejectable by any folder instead.
-test retract_in_phase3() fail {
-  spend(
-    Some(aRequest),
-    Retract(testStateRef),
-    testRequestRef,
-    Transaction {
-      ..transaction.placeholder,
-      validity_range: phase3Range,
-      extra_signatories: ["owner"],
-      reference_inputs: [update],
+/// No upper bound cannot lie inside phase 2; the finite partner is accepted.
+/// Singular.Statements.retract_refusal_first_failing supplies the refusal
+/// name, but its finite witness cannot express this open interval.
+/// The partner instantiates Singular.Statements.retract_admitted_iff.
+test retract_without_upper_bound_refuses() {
+  let range = ledgerRange(fx.processTime, fx.processTime + fx.retractTime)
+  refusesPhaseRange(
+    interval.Interval {
+      ..range,
+      upper_bound: interval.IntervalBound {
+        bound_type: interval.PositiveInfinity,
+        is_inclusive: False,
+      },
     },
   )
 }
@@ -399,11 +493,24 @@ test retract_held_does_not_replace_edge_admission() {
   )
 }
 
-test retract_held_does_not_replace_phase_admission() fail {
+/// The phase refusal precedes payment, even when no refund output exists.
+/// Singular.Statements.retract_refusal_first_failing.
+test retract_held_does_not_replace_phase_admission() {
   let input = heldRequest(0, fx.bookerKey, fx.requestLovelace)
   let tx = retractTx([input], [])
-  retractReason(input, Transaction { ..tx, validity_range: phase1Range }) == Some(
-    @"deposit-returned",
+  let refused =
+    Transaction { ..tx, validity_range: ledgerRange(0, fx.processTime / 2) }
+  retractInput(input, refused) == False && retractReason(input, refused) == Some(
+    @"not-phase2",
+  ) && refusesHeld(
+    input,
+    Transaction {
+      ..tx,
+      validity_range: ledgerRange(
+        fx.processTime,
+        fx.processTime + fx.retractTime,
+      ),
+    },
   )
 }
 

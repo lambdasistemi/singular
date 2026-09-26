@@ -41,6 +41,10 @@
     {
       "text": "The permissionless fold row was refused by the unrepaired candidate and accepted after the repair, both by execution, at two clean tips, with the owner-signed control beside it. The receipts cited are the ship run taken fresh at the clean tip after the receipt repair, every held row carrying its transaction id and measurements.",
       "pause": 400
+    },
+    {
+      "text": "The retraction window now has its own story. Two requests from the same owner are booked together. The first is refused before phase two, then accepted inside it. The second is refused after its window, beside the first request as its accepting control. The model refuses both timing alterations as not phase two; the chain attributes both to the request script. The generic session now runs ten rows. Open validity intervals remain outside the finite model, with their refusal checked at the Aiken layer.",
+      "pause": 400
     }
   ],
   "the-canonical-identity-rows": [
@@ -119,7 +123,7 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "bad77e51d1c0673c03f1db60db44687f2171b518af539e7ff85ac9700a008c57"
+    "sha256": "6d386c5577c06444514a3c07259cf4d396a1221155f5efd33ae0fff771e0a8b2"
   },
   "historical-execution-reports": [
     {
