@@ -86,6 +86,10 @@ library
     Singular.Registry.Ledger
     Singular.Registry.Lifecycle
     Singular.Registry.Node
+    Singular.Registry.Node.Options
+    Singular.Registry.Node.Wallet
+    Singular.Registry.Node.Indexer
+    Singular.Registry.Node.Session
     Singular.Registry.Proof
     Singular.Registry.Provider
     Singular.Registry.Trie
@@ -556,6 +560,7 @@ test-suite cage-tests
     Singular.Registry.TxBuilder.BurnSourceSpec
     Singular.Registry.CandidateSpec
     Singular.Registry.FailureMatchSpec
+    Singular.Registry.NodeCleanupSpec
     Singular.Registry.NodeSpec
     Singular.Registry.LifecycleSpec
     Singular.Registry.TypesSpec
@@ -572,6 +577,9 @@ test-suite cage-tests
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
+    , cardano-crypto-class
+    , cardano-node-clients
+    , cardano-node-clients:utxo-indexer-lib
     , cardano-tx-tools:tx-build
     , containers
     , base16-bytestring
@@ -581,6 +589,7 @@ test-suite cage-tests
     , filepath
     , hspec
     , microlens
+    , ouroboros-network
     , plutus-core
     , plutus-ledger-api
     , plutus-tx

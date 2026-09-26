@@ -86,55 +86,39 @@ module Singular.Registry.Node (
     checkFunding,
 ) where
 
-import Control.Applicative ((<|>))
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (Async, async, cancel, link, race, waitCatch)
-import Control.Exception (ErrorCall (..), SomeException, bracket, bracket_, displayException, throwIO, try)
-import Control.Monad (unless, when)
-import Data.Aeson (eitherDecodeStrict, withObject, (.:))
-import Data.Aeson.Types (parseMaybe)
-import Data.ByteString (ByteString)
-import Data.ByteString qualified as BS
+import Control.Exception (SomeException, bracket, try)
+import Control.Monad (unless)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Short qualified as SBS
-import Data.Char (isSpace)
 import Data.Foldable (for_, toList)
-import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef, writeIORef)
-import Data.List (isPrefixOf)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (catMaybes, isNothing)
+import Data.Maybe (isNothing)
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
-import Data.Text qualified as T
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
-import Data.Word (Word32, Word64)
-import System.Directory (createDirectoryIfMissing)
-import System.Environment (getArgs, getEnvironment)
-import System.FilePath ((</>))
+import Data.Word (Word64)
 import System.IO (hPutStrLn, stderr)
-import System.IO.Unsafe (unsafePerformIO)
-import System.Process (readProcess)
-import Text.Read (readMaybe)
 
-import Codec.Binary.Bech32 qualified as Bech32
 import Lens.Micro ((&), (.~), (^.))
 import Ouroboros.Consensus.HardFork.Combinator.AcrossEras (OneEraHash (..))
 import Ouroboros.Network.Block qualified as Chain
 import Ouroboros.Network.Magic (NetworkMagic (..))
 
 import Cardano.Crypto.Hash (hashFromBytes, hashToBytes)
-import Cardano.Ledger.Address (Addr (..), serialiseAddr)
+import Cardano.Ledger.Address (Addr, serialiseAddr)
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (feeTxBodyL, inputsTxBodyL, mkBasicTxBody, outputsTxBodyL, vldtTxBodyL)
 import Cardano.Ledger.Api.Tx.Out (TxOut, mkBasicTxOut, valueTxOutL)
-import Cardano.Ledger.BaseTypes (Network (..), SlotNo (..), StrictMaybe (..), TxIx (..))
+import Cardano.Ledger.BaseTypes (SlotNo (..), StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.Binary (decodeFull')
 import Cardano.Ledger.Core (eraProtVerLow)
-import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
-import Cardano.Ledger.Hashes (ScriptHash, extractHash, unsafeMakeSafeHash)
+import Cardano.Ledger.Credential (Credential (..))
+import Cardano.Ledger.Hashes (extractHash, unsafeMakeSafeHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
@@ -142,14 +126,9 @@ import Cardano.Ledger.Val (inject, (<->))
 
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup (
-    Ed25519DSIGN,
-    SignKeyDSIGN,
     addKeyWitness,
     devnetMagic,
     genesisDir,
-    genesisSignKey,
-    keyHashFromSignKey,
-    rawDeserialiseSignKeyDSIGN,
  )
 import Cardano.Node.Client.N2C.Connection (
     newLSQChannel,
@@ -161,7 +140,7 @@ import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
 import Cardano.Node.Client.N2C.Reconnect (defaultReconnectPolicy)
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Cardano.Node.Client.Provider qualified as N2C
-import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter, submitTx)
 import Cardano.Node.Client.Types (BlockPoint)
 import Cardano.Node.Client.UTxOIndexer.Follower (
     ChainSyncConfig (..),
@@ -176,288 +155,53 @@ import Cardano.Node.Client.UTxOIndexer.Indexer (
 import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
 import Cardano.Tx.Ledger (ConwayTx)
 import Control.Tracer (nullTracer)
-import Singular.Registry.Ledger (Coin (..), ConwayEra, PParams)
+import Singular.Registry.Ledger (Coin (..), ConwayEra)
+import Singular.Registry.Node.Indexer (
+    Following (..),
+    adaptProvider,
+    awaitIndexed,
+    confirmationAttempts,
+    confirmationPollSeconds,
+    currentFollower,
+    markFundingIndexed,
+    nodeAddressReads,
+    withFollowing,
+ )
+import Singular.Registry.Node.Options (
+    ExternalNode (..),
+    NodeMode (..),
+    die,
+    echoKoios,
+    nodeIsExternal,
+    nodeModeFromArgs,
+    nodeModeFromEnvironment,
+    runMode,
+ )
+import Singular.Registry.Node.Session (
+    NodeSession (..),
+    currentTipSlot,
+    scriptStakeRegistered,
+    sessionFor,
+    withOpenSession,
+ )
+import Singular.Registry.Node.Wallet (
+    Wallet (..),
+    bech32Address,
+    funderAddr,
+    funderSignKey,
+    loadWallet,
+    sessionMagic,
+    walletForMode,
+ )
 import Singular.Registry.Provider qualified as Cage
-
--- ---------------------------------------------------------
--- Mode
--- ---------------------------------------------------------
-
--- | A node the joiner already runs, with the key that funds the run.
-data ExternalNode = ExternalNode
-    { extSocket :: FilePath
-    -- ^ Path of the node's node-to-client socket
-    , extMagic :: Word32
-    -- ^ Network magic the joiner asserts the node carries
-    , extSkeyFile :: FilePath
-    -- ^ Payment signing key file funding every actor
-    }
-    deriving (Eq, Show)
-
--- | How this process reaches a chain.
-data NodeMode
-    = -- | Spawn a private devnet and use its genesis key (the default)
-      Devnet
-    | -- | Connect to the joiner's node and use the joiner's key
-      External ExternalNode
-    deriving (Eq, Show)
-
--- | Mainnet's network magic — the one value external mode refuses.
-mainnetMagic :: Word32
-mainnetMagic = 764824073
-
-{- | Resolve the mode from a command line and an environment.
-
-Pure, so precedence and the partial-configuration diagnostic are
-testable without a process: flags win over environment variables,
-unknown arguments are ignored (runners take their own), and naming any
-one of the three settings selects external mode and requires the other
-two.
--}
-nodeModeFromArgs ::
-    [String] ->
-    [(String, String)] ->
-    Either String NodeMode
-nodeModeFromArgs args env
-    | null (catMaybes [mSock, mMagic, mSkey]) = Right Devnet
-    | otherwise = do
-        sock <- need "--node-socket" "SINGULAR_NODE_SOCKET" mSock
-        magicS <- need "--network-magic" "SINGULAR_NETWORK_MAGIC" mMagic
-        skey <- need "--wallet-skey" "SINGULAR_WALLET_SKEY" mSkey
-        magic <- case readMaybe magicS of
-            Just n -> Right n
-            Nothing -> Left ("network magic is not a number: " <> magicS)
-        if magic == mainnetMagic
-            then
-                Left
-                    "external-node mode refuses network magic 764824073 \
-                    \(mainnet): these runners submit live transactions and \
-                    \are for test networks only"
-            else
-                Right . External $
-                    ExternalNode
-                        { extSocket = sock
-                        , extMagic = magic
-                        , extSkeyFile = skey
-                        }
-  where
-    mSock = flag "--node-socket" `orElse` lookup "SINGULAR_NODE_SOCKET" env
-    mMagic = flag "--network-magic" `orElse` lookup "SINGULAR_NETWORK_MAGIC" env
-    mSkey = flag "--wallet-skey" `orElse` lookup "SINGULAR_WALLET_SKEY" env
-    orElse a b = a <|> b
-    need f e = maybe (Left (missing f e)) Right
-    missing f e =
-        "external-node mode is partially configured: "
-            <> f
-            <> " (or "
-            <> e
-            <> ") is missing. All three of --node-socket, --network-magic \
-               \and --wallet-skey are required together; give none of them \
-               \to run the factory devnet."
-    flag name = go args
-      where
-        go (a : rest)
-            | a == name = case rest of
-                (v : _) -> Just v
-                [] -> Nothing
-            | (name <> "=") `isPrefixOf` a = Just (drop (length name + 1) a)
-            | otherwise = go rest
-        go [] = Nothing
-
--- | 'nodeModeFromArgs' applied to this process.
-nodeModeFromEnvironment :: IO NodeMode
-nodeModeFromEnvironment = do
-    args <- getArgs
-    env <- getEnvironment
-    either die pure (nodeModeFromArgs args env)
-
-{- | This process's mode, resolved once.
-
-A process-level constant: it depends only on the command line and the
-environment, both fixed for the lifetime of the process, so no ordering
-between this and any other action can change what it reads.
--}
-runMode :: NodeMode
-runMode = unsafePerformIO nodeModeFromEnvironment
-{-# NOINLINE runMode #-}
-
-{- | Whether this process runs against an external (public) node.
-Diagnostics that only make sense off the factory devnet gate on it.
--}
-nodeIsExternal :: Bool
-nodeIsExternal = case runMode of
-    Devnet -> False
-    External _ -> True
-
-{- | Preprod diagnostic: POST the same transaction bytes to Koios's
-public submittx endpoint and write its verbatim answer next to the
-transaction's retained evidence. The node this process talks to
-remains the only verdict; a Koios refusal, a transport error or a
-missing curl is recorded and never raised. Devnet runs keep no Koios
-echo — the factory devnet has no public endpoint.
--}
-echoKoios :: FilePath -> String -> ByteString -> IO ()
-echoKoios evDir tag raw = case runMode of
-    Devnet -> pure ()
-    External _ -> do
-        let cborPath = evDir </> ("tx-" <> tag <> ".cbor")
-            koiosPath = evDir </> ("tx-" <> tag <> ".koios.txt")
-        createDirectoryIfMissing True evDir
-        BS.writeFile cborPath raw
-        r <-
-            try
-                ( readProcess
-                    "curl"
-                    [ "-sS"
-                    , "--max-time"
-                    , "30"
-                    , "-X"
-                    , "POST"
-                    , "-H"
-                    , "Content-Type: application/cbor"
-                    , "--data-binary"
-                    , "@" <> cborPath
-                    , "https://preprod.koios.rest/api/v1/submittx"
-                    ]
-                    ""
-                ) ::
-                IO (Either SomeException String)
-        case r of
-            Right body -> writeFile koiosPath body
-            Left err -> writeFile koiosPath (displayException err)
 
 -- ---------------------------------------------------------
 -- Wallet
 -- ---------------------------------------------------------
 
--- | The wallet funding every actor of a run.
-data Wallet = Wallet
-    { walletAddr :: Addr
-    -- ^ Enterprise payment address derived from the signing key
-    , walletSignKey :: SignKeyDSIGN Ed25519DSIGN
-    -- ^ Signing key; read from the joiner's file, never printed
-    , walletNetwork :: Network
-    -- ^ Network the address is built for
-    }
-
-{- | Load a payment signing key from a file and derive its enterprise
-address for the given magic.
-
-Accepts the @cardano-cli@ text envelope (a JSON object with a
-@cborHex@ field holding the CBOR byte string @5820\<32 bytes\>@), the
-same value as bare hex, and the 32 raw key bytes. The key is never
-logged.
--}
-loadWallet :: Word32 -> FilePath -> IO Wallet
-loadWallet magic path = do
-    raw <- BS.readFile path
-    keyBytes <- either (die . prefix) pure (signKeyBytes raw)
-    sk <- case rawDeserialiseSignKeyDSIGN keyBytes of
-        Just sk -> pure sk
-        Nothing ->
-            die (prefix "the 32 bytes are not a valid Ed25519 signing key")
-    let net = if magic == mainnetMagic then Mainnet else Testnet
-    pure
-        Wallet
-            { walletAddr =
-                Addr net (KeyHashObj (keyHashFromSignKey sk)) StakeRefNull
-            , walletSignKey = sk
-            , walletNetwork = net
-            }
-  where
-    prefix msg = "wallet signing key " <> path <> ": " <> msg
-
--- | The 32 raw key bytes carried by a signing-key file.
-signKeyBytes :: ByteString -> Either String ByteString
-signKeyBytes raw
-    | BS.length trimmed == 32, not (isTextual trimmed) = Right trimmed
-    | Just h <- envelopeHex trimmed = unwrap =<< decodeHex h
-    | otherwise = unwrap =<< decodeHex trimmed
-  where
-    trimmed = BC.dropWhile isSpace (BC.dropWhileEnd isSpace raw)
-    isTextual = BS.all (\w -> w >= 0x20 && w < 0x7f)
-    envelopeHex b
-        | BC.take 1 b == "{" = case eitherDecodeStrict b of
-            Right v ->
-                BC.pack . T.unpack
-                    <$> parseMaybe (withObject "skey" (.: "cborHex")) v
-            Left _ -> Nothing
-        | otherwise = Nothing
-    decodeHex b = case B16.decode b of
-        Right bytes -> Right bytes
-        Left _ ->
-            Left
-                "not a text envelope with a cborHex field, not hex, and not \
-                \32 raw bytes"
-    unwrap bytes
-        | BS.length bytes == 34
-        , BS.take 2 bytes == BS.pack [0x58, 0x20] =
-            Right (BS.drop 2 bytes)
-        | BS.length bytes == 32 = Right bytes
-        | otherwise =
-            Left ("expected 32 key bytes, found " <> show (BS.length bytes))
-
-{- | The wallet a mode funds from: the devnet genesis key, or the
-joiner's key loaded from the file they named.
--}
-walletForMode :: NodeMode -> IO Wallet
-walletForMode Devnet =
-    pure
-        Wallet
-            { walletAddr =
-                Addr
-                    Testnet
-                    (KeyHashObj (keyHashFromSignKey genesisSignKey))
-                    StakeRefNull
-            , walletSignKey = genesisSignKey
-            , walletNetwork = Testnet
-            }
-walletForMode (External e) = loadWallet (extMagic e) (extSkeyFile e)
-
--- | This process's funding wallet, resolved once from 'runMode'.
-processWallet :: Wallet
-processWallet = unsafePerformIO (walletForMode runMode)
-{-# NOINLINE processWallet #-}
-
-{- | The address every actor of this run is funded from: the devnet
-genesis address by default, the joiner's address in external mode.
--}
-funderAddr :: Addr
-funderAddr = walletAddr processWallet
-
--- | The signing key matching 'funderAddr'.
-funderSignKey :: SignKeyDSIGN Ed25519DSIGN
-funderSignKey = walletSignKey processWallet
-
--- | The network magic this run negotiates with its node.
-sessionMagic :: NetworkMagic
-sessionMagic = case runMode of
-    Devnet -> devnetMagic
-    External e -> NetworkMagic (extMagic e)
-
 -- ---------------------------------------------------------
 -- Session
 -- ---------------------------------------------------------
-
--- | Everything a runner needs from the chain it runs against.
-data NodeSession = NodeSession
-    { nsProvider :: Cage.Provider IO
-    -- ^ Queries, over the connected node
-    , nsSubmitter :: Submitter IO
-    -- ^ Transaction submission, over the same connection
-    , nsMagic :: NetworkMagic
-    -- ^ Magic the handshake negotiated
-    , nsNetwork :: Network
-    -- ^ Network the funding address is built for
-    , nsPParams :: PParams ConwayEra
-    -- ^ Protocol parameters queried from the running node
-    , nsScriptRegistered :: ScriptHash -> IO Bool
-    -- ^ Whether this script has a registered reward account, including zero balance
-    , nsTipSlot :: IO SlotNo
-    -- ^ Current chain tip queried from this session
-    , nsMode :: NodeMode
-    -- ^ Mode this session was opened in
-    }
 
 -- | The devnet genesis directory, or 'Nothing' in external mode.
 devnetGenesis :: IO (Maybe FilePath)
@@ -540,31 +284,10 @@ withNodeModeAndFunding fundingFloor mode k = case mode of
                     , nsTipSlot = N2C.ledgerTipSlot <$> N2C.queryLedgerSnapshot n2c
                     , nsMode = mode
                     }
-        bracket_
-            (writeIORef openSession (Just sess))
-            (writeIORef openSession Nothing)
-            (k sess)
+        withOpenSession sess (k sess)
     -- Byron epoch length of the public networks; a follower started at
     -- the tip never decodes a Byron block, but the codec needs one.
     publicByronEpochSlots = 21_600
-
-{- | The session this process currently has open, installed by
-'withNodeMode'. 'awaitTx' is the only reader: it needs the chain the
-run is against, and threading a provider through every submission site
-would say nothing the session does not already know. Outside a
-session it names the error rather than guessing.
--}
-openSession :: IORef (Maybe NodeSession)
-openSession = unsafePerformIO (newIORef Nothing)
-{-# NOINLINE openSession #-}
-
--- | Registration is global to a script credential, shared by registries.
-scriptStakeRegistered :: ScriptHash -> IO Bool
-scriptStakeRegistered h = readIORef openSession >>= maybe (die "scriptStakeRegistered called outside a node session") (`nsScriptRegistered` h)
-
--- | Read the live tip for a transaction built in the active session.
-currentTipSlot :: IO SlotNo
-currentTipSlot = readIORef openSession >>= maybe (die "currentTipSlot called outside a node session") nsTipSlot
 
 {- | Wait until a submitted transaction is visible on the chain.
 
@@ -627,19 +350,6 @@ awaitTxWindow tx txid = do
     wanted <- txIdFromHex "awaitTxWindow" txid
     confirmOutputZero sess txid wanted deadline
 
--- | The open session, or name the confirmation called outside one.
-sessionFor :: String -> IO NodeSession
-sessionFor what =
-    readIORef openSession
-        >>= maybe
-            ( die
-                ( what
-                    <> " was called outside a node session; a runner must \
-                       \wait for confirmation inside withNode"
-                )
-            )
-            pure
-
 -- | A transaction id from its hex rendering.
 txIdFromHex :: String -> String -> IO TxId
 txIdFromHex what txid = do
@@ -654,7 +364,7 @@ while the output has not appeared.
 -}
 confirmOutputZero :: NodeSession -> String -> TxId -> SlotNo -> IO ()
 confirmOutputZero sess label tid deadline =
-    readIORef chainFollower
+    currentFollower
         >>= maybe
             (die (label <> ": no indexer follows this session's chain"))
             (indexed . followingIndexer)
@@ -769,25 +479,6 @@ awaitChain what observe = go confirmationAttempts
                 threadDelay (confirmationPollSeconds * 1_000_000)
                 go (n - 1)
 
-{- | The indexer this process follows its chain with, installed by
-'followChain'. 'awaitIndexed', 'confirmOutputZero' and
-'followedProvider' are its readers, for the same reason 'openSession'
-is 'awaitTx''s: every submission and every read already runs inside
-the session that knows the chain.
--}
-chainFollower :: IORef (Maybe Following)
-chainFollower = unsafePerformIO (newIORef Nothing)
-{-# NOINLINE chainFollower #-}
-
--- | An indexer following a chain, and where it started.
-data Following = Following
-    { followingIndexer :: IndexerHandle
-    , followingFromOrigin :: Bool
-    {- ^ Whether every block of the chain went through the indexer, so
-    that its view of an address lacks only the genesis outputs
-    -}
-    }
-
 {- | Follow the devnet at a socket from its origin for the duration of
 an action: 'awaitIndexed' returns on the block that carries a
 transaction, and 'followedProvider' answers address reads. The
@@ -814,18 +505,11 @@ followChain magic byronEpochSlots start sock action =
     withInMemoryIndexer $ \idx ->
         withChainSyncFollower nullTracer follow idx $ \follower -> do
             link (fhAsync follower)
-            bracket_
-                ( writeIORef chainFollower $
-                    Just
-                        Following
-                            { followingIndexer = idx
-                            , followingFromOrigin = isNothing start
-                            }
-                )
-                ( do
-                    writeIORef chainFollower Nothing
-                    writeIORef fundingIndexed False
-                )
+            withFollowing
+                Following
+                    { followingIndexer = idx
+                    , followingFromOrigin = isNothing start
+                    }
                 action
   where
     follow =
@@ -848,40 +532,6 @@ startingAt = \case
     Chain.BlockPoint (SlotNo s) (OneEraHash h) ->
         Just (Indexer.SlotNo s, Indexer.BlockHash (SBS.fromShort h))
 
-{- | Wait until the followed chain's indexer has applied the block
-carrying a submitted transaction, observed as the transaction's first
-output; name the transaction when it is not indexed within the
-confirmation window.
--}
-awaitIndexed :: ConwayTx -> IO ()
-awaitIndexed tx = do
-    idx <-
-        readIORef chainFollower
-            >>= maybe
-                ( die
-                    "awaitIndexed was called outside followChain; \
-                    \a runner must confirm inside the chain it follows"
-                )
-                (pure . followingIndexer)
-    let TxId h = txIdTx tx
-    seen <-
-        awaitTxIn
-            idx
-            (Indexer.TxIn (hashToBytes (extractHash h)) 0)
-            (Just window)
-    case seen of
-        Just _ -> pure ()
-        Nothing ->
-            die
-                ( "transaction "
-                    <> show (txIdTx tx)
-                    <> " was accepted by the node but not indexed within "
-                    <> show window
-                    <> " seconds"
-                )
-  where
-    window = confirmationAttempts * confirmationPollSeconds
-
 {- | The provider a runner reads the chain through.
 
 Where an indexer has followed the chain from its origin (the devnet),
@@ -901,19 +551,12 @@ address read for as long as the indexer runs.
 -}
 followedProvider :: Cage.Provider IO -> Submitter IO -> IO (Cage.Provider IO)
 followedProvider node submit =
-    readIORef chainFollower >>= \case
+    currentFollower >>= \case
         Just Following{followingIndexer = idx, followingFromOrigin = True} -> do
             indexFunding idx node submit
-            writeIORef fundingIndexed True
+            markFundingIndexed
             pure node{Cage.queryUTxOs = indexedUTxOs idx}
         _ -> pure node
-
-{- | Whether the followed devnet's funding read is done, after which a
-node address read is a defect: the indexer answers every one.
--}
-fundingIndexed :: IORef Bool
-fundingIndexed = unsafePerformIO (newIORef False)
-{-# NOINLINE fundingIndexed #-}
 
 -- | Every output at an address as the indexer holds it, in the node's order.
 indexedUTxOs :: IndexerHandle -> Addr -> IO [(TxIn, TxOut ConwayEra)]
@@ -988,17 +631,6 @@ confirmationDelay = case runMode of
     Devnet -> 5_000_000
     External _ -> 30_000_000
 
--- | Seconds between confirmation polls.
-confirmationPollSeconds :: Int
-confirmationPollSeconds = 2
-
-{- | How many polls before a submitted transaction is declared lost.
-Five minutes covers a public test network's block time with room for a
-slow epoch boundary; the devnet returns on the first or second poll.
--}
-confirmationAttempts :: Int
-confirmationAttempts = 150
-
 -- | One line naming the chain and the wallet; never the key.
 announce :: NodeMode -> NetworkMagic -> FilePath -> Addr -> IO ()
 announce mode (NetworkMagic magic) sock addr =
@@ -1048,38 +680,6 @@ awaitConnection (NetworkMagic magic) sock nodeThread prov = do
                        \another network refuses the handshake. Underlying \
                        \failure: "
                     <> show outcome
-
-{- | The cage provider over an N2C provider. Its address reads are the
-node's @GetUTxOByAddress@, refused once 'followedProvider' has handed
-the reads of a followed devnet to its indexer.
--}
-adaptProvider :: N2C.Provider IO -> Cage.Provider IO
-adaptProvider p =
-    Cage.Provider
-        { Cage.queryUTxOs = \addr -> do
-            followed <- readIORef fundingIndexed
-            when followed $
-                die
-                    ( "GetUTxOByAddress for "
-                        <> bech32Address addr
-                        <> " sent to the node of a followed devnet after its \
-                           \funding read: read through followedProvider"
-                    )
-            atomicModifyIORef' addressReads (\n -> (n + 1, ()))
-            N2C.queryUTxOs p addr
-        , Cage.queryProtocolParams = N2C.queryProtocolParams p
-        , Cage.evaluateTx = N2C.evaluateTx p
-        , Cage.posixMsToSlot = N2C.posixMsToSlot p
-        , Cage.posixMsCeilSlot = N2C.posixMsCeilSlot p
-        }
-
--- | How many @GetUTxOByAddress@ this process has sent to a node.
-nodeAddressReads :: IO Int
-nodeAddressReads = readIORef addressReads
-
-addressReads :: IORef Int
-addressReads = unsafePerformIO (newIORef 0)
-{-# NOINLINE addressReads #-}
 
 -- ---------------------------------------------------------
 -- Funding
@@ -1151,25 +751,3 @@ ada l =
         <> " ada)"
   where
     pad s = replicate (6 - length s) '0' <> s
-
-{- | Bech32 rendering of an address, the form a faucet and an explorer
-accept (CIP-5: @addr_test@ on a test network, @addr@ on mainnet).
-Shelley addresses exceed bech32's 90-character limit, so the lenient
-encoder is the correct one here.
--}
-bech32Address :: Addr -> String
-bech32Address a =
-    T.unpack (Bech32.encodeLenient hrp (Bech32.dataPartFromBytes bytes))
-  where
-    bytes = serialiseAddr a
-    hrp = case a of
-        Addr Mainnet _ _ -> unsafeHrp "addr"
-        Addr Testnet _ _ -> unsafeHrp "addr_test"
-        AddrBootstrap _ -> unsafeHrp "addr"
-    unsafeHrp t = case Bech32.humanReadablePartFromText t of
-        Right h -> h
-        Left err -> error ("bech32Address: bad prefix: " <> show err)
-
--- | Fail with a named diagnostic, never a bare exception.
-die :: String -> IO a
-die = throwIO . ErrorCall
