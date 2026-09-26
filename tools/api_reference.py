@@ -723,22 +723,30 @@ def copy_reference(
     located = []
     for module in private_modules:
         anchor = private_owners[module]["anchor"]
-        pos = guide_text.find(f'id="{anchor}"')
-        if pos < 0:
+        anchor_token = f'id="{anchor}"'
+        occurrences = guide_text.count(anchor_token)
+        if occurrences < 1:
             raise SystemExit(
                 f"api_reference: rendered guide anchor missing for private "
                 f"owner {module}: #{anchor} on {guide_page_rel}"
             )
-        located.append((pos, module, anchor, private_owners[module]["permalink"]))
+        if occurrences > 1:
+            raise SystemExit(
+                f"api_reference: ambiguous rendered guide anchor for private "
+                f"owner {module}: #{anchor} occurs {occurrences} times on "
+                f"{guide_page_rel}"
+            )
+        located.append((guide_text.find(anchor_token), module, anchor, private_owners[module]["permalink"]))
     located.sort()
     for i, (pos, module, anchor, url) in enumerate(located):
         end = located[i + 1][0] if i + 1 < len(located) else len(guide_text)
         entry = guide_text[pos:end]
-        if f'href="{url}"' not in entry:
+        url_token = f'href="{url}"'
+        if entry.count(url_token) != 1:
             raise SystemExit(
-                f"api_reference: owner permalink missing or wrong for private "
-                f"owner {module}: expected {url} bound to entry #{anchor} on "
-                f"{guide_page_rel}"
+                f"api_reference: owner permalink missing, wrong or duplicated "
+                f"for private owner {module}: expected exactly one {url} "
+                f"bound to entry #{anchor} on {guide_page_rel}"
             )
         for _, other_module, _, other_url in located:
             if other_module != module and f'href="{other_url}"' in entry:
