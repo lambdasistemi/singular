@@ -127,11 +127,11 @@ import Singular.Registry.TxBuilder.Internal.Identity (
     requestAddrFromCfg,
     scriptFromBytes,
     scriptHashBytes,
+    toLedgerData,
  )
 import Singular.Registry.TxBuilder.Internal.Lookup (
     computeScriptIntegrity,
     currentPosixMs,
-    toLedgerData,
  )
 import Singular.Registry.TxBuilder.Update (
     RegistryContext (..),

@@ -86,6 +86,7 @@ import Cardano.Ledger.Mary.Value (
     PolicyID (..),
  )
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
+import Cardano.Ledger.Plutus.Language (Language (PlutusV3))
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Slotting.Slot (SlotNo)
 import Cardano.Tx.Balance (
