@@ -146,10 +146,12 @@ session is installed — protocol parameters first, then (devnet only)
 the one node address read that sweeps the funding wallet and sets the
 guard, then the funding-floor check when a floor is given, then the
 announcement — and the body runs inside the open-session bracket. When
-the body returns or throws, the brackets unwind from the inside out:
-the open session is removed first, then the follower and — on the
-devnet — the guard with it, then the node client, so a later action
-never sees a torn-down runner.
+the body returns or throws, the brackets unwind from the inside out
+and the open session is removed first. What clears next depends on
+the mode: on the devnet the node client is cancelled, then the
+follower and guard clear together before the devnet itself is torn
+down; externally the follower clears and then the node client is
+cancelled. A later action never sees a torn-down runner.
 
 | Process state | Owner | Installed | Removed |
 | --- | --- | --- | --- |
@@ -218,8 +220,8 @@ follower through `currentFollower`, and `followedProvider` sets the
 guard through `markFundingIndexed` — each helper's body equal to the
 inline code it replaced; `indexFunding` reads the wallet through its
 accessors instead of a record pattern, equivalent for the devnet
-wallet it loads. Every other moved declaration is byte-equal to its
-base. At candidate revision `7b4adf3` the repository's exact-head
+wallet it loads. Every other moved declaration's body is equal to its
+base apart from whitespace. At candidate revision `7b4adf3` the repository's exact-head
 checks passed — the full cage suite, the devnet end-to-end paths and
 the bounded journey — and the focused cleanup brackets' installation,
 exceptional-exit removal and guard controls are bound to the same code

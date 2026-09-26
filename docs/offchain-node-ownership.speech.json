@@ -33,7 +33,7 @@
       "pause": 600
     },
     {
-      "text": "The second diagram shows unwinding from the inside out. In both modes the open session is removed first. On the devnet the node client is then cancelled, the follower and guard are cleared together, and the devnet is torn down. Externally the follower is cleared and then the node client cancelled.",
+      "text": "The second diagram shows unwinding from the inside out, and the open session is removed first in both modes. What clears next depends on the mode: on the devnet the node client is cancelled, then the follower and guard clear together before the devnet itself is torn down; externally the follower clears and then the node client is cancelled.",
       "pause": 500
     },
     {
@@ -79,7 +79,7 @@
       "pause": 500
     },
     {
-      "text": "The split is behavior-preserving by construction and by receipt. Five moved call sites now name the extracted helpers — the session installs the open session through the with-open-session helper, follow chain brackets the follower and the guard through the with-following helper, clearing the follower before the guard, the confirmation and followed-provider reads go through the current-follower reader, and the followed provider sets the guard through the mark-funding-indexed helper — each helper's body equal to the inline code it replaced. Index funding reads the wallet through its accessors instead of a record pattern, equivalent for the devnet wallet it loads, and every other moved declaration is byte-equal to its base.",
+      "text": "The split is behavior-preserving by construction and by receipt. Five moved call sites now name the extracted helpers — the session installs the open session through the with-open-session helper, follow chain brackets the follower and the guard through the with-following helper, clearing the follower before the guard, the confirmation and followed-provider reads go through the current-follower reader, and the followed provider sets the guard through the mark-funding-indexed helper — each helper's body equal to the inline code it replaced. Index funding reads the wallet through its accessors instead of a record pattern, equivalent for the devnet wallet it loads, and every other moved declaration's body is equal to its base apart from whitespace.",
       "pause": 600
     },
     {
@@ -89,6 +89,6 @@
   ],
   "_source": {
     "file": "offchain-node-ownership.md",
-    "sha256": "afb8c52506182ca0f6b69e2544a0162e35e3abeb1676bf51f57c22d066a39234"
+    "sha256": "46378729a1fce4cf03976619d95a1e8a260fdccd93ffd70d74bc749516b40e21"
   }
 }
