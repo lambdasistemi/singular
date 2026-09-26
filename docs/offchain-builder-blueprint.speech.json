@@ -1,0 +1,76 @@
+{
+  "one-owner-per-concern": [
+    {
+      "text": "A contributor changing an off-chain builder or blueprint step wants one obvious owner per concern. A change to a script identity, a lookup, or an edge decision should be reviewed in one place, and should not silently disagree with a second copy somewhere else.",
+      "pause": 300
+    },
+    {
+      "text": "A diagram is shown here. Two public facades, the blueprint facade and the transaction-builder facade, each re-export three focused owners. The blueprint owners cover schema and validation, parameter application, and loading with code selection. The builder owners cover identity and conversion, lookup and balancing, and edges with consumer binding and failure attribution. The identity owner applies request parameters from the parameter owner, the lookup owner reads request datums from the identity owner, and the edges owner hashes consumer scripts through the identity owner. The per-operation builders import these owners directly.",
+      "pause": 400
+    },
+    {
+      "text": "Every declaration lives in exactly one owner. The two public modules hold no implementations: they re-export the same names with the same signatures as before the extraction, so an existing test, shipped command, or journey keeps compiling unchanged. The per-operation builders import the focused owners directly. The retract builder is the one library module that still imports the facade, and the facade keeps it compiling and behaving unchanged while that file stays under a separate ticket's fence.",
+      "pause": 300
+    },
+    {
+      "text": "A table with six rows follows. Each row names one owner module and states what it is responsible for: the blueprint schema model, the application of registry parameters to compiled validator code, blueprint loading and code selection, builder identity and conversions, lookup and balancing, and the edge, consumer-binding, and failure-attribution decisions a builder shares with the cage.",
+      "pause": 300
+    }
+  ],
+  "where-common-changes-land": [
+    {
+      "text": "This section is the routing table for everyday edits. A request datum that gains or changes a field lands in the identity owner, which builds and decodes it; the on-chain request type it encodes lives in the registry types module.",
+      "pause": 250
+    },
+    {
+      "text": "Balancing, fee, or refund behavior lands in the lookup owner. The mint an edge owes, or the approval that certifies it, lands in the edges owner, which is also the only place an edge and its leaf bytes are paired.",
+      "pause": 250
+    },
+    {
+      "text": "The state validator's parameter list, or the request validator's parameter order, lands in the parameter owner, and then in the Aiken blueprint it applies. Blueprint parsing that wrongly rejects or accepts a shape lands in the schema owner. A boot reading the wrong compiled code from the registry partition lands in the load owner.",
+      "pause": 300
+    }
+  ],
+  "decisions-this-extraction-recorded": [
+    {
+      "text": "A table with three rows records the decisions this extraction made, each with the alternative it rejected.",
+      "pause": 200
+    },
+    {
+      "text": "First, the split itself: three owners per facade, matching the responsibilities named in the module plan, rather than ten or more fine-grained owners, which would be more indirection than a reviewer can hold for the same guarantee. Owners may split further only when ownership stays evident and the graph stays acyclic.",
+      "pause": 250
+    },
+    {
+      "text": "Second, compatibility: the facades re-export the original explicit export lists byte for byte, and bodies move verbatim apart from imports, rather than rewriting every caller in the same change, which would churn tests and shipped commands for no behavioral benefit.",
+      "pause": 250
+    },
+    {
+      "text": "Third, import direction: library builders import the focused owners, while tests, shipped commands, and journeys keep importing the facades. The retract builder keeps its facade import while its file is fenced to another ticket. Migrating every consumer at once was rejected because it would bury the behavior-preservation evidence under import churn.",
+      "pause": 300
+    },
+    {
+      "text": "The extraction is behavior-preserving by construction and by evidence. Every moved declaration's source text is compared against its previous home, the facades' export lists are compared byte for byte, the blueprint parameter reading, builder assertions, and failure attribution keep their independent assertions, and the fresh-blueprint end-to-end, bounded journey, and archive commands exercise the moved builders against a real devnet.",
+      "pause": 300
+    }
+  ],
+  "what-the-checks-do-not-establish": [
+    {
+      "text": "A green component build is a compile claim, not transaction correspondence. The behavioral rows cover the asserted edges and refusal shapes they cover; a change to an uncovered builder path still needs its own check. The linked guide states the check commands and their measured extents.",
+      "pause": 250
+    },
+    {
+      "text": "The generated, revision-matched Haskell API reference for this library now ships with this site. Its page links every module of the library stanza to the generated module page and the highlighted source, and the site check binds the generated pages to this candidate's own source bytes.",
+      "pause": 300
+    }
+  ],
+  "source": [
+    {
+      "text": "The last section links the facades and the six owner modules to the generated API reference on this site, so a reader can move from a responsibility on this page to the exact interface and source of the module that owns it. Read from the repository, the same links open the source files themselves. The complete generated reference for the library is the off-chain API reference page.",
+      "pause": 250
+    }
+  ],
+  "_source": {
+    "file": "offchain-builder-blueprint.md",
+    "sha256": "8b4557e171732a3b4db5b3648b8bb303813b6541178d1af643b21ff74edcef0b"
+  }
+}

@@ -33,7 +33,7 @@ ci:
     just simulator
     just browser
     just build-docs
-    python3 tools/check_site.py site
+    nix run --quiet .#docs-check
     just check-presentation
     just rename-registry-test
     bash tools/no-global-fixture-state.sh

@@ -4,6 +4,8 @@ from pathlib import Path
 import re
 import shutil
 
+import api_reference
+
 root = Path(__file__).resolve().parent.parent
 stage = root / ".docs-source"
 if stage.exists():
@@ -50,7 +52,57 @@ def restage_lean_hrefs(stage: Path) -> int:
     return rewritten
 
 
+def restage_api_hrefs(stage: Path) -> int:
+    """Point staged off-chain source anchors at the generated API reference.
+
+    Authored pages link the repository's own Haskell sources, so GitHub blob
+    rendering follows the current ref; the built site instead serves the
+    generated Haddock pages for this candidate, addressed one level up the
+    same way the shipped model/ copy is. The ``data-api`` attribute names
+    which generated page the anchor becomes (module page or hyperlinked
+    source page); the anchor must name a module of the Cabal library extent,
+    so a link to a non-library file cannot silently pass through.
+    """
+    extent = set(api_reference.library_modules(root / "offchain"))
+
+    def module_of(rel_path: str) -> str:
+        for source_dir in api_reference.parse_cabal_library(root / "offchain")["hs_source_dirs"]:
+            prefix = source_dir.strip("/") + "/"
+            if rel_path.startswith(prefix):
+                module = rel_path[len(prefix):-len(".hs")].replace("/", ".")
+                if module not in extent:
+                    raise RuntimeError(
+                        f"api anchor targets a file outside the Cabal library extent: {rel_path}"
+                    )
+                return module
+        raise RuntimeError(f"api anchor is not under a declared hs-source-dir: {rel_path}")
+
+    pattern = re.compile(r'<a href="\.\./offchain/([^"]+)" data-api="(module|source)">')
+
+    def replace(match: re.Match) -> str:
+        module = module_of(match.group(1))
+        page = (
+            api_reference.module_page_name(module)
+            if match.group(2) == "module"
+            else "src/" + api_reference.source_page_name(module)
+        )
+        return f'<a href="../../api/offchain/{page}">'
+
+    rewritten = 0
+    pages = sorted(stage.glob("docs/**/*.md"))
+    for md in pages:
+        text = md.read_text(encoding="utf-8")
+        new = pattern.sub(replace, text)
+        if new != text:
+            md.write_text(new, encoding="utf-8")
+            rewritten += 1
+    if rewritten == 0:
+        raise RuntimeError("no off-chain source anchors rewritten for staging: the generated API reference is unreachable")
+    return rewritten
+
+
 restage_lean_hrefs(stage)
+restage_api_hrefs(stage)
 # Ship the actual candidate sources and static simulator with the same site.
 # Generated build trees never become part of the publication.
 model = root / "lean"

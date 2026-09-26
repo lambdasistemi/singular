@@ -2,8 +2,13 @@
   description = "Singular executable model, statement debt and documentation";
   inputs.dev-assets-mkdocs.url = "github:paolino/dev-assets/34c7df6959c9fa36c6927808de6712b939e7a7fb?dir=mkdocs";
   inputs.dev-assets-playwright.url = "github:paolino/dev-assets/a8f2ff7603bc793794d3e4459b2d5510a57e72a2?dir=playwright";
+  # This repository's own off-chain tree, as a relative in-tree input: the
+  # generated API reference's Haddock build and its manifest source digests
+  # come from exactly this source. Its dependencies keep their own locked
+  # revisions (no follows rebinding), and offchain/flake.lock stays as is.
+  inputs.offchain.url = "path:./offchain";
   inputs.nixpkgs.follows = "dev-assets-mkdocs/nixpkgs";
-  outputs = { self, nixpkgs, dev-assets-mkdocs, dev-assets-playwright }:
+  outputs = { self, nixpkgs, dev-assets-mkdocs, dev-assets-playwright, offchain }:
     let
       systems = [ "x86_64-linux" "aarch64-linux" ];
       each = nixpkgs.lib.genAttrs systems;
@@ -13,6 +18,7 @@
         sharedShell = dev-assets-mkdocs.devShells.${system}.default;
         sharedSource = dev-assets-mkdocs;
         mermaidJs = dev-assets-mkdocs.packages.${system}.mermaid-js;
+        inherit offchain;
       };
       model = system: import ./nix/model.nix { pkgs = import nixpkgs { inherit system; }; src = self; };
       coverage = system: import ./nix/coverage.nix { pkgs = import nixpkgs { inherit system; }; src = self; };

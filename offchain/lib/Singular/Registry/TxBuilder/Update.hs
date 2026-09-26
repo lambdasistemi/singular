@@ -85,7 +85,9 @@ import Singular.Registry.Trie (
     Trie (..),
     TrieManager (..),
  )
-import Singular.Registry.TxBuilder.Internal
+import Singular.Registry.TxBuilder.Internal.Edges
+import Singular.Registry.TxBuilder.Internal.Identity
+import Singular.Registry.TxBuilder.Internal.Lookup
 import Singular.Registry.Types (
     CageDatum (..),
     OnChainRequest (..),

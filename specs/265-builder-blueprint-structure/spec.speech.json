@@ -1,0 +1,18 @@
+{
+  "requirements": [
+    {
+      "text": "The extraction preserves one implementation behind existing exports and results. The affected offchain library also gets same-revision generated Haddock with Cabal-discovered modules and checked source links.",
+      "pause": 400
+    }
+  ],
+  "acceptance-boundary": [
+    {
+      "text": "Epic answers A-001 and A-002 authorize the candidate library reference and a local off-chain lock input with existing pins fixed. The future documentation archive carries the same pages; Conformance and all-library coverage remain later work.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "f9937e88f0a33db669ff22df974e54746fe298a9ca7fcc662bbd8e869e8982fb"
+  }
+}

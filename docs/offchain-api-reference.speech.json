@@ -1,0 +1,48 @@
+{
+  "what-this-reference-contains": [
+    {
+      "text": "A contributor reading the builder and blueprint guide wants to click a module of this library and land on its real interface — signatures, documentation, and the highlighted source — for exactly the code this repository ships. This page is the entry point of that reference for the off-chain registry library: a generated Haddock reference, rebuilt with the documentation site from this same source tree, so what you read here is what you would compile against. One boundary on that promise is named later: identifiers and modules that belong to other packages are visible in the generated pages but are not clickable, because their documentation is not bundled with this site.",
+      "pause": 400
+    },
+    {
+      "text": "Every module of the off-chain registry library is listed here. Each entry links two pages of the generated reference: the module page — exports, types, and documented declarations — and the hyperlinked source page with the rendered, highlighted Haskell this candidate was built from. On this site the links open the generated pages; read from the repository, the same links open the source files themselves at the revision you are viewing.",
+      "pause": 400
+    },
+    {
+      "text": "The module extent is the library stanza of the off-chain Cabal file — every exposed module and every internal module across all declared source directories. The library currently declares no internal modules, so the extent is the public module surface; if one is added, this list and the generated reference grow with it, and the site check fails until they agree. The facades and owners of the registry builder and blueprint extraction are described module by module in the builder and blueprint modules guide.",
+      "pause": 400
+    }
+  ],
+  "how-the-reference-stays-honest": [
+    {
+      "text": "The reference cannot drift from the code it claims to document. The site build derives a manifest from the same off-chain source input Haddock ran on: for every module it records the digest of the Haskell source file and the digest of the actual generated source page. The site check then redoes both halves independently from this repository's own source tree — the manifest's module extent must equal the Cabal library extent, each recorded source digest must match the repository's file, and each generated page in the shipped site must match its recorded digest. A reference generated from any other source, however its label reads, fails that comparison; a page edited after generation fails its own digest.",
+      "pause": 400
+    },
+    {
+      "text": "Every link inside the generated pages is inspected too. A reference from one module of this library to another — a type, a function, a module, however the tool that generated it spelled it — must resolve to a page of this reference and, where it names an anchor, to an anchor that exists. The check prints how many same-library links it resolved, and the reference's own index and guide links are checked by the site's ordinary link inventory.",
+      "pause": 400
+    },
+    {
+      "text": "Dependency documentation is a different matter. The library is built against a large Cardano and Plutus dependency closure, and none of those packages' Haddock pages are bundled into this site: a type such as a ledger address or a Plutus core data value appears in the generated pages as a visible label, but it is not a link — following it would leave this site for documentation that is not shipped with it. Neutralizing those labels is decided from the build's own package database, which positively names every module each dependency owns, so a label is only unlinked when it provably belongs to a dependency; a dead or store-path link that reappears fails the site check, and a same-library reference may never be treated as a dependency label to hide a broken link.",
+      "pause": 400
+    },
+    {
+      "text": "One further generator class is unlinked by structure. Haddock renders instance method names in each instance's Methods list as same-page links, but emits no matching anchors for them — every instance of a class lists the same method names, so the anchor would have to be duplicated. Those method labels stay visible as plain text inside the instance lists, and the site check both counts them separately and still requires every fragment link outside that exact structure to resolve.",
+      "pause": 400
+    },
+    {
+      "text": "The release archive check extends the same discipline to what gets shipped: the staged documentation archive must carry the generated reference member for member and byte for byte before the ordinary release checks run.",
+      "pause": 400
+    }
+  ],
+  "what-the-reference-does-not-claim": [
+    {
+      "text": "This reference covers the off-chain registry library only. It is not a repository-wide API claim: the conformance suite's own library is documented separately, and a generated reference for every library in this repository is a later, independently checked extension. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder and blueprint code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "offchain-api-reference.md",
+    "sha256": "5ab3f39364e35a2fe2a1b3c0fe14a72b908dce01341c88bde1a1e2f2f3106a82"
+  }
+}

@@ -1,7 +1,17 @@
-{ pkgs, src, sharedShell, sharedSource, mermaidJs }:
+{ pkgs, src, sharedShell, sharedSource, mermaidJs, offchain }:
 let
   tools = sharedShell.nativeBuildInputs ++ sharedShell.buildInputs ++ [ pkgs.python3 pkgs.just ];
   candidateRef = src.rev or (src.dirtyRev or "");
+  # The generated off-chain API reference: Haddock runs on the off-chain
+  # flake input — this PR's own source tree — and the manifest records that
+  # input's source digests beside the generated pages', so the docs checker
+  # can prove the reference describes this candidate (a ref label alone is
+  # not a freshness witness).
+  apiHaddock = offchain.packages.${pkgs.system}.library-haddock;
+  # The build's own package database: positive evidence for which modules a
+  # dependency owns, used to neutralize (never merely unlink) the generated
+  # references to dependency documentation this site does not bundle.
+  apiPackageDb = offchain.packages.${pkgs.system}.library-haddock.configFiles;
   # Material fetches Mermaid from unpkg at read time unless `mermaid` is already
   # defined. The shared toolchain pins a copy; serving it from the site keeps
   # every diagram inside the checked, byte-verified build.
@@ -15,6 +25,7 @@ let
     buildPhase = ''
       python3 tools/prepare_docs.py
       mkdocs build --strict
+      python3 tools/api_reference.py manifest site ${apiHaddock.doc} ${offchain.outPath} ${apiPackageDb}
       python3 tools/prepare_release.py site
     '';
     installPhase = ''
@@ -41,8 +52,29 @@ let
     text = ''
       cd ${src}
       ${pkgs.lib.optionalString (candidateRef != "") "export SINGULAR_CANDIDATE_REF=${pkgs.lib.escapeShellArg candidateRef}"}
-      python3 tools/check_site.py ${docs}
+      # The generated-site tree under check is overridable for the negative
+      # controls; the candidate checkout and its ref binding never move.
+      python3 tools/check_site.py "''${SINGULAR_API_SITE_OVERRIDE:-${docs}}"
       python3 tools/check_presentation_repo.py
+    '';
+  };
+  # The staged docs archive must carry the candidate site's generated API
+  # pages — member for member, byte for byte — before the unchanged existing
+  # release checks run. The archive under check is overridable for the
+  # archive negative control; the site it is compared against never moves.
+  apiArchiveCheck = pkgs.writeShellApplication {
+    name = "api-archive-check";
+    runtimeInputs = [ pkgs.python3 ];
+    text = ''
+      python3 ${src}/tools/api_reference.py archive-check "''${SINGULAR_DOCS_ARCHIVE_OVERRIDE:-${release.archive}}" ${docs}
+    '';
+  };
+  releaseCheck = pkgs.writeShellApplication {
+    name = "release-check";
+    runtimeInputs = [ pkgs.bash ];
+    text = ''
+      ${pkgs.lib.getExe apiArchiveCheck}
+      ${pkgs.lib.getExe release.checker}
     '';
   };
   previewCheck = pkgs.writeShellApplication {
@@ -58,13 +90,16 @@ let
 in {
   inherit docs;
   releaseArchive = release.archive;
-  releaseCheck = release.check;
+  releaseCheck = pkgs.runCommand "singular-release-check" { } ''
+    ${pkgs.lib.getExe releaseCheck}
+    touch "$out"
+  '';
   check = pkgs.runCommand "singular-docs-check" { } ''
     ${pkgs.lib.getExe checker}
     touch "$out"
   '';
   apps = {
-    release-check = { type = "app"; program = pkgs.lib.getExe release.checker; };
+    release-check = { type = "app"; program = pkgs.lib.getExe releaseCheck; };
     release-artifacts = { type = "app"; program = pkgs.lib.getExe release.releaseArtifacts; };
     publish-docs = { type = "app"; program = pkgs.lib.getExe release.publisher; };
     publish-docs-boundary-test = { type = "app"; program = pkgs.lib.getExe releaseTest.publisher; };

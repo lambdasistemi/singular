@@ -105,11 +105,8 @@ import Cardano.Tx.Ledger (ConwayTx)
 import PlutusCore.Data qualified as PLC
 
 import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Blueprint (
-    NamingCodes (..),
-    applyBytesParam,
-    applyDataParam,
- )
+import Singular.Registry.Blueprint.Load (NamingCodes (..))
+import Singular.Registry.Blueprint.Params (applyBytesParam, applyDataParam)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId)
 import Singular.Registry.Provider qualified as Cage
@@ -117,14 +114,12 @@ import Singular.Registry.TxBuilder.ConnectedFold (
     RawRedeemer (..),
     generousUnits,
  )
-import Singular.Registry.TxBuilder.Internal (
+import Singular.Registry.TxBuilder.Internal.Edges (approvalName)
+import Singular.Registry.TxBuilder.Internal.Identity (
     addrKeyHashBytes,
     addrWitnessKeyHash,
-    approvalName,
     cageAddrFromCfg,
     computeScriptHash,
-    computeScriptIntegrity,
-    currentPosixMs,
     mkCageScript,
     mkInlineDatum,
     mkRequestDatumWith,
@@ -133,6 +128,10 @@ import Singular.Registry.TxBuilder.Internal (
     scriptFromBytes,
     scriptHashBytes,
     toLedgerData,
+ )
+import Singular.Registry.TxBuilder.Internal.Lookup (
+    computeScriptIntegrity,
+    currentPosixMs,
  )
 import Singular.Registry.TxBuilder.Update (
     RegistryContext (..),

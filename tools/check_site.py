@@ -1,5 +1,13 @@
 """Check rendered local links, speech coverage and required documentation surfaces.
 
+The generated off-chain API reference is checked here too: its manifest
+extent must equal the candidate's own Cabal library extent, its recorded
+source digests must match the candidate's source files, the actual
+generated pages must match the manifest's page digests, and every link
+inside the generated subtree must resolve (same-library) or carry positive
+dependency ownership — dead dependency or store links fail, and neutralized
+dependency labels are visible plain text.
+
 Link inventory (ticket 26): every reader-facing href/src in README and in the
 built HTML is discovered (never hand-listed), resolved the way a browser would
 resolve it under the deployed ``site_url`` prefix — directory URLs both with and
@@ -22,6 +30,8 @@ import sys
 from urllib.error import HTTPError, URLError
 from urllib.parse import unquote, urljoin, urlsplit
 from urllib.request import Request, urlopen
+
+import api_reference
 
 SITE_URL = "https://lambdasistemi.github.io/singular/"
 PREFIX = urlsplit(SITE_URL).path
@@ -146,7 +156,11 @@ class Page(HTMLParser):
 pages = {
     path: Page(path.read_text())
     for path in site.rglob("*.html")
+    # artifacts/ is the runnable review workspace; api/ is the generated
+    # Haddock reference — both ship as files and are checked by their own
+    # sections, not by the MkDocs page/speech rules.
     if not path.is_relative_to(site / "artifacts")
+    and not path.is_relative_to(site.joinpath(*api_reference.API_DIR))
 }
 assert pages, "no rendered pages"
 # Every script and stylesheet a reader loads comes from this site: a CDN fetch at
@@ -379,11 +393,12 @@ production_alias_rows = []
 
 
 def is_repo_source_href(href):
-    """Hrefs into the repository's lean/ sources are GitHub-context links:
-    blob rendering follows the current ref. Their staged, on-host form is the
-    prepare_docs model/ rewrite, proven where it is served — on the built page
-    row, with byte identity to this build's lean/ sources."""
-    return not urlsplit(href).scheme and re.search(r"(?:^|/)lean/", href) is not None
+    """Hrefs into the repository's lean/ or off-chain sources are
+    GitHub-context links: blob rendering follows the current ref. Their
+    staged, on-host forms are the prepare_docs rewrites (model/ bytes and
+    the generated api/ pages), proven where they are served — on the built
+    page row, against this build's own sources."""
+    return not urlsplit(href).scheme and re.search(r"(?:^|/)(?:lean/|offchain/)", href) is not None
 
 
 plans = []
@@ -513,6 +528,133 @@ for url_path, served in sorted(model_rows):
         model_mismatch.append(url_path)
 assert not model_mismatch, f"staged model/ bytes differ from lean/ sources: {model_mismatch}"
 assert not production_alias_rows, f"production model alias is not candidate identity evidence (moving alias): {production_alias_rows}"
+
+# ---------------------------------------------------------------------------
+# Generated off-chain API reference: the manifest's extent and source-file
+# digests must equal this candidate's own off-chain tree, and the actual
+# generated pages must match the manifest's recorded page digests. A ref
+# label proves nothing: the comparison is over content. Every link inside
+# the generated subtree is inspected: a same-library target that is missing
+# fails API_LINK_MISSING scope=library, and a clickable dependency or store
+# href fails API_DEPENDENCY_LINK_FORBIDDEN — neutralized labels are visible
+# plain text, never anchors. External assets fail the same-site rule.
+# ---------------------------------------------------------------------------
+api_root = site.joinpath(*api_reference.API_DIR)
+manifest_path = api_root / api_reference.MANIFEST_NAME
+assert manifest_path.is_file(), f"generated API reference missing: {manifest_path}"
+api_manifest = json.loads(manifest_path.read_text())
+root_extent = api_reference.library_modules(root / "offchain")
+manifest_modules = [record["module"] for record in api_manifest["modules"]]
+manifest_only = sorted(set(manifest_modules) - set(root_extent))
+cabal_only = sorted(set(root_extent) - set(manifest_modules))
+assert not manifest_only and not cabal_only, (
+    f"API_EXTENT_MISMATCH manifest-not-in-cabal={manifest_only} cabal-not-in-manifest={cabal_only}"
+)
+api_pages_verified = 0
+for record in api_manifest["modules"]:
+    source = root / "offchain" / record["source"]
+    assert source.is_file(), f"API manifest names a missing candidate source: {record['source']}"
+    if api_reference.sha256_file(source) != record["source_sha256"]:
+        print(f"API_SOURCE_STALE leg=source-digest module={record['module']}", file=sys.stderr)
+        sys.exit(1)
+    for page_field, digest_field in (
+        ("module_page", "module_page_sha256"),
+        ("source_page", "source_page_sha256"),
+    ):
+        page = api_root / record[page_field]
+        if not page.is_file() or api_reference.sha256_file(page) != record[digest_field]:
+            print(f"API_SOURCE_STALE leg=page-digest page={record[page_field]}", file=sys.stderr)
+            sys.exit(1)
+        api_pages_verified += 1
+
+# Dependency ownership comes from the manifest's recorded build package-db
+# inventory — positive evidence, independent of any target's existence — and
+# may never claim a module of this library.
+dep_modules = set(api_manifest.get("package_inventory", {}).get("dependency_modules", []))
+assert dep_modules, "API manifest carries no dependency module inventory"
+overlap = sorted(dep_modules & set(root_extent))
+assert not overlap, f"API_DEPENDENCY_INVENTORY_CONTRADICTION library modules claimed as dependencies: {overlap[:5]}"
+
+API_SPAN_DEP = re.compile(r'class="api-dep"')
+API_SPAN_AUTO = re.compile(r'class="api-autolink"')
+API_SPAN_INST = re.compile(r'class="api-instmethod"')
+api_page_ids = {
+    path.resolve(): set(re.findall(r'id="([^"]+)"', path.read_text(errors="replace")))
+    for path in sorted(api_root.rglob("*.html"))
+}
+resolved_library = external_anchors = 0
+spans_dep = spans_auto = spans_inst = 0
+for page in sorted(api_root.rglob("*.html")):
+    text = page.read_text(errors="replace")
+    spans_dep += len(API_SPAN_DEP.findall(text))
+    spans_auto += len(API_SPAN_AUTO.findall(text))
+    spans_inst += len(API_SPAN_INST.findall(text))
+    parsed = Page(text)
+    for asset in parsed.scripts + parsed.stylesheets:
+        if re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", asset):
+            print(f"API_EXTERNAL_ASSET {page.relative_to(site)} {asset}", file=sys.stderr)
+            sys.exit(1)
+        target = (page.parent / unquote(asset)).resolve()
+        if not target.exists():
+            print(f"API_EXTERNAL_ASSET {page.relative_to(site)} {asset}", file=sys.stderr)
+            sys.exit(1)
+    for href in parsed.links:
+        if href.startswith("file://"):
+            print(f"API_DEPENDENCY_LINK_FORBIDDEN {page.relative_to(site)} {href}", file=sys.stderr)
+            sys.exit(1)
+        if re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", href):
+            external_anchors += 1
+            continue
+        path_part, _, frag = href.partition("#")
+        # An empty path is a same-page reference: its fragment is checked
+        # against this page's own ids, never skipped.
+        target = (page.parent / unquote(path_part)).resolve() if path_part else page.resolve()
+        if path_part and not target.exists():
+            module = re.sub(r"\.html$", "", path_part.rsplit("/", 1)[-1]).replace("-", ".")
+            if module in dep_modules and module not in set(root_extent):
+                print(f"API_DEPENDENCY_LINK_FORBIDDEN {page.relative_to(site)} {href}", file=sys.stderr)
+                sys.exit(1)
+            print(f"API_LINK_MISSING scope=library {page.relative_to(site)} {href}", file=sys.stderr)
+            sys.exit(1)
+        if frag and target in api_page_ids:
+            if unquote(frag) not in api_page_ids[target]:
+                print(f"API_LINK_MISSING scope=library {page.relative_to(site)} {href}", file=sys.stderr)
+                sys.exit(1)
+        resolved_library += 1
+neutral = api_manifest.get("neutralization", {})
+recorded_dep = neutral.get("dependency", 0)
+recorded_auto = neutral.get("autolink", 0)
+recorded_inst = neutral.get("instance_method", 0)
+if spans_dep != recorded_dep or spans_auto != recorded_auto or spans_inst != recorded_inst:
+    print(
+        f"API_NEUTRALIZATION_DRIFT spans-dep={spans_dep} recorded={recorded_dep} "
+        f"spans-auto={spans_auto} recorded={recorded_auto} "
+        f"spans-instmethod={spans_inst} recorded={recorded_inst}",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+# Navigability: the reference index page links every manifest module page
+# and source page, so the generated extent is reachable from the nav, and
+# the built-page link inventory above resolves those rewritten anchors
+# against real files.
+api_index = site / "docs" / "offchain-api-reference" / "index.html"
+assert api_index.is_file(), f"generated API reference index page missing: {api_index}"
+api_index_text = api_index.read_text()
+for record in api_manifest["modules"]:
+    for page_field in ("module_page", "source_page"):
+        assert f"../../api/offchain/{record[page_field]}" in api_index_text, (
+            f"API_NAVIGABLE index page does not link {record[page_field]}"
+        )
+print(
+    f"api-reference modules={len(manifest_modules)} "
+    f"other-modules={len(api_manifest.get('other_modules', []))} "
+    f"pages-verified={api_pages_verified}"
+)
+print(
+    f"api-links resolved-library={resolved_library} "
+    f"neutralized-dependency={spans_dep} neutralized-autolink={spans_auto} "
+    f"neutralized-instance-method={spans_inst} external-anchors={external_anchors}"
+)
 
 # ---------------------------------------------------------------------------
 # Served routes (INV-29-PREFIX): what a server actually answers, for every

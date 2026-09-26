@@ -68,7 +68,8 @@ import Singular.Registry.Ledger (
 import Singular.Registry.Provider (
     Provider (..),
  )
-import Singular.Registry.TxBuilder.Internal
+import Singular.Registry.TxBuilder.Internal.Identity
+import Singular.Registry.TxBuilder.Internal.Lookup
 import Singular.Registry.Types (
     CageDatum (..),
     OnChainRequest (..),

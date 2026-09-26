@@ -125,15 +125,15 @@ import Singular.Registry.Ledger (
     TokenId (..),
  )
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.TxBuilder.Internal (
+import Singular.Registry.TxBuilder.Internal.Identity (
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
     computeScriptHash,
     extractCageDatum,
-    findStateUtxo,
     scriptHashBytes,
     txInToRef,
  )
+import Singular.Registry.TxBuilder.Internal.Lookup (findStateUtxo)
 import Singular.Registry.Types (
     CageDatum (..),
     OnChainTokenState (..),

@@ -1,0 +1,12 @@
+{
+  "callable-contracts": [
+    {
+      "text": "The listed public functions retain their signatures and observable results behind the same facades.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "0f16e09ad1027f93f6f22a76d5f2ddb0015659e4d41d02892138c8a6d0ac4848"
+  }
+}

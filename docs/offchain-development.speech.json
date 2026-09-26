@@ -23,6 +23,16 @@
   ],
   "_source": {
     "file": "offchain-development.md",
-    "sha256": "04e34d7c3a8950f629ccb7471b8d760a8270edc75fea36b850e03dc49a198aae"
-  }
+    "sha256": "6a2f248b839070f0eed05bd758ce5b21440247182f77ef4c29a69533a99af18a"
+  },
+  "module-ownership-map": [
+    {
+      "text": "The builder and blueprint modules now have a contributor map. It states which module owns script identity, lookups, balancing, edge decisions, and blueprint parameter work, where common edits land, and which decisions the extraction recorded.",
+      "pause": 250
+    },
+    {
+      "text": "The map is linked as Builder and blueprint modules. A generated, revision-matched Haskell API reference for the library is planned separately and is not part of that page yet.",
+      "pause": 300
+    }
+  ]
 }

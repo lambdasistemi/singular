@@ -81,7 +81,7 @@ import Cardano.Ledger.Core (eraProtVerHigh)
 import Cardano.Ledger.Mary.Value (MultiAsset (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
-import Singular.Registry.Blueprint (NamingCodes)
+import Singular.Registry.Blueprint.Load (NamingCodes)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (
     Addr,
@@ -98,13 +98,13 @@ import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Edges (SubmitSigned)
 import Singular.Registry.TxBuilder.Edges qualified as Edges
-import Singular.Registry.TxBuilder.Internal (
+import Singular.Registry.TxBuilder.Internal.Edges (walkEdge)
+import Singular.Registry.TxBuilder.Internal.Identity (
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
     extractCageDatum,
-    findStateUtxo,
-    walkEdge,
  )
+import Singular.Registry.TxBuilder.Internal.Lookup (findStateUtxo)
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
 import Singular.Registry.Types (
     CageDatum (..),
