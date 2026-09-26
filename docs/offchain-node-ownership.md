@@ -140,18 +140,18 @@ there, exactly as before the split.
 
 ## Facade, callers and the private boundary
 
-The facade's export list is unchanged, token for token. Callers that
+The facade's export list is unchanged, token for token. Modules that
 imported `Singular.Registry.Ledger` or `Singular.Registry.Provider`
 keep their import paths through the public library's re-exports. The
 six owners themselves are not importable from the public library: they
-live in the package's private internal library, reachable through the
-facade's names or — for the cage test component that observes the
-cleanup brackets — through an explicit dependency on that private
-library, which links the same compiled instance the facade uses. A
-downstream package could name that private library in its own build,
-as this package itself does with a dependency's devnet library; doing
-so is an explicit opt into internal seams, never part of the public
-surface.
+live in the package's private internal library. By Cabal's own rule a
+named library without public visibility can be depended on only by
+components of this same package — the cage test component, which
+observes the cleanup brackets, is the one that does, and that
+dependency links the same compiled instance the facade uses. Nothing
+outside the package can name the private library; a downstream reader
+keeps the facade and the two re-exported modules, exactly as before
+the split.
 
 ## Decisions this split recorded
 
@@ -161,8 +161,13 @@ surface.
 | How the cleanup tests reach the private seams | The cage test component depends on the private library explicitly, binding bracket, observer and facade to one compiled instance; the positive installation halves fail if that identity ever breaks. | A test-local duplicate of the state, which would be green while testing nothing a runner executes. |
 | How existing callers keep working | The facade re-exports its exact original export list; ledger and provider keep their import paths by re-export; original callers compile unchanged. | Rewriting callers to import the owners directly: import churn with no behavioral benefit, and it would widen the surface the split is meant to keep closed. |
 
-The split is behavior-preserving: every moved declaration kept its
-body, its export surface travels through the facade, the focused node
-tests and the full cage suite pass on the split tree, and the
-fresh-blueprint end-to-end paths exercise the moved connection,
-funding and confirmation behavior on a devnet, as before.
+The split is behavior-preserving by construction: every moved
+declaration kept its body, its export surface travels through the
+facade, and the process-state lifetimes are unchanged. The evidence
+bound to that today is the development tree where the split was built:
+the focused node tests and the full cage suite passed there before the
+work was committed. The committed head carries its own named checks —
+the focused cleanup suite runs again at that exact head before
+acceptance, and the fresh-blueprint end-to-end paths run as exact-head
+check commands on a devnet after that. Until those pass, this page
+claims no devnet behavior for the split.
