@@ -30,6 +30,18 @@ from pathlib import Path
 API_DIR = ("api", "offchain")
 MANIFEST_NAME = "manifest.json"
 STANZA_HEADERS = ("library", "common")
+# Stable anchors in the rendered Node ownership guide (docs/offchain-node-
+# ownership.md) for the package-private node owners. Existence of each
+# rendered anchor is verified against the built site at manifest time, so
+# a drifting heading id fails the build instead of publishing a dead link.
+PRIVATE_OWNER_GUIDE_ANCHORS = {
+    "Singular.Registry.Node.Options": "options-owner",
+    "Singular.Registry.Node.Wallet": "wallet-owner",
+    "Singular.Registry.Node.Indexer": "indexer-owner",
+    "Singular.Registry.Node.Session": "session-owner",
+    "Singular.Registry.Node.Confirmation": "confirmation-owner",
+    "Singular.Registry.Node.Funding": "funding-owner",
+}
 # Non-module autolinks the A-006 repair may neutralize to visible text when
 # no local target exists; everything else unresolvable stays a library
 # reference and must resolve or fail.
@@ -236,7 +248,13 @@ def _module_of_page(filename: str) -> str:
     return re.sub(r"\.html$", "", filename).replace("-", ".")
 
 
-def transform_tree(api_root: Path, extent: list[str], dep_modules: set[str], offchain_root: Path) -> dict:
+def transform_tree(
+    api_root: Path,
+    extent: list[str],
+    dep_modules: set[str],
+    offchain_root: Path,
+    private_owners: dict[str, dict] | None = None,
+) -> dict:
     """Repair same-library links, neutralize proven dependency links, and
     strip external assets from the copied generated tree.
 
@@ -302,7 +320,14 @@ def transform_tree(api_root: Path, extent: list[str], dep_modules: set[str], off
             )
         return None
 
-    stats = {"dependency": 0, "autolink": 0, "external_assets": 0, "library_repairs": [], "instance_method": 0}
+    stats = {
+        "dependency": 0,
+        "autolink": 0,
+        "external_assets": 0,
+        "library_repairs": [],
+        "instance_method": 0,
+        "private_owner": {m: 0 for m in (private_owners or {})},
+    }
 
     def instance_details_intervals(page_text: str) -> list[tuple[int, int]]:
         """Balanced (open, close) spans of every instance details block.
@@ -420,6 +445,23 @@ def transform_tree(api_root: Path, extent: list[str], dep_modules: set[str], off
                 page_name, href, frag, plain, original, page_text, match.start()
             )
         target_rel = (Path(page_name).parent / path).as_posix()
+        named = re.sub(r"\.html$", "", path.rsplit("/", 1)[-1]).replace("-", ".")
+        if named in (private_owners or {}):
+            # A generated link naming a package-private owner. Only the
+            # plain module-page shape may name one; anything else — a
+            # source-page path, a nested directory, an alias, or any
+            # fragment, which the guide's owner anchor cannot preserve
+            # the meaning of — is an unexpected shape and fails loudly
+            # rather than being repaired or neutralized. The visible
+            # label is preserved and the destination becomes the owner's
+            # checked guide anchor.
+            if target_rel != module_page_name(named) or frag:
+                raise SystemExit(
+                    f"api_reference: unexpected private-owner link shape in "
+                    f"{page_name}: {href}"
+                )
+            stats["private_owner"][named] += 1
+            return original.replace(href, private_owners[named]["href"], 1)
         target = api_root / target_rel
         if target.exists():
             if frag and frag not in page_ids.get(target_rel, ()):
@@ -598,7 +640,59 @@ def copy_reference(
         raise SystemExit(
             f"api_reference: package db claims library modules as dependencies: {overlap[:5]}"
         )
-    transform = transform_tree(api_root, modules, dep_modules, offchain_root)
+
+    # Package-private owners: modules of the one candidate sublibrary that
+    # the public library does not re-export. Each must have exactly one
+    # candidate-owned record and no other owner, a rendered guide anchor,
+    # and a real source file, all verified here — the guide destination is
+    # checked, never assumed.
+    sublib_records = [r for r in db_records if is_candidate_sublib(r)]
+    if len(sublib_records) != 1:
+        raise SystemExit(
+            "api_reference: expected exactly one candidate-owned "
+            f"{candidate_lib}/{candidate_sublib} package-db record, found "
+            f"{len(sublib_records)}"
+        )
+    private_modules = sorted(set(sublib_records[0]["modules"]) - set(reexported))
+    private_owners: dict[str, dict] = {}
+    guide_page_rel = "docs/offchain-node-ownership/index.html"
+    guide_page = site / guide_page_rel
+    guide_text = ""
+    if private_modules:
+        if not guide_page.is_file():
+            raise SystemExit(
+                f"api_reference: rendered owner guide page missing for private "
+                f"owners: {guide_page}"
+            )
+        guide_text = guide_page.read_text(errors="replace")
+    for module in private_modules:
+        anchor = PRIVATE_OWNER_GUIDE_ANCHORS.get(module)
+        if anchor is None:
+            raise SystemExit(
+                f"api_reference: no guide anchor mapping for private owner {module}"
+            )
+        owners = [r for r in db_records if module in r["modules"]]
+        same = [r for r in owners if is_candidate_sublib(r)]
+        others = [r for r in owners if not is_candidate_sublib(r)]
+        if len(same) != 1 or others:
+            raise SystemExit(
+                f"api_reference: private owner {module} requires exactly one "
+                f"candidate-owned {candidate_lib}/{candidate_sublib} record and "
+                f"no other owner; owners: "
+                f"{[(r['package'], r['lib'], r['conf']) for r in owners]}"
+            )
+        if f'id="{anchor}"' not in guide_text:
+            raise SystemExit(
+                f"api_reference: rendered guide anchor missing for private "
+                f"owner {module}: #{anchor} on {guide_page_rel}"
+            )
+        source = module_source(offchain_root, module)
+        private_owners[module] = {
+            "href": "../../" + guide_page_rel + "#" + anchor,
+            "anchor": anchor,
+            "source": source.relative_to(offchain_root).as_posix(),
+        }
+    transform = transform_tree(api_root, modules, dep_modules, offchain_root, private_owners)
     for record in records:
         record["module_page_sha256"] = sha256_file(api_root / record["module_page"])
         record["source_page_sha256"] = sha256_file(api_root / record["source_page"])
@@ -619,6 +713,15 @@ def copy_reference(
             "autolink": transform["autolink"],
             "external_assets": transform["external_assets"],
             "library_repairs": transform["library_repairs"],
+        },
+        "private_owner_links": {
+            module: {
+                "guide_page": guide_page_rel,
+                "anchor": info["anchor"],
+                "source": info["source"],
+                "rewrites": transform["private_owner"][module],
+            }
+            for module, info in private_owners.items()
         },
     }
     (api_root / MANIFEST_NAME).write_text(
