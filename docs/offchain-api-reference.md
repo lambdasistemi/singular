@@ -102,6 +102,14 @@ it provably belongs to a dependency; a dead or store-path link that
 reappears fails the site check, and a same-library reference may never be
 treated as a dependency label to hide a broken link.
 
+One further generator class is unlinked by structure. Haddock renders
+instance method names in each instance's Methods list as same-page links,
+but emits no matching anchors for them — every instance of a class lists
+the same method names, so the anchor would have to be duplicated. Those
+method labels stay visible as plain text inside the instance lists, and
+the site check both counts them separately and still requires every
+fragment link outside that exact structure to resolve.
+
 The release archive check extends the same discipline to what gets
 shipped: the staged documentation archive must carry the generated
 reference member for member and byte for byte before the ordinary release

@@ -577,16 +577,18 @@ assert not overlap, f"API_DEPENDENCY_INVENTORY_CONTRADICTION library modules cla
 
 API_SPAN_DEP = re.compile(r'class="api-dep"')
 API_SPAN_AUTO = re.compile(r'class="api-autolink"')
-library_page_ids = {
-    path.name: set(re.findall(r'id="([^"]+)"', path.read_text(errors="replace")))
-    for path in sorted(api_root.glob("*.html"))
+API_SPAN_INST = re.compile(r'class="api-instmethod"')
+api_page_ids = {
+    path.resolve(): set(re.findall(r'id="([^"]+)"', path.read_text(errors="replace")))
+    for path in sorted(api_root.rglob("*.html"))
 }
 resolved_library = external_anchors = 0
-spans_dep = spans_auto = 0
+spans_dep = spans_auto = spans_inst = 0
 for page in sorted(api_root.rglob("*.html")):
     text = page.read_text(errors="replace")
     spans_dep += len(API_SPAN_DEP.findall(text))
     spans_auto += len(API_SPAN_AUTO.findall(text))
+    spans_inst += len(API_SPAN_INST.findall(text))
     parsed = Page(text)
     for asset in parsed.scripts + parsed.stylesheets:
         if re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", asset):
@@ -604,28 +606,30 @@ for page in sorted(api_root.rglob("*.html")):
             external_anchors += 1
             continue
         path_part, _, frag = href.partition("#")
-        if not path_part:
-            continue
-        target = (page.parent / unquote(path_part)).resolve()
-        if not target.exists():
+        # An empty path is a same-page reference: its fragment is checked
+        # against this page's own ids, never skipped.
+        target = (page.parent / unquote(path_part)).resolve() if path_part else page.resolve()
+        if path_part and not target.exists():
             module = re.sub(r"\.html$", "", path_part.rsplit("/", 1)[-1]).replace("-", ".")
             if module in dep_modules and module not in set(root_extent):
                 print(f"API_DEPENDENCY_LINK_FORBIDDEN {page.relative_to(site)} {href}", file=sys.stderr)
                 sys.exit(1)
             print(f"API_LINK_MISSING scope=library {page.relative_to(site)} {href}", file=sys.stderr)
             sys.exit(1)
-        if frag and target.name in library_page_ids:
-            if unquote(frag) not in library_page_ids[target.name]:
+        if frag and target in api_page_ids:
+            if unquote(frag) not in api_page_ids[target]:
                 print(f"API_LINK_MISSING scope=library {page.relative_to(site)} {href}", file=sys.stderr)
                 sys.exit(1)
         resolved_library += 1
 neutral = api_manifest.get("neutralization", {})
 recorded_dep = neutral.get("dependency", 0)
 recorded_auto = neutral.get("autolink", 0)
-if spans_dep != recorded_dep or spans_auto != recorded_auto:
+recorded_inst = neutral.get("instance_method", 0)
+if spans_dep != recorded_dep or spans_auto != recorded_auto or spans_inst != recorded_inst:
     print(
         f"API_NEUTRALIZATION_DRIFT spans-dep={spans_dep} recorded={recorded_dep} "
-        f"spans-auto={spans_auto} recorded={recorded_auto}",
+        f"spans-auto={spans_auto} recorded={recorded_auto} "
+        f"spans-instmethod={spans_inst} recorded={recorded_inst}",
         file=sys.stderr,
     )
     sys.exit(1)
@@ -649,7 +653,7 @@ print(
 print(
     f"api-links resolved-library={resolved_library} "
     f"neutralized-dependency={spans_dep} neutralized-autolink={spans_auto} "
-    f"external-anchors={external_anchors}"
+    f"neutralized-instance-method={spans_inst} external-anchors={external_anchors}"
 )
 
 # ---------------------------------------------------------------------------

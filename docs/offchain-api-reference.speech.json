@@ -27,6 +27,10 @@
       "pause": 400
     },
     {
+      "text": "One further generator class is unlinked by structure. Haddock renders instance method names in each instance's Methods list as same-page links, but emits no matching anchors for them — every instance of a class lists the same method names, so the anchor would have to be duplicated. Those method labels stay visible as plain text inside the instance lists, and the site check both counts them separately and still requires every fragment link outside that exact structure to resolve.",
+      "pause": 400
+    },
+    {
       "text": "The release archive check extends the same discipline to what gets shipped: the staged documentation archive must carry the generated reference member for member and byte for byte before the ordinary release checks run.",
       "pause": 400
     }
@@ -39,6 +43,6 @@
   ],
   "_source": {
     "file": "offchain-api-reference.md",
-    "sha256": "78c1b019a0cb3971acc2a8dc54c86005ec043127bf80dfeb8c58b0bf5f4381b8"
+    "sha256": "5ab3f39364e35a2fe2a1b3c0fe14a72b908dce01341c88bde1a1e2f2f3106a82"
   }
 }

@@ -36,6 +36,13 @@ STANZA_HEADERS = ("library", "common")
 ENUMERATED_AUTOLINKS = ("one", "schema", "HEX.html")
 DEP_SPAN = '<span class="api-dep">{}</span>'
 AUTOLINK_SPAN = '<span class="api-autolink">{}</span>'
+# The epic-ruled structural class: a generator-emitted same-page method
+# anchor inside an instance Methods list whose target id Haddock never
+# emitted. Rendered as visible plain text, counted separately from
+# dependency labels and autolinks; any missing fragment outside this
+# exact structure stays a library link and fails the check.
+INSTANCE_METHOD_SPAN = '<span class="api-instmethod">{}</span>'
+METHODS_DIV = '<div class="subs methods">'
 EXTERNAL_STYLESHEET = re.compile(r'<link\b[^>]*href="https?://[^"]*"[^>]*/?>', re.I)
 EXTERNAL_SCRIPT = re.compile(r'<script\b[^>]*src="https?://[^"]*"[^>]*>\s*</script>', re.I)
 MATHJAX_CONFIG = re.compile(r'<script type="text/x-mathjax-config">.*?</script>', re.S)
@@ -183,24 +190,14 @@ def _module_of_page(filename: str) -> str:
     return re.sub(r"\.html$", "", filename).replace("-", ".")
 
 
-def library_defined_names(offchain_root: Path, extent: list[str]) -> set[str]:
-    """Identifiers the candidate's own library sources define.
+def _decode_haddock_frag(fragment: str) -> str:
+    """Normalize a Haddock fragment for comparison: percent-decode, then
+    expand the -decimal- operator escapes (e.g. -61--61- and %3D%3D are
+    both (==))."""
+    from urllib.parse import unquote
 
-    Used only to classify a generated fragment anchor that no library page
-    carries: an identifier our sources do not define is a re-exported
-    dependency identifier (neutralized as a visible label), while one they
-    do define without a page anchor is a malformed generation and fails."""
-    names: set[str] = set()
-    for module in extent:
-        text = module_source(offchain_root, module).read_text(errors="replace")
-        stripped = re.sub(r"--[^\n]*", "", text)
-        stripped = re.sub(r"\{-.*?-\}", "", stripped, flags=re.S)
-        for m in re.finditer(r"^(?:data|newtype|type)\s+\w+[^=\n]*=\s*(.*)$", stripped, re.M):
-            rhs = m.group(1)
-            names.update(re.findall(r"\b([A-Z]\w*)\b", rhs.split("{")[0]))
-            names.update(re.findall(r"\b(\w+)\s*::", rhs))
-        names.update(re.findall(r"^([a-zA-Z_][\w']*)\s*(?:::|=)", stripped, re.M))
-    return names
+    decoded = unquote(fragment)
+    return re.sub(r"-(\d+)-", lambda m: chr(int(m.group(1))), decoded)
 
 
 def transform_tree(api_root: Path, extent: list[str], dep_modules: set[str], offchain_root: Path) -> dict:
@@ -216,10 +213,13 @@ def transform_tree(api_root: Path, extent: list[str], dep_modules: set[str], off
     """
     library_pages = {p.name: p for p in api_root.glob("*.html")}
     extent_pages = {module_page_name(m) for m in extent}
+    # Fragment anchors live on module pages and hyperlinked source pages;
+    # index pages carry their own entry ids and never own a referenced
+    # fragment, so they are excluded from the map and from owner search.
     page_ids = {
-        name: set(ID_ATTR.findall(path.read_text(errors="replace")))
-        for name, path in library_pages.items()
-        if name in extent_pages
+        p.relative_to(api_root).as_posix(): set(ID_ATTR.findall(p.read_text(errors="replace")))
+        for p in [*api_root.glob("*.html"), *api_root.glob("src/*.html")]
+        if p.name in extent_pages or p.parent.name == "src"
     }
     page_of_module = {m: module_page_name(m) for m in extent}
 
@@ -266,14 +266,136 @@ def transform_tree(api_root: Path, extent: list[str], dep_modules: set[str], off
             )
         return None
 
-    stats = {"dependency": 0, "autolink": 0, "external_assets": 0, "library_repairs": []}
-    defined_names = library_defined_names(offchain_root, extent)
+    stats = {"dependency": 0, "autolink": 0, "external_assets": 0, "library_repairs": [], "instance_method": 0}
 
-    def rewrite(match: re.Match, page_name: str) -> str:
+    def instance_details_intervals(page_text: str) -> list[tuple[int, int]]:
+        """Balanced (open, close) spans of every instance details block.
+
+        A first-close search would mistake a nested associated-type details'
+        closing tag for the enclosing instance's; matching opens and closes
+        with a stack gives each ``details[id^="i:"]`` block its true span,
+        nested ``i:if:`` blocks included.
+        """
+        events = []
+        for m in re.finditer(r"<details\b[^>]*>|</details>", page_text):
+            events.append((m.start(), m.end(), m.group(0).startswith("<details")))
+        stack, spans = [], []
+        for start, endp, is_open in events:
+            if is_open:
+                stack.append((start, endp))
+            elif stack:
+                open_start, open_end = stack.pop()
+                if 'id="i:' in page_text[open_start:open_end]:
+                    spans.append((open_start, endp))
+        return spans
+
+    def inside_instance_methods(page_text: str, pos: int, intervals: list[tuple[int, int]]) -> bool:
+        """Positively inside an instance Methods list.
+
+        The epic ruling covers an anchor only when a ``div.subs.methods``
+        contains it (nested div counting) AND an instance details block —
+        balanced over nested details — either still contains the position,
+        or truly closed immediately before the Methods list with only
+        enclosing closing tags between: Haddock's immediate-sibling
+        rendering of an instance's Methods. Anything else is not covered.
+        """
+        div = page_text.rfind(METHODS_DIV, 0, pos)
+        if div < 0:
+            return False
+        depth = 1
+        i = div + len(METHODS_DIV)
+        while i < pos:
+            nxt_open = page_text.find("<div", i + 1, pos)
+            nxt_close = page_text.find("</div>", i + 1, pos)
+            if nxt_open >= 0 and (nxt_close < 0 or nxt_open < nxt_close):
+                depth += 1
+                i = nxt_open
+            elif nxt_close >= 0:
+                depth -= 1
+                if depth == 0:
+                    return False
+                i = nxt_close
+            else:
+                break
+        if depth <= 0:
+            return False
+        for open_start, close in intervals:
+            if open_start < pos < close:
+                return True
+        prior = max((close for _, close in intervals if close <= div), default=-1)
+        if prior < 0:
+            return False
+        between = page_text[prior:div]
+        return bool(
+            re.fullmatch(r"(?:\s|</td>|</tr>|</table>|</div>|</summary>|</p>|</details>)*", between)
+        )
+
+    def row_proven_dependency(page_text: str, match_start: int, component: str) -> bool:
+        """Positive per-identifier dependency origin from the same row.
+
+        Haddock renders an instance-method row with a Source link to the
+        identifier's definition. When that link is a store URL whose module
+        the build's package database owns, the identifier — not merely the
+        row's class — is positively dependency-owned: the same row names its
+        defining module. No target-existence is consulted.
+        """
+        row_start = page_text.rfind("</p>", 0, match_start)
+        row_start = row_start + 4 if row_start >= 0 else max(0, match_start - 600)
+        row_end = page_text.find("</p>", match_start)
+        row = page_text[row_start:row_end if row_end > 0 else match_start + 400]
+        wanted = _decode_haddock_frag(component)
+        for url in re.findall(r'href="(file://[^"]+)"', row):
+            url_path, _, url_frag = url.rpartition("#")
+            module = _module_of_page(url_path.rsplit("/", 1)[-1])
+            if module in dep_modules and _decode_haddock_frag(url_frag) == wanted:
+                return True
+        # Second tier: the anchor sits inside an instance-details block whose
+        # header links a class the build's package database owns. Haddock's
+        # generated structure presents this row as a method of that class, so
+        # the identifier is positively a dependency class method. The header
+        # is read from the original text, before any neutralization rewrote
+        # it in the output.
+        block = page_text.rfind('details id="i:id:', 0, match_start)
+        if block >= 0:
+            block_end = page_text.find("</details>", match_start)
+            header_zone = page_text[max(0, block - 900):block]
+            if block_end < 0 or block_end > match_start:
+                for url in re.findall(r'href="(file://[^"]+)"', header_zone):
+                    module = _module_of_page(url.partition("#")[0].rsplit("/", 1)[-1])
+                    if module in dep_modules:
+                        return True
+        return False
+
+    def classify_missing_fragment(page_name: str, href: str, frag: str, plain: str, original: str, page_text: str = "", match_start: int = 0):
+        """A fragment absent from the page that should carry it.
+
+        A unique other library page carrying the fragment is a repair. A
+        row-proven dependency identifier (its own row links its defining
+        module in the build's package database) becomes a visible label.
+        Anything else — including an identifier our sources define, and an
+        unproven reference — fails the build loudly: negative evidence never
+        licenses neutralization.
+        """
+        owners = [name for name, ids in page_ids.items() if frag in ids]
+        if len(owners) == 1:
+            replacement = owners[0] + "#" + frag
+            stats["library_repairs"].append({"page": page_name, "from": href, "to": replacement})
+            return original.replace(href, replacement, 1)
+        component = frag.split(":", 1)[1] if ":" in frag else frag
+        if row_proven_dependency(page_text, match_start, component):
+            stats["dependency"] += 1
+            return DEP_SPAN.format(plain)
+        raise SystemExit(
+            f"api_reference: fragment reference without positive dependency origin "
+            f"and no library anchor in {page_name}: {href}"
+        )
+
+    def rewrite(match: re.Match, page_name: str, page_text: str, intervals: list[tuple[int, int]]) -> str:
         href, label = match.group(1), match.group(2)
         plain = re.sub(r"<[^>]+>", "", label).strip() or href
+        original = match.group(0)
         if re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", href) and not href.startswith("file://"):
-            return match.group(0)
+            return original
         if href.startswith("file://"):
             module = _module_of_page(href.partition("#")[0].rsplit("/", 1)[-1])
             if module in dep_modules:
@@ -288,29 +410,54 @@ def transform_tree(api_root: Path, extent: list[str], dep_modules: set[str], off
             )
         path, _, frag = href.partition("#")
         if not path:
-            return match.group(0)
-        target = api_root / Path(page_name).parent / path
+            # A same-page reference: its fragment is checked against this
+            # page's own ids, never skipped. The epic-ruled structural class
+            # — a generator-emitted #v: method anchor inside an instance
+            # Methods list whose id was never emitted — becomes visible
+            # plain text, counted separately; everything else keeps the full
+            # classification discipline.
+            if not frag or frag in page_ids.get(page_name, ()):
+                return original
+            if (
+                frag.startswith("v:")
+                and inside_instance_methods(page_text, match.start(), intervals)
+            ):
+                stats["instance_method"] += 1
+                return INSTANCE_METHOD_SPAN.format(plain)
+            return classify_missing_fragment(
+                page_name, href, frag, plain, original, page_text, match.start()
+            )
+        target_rel = (Path(page_name).parent / path).as_posix()
+        target = api_root / target_rel
         if target.exists():
-            if frag and target.name in page_ids and frag not in page_ids[target.name]:
-                owners = [n for n, ids in page_ids.items() if frag in ids]
-                if len(owners) == 1:
-                    replacement = owners[0] + "#" + frag
+            if frag and frag not in page_ids.get(target_rel, ()):
+                # The generated doc-index module cell: the identifier is
+                # plain text and the anchor is the module label, whose title
+                # names a library module and whose target is that module's
+                # page. Positively recognized, the link is repaired to the
+                # bundled module page without the bogus identifier fragment
+                # and stays a clickable module link — never a neutralization.
+                titled = original
+                title_m = re.search(r'title="([^"]+)"', titled)
+                named_module = (title_m.group(1) if title_m else "").strip()
+                cell = page_text.rfind('<td class="module">', 0, match.start())
+                cell_close = page_text.find("</td>", match.start())
+                if (
+                    title_m
+                    and named_module in page_of_module
+                    and page_of_module[named_module] == path
+                    and cell >= 0
+                    and cell < match.start()
+                    and (cell_close < 0 or cell_close > match.start())
+                ):
                     stats["library_repairs"].append(
-                        {"page": page_name, "from": href, "to": replacement}
+                        {"page": page_name, "from": href, "to": path}
                     )
-                    return match.group(0).replace(href, replacement, 1)
-                if not owners:
-                    component = frag.split(":", 1)[1] if ":" in frag else frag
-                    if component not in defined_names:
-                        stats["dependency"] += 1
-                        return DEP_SPAN.format(plain)
-                    raise SystemExit(
-                        f"api_reference: library identifier has no generated anchor in {page_name}: {href}"
-                    )
-                raise SystemExit(
-                    f"api_reference: ambiguous fragment owners for {href} in {page_name}: {owners}"
+                    return original.replace(href, path, 1)
+                return classify_missing_fragment(
+                    page_name, href, frag, plain, original, page_text, match.start()
                 )
-            return match.group(0)
+            return original
         title = re.sub(r"\.html$", "", path.rsplit("/", 1)[-1])
         module = title.replace("-", ".")
         if module in dep_modules and module not in set(extent):
@@ -319,11 +466,11 @@ def transform_tree(api_root: Path, extent: list[str], dep_modules: set[str], off
         resolved = resolve_library(title, frag or None)
         if resolved is not None:
             page, new_frag = resolved
-            stats["library_repairs"].append(
-                {"page": page_name, "from": href, "to": page + (("#" + new_frag) if new_frag else "")}
-            )
             replacement = page + (("#" + new_frag) if new_frag else "")
-            return match.group(0).replace(href, replacement, 1)
+            stats["library_repairs"].append(
+                {"page": page_name, "from": href, "to": replacement}
+            )
+            return original.replace(href, replacement, 1)
         if path in ENUMERATED_AUTOLINKS or title in ENUMERATED_AUTOLINKS:
             stats["autolink"] += 1
             return AUTOLINK_SPAN.format(plain)
@@ -338,7 +485,8 @@ def transform_tree(api_root: Path, extent: list[str], dep_modules: set[str], off
         text, n_js = EXTERNAL_SCRIPT.subn("", text)
         stats["external_assets"] += n_config + n_css + n_js
         rel = page.relative_to(api_root).as_posix()
-        text = ANCHOR.sub(lambda m: rewrite(m, rel), text)
+        intervals = instance_details_intervals(text)
+        text = ANCHOR.sub(lambda m: rewrite(m, rel, text, intervals), text)
         page.write_text(text)
     return stats
 
@@ -400,6 +548,7 @@ def copy_reference(site: Path, haddock_out: Path, offchain_root: Path, config_fi
         },
         "neutralization": {
             "dependency": transform["dependency"],
+            "instance_method": transform["instance_method"],
             "autolink": transform["autolink"],
             "external_assets": transform["external_assets"],
             "library_repairs": transform["library_repairs"],
@@ -475,6 +624,7 @@ def main(argv: list[str]) -> None:
             f"other-modules={len(built['other_modules'])} "
             f"dependency-modules={built['package_inventory']['dependency_module_count']} "
             f"neutralized-dependency={neutral['dependency']} "
+            f"neutralized-instance-method={neutral['instance_method']} "
             f"neutralized-autolink={neutral['autolink']} "
             f"library-repairs={len(neutral['library_repairs'])} "
             f"external-assets-stripped={neutral['external_assets']}"
