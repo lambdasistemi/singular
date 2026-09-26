@@ -1,5 +1,102 @@
 # Changelog
 
+## [0.8.0](https://github.com/lambdasistemi/singular/compare/v0.7.0...v0.8.0) (2026-09-26)
+
+
+### Features
+
+* admit a retraction in the model driver before it is paid ([03fd9e0](https://github.com/lambdasistemi/singular/commit/03fd9e0ec4777a39f40362a8025c48066b0cb597))
+* carry every exit's payments in the model's observations ([24de43a](https://github.com/lambdasistemi/singular/commit/24de43a0cee336ddba0c195fb6a05cdda7f6aad7))
+* **conformance:** build the conformance DSL as operational programs ([aa8ff93](https://github.com/lambdasistemi/singular/commit/aa8ff9391728a136d56528bd57279bef30c427b2))
+* **conformance:** read the conformance suite as Lean theorem, clause and example ([08f779c](https://github.com/lambdasistemi/singular/commit/08f779c74fd4f5c39ac637612f05111aea9ab04c))
+* **lean:** bind the insert-absent custody transaction ([d92f35b](https://github.com/lambdasistemi/singular/commit/d92f35bf722120369c386ce09e6c7a40d321182f))
+* **lean:** prove and execute the insert-absent custody transaction ([3f247d1](https://github.com/lambdasistemi/singular/commit/3f247d138bbf4ed86d191902964d006946ccced8))
+* make the fold's required signers an observation with an obligation ([edba595](https://github.com/lambdasistemi/singular/commit/edba5957122f9da52775dd0c178c49124b5b651d))
+* make the model driver's operations the exits ([6e4577d](https://github.com/lambdasistemi/singular/commit/6e4577d34c571507a47ca3bc7f95e99f6b71c39d))
+* prove that no fold requires a signer ([c75c52c](https://github.com/lambdasistemi/singular/commit/c75c52ce5a1693cc4813a60d2da1f19a2939d907))
+* prove where every exit's deposit goes ([6c6ec77](https://github.com/lambdasistemi/singular/commit/6c6ec774c3711c68d07c0cf5617925c3f05dec93))
+* read the fold's required signers from the submitted transaction ([52b413a](https://github.com/lambdasistemi/singular/commit/52b413af1ec858995708892a83855629d462e130))
+* state and compare retraction admission ([80eba16](https://github.com/lambdasistemi/singular/commit/80eba16049be11d90564db5d8a285ace695b33a8))
+* state every exit's obligations in the model ([6cc928d](https://github.com/lambdasistemi/singular/commit/6cc928d9be989174769891efd3c9028b8ad04623))
+* state which pending requests their owner can retract, and when ([5a6e307](https://github.com/lambdasistemi/singular/commit/5a6e307c1caf1b4cdd6b2fae082d4b0c33c338f4))
+
+
+### Fixes
+
+* a Terminal read books with nothing under the application ([a68c8bf](https://github.com/lambdasistemi/singular/commit/a68c8bf2ddc55a6a0f45512bdf3ed7332fd087af))
+* book a Terminal read through the library approval decision ([be6a1e5](https://github.com/lambdasistemi/singular/commit/be6a1e525c124a18f46029626c47cec615ff3589))
+* build live retractions the ledger accepts ([3bf245d](https://github.com/lambdasistemi/singular/commit/3bf245d26ddbf4ab09c6b5556d2659862452b5bb))
+* **conformance:** preserve nested programs in rendered stories ([0376260](https://github.com/lambdasistemi/singular/commit/03762606943c5e829184de4554ad7c712c89b98f))
+* **coverage:** regenerate the insert-absent record population ([cf8f0d4](https://github.com/lambdasistemi/singular/commit/cf8f0d44880a5f774af1dc493302aec1aa2c595e))
+* declare what a live fold measures and say why the node refused it ([139abca](https://github.com/lambdasistemi/singular/commit/139abca0842daacc5be7ccda210615d4d6836bbf))
+* declare what a live fold measures and say why the node refused it ([a2b0a0a](https://github.com/lambdasistemi/singular/commit/a2b0a0a797fa4046693adec10df6ef832301b417))
+* deleteActive consumes the active witness it burns ([#236](https://github.com/lambdasistemi/singular/issues/236)) ([8c638c3](https://github.com/lambdasistemi/singular/commit/8c638c35058c2d28b1dc7d580568f396b963522a))
+* derive absent custody identity from its sole asset ([e0a682f](https://github.com/lambdasistemi/singular/commit/e0a682f6656656798620f8b07682aa001a89f067))
+* give the exit controls their own conformance row ([73594ba](https://github.com/lambdasistemi/singular/commit/73594ba4f624fe53922c6850d4e2bc581fb6c14b))
+* **naming:** recognise the current registry state validator ([72d682d](https://github.com/lambdasistemi/singular/commit/72d682d7ac1d74952d8314d27b2e0a656badd0ae))
+* **naming:** recognise the current registry state validator ([861034b](https://github.com/lambdasistemi/singular/commit/861034b0228ddd13effe24397f07ff9f64e0f3f0))
+* refresh witness state identity ([d4978f9](https://github.com/lambdasistemi/singular/commit/d4978f979f2ae0d8505dfb9ae7e0832b8d6f7460))
+* refuse a retraction outside phase 2 by name instead of crashing ([a17c320](https://github.com/lambdasistemi/singular/commit/a17c3209eb6927cb76c37ff9dffcbd5d9eae0f0c))
+* remove a deleted key from the model trie ([88957e4](https://github.com/lambdasistemi/singular/commit/88957e41876911a993c5d9a338f8ab006c9f6843))
+* report out-of-window retraction refusals ([ba194e2](https://github.com/lambdasistemi/singular/commit/ba194e2730c92387d8a48f85daf40a73072fc843))
+* return everything a retracted request holds to its owner ([f513e15](https://github.com/lambdasistemi/singular/commit/f513e1559578038e28ba286ea599584223991891))
+* return everything a retracted request holds to its owner ([4d7f1b1](https://github.com/lambdasistemi/singular/commit/4d7f1b1649bddf7797615e71f4e2e95f71e0cdf9))
+* return the deposit of every non-delivering fold, settled once per payee ([6e0a964](https://github.com/lambdasistemi/singular/commit/6e0a9649ab9b0bfbd05fcb645117536cbeebb08a))
+* return the deposit of every non-delivering fold, settled once per payee ([59b6cfd](https://github.com/lambdasistemi/singular/commit/59b6cfd1daa4d1214d4477187af73b9df38fbf6d))
+* **simulator:** check observable effects and report evidence boundaries ([bab7406](https://github.com/lambdasistemi/singular/commit/bab7406bcd0c66bd3657ce03103fc69211e7dcfa))
+* **simulator:** full supply biconditional; laws unconditional over reachable states ([7c5dd4d](https://github.com/lambdasistemi/singular/commit/7c5dd4d5612d1f4c2945ff5b17a87f62b8a2769f))
+* **simulator:** observe the whole modeled result; report the evidence boundary ([e4b97cb](https://github.com/lambdasistemi/singular/commit/e4b97cbb4b0a40e2cccbcbb32b49ebc5bc3ca946))
+* use refund-only absent custody datums ([86a56a4](https://github.com/lambdasistemi/singular/commit/86a56a42533f9f9ab7849226b03b795cbe391243))
+
+
+### Documentation
+
+* add dated Singular demo plays ([8c9856a](https://github.com/lambdasistemi/singular/commit/8c9856a688d5081688d267f38a76b1539769825c))
+* add dated Singular demo plays ([c54b2b1](https://github.com/lambdasistemi/singular/commit/c54b2b1a4b07b0c41b87996c83dc23454744961a))
+* add first registry model demo cast ([327b9c6](https://github.com/lambdasistemi/singular/commit/327b9c66a912069b2b317b14a7f02f00926f2c85))
+* align absent custody narration ([88a7bce](https://github.com/lambdasistemi/singular/commit/88a7bceb3fc18115b7b1966401ae9f51cffd246e))
+* **conformance:** explain every test in stakeholder language ([71a7895](https://github.com/lambdasistemi/singular/commit/71a7895b7397384e4faa6f585fc023e2f275a0a2))
+* **conformance:** present the book as stakeholder stories ([414175b](https://github.com/lambdasistemi/singular/commit/414175bc3af4be528565299ecf8017d0e02bb6dc))
+* **conformance:** specify model-driven execution and worker slices ([4f061b1](https://github.com/lambdasistemi/singular/commit/4f061b1e3db3488a50e7a3b708834b6cb582dd39))
+* cover final task narration ([c10cb3b](https://github.com/lambdasistemi/singular/commit/c10cb3b3cf9285c7b6ed278ebae06635044bb1d3))
+* drop removed cast from preview byte check ([447e9aa](https://github.com/lambdasistemi/singular/commit/447e9aaddc375821ecd2627958429581c1d61f0c))
+* keep the deletion ticket's planning records out of the published site ([c313921](https://github.com/lambdasistemi/singular/commit/c313921f2fe4e62cb1e00e8ce01f844352fb1d0d))
+* keep the retirement ticket's planning records out of the published site ([073ba48](https://github.com/lambdasistemi/singular/commit/073ba48b6c331c272615822f4c2920665cc0c0f2))
+* label historical Koios naming query ([8aa3c73](https://github.com/lambdasistemi/singular/commit/8aa3c7363888bdd8c2a1f00b903fb5fd593a4f72))
+* **lean:** scope insert-absent transaction contract ([1e63de7](https://github.com/lambdasistemi/singular/commit/1e63de75972d577e7d3b62a6c51a24048f68cdac))
+* make first registry demo a preprod play plan ([704b358](https://github.com/lambdasistemi/singular/commit/704b358b17ed101a9931bcb69467d7d30a6d5ddb))
+* make the conformance suite's audience constitutional ([2cc156b](https://github.com/lambdasistemi/singular/commit/2cc156bc8e766ec1d4fe6711d37e32e8a2902845)), closes [#215](https://github.com/lambdasistemi/singular/issues/215)
+* mark planned Singular demo releases and indexer path ([81dad53](https://github.com/lambdasistemi/singular/commit/81dad537463faac0c39e5a03aa554056c5314a71))
+* name registry handoff release and indexed read path ([3e5660a](https://github.com/lambdasistemi/singular/commit/3e5660af5be317a2a303a535cf5131868d62e7d3))
+* publish retraction window evidence and remaining limits ([6e200a4](https://github.com/lambdasistemi/singular/commit/6e200a43be14f446d374ad7cac890a343d8c7e87))
+* publish that retraction admission is compared on the chain ([22c736c](https://github.com/lambdasistemi/singular/commit/22c736ced9dfaa6cbaddfb1bf5460e16a08816cc))
+* publish the extra-signer registration and the difference it was detected by ([661fbdd](https://github.com/lambdasistemi/singular/commit/661fbdd26843bdbd95b032139816d7aa7e168689))
+* record the contract for deleting a registry key ([1aaae19](https://github.com/lambdasistemi/singular/commit/1aaae19223d5759a10e7ba5bca2a93ac55ffeca0))
+* record verified absent custody delivery ([d7a877a](https://github.com/lambdasistemi/singular/commit/d7a877a329d7ebb9793af1b6e634af84b59196d0))
+* record why deleteActive fails value conservation ([f8028e2](https://github.com/lambdasistemi/singular/commit/f8028e2f491063556587aaf097153b7ddf5c8be0))
+* regenerate the conformance book ([5ae22e6](https://github.com/lambdasistemi/singular/commit/5ae22e6ce74681c86be95847088dff3ef660d49f))
+* regenerate the conformance book at the ticket's head ([889a77c](https://github.com/lambdasistemi/singular/commit/889a77c5f19c4dd5f736fc7c66a65658edbb958a))
+* regenerate the running book from a clean devnet run ([e0ae589](https://github.com/lambdasistemi/singular/commit/e0ae5893f63e26338a24622a615a1de162f86cbd))
+* regenerate the running book from a clean devnet run ([beade75](https://github.com/lambdasistemi/singular/commit/beade75f65b11838c22515640ffce2d5a1efded7))
+* regenerate the running book with deleteActive agreeing ([#236](https://github.com/lambdasistemi/singular/issues/236)) ([2584c70](https://github.com/lambdasistemi/singular/commit/2584c706ee7382dd76075c428d195c12a08008ba))
+* regenerate the running book with witnessTerminal agreeing ([4e089ef](https://github.com/lambdasistemi/singular/commit/4e089ef28149820b5b15367980da7d1768e1a780))
+* rehearse first registry demo with model asciicast ([ac6b419](https://github.com/lambdasistemi/singular/commit/ac6b4196f8d9f8e3b8e5af759b290b4bdbeff018))
+* specify refund-only absent custody ([6d2b79d](https://github.com/lambdasistemi/singular/commit/6d2b79d026a61cf26f4a0149c39661e754977abb))
+* **specs:** add speech companion for the [#196](https://github.com/lambdasistemi/singular/issues/196) mapping page ([5bf0d0a](https://github.com/lambdasistemi/singular/commit/5bf0d0a799158d62a46d7f71f35963779db8dd64))
+* **specs:** add speech companions for the six [#209](https://github.com/lambdasistemi/singular/issues/209) conformance pages ([bdb5975](https://github.com/lambdasistemi/singular/commit/bdb5975447fd1cdd39dba8e08aa998c0eac371f4))
+* **specs:** clarify simulator verification narration ([122c143](https://github.com/lambdasistemi/singular/commit/122c143abd294cb9f48d4d98289931a780157861))
+* **specs:** qualify model declarations as Singular.*, not Singular.Model.* ([d6059ce](https://github.com/lambdasistemi/singular/commit/d6059ce23581006b15038f6e8865938e25c0572a))
+* stop publishing the deletion as a model disagreement ([71a30b3](https://github.com/lambdasistemi/singular/commit/71a30b3fb03138c9c2d5af47c13033810c11a854))
+* target preprod keripy and ckeri for dated plays ([1383644](https://github.com/lambdasistemi/singular/commit/13836446f29123632127485aec9d2be8fe670ba5))
+* use durable registry handoff link ([d60244d](https://github.com/lambdasistemi/singular/commit/d60244d3893b851d625462bf6c599c28a9b46f04))
+
+
+### Automation
+
+* admit the extra-signer registration step in the CG21 evidence check ([ad9dd30](https://github.com/lambdasistemi/singular/commit/ad9dd30d9a9c9d49d575577eca239d1c18ff0400))
+* run the offchain lint on every pull request ([cab222f](https://github.com/lambdasistemi/singular/commit/cab222f0beb27500c155483f79b3243548e85bc9))
+* run the offchain lint on every pull request ([1cf5275](https://github.com/lambdasistemi/singular/commit/1cf52753a719c78e2fe10a55c73bb0e266b19a33))
+
 ## [0.7.0](https://github.com/lambdasistemi/singular/compare/v0.6.1...v0.7.0) (2026-09-20)
 
 
