@@ -1,0 +1,12 @@
+{
+  "values-and-boundaries": [
+    {
+      "text": "The table binds the fields and formats of reference scripts, deployments, compiled parts, attached outputs and proof mirrors. An Attached value contains resolved outputs without the stronger live datum checks performed by verification. The retained callers compare a loaded mirror with the chain.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "0f0353d8c31df51eca59e3c448cb71970b5482f70bbe6018957d1c39c0c70a17"
+  }
+}

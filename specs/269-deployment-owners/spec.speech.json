@@ -1,0 +1,18 @@
+{
+  "requirements": [
+    {
+      "text": "The operator keeps the same public deployment interface, manifest and mirror formats, node decisions and refusal messages. The table gives each promise a checkable boundary.",
+      "pause": 400
+    }
+  ],
+  "evidence-and-authority": [
+    {
+      "text": "The diagram shows two library paths from a manifest: verification reads the live policy and windows, while attachment resolves outputs without those checks. A retained journey caller separately compares a loaded mirror with the chain. The accepted Lean tree governs registry behavior, while concrete file and node claims need their own evidence.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "6670dad0fbea24488b02953caee5827b81d3bab1df011ee12aa2a8419be399d1"
+  }
+}

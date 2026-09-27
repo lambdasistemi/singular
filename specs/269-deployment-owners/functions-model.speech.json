@@ -1,0 +1,12 @@
+{
+  "ownership-and-signatures": [
+    {
+      "text": "The table assigns every existing public function to Manifest, Mirror or Attach while callers continue importing the unchanged Deployment facade. Verification performs two additional live datum checks after state resolution; attachment returns without them. Mirror loading only decodes the file, and the callers compare roots.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "ae3c723c631be67f55014e19f5d98822a3c470369c143deede0113c810249c64"
+  }
+}

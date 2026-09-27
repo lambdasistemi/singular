@@ -1,0 +1,12 @@
+{
+  "work-items": [
+    {
+      "text": "The six tasks cover intake, the extraction, persistence evidence, an executing script identity refusal in required CI, contributor documentation, and the exact-head audited handoff. Task stamps do not stand in for merge or release.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "ce7148dc4c00dca24c59b532078438b476e4f5c68a5e0cb8f1f8502e975e4aad"
+  }
+}
