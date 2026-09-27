@@ -359,16 +359,25 @@
           # source page for EVERY module the public library stanza
           # declares — including the fold owners #267 keeps in
           # `other-modules` behind the unchanged six-export facade.
-          # Cabal's `--internal` haddock flag exposes non-exposed modules
-          # to Haddock, so the reference carries them without exposing a
-          # public import path. The flag is scoped to this documentation
-          # package alone, through a project that only appends it: every
-          # build output below keeps the untouched closure.
+          # Two flags make that happen without exposing a public import
+          # path: Cabal's `--internal` hands the non-exposed modules to
+          # Haddock (the g13 probe showed their source pages appear), and
+          # `--haddock-option=--show-all` cancels Haddock's hide
+          # attribute for the run — haddock-api 2.32 documents `show-all`
+          # as "behave as if no modules have the hide attribute", which is
+          # why `--internal` alone emitted source pages but no module
+          # pages. The flags are scoped to this documentation package
+          # alone, through a project that only appends them as an extra
+          # package module on the args-level modules list: every build
+          # output below keeps the untouched closure.
           library-haddock =
             (project.project.appendModule {
               modules = [
                 {
-                  packages.singular-registry.setupHaddockFlags = [ "--internal" ];
+                  packages.singular-registry.setupHaddockFlags = [
+                    "--internal"
+                    "--haddock-option=--show-all"
+                  ];
                 }
               ];
             }).hsPkgs.singular-registry.components.library.haddock;
