@@ -1,0 +1,16 @@
+{
+  "declaration-and-instance-map": [
+    {
+      "text": "The map names the sole future owner of every original type, alias, helper, explicit codec instance and stock derived instance. Fourteen data types each derive Show and Eq. Edge has no own instances; RequestPhase has no codec, and ConsumerRedeemer has only a ToData codec.",
+      "pause": 350
+    },
+    {
+      "text": "The compatibility constraints retain strict fields, constructor indices and the refund-only custody payload. Reflection may report a new defining module, so actual consumers must be checked before calling identity preserved.",
+      "pause": 350
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "31214711b5852841ea20653f117cf51281472f3868da739f6c7b5b1dc9ff3f16"
+  }
+}

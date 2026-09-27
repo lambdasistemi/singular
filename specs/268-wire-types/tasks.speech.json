@@ -1,0 +1,12 @@
+{
+  "work-items": [
+    {
+      "text": "The six work items cover intake, module ownership, wire controls, fresh-blueprint consumers, contributor documentation, and a clean candidate with a truthful unchanged Conformance fence. Exact-head gate, audit and CI results remain separate acceptance receipts rather than task stamps.",
+      "pause": 350
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "dc3a25d9e1d47a081657aa36527bfce2e0e4b5a3ccb47aac0f9da36a36a60a66"
+  }
+}

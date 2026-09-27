@@ -1,0 +1,16 @@
+{
+  "dependency-direction": [
+    {
+      "text": "The diagram starts with callers at the Types compatibility facade. Primitive values feed request, state, proof and redeemer owners. State reads request, and redeemer reads proof. No child reads back through the facade.",
+      "pause": 350
+    },
+    {
+      "text": "The table assigns one responsibility to each owner. The five new modules are internal to the public library; existing callers continue through the exposed Types module.",
+      "pause": 350
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "962f96f8a4d5bb22da87bcfa7fffc27d8df38e02253325ed793f15a400cab78e"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "public-callables": [
+    {
+      "text": "Existing callers keep the seven edge constants, edge names, request phase classification and four state policy-byte accessors through the Types facade. Each callable keeps its argument and result contract.",
+      "pause": 350
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "2817198d71f404588206a935c526bf9c30383667d8cf70371d383e7cc58efd4f"
+  }
+}

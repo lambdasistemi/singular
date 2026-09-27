@@ -25,13 +25,15 @@ viewing.
 
 The module extent is the public library of the off-chain Cabal file — every
 exposed module, every internal module, and every module the library
-re-exports under its own name. That complete extent is 39 modules in
+re-exports under its own name. That complete extent is 44 modules in
 three kinds: 34 explicitly exposed modules and two re-exported modules
 are what a caller imports; the three fold owners behind the `Update`
 facade — `Singular.Registry.TxBuilder.Update.Build`, `.Context` and
-`.Duties` — are package-internal `other-modules` with generated pages
-here for the contributor reading the facade's implementation, but no
-caller import path: a caller compiles against the facade's exports, not
+`.Duties` — and the five wire owners behind the `Types` facade —
+`Singular.Registry.Wire.Primitive`, `.Request`, `.State`, `.Proof` and
+`.Redeemer` — are package-internal `other-modules` with generated pages
+here for the contributor reading the facades' implementations, but no
+caller import path: a caller compiles against the facades' exports, not
 against these modules. `Singular.Registry.Ledger` and
 `Singular.Registry.Provider` are the re-exports: their implementations
 moved into the package's private ownership core
@@ -84,10 +86,17 @@ agree.
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Context.hs" data-api="module">Singular.Registry.TxBuilder.Update.Context</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Context.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Duties.hs" data-api="module">Singular.Registry.TxBuilder.Update.Duties</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Duties.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Types.hs" data-api="module">Singular.Registry.Types</a> — <a href="../offchain/lib/Singular/Registry/Types.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Wire/Primitive.hs" data-api="module">Singular.Registry.Wire.Primitive</a> — <a href="../offchain/lib/Singular/Registry/Wire/Primitive.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Wire/Proof.hs" data-api="module">Singular.Registry.Wire.Proof</a> — <a href="../offchain/lib/Singular/Registry/Wire/Proof.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Wire/Redeemer.hs" data-api="module">Singular.Registry.Wire.Redeemer</a> — <a href="../offchain/lib/Singular/Registry/Wire/Redeemer.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Wire/Request.hs" data-api="module">Singular.Registry.Wire.Request</a> — <a href="../offchain/lib/Singular/Registry/Wire/Request.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Wire/State.hs" data-api="module">Singular.Registry.Wire.State</a> — <a href="../offchain/lib/Singular/Registry/Wire/State.hs" data-api="source">source</a>
 
 The facades and owners of the registry builder and blueprint extraction
 are described module by module in the
-[builder and blueprint modules](offchain-builder-blueprint.md) guide.
+[builder and blueprint modules](offchain-builder-blueprint.md) guide, and
+the registry wire's five owners behind the `Types` facade in
+[Who owns the registry wire](offchain-wire-types.md).
 
 ## How the reference stays honest
 
@@ -143,6 +152,6 @@ documented separately, and a generated reference for every library in
 this repository is a later, independently checked extension. Nothing on
 this page is a publication or release claim — the reference ships with
 the candidate site and its future archives, and no version is tagged or
-published by existing here. The behavioral evidence for the moved builder
-and blueprint code lives in the check commands the off-chain development
-guide records, not in the existence of these pages.
+published by existing here. The behavioral evidence for the moved builder,
+blueprint and wire code lives in the check commands the off-chain
+development guide records, not in the existence of these pages.
