@@ -11,7 +11,7 @@
       "pause": 350
     },
     {
-      "text": "The current measured extent, also printed by every lint run's inventory line, is 88 discovered Haskell files in 23 source directories: Fourmolu covers 86 of them after the two verifier exclusions, and HLint runs on 75 files within ten selected directories. Adding a Cabal component or direct-GHC naming source must also update the declaration or script that makes it discoverable; check the resulting lint output rather than assuming a filename search proves coverage.",
+      "text": "The source-derived inventory at the ticket 267 candidate measures 89 discovered Haskell files in 23 source directories: Fourmolu selects 87 after the two verifier exclusions, and HLint selects 76 within ten directories. The added end-to-end witness belongs to all three sets. The lint app has not yet run on this candidate, so these are source-selected extents, not a green lint receipt. Thirteen directory names remain excluded from HLint under the same hint-debt boundary. Compare the next actual lint output with this inventory.",
       "pause": 500
     },
     {
@@ -33,6 +33,6 @@
   ],
   "_source": {
     "file": "offchain-development.md",
-    "sha256": "68350bd5509fd185c86e97f52e928fea15d0eff92b11ea9f2d75caaa3f12dcfa"
+    "sha256": "6682852d363f7cd0b00f7526943c90a807043ef1e7a40aae48279159b7030e6d"
   }
 }
