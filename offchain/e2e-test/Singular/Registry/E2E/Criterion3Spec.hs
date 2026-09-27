@@ -343,8 +343,8 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
             (serialiseAddr genesisAddr, BS.empty)
     refA <-
         Edges.bookEdgeTo cfg codes prov (submitWithGenesis submit) genesisAddr tokenId keyA edgeInsertActive destA
-    -- The booking sequence, captured at the calls themselves so the
-    -- receipt's order cannot drift from the code.
+    -- The booking sequence, written beside the calls in their order;
+    -- a future reordering of the calls must edit this list to match.
     let bookingSequence = [(keyB, refB), (keyA, refA)]
     -- The real provider's own observations, before anything is wrapped.
     pending <- Cage.queryUTxOs prov requestAddr
