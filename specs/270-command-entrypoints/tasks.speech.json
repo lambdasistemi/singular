@@ -1,0 +1,12 @@
+{
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "0459ef52f55a387afcb9a1e62eeb2a1b2e0ed059b5e134e175f76c6d51262841"
+  },
+  "work-items": [
+    {
+      "text": "The task ledger tracks intake, each of the four command extractions, high-level documentation, and exact-candidate audit and handoff. Task stamps never replace actual command, archive or continuous integration receipts.",
+      "pause": 500
+    }
+  ]
+}

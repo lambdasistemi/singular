@@ -1,0 +1,12 @@
+{
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "81f591765e03d24740708647155aa766b617b2119b81b5ee039d1bfcd36ba8f7"
+  },
+  "dependency-direction": [
+    {
+      "text": "Each command Main delegates to local options and orchestration, which use local steps and deliberate controls. Those modules depend on the registry library. Commands do not import another command scenario, and the older independent verifiers stay outside this extraction.",
+      "pause": 500
+    }
+  ]
+}
