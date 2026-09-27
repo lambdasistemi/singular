@@ -48,7 +48,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
-import Data.List (isPrefixOf, sortOn)
+import Data.List (isPrefixOf, sort, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Lens.Micro ((&), (.~), (^.))
@@ -84,6 +84,9 @@ import Cardano.Ledger.Api.Tx.Out (
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
 import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Core (extractHash)
+import Cardano.Ledger.Plutus.Data (hashData)
+import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Mary.Value (
     AssetName (..),
     MaryValue (..),
@@ -212,18 +215,37 @@ keyAssetName = AssetName . SBS.toShort
 -- The destination preimages this scenario books
 -- ---------------------------------------------------------
 
-{- | Every distinct destination-datum preimage the scenario books, with
-the hash bytes its request carries. Distinct nonempty preimages make
-an absent or swapped inline datum detectable.
+-- | The distinct nonempty destination-datum preimages the scenario
+-- books, named by stage. Distinct preimages make an absent or swapped
+-- inline datum detectable.
+orderDatumA, deliverDatumB, deliverDatumA, deliverDatumD, witnessDatumD :: PLC.Data
+orderDatumA = PLC.I 1
+deliverDatumB = PLC.I 2
+deliverDatumA = PLC.I 3
+deliverDatumD = PLC.I 4
+witnessDatumD = PLC.I 5
+
+scenarioDatumPreimages :: [PLC.Data]
+scenarioDatumPreimages =
+    [orderDatumA, deliverDatumB, deliverDatumA, deliverDatumD, witnessDatumD]
+
+{- | The hash a request's destination field carries for a preimage: the
+same ledger encoding the cage itself compares (@destinationMatches@
+hashes the inline datum with BLAKE2b-256; @Edges.edgeRecordDatumHash@
+uses this exact expression), so a literal label could never match.
 -}
-scenarioDatums :: [(ByteString, PLC.Data)]
-scenarioDatums =
-    [ ("c3-datum-order-a", PLC.I 1)
-    , ("c3-datum-b-deliver", PLC.I 2)
-    , ("c3-datum-a-deliver", PLC.I 3)
-    , ("c3-datum-d-deliver", PLC.I 4)
-    , ("c3-datum-d-witness", PLC.I 5)
-    ]
+datumHashOf :: PLC.Data -> ByteString
+datumHashOf d = hashToBytes (extractHash (hashData (Data d :: Data ConwayEra)))
+
+-- | The preimage for a hash the request carries, when this scenario
+-- booked it.
+preimageOf :: ByteString -> Maybe PLC.Data
+preimageOf h = lookup h [(datumHashOf d, d) | d <- scenarioDatumPreimages]
+
+-- | A delivering destination at the funding wallet carrying a booked
+-- preimage's real hash.
+deliverDest :: PLC.Data -> (ByteString, ByteString)
+deliverDest d = (serialiseAddr genesisAddr, datumHashOf d)
 
 -- ---------------------------------------------------------
 -- Scenario
@@ -285,7 +307,7 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
     -- both folded together below.
     let keyA = "c3-order-a"
         keyB = "c3-order-b"
-        destA = (serialiseAddr genesisAddr, "c3-datum-order-a")
+        destA = deliverDest orderDatumA
     refB <-
         Edges.bookEdgeTo cfg codes prov (submitWithGenesis submit) genesisAddr tokenId keyB edgeInsertAbsent
             (serialiseAddr genesisAddr, BS.empty)
@@ -293,7 +315,7 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
         Edges.bookEdgeTo cfg codes prov (submitWithGenesis submit) genesisAddr tokenId keyA edgeInsertActive destA
     -- The real provider's own observations, before anything is wrapped.
     pending <- Cage.queryUTxOs prov requestAddr
-    unless (length pending == 2 && map fst pending == [refA, refB] `orPermutation` [refB, refA]) $
+    unless (length pending == 2 && sort (map fst pending) == sort [refA, refB]) $
         fail "ORDER-WITNESS-NONDISCRIMINATING: the request address does not hold exactly the two booked requests"
     (outA, reqA) <- observedRequestAt refA pending
     (outB, reqB) <- observedRequestAt refB pending
@@ -355,7 +377,6 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
     requestOf pairs ref = case lookup ref pairs of
       Just req -> req
       Nothing -> error "orderingStage: booked request not in observation list"
-    orPermutation xs ys = xs == ys || xs == reverse ys
 -- ---------------------------------------------------------
 -- Stages A–D: the seven edges, connected
 -- ---------------------------------------------------------
@@ -376,10 +397,10 @@ connectedStages ::
     IO ()
 connectedStages cfg codes prov submit tm tokenId requestAddr refs = do
     -- Stage B.1: deliver keyB's active token and leave it held.
-    stage keyB edgeInsertActive "c3-datum-b-deliver"
+    stage keyB edgeInsertActive deliverDatumB
     -- Stage A: absent custody, then the active life, then retirement.
     stage keyA edgeInsertAbsent BS.empty
-    stage keyA edgeUpdateActive "c3-datum-a-deliver"
+    stage keyA edgeUpdateActive deliverDatumA
     stage keyA edgeUpdateTerminal BS.empty
     -- Stage B.2: burn keyB's active token.
     stage keyB edgeDeleteActive BS.empty
@@ -387,17 +408,17 @@ connectedStages cfg codes prov submit tm tokenId requestAddr refs = do
     stage keyC edgeInsertAbsent BS.empty
     stage keyC edgeDeleteAbsent BS.empty
     -- Stage D: active, terminal, witnessed.
-    stage keyD edgeInsertActive "c3-datum-d-deliver"
+    stage keyD edgeInsertActive deliverDatumD
     stage keyD edgeUpdateTerminal BS.empty
-    stage keyD edgeWitnessTerminal "c3-datum-d-witness"
+    stage keyD edgeWitnessTerminal witnessDatumD
   where
     keyA = "c3-key-a"
     keyB = "c3-key-b"
     keyC = "c3-key-c"
     keyD = "c3-key-d"
-    stage key edge datumHash =
+    stage key edge datum =
         bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge
-            (serialiseAddr genesisAddr, datumHash)
+            (deliverDest datum)
 
 -- ---------------------------------------------------------
 -- One booking, one fold, every control it feeds
@@ -467,6 +488,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                             { cuInput = custodyIn
                             , cuRefundAddr = refundAddr
                             , cuOwed = custodyCoin
+                            , cuPolicies = witnessPolicies cfg
                             , cuInputs = body ^. inputsTxBodyL
                             , cuOutputs = outputs
                             }
@@ -474,7 +496,11 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                 mutantFails
                     (label <> ": custody refund")
                     "C3-CUSTODY-REFUND"
-                    (cmpCustodyRefund custodyObs{cuOwed = custodyCoin + 1})
+                    ( cmpCustodyRefund
+                        custodyObs
+                            { cuRefundAddr = addrFromKeyHashBytes Testnet (BS.replicate 28 0x99)
+                            }
+                    )
             Nothing ->
                 expectationFailure ("setup: no keyed custody UTxO observed for key " <> show key)
     -- Holder: the two edges that burn an active token.
@@ -638,28 +664,42 @@ data CustodyObservation = CustodyObservation
     { cuInput :: TxIn
     , cuRefundAddr :: Addr
     , cuOwed :: Integer
+    , cuPolicies :: [PolicyID]
     , cuInputs :: Set.Set TxIn
     , cuOutputs :: [TxOut ConwayEra]
     }
 
-{- | @C3-CUSTODY-REFUND@: the exact observed custody input is consumed
-and some output refunds its recorded address at least the observed
-coin.
+{- | @C3-CUSTODY-REFUND@: the exact observed custody input is consumed,
+and the outputs at its recorded refund address that carry no delivered
+token sum to at least the observed coin — a token carrier or an
+approval/change output at the same address is not custody refund
+value, matching the constitution's realization of a custody refund.
 -}
 cmpCustodyRefund :: CustodyObservation -> Either String ()
-cmpCustodyRefund CustodyObservation{cuInput, cuRefundAddr, cuOwed, cuInputs, cuOutputs}
+cmpCustodyRefund CustodyObservation{cuInput, cuRefundAddr, cuOwed, cuPolicies, cuInputs, cuOutputs}
     | not (Set.member cuInput cuInputs) =
         Left "C3-CUSTODY-REFUND: the exact observed custody input is not consumed"
-    | not (null paid) = Right ()
-    | otherwise = Left "C3-CUSTODY-REFUND: no refund at the recorded address meets the observed custody coin"
+    | credited >= cuOwed = Right ()
+    | otherwise =
+        Left
+            ( "C3-CUSTODY-REFUND: the token-free refund credited at the recorded address ("
+                <> show credited
+                <> ") falls short of the observed custody coin ("
+                <> show cuOwed
+                <> ")"
+            )
   where
-    paid =
-        [ ()
-        | out <- cuOutputs
-        , out ^. addrTxOutL == cuRefundAddr
-        , let Coin c = out ^. coinTxOutL
-        , c >= cuOwed
-        ]
+    credited =
+        sum
+            [ c
+            | out <- cuOutputs
+            , out ^. addrTxOutL == cuRefundAddr
+            , not (any (\policy -> carriesPolicy policy out) cuPolicies)
+            , let Coin c = out ^. coinTxOutL
+            ]
+    carriesPolicy policy out = case out ^. valueTxOutL of
+        MaryValue _ (MultiAsset m) ->
+            maybe False (not . Map.null) (Map.lookup policy m)
 
 -- | The fold's required-signer set, reduced to its size class: the
 -- set must be empty, so any member is a defect.
@@ -700,9 +740,22 @@ approvalObservationOf cfg tx req approvalName =
         , aoQuantity = 1
         , aoMint = tx ^. bodyTxL . mintTxBodyL
         , aoOwnerAddress = ownerAddressOf req
-        , aoDeposit = requestDeposit req
+        , aoDeposit = approvalFloorOf (requestEdge req) req
         , aoOutputs = toList (tx ^. bodyTxL . outputsTxBodyL)
         }
+
+{- | The approval-return output's ADA floor, by edge, from the accepted
+obligations: a delivering edge returns the approval alone at the
+ledger's minimum (the minimum itself is unmodeled, so the floor here is
+zero) while its deposit goes to the destination or custody; the
+no-token-delivery edges group the deposit with the returned approval
+at the owner, where the deposit floor does apply.
+-}
+approvalFloorOf :: Edge -> OnChainRequest -> Integer
+approvalFloorOf edge req
+    | edge == edgeUpdateTerminal || edge == edgeDeleteAbsent || edge == edgeDeleteActive =
+        requestDeposit req
+    | otherwise = 0
 
 signerObservationOf :: ConwayTx -> SignerObservation
 signerObservationOf tx =
@@ -739,7 +792,7 @@ destinationShapeOf cfg edge key req
   where
     delivering pin = do
         addr <- addrFromBytes (fst (requestDestination req))
-        datum <- lookup (snd (requestDestination req)) scenarioDatums
+        datum <- preimageOf (snd (requestDestination req))
         pure DestinationShape{dsAddress = addr, dsDatum = datum, dsAsset = (policyIdFromPin pin, keyAssetName key)}
 
 observedRequestAt :: TxIn -> [(TxIn, TxOut ConwayEra)] -> IO (TxOut ConwayEra, OnChainRequest)
@@ -794,7 +847,7 @@ contextFor ::
     IO RegistryContext
 contextFor cfg codes prov refs = do
     base <- Edges.registryContextFor cfg codes prov refs
-    pure base{rcDatums = scenarioDatums ++ rcDatums base}
+    pure base{rcDatums = [(datumHashOf d, d) | d <- scenarioDatumPreimages] ++ rcDatums base}
 
 -- | Decode the body's state redeemer into its per-request actions.
 modifyActionsOf :: ConwayTx -> IO [[ProofStep]]
@@ -817,6 +870,16 @@ modifyActionsOf tx =
 
 activePin :: CageConfig -> PolicyID
 activePin cfg = policyIdFromPin (cfgActivePolicy cfg)
+
+-- | The three witness policies of this registry: the token columns a
+-- delivered asset can arrive under, used to keep token carriers out
+-- of a custody refund's credited value.
+witnessPolicies :: CageConfig -> [PolicyID]
+witnessPolicies cfg =
+    [ policyIdFromPin (cfgAbsentPolicy cfg)
+    , activePin cfg
+    , policyIdFromPin (cfgTerminalPolicy cfg)
+    ]
 
 quantityInValue :: PolicyID -> AssetName -> MaryValue era -> Integer
 quantityInValue policy name (MaryValue _ (MultiAsset m)) =
