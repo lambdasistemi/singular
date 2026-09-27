@@ -24,7 +24,6 @@ module Singular.Registry.TxBuilder.Update.Duties (
     registryDuties,
 ) where
 
-import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
@@ -40,7 +39,7 @@ import Cardano.Ledger.Api.Tx.Out (
     valueTxOutL,
  )
 import Cardano.Ledger.Coin (Coin (..))
-import Cardano.Ledger.Core (Script, hashScript)
+import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.Keys (KeyHash)
 import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..), MultiAsset (..), PolicyID (..))
 import Cardano.Tx.Build (Guard)
