@@ -20,16 +20,21 @@ custody and holder UTxOs, the policy pins of the booted config and the
 observed request deposits. Nothing here reads 'registryDuties' or the
 builder's own decisions.
 
-The ordering stage is deterministic. Two booking transactions are built
-before submission, the second spending the first's change output, with
-the second's key varied over a fixed sequence of at most 256
-candidates until its transaction id sorts below the first's; the
-bookings are then submitted in booking order, so the fold's canonical
-input order is the reverse of discovery order by construction.
-Transaction ids do not depend on witnesses, so precomputed ids are the
-submitted ids, and the spec verifies that. A setup that cannot
-establish the discrimination fails @ORDER-WITNESS-NONDISCRIMINATING@
-before any fold runs, and is a setup failure, never an intended RED.
+The ordering stage is deterministic. Two real requests are booked
+and captured through the real provider; a test-local provider
+override — a record update that changes only the request address's
+@queryUTxOs@ — returns those same real outputs to the one public fold
+in descending input order, while every other address and provider
+function forwards unchanged. The fold's canonical sort must therefore
+associate each request with its own proof in ascending order despite
+the reversed enumeration, and the spec derives that expected
+association independently from the observed request datums. A setup
+that cannot present exactly two distinct real requests, a genuinely
+reversed enumeration, or two distinguishable proofs fails
+@ORDER-WITNESS-NONDISCRIMINATING@ before submission, and is a setup
+failure, never an intended RED. This witnesses canonicalisation of a
+test-controlled enumeration of real outputs; real cage acceptance
+separately supports proof correctness.
 
 Each of the seven comparison classes runs once on the live captured
 observation and immediately again on a single field-mutated copy
@@ -45,7 +50,6 @@ import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.List (isPrefixOf, sortOn)
 import Data.Map.Strict qualified as Map
-import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Lens.Micro ((&), (.~), (^.))
 import Test.Hspec (
@@ -63,12 +67,10 @@ import Cardano.Ledger.Api.Scripts.Data (
     Datum (..),
     binaryDataToData,
  )
-import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body (
-    feeTxBodyL,
     inputsTxBodyL,
     mintTxBodyL,
-    mkBasicTxBody,
     outputsTxBodyL,
  )
 import Cardano.Ledger.Api.Tx.Out (
@@ -115,9 +117,11 @@ import Singular.Registry.Driver qualified as Driver
 import Singular.Registry.Ledger (
     Coin (..),
     ConwayEra,
-    PParams,
     TokenId,
     TxIn,
+ )
+import Singular.Registry.Provider (
+    Provider (..),
  )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (
@@ -130,12 +134,8 @@ import Singular.Registry.TxBuilder.Edges qualified as Edges
 import Singular.Registry.TxBuilder.Internal (
     addrFromBytes,
     addrFromKeyHashBytes,
-    addrWitnessKeyHash,
     cageAddrFromCfg,
-    currentPosixMs,
     extractCageDatum,
-    mkInlineDatum,
-    mkRequestDatumWith,
     policyIdFromPin,
     requestAddrFromCfg,
     toPlcData,
@@ -250,12 +250,25 @@ spec bp =
 -- Stage O: deterministic two-request ordering
 -- ---------------------------------------------------------
 
-{- | Book two requests through a dependency chain and fold them
-together. Booking A spends an ada-only wallet output and pays its
-change at output index 1; booking B spends that change, so B is valid
-only after A lands. B's key is varied over at most 256 fixed candidates
-until @txId B < txId A@; submitting A then B makes booking order
-@[A,B]@ and canonical request order @[B,A]@ by construction.
+{- | The criterion-3 ordering witness, per A-014's v2 selection: two
+REAL booked requests, captured through the real provider, enumerated to
+the one public fold in DESCENDING input order through a test-local
+provider override that changes no output and no other query.
+
+'Update.Context.queryContext' sorts its request list ascending, so the
+fold's proof association must follow ascending order despite the
+reversed enumeration. The expected association is derived independently
+from the observed request datums walked over a fresh speculative
+session of the committed trie; the actual association is decoded from
+the unsigned body's state redeemer. A setup that cannot present
+exactly two distinct real requests, a genuinely reversed enumeration
+or two distinguishable proofs fails @ORDER-WITNESS-NONDISCRIMINATING@
+before submission.
+
+L-ORD1: this witnesses canonicalisation of a test-controlled
+enumeration of real outputs; L-ORD2: the association is observed
+against proof content — real cage acceptance separately supports proof
+correctness.
 -}
 orderingStage ::
     CageConfig ->
@@ -268,66 +281,49 @@ orderingStage ::
     [(TxIn, TxOut ConwayEra)] ->
     IO ()
 orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
-    pp <- Cage.queryProtocolParams prov
-    utxos <- Cage.queryUTxOs prov genesisAddr
-    feeIn <- case [u | u@(_, o) <- utxos, adaOnlyOut o] of
-        [] -> fail "ORDER-WITNESS-NONDISCRIMINATING: no ada-only funding output for booking A"
-        (u : _) -> pure (fst u)
-    now <- currentPosixMs
-    let owner = addrKeyHashBytes genesisAddr
-        keyA = "c3-order-a"
+    -- Two real, independent bookings: distinct keys, distinct edges,
+    -- both folded together below.
+    let keyA = "c3-order-a"
+        keyB = "c3-order-b"
         destA = (serialiseAddr genesisAddr, "c3-datum-order-a")
-        balanceA = coinOf utxos feeIn
-        bondOf = let Coin t = defaultTip cfg in t + Edges.edgeDeposit
-        changeA = balanceA - bondOf - 2_000_000
-        txA =
-            bookingUnsigned cfg codes pp genesisAddr tokenId keyA edgeInsertActive destA now owner
-                (feeIn, balanceA, mempty)
-        txIdA = txIdTx txA
-        candidate key =
-            bookingUnsigned cfg codes pp genesisAddr tokenId key edgeInsertAbsent
-                (serialiseAddr genesisAddr, BS.empty) now owner
-                (TxIn txIdA (TxIx 1), changeA, mempty)
-        keys = ["c3-order-b-" <> intToBS n | n <- [0 .. 255 :: Int]]
-    when (changeA <= bondOf + 2_000_000) $
-        fail "ORDER-WITNESS-NONDISCRIMINATING: funding output too small for the booking chain"
-    picked <- case [k | k <- keys, txIdTx (candidate k) < txIdA] of
-        [] ->
-            fail
-                "ORDER-WITNESS-NONDISCRIMINATING: no candidate key sorted booking B below booking A within 256 candidates"
-        (k : _) -> pure k
-    let keyB = picked
-        txB = candidate keyB
-    signedA <- submitWithGenesis submit txA
-    signedB <- submitWithGenesis submit txB
-    unless (txIdTx signedA == txIdA && txIdTx signedB == txIdTx txB) $
-        fail "ORDER-WITNESS-NONDISCRIMINATING: submitted transaction ids differ from the precomputed ids"
+    refB <-
+        Edges.bookEdgeTo cfg codes prov (submitWithGenesis submit) genesisAddr tokenId keyB edgeInsertAbsent
+            (serialiseAddr genesisAddr, BS.empty)
+    refA <-
+        Edges.bookEdgeTo cfg codes prov (submitWithGenesis submit) genesisAddr tokenId keyA edgeInsertActive destA
+    -- The real provider's own observations, before anything is wrapped.
     pending <- Cage.queryUTxOs prov requestAddr
-    let refA = TxIn txIdA (TxIx 0)
-        refB = TxIn (txIdTx txB) (TxIx 0)
+    unless (length pending == 2 && map fst pending == [refA, refB] `orPermutation` [refB, refA]) $
+        fail "ORDER-WITNESS-NONDISCRIMINATING: the request address does not hold exactly the two booked requests"
     (outA, reqA) <- observedRequestAt refA pending
     (outB, reqB) <- observedRequestAt refB pending
-    let observed = sortOn fst [(refA, (outA, reqA)), (refB, (outB, reqB))]
-        sortedRefs = map fst observed
-        sortedRequests = map (snd . snd) observed
-    unless (map requestKey sortedRequests == [keyB, keyA]) $
-        expectationFailure
-            ( "ORDER-WITNESS-NONDISCRIMINATING: canonical request order "
-                <> show (map requestKey sortedRequests)
-                <> " does not reverse the booking order ["
-                <> show keyA
-                <> ","
-                <> show keyB
-                <> "]"
-            )
-    -- Expected proof actions: the OBSERVED requests, in canonical
-    -- order, walked over a speculative session of the same committed
-    -- trie. Derived from chain datums, never from the builder's list.
+    let ascending = sortOn fst pending
+        descending = reverse ascending
+        sortedRefs = map fst ascending
+        sortedRequests = map (requestOf (zip [refA, refB] [reqA, reqB])) sortedRefs
+    unless (map fst descending /= map fst ascending) $
+        fail "ORDER-WITNESS-NONDISCRIMINATING: reversed enumeration equals ascending order"
+    -- The test-local provider override: the request address's REAL
+    -- outputs, returned descending; every other address and provider
+    -- function forwards to the real provider unchanged.
+    let wrapped =
+            prov
+                { queryUTxOs = \addr ->
+                    if addr == requestAddr
+                        then pure descending
+                        else Cage.queryUTxOs prov addr
+                }
+    -- Expected association: observed datums, ascending order, fresh
+    -- speculative session of the committed trie.
     expectedActions <-
         withSpeculativeTrie tm tokenId $ \trie ->
             mapM (\req -> walkEdge trie (requestKey req) (requestEdge req)) sortedRequests
+    case expectedActions of
+        [proofOne, proofTwo]
+            | proofOne /= proofTwo -> pure ()
+        _ -> fail "ORDER-WITNESS-NONDISCRIMINATING: the two requests do not produce distinguishable proofs"
     ctx <- contextFor cfg codes prov refs
-    unsigned <- updateTokenWithDuties cfg prov tm tokenId genesisAddr ctx
+    unsigned <- updateTokenWithDuties cfg wrapped tm tokenId genesisAddr ctx
     decoded <- modifyActionsOf unsigned
     let orderObs = OrderObservation{ooActions = decoded, ooExpected = expectedActions}
     livePass "ordering: request association" (cmpOrder orderObs)
@@ -349,7 +345,17 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
     mutantFails "ordering fold: body signers" "C3-BODY-SIGNER" (cmpBodySigner (insertSigner signerObs))
     _signedFold <- submitWithGenesis submit unsigned
     syncFoldedRequests tm tokenId sortedRefs
-
+    -- Receipts through the REAL provider: both requests consumed.
+    after <- Cage.queryUTxOs prov requestAddr
+    forM_ sortedRefs $ \ref ->
+        when (lookup ref after /= Nothing) $
+            expectationFailure
+                ("wrong effect: ordering-fold request " <> show ref <> " still pending after submission")
+  where
+    requestOf pairs ref = case lookup ref pairs of
+      Just req -> req
+      Nothing -> error "orderingStage: booked request not in observation list"
+    orPermutation xs ys = xs == ys || xs == reverse ys
 -- ---------------------------------------------------------
 -- Stages A–D: the seven edges, connected
 -- ---------------------------------------------------------
@@ -513,51 +519,6 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
             expectationFailure
                 ("wrong effect: active asset for key " <> show key <> " still held after burn")
 
--- ---------------------------------------------------------
--- Booking construction (the frozen deterministic setup)
--- ---------------------------------------------------------
-
-{- | Build one booking transaction without submitting it, from an
-explicit input: the same pieces @Edges.bookEdgeTo@ composes —
-'Edges.bookingApproval' and 'Edges.certifyBooking' for the
-certification, 'mkRequestDatumWith' for the datum — and the same fee,
-bond and change shape. Pure, so transaction ids can be compared before
-anything is signed or submitted.
--}
-bookingUnsigned ::
-    CageConfig ->
-    NamingCodes ->
-    PParams ConwayEra ->
-    Addr ->
-    TokenId ->
-    ByteString ->
-    Edge ->
-    (ByteString, ByteString) ->
-    Integer ->
-    ByteString ->
-    (TxIn, Integer, MultiAsset) ->
-    ConwayTx
-bookingUnsigned cfg codes pp payerAddr tokenId key edge dest now owner (inputRef, inputBalance, carried) =
-    let Coin tipValue = defaultTip cfg
-        bond = tipValue + Edges.edgeDeposit
-        fee = 2_000_000
-        change = inputBalance - bond - fee
-        approval = Edges.bookingApproval codes edge key owner dest
-        requestAddr = requestAddrFromCfg cfg tokenId Testnet
-        datum = mkRequestDatumWith tokenId payerAddr key edge Edges.edgeDeposit now dest
-        reqOut =
-            mkBasicTxOut
-                requestAddr
-                (MaryValue (Coin bond) (maybe mempty Edges.baAsset approval))
-                & datumTxOutL .~ mkInlineDatum datum
-        changeOut = mkBasicTxOut payerAddr (MaryValue (Coin change) carried)
-        body =
-            mkBasicTxBody
-                & inputsTxBodyL .~ Set.singleton inputRef
-                & outputsTxBodyL .~ StrictSeq.fromList [reqOut, changeOut]
-                & feeTxBodyL .~ Coin fee
-                & reqSignerHashesTxBodyL .~ Set.singleton (addrWitnessKeyHash owner)
-     in Edges.certifyBooking pp inputRef approval (mkBasicTx body)
 
 -- ---------------------------------------------------------
 -- The seven comparison classes
@@ -902,8 +863,6 @@ bumpOne cfg m = case Map.toList m of
     [] -> Map.singleton (policyIdFromPin (cfgApplicationPolicy cfg), AssetName "c3-mutant") 1
     ((k, v) : _) -> Map.insert k (v + 1) m
 
-intToBS :: Int -> ByteString
-intToBS = BS.pack . map (fromIntegral . fromEnum) . show
 
 -- ---------------------------------------------------------
 -- Live and mutant runners (in-run controls)
