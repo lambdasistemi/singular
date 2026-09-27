@@ -342,6 +342,18 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
         sortedRequests = map (requestOf (zip [refA, refB] [reqA, reqB])) sortedRefs
     unless (map fst descending /= map fst ascending) $
         fail "ORDER-WITNESS-NONDISCRIMINATING: reversed enumeration equals ascending order"
+    -- Scenario receipt, from captured values only: the booked requests'
+    -- transaction ids, the raw test-controlled provider enumeration the
+    -- fold saw, and the canonical ascending order it must commit to.
+    putStrLn $
+        "[c3-receipt] ordering booking-order="
+            <> show [keyA, keyB]
+            <> " booked-request-txins="
+            <> show [refA, refB]
+            <> " raw-provider-order-descending="
+            <> show (map fst descending)
+            <> " canonical-order-ascending="
+            <> show sortedRefs
     -- The test-local provider override: the request address's REAL
     -- outputs, returned descending; every other address and provider
     -- function forwards to the real provider unchanged.
@@ -382,12 +394,19 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
     livePass "ordering fold: body signers" (cmpBodySigner signerObs)
     mutantFails "ordering fold: body signers" "C3-BODY-SIGNER" (cmpBodySigner (insertSigner signerObs))
     rootBefore <- withTrie tm tokenId getRoot
-    _signedFold <- submitWithGenesis submit unsigned
+    signedFold <- submitWithGenesis submit unsigned
     syncFoldedRequests tm tokenId ascending
     rootAfter <- withTrie tm tokenId getRoot
     when (unRoot rootBefore == unRoot rootAfter) $
         expectationFailure "wrong effect: mirror root did not move across the ordering fold"
     assertChainRootMatches cfg prov tokenId rootAfter "ordering fold"
+    putStrLn $
+        "[c3-receipt] ordering fold-txid="
+            <> show (txIdTx signedFold)
+            <> " mirror-root-before=0x"
+            <> show (unRoot rootBefore)
+            <> " mirror-root-after=0x"
+            <> show (unRoot rootAfter)
     -- Receipts through the REAL provider: both requests consumed.
     after <- Cage.queryUTxOs prov requestAddr
     forM_ sortedRefs $ \ref ->
@@ -573,6 +592,19 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
         expectationFailure
             ("wrong effect: mirror root did not move across the fold of edge " <> show edge)
     assertChainRootMatches cfg prov tokenId rootAfter ("fold of edge " <> show edge)
+    putStrLn $
+        "[c3-receipt] edge="
+            <> show edge
+            <> " key="
+            <> show key
+            <> " request-txin="
+            <> show requestTxIn
+            <> " fold-txid="
+            <> show (txIdTx signed)
+            <> " mirror-root-before=0x"
+            <> show (unRoot rootBefore)
+            <> " mirror-root-after=0x"
+            <> show (unRoot rootAfter)
     -- A delivering stage's built destination output lands at its
     -- address exactly as the body built it.
     case destinationShapeOf cfg edge key req of
