@@ -13,7 +13,7 @@
       "pause": 500
     },
     {
-      "text": "The fresh-blueprint Criterion Three spec tests the accepted-edge part of that gap. It books two real requests, presents their real outputs in descending TxIn order to one public fold, and runs connected stages for all seven admissible edges. Comparisons derive mints, approval assets, holder inputs, destinations, custody refunds and signers from observed pre-state and the Lean row, then inspect the body and landed outputs through the real provider. Each of the seven named effect comparisons has a one-field mutant required to fail in the same run. The local submitted devnet run passed twenty-three examples with no failures. Its receipts record booked request inputs, real and reversed provider orders, canonical input order, fold transaction IDs and roots. The terminal witness leaves the root unchanged as Lean requires; the other six edges change it. This finite representative devnet evidence still awaits the exact-head final gate, independent audit and pushed-head continuous integration. Arbitrary request sets, inadmissible-edge refusals, the delivering approval's ADA minimum and proof correctness beyond cage acceptance remain outside this case.",
+      "text": "The fresh-blueprint Criterion Three spec tests the accepted-edge part of that gap. It books two real requests, presents their real outputs in descending TxIn order to one public fold, and runs connected stages for all seven admissible edges. Comparisons derive mints, approval assets, holder inputs, destinations, custody refunds and signers from observed pre-state and the Lean row, then inspect the body and landed outputs through the real provider. Each of the seven named effect comparisons has a one-field mutant required to fail in the same run. The local submitted devnet run passed twenty-three examples with no failures. Its receipts record booked request inputs, real and reversed provider orders, canonical input order, fold transaction IDs and roots. The terminal witness leaves the root unchanged as Lean requires; the other six edges change it. The ae4fe9a candidate subsequently passed exact-head final Gate S, independent receipt audit, and pushed-head continuous integration. Those receipts bind that commit. Arbitrary request sets, inadmissible-edge refusals, the delivering approval's ADA minimum and proof correctness beyond cage acceptance remain outside this case.",
       "pause": 450
     }
   ],
@@ -81,6 +81,6 @@
   ],
   "_source": {
     "file": "offchain-fold-responsibilities.md",
-    "sha256": "bf2edb97c91d1f770575babbfe5b3505f39f4be25bf39afad10d9521ec4ce5c0"
+    "sha256": "fd2c959ccb13037db004c1a70187af82f045fcc988377e3ae1a6e42b98892d6f"
   }
 }

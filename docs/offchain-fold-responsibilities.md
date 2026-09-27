@@ -47,11 +47,11 @@ with no failures. Its receipts record the two booked request TxIns, the
 real and reversed provider orders, canonical TxIn order, fold transaction
 IDs and roots across all connected stages. The terminal witness leaves
 the root unchanged, as Lean requires; the other six edges change it.
-This is finite representative devnet evidence, pending the exact-head
-final gate, independent audit and pushed-head CI. It does not cover
-arbitrary request sets, inadmissible-edge refusals, the delivering
-approval's ADA minimum, or proof correctness beyond live cage
-acceptance.
+On `ae4fe9a`, the exact-head final gate, independent receipt audit and
+pushed-head CI completed. Those receipts bind that commit. This
+finite representative devnet case does not cover arbitrary request
+sets, inadmissible-edge refusals, the delivering approval's ADA
+minimum, or proof correctness beyond live cage acceptance.
 
 ## One owner per fold concern
 
