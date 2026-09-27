@@ -60,6 +60,7 @@ import Test.Hspec (
     it,
  )
 
+import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Address (Addr, serialiseAddr)
 import Cardano.Ledger.Api.Scripts.Data (
     Data (..),
@@ -84,14 +85,13 @@ import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes (TxIx (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (extractHash)
-import Cardano.Ledger.Plutus.Data (getPlutusData, hashData)
-import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Mary.Value (
     AssetName (..),
     MaryValue (..),
     MultiAsset (..),
     PolicyID,
  )
+import Cardano.Ledger.Plutus.Data (getPlutusData, hashData)
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import PlutusTx.Builtins (fromBuiltin)
@@ -114,6 +114,11 @@ import Singular.Registry.Config (
     CageConfig (..),
  )
 import Singular.Registry.Driver qualified as Driver
+import Singular.Registry.E2E.CageSpec (
+    publishCageRefs,
+    submitWithGenesis,
+    withBootedCage,
+ )
 import Singular.Registry.Ledger (
     ConwayEra,
     Root (..),
@@ -156,18 +161,13 @@ import Singular.Registry.Types (
     ProofStep,
     RequestAction (..),
     UpdateRedeemer (..),
-    edgeDeleteActive,
     edgeDeleteAbsent,
+    edgeDeleteActive,
     edgeInsertAbsent,
     edgeInsertActive,
     edgeUpdateActive,
     edgeUpdateTerminal,
     edgeWitnessTerminal,
- )
-import Singular.Registry.E2E.CageSpec (
-    publishCageRefs,
-    submitWithGenesis,
-    withBootedCage,
  )
 
 -- ---------------------------------------------------------
@@ -216,9 +216,10 @@ keyAssetName = AssetName . SBS.toShort
 -- The destination preimages this scenario books
 -- ---------------------------------------------------------
 
--- | The distinct nonempty destination-datum preimages the scenario
--- books, named by stage. Distinct preimages make an absent or swapped
--- inline datum detectable.
+{- | The distinct nonempty destination-datum preimages the scenario
+books, named by stage. Distinct preimages make an absent or swapped
+inline datum detectable.
+-}
 orderDatumA, deliverDatumB, deliverDatumA, deliverDatumD, witnessDatumD :: Data ConwayEra
 orderDatumA = ledgerData 1
 deliverDatumB = ledgerData 2
@@ -226,8 +227,9 @@ deliverDatumA = ledgerData 3
 deliverDatumD = ledgerData 4
 witnessDatumD = ledgerData 5
 
--- | The ledger datum wrapper over an integer preimage, so nothing here
--- names the Plutus core data type.
+{- | The ledger datum wrapper over an integer preimage, so nothing here
+names the Plutus core data type.
+-}
 ledgerData :: Integer -> Data ConwayEra
 ledgerData n = Data (toPlcData n)
 
@@ -243,20 +245,23 @@ uses this exact expression), so a literal label could never match.
 datumHashOf :: Data ConwayEra -> ByteString
 datumHashOf d = hashToBytes (extractHash (hashData d))
 
--- | The preimage for a hash the request carries, when this scenario
--- booked it.
+{- | The preimage for a hash the request carries, when this scenario
+booked it.
+-}
 preimageOf :: ByteString -> Maybe (Data ConwayEra)
 preimageOf h = lookup h [(datumHashOf d, d) | d <- scenarioDatumPreimages]
 
--- | A delivering destination at the funding wallet carrying a booked
--- preimage's real hash.
+{- | A delivering destination at the funding wallet carrying a booked
+preimage's real hash.
+-}
 deliverDest :: Data ConwayEra -> (ByteString, ByteString)
 deliverDest d = (serialiseAddr genesisAddr, datumHashOf d)
 
--- | The refund address the absent-insert stages book: a distinct key
--- address that is not the fold wallet, so the only ada-only outputs
--- that ever land there are the custody refunds owed to it (receiving
--- needs no witness).
+{- | The refund address the absent-insert stages book: a distinct key
+address that is not the fold wallet, so the only ada-only outputs
+that ever land there are the custody refunds owed to it (receiving
+needs no witness).
+-}
 stageRefundAddr :: CageConfig -> Addr
 stageRefundAddr cfg = addrFromKeyHashBytes (network cfg) (BS.replicate 28 0xab)
 
@@ -326,7 +331,15 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
         keyB = "c3-order-b"
         destA = deliverDest orderDatumA
     refB <-
-        Edges.bookEdgeTo cfg codes prov (submitWithGenesis submit) genesisAddr tokenId keyB edgeInsertAbsent
+        Edges.bookEdgeTo
+            cfg
+            codes
+            prov
+            (submitWithGenesis submit)
+            genesisAddr
+            tokenId
+            keyB
+            edgeInsertAbsent
             (serialiseAddr genesisAddr, BS.empty)
     refA <-
         Edges.bookEdgeTo cfg codes prov (submitWithGenesis submit) genesisAddr tokenId keyA edgeInsertActive destA
@@ -415,8 +428,9 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
                 ("wrong effect: ordering-fold request " <> show ref <> " still pending after submission")
   where
     requestOf pairs ref = case lookup ref pairs of
-      Just req -> req
-      Nothing -> error "orderingStage: booked request not in observation list"
+        Just req -> req
+        Nothing -> error "orderingStage: booked request not in observation list"
+
 -- ---------------------------------------------------------
 -- Stages A–D: the seven edges, connected
 -- ---------------------------------------------------------
@@ -463,7 +477,17 @@ connectedStages cfg codes prov submit tm tokenId requestAddr refs = do
     keyC = "c3-key-c"
     keyD = "c3-key-d"
     stage key edge datum =
-        bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge
+        bookFoldObserve
+            cfg
+            codes
+            prov
+            submit
+            tm
+            tokenId
+            requestAddr
+            refs
+            key
+            edge
             (deliverDest datum)
     stageTo key edge dest =
         bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest
@@ -609,14 +633,12 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
     -- address exactly as the body built it.
     case destinationShapeOf cfg edge key req of
         Just DestinationShape{dsAddress, dsDatum, dsAsset = (policy, asset)} ->
-            case
-                [ (ix, out)
-                | (ix, out) <- zip [0 :: Int ..] outputs
-                , out ^. addrTxOutL == dsAddress
-                , quantityInValue policy asset (out ^. valueTxOutL) >= 1
-                , inlineDatumData out == dsDatum
-                ]
-                of
+            case [ (ix, out)
+                 | (ix, out) <- zip [0 :: Int ..] outputs
+                 , out ^. addrTxOutL == dsAddress
+                 , quantityInValue policy asset (out ^. valueTxOutL) >= 1
+                 , inlineDatumData out == dsDatum
+                 ] of
                 [(ix, built)] -> do
                     landed <- Cage.queryUTxOs prov dsAddress
                     case lookup (TxIn (txIdTx signed) (TxIx (fromIntegral ix))) landed of
@@ -640,13 +662,11 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
         case findKeyedCustody cfg key cageUtxos of
             Just (_, _, refundBytes) -> do
                 refundAddr <- decodeRefund refundBytes
-                case
-                    [ (ix, out)
-                    | (ix, out) <- zip [0 :: Int ..] outputs
-                    , out ^. addrTxOutL == refundAddr
-                    , not (any (\p -> carriesPolicyAsset p out) (witnessPolicies cfg))
-                    ]
-                    of
+                case [ (ix, out)
+                     | (ix, out) <- zip [0 :: Int ..] outputs
+                     , out ^. addrTxOutL == refundAddr
+                     , not (any (\p -> carriesPolicyAsset p out) (witnessPolicies cfg))
+                     ] of
                     [(ix, built)] -> do
                         landed <- Cage.queryUTxOs prov refundAddr
                         case lookup (TxIn (txIdTx signed) (TxIx (fromIntegral ix))) landed of
@@ -670,7 +690,6 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
         unless (remaining == 0) $
             expectationFailure
                 ("wrong effect: active asset for key " <> show key <> " still held after burn")
-
 
 -- ---------------------------------------------------------
 -- The seven comparison classes
@@ -824,9 +843,10 @@ cmpCustodyRefund CustodyObservation{cuInput, cuRefundAddr, cuOwed, cuPolicies, c
             , let Coin c = out ^. coinTxOutL
             ]
 
--- | Whether an output carries any asset under a policy column, used
--- to keep token carriers out of a custody refund's credited value and
--- to identify the refund output in the post-state landing check.
+{- | Whether an output carries any asset under a policy column, used
+to keep token carriers out of a custody refund's credited value and
+to identify the refund output in the post-state landing check.
+-}
 carriesPolicyAsset :: PolicyID -> TxOut ConwayEra -> Bool
 carriesPolicyAsset policy out = case out ^. valueTxOutL of
     MaryValue _ (MultiAsset m) ->
@@ -870,8 +890,9 @@ assertChainRootMatches cfg prov tokenId mirrorRoot what = do
         Nothing ->
             expectationFailure ("setup: state UTxO not found after the " <> what)
 
--- | The fold's required-signer set, reduced to its size class: the
--- set must be empty, so any member is a defect.
+{- | The fold's required-signer set, reduced to its size class: the
+set must be empty, so any member is a defect.
+-}
 newtype SignerObservation = SignerObservation
     { soSigners :: Set.Set ()
     }
@@ -990,14 +1011,12 @@ findKeyedCustody ::
     [(TxIn, TxOut ConwayEra)] ->
     Maybe (TxIn, Integer, ByteString)
 findKeyedCustody cfg key utxos =
-    case
-        [ (i, coin, refund)
-        | (i, o) <- utxos
-        , quantityInValue (policyIdFromPin (cfgAbsentPolicy cfg)) (keyAssetName key) (o ^. valueTxOutL) == 1
-        , Just (AbsentCustody refund) <- [extractCageDatum o]
-        , let Coin coin = o ^. coinTxOutL
-        ]
-    of
+    case [ (i, coin, refund)
+         | (i, o) <- utxos
+         , quantityInValue (policyIdFromPin (cfgAbsentPolicy cfg)) (keyAssetName key) (o ^. valueTxOutL) == 1
+         , Just (AbsentCustody refund) <- [extractCageDatum o]
+         , let Coin coin = o ^. coinTxOutL
+         ] of
         [(found, coin, refund)] -> Just (found, coin, refund)
         _ -> Nothing
 
@@ -1006,8 +1025,9 @@ decodeRefund bytes = case addrFromBytes bytes of
     Just addr -> pure addr
     Nothing -> fail "custody datum records an undecodable refund address"
 
--- | The fold's context: the registry's own, plus this scenario's
--- distinct destination-datum preimages.
+{- | The fold's context: the registry's own, plus this scenario's
+distinct destination-datum preimages.
+-}
 contextFor ::
     CageConfig ->
     NamingCodes ->
@@ -1026,12 +1046,10 @@ contextFor cfg codes prov refs = do
 -- | Decode the body's state redeemer into its per-request actions.
 modifyActionsOf :: ConwayTx -> IO [[ProofStep]]
 modifyActionsOf tx =
-    case
-        [ actions
-        | (_, (d, _)) <- Map.toList rdmrs
-        , Just (Modify actions) <- [fromBuiltinData (BuiltinData (getPlutusData d))]
-        ]
-    of
+    case [ actions
+         | (_, (d, _)) <- Map.toList rdmrs
+         , Just (Modify actions) <- [fromBuiltinData (BuiltinData (getPlutusData d))]
+         ] of
         [actions] -> pure (map stepsOf actions)
         _ -> fail "state redeemer did not decode to exactly one Modify action list"
   where
@@ -1047,9 +1065,10 @@ modifyActionsOf tx =
 activePin :: CageConfig -> PolicyID
 activePin cfg = policyIdFromPin (cfgActivePolicy cfg)
 
--- | The three witness policies of this registry: the token columns a
--- delivered asset can arrive under, used to keep token carriers out
--- of a custody refund's credited value.
+{- | The three witness policies of this registry: the token columns a
+delivered asset can arrive under, used to keep token carriers out
+of a custody refund's credited value.
+-}
 witnessPolicies :: CageConfig -> [PolicyID]
 witnessPolicies cfg =
     [ policyIdFromPin (cfgAbsentPolicy cfg)
@@ -1084,14 +1103,14 @@ inlineDatumData out = case out ^. datumTxOutL of
     Datum bd -> binaryDataToData bd
     _ -> ledgerData (-1)
 
--- | Bump one entry of a nonzero expectation map, or add one under the
--- application policy when the map is empty: the mint mutant's
--- single-field change.
+{- | Bump one entry of a nonzero expectation map, or add one under the
+application policy when the map is empty: the mint mutant's
+single-field change.
+-}
 bumpOne :: CageConfig -> Map.Map (PolicyID, AssetName) Integer -> Map.Map (PolicyID, AssetName) Integer
 bumpOne cfg m = case Map.toList m of
     [] -> Map.singleton (policyIdFromPin (cfgApplicationPolicy cfg), AssetName "c3-mutant") 1
     ((k, v) : _) -> Map.insert k (v + 1) m
-
 
 -- ---------------------------------------------------------
 -- Live and mutant runners (in-run controls)
