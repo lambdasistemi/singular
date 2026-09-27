@@ -33,8 +33,8 @@ hand `registryDuties` already-ordered lists, and the built-body row
 folds one request); the quantities of every mint except the active
 burn; a custody refund's output address and amount; a delivering
 edge's destination; and an approval returned by a delivering or
-inadmissible edge. The new fresh-blueprint `Criterion3Spec` is written
-to test the accepted-edge portion of that gap. It books two real
+inadmissible edge. The fresh-blueprint `Criterion3Spec` tests the
+accepted-edge portion of that gap. It books two real
 requests and presents their real outputs in descending TxIn order to
 one public fold, then runs connected stages for all seven admissible
 edges. Its comparisons derive expected mints, approval assets, holder inputs,
@@ -42,9 +42,13 @@ destinations, custody refunds and signers from observed pre-state and
 the accepted Lean row. They inspect the unsigned body and the landed
 destination, refund and state outputs through the real provider. Each
 of the seven named effect comparisons has a one-field mutant required
-to fail in the same run.
-This is a finite source-level description. The PR's fresh-blueprint
-receipts decide whether it executed successfully. It does not cover
+to fail in the same run. The local submitted devnet run passed 23 examples
+with no failures. Its receipts record the two booked request TxIns, the
+real and reversed provider orders, canonical TxIn order, fold transaction
+IDs and roots across all connected stages. The terminal witness leaves
+the root unchanged, as Lean requires; the other six edges change it.
+This is finite representative devnet evidence, pending the exact-head
+final gate, independent audit and pushed-head CI. It does not cover
 arbitrary request sets, inadmissible-edge refusals, the delivering
 approval's ADA minimum, or proof correctness beyond live cage
 acceptance.
