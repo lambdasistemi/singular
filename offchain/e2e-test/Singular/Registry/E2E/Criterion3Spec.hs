@@ -383,7 +383,7 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
     mutantFails "ordering fold: body signers" "C3-BODY-SIGNER" (cmpBodySigner (insertSigner signerObs))
     rootBefore <- withTrie tm tokenId getRoot
     _signedFold <- submitWithGenesis submit unsigned
-    syncFoldedRequests tm tokenId sortedRefs
+    syncFoldedRequests tm tokenId ascending
     rootAfter <- withTrie tm tokenId getRoot
     when (unRoot rootBefore == unRoot rootAfter) $
         expectationFailure "wrong effect: mirror root did not move across the ordering fold"
@@ -565,7 +565,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                             "C3-HOLDER-TXIN"
                             (cmpHolder holderObs{hoExpectedTxIn = other})
     signed <- submitWithGenesis submit unsigned
-    syncFoldedRequests tm tokenId [requestTxIn]
+    syncFoldedRequests tm tokenId [(requestTxIn, reqOut)]
     -- Post-state, through the REAL provider: the mirror root moved
     -- across every connected stage's landed fold.
     rootAfter <- withTrie tm tokenId getRoot
