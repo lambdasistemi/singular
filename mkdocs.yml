@@ -39,6 +39,7 @@ nav:
   - Who owns a registry fold: docs/offchain-fold-responsibilities.md
   - Who owns the registry wire: docs/offchain-wire-types.md
   - Node module ownership: docs/offchain-node-ownership.md
+  - Deployment record ownership: docs/offchain-deployment-owners.md
   - Off-chain API reference: docs/offchain-api-reference.md
 theme:
   name: material

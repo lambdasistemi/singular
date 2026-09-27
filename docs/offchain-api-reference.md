@@ -25,13 +25,15 @@ viewing.
 
 The module extent is the public library of the off-chain Cabal file — every
 exposed module, every internal module, and every module the library
-re-exports under its own name. That complete extent is 44 modules in
+re-exports under its own name. That complete extent is 47 modules in
 three kinds: 34 explicitly exposed modules and two re-exported modules
 are what a caller imports; the three fold owners behind the `Update`
 facade — `Singular.Registry.TxBuilder.Update.Build`, `.Context` and
-`.Duties` — and the five wire owners behind the `Types` facade —
+`.Duties` — the five wire owners behind the `Types` facade —
 `Singular.Registry.Wire.Primitive`, `.Request`, `.State`, `.Proof` and
-`.Redeemer` — are package-internal `other-modules` with generated pages
+`.Redeemer` — and the three deployment owners behind the `Deployment`
+facade — `Singular.Registry.Deployment.Manifest`, `.Mirror` and
+`.Attach` — are package-internal `other-modules` with generated pages
 here for the contributor reading the facades' implementations, but no
 caller import path: a caller compiles against the facades' exports, not
 against these modules. `Singular.Registry.Ledger` and
@@ -61,6 +63,9 @@ agree.
 - <a href="../offchain/lib/Singular/Registry/Candidate.hs" data-api="module">Singular.Registry.Candidate</a> — <a href="../offchain/lib/Singular/Registry/Candidate.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Config.hs" data-api="module">Singular.Registry.Config</a> — <a href="../offchain/lib/Singular/Registry/Config.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Deployment.hs" data-api="module">Singular.Registry.Deployment</a> — <a href="../offchain/lib/Singular/Registry/Deployment.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Deployment/Attach.hs" data-api="module">Singular.Registry.Deployment.Attach</a> — <a href="../offchain/lib/Singular/Registry/Deployment/Attach.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Deployment/Manifest.hs" data-api="module">Singular.Registry.Deployment.Manifest</a> — <a href="../offchain/lib/Singular/Registry/Deployment/Manifest.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Deployment/Mirror.hs" data-api="module">Singular.Registry.Deployment.Mirror</a> — <a href="../offchain/lib/Singular/Registry/Deployment/Mirror.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Driver.hs" data-api="module">Singular.Registry.Driver</a> — <a href="../offchain/lib/Singular/Registry/Driver.hs" data-api="source">source</a>
 - <a href="../offchain/node-internal/Singular/Registry/Ledger.hs" data-api="module">Singular.Registry.Ledger</a> — <a href="../offchain/node-internal/Singular/Registry/Ledger.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Lifecycle.hs" data-api="module">Singular.Registry.Lifecycle</a> — <a href="../offchain/lib/Singular/Registry/Lifecycle.hs" data-api="source">source</a>

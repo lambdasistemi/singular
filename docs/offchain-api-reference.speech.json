@@ -1,7 +1,7 @@
 {
   "_source": {
     "file": "offchain-api-reference.md",
-    "sha256": "8bf1dfe520b21c13805c44b280955fff8a97666cdd88e6839ecc026a41882cc5"
+    "sha256": "b05bfd2f5e849ad653e8d578102147447b6e4747f5577dfeb3e0b4876e7b01f4"
   },
   "how-the-reference-stays-honest": [
     {

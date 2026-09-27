@@ -180,7 +180,7 @@ spec = do
             loaded <- loadMirror path
             loaded `shouldBe` replacement
 
-        it "refuses a mirror whose token is not hex naming the file" $ withTempDir $ \dir -> do
+        it "refuses a mirror whose token is not hex" $ withTempDir $ \dir -> do
             let manifestPath = dir </> "deployment.json"
             BL.writeFile
                 (mirrorPathFor manifestPath)
@@ -215,6 +215,40 @@ spec = do
             attach prov manifest parts
                 `shouldThrow` refusalContaining "cannot be attached to"
 
+        it "refuses a reference output that carries no reference script" $ do
+            let serves =
+                    Map.insert
+                        refAddr1
+                        [(refIn1, mkBasicTxOut refAddr1 (MaryValue (Coin 5_000_000) mempty))]
+                        agreeingServes
+            (_, prov) <- providerServing serves
+            attach prov manifest parts
+                `shouldThrow` refusalContaining "carries no reference script"
+
+        it "refuses an unreadable recorded address" $ do
+            let unreadable = case depReferenceScripts manifest of
+                    (r : rest) -> manifest{depReferenceScripts = r{refAddressBytes = "zz"} : rest}
+                    [] -> manifest
+            (_, prov) <- providerServing agreeingServes
+            attach prov unreadable parts
+                `shouldThrow` refusalContaining "address is not readable"
+
+        it "refuses a seed whose derived token contradicts the manifest" $ do
+            (_, prov) <- providerServing agreeingServes
+            attach prov manifest{depCageToken = T.pack (replicate 64 '0')} parts
+                `shouldThrow` refusalContaining "but the manifest records 0x"
+
+        it "refuses a release whose state validator hash differs from the manifest" $ do
+            (_, prov) <- providerServing agreeingServes
+            attach prov manifest{depStatePolicy = otherStateHex} parts
+                `shouldThrow` refusalContaining "the manifest belongs to another release"
+
+        it "refuses when no output at the registry address carries the recorded token" $ do
+            let serves = Map.fromList [(refAddr1, [refUtxo1]), (refAddr2, [refUtxo2])]
+            (_, prov) <- providerServing serves
+            attach prov manifest parts
+                `shouldThrow` refusalContaining "no output at the registry address carries the recorded token"
+
     describe "checking one against a node" $ do
         it "reports every claim when the node agrees" $ do
             (logRef, prov) <- providerServing agreeingServes
@@ -234,18 +268,18 @@ spec = do
                                 <> show (depRetractTime manifest)
                                 <> " ms"
                            ]
-                                <> [ "reference script "
-                                        <> T.unpack (refRole r)
-                                        <> " live at "
-                                        <> T.unpack (refOutRef r)
-                                        <> " carrying 0x"
-                                        <> T.unpack (refHash r)
-                                   | r <- depReferenceScripts manifest
-                                   ]
-                                <> [ "registry state output "
-                                        <> T.unpack (renderOutRef stateIn)
-                                        <> " carries the recorded token"
-                                   ]
+                    <> [ "reference script "
+                            <> T.unpack (refRole r)
+                            <> " live at "
+                            <> T.unpack (refOutRef r)
+                            <> " carrying 0x"
+                            <> T.unpack (refHash r)
+                       | r <- depReferenceScripts manifest
+                       ]
+                    <> [ "registry state output "
+                            <> T.unpack (renderOutRef stateIn)
+                            <> " carries the recorded token"
+                       ]
             reverse <$> readIORef logRef
                 `shouldReturn` [refAddr1, refAddr2, stateAddr]
 
@@ -307,26 +341,28 @@ outRefOf c ix =
 seedIn, stateIn, highIxIn, refIn1, refIn2 :: TxIn
 seedIn = outRefOf '1' 0
 stateIn = outRefOf '9' 7
-highIxIn = outRefOf '0' 65535
+highIxIn = outRefOf '0' 65_535
 refIn1 = outRefOf 'a' 0
 refIn2 = outRefOf 'b' 3
 
 secondSeedIn :: TxIn
 secondSeedIn = outRefOf '2' 0
 
--- | The registry token this seed determines, produced by the same
--- derivation the manifest records.
+{- | The registry token this seed determines, produced by the same
+derivation the manifest records.
+-}
 recordedToken :: TokenId
 recordedToken = TokenId (AssetName (SBS.toShort (deriveAssetName (txInToRef seedIn))))
 
 secondToken :: TokenId
 secondToken = TokenId (AssetName (SBS.toShort (deriveAssetName (txInToRef secondSeedIn))))
 
-stateHex, requestHex, applicationHex, activeHex :: Text
+stateHex, requestHex, applicationHex, activeHex, otherStateHex :: Text
 stateHex = T.pack (toHex (scriptHashBytes (computeScriptHash stateProgram)))
 requestHex = T.pack (toHex (scriptHashBytes (computeScriptHash requestProgram)))
 applicationHex = T.pack (toHex (scriptHashBytes (computeScriptHash applicationProgram)))
 activeHex = T.pack (toHex (SBS.fromShort activeProgram))
+otherStateHex = T.pack (toHex (scriptHashBytes (computeScriptHash otherProgram)))
 
 refAddr1, refAddr2, stateAddr :: Addr
 refAddr1 = addrFromKeyHashBytes Testnet (BS.replicate 28 0x5b)
@@ -339,7 +375,7 @@ refScriptOf role addr inRef prog =
         { refRole = role
         , refHash = T.pack (toHex (scriptHashBytes (hashScript (scriptFromBytes "spec" prog))))
         , refOutRef = renderOutRef inRef
-        , refAddress = renderAddrBytes addr
+        , refAddress = T.pack ("addr_test1z" <> T.unpack role)
         , refAddressBytes = renderAddrBytes addr
         }
 
@@ -467,8 +503,9 @@ expectedManifestValue =
 -- The provider fixture
 -- ---------------------------------------------------------
 
--- | A provider that records every address asked for and serves the
--- given UTxOs there.
+{- | A provider that records every address asked for and serves the
+given UTxOs there.
+-}
 providerServing ::
     Map Addr [(TxIn, TxOut ConwayEra)] ->
     IO (IORef [Addr], Cage.Provider IO)
@@ -517,8 +554,9 @@ agreeingState =
 stateUtxo :: (TxIn, TxOut ConwayEra)
 stateUtxo = stateUtxoOf agreeingState
 
--- | An output at the registry's address without the recorded token,
--- served before the real one so resolution is by token, not position.
+{- | An output at the registry's address without the recorded token,
+served before the real one so resolution is by token, not position.
+-}
 decoyUtxo :: (TxIn, TxOut ConwayEra)
 decoyUtxo = (outRefOf '9' 0, mkBasicTxOut stateAddr (MaryValue (Coin 3_000_000) mempty))
 
