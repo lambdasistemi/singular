@@ -353,7 +353,25 @@
           # Generated Haddock reference for the library, consumed by the
           # root documentation build. Same source tree, same lock: the docs
           # manifest can bind the reference to this candidate's content.
-          library-haddock = components.library.haddock;
+          #
+          # A-003: Haddock documents exposed modules only by default, but
+          # the generated API reference requires a module page and a
+          # source page for EVERY module the public library stanza
+          # declares — including the fold owners #267 keeps in
+          # `other-modules` behind the unchanged six-export facade.
+          # Cabal's `--internal` haddock flag exposes non-exposed modules
+          # to Haddock, so the reference carries them without exposing a
+          # public import path. The flag is scoped to this documentation
+          # package alone, through a project that only appends it: every
+          # build output below keeps the untouched closure.
+          library-haddock =
+            (project.project.appendModule {
+              modules = [
+                {
+                  packages.singular-registry.setupHaddockFlags = [ "--internal" ];
+                }
+              ];
+            }).hsPkgs.singular-registry.components.library.haddock;
           # The package-private ownership core's generated reference: the
           # root documentation build takes only the re-exported Ledger and
           # Provider page pairs from it; the private Node owners stay out
