@@ -1,0 +1,929 @@
+{-# LANGUAGE NumericUnderscores #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+{- |
+Module      : Singular.Registry.E2E.Criterion3Spec
+Description : Criterion 3 — every fold effect observed at the fresh-blueprint boundary
+License     : Apache-2.0
+
+One connected devnet scenario that exercises all seven admissible edges
+and observes, for each fold, the effects the issue's third acceptance
+criterion names: request order, keyed mints, approvals, holder
+selection, destinations, custody refunds and the unsigned body's empty
+required-signer set.
+
+Expected values are derived from the accepted Lean model's tables
+(@Singular.Model.delta@ through 'modelDelta', @route@, @obligations@,
+@requiredSigners@ — accepted tree @f1e6a0edcaf9edce7369fd42add8b3677ddabeb2@)
+applied to OBSERVED chain state: the request datums and UTxOs, the
+custody and holder UTxOs, the policy pins of the booted config and the
+observed request deposits. Nothing here reads 'registryDuties' or the
+builder's own decisions.
+
+The ordering stage is deterministic. Two booking transactions are built
+before submission, the second spending the first's change output, with
+the second's key varied over a fixed sequence of at most 256
+candidates until its transaction id sorts below the first's; the
+bookings are then submitted in booking order, so the fold's canonical
+input order is the reverse of discovery order by construction.
+Transaction ids do not depend on witnesses, so precomputed ids are the
+submitted ids, and the spec verifies that. A setup that cannot
+establish the discrimination fails @ORDER-WITNESS-NONDISCRIMINATING@
+before any fold runs, and is a setup failure, never an intended RED.
+
+Each of the seven comparison classes runs once on the live captured
+observation and immediately again on a single field-mutated copy
+inside this same E2E invocation: the live call must pass and the
+mutant must fail with its own stable @C3-…@ token.
+-}
+module Singular.Registry.E2E.Criterion3Spec (spec) where
+
+import Control.Monad (forM_, unless, when)
+import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
+import Data.ByteString.Short qualified as SBS
+import Data.Foldable (toList)
+import Data.List (isPrefixOf, sortOn)
+import Data.Map.Strict qualified as Map
+import Data.Sequence.Strict qualified as StrictSeq
+import Data.Set qualified as Set
+import Lens.Micro ((&), (.~), (^.))
+import Test.Hspec (
+    Expectation,
+    Spec,
+    describe,
+    expectationFailure,
+    it,
+ )
+
+import Cardano.Ledger.Address (Addr, serialiseAddr)
+import Cardano.Ledger.Alonzo.TxBody (reqSignerHashesTxBodyL)
+import Cardano.Ledger.Api.Scripts.Data (
+    Data (..),
+    Datum (..),
+    binaryDataToData,
+ )
+import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
+import Cardano.Ledger.Api.Tx.Body (
+    feeTxBodyL,
+    inputsTxBodyL,
+    mintTxBodyL,
+    mkBasicTxBody,
+    outputsTxBodyL,
+ )
+import Cardano.Ledger.Api.Tx.Out (
+    TxOut,
+    addrTxOutL,
+    coinTxOutL,
+    datumTxOutL,
+    mkBasicTxOut,
+    valueTxOutL,
+ )
+import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
+import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
+import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Mary.Value (
+    AssetName (..),
+    MaryValue (..),
+    MultiAsset (..),
+    PolicyID,
+ )
+import Cardano.Ledger.Plutus.Data (getPlutusData)
+import Cardano.Ledger.TxIn (TxIn (..))
+import Cardano.Tx.Ledger (ConwayTx)
+import PlutusCore.Data qualified as PLC
+import PlutusTx.Builtins (fromBuiltin)
+import PlutusTx.Builtins.Internal (BuiltinData (..))
+import PlutusTx.IsData.Class (FromData (..))
+
+import Cardano.Node.Client.E2E.Setup (
+    genesisAddr,
+ )
+import Cardano.Node.Client.Submitter (
+    Submitter,
+ )
+import Singular.Registry.Blueprint (
+    Blueprint,
+    NamingCodes,
+    extractCompiledCode,
+    loadRegistryCodesFromEnv,
+ )
+import Singular.Registry.Config (
+    CageConfig (..),
+ )
+import Singular.Registry.Driver qualified as Driver
+import Singular.Registry.Ledger (
+    Coin (..),
+    ConwayEra,
+    PParams,
+    TokenId,
+    TxIn,
+ )
+import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Trie (
+    TrieManager (..),
+ )
+import Singular.Registry.TxBuilder.ConnectedFold (
+    syncFoldedRequests,
+ )
+import Singular.Registry.TxBuilder.Edges qualified as Edges
+import Singular.Registry.TxBuilder.Internal (
+    addrFromBytes,
+    addrFromKeyHashBytes,
+    addrWitnessKeyHash,
+    cageAddrFromCfg,
+    currentPosixMs,
+    extractCageDatum,
+    mkInlineDatum,
+    mkRequestDatumWith,
+    policyIdFromPin,
+    requestAddrFromCfg,
+    toPlcData,
+    walkEdge,
+ )
+import Singular.Registry.TxBuilder.Update (
+    RegistryContext (..),
+    updateTokenWithDuties,
+ )
+import Singular.Registry.Types (
+    CageDatum (..),
+    Edge,
+    OnChainRequest (..),
+    ProofStep,
+    RequestAction (..),
+    UpdateRedeemer (..),
+    edgeDeleteActive,
+    edgeDeleteAbsent,
+    edgeInsertAbsent,
+    edgeInsertActive,
+    edgeUpdateActive,
+    edgeUpdateTerminal,
+    edgeWitnessTerminal,
+ )
+import Singular.Registry.E2E.CageSpec (
+    publishCageRefs,
+    submitWithGenesis,
+    withBootedCage,
+ )
+
+-- ---------------------------------------------------------
+-- The model table this witness derives its mints from
+-- ---------------------------------------------------------
+
+{- | @Singular.Model.delta@ on the accepted tree: the mint each edge
+owes, keyed by token kind — 0 absent, 1 active, 2 terminal — under the
+registry's pinned policy for that kind. Stated from the model, never
+read from the builder under test.
+-}
+modelDelta :: Edge -> [(Integer, Integer)]
+modelDelta edge
+    | edge == edgeInsertAbsent = [(0, 1)]
+    | edge == edgeInsertActive = [(1, 1)]
+    | edge == edgeUpdateActive = [(0, -1), (1, 1)]
+    | edge == edgeUpdateTerminal = [(1, -1)]
+    | edge == edgeDeleteAbsent = [(0, -1)]
+    | edge == edgeDeleteActive = [(1, -1)]
+    | edge == edgeWitnessTerminal = [(2, 1)]
+    | otherwise = []
+
+-- | The pinned policy of a kind, as the model's @tx@ row names it.
+kindPolicy :: CageConfig -> Integer -> PolicyID
+kindPolicy cfg kind
+    | kind == 0 = policyIdFromPin (cfgAbsentPolicy cfg)
+    | kind == 1 = policyIdFromPin (cfgActivePolicy cfg)
+    | otherwise = policyIdFromPin (cfgTerminalPolicy cfg)
+
+{- | Expected nonzero mint for observed requests: the model's delta
+over each observed edge, keyed by the observed policy pins and each
+observed request key.
+-}
+expectedMintOf :: CageConfig -> [OnChainRequest] -> Map.Map (PolicyID, AssetName) Integer
+expectedMintOf cfg requests =
+    Map.fromList
+        [ ((kindPolicy cfg kind, keyAssetName (requestKey req)), quantity)
+        | req <- requests
+        , (kind, quantity) <- modelDelta (requestEdge req)
+        ]
+
+keyAssetName :: ByteString -> AssetName
+keyAssetName = AssetName . SBS.toShort
+
+-- ---------------------------------------------------------
+-- The destination preimages this scenario books
+-- ---------------------------------------------------------
+
+{- | Every distinct destination-datum preimage the scenario books, with
+the hash bytes its request carries. Distinct nonempty preimages make
+an absent or swapped inline datum detectable.
+-}
+scenarioDatums :: [(ByteString, PLC.Data)]
+scenarioDatums =
+    [ ("c3-datum-order-a", PLC.I 1)
+    , ("c3-datum-b-deliver", PLC.I 2)
+    , ("c3-datum-a-deliver", PLC.I 3)
+    , ("c3-datum-d-deliver", PLC.I 4)
+    , ("c3-datum-d-witness", PLC.I 5)
+    ]
+
+-- ---------------------------------------------------------
+-- Scenario
+-- ---------------------------------------------------------
+
+spec :: Blueprint -> Spec
+spec bp =
+    describe "Criterion 3: seven edges, every fold effect at the fresh-blueprint boundary" $
+        case (extractCompiledCode "state.state" bp, extractCompiledCode "request.request" bp) of
+            (Just stateBytes, Just requestBytes) ->
+                it "observes order, approvals, mints, holders, destinations, custody refunds and body signers" $
+                    withBootedCage id stateBytes requestBytes $ \cfg prov submit tm reg -> do
+                        let tokenId = Driver.registryTokenId reg
+                            requestAddr = requestAddrFromCfg cfg tokenId Testnet
+                        codes <- loadRegistryCodesFromEnv
+                        refs <- publishCageRefs cfg prov submit tokenId
+                        orderingStage cfg codes prov submit tm tokenId requestAddr refs
+                        connectedStages cfg codes prov submit tm tokenId requestAddr refs
+            _ ->
+                it "no compiled code" $
+                    expectationFailure "state or request script not found in blueprint"
+
+-- ---------------------------------------------------------
+-- Stage O: deterministic two-request ordering
+-- ---------------------------------------------------------
+
+{- | Book two requests through a dependency chain and fold them
+together. Booking A spends an ada-only wallet output and pays its
+change at output index 1; booking B spends that change, so B is valid
+only after A lands. B's key is varied over at most 256 fixed candidates
+until @txId B < txId A@; submitting A then B makes booking order
+@[A,B]@ and canonical request order @[B,A]@ by construction.
+-}
+orderingStage ::
+    CageConfig ->
+    NamingCodes ->
+    Cage.Provider IO ->
+    Submitter IO ->
+    TrieManager IO ->
+    TokenId ->
+    Addr ->
+    [(TxIn, TxOut ConwayEra)] ->
+    IO ()
+orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
+    pp <- Cage.queryProtocolParams prov
+    utxos <- Cage.queryUTxOs prov genesisAddr
+    feeIn <- case [u | u@(_, o) <- utxos, adaOnlyOut o] of
+        [] -> fail "ORDER-WITNESS-NONDISCRIMINATING: no ada-only funding output for booking A"
+        (u : _) -> pure (fst u)
+    now <- currentPosixMs
+    let owner = addrKeyHashBytes genesisAddr
+        keyA = "c3-order-a"
+        destA = (serialiseAddr genesisAddr, "c3-datum-order-a")
+        balanceA = coinOf utxos feeIn
+        bondOf = let Coin t = defaultTip cfg in t + Edges.edgeDeposit
+        changeA = balanceA - bondOf - 2_000_000
+        txA =
+            bookingUnsigned cfg codes pp genesisAddr tokenId keyA edgeInsertActive destA now owner
+                (feeIn, balanceA, mempty)
+        txIdA = txIdTx txA
+        candidate key =
+            bookingUnsigned cfg codes pp genesisAddr tokenId key edgeInsertAbsent
+                (serialiseAddr genesisAddr, BS.empty) now owner
+                (TxIn txIdA (TxIx 1), changeA, mempty)
+        keys = ["c3-order-b-" <> intToBS n | n <- [0 .. 255 :: Int]]
+    when (changeA <= bondOf + 2_000_000) $
+        fail "ORDER-WITNESS-NONDISCRIMINATING: funding output too small for the booking chain"
+    picked <- case [k | k <- keys, txIdTx (candidate k) < txIdA] of
+        [] ->
+            fail
+                "ORDER-WITNESS-NONDISCRIMINATING: no candidate key sorted booking B below booking A within 256 candidates"
+        (k : _) -> pure k
+    let keyB = picked
+        txB = candidate keyB
+    signedA <- submitWithGenesis submit txA
+    signedB <- submitWithGenesis submit txB
+    unless (txIdTx signedA == txIdA && txIdTx signedB == txIdTx txB) $
+        fail "ORDER-WITNESS-NONDISCRIMINATING: submitted transaction ids differ from the precomputed ids"
+    pending <- Cage.queryUTxOs prov requestAddr
+    let refA = TxIn txIdA (TxIx 0)
+        refB = TxIn (txIdTx txB) (TxIx 0)
+    (outA, reqA) <- observedRequestAt refA pending
+    (outB, reqB) <- observedRequestAt refB pending
+    let observed = sortOn fst [(refA, (outA, reqA)), (refB, (outB, reqB))]
+        sortedRefs = map fst observed
+        sortedRequests = map (snd . snd) observed
+    unless (map requestKey sortedRequests == [keyB, keyA]) $
+        expectationFailure
+            ( "ORDER-WITNESS-NONDISCRIMINATING: canonical request order "
+                <> show (map requestKey sortedRequests)
+                <> " does not reverse the booking order ["
+                <> show keyA
+                <> ","
+                <> show keyB
+                <> "]"
+            )
+    -- Expected proof actions: the OBSERVED requests, in canonical
+    -- order, walked over a speculative session of the same committed
+    -- trie. Derived from chain datums, never from the builder's list.
+    expectedActions <-
+        withSpeculativeTrie tm tokenId $ \trie ->
+            mapM (\req -> walkEdge trie (requestKey req) (requestEdge req)) sortedRequests
+    ctx <- contextFor cfg codes prov refs
+    unsigned <- updateTokenWithDuties cfg prov tm tokenId genesisAddr ctx
+    decoded <- modifyActionsOf unsigned
+    let orderObs = OrderObservation{ooActions = decoded, ooExpected = expectedActions}
+    livePass "ordering: request association" (cmpOrder orderObs)
+    mutantFails "ordering: request association" "C3-ORDER-REDEEMER" (cmpOrder orderObs{ooExpected = reverse expectedActions})
+    let mintObs = mintObservationOf cfg unsigned sortedRequests
+    livePass "ordering fold: keyed mint" (cmpMint mintObs)
+    mutantFails "ordering fold: keyed mint" "C3-MINT-KEYED" (cmpMint mintObs{moExpected = bumpOne cfg (moExpected mintObs)})
+    forM_ [(refA, outA, reqA), (refB, outB, reqB)] $ \(ref, out, req) -> do
+        approvalName <- observedApprovalName cfg out
+        let approvalObs = approvalObservationOf cfg unsigned req approvalName
+        livePass ("ordering fold: approval for " <> show (requestKey req)) (cmpApproval approvalObs)
+        mutantFails
+            ("ordering fold: approval for " <> show (requestKey req))
+            "C3-APPROVAL-ASSET"
+            (cmpApproval approvalObs{aoName = AssetName "c3-mutant"})
+        _ <- pure ref
+    let signerObs = signerObservationOf unsigned
+    livePass "ordering fold: body signers" (cmpBodySigner signerObs)
+    mutantFails "ordering fold: body signers" "C3-BODY-SIGNER" (cmpBodySigner (insertSigner signerObs))
+    _signedFold <- submitWithGenesis submit unsigned
+    syncFoldedRequests tm tokenId sortedRefs
+
+-- ---------------------------------------------------------
+-- Stages A–D: the seven edges, connected
+-- ---------------------------------------------------------
+
+{- | Stage order matters for holder availability: B.1 leaves a second
+active token in the funding wallet so A's retirement sees two
+distinguishable holder candidates.
+-}
+connectedStages ::
+    CageConfig ->
+    NamingCodes ->
+    Cage.Provider IO ->
+    Submitter IO ->
+    TrieManager IO ->
+    TokenId ->
+    Addr ->
+    [(TxIn, TxOut ConwayEra)] ->
+    IO ()
+connectedStages cfg codes prov submit tm tokenId requestAddr refs = do
+    -- Stage B.1: deliver keyB's active token and leave it held.
+    stage keyB edgeInsertActive "c3-datum-b-deliver"
+    -- Stage A: absent custody, then the active life, then retirement.
+    stage keyA edgeInsertAbsent BS.empty
+    stage keyA edgeUpdateActive "c3-datum-a-deliver"
+    stage keyA edgeUpdateTerminal BS.empty
+    -- Stage B.2: burn keyB's active token.
+    stage keyB edgeDeleteActive BS.empty
+    -- Stage C: absent custody then deletion.
+    stage keyC edgeInsertAbsent BS.empty
+    stage keyC edgeDeleteAbsent BS.empty
+    -- Stage D: active, terminal, witnessed.
+    stage keyD edgeInsertActive "c3-datum-d-deliver"
+    stage keyD edgeUpdateTerminal BS.empty
+    stage keyD edgeWitnessTerminal "c3-datum-d-witness"
+  where
+    keyA = "c3-key-a"
+    keyB = "c3-key-b"
+    keyC = "c3-key-c"
+    keyD = "c3-key-d"
+    stage key edge datumHash =
+        bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge
+            (serialiseAddr genesisAddr, datumHash)
+
+-- ---------------------------------------------------------
+-- One booking, one fold, every control it feeds
+-- ---------------------------------------------------------
+
+bookFoldObserve ::
+    CageConfig ->
+    NamingCodes ->
+    Cage.Provider IO ->
+    Submitter IO ->
+    TrieManager IO ->
+    TokenId ->
+    Addr ->
+    [(TxIn, TxOut ConwayEra)] ->
+    ByteString ->
+    Edge ->
+    (ByteString, ByteString) ->
+    IO ()
+bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest = do
+    requestTxIn <-
+        Edges.bookEdgeTo cfg codes prov (submitWithGenesis submit) genesisAddr tokenId key edge dest
+    pending <- Cage.queryUTxOs prov requestAddr
+    (reqOut, req) <- observedRequestAt requestTxIn pending
+    cageUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
+    walletUtxos <- Cage.queryUTxOs prov genesisAddr
+    ctx <- contextFor cfg codes prov refs
+    unsigned <- updateTokenWithDuties cfg prov tm tokenId genesisAddr ctx
+    let body = unsigned ^. bodyTxL
+        requests = [req]
+        outputs = toList (body ^. outputsTxBodyL)
+        label = "edge " <> show edge
+        mintObs = mintObservationOf cfg unsigned requests
+    livePass (label <> ": keyed mint") (cmpMint mintObs)
+    mutantFails (label <> ": keyed mint") "C3-MINT-KEYED" (cmpMint mintObs{moExpected = bumpOne cfg (moExpected mintObs)})
+    -- Approval: every edge but witnessTerminal carries one, and the
+    -- owner's return output also carries at least the deposit floor.
+    when (edge /= edgeWitnessTerminal) $ do
+        approvalName <- observedApprovalName cfg reqOut
+        let approvalObs = approvalObservationOf cfg unsigned req approvalName
+        livePass (label <> ": approval") (cmpApproval approvalObs)
+        mutantFails (label <> ": approval") "C3-APPROVAL-ASSET" (cmpApproval approvalObs{aoName = AssetName "c3-mutant"})
+    let signerObs = signerObservationOf unsigned
+    livePass (label <> ": body signers") (cmpBodySigner signerObs)
+    mutantFails (label <> ": body signers") "C3-BODY-SIGNER" (cmpBodySigner (insertSigner signerObs))
+    -- Destination: the delivering shapes, including the custody
+    -- creation of an absent insert, whose output sits at the cage.
+    case destinationShapeOf cfg edge key req of
+        Just shape@DestinationShape{dsAddress, dsDatum, dsAsset} -> do
+            let destObs =
+                    DestinationObservation
+                        { doAddress = dsAddress
+                        , doDatum = dsDatum
+                        , doAsset = dsAsset
+                        , doFloor = requestDeposit req
+                        , doOutputs = outputs
+                        }
+            livePass (label <> ": destination") (cmpDestination destObs)
+            mutantFails (label <> ": destination") "C3-DESTINATION" (cmpDestination destObs{doDatum = PLC.I (-1)})
+        Nothing -> pure ()
+    -- Custody refund: the two edges that consume absent custody.
+    when (edge == edgeUpdateActive || edge == edgeDeleteAbsent) $
+        case findKeyedCustody cfg key cageUtxos of
+            Just (custodyIn, custodyCoin, refundBytes) -> do
+                refundAddr <- decodeRefund refundBytes
+                let custodyObs =
+                        CustodyObservation
+                            { cuInput = custodyIn
+                            , cuRefundAddr = refundAddr
+                            , cuOwed = custodyCoin
+                            , cuInputs = body ^. inputsTxBodyL
+                            , cuOutputs = outputs
+                            }
+                livePass (label <> ": custody refund") (cmpCustodyRefund custodyObs)
+                mutantFails
+                    (label <> ": custody refund")
+                    "C3-CUSTODY-REFUND"
+                    (cmpCustodyRefund custodyObs{cuOwed = custodyCoin + 1})
+            Nothing ->
+                expectationFailure ("setup: no keyed custody UTxO observed for key " <> show key)
+    -- Holder: the two edges that burn an active token.
+    when (edge == edgeUpdateTerminal || edge == edgeDeleteActive) $
+        case [i | (i, o) <- walletUtxos, quantityInValue (activePin cfg) (keyAssetName key) (o ^. valueTxOutL) == 1] of
+            [] -> expectationFailure ("setup: no single-quantity holder observed for key " <> show key)
+            (holderIn : _) -> do
+                let otherHolders =
+                        [ i
+                        | (i, o) <- walletUtxos
+                        , i /= holderIn
+                        , holdsAnyActive cfg o
+                        , quantityInValue (activePin cfg) (keyAssetName key) (o ^. valueTxOutL) == 0
+                        ]
+                    holderObs =
+                        HolderObservation
+                            { hoExpectedTxIn = holderIn
+                            , hoOtherCandidates = otherHolders
+                            , hoInputs = body ^. inputsTxBodyL
+                            }
+                livePass (label <> ": holder") (cmpHolder holderObs)
+                mutantFails
+                    (label <> ": holder")
+                    "C3-HOLDER-TXIN"
+                    ( cmpHolder
+                        holderObs
+                            { hoExpectedTxIn = case otherHolders of
+                                (h : _) -> h
+                                [] -> requestTxIn
+                            }
+                    )
+    _signed <- submitWithGenesis submit unsigned
+    syncFoldedRequests tm tokenId [requestTxIn]
+    -- Post-state: the request is spent; a burned asset is gone.
+    after <- Cage.queryUTxOs prov requestAddr
+    when (lookup requestTxIn after /= Nothing) $
+        expectationFailure ("wrong effect: request " <> show requestTxIn <> " still pending after fold")
+    when (edge == edgeUpdateTerminal || edge == edgeDeleteActive) $ do
+        walletAfter <- Cage.queryUTxOs prov genesisAddr
+        let remaining = length [() | (_, o) <- walletAfter, quantityInValue (activePin cfg) (keyAssetName key) (o ^. valueTxOutL) > 0]
+        unless (remaining == 0) $
+            expectationFailure
+                ("wrong effect: active asset for key " <> show key <> " still held after burn")
+
+-- ---------------------------------------------------------
+-- Booking construction (the frozen deterministic setup)
+-- ---------------------------------------------------------
+
+{- | Build one booking transaction without submitting it, from an
+explicit input: the same pieces @Edges.bookEdgeTo@ composes —
+'Edges.bookingApproval' and 'Edges.certifyBooking' for the
+certification, 'mkRequestDatumWith' for the datum — and the same fee,
+bond and change shape. Pure, so transaction ids can be compared before
+anything is signed or submitted.
+-}
+bookingUnsigned ::
+    CageConfig ->
+    NamingCodes ->
+    PParams ConwayEra ->
+    Addr ->
+    TokenId ->
+    ByteString ->
+    Edge ->
+    (ByteString, ByteString) ->
+    Integer ->
+    ByteString ->
+    (TxIn, Integer, MultiAsset) ->
+    ConwayTx
+bookingUnsigned cfg codes pp payerAddr tokenId key edge dest now owner (inputRef, inputBalance, carried) =
+    let Coin tipValue = defaultTip cfg
+        bond = tipValue + Edges.edgeDeposit
+        fee = 2_000_000
+        change = inputBalance - bond - fee
+        approval = Edges.bookingApproval codes edge key owner dest
+        requestAddr = requestAddrFromCfg cfg tokenId Testnet
+        datum = mkRequestDatumWith tokenId payerAddr key edge Edges.edgeDeposit now dest
+        reqOut =
+            mkBasicTxOut
+                requestAddr
+                (MaryValue (Coin bond) (maybe mempty Edges.baAsset approval))
+                & datumTxOutL .~ mkInlineDatum datum
+        changeOut = mkBasicTxOut payerAddr (MaryValue (Coin change) carried)
+        body =
+            mkBasicTxBody
+                & inputsTxBodyL .~ Set.singleton inputRef
+                & outputsTxBodyL .~ StrictSeq.fromList [reqOut, changeOut]
+                & feeTxBodyL .~ Coin fee
+                & reqSignerHashesTxBodyL .~ Set.singleton (addrWitnessKeyHash owner)
+     in Edges.certifyBooking pp inputRef approval (mkBasicTx body)
+
+-- ---------------------------------------------------------
+-- The seven comparison classes
+-- ---------------------------------------------------------
+
+data OrderObservation = OrderObservation
+    { ooActions :: [[ProofStep]]
+    , ooExpected :: [[ProofStep]]
+    }
+
+{- | @C3-ORDER-REDEEMER@: the decoded proof actions of the body's state
+redeemer associate each request with its own proof, in canonical
+sorted-input order.
+-}
+cmpOrder :: OrderObservation -> Either String ()
+cmpOrder OrderObservation{ooActions, ooExpected}
+    | ooActions == ooExpected = Right ()
+    | otherwise =
+        Left
+            "C3-ORDER-REDEEMER: decoded proof actions do not associate each request with its own proof in canonical order"
+
+data MintObservation = MintObservation
+    { moExpected :: Map.Map (PolicyID, AssetName) Integer
+    , moActual :: Map.Map (PolicyID, AssetName) Integer
+    }
+
+-- | @C3-MINT-KEYED@: the body's nonzero mint is exactly the model's delta.
+cmpMint :: MintObservation -> Either String ()
+cmpMint MintObservation{moExpected, moActual}
+    | moActual == moExpected = Right ()
+    | otherwise =
+        Left
+            ( "C3-MINT-KEYED: body mint "
+                <> show moActual
+                <> " is not the model's keyed delta "
+                <> show moExpected
+            )
+
+data ApprovalObservation = ApprovalObservation
+    { aoPolicy :: PolicyID
+    , aoName :: AssetName
+    , aoQuantity :: Integer
+    , aoMint :: MultiAsset
+    , aoOwnerAddress :: Addr
+    , aoDeposit :: Integer
+    , aoOutputs :: [TxOut ConwayEra]
+    }
+
+{- | @C3-APPROVAL-ASSET@: the fold does not mint or burn the approval,
+and exactly one owner output returns it, carrying at least the observed
+deposit floor.
+-}
+cmpApproval :: ApprovalObservation -> Either String ()
+cmpApproval ApprovalObservation{aoPolicy, aoName, aoQuantity, aoMint, aoOwnerAddress, aoDeposit, aoOutputs}
+    | quantityInMultiAsset aoPolicy aoName aoMint /= 0 =
+        Left "C3-APPROVAL-ASSET: the fold minted or burned the approval asset"
+    | length returns == 1 = Right ()
+    | otherwise =
+        Left
+            ( "C3-APPROVAL-ASSET: expected exactly one owner output returning the approval with its deposit, observed "
+                <> show (length returns)
+            )
+  where
+    returns =
+        [ ()
+        | out <- aoOutputs
+        , out ^. addrTxOutL == aoOwnerAddress
+        , quantityInValue aoPolicy aoName (out ^. valueTxOutL) == aoQuantity
+        , let Coin c = out ^. coinTxOutL
+        , c >= aoDeposit
+        ]
+
+data HolderObservation = HolderObservation
+    { hoExpectedTxIn :: TxIn
+    , hoOtherCandidates :: [TxIn]
+    , hoInputs :: Set.Set TxIn
+    }
+
+{- | @C3-HOLDER-TXIN@: the exact keyed holder input is spent and no
+wrong-key holder candidate is.
+-}
+cmpHolder :: HolderObservation -> Either String ()
+cmpHolder HolderObservation{hoExpectedTxIn, hoOtherCandidates, hoInputs}
+    | not (Set.member hoExpectedTxIn hoInputs) =
+        Left "C3-HOLDER-TXIN: the exact keyed holder input is not spent by the body"
+    | any (`Set.member` hoInputs) hoOtherCandidates =
+        Left "C3-HOLDER-TXIN: a wrong-key holder input is spent by the body"
+    | otherwise = Right ()
+
+data DestinationObservation = DestinationObservation
+    { doAddress :: Addr
+    , doDatum :: PLC.Data
+    , doAsset :: (PolicyID, AssetName)
+    , doFloor :: Integer
+    , doOutputs :: [TxOut ConwayEra]
+    }
+
+{- | @C3-DESTINATION@: some output pays the observed destination address
+with the keyed asset, the booked inline datum and at least the floor.
+-}
+cmpDestination :: DestinationObservation -> Either String ()
+cmpDestination DestinationObservation{doAddress, doDatum, doAsset = (policy, asset), doFloor, doOutputs}
+    | not (null matching) = Right ()
+    | otherwise = Left "C3-DESTINATION: no output pays the named address with the keyed asset, datum and floor"
+  where
+    matching =
+        [ ()
+        | out <- doOutputs
+        , out ^. addrTxOutL == doAddress
+        , quantityInValue policy asset (out ^. valueTxOutL) >= 1
+        , let Coin c = out ^. coinTxOutL
+        , c >= doFloor
+        , inlineDatumData out == doDatum
+        ]
+
+data CustodyObservation = CustodyObservation
+    { cuInput :: TxIn
+    , cuRefundAddr :: Addr
+    , cuOwed :: Integer
+    , cuInputs :: Set.Set TxIn
+    , cuOutputs :: [TxOut ConwayEra]
+    }
+
+{- | @C3-CUSTODY-REFUND@: the exact observed custody input is consumed
+and some output refunds its recorded address at least the observed
+coin.
+-}
+cmpCustodyRefund :: CustodyObservation -> Either String ()
+cmpCustodyRefund CustodyObservation{cuInput, cuRefundAddr, cuOwed, cuInputs, cuOutputs}
+    | not (Set.member cuInput cuInputs) =
+        Left "C3-CUSTODY-REFUND: the exact observed custody input is not consumed"
+    | not (null paid) = Right ()
+    | otherwise = Left "C3-CUSTODY-REFUND: no refund at the recorded address meets the observed custody coin"
+  where
+    paid =
+        [ ()
+        | out <- cuOutputs
+        , out ^. addrTxOutL == cuRefundAddr
+        , let Coin c = out ^. coinTxOutL
+        , c >= cuOwed
+        ]
+
+-- | The fold's required-signer set, reduced to its size class: the
+-- set must be empty, so any member is a defect.
+newtype SignerObservation = SignerObservation
+    { soSigners :: Set.Set ()
+    }
+
+-- | @C3-BODY-SIGNER@: the unsigned fold body requires no signature.
+cmpBodySigner :: SignerObservation -> Either String ()
+cmpBodySigner SignerObservation{soSigners}
+    | Set.null soSigners = Right ()
+    | otherwise = Left "C3-BODY-SIGNER: the unsigned fold body requires a signature"
+
+insertSigner :: SignerObservation -> SignerObservation
+insertSigner obs = obs{soSigners = Set.insert () (soSigners obs)}
+
+-- ---------------------------------------------------------
+-- Observation builders over captured state
+-- ---------------------------------------------------------
+
+mintObservationOf :: CageConfig -> ConwayTx -> [OnChainRequest] -> MintObservation
+mintObservationOf cfg tx requests =
+    MintObservation
+        { moExpected = expectedMintOf cfg requests
+        , moActual = nonzeroMint (tx ^. bodyTxL . mintTxBodyL)
+        }
+
+approvalObservationOf ::
+    CageConfig ->
+    ConwayTx ->
+    OnChainRequest ->
+    AssetName ->
+    ApprovalObservation
+approvalObservationOf cfg tx req approvalName =
+    ApprovalObservation
+        { aoPolicy = policyIdFromPin (cfgApplicationPolicy cfg)
+        , aoName = approvalName
+        , aoQuantity = 1
+        , aoMint = tx ^. bodyTxL . mintTxBodyL
+        , aoOwnerAddress = ownerAddressOf req
+        , aoDeposit = requestDeposit req
+        , aoOutputs = toList (tx ^. bodyTxL . outputsTxBodyL)
+        }
+
+signerObservationOf :: ConwayTx -> SignerObservation
+signerObservationOf tx =
+    SignerObservation{soSigners = Set.map (const ()) (tx ^. bodyTxL . reqSignerHashesTxBodyL)}
+
+data DestinationShape = DestinationShape
+    { dsAddress :: Addr
+    , dsDatum :: PLC.Data
+    , dsAsset :: (PolicyID, AssetName)
+    }
+
+{- | The observed destination shape per edge: the three delivering
+kinds pay the request's named address with the booked datum; an absent
+insert pays the cage a custody output whose datum records the request's
+own destination address as the refund.
+-}
+destinationShapeOf ::
+    CageConfig ->
+    Edge ->
+    ByteString ->
+    OnChainRequest ->
+    Maybe DestinationShape
+destinationShapeOf cfg edge key req
+    | edge == edgeInsertActive || edge == edgeUpdateActive =
+        delivering (cfgActivePolicy cfg)
+    | edge == edgeWitnessTerminal =
+        delivering (cfgTerminalPolicy cfg)
+    | edge == edgeInsertAbsent =
+        DestinationShape
+            <$> Just (cageAddrFromCfg cfg Testnet)
+            <*> Just (toPlcData (AbsentCustody (fst (requestDestination req))))
+            <*> Just (policyIdFromPin (cfgAbsentPolicy cfg), keyAssetName key)
+    | otherwise = Nothing
+  where
+    delivering pin = do
+        addr <- addrFromBytes (fst (requestDestination req))
+        datum <- lookup (snd (requestDestination req)) scenarioDatums
+        pure DestinationShape{dsAddress = addr, dsDatum = datum, dsAsset = (policyIdFromPin pin, keyAssetName key)}
+
+observedRequestAt :: TxIn -> [(TxIn, TxOut ConwayEra)] -> IO (TxOut ConwayEra, OnChainRequest)
+observedRequestAt ref utxos = case lookup ref utxos of
+    Just out -> case extractCageDatum out of
+        Just (RequestDatum request) -> pure (out, request)
+        _ -> fail "observed request carries no inline request datum"
+    Nothing -> fail "observed request UTxO not found at the request address"
+
+-- | The single application-policy asset the observed request UTxO carries.
+observedApprovalName :: CageConfig -> TxOut ConwayEra -> IO AssetName
+observedApprovalName cfg out = case out ^. valueTxOutL of
+    MaryValue _ (MultiAsset m) -> case Map.lookup (policyIdFromPin (cfgApplicationPolicy cfg)) m of
+        Just names
+            | [(name, 1)] <- Map.toList names -> pure name
+        _ -> fail "observed request does not carry exactly one approval asset of quantity 1"
+
+ownerAddressOf :: OnChainRequest -> Addr
+ownerAddressOf req =
+    addrFromKeyHashBytes Testnet (fromBuiltin (requestOwner req))
+
+-- | The keyed absent-custody UTxO: policy and key exact, quantity one.
+findKeyedCustody ::
+    CageConfig ->
+    ByteString ->
+    [(TxIn, TxOut ConwayEra)] ->
+    Maybe (TxIn, Integer, ByteString)
+findKeyedCustody cfg key utxos =
+    case
+        [ (i, coin, refund)
+        | (i, o) <- utxos
+        , quantityInValue (policyIdFromPin (cfgAbsentPolicy cfg)) (keyAssetName key) (o ^. valueTxOutL) == 1
+        , Just (AbsentCustody refund) <- [extractCageDatum o]
+        , let Coin coin = o ^. coinTxOutL
+        ]
+    of
+        [(found, coin, refund)] -> Just (found, coin, refund)
+        _ -> Nothing
+
+decodeRefund :: ByteString -> IO Addr
+decodeRefund bytes = case addrFromBytes bytes of
+    Just addr -> pure addr
+    Nothing -> fail "custody datum records an undecodable refund address"
+
+-- | The fold's context: the registry's own, plus this scenario's
+-- distinct destination-datum preimages.
+contextFor ::
+    CageConfig ->
+    NamingCodes ->
+    Cage.Provider IO ->
+    [(TxIn, TxOut ConwayEra)] ->
+    IO RegistryContext
+contextFor cfg codes prov refs = do
+    base <- Edges.registryContextFor cfg codes prov refs
+    pure base{rcDatums = scenarioDatums ++ rcDatums base}
+
+-- | Decode the body's state redeemer into its per-request actions.
+modifyActionsOf :: ConwayTx -> IO [[ProofStep]]
+modifyActionsOf tx =
+    case
+        [ actions
+        | (_, (d, _)) <- Map.toList rdmrs
+        , Just (Modify actions) <- [fromBuiltinData (BuiltinData (getPlutusData d))]
+        ]
+    of
+        [actions] -> pure (map stepsOf actions)
+        _ -> fail "state redeemer did not decode to exactly one Modify action list"
+  where
+    Redeemers rdmrs = tx ^. witsTxL . rdmrsTxWitsL
+    stepsOf (Update steps) = steps
+
+-- ---------------------------------------------------------
+-- Value helpers
+-- ---------------------------------------------------------
+
+activePin :: CageConfig -> PolicyID
+activePin cfg = policyIdFromPin (cfgActivePolicy cfg)
+
+quantityInValue :: PolicyID -> AssetName -> MaryValue era -> Integer
+quantityInValue policy name (MaryValue _ (MultiAsset m)) =
+    maybe 0 (Map.findWithDefault 0 name) (Map.lookup policy m)
+
+quantityInMultiAsset :: PolicyID -> AssetName -> MultiAsset -> Integer
+quantityInMultiAsset policy name (MultiAsset m) =
+    maybe 0 (Map.findWithDefault 0 name) (Map.lookup policy m)
+
+nonzeroMint :: MultiAsset -> Map.Map (PolicyID, AssetName) Integer
+nonzeroMint (MultiAsset m) =
+    Map.fromList
+        [ ((policy, name), quantity)
+        | (policy, names) <- Map.toList m
+        , (name, quantity) <- Map.toList names
+        , quantity /= 0
+        ]
+
+holdsAnyActive :: CageConfig -> TxOut ConwayEra -> Bool
+holdsAnyActive cfg out = case out ^. valueTxOutL of
+    MaryValue _ (MultiAsset m) ->
+        maybe False (not . Map.null) (Map.lookup (activePin cfg) m)
+
+adaOnlyOut :: TxOut ConwayEra -> Bool
+adaOnlyOut out = case out ^. valueTxOutL of
+    MaryValue _ (MultiAsset m) -> Map.null m
+
+coinOf :: [(TxIn, TxOut ConwayEra)] -> TxIn -> Integer
+coinOf utxos ref = case lookup ref utxos of
+    Just out -> let Coin c = out ^. coinTxOutL in c
+    Nothing -> error "coinOf: input not found"
+
+inlineDatumData :: TxOut ConwayEra -> PLC.Data
+inlineDatumData out = case out ^. datumTxOutL of
+    Datum bd -> case binaryDataToData bd of
+        Data d -> d
+    _ -> PLC.Constr (-1) []
+
+-- | Bump one entry of a nonzero expectation map, or add one under the
+-- application policy when the map is empty: the mint mutant's
+-- single-field change.
+bumpOne :: CageConfig -> Map.Map (PolicyID, AssetName) Integer -> Map.Map (PolicyID, AssetName) Integer
+bumpOne cfg m = case Map.toList m of
+    [] -> Map.singleton (policyIdFromPin (cfgApplicationPolicy cfg), AssetName "c3-mutant") 1
+    ((k, v) : _) -> Map.insert k (v + 1) m
+
+intToBS :: Int -> ByteString
+intToBS = BS.pack . map (fromIntegral . fromEnum) . show
+
+-- ---------------------------------------------------------
+-- Live and mutant runners (in-run controls)
+-- ---------------------------------------------------------
+
+{- | The live observation must pass. Runs inside the same E2E
+invocation as the capture.
+-}
+livePass :: String -> Either String () -> Expectation
+livePass _ (Right ()) = pure ()
+livePass label (Left err) =
+    expectationFailure ("live observation failed: " <> label <> ": " <> err)
+
+{- | The single-field mutant must fail with its own C3 token, proving
+the live comparison discriminates that class in this same invocation.
+-}
+mutantFails :: String -> String -> Either String () -> Expectation
+mutantFails label token result = case result of
+    Right () -> expectationFailure ("mutant unexpectedly passed: " <> label)
+    Left err ->
+        unless (token `isPrefixOf` err) $
+            expectationFailure
+                ("mutant failed with the wrong token: " <> label <> ": expected " <> token <> " at the start of " <> err)

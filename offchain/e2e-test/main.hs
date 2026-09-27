@@ -5,6 +5,7 @@ import Test.Hspec (describe, hspec)
 import Singular.Registry.E2E.CageSpec qualified
 import Singular.Registry.E2E.Config (resolveBlueprint)
 import Singular.Registry.E2E.ConfigSpec qualified
+import Singular.Registry.E2E.Criterion3Spec qualified
 import Singular.Registry.E2E.DriverSpec qualified
 import Singular.Registry.E2E.Fork81Spec qualified
 import Singular.Registry.E2E.InsertActiveSpec qualified
@@ -28,6 +29,7 @@ main = do
             Singular.Registry.E2E.InsertActiveSpec.spec blueprint
             Singular.Registry.E2E.Fork81Spec.spec blueprint
             Singular.Registry.E2E.UpdateTerminalSpec.spec blueprint
+            Singular.Registry.E2E.Criterion3Spec.spec blueprint
             Singular.Registry.E2E.CageSpec.spec blueprint
             Singular.Registry.E2E.DriverSpec.spec blueprint
         describe

@@ -662,6 +662,7 @@ test-suite e2e-tests
     Singular.Registry.E2E.CageSpec
     Singular.Registry.E2E.Config
     Singular.Registry.E2E.ConfigSpec
+    Singular.Registry.E2E.Criterion3Spec
     Singular.Registry.E2E.DriverSpec
     Singular.Registry.E2E.Fork81Spec
     Singular.Registry.E2E.NodeSpec
