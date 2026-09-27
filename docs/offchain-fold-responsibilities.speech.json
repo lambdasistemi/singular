@@ -5,12 +5,16 @@
       "pause": 400
     },
     {
-      "text": "The focused suite pins the parts it reaches: the order duties accumulate for the request list it is given, the quantities minted, the burn-source and custody selections, the per-owner grouping of deposit returns, and both the duties' empty signer list and the empty required-signer set of the transaction the public entry actually builds.",
-      "pause": 450
+      "text": "The focused suite pins what its rows actually assert: the order duties accumulate in for the request list a caller supplies; the active witness burn's net minus one, with the one input that holds it consumed and no output carrying it; which holder input a burn selects and which custody input a custody spend selects, by exact policy, key and quantity; the per-owner grouping of deposit returns and a deletion's approval riding inside its deposit output; and the fold's empty signer set, both in the duties it accumulates and in the required-signer field of the transaction the public entry actually builds.",
+      "pause": 550
     },
     {
-      "text": "Two promises it does not pin: which request order the fold's own query establishes — the focused rows hand registryDuties already-ordered lists, and the built-body row folds one request — and where a delivering edge's token lands, which no focused row asserts. Those two ride the fresh-blueprint devnet suites, whose own discrimination is a separate, unstated limit. Read them as the only evidence for input-order sorting and destination delivery.",
+      "text": "What no focused row asserts: the query's input-order sorting, since the rows hand registryDuties already-ordered lists and the built-body row folds one request; the quantities of every mint except the active burn, since the rows count the entries and read their key names only; a custody refund's output address and amount; a delivering edge's destination; and an approval returned by a delivering or inadmissible edge.",
       "pause": 500
+    },
+    {
+      "text": "Those behaviors are exercised only by the fresh-blueprint devnet suites — broader executed paths whose power to discriminate these particular defects is unproven, because no negative control names them. Read each promise of this story as either backed by a named row above, or standing on those suites alone.",
+      "pause": 450
     }
   ],
   "one-owner-per-fold-concern": [
@@ -39,12 +43,16 @@
       "pause": 350
     },
     {
-      "text": "What the focused suite executes: the duties list in the order of the requests it was given — not sorted, reversed, or swept from the inventory — with mints, outputs and burn sources each read back from what the builder produced; the exact holder selection for a burn; the per-owner grouping of deposit returns; and the built body's empty required-signer set through the public entry.",
+      "text": "What the focused tree executes: the duties list in the order of the requests it was given — not sorted, reversed, or swept from the inventory — with outputs, mints and burn sources each read back from what the builder produced; the active burn's net minus one with its held input and no carrier output; the exact holder and custody input selections; the per-owner grouping of deposit returns and a deletion's approval inside its deposit output; and the built body's empty required-signer set through the public entry.",
+      "pause": 550
+    },
+    {
+      "text": "What it does not: no row asserts the query's input-order sort, another mint's quantity, a custody refund's address and amount, a delivering edge's destination, or an approval returned by a delivering or inadmissible edge. A contributor changing those needs the devnet suites, not this tree — and those suites' discrimination for such defects is itself unproven.",
       "pause": 450
     },
     {
-      "text": "What it does not: nothing in the focused tree asserts the query's input-order sort, or a delivering edge's destination. A contributor changing the query's ordering or the deliver arm needs the devnet suites, not this tree, to catch it. And a contributor who needs any pinned behavior to change is not refactoring; that is a behavior change for the design flow.",
-      "pause": 450
+      "text": "And a contributor who needs any pinned behavior to change is not refactoring; that is a behavior change for the design flow.",
+      "pause": 300
     }
   ],
   "independent-evidence-boundaries": [
@@ -73,6 +81,6 @@
   ],
   "_source": {
     "file": "offchain-fold-responsibilities.md",
-    "sha256": "1c13444ba19352df88c97b569fe8a37c46b1b88e15cb9d10a821f86397f31636"
+    "sha256": "7f3175874578c6ede236a6ed738a4365fc6149c641238b4fbdee90e667d4dc66"
   }
 }

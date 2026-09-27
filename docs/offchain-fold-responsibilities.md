@@ -17,19 +17,28 @@ existing `Singular.Registry.TxBuilder.Update` import; I want the same
 request order, the same token effects, the same custody refunds and the
 same destinations as before, so my callers and my conformance rows see
 nothing move. A contributor refactoring the fold's internals owes me
-that. The focused suite pins the parts it reaches: the order in which
-duties accumulate for the request list it is given, the quantities
-minted, the burn-source and custody selections, the per-owner grouping
-of deposit returns, and — because the model proves no fold requires a
-signer — both the duties' empty signer list and the empty
-required-signer set of the transaction the public entry actually
-builds. Two promises it does not pin: which request order the fold's
-own query establishes (the focused rows hand `registryDuties`
-already-ordered lists, and the built-body row folds one request), and
-where a delivering edge's token lands (no focused row asserts a
-destination). Those two ride the fresh-blueprint devnet suites, whose
-own discrimination is a separate, unstated limit — read them as the
-only evidence for input-order sorting and destination delivery.
+that. The focused suite pins what its rows actually assert: the order
+duties accumulate in for the request list a caller supplies; the
+active witness burn's net `-1`, with the one input that holds it
+consumed and no output carrying it; which holder input a burn selects
+and which custody input a custody spend selects — exact policy, key
+and quantity; the per-owner grouping of deposit returns and a
+deletion's approval riding inside its deposit output; and the fold's
+empty signer set, both in the duties it accumulates and in the
+required-signer field of the transaction the public entry actually
+builds.
+
+What no focused row asserts: the query's input-order sorting (the
+rows hand `registryDuties` already-ordered lists, and the built-body
+row folds one request); the quantities of every mint except the active
+burn (the rows count the mint entries and read their key names only);
+a custody refund's output address and amount; a delivering edge's
+destination; and an approval returned by a delivering or inadmissible
+edge. Those behaviors are exercised only by the fresh-blueprint devnet
+suites — broader executed paths, whose power to discriminate these
+particular defects is unproven, because no negative control names
+them. Read each promise of this story as either backed by a named row
+above or standing on those suites alone.
 
 ## One owner per fold concern
 
@@ -99,18 +108,22 @@ The extraction is a representation change, not a new registry rule.
 The Lean model remains the authority: the fold's mint quantities, owner
 deposits, custody refunds and approval returns are what
 `Singular.obligations` says they are, and no fold requires a signer
-(`Singular.Statements.fold_requires_no_signer`). What the focused suite
+(`Singular.Statements.fold_requires_no_signer`). What the focused tree
 executes: the duties list in the order of the requests it was given —
-not sorted, reversed or swept from the inventory — with mints, outputs
-and burn sources each read back from what the builder produced; the
-exact holder selection for a burn; the per-owner grouping of deposit
-returns; and the built body's empty required-signer set through the
-public entry. What it does not: nothing in the focused tree asserts the
-query's input-order sort or a delivering edge's destination — a
-contributor changing `queryContext`'s ordering or the `deliver` arm
-needs the devnet suites, not this tree, to catch it. A contributor who
-needs any pinned behavior to change is not refactoring; that is a
-behavior change and belongs to the design flow, not to this structure.
+not sorted, reversed or swept from the inventory — with outputs,
+mints and burn sources each read back from what the builder produced;
+the active burn's net `-1` with its held input and no carrier output;
+the exact holder and custody input selections; the per-owner grouping
+of deposit returns and a deletion's approval inside its deposit
+output; and the built body's empty required-signer set through the
+public entry. What it does not: no row asserts the query's input-order
+sort, another mint's quantity, a custody refund's address and amount,
+a delivering edge's destination, or an approval returned by a
+delivering or inadmissible edge — a contributor changing those needs
+the devnet suites, not this tree, and those suites' discrimination for
+such defects is itself unproven. A contributor who needs any pinned
+behavior to change is not refactoring; that is a behavior change and
+belongs to the design flow, not to this structure.
 
 ## Independent evidence boundaries
 
