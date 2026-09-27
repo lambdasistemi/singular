@@ -614,12 +614,21 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                             (cmpHolder holderObs{hoExpectedTxIn = other})
     signed <- submitWithGenesis submit unsigned
     syncFoldedRequests tm tokenId [(requestTxIn, reqOut)]
-    -- Post-state, through the REAL provider: the mirror root moved
-    -- across every connected stage's landed fold.
+    -- Post-state, through the REAL provider. The six leaf-changing
+    -- edges must move the committed root; @witnessTerminal@ attests an
+    -- already-terminal key and Lean's @applyEdge_witnessTerminal@
+    -- keeps the trie, and so the root, unchanged — the mirror must
+    -- hold exactly the same root across it.
     rootAfter <- withTrie tm tokenId getRoot
-    when (unRoot rootBefore == unRoot rootAfter) $
-        expectationFailure
-            ("wrong effect: mirror root did not move across the fold of edge " <> show edge)
+    if edge == edgeWitnessTerminal
+        then
+            when (unRoot rootBefore /= unRoot rootAfter) $
+                expectationFailure
+                    ("wrong effect: mirror root moved across the witnessed read of edge " <> show edge)
+        else
+            when (unRoot rootBefore == unRoot rootAfter) $
+                expectationFailure
+                    ("wrong effect: mirror root did not move across the fold of edge " <> show edge)
     assertChainRootMatches cfg prov tokenId rootAfter ("fold of edge " <> show edge)
     putStrLn $
         "[c3-receipt] edge="
