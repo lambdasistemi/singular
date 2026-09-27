@@ -343,6 +343,9 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
             (serialiseAddr genesisAddr, BS.empty)
     refA <-
         Edges.bookEdgeTo cfg codes prov (submitWithGenesis submit) genesisAddr tokenId keyA edgeInsertActive destA
+    -- The booking sequence, captured at the calls themselves so the
+    -- receipt's order cannot drift from the code.
+    let bookingSequence = [(keyB, refB), (keyA, refA)]
     -- The real provider's own observations, before anything is wrapped.
     pending <- Cage.queryUTxOs prov requestAddr
     unless (length pending == 2 && sort (map fst pending) == sort [refA, refB]) $
@@ -355,14 +358,17 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
         sortedRequests = map (requestOf (zip [refA, refB] [reqA, reqB])) sortedRefs
     unless (map fst descending /= map fst ascending) $
         fail "ORDER-WITNESS-NONDISCRIMINATING: reversed enumeration equals ascending order"
-    -- Scenario receipt, from captured values only: the booked requests'
-    -- transaction ids, the raw test-controlled provider enumeration the
-    -- fold saw, and the canonical ascending order it must commit to.
+    -- Scenario receipt, from captured values only: the booking
+    -- sequence in call order, the raw test-controlled provider
+    -- enumeration the fold saw, the real provider's own order, and the
+    -- canonical ascending order it must commit to.
     putStrLn $
         "[c3-receipt] ordering booking-order="
-            <> show [keyA, keyB]
+            <> show (map fst bookingSequence)
             <> " booked-request-txins="
-            <> show [refA, refB]
+            <> show (map snd bookingSequence)
+            <> " real-provider-order="
+            <> show (map fst pending)
             <> " raw-provider-order-descending="
             <> show (map fst descending)
             <> " canonical-order-ascending="
@@ -416,9 +422,9 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
     putStrLn $
         "[c3-receipt] ordering fold-txid="
             <> show (txIdTx signedFold)
-            <> " mirror-root-before=0x"
+            <> " mirror-root-before="
             <> show (unRoot rootBefore)
-            <> " mirror-root-after=0x"
+            <> " mirror-root-after="
             <> show (unRoot rootAfter)
     -- Receipts through the REAL provider: both requests consumed.
     after <- Cage.queryUTxOs prov requestAddr
@@ -625,9 +631,9 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
             <> show requestTxIn
             <> " fold-txid="
             <> show (txIdTx signed)
-            <> " mirror-root-before=0x"
+            <> " mirror-root-before="
             <> show (unRoot rootBefore)
-            <> " mirror-root-after=0x"
+            <> " mirror-root-after="
             <> show (unRoot rootAfter)
     -- A delivering stage's built destination output lands at its
     -- address exactly as the body built it.
