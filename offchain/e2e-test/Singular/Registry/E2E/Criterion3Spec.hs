@@ -81,7 +81,7 @@ import Cardano.Ledger.Api.Tx.Out (
     valueTxOutL,
  )
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
-import Cardano.Ledger.BaseTypes (Network (..), TxIx (..))
+import Cardano.Ledger.BaseTypes (TxIx (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (extractHash)
 import Cardano.Ledger.Plutus.Data (getPlutusData, hashData)
@@ -92,6 +92,7 @@ import Cardano.Ledger.Mary.Value (
     MultiAsset (..),
     PolicyID,
  )
+import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import PlutusTx.Builtins (fromBuiltin)
 import PlutusTx.Builtins.Internal (BuiltinData (..))
@@ -117,13 +118,13 @@ import Singular.Registry.Ledger (
     ConwayEra,
     Root (..),
     TokenId,
-    TxIn,
  )
 import Singular.Registry.Provider (
     Provider (..),
  )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (
+    Trie (getRoot),
     TrieManager (..),
  )
 import Singular.Registry.TxBuilder.ConnectedFold (
@@ -134,7 +135,9 @@ import Singular.Registry.TxBuilder.Internal (
     addrFromBytes,
     addrFromKeyHashBytes,
     cageAddrFromCfg,
+    cagePolicyIdFromCfg,
     extractCageDatum,
+    findStateUtxo,
     policyIdFromPin,
     requestAddrFromCfg,
     toPlcData,
@@ -148,6 +151,7 @@ import Singular.Registry.Types (
     CageDatum (..),
     Edge,
     OnChainRequest (..),
+    OnChainRoot (..),
     ProofStep,
     RequestAction (..),
     UpdateRedeemer (..),
@@ -365,7 +369,7 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
     let mintObs = mintObservationOf cfg unsigned sortedRequests
     livePass "ordering fold: keyed mint" (cmpMint mintObs)
     mutantFails "ordering fold: keyed mint" "C3-MINT-KEYED" (cmpMint mintObs{moExpected = bumpOne cfg (moExpected mintObs)})
-    forM_ [(refA, outA, reqA), (refB, outB, reqB)] $ \(ref, out, req) -> do
+    forM_ [(refA, outA, reqA), (refB, outB, reqB)] $ \(_, out, req) -> do
         approvalName <- observedApprovalName cfg out
         let approvalObs = approvalObservationOf cfg unsigned req approvalName
         livePass ("ordering fold: approval for " <> show (requestKey req)) (cmpApproval approvalObs)
@@ -373,7 +377,6 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
             ("ordering fold: approval for " <> show (requestKey req))
             "C3-APPROVAL-ASSET"
             (cmpApproval approvalObs{aoName = AssetName "c3-mutant"})
-        _ <- pure ref
     let signerObs = signerObservationOf unsigned
     livePass "ordering fold: body signers" (cmpBodySigner signerObs)
     mutantFails "ordering fold: body signers" "C3-BODY-SIGNER" (cmpBodySigner (insertSigner signerObs))
@@ -383,6 +386,7 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
     rootAfter <- withTrie tm tokenId getRoot
     when (unRoot rootBefore == unRoot rootAfter) $
         expectationFailure "wrong effect: mirror root did not move across the ordering fold"
+    assertChainRootMatches cfg prov tokenId rootAfter "ordering fold"
     -- Receipts through the REAL provider: both requests consumed.
     after <- Cage.queryUTxOs prov requestAddr
     forM_ sortedRefs $ \ref ->
@@ -416,19 +420,22 @@ connectedStages cfg codes prov submit tm tokenId requestAddr refs = do
     stage keyB edgeInsertActive deliverDatumB
     -- Stage A: absent custody, then the active life, then retirement.
     -- The absent inserts book a refund address away from the fold
-    -- wallet, so refund crediting is unambiguous.
+    -- wallet, so refund crediting is unambiguous. The no-token-delivery
+    -- edges book a plain destination: nothing is delivered to it and
+    -- the booking's approval only binds the pair.
     let refundDest = (serialiseAddr (stageRefundAddr cfg), BS.empty)
+        plainDest = (serialiseAddr genesisAddr, BS.empty)
     stageTo keyA edgeInsertAbsent refundDest
     stage keyA edgeUpdateActive deliverDatumA
-    stage keyA edgeUpdateTerminal BS.empty
+    stageTo keyA edgeUpdateTerminal plainDest
     -- Stage B.2: burn keyB's active token.
-    stage keyB edgeDeleteActive BS.empty
+    stageTo keyB edgeDeleteActive plainDest
     -- Stage C: absent custody then deletion, same refund address.
     stageTo keyC edgeInsertAbsent refundDest
-    stage keyC edgeDeleteAbsent BS.empty
+    stageTo keyC edgeDeleteAbsent plainDest
     -- Stage D: active, terminal, witnessed.
     stage keyD edgeInsertActive deliverDatumD
-    stage keyD edgeUpdateTerminal BS.empty
+    stageTo keyD edgeUpdateTerminal plainDest
     stage keyD edgeWitnessTerminal witnessDatumD
   where
     keyA = "c3-key-a"
@@ -564,6 +571,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
     when (unRoot rootBefore == unRoot rootAfter) $
         expectationFailure
             ("wrong effect: mirror root did not move across the fold of edge " <> show edge)
+    assertChainRootMatches cfg prov tokenId rootAfter ("fold of edge " <> show edge)
     -- A delivering stage's built destination output lands at its
     -- address exactly as the body built it.
     case destinationShapeOf cfg edge key req of
@@ -580,7 +588,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                     landed <- Cage.queryUTxOs prov dsAddress
                     case lookup (TxIn (txIdTx signed) (TxIx (fromIntegral ix))) landed of
                         Just observed ->
-                            unless (observed == built) $
+                            unless (observed `sameOutputAs` built) $
                                 expectationFailure
                                     ( "wrong effect: landed destination output at index "
                                         <> show ix
@@ -610,7 +618,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                         landed <- Cage.queryUTxOs prov refundAddr
                         case lookup (TxIn (txIdTx signed) (TxIx (fromIntegral ix))) landed of
                             Just observed ->
-                                unless (observed == built) $
+                                unless (observed `sameOutputAs` built) $
                                     expectationFailure
                                         "wrong effect: landed custody refund differs from the body's built output"
                             Nothing ->
@@ -790,6 +798,44 @@ carriesPolicyAsset :: PolicyID -> TxOut ConwayEra -> Bool
 carriesPolicyAsset policy out = case out ^. valueTxOutL of
     MaryValue _ (MultiAsset m) ->
         maybe False (not . Map.null) (Map.lookup policy m)
+
+{- | Semantic output equality for the landing checks: address, value
+-- and inline datum compared directly, without depending on the
+-- ledger output type's own equality over its compact representation.
+-}
+sameOutputAs :: TxOut ConwayEra -> TxOut ConwayEra -> Bool
+sameOutputAs a b =
+    a ^. addrTxOutL == b ^. addrTxOutL
+        && a ^. valueTxOutL == b ^. valueTxOutL
+        && inlineDatumData a == inlineDatumData b
+
+{- | The chain's state root, read from the state UTxO's inline datum
+-- through the real provider, must equal the mirror's root after a
+-- landed fold: a moving mirror alone does not show the trie the chain
+-- committed.
+-}
+assertChainRootMatches ::
+    CageConfig ->
+    Cage.Provider IO ->
+    TokenId ->
+    Root ->
+    String ->
+    IO ()
+assertChainRootMatches cfg prov tokenId mirrorRoot what = do
+    cageUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
+    case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId cageUtxos of
+        Just (_, stateOut) -> case extractCageDatum stateOut of
+            Just (StateDatum st)
+                | stateRoot st == OnChainRoot (unRoot mirrorRoot) -> pure ()
+                | otherwise ->
+                    expectationFailure
+                        ( "wrong effect: chain state root after the "
+                            <> what
+                            <> " differs from the mirror root"
+                        )
+            _ -> expectationFailure ("setup: state UTxO carries no state datum after the " <> what)
+        Nothing ->
+            expectationFailure ("setup: state UTxO not found after the " <> what)
 
 -- | The fold's required-signer set, reduced to its size class: the
 -- set must be empty, so any member is a defect.
