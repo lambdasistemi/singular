@@ -1,4 +1,3 @@
-{-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
@@ -50,6 +49,7 @@ import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.List (isPrefixOf, sort, sortOn)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (isJust)
 import Data.Set qualified as Set
 import Lens.Micro ((^.))
 import Test.Hspec (
@@ -429,7 +429,7 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
     -- Receipts through the REAL provider: both requests consumed.
     after <- Cage.queryUTxOs prov requestAddr
     forM_ sortedRefs $ \ref ->
-        when (lookup ref after /= Nothing) $
+        when (isJust (lookup ref after)) $
             expectationFailure
                 ("wrong effect: ordering-fold request " <> show ref <> " still pending after submission")
   where
@@ -496,7 +496,7 @@ connectedStages cfg codes prov submit tm tokenId requestAddr refs = do
             edge
             (deliverDest datum)
     stageTo key edge dest =
-        bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest
+        bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge
 
 -- ---------------------------------------------------------
 -- One booking, one fold, every control it feeds
@@ -671,7 +671,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                 case [ (ix, out)
                      | (ix, out) <- zip [0 :: Int ..] outputs
                      , out ^. addrTxOutL == refundAddr
-                     , not (any (\p -> carriesPolicyAsset p out) (witnessPolicies cfg))
+                     , not (any (`carriesPolicyAsset` out) (witnessPolicies cfg))
                      ] of
                     [(ix, built)] -> do
                         landed <- Cage.queryUTxOs prov refundAddr
@@ -688,7 +688,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
             Nothing -> pure ()
     -- The request is spent; a burned asset is gone.
     after <- Cage.queryUTxOs prov requestAddr
-    when (lookup requestTxIn after /= Nothing) $
+    when (isJust (lookup requestTxIn after)) $
         expectationFailure ("wrong effect: request " <> show requestTxIn <> " still pending after fold")
     when (edge == edgeUpdateTerminal || edge == edgeDeleteActive) $ do
         walletAfter <- Cage.queryUTxOs prov genesisAddr
@@ -1019,9 +1019,9 @@ findKeyedCustody ::
 findKeyedCustody cfg key utxos =
     case [ (i, coin, refund)
          | (i, o) <- utxos
+         , let Coin coin = o ^. coinTxOutL
          , quantityInValue (policyIdFromPin (cfgAbsentPolicy cfg)) (keyAssetName key) (o ^. valueTxOutL) == 1
          , Just (AbsentCustody refund) <- [extractCageDatum o]
-         , let Coin coin = o ^. coinTxOutL
          ] of
         [(found, coin, refund)] -> Just (found, coin, refund)
         _ -> Nothing
