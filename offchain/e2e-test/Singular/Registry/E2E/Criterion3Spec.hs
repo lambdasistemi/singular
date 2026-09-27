@@ -51,7 +51,7 @@ import Data.Foldable (toList)
 import Data.List (isPrefixOf, sort, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
-import Lens.Micro ((&), (.~), (^.))
+import Lens.Micro ((^.))
 import Test.Hspec (
     Expectation,
     Spec,
@@ -61,7 +61,6 @@ import Test.Hspec (
  )
 
 import Cardano.Ledger.Address (Addr, serialiseAddr)
-import Cardano.Ledger.Alonzo.TxBody (reqSignerHashesTxBodyL)
 import Cardano.Ledger.Api.Scripts.Data (
     Data (..),
     Datum (..),
@@ -72,20 +71,20 @@ import Cardano.Ledger.Api.Tx.Body (
     inputsTxBodyL,
     mintTxBodyL,
     outputsTxBodyL,
+    reqSignerHashesTxBodyL,
  )
 import Cardano.Ledger.Api.Tx.Out (
     TxOut,
     addrTxOutL,
     coinTxOutL,
     datumTxOutL,
-    mkBasicTxOut,
     valueTxOutL,
  )
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
-import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
+import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (extractHash)
-import Cardano.Ledger.Plutus.Data (hashData)
+import Cardano.Ledger.Plutus.Data (getPlutusData, hashData)
 import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Mary.Value (
     AssetName (..),
@@ -94,9 +93,7 @@ import Cardano.Ledger.Mary.Value (
     PolicyID,
  )
 import Cardano.Ledger.Plutus.Data (getPlutusData)
-import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
-import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins (fromBuiltin)
 import PlutusTx.Builtins.Internal (BuiltinData (..))
 import PlutusTx.IsData.Class (FromData (..))
@@ -118,7 +115,6 @@ import Singular.Registry.Config (
  )
 import Singular.Registry.Driver qualified as Driver
 import Singular.Registry.Ledger (
-    Coin (..),
     ConwayEra,
     TokenId,
     TxIn,
@@ -218,14 +214,19 @@ keyAssetName = AssetName . SBS.toShort
 -- | The distinct nonempty destination-datum preimages the scenario
 -- books, named by stage. Distinct preimages make an absent or swapped
 -- inline datum detectable.
-orderDatumA, deliverDatumB, deliverDatumA, deliverDatumD, witnessDatumD :: PLC.Data
-orderDatumA = PLC.I 1
-deliverDatumB = PLC.I 2
-deliverDatumA = PLC.I 3
-deliverDatumD = PLC.I 4
-witnessDatumD = PLC.I 5
+orderDatumA, deliverDatumB, deliverDatumA, deliverDatumD, witnessDatumD :: Data ConwayEra
+orderDatumA = ledgerData 1
+deliverDatumB = ledgerData 2
+deliverDatumA = ledgerData 3
+deliverDatumD = ledgerData 4
+witnessDatumD = ledgerData 5
 
-scenarioDatumPreimages :: [PLC.Data]
+-- | The ledger datum wrapper over an integer preimage, so nothing here
+-- names the Plutus core data type.
+ledgerData :: Integer -> Data ConwayEra
+ledgerData n = Data (toPlcData n)
+
+scenarioDatumPreimages :: [Data ConwayEra]
 scenarioDatumPreimages =
     [orderDatumA, deliverDatumB, deliverDatumA, deliverDatumD, witnessDatumD]
 
@@ -234,18 +235,29 @@ same ledger encoding the cage itself compares (@destinationMatches@
 hashes the inline datum with BLAKE2b-256; @Edges.edgeRecordDatumHash@
 uses this exact expression), so a literal label could never match.
 -}
-datumHashOf :: PLC.Data -> ByteString
-datumHashOf d = hashToBytes (extractHash (hashData (Data d :: Data ConwayEra)))
+datumHashOf :: Data ConwayEra -> ByteString
+datumHashOf d = hashToBytes (extractHash (hashData d))
 
 -- | The preimage for a hash the request carries, when this scenario
 -- booked it.
-preimageOf :: ByteString -> Maybe PLC.Data
+preimageOf :: ByteString -> Maybe (Data ConwayEra)
 preimageOf h = lookup h [(datumHashOf d, d) | d <- scenarioDatumPreimages]
 
 -- | A delivering destination at the funding wallet carrying a booked
 -- preimage's real hash.
-deliverDest :: PLC.Data -> (ByteString, ByteString)
+deliverDest :: Data ConwayEra -> (ByteString, ByteString)
 deliverDest d = (serialiseAddr genesisAddr, datumHashOf d)
+
+-- | The refund address the absent-insert stages book: a distinct key
+-- address that is not the fold wallet, so the only ada-only outputs
+-- that ever land there are the custody refunds owed to it (receiving
+-- needs no witness).
+stageRefundAddr :: CageConfig -> Addr
+stageRefundAddr cfg = addrFromKeyHashBytes (network cfg) (BS.replicate 28 0xab)
+
+-- | A decodable address nothing pays, for the custody mutant's divert.
+absentAddress :: CageConfig -> Addr
+absentAddress cfg = addrFromKeyHashBytes (network cfg) (BS.replicate 28 0x99)
 
 -- ---------------------------------------------------------
 -- Scenario
@@ -259,7 +271,7 @@ spec bp =
                 it "observes order, approvals, mints, holders, destinations, custody refunds and body signers" $
                     withBootedCage id stateBytes requestBytes $ \cfg prov submit tm reg -> do
                         let tokenId = Driver.registryTokenId reg
-                            requestAddr = requestAddrFromCfg cfg tokenId Testnet
+                            requestAddr = requestAddrFromCfg cfg tokenId (network cfg)
                         codes <- loadRegistryCodesFromEnv
                         refs <- publishCageRefs cfg prov submit tokenId
                         orderingStage cfg codes prov submit tm tokenId requestAddr refs
@@ -399,13 +411,16 @@ connectedStages cfg codes prov submit tm tokenId requestAddr refs = do
     -- Stage B.1: deliver keyB's active token and leave it held.
     stage keyB edgeInsertActive deliverDatumB
     -- Stage A: absent custody, then the active life, then retirement.
-    stage keyA edgeInsertAbsent BS.empty
+    -- The absent inserts book a refund address away from the fold
+    -- wallet, so refund crediting is unambiguous.
+    let refundDest = (serialiseAddr (stageRefundAddr cfg), BS.empty)
+    stageTo keyA edgeInsertAbsent refundDest
     stage keyA edgeUpdateActive deliverDatumA
     stage keyA edgeUpdateTerminal BS.empty
     -- Stage B.2: burn keyB's active token.
     stage keyB edgeDeleteActive BS.empty
-    -- Stage C: absent custody then deletion.
-    stage keyC edgeInsertAbsent BS.empty
+    -- Stage C: absent custody then deletion, same refund address.
+    stageTo keyC edgeInsertAbsent refundDest
     stage keyC edgeDeleteAbsent BS.empty
     -- Stage D: active, terminal, witnessed.
     stage keyD edgeInsertActive deliverDatumD
@@ -419,6 +434,8 @@ connectedStages cfg codes prov submit tm tokenId requestAddr refs = do
     stage key edge datum =
         bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge
             (deliverDest datum)
+    stageTo key edge dest =
+        bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest
 
 -- ---------------------------------------------------------
 -- One booking, one fold, every control it feeds
@@ -442,7 +459,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
         Edges.bookEdgeTo cfg codes prov (submitWithGenesis submit) genesisAddr tokenId key edge dest
     pending <- Cage.queryUTxOs prov requestAddr
     (reqOut, req) <- observedRequestAt requestTxIn pending
-    cageUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
+    cageUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
     walletUtxos <- Cage.queryUTxOs prov genesisAddr
     ctx <- contextFor cfg codes prov refs
     unsigned <- updateTokenWithDuties cfg prov tm tokenId genesisAddr ctx
@@ -466,7 +483,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
     -- Destination: the delivering shapes, including the custody
     -- creation of an absent insert, whose output sits at the cage.
     case destinationShapeOf cfg edge key req of
-        Just shape@DestinationShape{dsAddress, dsDatum, dsAsset} -> do
+        Just DestinationShape{dsAddress, dsDatum, dsAsset} -> do
             let destObs =
                     DestinationObservation
                         { doAddress = dsAddress
@@ -476,7 +493,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                         , doOutputs = outputs
                         }
             livePass (label <> ": destination") (cmpDestination destObs)
-            mutantFails (label <> ": destination") "C3-DESTINATION" (cmpDestination destObs{doDatum = PLC.I (-1)})
+            mutantFails (label <> ": destination") "C3-DESTINATION" (cmpDestination destObs{doDatum = ledgerData (-1)})
         Nothing -> pure ()
     -- Custody refund: the two edges that consume absent custody.
     when (edge == edgeUpdateActive || edge == edgeDeleteAbsent) $
@@ -498,7 +515,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                     "C3-CUSTODY-REFUND"
                     ( cmpCustodyRefund
                         custodyObs
-                            { cuRefundAddr = addrFromKeyHashBytes Testnet (BS.replicate 28 0x99)
+                            { cuRefundAddr = absentAddress cfg
                             }
                     )
             Nothing ->
@@ -522,16 +539,15 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                             , hoInputs = body ^. inputsTxBodyL
                             }
                 livePass (label <> ": holder") (cmpHolder holderObs)
-                mutantFails
-                    (label <> ": holder")
-                    "C3-HOLDER-TXIN"
-                    ( cmpHolder
-                        holderObs
-                            { hoExpectedTxIn = case otherHolders of
-                                (h : _) -> h
-                                [] -> requestTxIn
-                            }
-                    )
+                case otherHolders of
+                    [] ->
+                        expectationFailure
+                            ("setup: no second distinguishable holder candidate for key " <> show key)
+                    (other : _) ->
+                        mutantFails
+                            (label <> ": holder")
+                            "C3-HOLDER-TXIN"
+                            (cmpHolder holderObs{hoExpectedTxIn = other})
     _signed <- submitWithGenesis submit unsigned
     syncFoldedRequests tm tokenId [requestTxIn]
     -- Post-state: the request is spent; a burned asset is gone.
@@ -636,7 +652,7 @@ cmpHolder HolderObservation{hoExpectedTxIn, hoOtherCandidates, hoInputs}
 
 data DestinationObservation = DestinationObservation
     { doAddress :: Addr
-    , doDatum :: PLC.Data
+    , doDatum :: Data ConwayEra
     , doAsset :: (PolicyID, AssetName)
     , doFloor :: Integer
     , doOutputs :: [TxOut ConwayEra]
@@ -739,7 +755,7 @@ approvalObservationOf cfg tx req approvalName =
         , aoName = approvalName
         , aoQuantity = 1
         , aoMint = tx ^. bodyTxL . mintTxBodyL
-        , aoOwnerAddress = ownerAddressOf req
+        , aoOwnerAddress = ownerAddressOf cfg req
         , aoDeposit = approvalFloorOf (requestEdge req) req
         , aoOutputs = toList (tx ^. bodyTxL . outputsTxBodyL)
         }
@@ -763,7 +779,7 @@ signerObservationOf tx =
 
 data DestinationShape = DestinationShape
     { dsAddress :: Addr
-    , dsDatum :: PLC.Data
+    , dsDatum :: Data ConwayEra
     , dsAsset :: (PolicyID, AssetName)
     }
 
@@ -785,8 +801,8 @@ destinationShapeOf cfg edge key req
         delivering (cfgTerminalPolicy cfg)
     | edge == edgeInsertAbsent =
         DestinationShape
-            <$> Just (cageAddrFromCfg cfg Testnet)
-            <*> Just (toPlcData (AbsentCustody (fst (requestDestination req))))
+            <$> Just (cageAddrFromCfg cfg (network cfg))
+            <*> Just (Data (toPlcData (AbsentCustody (fst (requestDestination req)))))
             <*> Just (policyIdFromPin (cfgAbsentPolicy cfg), keyAssetName key)
     | otherwise = Nothing
   where
@@ -810,9 +826,9 @@ observedApprovalName cfg out = case out ^. valueTxOutL of
             | [(name, 1)] <- Map.toList names -> pure name
         _ -> fail "observed request does not carry exactly one approval asset of quantity 1"
 
-ownerAddressOf :: OnChainRequest -> Addr
-ownerAddressOf req =
-    addrFromKeyHashBytes Testnet (fromBuiltin (requestOwner req))
+ownerAddressOf :: CageConfig -> OnChainRequest -> Addr
+ownerAddressOf cfg req =
+    addrFromKeyHashBytes (network cfg) (fromBuiltin (requestOwner req))
 
 -- | The keyed absent-custody UTxO: policy and key exact, quantity one.
 findKeyedCustody ::
@@ -847,7 +863,12 @@ contextFor ::
     IO RegistryContext
 contextFor cfg codes prov refs = do
     base <- Edges.registryContextFor cfg codes prov refs
-    pure base{rcDatums = [(datumHashOf d, d) | d <- scenarioDatumPreimages] ++ rcDatums base}
+    pure
+        base
+            { rcDatums =
+                [(datumHashOf d, getPlutusData d) | d <- scenarioDatumPreimages]
+                    ++ rcDatums base
+            }
 
 -- | Decode the body's state redeemer into its per-request actions.
 modifyActionsOf :: ConwayTx -> IO [[ProofStep]]
@@ -863,6 +884,8 @@ modifyActionsOf tx =
   where
     Redeemers rdmrs = tx ^. witsTxL . rdmrsTxWitsL
     stepsOf (Update steps) = steps
+    stepsOf Rejected =
+        error "modifyActionsOf: a fold state redeemer carried a Rejected action"
 
 -- ---------------------------------------------------------
 -- Value helpers
@@ -881,7 +904,7 @@ witnessPolicies cfg =
     , policyIdFromPin (cfgTerminalPolicy cfg)
     ]
 
-quantityInValue :: PolicyID -> AssetName -> MaryValue era -> Integer
+quantityInValue :: PolicyID -> AssetName -> MaryValue -> Integer
 quantityInValue policy name (MaryValue _ (MultiAsset m)) =
     maybe 0 (Map.findWithDefault 0 name) (Map.lookup policy m)
 
@@ -903,20 +926,10 @@ holdsAnyActive cfg out = case out ^. valueTxOutL of
     MaryValue _ (MultiAsset m) ->
         maybe False (not . Map.null) (Map.lookup (activePin cfg) m)
 
-adaOnlyOut :: TxOut ConwayEra -> Bool
-adaOnlyOut out = case out ^. valueTxOutL of
-    MaryValue _ (MultiAsset m) -> Map.null m
-
-coinOf :: [(TxIn, TxOut ConwayEra)] -> TxIn -> Integer
-coinOf utxos ref = case lookup ref utxos of
-    Just out -> let Coin c = out ^. coinTxOutL in c
-    Nothing -> error "coinOf: input not found"
-
-inlineDatumData :: TxOut ConwayEra -> PLC.Data
+inlineDatumData :: TxOut ConwayEra -> Data ConwayEra
 inlineDatumData out = case out ^. datumTxOutL of
-    Datum bd -> case binaryDataToData bd of
-        Data d -> d
-    _ -> PLC.Constr (-1) []
+    Datum bd -> binaryDataToData bd
+    _ -> ledgerData (-1)
 
 -- | Bump one entry of a nonzero expectation map, or add one under the
 -- application policy when the map is empty: the mint mutant's
