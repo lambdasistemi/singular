@@ -112,14 +112,14 @@ command's verification are separate acts.
 ## Evidence and limits
 
 The focused cage suite executes the rows above over files and a
-provider stub serving finite UTxOs; the devnet identity step, wired as
-a pull-request workflow job, boots a real devnet, deploys a registry,
+provider stub serving finite UTxOs; the devnet identity step rides the
+branch ruleset's required Build Gate status context — a normal,
+unconditional step of that job, so a refusal or a setup failure fails
+Build Gate itself — and boots a real devnet, deploys a registry,
 verifies the intact manifest end to end, and observes the real refusal
 and its diagnostic when the recorded representative policy is changed.
-Whether that job counts as required is a repository ruleset setting no
-source change supplies; the row stays open until the pushed head
-executes it and the ruleset says so. Limits are named rather than
-implied: the focused rows exercise the library attachment path over a
+The row stays open until the pushed head's Build Gate run shows the
+step executed and passed. Limits are named rather than implied: the focused rows exercise the library attachment path over a
 fixture, not a public journey, and no mirror-root comparison is claimed
 there; the retained register, recovery and retirement journeys are
 excluded from the classified component build and are covered by

@@ -1,7 +1,7 @@
 {
   "_source": {
     "file": "offchain-deployment-owners.md",
-    "sha256": "c224e0be48d1b2c9eb470c1fa090552c33510e242ecb15dc190073d039d51b4a"
+    "sha256": "5b9dec46cdcdec0170ec10fdd319761323712c7833312dfef3901b32b77ee504"
   },
   "the-story-this-serves": [
     {
@@ -98,11 +98,11 @@
     },
     {
       "pause": 500,
-      "text": "The devnet identity step, wired as a pull-request workflow job, deploys a registry, verifies the intact manifest end to end, and observes the real refusal when the recorded policy is changed."
+      "text": "The devnet identity step rides the required Build Gate status context — a normal, unconditional step of that job, so a refusal or a setup failure fails Build Gate itself — and deploys a registry, verifies the intact manifest end to end, and observes the real refusal when the recorded policy is changed."
     },
     {
       "pause": 500,
-      "text": "Whether that job counts as required is a repository ruleset setting no source change supplies; the row stays open until the pushed head executes it and the ruleset says so."
+      "text": "The row stays open until the pushed head's Build Gate run shows the step executed and passed."
     },
     {
       "pause": 500,

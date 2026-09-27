@@ -31,6 +31,18 @@ jobs:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix build --quiet .#build-gate
+      # #269 (R269-05): the deployment script-identity boundary rides the
+      # required Build Gate context rather than a separate job, so its
+      # failure — a refusal or a setup failure — fails Build Gate itself.
+      # The script boots a devnet, deploys a registry, verifies the intact
+      # manifest reaches completed node verification, then tampers the
+      # recorded representative policy and requires the real
+      # `deployment verify` refusal with its intended diagnostic. Guarded
+      # to pull-request events to keep the identity extent PR-only; the
+      # retired three-runner attach check stays outside (#172/#283).
+      - name: Deployment identity
+        if: github.event_name == 'pull_request' && github.event.action != 'closed'
+        run: bash offchain/deployment-identity-check.sh
   offchain-lint:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     name: Off-chain lint
@@ -50,33 +62,6 @@ jobs:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: (cd offchain && nix run --quiet .#lint)
-  offchain-deployment-identity:
-    if: github.event_name == 'pull_request' && github.event.action != 'closed'
-    name: Off-chain deployment identity
-    runs-on: nixos
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #269: the supported local-devnet script-identity boundary. The
-      # script boots a devnet, deploys a registry, verifies the intact
-      # manifest reaches completed node verification, then tampers the
-      # recorded representative policy and requires the real
-      # `deployment verify` refusal with its intended diagnostic. A
-      # setup or build failure is not a refusal witness; the script
-      # fails itself in that case. The retired three-runner attach
-      # check stays outside this boundary (#172/#283).
-      - run: bash offchain/deployment-identity-check.sh
   offchain-component-build:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     name: Off-chain component build
