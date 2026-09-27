@@ -1,0 +1,38 @@
+{
+  "requirements": [
+    {
+      "text": "Six requirements govern this change. Each original declaration gets exactly one owner, with all six public Update exports retained, including record selectors and instances, proven by a before-and-after declaration map, an unchanged export list, and compiled original callers.",
+      "pause": 450
+    },
+    {
+      "text": "Ordered request lookup, speculative proofs, state continuation, fee input and upper slot are kept, shown by focused fold controls and a fresh-blueprint end-to-end journey through production entry points.",
+      "pause": 400
+    },
+    {
+      "text": "Duty results and refusals are kept: mint quantities, approval returns, holder selection, destination datums, custody spends and refunds, owner deposit settlement, and no required signer — shown by the existing booking, burn-source and lifecycle assertions plus a behavior-sensitive negative control.",
+      "pause": 450
+    },
+    {
+      "text": "Transaction assembly, balancing and script and reference use stay at the same public call path, shown by the component build, the focused cage suite, the fresh-blueprint journey and exact-head CI.",
+      "pause": 400
+    },
+    {
+      "text": "Contributor-facing ownership, dependency and fold-flow documentation is published with source and API links and speech, passing the presentation checks and source-derived review. And independent evidence derivation and Conformance state stay untouched: unchanged consumer compilation and listing, and no new coverage claim.",
+      "pause": 450
+    }
+  ],
+  "boundary": [
+    {
+      "text": "The boundary. The deposit and custody settlement code, the shared-custody case and the model exit obligations are intake facts, not rules to reinterpret. One set of tests is outside this scope. No Lean, on-chain, wire, validator, Conformance, workflow, dependency, executable-name, release or deployment edit belongs to this ticket; a needed excluded-surface change is a question to the epic owner before any edit. A clear code-versus-Lean contradiction is repaired within scope with evidence, while ambiguity or a model conflict holds the affected acceptance.",
+      "pause": 550
+    },
+    {
+      "text": "Source inspection and a passing build alone do not establish transaction correspondence: the exact candidate, model, gate receipts, negative control, independent audit and uncovered behavior stay explicit in the pull-request record.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "f72214003aa6fe52d6c500910eb23d6106d2dd69a661310dfb87f5a073aa86cc"
+  }
+}
