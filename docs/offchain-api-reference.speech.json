@@ -5,7 +5,7 @@
       "pause": 400
     },
     {
-      "text": "Every module of the off-chain registry library is listed here. Each entry links two pages of the generated reference: the module page — exports, types, and documented declarations — and the hyperlinked source page with the rendered, highlighted Haskell this candidate was built from. On this site the links open the generated pages; read from the repository, the same links open the source files themselves at the revision you are viewing.",
+      "text": "Every module of the off-chain registry library is listed here, including the three private fold owners that live behind the Update facade. Each entry links two pages of the generated reference: the module page — exports, types, and documented declarations — and the hyperlinked source page.",
       "pause": 400
     },
     {
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "offchain-api-reference.md",
-    "sha256": "40d3d565ed7d56a3206e9656cf59b4ab452cd1a46350ade7e193e71e83dd7ff1"
+    "sha256": "754b3947e51d7835f947fd63e23b4a20fbf1da9cd173be97a3ca6c1154eee8ff"
   }
 }
