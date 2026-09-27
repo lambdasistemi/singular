@@ -1,7 +1,7 @@
 {
   "requirements": [
     {
-      "text": "The operator keeps the same public deployment interface, manifest and mirror formats, node decisions and refusal messages. The table gives each promise a checkable boundary.",
+      "text": "The operator keeps the same public deployment interface, manifest and mirror formats, node decisions and refusal messages. The table also requires a focused execution of the moved attach function, separate from the public verify command's script identity check.",
       "pause": 400
     }
   ],
@@ -13,6 +13,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "6670dad0fbea24488b02953caee5827b81d3bab1df011ee12aa2a8419be399d1"
+    "sha256": "d1cb2f3543a4e3bddbd63fc46d5debba8d052a40913c2393dea9846ecc440a70"
   }
 }

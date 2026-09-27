@@ -1,12 +1,12 @@
 {
   "work-items": [
     {
-      "text": "The six tasks cover intake, extraction, persistence evidence, a supported identity check wired into required CI, contributor documentation and candidate preparation. All task stamps happen before the final gate. Audit, pushed-head CI closure, merge and release have separate receipts.",
+      "text": "The six tasks cover intake, extraction, persistence evidence, a focused execution of attach plus a supported script identity check wired into CI, contributor documentation and candidate preparation. Stamps happen before the final gate. Audit, pushed-head CI closure, merge and release have separate receipts.",
       "pause": 500
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "a0d9e7e111b90c327eb06e7d5e8b98f04299d6c06b970bb35040b03cd0cecf4f"
+    "sha256": "e048366a89982098a209ddbe953113b788694d5fc7ac29425498486fffc97ec3"
   }
 }

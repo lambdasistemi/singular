@@ -1,7 +1,7 @@
 {
   "delivery-order": [
     {
-      "text": "The work begins with a clean model-bound baseline and draft pull request. The coder then splits three responsibilities behind one facade while keeping verification's extra live policy and window checks distinct from attachment. Independent review and exact-head checks precede the handoff.",
+      "text": "The work begins with a clean model-bound baseline and draft pull request. The coder splits three responsibilities behind one facade, preserving verification's extra checks. A focused cage test must execute attach and observe resolved outputs and a refusal. Independent review precedes the handoff.",
       "pause": 400
     }
   ],
@@ -11,8 +11,14 @@
       "pause": 500
     }
   ],
+  "source-to-criterion-witnesses": [
+    {
+      "text": "The table separates three witnesses. Focused tests check manifest and mirror fixtures, and call attach with a controlled provider. A new required CI step drives deployment verify on a local devnet with an intact and changed script identity. The latter does not prove every attach query.",
+      "pause": 500
+    }
+  ],
   "_source": {
     "file": "plan.md",
-    "sha256": "3ece9697c083346b49939de48a236f1000dcf96e0e6368c3f943ab56c7689a1e"
+    "sha256": "00e61762b90a0b7f08d3f465cc5dcbacbfe44caca46c0ac48a4dcd31414cca12"
   }
 }
