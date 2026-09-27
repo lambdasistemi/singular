@@ -1,7 +1,7 @@
 {
   "_source": {
     "file": "offchain-deployment-owners.md",
-    "sha256": "5b9dec46cdcdec0170ec10fdd319761323712c7833312dfef3901b32b77ee504"
+    "sha256": "fcaaf43d4e3c8bff2760b017fff49f2d08e5ad47d7c0acf723e3827da0354e0d"
   },
   "the-story-this-serves": [
     {
@@ -98,11 +98,11 @@
     },
     {
       "pause": 500,
-      "text": "The devnet identity step rides the required Build Gate status context — a normal, unconditional step of that job, so a refusal or a setup failure fails Build Gate itself — and deploys a registry, verifies the intact manifest end to end, and observes the real refusal when the recorded policy is changed."
+      "text": "The devnet identity step rides the required Build Gate status context — a normal, non-continue-on-error step on the open, synchronize and reopen pull-request runs of that job, so a refusal or a setup failure fails Build Gate itself — and deploys a registry, verifies the intact manifest end to end, and observes the real refusal when the recorded policy is changed."
     },
     {
       "pause": 500,
-      "text": "The row stays open until the pushed head's Build Gate run shows the step executed and passed."
+      "text": "The row stays open until the pushed PR head's Build Gate run shows the step executed and passed."
     },
     {
       "pause": 500,
