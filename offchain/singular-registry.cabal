@@ -620,6 +620,7 @@ test-suite cage-tests
   main-is:          Main.hs
   other-modules:
     Singular.Registry.BlueprintParametersSpec
+    Singular.Registry.DeploymentSpec
     Singular.Registry.TxBuilder.BookEdgeSpec
     Singular.Registry.TxBuilder.BootSpec
     Singular.Registry.TxBuilder.BurnSourceSpec
@@ -653,13 +654,16 @@ test-suite cage-tests
     , singular-registry:node-internal
     , directory
     , filepath
+    , aeson-pretty
     , hspec
     , microlens
+    , mts:mpf-write
     , ouroboros-network
     , plutus-core
     , plutus-ledger-api
     , plutus-tx
     , QuickCheck
+    , temporary
     , text
     , time
 
