@@ -15,9 +15,10 @@ compares a mirror; the caller that attaches does that afterwards.
 
 This module is an internal owner behind the 'Singular.Registry.Deployment'
 facade: callers import the facade, which re-exports the unchanged public
-surface. It reads manifest values, 'parseOutRef', 'hex' and 'die' from
-"Singular.Registry.Deployment.Manifest" and the focused identity and
-lookup adapters from the builder's internal family.
+surface. It reads manifest values, 'parseOutRef', 'renderOutRef',
+'hex' and 'die' from "Singular.Registry.Deployment.Manifest" and the
+focused identity and lookup adapters from the builder's internal
+family.
 -}
 module Singular.Registry.Deployment.Attach (
     -- * The release halves the manifest pins only by hash

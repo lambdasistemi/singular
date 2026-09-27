@@ -1,7 +1,7 @@
 {
   "_source": {
     "file": "offchain-deployment-owners.md",
-    "sha256": "98c723ee78228e9d79efe55fdc3f3d5ed6d065bb3727ede4d42d62cf5196bb3d"
+    "sha256": "c224e0be48d1b2c9eb470c1fa090552c33510e242ecb15dc190073d039d51b4a"
   },
   "the-story-this-serves": [
     {
@@ -14,7 +14,7 @@
     },
     {
       "pause": 500,
-      "text": "The focused suite pins every shape in both directions: the manifest's keys, pretty bytes and newline, the output-reference spelling and each named refusal, the mirror's hex maps and replacement write, and the attachment path itself."
+      "text": "The focused suite executes finite fixture cases: the manifest's keys, pretty bytes and newline, the output-reference spelling and four named refusals, the mirror's hex maps and replacement write, and the attachment path itself."
     },
     {
       "pause": 500,
@@ -25,8 +25,12 @@
       "text": "Refusal rows observe the real named diagnostics for a differing script hash, a spent output, a scriptless output, an unreadable address, a contradicting seed, a different release, a missing state token, and the two live-state refusals only verification makes."
     },
     {
+      "pause": 500,
+      "text": "The mutation evidence is equally finite: before the move the six single-site mutants failed one, two, one, one, one and one rows; after the move a field swap failed eight of two hundred fifty rows, and a hash bypass failed the one named refusal."
+    },
+    {
       "pause": 450,
-      "text": "Six source mutations on the single-module implementation each failed exactly their intended row, and after the move a field swap and a hash bypass each failed theirs again."
+      "text": "Three branches have no focused row: the mirror's JSON parse refusal, a process-window-only mismatch, and the representative-policy pin through attach, which the devnet step exercises through verify. The out-of-range output index has no refusal row either, since this toolchain's read accepts it."
     }
   ],
   "one-owner-per-record": [
@@ -94,11 +98,15 @@
     },
     {
       "pause": 500,
-      "text": "The devnet identity step in required CI deploys a registry, verifies the intact manifest end to end, and observes the real refusal when the recorded policy is changed."
+      "text": "The devnet identity step, wired as a pull-request workflow job, deploys a registry, verifies the intact manifest end to end, and observes the real refusal when the recorded policy is changed."
     },
     {
       "pause": 500,
-      "text": "Three limits are named: the focused rows are not a public journey and claim no mirror-root comparison; the retained journeys are covered by source-level mapping, not by the classified component build; and the identity step establishes same-release agreement, not cross-release stability."
+      "text": "Whether that job counts as required is a repository ruleset setting no source change supplies; the row stays open until the pushed head executes it and the ruleset says so."
+    },
+    {
+      "pause": 500,
+      "text": "The focused rows are not a public journey and claim no mirror-root comparison; the retained journeys are covered by source-level mapping, not by the classified component build; and the identity step establishes same-release agreement, not cross-release stability."
     },
     {
       "pause": 450,

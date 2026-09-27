@@ -22,25 +22,36 @@ carry between machines keep working and a wrong registry is still
 refused by name. A contributor refactoring the record's home owes me
 that.
 
-What the focused suite pins, both directions of every shape: the
-manifest's JSON keys, its pretty bytes and trailing newline, the strict
-read error that names the file, every `--deployment` spelling and the
-environment fallback, the `txid#index` round trip with each named
-refusal, the mirror's path beside the manifest, its hex maps, its
-replacement write and its absent-file empty map, and the attachment
-path itself — one row resolving two recorded reference outputs and the
-state output in the order the manifest records them, reading the
-provider's query record back, and refusal rows observing the real named
-diagnostics for a reference output whose live script hash differs from
-the pin, one that is no longer live, one that carries no script at all,
-an unreadable recorded address, a seed whose derived token contradicts
-the manifest, a release whose state validator hash differs, a registry
-address with no recorded token, and the two live-state refusals only
-verification makes — the active policy and the process and retract
-windows. Six source mutations on the single-module implementation each
-failed exactly their intended row before the move; after the move, a
-field swap between the manifest's two address spellings and a
-hash-acceptance bypass each failed exactly their intended row again.
+What the focused suite executes — finite fixture cases, named here
+with their counts and limits: the manifest's JSON keys, its pretty
+bytes and trailing newline, the strict read error that names the file,
+every `--deployment` spelling and the environment fallback, the
+`txid#index` round trip with four named refusals, the mirror's path
+beside the manifest, its hex maps, its replacement write and its
+absent-file empty map, and the attachment path itself — one row
+resolving two recorded reference outputs and the state output in the
+order the manifest records them, reading the provider's query record
+back, and refusal rows observing the real named diagnostics for a
+reference output whose live script hash differs from the pin, one that
+is no longer live, one that carries no script at all, an unreadable
+recorded address, a seed whose derived token contradicts the manifest,
+a release whose state validator hash differs, a registry address with
+no recorded token, and the two live-state refusals only verification
+makes — the active policy and the process and retract windows. The
+mutation evidence is equally finite: before the move, six single-site
+source mutations on the unsplit module failed these counts — a
+hash-acceptance bypass one row, a reference reorder two rows, the
+mirror path one row, the manifest newline one row, a process-window-
+only check one row, the mirror newline one row; after the move, a
+field swap between the manifest's two address spellings failed eight
+of two hundred fifty rows, and a hash-acceptance bypass failed the one
+named refusal. Three branches have no focused row: the mirror's JSON
+parse refusal, a process-window-only window mismatch, and the
+representative-policy pin through attach itself — the devnet identity
+step executes that pin through verify, not attach. The out-of-range
+output index has no refusal row either: this toolchain's fixed-width
+read accepts out-of-range and negative indices, so the suite pins the
+four refusals the parse genuinely makes.
 
 ## One owner per record
 
@@ -101,18 +112,23 @@ command's verification are separate acts.
 ## Evidence and limits
 
 The focused cage suite executes the rows above over files and a
-provider stub serving finite UTxOs; the devnet identity step in
-required CI boots a real devnet, deploys a registry, verifies the
-intact manifest end to end, and observes the real refusal and its
-diagnostic when the recorded representative policy is changed. Three
-limits are named rather than implied: the focused rows exercise the
-library attachment path over a fixture, not a public journey, and no
-mirror-root comparison is claimed there; the retained register,
-recovery and retirement journeys are excluded from the classified
-component build and are covered by source-level caller mapping here,
-not by compilation in that carrier; and the devnet identity step
-establishes same-release agreement between the manifest's pins and the
-release in hand, not cross-release stability of the identity producers.
-The mirror-root comparison itself remains executable only in the
-retained journeys, whose three-runner check cannot complete today, so
-its status is a named limit rather than a green row.
+provider stub serving finite UTxOs; the devnet identity step, wired as
+a pull-request workflow job, boots a real devnet, deploys a registry,
+verifies the intact manifest end to end, and observes the real refusal
+and its diagnostic when the recorded representative policy is changed.
+Whether that job counts as required is a repository ruleset setting no
+source change supplies; the row stays open until the pushed head
+executes it and the ruleset says so. Limits are named rather than
+implied: the focused rows exercise the library attachment path over a
+fixture, not a public journey, and no mirror-root comparison is claimed
+there; the retained register, recovery and retirement journeys are
+excluded from the classified component build and are covered by
+source-level caller mapping here, not by compilation in that carrier;
+the devnet identity step establishes same-release agreement between
+the manifest's pins and the release in hand, not cross-release
+stability of the identity producers; and the focused suite has no row
+for the mirror's JSON parse refusal, a process-window-only mismatch,
+or the representative-policy pin through attach. The mirror-root
+comparison itself remains executable only in the retained journeys,
+whose three-runner check cannot complete today, so its status is a
+named limit rather than a green row.

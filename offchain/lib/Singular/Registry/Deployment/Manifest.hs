@@ -7,9 +7,9 @@ One owner for the deployment record as a file: the manifest and
 reference-script values with their JSON instances, reading and writing
 one, choosing one from a command line or the environment, the
 @txid#index@ spelling and its parse, an address as the exact hex bytes
-the ledger serialises, and the two byte-rendering helpers
-('hex', 'die') the deployment family shares. Nothing here queries a
-node.
+the ledger serialises, the byte-rendering helper 'hex' and the shared
+error helper 'die' the deployment family shares. Nothing here queries
+a node.
 
 This module is an internal owner behind the 'Singular.Registry.Deployment'
 facade: callers import the facade, which re-exports the unchanged public
