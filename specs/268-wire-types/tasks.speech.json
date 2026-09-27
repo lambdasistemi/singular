@@ -1,0 +1,12 @@
+{
+  "work-items": [
+    {
+      "text": "The table separates intake, implementation, wire controls, fresh-blueprint consumers and contributor documentation. Exact-head gate, audit and CI results remain separate acceptance receipts rather than task stamps.",
+      "pause": 350
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "896a3dc6921f5c77a8db0fbfbf9ff9ef1bfa58822f3c3c8c8380e6998c9360ce"
+  }
+}

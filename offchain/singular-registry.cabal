@@ -108,10 +108,21 @@ library
   -- implementation modules of the existing public library: the facade
   -- re-exports their names as the unchanged public API, and the
   -- generated API reference discovers them here.
+  --
+  -- #268: the registry wire's focused owners behind the Types facade.
+  -- Same arrangement: Singular.Registry.Types re-exports the unchanged
+  -- public wire surface from these five, each definition beside its
+  -- encoding instances, and the generated API reference documents them
+  -- here for the contributor while callers keep importing the facade.
   other-modules:
     Singular.Registry.TxBuilder.Update.Build
     Singular.Registry.TxBuilder.Update.Context
     Singular.Registry.TxBuilder.Update.Duties
+    Singular.Registry.Wire.Primitive
+    Singular.Registry.Wire.Request
+    Singular.Registry.Wire.State
+    Singular.Registry.Wire.Proof
+    Singular.Registry.Wire.Redeemer
 
   reexported-modules:
     , Singular.Registry.Ledger

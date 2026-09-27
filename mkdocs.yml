@@ -37,6 +37,7 @@ nav:
   - Checking off-chain code: docs/offchain-development.md
   - Builder and blueprint modules: docs/offchain-builder-blueprint.md
   - Who owns a registry fold: docs/offchain-fold-responsibilities.md
+  - Who owns the registry wire: docs/offchain-wire-types.md
   - Node module ownership: docs/offchain-node-ownership.md
   - Off-chain API reference: docs/offchain-api-reference.md
 theme:

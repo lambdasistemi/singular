@@ -1,0 +1,18 @@
+{
+  "acceptance": [
+    {
+      "text": "The acceptance table binds each compatibility requirement to an executing or inspected witness. Literal wire data, existing callers, generated reference links and independent evidence each have a separate check.",
+      "pause": 350
+    }
+  ],
+  "boundary": [
+    {
+      "text": "This ticket moves the Haskell wire types and codecs behind the original Types facade. The accepted custody datum still carries only a refund address. Lean, Aiken and Conformance changes need separate authority.",
+      "pause": 350
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "fcfc6a267051094d7982a7b4a2d32ad77688688b49a3e5eabef8adeaa45e33ad"
+  }
+}
