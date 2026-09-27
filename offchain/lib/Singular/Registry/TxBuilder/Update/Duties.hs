@@ -68,6 +68,7 @@ import Singular.Registry.Types (
     CageDatum (..),
     OnChainRequest (..),
     OnChainTokenState (..),
+    UpdateRedeemer (..),
     edgeDeleteAbsent,
     edgeDeleteActive,
     edgeInsertAbsent,

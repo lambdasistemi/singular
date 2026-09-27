@@ -36,13 +36,22 @@ import Cardano.Ledger.Api.Tx (
 import Cardano.Ledger.Api.Tx.Body (
     feeTxBodyL,
  )
+import Cardano.Ledger.Api.Tx.Out (
+    TxOut,
+ )
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway.Scripts (
     ConwayPlutusPurpose,
  )
+import Cardano.Ledger.Core (
+    Script,
+ )
 import Cardano.Ledger.Plutus.ExUnits (ExUnits)
 import Cardano.Slotting.Slot (SlotNo)
 import Cardano.Tx.Build qualified as Tx
+import Cardano.Tx.Ledger (
+    ConwayTx,
+ )
 
 import Singular.Registry.Config (
     CageConfig (..),
