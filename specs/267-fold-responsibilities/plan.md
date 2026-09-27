@@ -25,16 +25,23 @@ flowchart LR
    public orchestration and re-export surface. Preserve moved bodies except
    imports, exports and narrowly justified type plumbing.
 3. Keep affected existing tests and callers through production entry points.
-   Add only a focused behavior-sensitive assertion where an existing control
-   leaves an ordering or effect blind spot, and prove that assertion can fail
-   for the intended defect.
+   Add focused behavior-sensitive assertions for the ordering and effect blind
+   spots. In one fresh-blueprint E2E run, present two real request outputs in
+   descending TxIn order to witness canonical input/proof association, then run
+   connected stages for all seven admissible edges. Derive expected effects
+   from observed pre-state and the accepted Lean row; compare the built body,
+   landed destination and refund UTxOs, and chain/mirror root. Each of the
+   seven effect comparisons and its one-field mutant must pass/fail
+   inside that same run.
 4. Update the high-level builder guide, navigation if needed, source/generated
    API links and curated speech in the same candidate as the extraction.
    Compare guide claims to the moved source before the expensive campaign.
 5. After implementation and source-derived documentation are settled, obtain
-   the persistent auditor's product checkpoint. Truthfully complete the
-   implementation task rows and any required speech stamp before the final
-   candidate commit. Run the frozen Gate S once on that clean final head,
+   the persistent auditor's product checkpoint. Keep the historical cheap-call
+   breaches and the new prospective guard separate from development and final
+   receipts. Truthfully complete the implementation task rows and any required
+   speech stamp before the final candidate commit. Run the frozen Gate S once
+   on that clean final head,
    obtain the auditor's exact-head pre-push report, bind pushed-head CI and
    hand back the draft PR. The epic owner alone accepts and merges.
 

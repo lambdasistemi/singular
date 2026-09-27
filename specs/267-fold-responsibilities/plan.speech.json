@@ -9,7 +9,7 @@
       "pause": 500
     },
     {
-      "text": "Third, keep the affected tests running through production entry points, and add only a focused behavior-sensitive assertion where an existing control leaves an ordering or effect blind spot — proving that assertion can fail for the intended defect.",
+      "text": "Third, keep tests running through production entry points and add focused assertions for the ordering and effect blind spots. One fresh-blueprint run presents two real request outputs in descending TxIn order, then runs connected stages for all seven admissible edges. Expected effects come from observed pre-state and the accepted Lean row; the body, landed destinations and refunds, and chain and mirror root are compared. Each of the seven effect comparisons passes and its one-field mutant fails inside that run.",
       "pause": 400
     },
     {
@@ -17,12 +17,12 @@
       "pause": 400
     },
     {
-      "text": "Fifth, after implementation and documentation are settled: the auditor's product checkpoint, the truthful task and speech stamps, the frozen gate once on the clean final head, the auditor's exact-head pre-push report, pushed-head CI, and the handback of the draft PR. The epic owner alone accepts and merges. One cohesive slice covers code, focused control and docs; the final gate, audit, CI and handback are acceptance receipts, not prematurely completed tracked tasks.",
+      "text": "Fifth, after implementation and documentation are settled: the auditor's product checkpoint, the historical cheap-call breaches kept separate from the prospective guard, the truthful task and speech stamps, the frozen gate once on the clean final head, the auditor's exact-head pre-push report, pushed-head CI, and the handback of the draft PR. The epic owner alone accepts and merges. One cohesive slice covers code, focused control and docs; the final gate, audit, CI and handback are acceptance receipts, not prematurely completed tracked tasks.",
       "pause": 600
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "a7b1b4fc68ed3ebf2cc5a1b44702c1cb07573588533c322376b7001b4d939034"
+    "sha256": "9cc362fd6ce4e398610011ae761a88639c0bc52cdd9d96c21ee32c53d72e0de4"
   }
 }

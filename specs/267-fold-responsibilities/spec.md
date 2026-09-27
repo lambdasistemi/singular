@@ -20,8 +20,8 @@ the intake tree. `foldActions`, `foldBatch`, `obligations`, `txOf`,
 | ID | Requirement | Observable acceptance |
 | --- | --- | --- |
 | R267-1 | Give each original declaration exactly one owner and retain all six public `Update` exports, including record selectors and instances. | Before/after declaration map, unchanged export list and compiled original callers. |
-| R267-2 | Keep ordered request lookup, speculative proofs, state continuation, fee input and upper slot. | Focused fold controls and fresh-blueprint E2E/journey through production entry points. |
-| R267-3 | Keep duty results and refusals: mint quantities, approval returns, holder selection, destination datums, custody spends/refunds, owner deposit settlement and no required signer. | Existing booking, burn-source and lifecycle assertions; a behavior-sensitive negative control detects an altered effect/order. |
+| R267-2 | Keep ordered request lookup, speculative proofs, state continuation, fee input and upper slot. | Focused fold controls and a fresh-blueprint two-request fold that presents real request outputs in descending TxIn order, checks ascending input/proof association, then observes request consumption and the chain/mirror root. Its swapped-association control must fail in the same run. |
+| R267-3 | Keep duty results and refusals: mint quantities, approval returns, holder selection, destination datums, custody spends/refunds, owner deposit settlement and no required signer. | Existing booking, burn-source and lifecycle assertions plus a connected, seven-edge fresh-blueprint scenario: compare each effect with observed pre-state and the Lean row, query landed destinations and refunds through the real provider, and make every named live comparison pass and its one-field mutant fail in that run. Coverage is finite and representative. |
 | R267-4 | Keep transaction assembly, balancing and script/reference use at the same public call path. | Component build, focused cage suite, fresh-blueprint E2E/journey and exact-head CI. |
 | R267-5 | Publish contributor-facing ownership, dependency and fold flow documentation with source/API links and speech. | Guide, navigation and synchronized speech pass docs/presentation checks and source-derived review. |
 | R267-6 | Leave independent evidence derivation and Conformance state untouched. | Conformance consumer compilation/listing is an unchanged compatibility check; no new coverage claim. |
@@ -31,10 +31,13 @@ the intake tree. `foldActions`, `foldBatch`, `obligations`, `txOf`,
 The #253 deposit/custody settlement code, #254 shared-custody case and #258
 model exit obligations are intake facts, not rules to reinterpret. #198 tests
 are outside this implementation scope. No Lean, on-chain, wire, validator,
-Conformance, workflow, dependency, executable-name, release or deployment edit
-belongs to this ticket. A needed excluded-surface change is a question to the
-epic owner before any edit. A clear code/Lean contradiction is repaired within
-scope with evidence; ambiguity or model conflict holds affected acceptance.
+Conformance, workflow, executable-name, release or deployment edit belongs to
+this ticket. The sole dependency exception is the epic owner's A-018 ruling:
+`cardano-crypto-class` may be added only to the `e2e-tests` Cabal component so
+the new datum-hash witness can compile. Any other excluded-surface change is a
+question to the epic owner before any edit. A clear code/Lean contradiction is
+repaired within scope with evidence; ambiguity or model conflict holds affected
+acceptance.
 
 Source inspection and a passing build alone do not establish transaction
 correspondence. The exact candidate, model, gate receipts, negative control,

@@ -28,17 +28,26 @@ empty signer set, both in the duties it accumulates and in the
 required-signer field of the transaction the public entry actually
 builds.
 
-What no focused row asserts: the query's input-order sorting (the
-rows hand `registryDuties` already-ordered lists, and the built-body
-row folds one request); the quantities of every mint except the active
-burn (the rows count the mint entries and read their key names only);
-a custody refund's output address and amount; a delivering edge's
-destination; and an approval returned by a delivering or inadmissible
-edge. Those behaviors are exercised only by the fresh-blueprint devnet
-suites — broader executed paths, whose power to discriminate these
-particular defects is unproven, because no negative control names
-them. Read each promise of this story as either backed by a named row
-above or standing on those suites alone.
+What no focused row asserts: the query's input-order sorting (the rows
+hand `registryDuties` already-ordered lists, and the built-body row
+folds one request); the quantities of every mint except the active
+burn; a custody refund's output address and amount; a delivering
+edge's destination; and an approval returned by a delivering or
+inadmissible edge. The new fresh-blueprint `Criterion3Spec` is written
+to test the accepted-edge portion of that gap. It books two real
+requests and presents their real outputs in descending TxIn order to
+one public fold, then runs connected stages for all seven admissible
+edges. Its comparisons derive expected mints, approval assets, holder inputs,
+destinations, custody refunds and signers from observed pre-state and
+the accepted Lean row. They inspect the unsigned body and the landed
+destination, refund and state outputs through the real provider. Each
+of the seven named effect comparisons has a one-field mutant required
+to fail in the same run.
+This is a finite source-level description. The PR's fresh-blueprint
+receipts decide whether it executed successfully. It does not cover
+arbitrary request sets, inadmissible-edge refusals, the delivering
+approval's ADA minimum, or proof correctness beyond live cage
+acceptance.
 
 ## One owner per fold concern
 
@@ -116,12 +125,13 @@ the active burn's net `-1` with its held input and no carrier output;
 the exact holder and custody input selections; the per-owner grouping
 of deposit returns and a deletion's approval inside its deposit
 output; and the built body's empty required-signer set through the
-public entry. What it does not: no row asserts the query's input-order
-sort, another mint's quantity, a custody refund's address and amount,
-a delivering edge's destination, or an approval returned by a
-delivering or inadmissible edge — a contributor changing those needs
-the devnet suites, not this tree, and those suites' discrimination for
-such defects is itself unproven. A contributor who needs any pinned
+public entry. The new fresh-blueprint E2E case directly compares the
+previously unpinned accepted-edge effects on finite connected stages,
+with in-run mutants and real post-state observations. Its two-request
+ordering witness controls the provider's enumeration of real outputs;
+it does not claim every possible input order. Refused edges and the
+delivering approval's ADA minimum remain outside these comparisons.
+A contributor who needs any pinned
 behavior to change is not refactoring; that is a behavior change and
 belongs to the design flow, not to this structure.
 

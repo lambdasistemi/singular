@@ -10,9 +10,12 @@ evidence states what actually ran.
 | T267-03 | Duty decisions and transaction assembly have one owner each; public API and effects remain. | Done |
 | T267-04 | Existing production-entry controls and one behavior-sensitive negative control pass at the candidate. | Done |
 | T267-05 | Contributor architecture, module purposes, diagram, navigation, valid source/API links and curated speech. | Done |
-| T267-06 | Clean final candidate prepared with all implementation and documentation changes, including truthful task and speech stamps. Exact-head Gate S, audit and CI remain acceptance receipts. | Done |
+| T267-06 | Clean final candidate prepared with all implementation and documentation changes, including truthful task and speech stamps. Exact-head Gate S, audit and CI remain acceptance receipts. | In progress |
+| T267-07 | Fresh-blueprint connected seven-edge witness and deterministic two-request order control show the specified effects from real pre/post-state, with in-run mutant refusals and exact chain/mirror root correspondence. | In progress |
 
 These are implementation and documentation task stamps. The frozen final Gate S,
 independent exact-head audit, pushed-head CI and PR readiness remain separate
 acceptance receipts. The development ledger retains the 9/8 overrun and the
-bounded A-001 repair through call 12; no task stamp waives that deviation.
+bounded A-001 repair through call 12. The A-013 cheap cap breach and A-017
+prelaunch search deviation are separate historical records; no task stamp
+waives either one.

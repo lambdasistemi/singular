@@ -5,11 +5,11 @@
       "pause": 450
     },
     {
-      "text": "Ordered request lookup, speculative proofs, state continuation, fee input and upper slot are kept, shown by focused fold controls and a fresh-blueprint end-to-end journey through production entry points.",
+      "text": "Ordered request lookup, speculative proofs, state continuation, fee input and upper slot are kept. Focused controls are joined by a fresh-blueprint two-request fold that presents real request outputs in descending TxIn order, checks ascending input and proof association, then observes request consumption and the chain and mirror root. A swapped-association control must fail in the same run.",
       "pause": 400
     },
     {
-      "text": "Duty results and refusals are kept: mint quantities, approval returns, holder selection, destination datums, custody spends and refunds, owner deposit settlement, and no required signer — shown by the existing booking, burn-source and lifecycle assertions plus a behavior-sensitive negative control.",
+      "text": "Duty results and refusals are kept: mint quantities, approval returns, holder selection, destination datums, custody spends and refunds, owner deposit settlement, and no required signer. Existing focused assertions are joined by a connected seven-edge fresh-blueprint scenario that compares observed pre-state and Lean-derived effects with the built body and landed outputs. Each live comparison must pass and its one-field mutant fail in the same run. Coverage is finite and representative.",
       "pause": 450
     },
     {
@@ -23,7 +23,7 @@
   ],
   "boundary": [
     {
-      "text": "The boundary. The deposit and custody settlement code, the shared-custody case and the model exit obligations are intake facts, not rules to reinterpret. One set of tests is outside this scope. No Lean, on-chain, wire, validator, Conformance, workflow, dependency, executable-name, release or deployment edit belongs to this ticket; a needed excluded-surface change is a question to the epic owner before any edit. A clear code-versus-Lean contradiction is repaired within scope with evidence, while ambiguity or a model conflict holds the affected acceptance.",
+      "text": "The boundary. The deposit and custody settlement code, the shared-custody case and the model exit obligations are intake facts, not rules to reinterpret. One set of tests is outside this scope. No Lean, on-chain, wire, validator, Conformance, workflow, executable-name, release or deployment edit belongs to this ticket. The epic owner made one narrow dependency exception: cardano-crypto-class may be added only to the e2e-tests component for the datum-hash witness. Any other excluded-surface change is a question before edit. A clear code-versus-Lean contradiction is repaired within scope with evidence, while ambiguity or a model conflict holds the affected acceptance.",
       "pause": 550
     },
     {
@@ -33,6 +33,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "f72214003aa6fe52d6c500910eb23d6106d2dd69a661310dfb87f5a073aa86cc"
+    "sha256": "0b5838f877c13ba29aa3900c38ca3a55845aeeb2f1dd89fbd8272f26fc2435b1"
   }
 }
