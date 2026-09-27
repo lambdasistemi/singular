@@ -9,7 +9,7 @@
       "pause": 500
     },
     {
-      "text": "Third, keep tests running through production entry points and add focused assertions for the ordering and effect blind spots. One fresh-blueprint run presents two real request outputs in descending TxIn order, then runs connected stages for all seven admissible edges. Expected effects come from observed pre-state and the accepted Lean row; the body, landed destinations and refunds, and chain and mirror root are compared. Each of the seven effect comparisons passes and its one-field mutant fails inside that run.",
+      "text": "Third, keep tests running through production entry points and add focused assertions for the ordering and effect blind spots. One fresh-blueprint run presents two real request outputs in descending TxIn order, then runs connected stages for all seven admissible edges. Expected effects come from observed pre-state and the accepted Lean row; the body, landed destinations and refunds, and chain and mirror root are compared. Each of the seven effect comparisons must pass and its one-field mutant must fail inside that run.",
       "pause": 400
     },
     {
