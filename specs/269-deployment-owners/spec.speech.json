@@ -1,0 +1,18 @@
+{
+  "requirements": [
+    {
+      "text": "The operator keeps the same public deployment interface, manifest and mirror formats, node decisions and refusal messages. The table also requires a focused execution of the moved attach function, separate from the public verify command's script identity check.",
+      "pause": 400
+    }
+  ],
+  "evidence-and-authority": [
+    {
+      "text": "The diagram shows two library paths from a manifest: verification reads the live policy and windows, while attachment resolves outputs without those checks. A retained journey caller separately compares a loaded mirror with the chain. The accepted Lean tree governs registry behavior, while concrete file and node claims need their own evidence.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "d1cb2f3543a4e3bddbd63fc46d5debba8d052a40913c2393dea9846ecc440a70"
+  }
+}

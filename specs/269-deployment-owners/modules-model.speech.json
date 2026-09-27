@@ -1,0 +1,12 @@
+{
+  "dependency-direction": [
+    {
+      "text": "The diagram runs from callers through the public facade to three owners. Manifest owns the record, mirror path, and shared byte and error rendering. Mirror imports those helpers and owns the persisted trie file. Attach imports Manifest and owns the node resolution helpers. Verification checks the live policy and windows; attachment does not. Retained journey callers compare mirror and chain roots.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "8eb6f4270a0c1aefb5f5626beaf72017cbf92f3a5d6db77a62e910cc1f173da3"
+  }
+}

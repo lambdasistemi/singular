@@ -1,0 +1,12 @@
+{
+  "work-items": [
+    {
+      "text": "The six tasks cover intake, extraction, persistence evidence, a focused execution of attach plus a supported script identity check wired into CI, contributor documentation and candidate preparation. Stamps happen before the final gate. Audit, pushed-head CI closure, merge and release have separate receipts.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "a1fe2e09a69d8689aded8be2f6242a47437ef5f9650860c5cc12904c2d761482"
+  }
+}

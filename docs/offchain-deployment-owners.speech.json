@@ -1,0 +1,116 @@
+{
+  "_source": {
+    "file": "offchain-deployment-owners.md",
+    "sha256": "fcaaf43d4e3c8bff2760b017fff49f2d08e5ad47d7c0acf723e3827da0354e0d"
+  },
+  "the-story-this-serves": [
+    {
+      "pause": 400,
+      "text": "An operator records one deployment and attaches later runs to it."
+    },
+    {
+      "pause": 500,
+      "text": "The story demands the same manifest bytes, the same mirror path and contents, the same node checks and refusal messages after the code is divided into owners."
+    },
+    {
+      "pause": 500,
+      "text": "The focused suite executes finite fixture cases: the manifest's keys, pretty bytes and newline, the output-reference spelling and four named refusals, the mirror's hex maps and replacement write, and the attachment path itself."
+    },
+    {
+      "pause": 500,
+      "text": "One row resolves two reference outputs and the state output in the recorded order, reading the provider's query record back."
+    },
+    {
+      "pause": 500,
+      "text": "Refusal rows observe the real named diagnostics for a differing script hash, a spent output, a scriptless output, an unreadable address, a contradicting seed, a different release, a missing state token, and the two live-state refusals only verification makes."
+    },
+    {
+      "pause": 500,
+      "text": "The mutation evidence is equally finite: before the move the six single-site mutants failed one, two, one, one, one and one rows; after the move a field swap failed eight of two hundred fifty rows, and a hash bypass failed the one named refusal."
+    },
+    {
+      "pause": 450,
+      "text": "Three branches have no focused row: the mirror's JSON parse refusal, a process-window-only mismatch, and the representative-policy pin through attach, which the devnet step exercises through verify. The out-of-range output index has no refusal row either, since this toolchain's read accepts it."
+    }
+  ],
+  "one-owner-per-record": [
+    {
+      "pause": 400,
+      "text": "Callers keep importing the facade, which re-exports exactly the surface they already used."
+    },
+    {
+      "pause": 500,
+      "text": "The manifest owner holds the values, their JSON, the paths and the output-reference spelling; the mirror owner holds persistence beside the manifest; the attach owner holds the release pins, verification and attachment."
+    },
+    {
+      "pause": 500,
+      "text": "The mirror reads its path and helpers from the manifest owner, so the mirror file's location has one definition."
+    },
+    {
+      "pause": 450,
+      "text": "Attachment reads the same manifest values plus the focused identity and lookup adapters the builders use, so a recorded address and a built address are derived the same way."
+    }
+  ],
+  "what-each-owner-holds": [
+    {
+      "pause": 350,
+      "text": "A table is shown here with three owners."
+    },
+    {
+      "pause": 500,
+      "text": "The manifest owner refuses an unreadable manifest naming the file, and a malformed output reference naming what was wrong."
+    },
+    {
+      "pause": 500,
+      "text": "The mirror owner refuses an unparsable mirror naming the file, and a value that is not hex."
+    },
+    {
+      "pause": 500,
+      "text": "The attach owner refuses a differently compiled release, a contradicting seed, a spent, scriptless or mismatched reference output, an unreadable address, a missing state token — and, for verification only, a live state whose active policy or windows disagree with the manifest."
+    }
+  ],
+  "the-boundary-the-record-cannot-carry": [
+    {
+      "pause": 400,
+      "text": "Folding means proving a key against the whole trie, so the deployment carries it as the mirror file beside the manifest."
+    },
+    {
+      "pause": 500,
+      "text": "That file is checked rather than hoped away, and the check belongs to the caller that attaches, not to the attach operation itself."
+    },
+    {
+      "pause": 500,
+      "text": "After attaching, the retained journey callers load the mirror and compare its root with the chain's, so a drifted copy fails by that comparison."
+    },
+    {
+      "pause": 500,
+      "text": "Attachment and verification stay two operations: verification reads the live state datum and refuses a mismatched policy or windows; attachment returns the resolved outputs without those checks."
+    },
+    {
+      "pause": 450,
+      "text": "A run that attaches is not thereby verified."
+    }
+  ],
+  "evidence-and-limits": [
+    {
+      "pause": 400,
+      "text": "The focused suite runs over files and a provider stub serving finite outputs."
+    },
+    {
+      "pause": 500,
+      "text": "The devnet identity step rides the required Build Gate status context — a normal, non-continue-on-error step on the open, synchronize and reopen pull-request runs of that job, so a refusal or a setup failure fails Build Gate itself — and deploys a registry, verifies the intact manifest end to end, and observes the real refusal when the recorded policy is changed."
+    },
+    {
+      "pause": 500,
+      "text": "The row stays open until the pushed PR head's Build Gate run shows the step executed and passed."
+    },
+    {
+      "pause": 500,
+      "text": "The focused rows are not a public journey and claim no mirror-root comparison; the retained journeys are covered by source-level mapping, not by the classified component build; and the identity step establishes same-release agreement, not cross-release stability."
+    },
+    {
+      "pause": 450,
+      "text": "The mirror-root comparison remains executable only in the retained journeys, so its status is a named limit rather than a green row."
+    }
+  ]
+}

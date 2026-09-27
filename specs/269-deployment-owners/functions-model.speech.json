@@ -1,0 +1,12 @@
+{
+  "ownership-and-signatures": [
+    {
+      "text": "The table assigns every public function to Manifest, Mirror or Attach. Manifest owns the mirror path and shared byte and error rendering; Mirror imports that path and decodes the file. Attach owns address decoding, token derivation and reference and state resolution. Verification checks the live policy and windows after state resolution; attachment returns without those checks.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "aa1746a6d1cc8cafc77f0b35c93677d74b2154953deddd02bcee7dcd00c9ec6c"
+  }
+}

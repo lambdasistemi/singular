@@ -6,6 +6,7 @@ import Naming.RegisterSpec qualified
 import Naming.RetireVerifySpec qualified
 import Singular.Registry.BlueprintParametersSpec qualified
 import Singular.Registry.CandidateSpec qualified
+import Singular.Registry.DeploymentSpec qualified
 import Singular.Registry.FailureMatchSpec qualified
 import Singular.Registry.LifecycleSpec qualified
 import Singular.Registry.NodeCleanupSpec qualified
@@ -23,6 +24,7 @@ main = hspec $ do
     Singular.Registry.TxBuilder.BootSpec.spec
     Singular.Registry.TxBuilder.BurnSourceSpec.spec
     Singular.Registry.CandidateSpec.spec
+    Singular.Registry.DeploymentSpec.spec
     Singular.Registry.FailureMatchSpec.spec
     Singular.Registry.NodeCleanupSpec.spec
     Singular.Registry.NodeSpec.spec

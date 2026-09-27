@@ -115,6 +115,14 @@ library
   -- encoding instances, and the generated API reference documents them
   -- here for the contributor while callers keep importing the facade.
   other-modules:
+    -- #269: the deployment record's focused owners behind the
+    -- Deployment facade. Same arrangement as the fold and wire owners
+    -- above: Singular.Registry.Deployment re-exports the unchanged
+    -- public surface from these three, each declaration beside its own
+    -- concern, and the generated API reference documents them here.
+    Singular.Registry.Deployment.Manifest
+    Singular.Registry.Deployment.Mirror
+    Singular.Registry.Deployment.Attach
     Singular.Registry.TxBuilder.Update.Build
     Singular.Registry.TxBuilder.Update.Context
     Singular.Registry.TxBuilder.Update.Duties
@@ -620,6 +628,7 @@ test-suite cage-tests
   main-is:          Main.hs
   other-modules:
     Singular.Registry.BlueprintParametersSpec
+    Singular.Registry.DeploymentSpec
     Singular.Registry.TxBuilder.BookEdgeSpec
     Singular.Registry.TxBuilder.BootSpec
     Singular.Registry.TxBuilder.BurnSourceSpec
@@ -653,13 +662,16 @@ test-suite cage-tests
     , singular-registry:node-internal
     , directory
     , filepath
+    , aeson-pretty
     , hspec
     , microlens
+    , mts:mpf-write
     , ouroboros-network
     , plutus-core
     , plutus-ledger-api
     , plutus-tx
     , QuickCheck
+    , temporary
     , text
     , time
 

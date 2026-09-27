@@ -31,6 +31,18 @@ jobs:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix build --quiet .#build-gate
+      # #269 (R269-05): the deployment script-identity boundary rides the
+      # required Build Gate context rather than a separate job, so its
+      # failure — a refusal or a setup failure — fails Build Gate itself.
+      # The script boots a devnet, deploys a registry, verifies the intact
+      # manifest reaches completed node verification, then tampers the
+      # recorded representative policy and requires the real
+      # `deployment verify` refusal with its intended diagnostic. Guarded
+      # to pull-request events to keep the identity extent PR-only; the
+      # retired three-runner attach check stays outside (#172/#283).
+      - name: Deployment identity
+        if: github.event_name == 'pull_request' && github.event.action != 'closed'
+        run: nix shell --quiet nixpkgs#jq nixpkgs#diffutils -c bash offchain/deployment-identity-check.sh
   offchain-lint:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     name: Off-chain lint

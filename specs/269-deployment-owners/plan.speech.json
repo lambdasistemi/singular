@@ -1,0 +1,24 @@
+{
+  "delivery-order": [
+    {
+      "text": "The work begins with a clean model-bound baseline and draft pull request. The coder splits three responsibilities behind one facade, preserving verification's extra checks. A focused cage test must execute attach and observe resolved outputs and a refusal. Independent review precedes the handoff.",
+      "pause": 400
+    }
+  ],
+  "evidence-limits-and-gates": [
+    {
+      "text": "A build alone cannot prove a script identity refusal. A supported local devnet check must accept the intact manifest and reject a changed script identity. It does not prove every attachment query. The retained journey mirror check stays a separately named evidence limit.",
+      "pause": 500
+    }
+  ],
+  "source-to-criterion-witnesses": [
+    {
+      "text": "The table separates three witnesses. Focused tests check manifest and mirror fixtures, and call attach with a controlled provider. A new required CI step drives deployment verify on a local devnet with an intact and changed script identity. The latter does not prove every attach query.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "00e61762b90a0b7f08d3f465cc5dcbacbfe44caca46c0ac48a4dcd31414cca12"
+  }
+}
