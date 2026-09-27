@@ -66,7 +66,7 @@ import Cardano.Ledger.Api.Scripts.Data (
     Datum (..),
     binaryDataToData,
  )
-import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body (
     inputsTxBodyL,
     mintTxBodyL,
@@ -81,7 +81,7 @@ import Cardano.Ledger.Api.Tx.Out (
     valueTxOutL,
  )
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
-import Cardano.Ledger.BaseTypes (Network (..))
+import Cardano.Ledger.BaseTypes (Network (..), TxIx (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (extractHash)
 import Cardano.Ledger.Plutus.Data (getPlutusData, hashData)
@@ -92,7 +92,6 @@ import Cardano.Ledger.Mary.Value (
     MultiAsset (..),
     PolicyID,
  )
-import Cardano.Ledger.Plutus.Data (getPlutusData)
 import Cardano.Tx.Ledger (ConwayTx)
 import PlutusTx.Builtins (fromBuiltin)
 import PlutusTx.Builtins.Internal (BuiltinData (..))
@@ -116,6 +115,7 @@ import Singular.Registry.Config (
 import Singular.Registry.Driver qualified as Driver
 import Singular.Registry.Ledger (
     ConwayEra,
+    Root (..),
     TokenId,
     TxIn,
  )
@@ -377,8 +377,12 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
     let signerObs = signerObservationOf unsigned
     livePass "ordering fold: body signers" (cmpBodySigner signerObs)
     mutantFails "ordering fold: body signers" "C3-BODY-SIGNER" (cmpBodySigner (insertSigner signerObs))
+    rootBefore <- withTrie tm tokenId getRoot
     _signedFold <- submitWithGenesis submit unsigned
     syncFoldedRequests tm tokenId sortedRefs
+    rootAfter <- withTrie tm tokenId getRoot
+    when (unRoot rootBefore == unRoot rootAfter) $
+        expectationFailure "wrong effect: mirror root did not move across the ordering fold"
     -- Receipts through the REAL provider: both requests consumed.
     after <- Cage.queryUTxOs prov requestAddr
     forM_ sortedRefs $ \ref ->
@@ -461,6 +465,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
     (reqOut, req) <- observedRequestAt requestTxIn pending
     cageUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
     walletUtxos <- Cage.queryUTxOs prov genesisAddr
+    rootBefore <- withTrie tm tokenId getRoot
     ctx <- contextFor cfg codes prov refs
     unsigned <- updateTokenWithDuties cfg prov tm tokenId genesisAddr ctx
     let body = unsigned ^. bodyTxL
@@ -494,6 +499,9 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                         }
             livePass (label <> ": destination") (cmpDestination destObs)
             mutantFails (label <> ": destination") "C3-DESTINATION" (cmpDestination destObs{doDatum = ledgerData (-1)})
+            -- The destination shape also names the body's delivery
+            -- output for the post-state landing check below.
+            pure ()
         Nothing -> pure ()
     -- Custody refund: the two edges that consume absent custody.
     when (edge == edgeUpdateActive || edge == edgeDeleteAbsent) $
@@ -548,9 +556,70 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                             (label <> ": holder")
                             "C3-HOLDER-TXIN"
                             (cmpHolder holderObs{hoExpectedTxIn = other})
-    _signed <- submitWithGenesis submit unsigned
+    signed <- submitWithGenesis submit unsigned
     syncFoldedRequests tm tokenId [requestTxIn]
-    -- Post-state: the request is spent; a burned asset is gone.
+    -- Post-state, through the REAL provider: the mirror root moved
+    -- across every connected stage's landed fold.
+    rootAfter <- withTrie tm tokenId getRoot
+    when (unRoot rootBefore == unRoot rootAfter) $
+        expectationFailure
+            ("wrong effect: mirror root did not move across the fold of edge " <> show edge)
+    -- A delivering stage's built destination output lands at its
+    -- address exactly as the body built it.
+    case destinationShapeOf cfg edge key req of
+        Just DestinationShape{dsAddress, dsDatum, dsAsset = (policy, asset)} ->
+            case
+                [ (ix, out)
+                | (ix, out) <- zip [0 :: Int ..] outputs
+                , out ^. addrTxOutL == dsAddress
+                , quantityInValue policy asset (out ^. valueTxOutL) >= 1
+                , inlineDatumData out == dsDatum
+                ]
+                of
+                [(ix, built)] -> do
+                    landed <- Cage.queryUTxOs prov dsAddress
+                    case lookup (TxIn (txIdTx signed) (TxIx (fromIntegral ix))) landed of
+                        Just observed ->
+                            unless (observed == built) $
+                                expectationFailure
+                                    ( "wrong effect: landed destination output at index "
+                                        <> show ix
+                                        <> " differs from the body's built output"
+                                    )
+                        Nothing ->
+                            expectationFailure
+                                ("wrong effect: destination output at index " <> show ix <> " not found after inclusion")
+                _ ->
+                    expectationFailure
+                        ("setup: destination output not uniquely identified in the body of edge " <> show edge)
+        Nothing -> pure ()
+    -- A custody-consuming stage's built refund output lands at the
+    -- recorded refund address exactly as the body built it.
+    when (edge == edgeUpdateActive || edge == edgeDeleteAbsent) $
+        case findKeyedCustody cfg key cageUtxos of
+            Just (_, _, refundBytes) -> do
+                refundAddr <- decodeRefund refundBytes
+                case
+                    [ (ix, out)
+                    | (ix, out) <- zip [0 :: Int ..] outputs
+                    , out ^. addrTxOutL == refundAddr
+                    , not (any (\p -> carriesPolicyAsset p out) (witnessPolicies cfg))
+                    ]
+                    of
+                    [(ix, built)] -> do
+                        landed <- Cage.queryUTxOs prov refundAddr
+                        case lookup (TxIn (txIdTx signed) (TxIx (fromIntegral ix))) landed of
+                            Just observed ->
+                                unless (observed == built) $
+                                    expectationFailure
+                                        "wrong effect: landed custody refund differs from the body's built output"
+                            Nothing ->
+                                expectationFailure "wrong effect: custody refund output not found after inclusion"
+                    _ ->
+                        expectationFailure
+                            ("setup: custody refund output not uniquely identified in the body of edge " <> show edge)
+            Nothing -> pure ()
+    -- The request is spent; a burned asset is gone.
     after <- Cage.queryUTxOs prov requestAddr
     when (lookup requestTxIn after /= Nothing) $
         expectationFailure ("wrong effect: request " <> show requestTxIn <> " still pending after fold")
@@ -710,12 +779,17 @@ cmpCustodyRefund CustodyObservation{cuInput, cuRefundAddr, cuOwed, cuPolicies, c
             [ c
             | out <- cuOutputs
             , out ^. addrTxOutL == cuRefundAddr
-            , not (any (\policy -> carriesPolicy policy out) cuPolicies)
+            , not (any (`carriesPolicyAsset` out) cuPolicies)
             , let Coin c = out ^. coinTxOutL
             ]
-    carriesPolicy policy out = case out ^. valueTxOutL of
-        MaryValue _ (MultiAsset m) ->
-            maybe False (not . Map.null) (Map.lookup policy m)
+
+-- | Whether an output carries any asset under a policy column, used
+-- to keep token carriers out of a custody refund's credited value and
+-- to identify the refund output in the post-state landing check.
+carriesPolicyAsset :: PolicyID -> TxOut ConwayEra -> Bool
+carriesPolicyAsset policy out = case out ^. valueTxOutL of
+    MaryValue _ (MultiAsset m) ->
+        maybe False (not . Map.null) (Map.lookup policy m)
 
 -- | The fold's required-signer set, reduced to its size class: the
 -- set must be empty, so any member is a defect.
