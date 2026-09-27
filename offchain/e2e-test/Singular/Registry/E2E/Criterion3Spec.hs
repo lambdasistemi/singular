@@ -495,8 +495,7 @@ connectedStages cfg codes prov submit tm tokenId requestAddr refs = do
             key
             edge
             (deliverDest datum)
-    stageTo key edge dest =
-        bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge
+    stageTo = bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs
 
 -- ---------------------------------------------------------
 -- One booking, one fold, every control it feeds
