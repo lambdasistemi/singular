@@ -701,8 +701,9 @@ keyedRequest i key edge =
         , out & datumTxOutL .~ mkInlineDatum (toPlcData (RequestDatum req))
         )
 
--- | The key one custody output locks: read from the output the builder
--- produced, never typed into the row.
+{- | The key one custody output locks: read from the output the builder
+produced, never typed into the row.
+-}
 soleAssetKey :: TxOut ConwayEra -> ByteString
 soleAssetKey out = case out ^. valueTxOutL of
     MaryValue _ (MultiAsset m) -> case Map.toList m of
@@ -772,15 +773,13 @@ noFoldSigner :: Spec
 noFoldSigner =
     describe "#267: no edge of a fold requires a signature" $
         it "accumulates no required signer across all seven edges" $
-            case
-                registryDuties
-                    boundCfg
-                    emptyPParams
-                    tokenState
-                    fullFoldContext
-                    sevenEdges
-                    (map (const True) sevenEdges)
-                of
+            case registryDuties
+                boundCfg
+                emptyPParams
+                tokenState
+                fullFoldContext
+                sevenEdges
+                (map (const True) sevenEdges) of
                 Left err -> expectationFailure err
                 Right d -> do
                     rdSigners d `shouldSatisfy` null
@@ -810,8 +809,9 @@ allEdges =
     , edgeWitnessTerminal
     ]
 
--- | A request on `edge` at its own key, with a destination this builder
--- can decode (the cage's own address, as the #178 refund fixture uses).
+{- | A request on `edge` at its own key, with a destination this builder
+can decode (the cage's own address, as the #178 refund fixture uses).
+-}
 destinedRequest :: Int -> Edge -> (TxIn, TxOut ConwayEra)
 destinedRequest i edge =
     let (_, out) = requestFor edge
@@ -829,8 +829,9 @@ destinedRequest i edge =
 sevenEdges :: [(TxIn, TxOut ConwayEra)]
 sevenEdges = [destinedRequest i e | (i, e) <- zip [20 ..] allEdges]
 
--- | A custody UTxO at its own input, holding one absent token for `key`
--- and naming a decodable refund address.
+{- | A custody UTxO at its own input, holding one absent token for `key`
+and naming a decodable refund address.
+-}
 keyedCustody :: Int -> ByteString -> (TxIn, TxOut ConwayEra)
 keyedCustody i key =
     ( holderIn i
@@ -840,9 +841,10 @@ keyedCustody i key =
         & datumTxOutL .~ mkInlineDatum refundOnly
     )
 
--- | Everything the seven-edge fold needs in hand: the witness scripts,
--- the cage script, custody for the two edges that spend it, and holders
--- for the two edges that burn.
+{- | Everything the seven-edge fold needs in hand: the witness scripts,
+the cage script, custody for the two edges that spend it, and holders
+for the two edges that burn.
+-}
 fullFoldContext :: RegistryContext
 fullFoldContext =
     ( holding
@@ -885,9 +887,10 @@ program =
             )
         )
 
--- | The registry the built-body row folds under: the same census, with
--- both script fields carrying the well-formed program and the script
--- hash following it.
+{- | The registry the built-body row folds under: the same census, with
+both script fields carrying the well-formed program and the script
+hash following it.
+-}
 builtCfg :: CageConfig
 builtCfg =
     cfg
@@ -945,7 +948,7 @@ assembled, which never depends on either stub's value.
 foldProvider :: Provider IO
 foldProvider =
     Provider
-        { queryUTxOs = \a -> pure (utxosAt a)
+        { queryUTxOs = pure . utxosAt
         , queryProtocolParams = pure emptyPParams
         , evaluateTx = \_ -> pure Map.empty
         , posixMsToSlot = \_ -> pure (SlotNo 100)
@@ -988,4 +991,3 @@ builtFoldBody =
                 `shouldSatisfy` (\ins -> Set.member stateIn ins && Set.member requestIn ins)
             case body ^. mintTxBodyL of
                 MultiAsset m -> m `shouldSatisfy` (not . Map.null)
-

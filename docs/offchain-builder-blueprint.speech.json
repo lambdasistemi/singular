@@ -5,16 +5,16 @@
       "pause": 300
     },
     {
-      "text": "A diagram is shown here. Two public facades, the blueprint facade and the transaction-builder facade, each re-export three focused owners. The blueprint owners cover schema and validation, parameter application, and loading with code selection. The builder owners cover identity and conversion, lookup and balancing, and edges with consumer binding and failure attribution. The identity owner applies request parameters from the parameter owner, the lookup owner reads request datums from the identity owner, and the edges owner hashes consumer scripts through the identity owner. The per-operation builders import these owners directly.",
+      "text": "A diagram is shown here. Three public facades now: the blueprint facade, the transaction-builder facade, and the fold facade. The blueprint facade re-exports three owners covering schema and validation, parameter application, and loading with code selection. The builder facade re-exports three owners covering identity and conversion, lookup and balancing, and edges with consumer binding and failure attribution. The fold facade re-exports the fold's own three owners: context preparation, what the requests owe, and the one transaction program. Duties reads the context; the build owner reads the duties; the context owner reads the older identity and lookup owners.",
+      "pause": 500
+    },
+    {
+      "text": "Every declaration lives in exactly one owner. The public modules hold no implementations: they re-export the same names with the same signatures as before the extraction, so an existing test, shipped command, or journey keeps compiling unchanged. The fold's own owners live behind the Update facade and are mapped in their own guide, Who owns a registry fold.",
       "pause": 400
     },
     {
-      "text": "Every declaration lives in exactly one owner. The two public modules hold no implementations: they re-export the same names with the same signatures as before the extraction, so an existing test, shipped command, or journey keeps compiling unchanged. The per-operation builders import the focused owners directly. The retract builder is the one library module that still imports the facade, and the facade keeps it compiling and behaving unchanged while that file stays under a separate ticket's fence.",
-      "pause": 300
-    },
-    {
-      "text": "A table with six rows follows. Each row names one owner module and states what it is responsible for: the blueprint schema model, the application of registry parameters to compiled validator code, blueprint loading and code selection, builder identity and conversions, lookup and balancing, and the edge, consumer-binding, and failure-attribution decisions a builder shares with the cage.",
-      "pause": 300
+      "text": "A table with nine rows follows. Each row names one owner module and states what it is responsible for: the three blueprint owners, the three builder owners for identity, lookup, and edges, and the three fold owners for context preparation, duty decisions, and transaction assembly.",
+      "pause": 500
     }
   ],
   "where-common-changes-land": [
@@ -27,8 +27,8 @@
       "pause": 250
     },
     {
-      "text": "The state validator's parameter list, or the request validator's parameter order, lands in the parameter owner, and then in the Aiken blueprint it applies. Blueprint parsing that wrongly rejects or accepts a shape lands in the schema owner. A boot reading the wrong compiled code from the registry partition lands in the load owner.",
-      "pause": 300
+      "text": "The state validator's parameter list, or the request validator's parameter order, lands in the parameter owner, and then in the Aiken blueprint it applies. Blueprint parsing that wrongly rejects or accepts a shape lands in the schema owner. A boot reading the wrong compiled code from the registry partition lands in the load owner. And what a fold's requests owe, or how the fold prepares or assembles, lands in the fold owners behind the Update facade, mapped in their own guide.",
+      "pause": 500
     }
   ],
   "decisions-this-extraction-recorded": [
@@ -65,12 +65,12 @@
   ],
   "source": [
     {
-      "text": "The last section links the facades and the six owner modules to the generated API reference on this site, so a reader can move from a responsibility on this page to the exact interface and source of the module that owns it. Read from the repository, the same links open the source files themselves. The complete generated reference for the library is the off-chain API reference page.",
-      "pause": 250
+      "text": "The page closes with source links for the three facades, the blueprint owners, the builder owners, and the fold owners, each linked to the generated API reference and to the repository file, and a pointer to the complete generated reference page.",
+      "pause": 300
     }
   ],
   "_source": {
     "file": "offchain-builder-blueprint.md",
-    "sha256": "8b4557e171732a3b4db5b3648b8bb303813b6541178d1af643b21ff74edcef0b"
+    "sha256": "f8db10823cddd6deef68f309151f9d3b3bd7d5493c05eaa56e5061f0235bcdba"
   }
 }
