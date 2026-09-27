@@ -1,0 +1,38 @@
+{
+  "requirements": [
+    {
+      "text": "Six requirements govern this change. Each original declaration gets exactly one owner, with all six public Update exports retained, including record selectors and instances, proven by a before-and-after declaration map, an unchanged export list, and compiled original callers.",
+      "pause": 450
+    },
+    {
+      "text": "Ordered request lookup, speculative proofs, state continuation, fee input and upper slot are kept. Focused controls are joined by a fresh-blueprint two-request fold that presents real request outputs in descending TxIn order, checks ascending input and proof association, then observes request consumption and the chain and mirror root. A swapped-association control must fail in the same run.",
+      "pause": 400
+    },
+    {
+      "text": "Duty results and refusals are kept: mint quantities, approval returns, holder selection, destination datums, custody spends and refunds, owner deposit settlement, and no required signer. Existing focused assertions are joined by a connected seven-edge fresh-blueprint scenario that compares observed pre-state and Lean-derived effects with the built body and landed outputs. Each live comparison must pass and its one-field mutant fail in the same run. Coverage is finite and representative.",
+      "pause": 450
+    },
+    {
+      "text": "Transaction assembly, balancing and script and reference use stay at the same public call path, shown by the component build, the focused cage suite, the fresh-blueprint journey and exact-head CI.",
+      "pause": 400
+    },
+    {
+      "text": "Contributor-facing ownership, dependency and fold-flow documentation is published with source and API links and speech, passing the presentation checks and source-derived review. And independent evidence derivation and Conformance state stay untouched: unchanged consumer compilation and listing, and no new coverage claim.",
+      "pause": 450
+    }
+  ],
+  "boundary": [
+    {
+      "text": "The boundary. The deposit and custody settlement code, the shared-custody case and the model exit obligations are intake facts, not rules to reinterpret. One set of tests is outside this scope. No Lean, on-chain, wire, validator, Conformance, workflow, executable-name, release or deployment edit belongs to this ticket. The epic owner made one narrow dependency exception: cardano-crypto-class may be added only to the e2e-tests component for the datum-hash witness. Any other excluded-surface change is a question before edit. A clear code-versus-Lean contradiction is repaired within scope with evidence, while ambiguity or a model conflict holds the affected acceptance.",
+      "pause": 550
+    },
+    {
+      "text": "Source inspection and a passing build alone do not establish transaction correspondence: the exact candidate, model, gate receipts, negative control, independent audit and uncovered behavior stay explicit in the pull-request record.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "0b5838f877c13ba29aa3900c38ca3a55845aeeb2f1dd89fbd8272f26fc2435b1"
+  }
+}

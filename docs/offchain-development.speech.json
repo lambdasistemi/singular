@@ -7,12 +7,16 @@
   ],
   "where-the-source-list-comes-from": [
     {
-      "text": "The Cabal file declares source directories for lint discovery and components for build classification. Two naming sources compiled directly by scripts join lint discovery. The private node ownership core declares its own source root, node-internal, so its modules are discovered like every other. Discovery finds eighty-five Haskell files in twenty-three source directories; eighty-three format-eligible files of those reach Fourmolu, and two preserved verifier files remain a formatter gap. HLint runs on seventy-two files within ten selected directories. Thirteen discovered files do not enter that HLint run because thirteen directory-name exclusions are configured. The component inventory accounts for every library, sublibrary, executable, and test declaration; supported members flow to the carrier and unverified members carry an issue and reason. Each result reaches CI with its own extent.",
-      "pause": 400
+      "text": "The lint app reads every source-directory declaration in the cabal file at run time and adds the two naming directories whose scripts compile them directly with GHC. It deduplicates nested directories and fails if discovery finds no sources or a declared directory is absent.",
+      "pause": 350
     },
     {
-      "text": "Lint discovery deduplicates nested directories and fails closed on missing declarations or empty source sets. A maintenance control put malformed Haskell in a newly covered tracked directory, ran the actual lint app, and restored the file byte for byte.",
-      "pause": 400
+      "text": "The source-derived inventory at the ticket 267 candidate measures 89 discovered Haskell files in 23 source directories: Fourmolu selects 87 after the two verifier exclusions, and HLint selects 76 within ten directories. The added end-to-end witness belongs to all three sets. At ae4fe9a, the lint app passed in the final Gate S off-chain lint row and in pushed-head continuous integration; that gate row reported 89 discovered files in 23 directories, Fourmolu over 87 files, and HLint over ten directories with no hints. These green receipts cover only the selected extents. Thirteen directory names remain excluded from HLint under the same hint-debt boundary. Compare the next actual lint output with this inventory.",
+      "pause": 500
+    },
+    {
+      "text": "The flake derives a supported build set from the current workflow and supported command closure. Its inventory must account for every Cabal library, executable, and test suite, and the gate must fail when a new declaration has no classification or an omitted classification drifts.",
+      "pause": 350
     }
   ],
   "current-boundaries": [
@@ -23,16 +27,12 @@
   ],
   "module-ownership-maps": [
     {
-      "text": "Two contributor maps now exist. The builder and blueprint map states which module owns script identity, lookups, balancing, edge decisions, and blueprint parameter work, where common edits land, and which decisions that extraction recorded. The node module ownership map does the same for the node runtime: options, wallet, indexer, funding, session and confirmation, their process state lifetimes, the independent evidence boundary, and the private boundary that keeps the owners out of the public surface.",
+      "text": "The builder and blueprint modules, the node runtime, and the registry fold now each have a contributor map: which module owns a concern, where common edits land, and which decisions the extraction recorded. They are Builder and blueprint modules, Node module ownership, and Who owns a registry fold.",
       "pause": 400
-    },
-    {
-      "text": "The maps are linked as Builder and blueprint modules, and Node module ownership.",
-      "pause": 250
     }
   ],
   "_source": {
     "file": "offchain-development.md",
-    "sha256": "369ba1291ca52ab063d97eec34b1c5ae2ab286237871a0a804b829dc78552c68"
+    "sha256": "c5d15c6e5897e286b67cf5c031ae0ec632c7218f620ea6795b8e29f7941e6b49"
   }
 }

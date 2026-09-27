@@ -1,0 +1,86 @@
+{
+  "the-story-this-serves": [
+    {
+      "text": "The story: as a registry caller, I fold requests through the existing Update import, and I want the same request order, the same token effects, the same custody refunds and the same destinations as before, so my conformance rows see nothing move.",
+      "pause": 400
+    },
+    {
+      "text": "The focused suite pins what its rows actually assert: the order duties accumulate in for the request list a caller supplies; the active witness burn's net minus one, with the one input that holds it consumed and no output carrying it; which holder input a burn selects and which custody input a custody spend selects, by exact policy, key and quantity; the per-owner grouping of deposit returns and a deletion's approval riding inside its deposit output; and the fold's empty signer set, both in the duties it accumulates and in the required-signer field of the transaction the public entry actually builds.",
+      "pause": 550
+    },
+    {
+      "text": "What no focused row asserts: the query's input-order sorting, since the rows hand registryDuties already-ordered lists and the built-body row folds one request; the quantities of every mint except the active burn; a custody refund's output address and amount; a delivering edge's destination; and an approval returned by a delivering or inadmissible edge.",
+      "pause": 500
+    },
+    {
+      "text": "The fresh-blueprint Criterion Three spec tests the accepted-edge part of that gap. It books two real requests, presents their real outputs in descending TxIn order to one public fold, and runs connected stages for all seven admissible edges. Comparisons derive mints, approval assets, holder inputs, destinations, custody refunds and signers from observed pre-state and the Lean row, then inspect the body and landed outputs through the real provider. Each of the seven named effect comparisons has a one-field mutant required to fail in the same run. The local submitted devnet run passed twenty-three examples with no failures. Its receipts record booked request inputs, real and reversed provider orders, canonical input order, fold transaction IDs and roots. The terminal witness leaves the root unchanged as Lean requires; the other six edges change it. The ae4fe9a candidate subsequently passed exact-head final Gate S, independent receipt audit, and pushed-head continuous integration. Those receipts bind that commit. Arbitrary request sets, inadmissible-edge refusals, the delivering approval's ADA minimum and proof correctness beyond cage acceptance remain outside this case.",
+      "pause": 450
+    }
+  ],
+  "one-owner-per-fold-concern": [
+    {
+      "text": "A contributor changing how the registry folds pending requests wants to change one module and have the review ask one question. This page tells you which owner your change belongs to, what the flow through them is, and what must never change while it moves.",
+      "pause": 400
+    },
+    {
+      "text": "A diagram is shown here. Callers import six public names from the Update facade. The facade reaches three owners: Context owns the queries, the ordered proofs, the state output, the upper slot and context completion; Duties owns what the requests owe; Build owns the evaluation adapter and the one transaction program. Duties reads Context; Build reads Duties; and below the fold owners, Duties also reads the edges owner for the cage-shared mint table, the identity owner, and ConnectedFold for the attached action types; Build reads the identity owner and ConnectedFold; the facade itself reads the identity owner for the request script and ConnectedFold for the custody-spend accessor. The graph is acyclic and one-way between the fold owners.",
+      "pause": 600
+    },
+    {
+      "text": "A table with four rows follows: the facade, with the public exports and the fold's sequence and nothing else; Context, with the registry context, the state, request and fee lookups, the speculative proofs, the state continuation and the validity slot; Duties, with the one derivation of mints, destinations, custody, burn sources, returns and the empty signer set; and Build, with the empty query type, the evaluation adapter, and the one program that assembles the transaction.",
+      "pause": 500
+    }
+  ],
+  "the-flow-a-fold-runs": [
+    {
+      "text": "A sequence diagram is shown. The caller hands the facade a config, a provider, a trie manager, a token, an address and a context. The facade asks Context to query the state, the requests sorted by input, a fee output and the parameters; then to compute the proofs speculatively through the trie in request order; then to prepare the new state output and the cage script; then to complete the partly empty context. It asks Duties what these requests owe, asks Context for the upper slot from the earliest deadline, and hands Build the evaluation adapter and the one program. Build returns the assembled transaction, and the facade returns it to the caller.",
+      "pause": 600
+    }
+  ],
+  "what-must-not-change": [
+    {
+      "text": "This extraction is a representation change, not a new registry rule. The Lean model stays the authority: mint quantities, owner deposits, custody refunds, approval returns, and no fold requiring a signer.",
+      "pause": 350
+    },
+    {
+      "text": "What the focused tree executes: the duties list in the order of the requests it was given — not sorted, reversed, or swept from the inventory — with outputs, mints and burn sources each read back from what the builder produced; the active burn's net minus one with its held input and no carrier output; the exact holder and custody input selections; the per-owner grouping of deposit returns and a deletion's approval inside its deposit output; and the built body's empty required-signer set through the public entry.",
+      "pause": 550
+    },
+    {
+      "text": "The new fresh-blueprint end-to-end case directly compares the previously unpinned accepted-edge effects on finite connected stages, with in-run mutants and real post-state observations. Its two-request ordering witness controls the provider enumeration of real outputs; it does not claim every input order. Refused edges and the delivering approval's ADA minimum remain outside these comparisons.",
+      "pause": 450
+    },
+    {
+      "text": "And a contributor who needs any pinned behavior to change is not refactoring; that is a behavior change for the design flow.",
+      "pause": 300
+    }
+  ],
+  "independent-evidence-boundaries": [
+    {
+      "text": "Two neighbors deliberately do not share this code. The cage computes its own duties from the requests it consumes, so a builder that agreed with the validator by construction would not catch a disagreement. And the Conformance suite's state is computed from run receipts; this extraction touches none of it.",
+      "pause": 400
+    }
+  ],
+  "where-common-changes-land": [
+    {
+      "text": "A request that gains or changes what it carries lands in Context, which finds and decodes it. An edge's obligations land in Duties, and only there. The transaction's shape lands in Build. What an omitted context field defaults to, and which queries the fold runs, land in Context. The public surface and the fold's sequence belong to the facade, which must stay a coordinator.",
+      "pause": 400
+    }
+  ],
+  "decisions-this-extraction-recorded": [
+    {
+      "text": "A table with four rows records the decisions. The split: three owners for preparation, decision and assembly, rather than finer per-edge owners. How callers keep working: the facade re-exports its six names byte-for-byte, and the children are implementation modules of the same library, rather than rewriting every caller. Where context completion lives: in Context, moved verbatim from the facade, because queries are preparation, rather than leaving them in the facade. And the pre-existing connected-fold copies are left untouched: that builder is the permissionless journey fold whose own header records its proof, slot and refund rules as transcribed from the repair runner — parallel logic that predates this extraction — so this slice neither creates nor unifies it, and it is recorded as a standing limit on the no-duplicate-algorithm claim within this extraction's fence.",
+      "pause": 600
+    }
+  ],
+  "source": [
+    {
+      "text": "The page closes with links to the facade and the three owners in the generated API reference and in the repository, and to the wider builder map and the check commands.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "offchain-fold-responsibilities.md",
+    "sha256": "fd2c959ccb13037db004c1a70187af82f045fcc988377e3ae1a6e42b98892d6f"
+  }
+}

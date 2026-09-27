@@ -353,7 +353,34 @@
           # Generated Haddock reference for the library, consumed by the
           # root documentation build. Same source tree, same lock: the docs
           # manifest can bind the reference to this candidate's content.
-          library-haddock = components.library.haddock;
+          #
+          # A-003: Haddock documents exposed modules only by default, but
+          # the generated API reference requires a module page and a
+          # source page for EVERY module the public library stanza
+          # declares — including the fold owners #267 keeps in
+          # `other-modules` behind the unchanged six-export facade.
+          # Two flags make that happen without exposing a public import
+          # path: Cabal's `--internal` hands the non-exposed modules to
+          # Haddock (the g13 probe showed their source pages appear), and
+          # `--haddock-option=--show-all` cancels Haddock's hide
+          # attribute for the run — haddock-api 2.32 documents `show-all`
+          # as "behave as if no modules have the hide attribute", which is
+          # why `--internal` alone emitted source pages but no module
+          # pages. The flags are scoped to this documentation package
+          # alone, through a project that only appends them as an extra
+          # package module on the args-level modules list: every build
+          # output below keeps the untouched closure.
+          library-haddock =
+            (project.project.appendModule {
+              modules = [
+                {
+                  packages.singular-registry.setupHaddockFlags = [
+                    "--internal"
+                    "--haddock-option=--show-all"
+                  ];
+                }
+              ];
+            }).hsPkgs.singular-registry.components.library.haddock;
           # The package-private ownership core's generated reference: the
           # root documentation build takes only the re-exported Ledger and
           # Provider page pairs from it; the private Node owners stay out

@@ -104,6 +104,15 @@ library
     Naming.Wire
     Naming.Wire.Vectors
 
+  -- #267: the fold's focused owners behind the Update facade. They are
+  -- implementation modules of the existing public library: the facade
+  -- re-exports their names as the unchanged public API, and the
+  -- generated API reference discovers them here.
+  other-modules:
+    Singular.Registry.TxBuilder.Update.Build
+    Singular.Registry.TxBuilder.Update.Context
+    Singular.Registry.TxBuilder.Update.Duties
+
   reexported-modules:
     , Singular.Registry.Ledger
     , Singular.Registry.Provider
@@ -653,6 +662,7 @@ test-suite e2e-tests
     Singular.Registry.E2E.CageSpec
     Singular.Registry.E2E.Config
     Singular.Registry.E2E.ConfigSpec
+    Singular.Registry.E2E.Criterion3Spec
     Singular.Registry.E2E.DriverSpec
     Singular.Registry.E2E.Fork81Spec
     Singular.Registry.E2E.NodeSpec
@@ -664,6 +674,7 @@ test-suite e2e-tests
     , base
     , base16-bytestring
     , bytestring
+    , cardano-crypto-class
     , cardano-strict-containers
     , cardano-ledger-api
     , cardano-ledger-core

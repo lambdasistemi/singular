@@ -15,6 +15,7 @@ flowchart TD
     subgraph Public facades
         BP[Singular.Registry.Blueprint]
         TI[Singular.Registry.TxBuilder.Internal]
+        UF[Singular.Registry.TxBuilder.Update]
     end
     subgraph Blueprint owners
         BS[Blueprint.Schema — schema types, JSON parsing, validation]
@@ -26,29 +27,51 @@ flowchart TD
         BU[Internal.Lookup — UTxO lookup, balancing, integrity, time]
         BE[Internal.Edges — edge decisions, consumer binding, failure attribution]
     end
+    subgraph Fold owners
+        UC[Update.Context — queries, proofs, state, slot, context]
+        UD[Update.Duties — what a fold's requests owe]
+        UB[Update.Build — evaluation adapter, one DSL program]
+    end
     BP -->|re-exports| BS
     BP -->|re-exports| BA
     BP -->|re-exports| BL
     TI -->|re-exports| BI
     TI -->|re-exports| BU
     TI -->|re-exports| BE
+    UF -->|re-exports the context| UC
+    UF -->|re-exports the duties| UD
     BI -->|applies request parameters| BA
     BU -->|reads request datums and owner bytes| BI
     BE -->|hashes consumer scripts| BI
-    Builders[Per-operation builders — Boot, Request, Update, Reject, ConnectedFold]
+    UC -->|identity, datums| BI
+    UC -->|lookup| BU
+    UC -->|edges| BE
+    UD -->|reads the context| UC
+    UD -->|edge-to-mint decisions shared with the cage| BE
+    UD -->|addresses, policy pins, datums| BI
+    UD -->|constructs attached mints, spends, redeemers| CF[ConnectedFold]
+    UB -->|reads the duties| UD
+    UB -->|input-to-reference conversion| BI
+    UB -->|attached action types| CF
+    UF -->|builds the request script| BI
+    UF -->|custody-spend accessor| CF
+    Builders[Per-operation builders — Boot, Request, Reject, ConnectedFold]
     Builders -->|import| BI
     Builders -->|import| BU
     Builders -->|import| BE
+    Callers[Tests, commands, journeys, conformance] -->|import the six fold names| UF
 ```
 
-Every declaration lives in exactly one owner. The two public modules are
+Every declaration lives in exactly one owner. The public modules are
 facades: they hold no implementations, they re-export the same names with
 the same signatures as before the extraction, and an existing caller — a
 test, a shipped command, a journey — keeps compiling unchanged. The
 per-operation builders import the focused owners directly; the retract
 builder is the one library module that still imports the facade, and the
 facade keeps it compiling and behaving unchanged while that file stays
-under a separate ticket's fence.
+under a separate ticket's fence. The fold's own owners live behind the
+`Update` facade and are mapped in their own guide,
+[Who owns a registry fold](offchain-fold-responsibilities.md).
 
 | Module | Responsible for |
 | --- | --- |
@@ -58,6 +81,9 @@ under a separate ticket's fence.
 | `Singular.Registry.TxBuilder.Internal.Identity` | What a builder calls a thing: script construction and hashing from config bytes, cage and request addresses and policy ids, request datum encoding, and conversions between ledger and on-chain reference types. |
 | `Singular.Registry.TxBuilder.Internal.Lookup` | Where a builder finds its inputs and closes its transaction: UTxO lookup by input, state and request; spending-index computation; script evaluation and balancing; script-integrity hashing; rejected-row refunds; POSIX-time to slot conversion. |
 | `Singular.Registry.TxBuilder.Internal.Edges` | The decisions a builder shares with the cage: what each registry edge does to the trie, what an edge owes the mint, the approval asset name, the pinned consumer binding, and attribution of node and evaluation failures to a named script hash. |
+| `Singular.Registry.TxBuilder.Update.Context` | The fold's preparation: the registry context and its empty value, state/request/fee lookup, ordered speculative proofs, the state continuation output and script, the validity upper slot, and completing a partly empty context from the provider. |
+| `Singular.Registry.TxBuilder.Update.Duties` | The fold's decisions: `RegistryDuties` and the one derivation of what a fold's requests owe — mints, destinations, custody spends, burn sources, deposit and approval returns, no required signer. |
+| `Singular.Registry.TxBuilder.Update.Build` | The fold's assembly: the empty query GADT, the evaluation adapter, and the one transaction DSL program (spends, mints, outputs, signatures, scripts or references, collateral, validity). |
 
 ## Where common changes land
 
@@ -73,6 +99,9 @@ under a separate ticket's fence.
 - Blueprint parsing rejects (or wrongly accepts) a shape: `Blueprint.Schema`.
 - A boot reads the wrong compiled code from the registry partition:
   `Blueprint.Load`.
+- What a fold's requests owe changes, or how the fold prepares or
+  assembles: the fold owners behind `Update`, mapped in
+  [Who owns a registry fold](offchain-fold-responsibilities.md).
 
 ## Decisions this extraction recorded
 
@@ -107,9 +136,10 @@ reference pages — module page and highlighted source — and, read from the
 repository, to the source files themselves at the revision you are
 viewing:
 
-- Facades: <a href="../offchain/lib/Singular/Registry/Blueprint.hs" data-api="module">Singular.Registry.Blueprint</a>, <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal.hs" data-api="module">Singular.Registry.TxBuilder.Internal</a>.
+- Facades: <a href="../offchain/lib/Singular/Registry/Blueprint.hs" data-api="module">Singular.Registry.Blueprint</a>, <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal.hs" data-api="module">Singular.Registry.TxBuilder.Internal</a>, <a href="../offchain/lib/Singular/Registry/TxBuilder/Update.hs" data-api="module">Singular.Registry.TxBuilder.Update</a>.
 - Blueprint owners: <a href="../offchain/lib/Singular/Registry/Blueprint/Schema.hs" data-api="module">Singular.Registry.Blueprint.Schema</a>, <a href="../offchain/lib/Singular/Registry/Blueprint/Params.hs" data-api="module">Singular.Registry.Blueprint.Params</a>, <a href="../offchain/lib/Singular/Registry/Blueprint/Load.hs" data-api="module">Singular.Registry.Blueprint.Load</a>.
 - Builder owners: <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Identity.hs" data-api="module">Singular.Registry.TxBuilder.Internal.Identity</a>, <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Lookup.hs" data-api="module">Singular.Registry.TxBuilder.Internal.Lookup</a>, <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Edges.hs" data-api="module">Singular.Registry.TxBuilder.Internal.Edges</a>.
+- Fold owners: <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Context.hs" data-api="module">Singular.Registry.TxBuilder.Update.Context</a>, <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Duties.hs" data-api="module">Singular.Registry.TxBuilder.Update.Duties</a>, <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Build.hs" data-api="module">Singular.Registry.TxBuilder.Update.Build</a>.
 
 The complete generated reference — every module of the library stanza,
 with its hyperlinked source — is the

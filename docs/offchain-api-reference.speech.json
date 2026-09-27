@@ -1,16 +1,16 @@
 {
   "what-this-reference-contains": [
     {
-      "text": "A contributor reading the builder and blueprint guide wants to click a module of this library and land on its real interface — signatures, documentation, and the highlighted source — for exactly the code this repository ships. This page is the entry point of that reference for the off-chain registry library: a generated Haddock reference, rebuilt with the documentation site from this same source tree, so what you read here is what you would compile against. One boundary on that promise is named later: identifiers and modules that belong to other packages are visible in the generated pages but are not clickable, because their documentation is not bundled with this site.",
+      "text": "A contributor reading the builder and blueprint guide wants to click a module of this library and land on its real interface — signatures, documentation, and the highlighted source. This page opens that generated reference for the off-chain registry library: it documents exactly the code this candidate was built from, and, as the extent states, a few of its modules are documented for the contributor without being importable by a caller.",
       "pause": 400
     },
     {
-      "text": "Every module of the off-chain registry library is listed here. Each entry links two pages of the generated reference: the module page — exports, types, and documented declarations — and the hyperlinked source page with the rendered, highlighted Haskell this candidate was built from. On this site the links open the generated pages; read from the repository, the same links open the source files themselves at the revision you are viewing.",
-      "pause": 400
+      "text": "Every module of the off-chain registry library is listed here. Each entry links two pages of the generated reference: the module page — exports, types, and documented declarations — and the hyperlinked source page.",
+      "pause": 350
     },
     {
-      "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. Ledger and Provider are re-exports: their implementations moved into the package's private ownership core, and the public library re-exports them, so their import paths and their entries in this reference are unchanged. The six node runtime owners in that private core are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in the node module ownership guide. The extent is the public module surface; the site check fails until it and this list agree.",
-      "pause": 400
+      "text": "The complete extent is 39 modules in three kinds. 34 explicitly exposed modules and two re-exported modules are what a caller imports. The three fold owners behind the Update facade — Build, Context and Duties — are package-internal other-modules: they have generated pages here for the contributor reading the facade's implementation, but no caller import path — a caller compiles against the facade's exports, not against these modules. Ledger and Provider are the re-exports: their implementations moved into the private ownership core and the public library re-exports them, so their import paths are unchanged. The six node runtime owners in that core stay outside this reference, documented with source links in the node ownership guide. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike.",
+      "pause": 600
     }
   ],
   "how-the-reference-stays-honest": [
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "offchain-api-reference.md",
-    "sha256": "40d3d565ed7d56a3206e9656cf59b4ab452cd1a46350ade7e193e71e83dd7ff1"
+    "sha256": "76aef6c79aae058d45e6b79c8d2c829778a40135619eb50e910aefabc8ad18a7"
   }
 }

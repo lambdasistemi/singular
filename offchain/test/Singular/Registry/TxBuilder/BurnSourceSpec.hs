@@ -23,6 +23,13 @@ named — the same rule `registryDuties` already applies to the custody an
 These rows are pure. `registryDuties` is the ONE place the off-chain side
 decides what an edge owes; it is the decision site this ticket changes,
 and these rows assert what it decides, not what a node later does with it.
+
+One row is not pure: the last describe drives the public
+`updateTokenWithDuties` itself, against a stub provider and an in-memory
+trie, and reads the body of the transaction it builds. The model proves
+no fold requires a signer, and that promise is about the SUBMITTED
+transaction's required-signer field — so the row reads that field of the
+built body, not only the duties the fold accumulated.
 -}
 module Singular.Registry.TxBuilder.BurnSourceSpec (spec) where
 
@@ -30,11 +37,18 @@ import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
 import Data.Either (isLeft, isRight)
+import Data.Set qualified as Set
 import Data.Word (Word8)
 import Test.Hspec
 
-import Cardano.Ledger.Address (serialiseAddr)
+import Cardano.Ledger.Address (Addr, serialiseAddr)
+import Cardano.Ledger.Alonzo.TxBody (reqSignerHashesTxBodyL)
 import Cardano.Ledger.Api.PParams (emptyPParams)
+import Cardano.Ledger.Api.Tx (bodyTxL)
+import Cardano.Ledger.Api.Tx.Body (
+    inputsTxBodyL,
+    mintTxBodyL,
+ )
 import Cardano.Ledger.Api.Tx.Out (
     TxOut,
     coinTxOutL,
@@ -42,7 +56,7 @@ import Cardano.Ledger.Api.Tx.Out (
     mkBasicTxOut,
     valueTxOutL,
  )
-import Cardano.Ledger.BaseTypes (Network (Testnet))
+import Cardano.Ledger.BaseTypes (Network (Testnet), SlotNo (..))
 import Cardano.Ledger.Core (Script, hashScript)
 import Cardano.Ledger.Mary.Value (
     AssetName (..),
@@ -53,11 +67,18 @@ import Cardano.Ledger.Mary.Value (
 import Cardano.Ledger.TxIn (TxIn)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
+import PlutusCore.Version (plcVersion110)
+import PlutusLedgerApi.V3 (serialiseUPLC)
 import PlutusTx.Builtins (toBuiltin)
+import UntypedPlutusCore qualified as UPLC
+import UntypedPlutusCore.DeBruijn ()
 
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (parseOutRef)
-import Singular.Registry.Ledger (Coin (..), ConwayEra)
+import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId (..))
+import Singular.Registry.Provider (Provider (..))
+import Singular.Registry.Trie (TrieManager (..))
+import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.ConnectedFold (
     ConnectedMint (..),
     ConnectedSpend (..),
@@ -65,10 +86,12 @@ import Singular.Registry.TxBuilder.ConnectedFold (
 import Singular.Registry.TxBuilder.Internal (
     addrFromKeyHashBytes,
     cageAddrFromCfg,
+    cagePolicyIdFromCfg,
     computeScriptHash,
     extractCageDatum,
     mkInlineDatum,
     policyIdFromPin,
+    requestAddrFromCfg,
     scriptFromBytes,
     scriptHashBytes,
     toPlcData,
@@ -79,6 +102,7 @@ import Singular.Registry.TxBuilder.Update (
     RegistryDuties (..),
     emptyRegistryContext,
     registryDuties,
+    updateTokenWithDuties,
  )
 import Singular.Registry.Types (
     CageDatum (..),
@@ -91,8 +115,10 @@ import Singular.Registry.Types (
     edgeDeleteAbsent,
     edgeDeleteActive,
     edgeInsertAbsent,
+    edgeInsertActive,
     edgeUpdateActive,
     edgeUpdateTerminal,
+    edgeWitnessTerminal,
  )
 
 import Control.Monad (void)
@@ -219,6 +245,9 @@ spec = do
     burnSourceRequired
     deletionBurnSource
     depositReturn
+    requestOrder
+    noFoldSigner
+    builtFoldBody
 
 -- ---------------------------------------------------------
 -- #178: absent custody identity comes from its sole asset
@@ -650,3 +679,315 @@ approved (i, out) =
         & valueTxOutL
             .~ MaryValue (out ^. coinTxOutL) approvalAsset
     )
+
+-- ---------------------------------------------------------
+-- #267: accumulated duties preserve request order
+-- ---------------------------------------------------------
+
+{- | A request at `key` on `edge`, at its own input `i`. The fold runs
+its requests in the order the caller hands them (the facade sorts by
+input), and these rows pin what that order means for the duties the
+fold accumulates.
+-}
+keyedRequest :: Int -> ByteString -> Edge -> (TxIn, TxOut ConwayEra)
+keyedRequest i key edge =
+    let (_, out) = requestFor edge
+        req = case extractCageDatum out of
+            Just (RequestDatum r) -> r{requestKey = key}
+            _ -> error "BurnSourceSpec fixture: requestFor carries no request"
+     in ( case parseOutRef (T.pack (replicate 64 '5' <> "#" <> show i)) of
+            Right r -> r
+            Left e -> error ("BurnSourceSpec fixture: " <> e)
+        , out & datumTxOutL .~ mkInlineDatum (toPlcData (RequestDatum req))
+        )
+
+{- | The key one custody output locks: read from the output the builder
+produced, never typed into the row.
+-}
+soleAssetKey :: TxOut ConwayEra -> ByteString
+soleAssetKey out = case out ^. valueTxOutL of
+    MaryValue _ (MultiAsset m) -> case Map.toList m of
+        [(_, names)] -> case Map.toList names of
+            [(AssetName n, _)] -> SBS.fromShort n
+            _ -> error "order fixture: a custody output names one key"
+        _ -> error "order fixture: a custody output holds one policy"
+
+-- | The key one mint names, read the same way.
+mintAssetKey :: ConnectedMint -> ByteString
+mintAssetKey m = case Map.toList (cmAssets m) of
+    [(AssetName n, _)] -> SBS.fromShort n
+    _ -> error "order fixture: a mint names one key"
+
+{- | The rows use two requests whose keys sort the OPPOSITE way to the
+requests, so a builder that sorted its outputs, folded the requests
+backwards, or swept the context's inventory in its own order each fails
+differently. Deposit returns are owed per OWNER and deliberately group
+by key, so no row here orders them.
+-}
+requestOrder :: Spec
+requestOrder =
+    describe "#267: accumulated duties preserve request order" $ do
+        it "locks custody in request order" $
+            case orderOf [keyedRequest 1 keyB edgeInsertAbsent, keyedRequest 2 keyA edgeInsertAbsent] of
+                Left err -> expectationFailure err
+                Right d -> map soleAssetKey (rdOutputs d) `shouldBe` [keyB, keyA]
+
+        it "mints in request order" $
+            case orderOf [keyedRequest 1 keyB edgeInsertAbsent, keyedRequest 2 keyA edgeInsertAbsent] of
+                Left err -> expectationFailure err
+                Right d -> map mintAssetKey (rdMints d) `shouldBe` [keyB, keyA]
+
+        -- The holder inventory deliberately lists the keys in the
+        -- opposite order to the requests, so the fold consumes the
+        -- sources its requests name, in request order — not the
+        -- inventory's.
+        it "consumes burn sources in request order" $
+            case registryDuties
+                boundCfg
+                emptyPParams
+                tokenState
+                (holding [boundHolder 1 keyA 1, boundHolder 2 keyB 1])
+                [ keyedRequest 3 keyB edgeDeleteActive
+                , keyedRequest 4 keyA edgeDeleteActive
+                ]
+                [True, True] of
+                Left err -> expectationFailure err
+                Right d -> map fst (rdInputs d) `shouldBe` [holderIn 2, holderIn 1]
+  where
+    orderOf reqs =
+        registryDuties cfg emptyPParams tokenState witnessScripts reqs (map (const True) reqs)
+
+-- ---------------------------------------------------------
+-- #267: no edge of a fold requires a signature
+-- ---------------------------------------------------------
+
+{- | The model proves every fold requires no signer
+(`Singular.Statements.fold_requires_no_signer`), so the duties a fold
+accumulates must carry no signature requirement however many edges it
+discharges. One request on each of the seven admissible edges, all
+processed, each with what that edge needs in hand — custody for the two
+that spend it, holders for the two that burn — read through the public
+`Update` import, exactly as a caller reads it.
+-}
+noFoldSigner :: Spec
+noFoldSigner =
+    describe "#267: no edge of a fold requires a signature" $
+        it "accumulates no required signer across all seven edges" $
+            case registryDuties
+                boundCfg
+                emptyPParams
+                tokenState
+                fullFoldContext
+                sevenEdges
+                (map (const True) sevenEdges) of
+                Left err -> expectationFailure err
+                Right d -> do
+                    rdSigners d `shouldSatisfy` null
+                    -- Non-vacuity: this fold did real work on every edge,
+                    -- so an empty signer list is a decision and not an
+                    -- empty answer. Seven edges mint eight entries
+                    -- (updateActive mints two), and the two custody
+                    -- spends and two burn sources are all consumed.
+                    length (rdMints d) `shouldBe` 8
+                    length (rdSpends d) `shouldBe` 2
+                    length (rdInputs d) `shouldBe` 2
+                    rdOutputs d `shouldSatisfy` (not . null)
+
+-- | The key a request on `edge` is booked at, one byte of edge in it.
+edgeKey :: Edge -> ByteString
+edgeKey e = "t267-key-" <> BS.pack [fromIntegral (e + 48)]
+
+-- | All seven admissible edges, in ordinal order.
+allEdges :: [Edge]
+allEdges =
+    [ edgeInsertAbsent
+    , edgeInsertActive
+    , edgeUpdateActive
+    , edgeUpdateTerminal
+    , edgeDeleteAbsent
+    , edgeDeleteActive
+    , edgeWitnessTerminal
+    ]
+
+{- | A request on `edge` at its own key, with a destination this builder
+can decode (the cage's own address, as the #178 refund fixture uses).
+-}
+destinedRequest :: Int -> Edge -> (TxIn, TxOut ConwayEra)
+destinedRequest i edge =
+    let (_, out) = requestFor edge
+        req = case extractCageDatum out of
+            Just (RequestDatum r) ->
+                r{requestKey = edgeKey edge, requestDestination = (refund, "")}
+            _ -> error "BurnSourceSpec fixture: requestFor carries no request"
+     in ( case parseOutRef (T.pack (replicate 64 '5' <> "#" <> show i)) of
+            Right r -> r
+            Left e -> error ("BurnSourceSpec fixture: " <> e)
+        , out & datumTxOutL .~ mkInlineDatum (toPlcData (RequestDatum req))
+        )
+
+-- | One request per admissible edge, at distinct inputs.
+sevenEdges :: [(TxIn, TxOut ConwayEra)]
+sevenEdges = [destinedRequest i e | (i, e) <- zip [20 ..] allEdges]
+
+{- | A custody UTxO at its own input, holding one absent token for `key`
+and naming a decodable refund address.
+-}
+keyedCustody :: Int -> ByteString -> (TxIn, TxOut ConwayEra)
+keyedCustody i key =
+    ( holderIn i
+    , mkBasicTxOut
+        (cageAddrFromCfg cfg Testnet)
+        (custodyValue (cfgAbsentPolicy cfg) key 1)
+        & datumTxOutL .~ mkInlineDatum refundOnly
+    )
+
+{- | Everything the seven-edge fold needs in hand: the witness scripts,
+the cage script, custody for the two edges that spend it, and holders
+for the two edges that burn.
+-}
+fullFoldContext :: RegistryContext
+fullFoldContext =
+    ( holding
+        [ boundHolder 11 (edgeKey edgeUpdateTerminal) 1
+        , boundHolder 12 (edgeKey edgeDeleteActive) 1
+        ]
+    )
+        { rcCageScript = Just (scriptFromBytes "t267 cage" (SBS.toShort (BS.pack [0x57])))
+        , rcCageUtxos =
+            [ keyedCustody 13 (edgeKey edgeUpdateActive)
+            , keyedCustody 14 (edgeKey edgeDeleteAbsent)
+            ]
+        }
+
+-- ---------------------------------------------------------
+-- #267: the BUILT fold requires no signature
+-- ---------------------------------------------------------
+
+{- | A well-formed PlutusV3 program, the two-argument identity. The
+request script's parameters are applied to ACTUAL UPLC
+(`applyDataParam` deserialises the configured bytes), so a config whose
+script fields carry arbitrary bytes cannot reach the fold's assertions:
+it fails inside the build with a deserialisation error. The built-body
+row folds under `builtCfg`; every pure row keeps the shared `cfg`.
+-}
+program :: SBS.ShortByteString
+program =
+    serialiseUPLC
+        ( UPLC.Program
+            ()
+            plcVersion110
+            ( UPLC.LamAbs
+                ()
+                (UPLC.DeBruijn 0)
+                ( UPLC.LamAbs
+                    ()
+                    (UPLC.DeBruijn 0)
+                    (UPLC.Var () (UPLC.DeBruijn 2))
+                )
+            )
+        )
+
+{- | The registry the built-body row folds under: the same census, with
+both script fields carrying the well-formed program and the script
+hash following it.
+-}
+builtCfg :: CageConfig
+builtCfg =
+    cfg
+        { cageScriptBytes = program
+        , requestScriptBytes = program
+        , cfgScriptHash = computeScriptHash program
+        }
+
+-- | The token this registry folds: the one `requestFor` already names.
+foldTokenId :: TokenId
+foldTokenId = TokenId (AssetName "t177-registry")
+
+stateIn :: TxIn
+stateIn = case parseOutRef (T.pack (replicate 64 '6' <> "#0")) of
+    Right r -> r
+    Left e -> error ("BurnSourceSpec fixture: " <> e)
+
+feeIn :: TxIn
+feeIn = case parseOutRef (T.pack (replicate 64 '7' <> "#0")) of
+    Right r -> r
+    Left e -> error ("BurnSourceSpec fixture: " <> e)
+
+-- | The wallet the fold funds and collaterals with.
+payer :: Addr
+payer = addrFromKeyHashBytes Testnet ownerKey
+
+{- | The registry state UTxO: one state token under the cage policy, the
+census datum at the cage address. Everything the fold's own queries ask
+for is served from this fixture — the stub provider never reaches a
+node, and the values it returns are read back from the built body, never
+compared to themselves.
+-}
+stateUtxoFor :: (TxIn, TxOut ConwayEra)
+stateUtxoFor =
+    ( stateIn
+    , mkBasicTxOut
+        (cageAddrFromCfg builtCfg Testnet)
+        (MaryValue (Coin 5000000) stateToken)
+        & datumTxOutL .~ mkInlineDatum (toPlcData (StateDatum tokenState))
+    )
+  where
+    stateToken =
+        MultiAsset
+            ( Map.singleton
+                (cagePolicyIdFromCfg builtCfg)
+                (Map.singleton (AssetName "t177-registry") 1)
+            )
+
+{- | A stub provider serving one registry: the state at the cage, the one
+pending request at the request address, an ada-only wallet output
+anywhere else. Evaluation is stubbed to succeed with no budgets and
+slot conversion to a constant — the row reads the BODY the builder
+assembled, which never depends on either stub's value.
+-}
+foldProvider :: Provider IO
+foldProvider =
+    Provider
+        { queryUTxOs = pure . utxosAt
+        , queryProtocolParams = pure emptyPParams
+        , evaluateTx = \_ -> pure Map.empty
+        , posixMsToSlot = \_ -> pure (SlotNo 100)
+        , posixMsCeilSlot = \_ -> pure (SlotNo 100)
+        }
+
+-- | What the fold's own queries see at each address.
+utxosAt :: Addr -> [(TxIn, TxOut ConwayEra)]
+utxosAt a
+    | a == cageAddrFromCfg builtCfg Testnet = [stateUtxoFor]
+    | a == requestAddrFromCfg builtCfg foldTokenId Testnet = [requestFor edgeInsertAbsent]
+    | otherwise = [(feeIn, mkBasicTxOut a (MaryValue (Coin 100000000) mempty))]
+
+{- | The fold's promise that no signer is required is a promise about
+the transaction a caller SUBMITS, so the row drives the public
+`updateTokenWithDuties` — query, proofs, duties and assembly, the whole
+path a caller runs — and reads the required-signer field of the body it
+builds. Non-vacuity rides the same body: the fold really spent the
+state and the request and really minted, so an empty signer field is a
+built fold's decision, not an empty answer.
+-}
+builtFoldBody :: Spec
+builtFoldBody =
+    describe "#267: the built fold requires no signature" $
+        it "builds the fold with no required signers in its body" $ do
+            tm <- mkPureTrieManager
+            createTrie tm foldTokenId
+            tx <-
+                updateTokenWithDuties
+                    builtCfg
+                    foldProvider
+                    tm
+                    foldTokenId
+                    payer
+                    witnessScripts
+            let body = tx ^. bodyTxL
+            body ^. reqSignerHashesTxBodyL `shouldSatisfy` Set.null
+            body
+                ^. inputsTxBodyL
+                `shouldSatisfy` (\ins -> Set.member stateIn ins && Set.member requestIn ins)
+            case body ^. mintTxBodyL of
+                MultiAsset m -> m `shouldSatisfy` (not . Map.null)

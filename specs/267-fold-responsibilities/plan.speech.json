@@ -1,0 +1,28 @@
+{
+  "ordered-work": [
+    {
+      "text": "The ordered work has five steps. First, freeze what must not move: the six public exports, the declaration map, the original caller closure, the accepted Lean tree and the merged intake surfaces, and record the clean baseline.",
+      "pause": 400
+    },
+    {
+      "text": "Second, move the code to its owners: context, query, proof, state and slot preparation into the context owner; duty types and decisions into the duties owner; the transaction program and evaluation adaptation into the build owner. The public facade stays the orchestration and re-export surface, and moved bodies are preserved except for imports, exports and narrowly justified plumbing.",
+      "pause": 500
+    },
+    {
+      "text": "Third, keep tests running through production entry points and add focused assertions for the ordering and effect blind spots. One fresh-blueprint run presents two real request outputs in descending TxIn order, then runs connected stages for all seven admissible edges. Expected effects come from observed pre-state and the accepted Lean row; the body, landed destinations and refunds, and chain and mirror root are compared. Each of the seven effect comparisons must pass and its one-field mutant must fail inside that run.",
+      "pause": 400
+    },
+    {
+      "text": "Fourth, update the high-level builder guide, the navigation, the source and generated API links and the curated speech in the same candidate as the extraction, comparing the guide's claims to the moved source before the expensive campaign.",
+      "pause": 400
+    },
+    {
+      "text": "Fifth, after implementation and documentation are settled: the auditor's product checkpoint, the historical cheap-call breaches kept separate from the prospective guard, the truthful task and speech stamps, the frozen gate once on the clean final head, the auditor's exact-head pre-push report, pushed-head CI, and the handback of the draft PR. The epic owner alone accepts and merges. One cohesive slice covers code, focused control and docs; the final gate, audit, CI and handback are acceptance receipts, not prematurely completed tracked tasks.",
+      "pause": 600
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "9cc362fd6ce4e398610011ae761a88639c0bc52cdd9d96c21ee32c53d72e0de4"
+  }
+}
