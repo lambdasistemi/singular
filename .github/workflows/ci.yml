@@ -42,7 +42,7 @@ jobs:
       # retired three-runner attach check stays outside (#172/#283).
       - name: Deployment identity
         if: github.event_name == 'pull_request' && github.event.action != 'closed'
-        run: nix shell --quiet nixpkgs#jq -c bash offchain/deployment-identity-check.sh
+        run: nix shell --quiet nixpkgs#jq nixpkgs#diffutils -c bash offchain/deployment-identity-check.sh
   offchain-lint:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     name: Off-chain lint
