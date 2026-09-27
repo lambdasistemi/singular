@@ -152,6 +152,7 @@ import Singular.Registry.Types (
     Edge,
     OnChainRequest (..),
     OnChainRoot (..),
+    OnChainTokenState (stateRoot),
     ProofStep,
     RequestAction (..),
     UpdateRedeemer (..),
