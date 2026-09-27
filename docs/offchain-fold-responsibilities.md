@@ -17,11 +17,19 @@ existing `Singular.Registry.TxBuilder.Update` import; I want the same
 request order, the same token effects, the same custody refunds and the
 same destinations as before, so my callers and my conformance rows see
 nothing move. A contributor refactoring the fold's internals owes me
-that, and the focused suite now pins it: the order in which duties
-accumulate, the quantities minted, and — because the model proves no
-fold requires a signer — both the duties' empty signer list and the
-empty required-signer set of the transaction the public entry actually
-builds.
+that. The focused suite pins the parts it reaches: the order in which
+duties accumulate for the request list it is given, the quantities
+minted, the burn-source and custody selections, the per-owner grouping
+of deposit returns, and — because the model proves no fold requires a
+signer — both the duties' empty signer list and the empty
+required-signer set of the transaction the public entry actually
+builds. Two promises it does not pin: which request order the fold's
+own query establishes (the focused rows hand `registryDuties`
+already-ordered lists, and the built-body row folds one request), and
+where a delivering edge's token lands (no focused row asserts a
+destination). Those two ride the fresh-blueprint devnet suites, whose
+own discrimination is a separate, unstated limit — read them as the
+only evidence for input-order sorting and destination delivery.
 
 ## One owner per fold concern
 
@@ -33,16 +41,29 @@ flowchart TD
     U -->|evaluation adapter and the one DSL program| B[Update.Build]
     D -->|reads the context a caller hands in| C
     B -->|reads the duties the fold decided| D
-    C -->|identity, lookup, edges| I[TxBuilder.Internal owners]
-    B -->|attached action types| CF[TxBuilder.ConnectedFold]
+    C -->|edges| IE[TxBuilder.Internal.Edges]
+    C -->|identity, datums| II[TxBuilder.Internal.Identity]
+    C -->|lookup| IL[TxBuilder.Internal.Lookup]
+    D -->|the edge-to-mint decisions it shares with the cage| IE
+    D -->|addresses, policy pins, datums| II
+    D -->|constructs attached mints, spends, redeemers| CF[TxBuilder.ConnectedFold]
+    B -->|input-to-reference conversion| II
+    B -->|reads the attached action types| CF
+    U -->|builds the request script| II
+    U -->|reads the custody-spend accessor| CF
 ```
 
 The facade holds no algorithm. It runs the fold's sequence — query,
 proofs, state preparation, context completion, duties, upper slot,
 program, build — and every decision in that sequence belongs to exactly
-one of the three owners below it. The graph is acyclic and one-way:
-Context knows nothing of duties or assembly, Duties reads Context but
-no assembly, Build reads Duties but no facade.
+one of the three owners below it. The graph is acyclic and one-way
+between the fold owners: Context knows nothing of duties or assembly,
+Duties reads Context but no assembly, Build reads Duties but no
+facade. Below the fold owners, both Duties and Build also read the
+older Internal owners directly — the duty derivation shares its
+edge-to-mint table with the cage through `Internal.Edges` — and both
+the facade and the build owner read `ConnectedFold` for the attached
+action types.
 
 | Module | Responsible for |
 | --- | --- |
@@ -78,14 +99,18 @@ The extraction is a representation change, not a new registry rule.
 The Lean model remains the authority: the fold's mint quantities, owner
 deposits, custody refunds and approval returns are what
 `Singular.obligations` says they are, and no fold requires a signer
-(`Singular.Statements.fold_requires_no_signer`). The focused suite pins
-the order duties accumulate in (requests are folded in input order, and
-their mints, outputs and burn sources list in that order, not sorted),
-the exact holder selection for a burn, the per-owner grouping of deposit
-returns, and the built body's empty required-signer set through the
-public entry. A contributor who needs one of those to change is not
-refactoring; that is a behavior change and belongs to the design flow,
-not to this structure.
+(`Singular.Statements.fold_requires_no_signer`). What the focused suite
+executes: the duties list in the order of the requests it was given —
+not sorted, reversed or swept from the inventory — with mints, outputs
+and burn sources each read back from what the builder produced; the
+exact holder selection for a burn; the per-owner grouping of deposit
+returns; and the built body's empty required-signer set through the
+public entry. What it does not: nothing in the focused tree asserts the
+query's input-order sort or a delivering edge's destination — a
+contributor changing `queryContext`'s ordering or the `deliver` arm
+needs the devnet suites, not this tree, to catch it. A contributor who
+needs any pinned behavior to change is not refactoring; that is a
+behavior change and belongs to the design flow, not to this structure.
 
 ## Independent evidence boundaries
 
@@ -118,7 +143,7 @@ extraction touches none of it.
 | How to split the fold | Three owners matching preparation, decision and assembly, behind the unchanged facade. | Finer owners per edge or per policy: more indirection, same guarantee. |
 | How callers keep working | The facade re-exports its six names byte-for-byte; children are implementation modules of the same library. | Rewriting callers to the children: churn across tests, commands and conformance with no behavioral benefit. |
 | Where the context completion lives | `Update.Context`, as `completeContext`, moved verbatim from the facade's inline block — queries are preparation, and the facade only sequences them. | Leaving the queries in the facade: the owner graph would say Context owns queries while the facade ran them. |
-| The pre-existing `ConnectedFold` copies | Left untouched: it is the permissionless journey fold with its own documented lineage, not a copy of the registry fold's owners. | Unifying them: a different ticket's design question — the two builders serve different flows with different rules. |
+| The pre-existing `ConnectedFold` copies | Left untouched: it is the permissionless journey fold with its own documented lineage — its own header says its proof, upper-slot and refund rules are transcribed from the repair runner, pre-dating this extraction — so this slice neither creates nor unifies parallel logic there. | Unifying them: a different ticket's design question — the two builders serve different flows with different rules, and the parallel logic is recorded as a standing limit on "no duplicate algorithm" within this extraction's fence. |
 
 ## Source
 

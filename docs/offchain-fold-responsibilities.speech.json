@@ -1,8 +1,16 @@
 {
   "the-story-this-serves": [
     {
-      "text": "The story: as a registry caller, I fold requests through the existing Update import, and I want the same request order, the same token effects, the same custody refunds and the same destinations as before, so my conformance rows see nothing move. The focused suite now pins exactly that.",
+      "text": "The story: as a registry caller, I fold requests through the existing Update import, and I want the same request order, the same token effects, the same custody refunds and the same destinations as before, so my conformance rows see nothing move.",
       "pause": 400
+    },
+    {
+      "text": "The focused suite pins the parts it reaches: the order duties accumulate for the request list it is given, the quantities minted, the burn-source and custody selections, the per-owner grouping of deposit returns, and both the duties' empty signer list and the empty required-signer set of the transaction the public entry actually builds.",
+      "pause": 450
+    },
+    {
+      "text": "Two promises it does not pin: which request order the fold's own query establishes — the focused rows hand registryDuties already-ordered lists, and the built-body row folds one request — and where a delivering edge's token lands, which no focused row asserts. Those two ride the fresh-blueprint devnet suites, whose own discrimination is a separate, unstated limit. Read them as the only evidence for input-order sorting and destination delivery.",
+      "pause": 500
     }
   ],
   "one-owner-per-fold-concern": [
@@ -11,8 +19,8 @@
       "pause": 400
     },
     {
-      "text": "A diagram is shown here. Callers import six public names from the Update facade. The facade reaches three owners: Context owns the queries, the ordered proofs, the state output, the upper slot and context completion; Duties owns what the requests owe; Build owns the evaluation adapter and the one transaction program. Duties reads Context; Build reads Duties; Context reads only the older Internal owners. The graph is acyclic and one-way.",
-      "pause": 500
+      "text": "A diagram is shown here. Callers import six public names from the Update facade. The facade reaches three owners: Context owns the queries, the ordered proofs, the state output, the upper slot and context completion; Duties owns what the requests owe; Build owns the evaluation adapter and the one transaction program. Duties reads Context; Build reads Duties; and below the fold owners, Duties also reads the edges owner for the cage-shared mint table, the identity owner, and ConnectedFold for the attached action types; Build reads the identity owner and ConnectedFold; the facade itself reads the identity owner for the request script and ConnectedFold for the custody-spend accessor. The graph is acyclic and one-way between the fold owners.",
+      "pause": 600
     },
     {
       "text": "A table with four rows follows: the facade, with the public exports and the fold's sequence and nothing else; Context, with the registry context, the state, request and fee lookups, the speculative proofs, the state continuation and the validity slot; Duties, with the one derivation of mints, destinations, custody, burn sources, returns and the empty signer set; and Build, with the empty query type, the evaluation adapter, and the one program that assembles the transaction.",
@@ -27,8 +35,16 @@
   ],
   "what-must-not-change": [
     {
-      "text": "This extraction is a representation change, not a new registry rule. The Lean model stays the authority: mint quantities, owner deposits, custody refunds, approval returns, and no fold requiring a signer. The focused suite pins the order duties accumulate in, the exact holder selection for a burn, the per-owner grouping of deposit returns, and the empty required-signer set of the transaction the public entry actually builds. A contributor who needs one of those to change is not refactoring; that is a behavior change for the design flow.",
-      "pause": 500
+      "text": "This extraction is a representation change, not a new registry rule. The Lean model stays the authority: mint quantities, owner deposits, custody refunds, approval returns, and no fold requiring a signer.",
+      "pause": 350
+    },
+    {
+      "text": "What the focused suite executes: the duties list in the order of the requests it was given — not sorted, reversed, or swept from the inventory — with mints, outputs and burn sources each read back from what the builder produced; the exact holder selection for a burn; the per-owner grouping of deposit returns; and the built body's empty required-signer set through the public entry.",
+      "pause": 450
+    },
+    {
+      "text": "What it does not: nothing in the focused tree asserts the query's input-order sort, or a delivering edge's destination. A contributor changing the query's ordering or the deliver arm needs the devnet suites, not this tree, to catch it. And a contributor who needs any pinned behavior to change is not refactoring; that is a behavior change for the design flow.",
+      "pause": 450
     }
   ],
   "independent-evidence-boundaries": [
@@ -45,7 +61,7 @@
   ],
   "decisions-this-extraction-recorded": [
     {
-      "text": "A table with four rows records the decisions. The split: three owners for preparation, decision and assembly, rather than finer per-edge owners. How callers keep working: the facade re-exports its six names byte-for-byte, and the children are implementation modules of the same library, rather than rewriting every caller. Where context completion lives: in Context, moved verbatim from the facade, because queries are preparation, rather than leaving them in the facade. And the pre-existing connected-fold copies are left untouched: that builder is the permissionless journey fold with its own lineage, not a copy of the registry fold's owners, and unifying them is a different ticket's design question.",
+      "text": "A table with four rows records the decisions. The split: three owners for preparation, decision and assembly, rather than finer per-edge owners. How callers keep working: the facade re-exports its six names byte-for-byte, and the children are implementation modules of the same library, rather than rewriting every caller. Where context completion lives: in Context, moved verbatim from the facade, because queries are preparation, rather than leaving them in the facade. And the pre-existing connected-fold copies are left untouched: that builder is the permissionless journey fold whose own header records its proof, slot and refund rules as transcribed from the repair runner — parallel logic that predates this extraction — so this slice neither creates nor unifies it, and it is recorded as a standing limit on the no-duplicate-algorithm claim within this extraction's fence.",
       "pause": 600
     }
   ],
@@ -57,6 +73,6 @@
   ],
   "_source": {
     "file": "offchain-fold-responsibilities.md",
-    "sha256": "73017c81b527e5e153a539789dc00a322ba857d6dd3a80c4b87104394e7bff8f"
+    "sha256": "1c13444ba19352df88c97b569fe8a37c46b1b88e15cb9d10a821f86397f31636"
   }
 }

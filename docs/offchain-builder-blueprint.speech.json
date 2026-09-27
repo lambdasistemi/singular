@@ -5,8 +5,8 @@
       "pause": 300
     },
     {
-      "text": "A diagram is shown here. Three public facades now: the blueprint facade, the transaction-builder facade, and the fold facade. The blueprint facade re-exports three owners covering schema and validation, parameter application, and loading with code selection. The builder facade re-exports three owners covering identity and conversion, lookup and balancing, and edges with consumer binding and failure attribution. The fold facade re-exports the fold's own three owners: context preparation, what the requests owe, and the one transaction program. Duties reads the context; the build owner reads the duties; the context owner reads the older identity and lookup owners.",
-      "pause": 500
+      "text": "A diagram is shown here. Three public facades: the blueprint facade, the transaction-builder facade, and the fold facade. The blueprint facade re-exports three owners covering schema and validation, parameter application, and loading with code selection. The builder facade re-exports three owners covering identity and conversion, lookup and balancing, and edges with consumer binding and failure attribution. The fold facade re-exports its own context and duties owners and reaches the build owner. Between the owners: the duty derivation reads the context owner and also reads the edges owner directly for the cage-shared mint table, the identity owner, and ConnectedFold for the attached action types; the build owner reads the duties, the identity owner and ConnectedFold; the facade itself reads the identity owner for the request script and ConnectedFold for the custody-spend accessor.",
+      "pause": 600
     },
     {
       "text": "Every declaration lives in exactly one owner. The public modules hold no implementations: they re-export the same names with the same signatures as before the extraction, so an existing test, shipped command, or journey keeps compiling unchanged. The fold's own owners live behind the Update facade and are mapped in their own guide, Who owns a registry fold.",
@@ -71,6 +71,6 @@
   ],
   "_source": {
     "file": "offchain-builder-blueprint.md",
-    "sha256": "f8db10823cddd6deef68f309151f9d3b3bd7d5493c05eaa56e5061f0235bcdba"
+    "sha256": "73d05c8a97394781637738878e7a744bf46388ee7e3c0bfcf919e8b9fdd1f1b8"
   }
 }

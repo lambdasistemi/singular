@@ -38,15 +38,23 @@ flowchart TD
     TI -->|re-exports| BI
     TI -->|re-exports| BU
     TI -->|re-exports| BE
-    UF -->|re-exports context and duties| UC
-    UF -->|re-exports duties| UD
+    UF -->|re-exports the context| UC
+    UF -->|re-exports the duties| UD
     BI -->|applies request parameters| BA
     BU -->|reads request datums and owner bytes| BI
     BE -->|hashes consumer scripts| BI
-    UC -->|identity, lookup, edges| BI
+    UC -->|identity, datums| BI
     UC -->|lookup| BU
+    UC -->|edges| BE
     UD -->|reads the context| UC
+    UD -->|edge-to-mint decisions shared with the cage| BE
+    UD -->|addresses, policy pins, datums| BI
+    UD -->|constructs attached mints, spends, redeemers| CF[ConnectedFold]
     UB -->|reads the duties| UD
+    UB -->|input-to-reference conversion| BI
+    UB -->|attached action types| CF
+    UF -->|builds the request script| BI
+    UF -->|custody-spend accessor| CF
     Builders[Per-operation builders — Boot, Request, Reject, ConnectedFold]
     Builders -->|import| BI
     Builders -->|import| BU
