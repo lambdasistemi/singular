@@ -22,6 +22,12 @@ compiled blueprint's declared schemas read at run time
 — and @txSize@ the measured serialized bytes, with no transactions.
 Every other accepted row is a @node-submit@ observation with
 transactions and units from the running node.
+
+One shape here is owned elsewhere and re-exported: the asset-movement
+form of edge evidence — a policy, a name and a quantity with their JSON
+encoding — lives in @Conformance.Evidence.Asset@ and is re-exported by
+this module unchanged, so the public import path a caller already uses
+does not move.
 -}
 module Conformance.Receipt (
     Outcome (..),

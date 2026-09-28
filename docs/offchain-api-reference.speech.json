@@ -1,7 +1,7 @@
 {
   "_source": {
     "file": "offchain-api-reference.md",
-    "sha256": "219ac1069bf24e9e4d779009c5203955863f16df7f13fc6af23977ca2e92de08"
+    "sha256": "375a990ab80afcb3cffd3310bb6b92755d33d29acedaf106a4ea38e7d8cc1b28"
   },
   "how-the-reference-stays-honest": [
     {
@@ -28,7 +28,7 @@
   "what-the-reference-does-not-claim": [
     {
       "pause": 400,
-      "text": "This reference covers the off-chain registry library only. The four registry commands, the journey, insert active, update terminal and deployment, are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. It is not a repository-wide API claim: the conformance suite's own library is documented separately, and a generated reference for every library in this repository is a later, independently checked extension. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages."
+      "text": "This reference covers the off-chain registry library only. The four registry commands, the journey, insert active, update terminal and deployment, are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference, the Conformance API reference, generated and checked by the same discipline from the Conformance tree, so between them the two references cover this repository's Haskell libraries; the on-chain validators are Aiken, and the coverage tree's evaluation spike is an executable, so neither carries a Haskell library reference. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages."
     }
   ],
   "what-this-reference-contains": [

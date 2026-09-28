@@ -1,0 +1,98 @@
+{
+  "_source": {
+    "file": "conformance-architecture.md",
+    "sha256": "3eb93ab86d88187ed6fc12ee38d917861dc95bffecedf5ed2193de226c293087"
+  },
+  "the-story-this-serves": [
+    {
+      "text": "As a contributor, I add or change a conformance row's program, its model binding or its comparison in one focused module, and the executed cases, receipts and published evidence stay exactly what they were — so a reviewer asks one question, and the public record a consuming project reads does not move under them.",
+      "pause": 400
+    },
+    {
+      "text": "As an integrator reading the consumer conformance record, I need the suite's own structure to keep its promise: rows become executed only through receipts, uncovered rows stay published, and the description language says what each case asserts — whatever module a change lands in.",
+      "pause": 500
+    }
+  ],
+  "what-the-library-owns": [
+    {
+      "text": "A table of the library's concerns and their owners. The description language: reusable theorem and clause structure, independent of registry actions. Story programs: programs over the nine exits of the model, seven folds, a reject and a retract, expressed as edge requests, tamperings and comparisons, with one program per edge and one for the keyed mint.",
+      "pause": 400
+    },
+    {
+      "text": "Theorem bindings: revision-bound Lean identities and statement anchors. Run-scoped identities: allocation belongs to actions, observation only looks up. Model transport: the JSON transport for the model's expected observations and verdicts, and the chapter bindings that name them.",
+      "pause": 400
+    },
+    {
+      "text": "Comparisons: the expected-side comparison as one named thing; discovered changes to every value the model declares observable; and the payments an accepted exit made, read off its transaction as the chain paid them.",
+      "pause": 400
+    },
+    {
+      "text": "Receipt evidence: run receipts, the only way a row becomes executed, their validation and storage; the asset-movement shape of edge evidence; attributable phase-two refusal matching; bounded node diagnostics. Rendering and inventory: the consumer row inventory and its validation, the book rendered from the same programs the live backend executes, the consumer's canonical-registry authentication, and per-purpose evaluation arithmetic that carries errors, never fabricated measurements.",
+      "pause": 500
+    }
+  ],
+  "which-way-dependencies-run": [
+    {
+      "text": "A diagram of the dependency direction. The live runner builds and interprets story programs, and writes receipt evidence. Story programs ask the model transport for the expected side; comparisons take the expected side from the model and the observed side from the runner. Rendering computes row states and the book from receipts, never typed, and reads the declared row inventory. The Conformance API reference documents every module of every library group.",
+      "pause": 500
+    },
+    {
+      "text": "The library never imports the app: the arrow runs one way, from the live runner into the library. The app modules — the command router, the row runners, the wallet, cage and submission owners, and the live interpreter that gives the story programs their live effects — are executables, outside the generated reference and documented here only by their boundary. The runner's own internal division is deferred work owned by the conformance epic, not delivered by the review this page came from.",
+      "pause": 400
+    },
+    {
+      "text": "One owner inside the evidence group is new and deliberately small: Conformance.Evidence.Asset owns the asset-movement shape of edge evidence — one movement named by its policy, asset name and quantity, with the JSON encoding that carries those three fields. It used to be the last declaration of Conformance.Receipt that is not a receipt concern. Conformance.Receipt re-exports it unchanged, so the one real caller, the live runner's keyed-mint expectation and observation, imports it through exactly the path it used before; the runner is not edited by that move.",
+      "pause": 500
+    }
+  ],
+  "a-rows-journey-step-by-step": [
+    {
+      "text": "A sequence diagram of one row's journey. The row runner builds the row's program: clauses, actions, theorem binding. The story program asks the model transport for the expected observation and verdict, and the model answers verbatim. The runner interprets the program against the devnet through the live interpreter, which hands the comparisons the observed payments and state as the chain paid them. The comparison takes the expected side from the model, unchanged, and answers with agreement or the named difference. The runner writes the receipt, or the refusal record — and a row becomes executed only through this receipt.",
+      "pause": 500
+    },
+    {
+      "text": "The expected side and the observed side stay independently derived: the model transport answers from the frozen model, the comparisons read the chain's outputs as the chain paid them, and neither consults the other's assumptions. The rendering then computes every row's state from the receipts that exist — an uncovered row stays uncovered in the published record, and no row's state is typed by hand.",
+      "pause": 500
+    }
+  ],
+  "what-may-not-change": [
+    {
+      "text": "These are the suite's public promises, and a structural change that breaks one of them is not an improvement.",
+      "pause": 300
+    },
+    {
+      "text": "A row becomes executed only through a receipt written by a run that actually executed it; row states are computed from receipts and never typed. Uncovered rows are published, not hidden; a green step is never presented as a fulfilled consumer promise. Every product claim is expressed in the suite's description language, and execution and rendering of that language are total over the same instruction set. Surfaces a reader navigates carry requirement text, not internal identifiers; harness evidence stays in its marked appendix. No case predicate, expected outcome, verdict classification, instruction, receipt field, theorem binding or evidence claim moves by a restructure.",
+      "pause": 500
+    }
+  ],
+  "where-to-make-a-change": [
+    {
+      "text": "A table of common changes and their owners. A row's story program, its clauses or its tamperings: the owning edge program or the keyed-mint fold, over the description language. A theorem's binding or statement anchor: the binding module, with its revision-bound identity. The model's expected side: the oracle transport and the chapter bindings. What a comparison accepts: the registration and perturbation comparisons and the payment observation. The receipt record's validation or storage: the receipt module; the asset-movement shape lives in its own owner and is re-exported unchanged. Refusal attribution and the negative control: the refusal module. The row inventory or its validation: the rows module. The published book or row-state rendering: the book module.",
+      "pause": 500
+    },
+    {
+      "text": "Live execution, wallets, submission and chain reads belong to the app modules under conformance slash app — the boundary this page draws; the datum-form observation inside the live interpreter is owned by the paused datum-observation lane, not this structure. A new library module goes into the Cabal library extent, and the generated reference's module list agrees with it or the site check fails.",
+      "pause": 500
+    }
+  ],
+  "decisions": [
+    {
+      "text": "A table of the decisions behind this structure. Where the asset-movement shape lives: one package-internal owner, re-exported unchanged — rejecting leaving it in the receipt module, because it describes what a keyed mint moved rather than how a row is validated, and rejecting a public module, because no caller needs a new import path. The caller's import path: the receipt facade re-exports it — rejecting editing the live runner, the one real caller, whose observation code is owned by another lane.",
+      "pause": 400
+    },
+    {
+      "text": "The generated reference: one parameterized machinery for both libraries, manifest-bound to this candidate's source — rejecting a second generator or checker, because two oracles drift, and rejecting a hand-written module list, because it cannot prove freshness. Where the reference is generated: the documentation build, from the Conformance input, beside the off-chain one — rejecting generation inside the conformance build, because API generation is a distinct build responsibility and cannot change product evidence.",
+      "pause": 500
+    }
+  ],
+  "evidence-and-limits": [
+    {
+      "text": "This page is a map, not evidence. The executed evidence for the suite is the receipts the runs write and the row states computed from them, published in the consumer conformance record; the reference's freshness is proven by its manifest digests, not by this prose. The structural review this page came from preserved behavior by moving one declaration byte-for-byte with its caller unchanged, and its matched base and head runs are the ticket owner's comparison to read, not a claim made here.",
+      "pause": 400
+    },
+    {
+      "text": "The runner's own internal division into owners remains deferred to the conformance epic's owner after the active semantic work lands; this page does not claim it delivered. No local build, test or documentation run backs this page's claims — the exact-head CI of the candidate that carries it is the verifier, and until that evidence exists these are design statements, not verified facts.",
+      "pause": 500
+    }
+  ]
+}

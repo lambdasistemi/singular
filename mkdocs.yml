@@ -44,6 +44,7 @@ nav:
   - State validator owners: docs/onchain-validator-owners.md
   - Off-chain API reference: docs/offchain-api-reference.md
   - Conformance API reference: docs/conformance-api-reference.md
+  - Conformance suite owners: docs/conformance-architecture.md
 theme:
   name: material
   custom_dir: overrides
