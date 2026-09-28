@@ -22,6 +22,21 @@
 #   c6  new covered source in a covered directory   -> PASS (auto-mapped; a
 #                                                    frozen per-file list
 #                                                    could not do this)
+#   c7  new offchain source outside every
+#       checker-visited component directory         -> haskell source outside
+#                                                    every checker-visited
+#                                                    component directory
+#                                                    (audit F-001: enforced
+#                                                    policies are bound to
+#                                                    the checker's extent)
+#   c8  ignored source present in the Git-free
+#       export (store-like context)                 -> must NOT vanish; it
+#                                                    fails as unmapped
+#                                                    (audit F-002)
+#   c9  force-added (tracked) source in a Git
+#       checkout whose path matches .gitignore      -> must NOT vanish; it
+#                                                    fails as unmapped
+#                                                    (audit F-002)
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -50,17 +65,28 @@ scratch() { # scratch <name> — fresh exported copy of the classified tree
   fi
 }
 
-expect_reject() { # expect_reject <name> <diagnostic-substring>
-  local name=$1 diagnostic=$2 log="$work/$1.log"
+expect_reject() { # expect_reject <name> <required-substring> [more…]
+  local name=$1; shift
+  local log="$work/$name.log"
   if python3 "$tool" --root "$work/$name" >"$log" 2>&1; then
     echo "control $name FAILED: the inventory accepted a defective tree" >&2
     failures=$((failures + 1))
-  elif grep -qF "$diagnostic" "$log"; then
-    echo "control $name PASS: rejected with the intended diagnostic"
-  else
-    echo "control $name FAILED: rejected for the wrong reason (wanted: $diagnostic)" >&2
+  elif ! grep -qF "$1" "$log"; then
+    echo "control $name FAILED: rejected for the wrong reason (wanted: $1)" >&2
     sed 's/^/  | /' "$log" >&2
     failures=$((failures + 1))
+  else
+    local missing=""
+    for pat in "$@"; do
+      grep -qF "$pat" "$log" || missing="$missing $pat"
+    done
+    if [ -n "$missing" ]; then
+      echo "control $name FAILED: diagnostic missing:$missing" >&2
+      sed 's/^/  | /' "$log" >&2
+      failures=$((failures + 1))
+    else
+      echo "control $name PASS: rejected with the intended diagnostic"
+    fi
   fi
 }
 
@@ -118,8 +144,49 @@ else
   failures=$((failures + 1))
 fi
 
+# c7 — a new offchain Haskell source outside every checker-visited component
+# directory must fail closed: no enforced policy may be claimed for a file
+# the offchain lint never visits (its extent is the Cabal hs-source-dirs
+# plus naming/test and naming/drift — audit finding F-001).
+scratch c7-offchain-outside-component
+mkdir -p "$work/c7-offchain-outside-component/offchain/unbuilt-component"
+printf 'module Unvisited () where\n' \
+  > "$work/c7-offchain-outside-component/offchain/unbuilt-component/Unvisited.hs"
+expect_reject c7-offchain-outside-component \
+  "haskell source outside every checker-visited component directory" \
+  "offchain/unbuilt-component/Unvisited.hs"
+
+# c8 — a source present in the Git-free export cannot be concealed by an
+# ignore pattern: in a Git-free source (Nix store copy, scratch export)
+# every present file is repository source, so ignore rules are inert and
+# the file must fail as unmapped rather than vanish (audit finding F-002).
+scratch c8-ignored-source-git-free
+mkdir -p "$work/c8-ignored-source-git-free/orphan-lane"
+printf 'module Hidden () where\n' \
+  > "$work/c8-ignored-source-git-free/orphan-lane/Hidden.hs"
+printf 'orphan-lane/\n' >> "$work/c8-ignored-source-git-free/.gitignore"
+expect_reject c8-ignored-source-git-free \
+  "unmapped haskell source: orphan-lane/Hidden.hs"
+
+# c9 — a TRACKED (force-added) source whose path matches .gitignore must not
+# be concealed in a Git checkout either: ignore rules skip untracked noise
+# only, and a tracked file is repository content (audit finding F-002).
+scratch c9-tracked-ignored-checkout
+if ! git -C "$work/c9-tracked-ignored-checkout" init -q \
+    || ! git -C "$work/c9-tracked-ignored-checkout" add -A; then
+  echo "controls: SETUP FAILURE — cannot stage the scratch checkout" >&2
+  exit 1
+fi
+mkdir -p "$work/c9-tracked-ignored-checkout/ignored-lane"
+printf 'module Hidden () where\n' \
+  > "$work/c9-tracked-ignored-checkout/ignored-lane/Hidden.hs"
+printf 'ignored-lane/\n' >> "$work/c9-tracked-ignored-checkout/.gitignore"
+git -C "$work/c9-tracked-ignored-checkout" add -f ignored-lane/Hidden.hs
+expect_reject c9-tracked-ignored-checkout \
+  "unmapped haskell source: ignored-lane/Hidden.hs"
+
 if (( failures > 0 )); then
   echo "controls: FAILED — $failures control(s) did not produce their intended outcome" >&2
   exit 1
 fi
-echo "controls: PASS — 6/6 controls produced their intended outcome"
+echo "controls: PASS — 9/9 controls produced their intended outcome"

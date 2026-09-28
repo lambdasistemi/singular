@@ -21,10 +21,14 @@ visible debt, never green language coverage. This inventory is a mapping, not
 enforcement: it proves every file is CLAIMED by a policy, and says which
 claims are currently executed.
 
-Reproducibility: the walk never consults Git. It skips `.git` and the paths
-the tracked `.gitignore` files match (a supported, fail-closed subset of
-gitignore syntax), so the same extent is discovered in a tracked checkout and
-in a Nix flake source, where no `.git` directory exists.
+Reproducibility across contexts: in a Git checkout the walk skips `.git`
+and skips an ignore-matched path ONLY when it is not tracked — a tracked
+file is never concealed, so a force-added source stays in the inventory
+while generated untracked noise is skipped. In a Git-free source, such as
+a Nix flake store copy, ignore rules are inert, because every present file
+is repository source. The `.gitignore` files are parsed (a supported,
+fail-closed subset of gitignore syntax) in both contexts so the two cannot
+drift. Nothing else depends on Git.
 
 Usage:
   python3 tools/code_inventory.py [--root DIR] [--json] [--export-tree DIR]
@@ -60,9 +64,14 @@ POLICIES: dict[str, dict] = {
     "hlint-offchain-active": {
         "kind": "lint", "tool": "hlint", "status": "enforced",
         "carrier": "offchain `nix run .#lint` — CI job 'Off-chain lint'",
-        "note": "offchain extent discovered from singular-registry.cabal "
-                "hs-source-dirs plus the two direct-GHC naming sources, minus "
-                "the 13 HLint debt directories (see hlint-offchain-debt).",
+        "note": "bound to the checker's own discovered extent: every Cabal "
+                "hs-source-dirs stanza of singular-registry.cabal (visited "
+                "recursively, as the checker's find does) plus the two "
+                "direct-GHC naming sources — the same discovery "
+                "offchain/nix/checks.nix performs — minus the 13 HLint debt "
+                "directories (see hlint-offchain-debt). An offchain source "
+                "outside that visited extent fails the inventory instead of "
+                "being claimed as enforced.",
     },
     "hlint-offchain-debt": {
         "kind": "lint", "tool": "hlint", "status": "pending",
@@ -76,8 +85,9 @@ POLICIES: dict[str, dict] = {
     "hlint-conformance": {
         "kind": "lint", "tool": "hlint", "status": "pending",
         "owner": "#278 S3/S4",
-        "note": "the Conformance cabal extent plus the #80 evaluation spike "
-                "harness; no HLint carrier covers the conformance tree today.",
+        "note": "every Haskell source under conformance/, whatever component "
+                "owns it (the Cabal stanzas and the #80 evaluation spike "
+                "today); no HLint carrier covers this tree yet.",
     },
     "aiken-check-onchain": {
         "kind": "lint", "tool": "aiken check", "status": "enforced",
@@ -171,8 +181,11 @@ POLICIES: dict[str, dict] = {
         "kind": "format", "tool": "fourmolu", "status": "enforced",
         "carrier": "offchain `nix run .#lint` — CI job 'Off-chain lint'",
         "note": "Fourmolu defaults; no fourmolu.yaml is committed yet (the "
-                "house configuration lands in #278 S2). Extent excludes the "
-                "two #264 A-003 fenced verifier sources.",
+                "house configuration lands in #278 S2). Extent is the "
+                "checker-visited component directories (Cabal hs-source-dirs "
+                "plus naming/test and naming/drift) minus the two #264 A-003 "
+                "fenced verifier sources; an offchain source outside the "
+                "visited extent fails closed, never claims enforcement.",
     },
     "fourmolu-offchain-fenced": {
         "kind": "format", "tool": "fourmolu", "status": "pending",
@@ -300,42 +313,67 @@ CODE_RULES: list[dict] = [
      "lint": "aiken-check-naming", "format": "aiken-fmt",
      "generated": False},
     # Haskell — the two A-003 fenced sources first (they sit under journey/).
+    # Every offchain rule is restricted ("where": "haskell-checker-extent")
+    # to the checker's own manifest-discovered extent — the Cabal
+    # hs-source-dirs plus naming/test and naming/drift, visited recursively
+    # exactly as offchain/nix/checks.nix does — so an enforced policy is
+    # never claimed for a file the checker does not visit; anything else
+    # under offchain/ hits the reject rule below and fails closed.
     {"id": "hs-offchain-fenced-verifier",
      "family": "haskell", "pattern": "offchain/journey/verifier/**/*.hs",
+     "where": "haskell-checker-extent",
      "lint": "hlint-offchain-debt", "format": "fourmolu-offchain-fenced",
      "generated": False, "note": VENDOR_NOTE},
     {"id": "hs-offchain-fenced-retire-verify",
      "family": "haskell", "pattern": "offchain/journey/retire-verify/**/*.hs",
+     "where": "haskell-checker-extent",
      "lint": "hlint-offchain-debt", "format": "fourmolu-offchain-fenced",
      "generated": False, "note": VENDOR_NOTE},
     # HLint debt directories: journey (root and every non-fenced sub-stanza),
     # naming/test, naming/drift, update-terminal — the 13 #264 exclusions.
     {"id": "hs-offchain-debt-journey",
      "family": "haskell", "pattern": "offchain/journey/**/*.hs",
+     "where": "haskell-checker-extent",
      "lint": "hlint-offchain-debt", "format": "fourmolu-offchain-active",
      "generated": False, "note": VENDOR_NOTE},
     {"id": "hs-offchain-debt-naming-test",
      "family": "haskell", "pattern": "offchain/naming/test/**/*.hs",
+     "where": "haskell-checker-extent",
      "lint": "hlint-offchain-debt", "format": "fourmolu-offchain-active",
      "generated": False, "note": VENDOR_NOTE},
     {"id": "hs-offchain-debt-naming-drift",
      "family": "haskell", "pattern": "offchain/naming/drift/**/*.hs",
+     "where": "haskell-checker-extent",
      "lint": "hlint-offchain-debt", "format": "fourmolu-offchain-active",
      "generated": False, "note": VENDOR_NOTE},
     {"id": "hs-offchain-debt-update-terminal",
      "family": "haskell", "pattern": "offchain/update-terminal/**/*.hs",
+     "where": "haskell-checker-extent",
      "lint": "hlint-offchain-debt", "format": "fourmolu-offchain-active",
      "generated": False, "note": VENDOR_NOTE},
     {"id": "hs-offchain",
      "family": "haskell", "pattern": "offchain/**/*.hs",
+     "where": "haskell-checker-extent",
      "lint": "hlint-offchain-active", "format": "fourmolu-offchain-active",
      "generated": False, "note": VENDOR_NOTE},
+    # A reject rule: an offchain Haskell source NO checker-visited component
+    # directory contains is a finding, never a row — the stable diagnostic
+    # names the boundary. Reject rules fire only on violating trees, so the
+    # happy path never references them; control c7 proves this one live.
+    {"id": "hs-offchain-outside-checker-extent",
+     "family": "haskell", "pattern": "offchain/**/*.hs",
+     "reject": "haskell source outside every checker-visited component "
+               "directory (the offchain lint discovers its extent from "
+               "singular-registry.cabal hs-source-dirs plus naming/test and "
+               "naming/drift; add the component to the Cabal manifest or map "
+               "an explicit pending policy)"},
     {"id": "hs-conformance",
      "family": "haskell", "pattern": "conformance/**/*.hs",
      "lint": "hlint-conformance", "format": "fourmolu-conformance",
      "generated": False,
-     "note": "includes the #80 evaluation spike harness under "
-             "conformance/coverage/evaluation/spike-app"},
+     "note": "every Haskell source under conformance/, whatever component "
+             "owns it (the Cabal stanzas and the #80 evaluation spike "
+             "harness today)"},
     # Lean — the simulator mirror first (byte-bound to lean/, never formatted
     # independently), then every other Lean source.
     {"id": "lean-simulator-mirror",
@@ -559,20 +597,30 @@ class IgnorePattern:
     dir_only: bool
     segments: tuple[str, ...]
 
-    def matches(self, rel_parts: tuple[str, ...], is_dir: bool) -> bool:
-        if self.dir_only and not is_dir:
-            # A dir-only pattern matches a directory; the walker prunes that
-            # directory, so files inside never reach this test.
-            return False
+    def _match_path(self, parts: tuple[str, ...]) -> bool:
         if self.anchored:
-            # Anchored: the pattern path must equal the candidate path.
-            if len(self.segments) != len(rel_parts):
-                return False
-            return all(_fnmatch_seg(s, n)
-                       for s, n in zip(self.segments, rel_parts))
-        # Unanchored patterns are single-segment in git's rule set: match
-        # against the entry's own name.
-        return bool(rel_parts) and _fnmatch_seg(self.segments[0], rel_parts[-1])
+            return (len(self.segments) == len(parts)
+                    and all(_fnmatch_seg(s, n)
+                            for s, n in zip(self.segments, parts)))
+        # Unanchored patterns are single-segment names (git's rule).
+        return _fnmatch_seg(self.segments[0], parts[-1])
+
+    def match_dir(self, parts: tuple[str, ...]) -> bool:
+        """The pattern selects this directory. A dir-only pattern matches
+        directories only; any other pattern matches files and directories
+        alike, as git does."""
+        return self._match_path(parts)
+
+    def conceals(self, parts: tuple[str, ...]) -> bool:
+        """The pattern hides the file at `parts` — by matching the file
+        itself or a directory above it. A dir-only pattern never matches a
+        file directly; it conceals through an ancestor directory."""
+        for i in range(1, len(parts) + 1):
+            if self.dir_only and i == len(parts):
+                continue
+            if self._match_path(parts[:i]):
+                return True
+        return False
 
 
 def parse_gitignore(path: Path, base_rel: str) -> list[IgnorePattern]:
@@ -694,26 +742,64 @@ def _walk_names(root: Path, name: str) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# Tree walk (no Git dependency; skips .git and gitignore-matched paths)
+# Tree walk
 # ---------------------------------------------------------------------------
 
-def walk_tree(root: Path) -> list[tuple[str, bool, bool]]:
-    """Return sorted (relpath, is_executable, has_no_extension) for every
-    non-ignored file under root."""
+def _tracked_files(root: Path) -> set[str] | None:
+    """The tracked file set when the root is a Git repository, else None.
+
+    In a checkout, an ignore-matched path is skipped ONLY when it is not
+    tracked: gitignore governs untracked working-tree noise, while a
+    tracked file — including a force-added source — is repository content
+    and must never be concealed. In a Git-free source (Nix flake store
+    copy, control scratch export) there is no noise to skip and no oracle
+    to tell noise from source, so ignore rules are inert there.
+    """
+    if not (root / ".git").exists():
+        return None
+    import subprocess
+    try:
+        proc = subprocess.run(["git", "-C", str(root), "ls-files", "-z"],
+                              capture_output=True, check=True)
+    except FileNotFoundError as exc:
+        raise InventoryError(
+            "a Git repository is present but the git tool is unavailable — "
+            "the tracked set cannot be established and ignore rules cannot "
+            "safely skip anything; refusing to guess") from exc
+    except subprocess.CalledProcessError as exc:
+        detail = exc.stderr.decode("utf-8", "replace").strip() if exc.stderr else ""
+        raise InventoryError(f"git ls-files failed: {detail}") from exc
+    return {p for p in proc.stdout.decode("utf-8", "surrogateescape").split("\0") if p}
+
+
+def walk_tree(root: Path) -> tuple[list[tuple[str, bool, bool]], str]:
+    """Walk the tree and return (sorted (relpath, is_executable,
+    has_no_extension) rows, context). `.git` is always skipped. Ignore
+    patterns apply only in a Git checkout and only to UNTRACKED paths; the
+    .gitignore files are parsed in every context so unsupported syntax
+    fails closed everywhere."""
+    tracked = _tracked_files(root)
+    context = "git-checkout" if tracked is not None else "git-free"
+    tracked_prefixes: set[str] = set()
+    if tracked is not None:
+        for t in tracked:
+            parts = t.split("/")
+            for i in range(1, len(parts)):
+                tracked_prefixes.add("/".join(parts[:i]))
     out: list[tuple[str, bool, bool]] = []
 
-    def ignored(rel_parts: tuple[str, ...], is_dir: bool,
-                stack: list[tuple[str, list[IgnorePattern]]]) -> bool:
+    def concealed(rel: str, stack: list[tuple[str, list[IgnorePattern]]],
+                  is_dir: bool) -> bool:
+        parts_full = tuple(rel.split("/"))
         for base, patterns in stack:
-            if not base:
-                rel = rel_parts
-            else:
-                bparts = tuple(base.split("/"))
-                if rel_parts[:len(bparts)] != bparts:
-                    continue
-                rel = rel_parts[len(bparts):]
+            bparts = tuple(base.split("/")) if base else ()
+            if parts_full[:len(bparts)] != bparts:
+                continue
+            parts = parts_full[len(bparts):]
+            if not parts:
+                continue
             for p in patterns:
-                if p.matches(rel, is_dir):
+                if (p.match_dir(parts) if is_dir else p.conceals(parts)):
                     return True
         return False
 
@@ -727,22 +813,25 @@ def walk_tree(root: Path) -> list[tuple[str, bool, bool]]:
             if entry.name == ".git":
                 continue
             erel = f"{rel}/{entry.name}" if rel else entry.name
-            parts = tuple(erel.split("/"))
             if entry.is_dir(follow_symlinks=False):
-                if ignored(parts, True, stack):
+                # Prune an ignore-matched directory only when no tracked
+                # file lives under it.
+                if tracked is not None and concealed(erel, stack, True) \
+                        and erel not in tracked_prefixes:
                     continue
                 rec(entry.path, erel, stack)
             else:
                 # everything that is not a directory is inventoried as a
                 # file; a tracked symlink is data nobody classified and
                 # must fail closed rather than slip past the walk
-                if ignored(parts, False, stack):
+                if tracked is not None and concealed(erel, stack, False) \
+                        and erel not in tracked:
                     continue
                 mode = entry.stat(follow_symlinks=False).st_mode
                 out.append((erel, bool(mode & stat.S_IXUSR), "." not in entry.name))
 
     rec(root, "", [])
-    return sorted(out)
+    return sorted(out), context
 
 
 # ---------------------------------------------------------------------------
@@ -810,7 +899,10 @@ def classify(root: Path, files: list[tuple[str, bool, bool]],
                 family, attribution = _manifest_attribution(rel, ext, manifests)
 
         if family is not None:
-            rule = _first_code_rule(family, rel)
+            rule = _first_code_rule(family, rel, manifests)
+            if rule is not None and rule.get("reject"):
+                findings.append(Finding(rel, rule["reject"]))
+                continue
             if rule is None:
                 why = f"unmapped {family} source"
                 if attribution == "manifest":
@@ -860,9 +952,32 @@ def _manifest_attribution(rel: str, ext: str | None,
     return None, None
 
 
-def _first_code_rule(family: str, rel: str) -> dict | None:
+def _under_any_dir(rel: str, dirs: set[str]) -> bool:
+    parts = PurePosixPath(rel).parts
+    for d in dirs:
+        dp = tuple(d.split("/"))
+        if parts[:len(dp)] == dp:
+            return True
+    return False
+
+
+def _rule_applies(rule: dict, rel: str, manifests: Manifests) -> bool:
+    if not glob_match(rule["pattern"], rel):
+        return False
+    where = rule.get("where")
+    if where is None:
+        return True
+    if where == "haskell-checker-extent":
+        # The file sits inside a component directory the offchain checker
+        # itself discovers and visits (recursively, like its find).
+        return _under_any_dir(rel, manifests.haskell_dirs)
+    raise InventoryError(f"unknown where predicate in registry: {where}")
+
+
+def _first_code_rule(family: str, rel: str,
+                     manifests: Manifests) -> dict | None:
     for rule in CODE_RULES:
-        if rule["family"] == family and glob_match(rule["pattern"], rel):
+        if rule["family"] == family and _rule_applies(rule, rel, manifests):
             return rule
     return None
 
@@ -895,6 +1010,11 @@ def self_check(rows: list[dict]) -> list[str]:
     matched_rules = {r["rule"] for r in rows if r["kind"] == "code"}
     matched_classes = {r["class"] for r in rows if r["kind"] == "noncode"}
     for rule in CODE_RULES:
+        if rule.get("reject"):
+            # A reject rule fires only on a tree that violates it, so the
+            # happy path never references it; control c7 proves it live on
+            # every CI run instead of the clean tree doing so.
+            continue
         if rule["id"] not in matched_rules:
             problems.append(f"inert rule: {rule['id']} ({rule['pattern']}) "
                             f"matched no file")
@@ -904,6 +1024,8 @@ def self_check(rows: list[dict]) -> list[str]:
                             f"matched no file")
     used: set[str] = set()
     for rule in CODE_RULES:
+        if rule.get("reject"):
+            continue
         used.update((rule["lint"], rule["format"]))
     for pid in sorted(POLICIES):
         if pid not in used:
@@ -923,7 +1045,7 @@ def self_check(rows: list[dict]) -> list[str]:
 # Report
 # ---------------------------------------------------------------------------
 
-def summarize(rows: list[dict]) -> dict:
+def summarize(rows: list[dict], context: str) -> dict:
     code = [r for r in rows if r["kind"] == "code"]
     noncode = [r for r in rows if r["kind"] == "noncode"]
     fam = {}
@@ -940,6 +1062,7 @@ def summarize(rows: list[dict]) -> dict:
     for r in noncode:
         classes[r["class"]] = classes.get(r["class"], 0) + 1
     return {
+        "context": context,
         "files": len(rows), "code": len(code), "noncode": len(noncode),
         "families": dict(sorted(fam.items())),
         "lint_status": dict(sorted(lint_stat.items())),
@@ -949,11 +1072,18 @@ def summarize(rows: list[dict]) -> dict:
     }
 
 
-def render_report(rows: list[dict], root: Path) -> str:
-    s = summarize(rows)
+def render_report(rows: list[dict], root: Path, context: str) -> str:
+    s = summarize(rows, context)
     lines = []
     lines.append(f"code inventory: {s['files']} files discovered and mapped "
                  f"({s['code']} code, {s['noncode']} non-code) under {root}")
+    lines.append(
+        "discovery context: " + (
+            "git checkout — ignore rules skip untracked noise only; "
+            "tracked files are never concealed"
+            if context == "git-checkout" else
+            "git-free source — ignore rules inert; every present file is "
+            "repository source"))
     lines.append("families: " + ", ".join(f"{k} {v}" for k, v in s["families"].items()))
     lint = s["lint_status"]
     fmt = s["format_status"]
@@ -1014,7 +1144,7 @@ def main(argv: list[str]) -> int:
         return 2
     try:
         manifests = parse_manifests(root)
-        files = walk_tree(root)
+        files, context = walk_tree(root)
         if not files:
             print("inventory: discovered an empty extent — refusing",
                   file=sys.stderr)
@@ -1035,11 +1165,11 @@ def main(argv: list[str]) -> int:
         exit_code = 1
 
     if args.json:
-        print(json.dumps({"root": str(root), "summary": summarize(rows),
+        print(json.dumps({"root": str(root), "summary": summarize(rows, context),
                           "rows": sorted(rows, key=lambda r: r["path"])},
                          indent=2, sort_keys=True))
     else:
-        print(render_report(rows, root))
+        print(render_report(rows, root, context))
 
     if exit_code == 0 and args.export_tree:
         try:
