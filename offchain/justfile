@@ -28,6 +28,8 @@ haskell-build:
 # loop only; it is NOT the gate, and it fails on a clean machine (D-011:
 # on CI it died in 96s fetching the CHaP index over HTTPS). The gate is
 # the hermetic `e2e` recipe below.
+
+# Run the devnet E2E with cabal (developer loop).
 haskell-e2e:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -41,6 +43,8 @@ haskell-e2e:
 # flake, then runs the Nix-built, cardano-node-wrapped test binary.
 # No cabal, no package index, no dev-shell state: this is the form CI
 # runs and the one that works on a clean machine.
+
+# Run the hermetic devnet E2E.
 e2e:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -53,6 +57,8 @@ e2e:
 # explicit, developer-requested regeneration (D-003, D-006). The result
 # is formatted with the pinned Aiken, never an ambient one, and the
 # build leaves no `result` symlink behind.
+
+# Regenerate the Aiken cage vectors.
 generate-vectors:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -69,6 +75,8 @@ generate-vectors:
 # the only freshness gate: a green `nix flake check` on either flake
 # asserts NOTHING about vector freshness (D-003). Enforced in CI by
 # .github/workflows/registry.yml (A-002).
+
+# Check the committed cage vectors against the generator.
 vectors-check:
     #!/usr/bin/env bash
     set -euo pipefail

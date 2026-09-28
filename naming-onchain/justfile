@@ -1,22 +1,30 @@
 # Build the naming blueprint via Nix — print the store path and leave
 # no `result` symlink (Singular's `/result*` ignore is root-anchored).
+
+# Build the naming blueprint.
 build:
     nix build --no-link --print-out-paths
 
 # Run the Aiken test suite — pinned toolchain (D-006): the aiken binary
 # comes from the nixpkgs this tree's copied flake.lock pins, never
 # whatever aiken happens to be on the caller's PATH.
+
+# Run the naming validator suite with the pinned aiken.
 test:
     nix develop --command aiken check
 
 # Enforce compiled script identity: rebuild the blueprint and compare
 # EVERY validator against the committed manifest, in both directions.
+
+# Compare the compiled validators with the committed manifest.
 script-identity:
     nix build --no-link --print-out-paths .#script-identity
 
 # Regenerate script-identity.json from a fresh blueprint build. Run
 # ONLY for a deliberate identity change; the manifest diff is what a
 # reviewer reads. Never hand-edit the manifest.
+
+# Regenerate the committed identity manifest.
 script-identity-regen:
     #!/usr/bin/env bash
     set -euo pipefail
