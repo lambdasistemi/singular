@@ -5,6 +5,12 @@
       "pause": 400
     }
   ],
+  "the-repository-code-inventory": [
+    {
+      "text": "The repository code inventory command maps every file the tree holds to a lint policy and a format policy, or to a named non-code class, and fails on anything unmapped. Discovery walks the tree through extensions, shebangs, executable mode and component manifests, so a new source file in a covered directory is mapped automatically while a file nobody classified fails with a named diagnostic. The same inventory runs over the Nix flake source, where no Git directory exists, and pull request CI runs both forms so the contexts cannot drift. The inventory is a mapping, not enforcement: the report names which policies CI executes today and which are pending debt owed by the remaining slices of the lint and format work, including the retained hint debt in the excluded offchain directories. A controls command injects synthetic orphans into scratch copies of the classified tree, each required to produce its intended failure, and never touches the working tree.",
+      "pause": 400
+    }
+  ],
   "edit-and-serve": [
     {
       "text": "Use the Nix development shell for a strict MkDocs build or live local server. A separate CI build verifies that shell.",
@@ -33,6 +39,6 @@
   ],
   "_source": {
     "file": "building.md",
-    "sha256": "748b7c963ad3044f51297cad1c764d0690178ced6666cc6bf4daf3e692aa04ae"
+    "sha256": "524f4851e8d70ef0813368bcc51dc66d1d72744b13cc667aa05b6ce10db2f4c0"
   }
 }
