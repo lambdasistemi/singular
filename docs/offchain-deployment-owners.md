@@ -66,6 +66,13 @@ flowchart TD
     A -->|script identity, cage address, state lookup| I[TxBuilder.Internal.Identity and Lookup]
 ```
 
+The deployment command is one of those callers: its command-local
+modules — flag reading in `Deployment.Options`, release loading in
+`Deployment.Compiled`, node operations in `Deployment.Node` and the
+`deploy`, `verify` and `count` verbs — import the facade's names and
+nothing behind it, as described in
+[Who owns a registry command](offchain-command-entrypoints.md).
+
 The facade re-exports exactly the surface callers already import; the
 three owners are package-internal modules of the same library, so the
 generated API reference documents them for the contributor while a

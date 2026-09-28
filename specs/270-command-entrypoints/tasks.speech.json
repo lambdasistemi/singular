@@ -1,0 +1,18 @@
+{
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "d3f90903875e438a6f23fac119c004fde90d93e464a148423937a910ab49863b"
+  },
+  "work-items": [
+    {
+      "text": "The implementation tasks are accepted at the named audited candidate. The finalization task is complete only when that final pushed head passes its local gate, remote continuous integration, and metadata and finalization checks. The linked pull request records readiness. This stamp does not replace command, archive, audit or integration receipts.",
+      "pause": 500
+    }
+  ],
+  "acceptance-and-finalization-evidence": [
+    {
+      "text": "The independent audit approves seven rows at the named candidate. The executed runtime observations belong to the earlier named implementation revision, followed only by comments and prose changes. The finalization task requires the exact final pushed head to pass its local gate, remote continuous integration and finalization and metadata checks. The linked pull request becomes ready only after that evidence is available.",
+      "pause": 500
+    }
+  ]
+}

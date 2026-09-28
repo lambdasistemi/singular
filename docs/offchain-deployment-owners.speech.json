@@ -1,7 +1,7 @@
 {
   "_source": {
     "file": "offchain-deployment-owners.md",
-    "sha256": "fcaaf43d4e3c8bff2760b017fff49f2d08e5ad47d7c0acf723e3827da0354e0d"
+    "sha256": "e2ed4d1de449d49f086599d362daec30ff6c8c1da94228e0b0567f1563dd068d"
   },
   "the-story-this-serves": [
     {
@@ -34,6 +34,10 @@
     }
   ],
   "one-owner-per-record": [
+    {
+      "pause": 400,
+      "text": "The deployment command is one of those callers: its flag reading, release loading, node operations and its deploy, verify and count verbs import the facade's names and nothing behind it, as the registry command page describes."
+    },
     {
       "pause": 400,
       "text": "Callers keep importing the facade, which re-exports exactly the surface they already used."

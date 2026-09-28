@@ -1,0 +1,12 @@
+{
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "c85a9545c01f5cb753518c9bb054fe2f0b468a861d60acda25bd476957857fdf"
+  },
+  "signatures": [
+    {
+      "text": "The four main functions keep their existing exception and exit behavior. Journey, insert-active, update-terminal and deployment orchestration retain their public command boundaries while new helpers gain explicit local owners.",
+      "pause": 500
+    }
+  ]
+}

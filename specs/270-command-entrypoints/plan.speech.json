@@ -1,0 +1,18 @@
+{
+  "delivery": [
+    {
+      "text": "First bind the base and original observations, then open the draft pull request and freeze the gate. The approved coder extracts four command families and ships documentation. The independent auditor reviews the exact candidate before the ticket owner hands the result to the epic owner.",
+      "pause": 500
+    }
+  ],
+  "evidence-limits": [
+    {
+      "text": "The checkout journey uses a fresh blueprint. The two edge commands run from extracted release archives. Each nested Nix invocation is accounted separately. A build or setup failure cannot stand for a ledger observation or refusal.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "a4ca8c9a6f0e2088246f82e6d5c69df17df73b70763cd7f1c44922f47e4ac1f3"
+  }
+}

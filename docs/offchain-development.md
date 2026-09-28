@@ -31,7 +31,7 @@ flowchart LR
     B -->|compile result| CI
 ```
 
-`offchain/nix/checks.nix` reads every `hs-source-dirs` declaration in `offchain/singular-registry.cabal` at lint run time and adds `naming/test` and `naming/drift`, whose scripts compile them directly with GHC. The private node ownership core declares its own source root `node-internal`, so its modules are discovered like every other. It deduplicates nested directories and fails if discovery finds no sources or a declared directory is absent. The source-derived inventory at the #267 candidate measures 89 discovered Haskell files in 23 source directories: Fourmolu selects 87 after the two verifier exclusions, and HLint selects 76 within ten directories. The added E2E witness belongs to all three sets. At `ae4fe9a`, the lint app passed in the final Gate S off-chain lint row and pushed-head CI; that gate row reported 89 discovered files in 23 directories, Fourmolu over 87 files and HLint over ten directories with no hints. These green receipts cover only the selected extents. Thirteen directory names remain excluded from HLint under the same configured hint-debt boundary. Adding a Cabal component or direct-GHC naming source must also update the declaration or script that makes it discoverable; compare the next actual lint output with this inventory rather than assuming a filename search proves coverage. The malformed-source control for this maintenance change places invalid Haskell in a newly included tracked directory, runs the actual lint app, and restores the file byte for byte.
+`offchain/nix/checks.nix` reads every `hs-source-dirs` declaration in `offchain/singular-registry.cabal` at lint run time and adds `naming/test` and `naming/drift`, whose scripts compile them directly with GHC. The private node ownership core declares its own source root `node-internal`, so its modules are discovered like every other. It deduplicates nested directories and fails if discovery finds no sources or a declared directory is absent. The source-derived inventory at the #267 candidate measures 89 discovered Haskell files in 23 source directories: Fourmolu selects 87 after the two verifier exclusions, and HLint selects 76 within ten directories. The added E2E witness belongs to all three sets. At `ae4fe9a`, the lint app passed in the final Gate S off-chain lint row and pushed-head CI; that gate row reported 89 discovered files in 23 directories, Fourmolu over 87 files and HLint over ten directories with no hints. These green receipts cover only the selected extents. Thirteen directory names remain excluded from HLint under the same configured hint-debt boundary. At the #270 candidate the same app reported 128 discovered files in 23 directories, Fourmolu over 126 and HLint over ten directories with no hints: the thirty command-local modules the registry commands gained sit inside already declared source directories, so discovery found them without a configuration change, and those under `journey` and `update-terminal` inherit those directories' HLint exclusion. Adding a Cabal component or direct-GHC naming source must also update the declaration or script that makes it discoverable; compare the next actual lint output with this inventory rather than assuming a filename search proves coverage. The malformed-source control for this maintenance change places invalid Haskell in a newly included tracked directory, runs the actual lint app, and restores the file byte for byte.
 
 `offchain/flake.nix` derives a supported build set from the current workflow and currently supported command closure. Its inventory must account for every Cabal library, executable, and test suite, and the gate must fail when a new declaration has no classification or an omitted classification drifts. Its component manifest can be compared with the Cabal stanzas. The flake's command is the same command used by the off-chain component CI job.
 
@@ -41,12 +41,13 @@ The source inventory, formatter extent, HLint extent and component build extent 
 
 ## Module ownership maps
 
-The builder and blueprint modules, the node runtime and the registry
-fold now each have a contributor map: which module owns a concern,
-where common edits land, and which decisions the extraction recorded.
-They are
+The builder and blueprint modules, the node runtime, the registry
+fold and the four registry commands now each have a contributor map:
+which module owns a concern, where common edits land, and which
+decisions the extraction recorded. They are
 [Builder and blueprint modules](offchain-builder-blueprint.md),
-[Node module ownership](offchain-node-ownership.md) and
-[Who owns a registry fold](offchain-fold-responsibilities.md).
+[Node module ownership](offchain-node-ownership.md),
+[Who owns a registry fold](offchain-fold-responsibilities.md) and
+[Who owns a registry command](offchain-command-entrypoints.md).
 
 The final integration work for epic #272, tracked as #278, must remove these temporary gaps and put every tracked code source under actual lint and format checks. It must also cover repository code beyond off-chain Haskell. Until that work is accepted, use each command's stated extent when interpreting a green result. Any source correction still has to preserve the Lean model's behavior and the dependent consumer guarantees.
