@@ -53,52 +53,79 @@ def restage_lean_hrefs(stage: Path) -> int:
 
 
 def restage_api_hrefs(stage: Path) -> int:
-    """Point staged off-chain source anchors at the generated API reference.
+    """Point staged source anchors at each library's generated API reference.
 
     Authored pages link the repository's own Haskell sources, so GitHub blob
     rendering follows the current ref; the built site instead serves the
     generated Haddock pages for this candidate, addressed one level up the
     same way the shipped model/ copy is. The ``data-api`` attribute names
-    which generated page the anchor becomes (module page or hyperlinked
-    source page); the anchor must name a module of the Cabal library extent,
-    so a link to a non-library file cannot silently pass through.
+    which generated page the anchor becomes: ``module`` or ``source`` for a
+    module's two pages — the anchor must name a module of that library's
+    Cabal extent, so a link to a non-library file cannot silently pass
+    through — or ``index``/``symbols`` for the reference's full-page index
+    and symbol index, whose anchor names the library's source root, the
+    closest honest GitHub landing for a page that only exists generated.
+    Every library with a generated reference must be reached by at least
+    one anchor, or the staging fails: an unreachable reference is a
+    navigation bug, not a silent pass.
     """
-    extent = set(api_reference.library_modules(root / "offchain"))
+    rewritten_total = 0
+    for library in api_reference.LIBRARIES.values():
+        extent = set(api_reference.library_modules(library, root / library.repo_dir))
 
-    def module_of(rel_path: str) -> str:
-        for source_dir in api_reference.parse_cabal_library(root / "offchain")["hs_source_dirs"]:
-            prefix = source_dir.strip("/") + "/"
-            if rel_path.startswith(prefix):
-                module = rel_path[len(prefix):-len(".hs")].replace("/", ".")
-                if module not in extent:
-                    raise RuntimeError(
-                        f"api anchor targets a file outside the Cabal library extent: {rel_path}"
-                    )
-                return module
-        raise RuntimeError(f"api anchor is not under a declared hs-source-dir: {rel_path}")
+        def module_of(rel_path: str) -> str:
+            for source_dir in api_reference.parse_cabal_library(
+                library, root / library.repo_dir
+            )["hs_source_dirs"]:
+                prefix = source_dir.strip("/") + "/"
+                if rel_path.startswith(prefix):
+                    module = rel_path[len(prefix):-len(".hs")].replace("/", ".")
+                    if module not in extent:
+                        raise RuntimeError(
+                            f"api anchor targets a file outside the {library.name} "
+                            f"Cabal library extent: {rel_path}"
+                        )
+                    return module
+            raise RuntimeError(f"api anchor is not under a declared hs-source-dir: {rel_path}")
 
-    pattern = re.compile(r'<a href="\.\./offchain/([^"]+)" data-api="(module|source)">')
-
-    def replace(match: re.Match) -> str:
-        module = module_of(match.group(1))
-        page = (
-            api_reference.module_page_name(module)
-            if match.group(2) == "module"
-            else "src/" + api_reference.source_page_name(module)
+        pattern = re.compile(
+            rf'<a href="\.\./{library.repo_dir}/([^"]*)" data-api="(module|source|index|symbols)">'
         )
-        return f'<a href="../../api/offchain/{page}">'
+        api_prefix = "/".join(library.api_dir)
 
-    rewritten = 0
-    pages = sorted(stage.glob("docs/**/*.md"))
-    for md in pages:
-        text = md.read_text(encoding="utf-8")
-        new = pattern.sub(replace, text)
-        if new != text:
-            md.write_text(new, encoding="utf-8")
-            rewritten += 1
-    if rewritten == 0:
-        raise RuntimeError("no off-chain source anchors rewritten for staging: the generated API reference is unreachable")
-    return rewritten
+        def replace(match: re.Match) -> str:
+            kind, rel = match.group(2), match.group(1)
+            if kind in ("index", "symbols"):
+                if rel:
+                    raise RuntimeError(
+                        f"api {kind} anchor must name the {library.name} source root, "
+                        f"not {rel}"
+                    )
+                page = "doc-index.html" if kind == "index" else "doc-index-All.html"
+            else:
+                module = module_of(rel)
+                page = (
+                    api_reference.module_page_name(module)
+                    if kind == "module"
+                    else "src/" + api_reference.source_page_name(module)
+                )
+            return f'<a href="../../{api_prefix}/{page}">'
+
+        rewritten = 0
+        pages = sorted(stage.glob("docs/**/*.md"))
+        for md in pages:
+            text = md.read_text(encoding="utf-8")
+            new = pattern.sub(replace, text)
+            if new != text:
+                md.write_text(new, encoding="utf-8")
+                rewritten += 1
+        if rewritten == 0:
+            raise RuntimeError(
+                f"no {library.name} source anchors rewritten for staging: the "
+                f"generated API reference is unreachable"
+            )
+        rewritten_total += rewritten
+    return rewritten_total
 
 
 restage_lean_hrefs(stage)

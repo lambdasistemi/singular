@@ -22,6 +22,12 @@ compiled blueprint's declared schemas read at run time
 — and @txSize@ the measured serialized bytes, with no transactions.
 Every other accepted row is a @node-submit@ observation with
 transactions and units from the running node.
+
+One shape here is owned elsewhere and re-exported: the asset-movement
+form of edge evidence — a policy, a name and a quantity with their JSON
+encoding — lives in @Conformance.Evidence.Asset@ and is re-exported by
+this module unchanged, so the public import path a caller already uses
+does not move.
 -}
 module Conformance.Receipt (
     Outcome (..),
@@ -45,6 +51,7 @@ module Conformance.Receipt (
     currentBase,
 ) where
 
+import Conformance.Evidence.Asset (AssetEntry (..))
 import Conformance.NodeRejection (boundedNodeReason)
 import Conformance.Story.Live (Edge (..), Tamper (..), edgeName, tamperName)
 import Control.Exception (ErrorCall (..), throwIO)
@@ -1075,29 +1082,3 @@ currentBase = do
                 "conformance list: git base unknown; \
                 \printing the declared plan"
             pure Nothing
-
--- ---------------------------------------------------------
--- Edge evidence (#173)
--- ---------------------------------------------------------
-
-{- | One asset movement, named by its policy and asset name.
-
-The registry's token identity is @(policy, key)@ and nothing else, so a
-row about a keyed mint has to report both. A quantity alone cannot
-distinguish "one token at this key" from "one token at some other key".
--}
-data AssetEntry = AssetEntry
-    { aePolicy :: !Text
-    , aeName :: !Text
-    , aeQuantity :: !Integer
-    }
-    deriving stock (Show, Eq)
-
-instance FromJSON AssetEntry where
-    parseJSON = withObject "AssetEntry" $ \o ->
-        AssetEntry <$> o .: "policy" <*> o .: "name" <*> o .: "quantity"
-
-instance ToJSON AssetEntry where
-    toJSON a =
-        object
-            ["policy" .= aePolicy a, "name" .= aeName a, "quantity" .= aeQuantity a]

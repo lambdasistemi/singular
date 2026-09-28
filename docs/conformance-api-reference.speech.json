@@ -1,0 +1,60 @@
+{
+  "_source": {
+    "file": "conformance-api-reference.md",
+    "sha256": "d9e552afad52e25f0074e6e4f2847bfbc2e8a31c8b4ea6e7072b38fcc6b050e1"
+  },
+  "what-this-reference-contains": [
+    {
+      "text": "As a contributor changing the conformance library, a story program, a model binding, a comparison, a receipt check or a rendering, I want to click a module and land on its real interface, signatures, documentation and highlighted source, for exactly the code this repository ships.",
+      "pause": 400
+    },
+    {
+      "text": "Every module of the Conformance library is listed here. Each entry links two pages of the generated reference: the module page, with exports, types and documented declarations, and the hyperlinked source page with the rendered Haskell this candidate was built from. The reference's own full-page index and symbol index are linked here too. On this site the links open the generated pages; read from the repository, the module links open the source files themselves at the revision you are viewing.",
+      "pause": 400
+    },
+    {
+      "text": "The module extent is the public library of the Conformance Cabal file: every exposed module and the one package-internal owner. That complete extent is twenty-four modules.",
+      "pause": 300
+    },
+    {
+      "text": "The twenty-three exposed modules are what a caller imports: the story programs and their binding and identity, the model transport and the Lean oracle, the registration and perturbation comparisons, the receipt record and its validation, the refusal attribution, the row inventory, the purpose-unit arithmetic, the node-refusal rendering and the payment observation. A list of twenty-four module names follows, each with its source link.",
+      "pause": 500
+    },
+    {
+      "text": "The one package-internal module, Conformance.Evidence.Asset, owns the asset-movement shape of edge evidence: one movement named by its policy, asset name and quantity, with the JSON encoding that carries those three fields. It is documented here for the contributor reading the facade's implementation. Conformance.Receipt re-exports its type, so no caller import path changes. The site check fails until the generated extent and this list agree.",
+      "pause": 500
+    }
+  ],
+  "how-the-reference-stays-honest": [
+    {
+      "text": "The reference cannot drift from the code it claims to document. The site build derives a manifest from the same Conformance source Haddock ran on: for every module it records the digest of the Haskell source file and the digests of the actual generated module page and source page. The site check then redoes both halves independently from this repository's own source tree: the manifest's module extent must equal the Cabal library extent, each recorded source digest must match the repository's file, and each generated page in the shipped site must match its recorded digest. A reference generated from any other source fails that comparison, and a page edited after generation fails its own digest.",
+      "pause": 400
+    },
+    {
+      "text": "Every link inside the generated pages is inspected too. A reference from one module of this library to another must resolve to a page of this reference and, where it names an anchor, to an anchor that exists. The check prints how many same-library links it resolved, and this page's links to the generated pages are checked by the site's ordinary link inventory.",
+      "pause": 400
+    },
+    {
+      "text": "Dependency documentation is a different matter. The library is built against a JSON, container and text dependency closure, and none of those packages' Haddock pages are bundled into this site: a type such as an aeson value or a strict text appears in the generated pages as a visible label, but it is not a link, because following it would leave this site for documentation that is not shipped with it. Neutralizing those labels is decided from the build's own package database, which positively names every module each dependency owns, so a label is only unlinked when it provably belongs to a dependency. A dead or store-path link that reappears fails the site check, and a same-library reference may never be treated as a dependency label to hide a broken link.",
+      "pause": 400
+    },
+    {
+      "text": "One further generator class is unlinked by structure. Haddock renders instance method names in each instance's Methods list as same-page links, but emits no matching anchors for them, because every instance of a class lists the same method names. Those method labels stay visible as plain text inside the instance lists, and the site check counts them separately and still requires every fragment link outside that exact structure to resolve.",
+      "pause": 400
+    },
+    {
+      "text": "The release archive check extends the same discipline to what gets shipped: the staged documentation archive must carry this library's generated reference member for member and byte for byte, alongside the off-chain registry library's, before the ordinary release checks run.",
+      "pause": 500
+    }
+  ],
+  "what-the-reference-does-not-claim": [
+    {
+      "text": "This reference covers the Conformance library only. The live runner that executes rows against a devnet is an executable, not a library module: its application modules, the run control, the row runners, the wallet, the cage and the observation code, are outside this reference, and the evidence they produce is the published consumer conformance record, not an API claim.",
+      "pause": 400
+    },
+    {
+      "text": "Nothing on this page is a publication or release claim. The reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the library lives in the check commands the documentation records, not in the existence of these pages.",
+      "pause": 500
+    }
+  ]
+}

@@ -93,6 +93,8 @@ library
     Conformance.Edge.Sequence
     Conformance.Fold.KeyedMint
     Conformance.Observe.Payments
+  other-modules:
+    Conformance.Evidence.Asset
   build-depends:
     , aeson >=2.1 && <2.3
     , base >=4.14 && <5

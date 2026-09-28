@@ -332,6 +332,28 @@
       {
         packages = {
           inherit conformance driverTransport foldBudgetRegression;
+          # Generated Haddock reference for the Conformance library, consumed
+          # by the root documentation build. Same source tree, same lock: the
+          # docs manifest can bind the reference to this candidate's content.
+          # The flag pair follows the off-chain reference's proven recipe:
+          # --internal hands the library's package-internal modules (the
+          # asset-evidence owner) to Haddock, and --haddock-option=--show-all
+          # cancels the hide attribute so every module of the library extent
+          # gets both a module page and a hyperlinked source page. The flags
+          # are scoped to this documentation output alone, through a project
+          # that only appends them as an extra package module: every other
+          # build output keeps the untouched closure.
+          library-haddock =
+            (project.project.appendModule {
+              modules = [
+                {
+                  packages.conformance.setupHaddockFlags = [
+                    "--internal"
+                    "--haddock-option=--show-all"
+                  ];
+                }
+              ];
+            }).hsPkgs.conformance.components.library.haddock;
           # #157 D-BOOT: the naming partition's blueprint, so the four
           # pins are derived rather than typed.
           inherit naming-blueprint;
