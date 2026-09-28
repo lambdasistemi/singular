@@ -3,6 +3,7 @@ use aiken/merkle_patricia_forestry as mpf
 use cardano/assets.{Value}
 use cardano/transaction.{InlineDatum, Input, Output}
 use lib
+use registry/discharge
 use state
 use registry_fixtures as fx
 use types.{Modify, StateDatum, UpdateAction}
@@ -32,7 +33,7 @@ use types.{Modify, StateDatum, UpdateAction}
 /// The refusal NAMES cannot be read back from an Aiken test — a `trace`
 /// is not observable — so each one is asserted at the single
 /// construction site the validator itself reads (`state.terminalFault`,
-/// `state.tokenMissingRefusal`), the pattern #173 fixed for
+/// `discharge.tokenMissingRefusal`), the pattern #173 fixed for
 /// `lib.occupiedRefusal` and `lib.mintRefusal`.
 ///
 /// Each refusal carries an ACCEPTING control that repairs ONLY the named
@@ -333,7 +334,7 @@ test an_active_leaf_is_not_a_trie_fault() {
 }
 
 test missing_witness_reason_is_token_missing() {
-  state.tokenMissingRefusal() == @"token-missing"
+  discharge.tokenMissingRefusal() == @"token-missing"
 }
 
 /// The reasons are pairwise distinct, asserted by NAME rather than by
@@ -355,7 +356,7 @@ test the_reasons_are_distinct_names() {
       fx.keyA,
       [],
     ) == Some(@"terminal-immutable"),
-    state.tokenMissingRefusal() == @"token-missing",
+    discharge.tokenMissingRefusal() == @"token-missing",
     lib.occupiedRefusal() == Some(@"key-exists"),
     lib.mintRefusal() == Some(@"net-mint-mismatch"),
   }
