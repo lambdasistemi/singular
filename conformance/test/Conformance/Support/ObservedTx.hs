@@ -73,7 +73,6 @@ import Test.Hspec (
     expectationFailure,
     it,
     shouldBe,
-    shouldHaveLength,
     shouldSatisfy,
     shouldThrow,
  )
@@ -501,7 +500,7 @@ differsAt array step mint payments destination = do
                     \passed the comparison"
             Left differences -> do
                 let paths = map snd (reportedDifferences differences)
-                paths `shouldHaveLength` 1
+                length paths `shouldBe` 1
                 concatMap (filterFields array) paths
                     `shouldSatisfy` any (== Field "datum")
 
