@@ -472,7 +472,8 @@ reports
 reports array role reported step mint payments destination = do
     observation <-
         observedTx step (lsTransactionOf step) mint payments destination
-    datumFormOf (entry array role observation) `shouldBe` String reported
+    datumFormOf (entry array role observation)
+        `shouldBe` String (T.pack reported)
 
 {- | One role's reported datum field, reached by the same comparison the
 chapters run. A ledger form the model does not expect must reach it as a
