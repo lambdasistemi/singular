@@ -9,6 +9,7 @@ use cardano/transaction.{
 use lib
 use registry_fixtures as fx
 use request
+use registry/trie
 use state
 use types.{Modify, RequestAction, StateDatum, UpdateAction}
 
@@ -396,7 +397,7 @@ test g2_prop_delta_reads_off_the_edge(edge via fuzz.int_between(-2, 9)) {
 /// `update-to-absent` ×2, `update-absent-to-terminal` and
 /// `update-active-to-active` are inexpressible and retire with the wire;
 /// `read-absent` / `read-non-terminal` survive as TRIE faults of edge 6
-/// (`state.readFault`, M3 below); `edge-from-terminal` survives for a
+/// (`trie.readFault`, M3 below); `edge-from-terminal` survives for a
 /// tree-changing edge on a terminal leaf (N10 below). Preservation of
 /// these verdicts across the recut stands in history: the S20 dual-codec
 /// checkpoint folded every retired row under both encodings with
@@ -650,7 +651,7 @@ test g5_zero_consumed_requests_refuses() fail {
 // ============================================================================
 
 /// A read names no value, so which leaf the key binds is a fact of the
-/// TRIE and the refusal is read off it (`state.readFault`) against the
+/// TRIE and the refusal is read off it (`trie.readFault`) against the
 /// action's own proof. The rows below mutate ONLY that leaf: the request,
 /// the outputs and the minted terminal witness are the accepting read's,
 /// so what refuses them is the leaf and nothing else.
@@ -696,17 +697,17 @@ test m3_read_of_an_unbound_key_refuses() fail {
 /// every leaf could not go green here.
 test m3_the_read_faults_are_distinct_names() {
   and {
-    state.readFault(
+    trie.readFault(
       mpf.from_root(fx.oneLeaf(fx.keyA, fx.absentLeaf)),
       fx.keyA,
       [],
     ) == Some(@"read-absent"),
-    state.readFault(
+    trie.readFault(
       mpf.from_root(fx.oneLeaf(fx.keyA, fx.activeLeaf)),
       fx.keyA,
       [],
     ) == Some(@"read-non-terminal"),
-    state.readFault(mpf.from_root(fx.emptyRoot()), fx.keyA, []) == Some(
+    trie.readFault(mpf.from_root(fx.emptyRoot()), fx.keyA, []) == Some(
       @"key-unknown",
     ),
   }
@@ -769,7 +770,7 @@ test n10_delete_active_on_terminal_refuses() fail {
 /// rows above can only establish THAT the fold refused. Without it a
 /// guard that halted with some other reason would go unnoticed.
 test n10_terminal_edge_reason_is_edge_from_terminal() {
-  state.terminalEdgeRefusal() == Some(@"edge-from-terminal")
+  trie.terminalEdgeRefusal() == Some(@"edge-from-terminal")
 }
 
 /// The accepting half: the terminal read is the sole operation a `0x02`
