@@ -3,36 +3,33 @@ use aiken/fuzz
 use aiken/interval
 use aiken/merkle_patricia_forestry.{empty, root}
 use aiken/merkle_patricia_forestry as mpf
-use cardano/address.{from_script}
-use cardano/assets.{PolicyId, from_asset, from_lovelace, zero}
-use cardano/transaction.{
-  InlineDatum, Input, NoDatum, Output, OutputReference, ScriptPurpose, Spend,
-  Transaction,
-}
-use lib
-use lib.{assetName, valueFromToken}
-use request as request_validator
-use state as state_validator
-use types.{
-  Burning, CageDatum, Contribute, End, Migrating, Migration, MintRedeemer,
-  TokenId,
-  Minting, Modify, Rejected, Request, RequestDatum, Retract, State, StateDatum,
-  Sweep, UpdateAction, UpdateRedeemer,
-}
-
 use cage_fixtures.{
   aRequest, burn_value, capturedMinUtxoRefundOutput, capturedRefundRequestInput,
   capturedRefundStateDatum, capturedRefundStateInput, capturedRefundStateOutput,
   capturedRefundTxFee, endRedeemerData, feeDelivery, feeRequestInput,
   feeStateDatum, feeStateInput, legacyApproval, legacyDelivery,
   legacyDestination, legacyKey, legacyMint, legacyRoot, legacyWallet,
-  modifyRedeemerData, noDestination, output, owner_fuzzer, refundOutput,
-  phase1Range, phase2Range, phase3Range, rawStateDatum, rejectedActionData,
-  request, state, stateDatum, stateSpendRedeemerData,
-  testAbsentPolicy, testAppPolicy, testFee, testProcessTime, testRepPolicy,
-  testRequestRef, testScriptAddress, testSeed, testStakeScript, testStateRef,
-  testRetractTime, testTerminalPolicy, testToken, testValue, update,
-  topupSmallRequestInput, updateActionData, zfDelivery,
+  modifyRedeemerData, noDestination, output, owner_fuzzer, phase1Range,
+  phase2Range, phase3Range, rawStateDatum, refundOutput, rejectedActionData,
+  request, state, stateDatum, stateSpendRedeemerData, testAbsentPolicy,
+  testAppPolicy, testFee, testProcessTime, testRepPolicy, testRequestRef,
+  testRetractTime, testScriptAddress, testSeed, testStakeScript, testStateRef,
+  testTerminalPolicy, testToken, testValue, topupSmallRequestInput, update,
+  updateActionData, zfDelivery,
+}
+use cardano/address.{from_script}
+use cardano/assets.{PolicyId, from_asset, from_lovelace, zero}
+use cardano/transaction.{
+  InlineDatum, Input, NoDatum, Output, OutputReference, ScriptPurpose, Spend,
+  Transaction,
+}
+use lib.{assetName, valueFromToken}
+use request as request_validator
+use state as state_validator
+use types.{
+  Burning, CageDatum, Contribute, End, Migrating, Migration, MintRedeemer,
+  Minting, Modify, Rejected, Request, RequestDatum, Retract, State, StateDatum,
+  Sweep, TokenId, UpdateAction, UpdateRedeemer,
 }
 
 fn spend(
@@ -76,7 +73,7 @@ const rejectStateOutput =
           application_policy: testAppPolicy,
           active_policy: testRepPolicy,
           absent_policy: testAbsentPolicy,
-          terminal_policy: testTerminalPolicy
+          terminal_policy: testTerminalPolicy,
         },
       ),
     ),
@@ -208,7 +205,7 @@ test reject_root_changes() fail {
             application_policy: testAppPolicy,
             active_policy: testRepPolicy,
             absent_policy: testAbsentPolicy,
-            terminal_policy: testTerminalPolicy
+            terminal_policy: testTerminalPolicy,
           },
         ),
       ),

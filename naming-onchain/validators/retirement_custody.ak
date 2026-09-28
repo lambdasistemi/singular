@@ -1,10 +1,12 @@
 use aiken/collection/dict.{get, keys}
 use aiken/collection/list.{filter, find, head}
-use aiken/crypto.{blake2b_256}
 use aiken/collection/pairs
+use aiken/crypto.{blake2b_256}
 use cardano/address
 use cardano/assets.{PolicyId, Value, flatten, quantity_of, tokens}
-use cardano/transaction.{InlineDatum, Input, OutputReference, Spend, Transaction}
+use cardano/transaction.{
+  InlineDatum, Input, OutputReference, Spend, Transaction,
+}
 use naming.{
   MUpdate, modify_action_count, mpfs_state_hash, mpfs_state_policy,
   mpfs_state_root, mrequest,
@@ -66,18 +68,18 @@ validator retirement_custody {
 
 /// The rest of the completion shape, once the burn itself is right.
 fn completes(claim: Input, self: OutputReference, tx: Transaction) -> Bool {
-    expect [stateIn] = filter(tx.inputs, is_spent_registry_state)
-    // NOTE-029: exactly one co-created script input (the retire's
-    // pending request) — none, or a confused batch of several,
-    // refuses. Fee/collateral inputs are payment-key owned.
-    expect [requestIn] =
-      filter(tx.inputs, fn(input) { is_co_created_input(self, stateIn, input) })
-    expect singleton_modify(tx, stateIn)
-    expect root_changed(tx, stateIn)
-    // NOTE-031: the co-created input is the exact pending request
-    // for the held asset (datum, token, and value relation checked).
-    expect request_binds_burn(claim, stateIn, requestIn)
-    True
+  expect [stateIn] = filter(tx.inputs, is_spent_registry_state)
+  // NOTE-029: exactly one co-created script input (the retire's
+  // pending request) — none, or a confused batch of several,
+  // refuses. Fee/collateral inputs are payment-key owned.
+  expect [requestIn] =
+    filter(tx.inputs, fn(input) { is_co_created_input(self, stateIn, input) })
+  expect singleton_modify(tx, stateIn)
+  expect root_changed(tx, stateIn)
+  // NOTE-031: the co-created input is the exact pending request
+  // for the held asset (datum, token, and value relation checked).
+  expect request_binds_burn(claim, stateIn, requestIn)
+  True
 }
 
 /// A script input co-created with the custody output: not this spend,
@@ -89,10 +91,9 @@ fn is_co_created_input(
   stateIn: Input,
   input: Input,
 ) -> Bool {
-  input.output_reference != self
-    && input.output_reference != stateIn.output_reference
-    && is_script_input(input)
-    && input.output_reference.transaction_id == self.transaction_id
+  input.output_reference != self && input.output_reference != stateIn.output_reference && is_script_input(
+    input,
+  ) && input.output_reference.transaction_id == self.transaction_id
 }
 
 fn is_script_input(input: Input) -> Bool {
@@ -135,12 +136,19 @@ fn request_binds_burn(claim: Input, stateIn: Input, requestIn: Input) -> Bool {
 /// the registry's configured representative policy (NOTE-032: policy
 /// is load-bearing — name alone admits foreign-policy lookalikes
 /// whose burn the mint authorizer never sees).
-fn burned_of(claim: Input, key: ByteArray, expectedPolicy: PolicyId) -> ByteArray {
+fn burned_of(
+  claim: Input,
+  key: ByteArray,
+  expectedPolicy: PolicyId,
+) -> ByteArray {
   expect Some(heldEntry) =
-    find(held_assets(claim.output.value), fn(entry) {
-      let (policy, name, _) = entry
-      policy == expectedPolicy && name == key
-    })
+    find(
+      held_assets(claim.output.value),
+      fn(entry) {
+        let (policy, name, _) = entry
+        policy == expectedPolicy && name == key
+      },
+    )
   let (_, burned, qty) = heldEntry
   expect qty == 1
   burned
@@ -149,10 +157,13 @@ fn burned_of(claim: Input, key: ByteArray, expectedPolicy: PolicyId) -> ByteArra
 /// Non-lovelace assets of a value (extracted so the burn check and
 /// the request binding share one shape).
 fn held_assets(value: Value) -> List<(PolicyId, ByteArray, Int)> {
-  filter(flatten(value), fn(entry) {
-    let (policy_id, _asset_name, quantity) = entry
-    policy_id != #"" && quantity > 0
-  })
+  filter(
+    flatten(value),
+    fn(entry) {
+      let (policy_id, _asset_name, quantity) = entry
+      policy_id != #"" && quantity > 0
+    },
+  )
 }
 
 /// The state spend is a singleton `Modify` (exactly one action).
@@ -196,10 +207,13 @@ fn has_single_cage_token(value: Value) -> Bool {
 fn held_burned_exactly_once(claim: Input, tx: Transaction) -> Bool {
   let held = held_assets(claim.output.value)
   expect held != []
-  list_all(held, fn(entry) {
-    let (policy_id, asset_name, quantity) = entry
-    quantity_of(tx.mint, policy_id, asset_name) == -quantity
-  })
+  list_all(
+    held,
+    fn(entry) {
+      let (policy_id, asset_name, quantity) = entry
+      quantity_of(tx.mint, policy_id, asset_name) == -quantity
+    },
+  )
 }
 
 fn list_all(items: List<a>, check: fn(a) -> Bool) -> Bool {

@@ -6,10 +6,7 @@ use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Spend, Transaction,
 }
 use cardano/transaction as tx_mod
-use types.{
-  Contribute, End, Modify, Rejected, State, StateDatum, UpdateRedeemer,
-}
-use witness
+use types.{Contribute, End, Modify, Rejected, State, StateDatum, UpdateRedeemer}
 use witness.{registryStateHash}
 
 // ============================================================================
@@ -169,9 +166,7 @@ test witness_terminal_mint_inside_a_fold_accepts() {
 
 /// Every kind needs the fold to MINT; the accepting half of the same
 /// property is what keeps the refusing half from passing vacuously.
-test witness_prop_minting_always_needs_the_fold(
-  kind via fuzz.int_between(0, 2),
-) {
+test witness_prop_minting_always_needs_the_fold(kind via fuzz.int_between(0, 2)) {
   !moveWitness(kind, 1, False) && moveWitness(kind, 1, True)
 }
 

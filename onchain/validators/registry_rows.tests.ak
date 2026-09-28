@@ -7,9 +7,9 @@ use cardano/transaction.{
   InlineDatum, Input, NoDatum, Output, Spend, Transaction,
 }
 use lib
+use registry/trie
 use registry_fixtures as fx
 use request
-use registry/trie
 use state
 use types.{Modify, RequestAction, StateDatum, UpdateAction}
 
@@ -305,7 +305,11 @@ test g2_update_absent_to_active_accepts() {
 }
 
 test g2_update_active_to_terminal_accepts() {
-  updateTerminal(fx.mintOf(fx.activePolicy, fx.keyA, -1), bookerPaid(), activeHeld())
+  updateTerminal(
+    fx.mintOf(fx.activePolicy, fx.keyA, -1),
+    bookerPaid(),
+    activeHeld(),
+  )
 }
 
 test g2_delete_absent_accepts() {
@@ -317,7 +321,11 @@ test g2_delete_absent_accepts() {
 }
 
 test g2_delete_active_accepts() {
-  deleteActive(fx.mintOf(fx.activePolicy, fx.keyA, -1), bookerPaid(), activeHeld())
+  deleteActive(
+    fx.mintOf(fx.activePolicy, fx.keyA, -1),
+    bookerPaid(),
+    activeHeld(),
+  )
 }
 
 test g2_read_terminal_accepts() {
@@ -344,19 +352,23 @@ test g2_update_absent_to_active_delta_off_refuses() fail {
 }
 
 test g2_update_active_to_terminal_delta_off_refuses() fail {
-  updateTerminal(fx.mintOf(fx.activePolicy, fx.keyA, -2), bookerPaid(), activeHeld())
-}
-
-test g2_delete_absent_delta_off_refuses() fail {
-  deleteAbsent(
-    zero,
-    deleteAbsentOutputs(),
-    updateActiveCustody(),
+  updateTerminal(
+    fx.mintOf(fx.activePolicy, fx.keyA, -2),
+    bookerPaid(),
+    activeHeld(),
   )
 }
 
+test g2_delete_absent_delta_off_refuses() fail {
+  deleteAbsent(zero, deleteAbsentOutputs(), updateActiveCustody())
+}
+
 test g2_delete_active_delta_off_refuses() fail {
-  deleteActive(fx.mintOf(fx.activePolicy, fx.keyA, 1), bookerPaid(), activeHeld())
+  deleteActive(
+    fx.mintOf(fx.activePolicy, fx.keyA, 1),
+    bookerPaid(),
+    activeHeld(),
+  )
 }
 
 test g2_read_terminal_delta_off_refuses() fail {
@@ -1696,12 +1708,14 @@ fn retract(edge: Int, signer: ByteArray) -> Bool {
       validity_range: fx.phase2(),
       extra_signatories: [signer],
       redeemers: [Pair(Spend(fx.requestRef(0)), redeemer)],
-      outputs: [Output {
-        address: fx.addressOf(fx.bookerAddress),
-        value: from_lovelace(fx.requestLovelace),
-        datum: InlineDatum(fx.requestRef(0)),
-        reference_script: None,
-      }],
+      outputs: [
+        Output {
+          address: fx.addressOf(fx.bookerAddress),
+          value: from_lovelace(fx.requestLovelace),
+          datum: InlineDatum(fx.requestRef(0)),
+          reference_script: None,
+        },
+      ],
       reference_inputs: [fx.stateInput(root)],
       inputs: [
         fx.requestInput(

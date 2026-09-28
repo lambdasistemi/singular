@@ -8,11 +8,8 @@ use cardano/assets.{from_asset, from_lovelace}
 use cardano/transaction.{
   InlineDatum, Input, NoDatum, Output, OutputReference, ScriptPurpose, Spend,
 }
-use lib
 use lib.{assetName, valueFromToken}
-use types.{
-  Request, RequestDatum, State, StateDatum, TokenId,
-}
+use types.{Request, RequestDatum, State, StateDatum, TokenId}
 
 // ============================================================================
 // Test constants
@@ -137,7 +134,7 @@ pub const state =
     application_policy: testAppPolicy,
     active_policy: testRepPolicy,
     absent_policy: testAbsentPolicy,
-    terminal_policy: testTerminalPolicy
+    terminal_policy: testTerminalPolicy,
   }
 
 // Raw datum for input/output UTxOs (no Option wrapper)
@@ -221,7 +218,7 @@ pub const feeState =
     application_policy: testAppPolicy,
     active_policy: testRepPolicy,
     absent_policy: testAbsentPolicy,
-    terminal_policy: testTerminalPolicy
+    terminal_policy: testTerminalPolicy,
   }
 
 pub const feeStateDatum = Some(StateDatum(feeState))
@@ -284,7 +281,7 @@ pub const feeStateOutput =
           application_policy: testAppPolicy,
           active_policy: testRepPolicy,
           absent_policy: testAbsentPolicy,
-          terminal_policy: testTerminalPolicy
+          terminal_policy: testTerminalPolicy,
         },
       ),
     ),
@@ -323,7 +320,7 @@ pub const capturedRefundState =
     application_policy: testAppPolicy,
     active_policy: testRepPolicy,
     absent_policy: testAbsentPolicy,
-    terminal_policy: testTerminalPolicy
+    terminal_policy: testTerminalPolicy,
   }
 
 pub const capturedRefundStateDatum = Some(StateDatum(capturedRefundState))
@@ -455,13 +452,12 @@ pub const output =
           application_policy: testAppPolicy,
           active_policy: testRepPolicy,
           absent_policy: testAbsentPolicy,
-          terminal_policy: testTerminalPolicy
+          terminal_policy: testTerminalPolicy,
         },
       ),
     ),
     reference_script: None,
   }
-
 
 pub fn owner_fuzzer() -> Fuzzer<ByteArray> {
   fuzz.bytearray_fixed(28)

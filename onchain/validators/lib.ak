@@ -1,9 +1,7 @@
 use aiken/cbor
-use aiken/collection/dict
 use aiken/collection/dict.{get, keys}
 use aiken/collection/list.{delete, find}
 use aiken/crypto.{Hash, Sha2_256, blake2b_256, sha2_256}
-use aiken/primitive/bytearray
 use aiken/primitive/bytearray.{concat, from_int_big_endian}
 use cardano/address.{Address, Credential, Inline, Script, VerificationKey}
 use cardano/assets.{PolicyId, Value, from_asset, policies, tokens}
@@ -53,7 +51,6 @@ use types.{TokenId}
 /// - `tokenFromValue` returns None for multi-policy values
 /// - `tokenFromValue` returns None for multi-asset-name values under one policy
 /// - `quantity` returns None when the policy or asset name is absent
-
 /// Get the quantity of a specific token in a value.
 ///
 /// Looks up the given policy ID in the value's token map, then looks up
@@ -385,10 +382,13 @@ pub fn decodeAddress(bytes: ByteArray) -> Option<Address> {
     None
   } else {
     let kind = bytearray.at(bytes, 0) / 16
-    if (kind == 6 || kind == 7) && size == 29 {
+    if ( kind == 6 || kind == 7 ) && size == 29 {
       Some(
         Address {
-          payment_credential: credentialOf(kind == 6, bytearray.slice(bytes, 1, 28)),
+          payment_credential: credentialOf(
+            kind == 6,
+            bytearray.slice(bytes, 1, 28),
+          ),
           stake_credential: None,
         },
       )
@@ -401,7 +401,10 @@ pub fn decodeAddress(bytes: ByteArray) -> Option<Address> {
           ),
           stake_credential: Some(
             Inline(
-              credentialOf(kind == 0 || kind == 1, bytearray.slice(bytes, 29, 56)),
+              credentialOf(
+                kind == 0 || kind == 1,
+                bytearray.slice(bytes, 29, 56),
+              ),
             ),
           ),
         },
@@ -434,7 +437,8 @@ pub fn destinationMatches(
 ) -> Bool {
   let (address, datumHash) = destination
   when decodeAddress(address) is {
-    Some(expected) -> expected == out.address && datumMatches(datumHash, out.datum)
+    Some(expected) ->
+      expected == out.address && datumMatches(datumHash, out.datum)
     None -> False
   }
 }
