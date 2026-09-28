@@ -29,6 +29,7 @@ import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString.Lazy qualified as BSL
 import Data.Either (isRight)
+import Data.Maybe (mapMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -111,7 +112,7 @@ chapter row steps =
         { receiptRow = row
         , receiptOutcome = Accepted
         , receiptVerdict = AgreesWithModel
-        , receiptTransactions = [txid | Just txid <- map acceptedTxid steps]
+        , receiptTransactions = mapMaybe acceptedTxid steps
         , receiptRefusal = Nothing
         , receiptRejected = Nothing
         , receiptMem = Just 99_999_999

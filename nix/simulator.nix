@@ -2,7 +2,10 @@
 let
   checker = pkgs.writeShellApplication {
     name = "simulator-check";
-    runtimeInputs = [ pkgs.nodejs pkgs.python3 ];
+    runtimeInputs = [
+      pkgs.nodejs
+      pkgs.python3
+    ];
     text = ''
       cd ${src}
       node simulator/mirror-check.mjs
@@ -11,9 +14,13 @@ let
       node simulator/gate.mjs --selftest
     '';
   };
-in {
-  apps.simulator-check = { type = "app"; program = pkgs.lib.getExe checker; };
-  check = pkgs.runCommand "singular-simulator-check" {} ''
+in
+{
+  apps.simulator-check = {
+    type = "app";
+    program = pkgs.lib.getExe checker;
+  };
+  check = pkgs.runCommand "singular-simulator-check" { } ''
     ${pkgs.lib.getExe checker}
     touch "$out"
   '';

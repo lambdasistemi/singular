@@ -15,6 +15,7 @@ module Conformance.Run.Receipts
 import Conformance.Run.Control
 import Conformance.Run.Environment
 import Conformance.Run.Observe
+import Data.Maybe (fromMaybe)
 
 import Data.Aeson
     ( Value (..)
@@ -82,9 +83,9 @@ writeCL01Receipt env rows = do
                 case eitherDecode content of
                     Right r -> pure (Just (r :: Receipt))
                     Left _ -> pure Nothing
-    getMem r = case receiptMem r of Just m -> m; Nothing -> 0
-    getCpu r = case receiptCpu r of Just c -> c; Nothing -> 0
-    getSize r = case receiptTxSize r of Just s -> s; Nothing -> 0
+    getMem r = fromMaybe 0 (receiptMem r)
+    getCpu r = fromMaybe 0 (receiptCpu r)
+    getSize r = fromMaybe 0 (receiptTxSize r)
 
 {- | CL01 for the CA rows: worst-case units and size across the
 session's two accepting boots (CA01 canonical, CA02 rival). CA03 and
@@ -132,14 +133,14 @@ writeCaCL01 env rows
                 case eitherDecode content of
                     Right r -> pure (Just (r :: Receipt))
                     Left _ -> pure Nothing
-    getMem r = case receiptMem r of Just m -> m; Nothing -> 0
-    getCpu r = case receiptCpu r of Just c -> c; Nothing -> 0
-    getSize r = case receiptTxSize r of Just s -> s; Nothing -> 0
+    getMem r = fromMaybe 0 (receiptMem r)
+    getCpu r = fromMaybe 0 (receiptCpu r)
+    getSize r = fromMaybe 0 (receiptTxSize r)
 
 -- | One envelope, with the generic body computed by Compare instructions.
 writeStoryReceipt :: Env -> T.Text -> [Value] -> IO ()
 writeStoryReceipt env row records = do
-    txids <- fmap concat $ mapM acceptedTx records
+    txids <- concat <$> mapM acceptedTx records
     measures <- readIORef (envLiveMeasurements env)
     require "story receipt has no accepted transaction" (not (null txids))
     require
@@ -283,6 +284,6 @@ writeCL01Issue70 env rows
                 case eitherDecode content of
                     Right r -> pure (Just (r :: Receipt))
                     Left _ -> pure Nothing
-    getMem r = case receiptMem r of Just m -> m; Nothing -> 0
-    getCpu r = case receiptCpu r of Just c -> c; Nothing -> 0
-    getSize r = case receiptTxSize r of Just s -> s; Nothing -> 0
+    getMem r = fromMaybe 0 (receiptMem r)
+    getCpu r = fromMaybe 0 (receiptCpu r)
+    getSize r = fromMaybe 0 (receiptTxSize r)

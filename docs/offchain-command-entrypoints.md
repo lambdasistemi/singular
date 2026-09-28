@@ -220,11 +220,9 @@ the library facade described in
 
 The checks that run on every pull request cover different claims. The
 off-chain lint app formats every command module and runs HLint over
-the `insert-active` and `deployment` directories; the `journey` and
-`update-terminal` directories stay outside HLint under the debt
-boundary described in [Checking off-chain code](offchain-development.md),
-so their new modules' hint state is recorded in the change's evidence,
-not by that green result. The component build compiles all four
+all of them, `journey` and `update-terminal` included, with no directory
+exclusions (see [Checking off-chain code](offchain-development.md)). The
+component build compiles all four
 commands. The registry workflow runs the journey from the checkout with
 a freshly built blueprint, and runs each archive command from an
 extracted release archive with its `jq` assertion over the observation.

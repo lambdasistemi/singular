@@ -92,7 +92,7 @@ import Data.Foldable (toList)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.List (isInfixOf, sortBy, sortOn)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
 import Data.Ord (Down (..), comparing)
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
@@ -439,7 +439,7 @@ runMode mode blueprintPath registryPath = do
         when ("--funding-only" `elem` args && not lifecycle) $
             failWith "--funding-only requires a public node or --lifecycle"
         mDeployment <- deploymentPathFromEnvironment
-        when (lifecycle && mDeployment == Nothing) $
+        when (lifecycle && isNothing mDeployment) $
             failWith
                 "the public lifecycle requires --deployment; deploy the registry once first"
         seedRef <- case mDeployment of
@@ -793,7 +793,7 @@ runMode mode blueprintPath registryPath = do
 fundPublicLifecycle :: Env -> IO ()
 fundPublicLifecycle env = do
     occupied <- withTrie (envTrie env) (envTok env) $ \trie -> Trie.lookup trie "rt-over"
-    when (occupied /= Nothing) $
+    when (isJust occupied) $
         failWith "public lifecycle: rt-over is already claimed"
     now <- currentPosixMs
     let pp = envPp env
@@ -932,7 +932,7 @@ runOverJourney env recOver = do
                 (Set.singleton (addrWitnessKeyHash (envOldHash env)))
                 (snapIn snapOverR)
                 destKey
-    unless (not skipHolds) $
+    when skipHolds $
         failWith "OV skip-proof broken: unrotated shape satisfies linkage?!"
     emit
         "row"
@@ -1074,11 +1074,10 @@ runRows env recAccept1 recAccept2 recRefusals recDuplicates recR1 recR2 recOver 
             )
     emit
         "complete"
-        ( "the retirement rows executed on a real devnet; every refusal \
-          \attributed to its reason, custody and the record's end proved \
-          \from the chain, retirement completed permissionlessly into Over \
-          \with the burn observed, the state after the refusals unchanged"
-        )
+        "the retirement rows executed on a real devnet; every refusal \
+        \attributed to its reason, custody and the record's end proved \
+        \from the chain, retirement completed permissionlessly into Over \
+        \with the burn observed, the state after the refusals unchanged"
 
 {- | The proof mirror this run loaded must be the trie the chain has.
 
@@ -1189,7 +1188,7 @@ rowLT01 env snap = do
         ( "LT01-controller-retirement-accepts: accepted tx="
             <> txIdHex signed
             <> " spelling=0x"
-            <> hex ("rt-accept1")
+            <> hex "rt-accept1"
             <> " (the original spelling; the \
                \controller alone retires the name; the representative \
                \is at custody and the record is gone)"
@@ -1236,7 +1235,7 @@ rowLT02 env snap = do
         ( "LT02-quorum-retirement-accepts: accepted tx="
             <> txIdHex signed
             <> " spelling=0x"
-            <> hex ("rt-accept2")
+            <> hex "rt-accept2"
             <> " (the spelling is \
                \immutable across routes; the fixed registration quorum \
                \alone retires the name, with no controller signature; the \
@@ -1456,7 +1455,7 @@ rowRetireRecoveredQuorum env snap = do
         ( "RR2-recovery-then-quorum-retire-accepts: accepted tx="
             <> txIdHex signed
             <> " spelling=0x"
-            <> hex ("rt-rr2")
+            <> hex "rt-rr2"
             <> " (the spelling survives rotation; quorum alone \
                \retires with no controller signature; representative at custody)"
         )
@@ -1480,9 +1479,8 @@ rowLT03 mode env snap = do
         env
         "LT03-insufficient-quorum-refused"
         "retirement-authorization"
-        ( "one distinct quorum signature short of the threshold of two, no \
-          \controller signature — otherwise exactly the accepted shape"
-        )
+        "one distinct quorum signature short of the threshold of two, no \
+        \controller signature — otherwise exactly the accepted shape"
         signed
     noTrace env snap "LT03"
 
@@ -1504,11 +1502,10 @@ rowLT03Dup env snap = do
         env
         "LT03-duplicate-member-refused"
         "retirement-authorization"
-        ( "the stored quorum names one member twice and a second once at \
-          \threshold two — well-formed by the existing rules — but the \
-          \duplicated member alone signs: counting signatures instead of \
-          \distinct members would accept, so this row binds the distinctness"
-        )
+        "the stored quorum names one member twice and a second once at \
+        \threshold two — well-formed by the existing rules — but the \
+        \duplicated member alone signs: counting signatures instead of \
+        \distinct members would accept, so this row binds the distinctness"
         signed
     noTrace env snap "LT03-duplicate"
 
@@ -1538,9 +1535,8 @@ rowLT05 env snap = do
         env
         "LT05-quorum-control-takeover-refused"
         "controller-signature"
-        ( "a quorum-signed attempt to change the control fields carries no \
-          \controller signature: the quorum may end the name, never take it over"
-        )
+        "a quorum-signed attempt to change the control fields carries no \
+        \controller signature: the quorum may end the name, never take it over"
         signed
     noTrace env snap "LT05"
 
@@ -1562,10 +1558,9 @@ rowLT06 env snap = do
         env
         "LT06-quorum-payment-redirection-refused"
         "controller-signature"
-        ( "a quorum-signed attempt to change the payment destination carries \
-          \no controller signature: the quorum may end the name, never \
-          \redirect its payments"
-        )
+        "a quorum-signed attempt to change the payment destination carries \
+        \no controller signature: the quorum may end the name, never \
+        \redirect its payments"
         signed
     noTrace env snap "LT06"
 
@@ -1584,16 +1579,15 @@ rowLT08 env snap = do
         env
         "LT08-wrong-retirement-custody-refused"
         "retirement-request"
-        ( "authorized by the controller but the representative goes anywhere \
-          \but the custody script — otherwise exactly the accepted shape"
-        )
+        "authorized by the controller but the representative goes anywhere \
+        \but the custody script — otherwise exactly the accepted shape"
         signed
     noTrace env snap "LT08"
 
 rowLT09 :: Env -> TxIn -> ConwayTx -> IO ()
 rowLT09 env consumedIn signedLT01 = do
     appUtxos <- Cage.queryUTxOs (envProv env) (envAppAddr env)
-    unless (not (any ((== consumedIn) . fst) appUtxos)) $
+    when (any ((== consumedIn) . fst) appUtxos) $
         failWith "LT09: the retired record is unexpectedly still live"
     emit
         "row"
@@ -2669,10 +2663,9 @@ runControlValid env recRefusals = do
                 "LT03-insufficient-quorum-refused: CONTROL valid-transaction \
                 \succeeded as constructed — failing the run as required"
             failWith
-                ( "CONTROL valid-transaction: LT03's transaction, made actually \
-                  \valid, SUCCEEDED — the guard did not refuse, so this run \
-                  \fails as the control requires"
-                )
+                "CONTROL valid-transaction: LT03's transaction, made actually \
+                \valid, SUCCEEDED — the guard did not refuse, so this run \
+                \fails as the control requires"
         Rejected reason ->
             failWith
                 ( "CONTROL valid-transaction: the control transaction was \
@@ -2710,7 +2703,7 @@ expectRefused
     -> String
     -> ConwayTx
     -> IO ()
-expectRefused mode env rowName modelReason guard signed =
+expectRefused mode env rowName modelReason =
     expectRefusedMarker
         mode
         env
@@ -2718,8 +2711,6 @@ expectRefused mode env rowName modelReason guard signed =
         modelReason
         (envAppHex env)
         "the application validator"
-        guard
-        signed
 
 {- | Refusal against an explicit script marker (general core behind
 expectRefused): phase-2 PlutusFailure naming @markerHex@ (a script
@@ -2881,7 +2872,7 @@ retireTx env snap destination signers spelling = do
             mkBasicTxBody
                 & inputsTxBodyL .~ inputs
                 & referenceInputsTxBodyL
-                    .~ Set.fromList ([stateIn] ++ map fst (envRefUtxos env))
+                    .~ Set.fromList (stateIn : map fst (envRefUtxos env))
                 & collateralInputsTxBodyL .~ Set.singleton (fst collateral)
                 & outputsTxBodyL .~ StrictSeq.fromList [custodyOut', requestOut, change]
                 & feeTxBodyL .~ Coin (lifecycleFee env)
@@ -2894,7 +2885,9 @@ retireTx env snap destination signers spelling = do
                 & reqSignerHashesTxBodyL
                     .~ Set.fromList (map addrWitnessKeyHash signers)
                 & scriptIntegrityHashTxBodyL .~ integrity
-    preparePublicTx env (1 + length signers) $
+    preparePublicTx
+        env
+        (1 + length signers)
         ( mkBasicTx body
             & witsTxL . rdmrsTxWitsL .~ redeemers
         )
@@ -2936,7 +2929,7 @@ fundCompleter env completerAddr
             _ -> failWith "completer funding did not produce its two outputs"
     | otherwise = do
         (fund, _collateral) <- takeFundCollateral env
-        let Coin inCoin = (snd fund) ^. coinTxOutL
+        let Coin inCoin = snd fund ^. coinTxOutL
             outCoin = 20_000_000
             changeCoin = inCoin - flatFee - 2 * outCoin
         unless (changeCoin > 1_000_000) $
@@ -3175,7 +3168,7 @@ maintainTx env snap successor signers = do
                 & reqSignerHashesTxBodyL
                     .~ Set.fromList (map addrWitnessKeyHash signers)
                 & scriptIntegrityHashTxBodyL .~ integrity
-    pure $
+    pure
         ( mkBasicTx body
             & witsTxL . scriptTxWitsL
                 .~ Map.singleton (envScriptHash env) (envScript env)
@@ -3239,7 +3232,9 @@ recoverTx env snap revealed reps registry successor signers = do
                 & reqSignerHashesTxBodyL
                     .~ Set.fromList (map addrWitnessKeyHash signers)
                 & scriptIntegrityHashTxBodyL .~ integrity
-    preparePublicTx env (1 + length signers) $
+    preparePublicTx
+        env
+        (1 + length signers)
         ( mkBasicTx body
             & witsTxL . scriptTxWitsL
                 .~ Map.singleton (envScriptHash env) (envScript env)
@@ -3414,7 +3409,7 @@ publishBatch prov submit pp poolRef addr scripts = do
                     & referenceScriptTxOutL .~ SJust script
         outs = map mkRefOut scripts
         spent = sum [c | o <- outs, let Coin c = o ^. coinTxOutL]
-        Coin inCoin = (snd fund) ^. coinTxOutL
+        Coin inCoin = snd fund ^. coinTxOutL
         changeCoin = inCoin - 1_000_000 - spent
     unless (changeCoin > 1_000_000) $
         failWith "publish: funding UTxO too small for script outputs"
@@ -3990,7 +3985,7 @@ evidenceVersion = maxBound
 
 -- | The signed transaction's exact CBOR bytes, for the Koios echo.
 serializeTxBytes :: ConwayTx -> ByteString
-serializeTxBytes tx = serialize' evidenceVersion tx
+serializeTxBytes = serialize' evidenceVersion
 
 serializeTxHex :: ConwayTx -> String
 serializeTxHex tx = hex (serialize' evidenceVersion tx)
@@ -4109,7 +4104,7 @@ checkPinnedRepresentative unappliedHex = do
             | p <- manifestValidators manifest
             , "representative.representative.mint" `T.isPrefixOf` mpTitle p
             ]
-    unless (length pins >= 1) $
+    when (null pins) $
         failWith
             "identity: no representative.representative.mint pin in the \
             \manifest"
@@ -4159,7 +4154,7 @@ checkPinnedConsumer unappliedHex = do
             | p <- manifestValidators manifest
             , "consumer.consumer" `T.isPrefixOf` mpTitle p
             ]
-    unless (length pins >= 1) $
+    when (null pins) $
         failWith
             "identity: no consumer.consumer pin in the registry manifest"
     unless (all (== T.pack unappliedHex) pins) $

@@ -2,6 +2,8 @@
 # The generated API references (Haddock for the off-chain and Conformance
 # libraries, `aiken docs` for the validators) are staged from the packaged
 # site build, so the local site serves the same generated pages CI checks.
+
+# Build the documentation site with the staged generated references.
 build-docs:
     python3 tools/prepare_docs.py --api-site "$(nix build --quiet --no-link --print-out-paths .#docs)"
     mkdocs build --strict
@@ -16,7 +18,7 @@ check-presentation:
 
 # After editing PAGE.md and redoing PAGE.speech.json: just stamp-speech PAGE.md
 stamp-speech +pages:
-    python3 tools/stamp_speech.py {{pages}}
+    python3 tools/stamp_speech.py {{ pages }}
 
 model:
     lake build
@@ -44,9 +46,13 @@ ci:
     just inventory-controls
     just format-check
     just format-controls
+    just lint
+    just lint-controls
 
 # #108: the rename tool must re-run cleanly on a pre-rename tree, be a no-op
 # on the second run, and its gate must catch strays planted in .sh files.
+
+# Run the rename tool's re-run, no-op and gate tests.
 rename-registry-test:
     bash tools/rename-registry.test.sh
 
@@ -54,8 +60,9 @@ rename-registry-test:
 # lint and format policy — or to a named non-code class — discovered from
 # the tree itself (extensions, shebangs, executable mode, component
 # manifests). Fails closed on anything unmapped. Mapping is not enforcement:
-# the report names which policies CI executes today and which are pending
-# debt owned by the remaining slices of the lint-and-format work.
+# the report names the CI carrier that executes each policy.
+
+# Map every file to its lint and format policy.
 inventory:
     python3 tools/code_inventory.py
 
@@ -64,6 +71,8 @@ inventory:
 # with no .git, so every run also proves the walk needs none — and requires
 # the intended diagnostic. The working tree is never touched; no deliberate
 # source defect is ever committed.
+
+# Run the inventory's negative and positive controls.
 inventory-controls:
     bash tools/code_inventory_controls.sh
 
@@ -71,11 +80,15 @@ inventory-controls:
 # repository root) to every discovered Haskell source — offchain and
 # conformance, the formerly fenced verifier sources and the evaluation
 # spike included, no directory exclusions. Run within nix develop.
+
+# Apply the house Fourmolu configuration to every Haskell source.
 format:
     bash tools/format_haskell.sh inplace
 
 # The matching check over the same discovered extent with the same one
 # configuration; this is the carrier `just ci` and PR CI run.
+
+# Check every Haskell source against the house Fourmolu configuration.
 format-check:
     bash tools/format_haskell.sh check
 
@@ -87,5 +100,30 @@ format-check:
 # tree joins the check through the Git index while ignored untracked build
 # noise never enters it. Scratch copies only; the working tree is never
 # touched.
+
+# Run the Haskell format check's negative and positive controls.
 format-controls:
     bash tools/format_controls.sh
+
+# #278: lint and format checks over every other code family the inventory
+# discovers — Nix, Python, shell, JavaScript/CSS, justfiles, workflow YAML,
+# Lean and HTML — with the pinned tools of the development shell. The
+# extent is the inventory's own, so a new file or directory is checked with
+# nothing to edit, and a code family with no checker fails the run. Pass
+# family names to narrow the run. Run within nix develop.
+
+# Lint and format-check every other code family.
+lint *families:
+    python3 tools/lint_code.py check {{ families }}
+
+# Apply the formatters (and safe lint fixes) of `just lint` in place.
+lint-fix *families:
+    python3 tools/lint_code.py fix {{ families }}
+
+# Negative controls for `just lint`: one planted defect per checker family,
+# including a new source under a new directory, in scratch copies of the
+# classified tree. The working tree is never touched.
+
+# Run the lint and format checks' negative controls.
+lint-controls:
+    bash tools/lint_controls.sh

@@ -20,6 +20,7 @@ import Cardano.Ledger.Api.Tx (witsTxL)
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Conformance.PurposeUnits
 import Conformance.Run.Environment
+import Data.Either (lefts)
 import Data.Text qualified as T
 
 import Data.ByteString.Lazy qualified as BSL
@@ -73,8 +74,7 @@ successfulPurposeUnits = Map.mapMaybe (either (const Nothing) Just)
 
 exceedsDeclaredUnits
     :: PurposeMeasurements -> PurposeUnits -> [T.Text]
-exceedsDeclaredUnits measured declared =
-    overBudgetPurposes (successfulPurposeUnits measured) declared
+exceedsDeclaredUnits measured = overBudgetPurposes (successfulPurposeUnits measured)
 
 declaredPurposeUnits
     :: ExUnits
@@ -116,7 +116,7 @@ redeemerPurposeNames tx = case tx ^. witsTxL . rdmrsTxWitsL of
 
 aggregatePurposeUnits
     :: PurposeMeasurements -> Either T.Text (Integer, Integer)
-aggregatePurposeUnits measured = case [reason | Left reason <- Map.elems measured] of
+aggregatePurposeUnits measured = case lefts (Map.elems measured) of
     reason : _ -> Left ("node evaluation failed: " <> reason)
     [] -> Right (sumPurposeUnits (successfulPurposeUnits measured))
 

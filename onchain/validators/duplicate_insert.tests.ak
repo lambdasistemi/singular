@@ -2,11 +2,13 @@ use aiken/collection/list
 use cardano/assets.{Value, merge, zero}
 use cardano/transaction.{InlineDatum, Input, Output}
 use lib
-use state
 use registry_fixtures as fx
-use types.{
-  Modify, RequestAction, StateDatum, UpdateAction,
-}
+use state
+use types.{Modify, RequestAction, StateDatum, UpdateAction}
+
+// ----------------------------------------------------------------------------
+// The driver
+// ----------------------------------------------------------------------------
 
 /// #173 A173-EDGE / A173-REFUSALS — the `insertActive` edge, its
 /// duplicate refusal and its keyed-mint refusal, executed against the
@@ -31,11 +33,6 @@ use types.{
 /// the construction site the validator reads from
 /// (`lib.occupiedRefusal` for the trie fault), asserted directly, because
 /// an Aiken test cannot read back a `trace`.
-
-// ----------------------------------------------------------------------------
-// The driver
-// ----------------------------------------------------------------------------
-
 fn foldBatch(
   root: ByteArray,
   nextRoot: ByteArray,
@@ -198,10 +195,7 @@ test the_wrong_distribution_agrees_per_kind() {
       fx.mintOf(fx.activePolicy, fx.keyB, 1),
     )
   let wrong = fx.mintOf(fx.activePolicy, fx.keyA, 2)
-  lib.kindTotal(right, fx.activePolicy) == lib.kindTotal(
-    wrong,
-    fx.activePolicy,
-  ) && right != wrong
+  lib.kindTotal(right, fx.activePolicy) == lib.kindTotal(wrong, fx.activePolicy) && right != wrong
 }
 
 /// A-006: the keyed-mint refusal is `net-mint-mismatch`, a DIFFERENT

@@ -15,7 +15,6 @@ use cardano/assets.{PolicyId}
 /// quorum. There is no fifth field and none may be added. Where this
 /// module and the codec disagree, the codec is right and this module is
 /// wrong.
-
 /// The payment destination option: none is `constr(0,[])`, some is
 /// `constr(1,[bytes])` — the contract's own encoding.
 pub type PaymentDestination {
@@ -65,16 +64,20 @@ pub fn decode_address(bytes: ByteArray) -> Option<AddressShape> {
   } else {
     let header = at(bytes, 0)
     let kind = header / 16
-    if (kind == 6 || kind == 7) && n == 29 {
-      Some(AddressShape {
-        payment_key: kind == 6,
-        payment_hash: slice(bytes, 1, 28),
-      })
+    if ( kind == 6 || kind == 7 ) && n == 29 {
+      Some(
+        AddressShape {
+          payment_key: kind == 6,
+          payment_hash: slice(bytes, 1, 28),
+        },
+      )
     } else if kind < 4 && n == 57 {
-      Some(AddressShape {
-        payment_key: kind == 0 || kind == 2,
-        payment_hash: slice(bytes, 1, 28),
-      })
+      Some(
+        AddressShape {
+          payment_key: kind == 0 || kind == 2,
+          payment_hash: slice(bytes, 1, 28),
+        },
+      )
     } else {
       None
     }
@@ -166,31 +169,29 @@ pub fn well_formed(record: NamingRecord) -> Bool {
   }
 }
 
-fn destination_ok(
-  destination: PaymentDestination,
-  control: ByteArray,
-) -> Bool {
+fn destination_ok(destination: PaymentDestination, control: ByteArray) -> Bool {
   when destination is {
     NoDestination -> True
-    SomeDestination(bytes) ->
-      canonical_address(bytes) && bytes != control
+    SomeDestination(bytes) -> canonical_address(bytes) && bytes != control
   }
 }
 
 /// Count distinct members — the contract's `nub` bound on the
 /// threshold.
 pub fn distinct_count(members: List<ByteArray>) -> Int {
-  length(foldl(
-    members,
-    [],
-    fn(member: ByteArray, acc: List<ByteArray>) {
-      if has(acc, member) {
-        acc
-      } else {
-        [member, ..acc]
-      }
-    },
-  ))
+  length(
+    foldl(
+      members,
+      [],
+      fn(member: ByteArray, acc: List<ByteArray>) {
+        if has(acc, member) {
+          acc
+        } else {
+          [member, ..acc]
+        }
+      },
+    ),
+  )
 }
 
 /// The registry state hash (issue #77, E-001 repair): the spent state
@@ -364,16 +365,18 @@ pub fn mpfs_state_datum_with_root(
   app_policy: PolicyId,
 ) -> Data {
   let datum: Data =
-    MpfsStateDatum(MpfsState {
-      root,
-      tip: 0,
-      process_time: 0,
-      retract_time: 0,
-      application_policy: app_policy,
-      active_policy,
-      absent_policy: #"b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0",
-      terminal_policy: #"c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0",
-    })
+    MpfsStateDatum(
+      MpfsState {
+        root,
+        tip: 0,
+        process_time: 0,
+        retract_time: 0,
+        application_policy: app_policy,
+        active_policy,
+        absent_policy: #"b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0",
+        terminal_policy: #"c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0",
+      },
+    )
   datum
 }
 
@@ -420,10 +423,10 @@ pub fn completion_request_owner(
   key: ByteArray,
 ) -> Option<ByteArray> {
   if datum is MRequestDatum(request): MRequestDatum {
-    if request.requestKey == key && ( when request.requestValue is {
+    if request.requestKey == key && when request.requestValue is {
       MUpdate(old, new) -> old == #"01" && new == #"02"
       _ -> False
-    } ) {
+    } {
       Some(request.requestOwner)
     } else {
       None

@@ -33,17 +33,19 @@ PROVIDER="${PROVIDER:-$(git -C "$(dirname "$0")/../.." rev-parse --show-toplevel
 OUTDIR="${OUTDIR:-$(mktemp -d -t pub-harness-XXXXXX)}"
 EVIDENCE="${EVIDENCE:-$PROVIDER/conformance/coverage/publication-boundary-evidence.log}"
 mkdir -p "$OUTDIR"
-SHIM="$OUTDIR/shims"; mkdir -p "$SHIM"
+SHIM="$OUTDIR/shims"
+mkdir -p "$SHIM"
 export GH_CALLS_LOG="$OUTDIR/gh-calls.log"
 cp "$PROVIDER/conformance/coverage/publication_gh_stub.sh" "$SHIM/gh"
 chmod +x "$SHIM/gh"
-: > "$OUTDIR/gh-calls.log"
-: > "$OUTDIR/run.log"
+: >"$OUTDIR/gh-calls.log"
+: >"$OUTDIR/run.log"
 log() { echo "$*" | tee -a "$OUTDIR/run.log"; }
-faillog() { echo "CASE-FAIL: $*" | tee -a "$OUTDIR/run.log"; FAIL=1; }
+faillog() {
+  echo "CASE-FAIL: $*" | tee -a "$OUTDIR/run.log"
+  FAIL=1
+}
 
-TESTPUB="$PROVIDER#publish-docs-boundary-test"
-PRODPUB="$PROVIDER#publish-docs"
 log "provider: $PROVIDER @ $(git -C "$PROVIDER" rev-parse HEAD)"
 log "provider status: $(git -C "$PROVIDER" status --porcelain | tr '\n' ';')"
 TESTPROG="$(cd "$PROVIDER" && nix eval --no-eval-cache --raw .#apps.x86_64-linux.publish-docs-boundary-test.program 2>/dev/null)"
@@ -57,12 +59,13 @@ log "production publisher: $PRODPROG"
 FAIL=0
 
 # --- fixtures ---------------------------------------------------------
+fixtures_script="$PROVIDER/conformance/coverage/publication_fixtures.sh"
 OUTDIR="$OUTDIR/fixtures" PROVIDER="$PROVIDER" \
-  "$PROVIDER/conformance/coverage/publication_fixtures.sh" >"$OUTDIR/fixture-build.log" 2>&1
+  "$fixtures_script" >"$OUTDIR/fixture-build.log" 2>&1
 FULL="$(grep -h FULLCLONE_HEAD "$OUTDIR/fixture-build.log" | cut -d= -f2)"
 MISS="$(grep -h MISSING_HEAD "$OUTDIR/fixture-build.log" | cut -d= -f2)"
-VTAG="v$(tr -d ' \n' < "$PROVIDER/version.txt")"
-DOCS_VERSION="$(tr -d ' \n' < "$PROVIDER/version.txt")"
+VTAG="v$(tr -d ' \n' <"$PROVIDER/version.txt")"
+DOCS_VERSION="$(tr -d ' \n' <"$PROVIDER/version.txt")"
 log "fullclone fixture: $OUTDIR/fixtures/fullclone @ $FULL"
 log "missing fixture: $OUTDIR/fixtures/missing @ $MISS"
 log "version tag: $VTAG"
@@ -99,7 +102,7 @@ run_pub() {
   local tagcommit="${6:-$sha}"
   export PUB_PR_SHA="$sha"
   local caseout="$OUTDIR/case-$name.log"
-  : > "$OUTDIR/gh-calls.log"
+  : >"$OUTDIR/gh-calls.log"
   log "=== case $name (via $app)"
   log "pwd: $pwd @ $(git -C "$pwd" rev-parse HEAD 2>/dev/null || echo non-git)"
   log "tag: $tag sha: $sha TAG_COMMIT: $tagcommit"
@@ -109,9 +112,9 @@ run_pub() {
     >"$caseout" 2>&1) || rc=$?
   log "publisher exit: $rc"
   log "--- publisher output ($caseout):"
-  cat "$caseout" >> "$OUTDIR/run.log"
+  cat "$caseout" >>"$OUTDIR/run.log"
   log "--- gh calls ($name):"
-  cat "$OUTDIR/gh-calls.log" >> "$OUTDIR/run.log"
+  cat "$OUTDIR/gh-calls.log" >>"$OUTDIR/run.log"
   PUB_RC="$rc"
 }
 
@@ -136,13 +139,25 @@ fi
 # --- refusing cases: exact exit plus verdict label, nothing after ------
 expect_blocked() { # name want_rc want_label
   local name="$1" want_rc="$2" want_label="$3"
-  [ "$PUB_RC" -eq "$want_rc" ] || { faillog "$name: exit $PUB_RC, want $want_rc"; return; }
+  [ "$PUB_RC" -eq "$want_rc" ] || {
+    faillog "$name: exit $PUB_RC, want $want_rc"
+    return
+  }
   grep -q "$want_label" "$OUTDIR/case-$name.log" \
-    || { faillog "$name: refusal label '$want_label' absent (empty or wrong failure)"; return; }
+    || {
+      faillog "$name: refusal label '$want_label' absent (empty or wrong failure)"
+      return
+    }
   grep -q "GHCALL: release upload" "$OUTDIR/gh-calls.log" \
-    && { faillog "$name: upload recorded despite refusal"; return; }
+    && {
+      faillog "$name: upload recorded despite refusal"
+      return
+    }
   grep -q "plutus-blueprint" "$OUTDIR/case-$name.log" \
-    && { faillog "$name: assembler invoked despite refusal"; return; }
+    && {
+      faillog "$name: assembler invoked despite refusal"
+      return
+    }
   log "case $name: HELD (exit $want_rc, '$want_label', no upload)"
 }
 
@@ -188,9 +203,9 @@ make_mut_copy() { # name patchfile -> sets MUTDIR; applies the retained patch
     mkdir -p "$MUTDIR/$(dirname "$f")"
     cp "$PROVIDER/$f" "$MUTDIR/$f"
   done
-  (cd "$MUTDIR" && patch -p1 -F0 --dry-run < "$2" >/dev/null) \
+  (cd "$MUTDIR" && patch -p1 -F0 --dry-run <"$2" >/dev/null) \
     || { faillog "mutation patch $2 does not apply"; }
-  (cd "$MUTDIR" && patch -p1 -F0 < "$2" >/dev/null) \
+  (cd "$MUTDIR" && patch -p1 -F0 <"$2" >/dev/null) \
     || { faillog "mutation patch $2 failed to apply"; }
   log "mutant copy $1: $MUTDIR (baseline $(git -C "$PROVIDER" rev-parse HEAD))"
   log "mutation patch: $2 sha256 $(sha256sum "$2" | cut -d' ' -f1)"
@@ -213,15 +228,15 @@ log "mutant-A closure: $MUTPROG_A"
   || { faillog "mutant-A closure identical to baseline — mutation did not reach the build"; }
 MUTOUT="$OUTDIR/case-guard-removed.log"
 MUTRC=0
-: > "$OUTDIR/gh-calls.log"
+: >"$OUTDIR/gh-calls.log"
 log "=== case guard-removed (mutant publisher, incomplete fixture)"
 (cd "$INC" && TAG_COMMIT="$INC_HEAD" PATH="$SHIM:$PATH" \
   timeout 850 nix run --quiet "$MUTDIR#publish-docs-boundary-test" -- "$VTAG" "$INC_HEAD" \
   >"$MUTOUT" 2>&1) || MUTRC=$?
 log "mutant publisher exit: $MUTRC"
-cat "$MUTOUT" >> "$OUTDIR/run.log"
+cat "$MUTOUT" >>"$OUTDIR/run.log"
 log "--- gh calls (guard-removed):"
-cat "$OUTDIR/gh-calls.log" >> "$OUTDIR/run.log"
+cat "$OUTDIR/gh-calls.log" >>"$OUTDIR/run.log"
 rm -rf "$MUTDIR"
 log "mutant copy destroyed (patch, fingerprint and logs retained above)"
 if [ "$MUTRC" -eq 1 ] && grep -q "release assembly: PASS" "$MUTOUT"; then
@@ -246,15 +261,15 @@ log "mutant-B closure: $MUTPROG_B"
   || { faillog "mutant-B closure identical to baseline — mutation did not reach the build"; }
 MUTOUT="$OUTDIR/case-no-final.log"
 MUTRC=0
-: > "$OUTDIR/gh-calls.log"
+: >"$OUTDIR/gh-calls.log"
 log "=== case no-final (mutant publisher, sufficient fixture)"
 (cd "$OUTDIR/fixtures/fullclone" && TAG_COMMIT="$FULL" PATH="$SHIM:$PATH" \
   timeout 850 nix run --quiet "$MUTDIR#publish-docs-boundary-test" -- "$VTAG" "$FULL" \
   >"$MUTOUT" 2>&1) || MUTRC=$?
 log "mutant publisher exit: $MUTRC"
-cat "$MUTOUT" >> "$OUTDIR/run.log"
+cat "$MUTOUT" >>"$OUTDIR/run.log"
 log "--- gh calls (no-final, must show no upload):"
-cat "$OUTDIR/gh-calls.log" >> "$OUTDIR/run.log"
+cat "$OUTDIR/gh-calls.log" >>"$OUTDIR/run.log"
 rm -rf "$MUTDIR"
 log "mutant copy destroyed (patch, fingerprint and logs retained above)"
 if [ "$MUTRC" -eq 0 ] && grep -q "release assembly: PASS" "$MUTOUT" \
@@ -290,8 +305,12 @@ grep -q "$RECORDER/bin" "$TESTPROG" \
 log "executable audit: recorder referenced"
 
 log "--- gh calls (uploads recorded only by the positive case):"
-cat "$OUTDIR/gh-calls.log" >> "$OUTDIR/run.log"
-[ "$FAIL" -eq 0 ] && log "ALL CASES HELD" || log "BOUNDARY BROKEN"
+cat "$OUTDIR/gh-calls.log" >>"$OUTDIR/run.log"
+if [ "$FAIL" -eq 0 ]; then
+  log "ALL CASES HELD"
+else
+  log "BOUNDARY BROKEN"
+fi
 # Single repo write, after the last nix invocation: the tree (and therefore
 # every closure identity logged above) stays frozen for the whole run.
 cp "$OUTDIR/run.log" "$EVIDENCE"

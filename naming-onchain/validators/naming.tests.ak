@@ -5,8 +5,8 @@ use fixtures.{
   tampered_commitment,
 }
 use naming.{
-  decode, decode_address, expect_naming, NamingDatum, NamingRecord,
-  NoDestination, RetirementQuorum, SomeDestination,
+  NamingDatum, NamingRecord, NoDestination, RetirementQuorum, SomeDestination,
+  decode, decode_address, expect_naming,
 }
 
 // ===========================================================================
@@ -37,10 +37,7 @@ test bad_header_address_refuses() {
 // ===========================================================================
 
 fn quorum() {
-  RetirementQuorum {
-    threshold: 2,
-    members: [member1, member2, member3],
-  }
+  RetirementQuorum { threshold: 2, members: [member1, member2, member3] }
 }
 
 fn canonical_record() {
@@ -69,15 +66,21 @@ test fifth_field_refuses() fail {
   let commitment_data: Data = commitment
   let quorum_data: Data = quorum()
   let fifth: Data = #"0000ff"
-  expect _ = decode(constr_data(0, [
-    constr_data(0, [
-      control_data,
-      destination_data,
-      commitment_data,
-      quorum_data,
-      fifth,
-    ]),
-  ]))
+  expect _ =
+    decode(
+      constr_data(
+        0,
+        [
+          constr_data(
+            0,
+            [
+              control_data, destination_data, commitment_data, quorum_data,
+              fifth,
+            ],
+          ),
+        ],
+      ),
+    )
   True
 }
 
@@ -91,9 +94,13 @@ test wrong_inner_arity_refuses() fail {
   let control_data: Data = control
   let destination_data: Data = SomeDestination(destination)
   let commitment_data: Data = commitment
-  expect _ = decode(constr_data(0, [
-    constr_data(0, [control_data, destination_data, commitment_data]),
-  ]))
+  expect _ =
+    decode(
+      constr_data(
+        0,
+        [constr_data(0, [control_data, destination_data, commitment_data])],
+      ),
+    )
   True
 }
 
@@ -104,14 +111,18 @@ test destination_wrong_constructor_refuses() fail {
   let destination_data: Data = constr_data(2, [])
   let commitment_data: Data = commitment
   let quorum_data: Data = quorum()
-  expect _ = decode(constr_data(0, [
-    constr_data(0, [
-      control_data,
-      destination_data,
-      commitment_data,
-      quorum_data,
-    ]),
-  ]))
+  expect _ =
+    decode(
+      constr_data(
+        0,
+        [
+          constr_data(
+            0,
+            [control_data, destination_data, commitment_data, quorum_data],
+          ),
+        ],
+      ),
+    )
   True
 }
 
@@ -150,102 +161,109 @@ test tampered_commitment_is_well_formed() {
 }
 
 test short_member_refuses() fail {
-  refuses(NamingDatum(record_with(
-    commitment,
-    RetirementQuorum {
-      threshold: 2,
-      members: [member1, short_member],
-    },
-  )))
+  refuses(
+    NamingDatum(
+      record_with(
+        commitment,
+        RetirementQuorum { threshold: 2, members: [member1, short_member] },
+      ),
+    ),
+  )
 }
 
 test zero_threshold_refuses() fail {
-  refuses(NamingDatum(record_with(
-    commitment,
-    RetirementQuorum {
-      threshold: 0,
-      members: [member1, member2],
-    },
-  )))
+  refuses(
+    NamingDatum(
+      record_with(
+        commitment,
+        RetirementQuorum { threshold: 0, members: [member1, member2] },
+      ),
+    ),
+  )
 }
 
 test threshold_above_members_refuses() fail {
-  refuses(NamingDatum(record_with(
-    commitment,
-    RetirementQuorum {
-      threshold: 3,
-      members: [member1, member2],
-    },
-  )))
+  refuses(
+    NamingDatum(
+      record_with(
+        commitment,
+        RetirementQuorum { threshold: 3, members: [member1, member2] },
+      ),
+    ),
+  )
 }
 
 // Two distinct members carried three times: the contract's nub bound
 // counts distinct members, so a threshold of 3 refuses.
 test threshold_over_duplicate_members_refuses() fail {
-  refuses(NamingDatum(record_with(
-    commitment,
-    RetirementQuorum {
-      threshold: 3,
-      members: [member1, member1, member2],
-    },
-  )))
+  refuses(
+    NamingDatum(
+      record_with(
+        commitment,
+        RetirementQuorum { threshold: 3, members: [member1, member1, member2] },
+      ),
+    ),
+  )
 }
 
 test duplicate_members_within_bound_accepts() {
   expect _ =
-    expect_naming(NamingDatum(record_with(
-      commitment,
-      RetirementQuorum {
-        threshold: 2,
-        members: [member1, member1, member2],
-      },
-    )))
+    expect_naming(
+      NamingDatum(
+        record_with(
+          commitment,
+          RetirementQuorum {
+            threshold: 2,
+            members: [member1, member1, member2],
+          },
+        ),
+      ),
+    )
   True
 }
 
 test destination_equal_to_control_refuses() fail {
-  refuses(NamingDatum(with_destination(
-    canonical_record(),
-    SomeDestination(control),
-  )))
+  refuses(
+    NamingDatum(with_destination(canonical_record(), SomeDestination(control))),
+  )
 }
 
 test script_credential_control_refuses() fail {
-  refuses(NamingDatum(with_control(
-    canonical_record(),
-    script_credential_control,
-  )))
+  refuses(
+    NamingDatum(with_control(canonical_record(), script_credential_control)),
+  )
 }
 
 test bad_header_control_refuses() fail {
-  refuses(NamingDatum(with_control(
-    canonical_record(),
-    bad_header_address,
-  )))
+  refuses(NamingDatum(with_control(canonical_record(), bad_header_address)))
 }
 
 test base_form_destination_accepts() {
   expect _ =
-    expect_naming(NamingDatum(with_destination(
-      canonical_record(),
-      SomeDestination(base_payment_address),
-    )))
+    expect_naming(
+      NamingDatum(
+        with_destination(
+          canonical_record(),
+          SomeDestination(base_payment_address),
+        ),
+      ),
+    )
   True
 }
 
 test non_canonical_destination_refuses() fail {
-  refuses(NamingDatum(with_destination(
-    canonical_record(),
-    SomeDestination(bad_header_address),
-  )))
+  refuses(
+    NamingDatum(
+      with_destination(canonical_record(), SomeDestination(bad_header_address)),
+    ),
+  )
 }
 
 test no_destination_accepts() {
   expect _ =
-    expect_naming(NamingDatum(with_destination(
-      canonical_record(),
-      NoDestination,
-    )))
+    expect_naming(
+      NamingDatum(with_destination(canonical_record(), NoDestination)),
+    )
   True
 }
 

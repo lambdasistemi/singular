@@ -37,6 +37,7 @@ import Data.Aeson.Types qualified as AesonTypes
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as Base16
 import Data.Map.Strict qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -92,7 +93,7 @@ runCS01 :: FilePath -> FilePath -> String -> Bool -> IO ()
 runCS01 blueprintPath receiptsDir base dirty = do
     control <- lookupEnv "CONFORMANCE_CONTROL"
     let spoil = control == Just "wrong-index"
-    emit "control" (maybe "normal" id control)
+    emit "control" (fromMaybe "normal" control)
     ebp <- loadBlueprint blueprintPath
     bp <- case ebp of
         Left err -> failWith ("blueprint does not parse: " <> err)
@@ -656,9 +657,9 @@ type TitleMap = Map.Map Text [(Text, Integer, [Text])]
 
 extractTitles :: Aeson.Value -> TitleMap
 extractTitles val =
-    case AesonTypes.parseMaybe parseDefs val of
-        Just m -> m
-        Nothing -> Map.empty
+    fromMaybe
+        Map.empty
+        (AesonTypes.parseMaybe parseDefs val)
   where
     parseDefs = AesonTypes.withObject "blueprint" $ \o -> do
         defs <-

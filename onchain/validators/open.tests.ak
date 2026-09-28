@@ -31,7 +31,8 @@ const testKey: ByteArray = #"6b6579"
 
 const testOwner: ByteArray = #"6f776e6572"
 
-const testAddress: ByteArray = #"6164647265737300000000000000000000000000000000000000000000"
+const testAddress: ByteArray =
+  #"6164647265737300000000000000000000000000000000000000000000"
 
 const testDatumHash: ByteArray = #"00"
 
@@ -40,10 +41,7 @@ const testDestination: (ByteArray, ByteArray) = (testAddress, testDatumHash)
 /// The transaction whose mint field moves exactly the named assets under
 /// the open policy.
 fn mint_tx(moved: List<(ByteArray, Int)>) -> Transaction {
-  Transaction {
-    ..tx_mod.placeholder,
-    mint: build_mint(moved),
-  }
+  Transaction { ..tx_mod.placeholder, mint: build_mint(moved) }
 }
 
 fn build_mint(moved: List<(ByteArray, Int)>) -> Value {
@@ -55,12 +53,7 @@ fn build_mint(moved: List<(ByteArray, Int)>) -> Value {
 }
 
 fn approve(edge: Int) -> OpenRedeemer {
-  Approve {
-    edge,
-    key: testKey,
-    owner: testOwner,
-    destination: testDestination,
-  }
+  Approve { edge, key: testKey, owner: testOwner, destination: testDestination }
 }
 
 fn bound_name(edge: Int) -> ByteArray {
@@ -70,11 +63,7 @@ fn bound_name(edge: Int) -> ByteArray {
 /// The rule, at each of the six tree edges: one `+1` asset whose name is
 /// the tuple's own binding is admitted.
 fn admits_edge(edge: Int) -> Bool {
-  open.open.mint(
-    approve(edge),
-    openPolicy,
-    mint_tx([(bound_name(edge), 1)]),
-  )
+  open.open.mint(approve(edge), openPolicy, mint_tx([(bound_name(edge), 1)]))
 }
 
 test open_admits_insert_absent() {
@@ -105,62 +94,38 @@ test open_admits_delete_active() {
 /// consumable). Every movement under the policy is negative and there is
 /// at least one.
 test open_admits_pure_burn() {
-  open.open.mint(
-    approve(1),
-    openPolicy,
-    mint_tx([(bound_name(1), -1)]),
-  )
+  open.open.mint(approve(1), openPolicy, mint_tx([(bound_name(1), -1)]))
 }
 
 /// The name is the binding: an asset name that is not this tuple's
 /// `approvalName` is refused, however well-formed the redeemer.
 test open_refuses_wrong_binding() {
-  !open.open.mint(
-    approve(1),
-    openPolicy,
-    mint_tx([(bound_name(2), 1)]),
-  )
+  !open.open.mint(approve(1), openPolicy, mint_tx([(bound_name(2), 1)]))
 }
 
 /// A single wrong byte in the name is enough — the whole tuple is
 /// committed, so this is the control that the check is not comparing
 /// lengths or prefixes.
 test open_refuses_foreign_name() {
-  !open.open.mint(
-    approve(1),
-    openPolicy,
-    mint_tx([(#"00", 1)]),
-  )
+  !open.open.mint(approve(1), openPolicy, mint_tx([(#"00", 1)]))
 }
 
 /// `witnessTerminal` needs no approval in the model, so minting one
 /// under the open policy is refused rather than left meaningfully
 /// mintable.
 test open_refuses_edge_six() {
-  !open.open.mint(
-    approve(6),
-    openPolicy,
-    mint_tx([(bound_name(6), 1)]),
-  )
+  !open.open.mint(approve(6), openPolicy, mint_tx([(bound_name(6), 1)]))
 }
 
 /// Edge 7 is not an edge at all.
 test open_refuses_edge_seven() {
-  !open.open.mint(
-    approve(7),
-    openPolicy,
-    mint_tx([(bound_name(7), 1)]),
-  )
+  !open.open.mint(approve(7), openPolicy, mint_tx([(bound_name(7), 1)]))
 }
 
 /// Quantity widening: two of the bound asset in one mint would let a
 /// single approval certify more than the one request it names.
 test open_refuses_widened_quantity() {
-  !open.open.mint(
-    approve(1),
-    openPolicy,
-    mint_tx([(bound_name(1), 2)]),
-  )
+  !open.open.mint(approve(1), openPolicy, mint_tx([(bound_name(1), 2)]))
 }
 
 /// Two distinct approval names in one mint is the same widening by

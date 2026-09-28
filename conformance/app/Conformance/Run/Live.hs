@@ -75,7 +75,7 @@ import Conformance.PurposeUnits
     , budgetRefusalPurposes
     , missingPurposeBudgets
     )
-import Conformance.Receipt (maxLiveStepReasonChars)
+import Conformance.Receipt (AssetEntry (..), maxLiveStepReasonChars)
 import Conformance.Story.Binding qualified as Binding
 import Conformance.Story.Identity qualified as Identity
 import Conformance.Story.Live qualified as Live
@@ -88,7 +88,7 @@ import Control.Exception
     , throwIO
     , try
     )
-import Control.Monad (forM_, when)
+import Control.Monad (forM_, replicateM, void, when)
 import Control.Monad.Operational qualified as Operational
 import Data.Aeson
     ( Value (..)
@@ -245,7 +245,6 @@ import Conformance.Mirror
     , require
     , txIdHex
     )
-import Conformance.Receipt (AssetEntry (..))
 import Conformance.Run.Retraction (declareRetraction)
 import Conformance.Run.Step
     ( StepOutcome (..)
@@ -698,15 +697,16 @@ submitEdge env state cage exit alteration request = do
                 (filter (`elem` map fst pending) allInputs == [reqIn])
             let wanted = Set.insert collateral (unsigned ^. bodyTxL . inputsTxBodyL)
             visible <-
-                fmap Map.fromList $
-                    fmap concat $
-                        mapM
-                            (Cage.queryUTxOs (envProv env))
-                            [ genesisAddr
-                            , wallet
-                            , requestAddrFromCfg cfg tid (network cfg)
-                            , cageAddrFromCfg cfg (network cfg)
-                            ]
+                fmap
+                    (Map.fromList . concat)
+                    ( mapM
+                        (Cage.queryUTxOs (envProv env))
+                        [ genesisAddr
+                        , wallet
+                        , requestAddrFromCfg cfg tid (network cfg)
+                        , cageAddrFromCfg cfg (network cfg)
+                        ]
+                    )
             emit
                 "step-inputs"
                 ( "request="
@@ -1240,8 +1240,8 @@ storyReferences env cage key edge
             Cage.queryUTxOs (envProv env) (cageAddrFromCfg cfg (network cfg))
         case [ u
              | u@(_, out) <- utxos
-             , Just (AbsentCustody _) <- [extractCageDatum out]
              , outAssets out == Map.singleton absentPolicy (Map.singleton key 1)
+             , Just (AbsentCustody _) <- [extractCageDatum out]
              ] of
             [u] -> pure [u]
             _ -> failWith ("no single observed custody UTxO for " <> show key)
@@ -1370,10 +1370,11 @@ observeStep env state step = case lsOutcome step of
     StepAccepted transaction _ -> do
         control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
         when (control == Just "unknown-identity") $
-            ()
-                <$ observeIdentity
+            void
+                ( observeIdentity
                     (liveWallets (liveIds state))
                     (WalletIdentity (BS.replicate 28 0xAB))
+                )
         observeAcceptedStep env state step transaction
     _ -> pure Null
 
@@ -1434,8 +1435,8 @@ observeAcceptedStep env state step transaction = do
         terminalBytes = SBS.fromShort (cfgTerminalPolicy cfg)
         activePolicy = policyIdFromPin (cfgActivePolicy cfg)
     holdings <-
-        fmap concat $
-            mapM
+        concat
+            <$> mapM
                 ( walletHoldings
                     ids
                     keys
@@ -1449,8 +1450,8 @@ observeAcceptedStep env state step transaction = do
             (observeCustody ids cfg)
             [ out
             | (_, out) <- cageOutputs
-            , Just (AbsentCustody _) <- [extractCageDatum out]
             , Map.member (SBS.fromShort (cfgAbsentPolicy cfg)) (outAssets out)
+            , Just (AbsentCustody _) <- [extractCageDatum out]
             ]
     let MultiAsset minted = transaction ^. bodyTxL . mintTxBodyL
     mint <-
@@ -1580,8 +1581,8 @@ observeAcceptedStep env state step transaction = do
             observeIdentity
                 (liveWallets identities)
                 (WalletIdentity (serialiseAddr wallet))
-        fmap concat $
-            mapM
+        concat
+            <$> mapM
                 ( \key -> do
                     keyId <- observeIdentity (liveKeys identities) (KeyIdentity key)
                     pure
@@ -1605,14 +1606,15 @@ classifyLeaves
 classifyLeaves membership observedRoot = do
     let present = [key | (key, True) <- membership]
         assignments =
-            sequence
-                (replicate (length present) [leafAbsent, leafActive, leafTerminal])
+            replicateM
+                (length present)
+                [leafAbsent, leafActive, leafTerminal]
     candidates <-
         mapM
             ( \values -> do
                 trie <- mkPureTrie
                 mapM_
-                    (\(key, value) -> CageTrie.insert trie key value)
+                    (uncurry (CageTrie.insert trie))
                     (zip present values)
                 root <- CageTrie.getRoot trie
                 pure (zip present values, unRoot root)
@@ -1868,8 +1870,8 @@ observeOwnerOutputs
     -> [Payments.Payment]
     -> IO [Value]
 observeOwnerOutputs ids wallets cfg tid step transaction payments =
-    fmap concat $
-        mapM
+    concat
+        <$> mapM
             ownerOutput
             [key | Payments.Payment (Payments.Owner key) _ <- payments]
   where
@@ -2262,8 +2264,7 @@ askModel _env state step judged = do
             . Map.lookup registry
             =<< readIORef (liveStarts state)
     setup <-
-        pure . Map.findWithDefault [] registry
-            =<< readIORef (liveTraces state)
+        Map.findWithDefault [] registry <$> readIORef (liveTraces state)
     (application, active, absent, terminal) <-
         observePins ids (rcCfg (lsCage step))
     let startValue =
@@ -2520,7 +2521,7 @@ compareStep env state step observation = do
             when (chainOutcome == String "accepted" && lsExit step == Live.Fold) $
                 modifyIORef'
                     (liveTraces state)
-                    (Map.insertWith (\new old -> old <> new) registry [lsModelRequest step])
+                    (Map.insertWith (flip (<>)) registry [lsModelRequest step])
         "unsupported" -> case lsOutcome step of
             StepUnsupported _ reason _ ->
                 emit

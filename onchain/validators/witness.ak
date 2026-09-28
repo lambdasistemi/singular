@@ -1,4 +1,3 @@
-use aiken/collection/dict
 use aiken/collection/dict.{get, keys}
 use aiken/collection/list.{find, length}
 use aiken/collection/pairs
@@ -135,9 +134,9 @@ fn modifyActionCount(redeemer_data: Data) -> Int {
 fn isRegistry(registry: ByteArray, input: Input) -> Bool {
   when input.output.address.payment_credential is {
     address.Script(hash) ->
-      hash == registryStateHash && when keys(
-        tokens(input.output.value, registryStateHash),
-      ) is {
+      hash == registryStateHash && when
+        keys(tokens(input.output.value, registryStateHash))
+      is {
         [name] ->
           get(tokens(input.output.value, registryStateHash), name) == Some(1) && bytearray.concat(
             registryStateHash,

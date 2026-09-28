@@ -176,8 +176,17 @@ def identity_of(root: Path, name: str) -> str:
     return obligation.identity
 
 
-def full_check(root: Path, *, layer: str, execution: str, check_id: str, name: str,
-               definition_digest: str, candidate: str, **evidence_overrides) -> dict:
+def full_check(
+    root: Path,
+    *,
+    layer: str,
+    execution: str,
+    check_id: str,
+    name: str,
+    definition_digest: str,
+    candidate: str,
+    **evidence_overrides,
+) -> dict:
     """A structurally valid, executed, fresh, non-vacuous check row."""
     evidence = {
         "status": "pass",
@@ -203,7 +212,11 @@ def full_check(root: Path, *, layer: str, execution: str, check_id: str, name: s
         "entryPoints": ["src/Greeter.hs:greeter"],
         "definitionDigests": {"Singular.greeter": definition_digest},
         "evidence": evidence,
-        "control": {"kind": "mutation", "target": "Singular.greeter", "status": "valid"},
+        "control": {
+            "kind": "mutation",
+            "target": "Singular.greeter",
+            "status": "valid",
+        },
     }
 
 

@@ -88,12 +88,12 @@ def clean_source(text: str) -> str:
 
 @dataclass(frozen=True)
 class Declaration:
-    keyword: str          # theorem | lemma
-    name: str             # qualified name, namespace stack + declared name
-    source: str           # repo-relative file path
-    line: int             # 1-based line of the declaration keyword
-    attributed: bool      # declared with a leading @[...] attribute
-    signature: str        # cleaned signature text, keyword through ':=' terminator
+    keyword: str  # theorem | lemma
+    name: str  # qualified name, namespace stack + declared name
+    source: str  # repo-relative file path
+    line: int  # 1-based line of the declaration keyword
+    attributed: bool  # declared with a leading @[...] attribute
+    signature: str  # cleaned signature text, keyword through ':=' terminator
     signatureSha256: str  # sha256(qualified name + signature): statement identity
 
     @property
@@ -116,7 +116,7 @@ def _signature_span(clean: str, start: int, limit: int) -> int:
         i += 1
     raise ValueError(
         f"no proof terminator ':=' found in declaration region "
-        f"[{start}:{limit}] — unrecognized grammar: {clean[start:start + 80]!r}"
+        f"[{start}:{limit}] — unrecognized grammar: {clean[start : start + 80]!r}"
     )
 
 
@@ -153,7 +153,9 @@ def scan_text(clean: str, source: str) -> list[Declaration]:
                 stack.append(None)
             else:
                 if not stack:
-                    raise ValueError(f"{source}: 'end' without an open namespace/section")
+                    raise ValueError(
+                        f"{source}: 'end' without an open namespace/section"
+                    )
                 stack.pop()
             continue
         m = payload

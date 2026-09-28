@@ -552,10 +552,9 @@ runRows mode env claimLCIn claimLMIn claimFoldIn = do
     finalNoTrace env a1 recordSnap
     emit
         "complete"
-        ( "the LM/LC rows executed on a real devnet; every refusal \
-          \attributed to its reason, the four proofs shown, the state \
-          \after the refusals unchanged"
-        )
+        "the LM/LC rows executed on a real devnet; every refusal \
+        \attributed to its reason, the four proofs shown, the state \
+        \after the refusals unchanged"
 
 -- ---------------------------------------------------------
 -- WR01 — refund round-trip
@@ -728,11 +727,10 @@ rowLM02 mode env a1 = case mode of
         case result of
             Submitted _ ->
                 failWith
-                    ( "CONTROL valid-transaction: LM02's transaction, made \
-                      \actually valid, SUCCEEDED — the guard did not refuse, \
-                      \so this run fails as the control requires (a row's \
-                      \transaction made actually valid must fail the run)"
-                    )
+                    "CONTROL valid-transaction: LM02's transaction, made \
+                    \actually valid, SUCCEEDED — the guard did not refuse, \
+                    \so this run fails as the control requires (a row's \
+                    \transaction made actually valid must fail the run)"
             Rejected reason ->
                 failWith
                     ( "CONTROL valid-transaction: the control transaction was \
@@ -746,11 +744,10 @@ rowLM02 mode env a1 = case mode of
             env
             "LM02-maintenance-unauthorized-refused"
             "controller-signature"
-            ( "the controller's payment key hash is absent from the required \
-              \signers (the row's witness is requiredSigners: []), so the \
-              \validator's signature check refuses; the vkey witness present \
-              \only pays the funding and collateral inputs"
-            )
+            "the controller's payment key hash is absent from the required \
+            \signers (the row's witness is requiredSigners: []), so the \
+            \validator's signature check refuses; the vkey witness present \
+            \only pays the funding and collateral inputs"
             tx
         noTrace env a1 "LM02"
 
@@ -767,10 +764,9 @@ rowLM03 env a1 = do
         env
         "LM03-maintenance-field-tamper-refused"
         "preserved-field"
-        ( "signed, but the continuation's next-control commitment was \
-          \tampered with (the v0.2.0 corpus's own tamper bytes), so the \
-          \validator's preservation equality refuses"
-        )
+        "signed, but the continuation's next-control commitment was \
+        \tampered with (the v0.2.0 corpus's own tamper bytes), so the \
+        \validator's preservation equality refuses"
         tx
     noTrace env a1 "LM03"
 
@@ -799,9 +795,8 @@ rowLM04 env a1 = do
         env
         "LM04-maintenance-quorum-alteration-refused"
         "quorum"
-        ( "signed, but the continuation's retirement quorum was altered (an \
-          \extra member), so the validator's preservation equality refuses"
-        )
+        "signed, but the continuation's retirement quorum was altered (an \
+        \extra member), so the validator's preservation equality refuses"
         tx
     noTrace env a1 "LM04"
 
@@ -828,10 +823,9 @@ rowLC03 env a1 = do
         env
         "LC03-insert-attestation-cancellation-refused"
         "withdraw-binding"
-        ( "no withdraw approval rides the claim, so there is no stored \
-          \destination to compare against and nothing to burn: the \
-          \validator's approval-binding destructure refuses"
-        )
+        "no withdraw approval rides the claim, so there is no stored \
+        \destination to compare against and nothing to burn: the \
+        \validator's approval-binding destructure refuses"
         tx
     noTrace env a1 "LC03"
 
@@ -897,7 +891,7 @@ rowLC01 env claimLCIn = do
                     Nothing -> False
         approvalAnywhere =
             any (approvalLiveIn . snd) (appUtxos <> genesisUtxos <> refundUtxos)
-    unless (not approvalAnywhere) $
+    when approvalAnywhere $
         failWith
             ( "LC01: an approval token named by the LC refund binding is "
                 <> "still live on chain"
@@ -934,7 +928,7 @@ rowLC01 env claimLCIn = do
 rowLC06 :: Env -> TxIn -> ConwayTx -> IO ()
 rowLC06 env claimIn signedLC01 = do
     appUtxos <- Cage.queryUTxOs (envProv env) (envAppAddr env)
-    unless (not (any ((== claimIn) . fst) appUtxos)) $
+    when (any ((== claimIn) . fst) appUtxos) $
         failWith "LC06: the claim is unexpectedly still live"
     emit
         "row"
@@ -997,10 +991,9 @@ rowLC02 env claimFoldSnap = do
         env
         "LC02-cancellation-redirect-refused"
         "withdraw-refund-address"
-        ( "the presented refund differs from the stored one, so the \
-          \validator's refund equality refuses; the transaction is otherwise \
-          \exactly the accepted LC01 shape"
-        )
+        "the presented refund differs from the stored one, so the \
+        \validator's refund equality refuses; the transaction is otherwise \
+        \exactly the accepted LC01 shape"
         tx
     noTrace env claimFoldSnap "LC02"
 
@@ -1052,10 +1045,9 @@ rowLC04 env recordSnap = do
         env
         "LC04-folded-claim-cancellation-refused"
         "request-unavailable"
-        ( "ran after a real fold: the fold consumed the approval (burned at \
-          \fold), so the folded record carries no withdraw approval and the \
-          \validator's approval-binding destructure refuses the cancellation"
-        )
+        "ran after a real fold: the fold consumed the approval (burned at \
+        \fold), so the folded record carries no withdraw approval and the \
+        \validator's approval-binding destructure refuses the cancellation"
         tx
     noTrace env recordSnap "LC04"
 
@@ -1205,7 +1197,7 @@ maintainTx env snap overrideM demanded = do
                             else Set.empty
                        )
                 & scriptIntegrityHashTxBodyL .~ integrity
-    pure $
+    pure
         ( mkBasicTx body
             & witsTxL . scriptTxWitsL
                 .~ Map.singleton (envScriptHash env) (envScript env)
@@ -1257,7 +1249,7 @@ cancelBody env snap presented refundAddr refundCoin mint mintRdmr = do
                 & feeTxBodyL .~ Coin flatFee
                 & mintTxBodyL .~ mint
                 & scriptIntegrityHashTxBodyL .~ integrity
-    pure $
+    pure
         ( mkBasicTx body
             & witsTxL . scriptTxWitsL
                 .~ Map.singleton (envScriptHash env) (envScript env)
@@ -1302,7 +1294,7 @@ foldBody env snap current = do
                 & feeTxBodyL .~ Coin flatFee
                 & mintTxBodyL .~ mintBurn (envAppPolicy env) (envFoldRefundBytes env)
                 & scriptIntegrityHashTxBodyL .~ integrity
-    pure $
+    pure
         ( mkBasicTx body
             & witsTxL . scriptTxWitsL
                 .~ Map.singleton (envScriptHash env) (envScript env)
@@ -1427,7 +1419,7 @@ setupTwoClaims env datumLC datumLM = do
         let matches =
                 [ fst cin
                 | (cin, s) <- zip candidates snaps
-                , (not (null (snapTokens s)) == wantApproval)
+                , not (null (snapTokens s)) == wantApproval
                 ]
         case matches of
             (cin : _) -> pure cin

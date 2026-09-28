@@ -553,11 +553,10 @@ runRows mode env canonicalSeed altSeed = do
     finalNoTrace env snapAfterLi01
     emit
         "complete"
-        ( "the seven wrong canonical initializations executed on a real \
-          \devnet; every refusal attributed to its reason, LI06 after a \
-          \real LI01 on the genuinely consumed seed, the canonical state \
-          \after the rows unchanged"
-        )
+        "the seven wrong canonical initializations executed on a real \
+        \devnet; every refusal attributed to its reason, LI06 after a \
+        \real LI01 on the genuinely consumed seed, the canonical state \
+        \after the rows unchanged"
 
 -- ---------------------------------------------------------
 -- The environment every row builds against
@@ -1419,7 +1418,7 @@ rowLI06 env canonicalSeed signedLi01 _snap = do
     -- The consumed-seed state is the chain's own: the canonical seed is
     -- gone from the unspent set because a real LI01 consumed it.
     wallet <- Cage.queryUTxOs (envProv env) genesisAddr
-    unless (not (any ((== fst canonicalSeed) . fst) wallet)) $
+    when (any ((== fst canonicalSeed) . fst) wallet) $
         failWith "LI06: the canonical seed is unexpectedly still live"
     emit
         "li06-build"
@@ -1506,9 +1505,8 @@ finalNoTrace env snap = do
     unless cpOK $
         failWith "no-trace: the checkpoint output changed after the rows"
     wallet <- Cage.queryUTxOs (envProv env) genesisAddr
-    unless
-        (not (any ((== cageSeed (envCfg env)) . txInToRef . fst) wallet))
-        $ failWith "no-trace: the canonical seed is unexpectedly unspent again"
+    when (any ((== cageSeed (envCfg env)) . txInToRef . fst) wallet) $
+        failWith "no-trace: the canonical seed is unexpectedly unspent again"
     emit
         "no-trace"
         ( "state unchanged after the seven rows — no trace: registry "
@@ -1738,8 +1736,8 @@ shortId = takeWhile (/= '-')
 -- The canonical initialization transaction (LI01's builder)
 -- ---------------------------------------------------------
 
-{- | Build the canonical initialization transaction exactly as issue
-#47's runner does: consume the canonical seed, mint exactly one
+{- | Build the canonical initialization transaction exactly as
+issue #47's runner does: consume the canonical seed, mint exactly one
 registry identity token named by the seed, create the
 validator-prescribed registry state UTxO plus the naming checkpoint
 output. Evaluation and fee balancing come from the same library
@@ -1831,7 +1829,7 @@ namingIdentityPathFromEnv =
     lookupEnv "NAMING_SCRIPT_IDENTITY"
         >>= maybe (pure defaultNamingIdentityPath) pure
 
-data ScriptIdentity = ScriptIdentity
+newtype ScriptIdentity = ScriptIdentity
     { siValidators :: [ValidatorPin]
     }
 
@@ -1918,7 +1916,7 @@ this run's raw representative code.
 checkPinnedRepresentative :: NamingIdentity -> String -> IO ()
 checkPinnedRepresentative ni unappliedHex = do
     let pins = pinsUnder ni "representative.representative.mint"
-    unless (length pins >= 1) $
+    when (null pins) $
         failWith
             "identity: no representative.representative.mint pin in the naming manifest"
     unless (all (== T.pack unappliedHex) pins) $

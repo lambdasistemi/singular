@@ -1,4 +1,5 @@
 """Validate version agreement, release guards and the actual release archives."""
+
 import hashlib
 import json
 from pathlib import Path
@@ -17,24 +18,39 @@ version = (root / "version.txt").read_text().strip()
 assert re.fullmatch(r"\d+\.\d+\.\d+", version), "invalid documentation version"
 manifest = json.loads((root / ".release-please-manifest.json").read_text())
 config = json.loads((root / "release-please-config.json").read_text())
-assert manifest == ({".": version} if version != "0.0.0" else {}), "manifest/version drift"
+assert manifest == ({".": version} if version != "0.0.0" else {}), (
+    "manifest/version drift"
+)
 assert config["release-type"] == "simple" and config["initial-version"] == "0.1.0"
-workflows = {p.name: yaml.load(p.read_text(), Loader=yaml.BaseLoader) for p in (root / ".github/workflows").glob("*.yml")}
+workflows = {
+    p.name: yaml.load(p.read_text(), Loader=yaml.BaseLoader)
+    for p in (root / ".github/workflows").glob("*.yml")
+}
 assert "workflow_dispatch" in workflows["ci.yml"]["on"], "CI recovery trigger missing"
 planner = workflows["release.yml"]["jobs"]["release-pr"]
-action = next(s for s in planner["steps"] if s.get("uses", "").startswith("googleapis/release-please-action@"))
-assert action["with"]["skip-github-release"] == "true", "release-please would post release comments"
+action = next(
+    s
+    for s in planner["steps"]
+    if s.get("uses", "").startswith("googleapis/release-please-action@")
+)
+assert action["with"]["skip-github-release"] == "true", (
+    "release-please would post release comments"
+)
 assert planner["needs"] == "build-gate", "release planning bypasses build gate"
 for name, workflow in workflows.items():
     for job in workflow["jobs"].values():
         assert job["runs-on"] == "nixos", name
-        assert all("dev-assets/setup-nix" not in s.get("uses", "") for s in job["steps"])
+        assert all(
+            "dev-assets/setup-nix" not in s.get("uses", "") for s in job["steps"]
+        )
 docs_name = f"singular-docs-{version}.tar.gz"
 onchain_name = f"singular-onchain-{version}.tar.gz"
 docs_digest = hashlib.sha256((archive / docs_name).read_bytes()).hexdigest()
 onchain_path = archive / onchain_name
 onchain_present = onchain_path.exists()
-onchain_digest = hashlib.sha256(onchain_path.read_bytes()).hexdigest() if onchain_present else None
+onchain_digest = (
+    hashlib.sha256(onchain_path.read_bytes()).hexdigest() if onchain_present else None
+)
 sums = {}
 for line in (archive / "SHA256SUMS").read_text().splitlines():
     digest, name = line.split("  ", 1)
@@ -87,27 +103,37 @@ with tarfile.open(archive / filename) as bundle:
         assert required in names, f"release archive misses {required}"
     recorded = bundle.extractfile("./artifacts/SHA256SUMS").read().decode().splitlines()
     expected_paths = {
-        name for name, member in members.items()
-        if name.startswith("artifacts/") and name != "artifacts/SHA256SUMS"
+        name
+        for name, member in members.items()
+        if name.startswith("artifacts/")
+        and name != "artifacts/SHA256SUMS"
         and member.isfile()
     }
-    expected_paths.update({
-        "model/corpus.json",
-        "model/naming-corpus.json",
-        "model/lifecycle-corpus.json",
-        "model/theorem-debt.json",
-        "model/naming-theorem-debt.json",
-        "model/lifecycle-theorem-debt.json",
-        "model/wire-theorem-debt.json",
-        "simulator/identity.json",
-    })
+    expected_paths.update(
+        {
+            "model/corpus.json",
+            "model/naming-corpus.json",
+            "model/lifecycle-corpus.json",
+            "model/theorem-debt.json",
+            "model/naming-theorem-debt.json",
+            "model/lifecycle-theorem-debt.json",
+            "model/wire-theorem-debt.json",
+            "simulator/identity.json",
+        }
+    )
     expected_lines = []
     payloads = read_all_forward(bundle, expected_paths)
     assert set(payloads) == expected_paths, "artifact payloads unreadable"
     for path in sorted(expected_paths):
         expected_lines.append(f"{hashlib.sha256(payloads[path]).hexdigest()}  {path}")
     assert recorded == expected_lines, "artifact identity manifest drift"
-    assert all(not m.name.startswith("/") and ".." not in Path(m.name).parts and not m.issym() and not m.islnk() for m in bundle.getmembers())
+    assert all(
+        not m.name.startswith("/")
+        and ".." not in Path(m.name).parts
+        and not m.issym()
+        and not m.islnk()
+        for m in bundle.getmembers()
+    )
 
 # The on-chain release archive, when it is present in the checked release
 # directory: the compiled scripts and both pinned identity layers, the runnable
@@ -125,50 +151,64 @@ if onchain_present:
         members = {m.name.removeprefix("./"): m for m in bundle.getmembers()}
         names = set(members)
         for required in (
-        "README.md",
-        "RELEASE.md",
-        "RELEASE-COMMIT",
-        "SHA256SUMS",
-        "verify-identities.sh",
-        # #173 A173-COMMAND: the packaged verb's run page. Required, so
-        # the archive cannot ship the command without its authority.
-        "INSERT-ACTIVE.md",
-        "offchain/insert-active/Main.hs",
-        # #177 I177-COMMAND: the second packaged verb's run page and its
-        # tracked source. Required, so the archive cannot ship the
-        # retirement command without the page that documents it.
-        "UPDATE-TERMINAL.md",
-        "offchain/update-terminal/Main.hs",
-        "onchain/plutus.json",
-        "onchain/script-identity.json",
-        "onchain/aiken.toml",
-        "onchain/aiken.lock",
-        "onchain/flake.nix",
-        "onchain/flake.lock",
-        "naming-onchain/plutus.json",
-        "naming-onchain/script-identity.json",
-        "naming-onchain/aiken.toml",
-        "naming-onchain/aiken.lock",
-        "naming-onchain/flake.nix",
-        "naming-onchain/flake.lock",
-        "offchain/flake.nix",
-        "offchain/flake.lock",
-        "offchain/journey/README.md",
-        "offchain/journey/Main.hs",
-        "offchain/journey/li01/Main.hs",
-        "offchain/journey/li-refusals/Main.hs",
-        "offchain/journey/lmlc/Main.hs",
-        "offchain/naming/src/Naming/Wire/Vectors.hs",
-        "fixtures/Naming-Wire-Vectors.hs",
-        "fixtures/README.md",
-    ):
+            "README.md",
+            "RELEASE.md",
+            "RELEASE-COMMIT",
+            "SHA256SUMS",
+            "verify-identities.sh",
+            # #173 A173-COMMAND: the packaged verb's run page. Required, so
+            # the archive cannot ship the command without its authority.
+            "INSERT-ACTIVE.md",
+            "offchain/insert-active/Main.hs",
+            # #177 I177-COMMAND: the second packaged verb's run page and its
+            # tracked source. Required, so the archive cannot ship the
+            # retirement command without the page that documents it.
+            "UPDATE-TERMINAL.md",
+            "offchain/update-terminal/Main.hs",
+            "onchain/plutus.json",
+            "onchain/script-identity.json",
+            "onchain/aiken.toml",
+            "onchain/aiken.lock",
+            "onchain/flake.nix",
+            "onchain/flake.lock",
+            "naming-onchain/plutus.json",
+            "naming-onchain/script-identity.json",
+            "naming-onchain/aiken.toml",
+            "naming-onchain/aiken.lock",
+            "naming-onchain/flake.nix",
+            "naming-onchain/flake.lock",
+            "offchain/flake.nix",
+            "offchain/flake.lock",
+            "offchain/journey/README.md",
+            "offchain/journey/Main.hs",
+            "offchain/journey/li01/Main.hs",
+            "offchain/journey/li-refusals/Main.hs",
+            "offchain/journey/lmlc/Main.hs",
+            "offchain/naming/src/Naming/Wire/Vectors.hs",
+            "fixtures/Naming-Wire-Vectors.hs",
+            "fixtures/README.md",
+        ):
             assert required in names, f"on-chain release archive misses {required}"
-        assert all(not m.name.startswith("/") and ".." not in Path(m.name).parts and not m.issym() and not m.islnk() for m in bundle.getmembers())
-        fixtures_copy = bundle.extractfile(members["fixtures/Naming-Wire-Vectors.hs"]).read()
-        canonical = bundle.extractfile(members["offchain/naming/src/Naming/Wire/Vectors.hs"]).read()
-        assert fixtures_copy == canonical, "vendored fixture copy drifted from the offchain module"
+        assert all(
+            not m.name.startswith("/")
+            and ".." not in Path(m.name).parts
+            and not m.issym()
+            and not m.islnk()
+            for m in bundle.getmembers()
+        )
+        fixtures_copy = bundle.extractfile(
+            members["fixtures/Naming-Wire-Vectors.hs"]
+        ).read()
+        canonical = bundle.extractfile(
+            members["offchain/naming/src/Naming/Wire/Vectors.hs"]
+        ).read()
+        assert fixtures_copy == canonical, (
+            "vendored fixture copy drifted from the offchain module"
+        )
         covered = {}
-        for line in bundle.extractfile(members["SHA256SUMS"]).read().decode().splitlines():
+        for line in (
+            bundle.extractfile(members["SHA256SUMS"]).read().decode().splitlines()
+        ):
             digest, name = line.split("  ", 1)
             covered[name] = digest
         expected = {
@@ -179,9 +219,13 @@ if onchain_present:
         }
         assert covered == expected, "on-chain archive internal checksum manifest drift"
         release_text = bundle.extractfile(members["RELEASE.md"]).read().decode()
-        assert release_text == (root / "onchain-release/RELEASE.md").read_text(), "archive release instructions differ from source"
+        assert release_text == (root / "onchain-release/RELEASE.md").read_text(), (
+            "archive release instructions differ from source"
+        )
         for phrase in ("epic", "E18", "obligation", "milestone artifact"):
-            assert phrase.casefold() not in release_text.casefold(), f"release text contains forbidden wording: {phrase}"
+            assert phrase.casefold() not in release_text.casefold(), (
+                f"release text contains forbidden wording: {phrase}"
+            )
         readme_text = bundle.extractfile(members["README.md"]).read().decode()
         # The corrected availability promise (operator ruling 2026-09-25):
         # the archive README presents the verified connected journey as the
@@ -216,7 +260,11 @@ if onchain_present:
         )
         lines = readme_text.splitlines()
         table_start = next(
-            (i for i, l in enumerate(lines) if "retained command" in l and l.lstrip().startswith("|")),
+            (
+                i
+                for i, line in enumerate(lines)
+                if "retained command" in line and line.lstrip().startswith("|")
+            ),
             None,
         )
         rows = []
@@ -269,19 +317,27 @@ if onchain_present:
         with tempfile.TemporaryDirectory() as extract_dir:
             bundle.extractall(extract_dir, filter="data")
             result = subprocess.run(
-                ["bash", "verify-identities.sh"], cwd=extract_dir, capture_output=True, text=True
+                ["bash", "verify-identities.sh"],
+                cwd=extract_dir,
+                capture_output=True,
+                text=True,
             )
             assert result.returncode == 0, (
                 "identity verification from the artifact failed:\n"
-                + result.stdout + result.stderr
+                + result.stdout
+                + result.stderr
             )
     identity_from_artifact = "PASS"
-print(json.dumps({
-    "version": version,
-    "unreleasedBaseline": not manifest,
-    "archive": filename,
-    "onchainArchive": onchain_checked,
-    "versionAgreement": "PASS",
-    "artifactAndWorkflowChecks": "PASS",
-    "identityFromArtifact": identity_from_artifact,
-}))
+print(
+    json.dumps(
+        {
+            "version": version,
+            "unreleasedBaseline": not manifest,
+            "archive": filename,
+            "onchainArchive": onchain_checked,
+            "versionAgreement": "PASS",
+            "artifactAndWorkflowChecks": "PASS",
+            "identityFromArtifact": identity_from_artifact,
+        }
+    )
+)

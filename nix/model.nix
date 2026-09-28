@@ -5,7 +5,15 @@ let
     version = "0.1.0";
     src = pkgs.lib.cleanSourceWith {
       inherit src;
-      filter = path: type: !(builtins.elem (builtins.baseNameOf path) [ ".lake" ".git" "site" "result" "__pycache__" ]);
+      filter =
+        path: _type:
+        !(builtins.elem (builtins.baseNameOf path) [
+          ".lake"
+          ".git"
+          "site"
+          "result"
+          "__pycache__"
+        ]);
     };
     nativeBuildInputs = [ pkgs.lean4 ];
     buildPhase = ''
@@ -38,10 +46,14 @@ let
         --root ${src}
     '';
   };
-in {
+in
+{
   inherit package;
-  apps.model-check = { type = "app"; program = pkgs.lib.getExe checker; };
-  check = pkgs.runCommand "singular-model-check" {} ''
+  apps.model-check = {
+    type = "app";
+    program = pkgs.lib.getExe checker;
+  };
+  check = pkgs.runCommand "singular-model-check" { } ''
     ${pkgs.lib.getExe checker}
     touch "$out"
   '';

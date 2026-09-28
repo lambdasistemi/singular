@@ -1,5 +1,4 @@
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE TypeApplications #-}
 
 {- |
 Module      : Conformance.Run
@@ -177,20 +176,18 @@ runRows rawRows receiptsDir = do
     -- one session, and a session it cannot fire in is refused here.
     when (caRequested && control == WrongReason) $
         failWith
-            ( "wrong-reason arms a refusal matcher, but the CA rows \
-              \assert no ledger refusal (the rival is accepted by \
-              \design); use naive-authenticator, false-claim or \
-              \unapplied-address"
-            )
+            "wrong-reason arms a refusal matcher, but the CA rows \
+            \assert no ledger refusal (the rival is accepted by \
+            \design); use naive-authenticator, false-claim or \
+            \unapplied-address"
     when
         ( cgRequested
             && control `elem` [NaiveAuthenticator, UnappliedAddress]
         )
         $ failWith
-            ( "naive-authenticator and unapplied-address are CA \
-              \controls; the CG rows they cannot arm would pass \
-              \vacuously"
-            )
+            "naive-authenticator and unapplied-address are CA \
+            \controls; the CG rows they cannot arm would pass \
+            \vacuously"
     blueprintPath <- requireEnv "REGISTRY_BLUEPRINT"
     -- Observe tree identity before any side effect: creating the
     -- receipts directory first would always report dirty.
@@ -322,9 +319,8 @@ validateRows raw = do
                 requested
     when (hasCa && hasCg) $
         failWith
-            ( "CA and CG rows run as separate sessions, one devnet \
-              \each: run CA01..CA05, then the CG rows"
-            )
+            "CA and CG rows run as separate sessions, one devnet \
+            \each: run CA01..CA05, then the CG rows"
     pure requested
 
 -- ---------------------------------------------------------
@@ -448,11 +444,10 @@ runSession
                             , envLiveMeasurements = liveMeasurementsRef
                             }
                         , hex (scriptHashBytes (cfgScriptHash cfg))
-                        , ( "CA session: canonical seed published at outRef "
-                                <> show seedRef
-                                <> " — the consumer derives the canonical \
-                                   \name as SHA-256 of this outRef"
-                          )
+                        , "CA session: canonical seed published at outRef "
+                            <> show seedRef
+                            <> " — the consumer derives the canonical \
+                               \name as SHA-256 of this outRef"
                         )
                 else
                     -- The CG02-CG05 session cage boots only when one

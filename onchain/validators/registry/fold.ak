@@ -47,7 +47,6 @@ use aiken/collection/list.{foldl}
 use aiken/crypto.{VerificationKeyHash}
 use aiken/merkle_patricia_forestry.{MerklePatriciaForestry}
 use aiken/merkle_patricia_forestry as mpf
-use cardano/assets
 use cardano/assets.{PolicyId, Value, from_asset, lovelace_of}
 use cardano/transaction.{InlineDatum, Input}
 use lib.{
@@ -163,8 +162,15 @@ fn stepRequest(
   input: Input,
   validity_range,
 ) -> Fold {
-  let Request { requestOwner, requestKey, edge: tag, submitted_at, destination, deposit, .. } =
-    request
+  let Request {
+    requestOwner,
+    requestKey,
+    edge: tag,
+    submitted_at,
+    destination,
+    deposit,
+    ..
+  } = request
   let held = lovelace_of(input.output.value)
   if held < pins.tip {
     // C8 (was the pinned consumer's R1): the cage checks carriage now.
@@ -261,8 +267,7 @@ fn applyEdge(
   // occupied key is an attributable refusal instead of a crash inside
   // `mpf.insert` — and a crash says only that the script died, never
   // that it refused.
-  let inserting =
-    edge == lib.edgeInsertAbsent || edge == lib.edgeInsertActive
+  let inserting = edge == lib.edgeInsertAbsent || edge == lib.edgeInsertActive
   // #177 I177-CHAIN: the same shape, one edge later. A retirement is a
   // fault of the TRIE when the leaf it names is not `Active`, and the
   // three ways that happens are the three reasons Lean gives. Read
@@ -282,14 +287,16 @@ fn applyEdge(
       terminalFault(acc.trie, key, proof)
     } else if inserting && !mpf.miss(acc.trie, key, proof) {
       lib.occupiedRefusal()
-    } else if edge == edgeWitnessTerminal && !mpf.has(acc.trie, key, leafTerminal, proof) {
-      readFault(acc.trie, key, proof)
-    } else if (edge == edgeUpdateActive || edge == edgeDeleteAbsent || edge == edgeDeleteActive) && mpf.has(
+    } else if edge == edgeWitnessTerminal && !mpf.has(
       acc.trie,
       key,
       leafTerminal,
       proof,
     ) {
+      readFault(acc.trie, key, proof)
+    } else if (
+      edge == edgeUpdateActive || edge == edgeDeleteAbsent || edge == edgeDeleteActive
+    ) && mpf.has(acc.trie, key, leafTerminal, proof) {
       terminalEdgeRefusal()
     } else {
       None
@@ -297,62 +304,66 @@ fn applyEdge(
   is {
     Some(reason) -> halt(acc, reason)
     None -> {
-  let advanced =
-    if edge == edgeWitnessTerminal {
-      // C3: no new proof code. `mpf.has` is the library's own inclusion
-      // check and is total, so a proof against the wrong root is an
-      // attributable refusal rather than a crash inside the library —
-      // and `readFault` above has already run it and halted with the
-      // fact when it answered false, so inclusion holds here (#183
-      // slice b). The mandated `update(root, key, proof, v, v) == root`
-      // then runs on the verified proof and must leave the root alone.
-      let after = mpf.update(acc.trie, key, proof, leafTerminal, leafTerminal)
-      if mpf.root(after) == mpf.root(acc.trie) {
-        Some(acc.trie)
-      } else {
-        None
-      }
-    } else {
-      // The trie move named by the edge, with the edge table's own leaf
-      // bytes (`types.ak`): no value bytes travel with the request.
-      Some(
-        if edge == edgeInsertAbsent {
-          mpf.insert(acc.trie, key, leafAbsent, proof)
-        } else if edge == edgeInsertActive {
-          mpf.insert(acc.trie, key, leafActive, proof)
-        } else if edge == edgeUpdateActive {
-          mpf.update(acc.trie, key, proof, leafAbsent, leafActive)
-        } else if edge == edgeUpdateTerminal {
-          mpf.update(acc.trie, key, proof, leafActive, leafTerminal)
-        } else if edge == edgeDeleteAbsent {
-          mpf.delete(acc.trie, key, leafAbsent, proof)
+      let advanced =
+        if edge == edgeWitnessTerminal {
+          // C3: no new proof code. `mpf.has` is the library's own inclusion
+          // check and is total, so a proof against the wrong root is an
+          // attributable refusal rather than a crash inside the library —
+          // and `readFault` above has already run it and halted with the
+          // fact when it answered false, so inclusion holds here (#183
+          // slice b). The mandated `update(root, key, proof, v, v) == root`
+          // then runs on the verified proof and must leave the root alone.
+          let after =
+            mpf.update(acc.trie, key, proof, leafTerminal, leafTerminal)
+          if mpf.root(after) == mpf.root(acc.trie) {
+            Some(acc.trie)
+          } else {
+            None
+          }
         } else {
-          // `edgeDeleteActive`: admitted `0..6` above and the read is
-          // handled in its own branch, so only edge 5 reaches here.
-          mpf.delete(acc.trie, key, leafActive, proof)
-        },
-      )
-    }
-  when advanced is {
-    None -> halt(acc, @"read-root")
-    Some(trie) ->
-      Fold {
-        ..acc,
-        trie,
-        minted: foldl(
-          deltaOf(edge),
-          acc.minted,
-          fn(entry, value) {
-            let (kind, quantity) = entry
-            assets.merge(value, from_asset(policyOfKind(pins, kind), key, quantity))
-          },
-        ),
-        duties: pushDuties(
-          acc.duties,
-          dutiesOf(pins, edge, owner, key, destination, floor),
-        ),
+          // The trie move named by the edge, with the edge table's own leaf
+          // bytes (`types.ak`): no value bytes travel with the request.
+          Some(
+            if edge == edgeInsertAbsent {
+              mpf.insert(acc.trie, key, leafAbsent, proof)
+            } else if edge == edgeInsertActive {
+              mpf.insert(acc.trie, key, leafActive, proof)
+            } else if edge == edgeUpdateActive {
+              mpf.update(acc.trie, key, proof, leafAbsent, leafActive)
+            } else if edge == edgeUpdateTerminal {
+              mpf.update(acc.trie, key, proof, leafActive, leafTerminal)
+            } else if edge == edgeDeleteAbsent {
+              mpf.delete(acc.trie, key, leafAbsent, proof)
+            } else {
+              // `edgeDeleteActive`: admitted `0..6` above and the read is
+              // handled in its own branch, so only edge 5 reaches here.
+              mpf.delete(acc.trie, key, leafActive, proof)
+            },
+          )
+        }
+      when advanced is {
+        None -> halt(acc, @"read-root")
+        Some(trie) ->
+          Fold {
+            ..acc,
+            trie,
+            minted: foldl(
+              deltaOf(edge),
+              acc.minted,
+              fn(entry, value) {
+                let (kind, quantity) = entry
+                assets.merge(
+                  value,
+                  from_asset(policyOfKind(pins, kind), key, quantity),
+                )
+              },
+            ),
+            duties: pushDuties(
+              acc.duties,
+              dutiesOf(pins, edge, owner, key, destination, floor),
+            ),
+          }
       }
-  }
     }
   }
 }

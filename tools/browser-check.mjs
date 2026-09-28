@@ -6,39 +6,64 @@ import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 
 async function checkPage(page, evidence) {
-  const errors = []; page.on('pageerror', e => errors.push(e.message));
-  const checks = []; const assert = (v, m) => { if (!v) throw Error(m); checks.push(m); };
-  const text = sel => page.locator(sel).innerText();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  const checks = [];
+  const assert = (v, m) => {
+    if (!v) throw Error(m);
+    checks.push(m);
+  };
+  const text = (sel) => page.locator(sel).innerText();
 
   // The page must run the engine in the browser and reproduce every Lean row.
   const status = await text('#corpus-status');
-  assert(/^(\d+)\/\1 Lean corpus rows reproduced/.test(status),
-    `every corpus row reproduced in the browser (${status})`);
+  assert(
+    /^(\d+)\/\1 Lean corpus rows reproduced/.test(status),
+    `every corpus row reproduced in the browser (${status})`,
+  );
 
   // The seven edges are exposed, and the read among them.
-  for (const edge of ['insertAbsent','insertActive','updateActive','updateTerminal',
-                      'deleteAbsent','deleteActive','witnessTerminal'])
-    assert(await page.locator(`#edge-${edge}`).count() === 1, `edge exposed: ${edge}`);
+  for (const edge of [
+    'insertAbsent',
+    'insertActive',
+    'updateActive',
+    'updateTerminal',
+    'deleteAbsent',
+    'deleteActive',
+    'witnessTerminal',
+  ])
+    assert((await page.locator(`#edge-${edge}`).count()) === 1, `edge exposed: ${edge}`);
 
   // Every illegal combination is refused BY NAME, not as a generic failure.
   const refusals = await page.locator('#refusals tr').allInnerTexts();
   assert(refusals.length === 28, 'the complement of the edge table is shown in full');
-  const reasons = refusals.map(r => r.split('\t').pop().trim());
-  const admitted = reasons.filter(r => r === '\u2014 admitted \u2014');
+  const reasons = refusals.map((r) => r.split('\t').pop().trim());
+  const admitted = reasons.filter((r) => r === '\u2014 admitted \u2014');
   assert(admitted.length === 7, `exactly seven admitted rows (saw ${admitted.length})`);
-  const refused = reasons.filter(r => r !== '\u2014 admitted \u2014');
+  const refused = reasons.filter((r) => r !== '\u2014 admitted \u2014');
   assert(refused.length === 21, `21 refused rows (saw ${refused.length})`);
   // Every refusal is a NAME a reader can look up, and the whole vocabulary is
   // exercised: a page that collapsed two causes onto one name fails here.
   // The table supplies the custody entry and the active token for every row, so
   // custody-missing and token-missing cannot appear here; the Lean corpus rows
   // replayed above (GC01-GC06) are what exercise those two.
-  const vocabulary = ['already-booked','key-exists','key-unknown','not-absent',
-    'not-active','not-booked','read-absent','read-active','read-unknown',
-    'terminal-immutable'];
+  const vocabulary = [
+    'already-booked',
+    'key-exists',
+    'key-unknown',
+    'not-absent',
+    'not-active',
+    'not-booked',
+    'read-absent',
+    'read-active',
+    'read-unknown',
+    'terminal-immutable',
+  ];
   const seen = [...new Set(refused)].sort().join(',');
-  assert(seen === vocabulary.join(','),
-    `every refusal is named, and all ten names are exercised (saw ${seen})`);
+  assert(
+    seen === vocabulary.join(','),
+    `every refusal is named, and all ten names are exercised (saw ${seen})`,
+  );
 
   // A journey a reader can play: witness an absence, then book it.
   await page.selectOption('#story-picker', 'witness');
@@ -62,15 +87,19 @@ async function checkPage(page, evidence) {
   await page.click('#hist-next');
   await page.click('#hist-next');
   await page.click('#hist-next');
-  assert(/read-active/.test(await text('#narration')),
-    'attesting an active key is refused by name');
+  assert(
+    /read-active/.test(await text('#narration')),
+    'attesting an active key is refused by name',
+  );
 
   // Free play: right policy, wrong tuple is not sufficient (D-APPROVAL).
   await page.click('#btn-reset');
   await page.selectOption('#approval-picker', 'mismatched');
   await page.click('#edge-insertActive');
-  assert(/approval-mismatch/.test(await text('#edge-result')),
-    'an approval under the right policy with the wrong tuple is refused');
+  assert(
+    /approval-mismatch/.test(await text('#edge-result')),
+    'an approval under the right policy with the wrong tuple is refused',
+  );
   await page.selectOption('#approval-picker', 'none');
   await page.click('#edge-insertActive');
   assert(/no-approval/.test(await text('#edge-result')), 'no approval at all is refused');
@@ -83,16 +112,24 @@ async function checkPage(page, evidence) {
   const journey = await page.locator('#naming-journey tr').allInnerTexts();
   assert(journey.length === 5, 'the Over witness journey has five steps');
   assert(/witnessTerminal/.test(journey[2]), 'the witness is minted by a folded read');
-  assert(/burn/.test(journey[4]) && /Known terminal/.test(journey[4]),
-    'the witnesses burn and the leaf stays terminal');
+  assert(
+    /burn/.test(journey[4]) && /Known terminal/.test(journey[4]),
+    'the witnesses burn and the leaf stays terminal',
+  );
   // The naming corpus is Lean evidence, not a replay: the label must claim
   // inspection, and must not claim the rows were executed here.
   const namingStatus = await text('#naming-status');
-  assert(/\d+\/\d+ naming rows across \d+ sections inspected · Lean evidence, not replayed/
-    .test(namingStatus), `naming corpus labeled as inspected evidence (${namingStatus})`);
+  assert(
+    /\d+\/\d+ naming rows across \d+ sections inspected · Lean evidence, not replayed/.test(
+      namingStatus,
+    ),
+    `naming corpus labeled as inspected evidence (${namingStatus})`,
+  );
   const lifecycleStatus = await text('#lifecycle-status');
-  assert(/\d+\/\d+ lifecycle rows across \d+ sections inspected/.test(lifecycleStatus),
-    `lifecycle corpus labeled as inspected evidence (${lifecycleStatus})`);
+  assert(
+    /\d+\/\d+ lifecycle rows across \d+ sections inspected/.test(lifecycleStatus),
+    `lifecycle corpus labeled as inspected evidence (${lifecycleStatus})`,
+  );
 
   await page.click('#btn-theme');
   await writeFile(join(evidence, 'checks.json'), JSON.stringify(checks, null, 2) + '\n');
@@ -118,7 +155,10 @@ const server = createServer((request, response) => {
 let browser;
 let passed = false;
 try {
-  assert(process.env.PLAYWRIGHT_MODULE, 'Run through the pinned Nix browser-check app or development shell');
+  assert(
+    process.env.PLAYWRIGHT_MODULE,
+    'Run through the pinned Nix browser-check app or development shell',
+  );
   const { chromium } = await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE));
   await new Promise((accept, reject) => {
     server.once('error', reject);
@@ -133,17 +173,22 @@ try {
   }
   // CI forbids the zygote's capset syscall. Fork/exec children directly while
   // preserving the outer runner restrictions and Playwright's existing flags.
-  browser = await chromium.launch({ headless: true, channel: 'chromium', env: browserEnvironment, args: ['--no-zygote'] });
+  browser = await chromium.launch({
+    headless: true,
+    channel: 'chromium',
+    env: browserEnvironment,
+    args: ['--no-zygote'],
+  });
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   page.setDefaultTimeout(10000);
   const external = [];
-  await page.route('**/*', route => {
+  await page.route('**/*', (route) => {
     if (route.request().url().startsWith(url)) return route.continue();
     external.push(route.request().url());
     return route.abort();
   });
   const errors = [];
-  page.on('pageerror', error => errors.push(error.message));
+  page.on('pageerror', (error) => errors.push(error.message));
   await page.goto(url, { waitUntil: 'networkidle' });
   const result = await checkPage(page, evidence);
   assert.equal(result.status, 'PASS');
@@ -156,7 +201,7 @@ try {
   passed = true;
 } finally {
   await browser?.close();
-  if (server.listening) await new Promise(resolve => server.close(resolve));
+  if (server.listening) await new Promise((resolve) => server.close(resolve));
   if (passed && process.env.KEEP_BROWSER_EVIDENCE !== '1') await rm(evidence, { recursive: true });
   else console.error(`Browser evidence retained: ${evidence}`);
 }

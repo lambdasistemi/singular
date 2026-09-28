@@ -3,33 +3,29 @@ use aiken/fuzz
 use aiken/interval
 use aiken/merkle_patricia_forestry.{empty, root}
 use aiken/merkle_patricia_forestry as mpf
+use cage_fixtures.{
+  aRequest, burn_value, endRedeemerData, feeDelivery, legacyApproval,
+  legacyDelivery, legacyDestination, legacyKey, legacyMint, legacyRoot,
+  legacyWallet, modifyRedeemerData, noDestination, output, owner_fuzzer,
+  phase1Range, phase2Range, phase3Range, rawStateDatum, rejectedActionData,
+  request, state, stateDatum, stateSpendRedeemerData, testAbsentPolicy,
+  testAppPolicy, testProcessTime, testRepPolicy, testRequestRef, testRetractTime,
+  testScriptAddress, testSeed, testStakeScript, testStateRef, testTerminalPolicy,
+  testToken, testValue, update, updateActionData, zfDelivery,
+}
 use cardano/address.{from_script}
 use cardano/assets.{PolicyId, from_asset, from_lovelace, zero}
 use cardano/transaction.{
   InlineDatum, Input, NoDatum, Output, OutputReference, ScriptPurpose, Spend,
   Transaction,
 }
-use lib
 use lib.{assetName, valueFromToken}
 use request as request_validator
 use state as state_validator
 use types.{
   Burning, CageDatum, Contribute, End, Migrating, Migration, MintRedeemer,
-  TokenId,
   Minting, Modify, Rejected, Request, RequestDatum, Retract, State, StateDatum,
-  Sweep, UpdateAction, UpdateRedeemer,
-}
-
-use cage_fixtures.{
-  aRequest, burn_value, endRedeemerData, feeDelivery, legacyApproval, legacyDelivery,
-  legacyDestination, legacyKey, legacyMint, legacyRoot, legacyWallet,
-  modifyRedeemerData, noDestination, output, owner_fuzzer,
-  phase1Range, phase2Range, phase3Range, rawStateDatum, rejectedActionData,
-  request, state, stateDatum, stateSpendRedeemerData,
-  testAbsentPolicy, testAppPolicy, testProcessTime, testRepPolicy,
-  testRequestRef, testScriptAddress, testSeed, testStakeScript, testStateRef,
-  testRetractTime, testTerminalPolicy, testToken, testValue, update,
-  updateActionData, zfDelivery,
+  Sweep, TokenId, UpdateAction, UpdateRedeemer,
 }
 
 fn spend(
@@ -120,7 +116,7 @@ test modify_rejects_foreign_policy_same_asset() fail {
       application_policy: testAppPolicy,
       active_policy: testRepPolicy,
       absent_policy: testAbsentPolicy,
-      terminal_policy: testTerminalPolicy
+      terminal_policy: testTerminalPolicy,
     }
   let foreign_value = valueFromToken("foreign_policy", testToken)
   let fake_input =
@@ -167,7 +163,7 @@ test end_rejects_foreign_policy_same_asset() fail {
       application_policy: testAppPolicy,
       active_policy: testRepPolicy,
       absent_policy: testAbsentPolicy,
-      terminal_policy: testTerminalPolicy
+      terminal_policy: testTerminalPolicy,
     }
   let foreign_value = valueFromToken("foreign_policy", testToken)
   let fake_input =
@@ -192,7 +188,6 @@ test end_rejects_foreign_policy_same_asset() fail {
     },
   )
 }
-
 
 /// End succeeds even when the mint field contains additional policies beyond
 /// the cage's own burn. This supports atomic migration where a new token is

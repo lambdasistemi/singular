@@ -122,7 +122,10 @@ fn dutyFault(
       // exactly one outstanding active token the same thing, so neither
       // zero witnesses nor two is a story a user can tell.
       let carriers =
-        filter(tx.inputs, fn(i) { quantity_of(i.output.value, policy, key) != 0 })
+        filter(
+          tx.inputs,
+          fn(i) { quantity_of(i.output.value, policy, key) != 0 },
+        )
       if !sole {
         if carriers != [] {
           None

@@ -117,7 +117,7 @@ import Data.IORef
 import Data.List (isInfixOf, sortBy, sortOn, stripPrefix)
 import Data.List qualified as List
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
 import Data.Ord (Down (..), comparing)
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
@@ -562,7 +562,7 @@ runMode mode namingPath registryPath = do
         when ("--funding-only" `elem` args && not lifecycle) $
             failWith "--funding-only requires a public node or --lifecycle"
         mDeployment <- deploymentPathFromEnvironment
-        when (lifecycle && mDeployment == Nothing) $
+        when (lifecycle && isNothing mDeployment) $
             failWith
                 "the public lifecycle requires --deployment; deploy the registry once first"
         seedRef <- case mDeployment of
@@ -954,7 +954,7 @@ runLifecycle env record = do
 fundPublicLifecycle :: Env -> IO ()
 fundPublicLifecycle env = do
     occupied <- withTrie (envTrie env) (envTok env) $ \trie -> Trie.lookup trie (envSpelling env)
-    when (occupied /= Nothing) $
+    when (isJust occupied) $
         failWith
             "public lifecycle: requested spelling is already claimed; choose an unclaimed spelling explicitly"
     key <-
@@ -3070,8 +3070,7 @@ rowHookPin env record =
 B's paid request consumed for A's claim. See `runHookCrosswiredRow`.
 -}
 rowHookCrosswired :: Env -> (Value -> IO ()) -> IO ()
-rowHookCrosswired env record =
-    runHookCrosswiredRow env record
+rowHookCrosswired = runHookCrosswiredRow
 
 {- | Retry PastHorizon failures only; every other failure propagates.
 The slot forecast horizon covers a bounded window; a bound computed
@@ -3502,7 +3501,7 @@ policyRefusalTx env ks mintPolicy mintScript mintRedeemer = do
                 , cfaSigners = []
                 , cfaRefUtxos = envRefUtxos env
                 , cfaAttachScripts =
-                    if mintPolicy == envRepPolicy env then [] else [mintScript]
+                    [mintScript | mintPolicy /= envRepPolicy env]
                 , cfaSkipEval = True
                 , cfaAdjustRoot = id
                 }
@@ -4573,7 +4572,7 @@ publishBatch prov submit pp poolRef addr scripts evDir evNext = do
                     & referenceScriptTxOutL .~ SJust script
         outs = map mkRefOut scripts
         spent = sum [c | o <- outs, let Coin c = o ^. coinTxOutL]
-        Coin inCoin = (snd fund) ^. coinTxOutL
+        Coin inCoin = snd fund ^. coinTxOutL
         changeCoin = inCoin - 1_000_000 - spent
     unless (changeCoin > 1_000_000) $
         failWith "publish: funding UTxO too small for script outputs"
@@ -4952,7 +4951,7 @@ instance FromJSON ManifestPin where
     parseJSON = withObject "ManifestPin" $ \o ->
         ManifestPin <$> o .: "title" <*> o .: "hash"
 
-data NamingIdentity = NamingIdentity
+newtype NamingIdentity = NamingIdentity
     { niValidators :: [ManifestPin]
     }
 
@@ -4993,7 +4992,7 @@ checkPinnedRepresentative unappliedHex = do
             <$> lookupEnv "NAMING_SCRIPT_IDENTITY"
     manifest <- readIdentityManifest path
     let pins = pinsUnder manifest "representative.representative.mint"
-    unless (length pins >= 1) $
+    when (null pins) $
         failWith "identity: no representative.representative.mint pin"
     unless (all (== T.pack unappliedHex) pins) $
         failWith
@@ -5011,7 +5010,7 @@ checkPinnedRegistryState unappliedHex = do
             <$> lookupEnv "REGISTRY_SCRIPT_IDENTITY"
     manifest <- readIdentityManifest path
     let pins = pinsUnder manifest "state.state"
-    unless (length pins >= 1) $
+    when (null pins) $
         failWith "identity: no state.state pin in the registry manifest"
     unless (all (== T.pack unappliedHex) pins) $
         failWith
@@ -5028,7 +5027,7 @@ checkPinnedConsumer unappliedHex = do
             <$> lookupEnv "REGISTRY_SCRIPT_IDENTITY"
     manifest <- readIdentityManifest path
     let pins = pinsUnder manifest "consumer.consumer"
-    unless (length pins >= 1) $
+    when (null pins) $
         failWith "identity: no consumer.consumer pin in the registry manifest"
     unless (all (== T.pack unappliedHex) pins) $
         failWith

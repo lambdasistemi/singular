@@ -35,6 +35,7 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -73,7 +74,7 @@ runCS06 :: FilePath -> FilePath -> String -> Bool -> IO ()
 runCS06 blueprintPath receiptsDir base dirty = do
     control <- lookupEnv "CONFORMANCE_CONTROL"
     let spoil = control == Just "wrong-params"
-    emit "control" (maybe "normal" id control)
+    emit "control" (fromMaybe "normal" control)
     ebp <- loadBlueprint blueprintPath
     bp <- case ebp of
         Left err -> failWith ("blueprint does not parse: " <> err)
@@ -125,9 +126,9 @@ type ParamMap = Map.Map Text (Maybe [ParamInfo])
 
 extractParams :: Aeson.Value -> ParamMap
 extractParams val =
-    case AesonTypes.parseMaybe parseVals val of
-        Just m -> m
-        Nothing -> Map.empty
+    fromMaybe
+        Map.empty
+        (AesonTypes.parseMaybe parseVals val)
   where
     parseVals = AesonTypes.withObject "blueprint" $ \o -> do
         vs <- o AesonTypes..: "validators" :: AesonTypes.Parser [Aeson.Value]
@@ -355,9 +356,7 @@ checkApplied bp = do
         else
             failWith
                 "CS06 control failed: swapped request params give the same hash"
-    let stakingSize = case extractCompiledCode "staking.staking" bp of
-            Nothing -> 0
-            Just c -> SBS.length c
+    let stakingSize = maybe 0 SBS.length (extractCompiledCode "staking.staking" bp)
         sizes =
             [ SBS.length stateBytes
             , SBS.length correct

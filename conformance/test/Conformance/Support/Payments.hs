@@ -161,7 +161,7 @@ spec = describe "Reading a fold's payments off its transaction" $ do
                     foldPayments
                         ((facts DeleteAbsent){factsRefund = spent})
                         (state : outputs)
-                refund amount = Payment (Refund ("address-of-" <> refunded)) amount
+                refund = Payment (Refund ("address-of-" <> refunded))
                 owed = Payment (Owner owner) 0
             refundOf [at refunded 4000001] `shouldBe` Right [owed, refund 4000001]
             refundOf [at refunded 3999999] `shouldBe` Right [owed, refund 3999999]
@@ -221,7 +221,7 @@ spec = describe "Reading a fold's payments off its transaction" $ do
             paymentsAfter ShortByOne InsertAbsent locking
                 `shouldBe` Right [Payment Custody 1999999]
             mapM_
-                (\(edge, outputs) -> conserved ShortByOne edge outputs)
+                (uncurry (conserved ShortByOne))
                 [ (InsertActive, delivering)
                 , (DeleteActive, returning)
                 , (InsertAbsent, locking)

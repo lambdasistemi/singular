@@ -136,12 +136,11 @@ acquireSession tag = do
     -- once proved) plus the per-process counter for same-instant starts.
     -- Only base/directory/filepath/process are used — no new dependencies.
     stamp <- init . filter (/= '\n') <$> readProcess "date" ["+%s%N"] ""
-    n <- abs <$> hashUnique <$> newUnique
+    n <- abs . hashUnique <$> newUnique
     let marker = "/tmp/t80-story-" <> tag <> "-" <> stamp <> "-" <> show n
         receipts = marker </> "receipts"
     createDirectoryIfMissing True marker
-    baseline <- nodePids
-    return (Session receipts marker baseline)
+    Session receipts marker <$> nodePids
 
 {- | Unconditional release: assert a clean marker, reap our nodes, remove the
 whole marker tree, then record what happened where the shell demonstration
@@ -268,7 +267,8 @@ main = do
     withArgs rest $
         defaultMain $
             withResource (acquireSession mode) (releaseSession mode) $ \getSess ->
-                testGroup "tasty-bdd evaluation: CG05 occupied-key refusal" $
+                testGroup
+                    "tasty-bdd evaluation: CG05 occupied-key refusal"
                     [ testBehavior
                         "real boundary: occupied insert refused, script-attributed, control discriminates"
                         $ Given
@@ -276,7 +276,6 @@ main = do
                                 bp <- blueprintPath
                                 ok <- doesFileExist bp
                                 CM.unless ok (die "blueprint missing")
-                                return ()
                             )
                         $ When (getSess >>= runStory)
                         $ Then
@@ -313,7 +312,7 @@ main = do
                                 ok <- doesFileExist (sessReceipts sess </> "receipt-CG05.json")
                                 assertTrue ok "CG05 receipt artifact exists"
                             )
-                        $ End
+                            End
                     ]
   where
     expectExitSuccess ExitSuccess = return ()

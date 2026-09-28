@@ -13,9 +13,12 @@ set -euo pipefail
 
 journey_args=()
 case "${1:-}" in
-    "") ;;
-    --lifecycle) journey_args=(--lifecycle) ;;
-    *) echo "usage: $0 [--lifecycle]" >&2; exit 2 ;;
+  "") ;;
+  --lifecycle) journey_args=(--lifecycle) ;;
+  *)
+    echo "usage: $0 [--lifecycle]" >&2
+    exit 2
+    ;;
 esac
 
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -32,7 +35,7 @@ export REGISTRY_BLUEPRINT="$registry" NAMING_BLUEPRINT="$naming"
 # time out on the build rather than on the devnet.
 echo "attach-check: building the runners and tools"
 nix build --quiet --no-link "$here#devnet" "$here#deployment" \
-    "$here#register-rows" "$here#recovery-rows" "$here#retirement-rows"
+  "$here#register-rows" "$here#recovery-rows" "$here#retirement-rows"
 
 # The devnet builds its chain under TMPDIR/cardano-e2e. Sharing that
 # with the last run means starting on its database and timing out on a
@@ -41,19 +44,21 @@ nix build --quiet --no-link "$here#devnet" "$here#deployment" \
 export TMPDIR="$work"
 
 echo "attach-check: starting a devnet the deployment can outlive"
-nix run --quiet "$here#devnet" > "$work/devnet.out" 2>"$work/devnet.err" &
+nix run --quiet "$here#devnet" >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
 for _ in $(seq 1 300); do
-    sock="$(head -n1 "$work/devnet.out" 2>/dev/null || true)"
-    [ -n "$sock" ] && [ -S "$sock" ] && break
-    kill -0 "$devnet_pid" 2>/dev/null || break
-    sleep 1
+  sock="$(head -n1 "$work/devnet.out" 2>/dev/null || true)"
+  [ -n "$sock" ] && [ -S "$sock" ] && break
+  kill -0 "$devnet_pid" 2>/dev/null || break
+  sleep 1
 done
 if [ -z "${sock:-}" ] || [ ! -S "${sock:-}" ]; then
-    echo "attach-check: the devnet never printed a usable socket" >&2
-    echo "--- devnet stdout ---" >&2; cat "$work/devnet.out" >&2 || true
-    echo "--- devnet stderr ---" >&2; tail -40 "$work/devnet.err" >&2 || true
-    exit 1
+  echo "attach-check: the devnet never printed a usable socket" >&2
+  echo "--- devnet stdout ---" >&2
+  cat "$work/devnet.out" >&2 || true
+  echo "--- devnet stderr ---" >&2
+  tail -40 "$work/devnet.err" >&2 || true
+  exit 1
 fi
 echo "attach-check: devnet socket $sock"
 
@@ -76,10 +81,10 @@ nix run --quiet "$here#deployment" -- deploy "${external[@]}" --out "$manifest" 
 
 # A self-consistent-looking manifest cannot choose a different representative
 # policy: verification derives it from this release and the registry seed.
-jq '.depRepresentativePolicy = ("00" * 28)' "$manifest" > "$work/wrong-policy.json"
-if nix run --quiet "$here#deployment" -- verify "${external[@]}" --deployment "$work/wrong-policy.json" > "$work/wrong-policy.out" 2>&1; then
-    echo "FAIL: verification accepted a substituted representative policy"
-    exit 1
+jq '.depRepresentativePolicy = ("00" * 28)' "$manifest" >"$work/wrong-policy.json"
+if nix run --quiet "$here#deployment" -- verify "${external[@]}" --deployment "$work/wrong-policy.json" >"$work/wrong-policy.out" 2>&1; then
+  echo "FAIL: verification accepted a substituted representative policy"
+  exit 1
 fi
 grep -F 'registry-bound representative policy differs from the deployment' "$work/wrong-policy.out"
 
@@ -88,22 +93,23 @@ before_refs="$(count_reference_outputs)"
 echo "attach-check: before — $before_state registry state output(s), $before_refs reference output(s)"
 
 for runner in register-rows recovery-rows retirement-rows; do
-    echo "attach-check: $runner, attached"
-    spelling=()
-    [ "$runner" != register-rows ] || spelling=(--spelling audience-name)
-    nix run --quiet "$here#$runner" -- "${external[@]}" --deployment "$manifest" "${spelling[@]}" "${journey_args[@]}"
+  echo "attach-check: $runner, attached"
+  spelling=()
+  [ "$runner" != register-rows ] || spelling=(--spelling audience-name)
+  nix run --quiet "$here#$runner" -- "${external[@]}" --deployment "$manifest" "${spelling[@]}" "${journey_args[@]}"
 done
 
 if [ "${#journey_args[@]}" -gt 0 ]; then
-    echo "attach-check: public duplicate preflight must refuse before spending"
-    if nix run --quiet "$here#register-rows" -- "${external[@]}" --deployment "$manifest" --spelling=audience-name --lifecycle > "$work/rerun.out" 2>&1; then
-        echo "FAIL: public lifecycle reused a claimed spelling" >&2; exit 1
-    fi
-    grep -F 'requested spelling is already claimed' "$work/rerun.out"
+  echo "attach-check: public duplicate preflight must refuse before spending"
+  if nix run --quiet "$here#register-rows" -- "${external[@]}" --deployment "$manifest" --spelling=audience-name --lifecycle >"$work/rerun.out" 2>&1; then
+    echo "FAIL: public lifecycle reused a claimed spelling" >&2
+    exit 1
+  fi
+  grep -F 'requested spelling is already claimed' "$work/rerun.out"
 else
-    echo "attach-check: the exact spelling is already held; rerun must submit and observe duplicate refusal"
-    nix run --quiet "$here#register-rows" -- "${external[@]}" --deployment "$manifest" --spelling=audience-name | tee "$work/rerun.out"
-    grep -F 'spelling "audience-name" is already held: duplicate insert refused' "$work/rerun.out"
+  echo "attach-check: the exact spelling is already held; rerun must submit and observe duplicate refusal"
+  nix run --quiet "$here#register-rows" -- "${external[@]}" --deployment "$manifest" --spelling=audience-name | tee "$work/rerun.out"
+  grep -F 'spelling "audience-name" is already held: duplicate insert refused' "$work/rerun.out"
 
 fi
 
@@ -112,16 +118,28 @@ after_refs="$(count_reference_outputs)"
 echo "attach-check: after  — $after_state registry state output(s), $after_refs reference output(s)"
 
 fail=0
-[ "$before_state" = "$after_state" ] || { echo "FAIL: a registry was booted ($before_state -> $after_state)"; fail=1; }
-[ "$before_refs" = "$after_refs" ] || { echo "FAIL: reference scripts were published ($before_refs -> $after_refs)"; fail=1; }
+[ "$before_state" = "$after_state" ] || {
+  echo "FAIL: a registry was booted ($before_state -> $after_state)"
+  fail=1
+}
+[ "$before_refs" = "$after_refs" ] || {
+  echo "FAIL: reference scripts were published ($before_refs -> $after_refs)"
+  fail=1
+}
 
 echo "attach-check: control — the same runner without --deployment must move both counters"
 nix run --quiet "$here#register-rows" -- "${external[@]}"
 control_state="$(count_state_outputs)"
 control_refs="$(count_reference_outputs)"
 echo "attach-check: control — $control_state registry state output(s), $control_refs reference output(s)"
-[ "$control_state" -gt "$after_state" ] || { echo "FAIL: the control booted no registry, so the state counter proves nothing"; fail=1; }
-[ "$control_refs" -gt "$after_refs" ] || { echo "FAIL: the control published no reference scripts, so the reference counter proves nothing"; fail=1; }
+[ "$control_state" -gt "$after_state" ] || {
+  echo "FAIL: the control booted no registry, so the state counter proves nothing"
+  fail=1
+}
+[ "$control_refs" -gt "$after_refs" ] || {
+  echo "FAIL: the control published no reference scripts, so the reference counter proves nothing"
+  fail=1
+}
 
 [ "$fail" -eq 0 ] || exit 1
 echo "attach-check: PASS — three runners attached, nothing booted, nothing published; the control moved both counters"

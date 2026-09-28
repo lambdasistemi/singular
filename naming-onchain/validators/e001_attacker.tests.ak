@@ -1,6 +1,6 @@
-use e001_attacker
 use cardano/assets.{add, zero}
 use cardano/transaction.{Transaction}
+use e001_attacker
 
 /// The attack fixture imposes nothing: any mint under it succeeds on its own.
 /// The application validator is what refuses foreign-policy representatives
@@ -11,7 +11,12 @@ test e001_attacker_mints_anything_accepts() {
     "attacker_policy",
     Transaction {
       ..transaction.placeholder,
-      mint: add(zero, "attacker_policy", #"e11d814979372c883b50bdb0ffadb1eaf0898bf54fd4fbf298af126fbabbda4c", 1),
+      mint: add(
+        zero,
+        "attacker_policy",
+        #"e11d814979372c883b50bdb0ffadb1eaf0898bf54fd4fbf298af126fbabbda4c",
+        1,
+      ),
     },
   )
 }
@@ -23,7 +28,12 @@ test e001_attacker_burns_anything_accepts() {
     "attacker_policy",
     Transaction {
       ..transaction.placeholder,
-      mint: add(zero, "attacker_policy", #"e11d814979372c883b50bdb0ffadb1eaf0898bf54fd4fbf298af126fbabbda4c", -1),
+      mint: add(
+        zero,
+        "attacker_policy",
+        #"e11d814979372c883b50bdb0ffadb1eaf0898bf54fd4fbf298af126fbabbda4c",
+        -1,
+      ),
     },
   )
 }

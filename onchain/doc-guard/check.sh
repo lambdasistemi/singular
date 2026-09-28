@@ -37,7 +37,10 @@
 set -euo pipefail
 
 list=0
-if [ "${1:-}" = "--list" ]; then list=1; shift; fi
+if [ "${1:-}" = "--list" ]; then
+  list=1
+  shift
+fi
 dir=${1:?usage: check.sh VALIDATORS_DIR [--reference DOCS_DIR [--reference-only]] | check.sh --list VALIDATORS_DIR}
 shift
 reference=""
@@ -69,7 +72,10 @@ if [ "$list" = 1 ]; then
 fi
 
 fail=0
-report() { echo "FAIL $*"; fail=1; }
+report() {
+  echo "FAIL $*"
+  fail=1
+}
 source_report() { if [ "$source_layer" = 1 ]; then report "$@"; fi; }
 
 # The four sections, in order, each with content, from lines already reduced
@@ -91,25 +97,31 @@ sections_check() {
 
 [ -f "$dir/state.ak" ] || report "no state.ak under $dir"
 registry=0
-for m in "${modules[@]}"; do case "$m" in "$dir/registry/"*) registry=$((registry + 1)) ;; esac; done
+for m in "${modules[@]}"; do case "$m" in "$dir/registry/"*) registry=$((registry + 1)) ;; esac done
 [ "$registry" -gt 0 ] || report "no registry module under $dir/registry"
 
 total=0
 checked=0
 members=0
 for m in "${modules[@]}"; do
-  rel="${m#"$dir"/}"; rel="${rel%.ak}"
+  rel="${m#"$dir"/}"
+  rel="${rel%.ak}"
   entries="$(exports "$m")"
 
   # Source layer: module doc.
   out="$(sed -n 's/^[[:space:]]*\/\/\/\/ \{0,1\}//p' "$m" | sections_check "$m")"
-  if [ -n "$out" ] && [ "$source_layer" = 1 ]; then printf '%s\n' "$out"; fail=1; fi
+  if [ -n "$out" ] && [ "$source_layer" = 1 ]; then
+    printf '%s\n' "$out"
+    fail=1
+  fi
 
   # Source layer: a doc comment with text directly above every export.
   while IFS= read -r entry; do
     [ -z "$entry" ] && continue
     total=$((total + 1))
-    line="${entry#*:}"; line="${line%%:*}"; decl="${entry#*:*:}"
+    line="${entry#*:}"
+    line="${line%%:*}"
+    decl="${entry#*:*:}"
     if ! awk -v n="$line" '
         FNR < n { if ($0 ~ /^[[:space:]]*\/\/\/( |$)/) { if ($0 ~ /^[[:space:]]*\/\/\/ .*[^[:space:]]/) text = 1 } else { text = 0 } }
         FNR == n { exit !(text) }' "$m"; then
@@ -121,12 +133,18 @@ for m in "${modules[@]}"; do
 
   # Reference layer: the generated page for this module.
   page="$reference/$rel.html"
-  if [ ! -f "$page" ]; then report "$rel: no generated reference page $page"; continue; fi
+  if [ ! -f "$page" ]; then
+    report "$rel: no generated reference page $page"
+    continue
+  fi
   checked=$((checked + 1))
   out="$(awk '/id="module-name"/ { on = 1; next } /<section class="module-members">/ { on = 0 } on' "$page" \
-         | sed -e 's/<h2>\([^<]*\)<\/h2>/\n## \1\n/g' -e 's/<[^>]*>//g' \
-         | sections_check "$page")"
-  [ -n "$out" ] && { printf '%s\n' "$out"; fail=1; }
+    | sed -e 's/<h2>\([^<]*\)<\/h2>/\n## \1\n/g' -e 's/<[^>]*>//g' \
+    | sections_check "$page")"
+  [ -n "$out" ] && {
+    printf '%s\n' "$out"
+    fail=1
+  }
 
   # The page's own member extent, reconciled with the source inventory.
   on_page="$(awk '/<section class="module-members">/ { on = 1 } /<\/section>/ { on = 0 }
@@ -161,5 +179,8 @@ done
 if [ -n "$reference" ] && [ "$checked" -eq 0 ]; then report "no generated reference page checked under $reference"; fi
 if [ -n "$reference" ] && [ "$members" -eq 0 ]; then report "no member found on any generated reference page under $reference"; fi
 echo "INVENTORY modules=${#modules[@]} registry_modules=$registry exports=$total reference_pages=$checked page_members=$members"
-if [ "$fail" = 1 ]; then echo "aiken-docs: FAILED"; exit 1; fi
+if [ "$fail" = 1 ]; then
+  echo "aiken-docs: FAILED"
+  exit 1
+fi
 echo "aiken-docs: OK"

@@ -503,7 +503,7 @@ checkPermissionlessFold prov submit tm cfg tok record = do
                             , "submittedTxId" .= txid
                             , "outcome" .= ("accepted" :: String)
                             , "stateInput" .= showIn stateIn
-                            , "requestInput" .= map showIn (map fst reqs)
+                            , "requestInput" .= map (showIn . fst) reqs
                             , "stateContinuationDatum" .= contDatum
                             , "rootBefore" .= rootBefore
                             , "rootAfter" .= rootAfter
@@ -1229,7 +1229,7 @@ suffixes are distinct by construction, so the discard rate is 0 and every
 generated case reaches the fold precondition (non-vacuous by assertion).
 -}
 lcgNext :: Int -> Int
-lcgNext s = (1103515245 * s + 12345) `mod` 2147483648
+lcgNext s = (1_103_515_245 * s + 12_345) `mod` 2_147_483_648
 
 genPairs :: Int -> Int -> [ByteString]
 genPairs seed n = take n ["p79-k" <> BSC.pack (show s) | s <- iterate lcgNext seed]
@@ -1340,7 +1340,7 @@ bisectRefused
     -> Addr
     -> [(TxIn, ByteString)]
     -> IO ByteString
-bisectRefused prov submit tm cfg tok feeAddr candidates = go candidates
+bisectRefused prov submit tm cfg tok feeAddr = go
   where
     go [] = failWith "bisectRefused: empty candidate set"
     go [(i, k)] = do
@@ -1463,8 +1463,8 @@ submitRequestFrom
     -> Edge
     -> Addr
     -> IO TxIn
-submitRequestFrom prov submit cfg tok key edge addr =
-    submitRequestWith prov submit cfg tok key edge Nothing addr
+submitRequestFrom prov submit cfg tok key edge =
+    submitRequestWith prov submit cfg tok key edge Nothing
 
 {- | The same submission, with the datum's deposit STATED rather than
 settled. A stated deposit that disagrees with the locked lovelace is
@@ -2146,7 +2146,7 @@ parkGarbage prov submit feeAddr reqAddr = do
         [] -> failWith "parkGarbage: no UTxOs"
         (u : _) -> pure u
     let garbageOut = mkBasicTxOut reqAddr (MaryValue (Coin 2_000_000) mempty)
-        Coin inCoin = (snd feeUtxo) ^. coinTxOutL
+        Coin inCoin = snd feeUtxo ^. coinTxOutL
         changeOutTx =
             mkBasicTxOut
                 feeAddr

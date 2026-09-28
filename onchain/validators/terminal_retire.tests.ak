@@ -5,9 +5,13 @@ use cardano/transaction.{InlineDatum, Input, Output}
 use lib
 use registry/discharge
 use registry/trie
-use state
 use registry_fixtures as fx
+use state
 use types.{Modify, StateDatum, UpdateAction}
+
+// ----------------------------------------------------------------------------
+// The driver
+// ----------------------------------------------------------------------------
 
 /// #177 I177-CHAIN — the `updateTerminal` edge (ordinal 3) against the
 /// REAL compiled cage: the retirement that lands, and the four refusals
@@ -41,11 +45,6 @@ use types.{Modify, StateDatum, UpdateAction}
 /// bad fact: the same fold, the same builder, the same batch, with the
 /// leaf moved back to `Active` or the witness input restored. Without
 /// it, "refused" is consistent with "this shape never folds at all".
-
-// ----------------------------------------------------------------------------
-// The driver
-// ----------------------------------------------------------------------------
-
 /// One `updateTerminal` request at `key`, folded from `root` to
 /// `nextRoot`, with `held` supplying the witness inputs and `extra` the
 /// outputs beyond the continuation and the booker's returned deposit,
@@ -230,7 +229,6 @@ test the_surviving_carrier_control_accepts() {
   retireFrom(fx.activeLeaf)
 }
 
-
 /// A witness for ANOTHER key is not this key's witness. `keyB`'s token
 /// rides in and `keyA`'s does not; the mint is still `keyA: -1`.
 fn wrongKeyWitness() -> Bool {
@@ -289,7 +287,6 @@ test delete_active_still_folds() {
     ),
   )
 }
-
 
 // ----------------------------------------------------------------------------
 // The reason each refusal gives

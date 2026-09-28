@@ -88,7 +88,7 @@ import Data.ByteString.Short qualified as SBS
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.List (intercalate, isInfixOf, sortBy, sortOn)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
 import Data.Ord (Down (..), comparing)
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
@@ -411,7 +411,7 @@ runMode mode blueprintPath registryPath = do
         when ("--funding-only" `elem` args && not lifecycle) $
             failWith "--funding-only requires a public node or --lifecycle"
         mDeployment <- deploymentPathFromEnvironment
-        when (lifecycle && mDeployment == Nothing) $
+        when (lifecycle && isNothing mDeployment) $
             failWith
                 "the public lifecycle requires --deployment; deploy the registry once first"
         seedRef <- case mDeployment of
@@ -718,7 +718,7 @@ runMode mode blueprintPath registryPath = do
 fundPublicLifecycle :: Env -> IO ()
 fundPublicLifecycle env = do
     occupied <- withTrie (envTrie env) (envTok env) $ \trie -> Trie.lookup trie "rc-main"
-    when (occupied /= Nothing) $
+    when (isJust occupied) $
         failWith "public lifecycle: rc-main is already claimed"
     now <- currentPosixMs
     let pp = envPp env
@@ -895,10 +895,9 @@ runRows env recMain recRefusals recForged = do
             )
     emit
         "complete"
-        ( "the LR recovery rows executed on a real devnet; every refusal \
-          \attributed to its reason, preservation and transfer proved from \
-          \the chain, the state after the refusals unchanged"
-        )
+        "the LR recovery rows executed on a real devnet; every refusal \
+        \attributed to its reason, preservation and transfer proved from \
+        \the chain, the state after the refusals unchanged"
 
 {- | The proof mirror this run loaded must be the trie the chain has.
 
@@ -1078,9 +1077,8 @@ rowLR02 env snap = do
         env
         "LR02-wrong-reveal-refused"
         "recovery-commitment"
-        ( "a different canonical address, signed by its own key — its \
-          \domain-separated commitment does not match the stored one"
-        )
+        "a different canonical address, signed by its own key — its \
+        \domain-separated commitment does not match the stored one"
         signed
     noTrace env snap "LR02"
 
@@ -1137,10 +1135,9 @@ rowLR06 env snap = do
         env
         "LR06-forged-public-digest-refused"
         "recovery-commitment"
-        ( "the stored commitment was computed without the domain separation, \
-          \so the validator's domain-separated recomputation mismatches; \
-          \this row passes iff the domain separation is dropped"
-        )
+        "the stored commitment was computed without the domain separation, \
+        \so the validator's domain-separated recomputation mismatches; \
+        \this row passes iff the domain separation is dropped"
         signed
     noTrace env snap "LR06"
 
@@ -1425,9 +1422,8 @@ rowLR05 env snap1 = do
         env
         "LR05-old-controller-refused"
         "controller-signature"
-        ( "after a real LR01 the old controller's ordinary maintenance is \
-          \refused: the record's control is the reveal, not the old key"
-        )
+        "after a real LR01 the old controller's ordinary maintenance is \
+        \refused: the record's control is the reveal, not the old key"
         signed
     noTrace env snap1 "LR05"
 
@@ -1529,10 +1525,9 @@ runControlValid env recRefusals = do
                 "LR03-missing-recovery-signer-refused: CONTROL valid-transaction \
                 \succeeded as constructed — failing the run as required"
             failWith
-                ( "CONTROL valid-transaction: LR03's transaction, made actually \
-                  \valid, SUCCEEDED — the guard did not refuse, so this run \
-                  \fails as the control requires"
-                )
+                "CONTROL valid-transaction: LR03's transaction, made actually \
+                \valid, SUCCEEDED — the guard did not refuse, so this run \
+                \fails as the control requires"
         Rejected reason ->
             failWith
                 ( "CONTROL valid-transaction: the control transaction was \
@@ -1678,7 +1673,9 @@ recoverTx env snap revealed reps registry successor signers = do
                 & reqSignerHashesTxBodyL
                     .~ Set.fromList (map addrWitnessKeyHash signers)
                 & scriptIntegrityHashTxBodyL .~ integrity
-    preparePublicTx env (1 + length signers) $
+    preparePublicTx
+        env
+        (1 + length signers)
         ( mkBasicTx body
             & witsTxL . scriptTxWitsL
                 .~ Map.singleton (envScriptHash env) (envScript env)
@@ -1722,7 +1719,9 @@ maintainTx env snap successor signers = do
                 & reqSignerHashesTxBodyL
                     .~ Set.fromList (map addrWitnessKeyHash signers)
                 & scriptIntegrityHashTxBodyL .~ integrity
-    preparePublicTx env (1 + length signers) $
+    preparePublicTx
+        env
+        (1 + length signers)
         ( mkBasicTx body
             & witsTxL . scriptTxWitsL
                 .~ Map.singleton (envScriptHash env) (envScript env)
@@ -1888,7 +1887,7 @@ publishBatch prov submit pp poolRef addr scripts = do
                     & referenceScriptTxOutL .~ SJust script
         outs = map mkRefOut scripts
         spent = sum [c | o <- outs, let Coin c = o ^. coinTxOutL]
-        Coin inCoin = (snd fund) ^. coinTxOutL
+        Coin inCoin = snd fund ^. coinTxOutL
         changeCoin = inCoin - 1_000_000 - spent
     unless (changeCoin > 1_000_000) $
         failWith "publish: funding UTxO too small for script outputs"
@@ -2510,7 +2509,7 @@ evidenceDirFromEnv = do
 
 -- | The signed transaction's exact CBOR bytes, for the Koios echo.
 serializeTxBytes :: ConwayTx -> ByteString
-serializeTxBytes tx = serialize' evidenceVersion tx
+serializeTxBytes = serialize' evidenceVersion
   where
     evidenceVersion = maxBound
 
@@ -2573,7 +2572,7 @@ checkPinnedRepresentative unappliedHex = do
             | p <- manifestValidators manifest
             , "representative.representative.mint" `T.isPrefixOf` mpTitle p
             ]
-    unless (length pins >= 1) $
+    when (null pins) $
         failWith
             "identity: no representative.representative.mint pin in the \
             \manifest"
@@ -2598,7 +2597,7 @@ checkPinnedConsumer unappliedHex = do
             | p <- manifestValidators manifest
             , "consumer.consumer" `T.isPrefixOf` mpTitle p
             ]
-    unless (length pins >= 1) $
+    when (null pins) $
         failWith
             "identity: no consumer.consumer pin in the registry manifest"
     unless (all (== T.pack unappliedHex) pins) $

@@ -44,12 +44,10 @@
 
 use aiken/collection/list.{filter}
 use aiken/collection/pairs
-use cardano/address
 use cardano/address.{Address}
-use cardano/assets
 use cardano/assets.{PolicyId, Value, lovelace_of}
 use cardano/transaction.{
-  Spend, Datum, InlineDatum, Input, OutputReference, Transaction,
+  Datum, InlineDatum, Input, OutputReference, Spend, Transaction,
 }
 use lib.{edgeDeleteAbsent, edgeUpdateActive, paysAddress, tokenFromPolicy}
 use registry/refusal.{traceFalse}
@@ -67,7 +65,12 @@ pub fn validCustodySpend(
   self: Input,
   tx: Transaction,
 ) -> Bool {
-  when (custodyKeyOf(self.output.value), foldAuthenticated(self.output.address, tx)) is {
+  when
+    (
+      custodyKeyOf(self.output.value),
+      foldAuthenticated(self.output.address, tx),
+    )
+  is {
     (Some((custodyPolicy, key)), Some((cageToken, absentPolicy))) ->
       if custodyPolicy != absentPolicy {
         traceFalse(@"custody-spend")
@@ -283,10 +286,9 @@ pub fn custodyInput(
     filter(
       inputs,
       fn(i) {
-        i.output.address == cageAddress && custodyKeyOf(i.output.value) == Some((
-          policy,
-          key,
-        ))
+        i.output.address == cageAddress && custodyKeyOf(i.output.value) == Some(
+          (policy, key),
+        )
       },
     )
   is {

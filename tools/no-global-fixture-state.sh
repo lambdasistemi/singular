@@ -23,29 +23,29 @@ root=${1:-conformance}
 
 mapfile -t sources < <(find "$root" -name '*.hs' -not -path '*/dist-newstyle/*' | sort)
 if [ ${#sources[@]} -eq 0 ]; then
-    echo "EMPTY EXTENT: no Haskell sources found under $root" >&2
-    exit 2
+  echo "EMPTY EXTENT: no Haskell sources found under $root" >&2
+  exit 2
 fi
 
 status=0
 for file in "${sources[@]}"; do
-    if grep -n 'unsafePerformIO' "$file"; then
-        echo "  ^ $file: unsafePerformIO has no use in a test tree" >&2
-        status=1
-    fi
-    # A binding whose type IS an IORef, not a function that happens to take
-    # one: `dirCounter :: IORef Int` is shared state, while
-    # `allocateIdentity :: ... => IORef s -> k -> IO Integer` is a function
-    # handed state its caller owns. The absence of `->` is what separates them.
-    if grep -nE '^[a-zA-Z_][a-zA-Z0-9_'"'"']* :: ([^=]*=> *)?IORef\b' "$file" | grep -v -- '->'; then
-        echo "  ^ $file: a column-zero IORef is state the whole process shares" >&2
-        status=1
-    fi
+  if grep -n 'unsafePerformIO' "$file"; then
+    echo "  ^ $file: unsafePerformIO has no use in a test tree" >&2
+    status=1
+  fi
+  # A binding whose type IS an IORef, not a function that happens to take
+  # one: `dirCounter :: IORef Int` is shared state, while
+  # `allocateIdentity :: ... => IORef s -> k -> IO Integer` is a function
+  # handed state its caller owns. The absence of `->` is what separates them.
+  if grep -nE '^[a-zA-Z_][a-zA-Z0-9_'"'"']* :: ([^=]*=> *)?IORef\b' "$file" | grep -v -- '->'; then
+    echo "  ^ $file: a column-zero IORef is state the whole process shares" >&2
+    status=1
+  fi
 done
 
 if [ $status -ne 0 ]; then
-    echo "FAIL no-global-fixture-state: see the lines above" >&2
-    exit 1
+  echo "FAIL no-global-fixture-state: see the lines above" >&2
+  exit 1
 fi
 
 echo "PASS no-global-fixture-state: ${#sources[@]} Haskell sources under $root carry no unsafePerformIO and no column-zero IORef"

@@ -22,14 +22,12 @@ const neighbor_root =
   #"651694f560326d4fc773d65daba52940d5ec0c3fb4b0603d4a095bc1b43c0b06"
 
 fn cs07_witness() -> Proof {
-  [Fork {
-    skip: 1,
-    neighbor: Neighbor {
-      nibble: 11,
-      prefix: #"0b",
-      root: neighbor_root,
+  [
+    Fork {
+      skip: 1,
+      neighbor: Neighbor { nibble: 11, prefix: #"0b", root: neighbor_root },
     },
-  }]
+  ]
 }
 
 // The validator's exact check (state.ak Insert arm): the witness must pass
@@ -38,15 +36,24 @@ fn cs07_witness() -> Proof {
 // output-root check).
 test lone_fork_insert_accepts_real_absence_witness() {
   mpf.root(
-    mpf.insert(mpf.from_root(pre_root), #"637330372d666f726b2d433131", #"7663", cs07_witness()),
-  )
-  == post_root
+    mpf.insert(
+      mpf.from_root(pre_root),
+      #"637330372d666f726b2d433131",
+      #"7663",
+      cs07_witness(),
+    ),
+  ) == post_root
 }
 
 // Including-side isolation: including(key, value, proof) alone must
 // reproduce the builder's committed post-insert root.
 test lone_fork_including_reproduces_builder_post_root() {
-  mpf.has(mpf.from_root(post_root), #"637330372d666f726b2d433131", #"7663", cs07_witness())
+  mpf.has(
+    mpf.from_root(post_root),
+    #"637330372d666f726b2d433131",
+    #"7663",
+    cs07_witness(),
+  )
 }
 
 // Occupied-key direction control: the absence witness must NOT verify
@@ -54,5 +61,10 @@ test lone_fork_including_reproduces_builder_post_root() {
 // this is the discrimination edge that makes the tests above mean
 // "absence" rather than "any proof accepted".
 test lone_fork_control_has_fails_against_pre_root() {
-  !mpf.has(mpf.from_root(pre_root), #"637330372d666f726b2d433131", #"7663", cs07_witness())
+  !mpf.has(
+    mpf.from_root(pre_root),
+    #"637330372d666f726b2d433131",
+    #"7663",
+    cs07_witness(),
+  )
 }

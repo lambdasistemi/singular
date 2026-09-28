@@ -16,9 +16,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from .debt import MAX_DISCARD_RATIO, PopulationError, UnknownRowError, check_current_population, unknown_rows
+from .debt import (
+    MAX_DISCARD_RATIO,
+    check_current_population,
+    unknown_rows,
+)
 from .inventory import Inventory
 from .record import Record
+
 
 @dataclass(frozen=True)
 class Regression:
@@ -60,14 +65,15 @@ def structural_layers(checks) -> frozenset[str]:
     return frozenset(layers)
 
 
-def ratchet(inventory: Inventory, base: Record, current: Record, root: Path) -> RatchetResult:
+def ratchet(
+    inventory: Inventory, base: Record, current: Record, root: Path
+) -> RatchetResult:
     unknown_rows(inventory, current)
     unknown_rows(inventory, base)
     check_current_population(inventory, current)
 
     regressions: list[Regression] = []
     identities = inventory.by_identity()
-    names = inventory.by_name()
 
     # every identity in the protected base population must still exist —
     # theorem removal cannot shrink the denominator, coverage record or not

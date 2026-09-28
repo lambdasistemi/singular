@@ -256,7 +256,7 @@ updateProofConstrsOn keyA keyB keyD keyE keyF keyG = do
 constrName :: ProofStep -> String
 constrName (Branch _ _) = "Branch"
 constrName (Fork _ _) = "Fork"
-constrName (Leaf _ _ _) = "Leaf"
+constrName (Leaf{}) = "Leaf"
 
 -- | Nibble vectors refusing all theory: the ground keys\' exact paths.
 runShowNibbles :: IO ()
@@ -349,13 +349,12 @@ shapeOf kvs target = do
     tm <- mkPureTrieManager
     let tid = TokenId (AssetName "t81-probe-token")
     createTrie tm tid
-    strs <- withSpeculativeTrie tm tid $ \trie -> do
-        mapM_ (\(k, v) -> CageTrie.insert trie k v) kvs
+    withSpeculativeTrie tm tid $ \trie -> do
+        mapM_ (uncurry (CageTrie.insert trie)) kvs
         mSteps <- CageTrie.getProofSteps trie target
         pure $ case mSteps of
             Nothing -> ["none"]
             Just steps -> map constrName steps
-    pure strs
 
 {- | Present-key `Fork` grind (P-A): fixed K1; P shares nibble `[0]`;
 Q shares `[0]` with a fresh index-1 nibble. Verified in the pure

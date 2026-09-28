@@ -1,3 +1,5 @@
+////// These fuzz tests verify, for randomly generated parameters, that:
+
 use aiken/fuzz
 use aiken/interval
 use cage.{in_phase1, in_phase2, is_rejectable}
@@ -28,7 +30,6 @@ use cage.{in_phase1, in_phase2, is_rejectable}
 /// **Phase 3** (rejectable): The retract window has expired. Any folder
 ///   can Reject expired requests. Additionally, any request with a dishonest
 ///   `submitted_at` (in the future) is rejectable in any phase.
-////// These fuzz tests verify, for randomly generated parameters, that:
 /// 1. The phases never overlap (mutual exclusion).
 /// 2. Honest requests in Phase 1 or 2 are never rejectable (safety).
 /// 3. Every point in time falls into at least one phase (coverage).

@@ -9,12 +9,15 @@
 # DOCS_ARCHIVE so downstream checksum verification is real. Every call is
 # appended to $GH_CALLS_LOG (required in the environment).
 set -u
-echo "GHCALL: $*" >> "$GH_CALLS_LOG"
+echo "GHCALL: $*" >>"$GH_CALLS_LOG"
 if [ "$1" = release ] && [ "$2" = view ]; then exit 1; fi
 if [ "$1" = release ] && [ "$2" = download ]; then
   dest=""
   while [ "$#" -gt 0 ]; do
-    if [ "$1" = --dir ]; then dest="$2"; shift 2; else shift; fi
+    if [ "$1" = --dir ]; then
+      dest="$2"
+      shift 2
+    else shift; fi
   done
   cp "$DOCS_ARCHIVE"/* "$dest"/
   exit 0

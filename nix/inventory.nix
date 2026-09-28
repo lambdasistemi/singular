@@ -12,9 +12,13 @@ let
       python3 ${src}/tools/code_inventory.py --root ${src}
     '';
   };
-in {
-  apps.inventory-check = { type = "app"; program = pkgs.lib.getExe checker; };
-  check = pkgs.runCommand "singular-inventory-check" {} ''
+in
+{
+  apps.inventory-check = {
+    type = "app";
+    program = pkgs.lib.getExe checker;
+  };
+  check = pkgs.runCommand "singular-inventory-check" { } ''
     ${pkgs.lib.getExe checker}
     touch "$out"
   '';

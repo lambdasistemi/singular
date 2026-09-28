@@ -68,14 +68,21 @@ def _validity_findings(check, root: Path) -> tuple[list[Finding], bool]:
     pays = True
 
     if ev.status == "fail":
-        findings.append(Finding("failing-check", f"{check.checkId} reported a failing result"))
+        findings.append(
+            Finding("failing-check", f"{check.checkId} reported a failing result")
+        )
         pays = False
     elif ev.status == "skipped":
-        findings.append(Finding("skipped-check", f"{check.checkId} was skipped, not executed"))
+        findings.append(
+            Finding("skipped-check", f"{check.checkId} was skipped, not executed")
+        )
         pays = False
     elif ev.status == "unexecuted":
         findings.append(
-            Finding("unexecuted-check", f"{check.checkId} is recorded but not selected by the runner")
+            Finding(
+                "unexecuted-check",
+                f"{check.checkId} is recorded but not selected by the runner",
+            )
         )
         pays = False
 
@@ -93,7 +100,12 @@ def _validity_findings(check, root: Path) -> tuple[list[Finding], bool]:
         for defn, bound in sorted(check.definitionDigests.items()):
             current_def = definition_digest(root, defn)
             if current_def is None:
-                findings.append(Finding("definition-not-found", f"{check.checkId} binds unknown definition {defn}"))
+                findings.append(
+                    Finding(
+                        "definition-not-found",
+                        f"{check.checkId} binds unknown definition {defn}",
+                    )
+                )
                 pays = False
             elif current_def != bound:
                 findings.append(
@@ -106,7 +118,10 @@ def _validity_findings(check, root: Path) -> tuple[list[Finding], bool]:
 
     if ev.thenAssertions == 0:
         findings.append(
-            Finding("vacuous-empty-then", f"{check.checkId} asserts nothing in its Then phase")
+            Finding(
+                "vacuous-empty-then",
+                f"{check.checkId} asserts nothing in its Then phase",
+            )
         )
         pays = False
     if ev.cases > 0 and ev.reached == 0:
@@ -118,7 +133,11 @@ def _validity_findings(check, root: Path) -> tuple[list[Finding], bool]:
         )
         pays = False
     if ev.cases == 0 and ev.status == "pass":
-        findings.append(Finding("empty-generator", f"{check.checkId} ran zero cases and claimed a pass"))
+        findings.append(
+            Finding(
+                "empty-generator", f"{check.checkId} ran zero cases and claimed a pass"
+            )
+        )
         pays = False
     if ev.cases > 0 and ev.discards / ev.cases > MAX_DISCARD_RATIO:
         findings.append(
@@ -143,7 +162,9 @@ def _validity_findings(check, root: Path) -> tuple[list[Finding], bool]:
     return findings, pays
 
 
-def compute_debt(inventory: Inventory, record: Record, root: Path) -> list[ObligationDebt]:
+def compute_debt(
+    inventory: Inventory, record: Record, root: Path
+) -> list[ObligationDebt]:
     checks_by_identity = record.by_identity_checks()
     mappings_by_identity = record.by_identity_mappings()
 
@@ -184,8 +205,12 @@ def compute_debt(inventory: Inventory, record: Record, root: Path) -> list[Oblig
                     "two layers",
                 )
             )
-        satisfied = len(layers) >= 2 and len(distinct_executions) == len(layers) and all(
-            any(layer in layers for layer in group) for group in REQUIRED_LAYERS
+        satisfied = (
+            len(layers) >= 2
+            and len(distinct_executions) == len(layers)
+            and all(
+                any(layer in layers for layer in group) for group in REQUIRED_LAYERS
+            )
         )
         debts.append(
             ObligationDebt(
@@ -250,7 +275,9 @@ def unknown_rows(inventory: Inventory, record: Record) -> None:
             )
 
 
-def find_stale_bindings(inventory: Inventory, record: Record) -> list[tuple[str, str, str]]:
+def find_stale_bindings(
+    inventory: Inventory, record: Record
+) -> list[tuple[str, str, str]]:
     """Rows bound to a known obligation name at a stale statement digest.
 
     Coverage never inherits across statement edits: a weakened or otherwise
@@ -261,22 +288,32 @@ def find_stale_bindings(inventory: Inventory, record: Record) -> list[tuple[str,
     stale: list[tuple[str, str, str]] = []
     for check in record.checks:
         obligation = by_name.get(check.obligation)
-        if obligation is not None and check.statementSha256 != obligation.statementSha256:
-            stale.append((
-                "stale-binding",
-                check.obligation,
-                f"check {check.checkId} binds {check.obligation} at digest "
-                f"{check.statementSha256[:12]}… but the statement now digests "
-                f"{obligation.statementSha256[:12]}… — coverage does not inherit across "
-                "statement edits; re-bind and re-establish the layers",
-            ))
+        if (
+            obligation is not None
+            and check.statementSha256 != obligation.statementSha256
+        ):
+            stale.append(
+                (
+                    "stale-binding",
+                    check.obligation,
+                    f"check {check.checkId} binds {check.obligation} at digest "
+                    f"{check.statementSha256[:12]}… but the statement now digests "
+                    f"{obligation.statementSha256[:12]}… — coverage does not inherit across "
+                    "statement edits; re-bind and re-establish the layers",
+                )
+            )
     for mapping in record.mappings:
         obligation = by_name.get(mapping.obligation)
-        if obligation is not None and mapping.statementSha256 != obligation.statementSha256:
-            stale.append((
-                "stale-binding",
-                mapping.obligation,
-                f"mapping {mapping.storyId} binds {mapping.obligation} at a stale statement "
-                f"digest ({mapping.statementSha256[:12]}…); re-bind it to the current identity",
-            ))
+        if (
+            obligation is not None
+            and mapping.statementSha256 != obligation.statementSha256
+        ):
+            stale.append(
+                (
+                    "stale-binding",
+                    mapping.obligation,
+                    f"mapping {mapping.storyId} binds {mapping.obligation} at a stale statement "
+                    f"digest ({mapping.statementSha256[:12]}…); re-bind it to the current identity",
+                )
+            )
     return stale

@@ -32,8 +32,10 @@ import Conformance.Receipt
     , Verdict (..)
     , writeReceiptFile
     )
+import Control.Monad (when)
 import Data.Char (isHexDigit)
 import Data.List (intercalate, isInfixOf, isPrefixOf, nub, sortOn)
+import Data.Maybe (catMaybes)
 import Data.Text qualified as T
 
 -- | How a refusal failed to attribute.
@@ -94,14 +96,12 @@ trimRefusal text =
         _ -> take 2000 (intercalate " | " parts)
   where
     parts =
-        [ part
-        | Just part <-
+        catMaybes
             [ evalHead text
             , plutusFailed text
             , scriptHashes text
             , cekError text
             ]
-        ]
 
 -- | Up to the node's validation report: failure class and purpose.
 evalHead :: String -> Maybe String
@@ -275,43 +275,41 @@ attributeRefusalReceipt role dir row verdict script marker text rejectedTxid bas
         Left m -> pure (Left m)
         Right () -> do
             let recorded = recordedReason text marker
-            if refusalWritesReceipt role
-                then
-                    writeReceiptFile
-                        dir
-                        Receipt
-                            { receiptRow = T.pack row
-                            , receiptOutcome = Refused
-                            , receiptVerdict = verdict
-                            , receiptTransactions = []
-                            , receiptRefusal =
-                                Just
-                                    ( RefusalInfo
-                                        { refusalScript = T.pack script
-                                        , refusalReason = T.pack recorded
-                                        , refusalPhase = "phase-2"
-                                        , refusalHashes =
-                                            map T.pack (refusalScriptHashes text)
-                                        , refusalBranch = Nothing
-                                        , refusalLimit =
-                                            Just
-                                                "no named validator branch in this compiled trace; attribution is script hash plus phase-2 only"
-                                        }
-                                    )
-                            , receiptMem = Nothing
-                            , receiptCpu = Nothing
-                            , receiptTxSize = Nothing
-                            , receiptBase = T.pack base
-                            , receiptNode = T.pack node
-                            , receiptBlueprint = T.pack blueprint
-                            , receiptVenue = "node-submit"
-                            , receiptRejected = Just (T.pack rejectedTxid)
-                            , receiptDirty = dirty
-                            , receiptPartial = Nothing
-                            , receiptDerivation = Nothing
-                            , receiptSteps = Nothing
-                            }
-                else pure ()
+            when (refusalWritesReceipt role) $
+                writeReceiptFile
+                    dir
+                    Receipt
+                        { receiptRow = T.pack row
+                        , receiptOutcome = Refused
+                        , receiptVerdict = verdict
+                        , receiptTransactions = []
+                        , receiptRefusal =
+                            Just
+                                ( RefusalInfo
+                                    { refusalScript = T.pack script
+                                    , refusalReason = T.pack recorded
+                                    , refusalPhase = "phase-2"
+                                    , refusalHashes =
+                                        map T.pack (refusalScriptHashes text)
+                                    , refusalBranch = Nothing
+                                    , refusalLimit =
+                                        Just
+                                            "no named validator branch in this compiled trace; attribution is script hash plus phase-2 only"
+                                    }
+                                )
+                        , receiptMem = Nothing
+                        , receiptCpu = Nothing
+                        , receiptTxSize = Nothing
+                        , receiptBase = T.pack base
+                        , receiptNode = T.pack node
+                        , receiptBlueprint = T.pack blueprint
+                        , receiptVenue = "node-submit"
+                        , receiptRejected = Just (T.pack rejectedTxid)
+                        , receiptDirty = dirty
+                        , receiptPartial = Nothing
+                        , receiptDerivation = Nothing
+                        , receiptSteps = Nothing
+                        }
             pure (Right ())
 
 {- | The reason a receipt records: trimmed to what attributes, but
