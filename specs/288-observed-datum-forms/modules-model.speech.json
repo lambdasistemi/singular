@@ -1,0 +1,12 @@
+{
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "86f9b5f335fd650413d00cbdb6fec633e8e10e8afdb1c09d4b06c8ef3bdb5177"
+  },
+  "responsibilities": [
+    {
+      "text": "The live observer supplies actual fields to the comparator. The Lean oracle independently supplies expectations. Tests exercise the actual observer. No module relocation or second interpreter is authorized.",
+      "pause": 350
+    }
+  ]
+}

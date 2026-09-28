@@ -1,0 +1,24 @@
+{
+  "_source": {
+    "file": "plan.md",
+    "sha256": "f452dd7d5ae526047800ddf88e069793fe3ec257adc9bc808bb19b4fda363f7a"
+  },
+  "delivery": [
+    {
+      "text": "Actual transaction and spent output evidence flows through the existing observer into the comparator. The fixed Lean driver independently supplies expectations. One implementer repairs the code while a separate reviewer checks committed milestones.",
+      "pause": 350
+    }
+  ],
+  "boundary": [
+    {
+      "text": "Keep the repair in the existing live observation modules and their tests. Do not move modules or edit offchain, validators, Lean, shared configuration, or generated books.",
+      "pause": 350
+    }
+  ],
+  "verification-limits": [
+    {
+      "text": "Run existing tests and connected devnet cases. A fixture demonstrates observation behavior, not live validator acceptance.",
+      "pause": 350
+    }
+  ]
+}

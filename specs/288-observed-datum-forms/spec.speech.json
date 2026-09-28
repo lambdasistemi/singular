@@ -1,0 +1,18 @@
+{
+  "_source": {
+    "file": "spec.md",
+    "sha256": "79630646f3d5b9a89e5232348eac565895d948fb8aba71c085382d1e66797c0c"
+  },
+  "required-behavior": [
+    {
+      "text": "Read the actual datum form for every affected input and destination. Preserve all three forms, keep observations independent of Lean expectations, fail on mismatches, and stay within the Conformance repair boundary.",
+      "pause": 350
+    }
+  ],
+  "model-and-evidence": [
+    {
+      "text": "The accepted Lean revision stays fixed. Exercise the actual observer and comparator. Distinguish synthetic ledger values from live transactions, and retain all existing coverage gaps.",
+      "pause": 350
+    }
+  ]
+}
