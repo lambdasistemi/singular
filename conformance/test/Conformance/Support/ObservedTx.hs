@@ -471,7 +471,7 @@ spec =
                         [stateOutput, carrier carrierForm]
                         activeAsset
                     )
-            let delivering =
+            delivering =
                 [Payment (Destination "holder") 3_000_000]
 
         it "reports the spent state input's actual datum form" $ do
