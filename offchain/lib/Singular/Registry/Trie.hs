@@ -11,13 +11,13 @@ per-token Merkle Patricia Forestry tries. The
 handles and provides speculative (read-your-writes,
 then-discard) sessions for transaction building.
 -}
-module Singular.Registry.Trie (
-    -- * Trie manager
-    TrieManager (..),
+module Singular.Registry.Trie
+    ( -- * Trie manager
+      TrieManager (..)
 
-    -- * Single trie operations
-    Trie (..),
-) where
+      -- * Single trie operations
+    , Trie (..)
+    ) where
 
 import Data.ByteString (ByteString)
 
@@ -26,21 +26,21 @@ import Singular.Registry.Types (ProofStep)
 
 -- | Manager for per-token tries.
 data TrieManager m = TrieManager
-    { withTrie ::
-        forall a.
-        TokenId ->
-        (Trie m -> m a) ->
-        m a
+    { withTrie
+        :: forall a
+         . TokenId
+        -> (Trie m -> m a)
+        -> m a
     -- ^ Run an action with access to a token's trie
-    , withSpeculativeTrie ::
-        forall a.
-        TokenId ->
-        ( forall n.
-          (Monad n) =>
-          Trie n ->
-          n a
-        ) ->
-        m a
+    , withSpeculativeTrie
+        :: forall a
+         . TokenId
+        -> ( forall n
+              . (Monad n)
+             => Trie n
+             -> n a
+           )
+        -> m a
     {- ^ Run a read-your-writes session whose
     mutations are discarded at the end.
     -}
@@ -56,8 +56,8 @@ data TrieManager m = TrieManager
 
 -- | Operations on a single trie.
 data Trie m = Trie
-    { insert ::
-        ByteString -> ByteString -> m Root
+    { insert
+        :: ByteString -> ByteString -> m Root
     -- ^ Insert a key-value pair, returning new root
     , delete :: ByteString -> m Root
     -- ^ Delete a key, returning new root
@@ -65,7 +65,7 @@ data Trie m = Trie
     -- ^ Look up a value by key
     , getRoot :: m Root
     -- ^ Get current root hash
-    , getProofSteps ::
-        ByteString -> m (Maybe [ProofStep])
+    , getProofSteps
+        :: ByteString -> m (Maybe [ProofStep])
     -- ^ Generate on-chain proof steps for a key
     }

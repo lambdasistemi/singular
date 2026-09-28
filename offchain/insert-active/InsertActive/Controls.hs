@@ -20,12 +20,12 @@ text when it is there and answers @null@ otherwise: the ledger's
 evaluation failure usually carries an empty Plutus log, and the name is
 asserted at the Aiken layer rather than guessed here.
 -}
-module InsertActive.Controls (
-    controlKey,
-    freshKeyControl,
-    duplicateRefusal,
-    refusalTrace,
-) where
+module InsertActive.Controls
+    ( controlKey
+    , freshKeyControl
+    , duplicateRefusal
+    , refusalTrace
+    ) where
 
 import Control.Exception (SomeException, displayException, try)
 import Data.Aeson (Value (..))

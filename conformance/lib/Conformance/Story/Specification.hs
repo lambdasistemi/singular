@@ -20,11 +20,12 @@ module Conformance.Story.Specification
     , clause
     ) where
 
-import Control.Monad.Operational (Program, singleton)
 import Conformance.Story.Binding (Binding)
+import Control.Monad.Operational (Program, singleton)
 
 -- | A bound declaration. Its nominal index identifies the theorem's checks.
 type role Theorem nominal
+
 newtype Theorem thm = BoundTheorem Binding
 
 -- | Bind a domain-specific theorem marker to its checked declaration identity.
@@ -37,10 +38,12 @@ theoremBinding (BoundTheorem binding) = binding
 
 -- | A check retains its theorem and supplies an interpreter action for the observation.
 type role LeanCheck nominal nominal nominal
+
 data LeanCheck act thm obs = BoundCheck (Theorem thm) (obs -> Story act ())
 
 -- | Domain bindings supply the executable check of an observed result.
-bindCheck :: Theorem thm -> (obs -> Story act ()) -> LeanCheck act thm obs
+bindCheck
+    :: Theorem thm -> (obs -> Story act ()) -> LeanCheck act thm obs
 bindCheck = BoundCheck
 
 -- | Resolve the same declaration for the enclosing theorem and its check.
@@ -65,7 +68,8 @@ newtype TheoremStory thm act res = TheoremStory (Program (Clause thm act) res)
 
 -- | An action's result is checked before it is returned to the surrounding story.
 data Clause thm act obs where
-    Clause :: String -> LeanCheck act thm obs -> Story act obs -> Clause thm act obs
+    Clause
+        :: String -> LeanCheck act thm obs -> Story act obs -> Clause thm act obs
 
 -- | Expose the clause program to interpreters without permitting reindexing.
 clauses :: TheoremStory thm act res -> Program (Clause thm act) res

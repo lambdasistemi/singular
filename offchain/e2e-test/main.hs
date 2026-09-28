@@ -18,20 +18,24 @@ main :: IO ()
 main = do
     blueprint <- resolveBlueprint
     putStrLn "Evidence boundaries: each group names what it exercises."
-    putStrLn "Compiled-script component checks are outside this suite; no result is claimed here."
-    putStrLn "Pending examples are unexecuted; filtered-out examples provide no evidence."
+    putStrLn
+        "Compiled-script component checks are outside this suite; no result is claimed here."
+    putStrLn
+        "Pending examples are unexecuted; filtered-out examples provide no evidence."
     hspec $ do
         describe
             "Unit checks (local files, no node or script execution)"
             Singular.Registry.E2E.NodeSpec.walletSpec
-        describe "Devnet scenarios (compiled scripts, submitted transactions and refusals)" $ do
-            Singular.Registry.E2E.OpenBootSpec.spec blueprint
-            Singular.Registry.E2E.InsertActiveSpec.spec blueprint
-            Singular.Registry.E2E.Fork81Spec.spec blueprint
-            Singular.Registry.E2E.UpdateTerminalSpec.spec blueprint
-            Singular.Registry.E2E.Criterion3Spec.spec blueprint
-            Singular.Registry.E2E.CageSpec.spec blueprint
-            Singular.Registry.E2E.DriverSpec.spec blueprint
+        describe
+            "Devnet scenarios (compiled scripts, submitted transactions and refusals)"
+            $ do
+                Singular.Registry.E2E.OpenBootSpec.spec blueprint
+                Singular.Registry.E2E.InsertActiveSpec.spec blueprint
+                Singular.Registry.E2E.Fork81Spec.spec blueprint
+                Singular.Registry.E2E.UpdateTerminalSpec.spec blueprint
+                Singular.Registry.E2E.Criterion3Spec.spec blueprint
+                Singular.Registry.E2E.CageSpec.spec blueprint
+                Singular.Registry.E2E.DriverSpec.spec blueprint
         describe
             "Live node checks (devnet queries, submission and connection refusals)"
             Singular.Registry.E2E.NodeSpec.spec

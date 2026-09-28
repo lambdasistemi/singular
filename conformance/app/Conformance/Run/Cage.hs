@@ -3,20 +3,38 @@ Module      : Conformance.Run.Cage
 Description : Split out of Conformance.Run (#263); see that module's header
 License     : Apache-2.0
 -}
-module Conformance.Run.Cage (ensureRowCage, cageTid, ensureStakeKit, registerStakeCredential, cageStateUtxo, recordDatum, recordDatumHash, cageUtxos, registryContext, sessionRefUtxos, cageRefUtxos, ensureStateRef, ensureStateRefWith, cageUtxosOf, defaultTipCoin, publishRefScript, rowRegistryContext) where
+module Conformance.Run.Cage
+    ( ensureRowCage
+    , cageTid
+    , ensureStakeKit
+    , registerStakeCredential
+    , cageStateUtxo
+    , recordDatum
+    , recordDatumHash
+    , cageUtxos
+    , registryContext
+    , sessionRefUtxos
+    , cageRefUtxos
+    , ensureStateRef
+    , ensureStateRefWith
+    , cageUtxosOf
+    , defaultTipCoin
+    , publishRefScript
+    , rowRegistryContext
+    ) where
 
-import Conformance.Run.Wallet
-import Conformance.Run.Submit
 import Conformance.Run.Environment
 import Conformance.Run.Manifest
+import Conformance.Run.Submit
+import Conformance.Run.Wallet
 
 import Control.Concurrent (threadDelay)
-import Control.Exception (
-    SomeException,
-    displayException,
-    throwIO,
-    try,
- )
+import Control.Exception
+    ( SomeException
+    , displayException
+    , throwIO
+    , try
+    )
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (newIORef, readIORef, writeIORef)
@@ -33,81 +51,84 @@ import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Plutus.Data (Data (..), hashData)
 
 import Cardano.Ledger.Api.PParams (ppKeyDepositL)
-import Cardano.Ledger.Api.Tx (
-    bodyTxL,
-    estimateMinFeeTx,
-    mkBasicTx,
-    mkBasicTxBody,
-    txIdTx,
- )
-import Cardano.Ledger.Api.Tx.Body (
-    certsTxBodyL,
-    feeTxBodyL,
-    inputsTxBodyL,
-    outputsTxBodyL,
- )
-import Cardano.Ledger.Api.Tx.Out (
-    referenceScriptTxOutL,
-    coinTxOutL,
-    getMinCoinTxOut,
-    mkBasicTxOut,
- )
-import Cardano.Ledger.BaseTypes (
-    StrictMaybe (..),
-    TxIx (..),
- )
-import Cardano.Ledger.Conway.TxCert (ConwayDelegCert (..), ConwayTxCert (..))
-import Cardano.Ledger.Core (
-    Script,
-    extractHash,
-    hashScript,
- )
+import Cardano.Ledger.Api.Tx
+    ( bodyTxL
+    , estimateMinFeeTx
+    , mkBasicTx
+    , mkBasicTxBody
+    , txIdTx
+    )
+import Cardano.Ledger.Api.Tx.Body
+    ( certsTxBodyL
+    , feeTxBodyL
+    , inputsTxBodyL
+    , outputsTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( coinTxOutL
+    , getMinCoinTxOut
+    , mkBasicTxOut
+    , referenceScriptTxOutL
+    )
+import Cardano.Ledger.BaseTypes
+    ( StrictMaybe (..)
+    , TxIx (..)
+    )
+import Cardano.Ledger.Conway.TxCert
+    ( ConwayDelegCert (..)
+    , ConwayTxCert (..)
+    )
+import Cardano.Ledger.Core
+    ( Script
+    , extractHash
+    , hashScript
+    )
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 
-import Singular.Registry.Blueprint (
-    NamingCodes (..),
-    applyBytesParam,
-    applyDataParam,
-    extractCompiledCode,
-    loadBlueprint,
- )
-import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (
-    AssetName (..),
-    Coin (..),
-    ConwayEra,
-    TokenId (..),
-    TxOut,
- )
-import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Trie (TrieManager (..))
-import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
-import Singular.Registry.TxBuilder.Internal (
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    computeScriptHash,
-    findStateUtxo,
-    mkCageScript,
-    mkRequestScript,
-    scriptHashBytes,
-    scriptFromBytes,
-    txInToRef,
- )
-import Singular.Registry.TxBuilder.Update (RegistryContext (..))
 import Cardano.Node.Client.E2E.Setup (addKeyWitness)
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter)
 import PlutusCore.Data qualified as PLC
+import Singular.Registry.Blueprint
+    ( NamingCodes (..)
+    , applyBytesParam
+    , applyDataParam
+    , extractCompiledCode
+    , loadBlueprint
+    )
+import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Ledger
+    ( AssetName (..)
+    , Coin (..)
+    , ConwayEra
+    , TokenId (..)
+    , TxOut
+    )
+import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Trie (TrieManager (..))
+import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
+import Singular.Registry.TxBuilder.Internal
+    ( cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , computeScriptHash
+    , findStateUtxo
+    , mkCageScript
+    , mkRequestScript
+    , scriptFromBytes
+    , scriptHashBytes
+    , txInToRef
+    )
+import Singular.Registry.TxBuilder.Update (RegistryContext (..))
 
-import Conformance.Mirror (
-    emit,
-    failWith,
-    hex,
-    require,
-    txIdHex,
- )
+import Conformance.Mirror
+    ( emit
+    , failWith
+    , hex
+    , require
+    , txIdHex
+    )
 
 -- ---------------------------------------------------------
 -- Issue #70 machinery: cages, the second wallet, the stake kit
@@ -120,14 +141,14 @@ neighbour row. The windows are the boot datum's phase clocks; rows
 retracting or rejecting wait for a phase boundary, so fast windows
 keep the run short without weakening any check.
 -}
-ensureRowCage ::
-    Env ->
-    String ->
-    -- | process window (ms, phase 1)
-    Integer ->
-    -- | retract window (ms, phase 2)
-    Integer ->
-    IO RowCage
+ensureRowCage
+    :: Env
+    -> String
+    -> Integer
+    -- ^ process window (ms, phase 1)
+    -> Integer
+    -- ^ retract window (ms, phase 2)
+    -> IO RowCage
 ensureRowCage env name processMs retractMs = do
     worlds <- readIORef (envWorlds env)
     case Map.lookup name worlds of
@@ -199,14 +220,12 @@ ensureRowCage env name processMs retractMs = do
             )
         pure w
 
-
 cageTid :: RowCage -> IO TokenId
 cageTid rc = do
     t <- readIORef (rcTid rc)
     case t of
         Just tid -> pure tid
         Nothing -> failWith "row cage is not booted"
-
 
 {- | The stake_script hook's kit (CG14/CG15): the blueprint's
 staking validator, its hash cross-checked against the pinned
@@ -239,7 +258,7 @@ ensureStakeKit env = do
                 pins ->
                     require
                         ( "the staking pin disagrees with this run's \
-                           \blueprint: "
+                          \blueprint: "
                             <> show pins
                             <> " vs 0x"
                             <> hHex
@@ -256,7 +275,6 @@ ensureStakeKit env = do
             writeIORef (envStake env) (Just k)
             pure k
 
-
 {- | Register the staking credential: a @RegTxCert@ paying the key
 deposit. Registration carries no script witness — the blueprint's
 staking validator implements only the withdraw handler, so a cert
@@ -264,8 +282,8 @@ purpose would run its fail branch, and the node does not demand a
 witness for a registration. The deposit is paid; nobody withdraws
 it back — a devnet-bound residue, recorded, not hidden.
 -}
-registerStakeCredential ::
-    Env -> SBS.ShortByteString -> ScriptHash -> IO ()
+registerStakeCredential
+    :: Env -> SBS.ShortByteString -> ScriptHash -> IO ()
 registerStakeCredential env _bytes h = do
     let prov = envProv env
         cred = ScriptHashObj h
@@ -313,7 +331,7 @@ registerStakeCredential env _bytes h = do
         Rejected reason ->
             failWith
                 ( "CG14/CG15 COULD NOT EXECUTE — registration of the \
-                   \staking credential refused: "
+                  \staking credential refused: "
                     <> T.unpack (TE.decodeUtf8Lenient reason)
                 )
     awaitTx signed
@@ -327,16 +345,15 @@ registerStakeCredential env _bytes h = do
             <> txIdHex signed
         )
 
-
 cageStateUtxo :: Env -> RowCage -> IO (TxIn, TxOut ConwayEra)
 cageStateUtxo env cage = do
     tid <- cageTid cage
     let cfg = rcCfg cage
-    utxos <- Cage.queryUTxOs (envProv env) (cageAddrFromCfg cfg (network cfg))
+    utxos <-
+        Cage.queryUTxOs (envProv env) (cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) tid utxos of
         Just u -> pure u
         Nothing -> failWith "row cage: no state UTxO"
-
 
 {- | The record datum a booking's destination binds, and its hash. The
 cage checks only that the receiving output carries a datum hashing to what
@@ -346,11 +363,10 @@ the harness needs one datum it can produce on both sides and nothing more.
 recordDatum :: PLC.Data
 recordDatum = PLC.B "cg-record"
 
-
 recordDatumHash :: ByteString
 recordDatumHash =
-    hashToBytes (extractHash (hashData (Data recordDatum :: Data ConwayEra)))
-
+    hashToBytes
+        (extractHash (hashData (Data recordDatum :: Data ConwayEra)))
 
 -- | The UTxOs sitting at the cage's own address; custody lives among them.
 cageUtxos :: Env -> IO [(TxIn, TxOut ConwayEra)]
@@ -358,7 +374,6 @@ cageUtxos env =
     Cage.queryUTxOs
         (envProv env)
         (cageAddrFromCfg (envCfg env) (network (envCfg env)))
-
 
 {- | Everything a fold of tree edges needs in hand: the three token
 policies this registry pins, the cage script custody spends run, the cage's
@@ -392,7 +407,6 @@ registryContext env = do
             , rcRefUtxos = refs
             }
 
-
 {- | The session's reference outputs, published on first use: the cage,
 the request validator and the three token policies.
 -}
@@ -406,38 +420,36 @@ sessionRefUtxos env = do
             writeIORef (envRefs env) (Just refs)
             pure refs
 
-
 -- | The reference outputs one cage's folds resolve their scripts through.
-cageRefUtxos ::
-    Env -> CageConfig -> TokenId -> IO [(TxIn, TxOut ConwayEra)]
+cageRefUtxos
+    :: Env -> CageConfig -> TokenId -> IO [(TxIn, TxOut ConwayEra)]
 cageRefUtxos env cfg tid = do
-            let (_, _, codes) = envCodes env
-                registryId =
-                    scriptHashBytes (cfgScriptHash cfg)
-                        <> SBS.fromShort (assetNameBytes (unTokenId tid))
-                witnessAt kind =
-                    scriptFromBytes
-                        ("witness-" <> show kind)
-                        ( applyBytesParam
-                            registryId
-                            (applyDataParam (PLC.I kind) (ncWitness codes))
-                        )
-            refs <-
-                mapM
-                    (publishRefScript env)
-                    ( [ mkCageScript cfg
-                      , mkRequestScript cfg tid
-                      ]
-                        <> map witnessAt [0, 1, 2]
-                    )
-            emit
-                "references"
-                ( show (length refs)
-                    <> " scripts published as reference outputs; folds resolve \
-                       \every purpose through them"
+    let (_, _, codes) = envCodes env
+        registryId =
+            scriptHashBytes (cfgScriptHash cfg)
+                <> SBS.fromShort (assetNameBytes (unTokenId tid))
+        witnessAt kind =
+            scriptFromBytes
+                ("witness-" <> show kind)
+                ( applyBytesParam
+                    registryId
+                    (applyDataParam (PLC.I kind) (ncWitness codes))
                 )
-            pure refs
-
+    refs <-
+        mapM
+            (publishRefScript env)
+            ( [ mkCageScript cfg
+              , mkRequestScript cfg tid
+              ]
+                <> map witnessAt [0, 1, 2]
+            )
+    emit
+        "references"
+        ( show (length refs)
+            <> " scripts published as reference outputs; folds resolve \
+               \every purpose through them"
+        )
+    pure refs
 
 {- | Sweep the funder's ada-only outputs back into one.
 
@@ -475,8 +487,8 @@ ensureStateRef env =
 session cage boots before its 'Env' is built, and the state validator
 depends on the blueprint alone, not on the seed.
 -}
-ensureStateRefWith ::
-    Cage.Provider IO -> Submitter IO -> SBS.ShortByteString -> IO ()
+ensureStateRefWith
+    :: Cage.Provider IO -> Submitter IO -> SBS.ShortByteString -> IO ()
 ensureStateRefWith prov submit stateBytes = do
     let script = scriptFromBytes "state" stateBytes
         wanted = hashScript script
@@ -496,17 +508,14 @@ ensureStateRefWith prov submit stateBytes = do
                 "published the state validator as a reference output; \
                 \boots reference it instead of carrying it inline"
 
-
 -- | The UTxOs at a given cage's own address; custody lives among them.
 cageUtxosOf :: Env -> CageConfig -> IO [(TxIn, TxOut ConwayEra)]
 cageUtxosOf env cfg =
     Cage.queryUTxOs (envProv env) (cageAddrFromCfg cfg (network cfg))
 
-
 -- | The tip a cage charges, as a plain integer.
 defaultTipCoin :: CageConfig -> Integer
 defaultTipCoin cfg = case defaultTip cfg of Coin c -> c
-
 
 {- | Publish one script as a reference output, once per session.
 
@@ -515,15 +524,16 @@ the request script and a token policy does not fit in a transaction. The
 same outputs serve every fold the session builds, so this happens once and
 the references are carried in the environment.
 -}
-publishRefScript :: Env -> Script ConwayEra -> IO (TxIn, TxOut ConwayEra)
+publishRefScript
+    :: Env -> Script ConwayEra -> IO (TxIn, TxOut ConwayEra)
 publishRefScript env = publishRefScriptWith (envProv env) (envSubmit env)
 
 -- | 'publishRefScript' from the provider and submitter alone.
-publishRefScriptWith ::
-    Cage.Provider IO ->
-    Submitter IO ->
-    Script ConwayEra ->
-    IO (TxIn, TxOut ConwayEra)
+publishRefScriptWith
+    :: Cage.Provider IO
+    -> Submitter IO
+    -> Script ConwayEra
+    -> IO (TxIn, TxOut ConwayEra)
 publishRefScriptWith prov submit script = do
     pp <- Cage.queryProtocolParams prov
     utxos <- Cage.queryUTxOs prov genesisAddr
@@ -568,7 +578,6 @@ publishRefScriptWith prov submit script = do
                     <> T.unpack (TE.decodeUtf8Lenient reason)
                 )
     pure (TxIn (txIdTx signed) (TxIx 0), refOut)
-
 
 {- | The duties context for a row cage: its own three token policies, the
 cage script its custody spends run, its UTxOs, the one destination datum

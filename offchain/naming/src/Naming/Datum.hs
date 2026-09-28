@@ -12,34 +12,34 @@ and the 'retirementQuorum'. There is no fifth field and none may be
 added. Where this module and the reference disagree, the reference is
 right and this module is wrong.
 -}
-module Naming.Datum (
-    PaymentDestination (..),
-    RetirementQuorum (..),
-    NamingDatum (..),
-    DatumAttachment (..),
-    DatumShape (..),
-    encodeNamingDatum,
-    decodeNamingDatum,
-    namingDatumShape,
-    serialiseNamingDatum,
-    deserialiseNamingDatum,
-    extractNamingDatum,
-) where
+module Naming.Datum
+    ( PaymentDestination (..)
+    , RetirementQuorum (..)
+    , NamingDatum (..)
+    , DatumAttachment (..)
+    , DatumShape (..)
+    , encodeNamingDatum
+    , decodeNamingDatum
+    , namingDatumShape
+    , serialiseNamingDatum
+    , deserialiseNamingDatum
+    , extractNamingDatum
+    ) where
 
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.List (nub)
 
-import Naming.Wire (
-    Address (..),
-    PaymentCredential (..),
-    WireData (..),
-    canonicalAddress,
-    decodeAddress,
-    deserialiseWireData,
-    guardWire,
-    serialiseWireData,
- )
+import Naming.Wire
+    ( Address (..)
+    , PaymentCredential (..)
+    , WireData (..)
+    , canonicalAddress
+    , decodeAddress
+    , deserialiseWireData
+    , guardWire
+    , serialiseWireData
+    )
 
 {- | The payment destination option: none is @constr(0,[])@, some is
 @constr(1,[bytes])@.
@@ -109,7 +109,9 @@ encodePaymentDestination (SomeDestination a) = Constr 1 [WBytes (addressBytes a)
 -- | Exact mirror of the contract's @encodeRetirementQuorum@.
 encodeRetirementQuorum :: RetirementQuorum -> WireData
 encodeRetirementQuorum q =
-    Constr 0 [WInt (quorumThreshold q), WList (map WBytes (quorumMembers q))]
+    Constr
+        0
+        [WInt (quorumThreshold q), WList (map WBytes (quorumMembers q))]
 
 {- | Exact mirror of the contract's @decodeNamingDatum@: outer
 @constr(0)@ of arity 1 wrapping an inner @constr(0)@ of arity 4, then
@@ -161,7 +163,8 @@ decodeRetirementQuorum :: WireData -> Maybe RetirementQuorum
 decodeRetirementQuorum (Constr 0 [WInt threshold, WList memberData])
     | threshold >= 0 = do
         members <- traverse asQuorumMember memberData
-        pure (RetirementQuorum{quorumMembers = members, quorumThreshold = threshold})
+        pure
+            (RetirementQuorum{quorumMembers = members, quorumThreshold = threshold})
 decodeRetirementQuorum _ = Nothing
 
 asQuorumMember :: WireData -> Maybe ByteString
@@ -194,7 +197,12 @@ wellFormedFixture f =
 -- | Exact mirror of the contract's @namingDatumShape@.
 namingDatumShape :: WireData -> Maybe DatumShape
 namingDatumShape (Constr 0 [Constr 0 fields]) =
-    Just DatumShape{shapeArity = length fields, shapeInnerIndex = 0, shapeOuterIndex = 0}
+    Just
+        DatumShape
+            { shapeArity = length fields
+            , shapeInnerIndex = 0
+            , shapeOuterIndex = 0
+            }
 namingDatumShape _ = Nothing
 
 -- | Exact mirror of the contract's @serialiseNamingDatum@.

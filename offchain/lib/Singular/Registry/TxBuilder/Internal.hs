@@ -19,139 +19,139 @@ implementations of its own and re-exports the focused owners
 conversion), @...Internal.Lookup@ (lookup and balance) and
 @...Internal.Edges@ (edges and binding).
 -}
-module Singular.Registry.TxBuilder.Internal (
-    -- * Script construction
-    mkCageScript,
-    mkRequestScript,
-    scriptFromBytes,
-    scriptHashBytes,
-    computeScriptHash,
+module Singular.Registry.TxBuilder.Internal
+    ( -- * Script construction
+      mkCageScript
+    , mkRequestScript
+    , scriptFromBytes
+    , scriptHashBytes
+    , computeScriptHash
 
-    -- * Registry-mode edges (#157 C2)
-    leafAbsent,
-    leafActive,
-    leafTerminal,
-    walkEdge,
-    policyIdFromPin,
-    addrFromBytes,
-    deltaOf,
-    policyOfKind,
-    approvalName,
+      -- * Registry-mode edges (#157 C2)
+    , leafAbsent
+    , leafActive
+    , leafTerminal
+    , walkEdge
+    , policyIdFromPin
+    , addrFromBytes
+    , deltaOf
+    , policyOfKind
+    , approvalName
 
-    -- * Derived identity
-    cagePolicyIdFromCfg,
-    cageAddrFromCfg,
-    requestAddrFromCfg,
-    onChainTokenId,
+      -- * Derived identity
+    , cagePolicyIdFromCfg
+    , cageAddrFromCfg
+    , requestAddrFromCfg
+    , onChainTokenId
 
-    -- * Datum helpers
-    mkRequestDatum,
-    mkRequestDatumWith,
-    toPlcData,
-    toLedgerData,
-    mkInlineDatum,
-    extractCageDatum,
+      -- * Datum helpers
+    , mkRequestDatum
+    , mkRequestDatumWith
+    , toPlcData
+    , toLedgerData
+    , mkInlineDatum
+    , extractCageDatum
 
-    -- * Reference conversion
-    txInToRef,
-    addrKeyHashBytes,
-    addrFromKeyHashBytes,
-    addrWitnessKeyHash,
+      -- * Reference conversion
+    , txInToRef
+    , addrKeyHashBytes
+    , addrFromKeyHashBytes
+    , addrWitnessKeyHash
 
-    -- * UTxO lookup
-    findUtxoByTxIn,
-    findStateUtxo,
-    findRequestUtxos,
+      -- * UTxO lookup
+    , findUtxoByTxIn
+    , findStateUtxo
+    , findRequestUtxos
 
-    -- * Indexing
-    spendingIndex,
+      -- * Indexing
+    , spendingIndex
 
-    -- * Script integrity
-    computeScriptIntegrity,
+      -- * Script integrity
+    , computeScriptIntegrity
 
-    -- * Evaluate and balance
-    evaluateAndBalance,
-    placeholderExUnits,
+      -- * Evaluate and balance
+    , evaluateAndBalance
+    , placeholderExUnits
 
-    -- * Constants
-    emptyRoot,
+      -- * Constants
+    , emptyRoot
 
-    -- * Time and slot helpers
-    currentPosixMs,
-    trySlots,
+      -- * Time and slot helpers
+    , currentPosixMs
+    , trySlots
 
-    -- * Request helpers
-    extractOwnerBytes,
+      -- * Request helpers
+    , extractOwnerBytes
 
-    -- * Refund computation
-    computeRefund,
+      -- * Refund computation
+    , computeRefund
 
-    -- * Pinned-hook invocation (NOTE-021)
-    pinScriptHash,
-    hookAccountAddress,
-    keyAccountAddress,
-    ConsumerBinding (..),
-    deriveConsumerBinding,
-    mkConsumerScript,
+      -- * Pinned-hook invocation (NOTE-021)
+    , pinScriptHash
+    , hookAccountAddress
+    , keyAccountAddress
+    , ConsumerBinding (..)
+    , deriveConsumerBinding
+    , mkConsumerScript
 
-    -- * Failure attribution (NOTE-023)
-    failedWitnessHash,
-    evalScriptHash,
-    isBudgetFailure,
-) where
+      -- * Failure attribution (NOTE-023)
+    , failedWitnessHash
+    , evalScriptHash
+    , isBudgetFailure
+    ) where
 
-import Singular.Registry.TxBuilder.Internal.Edges (
-    ConsumerBinding (..),
-    approvalName,
-    deltaOf,
-    deriveConsumerBinding,
-    evalScriptHash,
-    failedWitnessHash,
-    hookAccountAddress,
-    isBudgetFailure,
-    keyAccountAddress,
-    leafAbsent,
-    leafActive,
-    leafTerminal,
-    mkConsumerScript,
-    pinScriptHash,
-    policyOfKind,
-    walkEdge,
- )
-import Singular.Registry.TxBuilder.Internal.Identity (
-    addrFromBytes,
-    addrFromKeyHashBytes,
-    addrKeyHashBytes,
-    addrWitnessKeyHash,
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    computeScriptHash,
-    emptyRoot,
-    extractCageDatum,
-    extractOwnerBytes,
-    mkCageScript,
-    mkInlineDatum,
-    mkRequestDatum,
-    mkRequestDatumWith,
-    mkRequestScript,
-    onChainTokenId,
-    policyIdFromPin,
-    requestAddrFromCfg,
-    scriptFromBytes,
-    scriptHashBytes,
-    toLedgerData,
-    toPlcData,
-    txInToRef,
- )
-import Singular.Registry.TxBuilder.Internal.Lookup (
-    computeRefund,
-    computeScriptIntegrity,
-    currentPosixMs,
-    evaluateAndBalance,
-    findRequestUtxos,
-    findStateUtxo,
-    findUtxoByTxIn,
-    placeholderExUnits,
-    spendingIndex,
-    trySlots,
- )
+import Singular.Registry.TxBuilder.Internal.Edges
+    ( ConsumerBinding (..)
+    , approvalName
+    , deltaOf
+    , deriveConsumerBinding
+    , evalScriptHash
+    , failedWitnessHash
+    , hookAccountAddress
+    , isBudgetFailure
+    , keyAccountAddress
+    , leafAbsent
+    , leafActive
+    , leafTerminal
+    , mkConsumerScript
+    , pinScriptHash
+    , policyOfKind
+    , walkEdge
+    )
+import Singular.Registry.TxBuilder.Internal.Identity
+    ( addrFromBytes
+    , addrFromKeyHashBytes
+    , addrKeyHashBytes
+    , addrWitnessKeyHash
+    , cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , computeScriptHash
+    , emptyRoot
+    , extractCageDatum
+    , extractOwnerBytes
+    , mkCageScript
+    , mkInlineDatum
+    , mkRequestDatum
+    , mkRequestDatumWith
+    , mkRequestScript
+    , onChainTokenId
+    , policyIdFromPin
+    , requestAddrFromCfg
+    , scriptFromBytes
+    , scriptHashBytes
+    , toLedgerData
+    , toPlcData
+    , txInToRef
+    )
+import Singular.Registry.TxBuilder.Internal.Lookup
+    ( computeRefund
+    , computeScriptIntegrity
+    , currentPosixMs
+    , evaluateAndBalance
+    , findRequestUtxos
+    , findStateUtxo
+    , findUtxoByTxIn
+    , placeholderExUnits
+    , spendingIndex
+    , trySlots
+    )

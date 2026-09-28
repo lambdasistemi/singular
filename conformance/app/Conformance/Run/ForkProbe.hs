@@ -5,61 +5,61 @@ License     : Apache-2.0
 -}
 module Conformance.Run.ForkProbe (runForkProbe, runForkProbeSession) where
 
-import Conformance.Run.Wallet
-import Conformance.Run.Submit
+import Conformance.Run.Cage (ensureStateRefWith)
 import Conformance.Run.Environment
 import Conformance.Run.Observe
-import Conformance.Run.Cage (ensureStateRefWith)
+import Conformance.Run.Submit
+import Conformance.Run.Wallet
 
 import Control.Concurrent.Async (async, cancel)
-import Control.Exception (
-    SomeException,
-    displayException,
-    try,
- )
+import Control.Exception
+    ( SomeException
+    , displayException
+    , try
+    )
 import Data.ByteString.Short qualified as SBS
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 
+import Cardano.Node.Client.N2C.Connection
+    ( newLSQChannel
+    , newLTxSChannel
+    , runNodeClient
+    )
+import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
+import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Singular.Registry.Blueprint (NamingCodes (..))
+import Singular.Registry.Node
+    ( adaptProvider
+    , awaitConnection
+    , checkFunding
+    , defaultFundingFloor
+    , devnetGenesis
+    , followedProvider
+    , funderAddr
+    , sessionMagic
+    , withNodeSocket
+    )
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Edges qualified as RegistryEdges
-import Singular.Registry.TxBuilder.Internal (
-    walkEdge,
-    txInToRef,
- )
+import Singular.Registry.TxBuilder.Internal
+    ( txInToRef
+    , walkEdge
+    )
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
-import Singular.Registry.Types (
-    edgeInsertAbsent,
-    edgeUpdateActive,
- )
-import Singular.Registry.Node (
-    adaptProvider,
-    awaitConnection,
-    checkFunding,
-    defaultFundingFloor,
-    devnetGenesis,
-    followedProvider,
-    funderAddr,
-    sessionMagic,
-    withNodeSocket,
- )
-import Cardano.Node.Client.N2C.Connection (
-    newLSQChannel,
-    newLTxSChannel,
-    runNodeClient,
- )
-import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
-import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
+import Singular.Registry.Types
+    ( edgeInsertAbsent
+    , edgeUpdateActive
+    )
 
-import Conformance.Mirror (
-    emit,
-    require,
-    txIdHex,
- )
 import Conformance.ForkKeys (findPresentForkKeys)
+import Conformance.Mirror
+    ( emit
+    , require
+    , txIdHex
+    )
 
 {- | t81 present-key `Fork` control (P-B): insert K1, P, Q (predicted
 `[]`, `Leaf`-class, `Leaf`-class, all accepted), then an update fold
@@ -83,8 +83,12 @@ runForkProbe = do
         withNodeSocket $ \sock ->
             runForkProbeSession stateBytes requestBytes namingCodes sock
 
-
-runForkProbeSession :: SBS.ShortByteString -> SBS.ShortByteString -> NamingCodes -> FilePath -> IO ()
+runForkProbeSession
+    :: SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> NamingCodes
+    -> FilePath
+    -> IO ()
 runForkProbeSession stateBytes requestBytes namingCodes sock = do
     lsqCh <- newLSQChannel 16
     ltxsCh <- newLTxSChannel 16
@@ -126,13 +130,19 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
         (1 `notElem` proofStepConstrs unsigned1)
     (_, unsignedP) <- insertProbe tm cfg prov submit tid refs keyP
     require
-        ("probe setup P proof unexpected: " <> show (proofStepConstrs unsignedP))
+        ( "probe setup P proof unexpected: "
+            <> show (proofStepConstrs unsignedP)
+        )
         (2 `elem` proofStepConstrs unsignedP)
     (_, unsignedQ) <- insertProbe tm cfg prov submit tid refs keyQ
     require
-        ("probe setup Q unexpectedly carries Fork: " <> show (proofStepConstrs unsignedQ))
+        ( "probe setup Q unexpectedly carries Fork: "
+            <> show (proofStepConstrs unsignedQ)
+        )
         (1 `notElem` proofStepConstrs unsignedQ)
-    emit "probe" "update fold for present K1 (inclusion path, no excluding)"
+    emit
+        "probe"
+        "update fold for present K1 (inclusion path, no excluding)"
     _ <-
         RegistryEdges.bookEdge
             cfg
@@ -157,10 +167,14 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
             emit "probe-steps" (show (proofStepConstrs unsignedProbe))
             require
                 "accepted probe lacks well-formed Fork neighbor"
-                (1 `elem` proofStepConstrs unsignedProbe && forkNeighborsWellFormed unsignedProbe)
+                ( 1 `elem` proofStepConstrs unsignedProbe
+                    && forkNeighborsWellFormed unsignedProbe
+                )
             signedProbe <- submitWithGenesis submit unsignedProbe
             emit "probe-txid" (txIdHex signedProbe)
-            emit "complete" "probe done: inclusion-path Fork ACCEPTED (falsification)"
+            emit
+                "complete"
+                "probe done: inclusion-path Fork ACCEPTED (falsification)"
     cancel nodeThread
   where
     insertProbe tmInner cfgInner provInner submitInner tidInner refs key = do
@@ -174,7 +188,8 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
                 tidInner
                 key
                 edgeInsertAbsent
-        ctx <- RegistryEdges.registryContextFor cfgInner namingCodes provInner refs
+        ctx <-
+            RegistryEdges.registryContextFor cfgInner namingCodes provInner refs
         unsignedFold <-
             updateTokenWithDuties
                 cfgInner
@@ -186,5 +201,7 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
         signedFold <- submitWithGenesis submitInner unsignedFold
         _ <- withTrie tmInner tidInner $ \t ->
             () <$ walkEdge t key edgeInsertAbsent
-        emit ("probe-insert-" <> T.unpack (TE.decodeUtf8Lenient key)) (show (proofStepConstrs unsignedFold))
+        emit
+            ("probe-insert-" <> T.unpack (TE.decodeUtf8Lenient key))
+            (show (proofStepConstrs unsignedFold))
         pure (signedFold, unsignedFold)

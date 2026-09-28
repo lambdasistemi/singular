@@ -10,37 +10,37 @@ encode-only by construction. Reads "Singular.Registry.Wire.Primitive"
 and "Singular.Registry.Wire.Proof"; nothing here is importable by a
 caller — the public surface is the "Singular.Registry.Types" facade.
 -}
-module Singular.Registry.Wire.Redeemer (
-    -- * On-chain datum / redeemer wrappers
-    Migration (..),
-    MintRedeemer (..),
-    RequestAction (..),
-    UpdateRedeemer (..),
+module Singular.Registry.Wire.Redeemer
+    ( -- * On-chain datum / redeemer wrappers
+      Migration (..)
+    , MintRedeemer (..)
+    , RequestAction (..)
+    , UpdateRedeemer (..)
 
-    -- * Pinned-hook consumer redeemer (NOTE-021)
-    ConsumerRedeemer (..),
-) where
+      -- * Pinned-hook consumer redeemer (NOTE-021)
+    , ConsumerRedeemer (..)
+    ) where
 
 import PlutusCore.Data (Data (..))
-import PlutusTx.Builtins.Internal (
-    BuiltinByteString (..),
- )
-import PlutusTx.IsData.Class (
-    FromData (..),
-    ToData (..),
-    UnsafeFromData (..),
- )
-import Singular.Registry.Wire.Primitive (
-    OnChainTokenId (..),
-    OnChainTxOutRef (..),
-    bbsFromD,
-    bbsToD,
-    mkD,
-    unD,
- )
-import Singular.Registry.Wire.Proof (
-    ProofStep (..),
- )
+import PlutusTx.Builtins.Internal
+    ( BuiltinByteString (..)
+    )
+import PlutusTx.IsData.Class
+    ( FromData (..)
+    , ToData (..)
+    , UnsafeFromData (..)
+    )
+import Singular.Registry.Wire.Primitive
+    ( OnChainTokenId (..)
+    , OnChainTxOutRef (..)
+    , bbsFromD
+    , bbsToD
+    , mkD
+    , unD
+    )
+import Singular.Registry.Wire.Proof
+    ( ProofStep (..)
+    )
 
 {- | Migration parameters. Matches Aiken
 @types\/Migration@.

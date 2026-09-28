@@ -10,54 +10,63 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.Either (isLeft)
 import Data.List (isInfixOf, nub)
 import Data.Text qualified as T
-import Test.Hspec (
-    Spec,
-    describe,
-    expectationFailure,
-    it,
-    shouldBe,
-    shouldSatisfy,
- )
+import Test.Hspec
+    ( Spec
+    , describe
+    , expectationFailure
+    , it
+    , shouldBe
+    , shouldSatisfy
+    )
 
-import Conformance.Rows (
-    Row (..),
-    RowState (..),
-    expectedRowCount,
-    loadRows,
-    ownedDenominator,
-    rowId,
-    rowState,
-    validateInventory,
- )
+import Conformance.Rows
+    ( Row (..)
+    , RowState (..)
+    , expectedRowCount
+    , loadRows
+    , ownedDenominator
+    , rowId
+    , rowState
+    , validateInventory
+    )
 import Paths_conformance (getDataFileName)
 
 spec :: Spec
 spec = describe "Appendix: keeping the published requirements complete" $ do
-    it "Includes every expected requirement once and counts the requirements owned by the registry" $ do
-        rows <- loadCommitted
-        -- Both sides are read, never written twice: `rows` is the
-        -- committed artifact, `expectedRowCount` the pinned count.
-        -- Adding a row therefore moves ONE literal, in Rows.hs.
-        length rows `shouldBe` expectedRowCount
-        length (nub (map rowId rows)) `shouldBe` expectedRowCount
-        length
-            (filter ((/= OutOfScope) . rowState) rows)
-            `shouldBe` ownedDenominator
+    it
+        "Includes every expected requirement once and counts the requirements owned by the registry"
+        $ do
+            rows <- loadCommitted
+            -- Both sides are read, never written twice: `rows` is the
+            -- committed artifact, `expectedRowCount` the pinned count.
+            -- Adding a row therefore moves ONE literal, in Rows.hs.
+            length rows `shouldBe` expectedRowCount
+            length (nub (map rowId rows)) `shouldBe` expectedRowCount
+            length
+                (filter ((/= OutOfScope) . rowState) rows)
+                `shouldBe` ownedDenominator
 
-    it "Identifies checkpoint policy as outside the registry's responsibilities" $ do
-        rows <- loadCommitted
-        case filter ((== "CK06") . rowId) rows of
-            [ck06] -> rowState ck06 `shouldBe` OutOfScope
-            _ -> expectationFailure "inventory has no single checkpoint-policy requirement"
+    it
+        "Identifies checkpoint policy as outside the registry's responsibilities"
+        $ do
+            rows <- loadCommitted
+            case filter ((== "CK06") . rowId) rows of
+                [ck06] -> rowState ck06 `shouldBe` OutOfScope
+                _ ->
+                    expectationFailure
+                        "inventory has no single checkpoint-policy requirement"
 
-    it "Keeps the reject and retract exit controls a requirement of their own, apart from the retirement" $ do
-        rows <- loadCommitted
-        case filter ((== "CG23") . rowId) rows of
-            [exits] -> do
-                rowGroup exits `shouldBe` "CG"
-                rowRequirement exits
-                    `shouldSatisfy` (\text -> all (`T.isInfixOf` text) ["reject", "retract"])
-            _ -> expectationFailure "inventory has no single exit-controls requirement"
+    it
+        "Keeps the reject and retract exit controls a requirement of their own, apart from the retirement"
+        $ do
+            rows <- loadCommitted
+            case filter ((== "CG23") . rowId) rows of
+                [exits] -> do
+                    rowGroup exits `shouldBe` "CG"
+                    rowRequirement exits
+                        `shouldSatisfy` (\text -> all (`T.isInfixOf` text) ["reject", "retract"])
+                _ ->
+                    expectationFailure "inventory has no single exit-controls requirement"
 
     it "Does not store claims of completed tests in the requirements file" $ do
         rows <- loadCommitted
@@ -87,8 +96,9 @@ spec = describe "Appendix: keeping the published requirements complete" $ do
         (eitherDecode badStateRow :: Either String Row)
             `shouldSatisfy` isLeft
 
-    it "Rejects a completed-test claim typed directly into the requirements file" $
-        (eitherDecode executedStateRow :: Either String Row)
+    it
+        "Rejects a completed-test claim typed directly into the requirements file"
+        $ (eitherDecode executedStateRow :: Either String Row)
             `shouldSatisfy` isLeft
 
 loadCommitted :: IO [Row]

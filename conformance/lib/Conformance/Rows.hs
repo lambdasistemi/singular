@@ -15,27 +15,27 @@ is the coverage plan (@uncovered@, @bound-elsewhere@,
 executed only when 'effectiveState' finds a matching run receipt
 (see "Conformance.Receipt").
 -}
-module Conformance.Rows (
-    Row (..),
-    RowState (..),
-    ShownState (..),
-    expectedRowCount,
-    ownedDenominator,
-    loadRows,
-    validateInventory,
-    effectiveState,
-    renderInventory,
-    renderRow,
-) where
+module Conformance.Rows
+    ( Row (..)
+    , RowState (..)
+    , ShownState (..)
+    , expectedRowCount
+    , ownedDenominator
+    , loadRows
+    , validateInventory
+    , effectiveState
+    , renderInventory
+    , renderRow
+    ) where
 
-import Data.Aeson (
-    FromJSON (..),
-    eitherDecode,
-    withObject,
-    withText,
-    (.:),
-    (.:?),
- )
+import Data.Aeson
+    ( FromJSON (..)
+    , eitherDecode
+    , withObject
+    , withText
+    , (.:)
+    , (.:?)
+    )
 import Data.ByteString.Lazy qualified as BSL
 import Data.List (nub, sort)
 import Data.Text (Text)

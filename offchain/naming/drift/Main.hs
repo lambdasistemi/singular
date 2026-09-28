@@ -47,47 +47,47 @@ import Data.List (group, intercalate, sort, stripPrefix)
 import Data.Maybe (mapMaybe)
 import Data.Word (Word8)
 
-import Naming.Datum (
-    DatumAttachment (..),
-    DatumShape (..),
-    NamingDatum (..),
-    PaymentDestination (..),
-    RetirementQuorum (..),
- )
-import Naming.Request (
-    InitialOutput (..),
-    InsertProposal (..),
-    InsertRequestShape (..),
-    RefundComparison (..),
-    Representative (..),
-    refundReasonText,
- )
-import Naming.Wire (
-    Address (..),
-    AddressForm (..),
-    PaymentCredential (..),
-    WireData (..),
- )
-import Naming.Wire.Vectors (
-    wd01ExpectedBytes,
-    wd01Fixture,
-    wd01Id,
-    wd01MalformedBytes,
-    wd01Shape,
-    wd02Attachment,
-    wd02Id,
-    wd03Encoded,
-    wd03Id,
-    wr01ComparisonResult,
-    wr01ExpectedBytes,
-    wr01Id,
-    wr01MalformedBytes,
-    wr01PresentedRefundAddress,
-    wr01RedirectedBytes,
-    wr01Shape,
-    wr01StoredProposal,
-    wr01StoredRefundAddress,
- )
+import Naming.Datum
+    ( DatumAttachment (..)
+    , DatumShape (..)
+    , NamingDatum (..)
+    , PaymentDestination (..)
+    , RetirementQuorum (..)
+    )
+import Naming.Request
+    ( InitialOutput (..)
+    , InsertProposal (..)
+    , InsertRequestShape (..)
+    , RefundComparison (..)
+    , Representative (..)
+    , refundReasonText
+    )
+import Naming.Wire
+    ( Address (..)
+    , AddressForm (..)
+    , PaymentCredential (..)
+    , WireData (..)
+    )
+import Naming.Wire.Vectors
+    ( wd01ExpectedBytes
+    , wd01Fixture
+    , wd01Id
+    , wd01MalformedBytes
+    , wd01Shape
+    , wd02Attachment
+    , wd02Id
+    , wd03Encoded
+    , wd03Id
+    , wr01ComparisonResult
+    , wr01ExpectedBytes
+    , wr01Id
+    , wr01MalformedBytes
+    , wr01PresentedRefundAddress
+    , wr01RedirectedBytes
+    , wr01Shape
+    , wr01StoredProposal
+    , wr01StoredRefundAddress
+    )
 import System.Directory (doesFileExist)
 import System.Environment (getArgs)
 import System.Exit (ExitCode (..), exitFailure, exitSuccess, exitWith)
@@ -133,7 +133,8 @@ pValue input = case input of
     'n' : 'u' : 'l' : 'l' : rest -> pure (JNull, rest)
     _ -> pNumber input
 
-pObject :: String -> [(String, JValue)] -> Either String (JValue, String)
+pObject
+    :: String -> [(String, JValue)] -> Either String (JValue, String)
 pObject input acc = case input of
     '}' : rest -> pure (JObj (reverse acc), rest)
     '"' : rest -> do
@@ -194,8 +195,9 @@ pNumber input =
             '-' : r -> (-1 :: Integer, r)
             _ -> (1, input)
         (digits, rest1) = span isDigit rest0
-     in case digits of
-            [] -> Left ("unexpected character in the corpus: " ++ take 1 (show input))
+    in  case digits of
+            [] ->
+                Left ("unexpected character in the corpus: " ++ take 1 (show input))
             _ -> case rest1 of
                 c : _
                     | c == '.' || c == 'e' || c == 'E' ->
@@ -266,7 +268,10 @@ fixtureJson :: NamingDatum -> JValue
 fixtureJson d =
     JObj
         [ ("controlAddress", addrJson (controlAddress d))
-        , ("nextControlCommitment", JObj [("digest", byteArr (nextControlCommitment d))])
+        ,
+            ( "nextControlCommitment"
+            , JObj [("digest", byteArr (nextControlCommitment d))]
+            )
         , ("paymentDestination", destJson (paymentDestination d))
         ,
             ( "retirementQuorum"
@@ -344,7 +349,8 @@ comparisonJson :: RefundComparison -> JValue
 comparisonJson = \case
     RefundAccepted -> JObj [("accepted", JBool True)]
     RefundRefused r ->
-        JObj [("accepted", JBool False), ("reason", JStr (refundReasonText r))]
+        JObj
+            [("accepted", JBool False), ("reason", JStr (refundReasonText r))]
 
 --------------------------------------------------------------------------------
 -- The comparison: every pinned value against its corresponding row field
@@ -439,10 +445,17 @@ compareJ _path v l
                 [] -> []
 compareJ path (JObj vs) (JObj ls) =
     map
-        (\k -> "  " ++ path ++ ": key " ++ show k ++ " missing from the live row")
+        ( \k -> "  " ++ path ++ ": key " ++ show k ++ " missing from the live row"
+        )
         missingLive
         ++ map
-            (\k -> "  " ++ path ++ ": key " ++ show k ++ " not present in the vendored value")
+            ( \k ->
+                "  "
+                    ++ path
+                    ++ ": key "
+                    ++ show k
+                    ++ " not present in the vendored value"
+            )
             extraLive
         ++ concat
             [compareJ (path ++ "." ++ k) (get k vs) (get k ls) | k <- common]
@@ -462,7 +475,13 @@ compareJ path (JArr vs) (JArr ls)
             | (i, (a, b)) <- zip [0 :: Int ..] (zip vs ls)
             ]
 compareJ path v l =
-    ["  " ++ path ++ ": vendored " ++ renderJson v ++ ", live " ++ renderJson l]
+    [ "  "
+        ++ path
+        ++ ": vendored "
+        ++ renderJson v
+        ++ ", live "
+        ++ renderJson l
+    ]
 
 renderJson :: JValue -> String
 renderJson JNull = "null"
@@ -471,14 +490,18 @@ renderJson (JNum n) = show n
 renderJson (JStr s) = show s
 renderJson (JArr xs) = "[" ++ intercalate "," (map renderJson xs) ++ "]"
 renderJson (JObj kvs) =
-    "{" ++ intercalate "," [show k ++ ":" ++ renderJson v | (k, v) <- kvs] ++ "}"
+    "{"
+        ++ intercalate "," [show k ++ ":" ++ renderJson v | (k, v) <- kvs]
+        ++ "}"
 
 hexDigits :: String
 hexDigits = "0123456789abcdef"
 
 hexByte :: Word8 -> String
 hexByte w =
-    [hexDigits !! fromIntegral (w `div` 16), hexDigits !! fromIntegral (w `mod` 16)]
+    [ hexDigits !! fromIntegral (w `div` 16)
+    , hexDigits !! fromIntegral (w `mod` 16)
+    ]
 
 hexBytes :: [Word8] -> String
 hexBytes = concatMap hexByte
@@ -498,7 +521,8 @@ extractRelease src = case mapMaybe strip (lines src) of
         Left
             "the vendored module does not state its release \
             \(expected a '--   * release: ' line in the provenance header)"
-    rs -> Left ("multiple release lines in the vendored module: " ++ show rs)
+    rs ->
+        Left ("multiple release lines in the vendored module: " ++ show rs)
   where
     strip l = stripPrefix "--   * release: " l
 
@@ -537,7 +561,8 @@ asciiOnly = map (\c -> if c <= '\x7f' then c else '-')
 
 wireRows :: JValue -> Either String [(String, JValue)]
 wireRows corpus = do
-    wire <- note "the live corpus has no .wire array" (jLookup "wire" corpus)
+    wire <-
+        note "the live corpus has no .wire array" (jLookup "wire" corpus)
     case wire of
         JArr rs -> do
             named <- mapM rowId rs
@@ -587,8 +612,14 @@ still fails.
 -}
 retiredVecIds :: [(String, String)]
 retiredVecIds =
-    [ (wd02Id, "attachment rule became the Lean statement inline_datum_only")
-    , (wr01Id, "roundtrip became the Lean statement witness_request_wire_roundtrip")
+    [
+        ( wd02Id
+        , "attachment rule became the Lean statement inline_datum_only"
+        )
+    ,
+        ( wr01Id
+        , "roundtrip became the Lean statement witness_request_wire_roundtrip"
+        )
     ]
 
 readInput :: FilePath -> IO String
@@ -679,7 +710,8 @@ main = do
             , i `notElem` map fst retiredVecIds
             ]
     unless (null retiredVecIds) $ do
-        putStrLn "retired by the 2026-09-17 adoption (bytes kept, byte-exact suite still covers them):"
+        putStrLn
+            "retired by the 2026-09-17 adoption (bytes kept, byte-exact suite still covers them):"
         forM_ retiredVecIds $ \(i, why) -> do
             case lookup i rows of
                 Nothing -> putStrLn ("  " ++ i ++ " - absent as declared: " ++ why)
@@ -690,8 +722,12 @@ main = do
         mapM_ (\i -> putStrLn ("  " ++ i)) extraRows
     let resurrected = [i | (i, _) <- retiredVecIds, i `elem` map fst rows]
     unless (null resurrected) $
-        putStrLn "DIVERGENT: a vector declared retired is back in the live corpus"
-    if null missingRows && okFields == totalFields && null extraRows && null resurrected
+        putStrLn
+            "DIVERGENT: a vector declared retired is back in the live corpus"
+    if null missingRows
+        && okFields == totalFields
+        && null extraRows
+        && null resurrected
         then do
             putStrLn
                 ( "no drift: "

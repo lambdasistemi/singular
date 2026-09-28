@@ -8,12 +8,12 @@ must hold before the first transaction is built, the diagnostic that
 names the address, what is required, what is there, and the faucet
 step, and the rendering of lovelace amounts that diagnostic reads.
 -}
-module Singular.Registry.Node.Funding (
-    -- * Funding
-    FundingFloor (..),
-    defaultFundingFloor,
-    checkFunding,
-) where
+module Singular.Registry.Node.Funding
+    ( -- * Funding
+      FundingFloor (..)
+    , defaultFundingFloor
+    , checkFunding
+    ) where
 
 import Data.Map.Strict qualified as Map
 import Lens.Micro ((^.))

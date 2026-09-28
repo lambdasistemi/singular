@@ -1,10 +1,16 @@
--- | An edge sequence that belongs to no named requirement chapter.
--- It exercises the same interpreter used by registration and retirement.
+{- | An edge sequence that belongs to no named requirement chapter.
+It exercises the same interpreter used by registration and retirement.
+-}
 module Conformance.Edge.Sequence (story) where
 
 import Conformance.Story.Live
-    ( Context (Context), Edge (..), EdgeRequest (..), Story
-    , compareWithModel, observe, submit
+    ( Context (Context)
+    , Edge (..)
+    , EdgeRequest (..)
+    , Story
+    , compareWithModel
+    , observe
+    , submit
     )
 
 story :: Context reg wal -> Story reg wal step obs cmp ()

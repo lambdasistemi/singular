@@ -21,16 +21,16 @@ Nothing here decides whether a run passed. The accepting and refusing
 controls are in "InsertActive.Controls"; the observation is assembled in
 "InsertActive.Observation".
 -}
-module InsertActive.Steps (
-    Story (..),
-    storyKey,
-    walletDestination,
-    bootStory,
-    book,
-    foldOnce,
-    activeHeldAt,
-    txIdOf,
-) where
+module InsertActive.Steps
+    ( Story (..)
+    , storyKey
+    , walletDestination
+    , bootStory
+    , book
+    , foldOnce
+    , activeHeldAt
+    , txIdOf
+    ) where
 
 import Control.Monad (void)
 import Data.ByteString (ByteString)
@@ -45,46 +45,64 @@ import Cardano.Ledger.Address (serialiseAddr)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
 import Cardano.Ledger.Api.Tx.Out (TxOut, referenceScriptTxOutL)
-import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (SNothing))
+import Cardano.Ledger.BaseTypes
+    ( Network (Testnet)
+    , StrictMaybe (SNothing)
+    )
 import Cardano.Ledger.Core (valueTxOutL)
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId (..), TxIn)
 import Cardano.Node.Client.E2E.Setup (addKeyWitness, genesisAddr)
-import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Cardano.Node.Client.Submitter
+    ( SubmitResult (..)
+    , Submitter (..)
+    )
 import Cardano.Tx.Ledger (ConwayTx)
 
 import InsertActive.Narration (die, hex, say)
 import InsertActive.Options (StoryInputs (..))
 import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Blueprint (NamingCodes, loadRegistryCodesFromEnv)
+import Singular.Registry.Blueprint
+    ( NamingCodes
+    , loadRegistryCodesFromEnv
+    )
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (AssetName (..), Coin (..), ConwayEra, TokenId (..))
-import Singular.Registry.Node (NodeSession (..), awaitTx, funderSignKey)
+import Singular.Registry.Ledger
+    ( AssetName (..)
+    , Coin (..)
+    , ConwayEra
+    , TokenId (..)
+    )
+import Singular.Registry.Node
+    ( NodeSession (..)
+    , awaitTx
+    , funderSignKey
+    )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Edges qualified as Edges
-import Singular.Registry.TxBuilder.Internal (
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    computeScriptHash,
-    extractCageDatum,
-    findStateUtxo,
-    leafActive,
-    policyIdFromPin,
-    scriptFromBytes,
-    scriptHashBytes,
-    txInToRef,
- )
+import Singular.Registry.TxBuilder.Internal
+    ( cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , computeScriptHash
+    , extractCageDatum
+    , findStateUtxo
+    , leafActive
+    , policyIdFromPin
+    , scriptFromBytes
+    , scriptHashBytes
+    , txInToRef
+    )
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainTokenState (..),
-    OnChainTxOutRef,
-    edgeInsertActive,
- )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainTokenState (..)
+    , OnChainTxOutRef
+    , edgeInsertActive
+    )
 
 -- | One booted registry and everything a fold in it needs.
 data Story = Story
@@ -139,7 +157,9 @@ bootStory sess inputs = do
     -- REFERENCES that output, and a transaction may not both spend and
     -- reference the same one.
     seedRef <- case filter (\(_, o) -> o ^. referenceScriptTxOutL == SNothing) utxos of
-        [] -> die "the genesis wallet has no spendable UTxO to seed the registry with"
+        [] ->
+            die
+                "the genesis wallet has no spendable UTxO to seed the registry with"
         ((txIn, _) : _) -> pure (txInToRef txIn)
 
     codes <- loadRegistryCodesFromEnv
@@ -151,7 +171,10 @@ bootStory sess inputs = do
             <> show (inputOpenParams inputs)
             <> ")"
         )
-    say ("active witness policy   " <> T.unpack (hex (SBS.fromShort (cfgActivePolicy cfg))))
+    say
+        ( "active witness policy   "
+            <> T.unpack (hex (SBS.fromShort (cfgActivePolicy cfg)))
+        )
 
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr
     signedBoot <- submitWithGenesis submit unsignedBoot
@@ -219,7 +242,14 @@ foldOnce story key = do
             (storyCodes story)
             (storyProvider story)
             (storyRefs story)
-    tx <- updateTokenWithDuties (storyConfig story) (storyProvider story) tm tid genesisAddr ctx
+    tx <-
+        updateTokenWithDuties
+            (storyConfig story)
+            (storyProvider story)
+            tm
+            tid
+            genesisAddr
+            ctx
     signed <- submitWithGenesis (storySubmitter story) tx
     withTrie tm tid $ \t -> do
         _ <- insert t key leafActive
@@ -260,7 +290,7 @@ extractTokenId :: CageConfig -> ConwayTx -> IO (TokenId, ByteString)
 extractTokenId cfg tx =
     let MultiAsset ma = tx ^. bodyTxL . mintTxBodyL
         assets = Map.toList (ma Map.! cagePolicyIdFromCfg cfg)
-     in case assets of
+    in  case assets of
             [(AssetName an, _)] -> pure (TokenId (AssetName an), fromShort an)
             _ -> die ("boot: unexpected mint assets: " <> show (length assets))
 
@@ -268,20 +298,20 @@ extractTokenId cfg tx =
 txIdOf :: ConwayTx -> ByteString
 txIdOf tx =
     let TxId h = txIdTx tx
-     in hashToBytes (extractHash h)
+    in  hashToBytes (extractHash h)
 
-cageCfg ::
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    NamingCodes ->
-    OnChainTxOutRef ->
-    CageConfig
+cageCfg
+    :: SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> NamingCodes
+    -> OnChainTxOutRef
+    -> CageConfig
 cageCfg stateBytes requestBytes codes seed =
     let stateHash = computeScriptHash stateBytes
         registryId = scriptHashBytes stateHash <> deriveAssetName seed
         (appPin, absentPin, activePin, terminalPin) =
             Edges.namingPins codes registryId
-     in CageConfig
+    in  CageConfig
             { cageScriptBytes = stateBytes
             , requestScriptBytes = requestBytes
             , cfgScriptHash = stateHash

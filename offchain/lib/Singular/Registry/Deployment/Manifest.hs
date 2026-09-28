@@ -16,36 +16,36 @@ facade: callers import the facade, which re-exports the unchanged public
 surface. See the deployment ownership guide for the dependency direction
 between the owners.
 -}
-module Singular.Registry.Deployment.Manifest (
-    -- * The manifest
-    Deployment (..),
-    ReferenceScript (..),
-    readDeployment,
-    writeDeployment,
+module Singular.Registry.Deployment.Manifest
+    ( -- * The manifest
+      Deployment (..)
+    , ReferenceScript (..)
+    , readDeployment
+    , writeDeployment
 
-    -- * Choosing one
-    deploymentPathFromArgs,
-    deploymentPathFromEnvironment,
+      -- * Choosing one
+    , deploymentPathFromArgs
+    , deploymentPathFromEnvironment
 
-    -- * Output references
-    renderOutRef,
-    parseOutRef,
-    renderAddrBytes,
+      -- * Output references
+    , renderOutRef
+    , parseOutRef
+    , renderAddrBytes
 
-    -- * The mirror's path
-    mirrorPathFor,
+      -- * The mirror's path
+    , mirrorPathFor
 
-    -- * Shared rendering, for the deployment family only
-    die,
-    hex,
-) where
+      -- * Shared rendering, for the deployment family only
+    , die
+    , hex
+    ) where
 
 import Control.Exception (ErrorCall (..), throwIO)
-import Data.Aeson (
-    FromJSON (..),
-    ToJSON (..),
-    eitherDecodeFileStrict',
- )
+import Data.Aeson
+    ( FromJSON (..)
+    , ToJSON (..)
+    , eitherDecodeFileStrict'
+    )
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.ByteString (ByteString)

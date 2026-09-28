@@ -26,53 +26,53 @@ accepted contract so the suite needs no network. These are the
 contract's bytes. If the codec disagrees with them, the vectors are
 right and the codec is wrong.
 -}
-module Naming.Wire.Vectors (
-    wd01Id,
-    wd02Id,
-    wd03Id,
-    wr01Id,
-    wd01Fixture,
-    wd01ExpectedBytes,
-    wd01MalformedBytes,
-    wd01Shape,
-    wd02Attachment,
-    wd03Encoded,
-    wr01StoredProposal,
-    wr01RedirectedProposal,
-    wr01ExpectedBytes,
-    wr01MalformedBytes,
-    wr01RedirectedBytes,
-    wr01StoredRefundAddress,
-    wr01PresentedRefundAddress,
-    wr01Shape,
-    wr01ComparisonResult,
-) where
+module Naming.Wire.Vectors
+    ( wd01Id
+    , wd02Id
+    , wd03Id
+    , wr01Id
+    , wd01Fixture
+    , wd01ExpectedBytes
+    , wd01MalformedBytes
+    , wd01Shape
+    , wd02Attachment
+    , wd03Encoded
+    , wr01StoredProposal
+    , wr01RedirectedProposal
+    , wr01ExpectedBytes
+    , wr01MalformedBytes
+    , wr01RedirectedBytes
+    , wr01StoredRefundAddress
+    , wr01PresentedRefundAddress
+    , wr01Shape
+    , wr01ComparisonResult
+    ) where
 
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.Word (Word8)
 
-import Naming.Datum (
-    DatumAttachment (..),
-    DatumShape (..),
-    NamingDatum (..),
-    PaymentDestination (..),
-    RetirementQuorum (..),
-    encodeNamingDatum,
- )
-import Naming.Request (
-    InitialOutput (..),
-    InsertProposal (..),
-    InsertRequestShape (..),
-    RefundComparison (..),
-    Representative (..),
-    withdrawRefundAddress,
- )
-import Naming.Wire (
-    Address,
-    WireData (..),
-    decodeAddress,
- )
+import Naming.Datum
+    ( DatumAttachment (..)
+    , DatumShape (..)
+    , NamingDatum (..)
+    , PaymentDestination (..)
+    , RetirementQuorum (..)
+    , encodeNamingDatum
+    )
+import Naming.Request
+    ( InitialOutput (..)
+    , InsertProposal (..)
+    , InsertRequestShape (..)
+    , RefundComparison (..)
+    , Representative (..)
+    , withdrawRefundAddress
+    )
+import Naming.Wire
+    ( Address
+    , WireData (..)
+    , decodeAddress
+    )
 
 {- | The corpus row ids these bytes correspond to.
 
@@ -600,7 +600,8 @@ wd01MalformedBytes =
 
 -- | @WD01@ @shape@: @{arity: 4, innerIndex: 0, outerIndex: 0}@.
 wd01Shape :: DatumShape
-wd01Shape = DatumShape{shapeArity = 4, shapeInnerIndex = 0, shapeOuterIndex = 0}
+wd01Shape =
+    DatumShape{shapeArity = 4, shapeInnerIndex = 0, shapeOuterIndex = 0}
 
 {- | @WD02@'s attachment: a datum hash instead of an inline datum —
 refused (@result: null@).

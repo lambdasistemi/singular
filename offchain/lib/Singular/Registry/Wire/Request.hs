@@ -9,44 +9,44 @@ accept\/retract\/reject phase classification. Reads only
 "Singular.Registry.Wire.Primitive"; nothing here is importable by a
 caller — the public surface is the "Singular.Registry.Types" facade.
 -}
-module Singular.Registry.Wire.Request (
-    -- * On-chain domain types
-    Edge,
-    edgeInsertAbsent,
-    edgeInsertActive,
-    edgeUpdateActive,
-    edgeUpdateTerminal,
-    edgeDeleteAbsent,
-    edgeDeleteActive,
-    edgeWitnessTerminal,
-    edgeName,
-    OnChainRequest (..),
+module Singular.Registry.Wire.Request
+    ( -- * On-chain domain types
+      Edge
+    , edgeInsertAbsent
+    , edgeInsertActive
+    , edgeUpdateActive
+    , edgeUpdateTerminal
+    , edgeDeleteAbsent
+    , edgeDeleteActive
+    , edgeWitnessTerminal
+    , edgeName
+    , OnChainRequest (..)
 
-    -- * Request phase
-    RequestPhase (..),
-    requestPhase,
-) where
+      -- * Request phase
+    , RequestPhase (..)
+    , requestPhase
+    ) where
 
 import Cardano.Ledger.BaseTypes (SlotNo (..))
 import Data.ByteString (ByteString)
 import PlutusCore.Data (Data (..))
-import PlutusTx.Builtins.Internal (
-    BuiltinByteString (..),
- )
-import PlutusTx.IsData.Class (
-    FromData (..),
-    ToData (..),
-    UnsafeFromData (..),
- )
-import Singular.Registry.Wire.Primitive (
-    OnChainTokenId (..),
-    bbsFromD,
-    bbsToD,
-    bsFromD,
-    bsToD,
-    mkD,
-    unD,
- )
+import PlutusTx.Builtins.Internal
+    ( BuiltinByteString (..)
+    )
+import PlutusTx.IsData.Class
+    ( FromData (..)
+    , ToData (..)
+    , UnsafeFromData (..)
+    )
+import Singular.Registry.Wire.Primitive
+    ( OnChainTokenId (..)
+    , bbsFromD
+    , bbsToD
+    , bsFromD
+    , bsToD
+    , mkD
+    , unD
+    )
 
 {- | The C2 row index a request names (#183, Lean @Request.edge@,
 Aiken @lib\/edgeInsertAbsent@ … @edgeWitnessTerminal@).
@@ -159,14 +159,14 @@ chosen only while the tip is inside what that phase's builder can
 still build — a window already behind the tip never classifies into
 the phase that would build it.
 -}
-requestPhase ::
-    -- | Last slot an accept fold can carry (process deadline).
-    SlotNo ->
-    -- | Last slot a retract can carry (retract deadline).
-    SlotNo ->
-    -- | The live tip.
-    SlotNo ->
-    RequestPhase
+requestPhase
+    :: SlotNo
+    -- ^ Last slot an accept fold can carry (process deadline).
+    -> SlotNo
+    -- ^ Last slot a retract can carry (retract deadline).
+    -> SlotNo
+    -- ^ The live tip.
+    -> RequestPhase
 requestPhase acceptDeadline retractDeadline tip
     | tip < acceptDeadline = PhaseAccept
     | tip < retractDeadline = PhaseRetract

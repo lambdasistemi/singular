@@ -1,9 +1,9 @@
 -- | A committed live receipt in an independently owned temporary directory.
-module Conformance.Fixture.Receipt (
-    fixtureReceipt,
-    loadOne,
-    withScopedReceiptDir,
-) where
+module Conformance.Fixture.Receipt
+    ( fixtureReceipt
+    , loadOne
+    , withScopedReceiptDir
+    ) where
 
 import Conformance.Receipt (loadReceipts)
 import Data.ByteString.Lazy qualified as BSL

@@ -18,45 +18,45 @@ This is the edges-and-binding owner extracted from
 @Singular.Registry.TxBuilder.Internal@; the public module re-exports
 it and is its only intended consumer surface.
 -}
-module Singular.Registry.TxBuilder.Internal.Edges (
-    -- * Registry-mode edges (#157 C2)
-    leafAbsent,
-    leafActive,
-    leafTerminal,
-    walkEdge,
-    deltaOf,
-    policyOfKind,
-    approvalName,
+module Singular.Registry.TxBuilder.Internal.Edges
+    ( -- * Registry-mode edges (#157 C2)
+      leafAbsent
+    , leafActive
+    , leafTerminal
+    , walkEdge
+    , deltaOf
+    , policyOfKind
+    , approvalName
 
-    -- * Pinned-hook invocation (NOTE-021)
-    pinScriptHash,
-    hookAccountAddress,
-    keyAccountAddress,
-    ConsumerBinding (..),
-    deriveConsumerBinding,
-    mkConsumerScript,
+      -- * Pinned-hook invocation (NOTE-021)
+    , pinScriptHash
+    , hookAccountAddress
+    , keyAccountAddress
+    , ConsumerBinding (..)
+    , deriveConsumerBinding
+    , mkConsumerScript
 
-    -- * Failure attribution (NOTE-023)
-    failedWitnessHash,
-    evalScriptHash,
-    isBudgetFailure,
-) where
+      -- * Failure attribution (NOTE-023)
+    , failedWitnessHash
+    , evalScriptHash
+    , isBudgetFailure
+    ) where
 
-import Cardano.Crypto.Hash (
-    Blake2b_256,
-    hashFromBytes,
-    hashToBytes,
-    hashWith,
- )
+import Cardano.Crypto.Hash
+    ( Blake2b_256
+    , hashFromBytes
+    , hashToBytes
+    , hashWith
+    )
 import Cardano.Ledger.Address (AccountAddress (..), AccountId (..))
 import Cardano.Ledger.BaseTypes (Network)
 import Cardano.Ledger.Core (Script)
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Hashes (ScriptHash (..))
-import Cardano.Ledger.Keys (
-    KeyHash (..),
-    KeyRole (..),
- )
+import Cardano.Ledger.Keys
+    ( KeyHash (..)
+    , KeyRole (..)
+    )
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
@@ -67,21 +67,21 @@ import Data.Maybe (fromMaybe)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.Trie (Trie (..))
-import Singular.Registry.TxBuilder.Internal.Identity (
-    computeScriptHash,
-    scriptFromBytes,
-    scriptHashBytes,
- )
-import Singular.Registry.Types (
-    Edge,
-    ProofStep,
-    edgeDeleteAbsent,
-    edgeDeleteActive,
-    edgeInsertAbsent,
-    edgeInsertActive,
-    edgeUpdateActive,
-    edgeUpdateTerminal,
- )
+import Singular.Registry.TxBuilder.Internal.Identity
+    ( computeScriptHash
+    , scriptFromBytes
+    , scriptHashBytes
+    )
+import Singular.Registry.Types
+    ( Edge
+    , ProofStep
+    , edgeDeleteAbsent
+    , edgeDeleteActive
+    , edgeInsertAbsent
+    , edgeInsertActive
+    , edgeUpdateActive
+    , edgeUpdateTerminal
+    )
 
 -- ---------------------------------------------------------
 -- Registry-mode edges (#157 C2)
@@ -165,15 +165,15 @@ destination address ‖ destination datum hash)@. One formula, recomputed by
 the cage from the request it rides; a builder that computes it differently
 makes an honest booking refuse loudly at the fold.
 -}
-approvalName ::
-    Integer ->
-    -- | Registry key
-    ByteString ->
-    -- | Owner (the payment key hash the approval binds)
-    ByteString ->
-    -- | Destination: address bytes and datum hash
-    (ByteString, ByteString) ->
-    ByteString
+approvalName
+    :: Integer
+    -> ByteString
+    -- ^ Registry key
+    -> ByteString
+    -- ^ Owner (the payment key hash the approval binds)
+    -> (ByteString, ByteString)
+    -- ^ Destination: address bytes and datum hash
+    -> ByteString
 approvalName edge key owner (destAddr, datumHash) =
     blake2b256
         ( BS.singleton (fromInteger edge)
@@ -241,11 +241,11 @@ data ConsumerBinding = ConsumerBinding
     , cbHash :: ScriptHash
     }
 
-deriveConsumerBinding ::
-    SBS.ShortByteString -> ConsumerBinding
+deriveConsumerBinding
+    :: SBS.ShortByteString -> ConsumerBinding
 deriveConsumerBinding unapplied =
     let h = computeScriptHash unapplied
-     in ConsumerBinding
+    in  ConsumerBinding
             (SBS.toShort (scriptHashBytes h))
             unapplied
             (scriptFromBytes "consumer" unapplied)
@@ -281,7 +281,7 @@ failedWitnessHash s =
         Just rest -> case dropWhile (/= '"') rest of
             ('"' : after) ->
                 let hex = takeWhile isHexDigit after
-                 in if length hex == 56 then Just hex else Nothing
+                in  if length hex == 56 then Just hex else Nothing
             _ -> Nothing
 
 {- | Parse a builder-EVALUATION failure's named script field
@@ -298,7 +298,7 @@ evalScriptHash s =
         Just rest -> case dropWhile (/= '"') rest of
             ('"' : after) ->
                 let hex = takeWhile isHexDigit after
-                 in if length hex == 56 then Just hex else Nothing
+                in  if length hex == 56 then Just hex else Nothing
             _ -> Nothing
 
 findAfter :: String -> String -> Maybe String

@@ -21,14 +21,14 @@ and fails the run if the observable did not hold:
 Booking and folding are separate steps with separate narration lines;
 between them the scenario proves the key absent.
 -}
-module Journey.Steps (
-    journeyKey,
-    journeyValue,
-    stepBoot,
-    stepRequest,
-    stepApply,
-    stepReadBack,
-) where
+module Journey.Steps
+    ( journeyKey
+    , journeyValue
+    , stepBoot
+    , stepRequest
+    , stepApply
+    , stepReadBack
+    ) where
 
 import Data.ByteString (ByteString)
 
@@ -47,21 +47,21 @@ import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Edges qualified as Edges
-import Singular.Registry.TxBuilder.Internal (
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    extractCageDatum,
-    findStateUtxo,
-    leafAbsent,
-    requestAddrFromCfg,
- )
+import Singular.Registry.TxBuilder.Internal
+    ( cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , extractCageDatum
+    , findStateUtxo
+    , leafAbsent
+    , requestAddrFromCfg
+    )
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainRoot (..),
-    OnChainTokenState (..),
-    edgeInsertAbsent,
- )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
+    , edgeInsertAbsent
+    )
 
 {- | The bounded operation the journey applies: an insert of
 'journeyKey' with 'journeyValue'.
@@ -75,12 +75,12 @@ journeyValue = leafAbsent
 {- | Boot a cage: mint the state token, register its trie,
 observe the state UTxO and read the boot state datum.
 -}
-stepBoot ::
-    CageConfig ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    TrieManager IO ->
-    IO (TokenId, OnChainRoot, ConwayTx)
+stepBoot
+    :: CageConfig
+    -> Cage.Provider IO
+    -> Submitter IO
+    -> TrieManager IO
+    -> IO (TokenId, OnChainRoot, ConwayTx)
 stepBoot cfg prov submit tm = do
     unsigned <- bootTokenImpl cfg prov genesisAddr
     signed <- submitWithGenesis submit unsigned
@@ -112,13 +112,13 @@ stepBoot cfg prov submit tm = do
 {- | Submit an insert request into the cage's request address
 and observe it land.
 -}
-stepRequest ::
-    CageConfig ->
-    NamingCodes ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    TokenId ->
-    IO Int
+stepRequest
+    :: CageConfig
+    -> NamingCodes
+    -> Cage.Provider IO
+    -> Submitter IO
+    -> TokenId
+    -> IO Int
 stepRequest cfg codes prov submit tid = do
     let reqAddr = requestAddrFromCfg cfg tid Testnet
     before <- Cage.queryUTxOs prov reqAddr
@@ -158,16 +158,16 @@ stepRequest cfg codes prov submit tid = do
 {- | Apply the request as the oracle: the update consumes the
 request UTxO and moves the trie root on chain.
 -}
-stepApply ::
-    CageConfig ->
-    NamingCodes ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    TrieManager IO ->
-    TokenId ->
-    [(TxIn, TxOut ConwayEra)] ->
-    Int ->
-    IO ConwayTx
+stepApply
+    :: CageConfig
+    -> NamingCodes
+    -> Cage.Provider IO
+    -> Submitter IO
+    -> TrieManager IO
+    -> TokenId
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Int
+    -> IO ConwayTx
 stepApply cfg codes prov submit tm tid refs reqCount = do
     ctx <- Edges.registryContextFor cfg codes prov refs
     unsigned <- updateTokenWithDuties cfg prov tm tid genesisAddr ctx
@@ -191,12 +191,12 @@ state UTxO's inline datum and observe that the trie root
 moved from the boot root. Returns the authenticated state
 as read, for the negative section's unchanged control.
 -}
-stepReadBack ::
-    CageConfig ->
-    Cage.Provider IO ->
-    TokenId ->
-    OnChainRoot ->
-    IO OnChainTokenState
+stepReadBack
+    :: CageConfig
+    -> Cage.Provider IO
+    -> TokenId
+    -> OnChainRoot
+    -> IO OnChainTokenState
 stepReadBack cfg prov tid bootRoot = do
     stateUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
     st <- case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of

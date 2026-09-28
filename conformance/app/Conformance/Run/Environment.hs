@@ -3,16 +3,39 @@ Module      : Conformance.Run.Environment
 Description : Split out of Conformance.Run (#263); see that module's header
 License     : Apache-2.0
 -}
-module Conformance.Run.Environment (Env (..), RowCage (..), StakeKit (..), CaWorld (..), CaSnap (..), requireEnv, loadCodes, loadNamingCodes, checkNamingPins, genesisAddr, genesisSignKey, checkGenesis, readNodeVersion, requireBase, requireTreeClean, bracketTmpDir, blueprintId, cageCfg, cageCfgWith, shortMarker, extractTokenId, txInHex) where
+module Conformance.Run.Environment
+    ( Env (..)
+    , RowCage (..)
+    , StakeKit (..)
+    , CaWorld (..)
+    , CaSnap (..)
+    , requireEnv
+    , loadCodes
+    , loadNamingCodes
+    , checkNamingPins
+    , genesisAddr
+    , genesisSignKey
+    , checkGenesis
+    , readNodeVersion
+    , requireBase
+    , requireTreeClean
+    , bracketTmpDir
+    , blueprintId
+    , cageCfg
+    , cageCfgWith
+    , shortMarker
+    , extractTokenId
+    , txInHex
+    ) where
 
-import Conformance.Run.Control
 import Conformance.FoldFixture qualified as FoldFixture
+import Conformance.Run.Control
 
-import Control.Exception (
-    SomeException,
-    throwIO,
-    try,
- )
+import Control.Exception
+    ( SomeException
+    , throwIO
+    , try
+    )
 import Data.Aeson (Value (..))
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
@@ -21,12 +44,12 @@ import Data.Map.Strict qualified as Map
 import Data.Time (getCurrentTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Lens.Micro ((^.))
-import System.Directory (
-    createDirectoryIfMissing,
-    doesFileExist,
-    getTemporaryDirectory,
-    removePathForcibly,
- )
+import System.Directory
+    ( createDirectoryIfMissing
+    , doesFileExist
+    , getTemporaryDirectory
+    , removePathForcibly
+    )
 import System.Environment (lookupEnv)
 import System.Exit (ExitCode (..))
 import System.FilePath ((</>))
@@ -37,11 +60,11 @@ import System.Process (readProcess, readProcessWithExitCode)
 import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Address (Addr (..))
 
+import Cardano.Ledger.Api.Scripts.Data
+    ( Datum (..)
+    )
 import Cardano.Ledger.Api.Tx (bodyTxL)
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
-import Cardano.Ledger.Api.Scripts.Data (
-    Datum (..),
- )
 import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Ledger.Core (extractHash)
 import Cardano.Ledger.Hashes (ScriptHash)
@@ -49,48 +72,48 @@ import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
-import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Blueprint (
-    NamingCodes (..),
-    applyBytesParam,
-    applyDataParam,
-    extractCompiledCode,
-    loadBlueprint,
-    loadRegistryCodesFromEnv,
- )
-import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (
-    Coin (..),
-    ConwayEra,
-    TokenId (..),
-    TxOut,
- )
-import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Trie (TrieManager (..))
-import Singular.Registry.TxBuilder.Internal (
-    cagePolicyIdFromCfg,
-    computeScriptHash,
-    scriptHashBytes,
- )
-import Singular.Registry.Types (OnChainTxOutRef (..))
-import Singular.Registry.Node (
-    funderAddr,
-    funderSignKey,
- )
-import Cardano.Node.Client.E2E.Setup (
-    Ed25519DSIGN,
-    SignKeyDSIGN,
- )
+import Cardano.Node.Client.E2E.Setup
+    ( Ed25519DSIGN
+    , SignKeyDSIGN
+    )
 import Cardano.Node.Client.Submitter (Submitter (..))
 import PlutusCore.Data qualified as PLC
+import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Registry.Blueprint
+    ( NamingCodes (..)
+    , applyBytesParam
+    , applyDataParam
+    , extractCompiledCode
+    , loadBlueprint
+    , loadRegistryCodesFromEnv
+    )
+import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Ledger
+    ( Coin (..)
+    , ConwayEra
+    , TokenId (..)
+    , TxOut
+    )
+import Singular.Registry.Node
+    ( funderAddr
+    , funderSignKey
+    )
+import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Trie (TrieManager (..))
+import Singular.Registry.TxBuilder.Internal
+    ( cagePolicyIdFromCfg
+    , computeScriptHash
+    , scriptHashBytes
+    )
+import Singular.Registry.Types (OnChainTxOutRef (..))
 
-import Conformance.Mirror (
-    Mirror,
-    emit,
-    failWith,
-    hex,
-    require,
- )
+import Conformance.Mirror
+    ( Mirror
+    , emit
+    , failWith
+    , hex
+    , require
+    )
 
 -- ---------------------------------------------------------
 -- Session environment
@@ -112,16 +135,18 @@ data Env = Env
     , envBlueprintPath :: FilePath
     , envReceiptsDir :: FilePath
     , envCodes :: (SBS.ShortByteString, SBS.ShortByteString, NamingCodes)
-    -- ^ (unapplied state bytes, unapplied request bytes, unapplied
-    -- consumer bytes) from the session's blueprint: the row cages
-    -- boot from these.
+    {- ^ (unapplied state bytes, unapplied request bytes, unapplied
+    consumer bytes) from the session's blueprint: the row cages
+    boot from these.
+    -}
     , envKeys :: IORef (Bool, ByteString)
     , envDeleteKey :: IORef (Bool, ByteString)
     , envRefs :: IORef (Maybe [(TxIn, TxOut ConwayEra)])
-    -- ^ CG03/CG04 own their own key (D-001): the delete row acts on a
-    -- witnessed absence, which the shared key is not once CG02 has
-    -- activated it.
-    -- ^ (present, current value) for cgKey
+    {- ^ CG03/CG04 own their own key (D-001): the delete row acts on a
+    witnessed absence, which the shared key is not once CG02 has
+    activated it.
+    ^ (present, current value) for cgKey
+    -}
     , envValidUnits :: IORef (Integer, Integer)
     {- ^ last valid fold's measured units: the hand-built fold
     declares twice these, so the budget covers the error path
@@ -159,7 +184,6 @@ data Env = Env
     , envLiveMeasurements :: IORef [(Integer, Integer, Integer)]
     }
 
-
 {- | One row group's cage: the config it was booted from, its token,
 and the last valid fold's measured units (hand-built refusals
 declare twice those).
@@ -169,12 +193,12 @@ data RowCage = RowCage
     , rcTid :: IORef (Maybe TokenId)
     , rcUnits :: IORef (Integer, Integer)
     , rcRefs :: [(TxIn, TxOut ConwayEra)]
-    -- ^ This cage's reference outputs, published once at boot. Folds
-    -- resolve every purpose through them, and publishing is five awaited
-    -- submissions — far too many to spend inside a request's phase-1
-    -- window, so it happens before any request of this cage exists.
+    {- ^ This cage's reference outputs, published once at boot. Folds
+    resolve every purpose through them, and publishing is five awaited
+    submissions — far too many to spend inside a request's phase-1
+    window, so it happens before any request of this cage exists.
+    -}
     }
-
 
 {- | The staking validator's kit (CG14/CG15): the blueprint's
 staking validator bytes and hash (cross-checked against the pinned
@@ -191,7 +215,6 @@ data StakeKit = StakeKit
     , skCage :: RowCage
     }
 
-
 {- | The CA session's world (issue #69). The canonical seed's outRef
 is the publication a consumer derives the canonical name from; the
 IORefs carry what the rows produce in order (CA01's token id and
@@ -203,33 +226,35 @@ data CaWorld = CaWorld
     -- ^ the canonical cage config (seed = the published canonical seed)
     , caSeedRef :: OnChainTxOutRef
     , caRawState :: SBS.ShortByteString
-    -- ^ this run's unapplied state code; CA04 hashes it against the
-    -- pinned manifest entry before applying the declared parameters
+    {- ^ this run's unapplied state code; CA04 hashes it against the
+    pinned manifest entry before applying the declared parameters
+    -}
     , caTidRef :: IORef (Maybe TokenId)
     , caSnapRef :: IORef (Maybe CaSnap)
     , caBootTxRef :: IORef (Maybe ConwayTx)
-    -- ^ CA01's unsigned boot tx: CA05's no-script detector must fire
-    -- on it, proving the detector can detect a script witness
-    , caBootMeasureRef ::
-        IORef (Maybe (String, Integer, Integer, Integer))
+    {- ^ CA01's unsigned boot tx: CA05's no-script detector must fire
+    on it, proving the detector can detect a script witness
+    -}
+    , caBootMeasureRef
+        :: IORef (Maybe (String, Integer, Integer, Integer))
     -- ^ CA01's boot txid and measurements; CA04's receipt evidence
     , caRivalTidRef :: IORef (Maybe TokenId)
-    , caRivalMeasure ::
-        IORef (Maybe (String, Integer, Integer, Integer))
-    -- ^ rival txid, mem, cpu, size — CA02's accepted tx, reused as
-    -- CA03's receipt evidence
+    , caRivalMeasure
+        :: IORef (Maybe (String, Integer, Integer, Integer))
+    {- ^ rival txid, mem, cpu, size — CA02's accepted tx, reused as
+    CA03's receipt evidence
+    -}
     }
 
-
--- | The canonical registry's chain identity at CA01 time: the exact
--- UTxO, its value and its datum. CA02 proves the rival left it
--- untouched by comparing against this snapshot read back later.
+{- | The canonical registry's chain identity at CA01 time: the exact
+UTxO, its value and its datum. CA02 proves the rival left it
+untouched by comparing against this snapshot read back later.
+-}
 data CaSnap = CaSnap
     { csIn :: TxIn
     , csValue :: MaryValue
     , csDatum :: Datum ConwayEra
     }
-
 
 requireEnv :: String -> IO FilePath
 requireEnv name = do
@@ -240,10 +265,9 @@ requireEnv name = do
             failWith
                 ("run needs " <> name <> " pointing at a plutus blueprint")
 
-
-loadCodes ::
-    FilePath ->
-    IO (SBS.ShortByteString, SBS.ShortByteString, NamingCodes)
+loadCodes
+    :: FilePath
+    -> IO (SBS.ShortByteString, SBS.ShortByteString, NamingCodes)
 loadCodes path = do
     ebp <- loadBlueprint path
     bp <- case ebp of
@@ -259,7 +283,6 @@ loadCodes path = do
             failWith
                 "blueprint has no state.state/request.request code"
 
-
 {- | The naming partition's compiled code (#157 D-BOOT). The four pins
 the eight-field boot datum carries are DERIVED from it for the registry
 identity each boot creates — never typed, never a placeholder — so the
@@ -273,7 +296,6 @@ loadNamingCodes = do
     checkNamingPins (ncApplication codes) (ncWitness codes)
     pure codes
 
-
 {- | Cross-check this run's naming code against the naming partition's
 committed manifest, at load rather than at first boot: a derivation from
 the wrong code would produce four plausible-looking ids and fail much
@@ -283,8 +305,9 @@ checkNamingPins :: SBS.ShortByteString -> SBS.ShortByteString -> IO ()
 checkNamingPins appCode witnessCode = do
     let appHex = hex (scriptHashBytes (computeScriptHash appCode))
         witnessHex = hex (scriptHashBytes (computeScriptHash witnessCode))
-    emit "naming" ("application 0x" <> appHex <> " witness 0x" <> witnessHex)
-
+    emit
+        "naming"
+        ("application 0x" <> appHex <> " witness 0x" <> witnessHex)
 
 {- | The wallet every actor of this run is funded from. On the factory
 devnet it is the genesis UTxO key, as it always was; in external-node
@@ -295,11 +318,9 @@ below read unchanged.
 genesisAddr :: Addr
 genesisAddr = funderAddr
 
-
 -- | The signing key matching 'genesisAddr'.
 genesisSignKey :: SignKeyDSIGN Ed25519DSIGN
 genesisSignKey = funderSignKey
-
 
 {- | The genesis dir must carry the devnet files before the node
 spawns; otherwise @prepareTmpDir@ fails mid-copy. Points at
@@ -315,14 +336,12 @@ checkGenesis dir = do
         )
         ok
 
-
 readNodeVersion :: IO String
 readNodeVersion = do
     out <- readProcess "cardano-node" ["--version"] ""
     case lines out of
         [] -> failWith "cardano-node --version printed nothing"
         first : _ -> pure first
-
 
 requireBase :: IO String
 requireBase = do
@@ -331,18 +350,17 @@ requireBase = do
         [] -> failWith "git base unknown; receipts need it"
         first : _ -> pure first
 
-
 {- | Whether the running tree has uncommitted changes. A dirty tree
 still runs — its receipts record @dirty: true@ — but only a clean
 tree names a commit that reproduces them.
 -}
 requireTreeClean :: IO Bool
 requireTreeClean = do
-    (code, out, _) <- readProcessWithExitCode "git" ["status", "--porcelain"] ""
+    (code, out, _) <-
+        readProcessWithExitCode "git" ["status", "--porcelain"] ""
     case code of
         ExitSuccess -> pure (not (null (lines out)))
         _ -> failWith "git status unknown; receipts need tree identity"
-
 
 -- ---------------------------------------------------------
 -- Devnet isolation (not optional)
@@ -360,8 +378,8 @@ bracketTmpDir action = do
     now <- getCurrentTime
     let stamp =
             show
-                ( floor (utcTimeToPOSIXSeconds now * 1000) ::
-                    Integer
+                ( floor (utcTimeToPOSIXSeconds now * 1000)
+                    :: Integer
                 )
         dir =
             sysTmp </> ("conformance-" <> show pid <> "-" <> stamp)
@@ -386,7 +404,6 @@ bracketTmpDir action = do
         Right a -> pure a
         Left (e :: SomeException) -> throwIO e
 
-
 blueprintId :: CageConfig -> SBS.ShortByteString -> String
 blueprintId cfg requestBytes =
     "state:"
@@ -394,32 +411,30 @@ blueprintId cfg requestBytes =
         <> " request:"
         <> hex (scriptHashBytes (computeScriptHash requestBytes))
 
-
 -- ---------------------------------------------------------
 -- Config and identities
 -- ---------------------------------------------------------
 
-cageCfg ::
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    NamingCodes ->
-    OnChainTxOutRef ->
-    CageConfig
+cageCfg
+    :: SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> NamingCodes
+    -> OnChainTxOutRef
+    -> CageConfig
 cageCfg stateBytes requestBytes namingCodes seed =
     cageCfgWith stateBytes requestBytes namingCodes seed 30_000 30_000
 
-
 -- | 'cageCfg' with the row-owned phase windows.
-cageCfgWith ::
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    NamingCodes ->
-    OnChainTxOutRef ->
-    -- | process window (ms)
-    Integer ->
-    -- | retract window (ms)
-    Integer ->
-    CageConfig
+cageCfgWith
+    :: SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> NamingCodes
+    -> OnChainTxOutRef
+    -> Integer
+    -- ^ process window (ms)
+    -> Integer
+    -- ^ retract window (ms)
+    -> CageConfig
 cageCfgWith stateBytes requestBytes namingCodes seed processMs retractMs =
     -- Zero-parameter state (NOTE-060): the current state() validator
     -- takes no parameters — deploy its bytes directly. Applying a
@@ -441,7 +456,7 @@ cageCfgWith stateBytes requestBytes namingCodes seed processMs retractMs =
                         )
                     )
                 )
-     in CageConfig
+    in  CageConfig
             { cageScriptBytes = stateBytes
             , requestScriptBytes = requestBytes
             , cfgScriptHash = cfgScriptHashValue
@@ -449,15 +464,15 @@ cageCfgWith stateBytes requestBytes namingCodes seed processMs retractMs =
             , defaultProcessTime = processMs
             , defaultRetractTime = retractMs
             , defaultTip = Coin 1_000_000
-            -- Ownerless registry (NOTE-028/A-003, NOTE-046): the
-            -- representative policy is 28 zero bytes on registry-only
-            -- cages (no naming validator reads it here; enforced
-            -- at representative mint, not fold). The consumer pin
-            -- and script are the candidate's REAL consumer
-            -- (NOTE-049): state.validModify always requires the
-            -- exact pinned withdrawal, and the builders refuse an
-            -- empty script — zeros would fail closed at first fold.
-            , cfgApplicationPolicy =
+            , -- Ownerless registry (NOTE-028/A-003, NOTE-046): the
+              -- representative policy is 28 zero bytes on registry-only
+              -- cages (no naming validator reads it here; enforced
+              -- at representative mint, not fold). The consumer pin
+              -- and script are the candidate's REAL consumer
+              -- (NOTE-049): state.validModify always requires the
+              -- exact pinned withdrawal, and the builders refuse an
+              -- empty script — zeros would fail closed at first fold.
+              cfgApplicationPolicy =
                 SBS.toShort
                     (scriptHashBytes (computeScriptHash (ncApplication namingCodes)))
             , cfgAbsentPolicy = witnessPolicy 0
@@ -467,22 +482,19 @@ cageCfgWith stateBytes requestBytes namingCodes seed processMs retractMs =
             , network = Testnet
             }
 
-
 shortMarker :: String -> String
 shortMarker marker = take 12 marker
-
 
 extractTokenId :: CageConfig -> ConwayTx -> IO TokenId
 extractTokenId cfg tx =
     let MultiAsset ma = tx ^. bodyTxL . mintTxBodyL
         assets =
             Map.toList (ma Map.! cagePolicyIdFromCfg cfg)
-     in case assets of
+    in  case assets of
             [(an, _)] -> pure (TokenId an)
             _ ->
                 failWith
                     "extractTokenId: unexpected mint assets"
-
 
 txInHex :: TxId -> String
 txInHex (TxId h) =

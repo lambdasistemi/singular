@@ -26,9 +26,9 @@ demands index 99 for 'End': the real 'End' (index 0) must fail its
 schema, and the run must fail naming the mismatch. A checker that
 accepts everything would pass the control and reveal itself.
 -}
-module Conformance.CS01 (
-    runCS01,
-) where
+module Conformance.CS01
+    ( runCS01
+    ) where
 
 import Control.Exception (ErrorCall (..), throwIO)
 import Control.Monad (when)
@@ -46,43 +46,46 @@ import System.IO (BufferMode (..), hSetBuffering, stdout)
 import System.Process (readProcess)
 
 import PlutusCore.Data (Data (..))
-import PlutusTx.Builtins.Internal (BuiltinByteString (..), BuiltinData (..))
+import PlutusTx.Builtins.Internal
+    ( BuiltinByteString (..)
+    , BuiltinData (..)
+    )
 import PlutusTx.IsData.Class (ToData (..))
 
-import Singular.Registry.Blueprint (
-    Blueprint (..),
-    Schema (..),
-    extractCompiledCode,
-    loadBlueprint,
-    validateData,
- )
-import Singular.Registry.TxBuilder.Internal (
-    computeScriptHash,
-    scriptHashBytes,
- )
+import Singular.Registry.Blueprint
+    ( Blueprint (..)
+    , Schema (..)
+    , extractCompiledCode
+    , loadBlueprint
+    , validateData
+    )
+import Singular.Registry.TxBuilder.Internal
+    ( computeScriptHash
+    , scriptHashBytes
+    )
 
-import Singular.Registry.Types (
-    CageDatum (..),
-    edgeInsertActive,
-    Migration (..),
-    MintRedeemer (..),
-    Neighbor (..),
-    OnChainRequest (..),
-    OnChainRoot (..),
-    OnChainTokenId (..),
-    OnChainTokenState (..),
-    OnChainTxOutRef (..),
-    ProofStep (..),
-    RequestAction (..),
-    UpdateRedeemer (..),
- )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , Migration (..)
+    , MintRedeemer (..)
+    , Neighbor (..)
+    , OnChainRequest (..)
+    , OnChainRoot (..)
+    , OnChainTokenId (..)
+    , OnChainTokenState (..)
+    , OnChainTxOutRef (..)
+    , ProofStep (..)
+    , RequestAction (..)
+    , UpdateRedeemer (..)
+    , edgeInsertActive
+    )
 
-import Conformance.Receipt (
-    Outcome (..),
-    Receipt (..),
-    Verdict (..),
-    writeReceiptFile,
- )
+import Conformance.Receipt
+    ( Outcome (..)
+    , Receipt (..)
+    , Verdict (..)
+    , writeReceiptFile
+    )
 
 -- | Run CS01 against the blueprint at the given path.
 runCS01 :: FilePath -> FilePath -> String -> Bool -> IO ()
@@ -116,7 +119,6 @@ runCS01 blueprintPath receiptsDir base dirty = do
                 , receiptBase = T.pack base
                 , receiptDirty = dirty
                 , receiptPartial = Nothing
-
                 , receiptDerivation = Nothing
                 , receiptSteps = Nothing
                 , receiptNode = T.pack nodeVer
@@ -126,7 +128,13 @@ runCS01 blueprintPath receiptsDir base dirty = do
                 , receiptRejected = Nothing
                 }
     writeReceiptFile receiptsDir receipt
-    emit "row" ("CS01: ACCEPTED " <> show nTypes <> " types vs blueprint, size=" <> show fsize)
+    emit
+        "row"
+        ( "CS01: ACCEPTED "
+            <> show nTypes
+            <> " types vs blueprint, size="
+            <> show fsize
+        )
 
 {- | The armed control for the fixed-tuple schema (#157 D-DEST): demand
 that a THREE-element list validate against the two-element destination
@@ -164,9 +172,10 @@ armWrongArity defs = do
 destinationTupleDef :: Text
 destinationTupleDef = "Tuple<<ByteArray,ByteArray>>"
 
--- | Check every type; spoil mode demands a wrong index for End.
--- Returns the checked type count for the terminal (NOTE-063: the
--- list drives execution, so the count cannot drift from it).
+{- | Check every type; spoil mode demands a wrong index for End.
+Returns the checked type count for the terminal (NOTE-063: the
+list drives execution, so the count cannot drift from it).
+-}
 checkAll :: Map.Map Text Schema -> TitleMap -> Bool -> IO Int
 checkAll defs titles spoil = do
     let checks :: [(Text, IO ())]
@@ -235,10 +244,11 @@ sampleState =
         , stateTerminalPolicy = BuiltinByteString (BS.replicate 28 10)
         }
 
--- | Second round-trip sample varying one pin (NOTE-046: the old stake
--- None/Some variation has no subject — the state carries no stake
--- script). A single-variable difference keeps the pair discriminating,
--- and the pin it varies is the one #157 C7 renamed the active policy.
+{- | Second round-trip sample varying one pin (NOTE-046: the old stake
+None/Some variation has no subject — the state carries no stake
+script). A single-variable difference keeps the pair discriminating,
+and the pin it varies is the one #157 C7 renamed the active policy.
+-}
 sampleStateAltPolicy :: OnChainTokenState
 sampleStateAltPolicy =
     sampleState
@@ -272,22 +282,43 @@ sampleLeaf = Leaf 0 "leaf-key" (BS.replicate 32 4)
 toD :: (ToData a) => a -> Data
 toD x = let BuiltinData d = toBuiltinData x in d
 
-requireSchema :: Map.Map Text Schema -> Text -> Data -> String -> IO ()
+requireSchema
+    :: Map.Map Text Schema -> Text -> Data -> String -> IO ()
 requireSchema defs defName d label =
     case Map.lookup defName defs of
         Nothing ->
             failWith
-                ("CS01 gap: blueprint has no definition " <> T.unpack defName <> " for " <> label)
+                ( "CS01 gap: blueprint has no definition "
+                    <> T.unpack defName
+                    <> " for "
+                    <> label
+                )
         Just schema ->
             if validateData defs schema d
                 then emit ("check-" <> label) "schema ok"
-                else failWith ("CS01: " <> label <> " Data does not validate against " <> T.unpack defName <> ": " <> show d)
+                else
+                    failWith
+                        ( "CS01: "
+                            <> label
+                            <> " Data does not validate against "
+                            <> T.unpack defName
+                            <> ": "
+                            <> show d
+                        )
 
 requireIndex :: Data -> Integer -> String -> IO ()
 requireIndex (Constr ix _) want label =
     if ix == want
         then emit ("index-" <> label) ("Constr " <> show ix <> " ok")
-        else failWith ("CS01: " <> label <> " has Constr " <> show ix <> ", want " <> show want)
+        else
+            failWith
+                ( "CS01: "
+                    <> label
+                    <> " has Constr "
+                    <> show ix
+                    <> ", want "
+                    <> show want
+                )
 requireIndex other _ label =
     failWith ("CS01: " <> label <> " is not a Constr: " <> show other)
 
@@ -304,7 +335,11 @@ checkTokenId defs = do
 checkTxOutRef :: Map.Map Text Schema -> IO ()
 checkTxOutRef defs = do
     requireRoundTripReal sampleRef "OnChainTxOutRef"
-    requireSchema defs "cardano/transaction/OutputReference" (toD sampleRef) "OnChainTxOutRef"
+    requireSchema
+        defs
+        "cardano/transaction/OutputReference"
+        (toD sampleRef)
+        "OnChainTxOutRef"
     requireIndex (toD sampleRef) 0 "OnChainTxOutRef"
 
 checkRoot :: Map.Map Text Schema -> IO ()
@@ -334,7 +369,8 @@ checkEdge defs = do
         Just (I d)
             | d == requestDeposit sampleRequest ->
                 emit "deposit-field" "the deposit is the integer at request field 4"
-        other -> failWith ("CS01: request field 4 is not the deposit: " <> show other)
+        other ->
+            failWith ("CS01: request field 4 is not the deposit: " <> show other)
     -- Every admitted row, and one the cage refuses: a consumer that
     -- could not encode an inadmissible tag could not exercise the
     -- refusal that answers it.
@@ -342,22 +378,40 @@ checkEdge defs = do
         ( \e -> do
             let r = sampleRequest{requestEdge = e}
             requireRoundTripReal r ("OnChainRequest-edge-" <> show e)
-            requireSchema defs "types/Request" (toD r) ("OnChainRequest-edge-" <> show e)
+            requireSchema
+                defs
+                "types/Request"
+                (toD r)
+                ("OnChainRequest-edge-" <> show e)
         )
         ([0 .. 6] <> [7])
 
 checkRequest :: Map.Map Text Schema -> IO ()
 checkRequest defs = do
     requireRoundTripReal sampleRequest "OnChainRequest"
-    requireSchema defs "types/Request" (toD sampleRequest) "OnChainRequest"
+    requireSchema
+        defs
+        "types/Request"
+        (toD sampleRequest)
+        "OnChainRequest"
     requireIndex (toD sampleRequest) 0 "OnChainRequest"
 
 checkState :: Map.Map Text Schema -> IO ()
 checkState defs = do
     requireRoundTripReal sampleState "OnChainTokenState-Base"
-    requireRoundTripReal sampleStateAltPolicy "OnChainTokenState-AltRepPolicy"
-    requireSchema defs "types/State" (toD sampleState) "OnChainTokenState-Base"
-    requireSchema defs "types/State" (toD sampleStateAltPolicy) "OnChainTokenState-AltRepPolicy"
+    requireRoundTripReal
+        sampleStateAltPolicy
+        "OnChainTokenState-AltRepPolicy"
+    requireSchema
+        defs
+        "types/State"
+        (toD sampleState)
+        "OnChainTokenState-Base"
+    requireSchema
+        defs
+        "types/State"
+        (toD sampleStateAltPolicy)
+        "OnChainTokenState-AltRepPolicy"
     requireIndex (toD sampleState) 0 "OnChainTokenState"
 
 checkCageDatum :: Map.Map Text Schema -> IO ()
@@ -440,7 +494,9 @@ checkUpdateRedeemer defs spoil = do
         Nothing -> failWith "CS01 gap: no types/UpdateRedeemer definition"
         Just schema ->
             if validateData defs schema bad
-                then failWith "CS01 control failed: Constr 99 validates against UpdateRedeemer"
+                then
+                    failWith
+                        "CS01 control failed: Constr 99 validates against UpdateRedeemer"
                 else emit "control-bad-index" "Constr 99 correctly rejected"
 
 checkProofStep :: Map.Map Text Schema -> IO ()
@@ -448,9 +504,21 @@ checkProofStep defs = do
     requireRoundTripReal sampleBranch "Branch"
     requireRoundTripReal sampleFork "Fork"
     requireRoundTripReal sampleLeaf "Leaf"
-    requireSchema defs "aiken/merkle_patricia_forestry/ProofStep" (toD sampleBranch) "Branch"
-    requireSchema defs "aiken/merkle_patricia_forestry/ProofStep" (toD sampleFork) "Fork"
-    requireSchema defs "aiken/merkle_patricia_forestry/ProofStep" (toD sampleLeaf) "Leaf"
+    requireSchema
+        defs
+        "aiken/merkle_patricia_forestry/ProofStep"
+        (toD sampleBranch)
+        "Branch"
+    requireSchema
+        defs
+        "aiken/merkle_patricia_forestry/ProofStep"
+        (toD sampleFork)
+        "Fork"
+    requireSchema
+        defs
+        "aiken/merkle_patricia_forestry/ProofStep"
+        (toD sampleLeaf)
+        "Leaf"
     requireIndex (toD sampleBranch) 0 "Branch"
     requireIndex (toD sampleFork) 1 "Fork"
     requireIndex (toD sampleLeaf) 2 "Leaf"
@@ -458,19 +526,25 @@ checkProofStep defs = do
 checkNeighbor :: Map.Map Text Schema -> IO ()
 checkNeighbor defs = do
     requireRoundTripReal sampleNeighbor "Neighbor"
-    requireSchema defs "aiken/merkle_patricia_forestry/Neighbor" (toD sampleNeighbor) "Neighbor"
+    requireSchema
+        defs
+        "aiken/merkle_patricia_forestry/Neighbor"
+        (toD sampleNeighbor)
+        "Neighbor"
     requireIndex (toD sampleNeighbor) 0 "Neighbor"
 
 -- ---------------------------------------------------------
 -- Round trips through the real instances (mirrored decoding)
 -- ---------------------------------------------------------
 
--- | Round trip through a mirrored decoder shaped like the real
--- 'FromData' instances. The mirror exists so the row does not test
--- a codec against itself alone: the blueprint schema check above is
--- the binding verdict, and this round trip proves the Haskell side
--- at least decodes what it encodes.
-requireRoundTripReal :: (ToData a, RealFromData a, Eq a) => a -> String -> IO ()
+{- | Round trip through a mirrored decoder shaped like the real
+'FromData' instances. The mirror exists so the row does not test
+a codec against itself alone: the blueprint schema check above is
+the binding verdict, and this round trip proves the Haskell side
+at least decodes what it encodes.
+-}
+requireRoundTripReal
+    :: (ToData a, RealFromData a, Eq a) => a -> String -> IO ()
 requireRoundTripReal x label =
     case realFromData (let BuiltinData d = toBuiltinData x in d) of
         Just y ->
@@ -538,7 +612,11 @@ instance RealFromData CageDatum where
 instance RealFromData Migration where
     realFromData (Constr 0 [B pol, tid]) = do
         t <- realFromData tid :: Maybe OnChainTokenId
-        Just Migration{migrationOldPolicy = BuiltinByteString pol, migrationTokenId = t}
+        Just
+            Migration
+                { migrationOldPolicy = BuiltinByteString pol
+                , migrationTokenId = t
+                }
     realFromData _ = Nothing
 
 instance RealFromData MintRedeemer where
@@ -583,21 +661,25 @@ extractTitles val =
         Nothing -> Map.empty
   where
     parseDefs = AesonTypes.withObject "blueprint" $ \o -> do
-        defs <- o AesonTypes..: "definitions" :: AesonTypes.Parser (Map.Map Text Aeson.Value)
+        defs <-
+            o AesonTypes..: "definitions"
+                :: AesonTypes.Parser (Map.Map Text Aeson.Value)
         Map.fromList <$> mapM parseOne (Map.toList defs)
     parseOne (name, v) =
         case AesonTypes.parseMaybe parseDef v of
             Just cs -> pure (name, cs)
             Nothing -> pure (name, [])
     parseDef = AesonTypes.withObject "def" $ \o -> do
-        mAny <- o AesonTypes..:? "anyOf" :: AesonTypes.Parser (Maybe [Aeson.Value])
+        mAny <-
+            o AesonTypes..:? "anyOf" :: AesonTypes.Parser (Maybe [Aeson.Value])
         case mAny of
             Just cs -> mapM parseConstr cs
             Nothing -> pure []
     parseConstr = AesonTypes.withObject "constr" $ \o -> do
         title <- o AesonTypes..:? "title" AesonTypes..!= ""
         idx <- o AesonTypes..:? "index" AesonTypes..!= (-1)
-        fields <- o AesonTypes..:? "fields" AesonTypes..!= ([] :: [Aeson.Value])
+        fields <-
+            o AesonTypes..:? "fields" AesonTypes..!= ([] :: [Aeson.Value])
         ftitles <- mapM parseFieldTitle fields
         pure (title, idx, ftitles)
     parseFieldTitle = AesonTypes.withObject "field" $ \o ->
@@ -605,15 +687,62 @@ extractTitles val =
 
 checkFieldTitles :: TitleMap -> IO ()
 checkFieldTitles titles = do
-    expectFields titles "types/State" "State" ["root", "tip", "process_time", "retract_time", "application_policy", "active_policy", "absent_policy", "terminal_policy"]
-    expectFields titles "types/Request" "Request" ["requestToken", "requestOwner", "requestKey", "edge", "deposit", "submitted_at", "destination"]
-    expectFields titles "types/Migration" "Migration" ["oldPolicy", "tokenId"]
+    expectFields
+        titles
+        "types/State"
+        "State"
+        [ "root"
+        , "tip"
+        , "process_time"
+        , "retract_time"
+        , "application_policy"
+        , "active_policy"
+        , "absent_policy"
+        , "terminal_policy"
+        ]
+    expectFields
+        titles
+        "types/Request"
+        "Request"
+        [ "requestToken"
+        , "requestOwner"
+        , "requestKey"
+        , "edge"
+        , "deposit"
+        , "submitted_at"
+        , "destination"
+        ]
+    expectFields
+        titles
+        "types/Migration"
+        "Migration"
+        ["oldPolicy", "tokenId"]
     expectFields titles "types/TokenId" "TokenId" ["assetName"]
-    expectFields titles "cardano/transaction/OutputReference" "OutputReference" ["transaction_id", "output_index"]
-    expectFields titles "aiken/merkle_patricia_forestry/Neighbor" "Neighbor" ["nibble", "prefix", "root"]
-    expectFields titles "aiken/merkle_patricia_forestry/ProofStep" "Branch" ["skip", "neighbors"]
-    expectFields titles "aiken/merkle_patricia_forestry/ProofStep" "Fork" ["skip", "neighbor"]
-    expectFields titles "aiken/merkle_patricia_forestry/ProofStep" "Leaf" ["skip", "key", "value"]
+    expectFields
+        titles
+        "cardano/transaction/OutputReference"
+        "OutputReference"
+        ["transaction_id", "output_index"]
+    expectFields
+        titles
+        "aiken/merkle_patricia_forestry/Neighbor"
+        "Neighbor"
+        ["nibble", "prefix", "root"]
+    expectFields
+        titles
+        "aiken/merkle_patricia_forestry/ProofStep"
+        "Branch"
+        ["skip", "neighbors"]
+    expectFields
+        titles
+        "aiken/merkle_patricia_forestry/ProofStep"
+        "Fork"
+        ["skip", "neighbor"]
+    expectFields
+        titles
+        "aiken/merkle_patricia_forestry/ProofStep"
+        "Leaf"
+        ["skip", "key", "value"]
     emit "fields" "title order matches Haskell record order for 9 shapes"
 
 expectFields :: TitleMap -> Text -> Text -> [Text] -> IO ()
@@ -621,7 +750,13 @@ expectFields titles defName constrName want =
     case Map.lookup defName titles of
         Nothing -> failWith ("CS01 gap: no titles for " <> T.unpack defName)
         Just cs -> case [fs | (t, _, fs) <- cs, t == constrName] of
-            [] -> failWith ("CS01: no constructor " <> T.unpack constrName <> " in " <> T.unpack defName)
+            [] ->
+                failWith
+                    ( "CS01: no constructor "
+                        <> T.unpack constrName
+                        <> " in "
+                        <> T.unpack defName
+                    )
             (fs : _) ->
                 if fs == want
                     then emit ("fields-" <> T.unpack constrName) "order ok"
@@ -641,7 +776,9 @@ expectFields titles defName constrName want =
 
 blueprintId :: Blueprint -> IO String
 blueprintId bp =
-    case (extractCompiledCode "state.state" bp, extractCompiledCode "request.request" bp) of
+    case ( extractCompiledCode "state.state" bp
+         , extractCompiledCode "request.request" bp
+         ) of
         (Just stateBytes, Just requestBytes) -> do
             -- Zero-parameter state (NOTE-060): hash the bytes directly.
             let stateMarker = hexBytes (scriptHashBytes (computeScriptHash stateBytes))

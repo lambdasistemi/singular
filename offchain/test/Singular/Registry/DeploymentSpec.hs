@@ -48,18 +48,18 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
 
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    datumTxOutL,
-    mkBasicTxOut,
-    referenceScriptTxOutL,
- )
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , datumTxOutL
+    , mkBasicTxOut
+    , referenceScriptTxOutL
+    )
 import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (..))
 import Cardano.Ledger.Core (hashScript)
-import Cardano.Ledger.Mary.Value (
-    MaryValue (..),
-    MultiAsset (..),
- )
+import Cardano.Ledger.Mary.Value
+    ( MaryValue (..)
+    , MultiAsset (..)
+    )
 import Cardano.Ledger.TxIn (TxIn)
 import PlutusCore.Version (plcVersion110)
 import PlutusLedgerApi.V3 (serialiseUPLC)
@@ -71,25 +71,30 @@ import MPF.Backend.Pure (MPFInMemoryDB (..))
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment
-import Singular.Registry.Ledger (AssetName (..), Coin (..), ConwayEra, TokenId (..))
+import Singular.Registry.Ledger
+    ( AssetName (..)
+    , Coin (..)
+    , ConwayEra
+    , TokenId (..)
+    )
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.TxBuilder.Internal (
-    addrFromKeyHashBytes,
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    computeScriptHash,
-    mkInlineDatum,
-    scriptFromBytes,
-    scriptHashBytes,
-    toPlcData,
-    txInToRef,
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainRoot (..),
-    OnChainTokenState (..),
-    OnChainTxOutRef (..),
- )
+import Singular.Registry.TxBuilder.Internal
+    ( addrFromKeyHashBytes
+    , cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , computeScriptHash
+    , mkInlineDatum
+    , scriptFromBytes
+    , scriptHashBytes
+    , toPlcData
+    , txInToRef
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
+    , OnChainTxOutRef (..)
+    )
 
 import System.Directory (doesFileExist)
 import System.Environment (setEnv, unsetEnv)
@@ -99,17 +104,20 @@ import System.IO.Temp (withSystemTempDirectory)
 spec :: Spec
 spec = do
     describe "the manifest file" $ do
-        it "round-trips every field through its recorded keys and pretty bytes" $ withTempDir $ \dir -> do
-            let path = dir </> "deployment.json"
-            writeDeployment path manifest
-            readBack <- readDeployment path
-            readBack `shouldBe` manifest
-            raw <- BL.readFile path
-            case BL.unsnoc raw of
-                Just (_, b) -> b `shouldBe` newlineByte
-                Nothing -> expectationFailure "the manifest file is empty"
-            Aeson.decode raw `shouldBe` Just expectedManifestValue
-            raw `shouldBe` (encodePretty expectedManifestValue <> "\n")
+        it
+            "round-trips every field through its recorded keys and pretty bytes"
+            $ withTempDir
+            $ \dir -> do
+                let path = dir </> "deployment.json"
+                writeDeployment path manifest
+                readBack <- readDeployment path
+                readBack `shouldBe` manifest
+                raw <- BL.readFile path
+                case BL.unsnoc raw of
+                    Just (_, b) -> b `shouldBe` newlineByte
+                    Nothing -> expectationFailure "the manifest file is empty"
+                Aeson.decode raw `shouldBe` Just expectedManifestValue
+                raw `shouldBe` (encodePretty expectedManifestValue <> "\n")
 
         it "refuses an unreadable manifest naming the file" $ withTempDir $ \dir -> do
             let path = dir </> "broken.json"
@@ -144,27 +152,34 @@ spec = do
 
         it "names what was wrong with a bad reference" $ do
             let bad = parseOutRef :: Text -> Either String TxIn
-            leftOf (bad "zz#0") `shouldSatisfy` isInfixOf "transaction id is not hex"
-            leftOf (bad "aa#0") `shouldSatisfy` isInfixOf "transaction id is not 32 bytes"
-            leftOf (bad "carries-no-hash") `shouldSatisfy` isInfixOf "not a txid#index output reference"
-            leftOf (bad (T.pack (replicate 64 'a' <> "#two"))) `shouldSatisfy` isInfixOf "output index is not a number"
+            leftOf (bad "zz#0")
+                `shouldSatisfy` isInfixOf "transaction id is not hex"
+            leftOf (bad "aa#0")
+                `shouldSatisfy` isInfixOf "transaction id is not 32 bytes"
+            leftOf (bad "carries-no-hash")
+                `shouldSatisfy` isInfixOf "not a txid#index output reference"
+            leftOf (bad (T.pack (replicate 64 'a' <> "#two")))
+                `shouldSatisfy` isInfixOf "output index is not a number"
 
     describe "the proof mirror" $ do
-        it "writes the mirror beside the manifest and reads it back with hex maps" $ withTempDir $ \dir -> do
-            let manifestPath = dir </> "deployment.json"
-                mirrorPath' = mirrorPathFor manifestPath
-            mirrorPath' `shouldBe` (dir </> "deployment.mirror.json")
-            saveMirror manifestPath mirrorFixture
-            there <- doesFileExist mirrorPath'
-            there `shouldBe` True
-            loaded <- loadMirror manifestPath
-            loaded `shouldBe` mirrorFixture
-            raw <- BL.readFile mirrorPath'
-            case BL.unsnoc raw of
-                Just (_, b) -> b `shouldBe` newlineByte
-                Nothing -> expectationFailure "the mirror file is empty"
-            Aeson.decode raw `shouldBe` Just expectedMirrorValue
-            raw `shouldBe` (encodePretty expectedMirrorValue <> "\n")
+        it
+            "writes the mirror beside the manifest and reads it back with hex maps"
+            $ withTempDir
+            $ \dir -> do
+                let manifestPath = dir </> "deployment.json"
+                    mirrorPath' = mirrorPathFor manifestPath
+                mirrorPath' `shouldBe` (dir </> "deployment.mirror.json")
+                saveMirror manifestPath mirrorFixture
+                there <- doesFileExist mirrorPath'
+                there `shouldBe` True
+                loaded <- loadMirror manifestPath
+                loaded `shouldBe` mirrorFixture
+                raw <- BL.readFile mirrorPath'
+                case BL.unsnoc raw of
+                    Just (_, b) -> b `shouldBe` newlineByte
+                    Nothing -> expectationFailure "the mirror file is empty"
+                Aeson.decode raw `shouldBe` Just expectedMirrorValue
+                raw `shouldBe` (encodePretty expectedMirrorValue <> "\n")
 
         it "treats a missing mirror as empty rather than an error" $ withTempDir $ \dir -> do
             loaded <- loadMirror (dir </> "never-written.json")
@@ -238,16 +253,21 @@ spec = do
             attach prov manifest{depCageToken = T.pack (replicate 64 '0')} parts
                 `shouldThrow` refusalContaining "but the manifest records 0x"
 
-        it "refuses a release whose state validator hash differs from the manifest" $ do
-            (_, prov) <- providerServing agreeingServes
-            attach prov manifest{depStatePolicy = otherStateHex} parts
-                `shouldThrow` refusalContaining "the manifest belongs to another release"
+        it
+            "refuses a release whose state validator hash differs from the manifest"
+            $ do
+                (_, prov) <- providerServing agreeingServes
+                attach prov manifest{depStatePolicy = otherStateHex} parts
+                    `shouldThrow` refusalContaining "the manifest belongs to another release"
 
-        it "refuses when no output at the registry address carries the recorded token" $ do
-            let serves = Map.fromList [(refAddr1, [refUtxo1]), (refAddr2, [refUtxo2])]
-            (_, prov) <- providerServing serves
-            attach prov manifest parts
-                `shouldThrow` refusalContaining "no output at the registry address carries the recorded token"
+        it
+            "refuses when no output at the registry address carries the recorded token"
+            $ do
+                let serves = Map.fromList [(refAddr1, [refUtxo1]), (refAddr2, [refUtxo2])]
+                (_, prov) <- providerServing serves
+                attach prov manifest parts
+                    `shouldThrow` refusalContaining
+                        "no output at the registry address carries the recorded token"
 
     describe "checking one against a node" $ do
         it "reports every claim when the node agrees" $ do
@@ -288,7 +308,8 @@ spec = do
                 providerServing
                     (servingState agreeingState{stateRetractTime = 61_000})
             verifyDeployment prov manifest parts
-                `shouldThrow` refusalContaining "the live registry state carries process/retract windows"
+                `shouldThrow` refusalContaining
+                    "the live registry state carries process/retract windows"
 
         it "refuses a live state whose active policy is not the registry's" $ do
             (_, prov) <-
@@ -300,7 +321,8 @@ spec = do
                             }
                     )
             verifyDeployment prov manifest parts
-                `shouldThrow` refusalContaining "does not configure this registry-bound representative policy"
+                `shouldThrow` refusalContaining
+                    "does not configure this registry-bound representative policy"
 
 -- ---------------------------------------------------------
 -- The manifest fixture
@@ -320,7 +342,15 @@ lambdas n =
             )
         )
 
-stateProgram, requestProgram, applicationProgram, activeProgram, absentProgram, terminalProgram, consumerProgram, otherProgram :: SBS.ShortByteString
+stateProgram
+    , requestProgram
+    , applicationProgram
+    , activeProgram
+    , absentProgram
+    , terminalProgram
+    , consumerProgram
+    , otherProgram
+        :: SBS.ShortByteString
 stateProgram = lambdas 1
 requestProgram = lambdas 2
 applicationProgram = lambdas 3
@@ -352,15 +382,20 @@ secondSeedIn = outRefOf '2' 0
 derivation the manifest records.
 -}
 recordedToken :: TokenId
-recordedToken = TokenId (AssetName (SBS.toShort (deriveAssetName (txInToRef seedIn))))
+recordedToken =
+    TokenId (AssetName (SBS.toShort (deriveAssetName (txInToRef seedIn))))
 
 secondToken :: TokenId
-secondToken = TokenId (AssetName (SBS.toShort (deriveAssetName (txInToRef secondSeedIn))))
+secondToken =
+    TokenId
+        (AssetName (SBS.toShort (deriveAssetName (txInToRef secondSeedIn))))
 
 stateHex, requestHex, applicationHex, activeHex, otherStateHex :: Text
 stateHex = T.pack (toHex (scriptHashBytes (computeScriptHash stateProgram)))
 requestHex = T.pack (toHex (scriptHashBytes (computeScriptHash requestProgram)))
-applicationHex = T.pack (toHex (scriptHashBytes (computeScriptHash applicationProgram)))
+applicationHex =
+    T.pack
+        (toHex (scriptHashBytes (computeScriptHash applicationProgram)))
 activeHex = T.pack (toHex (SBS.fromShort activeProgram))
 otherStateHex = T.pack (toHex (scriptHashBytes (computeScriptHash otherProgram)))
 
@@ -369,11 +404,14 @@ refAddr1 = addrFromKeyHashBytes Testnet (BS.replicate 28 0x5b)
 refAddr2 = addrFromKeyHashBytes Testnet (BS.replicate 28 0x5c)
 stateAddr = cageAddrFromCfg fixtureCfg Testnet
 
-refScriptOf :: Text -> Addr -> TxIn -> SBS.ShortByteString -> ReferenceScript
+refScriptOf
+    :: Text -> Addr -> TxIn -> SBS.ShortByteString -> ReferenceScript
 refScriptOf role addr inRef prog =
     ReferenceScript
         { refRole = role
-        , refHash = T.pack (toHex (scriptHashBytes (hashScript (scriptFromBytes "spec" prog))))
+        , refHash =
+            T.pack
+                (toHex (scriptHashBytes (hashScript (scriptFromBytes "spec" prog))))
         , refOutRef = renderOutRef inRef
         , refAddress = T.pack ("addr_test1z" <> T.unpack role)
         , refAddressBytes = renderAddrBytes addr
@@ -399,7 +437,9 @@ manifest =
             , refScriptOf "request" refAddr2 refIn2 requestProgram
             ]
         , depBootstrapTxs =
-            [T.pack (toHex (BS.replicate 32 1)), T.pack (toHex (BS.replicate 32 2))]
+            [ T.pack (toHex (BS.replicate 32 1))
+            , T.pack (toHex (BS.replicate 32 2))
+            ]
         }
 
 parts :: CageParts
@@ -437,22 +477,22 @@ fixtureCfg =
         }
 
 -- | Every field of a cage configuration, as comparable values.
-cfgOf ::
-    CageConfig ->
-    ( SBS.ShortByteString
-    , SBS.ShortByteString
-    , Text
-    , OnChainTxOutRef
-    , Integer
-    , Integer
-    , Integer
-    , SBS.ShortByteString
-    , SBS.ShortByteString
-    , SBS.ShortByteString
-    , SBS.ShortByteString
-    , SBS.ShortByteString
-    , Network
-    )
+cfgOf
+    :: CageConfig
+    -> ( SBS.ShortByteString
+       , SBS.ShortByteString
+       , Text
+       , OnChainTxOutRef
+       , Integer
+       , Integer
+       , Integer
+       , SBS.ShortByteString
+       , SBS.ShortByteString
+       , SBS.ShortByteString
+       , SBS.ShortByteString
+       , SBS.ShortByteString
+       , Network
+       )
 cfgOf c =
     ( cageScriptBytes c
     , requestScriptBytes c
@@ -476,7 +516,8 @@ expectedManifestValue =
         , "depLeanRevision" Aeson..= ("f1e6a0ed" :: Text)
         , "depNetworkMagic" Aeson..= (42 :: Int)
         , "depSeedOutRef" Aeson..= renderOutRef seedIn
-        , "depCageToken" Aeson..= T.pack (toHex (deriveAssetName (txInToRef seedIn)))
+        , "depCageToken"
+            Aeson..= T.pack (toHex (deriveAssetName (txInToRef seedIn)))
         , "depStatePolicy" Aeson..= stateHex
         , "depRequestHash" Aeson..= requestHex
         , "depApplicationHash" Aeson..= applicationHex
@@ -485,9 +526,13 @@ expectedManifestValue =
         , "depRetractTime" Aeson..= (60_000 :: Integer)
         , "depTip" Aeson..= (2_000_000 :: Integer)
         , "depBootstrapTxs"
-            Aeson..= [T.pack (toHex (BS.replicate 32 1)), T.pack (toHex (BS.replicate 32 2))]
+            Aeson..= [ T.pack (toHex (BS.replicate 32 1))
+                     , T.pack (toHex (BS.replicate 32 2))
+                     ]
         , "depReferenceScripts"
-            Aeson..= [refValue (refScriptOf "state" refAddr1 refIn1 stateProgram), refValue (refScriptOf "request" refAddr2 refIn2 requestProgram)]
+            Aeson..= [ refValue (refScriptOf "state" refAddr1 refIn1 stateProgram)
+                     , refValue (refScriptOf "request" refAddr2 refIn2 requestProgram)
+                     ]
         ]
   where
     refValue r =
@@ -506,9 +551,9 @@ expectedManifestValue =
 {- | A provider that records every address asked for and serves the
 given UTxOs there.
 -}
-providerServing ::
-    Map Addr [(TxIn, TxOut ConwayEra)] ->
-    IO (IORef [Addr], Cage.Provider IO)
+providerServing
+    :: Map Addr [(TxIn, TxOut ConwayEra)]
+    -> IO (IORef [Addr], Cage.Provider IO)
 providerServing serves = do
     logRef <- newIORef []
     pure
@@ -517,7 +562,8 @@ providerServing serves = do
             { Cage.queryUTxOs = \a -> do
                 modifyIORef' logRef (a :)
                 pure (Map.findWithDefault [] a serves)
-            , Cage.queryProtocolParams = fail "the deployment rows query no protocol parameters"
+            , Cage.queryProtocolParams =
+                fail "the deployment rows query no protocol parameters"
             , Cage.evaluateTx = \_ -> fail "the deployment rows evaluate no transaction"
             , Cage.posixMsToSlot = \_ -> fail "the deployment rows query no slot"
             , Cage.posixMsCeilSlot = \_ -> fail "the deployment rows query no slot"
@@ -527,9 +573,9 @@ providerServing serves = do
 agreeingServes :: Map Addr [(TxIn, TxOut ConwayEra)]
 agreeingServes = servingState agreeingState
 
-servingState ::
-    OnChainTokenState ->
-    Map Addr [(TxIn, TxOut ConwayEra)]
+servingState
+    :: OnChainTokenState
+    -> Map Addr [(TxIn, TxOut ConwayEra)]
 servingState st =
     Map.fromList
         [ (refAddr1, [refUtxo1])
@@ -548,7 +594,8 @@ agreeingState =
         , stateAppPolicy = BuiltinByteString (SBS.fromShort applicationProgram)
         , stateActivePolicy = BuiltinByteString (SBS.fromShort activeProgram)
         , stateAbsentPolicy = BuiltinByteString (SBS.fromShort absentProgram)
-        , stateTerminalPolicy = BuiltinByteString (SBS.fromShort terminalProgram)
+        , stateTerminalPolicy =
+            BuiltinByteString (SBS.fromShort terminalProgram)
         }
 
 stateUtxo :: (TxIn, TxOut ConwayEra)
@@ -558,7 +605,10 @@ stateUtxo = stateUtxoOf agreeingState
 served before the real one so resolution is by token, not position.
 -}
 decoyUtxo :: (TxIn, TxOut ConwayEra)
-decoyUtxo = (outRefOf '9' 0, mkBasicTxOut stateAddr (MaryValue (Coin 3_000_000) mempty))
+decoyUtxo =
+    ( outRefOf '9' 0
+    , mkBasicTxOut stateAddr (MaryValue (Coin 3_000_000) mempty)
+    )
 
 stateUtxoOf :: OnChainTokenState -> (TxIn, TxOut ConwayEra)
 stateUtxoOf st =
@@ -573,14 +623,18 @@ tokenAsset =
     MultiAsset
         ( Map.singleton
             (cagePolicyIdFromCfg fixtureCfg)
-            (Map.singleton (AssetName (SBS.toShort (deriveAssetName (txInToRef seedIn)))) 1)
+            ( Map.singleton
+                (AssetName (SBS.toShort (deriveAssetName (txInToRef seedIn))))
+                1
+            )
         )
 
 refUtxo1, refUtxo2 :: (TxIn, TxOut ConwayEra)
 refUtxo1 = (refIn1, publishedAt refAddr1 stateProgram 5_000_000)
 refUtxo2 = (refIn2, publishedAt refAddr2 requestProgram 6_000_000)
 
-publishedAt :: Addr -> SBS.ShortByteString -> Integer -> TxOut ConwayEra
+publishedAt
+    :: Addr -> SBS.ShortByteString -> Integer -> TxOut ConwayEra
 publishedAt addr prog lovelace =
     mkBasicTxOut addr (MaryValue (Coin lovelace) mempty)
         & referenceScriptTxOutL
@@ -594,22 +648,31 @@ mirrorFixture :: Map TokenId MPFInMemoryDB
 mirrorFixture =
     Map.fromList
         [ (recordedToken, dbOf [(BS.replicate 1 1, BS.replicate 2 1)])
-        , (secondToken, dbOf [(BS.replicate 3 2, BS.replicate 4 2), (BS.replicate 5 2, BS.replicate 6 2)])
+        ,
+            ( secondToken
+            , dbOf
+                [ (BS.replicate 3 2, BS.replicate 4 2)
+                , (BS.replicate 5 2, BS.replicate 6 2)
+                ]
+            )
         ]
   where
     dbOf mpf =
         MPFInMemoryDB
             { mpfInMemoryMPF = Map.fromList mpf
             , mpfInMemoryKV = Map.fromList [(BS.replicate 7 3, BS.replicate 8 3)]
-            , mpfInMemoryJournal = Map.fromList [(BS.replicate 9 4, BS.replicate 10 4)]
-            , mpfInMemoryMetrics = Map.fromList [(BS.replicate 11 5, BS.replicate 12 5)]
+            , mpfInMemoryJournal =
+                Map.fromList [(BS.replicate 9 4, BS.replicate 10 4)]
+            , mpfInMemoryMetrics =
+                Map.fromList [(BS.replicate 11 5, BS.replicate 12 5)]
             , mpfInMemoryIterators = Map.empty
             }
 
 expectedMirrorValue :: Aeson.Value
 expectedMirrorValue =
     Aeson.object
-        [ "mirrorTries" Aeson..= [trieValue recordedToken [onePair], trieValue secondToken twoPairs]
+        [ "mirrorTries"
+            Aeson..= [trieValue recordedToken [onePair], trieValue secondToken twoPairs]
         ]
   where
     onePair = hexPair (BS.replicate 1 1) (BS.replicate 2 1)

@@ -11,13 +11,13 @@ Both mirror validator code in
 a Haskell/Aiken mismatch fails phase-2 validation — and is pinned by
 the fixture vectors in @Naming.RegisterSpec@.
 -}
-module Naming.Register (
-    insertApprovalDomain,
-    insertApprovalName,
-    registryAssetId,
-    representativeName,
-    overMarkerFor,
-) where
+module Naming.Register
+    ( insertApprovalDomain
+    , insertApprovalName
+    , registryAssetId
+    , representativeName
+    , overMarkerFor
+    ) where
 
 import Crypto.Hash (Blake2b_256, Digest, hash)
 import Data.ByteArray (convert)
@@ -44,8 +44,8 @@ insertApprovalName control commitment =
                 <> BS.singleton 0x00
                 <> control
                 <> commitment
-            ) ::
-            Digest Blake2b_256
+            )
+            :: Digest Blake2b_256
         )
 
 {- | The registry asset identity (NOTE-007/008/009): the FULL native asset

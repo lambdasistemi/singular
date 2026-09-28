@@ -18,12 +18,20 @@ row outcome reason = object ["outcome" .= outcome, "reason" .= reason]
 
 -- | A driver row judging outputs: the law accepted, and `settle` answered.
 judged :: Maybe String -> Value
-judged verdict = object ["outcome" .= ("accepted" :: String), "reason" .= Null, "settle" .= verdict]
+judged verdict =
+    object
+        [ "outcome" .= ("accepted" :: String)
+        , "reason" .= Null
+        , "settle" .= verdict
+        ]
 
 spec :: Spec
 spec = describe "Reading the model's verdict on a submitted transaction" $ do
-    it "refuses, for the judgement's reason, outputs that do not pay what the exit owes" $
-        modelVerdict (row "accepted" Nothing) (Just (judged (Just "destination")))
+    it
+        "refuses, for the judgement's reason, outputs that do not pay what the exit owes"
+        $ modelVerdict
+            (row "accepted" Nothing)
+            (Just (judged (Just "destination")))
             `shouldBe` Right (String "refused", String "destination")
 
     it "accepts outputs the judgement settles" $
@@ -31,7 +39,9 @@ spec = describe "Reading the model's verdict on a submitted transaction" $ do
             `shouldBe` Right (String "accepted", Null)
 
     it "keeps the law's refusal whatever the outputs" $
-        modelVerdict (row "refused" (Just "key-exists")) (Just (judged (Just "destination")))
+        modelVerdict
+            (row "refused" (Just "key-exists"))
+            (Just (judged (Just "destination")))
             `shouldBe` Right (String "refused", String "key-exists")
 
     it "keeps the law's acceptance when no transaction was judged" $

@@ -12,24 +12,37 @@ import Data.List (isInfixOf)
 import System.Environment (getEnvironment, getExecutablePath)
 import System.Exit (ExitCode (..))
 import System.IO.Temp (withSystemTempDirectory)
-import System.Process (CreateProcess (..), proc, readCreateProcessWithExitCode)
+import System.Process
+    ( CreateProcess (..)
+    , proc
+    , readCreateProcessWithExitCode
+    )
 import Test.Hspec (Spec, describe, expectationFailure, it)
 import Text.Read (readMaybe)
 
 -- | Configuration refusals observed at the executable boundary.
 spec :: Spec
-spec = describe "Appendix: harness configuration checks (subprocesses, no devnet)" $ do
-    it "refuses a missing REGISTRY_BLUEPRINT before any scenario passes" $
-        checkConfiguration "missing" Nothing "not set"
-    it "refuses an unreadable REGISTRY_BLUEPRINT before any scenario passes" $
-        withSystemTempDirectory "registry-config" $ \dir ->
-            checkConfiguration "unreadable" (Just (dir <> "/absent.json")) "cannot read"
-    it "refuses an invalid REGISTRY_BLUEPRINT before any scenario passes" $
-        withBlueprint "not a blueprint" $ \path ->
-            checkConfiguration "invalid" (Just path) "invalid blueprint"
-    it "refuses a REGISTRY_BLUEPRINT without required validators before any scenario passes" $
-        withBlueprint "{\"validators\":[],\"definitions\":{}}" $ \path ->
-            checkConfiguration "unusable" (Just path) "missing compiled validator"
+spec = describe
+    "Appendix: harness configuration checks (subprocesses, no devnet)"
+    $ do
+        it "refuses a missing REGISTRY_BLUEPRINT before any scenario passes" $
+            checkConfiguration "missing" Nothing "not set"
+        it
+            "refuses an unreadable REGISTRY_BLUEPRINT before any scenario passes"
+            $ withSystemTempDirectory "registry-config"
+            $ \dir ->
+                checkConfiguration
+                    "unreadable"
+                    (Just (dir <> "/absent.json"))
+                    "cannot read"
+        it "refuses an invalid REGISTRY_BLUEPRINT before any scenario passes" $
+            withBlueprint "not a blueprint" $ \path ->
+                checkConfiguration "invalid" (Just path) "invalid blueprint"
+        it
+            "refuses a REGISTRY_BLUEPRINT without required validators before any scenario passes"
+            $ withBlueprint "{\"validators\":[],\"definitions\":{}}"
+            $ \path ->
+                checkConfiguration "unusable" (Just path) "missing compiled validator"
 
 withBlueprint :: String -> (FilePath -> IO ()) -> IO ()
 withBlueprint contents action =
@@ -47,11 +60,18 @@ checkConfiguration configuration blueprint defect = do
                 <> filter ((/= "REGISTRY_BLUEPRINT") . fst) inherited
     (status, output, errors) <-
         readCreateProcessWithExitCode
-            (proc executable ["--match", "updateTerminal", "--format=specdoc", "--no-color"])
+            ( proc
+                executable
+                ["--match", "updateTerminal", "--format=specdoc", "--no-color"]
+            )
                 { env = Just environment
                 }
             ""
-    let summaries = [n - failures | line <- lines output, Just (n, failures) <- [exampleSummary line]]
+    let summaries =
+            [ n - failures
+            | line <- lines output
+            , Just (n, failures) <- [exampleSummary line]
+            ]
         passed = sum summaries
         diagnostic = output <> errors
         receipt =

@@ -8,9 +8,9 @@ halves to the registry it records, asks the node claim by claim, and
 prints each claim it answered, then how many held. Any claim the node
 does not agree with is a refusal naming it.
 -}
-module Deployment.Verify (
-    verify,
-) where
+module Deployment.Verify
+    ( verify
+    ) where
 
 import Deployment.Compiled (bindDeployment, loadCompiled)
 import Deployment.Narration (emit)

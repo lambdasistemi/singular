@@ -23,22 +23,24 @@ chain UTxOs at the derived address. Two decisions exist on purpose:
   name check and nothing else. A control that could not accept would
   prove nothing.
 -}
-module Conformance.Authenticate (
-    -- * Decisions
-    AuthDecision (..),
-    AuthReject (..),
-    authenticate,
-    authenticateWeak,
-    -- * Chain-shaped input
-    Assets,
-) where
+module Conformance.Authenticate
+    ( -- * Decisions
+      AuthDecision (..)
+    , AuthReject (..)
+    , authenticate
+    , authenticateWeak
+
+      -- * Chain-shaped input
+    , Assets
+    ) where
 
 import Data.ByteString (ByteString)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 
--- | One output's token assets, as the ledger reports them:
--- policy-id bytes @->@ asset-name bytes @->@ quantity.
+{- | One output's token assets, as the ledger reports them:
+policy-id bytes @->@ asset-name bytes @->@ quantity.
+-}
 type Assets = Map ByteString (Map ByteString Integer)
 
 -- | The authentication verdict for one output.
@@ -47,15 +49,18 @@ data AuthDecision
     | AuthReject AuthReject
     deriving stock (Show, Eq)
 
--- | Why an output failed canonical authentication. The failing leg
--- is named so a rejection is attributable, the same discipline the
--- refusal matcher applies to node reasons.
+{- | Why an output failed canonical authentication. The failing leg
+is named so a rejection is attributable, the same discipline the
+refusal matcher applies to node reasons.
+-}
 data AuthReject
-    = -- | No asset at all under the canonical policy: whatever this
-      -- output is, it is not a registry (the CA05 forgery).
+    = {- | No asset at all under the canonical policy: whatever this
+      output is, it is not a registry (the CA05 forgery).
+      -}
       PolicyAbsent
-    | -- | The policy is present but the derived name is not: a rival
-      -- registry from another seed (the CA02 rival).
+    | {- | The policy is present but the derived name is not: a rival
+      registry from another seed (the CA02 rival).
+      -}
       NameMismatch
     | -- | The canonical name with a quantity other than one.
       QuantityNotOne Integer

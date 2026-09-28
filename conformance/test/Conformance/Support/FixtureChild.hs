@@ -5,15 +5,18 @@ the same fixture boundary the suite uses, announces them, and holds them until
 the parent releases it — so the two processes are inside their scoped lifetimes
 at the same time, which is the only moment at which they can collide.
 -}
-module Conformance.Support.FixtureChild (
-    childModeVariable,
-    claimedFile,
-    releaseFile,
-    holdScopedDirectories,
-    waitForFile,
-) where
+module Conformance.Support.FixtureChild
+    ( childModeVariable
+    , claimedFile
+    , releaseFile
+    , holdScopedDirectories
+    , waitForFile
+    ) where
 
-import Conformance.Fixture.Receipt (fixtureReceipt, withScopedReceiptDir)
+import Conformance.Fixture.Receipt
+    ( fixtureReceipt
+    , withScopedReceiptDir
+    )
 import Control.Concurrent (threadDelay)
 import Data.ByteString.Lazy qualified as BSL
 import System.Directory (doesFileExist)

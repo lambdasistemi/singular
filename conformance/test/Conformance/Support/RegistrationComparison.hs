@@ -9,27 +9,30 @@ driver corpus, so nothing here is a list written beside the assertion.
 -}
 module Conformance.Support.RegistrationComparison (spec) where
 
-import Conformance.Compare.Perturbation (
-    Step (..),
-    appendAt,
-    arrayPaths,
-    checkPerturbations,
-    isLovelaceFloor,
-    leafPaths,
-    perturbAt,
-    replacing,
-    reportedDifferences,
- )
-import Conformance.Compare.Registration (
-    Agreement (..),
-    Declared (..),
-    Difference (..),
-    approvalAssetName,
-    compareRegistration,
-    declaredSurface,
-    rootOf,
- )
-import Conformance.Observe.Payments (OwnerReading (..), ownerOutputObservation)
+import Conformance.Compare.Perturbation
+    ( Step (..)
+    , appendAt
+    , arrayPaths
+    , checkPerturbations
+    , isLovelaceFloor
+    , leafPaths
+    , perturbAt
+    , replacing
+    , reportedDifferences
+    )
+import Conformance.Compare.Registration
+    ( Agreement (..)
+    , Declared (..)
+    , Difference (..)
+    , approvalAssetName
+    , compareRegistration
+    , declaredSurface
+    , rootOf
+    )
+import Conformance.Observe.Payments
+    ( OwnerReading (..)
+    , ownerOutputObservation
+    )
 import Conformance.Story.Identity (identify, observe)
 import Conformance.Story.Identity qualified as Identity
 import Data.Aeson (Value (..), eitherDecodeFileStrict)
@@ -49,7 +52,9 @@ corpus = do
     wired <- lookupEnv "CONFORMANCE_DRIVER_CORPUS"
     path <- case wired of
         Just path -> pure path
-        Nothing -> error "CONFORMANCE_DRIVER_CORPUS is not wired; the comparison has no expected side"
+        Nothing ->
+            error
+                "CONFORMANCE_DRIVER_CORPUS is not wired; the comparison has no expected side"
     eitherDecodeFileStrict path >>= either error pure
 
 part :: Text -> Value -> Value
@@ -74,7 +79,10 @@ scenarios = items . part "scenarios"
 
 row :: Text -> Value -> Value
 row identity value =
-    case [scenario | scenario <- scenarios value, part "id" scenario == String identity] of
+    case [ scenario
+         | scenario <- scenarios value
+         , part "id" scenario == String identity
+         ] of
         [found] -> found
         _ -> error ("driver corpus has no scenario " <> show identity)
 
@@ -105,7 +113,7 @@ raiseMintQuantity value = case value of
         Just (Array assets) -> case V.toList assets of
             Object asset : rest ->
                 let raised = Object (KM.insert "quantity" (Number 99) asset)
-                 in Object (KM.insert "mint" (Array (V.fromList (raised : rest))) fields)
+                in  Object (KM.insert "mint" (Array (V.fromList (raised : rest))) fields)
             _ -> error "the row mints nothing to raise"
         _ -> error "mint is not an array"
     _ -> error "observations are not an object"
@@ -118,10 +126,13 @@ setOutputLovelace index amount observations =
                 let output = outputs V.! index
                     updated = case output of
                         Object outputFields ->
-                            Object (KM.insert "lovelace" (Number (fromInteger amount)) outputFields)
+                            Object
+                                (KM.insert "lovelace" (Number (fromInteger amount)) outputFields)
                         _ -> error "transaction output is not an object"
-                    tx = Object (KM.insert "outputs" (Array (outputs V.// [(index, updated)])) fields)
-                 in replacing "tx" tx observations
+                    tx =
+                        Object
+                            (KM.insert "outputs" (Array (outputs V.// [(index, updated)])) fields)
+                in  replacing "tx" tx observations
             _ -> error "transaction outputs are not an array"
         _ -> error "transaction is not an object"
 
@@ -132,9 +143,14 @@ spec = describe "Comparing a registration with the model" $ do
         declared <- either error pure (declaredSurface value)
         let observations = part "observations" (row "DR02-register-active" value)
         case compareRegistration declared observations observations of
-            Left differences -> error ("an agreeing registration was reported as differing: " <> show differences)
+            Left differences ->
+                error
+                    ( "an agreeing registration was reported as differing: "
+                        <> show differences
+                    )
             Right agreement ->
-                sort (agreementCompared agreement) `shouldBe` sort (declaredObservations declared)
+                sort (agreementCompared agreement)
+                    `shouldBe` sort (declaredObservations declared)
 
     it "refuses an observation that leaves any declared field out" $ do
         value <- corpus
@@ -147,36 +163,50 @@ spec = describe "Comparing a registration with the model" $ do
             )
             (declaredObservations declared)
 
-    it "carries every name the model cannot observe, and compares none of them" $ do
-        value <- corpus
-        declared <- either error pure (declaredSurface value)
-        let observations = part "observations" (row "DR02-register-active" value)
-        case compareRegistration declared observations observations of
-            Left differences -> error ("an agreeing registration was reported as differing: " <> show differences)
-            Right agreement -> do
-                sort (agreementUnobserved agreement) `shouldBe` sort (declaredUnobservable declared)
-                agreementCompared agreement
-                    `shouldSatisfy` all (`notElem` declaredUnobservable declared)
+    it
+        "carries every name the model cannot observe, and compares none of them"
+        $ do
+            value <- corpus
+            declared <- either error pure (declaredSurface value)
+            let observations = part "observations" (row "DR02-register-active" value)
+            case compareRegistration declared observations observations of
+                Left differences ->
+                    error
+                        ( "an agreeing registration was reported as differing: "
+                            <> show differences
+                        )
+                Right agreement -> do
+                    sort (agreementUnobserved agreement)
+                        `shouldBe` sort (declaredUnobservable declared)
+                    agreementCompared agreement
+                        `shouldSatisfy` all (`notElem` declaredUnobservable declared)
 
-    it "refuses an observation claiming to have seen what the model cannot" $ do
-        value <- corpus
-        declared <- either error pure (declaredSurface value)
-        let observations = part "observations" (row "DR02-register-active" value)
-        mapM_
-            ( \name -> case compareRegistration declared observations (claiming name observations) of
-                Right _ -> error ("a registration claiming " <> show name <> " was accepted")
-                Left _ -> pure ()
-            )
-            (declaredUnobservable declared)
+    it
+        "refuses an observation claiming to have seen what the model cannot"
+        $ do
+            value <- corpus
+            declared <- either error pure (declaredSurface value)
+            let observations = part "observations" (row "DR02-register-active" value)
+            mapM_
+                ( \name -> case compareRegistration declared observations (claiming name observations) of
+                    Right _ -> error ("a registration claiming " <> show name <> " was accepted")
+                    Left _ -> pure ()
+                )
+                (declaredUnobservable declared)
 
-    it "refuses a registration whose delivered quantity differs from the model" $ do
-        value <- corpus
-        declared <- either error pure (declaredSurface value)
-        let observations = part "observations" (row "DR02-register-active" value)
-        case compareRegistration declared observations (raiseMintQuantity observations) of
-            Right _ -> error "a changed delivered quantity was accepted"
-            Left differences ->
-                map differenceObservation differences `shouldSatisfy` elem "mint"
+    it
+        "refuses a registration whose delivered quantity differs from the model"
+        $ do
+            value <- corpus
+            declared <- either error pure (declaredSurface value)
+            let observations = part "observations" (row "DR02-register-active" value)
+            case compareRegistration
+                declared
+                observations
+                (raiseMintQuantity observations) of
+                Right _ -> error "a changed delivered quantity was accepted"
+                Left differences ->
+                    map differenceObservation differences `shouldSatisfy` elem "mint"
 
     it "compares transaction output lovelace as a floor" $ do
         value <- corpus
@@ -199,97 +229,139 @@ spec = describe "Comparing a registration with the model" $ do
             Left differences ->
                 map differenceObservation differences `shouldSatisfy` elem "tx"
         case compareRegistration declared observations above of
-            Left differences -> error ("an output above its floor disagreed: " <> show differences)
-            Right _ -> pure ()
-
-    it "compares every payment's value as a floor, in paid and in the transaction's refunds" $ do
-        value <- corpus
-        declared <- either error pure (declaredSurface value)
-        let payingRows =
-                [ part "observations" scenario
-                | scenario <- scenarios value
-                , part "outcome" scenario == String "accepted"
-                , not (null (items (part "paid" (part "observations" scenario))))
-                ]
-        payingRows `shouldSatisfy` (> 1) . length
-        mapM_ (checkPaymentFloors declared) payingRows
-
-    it "compares a custody refund as a floor: paid in full or more agrees, short is refused" $ do
-        value <- corpus
-        declared <- either error pure (declaredSurface value)
-        -- The refund a custody pays when it is spent is its own recorded
-        -- address and value, read off the model's insert-absent row.
-        let absent = part "observations" (row "DR01-register-absent" value)
-            refunds =
-                [ Object (KM.fromList [("address", part "refundAddress" entry), ("value", part "value" entry)])
-                | entry <- items (part "custody" absent)
-                ]
-        refunds `shouldSatisfy` not . null
-        let observations = appendPayments refunds (part "observations" (row "DR07-reject-registered-twice" value))
-        checkPaymentFloors declared observations
-
-    it "reads the owner output's returned approval off the ledger: another approval is a transaction difference" $ do
-        value <- corpus
-        declared <- either error pure (declaredSurface value)
-        let observations = part "observations" (row "DR03-retire-registered" value)
-            outputs = items (part "outputs" (part "tx" observations))
-            owners = [(index, output) | (index, output) <- zip [0 ..] outputs, part "role" output == String "owner"]
-        (index, modelOwner) <- case owners of
-            [found] -> pure found
-            _ -> error "the retirement row has no single owner output"
-        let commitment = number (part "commitment" modelOwner)
-            reading approvals =
-                OwnerReading
-                    { readingLovelace = number (part "lovelace" modelOwner)
-                    , readingDatum = case part "datum" modelOwner of
-                        String form -> form
-                        _ -> error "datum form is not a string"
-                    , readingApprovals = approvals
-                    }
-            observedWith approvals =
-                either error (\owner -> replaceOutput index owner observations) $
-                    ownerOutputObservation (number (part "address" modelOwner)) approvalOf [] 0 Nothing (reading approvals)
-            -- The run's bindings: this request's approval, and another's.
-            approvalOf name = case name of
-                "requested" -> Right commitment
-                "another" -> Right (commitment + 1)
-                _ -> Left "observed an approval no booking established"
-        case compareRegistration declared observations (observedWith ["requested"]) of
-            Left differences -> error ("the request's own returned approval disagreed: " <> show differences)
-            Right _ -> pure ()
-        case compareRegistration declared observations (observedWith ["another"]) of
-            Right _ -> error "an owner output returning another approval was accepted"
-            Left differences -> map differenceObservation differences `shouldBe` ["tx"]
-        ownerOutputObservation 1 approvalOf [] 0 Nothing (reading ["unbooked"])
-            `shouldSatisfy` either (const True) (const False)
-
-    it "reports only an extra signer when a transaction also has floor surplus" $ do
-        value <- corpus
-        declared <- either error pure (declaredSurface value)
-        let observations = part "observations" (row "DR02-register-active" value)
-            modelOutputs = items (part "outputs" (part "tx" observations))
-            modelFloor = case modelOutputs of
-                first : _ -> number (part "lovelace" first)
-                [] -> error "the model transaction has no outputs"
-            surplus = setOutputLovelace 0 (modelFloor + 1) observations
-            changedTx = appendAt [Field "signers"] (part "tx" surplus)
-            observed = replacing "tx" changedTx surplus
-        case compareRegistration declared observations observed of
-            Right _ -> error "an extra signer was accepted"
             Left differences ->
-                reportedDifferences differences
-                    `shouldBe` [("tx", [Field "signers"])]
+                error ("an output above its floor disagreed: " <> show differences)
+            Right _ -> pure ()
+
+    it
+        "compares every payment's value as a floor, in paid and in the transaction's refunds"
+        $ do
+            value <- corpus
+            declared <- either error pure (declaredSurface value)
+            let payingRows =
+                    [ part "observations" scenario
+                    | scenario <- scenarios value
+                    , part "outcome" scenario == String "accepted"
+                    , not (null (items (part "paid" (part "observations" scenario))))
+                    ]
+            payingRows `shouldSatisfy` (> 1) . length
+            mapM_ (checkPaymentFloors declared) payingRows
+
+    it
+        "compares a custody refund as a floor: paid in full or more agrees, short is refused"
+        $ do
+            value <- corpus
+            declared <- either error pure (declaredSurface value)
+            -- The refund a custody pays when it is spent is its own recorded
+            -- address and value, read off the model's insert-absent row.
+            let absent = part "observations" (row "DR01-register-absent" value)
+                refunds =
+                    [ Object
+                        ( KM.fromList
+                            [ ("address", part "refundAddress" entry)
+                            , ("value", part "value" entry)
+                            ]
+                        )
+                    | entry <- items (part "custody" absent)
+                    ]
+            refunds `shouldSatisfy` not . null
+            let observations =
+                    appendPayments
+                        refunds
+                        (part "observations" (row "DR07-reject-registered-twice" value))
+            checkPaymentFloors declared observations
+
+    it
+        "reads the owner output's returned approval off the ledger: another approval is a transaction difference"
+        $ do
+            value <- corpus
+            declared <- either error pure (declaredSurface value)
+            let observations = part "observations" (row "DR03-retire-registered" value)
+                outputs = items (part "outputs" (part "tx" observations))
+                owners =
+                    [ (index, output)
+                    | (index, output) <- zip [0 ..] outputs
+                    , part "role" output == String "owner"
+                    ]
+            (index, modelOwner) <- case owners of
+                [found] -> pure found
+                _ -> error "the retirement row has no single owner output"
+            let commitment = number (part "commitment" modelOwner)
+                reading approvals =
+                    OwnerReading
+                        { readingLovelace = number (part "lovelace" modelOwner)
+                        , readingDatum = case part "datum" modelOwner of
+                            String form -> form
+                            _ -> error "datum form is not a string"
+                        , readingApprovals = approvals
+                        }
+                observedWith approvals =
+                    either error (\owner -> replaceOutput index owner observations) $
+                        ownerOutputObservation
+                            (number (part "address" modelOwner))
+                            approvalOf
+                            []
+                            0
+                            Nothing
+                            (reading approvals)
+                -- The run's bindings: this request's approval, and another's.
+                approvalOf name = case name of
+                    "requested" -> Right commitment
+                    "another" -> Right (commitment + 1)
+                    _ -> Left "observed an approval no booking established"
+            case compareRegistration declared observations (observedWith ["requested"]) of
+                Left differences ->
+                    error
+                        ("the request's own returned approval disagreed: " <> show differences)
+                Right _ -> pure ()
+            case compareRegistration declared observations (observedWith ["another"]) of
+                Right _ -> error "an owner output returning another approval was accepted"
+                Left differences -> map differenceObservation differences `shouldBe` ["tx"]
+            ownerOutputObservation
+                1
+                approvalOf
+                []
+                0
+                Nothing
+                (reading ["unbooked"])
+                `shouldSatisfy` either (const True) (const False)
+
+    it
+        "reports only an extra signer when a transaction also has floor surplus"
+        $ do
+            value <- corpus
+            declared <- either error pure (declaredSurface value)
+            let observations = part "observations" (row "DR02-register-active" value)
+                modelOutputs = items (part "outputs" (part "tx" observations))
+                modelFloor = case modelOutputs of
+                    first : _ -> number (part "lovelace" first)
+                    [] -> error "the model transaction has no outputs"
+                surplus = setOutputLovelace 0 (modelFloor + 1) observations
+                changedTx = appendAt [Field "signers"] (part "tx" surplus)
+                observed = replacing "tx" changedTx surplus
+            case compareRegistration declared observations observed of
+                Right _ -> error "an extra signer was accepted"
+                Left differences ->
+                    reportedDifferences differences
+                        `shouldBe` [("tx", [Field "signers"])]
 
     it "refuses to translate a concrete identity that was never bound" $ do
         let bound = snd (identify ("recipient" :: String) Identity.empty)
-        observe "recipient" bound `shouldSatisfy` either (const False) (const True)
+        observe "recipient" bound
+            `shouldSatisfy` either (const False) (const True)
         observe "a-wallet-nobody-registered" bound
             `shouldSatisfy` either (const True) (const False)
 
     it "refuses to bind two concrete identities to one model identifier" $ do
-        first <- either error pure (Identity.bind ("alice" :: String) 555 Identity.empty)
-        Identity.bind "mallory" 555 first `shouldSatisfy` either (const True) (const False)
-        Identity.bind "alice" 555 first `shouldSatisfy` either (const False) (const True)
+        first <-
+            either
+                error
+                pure
+                (Identity.bind ("alice" :: String) 555 Identity.empty)
+        Identity.bind "mallory" 555 first
+            `shouldSatisfy` either (const True) (const False)
+        Identity.bind "alice" 555 first
+            `shouldSatisfy` either (const False) (const True)
 
     it "reports observable changes and allows output floor surplus" $ do
         value <- corpus
@@ -318,7 +390,9 @@ spec = describe "Comparing a registration with the model" $ do
             `shouldBe` []
         -- and the transaction contributes the fields a reader would name
         let txLeaves = [path | ("tx", path, _) <- changes]
-        map (Field "outputs" :) [[Index 1, Field "address"], [Index 1, Field "datum"]]
+        map
+            (Field "outputs" :)
+            [[Index 1, Field "address"], [Index 1, Field "datum"]]
             `shouldSatisfy` all (`elem` txLeaves)
         txLeaves `shouldSatisfy` any (\path -> Field "assets" `elem` path)
         -- The wrong-signer control: signers is an empty list, so its discovered
@@ -326,9 +400,13 @@ spec = describe "Comparing a registration with the model" $ do
         [path | ("tx", path, _) <- growths, path == [Field "signers"]]
             `shouldBe` [[Field "signers"]]
         -- Raising output lovelace is accepted as a floor surplus.
-        let floorSurpluses = [(name, path) | (name, path, _) <- changes, isLovelaceFloor name path]
+        let floorSurpluses =
+                [(name, path) | (name, path, _) <- changes, isLovelaceFloor name path]
         floorSurpluses `shouldSatisfy` not . null
-        [(name, path) | (name, path, _) <- changes <> growths, isLovelaceFloor name path]
+        [ (name, path)
+          | (name, path, _) <- changes <> growths
+          , isLovelaceFloor name path
+          ]
             `shouldBe` floorSurpluses
         mapM_ (requireVerdict declared observations) (changes <> growths)
         case checkPerturbations declared observations observations of
@@ -367,7 +445,9 @@ checkRoot observations = do
             [ (number (part "key" entry), leafByte (part "leaf" entry))
             | entry <- items (part "trie" (part "state" observations))
             ]
-        expected = [fromIntegral (number byte) | byte <- items (part "root" observations)]
+        expected =
+            [ fromIntegral (number byte) | byte <- items (part "root" observations)
+            ]
     rootOf entries `shouldBe` expected
 
 -- | The model's own approval name, recomputed from that row's request tuple.
@@ -378,19 +458,28 @@ checkApproval (scenario, approval) = do
             String e -> e
             _ -> error "request edge is not a string"
         destination = number (part "destination" approval)
-    approvalAssetName edge (number (part "key" request)) (number (part "owner" request)) destination
+    approvalAssetName
+        edge
+        (number (part "key" request))
+        (number (part "owner" request))
+        destination
         `shouldBe` Just (number (part "assetName" approval))
     -- The destination commitment is the same function over the same tuple.
     -- A refused row observes nothing, so there is no transaction to read.
     case part "observations" scenario of
         Object _ ->
             case [ out
-                 | out <- items (part "outputs" (part "tx" (part "observations" scenario)))
+                 | out <-
+                    items (part "outputs" (part "tx" (part "observations" scenario)))
                  , part "role" out == String "destination"
                  ] of
                 [out]
                     | part "commitment" out /= Null ->
-                        approvalAssetName edge (number (part "key" request)) (number (part "owner" request)) destination
+                        approvalAssetName
+                            edge
+                            (number (part "key" request))
+                            (number (part "owner" request))
+                            destination
                             `shouldBe` Just (number (part "commitment" out))
                 _ -> pure ()
         _ -> pure ()
@@ -410,7 +499,8 @@ checkPaymentFloors declared observations = do
             let floor' = number (part "value" payment)
                 moved amount = setPaymentValue index amount observations
             case compareRegistration declared observations (moved (floor' + 1)) of
-                Left differences -> error ("a payment above its floor disagreed: " <> show differences)
+                Left differences ->
+                    error ("a payment above its floor disagreed: " <> show differences)
                 Right _ -> pure ()
             case compareRegistration declared observations (moved (floor' - 1)) of
                 Right _ -> error "a payment below the model's floor was accepted"
@@ -424,7 +514,12 @@ replaceOutput :: Int -> Value -> Value -> Value
 replaceOutput index output observations = case part "tx" observations of
     Object fields -> case part "outputs" (Object fields) of
         Array outputs ->
-            replacing "tx" (Object (KM.insert "outputs" (Array (outputs V.// [(index, output)])) fields)) observations
+            replacing
+                "tx"
+                ( Object
+                    (KM.insert "outputs" (Array (outputs V.// [(index, output)])) fields)
+                )
+                observations
         _ -> error "transaction outputs are not an array"
     _ -> error "transaction is not an object"
 
@@ -435,9 +530,14 @@ appendPayments extra observations =
             Array vector -> Array (vector <> V.fromList extra)
             _ -> error "payments are not an array"
         tx = case part "tx" observations of
-            Object fields -> Object (KM.insert "refunds" (grow (part "refunds" (Object fields))) fields)
+            Object fields ->
+                Object
+                    (KM.insert "refunds" (grow (part "refunds" (Object fields))) fields)
             _ -> error "transaction is not an object"
-     in replacing "tx" tx (replacing "paid" (grow (part "paid" observations)) observations)
+    in  replacing
+            "tx"
+            tx
+            (replacing "paid" (grow (part "paid" observations)) observations)
 
 -- | Set the value of payment @index@ in both @paid@ and @tx.refunds@.
 setPaymentValue :: Int -> Integer -> Value -> Value
@@ -456,9 +556,14 @@ setPaymentValue index amount observations =
                     )
             _ -> error "payments are not an array"
         tx = case part "tx" observations of
-            Object fields -> Object (KM.insert "refunds" (setValue (part "refunds" (Object fields))) fields)
+            Object fields ->
+                Object
+                    (KM.insert "refunds" (setValue (part "refunds" (Object fields))) fields)
             _ -> error "transaction is not an object"
-     in replacing "tx" tx (replacing "paid" (setValue (part "paid" observations)) observations)
+    in  replacing
+            "tx"
+            tx
+            (replacing "paid" (setValue (part "paid" observations)) observations)
 
 requireVerdict :: Declared -> Value -> (Text, [Step], Value) -> IO ()
 requireVerdict declared expected (name, path, changed)
@@ -466,10 +571,17 @@ requireVerdict declared expected (name, path, changed)
         case compareRegistration declared expected changed of
             Right _ -> pure ()
             Left differences ->
-                error ("the unobservable leaf " <> show path <> " was compared: " <> show differences)
+                error
+                    ( "the unobservable leaf "
+                        <> show path
+                        <> " was compared: "
+                        <> show differences
+                    )
     | otherwise =
         case compareRegistration declared expected changed of
-            Right _ -> error ("a changed " <> show name <> " at " <> show path <> " was accepted")
+            Right _ ->
+                error
+                    ("a changed " <> show name <> " at " <> show path <> " was accepted")
             Left differences ->
                 map differenceObservation differences
                     `shouldSatisfy` elem name

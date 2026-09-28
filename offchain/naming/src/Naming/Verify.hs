@@ -16,14 +16,14 @@ predicate here, including the wrong-policy\/same-name discrimination
 (NOTE-026). Either side alone is insufficient: parsing without
 predicates proves nothing, predicates without parsing check nothing.
 -}
-module Naming.Verify (
-    RetireEvidence (..),
-    CompleteEvidence (..),
-    positiveMintPolicy,
-    verifyRetireEvidence,
-    verifyCompletion,
-    singleNamingToken,
-) where
+module Naming.Verify
+    ( RetireEvidence (..)
+    , CompleteEvidence (..)
+    , positiveMintPolicy
+    , verifyRetireEvidence
+    , verifyCompletion
+    , singleNamingToken
+    ) where
 
 import Data.ByteString (ByteString)
 
@@ -32,10 +32,10 @@ import Naming.Register (representativeName)
 {- | Read one naming token from complete non-ADA value triples. The caller
 supplies the deployment's allowed approval and representative policies.
 -}
-singleNamingToken ::
-    [ByteString] ->
-    [(ByteString, ByteString, Integer)] ->
-    Either String (ByteString, Integer)
+singleNamingToken
+    :: [ByteString]
+    -> [(ByteString, ByteString, Integer)]
+    -> Either String (ByteString, Integer)
 singleNamingToken policies assets =
     case assets of
         [(policy, name, quantity)] | policy `elem` policies -> Right (name, quantity)
@@ -92,7 +92,8 @@ positive-quantity policy (the approval burn is negative). Anything
 else — none, several — fails: the derivation admits no judgment
 calls about which policy is \"the\" representative one.
 -}
-positiveMintPolicy :: [(ByteString, ByteString, Integer)] -> Either String ByteString
+positiveMintPolicy
+    :: [(ByteString, ByteString, Integer)] -> Either String ByteString
 positiveMintPolicy triples = case [p | (p, _, q) <- triples, q > 0] of
     [p] -> Right p
     ps ->
@@ -107,7 +108,10 @@ creation mint, signers and witnesses all check out.
 -}
 verifyRetireEvidence :: RetireEvidence -> Either String ()
 verifyRetireEvidence ev = do
-    unlessEq "retire spelling is not the creation request key" (reKey ev) (reSpelling ev)
+    unlessEq
+        "retire spelling is not the creation request key"
+        (reKey ev)
+        (reSpelling ev)
     unlessEq
         "claim-derived control differs from public creation material"
         (reCreationHash ev)
@@ -123,10 +127,19 @@ verifyRetireEvidence ev = do
     -- Custody triple binds policy, name and quantity together: a
     -- same-name token under a different policy is a different asset
     -- and refuses here (NOTE-026).
-    unlessEq "custody policy is not the derived rep policy" (reCustodyPolicy ev) repPolicy
-    unlessEq "custody name is not the recomputed rep" (reCustodyName ev) repComputed
+    unlessEq
+        "custody policy is not the derived rep policy"
+        (reCustodyPolicy ev)
+        repPolicy
+    unlessEq
+        "custody name is not the recomputed rep"
+        (reCustodyName ev)
+        repComputed
     unlessEq "custody quantity is not 1" (reCustodyQty ev) 1
-    unlessEq "recomputed rep differs from public creation material" repComputed (reRepLog ev)
+    unlessEq
+        "recomputed rep differs from public creation material"
+        repComputed
+        (reRepLog ev)
     -- Route: singleton signers must be the current control
     -- (controller route, rotated or not); larger sets must equal the
     -- quorum with the control absent (quorum route). Every expected
@@ -134,12 +147,21 @@ verifyRetireEvidence ev = do
     -- prove no authorization happened).
     case reSigners ev of
         [s] -> do
-            unlessEq "singleton signer is not the record control" s (reCurrentControl ev)
+            unlessEq
+                "singleton signer is not the record control"
+                s
+                (reCurrentControl ev)
             unlessWitnessed ev [s]
         ss -> do
-            unlessEq "signer count matches neither route" (length ss) (length (reQuorum ev))
+            unlessEq
+                "signer count matches neither route"
+                (length ss)
+                (length (reQuorum ev))
             unlessSubset "quorum-route signer outside the quorum" ss (reQuorum ev)
-            unlessAbsent "quorum route signed by the controller" (reCurrentControl ev) ss
+            unlessAbsent
+                "quorum route signed by the controller"
+                (reCurrentControl ev)
+                ss
             unlessWitnessed ev ss
   where
     unlessEq _ a b | a == b = Right ()
@@ -237,20 +259,32 @@ verifyCompletion ev = do
     -- Co-creation: the folded request comes from the same creator
     -- transaction as the spent custody (a request queued anywhere
     -- else, or no request at all, refuses).
-    unlessEq "folded request is not the retire's own (creator mismatch)" (ceRequestTxid ev) (ceCustodyTxid ev)
+    unlessEq
+        "folded request is not the retire's own (creator mismatch)"
+        (ceRequestTxid ev)
+        (ceCustodyTxid ev)
     -- Edge relation (#183): the folded request retires the burned
     -- asset's own key, and the move it names is the retirement. The
     -- request carries no values, so this is the whole of what it
     -- states about the move.
-    unlessEq "folded request is not for the burned asset's key" (ceReqKey ev) (ceRepName ev)
+    unlessEq
+        "folded request is not for the burned asset's key"
+        (ceReqKey ev)
+        (ceRepName ev)
     unlessEq
         "folded request does not name the retirement edge"
         (ceReqEdge ev)
         3
     -- Burn: the spent custody triple is the verified pair, and the
     -- mint field burns exactly it once.
-    unlessEq "spent custody policy is not the verified rep policy" (ceCustodyPolicy ev) (ceRepPolicy ev)
-    unlessEq "spent custody name is not the verified rep" (ceCustodyName ev) (ceRepName ev)
+    unlessEq
+        "spent custody policy is not the verified rep policy"
+        (ceCustodyPolicy ev)
+        (ceRepPolicy ev)
+    unlessEq
+        "spent custody name is not the verified rep"
+        (ceCustodyName ev)
+        (ceRepName ev)
     unlessEq "spent custody quantity is not 1" (ceCustodyQty ev) 1
     unlessEq
         "completion mint is not exactly the burn"
@@ -261,12 +295,24 @@ verifyCompletion ev = do
     -- `Rejected` action preserves the root and refuses here).
     unlessOk "state spend is not a Modify" (ceIsModify ev)
     unlessEq "Modify action is not a singleton" (ceActionCount ev) 1
-    unlessNeq "registry root unchanged (no genuine transition)" (ceRootBefore ev) (ceRootAfter ev)
+    unlessNeq
+        "registry root unchanged (no genuine transition)"
+        (ceRootBefore ev)
+        (ceRootAfter ev)
     -- Permissionless: nobody's approval rides the transaction; the
     -- sole witness owns the fee input and stands outside every route.
-    unlessEq "required signers not empty (not permissionless)" (ceReqSigners ev) []
-    unlessEq "witness is not exactly the fee owner" (ceWitnesses ev) [ceFeeOwner ev]
-    unlessAbsent "route key witnessed the completion" (ceWitnesses ev) (ceRouteKeys ev)
+    unlessEq
+        "required signers not empty (not permissionless)"
+        (ceReqSigners ev)
+        []
+    unlessEq
+        "witness is not exactly the fee owner"
+        (ceWitnesses ev)
+        [ceFeeOwner ev]
+    unlessAbsent
+        "route key witnessed the completion"
+        (ceWitnesses ev)
+        (ceRouteKeys ev)
   where
     unlessEq _ a b | a == b = Right ()
     unlessEq msg _ _ = Left msg

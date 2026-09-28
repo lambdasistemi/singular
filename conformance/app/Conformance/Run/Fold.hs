@@ -3,21 +3,41 @@ Module      : Conformance.Run.Fold
 Description : Split out of Conformance.Run (#263); see that module's header
 License     : Apache-2.0
 -}
-module Conformance.Run.Fold (FoldSpec (..), assembleFoldSpec, assembleFoldWithFee, rowSpec, declaredSpec, rowRequestAndFold, declaredUnits, buildRefusedFold, buildValidFold, foldUtxos, poisonProofs, validProofs, assembleFold, foldUpperSlot, calibrateFold, requestAndFold, requestAndFoldKey, foldSpecContext, foldSpecProcessed) where
+module Conformance.Run.Fold
+    ( FoldSpec (..)
+    , assembleFoldSpec
+    , assembleFoldWithFee
+    , rowSpec
+    , declaredSpec
+    , rowRequestAndFold
+    , declaredUnits
+    , buildRefusedFold
+    , buildValidFold
+    , foldUtxos
+    , poisonProofs
+    , validProofs
+    , assembleFold
+    , foldUpperSlot
+    , calibrateFold
+    , requestAndFold
+    , requestAndFoldKey
+    , foldSpecContext
+    , foldSpecProcessed
+    ) where
 
-import Conformance.Run.Control
 import Conformance.Run.Book
-import Conformance.Run.Units
 import Conformance.Run.Cage
-import Conformance.Run.Wallet
-import Conformance.Run.Submit
+import Conformance.Run.Control
 import Conformance.Run.Environment
 import Conformance.Run.Observe
+import Conformance.Run.Submit
+import Conformance.Run.Units
+import Conformance.Run.Wallet
 
-import Control.Exception (
-    SomeException,
-    try,
- )
+import Control.Exception
+    ( SomeException
+    , try
+    )
 import Control.Monad (unless)
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
@@ -25,142 +45,142 @@ import Data.Foldable (toList)
 import Data.IORef (readIORef, writeIORef)
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
-import Data.Text qualified as T
 import Data.Maybe (fromMaybe)
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
+import Data.Text qualified as T
 import Data.Time (getCurrentTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Lens.Micro ((&), (.~), (^.))
 
-import Cardano.Ledger.Address (
-    AccountAddress (..),
-    Withdrawals (..),
- )
+import Cardano.Ledger.Address
+    ( AccountAddress (..)
+    , Withdrawals (..)
+    )
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 
 import Cardano.Ledger.Api.PParams (ppMaxTxExUnitsL)
-import Cardano.Ledger.Api.Tx (
-    bodyTxL,
-    estimateMinFeeTx,
-    mkBasicTx,
-    mkBasicTxBody,
-    witsTxL,
- )
-import Cardano.Ledger.Api.Tx.Body (
-    ValidityInterval (..),
-    collateralInputsTxBodyL,
-    feeTxBodyL,
-    inputsTxBodyL,
-    mintTxBodyL,
-    outputsTxBodyL,
-    referenceInputsTxBodyL,
-    reqSignerHashesTxBodyL,
-    scriptIntegrityHashTxBodyL,
-    vldtTxBodyL,
-    withdrawalsTxBodyL,
- )
-import Cardano.Ledger.Api.Tx.Out (
-    addrTxOutL,
-    coinTxOutL,
-    datumTxOutL,
-    getMinCoinTxOut,
-    mkBasicTxOut,
-    valueTxOutL,
- )
-import Cardano.Ledger.Api.Tx.Wits (
-    Redeemers (..),
-    rdmrsTxWitsL,
-    scriptTxWitsL,
- )
-import Cardano.Ledger.BaseTypes (
-    SlotNo (..),
-    StrictMaybe (..),
- )
+import Cardano.Ledger.Api.Tx
+    ( bodyTxL
+    , estimateMinFeeTx
+    , mkBasicTx
+    , mkBasicTxBody
+    , witsTxL
+    )
+import Cardano.Ledger.Api.Tx.Body
+    ( ValidityInterval (..)
+    , collateralInputsTxBodyL
+    , feeTxBodyL
+    , inputsTxBodyL
+    , mintTxBodyL
+    , outputsTxBodyL
+    , referenceInputsTxBodyL
+    , reqSignerHashesTxBodyL
+    , scriptIntegrityHashTxBodyL
+    , vldtTxBodyL
+    , withdrawalsTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( addrTxOutL
+    , coinTxOutL
+    , datumTxOutL
+    , getMinCoinTxOut
+    , mkBasicTxOut
+    , valueTxOutL
+    )
+import Cardano.Ledger.Api.Tx.Wits
+    ( Redeemers (..)
+    , rdmrsTxWitsL
+    , scriptTxWitsL
+    )
+import Cardano.Ledger.BaseTypes
+    ( SlotNo (..)
+    , StrictMaybe (..)
+    )
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
-import Cardano.Ledger.Core (
-    KeyHash,
-    Script,
-    hashScript,
- )
+import Cardano.Ledger.Core
+    ( KeyHash
+    , Script
+    , hashScript
+    )
 import Cardano.Ledger.Keys (KeyRole (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
-import Singular.Registry.Blueprint (
-    NamingCodes (..),
-    applyBytesParam,
-    applyDataParam,
- )
+import PlutusCore.Data qualified as PLC
+import PlutusTx.Builtins.Internal (BuiltinByteString (..))
+import Singular.Registry.Blueprint
+    ( NamingCodes (..)
+    , applyBytesParam
+    , applyDataParam
+    )
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (
-    AssetName (..),
-    Coin (..),
-    ConwayEra,
-    ExUnits (..),
-    Root (..),
-    TokenId (..),
-    TxOut,
- )
+import Singular.Registry.Ledger
+    ( AssetName (..)
+    , Coin (..)
+    , ConwayEra
+    , ExUnits (..)
+    , Root (..)
+    , TokenId (..)
+    , TxOut
+    )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie qualified as CageTrie
-import Singular.Registry.TxBuilder.Internal (
-    walkEdge,
-    addrFromKeyHashBytes,
-    addrKeyHashBytes,
-    addrWitnessKeyHash,
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    computeScriptIntegrity,
-    currentPosixMs,
-    extractCageDatum,
-    extractOwnerBytes,
-    findRequestUtxos,
-    findStateUtxo,
-    mkCageScript,
-    mkInlineDatum,
-    mkRequestScript,
-    requestAddrFromCfg,
-    scriptHashBytes,
-    scriptFromBytes,
-    spendingIndex,
-    toLedgerData,
-    toPlcData,
-    trySlots,
-    txInToRef,
- )
-import Singular.Registry.TxBuilder.Update (
-    RegistryContext (..),
-    RegistryDuties (..),
-    registryDuties,
-    updateTokenWithDuties,
- )
-import Singular.Registry.TxBuilder.ConnectedFold (
-    ConnectedMint (..),
-    ConnectedSpend (..),
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    Edge,
-    edgeInsertAbsent,
-    OnChainRequest (..),
-    OnChainRoot (..),
-    OnChainTokenState (..),
-    ProofStep (..),
-    RequestAction (Update),
-    UpdateRedeemer (..),
- )
+import Singular.Registry.TxBuilder.ConnectedFold
+    ( ConnectedMint (..)
+    , ConnectedSpend (..)
+    )
+import Singular.Registry.TxBuilder.Internal
+    ( addrFromKeyHashBytes
+    , addrKeyHashBytes
+    , addrWitnessKeyHash
+    , cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , computeScriptIntegrity
+    , currentPosixMs
+    , extractCageDatum
+    , extractOwnerBytes
+    , findRequestUtxos
+    , findStateUtxo
+    , mkCageScript
+    , mkInlineDatum
+    , mkRequestScript
+    , requestAddrFromCfg
+    , scriptFromBytes
+    , scriptHashBytes
+    , spendingIndex
+    , toLedgerData
+    , toPlcData
+    , trySlots
+    , txInToRef
+    , walkEdge
+    )
+import Singular.Registry.TxBuilder.Update
+    ( RegistryContext (..)
+    , RegistryDuties (..)
+    , registryDuties
+    , updateTokenWithDuties
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , Edge
+    , OnChainRequest (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
+    , ProofStep (..)
+    , RequestAction (Update)
+    , UpdateRedeemer (..)
+    , edgeInsertAbsent
+    )
 import Singular.Registry.Types qualified as CageTypes
-import PlutusCore.Data qualified as PLC
-import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 
-import Conformance.Mirror (
-    emit,
-    failWith,
-    require,
- )
+import Conformance.Mirror
+    ( emit
+    , failWith
+    , require
+    )
 
 -- ---------------------------------------------------------
 -- Issue #70 fold assembly: one FoldSpec, every hand-built shape
@@ -192,12 +212,14 @@ data FoldSpec = FoldSpec
     , fsFee :: Maybe Integer
     -- ^ @Nothing@: the caller sizes the fee in a second pass
     , fsRefunds :: [Integer]
-    -- ^ explicit per-request refunds, one per request, of which only the
-    -- UNPROCESSED ones are emitted; @[]@: derive (bond - tip share -
-    -- fee share, first request carries the remainder)
+    {- ^ explicit per-request refunds, one per request, of which only the
+    UNPROCESSED ones are emitted; @[]@: derive (bond - tip share -
+    fee share, first request carries the remainder)
+    -}
     , fsStateOverride :: Maybe OnChainTokenState
-    -- ^ datum for the new state output; @Nothing@: preserve the old
-    -- state with 'fsNewRoot'
+    {- ^ datum for the new state output; @Nothing@: preserve the old
+    state with 'fsNewRoot'
+    -}
     , fsWithdrawal :: Maybe (AccountAddress, Script ConwayEra)
     , fsSigners :: Maybe [KeyHash Guard]
     {- ^ required signers; @Nothing@: the harness key (the process
@@ -217,12 +239,12 @@ data FoldSpec = FoldSpec
     , fsHolderUtxos :: [(TxIn, TxOut ConwayEra)]
     , fsFunder :: Maybe (TxIn, TxOut ConwayEra)
     , fsOmitUnfundedBurn :: Bool
-    -- ^ The cage's reference outputs, published once at its boot and
-    -- copied here by `rowSpec`. Reading them rather than asking for them
-    -- matters: asking publishes, and five awaited publications inside a
-    -- fee loop spend the row's validity window.
+    {- ^ The cage's reference outputs, published once at its boot and
+    copied here by `rowSpec`. Reading them rather than asking for them
+    matters: asking publishes, and five awaited publications inside a
+    fee loop spend the row's validity window.
+    -}
     }
-
 
 assembleFoldSpec :: Env -> FoldSpec -> IO ConwayTx
 assembleFoldSpec env fs = do
@@ -262,9 +284,10 @@ assembleFoldSpec env fs = do
     -- witness to burn. Remove that impossible mint from the refusal probe so
     -- the balanced transaction can reach the state script. An accepted
     -- submission is a finding in submitEdge, never a passing refusal.
-    let duties = if fsOmitUnfundedBurn fs
-            then duties0{rdMints = []}
-            else duties0
+    let duties =
+            if fsOmitUnfundedBurn fs
+                then duties0{rdMints = []}
+                else duties0
     -- A near-now upper bound: the tx is submitted immediately after
     -- assembly, and a slot 30s+ ahead lands past the node's ledger
     -- translation horizon (epoch-safe-zone) and fails phase 1.
@@ -304,7 +327,8 @@ assembleFoldSpec env fs = do
     newStateOut <- case fsStateOverride fs of
         Nothing -> pure (makeStateOut oldState)
         Just s -> pure (makeStateOutOverride s)
-    changeOut <- makeChange pp funder feeAmt (map outCoin (refundOuts refunds)) duties
+    changeOut <-
+        makeChange pp funder feeAmt (map outCoin (refundOuts refunds)) duties
     redeemers <- makeRedeemers fs funder duties
     scripts <- makeScripts fs refs duties
     let signers = case fsSigners fs of
@@ -326,8 +350,8 @@ assembleFoldSpec env fs = do
                     .~ StrictSeq.fromList
                         ( newStateOut
                             : rdOutputs duties
-                            <> refundOuts refunds
-                            <> [changeOut]
+                                <> refundOuts refunds
+                                <> [changeOut]
                         )
                 & feeTxBodyL .~ Coin feeAmt
                 & mintTxBodyL
@@ -357,13 +381,14 @@ assembleFoldSpec env fs = do
         -- #157 C10: no consumer withdrawal rides a fold any more; only a
         -- row that asks for its own stake withdrawal carries one.
         withWd =
-            body & withdrawalsTxBodyL
-                .~ Withdrawals
-                    ( Map.fromList
-                        [ (stakeAcct, Coin 0)
-                        | Just (stakeAcct, _) <- [fsWithdrawal fs]
-                        ]
-                    )
+            body
+                & withdrawalsTxBodyL
+                    .~ Withdrawals
+                        ( Map.fromList
+                            [ (stakeAcct, Coin 0)
+                            | Just (stakeAcct, _) <- [fsWithdrawal fs]
+                            ]
+                        )
     pure $
         mkBasicTx withWd
             & witsTxL . scriptTxWitsL .~ scripts
@@ -374,7 +399,7 @@ assembleFoldSpec env fs = do
         | otherwise =
             pure
                 [ let Coin reqVal = o ^. coinTxOutL
-                   in reqVal - tipAmount
+                  in  reqVal - tipAmount
                 | (_, o) <- fsReqs fs
                 ]
     {- The refunds a fold owes: one per request it does NOT process.
@@ -399,7 +424,7 @@ assembleFoldSpec env fs = do
             newDatum =
                 StateDatum
                     oldState{stateRoot = OnChainRoot (unRoot (fsNewRoot fs))}
-         in mkBasicTxOut
+        in  mkBasicTxOut
                 scriptAddr
                 (snd (fsState fs) ^. valueTxOutL)
                 & datumTxOutL .~ mkInlineDatum (toPlcData newDatum)
@@ -408,7 +433,7 @@ assembleFoldSpec env fs = do
             newDatum =
                 StateDatum
                     overridden{stateRoot = OnChainRoot (unRoot (fsNewRoot fs))}
-         in mkBasicTxOut
+        in  mkBasicTxOut
                 scriptAddr
                 (snd (fsState fs) ^. valueTxOutL)
                 & datumTxOutL .~ mkInlineDatum (toPlcData newDatum)
@@ -435,7 +460,11 @@ assembleFoldSpec env fs = do
             ("hand-build: change under min-ADA: " <> show change)
             (change >= minAda)
         pure out
-    makeRedeemers :: FoldSpec -> (TxIn, TxOut ConwayEra) -> RegistryDuties -> IO (Redeemers ConwayEra)
+    makeRedeemers
+        :: FoldSpec
+        -> (TxIn, TxOut ConwayEra)
+        -> RegistryDuties
+        -> IO (Redeemers ConwayEra)
     makeRedeemers fs' funder' duties = do
         -- The same input set the body builds, custody included: a spending
         -- index is a position in it, and two different sets give two
@@ -458,7 +487,7 @@ assembleFoldSpec env fs = do
             stateRef = txInToRef (fst (fsState fs'))
             requestPairs =
                 [ let purpose = ConwaySpending (AsIx (spendingIndex reqIn inputs))
-                   in (purpose, (toLedgerData (Contribute stateRef), unitsFor purpose))
+                  in  (purpose, (toLedgerData (Contribute stateRef), unitsFor purpose))
                 | (reqIn, _) <- fsReqs fs'
                 ]
             -- #157 C10: the consumer rewarding purpose is gone; a row that
@@ -467,15 +496,23 @@ assembleFoldSpec env fs = do
                 Nothing -> []
                 Just _ ->
                     [ let purpose = ConwayRewarding (AsIx 0)
-                       in (purpose, (toLedgerData (0 :: Integer), unitsFor purpose))
+                      in  (purpose, (toLedgerData (0 :: Integer), unitsFor purpose))
                     ]
             -- #157: the token policies this fold moves tokens under.
             mintPolicies = map cmPolicy (rdMints duties)
             mintIndex p =
-                AsIx (fromIntegral (length (takeWhile (/= p) (Map.keys (Map.fromList [(q, ()) | q <- mintPolicies])))))
+                AsIx
+                    ( fromIntegral
+                        ( length
+                            ( takeWhile
+                                (/= p)
+                                (Map.keys (Map.fromList [(q, ()) | q <- mintPolicies]))
+                            )
+                        )
+                    )
             mintPairs =
                 [ let purpose = ConwayMinting (mintIndex (cmPolicy m))
-                   in (purpose, (toLedgerData (cmRedeemer m), unitsFor purpose))
+                  in  (purpose, (toLedgerData (cmRedeemer m), unitsFor purpose))
                 | m <- rdMints duties
                 ]
             pairs =
@@ -483,12 +520,12 @@ assembleFoldSpec env fs = do
                 , (toLedgerData (Modify (fsActions fs')), unitsFor statePurpose)
                 )
                     : requestPairs
-                    <> hookPairs
-                    <> mintPairs
-                    <> [ let purpose = ConwaySpending (AsIx (spendingIndex (fst (csUtxo sp)) inputs))
-                          in (purpose, (toLedgerData (csRedeemer sp), unitsFor purpose))
-                       | sp <- rdSpends duties
-                       ]
+                        <> hookPairs
+                        <> mintPairs
+                        <> [ let purpose = ConwaySpending (AsIx (spendingIndex (fst (csUtxo sp)) inputs))
+                             in  (purpose, (toLedgerData (csRedeemer sp), unitsFor purpose))
+                           | sp <- rdSpends duties
+                           ]
         pure (Redeemers (Map.fromList pairs))
     makeScripts fs' refs duties = do
         let stateScript = mkCageScript (fsCfg fs')
@@ -532,15 +569,15 @@ assembleFoldSpec env fs = do
     requestTokenMatches out = case extractCageDatum out of
         Just (RequestDatum rq) ->
             let CageTypes.OnChainTokenId (BuiltinByteString bs) = requestToken rq
-             in AssetName (SBS.toShort bs) == unTokenId (fsTid fs)
+            in  AssetName (SBS.toShort bs) == unTokenId (fsTid fs)
         _ -> False
 
-
--- | Assemble with an iterated fee: assemble, let the ledger price
--- the transaction, and repeat until the declared fee exceeds the
--- estimate by a fixed margin. The margin discipline is CG05's: too
--- small fails loudly at submit (phase 1, no script named); too large
--- fails loudly in assembly (a refund under min-ADA).
+{- | Assemble with an iterated fee: assemble, let the ledger price
+the transaction, and repeat until the declared fee exceeds the
+estimate by a fixed margin. The margin discipline is CG05's: too
+small fails loudly at submit (phase 1, no script named); too large
+fails loudly in assembly (a refund under min-ADA).
+-}
 assembleFoldWithFee :: Env -> FoldSpec -> IO ConwayTx
 assembleFoldWithFee env fs = go (0 :: Int) 1_500_000
   where
@@ -557,19 +594,18 @@ assembleFoldWithFee env fs = go (0 :: Int) 1_500_000
             then pure tx
             else go (n + 1) needed
 
-
 {- | A FoldSpec with this cage's defaults: derive refunds and
 signers, no withdrawal, no state override, deadline validity.
 -}
-rowSpec ::
-    RowCage ->
-    TokenId ->
-    (TxIn, TxOut ConwayEra) ->
-    [(TxIn, TxOut ConwayEra)] ->
-    [RequestAction] ->
-    Root ->
-    ExUnits ->
-    FoldSpec
+rowSpec
+    :: RowCage
+    -> TokenId
+    -> (TxIn, TxOut ConwayEra)
+    -> [(TxIn, TxOut ConwayEra)]
+    -> [RequestAction]
+    -> Root
+    -> ExUnits
+    -> FoldSpec
 rowSpec cage tid state reqs actions root units =
     FoldSpec
         { fsCfg = rcCfg cage
@@ -594,12 +630,12 @@ rowSpec cage tid state reqs actions root units =
         , fsOmitUnfundedBurn = False
         }
 
-
--- | Twice the measured units: the declared budget of a refusing
--- fold. A cage with no measured fold yet (its rows refuse before
--- above anything a script consumes before erroring, far below the
--- per-purpose phase-2 ceiling, and small enough that the node's
--- rejection payload stays inside the local channel's limits.
+{- | Twice the measured units: the declared budget of a refusing
+fold. A cage with no measured fold yet (its rows refuse before
+above anything a script consumes before erroring, far below the
+per-purpose phase-2 ceiling, and small enough that the node's
+rejection payload stays inside the local channel's limits.
+-}
 declaredSpec :: Env -> RowCage -> IO ExUnits
 declaredSpec env cage = do
     (mem, cpu) <- readIORef (rcUnits cage)
@@ -612,9 +648,10 @@ declaredSpec env cage = do
                     ExUnits
                         (maxMem `div` 100)
                         (maxSteps `div` 20)
-            emit "units" "no measured fold in this cage; declaring 1% mem / 5% cpu of the maxima"
+            emit
+                "units"
+                "no measured fold in this cage; declaring 1% mem / 5% cpu of the maxima"
             pure fallback
-
 
 {- | One row cage's request-and-fold cycle through the library
 builder, with the calibration the hand-built shapes inherit their
@@ -622,14 +659,14 @@ credibility from: submit the request, build the library fold over
 all pending requests, build the hand parallel, compare, measure,
 submit, commit the trie.
 -}
-rowRequestAndFold ::
-    Env ->
-    RowCage ->
-    String ->
-    ByteString ->
-    ByteString ->
-    Edge ->
-    IO (ConwayTx, Integer, Integer, Integer)
+rowRequestAndFold
+    :: Env
+    -> RowCage
+    -> String
+    -> ByteString
+    -> ByteString
+    -> Edge
+    -> IO (ConwayTx, Integer, Integer, Integer)
 rowRequestAndFold env cage label key _val _op = do
     let cfg = rcCfg cage
         prov = envProv env
@@ -659,14 +696,15 @@ rowRequestAndFold env cage label key _val _op = do
     pp <- Cage.queryProtocolParams prov
     let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
         calibSpec =
-            (rowSpec
+            ( rowSpec
                 cage
                 tid
                 state
                 reqUtxos
                 (map Update handProofs)
                 handRoot
-                (ExUnits maxMem maxSteps))
+                (ExUnits maxMem maxSteps)
+            )
                 { fsFee = Just 700_000
                 }
     handFold <- assembleFoldSpec env calibSpec
@@ -683,7 +721,6 @@ rowRequestAndFold env cage label key _val _op = do
     rowCommit env cage key edgeInsertAbsent
     pure (signed, mem, cpu, size)
 
-
 -- ---------------------------------------------------------
 -- Hand-built folds
 -- ---------------------------------------------------------
@@ -699,7 +736,6 @@ loudly either way.
 declaredUnits :: (Integer, Integer) -> ExUnits
 declaredUnits (mem, cpu) =
     ExUnits (fromIntegral (mem * 2)) (fromIntegral (cpu * 2))
-
 
 {- | The hand-built poisoned fold for CG05: spends the state and the
 sole pending occupied-insert request exactly as the library fold
@@ -741,7 +777,6 @@ buildRefusedFold env = do
     -- masquerade as the row's verdict.
     feeMargin = 50_000
 
-
 {- | The hand-built valid fold for calibration: same assembly as the
 poisoned fold but over the valid pending requests, with maximal
 declared units (it is never submitted, so its fee is irrelevant).
@@ -755,16 +790,23 @@ buildValidFold env = do
     (proofLists, newRoot) <- validProofs env reqUtxos
     -- Calibration builds never submit: any fee keeping the outputs
     -- above min-ADA serves; fee-dependent fields are uncompared.
-    hand <- assembleFold env stateUtxo reqUtxos proofLists newRoot (ExUnits maxMem maxSteps) 700_000
+    hand <-
+        assembleFold
+            env
+            stateUtxo
+            reqUtxos
+            proofLists
+            newRoot
+            (ExUnits maxMem maxSteps)
+            700_000
     pure (stateIn, hand)
-
 
 {- | The fold's inputs as the library discovers them: the state UTxO
 by policy token, the pending requests sorted. Shared by the
 calibration build so both builders consume the same UTxOs.
 -}
-foldUtxos ::
-    Env -> IO ((TxIn, TxOut ConwayEra), [(TxIn, TxOut ConwayEra)])
+foldUtxos
+    :: Env -> IO ((TxIn, TxOut ConwayEra), [(TxIn, TxOut ConwayEra)])
 foldUtxos env = do
     let cfg = envCfg env
         prov = envProv env
@@ -782,7 +824,6 @@ foldUtxos env = do
     require "hand-build: no pending requests" (not (null reqs))
     pure (stateUtxo, reqs)
 
-
 {- | Proofs and root for the poisoned fold: the overwrite the library
 itself would declare (insert over the occupied key, proof steps,
 new root), computed through the same speculative trie the library
@@ -796,11 +837,11 @@ poisonProofs env =
         r <- CageTrie.getRoot trie
         pure (fromMaybe [] mSteps, r)
 
-
 {- | Proofs and root for valid folds, replicating the library's
 per-request processing through the same speculative trie.
 -}
-validProofs :: Env -> [(TxIn, TxOut ConwayEra)] -> IO ([[ProofStep]], Root)
+validProofs
+    :: Env -> [(TxIn, TxOut ConwayEra)] -> IO ([[ProofStep]], Root)
 validProofs env reqUtxos =
     withSpeculativeTrie (envTm env) (envTid env) $ \trie -> do
         ps <- mapM (processOne trie) reqUtxos
@@ -817,7 +858,6 @@ validProofs env reqUtxos =
             Just (RequestDatum rq) -> (requestKey rq, requestEdge rq)
             _ -> error "hand-build: pending UTxO has no request datum"
 
-
 {- | Assemble a fold transaction by hand: the library fold's shape
 with hand-computed fee, change and declared units. Two-pass fee
 sizing against the devnet minima plus a flat margin; the refund and
@@ -828,15 +868,15 @@ change are asserted above min-ADA, never defaulted.
 with caller-computed fee, change and declared units. The refund and
 change are asserted above min-ADA, never defaulted.
 -}
-assembleFold ::
-    Env ->
-    (TxIn, TxOut ConwayEra) ->
-    [(TxIn, TxOut ConwayEra)] ->
-    [[ProofStep]] ->
-    Root ->
-    ExUnits ->
-    Integer ->
-    IO ConwayTx
+assembleFold
+    :: Env
+    -> (TxIn, TxOut ConwayEra)
+    -> [(TxIn, TxOut ConwayEra)]
+    -> [[ProofStep]]
+    -> Root
+    -> ExUnits
+    -> Integer
+    -> IO ConwayTx
 assembleFold env (stateIn, stateOut) reqUtxos proofLists newRoot units fee = do
     let prov = envProv env
     pp <- Cage.queryProtocolParams prov
@@ -851,8 +891,14 @@ assembleFold env (stateIn, stateOut) reqUtxos proofLists newRoot units fee = do
     -- protocol fact, not a builder opinion; what CL01 compares is the
     -- two assemblies of them.
     ctx0 <- registryContext env
-    let ctx = ctx0 {rcAllowInadmissible = True}
-    duties <- case registryDuties (envCfg env) pp oldState ctx reqUtxos (map (const True) reqUtxos) of
+    let ctx = ctx0{rcAllowInadmissible = True}
+    duties <- case registryDuties
+        (envCfg env)
+        pp
+        oldState
+        ctx
+        reqUtxos
+        (map (const True) reqUtxos) of
         Right d -> pure d
         Left err -> failWith ("hand-build: " <> err)
     -- #157 C10: there is no pinned consumer and no mandatory
@@ -865,13 +911,15 @@ assembleFold env (stateIn, stateOut) reqUtxos proofLists newRoot units fee = do
             custodyIns = map (fst . csUtxo) (rdSpends duties)
             mintValue =
                 foldr
-                    (\m acc -> Map.insertWith (Map.unionWith (+)) (cmPolicy m) (cmAssets m) acc)
+                    ( \m acc -> Map.insertWith (Map.unionWith (+)) (cmPolicy m) (cmAssets m) acc
+                    )
                     Map.empty
                     (rdMints duties)
             inputs =
                 Set.fromList
                     (stateIn : fst funder : map fst reqUtxos <> custodyIns)
-        changeOut <- makeChange pp funder feeAmt (newStateOut : dutyOuts) (rdSpends duties)
+        changeOut <-
+            makeChange pp funder feeAmt (newStateOut : dutyOuts) (rdSpends duties)
         redeemers <-
             makeRedeemers
                 stateIn
@@ -947,7 +995,8 @@ assembleFold env (stateIn, stateOut) reqUtxos proofLists newRoot units fee = do
             -- #157: minting purposes are indexed by the policy's position
             -- in the transaction's own sorted mint map.
             mintIndex policy =
-                AsIx (fromIntegral (length (takeWhile (/= policy) (Map.keys mintValue))))
+                AsIx
+                    (fromIntegral (length (takeWhile (/= policy) (Map.keys mintValue))))
             pairs =
                 ( statePurpose
                 , (toLedgerData modRedeemer, units')
@@ -957,16 +1006,16 @@ assembleFold env (stateIn, stateOut) reqUtxos proofLists newRoot units fee = do
                         )
                       | (reqIn, _) <- reqUtxos'
                       ]
-                    <> [ ( ConwaySpending (AsIx (spendingIndex (fst (csUtxo sp)) inputs))
-                         , (toLedgerData (csRedeemer sp), units')
-                         )
-                       | sp <- rdSpends duties
-                       ]
-                    <> [ ( ConwayMinting (mintIndex (cmPolicy m))
-                         , (toLedgerData (cmRedeemer m), units')
-                         )
-                       | m <- rdMints duties
-                       ]
+                        <> [ ( ConwaySpending (AsIx (spendingIndex (fst (csUtxo sp)) inputs))
+                             , (toLedgerData (csRedeemer sp), units')
+                             )
+                           | sp <- rdSpends duties
+                           ]
+                        <> [ ( ConwayMinting (mintIndex (cmPolicy m))
+                             , (toLedgerData (cmRedeemer m), units')
+                             )
+                           | m <- rdMints duties
+                           ]
         pure (Redeemers (Map.fromList pairs))
     -- The state validator alone is fifteen kilobytes: with the session.s
     -- reference outputs in view every purpose resolves through them, and
@@ -989,13 +1038,15 @@ assembleFold env (stateIn, stateOut) reqUtxos proofLists newRoot units fee = do
     adaOnly out = case out ^. valueTxOutL of
         MaryValue _ (MultiAsset ma) -> Map.null ma
 
-
 {- | The fold's validity upper slot, replicating the library's
 deadline: the earliest request deadline mapped to a slot, with the
 library's own fallbacks.
 -}
-foldUpperSlot ::
-    Cage.Provider IO -> OnChainTokenState -> [TxOut ConwayEra] -> IO SlotNo
+foldUpperSlot
+    :: Cage.Provider IO
+    -> OnChainTokenState
+    -> [TxOut ConwayEra]
+    -> IO SlotNo
 foldUpperSlot prov oldState reqOuts = do
     deadlines <- mapM submittedAt reqOuts
     let earliest = minimum deadlines + stateProcessTime oldState
@@ -1014,7 +1065,6 @@ foldUpperSlot prov oldState reqOuts = do
     submittedAt out = case extractCageDatum out of
         Just (RequestDatum rq) -> pure (requestSubmittedAt rq)
         _ -> failWith "hand-build: pending UTxO has no request datum"
-
 
 {- | The calibration: the hand-built valid fold must match the
 library fold on everything the validator rules on — same inputs,
@@ -1065,11 +1115,10 @@ calibrateFold stateIn hand dsl = do
         let Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
             idx =
                 spendingIndex stateIn (tx ^. bodyTxL . inputsTxBodyL)
-         in Map.lookup (ConwaySpending (AsIx idx)) m
+        in  Map.lookup (ConwaySpending (AsIx idx)) m
     redeemerKeys tx =
         let Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
-         in Map.keys m
-
+        in  Map.keys m
 
 -- ---------------------------------------------------------
 -- Fold plumbing (the E2E code path)
@@ -1083,19 +1132,19 @@ calibrated: the hand-built parallel must match the library fold on
 inputs, state output, refund destinations and Modify proofs, or
 the hand model drifted and the run fails before reading verdicts.
 -}
-requestAndFold ::
-    Env -> String -> Edge -> IO (ConwayTx, Integer, Integer, Integer)
+requestAndFold
+    :: Env -> String -> Edge -> IO (ConwayTx, Integer, Integer, Integer)
 requestAndFold env label = requestAndFoldKey env label cgKey
 
-
--- | `requestAndFold` on a named key: the delete and re-insert rows own
--- their own, because their edges need a witnessed absence to act on.
-requestAndFoldKey ::
-    Env ->
-    String ->
-    ByteString ->
-    Edge ->
-    IO (ConwayTx, Integer, Integer, Integer)
+{- | `requestAndFold` on a named key: the delete and re-insert rows own
+their own, because their edges need a witnessed absence to act on.
+-}
+requestAndFoldKey
+    :: Env
+    -> String
+    -> ByteString
+    -> Edge
+    -> IO (ConwayTx, Integer, Integer, Integer)
 requestAndFoldKey env label key op = do
     let cfg = envCfg env
         prov = envProv env
@@ -1132,7 +1181,6 @@ requestAndFoldKey env label key op = do
     emitMeasure env label mem cpu size
     pure (signed, mem, cpu, size)
 
-
 {- | The duties context for a fold spec, from its own cage configuration
 and the reference outputs it carries.
 -}
@@ -1163,7 +1211,6 @@ foldSpecContext env fs = do
               rcAllowInadmissible = True
             , rcRefUtxos = fsRefs fs
             }
-
 
 -- | Which of a fold's requests it PROCESSES, as opposed to rejects.
 foldSpecProcessed :: FoldSpec -> [Bool]

@@ -11,18 +11,18 @@ address every actor is funded from.
 Key material is read from the joiner's file and never printed; only
 the derived (public) address is reported ('bech32Address').
 -}
-module Singular.Registry.Node.Wallet (
-    -- * Wallet
-    Wallet (..),
-    loadWallet,
-    walletForMode,
-    funderAddr,
-    funderSignKey,
+module Singular.Registry.Node.Wallet
+    ( -- * Wallet
+      Wallet (..)
+    , loadWallet
+    , walletForMode
+    , funderAddr
+    , funderSignKey
 
-    -- * Identity
-    sessionMagic,
-    bech32Address,
-) where
+      -- * Identity
+    , sessionMagic
+    , bech32Address
+    ) where
 
 import Data.Aeson (eitherDecodeStrict, withObject, (.:))
 import Data.Aeson.Types (parseMaybe)
@@ -40,22 +40,25 @@ import Ouroboros.Network.Magic (NetworkMagic (..))
 
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.BaseTypes (Network (..))
-import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
-import Cardano.Node.Client.E2E.Setup (
-    Ed25519DSIGN,
-    SignKeyDSIGN,
-    devnetMagic,
-    genesisSignKey,
-    keyHashFromSignKey,
-    rawDeserialiseSignKeyDSIGN,
- )
-import Singular.Registry.Node.Options (
-    ExternalNode (..),
-    NodeMode (..),
-    die,
-    mainnetMagic,
-    runMode,
- )
+import Cardano.Ledger.Credential
+    ( Credential (..)
+    , StakeReference (..)
+    )
+import Cardano.Node.Client.E2E.Setup
+    ( Ed25519DSIGN
+    , SignKeyDSIGN
+    , devnetMagic
+    , genesisSignKey
+    , keyHashFromSignKey
+    , rawDeserialiseSignKeyDSIGN
+    )
+import Singular.Registry.Node.Options
+    ( ExternalNode (..)
+    , NodeMode (..)
+    , die
+    , mainnetMagic
+    , runMode
+    )
 
 -- | The wallet funding every actor of a run.
 data Wallet = Wallet

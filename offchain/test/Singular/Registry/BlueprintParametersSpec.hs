@@ -46,8 +46,9 @@ paramsOf bp title =
 
 spec :: Spec
 spec = describe "Blueprint parameter counts" $ do
-    it "reads an absent parameters array as zero and a present one by its length" $
-        case eitherDecode blueprintJson of
+    it
+        "reads an absent parameters array as zero and a present one by its length"
+        $ case eitherDecode blueprintJson of
             Left err -> expectationFailure ("blueprint did not parse: " <> err)
             Right bp -> do
                 -- The parameterless case: what makes a compiled hash a

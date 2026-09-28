@@ -15,11 +15,11 @@ format preserved; 4KB script bodies elided):
 -}
 module Singular.Registry.FailureMatchSpec (spec) where
 
-import Singular.Registry.TxBuilder.Internal (
-    evalScriptHash,
-    failedWitnessHash,
-    isBudgetFailure,
- )
+import Singular.Registry.TxBuilder.Internal
+    ( evalScriptHash
+    , failedWitnessHash
+    , isBudgetFailure
+    )
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 consumerHash :: String

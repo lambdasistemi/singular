@@ -58,27 +58,27 @@ import Data.ByteString.Short qualified as SBS
 import Lens.Micro ((^.))
 
 import Cardano.Ledger.Core (valueTxOutL)
-import Singular.Registry.Blueprint (
-    Blueprint,
-    extractCompiledCode,
-    loadRegistryCodesFromEnv,
- )
+import Singular.Registry.Blueprint
+    ( Blueprint
+    , extractCompiledCode
+    , loadRegistryCodesFromEnv
+    )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (AssetName (..), Root (..))
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Internal (policyIdFromPin)
 import Singular.Registry.Types (edgeInsertActive)
 
-import Singular.Registry.Driver (
-    FoldOutcome (..),
-    bootRegistry,
-    foldEdgeTo,
-    renderRoot,
- )
-import Singular.Registry.E2E.CageSpec (
-    submitWithGenesis,
-    withE2E,
- )
+import Singular.Registry.Driver
+    ( FoldOutcome (..)
+    , bootRegistry
+    , foldEdgeTo
+    , renderRoot
+    )
+import Singular.Registry.E2E.CageSpec
+    ( submitWithGenesis
+    , withE2E
+    )
 
 spec :: Blueprint -> Spec
 spec bp = describe "Inserting an active key" $ do
@@ -91,15 +91,18 @@ spec bp = describe "Inserting an active key" $ do
             it "no compiled code" $
                 expectationFailure "state or request script not found"
 
-insertActiveSpec ::
-    SBS.ShortByteString -> SBS.ShortByteString -> Spec
+insertActiveSpec
+    :: SBS.ShortByteString -> SBS.ShortByteString -> Spec
 insertActiveSpec stateBytes requestBytes = do
-    it "when a fresh key is inserted, delivers exactly one active token to the named wallet" $
-        withE2E stateBytes requestBytes $ \cfg prov submit tm -> do
+    it
+        "when a fresh key is inserted, delivers exactly one active token to the named wallet"
+        $ withE2E stateBytes requestBytes
+        $ \cfg prov submit tm -> do
             codes <- loadRegistryCodesFromEnv
             reg <-
                 bootRegistry cfg codes prov (submitWithGenesis submit) genesisAddr tm
-            _ <- sayFold $ foldEdgeTo reg activeKey edgeInsertActive walletDestination
+            _ <-
+                sayFold $ foldEdgeTo reg activeKey edgeInsertActive walletDestination
 
             -- The observation, not the exit code: exactly one token under
             -- the ACTIVE policy, named by the key, at the wallet the
@@ -112,8 +115,10 @@ insertActiveSpec stateBytes requestBytes = do
             held <- activeHeldAt prov cfg activeKey
             held `shouldBe` (1 :: Integer)
 
-    it "when a key is already active, refuses reinsertion while accepting a fresh key" $
-        withE2E stateBytes requestBytes $ \cfg prov submit tm -> do
+    it
+        "when a key is already active, refuses reinsertion while accepting a fresh key"
+        $ withE2E stateBytes requestBytes
+        $ \cfg prov submit tm -> do
             codes <- loadRegistryCodesFromEnv
             reg <-
                 bootRegistry cfg codes prov (submitWithGenesis submit) genesisAddr tm
@@ -194,7 +199,8 @@ sayFold act = do
     pure o
 
 -- | The quantity held under the ACTIVE policy at this key, at the wallet.
-activeHeldAt :: Cage.Provider IO -> CageConfig -> ByteString -> IO Integer
+activeHeldAt
+    :: Cage.Provider IO -> CageConfig -> ByteString -> IO Integer
 activeHeldAt prov cfg key = do
     walletUtxos <- Cage.queryUTxOs prov genesisAddr
     let policy = policyIdFromPin (cfgActivePolicy cfg)

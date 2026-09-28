@@ -20,13 +20,13 @@ evidence belongs to the separate, retained @repair-rows@ runner
 (@ownerless-end@), which is currently unverified under #172 — not to this
 journey.
 -}
-module Journey.Controls (
-    stepReject,
-    expectRejected,
-    expectedRejectionReason,
-    negativeKey,
-    negativeValue,
-) where
+module Journey.Controls
+    ( stepReject
+    , expectRejected
+    , expectedRejectionReason
+    , negativeKey
+    , negativeValue
+    ) where
 
 import Control.Monad (unless)
 import Data.ByteString (ByteString)
@@ -44,45 +44,53 @@ import Cardano.Ledger.Api.Tx.Out (TxOut)
 import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Node.Client.E2E.Setup (addKeyWitness)
-import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Cardano.Node.Client.Submitter
+    ( SubmitResult (..)
+    , Submitter (..)
+    )
 import Cardano.Tx.Ledger (ConwayTx)
 
-import Journey.Chain (
-    genesisAddr,
-    genesisSignKey,
-    readChainState,
-    submitWithGenesis,
- )
-import Journey.Malformations (
-    dropModifyProof,
-    forgeContributeStateRef,
-    tamperRoot,
-    tamperStateOutputRoot,
- )
+import Journey.Chain
+    ( genesisAddr
+    , genesisSignKey
+    , readChainState
+    , submitWithGenesis
+    )
+import Journey.Malformations
+    ( dropModifyProof
+    , forgeContributeStateRef
+    , tamperRoot
+    , tamperStateOutputRoot
+    )
 import Journey.Narration (emit, failWith, hex, require, textOf)
 import Journey.Steps (journeyKey, journeyValue)
 import Singular.Registry.Blueprint (NamingCodes)
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (ConwayEra, Root (..), TokenId (..), TxIn)
+import Singular.Registry.Ledger
+    ( ConwayEra
+    , Root (..)
+    , TokenId (..)
+    , TxIn
+    )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie qualified as CageTrie
 import Singular.Registry.TxBuilder.Edges qualified as Edges
-import Singular.Registry.TxBuilder.Internal (
-    cageAddrFromCfg,
-    extractCageDatum,
-    leafAbsent,
-    requestAddrFromCfg,
-    scriptHashBytes,
-    txInToRef,
- )
+import Singular.Registry.TxBuilder.Internal
+    ( cageAddrFromCfg
+    , extractCageDatum
+    , leafAbsent
+    , requestAddrFromCfg
+    , scriptHashBytes
+    , txInToRef
+    )
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainRoot (..),
-    OnChainTokenState (..),
-    edgeInsertAbsent,
- )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
+    , edgeInsertAbsent
+    )
 
 {- | The rejection reason each negative case requires: the
 node must report a phase-2 Plutus evaluation failure — the
@@ -114,16 +122,16 @@ prove the authenticated state is unchanged: a rejected
 evaluation never applies, so the rejected transactions must
 have left no trace.
 -}
-stepReject ::
-    CageConfig ->
-    NamingCodes ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    TrieManager IO ->
-    TokenId ->
-    [(TxIn, TxOut ConwayEra)] ->
-    OnChainTokenState ->
-    IO ()
+stepReject
+    :: CageConfig
+    -> NamingCodes
+    -> Cage.Provider IO
+    -> Submitter IO
+    -> TrieManager IO
+    -> TokenId
+    -> [(TxIn, TxOut ConwayEra)]
+    -> OnChainTokenState
+    -> IO ()
 stepReject cfg codes prov submit tm tid refs stateBeforeRejects = do
     -- A second, unapplied insert request: the payload the
     -- mutated updates below pretend to process. It stays at
@@ -259,13 +267,13 @@ validators must refuse. Fails the journey if the node
 accepts it — naming the guard that did not hold — or if it
 rejects it for any reason other than 'expectedRejectionReason'.
 -}
-expectRejected ::
-    String ->
-    String ->
-    String ->
-    Submitter IO ->
-    ConwayTx ->
-    IO ()
+expectRejected
+    :: String
+    -> String
+    -> String
+    -> Submitter IO
+    -> ConwayTx
+    -> IO ()
 expectRejected caseName guard expectedScript submit tx = do
     result <- submitTx submit (addKeyWitness genesisSignKey tx)
     case result of

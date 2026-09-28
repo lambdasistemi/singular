@@ -32,31 +32,31 @@ import Control.Exception (SomeException, try)
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.List (isInfixOf)
-import Test.Hspec (
-    Spec,
-    describe,
-    expectationFailure,
-    it,
-    shouldBe,
-    shouldNotBe,
- )
+import Test.Hspec
+    ( Spec
+    , describe
+    , expectationFailure
+    , it
+    , shouldBe
+    , shouldNotBe
+    )
 
 import Cardano.Node.Client.E2E.Setup (genesisAddr)
-import Singular.Registry.Blueprint (
-    Blueprint,
-    extractCompiledCode,
-    loadRegistryCodesFromEnv,
- )
-import Singular.Registry.Driver (
-    FoldOutcome (..),
-    bootRegistry,
-    chainRoot,
-    foldEdge,
-    mirrorRoot,
-    registryRefs,
-    registryTokenId,
-    renderRoot,
- )
+import Singular.Registry.Blueprint
+    ( Blueprint
+    , extractCompiledCode
+    , loadRegistryCodesFromEnv
+    )
+import Singular.Registry.Driver
+    ( FoldOutcome (..)
+    , bootRegistry
+    , chainRoot
+    , foldEdge
+    , mirrorRoot
+    , registryRefs
+    , registryTokenId
+    , renderRoot
+    )
 import Singular.Registry.Ledger (Root (..))
 import Singular.Registry.TxBuilder.Edges qualified as Edges
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
@@ -77,8 +77,10 @@ spec bp = describe "Keeping the local registry in step with the chain" $ do
 
 driverSpec :: SBS.ShortByteString -> SBS.ShortByteString -> Spec
 driverSpec stateBytes requestBytes = do
-    it "folds a named sequence of edges, each committed before the next proof" $
-        withE2E stateBytes requestBytes $ \cfg prov submit tm -> do
+    it
+        "folds a named sequence of edges, each committed before the next proof"
+        $ withE2E stateBytes requestBytes
+        $ \cfg prov submit tm -> do
             codes <- loadRegistryCodesFromEnv
             reg <-
                 bootRegistry cfg codes prov (submitWithGenesis submit) genesisAddr tm
@@ -100,8 +102,10 @@ driverSpec stateBytes requestBytes = do
             onChain <- chainRoot reg
             unRoot mirror `shouldBe` unOnChainRoot onChain
 
-    it "rejects a caller that landed a fold without committing it, at the next fold" $
-        withE2E stateBytes requestBytes $ \cfg prov submit tm -> do
+    it
+        "rejects a caller that landed a fold without committing it, at the next fold"
+        $ withE2E stateBytes requestBytes
+        $ \cfg prov submit tm -> do
             codes <- loadRegistryCodesFromEnv
             let submit' = submitWithGenesis submit
             reg <- bootRegistry cfg codes prov submit' genesisAddr tm
@@ -148,7 +152,8 @@ driverSpec stateBytes requestBytes = do
                 chainHex = renderRoot (unOnChainRoot landedChain)
             staleHex `shouldNotBe` chainHex
 
-            result <- try @SomeException (foldEdge reg afterSeededKey edgeInsertAbsent)
+            result <-
+                try @SomeException (foldEdge reg afterSeededKey edgeInsertAbsent)
             case result of
                 Right _ ->
                     expectationFailure

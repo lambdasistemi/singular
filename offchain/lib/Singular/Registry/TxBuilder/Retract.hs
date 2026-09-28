@@ -8,10 +8,10 @@ pending request. The requester spends their request
 UTxO (recovering locked ADA) while referencing the
 State UTxO. Validity interval is Phase 2.
 -}
-module Singular.Registry.TxBuilder.Retract (
-    retractRequestImpl,
-    retractRequestAtTipImpl,
-) where
+module Singular.Registry.TxBuilder.Retract
+    ( retractRequestImpl
+    , retractRequestAtTipImpl
+    ) where
 
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
@@ -21,65 +21,65 @@ import Data.Set qualified as Set
 import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Allegra.Scripts (
-    ValidityInterval (..),
- )
+import Cardano.Ledger.Allegra.Scripts
+    ( ValidityInterval (..)
+    )
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
-import Cardano.Ledger.Alonzo.TxBody (
-    reqSignerHashesTxBodyL,
-    scriptIntegrityHashTxBodyL,
- )
-import Cardano.Ledger.Api.Tx (
-    mkBasicTx,
-    witsTxL,
- )
-import Cardano.Ledger.Api.Tx.Body (
-    collateralInputsTxBodyL,
-    inputsTxBodyL,
-    mkBasicTxBody,
-    outputsTxBodyL,
-    referenceInputsTxBodyL,
-    vldtTxBodyL,
- )
-import Cardano.Ledger.Api.Tx.Out (
-    coinTxOutL,
-    datumTxOutL,
-    getMinCoinTxOut,
- )
-import Cardano.Ledger.Api.Tx.Wits (
-    Redeemers (..),
-    rdmrsTxWitsL,
-    scriptTxWitsL,
- )
-import Cardano.Ledger.BaseTypes (
-    SlotNo (..),
-    StrictMaybe (SJust),
- )
-import Cardano.Ledger.Conway.Scripts (
-    ConwayPlutusPurpose (..),
- )
+import Cardano.Ledger.Alonzo.TxBody
+    ( reqSignerHashesTxBodyL
+    , scriptIntegrityHashTxBodyL
+    )
+import Cardano.Ledger.Api.Tx
+    ( mkBasicTx
+    , witsTxL
+    )
+import Cardano.Ledger.Api.Tx.Body
+    ( collateralInputsTxBodyL
+    , inputsTxBodyL
+    , mkBasicTxBody
+    , outputsTxBodyL
+    , referenceInputsTxBodyL
+    , vldtTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( coinTxOutL
+    , datumTxOutL
+    , getMinCoinTxOut
+    )
+import Cardano.Ledger.Api.Tx.Wits
+    ( Redeemers (..)
+    , rdmrsTxWitsL
+    , scriptTxWitsL
+    )
+import Cardano.Ledger.BaseTypes
+    ( SlotNo (..)
+    , StrictMaybe (SJust)
+    )
+import Cardano.Ledger.Conway.Scripts
+    ( ConwayPlutusPurpose (..)
+    )
 import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.TxIn (TxIn)
 
 import Cardano.Tx.Ledger (ConwayTx)
-import PlutusTx.Builtins.Internal (
-    BuiltinByteString (..),
- )
-import Singular.Registry.Config (
-    CageConfig (..),
- )
-import Singular.Registry.Ledger (
-    ConwayTxBody,
-    TokenId,
- )
+import PlutusTx.Builtins.Internal
+    ( BuiltinByteString (..)
+    )
+import Singular.Registry.Config
+    ( CageConfig (..)
+    )
+import Singular.Registry.Ledger
+    ( ConwayTxBody
+    , TokenId
+    )
 import Singular.Registry.Provider (Provider (..))
 import Singular.Registry.TxBuilder.Internal
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainRequest (..),
-    OnChainTokenState (..),
-    UpdateRedeemer (..),
- )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRequest (..)
+    , OnChainTokenState (..)
+    , UpdateRedeemer (..)
+    )
 
 {- | Build a retract-request transaction.
 
@@ -88,23 +88,29 @@ state UTxO. All its lovelace is paid to the request owner's key,
 with the consumed request reference as the return's inline datum.
 Wallet funding pays fees separately. Requires Phase 2 validity.
 -}
-retractRequestImpl ::
-    CageConfig ->
-    Provider IO ->
-    -- | Token the request belongs to
-    TokenId ->
-    -- | UTxO reference of the request to retract
-    TxIn ->
-    -- | Fee payer and change address
-    Addr ->
-    IO ConwayTx
+retractRequestImpl
+    :: CageConfig
+    -> Provider IO
+    -> TokenId
+    -- ^ Token the request belongs to
+    -> TxIn
+    -- ^ UTxO reference of the request to retract
+    -> Addr
+    -- ^ Fee payer and change address
+    -> IO ConwayTx
 retractRequestImpl = retractRequestAtTipImpl (SlotNo 0)
 
 {- | Use the submission-time tip as the lower validity bound, while
 staying inside the request's unchanged phase-2 window.
 -}
-retractRequestAtTipImpl ::
-    SlotNo -> CageConfig -> Provider IO -> TokenId -> TxIn -> Addr -> IO ConwayTx
+retractRequestAtTipImpl
+    :: SlotNo
+    -> CageConfig
+    -> Provider IO
+    -> TokenId
+    -> TxIn
+    -> Addr
+    -> IO ConwayTx
 retractRequestAtTipImpl tip cfg prov tid reqTxIn addr = do
     let reqAddr =
             requestAddrFromCfg cfg tid (network cfg)

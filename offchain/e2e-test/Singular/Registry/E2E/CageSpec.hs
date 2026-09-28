@@ -6,17 +6,17 @@ Module      : Singular.Registry.E2E.CageSpec
 Description : E2E tests for the full cage protocol
 License     : Apache-2.0
 -}
-module Singular.Registry.E2E.CageSpec (
-    spec,
-    withBootedCage,
-    withE2E,
-    submitInsertRequest,
-    submitWithGenesis,
-    publishCageRefs,
-    registryContextFor,
-    bookEdge,
-    foldEdge,
-) where
+module Singular.Registry.E2E.CageSpec
+    ( spec
+    , withBootedCage
+    , withE2E
+    , submitInsertRequest
+    , submitWithGenesis
+    , publishCageRefs
+    , registryContextFor
+    , bookEdge
+    , foldEdge
+    ) where
 
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (async, cancel)
@@ -27,124 +27,138 @@ import Data.Foldable (toList)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Lens.Micro ((^.))
-import Test.Hspec (
-    Expectation,
-    Spec,
-    describe,
-    expectationFailure,
-    it,
-    shouldSatisfy,
- )
+import Test.Hspec
+    ( Expectation
+    , Spec
+    , describe
+    , expectationFailure
+    , it
+    , shouldSatisfy
+    )
 
-import Cardano.Ledger.Api.Tx (
-    bodyTxL,
-    txIdTx,
- )
-import Cardano.Ledger.Api.Tx.Body (
-    inputsTxBodyL,
-    mintTxBodyL,
-    outputsTxBodyL,
- )
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    addrTxOutL,
-    coinTxOutL,
-    datumTxOutL,
-    referenceScriptTxOutL,
-    valueTxOutL,
- )
-import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (SNothing), TxIx (..))
-import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..), MultiAsset (..))
+import Cardano.Ledger.Api.Tx
+    ( bodyTxL
+    , txIdTx
+    )
+import Cardano.Ledger.Api.Tx.Body
+    ( inputsTxBodyL
+    , mintTxBodyL
+    , outputsTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , addrTxOutL
+    , coinTxOutL
+    , datumTxOutL
+    , referenceScriptTxOutL
+    , valueTxOutL
+    )
+import Cardano.Ledger.BaseTypes
+    ( Network (..)
+    , StrictMaybe (SNothing)
+    , TxIx (..)
+    )
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    )
 import Cardano.Ledger.TxIn (TxIn (..))
 
-import Cardano.Node.Client.E2E.Devnet (
-    withCardanoNode,
- )
-import Cardano.Node.Client.E2E.Setup (
-    addKeyWitness,
-    genesisAddr,
-    genesisDir,
-    genesisSignKey,
- )
-import Cardano.Node.Client.N2C.Connection (
-    newLSQChannel,
-    newLTxSChannel,
-    runNodeClient,
- )
-import Cardano.Node.Client.N2C.Provider (
-    mkN2CProvider,
- )
-import Cardano.Node.Client.N2C.Submitter (
-    mkN2CSubmitter,
- )
-import Cardano.Node.Client.Submitter (
-    SubmitResult (..),
-    Submitter (..),
- )
+import Cardano.Node.Client.E2E.Devnet
+    ( withCardanoNode
+    )
+import Cardano.Node.Client.E2E.Setup
+    ( addKeyWitness
+    , genesisAddr
+    , genesisDir
+    , genesisSignKey
+    )
+import Cardano.Node.Client.N2C.Connection
+    ( newLSQChannel
+    , newLTxSChannel
+    , runNodeClient
+    )
+import Cardano.Node.Client.N2C.Provider
+    ( mkN2CProvider
+    )
+import Cardano.Node.Client.N2C.Submitter
+    ( mkN2CSubmitter
+    )
+import Cardano.Node.Client.Submitter
+    ( SubmitResult (..)
+    , Submitter (..)
+    )
 import Cardano.Tx.Ledger (ConwayTx)
 import Ouroboros.Network.Magic (NetworkMagic (..))
 import PlutusTx.Builtins (fromBuiltin)
 import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Blueprint (
-    Blueprint,
-    NamingCodes,
-    extractCompiledCode,
-    loadRegistryCodesFromEnv,
- )
-import Singular.Registry.Config (
-    CageConfig (..),
- )
+import Singular.Registry.Blueprint
+    ( Blueprint
+    , NamingCodes
+    , extractCompiledCode
+    , loadRegistryCodesFromEnv
+    )
+import Singular.Registry.Config
+    ( CageConfig (..)
+    )
 import Singular.Registry.Driver qualified as Driver
-import Singular.Registry.Ledger (
-    Coin (..),
-    ConwayEra,
-    TokenId (..),
- )
-import Singular.Registry.Node (adaptProvider, awaitConnection, awaitIndexed, followedProvider, withDevnetIndexer)
+import Singular.Registry.Ledger
+    ( Coin (..)
+    , ConwayEra
+    , TokenId (..)
+    )
+import Singular.Registry.Node
+    ( adaptProvider
+    , awaitConnection
+    , awaitIndexed
+    , followedProvider
+    , withDevnetIndexer
+    )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
-import Singular.Registry.Trie.PureManager (
-    mkPureTrieManager,
- )
+import Singular.Registry.Trie.PureManager
+    ( mkPureTrieManager
+    )
 import Singular.Registry.TxBuilder.Edges (SubmitSigned)
 import Singular.Registry.TxBuilder.Edges qualified as Edges
-import Singular.Registry.TxBuilder.Internal (
-    addrKeyHashBytes,
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    computeScriptHash,
-    extractCageDatum,
-    findUtxoByTxIn,
-    mkInlineDatum,
-    policyIdFromPin,
-    requestAddrFromCfg,
-    scriptFromBytes,
-    scriptHashBytes,
-    toPlcData,
-    txInToRef,
- )
-import Singular.Registry.TxBuilder.Reject (
-    rejectRequestsWithRefs,
- )
-import Singular.Registry.TxBuilder.Request (
-    requestEdgeImpl,
- )
-import Singular.Registry.TxBuilder.Retract (
-    retractRequestImpl,
- )
-import Singular.Registry.TxBuilder.Update (
-    RegistryContext,
-    updateTokenWithDuties,
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    Edge,
-    OnChainRequest (..),
-    OnChainTokenState (..),
-    OnChainTxOutRef,
-    edgeInsertAbsent,
-    edgeInsertActive,
- )
+import Singular.Registry.TxBuilder.Internal
+    ( addrKeyHashBytes
+    , cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , computeScriptHash
+    , extractCageDatum
+    , findUtxoByTxIn
+    , mkInlineDatum
+    , policyIdFromPin
+    , requestAddrFromCfg
+    , scriptFromBytes
+    , scriptHashBytes
+    , toPlcData
+    , txInToRef
+    )
+import Singular.Registry.TxBuilder.Reject
+    ( rejectRequestsWithRefs
+    )
+import Singular.Registry.TxBuilder.Request
+    ( requestEdgeImpl
+    )
+import Singular.Registry.TxBuilder.Retract
+    ( retractRequestImpl
+    )
+import Singular.Registry.TxBuilder.Update
+    ( RegistryContext
+    , updateTokenWithDuties
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , Edge
+    , OnChainRequest (..)
+    , OnChainTokenState (..)
+    , OnChainTxOutRef
+    , edgeInsertAbsent
+    , edgeInsertActive
+    )
 
 {- | Full cage protocol E2E test spec.
 Receives the blueprint resolved by the E2E entrypoint.
@@ -174,10 +188,10 @@ spec bp = describe "Request processing, retraction and rejection" $ do
 -- ---------------------------------------------------------
 
 -- | Full cage E2E coverage.
-cageFlowSpec ::
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    Spec
+cageFlowSpec
+    :: SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> Spec
 cageFlowSpec stateBytes requestBytes = do
     it "boots state and applies a request update"
         $ withBootedCage
@@ -229,7 +243,9 @@ cageFlowSpec stateBytes requestBytes = do
                 expectedAbsent =
                     MultiAsset $
                         Map.singleton
-                            (policyIdFromPin (SBS.toShort (fromBuiltin (stateAbsentPolicy oldState))))
+                            ( policyIdFromPin
+                                (SBS.toShort (fromBuiltin (stateAbsentPolicy oldState)))
+                            )
                             (Map.singleton (AssetName (SBS.toShort (requestKey request))) 1)
             -- Singular.txOfExit: the fold also spends its state.
             assertEqual
@@ -355,7 +371,9 @@ cageFlowSpec stateBytes requestBytes = do
                     , out ^. datumTxOutL == mkInlineDatum (toPlcData (txInToRef reqTxIn))
                     ]
                 floorCoin = Coin (requestDeposit request + stateMaxFee oldState)
-            assertEffect "retraction refund recipient missing" (not (null ownerOutputs))
+            assertEffect
+                "retraction refund recipient missing"
+                (not (null ownerOutputs))
             assertEffect
                 "retraction refund is not bound inline to the consumed request"
                 (not (null boundOutputs))
@@ -440,11 +458,17 @@ cageFlowSpec stateBytes requestBytes = do
             assertEqual "rejection mint" mempty (rejectBody ^. mintTxBodyL)
             -- Singular.obligations .reject / receivedBy (.owner).
             let ownerOutputs = filter (paysOwner request) rejectOutputs
-            assertEffect "rejection refund recipient missing" (not (null ownerOutputs))
+            assertEffect
+                "rejection refund recipient missing"
+                (not (null ownerOutputs))
             assertAtLeast
                 "rejection owner refund"
                 (Coin (requestDeposit request))
-                (Coin (sum [amount | out <- ownerOutputs, let Coin amount = out ^. coinTxOutL]))
+                ( Coin
+                    ( sum
+                        [amount | out <- ownerOutputs, let Coin amount = out ^. coinTxOutL]
+                    )
+                )
             signedReject <- submitWithGenesis submit unsignedReject
 
             reqUtxosAfter <-
@@ -473,35 +497,41 @@ token, creating the trie, publishing the cage references and the three
 checks that used to live in this module's own 'bootCage'. A caller that
 wants only the token asks the handle for it.
 -}
-withBootedCage ::
-    (CageConfig -> CageConfig) ->
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    ( CageConfig ->
-      Cage.Provider IO ->
-      Submitter IO ->
-      TrieManager IO ->
-      Driver.Registry ->
-      IO a
-    ) ->
-    IO a
+withBootedCage
+    :: (CageConfig -> CageConfig)
+    -> SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> ( CageConfig
+         -> Cage.Provider IO
+         -> Submitter IO
+         -> TrieManager IO
+         -> Driver.Registry
+         -> IO a
+       )
+    -> IO a
 withBootedCage adjustCfg stateBytes requestBytes action =
     withE2E stateBytes requestBytes $
         \cfg0 prov submit tm -> do
             let cfg = adjustCfg cfg0
             codes <- loadRegistryCodesFromEnv
             reg <-
-                Driver.bootRegistry cfg codes prov (submitWithGenesis submit) genesisAddr tm
+                Driver.bootRegistry
+                    cfg
+                    codes
+                    prov
+                    (submitWithGenesis submit)
+                    genesisAddr
+                    tm
             action cfg prov submit tm reg
 
-submitInsertRequest ::
-    CageConfig ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    TokenId ->
-    ByteString ->
-    Edge ->
-    IO TxIn
+submitInsertRequest
+    :: CageConfig
+    -> Cage.Provider IO
+    -> Submitter IO
+    -> TokenId
+    -> ByteString
+    -> Edge
+    -> IO TxIn
 submitInsertRequest cfg prov submit tokenId key edge = do
     unsignedReq <-
         requestEdgeImpl
@@ -518,10 +548,10 @@ submitInsertRequest cfg prov submit tokenId key edge = do
             (txIdTx signedReq)
             (TxIx 0)
 
-submitWithGenesis ::
-    Submitter IO ->
-    ConwayTx ->
-    IO ConwayTx
+submitWithGenesis
+    :: Submitter IO
+    -> ConwayTx
+    -> IO ConwayTx
 submitWithGenesis submit unsignedTx = do
     let signedTx =
             addKeyWitness
@@ -554,18 +584,18 @@ fastRejectCfg cfg =
 {- | Start a devnet node, connect via N2C,
 build Provider and Submitter, then run.
 -}
-withE2E ::
-    -- | Unparameterized state compiled-code bytes
-    SBS.ShortByteString ->
-    -- | Unparameterized request compiled-code bytes
-    SBS.ShortByteString ->
-    ( CageConfig ->
-      Cage.Provider IO ->
-      Submitter IO ->
-      TrieManager IO ->
-      IO a
-    ) ->
-    IO a
+withE2E
+    :: SBS.ShortByteString
+    -- ^ Unparameterized state compiled-code bytes
+    -> SBS.ShortByteString
+    -- ^ Unparameterized request compiled-code bytes
+    -> ( CageConfig
+         -> Cage.Provider IO
+         -> Submitter IO
+         -> TrieManager IO
+         -> IO a
+       )
+    -> IO a
 withE2E stateBytes requestBytes action = do
     gDir <- genesisDir
     withCardanoNode gDir $ \sock _startMs -> withDevnetIndexer sock $ do
@@ -637,17 +667,28 @@ assertEqual :: (Eq a, Show a) => String -> a -> a -> Expectation
 assertEqual label expected actual =
     unless (actual == expected) $
         expectationFailure $
-            "wrong effect: " <> label <> "; expected " <> show expected <> "; observed " <> show actual
+            "wrong effect: "
+                <> label
+                <> "; expected "
+                <> show expected
+                <> "; observed "
+                <> show actual
 
 -- | Singular.settle: a payment is a floor, with any surplus unconstrained.
 assertAtLeast :: String -> Coin -> Coin -> Expectation
 assertAtLeast label expected actual =
     unless (actual >= expected) $
         expectationFailure $
-            "wrong effect: " <> label <> "; expected at least " <> show expected <> "; observed " <> show actual
+            "wrong effect: "
+                <> label
+                <> "; expected at least "
+                <> show expected
+                <> "; observed "
+                <> show actual
 
 -- | Singular.txOfExit: spend precisely the selected request from the queue.
-assertConsumedRequest :: TxIn -> [(TxIn, TxOut ConwayEra)] -> ConwayTx -> Expectation
+assertConsumedRequest
+    :: TxIn -> [(TxIn, TxOut ConwayEra)] -> ConwayTx -> Expectation
 assertConsumedRequest selected requests tx = do
     let consumed =
             [ ref
@@ -656,20 +697,27 @@ assertConsumedRequest selected requests tx = do
             ]
     unless (consumed == [selected]) $
         expectationFailure $
-            "wrong consumed request: expected " <> show [selected] <> "; observed " <> show consumed
+            "wrong consumed request: expected "
+                <> show [selected]
+                <> "; observed "
+                <> show consumed
 
 -- | Require an unambiguous observed output, rather than picking the first.
 exactlyOne :: (Show a) => String -> [a] -> IO a
 exactlyOne _ [found] = pure found
 exactlyOne label found = do
-    expectationFailure ("wrong effect: " <> label <> "; expected one, observed " <> show found)
+    expectationFailure
+        ("wrong effect: " <> label <> "; expected one, observed " <> show found)
     fail label
 
 -- | Read the request's expected effects from its pre-transaction chain datum.
-observedRequest :: TxIn -> [(TxIn, TxOut ConwayEra)] -> IO OnChainRequest
+observedRequest
+    :: TxIn -> [(TxIn, TxOut ConwayEra)] -> IO OnChainRequest
 observedRequest ref utxos = case lookup ref utxos >>= extractCageDatum of
     Just (RequestDatum request) -> pure request
-    _ -> fail "selected request was not observable with an inline request datum"
+    _ ->
+        fail
+            "selected request was not observable with an inline request datum"
 
 -- | Decode the state used as the pre-transaction expectation or continuation.
 observedState :: TxOut ConwayEra -> IO OnChainTokenState
@@ -681,27 +729,46 @@ observedState out = case extractCageDatum out of
 holdsState :: CageConfig -> TokenId -> TxOut ConwayEra -> Bool
 holdsState cfg tokenId out =
     let MaryValue _ (MultiAsset assets) = out ^. valueTxOutL
-     in (Map.lookup (cagePolicyIdFromCfg cfg) assets >>= Map.lookup (unTokenId tokenId)) == Just 1
+    in  ( Map.lookup (cagePolicyIdFromCfg cfg) assets
+            >>= Map.lookup (unTokenId tokenId)
+        )
+            == Just 1
 
 -- | Singular.txStateOutput: exactly one state continuation at the cage.
-stateContinuation :: CageConfig -> TokenId -> [TxOut ConwayEra] -> IO (TxOut ConwayEra)
+stateContinuation
+    :: CageConfig -> TokenId -> [TxOut ConwayEra] -> IO (TxOut ConwayEra)
 stateContinuation cfg tokenId outputs = do
-    out <- exactlyOne "state continuation" (filter (holdsState cfg tokenId) outputs)
-    assertEqual "state continuation address" (cageAddrFromCfg cfg (network cfg)) (out ^. addrTxOutL)
+    out <-
+        exactlyOne
+            "state continuation"
+            (filter (holdsState cfg tokenId) outputs)
+    assertEqual
+        "state continuation address"
+        (cageAddrFromCfg cfg (network cfg))
+        (out ^. addrTxOutL)
     pure out
 
 -- | Read the registry state and retain its reference to distinguish an unspent UTxO.
-currentState :: CageConfig -> Cage.Provider IO -> TokenId -> IO (TxIn, TxOut ConwayEra)
+currentState
+    :: CageConfig
+    -> Cage.Provider IO
+    -> TokenId
+    -> IO (TxIn, TxOut ConwayEra)
 currentState cfg prov tokenId = do
     utxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
-    exactlyOne "observed registry state" (filter (holdsState cfg tokenId . snd) utxos)
+    exactlyOne
+        "observed registry state"
+        (filter (holdsState cfg tokenId . snd) utxos)
 
 -- | Singular.paysRecipient: ownership is the payment key, independent of staking.
 paysOwner :: OnChainRequest -> TxOut ConwayEra -> Bool
-paysOwner request out = addrKeyHashBytes (out ^. addrTxOutL) == fromBuiltin (requestOwner request)
+paysOwner request out =
+    addrKeyHashBytes (out ^. addrTxOutL)
+        == fromBuiltin (requestOwner request)
 
 -- | Check the actual output at the submitted transaction's output reference.
-assertLandedOutput :: Cage.Provider IO -> ConwayTx -> TxOut ConwayEra -> Expectation
+assertLandedOutput
+    :: Cage.Provider IO -> ConwayTx -> TxOut ConwayEra -> Expectation
 assertLandedOutput prov tx expected = do
     ix <-
         exactlyOne
@@ -735,12 +802,12 @@ The raw state bytes are applied to the empty
 hashing, matching the parameterized on-chain state
 script.
 -}
-cageCfg ::
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    NamingCodes ->
-    OnChainTxOutRef ->
-    CageConfig
+cageCfg
+    :: SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> NamingCodes
+    -> OnChainTxOutRef
+    -> CageConfig
 cageCfg stateBytes requestBytes codes seed =
     let appliedStateBytes = stateBytes
         stateHash = computeScriptHash appliedStateBytes
@@ -752,7 +819,7 @@ cageCfg stateBytes requestBytes codes seed =
         registryId = scriptHashBytes stateHash <> deriveAssetName seed
         (appPin, absentPin, activePin, terminalPin) =
             Edges.namingPins codes registryId
-     in CageConfig
+    in  CageConfig
             { cageScriptBytes = appliedStateBytes
             , requestScriptBytes = requestBytes
             , cfgScriptHash = stateHash
@@ -783,23 +850,29 @@ validator alone is fifteen kilobytes, so a fold or a reject that
 attaches it and the request script does not fit in a transaction; with
 references every purpose resolves through them instead.
 -}
-publishCageRefs ::
-    CageConfig ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    TokenId ->
-    IO [(TxIn, TxOut ConwayEra)]
+publishCageRefs
+    :: CageConfig
+    -> Cage.Provider IO
+    -> Submitter IO
+    -> TokenId
+    -> IO [(TxIn, TxOut ConwayEra)]
 publishCageRefs cfg prov submit tokenId = do
     codes <- loadRegistryCodesFromEnv
-    Edges.publishCageRefs cfg codes prov (genesisSubmit submit) genesisAddr tokenId
+    Edges.publishCageRefs
+        cfg
+        codes
+        prov
+        (genesisSubmit submit)
+        genesisAddr
+        tokenId
 
 -- | The duties context a fold of tree edges discharges its obligations from.
-registryContextFor ::
-    CageConfig ->
-    Cage.Provider IO ->
-    TokenId ->
-    [(TxIn, TxOut ConwayEra)] ->
-    IO RegistryContext
+registryContextFor
+    :: CageConfig
+    -> Cage.Provider IO
+    -> TokenId
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO RegistryContext
 registryContextFor cfg prov _tokenId refs = do
     codes <- loadRegistryCodesFromEnv
     Edges.registryContextFor cfg codes prov refs
@@ -807,29 +880,37 @@ registryContextFor cfg prov _tokenId refs = do
 {- | Book one tree edge: the approval the naming application mints
 certifies the edge, and the request carries it to the fold.
 -}
-bookEdge ::
-    CageConfig ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    TokenId ->
-    ByteString ->
-    Edge ->
-    IO TxIn
+bookEdge
+    :: CageConfig
+    -> Cage.Provider IO
+    -> Submitter IO
+    -> TokenId
+    -> ByteString
+    -> Edge
+    -> IO TxIn
 bookEdge cfg prov submit tokenId key op = do
     codes <- loadRegistryCodesFromEnv
-    Edges.bookEdge cfg codes prov (genesisSubmit submit) genesisAddr tokenId key op
+    Edges.bookEdge
+        cfg
+        codes
+        prov
+        (genesisSubmit submit)
+        genesisAddr
+        tokenId
+        key
+        op
 
 -- | Book one edge and fold it, end to end on a real devnet.
-foldEdge ::
-    CageConfig ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    TrieManager IO ->
-    TokenId ->
-    [(TxIn, TxOut ConwayEra)] ->
-    ByteString ->
-    Edge ->
-    IO ConwayTx
+foldEdge
+    :: CageConfig
+    -> Cage.Provider IO
+    -> Submitter IO
+    -> TrieManager IO
+    -> TokenId
+    -> [(TxIn, TxOut ConwayEra)]
+    -> ByteString
+    -> Edge
+    -> IO ConwayTx
 foldEdge cfg prov submit tm tokenId refs key op = do
     _ <- bookEdge cfg prov submit tokenId key op
     ctx <- registryContextFor cfg prov tokenId refs

@@ -14,62 +14,66 @@ module Conformance.Support.Refusal (spec) where
 import Data.Either (isLeft)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Text qualified as T
-import System.Directory (
-    createDirectoryIfMissing,
-    doesFileExist,
-    getTemporaryDirectory,
-    removePathForcibly,
- )
+import System.Directory
+    ( createDirectoryIfMissing
+    , doesFileExist
+    , getTemporaryDirectory
+    , removePathForcibly
+    )
 import System.FilePath ((</>))
-import Test.Hspec (
-    Spec,
-    describe,
-    it,
-    shouldBe,
-    shouldSatisfy,
- )
+import Test.Hspec
+    ( Spec
+    , describe
+    , it
+    , shouldBe
+    , shouldSatisfy
+    )
 
-import Conformance.Receipt (
-    Outcome (..),
-    Receipt (..),
-    RefusalInfo (..),
-    Verdict (..),
-    loadReceipts,
-    writeReceiptFile,
- )
-import Conformance.Refusal (
-    RefusalMismatch (..),
-    RefusalRole (..),
-    attributeRefusalReceipt,
-    matchRefusal,
-    trimRefusal,
-    wrongReasonMarker,
- )
+import Conformance.Receipt
+    ( Outcome (..)
+    , Receipt (..)
+    , RefusalInfo (..)
+    , Verdict (..)
+    , loadReceipts
+    , writeReceiptFile
+    )
+import Conformance.Refusal
+    ( RefusalMismatch (..)
+    , RefusalRole (..)
+    , attributeRefusalReceipt
+    , matchRefusal
+    , trimRefusal
+    , wrongReasonMarker
+    )
 
 spec :: Spec
 spec = describe "Appendix: checking which script rejected a transaction" $ do
-    it "Recognises a script rejection when the node error identifies the expected script" $
-        matchRefusal
+    it
+        "Recognises a script rejection when the node error identifies the expected script"
+        $ matchRefusal
             "abcdef01"
             "phase-2 PlutusFailure naming ScriptHash \"abcdef01\": \
             \script evaluation failed"
             `shouldBe` Right ()
 
-    it "Recognises a script rejection during transaction building when the error identifies the expected script" $
-        matchRefusal "874e476d" evalFailureSample `shouldBe` Right ()
+    it
+        "Recognises a script rejection during transaction building when the error identifies the expected script"
+        $ matchRefusal "874e476d" evalFailureSample `shouldBe` Right ()
 
     it "Does not mistake already-spent inputs for a script rejection" $
         matchRefusal "abcdef01" "BadInputs: inputs are spent"
             `shouldSatisfy` isLeft
 
-    it "Does not count a script identifier mentioned in an input error as a script rejection" $
-        matchRefusal
+    it
+        "Does not count a script identifier mentioned in an input error as a script rejection"
+        $ matchRefusal
             "abcdef01"
             "BadInputs 0xabcdef01: inputs are spent"
             `shouldSatisfy` isLeft
 
-    it "Does not blame the expected script when the error identifies a different one" $
-        matchRefusal
+    it
+        "Does not blame the expected script when the error identifies a different one"
+        $ matchRefusal
             "abcdef01"
             "phase-2 PlutusFailure naming ScriptHash \"99999999\": \
             \script evaluation failed"
@@ -80,15 +84,17 @@ spec = describe "Appendix: checking which script rejected a transaction" $ do
                     \script evaluation failed"
                 )
 
-    it "Rejects an error when asked to attribute it to a deliberately unrelated script identifier" $
-        matchRefusal
+    it
+        "Rejects an error when asked to attribute it to a deliberately unrelated script identifier"
+        $ matchRefusal
             wrongReasonMarker
             "phase-2 PlutusFailure naming ScriptHash \"abcdef01\": \
             \script evaluation failed"
             `shouldSatisfy` isLeft
 
-    it "Does not blame a script merely because its identifier appears elsewhere in the error message" $
-        matchRefusal
+    it
+        "Does not blame a script merely because its identifier appears elsewhere in the error message"
+        $ matchRefusal
             "abcdef01"
             "phase-2 PlutusFailure naming ScriptHash \"99999999\": \
             \diagnostic context abcdef01 unquoted"
@@ -99,31 +105,34 @@ spec = describe "Appendix: checking which script rejected a transaction" $ do
                     \diagnostic context abcdef01 unquoted"
                 )
 
-    it "Shortens a build error while keeping the failing script and execution error" $
-        let trimmed = trimRefusal evalShapedRefusal
-         in do
+    it
+        "Shortens a build error while keeping the failing script and execution error"
+        $ let trimmed = trimRefusal evalShapedRefusal
+          in  do
                 trimmed `shouldSatisfy` ("scriptHash=874e476d" `isInfixOf`)
                 trimmed `shouldSatisfy` ("cek=" `isInfixOf`)
                 trimmed `shouldSatisfy` (not . ("plutusBinary" `isInfixOf`))
                 trimmed `shouldSatisfy` (not . ("pwcCostModel" `isInfixOf`))
                 length trimmed `shouldSatisfy` (< 2000)
 
-    it "Labels an unfamiliar error as unparsed instead of inventing an explanation" $
-        trimRefusal "something entirely new"
+    it
+        "Labels an unfamiliar error as unparsed instead of inventing an explanation"
+        $ trimRefusal "something entirely new"
             `shouldBe` "something entirely new [unparsed]"
 
     it "Keeps both script identifiers when two scripts fail" $
         let two = nodeShapedRefusal <> " second: " <> secondHashRefusal
             trimmed = trimRefusal two
-         in do
+        in  do
                 -- Joined in ledger order as one field: a trimmer keeping
                 -- only the first hash cannot satisfy this.
                 trimmed `shouldSatisfy` ("scriptHash=874e476d,28726576" `isInfixOf`)
                 length trimmed `shouldSatisfy` (< 2000)
 
-    it "Shortens a node error while keeping the failing script and its reason" $
-        let trimmed = trimRefusal nodeShapedRefusal
-         in do
+    it
+        "Shortens a node error while keeping the failing script and its reason"
+        $ let trimmed = trimRefusal nodeShapedRefusal
+          in  do
                 trimmed `shouldSatisfy` ("scriptHash=874e476d" `isInfixOf`)
                 trimmed `shouldSatisfy` ("cek=" `isInfixOf`)
                 trimmed `shouldSatisfy` ("PlutusV3 script failed" `isInfixOf`)
@@ -136,24 +145,29 @@ spec = describe "Appendix: checking which script rejected a transaction" $ do
     receiptPolicySpec
 
 evalFailureSample :: String
-evalFailureSample = "updateToken: build failed: EvalFailure (ConwaySpending (AsIx 2)) ValidationFailure (CekError script error) (PlutusWithContext {pwcScriptHash = ScriptHash 874e476d})"
+evalFailureSample =
+    "updateToken: build failed: EvalFailure (ConwaySpending (AsIx 2)) ValidationFailure (CekError script error) (PlutusWithContext {pwcScriptHash = ScriptHash 874e476d})"
 
 evalShapedRefusal :: String
-evalShapedRefusal = "updateToken: build failed: EvalFailure (ConwaySpending (AsIx 2)) \\\"ValidationFailure (CekError script error) [] (PlutusWithContext {pwcScript = Left (Plutus {plutusBinary = \\\"AAAABBBB\\\"}), pwcScriptHash = ScriptHash \\\"874e476d\\\", pwcExUnits = X, pwcCostModel = CostModel PlutusV3 [1, 2, 3]})\\\""
+evalShapedRefusal =
+    "updateToken: build failed: EvalFailure (ConwaySpending (AsIx 2)) \\\"ValidationFailure (CekError script error) [] (PlutusWithContext {pwcScript = Left (Plutus {plutusBinary = \\\"AAAABBBB\\\"}), pwcScriptHash = ScriptHash \\\"874e476d\\\", pwcExUnits = X, pwcCostModel = CostModel PlutusV3 [1, 2, 3]})\\\""
 
--- | The node shape with a different failing script: a tampered fold can
--- fail two scripts in one submission, and the failure-list order varies
--- run to run, so attribution must keep every hash it names.
+{- | The node shape with a different failing script: a tampered fold can
+fail two scripts in one submission, and the failure-list order varies
+run to run, so attribution must keep every hash it names.
+-}
 secondHashRefusal :: String
 secondHashRefusal = replaceAll "874e476d" "28726576" nodeShapedRefusal
   where
     replaceAll _ _ [] = []
     replaceAll from to s@(c : cs)
-        | from `isPrefixOf` s = to <> replaceAll from to (drop (length from) s)
+        | from `isPrefixOf` s =
+            to <> replaceAll from to (drop (length from) s)
         | otherwise = c : replaceAll from to cs
 
 nodeShapedRefusal :: String
-nodeShapedRefusal = "HardForkApplyTxErrFromEra (ConwayUtxowFailure (FailedUnexpectedly (PlutusFailure \"The PlutusV3 script failed: Base64-encoded script bytes: \\\"AAAABBBB\\\", ScriptHash \\\"874e476d\\\", The plutus evaluation error is: CekError script error. Caused by: error. The protocol version is: Version 10, ScriptInfo: more\")))"
+nodeShapedRefusal =
+    "HardForkApplyTxErrFromEra (ConwayUtxowFailure (FailedUnexpectedly (PlutusFailure \"The PlutusV3 script failed: Base64-encoded script bytes: \\\"AAAABBBB\\\", ScriptHash \\\"874e476d\\\", The plutus evaluation error is: CekError script error. Caused by: error. The protocol version is: Version 10, ScriptInfo: more\")))"
 
 -- ============================================================================
 -- Receipt policy (A-002): who writes, and who must never overwrite.
@@ -170,8 +184,9 @@ nodeShapedRefusal = "HardForkApplyTxErrFromEra (ConwayUtxowFailure (FailedUnexpe
 -- the run naming the mismatch — both upstream of the write this policy
 -- governs.
 
--- | A deterministic receipts directory: wiped at the start of each use
--- so a previous run's bytes can never flatter an assertion.
+{- | A deterministic receipts directory: wiped at the start of each use
+so a previous run's bytes can never flatter an assertion.
+-}
 freshReceiptsDir :: IO FilePath
 freshReceiptsDir = do
     tmp <- getTemporaryDirectory
@@ -180,8 +195,9 @@ freshReceiptsDir = do
     createDirectoryIfMissing True dir
     pure dir
 
--- | The row's own receipt as the run writes it before its control
--- fires: accepted, held-q002, transaction id and measurements present.
+{- | The row's own receipt as the run writes it before its control
+fires: accepted, held-q002, transaction id and measurements present.
+-}
 heldRowReceipt :: Receipt
 heldRowReceipt =
     Receipt
@@ -200,7 +216,6 @@ heldRowReceipt =
         , receiptRejected = Nothing
         , receiptDirty = False
         , receiptPartial = Nothing
-
         , receiptDerivation = Nothing
         , receiptSteps = Nothing
         }
@@ -222,94 +237,103 @@ policyReason =
         <> "Caused by: error. The protocol version is: Version 10\")))"
 
 receiptPolicySpec :: Spec
-receiptPolicySpec = describe "Protecting the saved report when checking deliberate failures" $ do
-    it "A deliberately rejected comparison transaction does not overwrite the main test report" $ do
-        dir <- freshReceiptsDir
-        writeReceiptFile dir heldRowReceipt
-        r <-
-            attributeRefusalReceipt
-                RefusalControl
-                dir
-                "CG11"
-                HeldQ002
-                "state"
-                policyMarker
-                policyReason
-                "controltxid"
-                "base"
-                False
-                "node"
-                "blueprint"
-        r `shouldBe` Right ()
-        rs <- loadReceipts dir
-        case rs of
-            Right [r0] -> do
-                receiptVerdict r0 `shouldBe` HeldQ002
-                receiptOutcome r0 `shouldBe` Accepted
-                receiptTransactions r0 `shouldBe` [T.pack "rowtxid"]
-                receiptRejected r0 `shouldBe` Nothing
-            other -> fail ("expected the untouched held receipt, got " <> show other)
-    it "A test of required rejection saves the rejected transaction and the script responsible" $ do
-        dir <- freshReceiptsDir
-        r <-
-            attributeRefusalReceipt
-                RefusalRow
-                dir
-                "CG05"
-                AgreesWithModel
-                "state"
-                policyMarker
-                policyReason
-                "rejectedtxid"
-                "base"
-                False
-                "node"
-                "blueprint"
-        r `shouldBe` Right ()
-        rs <- loadReceipts dir
-        case rs of
-            Right [r0] -> do
-                receiptOutcome r0 `shouldBe` Refused
-                receiptVerdict r0 `shouldBe` AgreesWithModel
-                receiptRejected r0 `shouldBe` Just (T.pack "rejectedtxid")
-                fmap refusalScript (receiptRefusal r0) `shouldBe` Just (T.pack "state")
-                receiptVenue r0 `shouldBe` "node-submit"
-            other -> fail ("expected the row's refused receipt, got " <> show other)
-    it -- A control that attempted any write would throw here: the
-       -- directory does not exist, so Right () proves no write attempt.
-        "A deliberate failure check writes no report, even when the reports directory does not exist"
-        $ do
-            r <-
-                attributeRefusalReceipt
-                    RefusalControl
-                    "/nonexistent-conformance-refusal-spec"
-                    "CG12"
-                    HeldQ002
-                    "state"
-                    policyMarker
-                    policyReason
-                    "controltxid"
-                    "base"
-                    False
-                    "node"
-                    "blueprint"
-            r `shouldBe` Right ()
-    it "An unexplained rejection saves no evidence and reports the problem" $ do
-        dir <- freshReceiptsDir
-        r <-
-            attributeRefusalReceipt
-                RefusalRow
-                dir
-                "CG05"
-                AgreesWithModel
-                "state"
-                policyMarker
-                "phase-1 refusal that names no script at all"
-                "rejectedtxid"
-                "base"
-                False
-                "node"
-                "blueprint"
-        r `shouldSatisfy` isLeft
-        exists <- doesFileExist (dir </> "receipt-CG05.json")
-        exists `shouldBe` False
+receiptPolicySpec = describe
+    "Protecting the saved report when checking deliberate failures"
+    $ do
+        it
+            "A deliberately rejected comparison transaction does not overwrite the main test report"
+            $ do
+                dir <- freshReceiptsDir
+                writeReceiptFile dir heldRowReceipt
+                r <-
+                    attributeRefusalReceipt
+                        RefusalControl
+                        dir
+                        "CG11"
+                        HeldQ002
+                        "state"
+                        policyMarker
+                        policyReason
+                        "controltxid"
+                        "base"
+                        False
+                        "node"
+                        "blueprint"
+                r `shouldBe` Right ()
+                rs <- loadReceipts dir
+                case rs of
+                    Right [r0] -> do
+                        receiptVerdict r0 `shouldBe` HeldQ002
+                        receiptOutcome r0 `shouldBe` Accepted
+                        receiptTransactions r0 `shouldBe` [T.pack "rowtxid"]
+                        receiptRejected r0 `shouldBe` Nothing
+                    other -> fail ("expected the untouched held receipt, got " <> show other)
+        it
+            "A test of required rejection saves the rejected transaction and the script responsible"
+            $ do
+                dir <- freshReceiptsDir
+                r <-
+                    attributeRefusalReceipt
+                        RefusalRow
+                        dir
+                        "CG05"
+                        AgreesWithModel
+                        "state"
+                        policyMarker
+                        policyReason
+                        "rejectedtxid"
+                        "base"
+                        False
+                        "node"
+                        "blueprint"
+                r `shouldBe` Right ()
+                rs <- loadReceipts dir
+                case rs of
+                    Right [r0] -> do
+                        receiptOutcome r0 `shouldBe` Refused
+                        receiptVerdict r0 `shouldBe` AgreesWithModel
+                        receiptRejected r0 `shouldBe` Just (T.pack "rejectedtxid")
+                        fmap refusalScript (receiptRefusal r0)
+                            `shouldBe` Just (T.pack "state")
+                        receiptVenue r0 `shouldBe` "node-submit"
+                    other -> fail ("expected the row's refused receipt, got " <> show other)
+        it -- A control that attempted any write would throw here: the
+        -- directory does not exist, so Right () proves no write attempt.
+            "A deliberate failure check writes no report, even when the reports directory does not exist"
+            $ do
+                r <-
+                    attributeRefusalReceipt
+                        RefusalControl
+                        "/nonexistent-conformance-refusal-spec"
+                        "CG12"
+                        HeldQ002
+                        "state"
+                        policyMarker
+                        policyReason
+                        "controltxid"
+                        "base"
+                        False
+                        "node"
+                        "blueprint"
+                r `shouldBe` Right ()
+        it
+            "An unexplained rejection saves no evidence and reports the problem"
+            $ do
+                dir <- freshReceiptsDir
+                r <-
+                    attributeRefusalReceipt
+                        RefusalRow
+                        dir
+                        "CG05"
+                        AgreesWithModel
+                        "state"
+                        policyMarker
+                        "phase-1 refusal that names no script at all"
+                        "rejectedtxid"
+                        "base"
+                        False
+                        "node"
+                        "blueprint"
+                r `shouldSatisfy` isLeft
+                exists <- doesFileExist (dir </> "receipt-CG05.json")
+                exists `shouldBe` False

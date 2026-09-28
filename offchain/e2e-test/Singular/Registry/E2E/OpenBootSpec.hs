@@ -47,28 +47,28 @@ import Data.ByteString.Short qualified as SBS
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 
-import Singular.Registry.Blueprint (
-    Blueprint,
-    NamingCodes (..),
-    extractCompiledCode,
-    loadRegistryCodesFromEnv,
- )
+import Singular.Registry.Blueprint
+    ( Blueprint
+    , NamingCodes (..)
+    , extractCompiledCode
+    , loadRegistryCodesFromEnv
+    )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Driver qualified as Driver
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Edges qualified as Edges
-import Singular.Registry.TxBuilder.Internal (
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    computeScriptHash,
-    extractCageDatum,
-    findStateUtxo,
-    scriptHashBytes,
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainTokenState (..),
- )
+import Singular.Registry.TxBuilder.Internal
+    ( cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , computeScriptHash
+    , extractCageDatum
+    , findStateUtxo
+    , scriptHashBytes
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainTokenState (..)
+    )
 
 import Singular.Registry.E2E.CageSpec (withBootedCage)
 
@@ -79,8 +79,12 @@ spec bp = describe "Booting the open registry" $ do
          , extractCompiledCode "open.open" bp
          , extractCompiledCode "witness.witness" bp
          ) of
-        (Just stateBytes, Just requestBytes, Just openBytes, Just witnessBytes) ->
-            openBootSpec stateBytes requestBytes openBytes witnessBytes
+        ( Just stateBytes
+            , Just requestBytes
+            , Just openBytes
+            , Just witnessBytes
+            ) ->
+                openBootSpec stateBytes requestBytes openBytes witnessBytes
         (_, _, Nothing, _) ->
             it "the registry blueprint carries open.open" $
                 expectationFailure
@@ -95,61 +99,63 @@ spec bp = describe "Booting the open registry" $ do
             it "no compiled code" $
                 expectationFailure "state or request script not found in blueprint"
 
-openBootSpec ::
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    Spec
+openBootSpec
+    :: SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> Spec
 openBootSpec stateBytes requestBytes openBytes witnessBytes = do
-    it "pins the parameterless open policy and the three witnesses, and the eight-field datum decodes with no naming input" $ do
-        -- "with no naming input" is a fact about this run.
-        naming <- lookupEnv "NAMING_BLUEPRINT"
-        unless (isNothing naming) $
-            expectationFailure
-                "A173-BOOT: NAMING_BLUEPRINT is set; this row must boot with no naming input at all"
+    it
+        "pins the parameterless open policy and the three witnesses, and the eight-field datum decodes with no naming input"
+        $ do
+            -- "with no naming input" is a fact about this run.
+            naming <- lookupEnv "NAMING_BLUEPRINT"
+            unless (isNothing naming) $
+                expectationFailure
+                    "A173-BOOT: NAMING_BLUEPRINT is set; this row must boot with no naming input at all"
 
-        -- The production entry point. The pins must come from here.
-        codes <- loadRegistryCodesFromEnv
-        ncApplication codes `shouldBe` openBytes
-        ncWitness codes `shouldBe` witnessBytes
+            -- The production entry point. The pins must come from here.
+            codes <- loadRegistryCodesFromEnv
+            ncApplication codes `shouldBe` openBytes
+            ncWitness codes `shouldBe` witnessBytes
 
-        let expectedOpenPolicy =
-                SBS.toShort (scriptHashBytes (computeScriptHash openBytes))
+            let expectedOpenPolicy =
+                    SBS.toShort (scriptHashBytes (computeScriptHash openBytes))
 
-        withBootedCage id stateBytes requestBytes $ \cfg prov _submit _tm reg -> do
-            let tokenId = Driver.registryTokenId reg
-            -- The config pins the open application, obtained from the
-            -- blueprint rather than written down here.
-            cfgApplicationPolicy cfg `shouldBe` expectedOpenPolicy
+            withBootedCage id stateBytes requestBytes $ \cfg prov _submit _tm reg -> do
+                let tokenId = Driver.registryTokenId reg
+                -- The config pins the open application, obtained from the
+                -- blueprint rather than written down here.
+                cfgApplicationPolicy cfg `shouldBe` expectedOpenPolicy
 
-            let registryId =
-                    scriptHashBytes (computeScriptHash stateBytes)
-                (_, absentPin, activePin, terminalPin) =
-                    Edges.namingPins codes registryId
-            length (nub [absentPin, activePin, terminalPin]) `shouldBe` 3
+                let registryId =
+                        scriptHashBytes (computeScriptHash stateBytes)
+                    (_, absentPin, activePin, terminalPin) =
+                        Edges.namingPins codes registryId
+                length (nub [absentPin, activePin, terminalPin]) `shouldBe` 3
 
-            -- The eight-field datum, read back from chain.
-            let stateAddr = cageAddrFromCfg cfg Testnet
-            stateUtxos <- Cage.queryUTxOs prov stateAddr
-            case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId stateUtxos of
-                Nothing ->
-                    expectationFailure
-                        "A173-BOOT: no state UTxO carrying the registry policy token"
-                Just (_, out) -> case extractCageDatum out of
-                    Just (StateDatum st) -> do
-                        -- field 5 of 8: the application policy IS the open
-                        -- policy, on chain, not merely in the config.
-                        hex (SBS.fromShort (cfgApplicationPolicy cfg))
-                            `shouldBe` hex (SBS.fromShort expectedOpenPolicy)
-                        -- the remaining pins decode and are the three the
-                        -- boot derived, pairwise distinct.
-                        stateProcessTime st `shouldSatisfy` (> 0)
-                        stateRetractTime st `shouldSatisfy` (> 0)
-                        stateMaxFee st `shouldSatisfy` (>= 0)
-                    _ ->
+                -- The eight-field datum, read back from chain.
+                let stateAddr = cageAddrFromCfg cfg Testnet
+                stateUtxos <- Cage.queryUTxOs prov stateAddr
+                case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId stateUtxos of
+                    Nothing ->
                         expectationFailure
-                            "A173-BOOT: the state UTxO carries no eight-field state datum"
+                            "A173-BOOT: no state UTxO carrying the registry policy token"
+                    Just (_, out) -> case extractCageDatum out of
+                        Just (StateDatum st) -> do
+                            -- field 5 of 8: the application policy IS the open
+                            -- policy, on chain, not merely in the config.
+                            hex (SBS.fromShort (cfgApplicationPolicy cfg))
+                                `shouldBe` hex (SBS.fromShort expectedOpenPolicy)
+                            -- the remaining pins decode and are the three the
+                            -- boot derived, pairwise distinct.
+                            stateProcessTime st `shouldSatisfy` (> 0)
+                            stateRetractTime st `shouldSatisfy` (> 0)
+                            stateMaxFee st `shouldSatisfy` (>= 0)
+                        _ ->
+                            expectationFailure
+                                "A173-BOOT: the state UTxO carries no eight-field state datum"
 
 hex :: ByteString -> String
 hex = T.unpack . TE.decodeUtf8 . Base16.encode

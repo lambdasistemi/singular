@@ -24,15 +24,15 @@ An accepted refusal leg fails the run and is reported, not relabelled.
 it is there and answers @null@ otherwise; the names are asserted at the
 Aiken layer against @state.terminalRefusal@.
 -}
-module UpdateTerminal.Controls (
-    unknownKey,
-    absentKey,
-    controlKey,
-    absentRefusal,
-    UnknownLeg (..),
-    unknownRefusal,
-    refusalTrace,
-) where
+module UpdateTerminal.Controls
+    ( unknownKey
+    , absentKey
+    , controlKey
+    , absentRefusal
+    , UnknownLeg (..)
+    , unknownRefusal
+    , refusalTrace
+    ) where
 
 import Control.Exception (SomeException, displayException, try)
 import Data.Aeson (Value (..))
@@ -41,16 +41,16 @@ import Data.List (isInfixOf)
 import Data.Text qualified as T
 
 import UpdateTerminal.Narration (die, hex, say)
-import UpdateTerminal.Registry (
-    Registry,
-    absentOp,
-    book,
-    foldAndMirror,
-    foldInadmissible,
-    insertOp,
-    retireOp,
-    txIdOf,
- )
+import UpdateTerminal.Registry
+    ( Registry
+    , absentOp
+    , book
+    , foldAndMirror
+    , foldInadmissible
+    , insertOp
+    , retireOp
+    , txIdOf
+    )
 
 {- | The Unknown leg's own accepting control, booked and retired in the
 second registry before the refusal it controls.
@@ -94,7 +94,8 @@ unknownRefusal reg = do
     book reg controlKey insertOp
     _ <- foldAndMirror reg controlKey insertOp
     book reg controlKey retireOp
-    controlOutcome <- try @SomeException (foldAndMirror reg controlKey retireOp)
+    controlOutcome <-
+        try @SomeException (foldAndMirror reg controlKey retireOp)
     controlTxid <- case controlOutcome of
         Right tx -> pure (hex (txIdOf tx))
         Left e ->

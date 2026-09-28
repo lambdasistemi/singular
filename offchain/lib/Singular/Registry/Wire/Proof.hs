@@ -9,25 +9,25 @@ with its codec. Reads only "Singular.Registry.Wire.Primitive"; nothing
 here is importable by a caller — the public surface is the
 "Singular.Registry.Types" facade.
 -}
-module Singular.Registry.Wire.Proof (
-    -- * Proof steps (Aiken MPF proof encoding)
-    ProofStep (..),
-    Neighbor (..),
-) where
+module Singular.Registry.Wire.Proof
+    ( -- * Proof steps (Aiken MPF proof encoding)
+      ProofStep (..)
+    , Neighbor (..)
+    ) where
 
 import Data.ByteString (ByteString)
 import PlutusCore.Data (Data (..))
-import PlutusTx.IsData.Class (
-    FromData (..),
-    ToData (..),
-    UnsafeFromData (..),
- )
-import Singular.Registry.Wire.Primitive (
-    bsFromD,
-    bsToD,
-    mkD,
-    unD,
- )
+import PlutusTx.IsData.Class
+    ( FromData (..)
+    , ToData (..)
+    , UnsafeFromData (..)
+    )
+import Singular.Registry.Wire.Primitive
+    ( bsFromD
+    , bsToD
+    , mkD
+    , unD
+    )
 
 {- | A single step in an MPF Merkle proof, matching
 the Aiken @ProofStep@ type from

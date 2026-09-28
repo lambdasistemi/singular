@@ -22,23 +22,23 @@ own, with its own accepting control folded in it before the bad one.
   than the builder's;
 * 'rootNow' is the mirror's root, 'committedRoot' the one on chain.
 -}
-module UpdateTerminal.Registry (
-    Session (sessProvider),
-    openSession,
-    Registry (..),
-    bootRegistry,
-    insertOp,
-    absentOp,
-    retireOp,
-    walletDestination,
-    book,
-    foldAndMirror,
-    foldInadmissible,
-    rootNow,
-    committedRoot,
-    bootStateOf,
-    txIdOf,
-) where
+module UpdateTerminal.Registry
+    ( Session (sessProvider)
+    , openSession
+    , Registry (..)
+    , bootRegistry
+    , insertOp
+    , absentOp
+    , retireOp
+    , walletDestination
+    , book
+    , foldAndMirror
+    , foldInadmissible
+    , rootNow
+    , committedRoot
+    , bootStateOf
+    , txIdOf
+    ) where
 
 import Control.Monad (void)
 import Data.ByteString (ByteString)
@@ -53,50 +53,69 @@ import Cardano.Ledger.Address (serialiseAddr)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
 import Cardano.Ledger.Api.Tx.Out (TxOut, referenceScriptTxOutL)
-import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (SNothing))
+import Cardano.Ledger.BaseTypes
+    ( Network (Testnet)
+    , StrictMaybe (SNothing)
+    )
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.Mary.Value (MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId (..), TxIn)
 import Cardano.Node.Client.E2E.Setup (addKeyWitness, genesisAddr)
-import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Cardano.Node.Client.Submitter
+    ( SubmitResult (..)
+    , Submitter (..)
+    )
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Blueprint (NamingCodes, loadRegistryCodesFromEnv)
+import Singular.Registry.Blueprint
+    ( NamingCodes
+    , loadRegistryCodesFromEnv
+    )
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (AssetName (..), Coin (..), ConwayEra, Root (..), TokenId (..))
-import Singular.Registry.Node (NodeSession (..), awaitTx, funderSignKey)
+import Singular.Registry.Ledger
+    ( AssetName (..)
+    , Coin (..)
+    , ConwayEra
+    , Root (..)
+    , TokenId (..)
+    )
+import Singular.Registry.Node
+    ( NodeSession (..)
+    , awaitTx
+    , funderSignKey
+    )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.Pure ()
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Edges qualified as Edges
-import Singular.Registry.TxBuilder.Internal (
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    computeScriptHash,
-    extractCageDatum,
-    findStateUtxo,
-    scriptFromBytes,
-    scriptHashBytes,
-    txInToRef,
-    walkEdge,
- )
-import Singular.Registry.TxBuilder.Update (
-    RegistryContext (..),
-    updateTokenWithDuties,
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    Edge,
-    OnChainRoot (..),
-    OnChainTokenState (..),
-    OnChainTxOutRef,
-    edgeInsertAbsent,
-    edgeInsertActive,
-    edgeUpdateTerminal,
- )
+import Singular.Registry.TxBuilder.Internal
+    ( cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , computeScriptHash
+    , extractCageDatum
+    , findStateUtxo
+    , scriptFromBytes
+    , scriptHashBytes
+    , txInToRef
+    , walkEdge
+    )
+import Singular.Registry.TxBuilder.Update
+    ( RegistryContext (..)
+    , updateTokenWithDuties
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , Edge
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
+    , OnChainTxOutRef
+    , edgeInsertAbsent
+    , edgeInsertActive
+    , edgeUpdateTerminal
+    )
 import UpdateTerminal.Narration (die, hex, say)
 import UpdateTerminal.Options (StoryInputs (..))
 
@@ -173,9 +192,15 @@ bootRegistry s label = do
     -- Never seed from the reference publication: boot REFERENCES
     -- that output and may not also spend it.
     seedRef <- case filter (\(_, o) -> o ^. referenceScriptTxOutL == SNothing) utxos of
-        [] -> die "the genesis wallet has no spendable UTxO to seed a registry with"
+        [] ->
+            die "the genesis wallet has no spendable UTxO to seed a registry with"
         ((txIn, _) : _) -> pure (txInToRef txIn)
-    let cfg = cageCfg (inputStateBytes inputs) (inputRequestBytes inputs) (sessCodes s) seedRef
+    let cfg =
+            cageCfg
+                (inputStateBytes inputs)
+                (inputRequestBytes inputs)
+                (sessCodes s)
+                seedRef
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr
     signedBoot <- submitWithGenesis submit unsignedBoot
     (tid, tidBytes) <- extractTokenId cfg signedBoot
@@ -237,7 +262,12 @@ foldInadmissible reg = foldWith reg True
 foldWith :: Registry -> Bool -> IO ConwayTx
 foldWith reg inadmissible = do
     let s = regSession reg
-    ctx0 <- Edges.registryContextFor (regCfg reg) (sessCodes s) (sessProvider s) (regRefs reg)
+    ctx0 <-
+        Edges.registryContextFor
+            (regCfg reg)
+            (sessCodes s)
+            (sessProvider s)
+            (regRefs reg)
     let ctx = ctx0{rcAllowInadmissible = inadmissible}
     tx <-
         updateTokenWithDuties
@@ -259,7 +289,12 @@ key's hash rather than its value and cannot see one, while a trie with a
 different leaf at a key has a different root.
 -}
 committedRoot :: Registry -> IO ByteString
-committedRoot reg = unOnChainRoot . stateRoot <$> readState reg "the state UTxO carries no state datum" "no state UTxO carrying the registry policy token"
+committedRoot reg =
+    unOnChainRoot . stateRoot
+        <$> readState
+            reg
+            "the state UTxO carries no state datum"
+            "no state UTxO carrying the registry policy token"
 
 -- | The eight-field state datum as the boot left it.
 bootStateOf :: Registry -> IO OnChainTokenState
@@ -272,7 +307,10 @@ bootStateOf reg =
 readState :: Registry -> String -> String -> IO OnChainTokenState
 readState reg notState missing = do
     let cfg = regCfg reg
-    utxos <- Cage.queryUTxOs (sessProvider (regSession reg)) (cageAddrFromCfg cfg Testnet)
+    utxos <-
+        Cage.queryUTxOs
+            (sessProvider (regSession reg))
+            (cageAddrFromCfg cfg Testnet)
     case findStateUtxo (cagePolicyIdFromCfg cfg) (regTid reg) utxos of
         Just (_, out) -> case extractCageDatum out of
             Just (StateDatum st) -> pure st
@@ -297,7 +335,7 @@ extractTokenId :: CageConfig -> ConwayTx -> IO (TokenId, ByteString)
 extractTokenId cfg tx =
     let MultiAsset ma = tx ^. bodyTxL . mintTxBodyL
         assets = Map.toList (ma Map.! cagePolicyIdFromCfg cfg)
-     in case assets of
+    in  case assets of
             [(AssetName an, _)] -> pure (TokenId (AssetName an), fromShort an)
             _ -> die ("boot: unexpected mint assets: " <> show (length assets))
 
@@ -305,20 +343,20 @@ extractTokenId cfg tx =
 txIdOf :: ConwayTx -> ByteString
 txIdOf tx =
     let TxId h = txIdTx tx
-     in hashToBytes (extractHash h)
+    in  hashToBytes (extractHash h)
 
-cageCfg ::
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    NamingCodes ->
-    OnChainTxOutRef ->
-    CageConfig
+cageCfg
+    :: SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> NamingCodes
+    -> OnChainTxOutRef
+    -> CageConfig
 cageCfg stateBytes requestBytes codes seed =
     let stateHash = computeScriptHash stateBytes
         registryId = scriptHashBytes stateHash <> deriveAssetName seed
         (appPin, absentPin, activePin, terminalPin) =
             Edges.namingPins codes registryId
-     in CageConfig
+    in  CageConfig
             { cageScriptBytes = stateBytes
             , requestScriptBytes = requestBytes
             , cfgScriptHash = stateHash

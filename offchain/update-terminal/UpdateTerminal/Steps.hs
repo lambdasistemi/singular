@@ -19,13 +19,13 @@ BEFORE the burn spends it), and the committed root on chain.
 The readers 'mintedActive' and 'bootObservation' compute their fields
 from the transactions themselves.
 -}
-module UpdateTerminal.Steps (
-    storyKey,
-    Retirement (..),
-    retireStoryKey,
-    mintedActive,
-    bootObservation,
-) where
+module UpdateTerminal.Steps
+    ( storyKey
+    , Retirement (..)
+    , retireStoryKey
+    , mintedActive
+    , bootObservation
+    ) where
 
 import Data.Aeson (Value, object, (.=))
 import Data.ByteString (ByteString)
@@ -36,7 +36,10 @@ import Data.Set qualified as Set
 import Lens.Micro ((^.))
 
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
-import Cardano.Ledger.Api.Tx.Body (mintTxBodyL, referenceInputsTxBodyL)
+import Cardano.Ledger.Api.Tx.Body
+    ( mintTxBodyL
+    , referenceInputsTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.Wits (scriptTxWitsL)
 import Cardano.Ledger.Binary (serialize)
 import Cardano.Ledger.Core (eraProtVerHigh, valueTxOutL)
@@ -50,16 +53,16 @@ import Singular.Registry.Ledger (AssetName (..), ConwayEra, Root)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Internal (policyIdFromPin)
 import UpdateTerminal.Narration (die, hex, say)
-import UpdateTerminal.Registry (
-    Registry (..),
-    Session (sessProvider),
-    book,
-    committedRoot,
-    foldAndMirror,
-    insertOp,
-    retireOp,
-    rootNow,
- )
+import UpdateTerminal.Registry
+    ( Registry (..)
+    , Session (sessProvider)
+    , book
+    , committedRoot
+    , foldAndMirror
+    , insertOp
+    , retireOp
+    , rootNow
+    )
 
 -- | The key the documented run books and then retires.
 storyKey :: ByteString
@@ -89,7 +92,10 @@ retireStoryKey story = do
     insertTx <- foldAndMirror story storyKey insertOp
     rootActive <- rootNow story
     heldBefore <- activeHeldAt story cfg storyKey
-    say ("active tokens at the named wallet after the insert: " <> show heldBefore)
+    say
+        ( "active tokens at the named wallet after the insert: "
+            <> show heldBefore
+        )
 
     -- The exact input the burn will consume, recorded BEFORE it is
     -- spent: the wallet UTxO carrying this key's one active witness.
@@ -104,7 +110,10 @@ retireStoryKey story = do
     rootTerminal <- rootNow story
     heldAfter <- activeHeldAt story cfg storyKey
     chainRoot <- committedRoot story
-    say ("active tokens at the named wallet after the retirement: " <> show heldAfter)
+    say
+        ( "active tokens at the named wallet after the retirement: "
+            <> show heldAfter
+        )
     pure
         Retirement
             { retInsertTx = insertTx
@@ -121,7 +130,8 @@ retireStoryKey story = do
 -- | Exactly the quantity held under the ACTIVE policy at this key.
 activeHeldAt :: Registry -> CageConfig -> ByteString -> IO Integer
 activeHeldAt reg cfg key = do
-    walletUtxos <- Cage.queryUTxOs (sessProvider (regSession reg)) genesisAddr
+    walletUtxos <-
+        Cage.queryUTxOs (sessProvider (regSession reg)) genesisAddr
     let policy = policyIdFromPin (cfgActivePolicy cfg)
     pure $
         sum
@@ -139,7 +149,8 @@ quantity, read off the chain before the retirement spends it.
 -}
 activeSourceOf :: Registry -> CageConfig -> ByteString -> IO Value
 activeSourceOf reg cfg key = do
-    walletUtxos <- Cage.queryUTxOs (sessProvider (regSession reg)) genesisAddr
+    walletUtxos <-
+        Cage.queryUTxOs (sessProvider (regSession reg)) genesisAddr
     let policy = policyIdFromPin (cfgActivePolicy cfg)
         carriers =
             [ (txIn, q)
@@ -174,7 +185,7 @@ mintedActive :: ConwayTx -> CageConfig -> [Value]
 mintedActive tx cfg =
     let MultiAsset ma = tx ^. bodyTxL . mintTxBodyL
         policy = policyIdFromPin (cfgActivePolicy cfg)
-     in [ object
+    in  [ object
             [ "policy" .= hex (SBS.fromShort (cfgActivePolicy cfg))
             , "name" .= hex (SBS.fromShort n)
             , "quantity" .= q
@@ -199,9 +210,16 @@ for among the witnesses actually attached.
 bootObservation :: CageConfig -> ConwayTx -> Value
 bootObservation cfg tx =
     object
-        [ "bytes" .= (fromIntegral (BL.length (serialize (eraProtVerHigh @ConwayEra) tx)) :: Integer)
-        , "inlineScripts" .= (fromIntegral (Map.size (tx ^. witsTxL . scriptTxWitsL)) :: Integer)
-        , "referenceInputs" .= (fromIntegral (Set.size (tx ^. bodyTxL . referenceInputsTxBodyL)) :: Integer)
+        [ "bytes"
+            .= ( fromIntegral (BL.length (serialize (eraProtVerHigh @ConwayEra) tx))
+                    :: Integer
+               )
+        , "inlineScripts"
+            .= (fromIntegral (Map.size (tx ^. witsTxL . scriptTxWitsL)) :: Integer)
+        , "referenceInputs"
+            .= ( fromIntegral (Set.size (tx ^. bodyTxL . referenceInputsTxBodyL))
+                    :: Integer
+               )
         , "stateScriptInline"
             .= Map.member (cfgScriptHash cfg) (tx ^. witsTxL . scriptTxWitsL)
         ]

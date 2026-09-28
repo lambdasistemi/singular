@@ -15,85 +15,85 @@ This is the identity-and-conversion owner extracted from
 @Singular.Registry.TxBuilder.Internal@; the public module re-exports
 it and is its only intended consumer surface.
 -}
-module Singular.Registry.TxBuilder.Internal.Identity (
-    -- * Script construction
-    mkCageScript,
-    mkRequestScript,
-    scriptFromBytes,
-    scriptHashBytes,
-    computeScriptHash,
+module Singular.Registry.TxBuilder.Internal.Identity
+    ( -- * Script construction
+      mkCageScript
+    , mkRequestScript
+    , scriptFromBytes
+    , scriptHashBytes
+    , computeScriptHash
 
-    -- * Derived identity
-    cagePolicyIdFromCfg,
-    cageAddrFromCfg,
-    requestAddrFromCfg,
-    onChainTokenId,
+      -- * Derived identity
+    , cagePolicyIdFromCfg
+    , cageAddrFromCfg
+    , requestAddrFromCfg
+    , onChainTokenId
 
-    -- * Datum helpers
-    mkRequestDatum,
-    mkRequestDatumWith,
-    toPlcData,
-    toLedgerData,
-    mkInlineDatum,
-    extractCageDatum,
+      -- * Datum helpers
+    , mkRequestDatum
+    , mkRequestDatumWith
+    , toPlcData
+    , toLedgerData
+    , mkInlineDatum
+    , extractCageDatum
 
-    -- * Reference conversion
-    txInToRef,
-    addrKeyHashBytes,
-    addrFromKeyHashBytes,
-    addrWitnessKeyHash,
+      -- * Reference conversion
+    , txInToRef
+    , addrKeyHashBytes
+    , addrFromKeyHashBytes
+    , addrWitnessKeyHash
 
-    -- * Request helpers
-    extractOwnerBytes,
+      -- * Request helpers
+    , extractOwnerBytes
 
-    -- * Constants
-    emptyRoot,
+      -- * Constants
+    , emptyRoot
 
-    -- * Reference identity from pins
-    policyIdFromPin,
-    addrFromBytes,
-) where
+      -- * Reference identity from pins
+    , policyIdFromPin
+    , addrFromBytes
+    ) where
 
 import Cardano.Crypto.Hash (hashFromBytes, hashToBytes)
 import Cardano.Ledger.Address (Addr (..), decodeAddrEither)
-import Cardano.Ledger.Alonzo.Scripts (
-    fromPlutusScript,
-    mkPlutusScript,
- )
-import Cardano.Ledger.Api.Scripts.Data (
-    Data (..),
-    Datum (..),
-    binaryDataToData,
-    dataToBinaryData,
- )
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    datumTxOutL,
- )
-import Cardano.Ledger.BaseTypes (
-    Network,
-    TxIx (..),
- )
-import Cardano.Ledger.Core (
-    Script,
-    extractHash,
-    hashScript,
- )
-import Cardano.Ledger.Credential (
-    Credential (..),
-    StakeReference (..),
- )
+import Cardano.Ledger.Alonzo.Scripts
+    ( fromPlutusScript
+    , mkPlutusScript
+    )
+import Cardano.Ledger.Api.Scripts.Data
+    ( Data (..)
+    , Datum (..)
+    , binaryDataToData
+    , dataToBinaryData
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , datumTxOutL
+    )
+import Cardano.Ledger.BaseTypes
+    ( Network
+    , TxIx (..)
+    )
+import Cardano.Ledger.Core
+    ( Script
+    , extractHash
+    , hashScript
+    )
+import Cardano.Ledger.Credential
+    ( Credential (..)
+    , StakeReference (..)
+    )
 import Cardano.Ledger.Hashes (ScriptHash (..))
-import Cardano.Ledger.Keys (
-    KeyHash (..),
-    KeyRole (..),
- )
+import Cardano.Ledger.Keys
+    ( KeyHash (..)
+    , KeyRole (..)
+    )
 import Cardano.Ledger.Mary.Value (PolicyID (..))
-import Cardano.Ledger.Plutus.Language (
-    Language (PlutusV3),
-    Plutus (..),
-    PlutusBinary (..),
- )
+import Cardano.Ledger.Plutus.Language
+    ( Language (PlutusV3)
+    , Plutus (..)
+    , PlutusBinary (..)
+    )
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
@@ -101,57 +101,61 @@ import Data.ByteString.Short qualified as SBS
 import Data.Coerce (coerce)
 import Lens.Micro ((^.))
 import PlutusCore.Data qualified as PLC
-import PlutusTx.Builtins.Internal (
-    BuiltinByteString (..),
-    BuiltinData (..),
- )
-import PlutusTx.IsData.Class (
-    FromData (..),
-    ToData (..),
- )
+import PlutusTx.Builtins.Internal
+    ( BuiltinByteString (..)
+    , BuiltinData (..)
+    )
+import PlutusTx.IsData.Class
+    ( FromData (..)
+    , ToData (..)
+    )
 import Singular.Registry.Blueprint.Params (applyRequestParams)
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (AssetName (..), ConwayEra, TokenId (..))
-import Singular.Registry.Types (
-    CageDatum (..),
-    Edge,
-    OnChainRequest (..),
-    OnChainTokenId (..),
-    OnChainTxOutRef (..),
- )
+import Singular.Registry.Ledger
+    ( AssetName (..)
+    , ConwayEra
+    , TokenId (..)
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , Edge
+    , OnChainRequest (..)
+    , OnChainTokenId (..)
+    , OnChainTxOutRef (..)
+    )
 
 -- | Empty MPF root (32 zero bytes).
 emptyRoot :: ByteString
 emptyRoot = BS.replicate 32 0
 
 -- | Build the cage 'Script' from config bytes.
-mkCageScript ::
-    CageConfig ->
-    Script ConwayEra
+mkCageScript
+    :: CageConfig
+    -> Script ConwayEra
 mkCageScript cfg =
     scriptFromBytes
         "mkCageScript"
         (cageScriptBytes cfg)
 
 -- | Build the per-cage request 'Script' from config bytes.
-mkRequestScript ::
-    CageConfig ->
-    TokenId ->
-    Script ConwayEra
+mkRequestScript
+    :: CageConfig
+    -> TokenId
+    -> Script ConwayEra
 mkRequestScript cfg tid =
     scriptFromBytes
         "mkRequestScript"
         (requestScriptBytesFromCfg cfg tid)
 
-scriptFromBytes ::
-    String ->
-    SBS.ShortByteString ->
-    Script ConwayEra
+scriptFromBytes
+    :: String
+    -> SBS.ShortByteString
+    -> Script ConwayEra
 scriptFromBytes label sbs =
     let plutus =
             Plutus @PlutusV3 $
                 PlutusBinary sbs
-     in case mkPlutusScript plutus of
+    in  case mkPlutusScript plutus of
             Just ps -> fromPlutusScript ps
             Nothing ->
                 error
@@ -161,14 +165,14 @@ scriptFromBytes label sbs =
                     )
 
 -- | Compute the 'ScriptHash' from raw script bytes.
-computeScriptHash ::
-    SBS.ShortByteString ->
-    ScriptHash
+computeScriptHash
+    :: SBS.ShortByteString
+    -> ScriptHash
 computeScriptHash sbs =
     let plutus =
             Plutus @PlutusV3 $
                 PlutusBinary sbs
-     in case mkPlutusScript @ConwayEra plutus of
+    in  case mkPlutusScript @ConwayEra plutus of
             Just ps ->
                 hashScript @ConwayEra $
                     fromPlutusScript ps
@@ -183,10 +187,10 @@ cagePolicyIdFromCfg =
     PolicyID . cfgScriptHash
 
 -- | Compute the cage script address from config.
-cageAddrFromCfg ::
-    CageConfig ->
-    Network ->
-    Addr
+cageAddrFromCfg
+    :: CageConfig
+    -> Network
+    -> Addr
 cageAddrFromCfg cfg net =
     Addr
         net
@@ -194,11 +198,11 @@ cageAddrFromCfg cfg net =
         StakeRefNull
 
 -- | Compute the request script address for a token.
-requestAddrFromCfg ::
-    CageConfig ->
-    TokenId ->
-    Network ->
-    Addr
+requestAddrFromCfg
+    :: CageConfig
+    -> TokenId
+    -> Network
+    -> Addr
 requestAddrFromCfg cfg tid net =
     Addr
         net
@@ -215,12 +219,12 @@ onChainTokenId tid =
         BuiltinByteString $
             SBS.fromShort $
                 let AssetName sbs = unTokenId tid
-                 in sbs
+                in  sbs
 
-requestScriptBytesFromCfg ::
-    CageConfig ->
-    TokenId ->
-    SBS.ShortByteString
+requestScriptBytesFromCfg
+    :: CageConfig
+    -> TokenId
+    -> SBS.ShortByteString
 requestScriptBytesFromCfg cfg tid =
     applyRequestParams
         (scriptHashBytes $ cfgScriptHash cfg)
@@ -232,16 +236,16 @@ scriptHashBytes (ScriptHash h) =
     hashToBytes h
 
 -- | Build a 'CageDatum' for a request at one C2 edge (#183).
-mkRequestDatum ::
-    TokenId ->
-    Addr ->
-    ByteString ->
-    -- | The C2 row index the request names
-    Edge ->
-    -- | The deposit the request rides with, over and above the tip
-    Integer ->
-    Integer ->
-    PLC.Data
+mkRequestDatum
+    :: TokenId
+    -> Addr
+    -> ByteString
+    -> Edge
+    -- ^ The C2 row index the request names
+    -> Integer
+    -- ^ The deposit the request rides with, over and above the tip
+    -> Integer
+    -> PLC.Data
 mkRequestDatum tid addr key edge deposit submittedAt =
     mkRequestDatumWith
         tid
@@ -258,17 +262,17 @@ active or terminal token, and the approval that certifies the edge binds
 these same bytes, so the booking and the fold cannot disagree about where
 the token goes.
 -}
-mkRequestDatumWith ::
-    TokenId ->
-    Addr ->
-    ByteString ->
-    -- | The C2 row index the request names
-    Edge ->
-    -- | The deposit the request rides with, over and above the tip
-    Integer ->
-    Integer ->
-    (ByteString, ByteString) ->
-    PLC.Data
+mkRequestDatumWith
+    :: TokenId
+    -> Addr
+    -> ByteString
+    -> Edge
+    -- ^ The C2 row index the request names
+    -> Integer
+    -- ^ The deposit the request rides with, over and above the tip
+    -> Integer
+    -> (ByteString, ByteString)
+    -> PLC.Data
 mkRequestDatumWith tid addr key edge deposit submittedAt destination =
     let datum =
             OnChainRequest
@@ -282,7 +286,7 @@ mkRequestDatumWith tid addr key edge deposit submittedAt destination =
                 , requestSubmittedAt = submittedAt
                 , requestDestination = destination
                 }
-     in toPlcData (RequestDatum datum)
+    in  toPlcData (RequestDatum datum)
 
 {- | Convert a 'ToData' value to
 'PlutusCore.Data.Data'.
@@ -292,8 +296,8 @@ toPlcData x =
     let BuiltinData d = toBuiltinData x in d
 
 -- | Convert a 'ToData' value to a ledger 'Data'.
-toLedgerData ::
-    (ToData a) => a -> Data ConwayEra
+toLedgerData
+    :: (ToData a) => a -> Data ConwayEra
 toLedgerData = Data . toPlcData
 
 {- | Wrap 'PlutusCore.Data.Data' as an inline
@@ -329,10 +333,10 @@ addrKeyHashBytes _ = BS.empty
 {- | Reconstruct an 'Addr' from raw payment key
 hash bytes.
 -}
-addrFromKeyHashBytes ::
-    Network ->
-    ByteString ->
-    Addr
+addrFromKeyHashBytes
+    :: Network
+    -> ByteString
+    -> Addr
 addrFromKeyHashBytes net bs =
     case hashFromBytes bs of
         Just h ->
@@ -348,8 +352,8 @@ addrFromKeyHashBytes net bs =
 {- | Extract a 'KeyHash' ''Witness' from raw
 payment key hash bytes.
 -}
-addrWitnessKeyHash ::
-    ByteString -> KeyHash Guard
+addrWitnessKeyHash
+    :: ByteString -> KeyHash Guard
 addrWitnessKeyHash bs =
     case hashFromBytes bs of
         Just h ->
@@ -363,21 +367,21 @@ addrWitnessKeyHash bs =
 {- | Extract a 'CageDatum' from an inline datum
 in a 'TxOut'.
 -}
-extractCageDatum ::
-    TxOut ConwayEra -> Maybe CageDatum
+extractCageDatum
+    :: TxOut ConwayEra -> Maybe CageDatum
 extractCageDatum txOut =
     case txOut ^. datumTxOutL of
         Datum bd ->
             let Data plcData =
                     binaryDataToData bd
-             in fromBuiltinData (BuiltinData plcData)
+            in  fromBuiltinData (BuiltinData plcData)
         _ -> Nothing
 
 {- | Extract the owner key hash bytes from a
 request 'TxOut'.
 -}
-extractOwnerBytes ::
-    TxOut ConwayEra -> ByteString
+extractOwnerBytes
+    :: TxOut ConwayEra -> ByteString
 extractOwnerBytes out =
     case extractCageDatum out of
         Just (RequestDatum req) ->
@@ -385,7 +389,7 @@ extractOwnerBytes out =
                     { requestOwner =
                         BuiltinByteString bs
                     } = req
-             in bs
+            in  bs
         _ ->
             error
                 "extractOwnerBytes: \

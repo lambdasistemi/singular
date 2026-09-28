@@ -39,48 +39,56 @@ import System.Directory (getTemporaryDirectory, removeFile)
 import System.IO (hClose, hPutStr, openTempFile)
 
 import Lens.Micro ((&), (.~), (^.))
-import Test.Hspec (
-    Spec,
-    aroundAll,
-    describe,
-    it,
-    shouldBe,
-    shouldSatisfy,
- )
+import Test.Hspec
+    ( Spec
+    , aroundAll
+    , describe
+    , it
+    , shouldBe
+    , shouldSatisfy
+    )
 
 import Cardano.Ledger.Api.Era (ConwayEra)
 import Cardano.Ledger.Api.PParams (ppMaxTxSizeL)
 import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx)
-import Cardano.Ledger.Api.Tx.Body (feeTxBodyL, inputsTxBodyL, mkBasicTxBody, outputsTxBodyL)
+import Cardano.Ledger.Api.Tx.Body
+    ( feeTxBodyL
+    , inputsTxBodyL
+    , mkBasicTxBody
+    , outputsTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.Out (TxOut, mkBasicTxOut, valueTxOutL)
 import Cardano.Ledger.BaseTypes (TxIx (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Ledger.Val (inject, (<->))
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
-import Cardano.Node.Client.E2E.Setup (
-    Ed25519DSIGN,
-    SignKeyDSIGN,
-    addKeyWitness,
-    genesisDir,
-    genesisSignKey,
-    mkSignKey,
-    rawSerialiseSignKeyDSIGN,
- )
-import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Cardano.Node.Client.E2E.Setup
+    ( Ed25519DSIGN
+    , SignKeyDSIGN
+    , addKeyWitness
+    , genesisDir
+    , genesisSignKey
+    , mkSignKey
+    , rawSerialiseSignKeyDSIGN
+    )
+import Cardano.Node.Client.Submitter
+    ( SubmitResult (..)
+    , Submitter (..)
+    )
 import Cardano.Tx.Ledger (ConwayTx)
-import Singular.Registry.Node (
-    ExternalNode (..),
-    NodeMode (..),
-    NodeSession (..),
-    Wallet (..),
-    awaitTx,
-    bech32Address,
-    loadWallet,
-    nodeAddressReads,
-    walletForMode,
-    withNodeMode,
- )
+import Singular.Registry.Node
+    ( ExternalNode (..)
+    , NodeMode (..)
+    , NodeSession (..)
+    , Wallet (..)
+    , awaitTx
+    , bech32Address
+    , loadWallet
+    , nodeAddressReads
+    , walletForMode
+    , withNodeMode
+    )
 import Singular.Registry.Provider qualified as Cage
 
 spec :: Spec
@@ -192,7 +200,8 @@ walletSpec = describe "Loading a wallet from its signing key" $ do
 {- | A signing key file in the @cardano-cli@ text-envelope form — the
 file a joiner produces with @cardano-cli address key-gen@.
 -}
-withSkeyFile :: SignKeyDSIGN Ed25519DSIGN -> (FilePath -> IO a) -> IO a
+withSkeyFile
+    :: SignKeyDSIGN Ed25519DSIGN -> (FilePath -> IO a) -> IO a
 withSkeyFile sk k = do
     tmp <- getTemporaryDirectory
     (path, h) <- openTempFile tmp "joiner.skey"

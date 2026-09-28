@@ -10,13 +10,13 @@ list are read against these step names. 'failWith' aborts with a
 @journey: FAILED: journey: ...@ with exit status 1; 'require' is
 'failWith' for an observable that did not hold.
 -}
-module Journey.Narration (
-    emit,
-    require,
-    failWith,
-    hex,
-    textOf,
-) where
+module Journey.Narration
+    ( emit
+    , require
+    , failWith
+    , hex
+    , textOf
+    ) where
 
 import Control.Exception (ErrorCall (..), throwIO)
 import Control.Monad (unless)

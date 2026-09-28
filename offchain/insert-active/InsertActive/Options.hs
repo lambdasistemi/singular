@@ -18,22 +18,22 @@ variable:
 without @open.open.mint@, and one without the state or request
 validator.
 -}
-module InsertActive.Options (
-    observedPathFrom,
-    StoryInputs (..),
-    readStoryInputs,
-) where
+module InsertActive.Options
+    ( observedPathFrom
+    , StoryInputs (..)
+    , readStoryInputs
+    ) where
 
 import Data.ByteString.Short qualified as SBS
 import System.Environment (lookupEnv)
 
 import InsertActive.Narration (die)
-import Singular.Registry.Blueprint (
-    Blueprint (..),
-    Validator (..),
-    extractCompiledCode,
-    loadBlueprint,
- )
+import Singular.Registry.Blueprint
+    ( Blueprint (..)
+    , Validator (..)
+    , extractCompiledCode
+    , loadBlueprint
+    )
 
 -- | The path after the first @--observed@, if any.
 observedPathFrom :: [String] -> Maybe FilePath
@@ -78,4 +78,5 @@ readStoryInputs = do
          ) of
         (Just stateBytes, Just requestBytes) ->
             pure (StoryInputs stateBytes requestBytes openParams)
-        _ -> die "state.state or request.request not found in REGISTRY_BLUEPRINT"
+        _ ->
+            die "state.state or request.request not found in REGISTRY_BLUEPRINT"

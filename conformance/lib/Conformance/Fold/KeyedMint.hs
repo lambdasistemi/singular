@@ -13,7 +13,8 @@ keyedMintFold =
 
 -- | Verbatim Lean anchors used by this subject.
 conjuncts :: [String]
-conjuncts = [ "assetKindTotal (claimedMint [b₁, b₂]) k"
-          , "assetSame (claimedMint [b₁, b₂]) (actualMint [b₁, b₂]) = false"
-          , "foldBatch s [b₁, b₂] = .error \"net-mint-mismatch\""
+conjuncts =
+    [ "assetKindTotal (claimedMint [b₁, b₂]) k"
+    , "assetSame (claimedMint [b₁, b₂]) (actualMint [b₁, b₂]) = false"
+    , "foldBatch s [b₁, b₂] = .error \"net-mint-mismatch\""
     ]

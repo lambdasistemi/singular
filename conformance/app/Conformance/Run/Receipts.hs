@@ -3,35 +3,42 @@ Module      : Conformance.Run.Receipts
 Description : Split out of Conformance.Run (#263); see that module's header
 License     : Apache-2.0
 -}
-module Conformance.Run.Receipts (writeCL01Receipt, writeCaCL01, writeStoryReceipt, writeRowReceipt, recordHold, writeCL01Issue70) where
+module Conformance.Run.Receipts
+    ( writeCL01Receipt
+    , writeCaCL01
+    , writeStoryReceipt
+    , writeRowReceipt
+    , recordHold
+    , writeCL01Issue70
+    ) where
 
 import Conformance.Run.Control
 import Conformance.Run.Environment
 import Conformance.Run.Observe
 
-import Data.Aeson (
-    Value (..),
-    eitherDecode,
- )
+import Data.Aeson
+    ( Value (..)
+    , eitherDecode
+    )
 import Data.ByteString.Lazy qualified as BSL
 import Data.IORef (modifyIORef', readIORef)
 import Data.Text qualified as T
 import System.Directory (doesFileExist)
 import System.FilePath ((</>))
 
-import Conformance.Mirror (
-    emit,
-    failWith,
-    require,
- )
-import Conformance.Receipt (
-    DerivationEvidence (..),
-    Outcome (..),
-    Receipt (..),
-    RefusalInfo (..),
-    Verdict (..),
-    writeReceiptFile,
- )
+import Conformance.Mirror
+    ( emit
+    , failWith
+    , require
+    )
+import Conformance.Receipt
+    ( DerivationEvidence (..)
+    , Outcome (..)
+    , Receipt (..)
+    , RefusalInfo (..)
+    , Verdict (..)
+    , writeReceiptFile
+    )
 
 {- | CL01 for these rows: worst-case units and size across the
 slice's accepting folds, with the fold transactions named. The
@@ -49,7 +56,8 @@ writeCL01Receipt env rows = do
                     env
                     "CL01"
                     Accepted
-                    AgreesWithModel                    (map T.unpack (concatMap receiptTransactions rs))
+                    AgreesWithModel
+                    (map T.unpack (concatMap receiptTransactions rs))
                     Nothing
                     Nothing
                     (Just (maximum (map getMem rs)))
@@ -78,7 +86,6 @@ writeCL01Receipt env rows = do
     getCpu r = case receiptCpu r of Just c -> c; Nothing -> 0
     getSize r = case receiptTxSize r of Just s -> s; Nothing -> 0
 
-
 {- | CL01 for the CA rows: worst-case units and size across the
 session's two accepting boots (CA01 canonical, CA02 rival). CA03 and
 CA04 name one of those two transactions and reuse its measurements;
@@ -95,7 +102,8 @@ writeCaCL01 env rows
                     env
                     "CL01"
                     Accepted
-                    AgreesWithModel                    (map T.unpack (concatMap receiptTransactions rs))
+                    AgreesWithModel
+                    (map T.unpack (concatMap receiptTransactions rs))
                     Nothing
                     Nothing
                     (Just (maximum (map getMem rs)))
@@ -128,18 +136,20 @@ writeCaCL01 env rows
     getCpu r = case receiptCpu r of Just c -> c; Nothing -> 0
     getSize r = case receiptTxSize r of Just s -> s; Nothing -> 0
 
-
 -- | One envelope, with the generic body computed by Compare instructions.
 writeStoryReceipt :: Env -> T.Text -> [Value] -> IO ()
 writeStoryReceipt env row records = do
     txids <- fmap concat $ mapM acceptedTx records
     measures <- readIORef (envLiveMeasurements env)
     require "story receipt has no accepted transaction" (not (null txids))
-    require "story receipt measurement count differs from accepted steps"
+    require
+        "story receipt measurement count differs from accepted steps"
         (length txids == length measures)
-    let (mem, cpu, size) = foldr
-            (\(m, c, s) (ms, cs, largest) -> (m + ms, c + cs, max s largest))
-            (0, 0, 0) measures
+    let (mem, cpu, size) =
+            foldr
+                (\(m, c, s) (ms, cs, largest) -> (m + ms, c + cs, max s largest))
+                (0, 0, 0)
+                measures
     writeReceiptFile (envReceiptsDir env) $
         Receipt
             { receiptRow = row
@@ -172,25 +182,24 @@ writeStoryReceipt env row records = do
                     _ -> failWith "accepted step names no transaction id"
             else pure []
 
-
 -- ---------------------------------------------------------
 -- Receipts
 -- ---------------------------------------------------------
 
-writeRowReceipt ::
-    Env ->
-    String ->
-    Outcome ->
-    Verdict ->
-    [String] ->
-    Maybe RefusalInfo ->
-    Maybe String ->
-    Maybe Integer ->
-    Maybe Integer ->
-    Maybe Integer ->
-    T.Text ->
-    Maybe [DerivationEvidence] ->
-    IO ()
+writeRowReceipt
+    :: Env
+    -> String
+    -> Outcome
+    -> Verdict
+    -> [String]
+    -> Maybe RefusalInfo
+    -> Maybe String
+    -> Maybe Integer
+    -> Maybe Integer
+    -> Maybe Integer
+    -> T.Text
+    -> Maybe [DerivationEvidence]
+    -> IO ()
 writeRowReceipt env row outcome verdict txs refusal rejected mem cpu size venue derivation =
     writeReceiptFile (envReceiptsDir env) $
         Receipt
@@ -206,14 +215,12 @@ writeRowReceipt env row outcome verdict txs refusal rejected mem cpu size venue 
             , receiptBase = T.pack (envBase env)
             , receiptDirty = envDirty env
             , receiptPartial = Nothing
-
             , receiptDerivation = derivation
             , receiptSteps = Nothing
             , receiptNode = T.pack (envNode env)
             , receiptBlueprint = T.pack (envBlueprint env)
             , receiptVenue = venue
             }
-
 
 {- | Record a held row (Q-002, story 2): the chain's outcome agrees
 with Singular's Lean and contradicts the consumer's theorem. The
@@ -237,7 +244,6 @@ recordHold env row holdId leanSays consumerSays = do
                \while this row is held"
         )
 
-
 writeCL01Issue70 :: Env -> [String] -> IO ()
 writeCL01Issue70 env rows
     | all (`elem` rows) issue70Rows = do
@@ -248,7 +254,8 @@ writeCL01Issue70 env rows
                     env
                     "CL01"
                     Accepted
-                    AgreesWithModel                    (map T.unpack (concatMap receiptTransactions rs))
+                    AgreesWithModel
+                    (map T.unpack (concatMap receiptTransactions rs))
                     Nothing
                     Nothing
                     (Just (maximum (map getMem rs)))
@@ -260,7 +267,7 @@ writeCL01Issue70 env rows
                 emit
                     "measure"
                     "CL01 not receipted: an accepting row's receipt is \
-                     \missing"
+                    \missing"
     | otherwise =
         emit
             "measure"

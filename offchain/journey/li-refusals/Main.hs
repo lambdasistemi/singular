@@ -87,13 +87,13 @@ module Main (main) where
 
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (Async, async, cancel, poll)
-import Control.Exception (
-    ErrorCall (..),
-    SomeException,
-    displayException,
-    throwIO,
-    try,
- )
+import Control.Exception
+    ( ErrorCall (..)
+    , SomeException
+    , displayException
+    , throwIO
+    , try
+    )
 import Control.Monad (unless, when)
 import Crypto.Hash (Blake2b_256, Digest, hash)
 import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
@@ -117,115 +117,135 @@ import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import System.Environment (lookupEnv)
 import System.Exit (ExitCode (..), exitWith)
-import System.IO (BufferMode (..), hPutStrLn, hSetBuffering, stderr, stdout)
+import System.IO
+    ( BufferMode (..)
+    , hPutStrLn
+    , hSetBuffering
+    , stderr
+    , stdout
+    )
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
-import Cardano.Ledger.Api.Scripts.Data (Data (..), Datum (..), binaryDataToData)
+import Cardano.Ledger.Api.Scripts.Data
+    ( Data (..)
+    , Datum (..)
+    , binaryDataToData
+    )
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
-import Cardano.Ledger.Api.Tx.Body (
-    collateralInputsTxBodyL,
-    feeTxBodyL,
-    inputsTxBodyL,
-    mintTxBodyL,
-    mkBasicTxBody,
-    outputsTxBodyL,
-    reqSignerHashesTxBodyL,
-    scriptIntegrityHashTxBodyL,
- )
+import Cardano.Ledger.Api.Tx.Body
+    ( collateralInputsTxBodyL
+    , feeTxBodyL
+    , inputsTxBodyL
+    , mintTxBodyL
+    , mkBasicTxBody
+    , outputsTxBodyL
+    , reqSignerHashesTxBodyL
+    , scriptIntegrityHashTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.In (TxIn (..))
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    addrTxOutL,
-    coinTxOutL,
-    datumTxOutL,
-    getMinCoinTxOut,
-    mkBasicTxOut,
-    valueTxOutL,
- )
-import Cardano.Ledger.Api.Tx.Wits (
-    Redeemers (..),
-    rdmrsTxWitsL,
-    scriptTxWitsL,
- )
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , addrTxOutL
+    , coinTxOutL
+    , datumTxOutL
+    , getMinCoinTxOut
+    , mkBasicTxOut
+    , valueTxOutL
+    )
+import Cardano.Ledger.Api.Tx.Wits
+    ( Redeemers (..)
+    , rdmrsTxWitsL
+    , scriptTxWitsL
+    )
 import Cardano.Ledger.BaseTypes (Network (..), TxIx (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (Script, extractHash, hashScript)
-import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
+import Cardano.Ledger.Credential
+    ( Credential (..)
+    , StakeReference (..)
+    )
 import Cardano.Ledger.Hashes (ScriptHash)
-import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..), PolicyID (..))
+import Cardano.Ledger.Mary.Value
+    ( MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID (..)
+    )
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
-import Cardano.Node.Client.E2E.Setup (
-    addKeyWitness,
-    devnetMagic,
-    genesisAddr,
-    genesisDir,
-    genesisSignKey,
- )
+import Cardano.Node.Client.E2E.Setup
+    ( addKeyWitness
+    , devnetMagic
+    , genesisAddr
+    , genesisDir
+    , genesisSignKey
+    )
 import Cardano.Node.Client.Ledger (ConwayTx)
-import Cardano.Node.Client.N2C.Connection (
-    newLSQChannel,
-    newLTxSChannel,
-    runNodeClient,
- )
+import Cardano.Node.Client.N2C.Connection
+    ( newLSQChannel
+    , newLTxSChannel
+    , runNodeClient
+    )
 import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Cardano.Node.Client.Provider qualified as N2C
-import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Cardano.Node.Client.Submitter
+    ( SubmitResult (..)
+    , Submitter (..)
+    )
 import Naming.Datum
 import Naming.Register (registryAssetId)
-import Naming.Wire (
-    Address (..),
-    WireData (..),
-    addressBytes,
-    canonicalAddress,
-    decodeAddress,
-    serialiseWireData,
- )
+import Naming.Wire
+    ( Address (..)
+    , WireData (..)
+    , addressBytes
+    , canonicalAddress
+    , decodeAddress
+    , serialiseWireData
+    )
 import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Blueprint (
-    applyBytesParam,
-    extractCompiledCode,
-    loadBlueprint,
- )
+import Singular.Registry.Blueprint
+    ( applyBytesParam
+    , extractCompiledCode
+    , loadBlueprint
+    )
 import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
-import Singular.Registry.Ledger (
-    AssetName (..),
-    Coin (..),
-    ConwayEra,
-    PParams,
-    TokenId (..),
- )
+import Singular.Registry.Ledger
+    ( AssetName (..)
+    , Coin (..)
+    , ConwayEra
+    , PParams
+    , TokenId (..)
+    )
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.TxBuilder.Internal (
-    addrKeyHashBytes,
-    addrWitnessKeyHash,
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    computeScriptHash,
-    computeScriptIntegrity,
-    emptyRoot,
-    evaluateAndBalance,
-    findStateUtxo,
-    mkCageScript,
-    mkInlineDatum,
-    placeholderExUnits,
-    scriptFromBytes,
-    scriptHashBytes,
-    toLedgerData,
-    toPlcData,
-    txInToRef,
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    MintRedeemer (..),
-    OnChainRoot (..),
-    OnChainTxOutRef (..),
- )
+import Singular.Registry.TxBuilder.Internal
+    ( addrKeyHashBytes
+    , addrWitnessKeyHash
+    , cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , computeScriptHash
+    , computeScriptIntegrity
+    , emptyRoot
+    , evaluateAndBalance
+    , findStateUtxo
+    , mkCageScript
+    , mkInlineDatum
+    , placeholderExUnits
+    , scriptFromBytes
+    , scriptHashBytes
+    , toLedgerData
+    , toPlcData
+    , txInToRef
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , MintRedeemer (..)
+    , OnChainRoot (..)
+    , OnChainTxOutRef (..)
+    )
 
 -- ---------------------------------------------------------
 -- Run modes
@@ -311,7 +331,9 @@ main = do
                 \what came back"
     registryPath <- requireEnv "REGISTRY_BLUEPRINT"
     namingPath <- requireEnv "NAMING_BLUEPRINT"
-    outcome <- try (runMode mode registryPath namingPath) :: IO (Either SomeException ())
+    outcome <-
+        try (runMode mode registryPath namingPath)
+            :: IO (Either SomeException ())
     case outcome of
         Right () -> do
             putStrLn "exit_status: 0"
@@ -390,14 +412,19 @@ runMode mode registryPath namingPath = do
         world <- designateWorld prov submit genesisIn genesisOut
         _ <- waitConfirmation "world designation split"
         utxos1 <- Cage.queryUTxOs prov genesisAddr
-        canonicalSeed <- utxoByRef utxos1 (worldCanonicalRef world) "canonical seed"
+        canonicalSeed <-
+            utxoByRef utxos1 (worldCanonicalRef world) "canonical seed"
         altSeed <- utxoByRef utxos1 (worldAltRef world) "alternate seed"
         let appHash = computeScriptHash appBytes
             appHex = hex (scriptHashBytes appHash)
             appAddr = Addr Testnet (ScriptHashObj appHash) StakeRefNull
             reprAppliedBytes =
-                applyBytesParam (registryAssetId (scriptHashBytes appliedHash) (deriveAssetName (worldCanonicalRef world))) $
-                    applyBytesParam (scriptHashBytes appHash) reprBytes
+                applyBytesParam
+                    ( registryAssetId
+                        (scriptHashBytes appliedHash)
+                        (deriveAssetName (worldCanonicalRef world))
+                    )
+                    $ applyBytesParam (scriptHashBytes appHash) reprBytes
             reprAppliedHash = computeScriptHash reprAppliedBytes
             reprAppliedHex = hex (scriptHashBytes reprAppliedHash)
             reprUnappliedHex = hex (scriptHashBytes (computeScriptHash reprBytes))
@@ -507,7 +534,12 @@ runMode mode registryPath namingPath = do
 LI01, then LI06 against the genuinely consumed seed, then the
 no-trace proof.
 -}
-runRows :: Mode -> Env -> (TxIn, TxOut ConwayEra) -> (TxIn, TxOut ConwayEra) -> IO ()
+runRows
+    :: Mode
+    -> Env
+    -> (TxIn, TxOut ConwayEra)
+    -> (TxIn, TxOut ConwayEra)
+    -> IO ()
 runRows mode env canonicalSeed altSeed = do
     rowLI02 mode env altSeed
     rowLI03 mode env altSeed
@@ -569,12 +601,12 @@ funding pool. Output 0 is the canonical seed; after this
 transaction it is the lexically first UTxO of the genesis wallet
 (one txid, lowest index), so the LI01 designation rule names it.
 -}
-designateWorld ::
-    Cage.Provider IO ->
-    Submitter IO ->
-    TxIn ->
-    TxOut ConwayEra ->
-    IO World
+designateWorld
+    :: Cage.Provider IO
+    -> Submitter IO
+    -> TxIn
+    -> TxOut ConwayEra
+    -> IO World
 designateWorld prov submit genesisIn genesisOut = do
     let Coin total = genesisOut ^. coinTxOutL
         nFunders = 16 :: Integer
@@ -612,7 +644,11 @@ designateWorld prov submit genesisIn genesisOut = do
         mine =
             sortBy
                 (comparing (txInIndex . fst))
-                [p | p@(i, _) <- after, txInTxIdHex i == txid, txInIndex i < nFunders + 2]
+                [ p
+                | p@(i, _) <- after
+                , txInTxIdHex i == txid
+                , txInIndex i < nFunders + 2
+                ]
     unless (toInteger (length mine) == nFunders + 2) $
         failWith
             ( "world: expected "
@@ -624,8 +660,10 @@ designateWorld prov submit genesisIn genesisOut = do
         seed0 = lookup 0 indexed
         seed1 = lookup 1 indexed
         pool = [p | (idx, p) <- indexed, idx >= 2]
-    (cIn, _) <- maybe (failWith "world: canonical seed output missing") pure seed0
-    (aIn, _) <- maybe (failWith "world: alternate seed output missing") pure seed1
+    (cIn, _) <-
+        maybe (failWith "world: canonical seed output missing") pure seed0
+    (aIn, _) <-
+        maybe (failWith "world: alternate seed output missing") pure seed1
     poolRef <- newIORef pool
     emit
         "world"
@@ -675,7 +713,12 @@ rowLI02 mode env altSeed = do
                     )
         scripts =
             Map.singleton (envAppliedHash env) (envAppliedScript env)
-        regOut = registryOut env (envScriptAddr env) (cagePolicyIdFromCfg (envCfg env)) (envCanonicalName env)
+        regOut =
+            registryOut
+                env
+                (envScriptAddr env)
+                (cagePolicyIdFromCfg (envCfg env))
+                (envCanonicalName env)
         cpOut = checkpointOut env (envScriptAddr env)
     tx <-
         buildRefusalTx
@@ -819,7 +862,12 @@ seed (registry 2's identity), and output 0 carries it. The applied
 state script's exact-quantity check — the mint under the policy must
 be exactly the seed-derived token — refuses.
 -}
-rowLI04 :: Mode -> Env -> (TxIn, TxOut ConwayEra) -> (TxIn, TxOut ConwayEra) -> IO ()
+rowLI04
+    :: Mode
+    -> Env
+    -> (TxIn, TxOut ConwayEra)
+    -> (TxIn, TxOut ConwayEra)
+    -> IO ()
 rowLI04 mode env canonicalSeed _altSeed = do
     let canonicalRef = cageSeed (envCfg env)
         mintMA =
@@ -905,13 +953,15 @@ rowLI05 mode env canonicalSeed = do
             Redeemers $
                 Map.fromList
                     [
-                        ( ConwayMinting (AsIx (mintIndexOf mintMA (cagePolicyIdFromCfg (envCfg env))))
+                        ( ConwayMinting
+                            (AsIx (mintIndexOf mintMA (cagePolicyIdFromCfg (envCfg env))))
                         , (toLedgerData (Minting canonicalRef), maxUnits)
                         )
                     ,
                         ( ConwayMinting (AsIx idx)
                         ,
-                            ( Data (withdrawApprovalRedeemer (envCtrlHash env) (envCanonicalName env))
+                            ( Data
+                                (withdrawApprovalRedeemer (envCtrlHash env) (envCanonicalName env))
                             , maxUnits
                             )
                         )
@@ -921,7 +971,12 @@ rowLI05 mode env canonicalSeed = do
                 [ (envAppliedHash env, envAppliedScript env)
                 , (envAppHash env, envAppScript env)
                 ]
-        regOut = registryOut env (envScriptAddr env) (cagePolicyIdFromCfg (envCfg env)) (envCanonicalName env)
+        regOut =
+            registryOut
+                env
+                (envScriptAddr env)
+                (cagePolicyIdFromCfg (envCfg env))
+                (envCanonicalName env)
         cpOut = checkpointOut env (envScriptAddr env)
     tx <-
         buildRefusalTx
@@ -978,7 +1033,9 @@ li05BoundaryProbe env = do
             Redeemers $
                 Map.singleton
                     (ConwayMinting (AsIx idx))
-                    (Data (withdrawApprovalRedeemer (envCtrlHash env) destBytes), maxUnits)
+                    ( Data (withdrawApprovalRedeemer (envCtrlHash env) destBytes)
+                    , maxUnits
+                    )
         scripts = Map.singleton (envAppHash env) (envAppScript env)
     tx <-
         buildRefusalTx
@@ -1049,7 +1106,8 @@ rowLI07 mode env canonicalSeed = do
             Redeemers $
                 Map.fromList
                     [
-                        ( ConwayMinting (AsIx (mintIndexOf mintMA (cagePolicyIdFromCfg (envCfg env))))
+                        ( ConwayMinting
+                            (AsIx (mintIndexOf mintMA (cagePolicyIdFromCfg (envCfg env))))
                         , (toLedgerData (Minting canonicalRef), maxUnits)
                         )
                     ,
@@ -1062,7 +1120,12 @@ rowLI07 mode env canonicalSeed = do
                 [ (envAppliedHash env, envAppliedScript env)
                 , (envReprAppliedHash env, envReprAppliedScript env)
                 ]
-        regOut = registryOut env (envScriptAddr env) (cagePolicyIdFromCfg (envCfg env)) (envCanonicalName env)
+        regOut =
+            registryOut
+                env
+                (envScriptAddr env)
+                (cagePolicyIdFromCfg (envCfg env))
+                (envCanonicalName env)
         cpOut = checkpointOut env (envScriptAddr env)
     tx <-
         buildRefusalTx
@@ -1122,7 +1185,8 @@ rowLI08 mode env canonicalSeed = do
             Redeemers $
                 Map.singleton
                     (ConwayMinting (AsIx 0))
-                    ( Data (withdrawApprovalRedeemer (envCtrlHash env) (envCanonicalName env))
+                    ( Data
+                        (withdrawApprovalRedeemer (envCtrlHash env) (envCanonicalName env))
                     , maxUnits
                     )
         scripts = Map.singleton (envAppHash env) (envAppScript env)
@@ -1183,10 +1247,10 @@ datum from the chain. Returns the signed transaction (LI06 replays
 those exact bytes) and the snapshot the no-trace proof compares
 against.
 -}
-runRealLi01 ::
-    Env ->
-    (TxIn, TxOut ConwayEra) ->
-    IO (ConwayTx, CanonicalSnap)
+runRealLi01
+    :: Env
+    -> (TxIn, TxOut ConwayEra)
+    -> IO (ConwayTx, CanonicalSnap)
 runRealLi01 env canonicalSeed = do
     emit
         "li01"
@@ -1255,26 +1319,34 @@ runRealLi01 env canonicalSeed = do
         li01Utxos = filter ((== txid) . txInTxIdHex . fst) scriptUtxos
     (regIn, regOut) <- case findStateUtxo (cagePolicyIdFromCfg (envCfg env)) tokenId li01Utxos of
         Just r -> pure r
-        Nothing -> failWith "li01: no registry UTxO from the LI01 tx is live at the application validator"
+        Nothing ->
+            failWith
+                "li01: no registry UTxO from the LI01 tx is live at the application validator"
     (cpIn, cpOut) <- case [ p
                           | p@(i, _) <- li01Utxos
                           , i /= regIn
                           , isNamingDatum (snd p)
                           ] of
         [c] -> pure c
-        _ -> failWith "li01: expected exactly one checkpoint output from the LI01 tx"
+        _ ->
+            failWith
+                "li01: expected exactly one checkpoint output from the LI01 tx"
     -- The checkpoint datum decodes with the merged codec and its bytes
     -- are the contract codec's encoding of the fixture.
     decoded <- case datumDataOf cpOut >>= wireOf >>= decodeNamingDatum of
         Just nd -> pure nd
-        Nothing -> failWith "li01: the checkpoint datum does not decode as a naming datum"
+        Nothing ->
+            failWith
+                "li01: the checkpoint datum does not decode as a naming datum"
     let expected = envNamingDatum env
         diffs = datumDiffs expected decoded
-    unless (null diffs) $ failWith ("li01: checkpoint mismatch: " <> intercalate "; " diffs)
+    unless (null diffs) $
+        failWith ("li01: checkpoint mismatch: " <> intercalate "; " diffs)
     let chainBytes = datumDataOf cpOut >>= wireOf >>= serialiseWireData
         codecBytes = serialiseNamingDatum expected
     unless (chainBytes == codecBytes) $
-        failWith "li01: the on-chain checkpoint bytes are not the codec's encoding"
+        failWith
+            "li01: the on-chain checkpoint bytes are not the codec's encoding"
     emit
         "li01-accepted"
         ( "LI01-canonical-initialization-accepts executed: tx="
@@ -1294,13 +1366,17 @@ runRealLi01 env canonicalSeed = do
     -- touched the canonical registry: it is a different UTxO under a
     -- different name, both read back from the chain.
     let rivalTokenId = TokenId (AssetName (SBS.toShort (envAltName env)))
-    (rivalIn, _) <- case findStateUtxo (cagePolicyIdFromCfg (envCfg env)) rivalTokenId scriptUtxos of
+    (rivalIn, _) <- case findStateUtxo
+        (cagePolicyIdFromCfg (envCfg env))
+        rivalTokenId
+        scriptUtxos of
         Just r -> pure r
         Nothing ->
             failWith
                 "li03-canonical: the rival registry is no longer live at the application validator"
     unless (rivalIn /= regIn) $
-        failWith "li03-canonical: the rival UTxO is the canonical registry — name collision"
+        failWith
+            "li03-canonical: the rival UTxO is the canonical registry — name collision"
     emit
         "li03-canonical"
         ( "the canonical registry is unaffected by the accepted rival: still "
@@ -1337,7 +1413,8 @@ be re-spent, so the LEDGER refuses in phase 1, naming the consumed
 input — the strongest form of the guarantee and recorded exactly as
 that, not dressed up as a validator refusal (the LC06 precedent).
 -}
-rowLI06 :: Env -> (TxIn, TxOut ConwayEra) -> ConwayTx -> CanonicalSnap -> IO ()
+rowLI06
+    :: Env -> (TxIn, TxOut ConwayEra) -> ConwayTx -> CanonicalSnap -> IO ()
 rowLI06 env canonicalSeed signedLi01 _snap = do
     -- The consumed-seed state is the chain's own: the canonical seed is
     -- gone from the unspent set because a real LI01 consumed it.
@@ -1407,10 +1484,14 @@ finalNoTrace env snap = do
     scriptUtxos <- Cage.queryUTxOs (envProv env) (envScriptAddr env)
     reg <- case filter ((== csRegistryIn snap) . fst) scriptUtxos of
         [p] -> pure p
-        _ -> failWith "no-trace: the registry UTxO is no longer live at the application validator"
+        _ ->
+            failWith
+                "no-trace: the registry UTxO is no longer live at the application validator"
     cp <- case filter ((== csCheckpointIn snap) . fst) scriptUtxos of
         [p] -> pure p
-        _ -> failWith "no-trace: the checkpoint output is no longer live at the application validator"
+        _ ->
+            failWith
+                "no-trace: the checkpoint output is no longer live at the application validator"
     let (_, regOut) = reg
         (_, cpOut) = cp
         regOK =
@@ -1420,11 +1501,14 @@ finalNoTrace env snap = do
         cpOK =
             cpOut ^. valueTxOutL == csCheckpointValue snap
                 && cpOut ^. datumTxOutL == csCheckpointDatum snap
-    unless regOK $ failWith "no-trace: the registry UTxO changed after the rows"
-    unless cpOK $ failWith "no-trace: the checkpoint output changed after the rows"
+    unless regOK $
+        failWith "no-trace: the registry UTxO changed after the rows"
+    unless cpOK $
+        failWith "no-trace: the checkpoint output changed after the rows"
     wallet <- Cage.queryUTxOs (envProv env) genesisAddr
-    unless (not (any ((== cageSeed (envCfg env)) . txInToRef . fst) wallet)) $
-        failWith "no-trace: the canonical seed is unexpectedly unspent again"
+    unless
+        (not (any ((== cageSeed (envCfg env)) . txInToRef . fst) wallet))
+        $ failWith "no-trace: the canonical seed is unexpectedly unspent again"
     emit
         "no-trace"
         ( "state unchanged after the seven rows — no trace: registry "
@@ -1539,13 +1623,14 @@ one token under @policy@ named @name@, inline StateDatum with the
 empty root — the shape the applied state script's mint branch
 prescribes for output 0.
 -}
-registryOut :: Env -> Addr -> PolicyID -> ByteString -> TxOut ConwayEra
+registryOut
+    :: Env -> Addr -> PolicyID -> ByteString -> TxOut ConwayEra
 registryOut env addr policy name =
     let mintMA =
             MultiAsset $
                 Map.singleton policy (Map.singleton (AssetName (SBS.toShort name)) 1)
         stateDatum = StateDatum (bootStateFromCfg (envCfg env) (OnChainRoot emptyRoot))
-     in mkBasicTxOut addr (MaryValue (Coin 2_000_000) mintMA)
+    in  mkBasicTxOut addr (MaryValue (Coin 2_000_000) mintMA)
             & datumTxOutL .~ mkInlineDatum (toPlcData stateDatum)
 
 {- | The naming checkpoint output: min-ADA plus margin, the four-field
@@ -1559,7 +1644,7 @@ checkpointOut env addr =
                 & datumTxOutL
                     .~ mkInlineDatum (namingDatumToData (envNamingDatum env))
         Coin c = getMinCoinTxOut (envPp env) probe
-     in probe & coinTxOutL .~ Coin (c + 1_000_000)
+    in  probe & coinTxOutL .~ Coin (c + 1_000_000)
 
 {- | The Conway mint-purpose index of @pid@: the ledger orders mint
 purposes by the mint map's policy-id order.
@@ -1585,15 +1670,15 @@ one, so the matcher fails naming what came back. In main mode an
 ACCEPTED attempt fails the run — a refusal the guard cannot produce
 is a binding that does not bind.
 -}
-expectRefused ::
-    Mode ->
-    Env ->
-    String ->
-    String ->
-    String ->
-    String ->
-    ConwayTx ->
-    IO ()
+expectRefused
+    :: Mode
+    -> Env
+    -> String
+    -> String
+    -> String
+    -> String
+    -> ConwayTx
+    -> IO ()
 expectRefused mode env rowName modelReason marker guard tx = do
     let signed = addKeyWitness genesisSignKey tx
         wrongReasonMode = mode == ControlWrongReason
@@ -1660,14 +1745,14 @@ validator-prescribed registry state UTxO plus the naming checkpoint
 output. Evaluation and fee balancing come from the same library
 path, so the accepted row and the LI06 replay are the #47 shape.
 -}
-buildCanonicalTx ::
-    CageConfig ->
-    PParams ConwayEra ->
-    Cage.Provider IO ->
-    (TxIn, TxOut ConwayEra) ->
-    [(TxIn, TxOut ConwayEra)] ->
-    NamingDatum ->
-    IO ConwayTx
+buildCanonicalTx
+    :: CageConfig
+    -> PParams ConwayEra
+    -> Cage.Provider IO
+    -> (TxIn, TxOut ConwayEra)
+    -> [(TxIn, TxOut ConwayEra)]
+    -> NamingDatum
+    -> IO ConwayTx
 buildCanonicalTx cfg pp prov seedUtxo funders namingDatum = do
     let scriptAddr = cageAddrFromCfg cfg Testnet
         mintMA =
@@ -1693,7 +1778,7 @@ buildCanonicalTx cfg pp prov seedUtxo funders namingDatum = do
                 & coinTxOutL
                     .~ Coin
                         ( let Coin c = getMinCoinTxOut pp probeOut
-                           in c + 1_000_000
+                          in  c + 1_000_000
                         )
         script = mkCageScript cfg
         scriptHash = hashScript script
@@ -1834,7 +1919,8 @@ checkPinnedRepresentative :: NamingIdentity -> String -> IO ()
 checkPinnedRepresentative ni unappliedHex = do
     let pins = pinsUnder ni "representative.representative.mint"
     unless (length pins >= 1) $
-        failWith "identity: no representative.representative.mint pin in the naming manifest"
+        failWith
+            "identity: no representative.representative.mint pin in the naming manifest"
     unless (all (== T.pack unappliedHex) pins) $
         failWith $
             "identity: the naming manifest pins "
@@ -1887,8 +1973,8 @@ nextControlCommitmentOf bs =
             ( "singular/naming/next-control/v1"
                 <> BS.singleton 0x00
                 <> bs
-            ) ::
-            Digest Blake2b_256
+            )
+            :: Digest Blake2b_256
         )
 
 datumDiffs :: NamingDatum -> NamingDatum -> [String]
@@ -1961,9 +2047,9 @@ isNamingDatum o =
 -- Shared plumbing
 -- ---------------------------------------------------------
 
-takeFundCollateral ::
-    Env ->
-    IO ((TxIn, TxOut ConwayEra), (TxIn, TxOut ConwayEra))
+takeFundCollateral
+    :: Env
+    -> IO ((TxIn, TxOut ConwayEra), (TxIn, TxOut ConwayEra))
 takeFundCollateral env = do
     pool <- readIORef (envPool env)
     case pool of
@@ -1972,11 +2058,11 @@ takeFundCollateral env = do
             pure (f, c)
         _ -> failWith "the funding pool is exhausted"
 
-utxoByRef ::
-    [(TxIn, TxOut ConwayEra)] ->
-    OnChainTxOutRef ->
-    String ->
-    IO (TxIn, TxOut ConwayEra)
+utxoByRef
+    :: [(TxIn, TxOut ConwayEra)]
+    -> OnChainTxOutRef
+    -> String
+    -> IO (TxIn, TxOut ConwayEra)
 utxoByRef utxos ref label =
     case filter ((== ref) . txInToRef . fst) utxos of
         [p] -> pure p
@@ -2051,4 +2137,4 @@ outRefSortKey :: TxIn -> (ByteString, Integer)
 outRefSortKey i =
     let r = txInToRef i
         BuiltinByteString b = txOutRefId r
-     in (b, txOutRefIdx r)
+    in  (b, txOutRefIdx r)

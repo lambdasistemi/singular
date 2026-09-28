@@ -19,13 +19,13 @@ application and the retirement custody script;
 registry a seed creates; 'partsOf' is the one derivation the manifest,
 the boot configuration and the state datum all take their pins from.
 -}
-module Deployment.Compiled (
-    Compiled (..),
-    loadCompiled,
-    bindSeed,
-    bindDeployment,
-    partsOf,
-) where
+module Deployment.Compiled
+    ( Compiled (..)
+    , loadCompiled
+    , bindSeed
+    , bindDeployment
+    , partsOf
+    ) where
 
 import Data.ByteString.Short qualified as SBS
 import Data.Text qualified as T
@@ -34,22 +34,22 @@ import Cardano.Ledger.Api.Tx.In (TxIn)
 import Deployment.Narration (failWith)
 import Deployment.Options (requireEnv)
 import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Blueprint (
-    applyBytesParam,
-    applyIntParam,
-    extractCompiledCode,
-    loadBlueprint,
- )
-import Singular.Registry.Deployment (
-    CageParts (..),
-    Deployment (..),
-    parseOutRef,
- )
-import Singular.Registry.TxBuilder.Internal (
-    computeScriptHash,
-    scriptHashBytes,
-    txInToRef,
- )
+import Singular.Registry.Blueprint
+    ( applyBytesParam
+    , applyIntParam
+    , extractCompiledCode
+    , loadBlueprint
+    )
+import Singular.Registry.Deployment
+    ( CageParts (..)
+    , Deployment (..)
+    , parseOutRef
+    )
+import Singular.Registry.TxBuilder.Internal
+    ( computeScriptHash
+    , scriptHashBytes
+    , txInToRef
+    )
 
 -- | Everything the two blueprints in this release contribute.
 data Compiled = Compiled
@@ -94,7 +94,8 @@ loadCompiled = do
     -- partition, beside the cage whose fold they co-locate with. The
     -- naming application itself stays where it is.
     witnessBytes <- need "registry" mbp "witness.witness"
-    custodyBytes <- need "naming" nbp "retirement_custody.retirement_custody"
+    custodyBytes <-
+        need "naming" nbp "retirement_custody.retirement_custody"
     stakingBytes <- need "registry" mbp "staking.staking"
     pure
         Compiled
@@ -125,7 +126,7 @@ bindSeed c seedIn =
                 <> deriveAssetName (txInToRef seedIn)
         witnessAt kind =
             applyBytesParam registryId (applyIntParam kind (cWitnessBytes c))
-     in c
+    in  c
             { cAbsentBytes = witnessAt 0
             , cActiveBytes = witnessAt 1
             , cTerminalBytes = witnessAt 2
@@ -133,7 +134,8 @@ bindSeed c seedIn =
 
 -- | Bind to the registry a manifest records, by its seed.
 bindDeployment :: Compiled -> Deployment -> IO Compiled
-bindDeployment c dep = bindSeed c <$> either failWith pure (parseOutRef (depSeedOutRef dep))
+bindDeployment c dep =
+    bindSeed c <$> either failWith pure (parseOutRef (depSeedOutRef dep))
 
 -- | The hash of compiled bytes, as a policy id in the shape a pin takes.
 policyOf :: SBS.ShortByteString -> SBS.ShortByteString

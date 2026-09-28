@@ -45,30 +45,34 @@ import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Api.PParams (emptyPParams)
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
-import Cardano.Ledger.Api.Tx.Body (
-    collateralInputsTxBodyL,
-    mintTxBodyL,
-    outputsTxBodyL,
-    scriptIntegrityHashTxBodyL,
- )
-import Cardano.Ledger.Api.Tx.Out (
-    addrTxOutL,
-    mkBasicTxOut,
-    valueTxOutL,
- )
-import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL, scriptTxWitsL)
-import Cardano.Ledger.BaseTypes (
-    Network (Testnet),
-    StrictMaybe (..),
- )
+import Cardano.Ledger.Api.Tx.Body
+    ( collateralInputsTxBodyL
+    , mintTxBodyL
+    , outputsTxBodyL
+    , scriptIntegrityHashTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( addrTxOutL
+    , mkBasicTxOut
+    , valueTxOutL
+    )
+import Cardano.Ledger.Api.Tx.Wits
+    ( Redeemers (..)
+    , rdmrsTxWitsL
+    , scriptTxWitsL
+    )
+import Cardano.Ledger.BaseTypes
+    ( Network (Testnet)
+    , StrictMaybe (..)
+    )
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (Script, ScriptHash, hashScript)
-import Cardano.Ledger.Mary.Value (
-    AssetName (..),
-    MaryValue (..),
-    MultiAsset (..),
-    PolicyID,
- )
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID
+    )
 import Cardano.Ledger.Plutus.Data (getPlutusData)
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Ledger (ConwayTx)
@@ -83,23 +87,27 @@ import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId (..))
 import Singular.Registry.Provider (Provider (..))
-import Singular.Registry.TxBuilder.Edges (
-    bookEdge,
-    edgeDestinationOf,
-    namingPins,
-    registryIdOf,
- )
-import Singular.Registry.TxBuilder.Internal (
-    addrFromKeyHashBytes,
-    addrKeyHashBytes,
-    approvalName,
-    computeScriptHash,
-    policyIdFromPin,
-    requestAddrFromCfg,
-    scriptFromBytes,
-    txInToRef,
- )
-import Singular.Registry.Types (Edge, OnChainTxOutRef, edgeWitnessTerminal)
+import Singular.Registry.TxBuilder.Edges
+    ( bookEdge
+    , edgeDestinationOf
+    , namingPins
+    , registryIdOf
+    )
+import Singular.Registry.TxBuilder.Internal
+    ( addrFromKeyHashBytes
+    , addrKeyHashBytes
+    , approvalName
+    , computeScriptHash
+    , policyIdFromPin
+    , requestAddrFromCfg
+    , scriptFromBytes
+    , txInToRef
+    )
+import Singular.Registry.Types
+    ( Edge
+    , OnChainTxOutRef
+    , edgeWitnessTerminal
+    )
 
 -- ---------------------------------------------------------
 -- Fixtures: one registry, one payer, two keys
@@ -159,10 +167,19 @@ unpinned =
         }
 
 seedRef :: OnChainTxOutRef
-seedRef = txInToRef $ either (error . ("BookEdgeSpec fixture: " <>)) id (parseOutRef (T.pack (replicate 64 '1' <> "#0")))
+seedRef =
+    txInToRef $
+        either
+            (error . ("BookEdgeSpec fixture: " <>))
+            id
+            (parseOutRef (T.pack (replicate 64 '1' <> "#0")))
 
 fundIn :: TxIn
-fundIn = either (error . ("BookEdgeSpec fixture: " <>)) id (parseOutRef (T.pack (replicate 64 '3' <> "#0")))
+fundIn =
+    either
+        (error . ("BookEdgeSpec fixture: " <>))
+        id
+        (parseOutRef (T.pack (replicate 64 '3' <> "#0")))
 
 {- | The registry with the four pins its naming partition derives. The
 design pins the application hash, and the rows below assert against the
@@ -177,7 +194,11 @@ cfg =
         , cfgTerminalPolicy = terminalPin
         }
 
-applicationPin, absentPin, activePin, terminalPin :: SBS.ShortByteString
+applicationPin
+    , absentPin
+    , activePin
+    , terminalPin
+        :: SBS.ShortByteString
 (applicationPin, absentPin, activePin, terminalPin) =
     namingPins codes (registryIdOf unpinned)
 
@@ -222,7 +243,8 @@ provider :: Provider IO
 provider =
     Provider
         { queryUTxOs = \_ ->
-            pure [(fundIn, mkBasicTxOut payer (MaryValue (Coin 100_000_000) mempty))]
+            pure
+                [(fundIn, mkBasicTxOut payer (MaryValue (Coin 100_000_000) mempty))]
         , queryProtocolParams = pure emptyPParams
         , evaluateTx = \_ -> fail "bookEdge evaluates nothing"
         , posixMsToSlot = \_ -> fail "bookEdge queries no slot"
@@ -264,19 +286,25 @@ mintedUnder tx = Map.findWithDefault Map.empty applicationPolicy (mintOf tx)
 {- | Every redeemer the transaction carries, as plain data, with the
 purpose that names it.
 -}
-redeemersOf :: ConwayTx -> [(ConwayPlutusPurpose AsIx ConwayEra, PLCData.Data)]
+redeemersOf
+    :: ConwayTx -> [(ConwayPlutusPurpose AsIx ConwayEra, PLCData.Data)]
 redeemersOf tx =
     let Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
-     in [(purpose, getPlutusData d) | (purpose, (d, _)) <- Map.toList m]
+    in  [(purpose, getPlutusData d) | (purpose, (d, _)) <- Map.toList m]
 
 {- | The approval redeemer the design binds: the @Approve@ constructor
 over @(edge, key, owner, (destination address, destination datum))@ —
 the tuple the approval name hashes (DM-1-BIND).
 -}
-approveRedeemer :: Edge -> ByteString -> ByteString -> (ByteString, ByteString) -> PLCData.Data
+approveRedeemer
+    :: Edge
+    -> ByteString
+    -> ByteString
+    -> (ByteString, ByteString)
+    -> PLCData.Data
 approveRedeemer edge key owner destination =
     let (destAddr, destHash) = destination
-     in PLCData.Constr
+    in  PLCData.Constr
             0
             [ PLCData.I edge
             , PLCData.B key
@@ -293,8 +321,10 @@ requestHolds tx =
          ] of
         [out] ->
             let MaryValue _ assets = out ^. valueTxOutL
-             in pure (Map.findWithDefault Map.empty applicationPolicy (policies assets))
-        outs -> fail ("the booking has " <> show (length outs) <> " request outputs")
+            in  pure
+                    (Map.findWithDefault Map.empty applicationPolicy (policies assets))
+        outs ->
+            fail ("the booking has " <> show (length outs) <> " request outputs")
 
 -- | The hashes of the scripts the transaction witnesses.
 witnessOf :: ConwayTx -> [ScriptHash]
@@ -324,11 +354,19 @@ carriesNothing tx = do
         findings =
             concat
                 [ ["it mints " <> T.pack (show mint) | not (Map.null mint)]
-                , ["it carries redeemers " <> T.pack (show redeemers) | not (null redeemers)]
-                , ["it carries a script witness " <> T.pack (show witness) | not (null witness)]
-                , ["it carries collateral " <> T.pack (show collateral) | not (Set.null collateral)]
+                , [ "it carries redeemers " <> T.pack (show redeemers)
+                  | not (null redeemers)
+                  ]
+                , [ "it carries a script witness " <> T.pack (show witness)
+                  | not (null witness)
+                  ]
+                , [ "it carries collateral " <> T.pack (show collateral)
+                  | not (Set.null collateral)
+                  ]
                 , ["it carries a script-integrity hash" | setS integrity]
-                , ["its request output holds " <> T.pack (show holds) | not (Map.null holds)]
+                , [ "its request output holds " <> T.pack (show holds)
+                  | not (Map.null holds)
+                  ]
                 ]
     case findings of
         [] -> pure ()
@@ -354,14 +392,17 @@ carriesItsApproval edge key tx = do
     redeemersOf tx
         `shouldBe` [(ConwayMinting (AsIx 0), approveRedeemer edge key owner destination)]
     witnessOf tx `shouldBe` [hashScript applicationScript]
-    tx ^. bodyTxL . collateralInputsTxBodyL `shouldBe` Set.singleton fundIn
+    tx ^. bodyTxL . collateralInputsTxBodyL
+        `shouldBe` Set.singleton fundIn
     tx ^. bodyTxL . scriptIntegrityHashTxBodyL `shouldSatisfy` setS
     requestHolds tx `shouldReturn` approval
 
 spec :: Spec
 spec =
-    describe "bookEdge certifies exactly the edges the application approves" $
-        forM_ keys $ \key ->
+    describe
+        "bookEdge certifies exactly the edges the application approves"
+        $ forM_ keys
+        $ \key ->
             forM_ edges $ \(edge, name) ->
                 if edge == edgeWitnessTerminal
                     then

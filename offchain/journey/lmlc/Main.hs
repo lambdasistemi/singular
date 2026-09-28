@@ -61,13 +61,13 @@ Hermetic run (D-011), from @offchain/@:
 module Main (main) where
 
 import Control.Concurrent (threadDelay)
-import Control.Exception (
-    ErrorCall (..),
-    SomeException,
-    displayException,
-    throwIO,
-    try,
- )
+import Control.Exception
+    ( ErrorCall (..)
+    , SomeException
+    , displayException
+    , throwIO
+    , try
+    )
 import Control.Monad (unless, when)
 import Crypto.Hash (Blake2b_256, Digest, hash)
 import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
@@ -91,92 +91,115 @@ import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 import System.Environment (lookupEnv)
 import System.Exit (ExitCode (..), exitWith)
-import System.IO (BufferMode (..), hPutStrLn, hSetBuffering, stderr, stdout)
+import System.IO
+    ( BufferMode (..)
+    , hPutStrLn
+    , hSetBuffering
+    , stderr
+    , stdout
+    )
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
-import Cardano.Ledger.Api.Scripts.Data (Data (..), Datum (..), binaryDataToData)
+import Cardano.Ledger.Api.Scripts.Data
+    ( Data (..)
+    , Datum (..)
+    , binaryDataToData
+    )
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
-import Cardano.Ledger.Api.Tx.Body (
-    collateralInputsTxBodyL,
-    feeTxBodyL,
-    inputsTxBodyL,
-    mintTxBodyL,
-    mkBasicTxBody,
-    outputsTxBodyL,
-    reqSignerHashesTxBodyL,
-    scriptIntegrityHashTxBodyL,
- )
+import Cardano.Ledger.Api.Tx.Body
+    ( collateralInputsTxBodyL
+    , feeTxBodyL
+    , inputsTxBodyL
+    , mintTxBodyL
+    , mkBasicTxBody
+    , outputsTxBodyL
+    , reqSignerHashesTxBodyL
+    , scriptIntegrityHashTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.In (TxIn (..))
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    coinTxOutL,
-    datumTxOutL,
-    getMinCoinTxOut,
-    mkBasicTxOut,
-    valueTxOutL,
- )
-import Cardano.Ledger.Api.Tx.Wits (
-    Redeemers (..),
-    rdmrsTxWitsL,
-    scriptTxWitsL,
- )
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , coinTxOutL
+    , datumTxOutL
+    , getMinCoinTxOut
+    , mkBasicTxOut
+    , valueTxOutL
+    )
+import Cardano.Ledger.Api.Tx.Wits
+    ( Redeemers (..)
+    , rdmrsTxWitsL
+    , scriptTxWitsL
+    )
 import Cardano.Ledger.BaseTypes (Network (..), TxIx (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (Script, extractHash)
-import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
+import Cardano.Ledger.Credential
+    ( Credential (..)
+    , StakeReference (..)
+    )
 import Cardano.Ledger.Hashes (ScriptHash)
-import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..), PolicyID (..))
+import Cardano.Ledger.Mary.Value
+    ( MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID (..)
+    )
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
-import Cardano.Node.Client.E2E.Setup (
-    Ed25519DSIGN,
-    SignKeyDSIGN,
-    addKeyWitness,
-    enterpriseAddr,
-    keyHashFromSignKey,
-    mkSignKey,
- )
+import Cardano.Node.Client.E2E.Setup
+    ( Ed25519DSIGN
+    , SignKeyDSIGN
+    , addKeyWitness
+    , enterpriseAddr
+    , keyHashFromSignKey
+    , mkSignKey
+    )
 import Cardano.Node.Client.Ledger (ConwayTx)
-import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Cardano.Node.Client.Submitter
+    ( SubmitResult (..)
+    , Submitter (..)
+    )
 import Naming.Datum
-import Naming.Wire (
-    Address (..),
-    WireData (..),
-    addressBytes,
-    canonicalAddress,
-    decodeAddress,
-    serialiseWireData,
- )
-import Singular.Registry.Blueprint (extractCompiledCode, loadBlueprint)
-import Singular.Registry.Ledger (
-    AssetName (..),
-    Coin (..),
-    ConwayEra,
-    PParams,
- )
-import Singular.Registry.Node (
-    NodeSession (..),
-    awaitChain,
-    awaitTx,
-    confirmationDelay,
-    funderAddr,
-    funderSignKey,
-    withNode,
- )
+import Naming.Wire
+    ( Address (..)
+    , WireData (..)
+    , addressBytes
+    , canonicalAddress
+    , decodeAddress
+    , serialiseWireData
+    )
+import Singular.Registry.Blueprint
+    ( extractCompiledCode
+    , loadBlueprint
+    )
+import Singular.Registry.Ledger
+    ( AssetName (..)
+    , Coin (..)
+    , ConwayEra
+    , PParams
+    )
+import Singular.Registry.Node
+    ( NodeSession (..)
+    , awaitChain
+    , awaitTx
+    , confirmationDelay
+    , funderAddr
+    , funderSignKey
+    , withNode
+    )
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.TxBuilder.Internal (
-    addrKeyHashBytes,
-    addrWitnessKeyHash,
-    computeScriptHash,
-    computeScriptIntegrity,
-    mkInlineDatum,
-    scriptFromBytes,
-    scriptHashBytes,
-    spendingIndex,
- )
+import Singular.Registry.TxBuilder.Internal
+    ( addrKeyHashBytes
+    , addrWitnessKeyHash
+    , computeScriptHash
+    , computeScriptIntegrity
+    , mkInlineDatum
+    , scriptFromBytes
+    , scriptHashBytes
+    , spendingIndex
+    )
 
 -- ---------------------------------------------------------
 -- Run modes
@@ -580,7 +603,12 @@ rowLM01 env claimIn = do
     current <- chainDatumOf env snap "LM01"
     let destCodec = envDestCodec env
         maintained = current{paymentDestination = SomeDestination destCodec}
-    tx <- maintainTx env snap (Just (\d -> d{paymentDestination = SomeDestination destCodec})) True
+    tx <-
+        maintainTx
+            env
+            snap
+            (Just (\d -> d{paymentDestination = SomeDestination destCodec}))
+            True
     let signed = addKeyWitness genesisSignKey tx
     unless
         ( Set.singleton (addrWitnessKeyHash (envCtrlHash env))
@@ -590,7 +618,11 @@ rowLM01 env claimIn = do
     submitAccepted env "LM01" signed
     _ <- waitConfirmation (txIdHex signed <> " (LM01)")
     contIn <-
-        mustFindUTxO (envProv env) (envAppAddr env) (txIdHex signed) "LM01 continuation"
+        mustFindUTxO
+            (envProv env)
+            (envAppAddr env)
+            (txIdHex signed)
+            "LM01 continuation"
     contSnap <- mustSnap env contIn
     decoded <- chainDatumOf env contSnap "LM01"
     -- Proof 1: preservation, field by field, read back from the chain.
@@ -613,7 +645,8 @@ rowLM01 env claimIn = do
                 <> intercalate "; " diffs
             )
     unless (paymentDestination decoded == SomeDestination destCodec) $
-        failWith "LM01-preservation: the payment destination was not maintained"
+        failWith
+            "LM01-preservation: the payment destination was not maintained"
     assertChainBytes contSnap maintained "LM01"
     emit
         "row"
@@ -984,7 +1017,11 @@ rowFold env claimFoldIn = do
     submitAccepted env "fold" signed
     _ <- waitConfirmation (txIdHex signed <> " (fold)")
     recordIn <-
-        mustFindUTxO (envProv env) (envAppAddr env) (txIdHex signed) "folded record"
+        mustFindUTxO
+            (envProv env)
+            (envAppAddr env)
+            (txIdHex signed)
+            "folded record"
     recordSnap <- mustSnap env recordIn
     emit
         "row"
@@ -1031,7 +1068,8 @@ finalNoTrace env a1 recordR = do
     now1 <- mustSnap env (snapIn a1)
     now2 <- mustSnap env (snapIn recordR)
     unless (sameSnap a1 now1) $ failWith "final: A1 moved"
-    unless (sameSnap recordR now2) $ failWith "final: the folded record moved"
+    unless (sameSnap recordR now2) $
+        failWith "final: the folded record moved"
     emit
         "no-trace"
         ( "state unchanged after every refusal — no trace: A1="
@@ -1059,14 +1097,14 @@ finalNoTrace env a1 recordR = do
 -- Refusal attribution (the #41 discipline)
 -- ---------------------------------------------------------
 
-expectRefused ::
-    Mode ->
-    Env ->
-    String ->
-    String ->
-    String ->
-    ConwayTx ->
-    IO ()
+expectRefused
+    :: Mode
+    -> Env
+    -> String
+    -> String
+    -> String
+    -> ConwayTx
+    -> IO ()
 expectRefused mode env rowName modelReason guard tx = do
     let signed = addKeyWitness genesisSignKey tx
         wrongReasonMode = mode == ControlWrongReason
@@ -1126,14 +1164,14 @@ redeemer, continue the record at the application validator with
 @contDatum@, pay the flat fee from the funding input. When
 @demandsController@, the body demands the controller's signature.
 -}
-maintainTx ::
-    Env ->
-    Snap ->
-    Maybe (NamingDatum -> NamingDatum) ->
-    -- | override the continuation datum (Nothing = identity)
-    Bool ->
-    -- | demand the controller's signature
-    IO ConwayTx
+maintainTx
+    :: Env
+    -> Snap
+    -> Maybe (NamingDatum -> NamingDatum)
+    -> Bool
+    -- ^ override the continuation datum (Nothing = identity)
+    -> IO ConwayTx
+    -- ^ demand the controller's signature
 maintainTx env snap overrideM demanded = do
     current <- chainDatumOf env snap "LM"
     let contDatum = maybe current ($ current) overrideM
@@ -1148,7 +1186,12 @@ maintainTx env snap overrideM demanded = do
                 )
         integrity = computeScriptIntegrity (envPp env) redeemers
         contOut =
-            scriptOut (envPp env) (envAppAddr env) (snapCoin snap) mempty contDatum
+            scriptOut
+                (envPp env)
+                (envAppAddr env)
+                (snapCoin snap)
+                mempty
+                contDatum
         change = changeOut (snapCoin snap + coinOf fund) flatFee [contOut]
         body =
             mkBasicTxBody
@@ -1176,17 +1219,17 @@ redeemer presenting @presented@, pay a refund output to
 @refundAddr@ carrying @refundCoin@, mint @mint@ (with @mintRdmr@
 when minting or burning under the policy).
 -}
-cancelBody ::
-    Env ->
-    Snap ->
-    -- | the presented refund
-    ByteString ->
-    -- | the refund output address
-    Addr ->
-    Integer ->
-    MultiAsset ->
-    Maybe PLC.Data ->
-    IO ConwayTx
+cancelBody
+    :: Env
+    -> Snap
+    -> ByteString
+    -- ^ the presented refund
+    -> Addr
+    -- ^ the refund output address
+    -> Integer
+    -> MultiAsset
+    -> Maybe PLC.Data
+    -> IO ConwayTx
 cancelBody env snap presented refundAddr refundCoin mint mintRdmr = do
     (fund, collateral) <- takeFundCollateral env
     let inputs = Set.fromList [snapIn snap, fst fund]
@@ -1278,19 +1321,19 @@ withdrawApprovalRedeemer env destination =
 {- | An output at the application validator carrying @tokens@ and the
 inline naming datum, sized at least min-ADA plus margin.
 -}
-scriptOut ::
-    PParams ConwayEra ->
-    Addr ->
-    Integer ->
-    Map.Map PolicyID (Map.Map AssetName Integer) ->
-    NamingDatum ->
-    TxOut ConwayEra
+scriptOut
+    :: PParams ConwayEra
+    -> Addr
+    -> Integer
+    -> Map.Map PolicyID (Map.Map AssetName Integer)
+    -> NamingDatum
+    -> TxOut ConwayEra
 scriptOut pp addr coin tokens datum =
     let probe :: TxOut ConwayEra
         probe = mkBasicTxOut addr (MaryValue (Coin 0) (MultiAsset tokens))
         minCoin = let Coin c = getMinCoinTxOut pp probe in c
         finalCoin = max coin (minCoin + 1_000_000)
-     in mkBasicTxOut
+    in  mkBasicTxOut
             addr
             (MaryValue (Coin finalCoin) (MultiAsset tokens))
             & datumTxOutL .~ mkInlineDatum (namingDataToData datum)
@@ -1301,19 +1344,19 @@ plainOut pp addr coin =
         probe = mkBasicTxOut addr (MaryValue (Coin 0) mempty)
         minCoin = let Coin c = getMinCoinTxOut pp probe in c
         finalCoin = max coin (minCoin + 1_000_000)
-     in mkBasicTxOut addr (MaryValue (Coin finalCoin) mempty)
+    in  mkBasicTxOut addr (MaryValue (Coin finalCoin) mempty)
 
-changeOut ::
-    -- | total input lovelace
-    Integer ->
-    -- | fee
-    Integer ->
-    [TxOut ConwayEra] ->
-    TxOut ConwayEra
+changeOut
+    :: Integer
+    -- ^ total input lovelace
+    -> Integer
+    -- ^ fee
+    -> [TxOut ConwayEra]
+    -> TxOut ConwayEra
 changeOut inCoin fee outs =
     let spent = sum [c | o <- outs, let Coin c = o ^. coinTxOutL]
         change = inCoin - fee - spent
-     in if change <= 1_000_000
+    in  if change <= 1_000_000
             then error "naming-rows: change underflow while balancing"
             else mkBasicTxOut genesisAddr (MaryValue (Coin change) mempty)
 
@@ -1325,11 +1368,11 @@ changeOut inCoin fee outs =
 request time, controller-signed) and create claimLC (with the
 approval) and claimLM (without one).
 -}
-setupTwoClaims ::
-    Env ->
-    NamingDatum ->
-    NamingDatum ->
-    IO (String, TxIn, TxIn)
+setupTwoClaims
+    :: Env
+    -> NamingDatum
+    -> NamingDatum
+    -> IO (String, TxIn, TxIn)
 setupTwoClaims env datumLC datumLM = do
     (fund, collateral) <- takeFundCollateral env
     let approvalTokens =
@@ -1337,7 +1380,12 @@ setupTwoClaims env datumLC datumLM = do
                 (envAppPolicy env)
                 (Map.singleton (AssetName (SBS.toShort (envRefundBytes env))) 1)
         claimLCOut =
-            scriptOut (envPp env) (envAppAddr env) claimCoin approvalTokens datumLC
+            scriptOut
+                (envPp env)
+                (envAppAddr env)
+                claimCoin
+                approvalTokens
+                datumLC
         claimLMOut = scriptOut (envPp env) (envAppAddr env) claimCoin mempty datumLM
         redeemers =
             Redeemers
@@ -1365,7 +1413,10 @@ setupTwoClaims env datumLC datumLM = do
     let signed = addKeyWitness genesisSignKey tx
     submitAccepted env "setup-claims" signed
     utxos <- queryAfterDelay env
-    let mine = sortBy (comparing (txInIndex . fst)) (utxosByTxId utxos (txIdHex signed))
+    let mine =
+            sortBy
+                (comparing (txInIndex . fst))
+                (utxosByTxId utxos (txIdHex signed))
     claimLCIn <- pickClaim mine True "claimLC"
     claimLMIn <- pickClaim mine False "claimLM"
     pure (txIdHex signed, claimLCIn, claimLMIn)
@@ -1386,10 +1437,10 @@ setupTwoClaims env datumLC datumLM = do
 proof folds for real. One approval per transaction: the mint
 purpose mints exactly one.
 -}
-setupFoldClaim ::
-    Env ->
-    NamingDatum ->
-    IO (String, TxIn)
+setupFoldClaim
+    :: Env
+    -> NamingDatum
+    -> IO (String, TxIn)
 setupFoldClaim env datumFold = do
     (fund, collateral) <- takeFundCollateral env
     let approvalTokens =
@@ -1397,12 +1448,19 @@ setupFoldClaim env datumFold = do
                 (envAppPolicy env)
                 (Map.singleton (AssetName (SBS.toShort (envFoldRefundBytes env))) 1)
         claimOut =
-            scriptOut (envPp env) (envAppAddr env) claimCoin approvalTokens datumFold
+            scriptOut
+                (envPp env)
+                (envAppAddr env)
+                claimCoin
+                approvalTokens
+                datumFold
         redeemers =
             Redeemers
                 ( Map.singleton
                     (ConwayMinting (AsIx 0))
-                    (Data (withdrawApprovalRedeemer env (envFoldRefundBytes env)), maxUnits)
+                    ( Data (withdrawApprovalRedeemer env (envFoldRefundBytes env))
+                    , maxUnits
+                    )
                 )
         integrity = computeScriptIntegrity (envPp env) redeemers
         change = changeOut (coinOf fund) flatFee [claimOut]
@@ -1424,7 +1482,10 @@ setupFoldClaim env datumFold = do
     let signed = addKeyWitness genesisSignKey tx
     submitAccepted env "setup-fold-claim" signed
     utxos <- queryAfterDelay env
-    let mine = sortBy (comparing (txInIndex . fst)) (utxosByTxId utxos (txIdHex signed))
+    let mine =
+            sortBy
+                (comparing (txInIndex . fst))
+                (utxosByTxId utxos (txIdHex signed))
     case mine of
         ((cin, _) : _) -> pure (txIdHex signed, cin)
         [] ->
@@ -1433,7 +1494,8 @@ setupFoldClaim env datumFold = do
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
 -- | Split the genesis wallet into funding and collateral UTxOs.
-splitGenesis :: Cage.Provider IO -> Submitter IO -> IO [(TxIn, TxOut ConwayEra)]
+splitGenesis
+    :: Cage.Provider IO -> Submitter IO -> IO [(TxIn, TxOut ConwayEra)]
 splitGenesis prov submit = do
     utxos <- Cage.queryUTxOs prov genesisAddr
     -- The largest output, which is what "big" meant all along. Ordering
@@ -1496,9 +1558,9 @@ txInTxIdHex (TxIn (TxId h) _) = hex (hashToBytes (extractHash h))
 txInIndex :: TxIn -> Integer
 txInIndex (TxIn _ (TxIx i)) = toInteger i
 
-takeFundCollateral ::
-    Env ->
-    IO ((TxIn, TxOut ConwayEra), (TxIn, TxOut ConwayEra))
+takeFundCollateral
+    :: Env
+    -> IO ((TxIn, TxOut ConwayEra), (TxIn, TxOut ConwayEra))
 takeFundCollateral env = do
     pool <- readIORef (envPool env)
     case pool of
@@ -1541,12 +1603,12 @@ mustSnap env txin = do
                     <> " is not live at the application validator"
                 )
 
-mustFindUTxO ::
-    Cage.Provider IO ->
-    Addr ->
-    String ->
-    String ->
-    IO TxIn
+mustFindUTxO
+    :: Cage.Provider IO
+    -> Addr
+    -> String
+    -> String
+    -> IO TxIn
 mustFindUTxO prov addr txid label =
     awaitChain
         ( label
@@ -1562,10 +1624,10 @@ mustFindUTxO prov addr txid label =
                         (utxosByTxId utxos txid)
             pure (fst <$> listToMaybe mine)
 
-utxosByTxId ::
-    [(TxIn, TxOut ConwayEra)] ->
-    String ->
-    [(TxIn, TxOut ConwayEra)]
+utxosByTxId
+    :: [(TxIn, TxOut ConwayEra)]
+    -> String
+    -> [(TxIn, TxOut ConwayEra)]
 utxosByTxId utxos txid = filter ((== txid) . txInTxIdHex . fst) utxos
 
 datumDataOf :: TxOut ConwayEra -> Maybe PLC.Data
@@ -1676,7 +1738,10 @@ redeemerCancel presentedRefund = PLC.Constr 1 [PLC.B presentedRefund]
 mintBurn :: PolicyID -> ByteString -> MultiAsset
 mintBurn policy name =
     MultiAsset
-        (Map.singleton policy (Map.singleton (AssetName (SBS.toShort name)) (-1)))
+        ( Map.singleton
+            policy
+            (Map.singleton (AssetName (SBS.toShort name)) (-1))
+        )
 
 -- ---------------------------------------------------------
 -- Submission helpers
@@ -1734,7 +1799,8 @@ checkPinnedApplication appHex = do
         fromMaybe "../naming-onchain/script-identity.json"
             <$> lookupEnv "NAMING_SCRIPT_IDENTITY"
     bytes <- BS.readFile path
-    manifest <- either failWith pure (eitherDecode' (BSL.fromStrict bytes))
+    manifest <-
+        either failWith pure (eitherDecode' (BSL.fromStrict bytes))
     let pins =
             [ mpHash p
             | p <- manifestValidators manifest
@@ -1785,6 +1851,6 @@ nextControlCommitmentOf bs =
             ( "singular/naming/next-control/v1"
                 <> BS.singleton 0x00
                 <> bs
-            ) ::
-            Digest Blake2b_256
+            )
+            :: Digest Blake2b_256
         )

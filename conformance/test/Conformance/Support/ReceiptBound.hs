@@ -17,7 +17,14 @@ full to each chapter measured on its own.
 -}
 module Conformance.Support.ReceiptBound (spec) where
 
-import Data.Aeson (Value (..), eitherDecodeFileStrict, eitherDecodeStrict, encode, object, (.=))
+import Data.Aeson
+    ( Value (..)
+    , eitherDecodeFileStrict
+    , eitherDecodeStrict
+    , encode
+    , object
+    , (.=)
+    )
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString.Lazy qualified as BSL
@@ -29,41 +36,64 @@ import Data.Text.IO qualified as TIO
 import System.Environment (lookupEnv)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
-import Conformance.Compare.Registration (Declared (..), declaredSurface)
-import Conformance.Receipt (Outcome (..), Receipt (..), Verdict (..), checkReceiptSize, maxReceiptBytes)
+import Conformance.Compare.Registration
+    ( Declared (..)
+    , declaredSurface
+    )
+import Conformance.Receipt
+    ( Outcome (..)
+    , Receipt (..)
+    , Verdict (..)
+    , checkReceiptSize
+    , maxReceiptBytes
+    )
 import Paths_conformance (getDataFileName)
 
 -- | The size of the one receipt the recorded run failed to write.
 observedBytes :: Int
 observedBytes = 21649
 
--- | The retirement chapter's eleven steps come first in the recorded run; the
--- exit controls' eight follow.
+{- | The retirement chapter's eleven steps come first in the recorded run; the
+exit controls' eight follow.
+-}
 retirementSteps :: Int
 retirementSteps = 11
 
 spec :: Spec
-spec = describe "Appendix: keeping each live chapter's receipt under the size bound" $ do
-    it "Rebuilds the recorded run as one receipt over the bound, as the run failed" $ do
-        steps <- recordedSteps
-        length steps `shouldBe` 19
-        size (chapter "CG22" steps) `shouldSatisfy` (> maxReceiptBytes)
-        putStrLn
-            ( "rebuilt run: " <> show (size (chapter "CG22" steps)) <> " bytes, "
-                <> show (missing steps) <> " short of the observed; retirement "
-                <> show (size (chapter "CG22" (take retirementSteps steps))) <> ", exit controls "
-                <> show (size (chapter "CG23" (drop retirementSteps steps))) <> " bytes before that is added"
-            )
-    it "Writes the exit controls' receipt under the bound, with every byte the rebuilt run misses added" $ do
-        steps <- recordedSteps
-        let exits = chapter "CG23" (drop retirementSteps steps)
-        size exits + missing steps `shouldSatisfy` (< maxReceiptBytes)
-        checkReceiptSize exits `shouldSatisfy` isRight
-    it "Writes the retirement receipt under the bound, with every byte the rebuilt run misses added" $ do
-        steps <- recordedSteps
-        let retirement = chapter "CG22" (take retirementSteps steps)
-        size retirement + missing steps `shouldSatisfy` (< maxReceiptBytes)
-        checkReceiptSize retirement `shouldSatisfy` isRight
+spec = describe
+    "Appendix: keeping each live chapter's receipt under the size bound"
+    $ do
+        it
+            "Rebuilds the recorded run as one receipt over the bound, as the run failed"
+            $ do
+                steps <- recordedSteps
+                length steps `shouldBe` 19
+                size (chapter "CG22" steps) `shouldSatisfy` (> maxReceiptBytes)
+                putStrLn
+                    ( "rebuilt run: "
+                        <> show (size (chapter "CG22" steps))
+                        <> " bytes, "
+                        <> show (missing steps)
+                        <> " short of the observed; retirement "
+                        <> show (size (chapter "CG22" (take retirementSteps steps)))
+                        <> ", exit controls "
+                        <> show (size (chapter "CG23" (drop retirementSteps steps)))
+                        <> " bytes before that is added"
+                    )
+        it
+            "Writes the exit controls' receipt under the bound, with every byte the rebuilt run misses added"
+            $ do
+                steps <- recordedSteps
+                let exits = chapter "CG23" (drop retirementSteps steps)
+                size exits + missing steps `shouldSatisfy` (< maxReceiptBytes)
+                checkReceiptSize exits `shouldSatisfy` isRight
+        it
+            "Writes the retirement receipt under the bound, with every byte the rebuilt run misses added"
+            $ do
+                steps <- recordedSteps
+                let retirement = chapter "CG22" (take retirementSteps steps)
+                size retirement + missing steps `shouldSatisfy` (< maxReceiptBytes)
+                checkReceiptSize retirement `shouldSatisfy` isRight
 
 size :: Receipt -> Int
 size = fromIntegral . BSL.length . encode
@@ -72,8 +102,9 @@ size = fromIntegral . BSL.length . encode
 missing :: [Value] -> Int
 missing steps = max 0 (observedBytes - size (chapter "CG22" steps))
 
--- | A chapter's receipt as the story receipt writer builds it. The envelope
--- numbers take the widest values a run of this size writes.
+{- | A chapter's receipt as the story receipt writer builds it. The envelope
+numbers take the widest values a run of this size writes.
+-}
 chapter :: Text -> [Value] -> Receipt
 chapter row steps =
     Receipt
@@ -110,7 +141,8 @@ at _ _ = Nothing
 
 recordedSteps :: IO [Value]
 recordedSteps = do
-    path <- getDataFileName "test/fixtures/live-steps/overflowed-retirement.txt"
+    path <-
+        getDataFileName "test/fixtures/live-steps/overflowed-retirement.txt"
     declared <- declaredCorpus
     ls <- T.lines <$> TIO.readFile path
     either fail pure (traverse (stepRecord declared) ls)
@@ -118,7 +150,13 @@ recordedSteps = do
 declaredCorpus :: IO Declared
 declaredCorpus = do
     wired <- lookupEnv "CONFORMANCE_DRIVER_CORPUS"
-    path <- maybe (fail "CONFORMANCE_DRIVER_CORPUS is not wired; the declared observations are unknown") pure wired
+    path <-
+        maybe
+            ( fail
+                "CONFORMANCE_DRIVER_CORPUS is not wired; the declared observations are unknown"
+            )
+            pure
+            wired
     corpus <- eitherDecodeFileStrict path >>= either fail pure
     either fail pure (declaredSurface corpus)
 
@@ -151,49 +189,76 @@ stepRecord declared line = do
             let scripts = case hashes of
                     Array names -> Array (fmap (const (String "request")) names)
                     _ -> Array mempty
-            pure $ object
-                [ "outcome" .= chainOutcome, "txid" .= txid
-                , "refusal" .= object
-                    [ "trace" .= Null, "hashes" .= hashes, "kind" .= kind
-                    , "rejection" .= rejection, "budgetPurposes" .= budget
-                    , "overDeclaredPurposes" .= over, "declared" .= units
-                    , "measured" .= measured, "scripts" .= scripts ]
-                ]
+            pure $
+                object
+                    [ "outcome" .= chainOutcome
+                    , "txid" .= txid
+                    , "refusal"
+                        .= object
+                            [ "trace" .= Null
+                            , "hashes" .= hashes
+                            , "kind" .= kind
+                            , "rejection" .= rejection
+                            , "budgetPurposes" .= budget
+                            , "overDeclaredPurposes" .= over
+                            , "declared" .= units
+                            , "measured" .= measured
+                            , "scripts" .= scripts
+                            ]
+                    ]
         _ -> pure (object ["outcome" .= chainOutcome, "txid" .= txid])
     let exit = label
-        edge = if label `elem` ["reject", "retract"] then "insertActive" else label
+        edge =
+            if label `elem` ["reject", "retract"] then "insertActive" else label
         untamperedAccepted = tamper == "none" && chainOutcome == "accepted"
         observations = declaredObservations declared
-    pure $ object
-        [ "registry" .= (0 :: Int)
-        , "edge" .= edge
-        , "exit" .= exit
-        , "request" .= object
-            ( [ "edge" .= edge, "key" .= (0 :: Int), "owner" .= (0 :: Int)
-              , "refundAddress" .= (0 :: Int), "deposit" .= (3_000_000 :: Int)
-              , "output" .= (0 :: Int), "applicationPolicy" .= (0 :: Int)
-              , "approval" .= ("canonical" :: Text), "tip" .= (9_999_999 :: Int) ]
-                <> ["reference" .= (0 :: Int) | exit == "retract"]
-            )
-        , "tamper" .= (if tamper == "none" then Null else String tamper)
-        , "model" .= object ["outcome" .= modelOutcome, "reason" .= reason]
-        , "chain" .= chain
-        , "comparison" .= comparison
-        , "compared" .= (if untamperedAccepted then observations else [])
-        , "unobserved" .= (if untamperedAccepted then declaredUnobservable declared else [])
-        , "perturbation" .= if untamperedAccepted
-            then object
-                [ "refused" .= length observations
-                , "byObservation" .= object [Key.fromText name .= (1 :: Int) | name <- observations]
-                , "exempt" .= ([] :: [Text]) ]
-            else Null
-        , "differences" .= ([] :: [Value])
-        ]
+    pure $
+        object
+            [ "registry" .= (0 :: Int)
+            , "edge" .= edge
+            , "exit" .= exit
+            , "request"
+                .= object
+                    ( [ "edge" .= edge
+                      , "key" .= (0 :: Int)
+                      , "owner" .= (0 :: Int)
+                      , "refundAddress" .= (0 :: Int)
+                      , "deposit" .= (3_000_000 :: Int)
+                      , "output" .= (0 :: Int)
+                      , "applicationPolicy" .= (0 :: Int)
+                      , "approval" .= ("canonical" :: Text)
+                      , "tip" .= (9_999_999 :: Int)
+                      ]
+                        <> ["reference" .= (0 :: Int) | exit == "retract"]
+                    )
+            , "tamper" .= (if tamper == "none" then Null else String tamper)
+            , "model" .= object ["outcome" .= modelOutcome, "reason" .= reason]
+            , "chain" .= chain
+            , "comparison" .= comparison
+            , "compared" .= (if untamperedAccepted then observations else [])
+            , "unobserved"
+                .= (if untamperedAccepted then declaredUnobservable declared else [])
+            , "perturbation"
+                .= if untamperedAccepted
+                    then
+                        object
+                            [ "refused" .= length observations
+                            , "byObservation"
+                                .= object [Key.fromText name .= (1 :: Int) | name <- observations]
+                            , "exempt" .= ([] :: [Text])
+                            ]
+                    else Null
+            , "differences" .= ([] :: [Value])
+            ]
   where
     rest marker = case T.breakOn marker line of
         (_, found) | not (T.null found) -> Just (T.drop (T.length marker) found)
         _ -> Nothing
-    required marker = maybe (Left ("step line has no " <> show marker <> ": " <> T.unpack line)) Right (rest marker)
+    required marker =
+        maybe
+            (Left ("step line has no " <> show marker <> ": " <> T.unpack line))
+            Right
+            (rest marker)
     word marker = T.takeWhile (/= ' ') <$> required marker
     quoted marker = T.takeWhile (/= '"') <$> required marker
     between open close = fst . T.breakOn close <$> required open

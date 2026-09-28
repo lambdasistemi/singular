@@ -10,27 +10,27 @@ import Data.ByteString qualified as BS
 import Data.Maybe (isNothing)
 import System.Exit (exitFailure)
 
-import Naming.Datum (
-    decodeNamingDatum,
-    deserialiseNamingDatum,
-    encodeNamingDatum,
-    extractNamingDatum,
-    namingDatumShape,
-    serialiseNamingDatum,
- )
-import Naming.Request (
-    RefundComparison (..),
-    compareRefund,
-    deserialiseInsertCommitment,
-    encodeInsertCommitment,
-    insertRequestShape,
-    matchingInsertCommitment,
-    serialiseInsertCommitment,
- )
-import Naming.Wire (
-    deserialiseWireData,
-    serialiseWireData,
- )
+import Naming.Datum
+    ( decodeNamingDatum
+    , deserialiseNamingDatum
+    , encodeNamingDatum
+    , extractNamingDatum
+    , namingDatumShape
+    , serialiseNamingDatum
+    )
+import Naming.Request
+    ( RefundComparison (..)
+    , compareRefund
+    , deserialiseInsertCommitment
+    , encodeInsertCommitment
+    , insertRequestShape
+    , matchingInsertCommitment
+    , serialiseInsertCommitment
+    )
+import Naming.Wire
+    ( deserialiseWireData
+    , serialiseWireData
+    )
 import Naming.Wire.Vectors
 
 -- | A check: 'Nothing' passes, @Just reason@ fails with that reason.
@@ -50,7 +50,8 @@ main = do
                     ++ " (WD01 WD02 WD03 WR01),"
                     ++ " byte comparisons byte-for-byte against expectedBytes"
         else do
-            putStrLn ("SUITE FAILED: " ++ show failed ++ " of " ++ show total ++ " checks")
+            putStrLn
+                ("SUITE FAILED: " ++ show failed ++ " of " ++ show total ++ " checks")
             exitFailure
 
 runCheck :: (String, Check) -> IO Bool
@@ -73,7 +74,10 @@ checks =
             case serialiseNamingDatum wd01Fixture of
                 Nothing -> Just "the encoder refused the WD01 fixture"
                 Just bytes ->
-                    expectBytesEqual "encode(fixture) != expectedBytes" bytes wd01ExpectedBytes
+                    expectBytesEqual
+                        "encode(fixture) != expectedBytes"
+                        bytes
+                        wd01ExpectedBytes
         )
     ,
         ( wd01Id ++ ": decode(expectedBytes) == decoded fixture"
@@ -82,7 +86,8 @@ checks =
                 Nothing -> Just "decode(expectedBytes) produced nothing"
                 Just datum
                     | datum == wd01Fixture -> Nothing
-                    | otherwise -> Just "decode(expectedBytes) != the recorded decoded fixture"
+                    | otherwise ->
+                        Just "decode(expectedBytes) != the recorded decoded fixture"
         )
     ,
         ( wd01Id ++ ": re-encoding the decoded datum reproduces expectedBytes"
@@ -96,7 +101,8 @@ checks =
                         wd01ExpectedBytes
         )
     ,
-        ( wd01Id ++ ": decode(malformedBytes) is nothing (malformedResult: null)"
+        ( wd01Id
+            ++ ": decode(malformedBytes) is nothing (malformedResult: null)"
         , pure $
             if isNothing (deserialiseNamingDatum wd01MalformedBytes)
                 then Nothing
@@ -109,7 +115,9 @@ checks =
         , pure $
             case namingDatumShape (encodeNamingDatum wd01Fixture) of
                 Just shape | shape == wd01Shape -> shapeOfBytesCheck
-                _ -> Just "the encoded datum's shape != {arity: 4, innerIndex: 0, outerIndex: 0}"
+                _ ->
+                    Just
+                        "the encoded datum's shape != {arity: 4, innerIndex: 0, outerIndex: 0}"
         )
     ,
         ( wd02Id ++ ": a datum-hash attachment is refused (result: null)"
@@ -117,10 +125,12 @@ checks =
             if isNothing (extractNamingDatum wd02Attachment)
                 then Nothing
                 else
-                    Just "an attached datum hash decoded, but the vector records result: null"
+                    Just
+                        "an attached datum hash decoded, but the vector records result: null"
         )
     ,
-        ( wd03Id ++ ": decodeNamingDatum(two-destination datum) is nothing (result: null)"
+        ( wd03Id
+            ++ ": decodeNamingDatum(two-destination datum) is nothing (result: null)"
         , pure $
             if isNothing (decodeNamingDatum wd03Encoded)
                 then Nothing
@@ -129,7 +139,8 @@ checks =
                         "the two-destination datum decoded, but the vector records result: null"
         )
     ,
-        ( wd03Id ++ ": deserialise+decode of the serialised two-destination datum is nothing"
+        ( wd03Id
+            ++ ": deserialise+decode of the serialised two-destination datum is nothing"
         , pure $
             case serialiseWireData wd03Encoded of
                 Nothing -> Just "the two-destination datum did not serialise"
@@ -138,7 +149,8 @@ checks =
                     | otherwise -> Just "the serialised two-destination datum decoded"
         )
     ,
-        ( wr01Id ++ ": encode(stored proposal commitment) == expectedBytes, byte-for-byte"
+        ( wr01Id
+            ++ ": encode(stored proposal commitment) == expectedBytes, byte-for-byte"
         , pure $
             case serialiseInsertCommitment wr01StoredProposal of
                 Nothing -> Just "the encoder refused the stored proposal"
@@ -149,7 +161,8 @@ checks =
                         wr01ExpectedBytes
         )
     ,
-        ( wr01Id ++ ": decode(expectedBytes) == stored proposal (refundAddress 60 round-trips)"
+        ( wr01Id
+            ++ ": decode(expectedBytes) == stored proposal (refundAddress 60 round-trips)"
         , pure $
             case deserialiseInsertCommitment wr01ExpectedBytes of
                 Nothing -> Just "decode(expectedBytes) produced nothing"
@@ -158,7 +171,8 @@ checks =
                     | otherwise -> Just "decode(expectedBytes) != the stored proposal"
         )
     ,
-        ( wr01Id ++ ": re-encoding the decoded commitment reproduces expectedBytes"
+        ( wr01Id
+            ++ ": re-encoding the decoded commitment reproduces expectedBytes"
         , pure $
             case deserialiseInsertCommitment wr01ExpectedBytes of
                 Nothing -> Just "decode(expectedBytes) produced nothing"
@@ -169,7 +183,8 @@ checks =
                         wr01ExpectedBytes
         )
     ,
-        ( wr01Id ++ ": decode(malformedBytes) is nothing (malformedResult: null)"
+        ( wr01Id
+            ++ ": decode(malformedBytes) is nothing (malformedResult: null)"
         , pure $
             if isNothing (deserialiseInsertCommitment wr01MalformedBytes)
                 then Nothing
@@ -178,7 +193,8 @@ checks =
                         "the malformed input decoded successfully, but the vector records malformedResult: null"
         )
     ,
-        ( wr01Id ++ ": shape == {commitmentIndex: 0, commitmentArity: 1, proposalIndex: 0, proposalArity: 6}"
+        ( wr01Id
+            ++ ": shape == {commitmentIndex: 0, commitmentArity: 1, proposalIndex: 0, proposalArity: 6}"
         , pure $
             case insertRequestShape (encodeInsertCommitment wr01StoredProposal) of
                 Just shape | shape == wr01Shape -> Nothing
@@ -187,7 +203,8 @@ checks =
                         "shape != {commitmentIndex: 0, commitmentArity: 1, proposalIndex: 0, proposalArity: 6}"
         )
     ,
-        ( wr01Id ++ ": redirectedBytes decodes to the redirected proposal (refundAddress 61)"
+        ( wr01Id
+            ++ ": redirectedBytes decodes to the redirected proposal (refundAddress 61)"
         , pure $
             case deserialiseInsertCommitment wr01RedirectedBytes of
                 Just proposal
@@ -206,7 +223,8 @@ checks =
             ++ ": matching the redirected commitment against the request is refused"
             ++ " (redirectedRequestResult: null)"
         , pure $
-            if isNothing (matchingInsertCommitment wr01StoredProposal wr01RedirectedBytes)
+            if isNothing
+                (matchingInsertCommitment wr01StoredProposal wr01RedirectedBytes)
                 then Nothing
                 else Just "the redirected commitment matched the request"
         )
@@ -231,7 +249,9 @@ checks =
             | Just shape <- namingDatumShape wire
             , shape == wd01Shape ->
                 Nothing
-        _ -> Just "the shape of the bytes behind expectedBytes != the recorded shape"
+        _ ->
+            Just
+                "the shape of the bytes behind expectedBytes != the recorded shape"
 
 expectBytesEqual :: String -> ByteString -> ByteString -> Maybe String
 expectBytesEqual what got expected

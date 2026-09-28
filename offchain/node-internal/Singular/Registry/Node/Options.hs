@@ -20,23 +20,29 @@ Two modes:
 This module owns no connection, wallet or follower state; the mode it
 resolves is the input every other node module reads.
 -}
-module Singular.Registry.Node.Options (
-    -- * Mode
-    NodeMode (..),
-    ExternalNode (..),
-    nodeModeFromArgs,
-    nodeModeFromEnvironment,
-    runMode,
-    nodeIsExternal,
-    echoKoios,
+module Singular.Registry.Node.Options
+    ( -- * Mode
+      NodeMode (..)
+    , ExternalNode (..)
+    , nodeModeFromArgs
+    , nodeModeFromEnvironment
+    , runMode
+    , nodeIsExternal
+    , echoKoios
 
-    -- * Diagnostics
-    die,
-    mainnetMagic,
-) where
+      -- * Diagnostics
+    , die
+    , mainnetMagic
+    ) where
 
 import Control.Applicative ((<|>))
-import Control.Exception (ErrorCall (..), SomeException, displayException, throwIO, try)
+import Control.Exception
+    ( ErrorCall (..)
+    , SomeException
+    , displayException
+    , throwIO
+    , try
+    )
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.List (isPrefixOf)
@@ -80,10 +86,10 @@ unknown arguments are ignored (runners take their own), and naming any
 one of the three settings selects external mode and requires the other
 two.
 -}
-nodeModeFromArgs ::
-    [String] ->
-    [(String, String)] ->
-    Either String NodeMode
+nodeModeFromArgs
+    :: [String]
+    -> [(String, String)]
+    -> Either String NodeMode
 nodeModeFromArgs args env
     | null (catMaybes [mSock, mMagic, mSkey]) = Right Devnet
     | otherwise = do
@@ -186,8 +192,8 @@ echoKoios evDir tag raw = case runMode of
                     , "https://preprod.koios.rest/api/v1/submittx"
                     ]
                     ""
-                ) ::
-                IO (Either SomeException String)
+                )
+                :: IO (Either SomeException String)
         case r of
             Right body -> writeFile koiosPath body
             Left err -> writeFile koiosPath (displayException err)

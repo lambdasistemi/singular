@@ -52,45 +52,45 @@ import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
 import Data.Set qualified as Set
 import Lens.Micro ((^.))
-import Test.Hspec (
-    Expectation,
-    Spec,
-    describe,
-    expectationFailure,
-    it,
- )
+import Test.Hspec
+    ( Expectation
+    , Spec
+    , describe
+    , expectationFailure
+    , it
+    )
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Address (Addr, serialiseAddr)
-import Cardano.Ledger.Api.Scripts.Data (
-    Data (..),
-    Datum (..),
-    binaryDataToData,
- )
+import Cardano.Ledger.Api.Scripts.Data
+    ( Data (..)
+    , Datum (..)
+    , binaryDataToData
+    )
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx, witsTxL)
-import Cardano.Ledger.Api.Tx.Body (
-    inputsTxBodyL,
-    mintTxBodyL,
-    outputsTxBodyL,
-    reqSignerHashesTxBodyL,
- )
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    addrTxOutL,
-    coinTxOutL,
-    datumTxOutL,
-    valueTxOutL,
- )
+import Cardano.Ledger.Api.Tx.Body
+    ( inputsTxBodyL
+    , mintTxBodyL
+    , outputsTxBodyL
+    , reqSignerHashesTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , addrTxOutL
+    , coinTxOutL
+    , datumTxOutL
+    , valueTxOutL
+    )
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes (TxIx (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (extractHash)
-import Cardano.Ledger.Mary.Value (
-    AssetName (..),
-    MaryValue (..),
-    MultiAsset (..),
-    PolicyID,
- )
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID
+    )
 import Cardano.Ledger.Plutus.Data (getPlutusData, hashData)
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
@@ -98,77 +98,77 @@ import PlutusTx.Builtins (fromBuiltin)
 import PlutusTx.Builtins.Internal (BuiltinData (..))
 import PlutusTx.IsData.Class (FromData (..))
 
-import Cardano.Node.Client.E2E.Setup (
-    genesisAddr,
- )
-import Cardano.Node.Client.Submitter (
-    Submitter,
- )
-import Singular.Registry.Blueprint (
-    Blueprint,
-    NamingCodes,
-    extractCompiledCode,
-    loadRegistryCodesFromEnv,
- )
-import Singular.Registry.Config (
-    CageConfig (..),
- )
+import Cardano.Node.Client.E2E.Setup
+    ( genesisAddr
+    )
+import Cardano.Node.Client.Submitter
+    ( Submitter
+    )
+import Singular.Registry.Blueprint
+    ( Blueprint
+    , NamingCodes
+    , extractCompiledCode
+    , loadRegistryCodesFromEnv
+    )
+import Singular.Registry.Config
+    ( CageConfig (..)
+    )
 import Singular.Registry.Driver qualified as Driver
-import Singular.Registry.E2E.CageSpec (
-    publishCageRefs,
-    submitWithGenesis,
-    withBootedCage,
- )
-import Singular.Registry.Ledger (
-    ConwayEra,
-    Root (..),
-    TokenId,
- )
-import Singular.Registry.Provider (
-    Provider (..),
- )
+import Singular.Registry.E2E.CageSpec
+    ( publishCageRefs
+    , submitWithGenesis
+    , withBootedCage
+    )
+import Singular.Registry.Ledger
+    ( ConwayEra
+    , Root (..)
+    , TokenId
+    )
+import Singular.Registry.Provider
+    ( Provider (..)
+    )
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Trie (
-    Trie (getRoot),
-    TrieManager (..),
- )
-import Singular.Registry.TxBuilder.ConnectedFold (
-    syncFoldedRequests,
- )
+import Singular.Registry.Trie
+    ( Trie (getRoot)
+    , TrieManager (..)
+    )
+import Singular.Registry.TxBuilder.ConnectedFold
+    ( syncFoldedRequests
+    )
 import Singular.Registry.TxBuilder.Edges qualified as Edges
-import Singular.Registry.TxBuilder.Internal (
-    addrFromBytes,
-    addrFromKeyHashBytes,
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    extractCageDatum,
-    findStateUtxo,
-    policyIdFromPin,
-    requestAddrFromCfg,
-    toPlcData,
-    walkEdge,
- )
-import Singular.Registry.TxBuilder.Update (
-    RegistryContext (..),
-    updateTokenWithDuties,
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    Edge,
-    OnChainRequest (..),
-    OnChainRoot (..),
-    OnChainTokenState (stateRoot),
-    ProofStep,
-    RequestAction (..),
-    UpdateRedeemer (..),
-    edgeDeleteAbsent,
-    edgeDeleteActive,
-    edgeInsertAbsent,
-    edgeInsertActive,
-    edgeUpdateActive,
-    edgeUpdateTerminal,
-    edgeWitnessTerminal,
- )
+import Singular.Registry.TxBuilder.Internal
+    ( addrFromBytes
+    , addrFromKeyHashBytes
+    , cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , extractCageDatum
+    , findStateUtxo
+    , policyIdFromPin
+    , requestAddrFromCfg
+    , toPlcData
+    , walkEdge
+    )
+import Singular.Registry.TxBuilder.Update
+    ( RegistryContext (..)
+    , updateTokenWithDuties
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , Edge
+    , OnChainRequest (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (stateRoot)
+    , ProofStep
+    , RequestAction (..)
+    , UpdateRedeemer (..)
+    , edgeDeleteAbsent
+    , edgeDeleteActive
+    , edgeInsertAbsent
+    , edgeInsertActive
+    , edgeUpdateActive
+    , edgeUpdateTerminal
+    , edgeWitnessTerminal
+    )
 
 -- ---------------------------------------------------------
 -- The model table this witness derives its mints from
@@ -201,7 +201,10 @@ kindPolicy cfg kind
 over each observed edge, keyed by the observed policy pins and each
 observed request key.
 -}
-expectedMintOf :: CageConfig -> [OnChainRequest] -> Map.Map (PolicyID, AssetName) Integer
+expectedMintOf
+    :: CageConfig
+    -> [OnChainRequest]
+    -> Map.Map (PolicyID, AssetName) Integer
 expectedMintOf cfg requests =
     Map.fromList
         [ ((kindPolicy cfg kind, keyAssetName (requestKey req)), quantity)
@@ -220,7 +223,12 @@ keyAssetName = AssetName . SBS.toShort
 books, named by stage. Distinct preimages make an absent or swapped
 inline datum detectable.
 -}
-orderDatumA, deliverDatumB, deliverDatumA, deliverDatumD, witnessDatumD :: Data ConwayEra
+orderDatumA
+    , deliverDatumB
+    , deliverDatumA
+    , deliverDatumD
+    , witnessDatumD
+        :: Data ConwayEra
 orderDatumA = ledgerData 1
 deliverDatumB = ledgerData 2
 deliverDatumA = ledgerData 3
@@ -235,7 +243,12 @@ ledgerData n = Data (toPlcData n)
 
 scenarioDatumPreimages :: [Data ConwayEra]
 scenarioDatumPreimages =
-    [orderDatumA, deliverDatumB, deliverDatumA, deliverDatumD, witnessDatumD]
+    [ orderDatumA
+    , deliverDatumB
+    , deliverDatumA
+    , deliverDatumD
+    , witnessDatumD
+    ]
 
 {- | The hash a request's destination field carries for a preimage: the
 same ledger encoding the cage itself compares (@destinationMatches@
@@ -275,11 +288,16 @@ absentAddress cfg = addrFromKeyHashBytes (network cfg) (BS.replicate 28 0x99)
 
 spec :: Blueprint -> Spec
 spec bp =
-    describe "Criterion 3: seven edges, every fold effect at the fresh-blueprint boundary" $
-        case (extractCompiledCode "state.state" bp, extractCompiledCode "request.request" bp) of
+    describe
+        "Criterion 3: seven edges, every fold effect at the fresh-blueprint boundary"
+        $ case ( extractCompiledCode "state.state" bp
+               , extractCompiledCode "request.request" bp
+               ) of
             (Just stateBytes, Just requestBytes) ->
-                it "observes order, approvals, mints, holders, destinations, custody refunds and body signers" $
-                    withBootedCage id stateBytes requestBytes $ \cfg prov submit tm reg -> do
+                it
+                    "observes order, approvals, mints, holders, destinations, custody refunds and body signers"
+                    $ withBootedCage id stateBytes requestBytes
+                    $ \cfg prov submit tm reg -> do
                         let tokenId = Driver.registryTokenId reg
                             requestAddr = requestAddrFromCfg cfg tokenId (network cfg)
                         codes <- loadRegistryCodesFromEnv
@@ -314,16 +332,16 @@ enumeration of real outputs; L-ORD2: the association is observed
 against proof content — real cage acceptance separately supports proof
 correctness.
 -}
-orderingStage ::
-    CageConfig ->
-    NamingCodes ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    TrieManager IO ->
-    TokenId ->
-    Addr ->
-    [(TxIn, TxOut ConwayEra)] ->
-    IO ()
+orderingStage
+    :: CageConfig
+    -> NamingCodes
+    -> Cage.Provider IO
+    -> Submitter IO
+    -> TrieManager IO
+    -> TokenId
+    -> Addr
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO ()
 orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
     -- Two real, independent bookings: distinct keys, distinct edges,
     -- both folded together below.
@@ -342,14 +360,25 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
             edgeInsertAbsent
             (serialiseAddr genesisAddr, BS.empty)
     refA <-
-        Edges.bookEdgeTo cfg codes prov (submitWithGenesis submit) genesisAddr tokenId keyA edgeInsertActive destA
+        Edges.bookEdgeTo
+            cfg
+            codes
+            prov
+            (submitWithGenesis submit)
+            genesisAddr
+            tokenId
+            keyA
+            edgeInsertActive
+            destA
     -- The booking sequence, written beside the calls in their order;
     -- a future reordering of the calls must edit this list to match.
     let bookingSequence = [(keyB, refB), (keyA, refA)]
     -- The real provider's own observations, before anything is wrapped.
     pending <- Cage.queryUTxOs prov requestAddr
-    unless (length pending == 2 && sort (map fst pending) == sort [refA, refB]) $
-        fail "ORDER-WITNESS-NONDISCRIMINATING: the request address does not hold exactly the two booked requests"
+    unless
+        (length pending == 2 && sort (map fst pending) == sort [refA, refB])
+        $ fail
+            "ORDER-WITNESS-NONDISCRIMINATING: the request address does not hold exactly the two booked requests"
     (outA, reqA) <- observedRequestAt refA pending
     (outB, reqB) <- observedRequestAt refB pending
     let ascending = sortOn fst pending
@@ -357,7 +386,8 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
         sortedRefs = map fst ascending
         sortedRequests = map (requestOf (zip [refA, refB] [reqA, reqB])) sortedRefs
     unless (map fst descending /= map fst ascending) $
-        fail "ORDER-WITNESS-NONDISCRIMINATING: reversed enumeration equals ascending order"
+        fail
+            "ORDER-WITNESS-NONDISCRIMINATING: reversed enumeration equals ascending order"
     -- Scenario receipt, from captured values only: the booking
     -- sequence in call order, the raw test-controlled provider
     -- enumeration the fold saw, the real provider's own order, and the
@@ -387,37 +417,54 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
     -- speculative session of the committed trie.
     expectedActions <-
         withSpeculativeTrie tm tokenId $ \trie ->
-            mapM (\req -> walkEdge trie (requestKey req) (requestEdge req)) sortedRequests
+            mapM
+                (\req -> walkEdge trie (requestKey req) (requestEdge req))
+                sortedRequests
     case expectedActions of
         [proofOne, proofTwo]
             | proofOne /= proofTwo -> pure ()
-        _ -> fail "ORDER-WITNESS-NONDISCRIMINATING: the two requests do not produce distinguishable proofs"
+        _ ->
+            fail
+                "ORDER-WITNESS-NONDISCRIMINATING: the two requests do not produce distinguishable proofs"
     ctx <- contextFor cfg codes prov refs
-    unsigned <- updateTokenWithDuties cfg wrapped tm tokenId genesisAddr ctx
+    unsigned <-
+        updateTokenWithDuties cfg wrapped tm tokenId genesisAddr ctx
     decoded <- modifyActionsOf unsigned
     let orderObs = OrderObservation{ooActions = decoded, ooExpected = expectedActions}
     livePass "ordering: request association" (cmpOrder orderObs)
-    mutantFails "ordering: request association" "C3-ORDER-REDEEMER" (cmpOrder orderObs{ooExpected = reverse expectedActions})
+    mutantFails
+        "ordering: request association"
+        "C3-ORDER-REDEEMER"
+        (cmpOrder orderObs{ooExpected = reverse expectedActions})
     let mintObs = mintObservationOf cfg unsigned sortedRequests
     livePass "ordering fold: keyed mint" (cmpMint mintObs)
-    mutantFails "ordering fold: keyed mint" "C3-MINT-KEYED" (cmpMint mintObs{moExpected = bumpOne cfg (moExpected mintObs)})
+    mutantFails
+        "ordering fold: keyed mint"
+        "C3-MINT-KEYED"
+        (cmpMint mintObs{moExpected = bumpOne cfg (moExpected mintObs)})
     forM_ [(refA, outA, reqA), (refB, outB, reqB)] $ \(_, out, req) -> do
         approvalName <- observedApprovalName cfg out
         let approvalObs = approvalObservationOf cfg unsigned req approvalName
-        livePass ("ordering fold: approval for " <> show (requestKey req)) (cmpApproval approvalObs)
+        livePass
+            ("ordering fold: approval for " <> show (requestKey req))
+            (cmpApproval approvalObs)
         mutantFails
             ("ordering fold: approval for " <> show (requestKey req))
             "C3-APPROVAL-ASSET"
             (cmpApproval approvalObs{aoName = AssetName "c3-mutant"})
     let signerObs = signerObservationOf unsigned
     livePass "ordering fold: body signers" (cmpBodySigner signerObs)
-    mutantFails "ordering fold: body signers" "C3-BODY-SIGNER" (cmpBodySigner (insertSigner signerObs))
+    mutantFails
+        "ordering fold: body signers"
+        "C3-BODY-SIGNER"
+        (cmpBodySigner (insertSigner signerObs))
     rootBefore <- withTrie tm tokenId getRoot
     signedFold <- submitWithGenesis submit unsigned
     syncFoldedRequests tm tokenId ascending
     rootAfter <- withTrie tm tokenId getRoot
     when (unRoot rootBefore == unRoot rootAfter) $
-        expectationFailure "wrong effect: mirror root did not move across the ordering fold"
+        expectationFailure
+            "wrong effect: mirror root did not move across the ordering fold"
     assertChainRootMatches cfg prov tokenId rootAfter "ordering fold"
     putStrLn $
         "[c3-receipt] ordering fold-txid="
@@ -431,7 +478,10 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
     forM_ sortedRefs $ \ref ->
         when (isJust (lookup ref after)) $
             expectationFailure
-                ("wrong effect: ordering-fold request " <> show ref <> " still pending after submission")
+                ( "wrong effect: ordering-fold request "
+                    <> show ref
+                    <> " still pending after submission"
+                )
   where
     requestOf pairs ref = case lookup ref pairs of
         Just req -> req
@@ -445,16 +495,16 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
 active token in the funding wallet so A's retirement sees two
 distinguishable holder candidates.
 -}
-connectedStages ::
-    CageConfig ->
-    NamingCodes ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    TrieManager IO ->
-    TokenId ->
-    Addr ->
-    [(TxIn, TxOut ConwayEra)] ->
-    IO ()
+connectedStages
+    :: CageConfig
+    -> NamingCodes
+    -> Cage.Provider IO
+    -> Submitter IO
+    -> TrieManager IO
+    -> TokenId
+    -> Addr
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO ()
 connectedStages cfg codes prov submit tm tokenId requestAddr refs = do
     -- Stage B.1: deliver keyB's active token and leave it held.
     stage keyB edgeInsertActive deliverDatumB
@@ -501,22 +551,31 @@ connectedStages cfg codes prov submit tm tokenId requestAddr refs = do
 -- One booking, one fold, every control it feeds
 -- ---------------------------------------------------------
 
-bookFoldObserve ::
-    CageConfig ->
-    NamingCodes ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    TrieManager IO ->
-    TokenId ->
-    Addr ->
-    [(TxIn, TxOut ConwayEra)] ->
-    ByteString ->
-    Edge ->
-    (ByteString, ByteString) ->
-    IO ()
+bookFoldObserve
+    :: CageConfig
+    -> NamingCodes
+    -> Cage.Provider IO
+    -> Submitter IO
+    -> TrieManager IO
+    -> TokenId
+    -> Addr
+    -> [(TxIn, TxOut ConwayEra)]
+    -> ByteString
+    -> Edge
+    -> (ByteString, ByteString)
+    -> IO ()
 bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest = do
     requestTxIn <-
-        Edges.bookEdgeTo cfg codes prov (submitWithGenesis submit) genesisAddr tokenId key edge dest
+        Edges.bookEdgeTo
+            cfg
+            codes
+            prov
+            (submitWithGenesis submit)
+            genesisAddr
+            tokenId
+            key
+            edge
+            dest
     pending <- Cage.queryUTxOs prov requestAddr
     (reqOut, req) <- observedRequestAt requestTxIn pending
     cageUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
@@ -530,17 +589,26 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
         label = "edge " <> show edge
         mintObs = mintObservationOf cfg unsigned requests
     livePass (label <> ": keyed mint") (cmpMint mintObs)
-    mutantFails (label <> ": keyed mint") "C3-MINT-KEYED" (cmpMint mintObs{moExpected = bumpOne cfg (moExpected mintObs)})
+    mutantFails
+        (label <> ": keyed mint")
+        "C3-MINT-KEYED"
+        (cmpMint mintObs{moExpected = bumpOne cfg (moExpected mintObs)})
     -- Approval: every edge but witnessTerminal carries one, and the
     -- owner's return output also carries at least the deposit floor.
     when (edge /= edgeWitnessTerminal) $ do
         approvalName <- observedApprovalName cfg reqOut
         let approvalObs = approvalObservationOf cfg unsigned req approvalName
         livePass (label <> ": approval") (cmpApproval approvalObs)
-        mutantFails (label <> ": approval") "C3-APPROVAL-ASSET" (cmpApproval approvalObs{aoName = AssetName "c3-mutant"})
+        mutantFails
+            (label <> ": approval")
+            "C3-APPROVAL-ASSET"
+            (cmpApproval approvalObs{aoName = AssetName "c3-mutant"})
     let signerObs = signerObservationOf unsigned
     livePass (label <> ": body signers") (cmpBodySigner signerObs)
-    mutantFails (label <> ": body signers") "C3-BODY-SIGNER" (cmpBodySigner (insertSigner signerObs))
+    mutantFails
+        (label <> ": body signers")
+        "C3-BODY-SIGNER"
+        (cmpBodySigner (insertSigner signerObs))
     -- Destination: the delivering shapes, including the custody
     -- creation of an absent insert, whose output sits at the cage.
     case destinationShapeOf cfg edge key req of
@@ -554,7 +622,10 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                         , doOutputs = outputs
                         }
             livePass (label <> ": destination") (cmpDestination destObs)
-            mutantFails (label <> ": destination") "C3-DESTINATION" (cmpDestination destObs{doDatum = ledgerData (-1)})
+            mutantFails
+                (label <> ": destination")
+                "C3-DESTINATION"
+                (cmpDestination destObs{doDatum = ledgerData (-1)})
             -- The destination shape also names the body's delivery
             -- output for the post-state landing check below.
             pure ()
@@ -583,18 +654,26 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                             }
                     )
             Nothing ->
-                expectationFailure ("setup: no keyed custody UTxO observed for key " <> show key)
+                expectationFailure
+                    ("setup: no keyed custody UTxO observed for key " <> show key)
     -- Holder: the two edges that burn an active token.
     when (edge == edgeUpdateTerminal || edge == edgeDeleteActive) $
-        case [i | (i, o) <- walletUtxos, quantityInValue (activePin cfg) (keyAssetName key) (o ^. valueTxOutL) == 1] of
-            [] -> expectationFailure ("setup: no single-quantity holder observed for key " <> show key)
+        case [ i
+             | (i, o) <- walletUtxos
+             , quantityInValue (activePin cfg) (keyAssetName key) (o ^. valueTxOutL)
+                == 1
+             ] of
+            [] ->
+                expectationFailure
+                    ("setup: no single-quantity holder observed for key " <> show key)
             (holderIn : _) -> do
                 let otherHolders =
                         [ i
                         | (i, o) <- walletUtxos
                         , i /= holderIn
                         , holdsAnyActive cfg o
-                        , quantityInValue (activePin cfg) (keyAssetName key) (o ^. valueTxOutL) == 0
+                        , quantityInValue (activePin cfg) (keyAssetName key) (o ^. valueTxOutL)
+                            == 0
                         ]
                     holderObs =
                         HolderObservation
@@ -606,7 +685,9 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                 case otherHolders of
                     [] ->
                         expectationFailure
-                            ("setup: no second distinguishable holder candidate for key " <> show key)
+                            ( "setup: no second distinguishable holder candidate for key "
+                                <> show key
+                            )
                     (other : _) ->
                         mutantFails
                             (label <> ": holder")
@@ -624,12 +705,21 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
         then
             when (unRoot rootBefore /= unRoot rootAfter) $
                 expectationFailure
-                    ("wrong effect: mirror root moved across the witnessed read of edge " <> show edge)
+                    ( "wrong effect: mirror root moved across the witnessed read of edge "
+                        <> show edge
+                    )
         else
             when (unRoot rootBefore == unRoot rootAfter) $
                 expectationFailure
-                    ("wrong effect: mirror root did not move across the fold of edge " <> show edge)
-    assertChainRootMatches cfg prov tokenId rootAfter ("fold of edge " <> show edge)
+                    ( "wrong effect: mirror root did not move across the fold of edge "
+                        <> show edge
+                    )
+    assertChainRootMatches
+        cfg
+        prov
+        tokenId
+        rootAfter
+        ("fold of edge " <> show edge)
     putStrLn $
         "[c3-receipt] edge="
             <> show edge
@@ -665,10 +755,15 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                                     )
                         Nothing ->
                             expectationFailure
-                                ("wrong effect: destination output at index " <> show ix <> " not found after inclusion")
+                                ( "wrong effect: destination output at index "
+                                    <> show ix
+                                    <> " not found after inclusion"
+                                )
                 _ ->
                     expectationFailure
-                        ("setup: destination output not uniquely identified in the body of edge " <> show edge)
+                        ( "setup: destination output not uniquely identified in the body of edge "
+                            <> show edge
+                        )
         Nothing -> pure ()
     -- A custody-consuming stage's built refund output lands at the
     -- recorded refund address exactly as the body built it.
@@ -689,21 +784,37 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                                     expectationFailure
                                         "wrong effect: landed custody refund differs from the body's built output"
                             Nothing ->
-                                expectationFailure "wrong effect: custody refund output not found after inclusion"
+                                expectationFailure
+                                    "wrong effect: custody refund output not found after inclusion"
                     _ ->
                         expectationFailure
-                            ("setup: custody refund output not uniquely identified in the body of edge " <> show edge)
+                            ( "setup: custody refund output not uniquely identified in the body of edge "
+                                <> show edge
+                            )
             Nothing -> pure ()
     -- The request is spent; a burned asset is gone.
     after <- Cage.queryUTxOs prov requestAddr
     when (isJust (lookup requestTxIn after)) $
-        expectationFailure ("wrong effect: request " <> show requestTxIn <> " still pending after fold")
+        expectationFailure
+            ( "wrong effect: request "
+                <> show requestTxIn
+                <> " still pending after fold"
+            )
     when (edge == edgeUpdateTerminal || edge == edgeDeleteActive) $ do
         walletAfter <- Cage.queryUTxOs prov genesisAddr
-        let remaining = length [() | (_, o) <- walletAfter, quantityInValue (activePin cfg) (keyAssetName key) (o ^. valueTxOutL) > 0]
+        let remaining =
+                length
+                    [ ()
+                    | (_, o) <- walletAfter
+                    , quantityInValue (activePin cfg) (keyAssetName key) (o ^. valueTxOutL)
+                        > 0
+                    ]
         unless (remaining == 0) $
             expectationFailure
-                ("wrong effect: active asset for key " <> show key <> " still held after burn")
+                ( "wrong effect: active asset for key "
+                    <> show key
+                    <> " still held after burn"
+                )
 
 -- ---------------------------------------------------------
 -- The seven comparison classes
@@ -757,24 +868,33 @@ and exactly one owner output returns it, carrying at least the observed
 deposit floor.
 -}
 cmpApproval :: ApprovalObservation -> Either String ()
-cmpApproval ApprovalObservation{aoPolicy, aoName, aoQuantity, aoMint, aoOwnerAddress, aoDeposit, aoOutputs}
-    | quantityInMultiAsset aoPolicy aoName aoMint /= 0 =
-        Left "C3-APPROVAL-ASSET: the fold minted or burned the approval asset"
-    | length returns == 1 = Right ()
-    | otherwise =
-        Left
-            ( "C3-APPROVAL-ASSET: expected exactly one owner output returning the approval with its deposit, observed "
-                <> show (length returns)
-            )
-  where
-    returns =
-        [ ()
-        | out <- aoOutputs
-        , out ^. addrTxOutL == aoOwnerAddress
-        , quantityInValue aoPolicy aoName (out ^. valueTxOutL) == aoQuantity
-        , let Coin c = out ^. coinTxOutL
-        , c >= aoDeposit
-        ]
+cmpApproval
+    ApprovalObservation
+        { aoPolicy
+        , aoName
+        , aoQuantity
+        , aoMint
+        , aoOwnerAddress
+        , aoDeposit
+        , aoOutputs
+        }
+        | quantityInMultiAsset aoPolicy aoName aoMint /= 0 =
+            Left "C3-APPROVAL-ASSET: the fold minted or burned the approval asset"
+        | length returns == 1 = Right ()
+        | otherwise =
+            Left
+                ( "C3-APPROVAL-ASSET: expected exactly one owner output returning the approval with its deposit, observed "
+                    <> show (length returns)
+                )
+      where
+        returns =
+            [ ()
+            | out <- aoOutputs
+            , out ^. addrTxOutL == aoOwnerAddress
+            , quantityInValue aoPolicy aoName (out ^. valueTxOutL) == aoQuantity
+            , let Coin c = out ^. coinTxOutL
+            , c >= aoDeposit
+            ]
 
 data HolderObservation = HolderObservation
     { hoExpectedTxIn :: TxIn
@@ -788,7 +908,8 @@ wrong-key holder candidate is.
 cmpHolder :: HolderObservation -> Either String ()
 cmpHolder HolderObservation{hoExpectedTxIn, hoOtherCandidates, hoInputs}
     | not (Set.member hoExpectedTxIn hoInputs) =
-        Left "C3-HOLDER-TXIN: the exact keyed holder input is not spent by the body"
+        Left
+            "C3-HOLDER-TXIN: the exact keyed holder input is not spent by the body"
     | any (`Set.member` hoInputs) hoOtherCandidates =
         Left "C3-HOLDER-TXIN: a wrong-key holder input is spent by the body"
     | otherwise = Right ()
@@ -805,19 +926,28 @@ data DestinationObservation = DestinationObservation
 with the keyed asset, the booked inline datum and at least the floor.
 -}
 cmpDestination :: DestinationObservation -> Either String ()
-cmpDestination DestinationObservation{doAddress, doDatum, doAsset = (policy, asset), doFloor, doOutputs}
-    | not (null matching) = Right ()
-    | otherwise = Left "C3-DESTINATION: no output pays the named address with the keyed asset, datum and floor"
-  where
-    matching =
-        [ ()
-        | out <- doOutputs
-        , out ^. addrTxOutL == doAddress
-        , quantityInValue policy asset (out ^. valueTxOutL) >= 1
-        , let Coin c = out ^. coinTxOutL
-        , c >= doFloor
-        , inlineDatumData out == doDatum
-        ]
+cmpDestination
+    DestinationObservation
+        { doAddress
+        , doDatum
+        , doAsset = (policy, asset)
+        , doFloor
+        , doOutputs
+        }
+        | not (null matching) = Right ()
+        | otherwise =
+            Left
+                "C3-DESTINATION: no output pays the named address with the keyed asset, datum and floor"
+      where
+        matching =
+            [ ()
+            | out <- doOutputs
+            , out ^. addrTxOutL == doAddress
+            , quantityInValue policy asset (out ^. valueTxOutL) >= 1
+            , let Coin c = out ^. coinTxOutL
+            , c >= doFloor
+            , inlineDatumData out == doDatum
+            ]
 
 data CustodyObservation = CustodyObservation
     { cuInput :: TxIn
@@ -835,27 +965,36 @@ approval/change output at the same address is not custody refund
 value, matching the constitution's realization of a custody refund.
 -}
 cmpCustodyRefund :: CustodyObservation -> Either String ()
-cmpCustodyRefund CustodyObservation{cuInput, cuRefundAddr, cuOwed, cuPolicies, cuInputs, cuOutputs}
-    | not (Set.member cuInput cuInputs) =
-        Left "C3-CUSTODY-REFUND: the exact observed custody input is not consumed"
-    | credited >= cuOwed = Right ()
-    | otherwise =
-        Left
-            ( "C3-CUSTODY-REFUND: the token-free refund credited at the recorded address ("
-                <> show credited
-                <> ") falls short of the observed custody coin ("
-                <> show cuOwed
-                <> ")"
-            )
-  where
-    credited =
-        sum
-            [ c
-            | out <- cuOutputs
-            , out ^. addrTxOutL == cuRefundAddr
-            , not (any (`carriesPolicyAsset` out) cuPolicies)
-            , let Coin c = out ^. coinTxOutL
-            ]
+cmpCustodyRefund
+    CustodyObservation
+        { cuInput
+        , cuRefundAddr
+        , cuOwed
+        , cuPolicies
+        , cuInputs
+        , cuOutputs
+        }
+        | not (Set.member cuInput cuInputs) =
+            Left
+                "C3-CUSTODY-REFUND: the exact observed custody input is not consumed"
+        | credited >= cuOwed = Right ()
+        | otherwise =
+            Left
+                ( "C3-CUSTODY-REFUND: the token-free refund credited at the recorded address ("
+                    <> show credited
+                    <> ") falls short of the observed custody coin ("
+                    <> show cuOwed
+                    <> ")"
+                )
+      where
+        credited =
+            sum
+                [ c
+                | out <- cuOutputs
+                , out ^. addrTxOutL == cuRefundAddr
+                , not (any (`carriesPolicyAsset` out) cuPolicies)
+                , let Coin c = out ^. coinTxOutL
+                ]
 
 {- | Whether an output carries any asset under a policy column, used
 to keep token carriers out of a custody refund's credited value and
@@ -881,13 +1020,13 @@ sameOutputAs a b =
 -- landed fold: a moving mirror alone does not show the trie the chain
 -- committed.
 -}
-assertChainRootMatches ::
-    CageConfig ->
-    Cage.Provider IO ->
-    TokenId ->
-    Root ->
-    String ->
-    IO ()
+assertChainRootMatches
+    :: CageConfig
+    -> Cage.Provider IO
+    -> TokenId
+    -> Root
+    -> String
+    -> IO ()
 assertChainRootMatches cfg prov tokenId mirrorRoot what = do
     cageUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId cageUtxos of
@@ -900,7 +1039,9 @@ assertChainRootMatches cfg prov tokenId mirrorRoot what = do
                             <> what
                             <> " differs from the mirror root"
                         )
-            _ -> expectationFailure ("setup: state UTxO carries no state datum after the " <> what)
+            _ ->
+                expectationFailure
+                    ("setup: state UTxO carries no state datum after the " <> what)
         Nothing ->
             expectationFailure ("setup: state UTxO not found after the " <> what)
 
@@ -915,7 +1056,8 @@ newtype SignerObservation = SignerObservation
 cmpBodySigner :: SignerObservation -> Either String ()
 cmpBodySigner SignerObservation{soSigners}
     | Set.null soSigners = Right ()
-    | otherwise = Left "C3-BODY-SIGNER: the unsigned fold body requires a signature"
+    | otherwise =
+        Left "C3-BODY-SIGNER: the unsigned fold body requires a signature"
 
 insertSigner :: SignerObservation -> SignerObservation
 insertSigner obs = obs{soSigners = Set.insert () (soSigners obs)}
@@ -924,19 +1066,20 @@ insertSigner obs = obs{soSigners = Set.insert () (soSigners obs)}
 -- Observation builders over captured state
 -- ---------------------------------------------------------
 
-mintObservationOf :: CageConfig -> ConwayTx -> [OnChainRequest] -> MintObservation
+mintObservationOf
+    :: CageConfig -> ConwayTx -> [OnChainRequest] -> MintObservation
 mintObservationOf cfg tx requests =
     MintObservation
         { moExpected = expectedMintOf cfg requests
         , moActual = nonzeroMint (tx ^. bodyTxL . mintTxBodyL)
         }
 
-approvalObservationOf ::
-    CageConfig ->
-    ConwayTx ->
-    OnChainRequest ->
-    AssetName ->
-    ApprovalObservation
+approvalObservationOf
+    :: CageConfig
+    -> ConwayTx
+    -> OnChainRequest
+    -> AssetName
+    -> ApprovalObservation
 approvalObservationOf cfg tx req approvalName =
     ApprovalObservation
         { aoPolicy = policyIdFromPin (cfgApplicationPolicy cfg)
@@ -957,13 +1100,18 @@ at the owner, where the deposit floor does apply.
 -}
 approvalFloorOf :: Edge -> OnChainRequest -> Integer
 approvalFloorOf edge req
-    | edge == edgeUpdateTerminal || edge == edgeDeleteAbsent || edge == edgeDeleteActive =
+    | edge == edgeUpdateTerminal
+        || edge == edgeDeleteAbsent
+        || edge == edgeDeleteActive =
         requestDeposit req
     | otherwise = 0
 
 signerObservationOf :: ConwayTx -> SignerObservation
 signerObservationOf tx =
-    SignerObservation{soSigners = Set.map (const ()) (tx ^. bodyTxL . reqSignerHashesTxBodyL)}
+    SignerObservation
+        { soSigners =
+            Set.map (const ()) (tx ^. bodyTxL . reqSignerHashesTxBodyL)
+        }
 
 data DestinationShape = DestinationShape
     { dsAddress :: Addr
@@ -976,12 +1124,12 @@ kinds pay the request's named address with the booked datum; an absent
 insert pays the cage a custody output whose datum records the request's
 own destination address as the refund.
 -}
-destinationShapeOf ::
-    CageConfig ->
-    Edge ->
-    ByteString ->
-    OnChainRequest ->
-    Maybe DestinationShape
+destinationShapeOf
+    :: CageConfig
+    -> Edge
+    -> ByteString
+    -> OnChainRequest
+    -> Maybe DestinationShape
 destinationShapeOf cfg edge key req
     | edge == edgeInsertActive || edge == edgeUpdateActive =
         delivering (cfgActivePolicy cfg)
@@ -997,9 +1145,17 @@ destinationShapeOf cfg edge key req
     delivering pin = do
         addr <- addrFromBytes (fst (requestDestination req))
         datum <- preimageOf (snd (requestDestination req))
-        pure DestinationShape{dsAddress = addr, dsDatum = datum, dsAsset = (policyIdFromPin pin, keyAssetName key)}
+        pure
+            DestinationShape
+                { dsAddress = addr
+                , dsDatum = datum
+                , dsAsset = (policyIdFromPin pin, keyAssetName key)
+                }
 
-observedRequestAt :: TxIn -> [(TxIn, TxOut ConwayEra)] -> IO (TxOut ConwayEra, OnChainRequest)
+observedRequestAt
+    :: TxIn
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO (TxOut ConwayEra, OnChainRequest)
 observedRequestAt ref utxos = case lookup ref utxos of
     Just out -> case extractCageDatum out of
         Just (RequestDatum request) -> pure (out, request)
@@ -1012,23 +1168,29 @@ observedApprovalName cfg out = case out ^. valueTxOutL of
     MaryValue _ (MultiAsset m) -> case Map.lookup (policyIdFromPin (cfgApplicationPolicy cfg)) m of
         Just names
             | [(name, 1)] <- Map.toList names -> pure name
-        _ -> fail "observed request does not carry exactly one approval asset of quantity 1"
+        _ ->
+            fail
+                "observed request does not carry exactly one approval asset of quantity 1"
 
 ownerAddressOf :: CageConfig -> OnChainRequest -> Addr
 ownerAddressOf cfg req =
     addrFromKeyHashBytes (network cfg) (fromBuiltin (requestOwner req))
 
 -- | The keyed absent-custody UTxO: policy and key exact, quantity one.
-findKeyedCustody ::
-    CageConfig ->
-    ByteString ->
-    [(TxIn, TxOut ConwayEra)] ->
-    Maybe (TxIn, Integer, ByteString)
+findKeyedCustody
+    :: CageConfig
+    -> ByteString
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Maybe (TxIn, Integer, ByteString)
 findKeyedCustody cfg key utxos =
     case [ (i, coin, refund)
          | (i, o) <- utxos
          , let Coin coin = o ^. coinTxOutL
-         , quantityInValue (policyIdFromPin (cfgAbsentPolicy cfg)) (keyAssetName key) (o ^. valueTxOutL) == 1
+         , quantityInValue
+            (policyIdFromPin (cfgAbsentPolicy cfg))
+            (keyAssetName key)
+            (o ^. valueTxOutL)
+            == 1
          , Just (AbsentCustody refund) <- [extractCageDatum o]
          ] of
         [(found, coin, refund)] -> Just (found, coin, refund)
@@ -1042,12 +1204,12 @@ decodeRefund bytes = case addrFromBytes bytes of
 {- | The fold's context: the registry's own, plus this scenario's
 distinct destination-datum preimages.
 -}
-contextFor ::
-    CageConfig ->
-    NamingCodes ->
-    Cage.Provider IO ->
-    [(TxIn, TxOut ConwayEra)] ->
-    IO RegistryContext
+contextFor
+    :: CageConfig
+    -> NamingCodes
+    -> Cage.Provider IO
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO RegistryContext
 contextFor cfg codes prov refs = do
     base <- Edges.registryContextFor cfg codes prov refs
     pure
@@ -1062,15 +1224,18 @@ modifyActionsOf :: ConwayTx -> IO [[ProofStep]]
 modifyActionsOf tx =
     case [ actions
          | (_, (d, _)) <- Map.toList rdmrs
-         , Just (Modify actions) <- [fromBuiltinData (BuiltinData (getPlutusData d))]
+         , Just (Modify actions) <-
+            [fromBuiltinData (BuiltinData (getPlutusData d))]
          ] of
         [actions] -> pure (map stepsOf actions)
-        _ -> fail "state redeemer did not decode to exactly one Modify action list"
+        _ ->
+            fail "state redeemer did not decode to exactly one Modify action list"
   where
     Redeemers rdmrs = tx ^. witsTxL . rdmrsTxWitsL
     stepsOf (Update steps) = steps
     stepsOf Rejected =
-        error "modifyActionsOf: a fold state redeemer carried a Rejected action"
+        error
+            "modifyActionsOf: a fold state redeemer carried a Rejected action"
 
 -- ---------------------------------------------------------
 -- Value helpers
@@ -1121,9 +1286,15 @@ inlineDatumData out = case out ^. datumTxOutL of
 application policy when the map is empty: the mint mutant's
 single-field change.
 -}
-bumpOne :: CageConfig -> Map.Map (PolicyID, AssetName) Integer -> Map.Map (PolicyID, AssetName) Integer
+bumpOne
+    :: CageConfig
+    -> Map.Map (PolicyID, AssetName) Integer
+    -> Map.Map (PolicyID, AssetName) Integer
 bumpOne cfg m = case Map.toList m of
-    [] -> Map.singleton (policyIdFromPin (cfgApplicationPolicy cfg), AssetName "c3-mutant") 1
+    [] ->
+        Map.singleton
+            (policyIdFromPin (cfgApplicationPolicy cfg), AssetName "c3-mutant")
+            1
     ((k, v) : _) -> Map.insert k (v + 1) m
 
 -- ---------------------------------------------------------
@@ -1136,7 +1307,8 @@ invocation as the capture.
 livePass :: String -> Either String () -> Expectation
 livePass _ (Right ()) = pure ()
 livePass label (Left err) =
-    expectationFailure ("live observation failed: " <> label <> ": " <> err)
+    expectationFailure
+        ("live observation failed: " <> label <> ": " <> err)
 
 {- | The single-field mutant must fail with its own C3 token, proving
 the live comparison discriminates that class in this same invocation.
@@ -1147,4 +1319,10 @@ mutantFails label token result = case result of
     Left err ->
         unless (token `isPrefixOf` err) $
             expectationFailure
-                ("mutant failed with the wrong token: " <> label <> ": expected " <> token <> " at the start of " <> err)
+                ( "mutant failed with the wrong token: "
+                    <> label
+                    <> ": expected "
+                    <> token
+                    <> " at the start of "
+                    <> err
+                )

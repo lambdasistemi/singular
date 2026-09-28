@@ -12,19 +12,19 @@ carried. Both are derived from the comparison that actually ran — the compared
 objects' own fields, intersected with the declared surface — so a comparison
 that covers a projection cannot report otherwise.
 -}
-module Conformance.Compare.Registration (
-    Declared (..),
-    Delivery (..),
-    Difference (..),
-    Agreement (..),
-    declaredSurface,
-    deliveryObservation,
-    compareRegistration,
-    outputFloorAgrees,
-    rootOf,
-    approvalAssetName,
-    edgeOrdinal,
-) where
+module Conformance.Compare.Registration
+    ( Declared (..)
+    , Delivery (..)
+    , Difference (..)
+    , Agreement (..)
+    , declaredSurface
+    , deliveryObservation
+    , compareRegistration
+    , outputFloorAgrees
+    , rootOf
+    , approvalAssetName
+    , edgeOrdinal
+    ) where
 
 import Data.Aeson (Value (..), encode, object, (.:), (.=))
 import Data.Aeson.Key qualified as Key
@@ -80,7 +80,11 @@ declaredSurface = parseEither $ \value -> do
         _ -> fail "driver corpus is not an object"
     observations <- surface .: "observations"
     unobservable <- surface .: "unobservable"
-    pure Declared{declaredObservations = observations, declaredUnobservable = unobservable}
+    pure
+        Declared
+            { declaredObservations = observations
+            , declaredUnobservable = unobservable
+            }
 
 -- | Exactly the object this chapter has always compared.
 deliveryObservation :: Delivery -> Value
@@ -107,7 +111,8 @@ must be at least the corresponding model value. Surplus is allowed while every
 other field, and the number and order of outputs and payments, is compared for
 equality.
 -}
-compareRegistration :: Declared -> Value -> Value -> Either [Difference] Agreement
+compareRegistration
+    :: Declared -> Value -> Value -> Either [Difference] Agreement
 compareRegistration declared expected observed =
     case claimed <> missing <> disagreeing of
         [] ->
@@ -132,7 +137,10 @@ compareRegistration declared expected observed =
         ]
     -- A declared observation absent from either side is not accounted for.
     missing =
-        [ Difference name (fromMaybe Null (at name expected)) (fromMaybe Null (at name observed))
+        [ Difference
+            name
+            (fromMaybe Null (at name expected))
+            (fromMaybe Null (at name observed))
         | name <- sort (declaredObservations declared)
         , at name expected == Nothing || at name observed == Nothing
         ]
@@ -154,10 +162,14 @@ compareRegistration declared expected observed =
                  , KM.lookup "refunds" expectedFields
                  , KM.lookup "refunds" observedFields
                  ) of
-                (Just expectedOutputs, Just observedOutputs, Just expectedRefunds, Just observedRefunds) ->
-                    floorsAgree "lovelace" expectedOutputs observedOutputs
-                        && floorsAgree "value" expectedRefunds observedRefunds
-                        && stripFloors expectedTx == stripFloors observedTx
+                ( Just expectedOutputs
+                    , Just observedOutputs
+                    , Just expectedRefunds
+                    , Just observedRefunds
+                    ) ->
+                        floorsAgree "lovelace" expectedOutputs observedOutputs
+                            && floorsAgree "value" expectedRefunds observedRefunds
+                            && stripFloors expectedTx == stripFloors observedTx
                 _ -> False
         _ -> False
     -- Two lists of objects agree when they have the same length, each
@@ -166,7 +178,8 @@ compareRegistration declared expected observed =
         (Array expectedEntries, Array observedEntries) ->
             V.length expectedEntries == V.length observedEntries
                 && and (V.zipWith (floorMet field) expectedEntries observedEntries)
-                && fmap (without field) expectedEntries == fmap (without field) observedEntries
+                && fmap (without field) expectedEntries
+                    == fmap (without field) observedEntries
         _ -> False
     floorMet field expectedEntry observedEntry = case (expectedEntry, observedEntry) of
         (Object expectedFields, Object observedFields) ->
@@ -224,7 +237,7 @@ rootOf leaves = u64bytes (fnv1a (concatMap commit (sortOn fst leaves)))
   where
     commit (key, leaf) =
         let byte = fromIntegral (key `mod` 256)
-         in u64bytes (fnv1a [byte]) <> [byte, leaf]
+        in  u64bytes (fnv1a [byte]) <> [byte, leaf]
 
 fnv1a :: [Word8] -> Word64
 fnv1a = foldl step 14695981039346656037
@@ -233,7 +246,9 @@ fnv1a = foldl step 14695981039346656037
 
 u64bytes :: Word64 -> [Word8]
 u64bytes value =
-    [fromIntegral ((value `shiftR` place) .&. 0xFF) | place <- [56, 48, 40, 32, 24, 16, 8, 0]]
+    [ fromIntegral ((value `shiftR` place) .&. 0xFF)
+    | place <- [56, 48, 40, 32, 24, 16, 8, 0]
+    ]
 
 -- | @Singular.edgeOrdinal@: the byte each edge commits under.
 edgeOrdinal :: Text -> Maybe Word8
@@ -257,8 +272,12 @@ function, so like 'rootOf' it is not trusted on sight — a control requires it 
 reproduce every approval asset name and destination commitment in the committed
 corpus, from that row's own request.
 -}
-approvalAssetName :: Text -> Integer -> Integer -> Integer -> Maybe Integer
+approvalAssetName
+    :: Text -> Integer -> Integer -> Integer -> Maybe Integer
 approvalAssetName edge key owner destination = do
     ordinal <- edgeOrdinal edge
     let byte value = fromIntegral (value `mod` 256)
-    pure (fromIntegral (fnv1a [ordinal, byte key, byte owner, byte destination] .&. 0xFFFFFFFF))
+    pure
+        ( fromIntegral
+            (fnv1a [ordinal, byte key, byte owner, byte destination] .&. 0xFFFFFFFF)
+        )

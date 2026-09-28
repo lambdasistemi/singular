@@ -16,15 +16,15 @@ This module owns no duty decisions and no transaction assembly; see
 "Singular.Registry.TxBuilder.Update", which re-exports the context
 types unchanged (#267).
 -}
-module Singular.Registry.TxBuilder.Update.Context (
-    RegistryContext (..),
-    emptyRegistryContext,
-    completeContext,
-    queryContext,
-    computeProofs,
-    prepareState,
-    computeUpperSlot,
-) where
+module Singular.Registry.TxBuilder.Update.Context
+    ( RegistryContext (..)
+    , emptyRegistryContext
+    , completeContext
+    , queryContext
+    , computeProofs
+    , prepareState
+    , computeUpperSlot
+    ) where
 
 import Control.Exception (SomeException, try)
 import Control.Monad (when)
@@ -33,53 +33,53 @@ import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Ord (Down (..))
 import Data.Time.Clock (getCurrentTime)
-import Data.Time.Clock.POSIX (
-    utcTimeToPOSIXSeconds,
- )
+import Data.Time.Clock.POSIX
+    ( utcTimeToPOSIXSeconds
+    )
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    coinTxOutL,
-    datumTxOutL,
-    mkBasicTxOut,
-    referenceScriptTxOutL,
-    valueTxOutL,
- )
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , coinTxOutL
+    , datumTxOutL
+    , mkBasicTxOut
+    , referenceScriptTxOutL
+    , valueTxOutL
+    )
 import Cardano.Ledger.BaseTypes (StrictMaybe (..))
 import Cardano.Ledger.Core (Script)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Slotting.Slot (SlotNo)
 
-import Singular.Registry.Config (
-    CageConfig (..),
- )
-import Singular.Registry.Ledger (
-    ConwayEra,
-    PParams,
-    Root (..),
-    TokenId,
-    TxIn,
- )
-import Singular.Registry.Provider (
-    Provider (..),
- )
-import Singular.Registry.Trie (
-    Trie (..),
-    TrieManager (..),
- )
+import Singular.Registry.Config
+    ( CageConfig (..)
+    )
+import Singular.Registry.Ledger
+    ( ConwayEra
+    , PParams
+    , Root (..)
+    , TokenId
+    , TxIn
+    )
+import Singular.Registry.Provider
+    ( Provider (..)
+    )
+import Singular.Registry.Trie
+    ( Trie (..)
+    , TrieManager (..)
+    )
 import Singular.Registry.TxBuilder.Internal.Edges
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainRequest (..),
-    OnChainRoot (..),
-    OnChainTokenState (..),
-    ProofStep,
- )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRequest (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
+    , ProofStep
+    )
 
 {- | What a fold needs in hand to discharge the obligations: the three
 token policies' scripts by kind, the cage script (custody spends run it),
@@ -145,13 +145,13 @@ the one this build's own state continuation runs. The caller-supplied
 value always wins; only an omission triggers a query (#267: moved
 verbatim from the facade's inline completion).
 -}
-completeContext ::
-    CageConfig ->
-    Provider IO ->
-    Addr ->
-    Script ConwayEra ->
-    RegistryContext ->
-    IO RegistryContext
+completeContext
+    :: CageConfig
+    -> Provider IO
+    -> Addr
+    -> Script ConwayEra
+    -> RegistryContext
+    -> IO RegistryContext
 completeContext cfg prov addr script ctx0 = do
     -- The cage's own UTxOs are where custody sits; the caller need not
     -- have queried them, and the cage script is this build's own.
@@ -180,12 +180,12 @@ completeContext cfg prov addr script ctx0 = do
 {- | Query cage UTxOs, find the state and request
 UTxOs, pick a fee-paying wallet UTxO.
 -}
-queryContext ::
-    CageConfig ->
-    Provider IO ->
-    TokenId ->
-    Addr ->
-    IO
+queryContext
+    :: CageConfig
+    -> Provider IO
+    -> TokenId
+    -> Addr
+    -> IO
         ( (TxIn, TxOut ConwayEra)
         , [(TxIn, TxOut ConwayEra)]
         , (TxIn, TxOut ConwayEra)
@@ -228,11 +228,11 @@ queryContext cfg prov tid addr = do
 {- | Run speculative trie operations to compute
 proofs and the new root hash.
 -}
-computeProofs ::
-    TrieManager IO ->
-    TokenId ->
-    [(TxIn, TxOut ConwayEra)] ->
-    IO ([[ProofStep]], Root)
+computeProofs
+    :: TrieManager IO
+    -> TokenId
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO ([[ProofStep]], Root)
 computeProofs tm tid reqUtxos =
     withSpeculativeTrie tm tid $ \trie -> do
         ps <- mapM (processRequest trie) reqUtxos
@@ -242,11 +242,11 @@ computeProofs tm tid reqUtxos =
 {- | Extract old state, build new state output,
 cage script, and owner key hash.
 -}
-prepareState ::
-    CageConfig ->
-    TxOut ConwayEra ->
-    Root ->
-    (OnChainTokenState, TxOut ConwayEra, Script ConwayEra)
+prepareState
+    :: CageConfig
+    -> TxOut ConwayEra
+    -> Root
+    -> (OnChainTokenState, TxOut ConwayEra, Script ConwayEra)
 prepareState cfg stateOut newRoot =
     let scriptAddr =
             cageAddrFromCfg cfg (network cfg)
@@ -272,14 +272,14 @@ prepareState cfg stateOut newRoot =
                     .~ mkInlineDatum
                         (toPlcData newStateDatum)
         script = mkCageScript cfg
-     in (oldState, newStateOut, script)
+    in  (oldState, newStateOut, script)
 
 -- | Compute the validity upper slot.
-computeUpperSlot ::
-    Provider IO ->
-    OnChainTokenState ->
-    [(TxIn, TxOut ConwayEra)] ->
-    IO SlotNo
+computeUpperSlot
+    :: Provider IO
+    -> OnChainTokenState
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO SlotNo
 computeUpperSlot prov oldState reqUtxos = do
     let extractSubmittedAt (_, rOut) =
             case extractCageDatum rOut of
@@ -313,11 +313,11 @@ computeUpperSlot prov oldState reqUtxos = do
                     [30, 5, 2]
 
 -- | Process a single request.
-processRequest ::
-    (Monad m) =>
-    Trie m ->
-    (TxIn, TxOut ConwayEra) ->
-    m [ProofStep]
+processRequest
+    :: (Monad m)
+    => Trie m
+    -> (TxIn, TxOut ConwayEra)
+    -> m [ProofStep]
 processRequest trie (_txIn, txOut) =
     walkEdge trie (requestKey req) (requestEdge req)
   where
@@ -336,4 +336,7 @@ reference it.
 adaOnlyOutput :: TxOut ConwayEra -> Bool
 adaOnlyOutput out =
     (case out ^. valueTxOutL of MaryValue _ (MultiAsset m) -> Map.null m)
-        && (case out ^. referenceScriptTxOutL of SNothing -> True; SJust _ -> False)
+        && ( case out ^. referenceScriptTxOutL of
+                SNothing -> True
+                SJust _ -> False
+           )

@@ -13,11 +13,11 @@ ledger's error text the field is @null@ rather than a guess.
 The Absent refusal's accepting control is the story's own retirement,
 so its @controlTxid@ is the retirement's transaction id.
 -}
-module UpdateTerminal.Observation (
-    Observed (..),
-    observation,
-    writeObservation,
-) where
+module UpdateTerminal.Observation
+    ( Observed (..)
+    , observation
+    , writeObservation
+    ) where
 
 import Data.Aeson (Value (..), object, (.=))
 import Data.Aeson.Encode.Pretty (encodePretty)
@@ -52,7 +52,7 @@ observation :: Observed -> Value
 observation o =
     let r = obsRetirement o
         unknown = obsUnknown o
-     in object
+    in  object
             [ "edge" .= ("updateTerminal" :: T.Text)
             , "open"
                 .= object
@@ -118,8 +118,8 @@ observation o =
                             , "distinguisher"
                                 .= ( "the control retired a key that IS \
                                      \Active in this same registry; this \
-                                     \one was never inserted at all" ::
-                                        T.Text
+                                     \one was never inserted at all"
+                                        :: T.Text
                                    )
                             ]
                     , "absent"
@@ -131,8 +131,8 @@ observation o =
                             , "distinguisher"
                                 .= ( "the control retired a key that IS \
                                      \Active in this same registry; this \
-                                     \one was witnessed Absent" ::
-                                        T.Text
+                                     \one was witnessed Absent"
+                                        :: T.Text
                                    )
                             ]
                     ]

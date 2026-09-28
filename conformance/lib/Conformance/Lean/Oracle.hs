@@ -7,11 +7,23 @@ import Data.ByteString.Lazy.Char8 qualified as BSL
 import System.Exit (ExitCode (..))
 import System.Process (readProcessWithExitCode)
 
-expectedObservation :: FilePath -> [String] -> Value -> IO (Either String Value)
+expectedObservation
+    :: FilePath -> [String] -> Value -> IO (Either String Value)
 expectedObservation executable arguments scenario = do
-    (status, output, diagnostics) <- readProcessWithExitCode executable arguments (BSL.unpack (encode scenario) <> "\n")
+    (status, output, diagnostics) <-
+        readProcessWithExitCode
+            executable
+            arguments
+            (BSL.unpack (encode scenario) <> "\n")
     pure $ case status of
-        ExitFailure code -> Left ("Lean evaluator failed (" <> show code <> "): " <> diagnostics <> output)
+        ExitFailure code ->
+            Left
+                ( "Lean evaluator failed ("
+                    <> show code
+                    <> "): "
+                    <> diagnostics
+                    <> output
+                )
         ExitSuccess -> case eitherDecode (BSL.pack output) of
             Left reason -> Left ("invalid Lean evaluator response: " <> reason)
             Right expected -> Right expected
@@ -34,6 +46,9 @@ modelVerdict row judged = do
                 _ -> Left "the driver's judgement is neither settled nor a reason"
         _ -> pure (outcome, reason)
   where
-    field name (Object fields) = maybe (Left ("model row has no " <> show name)) Right
-        (KM.lookup name fields)
+    field name (Object fields) =
+        maybe
+            (Left ("model row has no " <> show name))
+            Right
+            (KM.lookup name fields)
     field name _ = Left ("model row is not an object reading " <> show name)

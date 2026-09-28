@@ -13,10 +13,10 @@ default parameters. The state validator is resolved
 through its published reference output; a wallet
 without one is refused 'StateValidatorNotPublished'.
 -}
-module Singular.Registry.TxBuilder.Boot (
-    bootTokenImpl,
-    BootRefusal (..),
-) where
+module Singular.Registry.TxBuilder.Boot
+    ( bootTokenImpl
+    , BootRefusal (..)
+    ) where
 
 import Control.Exception (Exception (..), throwIO)
 import Data.ByteString.Short qualified as SBS
@@ -27,41 +27,47 @@ import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
-import Cardano.Ledger.Alonzo.TxBody (
-    scriptIntegrityHashTxBodyL,
- )
+import Cardano.Ledger.Alonzo.TxBody
+    ( scriptIntegrityHashTxBodyL
+    )
 import Cardano.Ledger.Api.PParams (PParams, ppCollateralPercentageL)
-import Cardano.Ledger.Api.Tx (
-    bodyTxL,
-    estimateMinFeeTx,
-    mkBasicTx,
-    witsTxL,
- )
-import Cardano.Ledger.Api.Tx.Body (
-    collateralInputsTxBodyL,
-    collateralReturnTxBodyL,
-    feeTxBodyL,
-    inputsTxBodyL,
-    mintTxBodyL,
-    mkBasicTxBody,
-    outputsTxBodyL,
-    referenceInputsTxBodyL,
-    totalCollateralTxBodyL,
- )
-import Cardano.Ledger.Api.Tx.Out (coinTxOutL, datumTxOutL, mkBasicTxOut, referenceScriptTxOutL, valueTxOutL)
-import Cardano.Ledger.Api.Tx.Wits (
-    Redeemers (..),
-    rdmrsTxWitsL,
- )
+import Cardano.Ledger.Api.Tx
+    ( bodyTxL
+    , estimateMinFeeTx
+    , mkBasicTx
+    , witsTxL
+    )
+import Cardano.Ledger.Api.Tx.Body
+    ( collateralInputsTxBodyL
+    , collateralReturnTxBodyL
+    , feeTxBodyL
+    , inputsTxBodyL
+    , mintTxBodyL
+    , mkBasicTxBody
+    , outputsTxBodyL
+    , referenceInputsTxBodyL
+    , totalCollateralTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( coinTxOutL
+    , datumTxOutL
+    , mkBasicTxOut
+    , referenceScriptTxOutL
+    , valueTxOutL
+    )
+import Cardano.Ledger.Api.Tx.Wits
+    ( Redeemers (..)
+    , rdmrsTxWitsL
+    )
 import Cardano.Ledger.BaseTypes (Inject (inject), StrictMaybe (..))
-import Cardano.Ledger.Conway.Scripts (
-    ConwayPlutusPurpose (..),
- )
+import Cardano.Ledger.Conway.Scripts
+    ( ConwayPlutusPurpose (..)
+    )
 import Cardano.Ledger.Core (TxOut, hashScript)
-import Cardano.Ledger.Mary.Value (
-    MaryValue (..),
-    MultiAsset (..),
- )
+import Cardano.Ledger.Mary.Value
+    ( MaryValue (..)
+    , MultiAsset (..)
+    )
 import Cardano.Ledger.TxIn (TxIn)
 import Data.Foldable (toList)
 import Data.List (find, sortOn)
@@ -69,30 +75,30 @@ import Data.Ord (Down (..))
 
 import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Config (
-    CageConfig (..),
-    bootStateFromCfg,
- )
-import Singular.Registry.Ledger (
-    AssetName (..),
-    Coin (..),
-    ConwayEra,
- )
+import Singular.Registry.Config
+    ( CageConfig (..)
+    , bootStateFromCfg
+    )
+import Singular.Registry.Ledger
+    ( AssetName (..)
+    , Coin (..)
+    , ConwayEra
+    )
 import Singular.Registry.Provider (Provider (..))
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
-import Singular.Registry.Types (
-    CageDatum (..),
-    MintRedeemer (..),
-    OnChainRoot (..),
-    OnChainTxOutRef,
- )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , MintRedeemer (..)
+    , OnChainRoot (..)
+    , OnChainTxOutRef
+    )
 
 -- | Locate the wallet UTxO whose on-chain reference matches @cageSeed@.
-lookupSeed ::
-    OnChainTxOutRef ->
-    [(TxIn, TxOut ConwayEra)] ->
-    Maybe (TxIn, TxOut ConwayEra)
+lookupSeed
+    :: OnChainTxOutRef
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Maybe (TxIn, TxOut ConwayEra)
 lookupSeed target =
     find (\(tin, _) -> txInToRef tin == target)
 
@@ -108,10 +114,10 @@ Discovery rather than a new argument, because every caller of
 `bootTokenImpl` boots from a wallet the publisher writes to. A session
 publishes once — `publishStateRef` — and every boot after it references.
 -}
-lookupStateRef ::
-    CageConfig ->
-    [(TxIn, TxOut ConwayEra)] ->
-    Maybe (TxIn, TxOut ConwayEra)
+lookupStateRef
+    :: CageConfig
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Maybe (TxIn, TxOut ConwayEra)
 lookupStateRef cfg =
     find
         ( \(_, out) -> case out ^. referenceScriptTxOutL of
@@ -140,11 +146,11 @@ instance Exception BootRefusal where
 Refuses 'StateValidatorNotPublished' when the payer's wallet holds no
 publication of the state validator.
 -}
-bootTokenImpl ::
-    CageConfig ->
-    Provider IO ->
-    Addr ->
-    IO ConwayTx
+bootTokenImpl
+    :: CageConfig
+    -> Provider IO
+    -> Addr
+    -> IO ConwayTx
 bootTokenImpl cfg prov addr = do
     pp <- queryProtocolParams prov
     utxos <- queryUTxOs prov addr
@@ -297,27 +303,27 @@ Nothing here invents a fee: `estimateMinFeeTx` is the ledger's own
 estimator, given the byte count this transaction's own reference inputs
 carry.
 -}
-payForReferenceScripts ::
-    PParams ConwayEra ->
-    -- | the compiled bytes of the script this boot references
-    Int ->
-    ConwayTx ->
-    ConwayTx
+payForReferenceScripts
+    :: PParams ConwayEra
+    -> Int
+    -- ^ the compiled bytes of the script this boot references
+    -> ConwayTx
+    -> ConwayTx
 payForReferenceScripts pp stateBytes tx =
     let Coin currentFee = tx ^. bodyTxL . feeTxBodyL
         Coin needed = estimateMinFeeTx pp tx 1 0 stateBytes
         delta = needed - currentFee
-     in if delta <= 0
+    in  if delta <= 0
             then tx
             else
                 let outs = toList (tx ^. bodyTxL . outputsTxBodyL)
-                 in case reverse outs of
+                in  case reverse outs of
                         [] -> tx
                         (change : earlier) ->
                             let Coin changeCoin = change ^. coinTxOutL
                                 changePaid =
                                     change & coinTxOutL .~ Coin (changeCoin - delta)
-                             in tx
+                            in  tx
                                     & bodyTxL . feeTxBodyL .~ Coin needed
                                     & bodyTxL . outputsTxBodyL
                                         .~ StrictSeq.fromList
@@ -337,12 +343,12 @@ collateral return carrying the rest of the input back. Both are derived
 from the fee this transaction actually pays and the protocol's own
 percentage — nothing here is a chosen number.
 -}
-declareCollateral ::
-    PParams ConwayEra ->
-    [(TxIn, TxOut ConwayEra)] ->
-    Addr ->
-    ConwayTx ->
-    ConwayTx
+declareCollateral
+    :: PParams ConwayEra
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Addr
+    -> ConwayTx
+    -> ConwayTx
 declareCollateral pp resolvable changeAddr tx =
     let collateral = tx ^. bodyTxL . collateralInputsTxBodyL
         backing =
@@ -356,7 +362,7 @@ declareCollateral pp resolvable changeAddr tx =
         percent = toInteger (pp ^. ppCollateralPercentageL)
         required = (fee * percent + 99) `div` 100
         back = backing - required
-     in if Set.null collateral || backing <= required
+    in  if Set.null collateral || backing <= required
             then tx
             else
                 tx

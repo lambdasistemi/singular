@@ -5,19 +5,31 @@ module Main (main) where
 
 import Data.ByteString qualified as BS
 import PlutusCore.Data (Data (..))
-import PlutusCore.Evaluation.Machine.ExBudgetingDefaults (defaultCekParametersForTesting)
+import PlutusCore.Evaluation.Machine.ExBudgetingDefaults
+    ( defaultCekParametersForTesting
+    )
 import PlutusLedgerApi.V3 (uncheckedDeserialiseUPLC)
-import Singular.Registry.Blueprint (applyDataParam, extractCompiledCode, loadBlueprint)
+import Singular.Registry.Blueprint
+    ( applyDataParam
+    , extractCompiledCode
+    , loadBlueprint
+    )
 import System.Environment (getEnv)
 import Test.Hspec (hspec, it, shouldBe)
-import UntypedPlutusCore (Program (..), fakeNameDeBruijn, termMapNames)
-import UntypedPlutusCore.Evaluation.Machine.Cek (
-    CekReport (..),
-    counting,
-    logEmitter,
-    runCekDeBruijn,
- )
-import UntypedPlutusCore.Evaluation.Machine.Cek.Internal (CekResult (..))
+import UntypedPlutusCore
+    ( Program (..)
+    , fakeNameDeBruijn
+    , termMapNames
+    )
+import UntypedPlutusCore.Evaluation.Machine.Cek
+    ( CekReport (..)
+    , counting
+    , logEmitter
+    , runCekDeBruijn
+    )
+import UntypedPlutusCore.Evaluation.Machine.Cek.Internal
+    ( CekResult (..)
+    )
 
 main :: IO ()
 main = do
@@ -28,7 +40,7 @@ main = do
             extractCompiledCode "application.application.spend" blueprint
     let evaluate context =
             let Program _ _ term = uncheckedDeserialiseUPLC (applyDataParam context script)
-             in runCekDeBruijn
+            in  runCekDeBruijn
                     defaultCekParametersForTesting
                     counting
                     logEmitter

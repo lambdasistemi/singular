@@ -10,11 +10,11 @@ state script hash, the seed @OutputReference@ used
 by boot minting, default token parameters, and
 network.
 -}
-module Singular.Registry.Config (
-    -- * Configuration
-    CageConfig (..),
-    bootStateFromCfg,
-) where
+module Singular.Registry.Config
+    ( -- * Configuration
+      CageConfig (..)
+    , bootStateFromCfg
+    ) where
 
 import Data.ByteString.Short (ShortByteString)
 import Data.ByteString.Short qualified as SBS
@@ -24,11 +24,11 @@ import Cardano.Ledger.Hashes (ScriptHash)
 
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.Registry.Ledger (Coin (..))
-import Singular.Registry.Types (
-    OnChainRoot (..),
-    OnChainTokenState (..),
-    OnChainTxOutRef,
- )
+import Singular.Registry.Types
+    ( OnChainRoot (..)
+    , OnChainTokenState (..)
+    , OnChainTxOutRef
+    )
 
 {- | Configuration for the cage script transaction
 builders.

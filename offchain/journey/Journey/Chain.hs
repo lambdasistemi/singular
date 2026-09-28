@@ -9,14 +9,14 @@ token a boot minted, signed submission that waits for confirmation, and
 'readChainState' — the state datum read straight from the chain, the
 only comparison target every verification in the journey uses.
 -}
-module Journey.Chain (
-    genesisAddr,
-    genesisSignKey,
-    cageCfg,
-    extractTokenId,
-    submitWithGenesis,
-    readChainState,
-) where
+module Journey.Chain
+    ( genesisAddr
+    , genesisSignKey
+    , cageCfg
+    , extractTokenId
+    , submitWithGenesis
+    , readChainState
+    ) where
 
 import Data.ByteString (ByteString)
 import Data.ByteString.Short (fromShort)
@@ -29,35 +29,42 @@ import Cardano.Ledger.Api.Tx (bodyTxL)
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
 import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Ledger.Mary.Value (MultiAsset (..))
-import Cardano.Node.Client.E2E.Setup (
-    Ed25519DSIGN,
-    SignKeyDSIGN,
-    addKeyWitness,
- )
-import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Cardano.Node.Client.E2E.Setup
+    ( Ed25519DSIGN
+    , SignKeyDSIGN
+    , addKeyWitness
+    )
+import Cardano.Node.Client.Submitter
+    ( SubmitResult (..)
+    , Submitter (..)
+    )
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Journey.Narration (failWith)
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (NamingCodes)
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (AssetName (..), Coin (..), TokenId (..))
+import Singular.Registry.Ledger
+    ( AssetName (..)
+    , Coin (..)
+    , TokenId (..)
+    )
 import Singular.Registry.Node (awaitTx, funderAddr, funderSignKey)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Edges qualified as Edges
-import Singular.Registry.TxBuilder.Internal (
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    computeScriptHash,
-    extractCageDatum,
-    findStateUtxo,
-    scriptHashBytes,
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainTokenState (..),
-    OnChainTxOutRef,
- )
+import Singular.Registry.TxBuilder.Internal
+    ( cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , computeScriptHash
+    , extractCageDatum
+    , findStateUtxo
+    , scriptHashBytes
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainTokenState (..)
+    , OnChainTxOutRef
+    )
 
 {- | The wallet every actor of this run is funded from. On the factory
 devnet it is the genesis UTxO key, as it always was; in external-node
@@ -78,19 +85,19 @@ suite does. The state validator takes no parameters: its raw
 bytes are hashed as they are, so the configuration's state
 hash is the blueprint code's own hash.
 -}
-cageCfg ::
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    NamingCodes ->
-    OnChainTxOutRef ->
-    CageConfig
+cageCfg
+    :: SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> NamingCodes
+    -> OnChainTxOutRef
+    -> CageConfig
 cageCfg stateBytes requestBytes codes seed =
     let appliedStateBytes = stateBytes
         stateHash = computeScriptHash appliedStateBytes
         registryId = scriptHashBytes stateHash <> deriveAssetName seed
         (appPin, absentPin, activePin, terminalPin) =
             Edges.namingPins codes registryId
-     in CageConfig
+    in  CageConfig
             { cageScriptBytes = appliedStateBytes
             , requestScriptBytes = requestBytes
             , cfgScriptHash = stateHash
@@ -122,7 +129,7 @@ extractTokenId cfg tx =
         assets =
             Map.toList
                 (ma Map.! cagePolicyIdFromCfg cfg)
-     in case assets of
+    in  case assets of
             [(AssetName an, _)] ->
                 pure (TokenId (AssetName an), fromShort an)
             _ ->
@@ -147,11 +154,11 @@ submitWithGenesis submit unsigned = do
 the chain: the state UTxO at the cage address. This is the
 only comparison target for every verification below.
 -}
-readChainState ::
-    CageConfig ->
-    Cage.Provider IO ->
-    TokenId ->
-    IO OnChainTokenState
+readChainState
+    :: CageConfig
+    -> Cage.Provider IO
+    -> TokenId
+    -> IO OnChainTokenState
 readChainState cfg prov tid = do
     stateUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
     case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of

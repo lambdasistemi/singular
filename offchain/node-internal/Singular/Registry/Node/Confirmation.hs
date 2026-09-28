@@ -14,16 +14,16 @@ follower through their owners — 'Singular.Registry.Node.Session' and
 'Singular.Registry.Node.Indexer' — and names its error when called
 outside them rather than guessing a chain.
 -}
-module Singular.Registry.Node.Confirmation (
-    -- * Confirmation
-    awaitTx,
-    awaitTxId,
-    awaitTxWindow,
-    confirmDeadline,
-    txUpperBoundSlot,
-    awaitChain,
-    confirmationDelay,
-) where
+module Singular.Registry.Node.Confirmation
+    ( -- * Confirmation
+      awaitTx
+    , awaitTxId
+    , awaitTxWindow
+    , confirmDeadline
+    , txUpperBoundSlot
+    , awaitChain
+    , confirmationDelay
+    ) where
 
 import Control.Concurrent (threadDelay)
 import Control.Exception (SomeException, try)
@@ -36,26 +36,31 @@ import Lens.Micro ((^.))
 
 import Cardano.Crypto.Hash (hashFromBytes, hashToBytes)
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
-import Cardano.Ledger.Api.Tx (bodyTxL, outputsTxBodyL, txIdTx, vldtTxBodyL)
+import Cardano.Ledger.Api.Tx
+    ( bodyTxL
+    , outputsTxBodyL
+    , txIdTx
+    , vldtTxBodyL
+    )
 import Cardano.Ledger.BaseTypes (SlotNo (..), StrictMaybe (..))
 import Cardano.Ledger.Hashes (extractHash, unsafeMakeSafeHash)
 import Cardano.Ledger.TxIn (TxId (..))
-import Cardano.Node.Client.UTxOIndexer.Indexer (
-    awaitTxIn,
- )
+import Cardano.Node.Client.UTxOIndexer.Indexer
+    ( awaitTxIn
+    )
 import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
 import Cardano.Tx.Ledger (ConwayTx)
-import Singular.Registry.Node.Indexer (
-    Following (..),
-    confirmationAttempts,
-    confirmationPollSeconds,
-    currentFollower,
- )
+import Singular.Registry.Node.Indexer
+    ( Following (..)
+    , confirmationAttempts
+    , confirmationPollSeconds
+    , currentFollower
+    )
 import Singular.Registry.Node.Options (NodeMode (..), die, runMode)
-import Singular.Registry.Node.Session (
-    NodeSession (..),
-    sessionFor,
- )
+import Singular.Registry.Node.Session
+    ( NodeSession (..)
+    , sessionFor
+    )
 import Singular.Registry.Provider qualified as Cage
 
 {- | Wait until a submitted transaction is visible on the chain.
@@ -122,8 +127,16 @@ awaitTxWindow tx txid = do
 -- | A transaction id from its hex rendering.
 txIdFromHex :: String -> String -> IO TxId
 txIdFromHex what txid = do
-    raw <- either (const (die (what <> ": transaction id is not hex"))) pure (B16.decode (BC.pack txid))
-    h <- maybe (die (what <> ": transaction id is not 32 bytes")) pure (hashFromBytes raw)
+    raw <-
+        either
+            (const (die (what <> ": transaction id is not hex")))
+            pure
+            (B16.decode (BC.pack txid))
+    h <-
+        maybe
+            (die (what <> ": transaction id is not 32 bytes"))
+            pure
+            (hashFromBytes raw)
     pure (TxId (unsafeMakeSafeHash h))
 
 {- | Wait until the indexer following the session's chain reports the
@@ -160,12 +173,15 @@ window restated in slots keeps the deadline total.
 -}
 windowDeadlineFor :: NodeSession -> ConwayTx -> IO SlotNo
 windowDeadlineFor sess tx = do
-    r <- try (confirmDeadline (nsProvider sess) tx) :: IO (Either SomeException SlotNo)
+    r <-
+        try (confirmDeadline (nsProvider sess) tx)
+            :: IO (Either SomeException SlotNo)
     case r of
         Right d -> pure d
         Left _ -> do
             tip <- nsTipSlot sess
-            pure (tip + fromIntegral (confirmationAttempts * confirmationPollSeconds))
+            pure
+                (tip + fromIntegral (confirmationAttempts * confirmationPollSeconds))
 
 -- | Two minutes expressed in slots of the chain the provider talks to.
 twoMinutesInSlots :: Cage.Provider IO -> IO SlotNo
@@ -192,7 +208,11 @@ fixedWindowDeadline :: Cage.Provider IO -> IO SlotNo
 fixedWindowDeadline prov = do
     now <- getCurrentTime
     let nowMs = round (utcTimeToPOSIXSeconds now * 1000) :: Integer
-    Cage.posixMsToSlot prov (nowMs + fromIntegral (confirmationAttempts * confirmationPollSeconds) * 1000)
+    Cage.posixMsToSlot
+        prov
+        ( nowMs
+            + fromIntegral (confirmationAttempts * confirmationPollSeconds) * 1000
+        )
 
 {- | The validity upper bound a transaction carries, if any. The fold,
 update and retract builders pin one (request deadline, phase-2 end);
@@ -201,7 +221,7 @@ registration, request and boot transactions leave it open.
 txUpperBoundSlot :: ConwayTx -> Maybe SlotNo
 txUpperBoundSlot tx =
     let vldt = tx ^. bodyTxL . vldtTxBodyL
-     in case invalidHereafter vldt of
+    in  case invalidHereafter vldt of
             SJust bound -> Just bound
             SNothing -> Nothing
 

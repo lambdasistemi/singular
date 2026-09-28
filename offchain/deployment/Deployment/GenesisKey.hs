@@ -12,17 +12,17 @@ Devnet only. The key is a constant of the checked-in genesis, public by
 construction, and worth nothing on any network anyone uses. No node is
 contacted.
 -}
-module Deployment.GenesisKey (
-    genesisSkey,
-) where
+module Deployment.GenesisKey
+    ( genesisSkey
+    ) where
 
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 
-import Cardano.Node.Client.E2E.Setup (
-    genesisSignKey,
-    rawSerialiseSignKeyDSIGN,
- )
+import Cardano.Node.Client.E2E.Setup
+    ( genesisSignKey
+    , rawSerialiseSignKeyDSIGN
+    )
 import Deployment.Narration (emit)
 import Deployment.Options (genesisKeyPath)
 

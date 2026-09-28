@@ -3,11 +3,21 @@ Module      : Conformance.Run.Wallet
 Description : Split out of Conformance.Run (#263); see that module's header
 License     : Apache-2.0
 -}
-module Conformance.Run.Wallet (largestWalletUtxo, secondWallet, fundWallet, collateralPot, collateralPotWithChange, consolidateFunding, consolidateWallet, atticAddr, carveSeed) where
+module Conformance.Run.Wallet
+    ( largestWalletUtxo
+    , secondWallet
+    , fundWallet
+    , collateralPot
+    , collateralPotWithChange
+    , consolidateFunding
+    , consolidateWallet
+    , atticAddr
+    , carveSeed
+    ) where
 
-import Conformance.Run.Submit
 import Conformance.Run.Environment
 import Conformance.Run.Observe
+import Conformance.Run.Submit
 
 import Control.Concurrent (threadDelay)
 import Data.ByteString qualified as BS
@@ -23,53 +33,53 @@ import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Ledger.Address (Addr (..))
 
-import Cardano.Ledger.Api.Tx (
-    mkBasicTx,
-    mkBasicTxBody,
-    txIdTx,
- )
-import Cardano.Ledger.Api.Tx.Body (
-    feeTxBodyL,
-    inputsTxBodyL,
-    outputsTxBodyL,
- )
-import Cardano.Ledger.Api.Tx.Out (
-    coinTxOutL,
-    getMinCoinTxOut,
-    mkBasicTxOut,
- )
-import Cardano.Ledger.BaseTypes (
-    Network (..),
-    TxIx (..),
- )
+import Cardano.Ledger.Api.Tx
+    ( mkBasicTx
+    , mkBasicTxBody
+    , txIdTx
+    )
+import Cardano.Ledger.Api.Tx.Body
+    ( feeTxBodyL
+    , inputsTxBodyL
+    , outputsTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( coinTxOutL
+    , getMinCoinTxOut
+    , mkBasicTxOut
+    )
+import Cardano.Ledger.BaseTypes
+    ( Network (..)
+    , TxIx (..)
+    )
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 
-import Singular.Registry.Ledger (
-    Coin (..),
-    ConwayEra,
-    TxOut,
- )
+import Cardano.Node.Client.E2E.Setup
+    ( Ed25519DSIGN
+    , SignKeyDSIGN
+    , addKeyWitness
+    , enterpriseAddr
+    , keyHashFromSignKey
+    , mkSignKey
+    )
+import Cardano.Node.Client.Submitter
+    ( SubmitResult (..)
+    , Submitter (..)
+    )
+import Singular.Registry.Ledger
+    ( Coin (..)
+    , ConwayEra
+    , TxOut
+    )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Internal (addrFromKeyHashBytes)
-import Cardano.Node.Client.E2E.Setup (
-    addKeyWitness,
-    enterpriseAddr,
-    keyHashFromSignKey,
-    mkSignKey,
-    Ed25519DSIGN,
-    SignKeyDSIGN,
- )
-import Cardano.Node.Client.Submitter (
-    SubmitResult (..),
-    Submitter (..),
- )
 
-import Conformance.Mirror (
-    emit,
-    failWith,
-    require,
- )
+import Conformance.Mirror
+    ( emit
+    , failWith
+    , require
+    )
 
 {- | The largest wallet UTxO: ample funds for boot, which spends
 only the seed and one more input. First-in-query-order would be
@@ -82,10 +92,11 @@ largestWalletUtxo prov = do
     -- the funder and rides in the wallet. Fee and collateral inputs are
     -- taken from an ada-only output, which is what the ledger requires of
     -- collateral and what the hand model asserts of its funder.
-    case sortOn (Down . (^. coinTxOutL) . snd) (filter (adaOnlyOut . snd) utxos) of
+    case sortOn
+        (Down . (^. coinTxOutL) . snd)
+        (filter (adaOnlyOut . snd) utxos) of
         [] -> failWith "genesis wallet has no ada-only UTxO; cannot fund"
         u : _ -> pure u
-
 
 {- | The second wallet: a key derived from a fixed seed (like the
 genesis key), funded by a plain split of the largest genesis UTxO.
@@ -102,7 +113,6 @@ secondWallet env = do
             fundWallet env addr 12_000_000
             writeIORef (envKey2 env) (Just (sk, addr))
             pure (sk, addr)
-
 
 fundWallet :: Env -> Addr -> Integer -> IO ()
 fundWallet env addr amount = do
@@ -128,7 +138,6 @@ fundWallet env addr amount = do
     _ <- submitWithGenesis (envSubmit env) (mkBasicTx body)
     pure ()
 
-
 {- | A small dedicated collateral pot for one refusing transaction:
 on phase-2 failure the whole collateral is taken, so the collateral
 is a split-off 5 ADA output — never the 30 ADA funder the CG05
@@ -137,7 +146,6 @@ regular input), ada-only and key-witnessed.
 -}
 collateralPot :: Env -> IO TxIn
 collateralPot env = fst <$> collateralPotWithChange env
-
 
 collateralPotWithChange :: Env -> IO (TxIn, (TxIn, TxOut ConwayEra))
 collateralPotWithChange env = do
@@ -174,17 +182,23 @@ collateralPotWithChange env = do
                 then pure ()
                 else threadDelay 1_000_000 >> awaitVisible (n - 1)
     awaitVisible (30 :: Int)
-    pure (potIn, (changeIn, mkBasicTxOut genesisAddr
-        (MaryValue (Coin change) mempty)))
-
+    pure
+        ( potIn
+        ,
+            ( changeIn
+            , mkBasicTxOut
+                genesisAddr
+                (MaryValue (Coin change) mempty)
+            )
+        )
 
 consolidateFunding :: Env -> IO ()
 consolidateFunding env = consolidateWallet (envProv env) (envSubmit env)
 
-
--- | The sweep, before there is an `Env` to carry: a CA session designates
--- its canonical seed during construction, and a sweep after that would
--- spend the very output CA01 boots from.
+{- | The sweep, before there is an `Env` to carry: a CA session designates
+its canonical seed during construction, and a sweep after that would
+spend the very output CA01 boots from.
+-}
 consolidateWallet :: Cage.Provider IO -> Submitter IO -> IO ()
 consolidateWallet prov submit = do
     utxos <- Cage.queryUTxOs prov genesisAddr
@@ -210,7 +224,7 @@ consolidateWallet prov submit = do
                         then 0
                         else
                             let Coin c = getMinCoinTxOut @ConwayEra pp (atticProbe atticFirst)
-                             in c
+                            in  c
                 fundingAda = total - fee - atticAda
                 outs =
                     mkBasicTxOut genesisAddr (MaryValue (Coin fundingAda) mempty)
@@ -244,7 +258,6 @@ consolidateWallet prov submit = do
                             <> T.unpack (TE.decodeUtf8Lenient reason)
                         )
 
-
 {- | Where spent approvals go.
 
 A fold returns the approval it consumed to the booker, which in this
@@ -256,7 +269,6 @@ nothing about where it rests.
 -}
 atticAddr :: Addr
 atticAddr = addrFromKeyHashBytes Testnet (BS.replicate 28 0xaa)
-
 
 {- | Carve a small ada-only output to seed a cage with.
 
