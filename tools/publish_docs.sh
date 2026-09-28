@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 tag="$1"
 expected_sha="$2"
 [[ "$tag" == "v$DOCS_VERSION" && "$DOCS_VERSION" != "0.0.0" ]]

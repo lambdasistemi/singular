@@ -46,8 +46,6 @@ faillog() {
   FAIL=1
 }
 
-TESTPUB="$PROVIDER#publish-docs-boundary-test"
-PRODPUB="$PROVIDER#publish-docs"
 log "provider: $PROVIDER @ $(git -C "$PROVIDER" rev-parse HEAD)"
 log "provider status: $(git -C "$PROVIDER" status --porcelain | tr '\n' ';')"
 TESTPROG="$(cd "$PROVIDER" && nix eval --no-eval-cache --raw .#apps.x86_64-linux.publish-docs-boundary-test.program 2>/dev/null)"
@@ -61,8 +59,9 @@ log "production publisher: $PRODPROG"
 FAIL=0
 
 # --- fixtures ---------------------------------------------------------
+fixtures_script="$PROVIDER/conformance/coverage/publication_fixtures.sh"
 OUTDIR="$OUTDIR/fixtures" PROVIDER="$PROVIDER" \
-  "$PROVIDER/conformance/coverage/publication_fixtures.sh" >"$OUTDIR/fixture-build.log" 2>&1
+  "$fixtures_script" >"$OUTDIR/fixture-build.log" 2>&1
 FULL="$(grep -h FULLCLONE_HEAD "$OUTDIR/fixture-build.log" | cut -d= -f2)"
 MISS="$(grep -h MISSING_HEAD "$OUTDIR/fixture-build.log" | cut -d= -f2)"
 VTAG="v$(tr -d ' \n' <"$PROVIDER/version.txt")"
@@ -307,7 +306,11 @@ log "executable audit: recorder referenced"
 
 log "--- gh calls (uploads recorded only by the positive case):"
 cat "$OUTDIR/gh-calls.log" >>"$OUTDIR/run.log"
-[ "$FAIL" -eq 0 ] && log "ALL CASES HELD" || log "BOUNDARY BROKEN"
+if [ "$FAIL" -eq 0 ]; then
+  log "ALL CASES HELD"
+else
+  log "BOUNDARY BROKEN"
+fi
 # Single repo write, after the last nix invocation: the tree (and therefore
 # every closure identity logged above) stays frozen for the whole run.
 cp "$OUTDIR/run.log" "$EVIDENCE"

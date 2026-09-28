@@ -80,4 +80,5 @@ count=$(printf '%s\n' "$files" | wc -l)
 echo "format: $count discovered Haskell sources, $context, house fourmolu.yaml, mode=$mode" >&2
 
 cd "$target"
-fourmolu --config fourmolu.yaml --ghc-opt=-XImportQualifiedPost -m "$mode" $files
+mapfile -t file_list <<<"$files"
+fourmolu --config fourmolu.yaml --ghc-opt=-XImportQualifiedPost -m "$mode" "${file_list[@]}"

@@ -234,6 +234,7 @@ step6_prose() {
     offchain/singular-registry.cabal
   sed_present -e 's/Existing MPFS is a separate application/The product it was imported from is a separate application/' \
     README.md
+  # shellcheck disable=SC2016 # the backticks are literal Markdown, not expansions
   sed_present -e 's|`docs/design/registry-as-mpfs.md`|the registry design rulings|' \
     -e 's/Upstream cardano-mpfs-onchain$/Upstream/' \
     docs/consumer-conformance.md
