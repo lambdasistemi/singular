@@ -1,0 +1,30 @@
+{
+  "where-it-lives-and-how-it-builds": [
+    {
+      "text": "The application is its own small Lean project, applications open-datum, built on the unchanged registry model. It uses the repository's pinned Lean, and the application-model recipe checks that pin, builds the project, regenerates the corpus and ledgers, and replays every scenario.",
+      "pause": 400
+    }
+  ],
+  "ruling-model-statement": [
+    {
+      "text": "Each operator requirement maps to one step of the law and to the statements about it: booking with the controller's signature, the unchanged permissionless fold, payload updates that keep control, token and deposit, termination only through the registry's own retirement fold, and payment of the sum of what the registry owes and the released deposits.",
+      "pause": 400
+    }
+  ],
+  "representation-choices-technical-not-rulings": [
+    {
+      "text": "Plutus data is modelled abstractly, and its hash stands in for the real one without claiming byte agreement. One identity serves as both the policy and the contract address, and a destination packs the contract and the envelope hash into one number.",
+      "pause": 400
+    }
+  ],
+  "limits": [
+    {
+      "text": "Every statement is stated and not yet proved. Seven have no scenario bound to them, the corpus is small and fixed, and the replay check has not yet been shown to fail on a mutated corpus. On-chain cost and binding questions are later work.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "model.md",
+    "sha256": "d222794b2ec941f0ae9a4013151de331d22f8fe13d3339bba65df086b2f309ff"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "demo-1-application-open-datum-locked-token-and-deposit": [
+    {
+      "text": "The operator's clarification: Alice uses an open policy, so the datum is open; the token does not go to her wallet. She interacts with a smart contract, can change the datum, cannot take the deposit, and the deposit stays until she terminates the token. This replaces the earlier wallet delivery; findability, duplicate refusal, termination and no resurrection stay required.",
+      "pause": 400
+    },
+    {
+      "text": "Insertion delivers token, datum and deposit to the application contract. Alice may change the datum while token, contract and deposit are preserved and cannot be pulled out early. Only a successful termination of the same registry and key burns the token, commits Terminal and releases the deposit, and the termination request's own deposit and tip are separate.",
+      "pause": 400
+    },
+    {
+      "text": "Required are one successful datum change and one refused early withdrawal with controls and fresh observations, and a payload that cannot rewrite authority, identity, amount or release. The open minting policy does not enforce custody by itself; the owner must reconcile scope, gate and allocation, and issue 304 stays with its epic. No seats, budget, live writes, publication or merge are granted.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "ruling-application-deposit-lock.md",
+    "sha256": "3971bf541962a6d7c7531d333134e0ec7d978a06618596f22f04ccb064811eac"
+  }
+}

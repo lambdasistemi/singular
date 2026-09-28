@@ -1,0 +1,24 @@
+{
+  "open-datum-application": [
+    {
+      "text": "As the controller, I want my registry token to carry arbitrary Plutus data at an application contract, so I can change that data with my Cardano key while my original deposit stays protected until I terminate the token.",
+      "pause": 400
+    },
+    {
+      "text": "Insertion binds the registry state asset, the active token and key, the controller's payment key and the original deposit in protected control data, beside a free payload of constructors, maps, lists, integers and bytes. A payload edit keeps every control field, the token at the contract, the deposit floor and the registry's lifecycle commitment.",
+      "pause": 400
+    },
+    {
+      "text": "The key authorizes updates and the termination approval, while registry folds keep needing no signer. Booking a termination leaves token and deposit locked; release needs the accepted updateTerminal fold of the same registry and key, the token burned and Terminal committed, all in one transaction. Reject, retract, deleteActive, unrelated evidence or a bare burn release nothing.",
+      "pause": 400
+    },
+    {
+      "text": "Payments add up the original deposits and the registry's own refunds owed to each controller, so a payment that meets each floor alone but not their sum is refused. Accepting and refusing controls are required for every case, client or setup failures never count as ledger refusals, and issue 304 stays with its own epic. This phase delivers the model, intended statements and inversions only; no validator, builder, command or chain demonstration is claimed.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "c56da49385fac26899138f739beef4f2087bf0f69507224f0ee45c4509a03306"
+  }
+}
