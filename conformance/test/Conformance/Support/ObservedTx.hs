@@ -171,7 +171,6 @@ fixtureCage =
         <$> newIORef Nothing
         <*> newIORef (0, 0)
         <*> pure []
-        <*> pure []
 
 -- | One wallet per role, named by its payment key's repeated byte.
 walletAt :: Word8 -> Addr
