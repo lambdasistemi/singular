@@ -22,6 +22,17 @@ model:
     lake build
     python3 tools/check_model.py
 
+# #310: the open-datum application, an isolated Lake project over the unchanged
+# root model. The selected compiler must be the root pin; the corpus and ledgers
+# are regenerated from the model surface and must equal the committed ones, and
+# every committed scenario must replay from its own JSON to the same run.
+application-model:
+    lean --version | grep -q "version $(sed 's/.*:v//' lean-toolchain),"
+    lake -d applications/open-datum --keep-toolchain build
+    lake -d applications/open-datum --keep-toolchain exe open-datum-application corpus | diff - applications/open-datum/corpus.json
+    lake -d applications/open-datum --keep-toolchain exe open-datum-application ledgers | diff - applications/open-datum/ledgers.json
+    lake -d applications/open-datum --keep-toolchain exe open-datum-application replay < applications/open-datum/corpus.json
+
 simulator:
     node simulator/mirror-check.mjs
     node simulator/build.mjs --check
@@ -33,6 +44,7 @@ browser:
 
 ci:
     just model
+    just application-model
     just simulator
     just browser
     just build-docs

@@ -1,0 +1,2301 @@
+[{"scenario":
+  {"statement": "insertion_binds_envelope",
+   "name": "lifecycle",
+   "mutates": null,
+   "kind": "witness",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"},
+    {"successors":
+     [{"lovelace": 3000000,
+       "envelope":
+       {"payload":
+        {"tag": "list",
+         "items":
+         [{"value": [190, 239], "tag": "bytes"}, {"value": 2, "tag": "int"}]},
+        "control":
+        {"version": 1,
+         "registry": {"policy": 50, "assetName": 51},
+         "key": 5,
+         "deposit": 3000000,
+         "controller": 42,
+         "activePolicy": 8}},
+       "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+       "address": 7}],
+     "signatures": [42],
+     "ref": 0,
+     "action": "update"},
+    {"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 0,
+      "key": 5,
+      "edge": "updateTerminal",
+      "deposit": 2000000},
+     "ref": 1,
+     "action": "bookTerminate"},
+    {"outputs": [{"owner": 42, "lovelace": 5000000}],
+     "keys": [5],
+     "exit": {"exit": "fold", "edge": "updateTerminal"},
+     "action": "foldRelease"}]},
+  "outcomes":
+  [{"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"}],
+  "final":
+  {"registry":
+   {"trie": [{"leaf": "terminal", "key": 5}],
+    "held": [],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [76, 17, 37, 97, 139, 77, 123, 99],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending": [],
+   "outputs": []}},
+ {"scenario":
+  {"statement": "release_settles_additively",
+   "name": "update-between-booking-and-fold",
+   "mutates": null,
+   "kind": "witness",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"},
+    {"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 0,
+      "key": 5,
+      "edge": "updateTerminal",
+      "deposit": 2000000},
+     "ref": 0,
+     "action": "bookTerminate"},
+    {"successors":
+     [{"lovelace": 3000000,
+       "envelope":
+       {"payload":
+        {"tag": "list",
+         "items":
+         [{"value": [190, 239], "tag": "bytes"}, {"value": 2, "tag": "int"}]},
+        "control":
+        {"version": 1,
+         "registry": {"policy": 50, "assetName": 51},
+         "key": 5,
+         "deposit": 3000000,
+         "controller": 42,
+         "activePolicy": 8}},
+       "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+       "address": 7}],
+     "signatures": [42],
+     "ref": 0,
+     "action": "update"},
+    {"outputs": [{"owner": 42, "lovelace": 5000000}],
+     "keys": [5],
+     "exit": {"exit": "fold", "edge": "updateTerminal"},
+     "action": "foldRelease"}]},
+  "outcomes":
+  [{"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"}],
+  "final":
+  {"registry":
+   {"trie": [{"leaf": "terminal", "key": 5}],
+    "held": [],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [76, 17, 37, 97, 139, 77, 123, 99],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending": [],
+   "outputs": []}},
+ {"scenario":
+  {"statement": "update_requires_controller",
+   "name": "update-unsigned",
+   "mutates": "signatures",
+   "kind": "mutant",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"},
+    {"successors":
+     [{"lovelace": 3000000,
+       "envelope":
+       {"payload":
+        {"tag": "list",
+         "items":
+         [{"value": [190, 239], "tag": "bytes"}, {"value": 2, "tag": "int"}]},
+        "control":
+        {"version": 1,
+         "registry": {"policy": 50, "assetName": 51},
+         "key": 5,
+         "deposit": 3000000,
+         "controller": 42,
+         "activePolicy": 8}},
+       "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+       "address": 7}],
+     "signatures": [43],
+     "ref": 0,
+     "action": "update"}]},
+  "outcomes":
+  [{"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"reason": "update-controller-signature", "outcome": "refused"}],
+  "final":
+  {"registry":
+   {"trie": [{"leaf": "active", "key": 5}],
+    "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [76, 17, 37, 97, 140, 77, 124, 246],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending": [],
+   "outputs":
+   [{"ref": 0,
+     "lovelace": 3000000,
+     "envelopeHash": 13312853332715543779,
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+     "address": 7}]}},
+ {"scenario":
+  {"statement": "update_preserves_custody",
+   "name": "update-alters-control",
+   "mutates": "control.deposit",
+   "kind": "mutant",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"},
+    {"successors":
+     [{"lovelace": 3000000,
+       "envelope":
+       {"payload":
+        {"tag": "list",
+         "items":
+         [{"value": [190, 239], "tag": "bytes"}, {"value": 2, "tag": "int"}]},
+        "control":
+        {"version": 1,
+         "registry": {"policy": 50, "assetName": 51},
+         "key": 5,
+         "deposit": 1,
+         "controller": 42,
+         "activePolicy": 8}},
+       "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+       "address": 7}],
+     "signatures": [42],
+     "ref": 0,
+     "action": "update"}]},
+  "outcomes":
+  [{"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"reason": "update-control", "outcome": "refused"}],
+  "final":
+  {"registry":
+   {"trie": [{"leaf": "active", "key": 5}],
+    "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [76, 17, 37, 97, 140, 77, 124, 246],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending": [],
+   "outputs":
+   [{"ref": 0,
+     "lovelace": 3000000,
+     "envelopeHash": 13312853332715543779,
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+     "address": 7}]}},
+ {"scenario":
+  {"statement": "update_preserves_custody",
+   "name": "update-token-escape",
+   "mutates": "successor.address",
+   "kind": "mutant",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"},
+    {"successors":
+     [{"lovelace": 3000000,
+       "envelope":
+       {"payload":
+        {"tag": "list",
+         "items":
+         [{"value": [190, 239], "tag": "bytes"}, {"value": 2, "tag": "int"}]},
+        "control":
+        {"version": 1,
+         "registry": {"policy": 50, "assetName": 51},
+         "key": 5,
+         "deposit": 3000000,
+         "controller": 42,
+         "activePolicy": 8}},
+       "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+       "address": 43}],
+     "signatures": [42],
+     "ref": 0,
+     "action": "update"}]},
+  "outcomes":
+  [{"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"reason": "update-escape", "outcome": "refused"}],
+  "final":
+  {"registry":
+   {"trie": [{"leaf": "active", "key": 5}],
+    "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [76, 17, 37, 97, 140, 77, 124, 246],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending": [],
+   "outputs":
+   [{"ref": 0,
+     "lovelace": 3000000,
+     "envelopeHash": 13312853332715543779,
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+     "address": 7}]}},
+ {"scenario":
+  {"statement": "update_preserves_custody",
+   "name": "update-short-deposit",
+   "mutates": "successor.lovelace",
+   "kind": "mutant",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"},
+    {"successors":
+     [{"lovelace": 2999999,
+       "envelope":
+       {"payload":
+        {"tag": "list",
+         "items":
+         [{"value": [190, 239], "tag": "bytes"}, {"value": 2, "tag": "int"}]},
+        "control":
+        {"version": 1,
+         "registry": {"policy": 50, "assetName": 51},
+         "key": 5,
+         "deposit": 3000000,
+         "controller": 42,
+         "activePolicy": 8}},
+       "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+       "address": 7}],
+     "signatures": [42],
+     "ref": 0,
+     "action": "update"}]},
+  "outcomes":
+  [{"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"reason": "update-deposit", "outcome": "refused"}],
+  "final":
+  {"registry":
+   {"trie": [{"leaf": "active", "key": 5}],
+    "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [76, 17, 37, 97, 140, 77, 124, 246],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending": [],
+   "outputs":
+   [{"ref": 0,
+     "lovelace": 3000000,
+     "envelopeHash": 13312853332715543779,
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+     "address": 7}]}},
+ {"scenario":
+  {"statement": "update_preserves_custody",
+   "name": "update-drops-token",
+   "mutates": "successor.assets",
+   "kind": "mutant",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"},
+    {"successors":
+     [{"lovelace": 3000000,
+       "envelope":
+       {"payload":
+        {"tag": "list",
+         "items":
+         [{"value": [190, 239], "tag": "bytes"}, {"value": 2, "tag": "int"}]},
+        "control":
+        {"version": 1,
+         "registry": {"policy": 50, "assetName": 51},
+         "key": 5,
+         "deposit": 3000000,
+         "controller": 42,
+         "activePolicy": 8}},
+       "assets": [],
+       "address": 7}],
+     "signatures": [42],
+     "ref": 0,
+     "action": "update"}]},
+  "outcomes":
+  [{"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"reason": "update-token", "outcome": "refused"}],
+  "final":
+  {"registry":
+   {"trie": [{"leaf": "active", "key": 5}],
+    "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [76, 17, 37, 97, 140, 77, 124, 246],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending": [],
+   "outputs":
+   [{"ref": 0,
+     "lovelace": 3000000,
+     "envelopeHash": 13312853332715543779,
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+     "address": 7}]}},
+ {"scenario":
+  {"statement": "withdraw_inversion",
+   "name": "early-withdrawal",
+   "mutates": "no release",
+   "kind": "mutant",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"},
+    {"ref": 0,
+     "outputs": [{"owner": 42, "lovelace": 3000000}],
+     "action": "withdraw"}]},
+  "outcomes":
+  [{"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"reason": "no-withdrawal-path", "outcome": "refused"}],
+  "final":
+  {"registry":
+   {"trie": [{"leaf": "active", "key": 5}],
+    "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [76, 17, 37, 97, 140, 77, 124, 246],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending": [],
+   "outputs":
+   [{"ref": 0,
+     "lovelace": 3000000,
+     "envelopeHash": 13312853332715543779,
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+     "address": 7}]}},
+ {"scenario":
+  {"statement": "release_only_updateTerminal",
+   "name": "release-by-reject",
+   "mutates": "exit",
+   "kind": "mutant",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"},
+    {"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 0,
+      "key": 5,
+      "edge": "updateTerminal",
+      "deposit": 2000000},
+     "ref": 0,
+     "action": "bookTerminate"},
+    {"outputs": [{"owner": 42, "lovelace": 5000000}],
+     "keys": [5],
+     "exit": {"exit": "reject"},
+     "action": "foldRelease"}]},
+  "outcomes":
+  [{"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"reason": "release-needs-terminal-fold", "outcome": "refused"}],
+  "final":
+  {"registry":
+   {"trie": [{"leaf": "active", "key": 5}],
+    "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [76, 17, 37, 97, 140, 77, 124, 246],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending":
+   [{"tip": 0,
+     "refundAddress": 0,
+     "owner": 42,
+     "output": 0,
+     "key": 5,
+     "edge": "updateTerminal",
+     "deposit": 2000000}],
+   "outputs":
+   [{"ref": 0,
+     "lovelace": 3000000,
+     "envelopeHash": 13312853332715543779,
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+     "address": 7}]}},
+ {"scenario":
+  {"statement": "release_only_updateTerminal",
+   "name": "release-by-deleteActive",
+   "mutates": "exit",
+   "kind": "mutant",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"},
+    {"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 0,
+      "key": 5,
+      "edge": "updateTerminal",
+      "deposit": 2000000},
+     "ref": 0,
+     "action": "bookTerminate"},
+    {"outputs": [{"owner": 42, "lovelace": 5000000}],
+     "keys": [5],
+     "exit": {"exit": "fold", "edge": "deleteActive"},
+     "action": "foldRelease"}]},
+  "outcomes":
+  [{"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"reason": "release-needs-terminal-fold", "outcome": "refused"}],
+  "final":
+  {"registry":
+   {"trie": [{"leaf": "active", "key": 5}],
+    "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [76, 17, 37, 97, 140, 77, 124, 246],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending":
+   [{"tip": 0,
+     "refundAddress": 0,
+     "owner": 42,
+     "output": 0,
+     "key": 5,
+     "edge": "updateTerminal",
+     "deposit": 2000000}],
+   "outputs":
+   [{"ref": 0,
+     "lovelace": 3000000,
+     "envelopeHash": 13312853332715543779,
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+     "address": 7}]}},
+ {"scenario":
+  {"statement": "foldRelease_inversion",
+   "name": "release-without-booking",
+   "mutates": "booking",
+   "kind": "mutant",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"},
+    {"outputs": [{"owner": 42, "lovelace": 5000000}],
+     "keys": [5],
+     "exit": {"exit": "fold", "edge": "updateTerminal"},
+     "action": "foldRelease"}]},
+  "outcomes":
+  [{"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"reason": "no-pending-request", "outcome": "refused"}],
+  "final":
+  {"registry":
+   {"trie": [{"leaf": "active", "key": 5}],
+    "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [76, 17, 37, 97, 140, 77, 124, 246],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending": [],
+   "outputs":
+   [{"ref": 0,
+     "lovelace": 3000000,
+     "envelopeHash": 13312853332715543779,
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+     "address": 7}]}},
+ {"scenario":
+  {"statement": "release_settles_additively",
+   "name": "release-each-floor-not-sum",
+   "mutates": "outputs: max of the two floors",
+   "kind": "mutant",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"},
+    {"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 0,
+      "key": 5,
+      "edge": "updateTerminal",
+      "deposit": 2000000},
+     "ref": 0,
+     "action": "bookTerminate"},
+    {"outputs": [{"owner": 42, "lovelace": 3000000}],
+     "keys": [5],
+     "exit": {"exit": "fold", "edge": "updateTerminal"},
+     "action": "foldRelease"}]},
+  "outcomes":
+  [{"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"reason": "deposit-returned", "outcome": "refused"}],
+  "final":
+  {"registry":
+   {"trie": [{"leaf": "active", "key": 5}],
+    "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [76, 17, 37, 97, 140, 77, 124, 246],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending":
+   [{"tip": 0,
+     "refundAddress": 0,
+     "owner": 42,
+     "output": 0,
+     "key": 5,
+     "edge": "updateTerminal",
+     "deposit": 2000000}],
+   "outputs":
+   [{"ref": 0,
+     "lovelace": 3000000,
+     "envelopeHash": 13312853332715543779,
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+     "address": 7}]}},
+ {"scenario":
+  {"statement": "foldRelease_inversion",
+   "name": "release-unrelated-registry",
+   "mutates": "registry asset",
+   "kind": "mutant",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 52},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"},
+    {"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 0,
+      "key": 5,
+      "edge": "updateTerminal",
+      "deposit": 2000000},
+     "ref": 0,
+     "action": "bookTerminate"},
+    {"outputs": [{"owner": 42, "lovelace": 5000000}],
+     "keys": [5],
+     "exit": {"exit": "fold", "edge": "updateTerminal"},
+     "action": "foldRelease"}]},
+  "outcomes":
+  [{"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"reason": "release-registry", "outcome": "refused"}],
+  "final":
+  {"registry":
+   {"trie": [{"leaf": "active", "key": 5}],
+    "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [76, 17, 37, 97, 140, 77, 124, 246],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending":
+   [{"tip": 0,
+     "refundAddress": 0,
+     "owner": 42,
+     "output": 0,
+     "key": 5,
+     "edge": "updateTerminal",
+     "deposit": 2000000}],
+   "outputs":
+   [{"ref": 0,
+     "lovelace": 3000000,
+     "envelopeHash": 13312853332715543779,
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+     "address": 7}]}},
+ {"scenario":
+  {"statement": "release_settles_additively",
+   "name": "two-releases-one-controller",
+   "mutates": null,
+   "kind": "witness",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"},
+    {"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 145401620482453453290,
+      "key": 6,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 6,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 6, "action": "foldInsert"},
+    {"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 0,
+      "key": 5,
+      "edge": "updateTerminal",
+      "deposit": 2000000},
+     "ref": 0,
+     "action": "bookTerminate"},
+    {"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 0,
+      "key": 6,
+      "edge": "updateTerminal",
+      "deposit": 2000000},
+     "ref": 1,
+     "action": "bookTerminate"},
+    {"outputs": [{"owner": 42, "lovelace": 10000000}],
+     "keys": [5, 6],
+     "exit": {"exit": "fold", "edge": "updateTerminal"},
+     "action": "foldRelease"}]},
+  "outcomes":
+  [{"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"}],
+  "final":
+  {"registry":
+   {"trie": [{"leaf": "terminal", "key": 6}, {"leaf": "terminal", "key": 5}],
+    "held": [],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [215, 242, 140, 87, 144, 213, 3, 27],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending": [],
+   "outputs": []}},
+ {"scenario":
+  {"statement": "release_settles_additively",
+   "name": "two-releases-short-by-one",
+   "mutates": "outputs",
+   "kind": "mutant",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"},
+    {"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 145401620482453453290,
+      "key": 6,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 6,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 6, "action": "foldInsert"},
+    {"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 0,
+      "key": 5,
+      "edge": "updateTerminal",
+      "deposit": 2000000},
+     "ref": 0,
+     "action": "bookTerminate"},
+    {"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 0,
+      "key": 6,
+      "edge": "updateTerminal",
+      "deposit": 2000000},
+     "ref": 1,
+     "action": "bookTerminate"},
+    {"outputs": [{"owner": 42, "lovelace": 9999999}],
+     "keys": [5, 6],
+     "exit": {"exit": "fold", "edge": "updateTerminal"},
+     "action": "foldRelease"}]},
+  "outcomes":
+  [{"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"reason": "deposit-returned", "outcome": "refused"}],
+  "final":
+  {"registry":
+   {"trie": [{"leaf": "active", "key": 6}, {"leaf": "active", "key": 5}],
+    "held":
+    [{"output": 145401620482453453290, "kind": "active", "key": 6},
+     {"output": 142440061848682405091, "kind": "active", "key": 5}],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [36, 108, 78, 23, 255, 160, 6, 211],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending":
+   [{"tip": 0,
+     "refundAddress": 0,
+     "owner": 42,
+     "output": 0,
+     "key": 5,
+     "edge": "updateTerminal",
+     "deposit": 2000000},
+    {"tip": 0,
+     "refundAddress": 0,
+     "owner": 42,
+     "output": 0,
+     "key": 6,
+     "edge": "updateTerminal",
+     "deposit": 2000000}],
+   "outputs":
+   [{"ref": 0,
+     "lovelace": 3000000,
+     "envelopeHash": 13312853332715543779,
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+     "address": 7},
+    {"ref": 1,
+     "lovelace": 3000000,
+     "envelopeHash": 16274411966486591978,
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 6,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "assets": [{"quantity": 1, "kind": "active", "key": 6}],
+     "address": 7}]}},
+ {"scenario":
+  {"statement": "bookInsert_inversion",
+   "name": "booking-unsigned",
+   "mutates": "signatures",
+   "kind": "mutant",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [43],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"}]},
+  "outcomes": [{"reason": "app-controller-signature", "outcome": "refused"}],
+  "final":
+  {"registry":
+   {"trie": [],
+    "held": [],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [203, 242, 156, 228, 132, 34, 35, 37],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending": [],
+   "outputs": []}},
+ {"scenario":
+  {"statement": "bookInsert_inversion",
+   "name": "booking-other-destination",
+   "mutates": "request.output",
+   "kind": "mutant",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 99,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"}]},
+  "outcomes": [{"reason": "app-destination", "outcome": "refused"}],
+  "final":
+  {"registry":
+   {"trie": [],
+    "held": [],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [203, 242, 156, 228, 132, 34, 35, 37],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending": [],
+   "outputs": []}},
+ {"scenario":
+  {"statement": "bookInsert_inversion",
+   "name": "booking-deposit-mismatch",
+   "mutates": "request.deposit",
+   "kind": "mutant",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000001},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"}]},
+  "outcomes": [{"reason": "app-deposit", "outcome": "refused"}],
+  "final":
+  {"registry":
+   {"trie": [],
+    "held": [],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [203, 242, 156, 228, 132, 34, 35, 37],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending": [],
+   "outputs": []}},
+ {"scenario":
+  {"statement": "bookTerminate_inversion",
+   "name": "terminate-booking-by-stranger",
+   "mutates": "owner",
+   "kind": "mutant",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"},
+    {"signatures": [43],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 43,
+      "output": 0,
+      "key": 5,
+      "edge": "updateTerminal",
+      "deposit": 2000000},
+     "ref": 0,
+     "action": "bookTerminate"}]},
+  "outcomes":
+  [{"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"reason": "app-owner", "outcome": "refused"}],
+  "final":
+  {"registry":
+   {"trie": [{"leaf": "active", "key": 5}],
+    "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [76, 17, 37, 97, 140, 77, 124, 246],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending": [],
+   "outputs":
+   [{"ref": 0,
+     "lovelace": 3000000,
+     "envelopeHash": 13312853332715543779,
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+     "address": 7}]}},
+ {"scenario":
+  {"statement": "duplicate_refused_by_registry",
+   "name": "duplicate-insertion",
+   "mutates": "leaf Active",
+   "kind": "mutant",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"},
+    {"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"}]},
+  "outcomes":
+  [{"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"reason": "key-exists", "outcome": "refused"}],
+  "final":
+  {"registry":
+   {"trie": [{"leaf": "active", "key": 5}],
+    "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [76, 17, 37, 97, 140, 77, 124, 246],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending":
+   [{"tip": 0,
+     "refundAddress": 0,
+     "owner": 42,
+     "output": 142440061848682405091,
+     "key": 5,
+     "edge": "insertActive",
+     "deposit": 3000000}],
+   "outputs":
+   [{"ref": 0,
+     "lovelace": 3000000,
+     "envelopeHash": 13312853332715543779,
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+     "address": 7}]}},
+ {"scenario":
+  {"statement": "resurrection_refused_by_registry",
+   "name": "resurrection",
+   "mutates": "leaf Terminal",
+   "kind": "mutant",
+   "config":
+   {"terminalPolicy": 10,
+    "root": [203, 242, 156, 228, 132, 34, 35, 37],
+    "retractTime": 0,
+    "processTime": 0,
+    "maxFee": 0,
+    "applicationPolicy": 7,
+    "activePolicy": 8,
+    "absentPolicy": 9},
+   "asset": {"policy": 50, "assetName": 51},
+   "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+   "actions":
+   [{"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"},
+    {"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 0,
+      "key": 5,
+      "edge": "updateTerminal",
+      "deposit": 2000000},
+     "ref": 0,
+     "action": "bookTerminate"},
+    {"outputs": [{"owner": 42, "lovelace": 5000000}],
+     "keys": [5],
+     "exit": {"exit": "fold", "edge": "updateTerminal"},
+     "action": "foldRelease"},
+    {"signatures": [42],
+     "request":
+     {"tip": 0,
+      "refundAddress": 0,
+      "owner": 42,
+      "output": 142440061848682405091,
+      "key": 5,
+      "edge": "insertActive",
+      "deposit": 3000000},
+     "envelope":
+     {"payload":
+      {"tag": "constr",
+       "index": 0,
+       "fields":
+       [{"value": 1, "tag": "int"},
+        {"value": [202, 254], "tag": "bytes"},
+        {"tag": "map",
+         "entries":
+         [[{"value": [1], "tag": "bytes"},
+           {"tag": "list",
+            "items":
+            [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+      "control":
+      {"version": 1,
+       "registry": {"policy": 50, "assetName": 51},
+       "key": 5,
+       "deposit": 3000000,
+       "controller": 42,
+       "activePolicy": 8}},
+     "action": "bookInsert"},
+    {"key": 5, "action": "foldInsert"}]},
+  "outcomes":
+  [{"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"outcome": "accepted"},
+   {"reason": "key-exists", "outcome": "refused"}],
+  "final":
+  {"registry":
+   {"trie": [{"leaf": "terminal", "key": 5}],
+    "held": [],
+    "custody": [],
+    "config":
+    {"terminalPolicy": 10,
+     "root": [76, 17, 37, 97, 139, 77, 123, 99],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9}},
+   "pending":
+   [{"tip": 0,
+     "refundAddress": 0,
+     "owner": 42,
+     "output": 142440061848682405091,
+     "key": 5,
+     "edge": "insertActive",
+     "deposit": 3000000}],
+   "outputs": []}}]
