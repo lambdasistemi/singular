@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 {- |
 Module      : Conformance.Run.CgRows
 Description : Split out of Conformance.Run (#263); see that module's header
@@ -467,7 +469,7 @@ runCG07 env = do
     require
         "retraction window has a disagreement or unsupported step"
         ( all
-            ( \record -> case record of
+            ( \case
                 Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
                 _ -> False
             )
@@ -490,7 +492,7 @@ runCG09 env = do
     tid <- cageTid cage
     (reqIn, reqOut) <- rowRequestInsert env cage "cg09-key" "cg09-value"
     let (_, submittedAt) = requestDatumOf reqOut
-    units <- pure (ExUnits 1_400_000 100_000_000)
+    let units = ExUnits 1_400_000 100_000_000
     pot <- collateralPot env
     state <- cageStateUtxo env cage
     oldState <- extractState (snd state)
@@ -1063,9 +1065,8 @@ runCG15 env = do
     hand <- assembleFoldWithFee env spec
     emit
         "row"
-        ( "CG15: the hook is set but the fold carries no withdrawal; \
-          \the state script must refuse"
-        )
+        "CG15: the hook is set but the fold carries no withdrawal; \
+        \the state script must refuse"
     submitExpectRefused
         env
         "CG15"
@@ -1193,7 +1194,7 @@ runCG19 env = do
     emit
         "row"
         "CG19: submitting the crossed-refund fold for its candidate-bound observation"
-    signedCrossed <- pure (addKeyWitness genesisSignKey hand)
+    let signedCrossed = addKeyWitness genesisSignKey hand
     crossResult <- submitTxResilient (envSubmit env) signedCrossed
     case crossResult of
         Submitted txid -> do
@@ -1221,8 +1222,7 @@ runCG19 env = do
                     <> "all (Model.lean, Action.fold) — the model constrains "
                     <> "nothing here"
                 )
-                ( "R11 — action-dependent routing (E18 disposition): processed Update value routes to the checkpoint/consumer hook (Update contributes no Rejected-owner obligations); Rejected owes input-tip per owner under a no-underpayment floor (upstream cardano-mpfs-onchain#101 is the partition fix)"
-                )
+                "R11 — action-dependent routing (E18 disposition): processed Update value routes to the checkpoint/consumer hook (Update contributes no Rejected-owner obligations); Rejected owes input-tip per owner under a no-underpayment floor (upstream cardano-mpfs-onchain#101 is the partition fix)"
             emit
                 "row"
                 ( "CG19: the chain ACCEPTED crossed refunds (bonds 5 ada and "
@@ -1251,8 +1251,7 @@ runCG19 env = do
                     <> "all (Model.lean, Action.fold) — the model constrains "
                     <> "nothing here"
                 )
-                ( "R11 — action-dependent routing (E18 disposition): processed Update value routes to the checkpoint/consumer hook (Update contributes no Rejected-owner obligations); Rejected owes input-tip per owner under a no-underpayment floor (upstream cardano-mpfs-onchain#101 is the partition fix)"
-                )
+                "R11 — action-dependent routing (E18 disposition): processed Update value routes to the checkpoint/consumer hook (Update contributes no Rejected-owner obligations); Rejected owes input-tip per owner under a no-underpayment floor (upstream cardano-mpfs-onchain#101 is the partition fix)"
             emit
                 "row"
                 ( "CG19: the chain REFUSED crossed refunds — recorded with "
@@ -1378,7 +1377,7 @@ runCG19RejectedFloor env cage tid = do
         "control"
         ("CG19-rejected-floor: obligations " <> show obligations)
     -- Phase-3 wait: past the latest request deadline.
-    submittedAts <- mapM submittedAtDatum (map snd sortedReqs)
+    submittedAts <- mapM (submittedAtDatum . snd) sortedReqs
     let deadline =
             maximum submittedAts
                 + stateProcessTime oldState
@@ -1602,7 +1601,7 @@ runCG21 env = do
     require
         "registration chapter has a disagreement or unsupported step"
         ( all
-            ( \record -> case record of
+            ( \case
                 Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
                 _ -> False
             )
@@ -1680,7 +1679,7 @@ runCG22 env = do
     require
         "retirement chapter has a disagreement or unsupported step"
         ( all
-            ( \record -> case record of
+            ( \case
                 Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
                 _ -> False
             )
@@ -1744,7 +1743,7 @@ runCG23 env = do
     require
         "exit chapter has a disagreement or unsupported step"
         ( all
-            ( \record -> case record of
+            ( \case
                 Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
                 _ -> False
             )

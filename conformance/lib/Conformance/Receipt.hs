@@ -79,7 +79,7 @@ import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString.Lazy qualified as BSL
 import Data.List (isPrefixOf, isSuffixOf, sort)
-import Data.Maybe (isJust, isNothing)
+import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Vector qualified as Vector
@@ -255,8 +255,8 @@ instance ToJSON ConstructorEvidence where
             , "evidence" .= ceEvidence c
             ]
 
-data PartialInfo = PartialInfo
-    { partialConstructors :: ![ConstructorEvidence]
+newtype PartialInfo = PartialInfo
+    { partialConstructors :: [ConstructorEvidence]
     }
     deriving stock (Show, Eq)
 
@@ -559,7 +559,7 @@ stepsComplete path receipt steps
             comparison = at "comparison" step
             -- Where the comparison found the observation to differ. A receipt
             -- written before steps carried the field reports none.
-            differences = maybe (Array Vector.empty) id (at "differences" step)
+            differences = fromMaybe (Array Vector.empty) (at "differences" step)
             signerDifference =
                 Array
                     ( Vector.singleton
@@ -1040,40 +1040,34 @@ loadReceipts dir = do
                 then
                     Left (path <> ": refused row " <> rowName <> " phase is not phase-2")
                 else checkHashes
-        checkHashes =
-            if null (refusalHashes info)
-                then
-                    Left
-                        ( path
-                            <> ": refused row "
-                            <> rowName
-                            <> " names no extracted failure hashes"
-                        )
-                else
-                    if any T.null (refusalHashes info)
-                        then
-                            Left
-                                (path <> ": refused row " <> rowName <> " names an empty failure hash")
-                        else checkBranch
-        checkBranch =
-            if refusalBranch info == Nothing && refusalLimit info == Nothing
-                then
-                    Left
-                        ( path
-                            <> ": refused row "
-                            <> rowName
-                            <> " states neither a named branch nor its limit"
-                        )
-                else
-                    if any emptyJust [refusalBranch info, refusalLimit info]
-                        then
-                            Left
-                                ( path
-                                    <> ": refused row "
-                                    <> rowName
-                                    <> " carries an empty branch or limit"
-                                )
-                        else Right r
+        checkHashes
+            | null (refusalHashes info) =
+                Left
+                    ( path
+                        <> ": refused row "
+                        <> rowName
+                        <> " names no extracted failure hashes"
+                    )
+            | any T.null (refusalHashes info) =
+                Left
+                    (path <> ": refused row " <> rowName <> " names an empty failure hash")
+            | otherwise = checkBranch
+        checkBranch
+            | isNothing (refusalBranch info) && isNothing (refusalLimit info) =
+                Left
+                    ( path
+                        <> ": refused row "
+                        <> rowName
+                        <> " states neither a named branch nor its limit"
+                    )
+            | any emptyJust [refusalBranch info, refusalLimit info] =
+                Left
+                    ( path
+                        <> ": refused row "
+                        <> rowName
+                        <> " carries an empty branch or limit"
+                    )
+            | otherwise = Right r
         emptyJust (Just t) = T.null t
         emptyJust Nothing = False
     checkAccepted p x

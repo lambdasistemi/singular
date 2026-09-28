@@ -24,6 +24,7 @@ import Conformance.Run.Receipts
 import Conformance.Run.Submit
 import Conformance.Run.Units
 import Conformance.Run.Wallet
+import Control.Monad (when)
 
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (readIORef, writeIORef)
@@ -435,24 +436,21 @@ runCA03 env w = do
         canonicalName = deriveAssetName (caSeedRef w)
         weak = authenticateWeak policyBytes (outAssets rivalOut)
         strong = authenticate policyBytes canonicalName (outAssets rivalOut)
-    if envControl env == NaiveAuthenticator
-        then
-            failWith
-                ( "CA03 ARMED (naive-authenticator): the policy+address \
-                  \authenticator ACCEPTED the rival (UTxO "
-                    <> show rivalIn
-                    <> "), as designed — the run required the control \
-                       \to reject, so the run fails here: without the \
-                       \derived-name check the rival passes for the \
-                       \canonical registry"
-                )
-        else pure ()
+    when (envControl env == NaiveAuthenticator) $
+        failWith
+            ( "CA03 ARMED (naive-authenticator): the policy+address \
+              \authenticator ACCEPTED the rival (UTxO "
+                <> show rivalIn
+                <> "), as designed — the run required the control \
+                   \to reject, so the run fails here: without the \
+                   \derived-name check the rival passes for the \
+                   \canonical registry"
+            )
     require
-        ( "CA03: the weak authenticator REJECTED the rival — the \
-          \control does not discriminate: policy+address already \
-          \excludes the rival, so CA02's rejection is not \
-          \attributable to the name check"
-        )
+        "CA03: the weak authenticator REJECTED the rival — the \
+        \control does not discriminate: policy+address already \
+        \excludes the rival, so CA02's rejection is not \
+        \attributable to the name check"
         (weak == AuthAccept)
     require
         ( "CA03: the strong authenticator accepted the rival — CA02's \
@@ -785,9 +783,8 @@ runCA05 env w = do
         Nothing -> failWith "CA05: no boot tx recorded; run CA01 first"
         Just bt ->
             require
-                ( "CA05 control failed: the no-script detector did not \
-                  \fire on the boot tx, which carried the state script"
-                )
+                "CA05 control failed: the no-script detector did not \
+                \fire on the boot tx, which carried the state script"
                 (not (null (txScriptWitnesses bt)))
     require
         "CA05: the detector reported script execution on the forged payment"
@@ -807,13 +804,12 @@ runCA05 env w = do
         Nothing
     emit
         "row"
-        ( "CA05: forged output accepted at the canonical address with \
-          \NO script executed (no witness, no redeemer, no mint, \
-          \empty node evaluation; the same detector fires on the \
-          \boot tx) — creating an output is not execution of its \
-          \receiving validator; authentication rejects it: no token \
-          \under the canonical policy"
-        )
+        "CA05: forged output accepted at the canonical address with \
+        \NO script executed (no witness, no redeemer, no mint, \
+        \empty node evaluation; the same detector fires on the \
+        \boot tx) — creating an output is not execution of its \
+        \receiving validator; authentication rejects it: no token \
+        \under the canonical policy"
 
 -- ---------------------------------------------------------
 -- CA helpers

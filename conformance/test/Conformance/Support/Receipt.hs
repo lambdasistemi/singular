@@ -955,7 +955,7 @@ overlongLiveRefusal =
                             , "refusal"
                                 .= object
                                     [ "rejection" .= T.replicate 20_000 "x"
-                                    , "measured" .= object ["units" .= [(1 :: Integer), 2]]
+                                    , "measured" .= object ["units" .= [1 :: Integer, 2]]
                                     ]
                             ]
                     ]

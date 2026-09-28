@@ -19,6 +19,7 @@ module Conformance.Story.Binding
 import Data.Aeson (FromJSON (..), eitherDecode, withObject, (.:))
 import Data.ByteString.Lazy qualified as BSL
 import Data.List (isInfixOf)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import System.Directory (doesFileExist)
@@ -33,8 +34,7 @@ data BoundObligation = BoundObligation
 
 -- | Name a bound obligation by qualified declaration, digest, revision.
 mkBoundObligation :: String -> String -> String -> BoundObligation
-mkBoundObligation name digest revision =
-    BoundObligation name digest revision
+mkBoundObligation = BoundObligation
 
 -- | A binding is a bound obligation.
 type Binding = BoundObligation
@@ -115,6 +115,4 @@ resolveClause inventory obligation anchors =
     not (null anchors)
         && all (`elem` map T.pack (anchorsFor (boName obligation))) anchors
   where
-    anchorsFor name = case lookup name inventory of
-        Just listed -> listed
-        Nothing -> []
+    anchorsFor name = fromMaybe [] (lookup name inventory)

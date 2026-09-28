@@ -10,6 +10,7 @@ import Conformance.Run.Environment
 import Conformance.Run.Observe
 import Conformance.Run.Submit
 import Conformance.Run.Wallet
+import Control.Monad (void)
 
 import Control.Concurrent.Async (async, cancel)
 import Control.Exception
@@ -200,7 +201,7 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
                 ctx
         signedFold <- submitWithGenesis submitInner unsignedFold
         _ <- withTrie tmInner tidInner $ \t ->
-            () <$ walkEdge t key edgeInsertAbsent
+            void (walkEdge t key edgeInsertAbsent)
         emit
             ("probe-insert-" <> T.unpack (TE.decodeUtf8Lenient key))
             (show (proofStepConstrs unsignedFold))

@@ -25,6 +25,7 @@ import Data.Aeson.KeyMap qualified as KM
 import Data.Foldable (toList)
 import Data.List (nub)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (catMaybes)
 import Data.Text (Text)
 import Data.Vector qualified as V
 
@@ -241,7 +242,7 @@ checkPerturbations declared expected observed = do
         else Left ("no discovered changes for " <> show absent)
     results <- mapM check changes
     lowered <- mapM checkLowering lowerings
-    let refused = [name | Just name <- results <> lowered]
+    let refused = catMaybes (results <> lowered)
         exempt =
             [ show path
             | ((name, path, _), Nothing) <- zip changes results

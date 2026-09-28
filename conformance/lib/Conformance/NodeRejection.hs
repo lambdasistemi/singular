@@ -25,7 +25,7 @@ boundedNodeReason limit original
     constructors = filter isFailure (T.split (not . isAlphaNum) header)
     isFailure word =
         any (`T.isSuffixOf` word) ["Failure", "Error"]
-            && word `notElem` ["ConwayApplyTxError"]
+            && (word /= "ConwayApplyTxError")
             || word `elem` ["ValidationTagMismatch", "FailedUnexpectedly"]
     path =
         clip

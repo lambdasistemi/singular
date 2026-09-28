@@ -32,7 +32,7 @@ import Data.Aeson.KeyMap qualified as KM
 import Data.Aeson.Types (parseEither)
 import Data.Bits (shiftR, xor, (.&.))
 import Data.List (sort, sortOn)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isNothing)
 import Data.Text (Text)
 import Data.Vector qualified as V
 import Data.Word (Word64, Word8)
@@ -142,7 +142,7 @@ compareRegistration declared expected observed =
             (fromMaybe Null (at name expected))
             (fromMaybe Null (at name observed))
         | name <- sort (declaredObservations declared)
-        , at name expected == Nothing || at name observed == Nothing
+        , isNothing (at name expected) || isNothing (at name observed)
         ]
     disagreeing =
         [ Difference name left right
@@ -206,7 +206,7 @@ compareRegistration declared expected observed =
     without field value = case value of
         Object fields -> Object (KM.delete field fields)
         _ -> value
-    comparable name = heldAsMultiset name
+    comparable = heldAsMultiset
     -- Neither the model nor the chain orders a wallet's holdings, so `held`,
     -- alone and inside `state`, is compared as a multiset.
     heldAsMultiset name value = case (name, value) of

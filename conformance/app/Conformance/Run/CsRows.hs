@@ -50,7 +50,7 @@ import Control.Exception
     ( ErrorCall (..)
     , throwIO
     )
-import Control.Monad (unless)
+import Control.Monad (unless, void)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as BSL
@@ -426,7 +426,7 @@ runCS02 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
                 "control"
                 "false-datum armed: demanding state bytes match request bytes"
             require
-                ("CS02: submitted state bytes differ from chain-observed (control)")
+                "CS02: submitted state bytes differ from chain-observed (control)"
                 (submittedStateDatum == submittedReqDatum)
         _ -> do
             require
@@ -471,8 +471,8 @@ findStateDatum :: ConwayTx -> Datum ConwayEra
 findStateDatum tx =
     case [ d
          | out <- toList (tx ^. bodyTxL . outputsTxBodyL)
-         , Just d <- [datumOfTxOut out]
          , isStateDatum out
+         , Just d <- [datumOfTxOut out]
          ] of
         [d] -> d
         _ -> error "CS02: unsigned tx has no single state datum"
@@ -482,8 +482,8 @@ findRequestDatum :: ByteString -> ConwayTx -> Datum ConwayEra
 findRequestDatum key tx =
     case [ d
          | out <- toList (tx ^. bodyTxL . outputsTxBodyL)
-         , Just d <- [datumOfTxOut out]
          , isRequestDatum key out
+         , Just d <- [datumOfTxOut out]
          ] of
         [d] -> d
         _ -> error "CS02: unsigned tx has no single request datum"
@@ -751,13 +751,12 @@ runCS08 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
             -- applications of one script, so they cannot coincide.
             require
                 "CS08: a pinned policy is a placeholder (28 zero bytes)"
-                ( all
-                    (/= BuiltinByteString (BS.replicate 28 0))
-                    [ stateAppPolicy observedBase
-                    , stateActivePolicy observedBase
-                    , stateAbsentPolicy observedBase
-                    , stateTerminalPolicy observedBase
-                    ]
+                ( BuiltinByteString (BS.replicate 28 0)
+                    `notElem` [ stateAppPolicy observedBase
+                              , stateActivePolicy observedBase
+                              , stateAbsentPolicy observedBase
+                              , stateTerminalPolicy observedBase
+                              ]
                 )
             require
                 "CS08: the three derived token policies are not distinct"
@@ -998,7 +997,7 @@ runCS03 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     (memFold, cpuFold) <- measureUnitsProv prov unsignedFoldA
     signedFoldA <- submitWithGenesis submit unsignedFoldA
     _ <- withTrie tm tidA $ \t ->
-        () <$ walkEdge t cs03KeyA edgeInsertActive
+        void (walkEdge t cs03KeyA edgeInsertActive)
     (seedB, _) <- largestWalletUtxo prov
     let cfgB =
             fastRetractCfgLocal
@@ -1400,7 +1399,7 @@ runCS05 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     (memFold, cpuFold) <- measureUnitsProv prov unsignedFoldC
     signedFoldC <- submitWithGenesis submit unsignedFoldC
     _ <- withTrie tm tidC $ \t ->
-        () <$ walkEdge t "cs05-update-key" edgeInsertActive
+        void (walkEdge t "cs05-update-key" edgeInsertActive)
     (seedD, _) <- largestWalletUtxo prov
     let cfgD =
             fastRejectCfgLocal

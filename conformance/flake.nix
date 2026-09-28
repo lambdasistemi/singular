@@ -333,13 +333,18 @@
         # off-chain lint resolves (the two locks are byte-identical), so
         # the two format checks cannot drift. Fail-closed on anything but
         # exactly one Fourmolu tool in the shell.
-        fourmoluTool =
+        shellTool =
+          pattern:
           let
             matches = builtins.filter
-              (p: builtins.match "fourmolu-exe-fourmolu-.*" (p.name or "") != null)
+              (p: builtins.match pattern (p.name or "") != null)
               project.project.shell.nativeBuildInputs;
           in
           assert builtins.length matches == 1; builtins.head matches;
+        fourmoluTool = shellTool "fourmolu-exe-fourmolu-.*";
+        # #278 S3: HLint from the same locked dev-shell tool set, so the
+        # Conformance lint resolves the HLint the off-chain lint runs.
+        hlintTool = shellTool "hlint-exe-hlint-.*";
 
         # #278 S2: the Conformance Haskell format check. Discovery mirrors
         # the off-chain lint: every hs-source-dirs the Cabal manifests
@@ -353,16 +358,9 @@
         # lint, the check runs over the FLAKE SOURCE (a store copy), so
         # the bytes it checks are candidate-bound; the root `just
         # format-check` carries the whole-tree checkout-context carrier.
-        formatCheck = pkgs.writeShellApplication {
-          name = "format-check";
-          runtimeInputs = [
-            fourmoluTool
-            pkgs.coreutils
-            pkgs.gawk
-            pkgs.findutils
-          ];
-          excludeShellChecks = [ "SC2046" "SC2086" ];
-          text = ''
+        # The Conformance Haskell extent, shared by the format and lint
+        # checks so the two cannot visit different files.
+        haskellDiscovery = ''
             cd "${./.}"
             conf_dirs=$(
               awk '/^[ \t]*hs-source-dirs:/ {
@@ -385,12 +383,48 @@
             done
             files=$(find $dirs -name '*.hs' | sort -u)
             [ -n "$files" ] || { echo "format-check: no Haskell sources in the discovered extent" >&2; exit 1; }
-            echo "format-check inventory: $(printf '%s\n' $files | wc -l) Haskell sources over $(printf '%s\n' $dirs | wc -l) dirs, house fourmolu.yaml, no exclusions" >&2
+            echo "conformance haskell extent: $(printf '%s\n' $files | wc -l) Haskell sources over $(printf '%s\n' $dirs | wc -l) dirs, house fourmolu.yaml, no exclusions" >&2
+        '';
+
+        formatCheck = pkgs.writeShellApplication {
+          name = "format-check";
+          runtimeInputs = [
+            fourmoluTool
+            pkgs.coreutils
+            pkgs.gawk
+            pkgs.findutils
+          ];
+          excludeShellChecks = [ "SC2046" "SC2086" ];
+          text = ''
+            ${haskellDiscovery}
             # The GHC option matches the off-chain lint invocation so the
             # two checks share one formatter dialect.
             fourmolu --config ${../fourmolu.yaml} --ghc-opt=-XImportQualifiedPost -m check $files
           '';
         };
+
+        # #278 S3: HLint over exactly the extent the format check visits
+        # (the Conformance Cabal stanzas plus the #80 evaluation spike),
+        # discovered at check time, with no exclusions and no ignore file.
+        hlintCheck = pkgs.writeShellApplication {
+          name = "hlint-check";
+          runtimeInputs = [
+            hlintTool
+            pkgs.coreutils
+            pkgs.gawk
+            pkgs.findutils
+          ];
+          excludeShellChecks = [ "SC2046" "SC2086" ];
+          text = ''
+            ${haskellDiscovery}
+            hlint $files
+          '';
+        };
+
+        hlintCheckRun = pkgs.runCommand "singular-conformance-hlint-check" { } ''
+          ${pkgs.lib.getExe hlintCheck}
+          touch "$out"
+        '';
 
         # #278 S2, audit F003: the flake check EXECUTES the same app over
         # the flake source it was built from — `nix build`/`nix flake
@@ -443,6 +477,7 @@
 
         checks = {
           format-check = formatCheckRun;
+          hlint-check = hlintCheckRun;
           conformance-exe = components.exes.conformance;
           conformance-tests = components.tests.conformance-tests;
           coverage-gate-tests = coverageGateTests;
@@ -453,6 +488,10 @@
           format-check = {
             type = "app";
             program = pkgs.lib.getExe formatCheck;
+          };
+          hlint-check = {
+            type = "app";
+            program = pkgs.lib.getExe hlintCheck;
           };
           fold-budget-regression = {
             type = "app";

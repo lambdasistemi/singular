@@ -324,7 +324,7 @@ registerStakeCredential env _bytes h = do
                             genesisAddr
                             (MaryValue (Coin change) mempty)
                         ]
-    signed <- pure (addKeyWitness genesisSignKey tx)
+    let signed = addKeyWitness genesisSignKey tx
     result <- submitTxResilient (envSubmit env) signed
     case result of
         Submitted _ -> pure ()

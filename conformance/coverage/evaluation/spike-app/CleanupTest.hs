@@ -10,6 +10,7 @@ module Main (main) where
 
 import Cleanup (cleanupFailure)
 import Data.List (isInfixOf)
+import Data.Maybe (isNothing)
 import Test.Tasty (defaultMain, testGroup)
 import Test.Tasty.HUnit (assertBool, testCase)
 
@@ -19,7 +20,7 @@ main =
         testGroup
             "cleanup failure predicate"
             [ testCase "clean tree and no observed pids passes" $
-                assertBool "expected Nothing" (cleanupFailure False [] == Nothing)
+                assertBool "expected Nothing" (isNothing (cleanupFailure False []))
             , testCase "leftover tree fails" $
                 case cleanupFailure True [] of
                     Nothing -> assertBool "expected failure" False

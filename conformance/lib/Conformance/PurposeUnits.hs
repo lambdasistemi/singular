@@ -15,6 +15,7 @@ module Conformance.PurposeUnits
     ) where
 
 import Conformance.Refusal (refusalScriptHashes)
+import Data.Bifunctor (bimap)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
@@ -100,7 +101,7 @@ fallbackBelowMaximum purposes = do
 
 -- | Preserve each purpose's own measured pair when applying the 2x headroom.
 doublePurposeUnits :: PurposeUnits -> PurposeUnits
-doublePurposeUnits = Map.map (\(mem, cpu) -> (2 * mem, 2 * cpu))
+doublePurposeUnits = Map.map (bimap (2 *) (2 *))
 
 missingPurposeBudgets :: PurposeUnits -> PurposeUnits -> [Text]
 missingPurposeBudgets measured declared =

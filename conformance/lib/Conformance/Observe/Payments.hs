@@ -235,7 +235,7 @@ tamperEdits alteration facts outputs = case (alteration, owedOutputs facts outpu
                 "the output paying what the fold owes is its last; no change can take the lovelace"
         | outputCarrier changed
             || outputCustody changed
-            || outputReference changed /= Nothing
+            || isJust (outputReference changed)
             || (not retraction && not (null (outputApprovals changed))) ->
             Left "the last output is not change that pays nothing the exit owes"
         | otherwise ->

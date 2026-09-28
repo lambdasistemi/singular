@@ -1,6 +1,7 @@
 module Conformance.Support.PurposeUnits (spec) where
 
 import Data.Map.Strict qualified as Map
+import Data.Maybe (fromMaybe)
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 import Conformance.PurposeUnits
@@ -73,7 +74,7 @@ spec = describe "per-purpose execution-unit fixture" $ do
         $ do
             let measured = fixtureMeasurements
                 fallback = fallbackBelowMaximum measured
-                declared = Map.map (const (maybe (0, 0) id fallback)) measured
+                declared = Map.map (const (fromMaybe (0, 0) fallback)) measured
                 overrunNames = overBudgetPurposes measured declared
                 doubled = doublePurposeUnits measured
             putStrLn ("fixture purpose evaluation map: " <> show measured)
