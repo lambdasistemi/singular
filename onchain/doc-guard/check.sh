@@ -13,14 +13,18 @@
 #   each with text of its own;
 # - every public declaration — `pub fn`, `pub type`, `pub opaque type`,
 #   `pub const` — and every `validator` is immediately preceded by a `///`
-#   doc comment with text.
+#   doc comment with text. A declaration is found whatever its indentation:
+#   the compiler accepts an indented top-level declaration, so the guard does.
 #
 # Reference layer (with --reference DOCS_DIR, the output of `aiken docs` for
 # the same tree). What a reader of the generated reference sees: each
-# module's page exists, its module documentation renders the four sections in
-# order with content under each, and every public declaration found by the
-# source layer renders a non-empty description on that page. (Aiken renders
-# no page entry for a `validator`; the source layer alone covers it.)
+# module's page exists and its module documentation renders the four
+# sections in order with content under each. The members the compiler put on
+# the page are discovered from the page itself and reconciled with the source
+# inventory in both directions — a member on the page the source layer did
+# not find, or a source export missing from the page, fails — and every
+# member on the page must render a non-empty description. (Aiken renders no
+# page entry for a `validator`; the source layer alone covers it.)
 # `--reference-only` reports this layer alone, so its negative controls show
 # it refuses a gap by itself.
 #
@@ -48,10 +52,14 @@ if [ -d "$dir/registry" ]; then
     < <(find "$dir/registry" -type f -name '*.ak' | LC_ALL=C sort)
 fi
 
+# FILE:LINE:DECLARATION for every public declaration and validator, at any
+# indentation. `pub` and `validator` only open top-level declarations, and a
+# line starting with them is never inside a comment.
 exports() {
-  awk '/^(pub (fn|type|opaque type|const) |validator )/ {
-         match($0, /^(pub (fn|type|opaque type|const)|validator) [A-Za-z_][A-Za-z0-9_]*/)
-         print FILENAME ":" FNR ":" substr($0, RSTART, RLENGTH)
+  awk '/^[[:space:]]*(pub[[:space:]]+(fn|type|opaque[[:space:]]+type|const)|validator)[[:space:]]+[A-Za-z_]/ {
+         line = $0; sub(/^[[:space:]]+/, "", line); gsub(/[[:space:]]+/, " ", line)
+         match(line, /^(pub (fn|type|opaque type|const)|validator) [A-Za-z_][A-Za-z0-9_]*/)
+         print FILENAME ":" FNR ":" substr(line, RSTART, RLENGTH)
        }' "$@"
 }
 
@@ -88,11 +96,13 @@ for m in "${modules[@]}"; do case "$m" in "$dir/registry/"*) registry=$((registr
 
 total=0
 checked=0
+members=0
 for m in "${modules[@]}"; do
   rel="${m#"$dir"/}"; rel="${rel%.ak}"
+  entries="$(exports "$m")"
 
   # Source layer: module doc.
-  out="$(sed -n 's/^\/\/\/\/ \{0,1\}//p' "$m" | sections_check "$m")"
+  out="$(sed -n 's/^[[:space:]]*\/\/\/\/ \{0,1\}//p' "$m" | sections_check "$m")"
   if [ -n "$out" ] && [ "$source_layer" = 1 ]; then printf '%s\n' "$out"; fail=1; fi
 
   # Source layer: a doc comment with text directly above every export.
@@ -101,11 +111,11 @@ for m in "${modules[@]}"; do
     total=$((total + 1))
     line="${entry#*:}"; line="${line%%:*}"; decl="${entry#*:*:}"
     if ! awk -v n="$line" '
-        FNR < n { if ($0 ~ /^\/\/\/( |$)/) { if ($0 ~ /^\/\/\/ .*[^[:space:]]/) text = 1 } else { text = 0 } }
+        FNR < n { if ($0 ~ /^[[:space:]]*\/\/\/( |$)/) { if ($0 ~ /^[[:space:]]*\/\/\/ .*[^[:space:]]/) text = 1 } else { text = 0 } }
         FNR == n { exit !(text) }' "$m"; then
       source_report "$m:$line: '$decl' has no doc comment"
     fi
-  done < <(exports "$m")
+  done <<<"$entries"
 
   [ -n "$reference" ] || continue
 
@@ -117,11 +127,22 @@ for m in "${modules[@]}"; do
          | sed -e 's/<h2>\([^<]*\)<\/h2>/\n## \1\n/g' -e 's/<[^>]*>//g' \
          | sections_check "$page")"
   [ -n "$out" ] && { printf '%s\n' "$out"; fail=1; }
-  while IFS= read -r entry; do
-    [ -z "$entry" ] && continue
-    decl="${entry#*:*:}"
-    case "$decl" in validator\ *) continue ;; esac
-    name="${decl##* }"
+
+  # The page's own member extent, reconciled with the source inventory.
+  on_page="$(awk '/<section class="module-members">/ { on = 1 } /<\/section>/ { on = 0 }
+                  on && match($0, /<h2 id="[^"]+">/) { print substr($0, RSTART + 8, RLENGTH - 10) }' "$page" | LC_ALL=C sort)"
+  in_source="$(sed -n 's/^.*:\(pub [a-z ]*\) \([A-Za-z_][A-Za-z0-9_]*\)$/\2/p' <<<"$entries" | LC_ALL=C sort)"
+  while IFS= read -r extra; do
+    [ -n "$extra" ] && report "$page: member '$extra' is on the generated page but not in the source inventory"
+  done < <(LC_ALL=C comm -23 <(printf '%s\n' "$on_page" | sed '/^$/d') <(printf '%s\n' "$in_source" | sed '/^$/d'))
+  while IFS= read -r missing; do
+    [ -n "$missing" ] && report "$page: source export '$missing' is missing from the generated page"
+  done < <(LC_ALL=C comm -13 <(printf '%s\n' "$on_page" | sed '/^$/d') <(printf '%s\n' "$in_source" | sed '/^$/d'))
+
+  # Every member the compiler put on the page renders a description.
+  while IFS= read -r name; do
+    [ -z "$name" ] && continue
+    members=$((members + 1))
     if ! awk -v id="<h2 id=\"$name\">" '
         index($0, id) { found = 1; next }
         found && /class="member"/ { exit }
@@ -131,13 +152,14 @@ for m in "${modules[@]}"; do
           gsub(/<[^>]*>/, "", text); gsub(/[[:space:]]/, "", text)
           exit !(found && text != "")
         }' "$page"; then
-      report "$page: '$decl' renders no description"
+      report "$page: member '$name' renders no description"
     fi
-  done < <(exports "$m")
+  done <<<"$on_page"
 done
 
 [ "$total" -gt 0 ] || report "no public declaration found in the extent"
 if [ -n "$reference" ] && [ "$checked" -eq 0 ]; then report "no generated reference page checked under $reference"; fi
-echo "INVENTORY modules=${#modules[@]} registry_modules=$registry exports=$total reference_pages=$checked"
+if [ -n "$reference" ] && [ "$members" -eq 0 ]; then report "no member found on any generated reference page under $reference"; fi
+echo "INVENTORY modules=${#modules[@]} registry_modules=$registry exports=$total reference_pages=$checked page_members=$members"
 if [ "$fail" = 1 ]; then echo "aiken-docs: FAILED"; exit 1; fi
 echo "aiken-docs: OK"
