@@ -1,0 +1,136 @@
+{
+  "the-story-this-serves": [
+    {
+      "pause": 400,
+      "text": "A registry integrator keeps using the state validator already deployed."
+    },
+    {
+      "pause": 500,
+      "text": "The story demands the same script hashes, acceptances, refusals, trace reasons and transaction effects after the source is divided into owners."
+    },
+    {
+      "pause": 450,
+      "text": "The promise is checked by comparing all eleven validators of a fresh blueprint, field by field, with the blueprint from before the move."
+    },
+    {
+      "pause": 450,
+      "text": "And by comparing all three hundred sixty Aiken tests, three hundred forty of which report a cost, on status, memory and CPU cost, and traces, under the same property seed."
+    },
+    {
+      "pause": 500,
+      "text": "Both comparisons ran after each of the four moves and found no difference."
+    }
+  ],
+  "one-owner-per-rule": [
+    {
+      "pause": 500,
+      "text": "A diagram is shown here: the state module dispatches minting to genesis, custody spends to custody, and Modify spends to the modify owner."
+    },
+    {
+      "pause": 450,
+      "text": "The modify owner runs the fold, checks each duty through discharge, and settles lovelace through settlement. The fold collects duties and asks the trie owner for its refusals. Discharge and settlement read custody outputs."
+    },
+    {
+      "pause": 450,
+      "text": "Dependencies run one way, from the dispatch down; no owner imports the state module, and refusal, duty, trie and genesis import no other owner."
+    },
+    {
+      "pause": 450,
+      "text": "Every moved declaration kept its body byte for byte, importing its names unqualified."
+    },
+    {
+      "pause": 500,
+      "text": "Two test modules now read the trie and retirement refusals from their owners, because Aiken has no re-export and a forwarding function would have changed the costs the tests pin."
+    }
+  ],
+  "how-a-fold-is-judged": [
+    {
+      "pause": 400,
+      "text": "A diagram is shown here of the order in which a Modify is judged."
+    },
+    {
+      "pause": 450,
+      "text": "First the continuation address, state token, no drain and preserved pins. Then the fold over every input: carriage, phase, edge, approval and trie move."
+    },
+    {
+      "pause": 450,
+      "text": "Then the batch checks: something consumed, no surplus action, the root, and the mint delta. Then each duty is discharged, and finally custody refunds, positional refunds and each payee's sum are settled."
+    },
+    {
+      "pause": 500,
+      "text": "The first failing check is the one reason traced, and that order is part of the contract."
+    }
+  ],
+  "what-each-owner-holds": [
+    {
+      "pause": 400,
+      "text": "A table is shown here with ten owners, each linked to its source."
+    },
+    {
+      "pause": 450,
+      "text": "The state module dispatches. Genesis mints the state token. Modify owns the judging order and the frame refusals such as continuation address, state drain, root and net mint mismatch."
+    },
+    {
+      "pause": 450,
+      "text": "The fold owns carriage, phase, edge admission and approval refusals. The trie owner names the leaf refusals such as key unknown, not booked and edge from terminal."
+    },
+    {
+      "pause": 500,
+      "text": "Duty only collects. Discharge refuses a wrong destination, absent custody, a missing burn and a missing token. Settlement refuses a short refund or a returned deposit. Custody refuses a custody spend outside its fold. Refusal reports."
+    }
+  ],
+  "where-a-common-change-goes": [
+    {
+      "pause": 400,
+      "text": "A table is shown here routing seven common changes to the owner to edit."
+    },
+    {
+      "pause": 450,
+      "text": "A new request check goes to the fold; a new edge to the fold and duty; token destinations to discharge; lovelace payments to settlement; custody spending to custody; the check order to modify; booting to genesis."
+    },
+    {
+      "pause": 500,
+      "text": "Any change that moves a compiled script moves its hash, the manifest, the witness pin and every deployment on the old hash. That is a deployment decision, never a side effect of reorganizing source."
+    }
+  ],
+  "documentation-in-the-aiken-source": [
+    {
+      "pause": 500,
+      "text": "Each owner documents itself in Aiken doc comments: responsibility, dependencies, assumptions and invariants, plus a description on every public declaration and on the validator."
+    },
+    {
+      "pause": 450,
+      "text": "The onchain flake check named aiken docs enforces this over an extent it discovers, on the source and on the reference the pinned Aiken generates."
+    },
+    {
+      "pause": 450,
+      "text": "It then plants each kind of gap in a copy and requires each layer to refuse it."
+    },
+    {
+      "pause": 500,
+      "text": "The check establishes presence, not truth; no doc comment is evidence of what the validator does."
+    }
+  ],
+  "evidence-and-limits": [
+    {
+      "pause": 450,
+      "text": "The identity and cost comparisons ran against the revision before the move after each of the four moves, and found nothing changed."
+    },
+    {
+      "pause": 450,
+      "text": "From here on, the continuous integration carriers keep the promise: the script identity manifest, the Aiken suite, the vectors, and devnet journeys on a fresh blueprint."
+    },
+    {
+      "pause": 450,
+      "text": "Limits: property tests report no cost; the comparison proves preservation, not correctness, which stays the Lean model's question."
+    },
+    {
+      "pause": 500,
+      "text": "The generated Aiken reference is checked but not published, because its source links name another repository; and the documentation check proves each description exists, not that it is accurate."
+    }
+  ],
+  "_source": {
+    "file": "onchain-validator-owners.md",
+    "sha256": "f16b7fe0b8766d497014959ea6f1f5038ad09e72ede883afe96104ec7c72aa08"
+  }
+}
