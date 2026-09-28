@@ -17,6 +17,28 @@ The documentation package and checks use the locked shared MkDocs toolchain. The
 
 The browser check launches the pinned Chromium build, serves the standalone simulator on a temporary loopback port, and executes its manual-control and story assertions. The canonical runner is `tools/browser-check.mjs`; the earlier callback under `simulator/` is retained as historical browser evidence. Screenshots use a temporary writable directory; no browser download or external service is required during execution. Set `KEEP_BROWSER_EVIDENCE=1` to retain successful browser evidence. CI's build gate realizes the packages, executing checks, and development-shell inputs before the downstream verification jobs.
 
+## The repository code inventory
+
+`just inventory` maps every file the tree actually holds to its lint policy
+and its format policy — or, for data and artifacts, to a named non-code
+class — and fails on anything unmapped. Discovery walks the tree itself
+(extensions, shebangs, executable mode and component manifests), so a new
+source file in a covered directory is mapped without editing anything,
+while a file nobody classified fails with a named diagnostic instead of
+passing silently. The same inventory runs over the Nix flake source, where
+no Git directory exists, through `nix run .#inventory-check`; pull-request
+CI runs both forms so the two contexts cannot drift. The checked registry
+lives in `tools/code_inventory.py`.
+
+The inventory is a mapping, not enforcement: its report names which
+policies CI executes today and which are pending debt owned by the
+remaining slices of the lint-and-format work — including the retained HLint
+hint debt in the excluded offchain directories, which stays visible until
+it is resolved. `just inventory-controls` runs the negative and positive
+controls: synthetic orphans injected into scratch copies of the classified
+tree, each required to produce its intended failure. The controls never
+touch the working tree.
+
 ## Edit and serve
 
 The development shell has a separate CI build because packaged builds do not exercise it:

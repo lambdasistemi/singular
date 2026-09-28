@@ -155,6 +155,36 @@ jobs:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix run --quiet .#browser-check
+  inventory:
+    if: github.event.action != 'closed'
+    needs: build-gate
+    name: Code inventory
+    runs-on: nixos
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #278 slice 1: the machine-checked code inventory. This job runs the
+      # inventory over the NIX FLAKE SOURCE — a store copy with no .git
+      # directory — which is one of the two contexts the inventory must
+      # reproduce; the tracked-checkout context is carried by `just
+      # inventory` inside the dev-shell job's `just ci`. The inventory maps
+      # every discovered file to a lint and a format policy (or a named
+      # non-code class), fails closed on anything unmapped, and reports
+      # enforced versus pending extents honestly — the negative and positive
+      # controls proving each discovery signal runs in the dev-shell job via
+      # `just inventory-controls`.
+      - run: nix run --quiet .#inventory-check
   coverage:
     if: github.event.action != 'closed'
     needs: build-gate
