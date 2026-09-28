@@ -52,6 +52,11 @@
       packages = each (system: packages system // { build-gate = buildGate system; });
       checks = each (system: { docs = (project system).check; release = (project system).releaseCheck; model = (model system).check; simulator = (simulator system).check; browser = (browser system).check; coverage = (coverage system).check; inventory = (inventory system).check; });
       apps = each (system: ((project system).apps // (model system).apps // (simulator system).apps // (browser system).apps // (coverage system).apps // (inventory system).apps));
-      devShells = each (system: { default = (project system).shell.overrideAttrs (old: (browser system).environment // { nativeBuildInputs = (old.nativeBuildInputs or []) ++ (with import nixpkgs { inherit system; }; [ lean4 nodejs ]); }); });
+      # #278 S2: the root development shell carries the pinned house
+      # formatter — the exact Fourmolu the off-chain lock resolves, exposed
+      # by the offchain flake — so `just format`, `just format-check` and
+      # `just format-controls` (all inside `just ci`) run the one pinned
+      # binary the lint checks run. No second version source.
+      devShells = each (system: { default = (project system).shell.overrideAttrs (old: (browser system).environment // { nativeBuildInputs = (old.nativeBuildInputs or []) ++ [ offchain.packages.${system}.fourmolu ] ++ (with import nixpkgs { inherit system; }; [ lean4 nodejs ]); }); });
     };
 }

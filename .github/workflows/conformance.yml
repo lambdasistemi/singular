@@ -53,6 +53,37 @@ jobs:
       # changes outside this workflow's path filter.
       - name: Owned docs page passes the presentation gate
         run: nix develop --quiet --command python3 tools/check_presentation.py --front README.md --register docs/model-ledger.md --register docs/theorems.md --register docs/mutants.md docs/consumer-conformance.md
+  format-check:
+    name: Conformance Haskell format check
+    runs-on: nixos
+    timeout-minutes: 20
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #278 S2: the Conformance Haskell tree under the house Fourmolu
+      # configuration — the one committed fourmolu.yaml at the repository
+      # root, passed explicitly so a missing configuration fails loudly
+      # instead of falling back to Fourmolu defaults. The app discovers
+      # its extent from the Cabal manifests at check time (the Conformance
+      # stanzas plus the #80 evaluation spike), runs the pinned Fourmolu
+      # its lock resolves, and checks the FLAKE SOURCE (a store copy), so
+      # the bytes it checks are candidate-bound — the same shape as the
+      # off-chain lint app. The whole-tree checkout-context carrier (both
+      # Haskell trees, same configuration, same extent) is `just
+      # format-check` inside the dev-shell job's `just ci`; the negative
+      # and positive controls run there too via `just format-controls`.
+      - run: nix run --quiet .#format-check
+        working-directory: conformance
   conformance:
     name: Generic, canonical-identity and serialization rows on a real devnet
     runs-on: nixos

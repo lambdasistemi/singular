@@ -328,6 +328,70 @@
           '';
         };
 
+        # #278 S2: the pinned house formatter, extracted from this tree's
+        # locked dev-shell tool set — the same Fourmolu version the
+        # off-chain lint resolves (the two locks are byte-identical), so
+        # the two format checks cannot drift. Fail-closed on anything but
+        # exactly one Fourmolu tool in the shell.
+        fourmoluTool =
+          let
+            matches = builtins.filter
+              (p: builtins.match "fourmolu-exe-fourmolu-.*" (p.name or "") != null)
+              project.project.shell.nativeBuildInputs;
+          in
+          assert builtins.length matches == 1; builtins.head matches;
+
+        # #278 S2: the Conformance Haskell format check. Discovery mirrors
+        # the off-chain lint: every hs-source-dirs the Cabal manifests
+        # declare (conformance.cabal and the #80 evaluation spike's
+        # spike.cabal), visited recursively, so a new component or source
+        # directory is covered with no list to edit; empty discovery or a
+        # missing declared directory fails closed. The house configuration
+        # is the committed fourmolu.yaml at the repository root, passed
+        # explicitly so a missing configuration fails loudly instead of
+        # silently falling back to Fourmolu defaults. Like the off-chain
+        # lint, the check runs over the FLAKE SOURCE (a store copy), so
+        # the bytes it checks are candidate-bound; the root `just
+        # format-check` carries the whole-tree checkout-context carrier.
+        formatCheck = pkgs.writeShellApplication {
+          name = "format-check";
+          runtimeInputs = [
+            fourmoluTool
+            pkgs.coreutils
+            pkgs.gawk
+            pkgs.findutils
+          ];
+          excludeShellChecks = [ "SC2046" "SC2086" ];
+          text = ''
+            cd "${./.}"
+            conf_dirs=$(
+              awk '/^[ \t]*hs-source-dirs:/ {
+                sub(/^[ \t]*hs-source-dirs:[ \t]*/, "")
+                for (i = 1; i <= NF; i++) print $i
+              }' conformance.cabal
+            ) || { echo "format-check: source discovery failed: cannot read conformance.cabal (awk exit $?)" >&2; exit 1; }
+            [ -n "$conf_dirs" ] || { echo "format-check: source discovery found no hs-source-dirs in conformance.cabal" >&2; exit 1; }
+            spike_dirs=$(
+              awk '/^[ \t]*hs-source-dirs:/ {
+                sub(/^[ \t]*hs-source-dirs:[ \t]*/, "")
+                for (i = 1; i <= NF; i++) print "coverage/evaluation/" $i
+              }' coverage/evaluation/spike.cabal
+            ) || { echo "format-check: source discovery failed: cannot read coverage/evaluation/spike.cabal (awk exit $?)" >&2; exit 1; }
+            [ -n "$spike_dirs" ] || { echo "format-check: source discovery found no hs-source-dirs in coverage/evaluation/spike.cabal" >&2; exit 1; }
+            dirs=$(printf '%s\n%s\n' "$conf_dirs" "$spike_dirs" | sort -u)
+            [ -n "$dirs" ] || { echo "format-check: discovered no source directories" >&2; exit 1; }
+            for d in $dirs; do
+              [ -d "$d" ] || { echo "format-check: declared source directory missing: $d" >&2; exit 1; }
+            done
+            files=$(find $dirs -name '*.hs' | sort -u)
+            [ -n "$files" ] || { echo "format-check: no Haskell sources in the discovered extent" >&2; exit 1; }
+            echo "format-check inventory: $(printf '%s\n' $files | wc -l) Haskell sources over $(printf '%s\n' $dirs | wc -l) dirs, house fourmolu.yaml, no exclusions" >&2
+            # The GHC option matches the off-chain lint invocation so the
+            # two checks share one formatter dialect.
+            fourmolu --config ${../fourmolu.yaml} --ghc-opt=-XImportQualifiedPost -m check $files
+          '';
+        };
+
       in
       {
         packages = {
@@ -367,6 +431,7 @@
         };
 
         checks = {
+          format-check = formatCheck;
           conformance-exe = components.exes.conformance;
           conformance-tests = components.tests.conformance-tests;
           coverage-gate-tests = coverageGateTests;
@@ -374,6 +439,10 @@
         };
 
         apps = {
+          format-check = {
+            type = "app";
+            program = pkgs.lib.getExe formatCheck;
+          };
           fold-budget-regression = {
             type = "app";
             program = pkgs.lib.getExe foldBudgetRegression;
