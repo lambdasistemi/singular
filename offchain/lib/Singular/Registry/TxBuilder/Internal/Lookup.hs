@@ -17,82 +17,82 @@ This is the lookup-and-balance owner extracted from
 @Singular.Registry.TxBuilder.Internal@; the public module re-exports
 it and is its only intended consumer surface.
 -}
-module Singular.Registry.TxBuilder.Internal.Lookup (
-    -- * UTxO lookup
-    findUtxoByTxIn,
-    findStateUtxo,
-    findRequestUtxos,
+module Singular.Registry.TxBuilder.Internal.Lookup
+    ( -- * UTxO lookup
+      findUtxoByTxIn
+    , findStateUtxo
+    , findRequestUtxos
 
-    -- * Indexing
-    spendingIndex,
+      -- * Indexing
+    , spendingIndex
 
-    -- * Script integrity
-    computeScriptIntegrity,
+      -- * Script integrity
+    , computeScriptIntegrity
 
-    -- * Evaluate and balance
-    evaluateAndBalance,
-    placeholderExUnits,
+      -- * Evaluate and balance
+    , evaluateAndBalance
+    , placeholderExUnits
 
-    -- * Time and slot helpers
-    currentPosixMs,
-    trySlots,
+      -- * Time and slot helpers
+    , currentPosixMs
+    , trySlots
 
-    -- * Refund computation
-    computeRefund,
-) where
+      -- * Refund computation
+    , computeRefund
+    ) where
 
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Alonzo.PParams (
-    LangDepView,
-    getLanguageView,
- )
-import Cardano.Ledger.Alonzo.Tx (
-    ScriptIntegrity (..),
-    ScriptIntegrityHash,
-    hashScriptIntegrity,
- )
-import Cardano.Ledger.Alonzo.TxBody (
-    scriptIntegrityHashTxBodyL,
- )
-import Cardano.Ledger.Alonzo.TxWits (
-    Redeemers (..),
-    TxDats (..),
- )
-import Cardano.Ledger.Api.Tx (
-    bodyTxL,
-    witsTxL,
- )
-import Cardano.Ledger.Api.Tx.Body (
-    inputsTxBodyL,
- )
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    coinTxOutL,
-    getMinCoinTxOut,
-    mkBasicTxOut,
-    valueTxOutL,
- )
-import Cardano.Ledger.Api.Tx.Wits (
-    rdmrsTxWitsL,
- )
-import Cardano.Ledger.BaseTypes (
-    Inject (..),
-    Network,
-    StrictMaybe (..),
- )
-import Cardano.Ledger.Mary.Value (
-    MaryValue (..),
-    MultiAsset (..),
-    PolicyID (..),
- )
+import Cardano.Ledger.Alonzo.PParams
+    ( LangDepView
+    , getLanguageView
+    )
+import Cardano.Ledger.Alonzo.Tx
+    ( ScriptIntegrity (..)
+    , ScriptIntegrityHash
+    , hashScriptIntegrity
+    )
+import Cardano.Ledger.Alonzo.TxBody
+    ( scriptIntegrityHashTxBodyL
+    )
+import Cardano.Ledger.Alonzo.TxWits
+    ( Redeemers (..)
+    , TxDats (..)
+    )
+import Cardano.Ledger.Api.Tx
+    ( bodyTxL
+    , witsTxL
+    )
+import Cardano.Ledger.Api.Tx.Body
+    ( inputsTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , coinTxOutL
+    , getMinCoinTxOut
+    , mkBasicTxOut
+    , valueTxOutL
+    )
+import Cardano.Ledger.Api.Tx.Wits
+    ( rdmrsTxWitsL
+    )
+import Cardano.Ledger.BaseTypes
+    ( Inject (..)
+    , Network
+    , StrictMaybe (..)
+    )
+import Cardano.Ledger.Mary.Value
+    ( MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID (..)
+    )
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.Plutus.Language (Language (PlutusV3))
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Slotting.Slot (SlotNo)
-import Cardano.Tx.Balance (
-    BalanceResult (..),
-    balanceTx,
- )
+import Cardano.Tx.Balance
+    ( BalanceResult (..)
+    , balanceTx
+    )
 import Cardano.Tx.Ledger (ConwayTx)
 import Control.Exception (SomeException, try)
 import Data.ByteString.Short qualified as SBS
@@ -102,24 +102,24 @@ import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Word (Word32)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
-import Singular.Registry.Ledger (
-    AssetName (..),
-    Coin (..),
-    ConwayEra,
-    PParams,
-    TokenId (..),
- )
+import Singular.Registry.Ledger
+    ( AssetName (..)
+    , Coin (..)
+    , ConwayEra
+    , PParams
+    , TokenId (..)
+    )
 import Singular.Registry.Provider (Provider (..))
-import Singular.Registry.TxBuilder.Internal.Identity (
-    addrFromKeyHashBytes,
-    extractCageDatum,
-    extractOwnerBytes,
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainRequest (..),
-    OnChainTokenId (..),
- )
+import Singular.Registry.TxBuilder.Internal.Identity
+    ( addrFromKeyHashBytes
+    , extractCageDatum
+    , extractOwnerBytes
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRequest (..)
+    , OnChainTokenId (..)
+    )
 
 {- | Placeholder execution units used in the initial
 unbalanced transaction.
@@ -130,16 +130,16 @@ placeholderExUnits = ExUnits 0 0
 {- | Evaluate script execution units and balance
 a transaction.
 -}
-evaluateAndBalance ::
-    Provider IO ->
-    PParams ConwayEra ->
-    -- | All input UTxOs (fee + script)
-    [(TxIn, TxOut ConwayEra)] ->
-    -- | Change address
-    Addr ->
-    -- | Unbalanced tx with placeholder ExUnits
-    ConwayTx ->
-    IO ConwayTx
+evaluateAndBalance
+    :: Provider IO
+    -> PParams ConwayEra
+    -> [(TxIn, TxOut ConwayEra)]
+    -- ^ All input UTxOs (fee + script)
+    -> Addr
+    -- ^ Change address
+    -> ConwayTx
+    -- ^ Unbalanced tx with placeholder ExUnits
+    -> IO ConwayTx
 evaluateAndBalance prov pp inputUtxos changeAddr tx =
     do
         let existingIns =
@@ -207,10 +207,10 @@ evaluateAndBalance prov pp inputUtxos changeAddr tx =
             Right br -> pure (balancedTx br)
 
 -- | Find a UTxO by its 'TxIn'.
-findUtxoByTxIn ::
-    TxIn ->
-    [(TxIn, TxOut ConwayEra)] ->
-    Maybe (TxIn, TxOut ConwayEra)
+findUtxoByTxIn
+    :: TxIn
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Maybe (TxIn, TxOut ConwayEra)
 findUtxoByTxIn needle =
     find' (\(tin, _) -> tin == needle)
   where
@@ -220,11 +220,11 @@ findUtxoByTxIn needle =
         | otherwise = find' p xs
 
 -- | Find the state UTxO for a token.
-findStateUtxo ::
-    PolicyID ->
-    TokenId ->
-    [(TxIn, TxOut ConwayEra)] ->
-    Maybe (TxIn, TxOut ConwayEra)
+findStateUtxo
+    :: PolicyID
+    -> TokenId
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Maybe (TxIn, TxOut ConwayEra)
 findStateUtxo policyId tid = find' isState
   where
     assetName = unTokenId tid
@@ -241,10 +241,10 @@ findStateUtxo policyId tid = find' isState
         | otherwise = find' p xs
 
 -- | Find all request UTxOs for a token.
-findRequestUtxos ::
-    TokenId ->
-    [(TxIn, TxOut ConwayEra)] ->
-    [(TxIn, TxOut ConwayEra)]
+findRequestUtxos
+    :: TokenId
+    -> [(TxIn, TxOut ConwayEra)]
+    -> [(TxIn, TxOut ConwayEra)]
 findRequestUtxos tid = filter isRequest
   where
     targetName = unTokenId tid
@@ -256,7 +256,7 @@ findRequestUtxos tid = filter isRequest
                             OnChainTokenId
                                 (BuiltinByteString bs)
                         } = req
-                 in AssetName (SBS.toShort bs)
+                in  AssetName (SBS.toShort bs)
                         == targetName
             _ -> False
 
@@ -264,7 +264,7 @@ findRequestUtxos tid = filter isRequest
 spendingIndex :: TxIn -> Set.Set TxIn -> Word32
 spendingIndex needle inputs =
     let sorted = Set.toAscList inputs
-     in go 0 sorted
+    in  go 0 sorted
   where
     go _ [] =
         error "spendingIndex: TxIn not in set"
@@ -273,10 +273,10 @@ spendingIndex needle inputs =
         | otherwise = go (n + 1) xs
 
 -- | Compute the 'ScriptIntegrityHash'.
-computeScriptIntegrity ::
-    PParams ConwayEra ->
-    Redeemers ConwayEra ->
-    StrictMaybe ScriptIntegrityHash
+computeScriptIntegrity
+    :: PParams ConwayEra
+    -> Redeemers ConwayEra
+    -> StrictMaybe ScriptIntegrityHash
 computeScriptIntegrity pp rdmrs =
     let langViews :: Set.Set LangDepView
         langViews =
@@ -284,7 +284,7 @@ computeScriptIntegrity pp rdmrs =
                 (getLanguageView pp PlutusV3)
         emptyDats :: TxDats ConwayEra
         emptyDats = TxDats mempty
-     in SJust
+    in  SJust
             ( hashScriptIntegrity
                 (ScriptIntegrity rdmrs emptyDats langViews)
             )
@@ -298,8 +298,8 @@ currentPosixMs = do
 {- | Try converting successive POSIX ms values to
 slots, returning the first that succeeds.
 -}
-trySlots ::
-    Provider IO -> [Integer] -> IO SlotNo
+trySlots
+    :: Provider IO -> [Integer] -> IO SlotNo
 trySlots _ [] =
     error
         "posixMsToSlot: all fallbacks \
@@ -320,12 +320,12 @@ and exact lock accumulation instead of an aggregate envelope). THE shared
 helper for every rejected-refund emission — `Reject` and manual paths
 call it; processed rows emit no refunds at all (their bond locks).
 -}
-computeRefund ::
-    PParams ConwayEra ->
-    Network ->
-    Integer ->
-    TxOut ConwayEra ->
-    TxOut ConwayEra
+computeRefund
+    :: PParams ConwayEra
+    -> Network
+    -> Integer
+    -> TxOut ConwayEra
+    -> TxOut ConwayEra
 computeRefund pp net tipAmount reqOut =
     let Coin reqVal = reqOut ^. coinTxOutL
         rawRefund =
@@ -339,6 +339,6 @@ computeRefund pp net tipAmount reqOut =
                 refundAddr
                 (inject rawRefund)
         minCoin = getMinCoinTxOut pp draft
-     in mkBasicTxOut
+    in  mkBasicTxOut
             refundAddr
             (inject (max rawRefund minCoin))

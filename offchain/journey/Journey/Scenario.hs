@@ -17,9 +17,9 @@ Each step's owner: "Journey.Steps" (boot, request, apply, read-back),
 "Journey.Identity" (identity header and derived-applied-identity),
 "Journey.Controls" (the refused transactions and their control).
 -}
-module Journey.Scenario (
-    journey,
-) where
+module Journey.Scenario
+    ( journey
+    ) where
 
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (newIORef)
@@ -31,26 +31,29 @@ import MPF.Backend.Pure (emptyMPFInMemoryDB)
 
 import Journey.Chain (cageCfg, genesisAddr, submitWithGenesis)
 import Journey.Controls (stepReject)
-import Journey.Identity (
-    ScriptIdentity,
-    printIdentity,
-    readScriptIdentity,
-    stepDerivedIdentity,
- )
+import Journey.Identity
+    ( ScriptIdentity
+    , printIdentity
+    , readScriptIdentity
+    , stepDerivedIdentity
+    )
 import Journey.Narration (emit, failWith)
 import Journey.Options (identityPathFromEnv, requireEnv)
 import Journey.Proofs (stepVerifyAbsent, stepVerifyPresent)
 import Journey.Steps (stepApply, stepBoot, stepReadBack, stepRequest)
-import Singular.Registry.Blueprint (
-    extractCompiledCode,
-    loadBlueprint,
-    loadRegistryCodesFromEnv,
- )
+import Singular.Registry.Blueprint
+    ( extractCompiledCode
+    , loadBlueprint
+    , loadRegistryCodesFromEnv
+    )
 import Singular.Registry.Node (NodeSession (..), withNode)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Edges qualified as Edges
-import Singular.Registry.TxBuilder.Internal (scriptFromBytes, txInToRef)
+import Singular.Registry.TxBuilder.Internal
+    ( scriptFromBytes
+    , txInToRef
+    )
 
 -- | Read the environment and identities, then run the journey.
 journey :: IO ()
@@ -75,12 +78,12 @@ journey = do
 {- | The eleven steps against one node session, from the three
 validators' compiled code.
 -}
-runJourney ::
-    ScriptIdentity ->
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    IO ()
+runJourney
+    :: ScriptIdentity
+    -> SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> IO ()
 runJourney si stateBytes requestBytes stakingBytes = do
     withNode $ \sess -> do
         let prov = nsProvider sess

@@ -12,11 +12,11 @@ directory (the runners execute from @offchain/@ inside the extracted
 archive). A revision that cannot be established fails closed, never
 "unknown".
 -}
-module Singular.Registry.Candidate (
-    CandidateSource (..),
-    resolveCandidate,
-    sourceName,
-) where
+module Singular.Registry.Candidate
+    ( CandidateSource (..)
+    , resolveCandidate
+    , sourceName
+    ) where
 
 import Control.Exception (SomeException, try)
 import Data.ByteString qualified as BS
@@ -54,8 +54,12 @@ that cannot be read counts as dirty.
 resolveCandidate :: IO (Either String (String, Bool, CandidateSource))
 resolveCandidate = do
     override <- lookupEnv "CANDIDATE_SHA"
-    headOut <- try (readProcess "git" ["rev-parse", "HEAD"] "") :: IO (Either SomeException String)
-    statusOut <- try (readProcess "git" ["status", "--porcelain"] "") :: IO (Either SomeException String)
+    headOut <-
+        try (readProcess "git" ["rev-parse", "HEAD"] "")
+            :: IO (Either SomeException String)
+    statusOut <-
+        try (readProcess "git" ["status", "--porcelain"] "")
+            :: IO (Either SomeException String)
     let dirty = case statusOut of
             Right status -> any (/= '\n') status
             Left _ -> True

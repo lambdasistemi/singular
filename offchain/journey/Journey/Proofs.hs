@@ -16,52 +16,52 @@ runner derived from the same trie.
 * 'rejectFalseClaim' — the same proof carrying a value the state does
   not hold must NOT reproduce the chain root.
 -}
-module Journey.Proofs (
-    stepVerifyAbsent,
-    stepVerifyPresent,
-    rejectFalseClaim,
-    forgedValue,
-) where
+module Journey.Proofs
+    ( stepVerifyAbsent
+    , stepVerifyPresent
+    , rejectFalseClaim
+    , forgedValue
+    ) where
 
 import Control.Monad (unless, when)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.IORef (IORef, readIORef)
 
-import MPF.Backend.Pure (
-    MPFInMemoryDB,
-    runMPFPure,
-    runMPFPureTransaction,
- )
-import MPF.Backend.Standalone (
-    MPFStandalone (..),
-    MPFStandaloneCodecs (..),
- )
-import MPF.Hashes (
-    MPFHash,
-    isoMPFHash,
-    mkMPFHash,
-    mpfHashing,
-    parseMPFHash,
-    renderMPFHash,
- )
-import MPF.Interface (
-    FromHexKV (..),
-    HexKey,
-    byteStringToHexKey,
-    hexKeyPrism,
- )
-import MPF.Proof.Exclusion (
-    MPFExclusionProof,
-    foldMPFExclusionProof,
-    mkMPFExclusionProof,
-    verifyMPFExclusionProof,
- )
-import MPF.Proof.Insertion (
-    MPFProof (..),
-    foldMPFProof,
-    mkMPFInclusionProof,
- )
+import MPF.Backend.Pure
+    ( MPFInMemoryDB
+    , runMPFPure
+    , runMPFPureTransaction
+    )
+import MPF.Backend.Standalone
+    ( MPFStandalone (..)
+    , MPFStandaloneCodecs (..)
+    )
+import MPF.Hashes
+    ( MPFHash
+    , isoMPFHash
+    , mkMPFHash
+    , mpfHashing
+    , parseMPFHash
+    , renderMPFHash
+    )
+import MPF.Interface
+    ( FromHexKV (..)
+    , HexKey
+    , byteStringToHexKey
+    , hexKeyPrism
+    )
+import MPF.Proof.Exclusion
+    ( MPFExclusionProof
+    , foldMPFExclusionProof
+    , mkMPFExclusionProof
+    , verifyMPFExclusionProof
+    )
+import MPF.Proof.Insertion
+    ( MPFProof (..)
+    , foldMPFProof
+    , mkMPFInclusionProof
+    )
 
 import Journey.Chain (readChainState)
 import Journey.Narration (emit, failWith, hex, textOf)
@@ -71,10 +71,10 @@ import Singular.Registry.Ledger (TokenId)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie qualified as CageTrie
 import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
-import Singular.Registry.Types (
-    OnChainRoot (..),
-    OnChainTokenState (..),
- )
+import Singular.Registry.Types
+    ( OnChainRoot (..)
+    , OnChainTokenState (..)
+    )
 
 -- | A value the state does not hold: the negative case's claim.
 forgedValue :: ByteString
@@ -107,8 +107,8 @@ mpfKeyPath = byteStringToHexKey . renderMPFHash . mkMPFHash
 {- | Build the exclusion proof for a raw key against a
 snapshot of the mirror database.
 -}
-exclusionProofFrom ::
-    MPFInMemoryDB -> ByteString -> Maybe (MPFExclusionProof MPFHash)
+exclusionProofFrom
+    :: MPFInMemoryDB -> ByteString -> Maybe (MPFExclusionProof MPFHash)
 exclusionProofFrom db k =
     fst $
         runMPFPure db $
@@ -123,8 +123,8 @@ exclusionProofFrom db k =
 {- | Build the inclusion proof for a raw key against a
 snapshot of the mirror database.
 -}
-inclusionProofFrom ::
-    MPFInMemoryDB -> ByteString -> Maybe (MPFProof MPFHash)
+inclusionProofFrom
+    :: MPFInMemoryDB -> ByteString -> Maybe (MPFProof MPFHash)
 inclusionProofFrom db k =
     fst $
         runMPFPure db $
@@ -152,12 +152,12 @@ trustedRootFromChain (OnChainRoot bs)
 state, before the insert: fold the exclusion proof and compare
 the root it implies against the root read back from the chain.
 -}
-stepVerifyAbsent ::
-    CageConfig ->
-    Cage.Provider IO ->
-    IORef MPFInMemoryDB ->
-    TokenId ->
-    IO ()
+stepVerifyAbsent
+    :: CageConfig
+    -> Cage.Provider IO
+    -> IORef MPFInMemoryDB
+    -> TokenId
+    -> IO ()
 stepVerifyAbsent cfg prov mirrorRef tid = do
     chainRoot <- stateRoot <$> readChainState cfg prov tid
     trusted <- trustedRootFromChain chainRoot
@@ -195,12 +195,12 @@ it, and compare against the chain-read root. Then run the
 negative case, 'rejectFalseClaim', against the same proof and
 the same chain root.
 -}
-stepVerifyPresent ::
-    CageConfig ->
-    Cage.Provider IO ->
-    IORef MPFInMemoryDB ->
-    TokenId ->
-    IO ()
+stepVerifyPresent
+    :: CageConfig
+    -> Cage.Provider IO
+    -> IORef MPFInMemoryDB
+    -> TokenId
+    -> IO ()
 stepVerifyPresent cfg prov mirrorRef tid = do
     let mirror = mkPureTrieFromRef mirrorRef
     _ <- CageTrie.insert mirror journeyKey journeyValue

@@ -24,35 +24,35 @@ Every consumer of the application — the conformance rows, the devnet E2E
 and the bounded journey — derives its pins and books its edges the same
 way, so all three move together.
 -}
-module Singular.Registry.TxBuilder.Edges (
-    -- * Submission
-    SubmitSigned,
+module Singular.Registry.TxBuilder.Edges
+    ( -- * Submission
+      SubmitSigned
 
-    -- * Derived identity
-    registryIdOf,
-    witnessScriptOf,
-    namingPins,
+      -- * Derived identity
+    , registryIdOf
+    , witnessScriptOf
+    , namingPins
 
-    -- * Reference outputs
-    publishRefScript,
-    publishStateRef,
-    publishCageRefs,
-    adaOnlyOut,
+      -- * Reference outputs
+    , publishRefScript
+    , publishStateRef
+    , publishCageRefs
+    , adaOnlyOut
 
-    -- * Booking one edge
-    BookingApproval (..),
-    bookingApproval,
-    certifyBooking,
-    bookEdge,
-    bookEdgeTo,
-    edgeDeposit,
-    edgeDestinationOf,
-    edgeRecordDatum,
-    edgeRecordDatumHash,
+      -- * Booking one edge
+    , BookingApproval (..)
+    , bookingApproval
+    , certifyBooking
+    , bookEdge
+    , bookEdgeTo
+    , edgeDeposit
+    , edgeDestinationOf
+    , edgeRecordDatum
+    , edgeRecordDatumHash
 
-    -- * Folding
-    registryContextFor,
-) where
+      -- * Folding
+    , registryContextFor
+    ) where
 
 import Control.Monad (unless, when)
 import Data.ByteString (ByteString)
@@ -69,36 +69,43 @@ import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
-import Cardano.Ledger.Api.Tx.Body (
-    collateralInputsTxBodyL,
-    feeTxBodyL,
-    inputsTxBodyL,
-    mintTxBodyL,
-    mkBasicTxBody,
-    outputsTxBodyL,
-    reqSignerHashesTxBodyL,
-    scriptIntegrityHashTxBodyL,
- )
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    coinTxOutL,
-    datumTxOutL,
-    getMinCoinTxOut,
-    mkBasicTxOut,
-    referenceScriptTxOutL,
-    valueTxOutL,
- )
-import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL, scriptTxWitsL)
+import Cardano.Ledger.Api.Tx.Body
+    ( collateralInputsTxBodyL
+    , feeTxBodyL
+    , inputsTxBodyL
+    , mintTxBodyL
+    , mkBasicTxBody
+    , outputsTxBodyL
+    , reqSignerHashesTxBodyL
+    , scriptIntegrityHashTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , coinTxOutL
+    , datumTxOutL
+    , getMinCoinTxOut
+    , mkBasicTxOut
+    , referenceScriptTxOutL
+    , valueTxOutL
+    )
+import Cardano.Ledger.Api.Tx.Wits
+    ( Redeemers (..)
+    , rdmrsTxWitsL
+    , scriptTxWitsL
+    )
 import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (PParams, Script, extractHash, hashScript)
-import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
-import Cardano.Ledger.Mary.Value (
-    AssetName (..),
-    MaryValue (..),
-    MultiAsset (..),
-    PolicyID (..),
- )
+import Cardano.Ledger.Credential
+    ( Credential (..)
+    , StakeReference (..)
+    )
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID (..)
+    )
 import Cardano.Ledger.Plutus.Data (Data (..), hashData)
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
@@ -106,44 +113,47 @@ import PlutusCore.Data qualified as PLC
 
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint.Load (NamingCodes (..))
-import Singular.Registry.Blueprint.Params (applyBytesParam, applyDataParam)
+import Singular.Registry.Blueprint.Params
+    ( applyBytesParam
+    , applyDataParam
+    )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId)
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.TxBuilder.ConnectedFold (
-    RawRedeemer (..),
-    generousUnits,
- )
+import Singular.Registry.TxBuilder.ConnectedFold
+    ( RawRedeemer (..)
+    , generousUnits
+    )
 import Singular.Registry.TxBuilder.Internal.Edges (approvalName)
-import Singular.Registry.TxBuilder.Internal.Identity (
-    addrKeyHashBytes,
-    addrWitnessKeyHash,
-    cageAddrFromCfg,
-    computeScriptHash,
-    mkCageScript,
-    mkInlineDatum,
-    mkRequestDatumWith,
-    mkRequestScript,
-    requestAddrFromCfg,
-    scriptFromBytes,
-    scriptHashBytes,
-    toLedgerData,
- )
-import Singular.Registry.TxBuilder.Internal.Lookup (
-    computeScriptIntegrity,
-    currentPosixMs,
- )
-import Singular.Registry.TxBuilder.Update (
-    RegistryContext (..),
-    emptyRegistryContext,
- )
-import Singular.Registry.Types (
-    Edge,
-    edgeInsertAbsent,
-    edgeInsertActive,
-    edgeUpdateActive,
-    edgeWitnessTerminal,
- )
+import Singular.Registry.TxBuilder.Internal.Identity
+    ( addrKeyHashBytes
+    , addrWitnessKeyHash
+    , cageAddrFromCfg
+    , computeScriptHash
+    , mkCageScript
+    , mkInlineDatum
+    , mkRequestDatumWith
+    , mkRequestScript
+    , requestAddrFromCfg
+    , scriptFromBytes
+    , scriptHashBytes
+    , toLedgerData
+    )
+import Singular.Registry.TxBuilder.Internal.Lookup
+    ( computeScriptIntegrity
+    , currentPosixMs
+    )
+import Singular.Registry.TxBuilder.Update
+    ( RegistryContext (..)
+    , emptyRegistryContext
+    )
+import Singular.Registry.Types
+    ( Edge
+    , edgeInsertAbsent
+    , edgeInsertActive
+    , edgeUpdateActive
+    , edgeWitnessTerminal
+    )
 
 {- | Sign a built transaction with the payer's key, submit it, and wait
 for it. The caller owns its own signing key and its own confirmation
@@ -159,7 +169,8 @@ registryIdOf cfg =
     scriptHashBytes (cfgScriptHash cfg) <> deriveAssetName (cageSeed cfg)
 
 -- | The witness policy script of one token kind.
-witnessScriptOf :: CageConfig -> NamingCodes -> Integer -> Script ConwayEra
+witnessScriptOf
+    :: CageConfig -> NamingCodes -> Integer -> Script ConwayEra
 witnessScriptOf cfg codes kind =
     scriptFromBytes
         ("witness-" <> show kind)
@@ -176,16 +187,16 @@ The registry id the witness policies are parameterized by depends on the
 state script hash and the boot seed, so this takes them directly rather
 than a configuration that does not exist yet.
 -}
-namingPins ::
-    NamingCodes ->
-    -- | The registry id: state script hash then boot token name
-    ByteString ->
-    -- | Application, absent, active, terminal
-    ( SBS.ShortByteString
-    , SBS.ShortByteString
-    , SBS.ShortByteString
-    , SBS.ShortByteString
-    )
+namingPins
+    :: NamingCodes
+    -> ByteString
+    -- ^ The registry id: state script hash then boot token name
+    -> ( SBS.ShortByteString
+       , SBS.ShortByteString
+       , SBS.ShortByteString
+       , SBS.ShortByteString
+       )
+    -- ^ Application, absent, active, terminal
 namingPins codes registryId =
     ( pinOf (ncApplication codes)
     , witnessPin 0
@@ -209,20 +220,25 @@ output and reference it.
 adaOnlyOut :: TxOut ConwayEra -> Bool
 adaOnlyOut out =
     (case out ^. valueTxOutL of MaryValue _ (MultiAsset m) -> Map.null m)
-        && (case out ^. referenceScriptTxOutL of SNothing -> True; SJust _ -> False)
+        && ( case out ^. referenceScriptTxOutL of
+                SNothing -> True
+                SJust _ -> False
+           )
 
 -- | Publish one script as a reference output at the payer's own address.
-publishRefScript ::
-    Cage.Provider IO ->
-    SubmitSigned ->
-    Addr ->
-    Script ConwayEra ->
-    IO (TxIn, TxOut ConwayEra)
+publishRefScript
+    :: Cage.Provider IO
+    -> SubmitSigned
+    -> Addr
+    -> Script ConwayEra
+    -> IO (TxIn, TxOut ConwayEra)
 publishRefScript prov submit payerAddr script = do
     pp <- Cage.queryProtocolParams prov
     utxos <- Cage.queryUTxOs prov payerAddr
     fund <-
-        case sortOn (Down . (^. coinTxOutL) . snd) (filter (adaOnlyOut . snd) utxos) of
+        case sortOn
+            (Down . (^. coinTxOutL) . snd)
+            (filter (adaOnlyOut . snd) utxos) of
             [] -> error "publishRefScript: the payer wallet has no ada-only output"
             (u : _) -> pure u
     let probe =
@@ -269,12 +285,12 @@ Idempotent by discovery: a wallet that already holds the publication
 gets it back rather than a second one, so a harness that boots several
 cages publishes once.
 -}
-publishStateRef ::
-    CageConfig ->
-    Cage.Provider IO ->
-    SubmitSigned ->
-    Addr ->
-    IO (TxIn, TxOut ConwayEra)
+publishStateRef
+    :: CageConfig
+    -> Cage.Provider IO
+    -> SubmitSigned
+    -> Addr
+    -> IO (TxIn, TxOut ConwayEra)
 publishStateRef cfg prov submit payerAddr = do
     let script = mkCageScript cfg
         wanted = hashScript script
@@ -290,14 +306,14 @@ publishStateRef cfg prov submit payerAddr = do
 {- | Publish this cage's scripts as reference outputs: the cage, the
 request validator and the three token policies.
 -}
-publishCageRefs ::
-    CageConfig ->
-    NamingCodes ->
-    Cage.Provider IO ->
-    SubmitSigned ->
-    Addr ->
-    TokenId ->
-    IO [(TxIn, TxOut ConwayEra)]
+publishCageRefs
+    :: CageConfig
+    -> NamingCodes
+    -> Cage.Provider IO
+    -> SubmitSigned
+    -> Addr
+    -> TokenId
+    -> IO [(TxIn, TxOut ConwayEra)]
 publishCageRefs cfg codes prov submit payerAddr tokenId =
     mapM
         (publishRefScript prov submit payerAddr)
@@ -318,22 +334,23 @@ edgeRecordDatum = PLC.B "singular-record"
 -- | The hash of 'edgeRecordDatum'.
 edgeRecordDatumHash :: ByteString
 edgeRecordDatumHash =
-    hashToBytes (extractHash (hashData (Data edgeRecordDatum :: Data ConwayEra)))
+    hashToBytes
+        (extractHash (hashData (Data edgeRecordDatum :: Data ConwayEra)))
 
 {- | Where an edge delivers (#157 D-DEST). An absence names the address
 its deposit comes back to and no datum; an activation names the naming
 application's own address and the record datum it will carry.
 -}
-edgeDestinationOf ::
-    CageConfig ->
-    NamingCodes ->
-    Addr ->
-    Edge ->
-    (ByteString, ByteString)
+edgeDestinationOf
+    :: CageConfig
+    -> NamingCodes
+    -> Addr
+    -> Edge
+    -> (ByteString, ByteString)
 edgeDestinationOf cfg codes payerAddr edge =
     let appHash = computeScriptHash (ncApplication codes)
         appAddr = Addr (network cfg) (ScriptHashObj appHash) StakeRefNull
-     in if edge == edgeInsertActive || edge == edgeUpdateActive
+    in  if edge == edgeInsertActive || edge == edgeUpdateActive
             then (serialiseAddr appAddr, edgeRecordDatumHash)
             else (serialiseAddr payerAddr, BS.empty)
 
@@ -368,17 +385,17 @@ because @open.ak@ refuses to certify a read and the cage never looks
 for one — a booking that minted anyway is a transaction the node can
 only reject. Admissibility of @edge@ stays the caller's check.
 -}
-bookingApproval ::
-    NamingCodes ->
-    -- | Admissible edge, 0..6
-    Edge ->
-    -- | Registry key
-    ByteString ->
-    -- | Booker's key hash bytes
-    ByteString ->
-    -- | Destination: address bytes, datum hash
-    (ByteString, ByteString) ->
-    Maybe BookingApproval
+bookingApproval
+    :: NamingCodes
+    -> Edge
+    -- ^ Admissible edge, 0..6
+    -> ByteString
+    -- ^ Registry key
+    -> ByteString
+    -- ^ Booker's key hash bytes
+    -> (ByteString, ByteString)
+    -- ^ Destination: address bytes, datum hash
+    -> Maybe BookingApproval
 bookingApproval codes edge key owner dest
     | edge == edgeWitnessTerminal = Nothing
     | otherwise =
@@ -412,15 +429,15 @@ and the script-integrity hash; without one, the booking unchanged — no
 redeemers, no witness, no collateral, and so no script-integrity hash,
 which the ledger computes for any transaction that could run a script.
 -}
-certifyBooking ::
-    -- | Protocol parameters, for the script-integrity hash
-    PParams ConwayEra ->
-    -- | Ada-only input, collateral when an approval is present
-    TxIn ->
-    Maybe BookingApproval ->
-    -- | The booking with inputs, outputs, fee and signers set
-    ConwayTx ->
-    ConwayTx
+certifyBooking
+    :: PParams ConwayEra
+    -- ^ Protocol parameters, for the script-integrity hash
+    -> TxIn
+    -- ^ Ada-only input, collateral when an approval is present
+    -> Maybe BookingApproval
+    -> ConwayTx
+    -- ^ The booking with inputs, outputs, fee and signers set
+    -> ConwayTx
 certifyBooking pp collateral mApproval unsigned =
     case mApproval of
         Nothing -> unsigned
@@ -433,7 +450,7 @@ certifyBooking pp collateral mApproval unsigned =
                             , generousUnits
                             )
                         )
-             in unsigned
+            in  unsigned
                     & bodyTxL . mintTxBodyL .~ baAsset approval
                     & bodyTxL . collateralInputsTxBodyL .~ Set.singleton collateral
                     & bodyTxL
@@ -448,16 +465,16 @@ certifyBooking pp collateral mApproval unsigned =
 {- | Book an edge, routing its minted token to the destination
 `edgeDestinationOf` chooses for it.
 -}
-bookEdge ::
-    CageConfig ->
-    NamingCodes ->
-    Cage.Provider IO ->
-    SubmitSigned ->
-    Addr ->
-    TokenId ->
-    ByteString ->
-    Edge ->
-    IO TxIn
+bookEdge
+    :: CageConfig
+    -> NamingCodes
+    -> Cage.Provider IO
+    -> SubmitSigned
+    -> Addr
+    -> TokenId
+    -> ByteString
+    -> Edge
+    -> IO TxIn
 bookEdge cfg codes prov submit payerAddr tokenId key edge =
     bookEdgeTo
         cfg
@@ -487,17 +504,17 @@ Which edges carry an approval, what it is, and how the transaction
 carries it is decided once, in 'bookingApproval' and 'certifyBooking':
 a tree edge mints and certifies, and a read books nothing at all.
 -}
-bookEdgeTo ::
-    CageConfig ->
-    NamingCodes ->
-    Cage.Provider IO ->
-    SubmitSigned ->
-    Addr ->
-    TokenId ->
-    ByteString ->
-    Edge ->
-    (ByteString, ByteString) ->
-    IO TxIn
+bookEdgeTo
+    :: CageConfig
+    -> NamingCodes
+    -> Cage.Provider IO
+    -> SubmitSigned
+    -> Addr
+    -> TokenId
+    -> ByteString
+    -> Edge
+    -> (ByteString, ByteString)
+    -> IO TxIn
 bookEdgeTo cfg codes prov submit payerAddr tokenId key edge dest0 = do
     -- #183: the tag IS the edge. A booking states its own C2 row, and a
     -- row outside the table is one only an adversarial caller wants, so
@@ -514,7 +531,9 @@ bookEdgeTo cfg codes prov submit payerAddr tokenId key edge dest0 = do
     pp <- Cage.queryProtocolParams prov
     utxos <- Cage.queryUTxOs prov payerAddr
     (feeIn, feeOut) <-
-        case sortOn (Down . (^. coinTxOutL) . snd) (filter (adaOnlyOut . snd) utxos) of
+        case sortOn
+            (Down . (^. coinTxOutL) . snd)
+            (filter (adaOnlyOut . snd) utxos) of
             [] -> error "bookEdge: the payer wallet has no ada-only output"
             (u : _) -> pure u
     now <- currentPosixMs
@@ -535,11 +554,14 @@ bookEdgeTo cfg codes prov submit payerAddr tokenId key edge dest0 = do
         -- equality silently, so the booking refuses instead.
         datum = mkRequestDatumWith tokenId payerAddr key edge edgeDeposit now dest
         reqOut =
-            mkBasicTxOut requestAddr (MaryValue (Coin bond) (maybe mempty baAsset approval))
+            mkBasicTxOut
+                requestAddr
+                (MaryValue (Coin bond) (maybe mempty baAsset approval))
                 & datumTxOutL .~ mkInlineDatum datum
         Coin minAda = getMinCoinTxOut pp reqOut
     unless (change > 0) $
-        error ("bookEdge: the payer wallet is too small (" <> show feeBal <> ")")
+        error
+            ("bookEdge: the payer wallet is too small (" <> show feeBal <> ")")
     unless (bond >= minAda) $
         error ("bookEdge: the bond is under min-ADA: " <> show bond)
     let body =
@@ -562,12 +584,12 @@ this registry pins, the cage script custody spends run, the cage's own
 UTxOs, the one destination datum a booking binds, and the reference
 outputs the fold's scripts resolve through.
 -}
-registryContextFor ::
-    CageConfig ->
-    NamingCodes ->
-    Cage.Provider IO ->
-    [(TxIn, TxOut ConwayEra)] ->
-    IO RegistryContext
+registryContextFor
+    :: CageConfig
+    -> NamingCodes
+    -> Cage.Provider IO
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO RegistryContext
 registryContextFor cfg codes prov refs = do
     utxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
     pure

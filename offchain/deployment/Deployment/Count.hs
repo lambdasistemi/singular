@@ -16,9 +16,9 @@ leaves both unchanged; a run that booted and published moves both.
 The count is printed alone on standard output. An unknown @--what@ and
 undecodable address bytes are refused once the node session is open.
 -}
-module Deployment.Count (
-    count,
-) where
+module Deployment.Count
+    ( count
+    ) where
 
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
@@ -37,10 +37,10 @@ import Deployment.Options (CountOptions (..), countOptions)
 import Singular.Registry.Deployment (cageConfigFor, readDeployment)
 import Singular.Registry.Node (NodeSession (..), funderAddr, withNode)
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.TxBuilder.Internal (
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
- )
+import Singular.Registry.TxBuilder.Internal
+    ( cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    )
 
 -- | Count what these arguments ask for, at the node.
 count :: [String] -> IO ()
@@ -64,11 +64,12 @@ count args = do
                         pure (Set.toList (Set.fromList [funderAddr, addr]))
                 utxos <- concat <$> mapM (Cage.queryUTxOs prov) addresses
                 print (length [() | (_, o) <- utxos, hasReferenceScript o])
-            what -> failWith ("count: --what must be state or reference, not " <> what)
+            what ->
+                failWith ("count: --what must be state or reference, not " <> what)
   where
     carriesPolicy cfg o =
         let MaryValue _ (MultiAsset m) = o ^. valueTxOutL
-         in Map.member (cagePolicyIdFromCfg cfg) m
+        in  Map.member (cagePolicyIdFromCfg cfg) m
     hasReferenceScript o = case o ^. referenceScriptTxOutL of
         SJust _ -> True
         SNothing -> False

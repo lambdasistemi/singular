@@ -11,11 +11,11 @@ The journey takes no command-line arguments. It reads:
   @../onchain/script-identity.json@ by default (relative to @offchain/@,
   where the flake app and the CI job run it).
 -}
-module Journey.Options (
-    requireEnv,
-    defaultIdentityPath,
-    identityPathFromEnv,
-) where
+module Journey.Options
+    ( requireEnv
+    , defaultIdentityPath
+    , identityPathFromEnv
+    ) where
 
 import System.Environment (lookupEnv)
 

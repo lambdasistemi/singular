@@ -13,34 +13,34 @@ through this module ('awaitIndexed', 'currentFollower',
 'followedProvider', 'adaptProvider'), never a second copy of its
 state.
 -}
-module Singular.Registry.Node.Indexer (
-    -- * Follower state
-    Following (..),
-    withFollowing,
-    currentFollower,
+module Singular.Registry.Node.Indexer
+    ( -- * Follower state
+      Following (..)
+    , withFollowing
+    , currentFollower
 
-    -- * Following a chain
-    withDevnetIndexer,
-    followChain,
-    startingAt,
+      -- * Following a chain
+    , withDevnetIndexer
+    , followChain
+    , startingAt
 
-    -- * Indexed confirmation
-    awaitIndexed,
+      -- * Indexed confirmation
+    , awaitIndexed
 
-    -- * Provider adaptation
-    followedProvider,
-    adaptProvider,
+      -- * Provider adaptation
+    , followedProvider
+    , adaptProvider
 
-    -- * Funding-read guard
-    markFundingIndexed,
+      -- * Funding-read guard
+    , markFundingIndexed
 
-    -- * Address reads
-    nodeAddressReads,
+      -- * Address reads
+    , nodeAddressReads
 
-    -- * Pacing
-    confirmationPollSeconds,
-    confirmationAttempts,
-) where
+      -- * Pacing
+    , confirmationPollSeconds
+    , confirmationAttempts
+    ) where
 
 import Control.Concurrent.Async (link)
 import Control.Exception (bracket_)
@@ -49,7 +49,13 @@ import Control.Tracer (nullTracer)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Short qualified as SBS
-import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef, writeIORef)
+import Data.IORef
+    ( IORef
+    , atomicModifyIORef'
+    , newIORef
+    , readIORef
+    , writeIORef
+    )
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isNothing)
 import Data.Sequence.Strict qualified as StrictSeq
@@ -59,14 +65,21 @@ import System.IO (hPutStrLn, stderr)
 import System.IO.Unsafe (unsafePerformIO)
 
 import Lens.Micro ((&), (.~), (^.))
-import Ouroboros.Consensus.HardFork.Combinator.AcrossEras (OneEraHash (..))
+import Ouroboros.Consensus.HardFork.Combinator.AcrossEras
+    ( OneEraHash (..)
+    )
 import Ouroboros.Network.Block qualified as Chain
 import Ouroboros.Network.Magic (NetworkMagic)
 
 import Cardano.Crypto.Hash (hashFromBytes, hashToBytes)
 import Cardano.Ledger.Address (Addr, serialiseAddr)
 import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx)
-import Cardano.Ledger.Api.Tx.Body (feeTxBodyL, inputsTxBodyL, mkBasicTxBody, outputsTxBodyL)
+import Cardano.Ledger.Api.Tx.Body
+    ( feeTxBodyL
+    , inputsTxBodyL
+    , mkBasicTxBody
+    , outputsTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.Out (TxOut, mkBasicTxOut, valueTxOutL)
 import Cardano.Ledger.BaseTypes (SlotNo (..), TxIx (..))
 import Cardano.Ledger.Binary (decodeFull')
@@ -74,30 +87,38 @@ import Cardano.Ledger.Core (eraProtVerLow)
 import Cardano.Ledger.Hashes (extractHash, unsafeMakeSafeHash)
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 import Cardano.Ledger.Val (inject, (<->))
-import Cardano.Node.Client.E2E.Setup (
-    addKeyWitness,
-    devnetMagic,
- )
+import Cardano.Node.Client.E2E.Setup
+    ( addKeyWitness
+    , devnetMagic
+    )
 import Cardano.Node.Client.N2C.Probe (defaultProbeConfig)
 import Cardano.Node.Client.N2C.Reconnect (defaultReconnectPolicy)
 import Cardano.Node.Client.Provider qualified as N2C
-import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter, submitTx)
+import Cardano.Node.Client.Submitter
+    ( SubmitResult (..)
+    , Submitter
+    , submitTx
+    )
 import Cardano.Node.Client.Types (BlockPoint)
-import Cardano.Node.Client.UTxOIndexer.Follower (
-    ChainSyncConfig (..),
-    FollowerHandle (..),
-    InterestSet (..),
-    withChainSyncFollower,
- )
-import Cardano.Node.Client.UTxOIndexer.Indexer (
-    IndexerHandle (..),
-    withInMemoryIndexer,
- )
+import Cardano.Node.Client.UTxOIndexer.Follower
+    ( ChainSyncConfig (..)
+    , FollowerHandle (..)
+    , InterestSet (..)
+    , withChainSyncFollower
+    )
+import Cardano.Node.Client.UTxOIndexer.Indexer
+    ( IndexerHandle (..)
+    , withInMemoryIndexer
+    )
 import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
 import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.Node.Options (NodeMode (..), die)
-import Singular.Registry.Node.Wallet (Wallet (..), bech32Address, walletForMode)
+import Singular.Registry.Node.Wallet
+    ( Wallet (..)
+    , bech32Address
+    , walletForMode
+    )
 import Singular.Registry.Provider qualified as Cage
 
 {- | The indexer this process follows its chain with, installed by
@@ -151,13 +172,13 @@ history, so a session there starts at the node's tip: every
 transaction it submits lands in a later block. A follower failure is
 re-thrown in the calling thread.
 -}
-followChain ::
-    NetworkMagic ->
-    Word64 ->
-    Maybe (Indexer.SlotNo, Indexer.BlockHash) ->
-    FilePath ->
-    IO a ->
-    IO a
+followChain
+    :: NetworkMagic
+    -> Word64
+    -> Maybe (Indexer.SlotNo, Indexer.BlockHash)
+    -> FilePath
+    -> IO a
+    -> IO a
 followChain magic byronEpochSlots start sock action =
     withInMemoryIndexer $ \idx ->
         withChainSyncFollower nullTracer follow idx $ \follower -> do
@@ -240,7 +261,8 @@ into one output a block carries. From then on the node and the indexer
 agree on that address, and 'adaptProvider' refuses any further node
 address read for as long as the indexer runs.
 -}
-followedProvider :: Cage.Provider IO -> Submitter IO -> IO (Cage.Provider IO)
+followedProvider
+    :: Cage.Provider IO -> Submitter IO -> IO (Cage.Provider IO)
 followedProvider node submit =
     currentFollower >>= \case
         Just Following{followingIndexer = idx, followingFromOrigin = True} -> do
@@ -256,9 +278,18 @@ indexedUTxOs idx addr = do
     Map.toList . Map.fromList <$> traverse decodeRow rows
   where
     decodeRow (Indexer.TxIn tid ix, Indexer.TxOut bytes) = do
-        h <- maybe (bad tid "the transaction id is not 32 bytes") pure (hashFromBytes tid)
-        out <- either (bad tid . show) pure (decodeFull' (eraProtVerLow @ConwayEra) bytes)
-        pure (TxIn (TxId (unsafeMakeSafeHash h)) (TxIx (fromIntegral ix)), out)
+        h <-
+            maybe
+                (bad tid "the transaction id is not 32 bytes")
+                pure
+                (hashFromBytes tid)
+        out <-
+            either
+                (bad tid . show)
+                pure
+                (decodeFull' (eraProtVerLow @ConwayEra) bytes)
+        pure
+            (TxIn (TxId (unsafeMakeSafeHash h)) (TxIx (fromIntegral ix)), out)
     bad tid why =
         die
             ( "an indexed output of transaction "
@@ -272,7 +303,8 @@ from the node and spend the outputs the indexer has not seen into one
 self-payment, confirmed through the indexer. On the factory devnet
 that is the single genesis output.
 -}
-indexFunding :: IndexerHandle -> Cage.Provider IO -> Submitter IO -> IO ()
+indexFunding
+    :: IndexerHandle -> Cage.Provider IO -> Submitter IO -> IO ()
 indexFunding idx node submit = do
     wallet <- walletForMode Devnet
     let addr = walletAddr wallet

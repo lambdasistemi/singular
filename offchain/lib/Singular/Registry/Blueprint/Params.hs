@@ -13,36 +13,36 @@ This is the parameter-application owner extracted from
 @Singular.Registry.Blueprint@; the public module re-exports it and is
 its only intended consumer surface.
 -}
-module Singular.Registry.Blueprint.Params (
-    applyDataParam,
-    applyIntParam,
-    applyBytesParam,
-    applyOutputRef,
-    applyPreviousPolicies,
-    applyRequestParams,
-) where
+module Singular.Registry.Blueprint.Params
+    ( applyDataParam
+    , applyIntParam
+    , applyBytesParam
+    , applyOutputRef
+    , applyPreviousPolicies
+    , applyRequestParams
+    ) where
 
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
 import PlutusCore qualified as PLC
 import PlutusCore.Data (Data (..))
-import PlutusLedgerApi.V3 (
-    serialiseUPLC,
-    uncheckedDeserialiseUPLC,
- )
-import PlutusTx.Builtins.Internal (
-    BuiltinByteString (..),
-    BuiltinData (..),
- )
+import PlutusLedgerApi.V3
+    ( serialiseUPLC
+    , uncheckedDeserialiseUPLC
+    )
+import PlutusTx.Builtins.Internal
+    ( BuiltinByteString (..)
+    , BuiltinData (..)
+    )
 import PlutusTx.IsData.Class (ToData (..))
-import Singular.Registry.Types (
-    OnChainTokenId (..),
-    OnChainTxOutRef,
- )
-import UntypedPlutusCore (
-    Program (..),
-    applyProgram,
- )
+import Singular.Registry.Types
+    ( OnChainTokenId (..)
+    , OnChainTxOutRef
+    )
+import UntypedPlutusCore
+    ( Program (..)
+    , applyProgram
+    )
 import UntypedPlutusCore qualified as UPLC
 import UntypedPlutusCore.DeBruijn ()
 
@@ -52,12 +52,12 @@ UPLC program that expects one parameter. This
 function applies the supplied 'Data' value to that
 parameter slot, producing the final script bytes.
 -}
-applyDataParam ::
-    -- | Encoded parameter value
-    Data ->
-    -- | Flat-encoded UPLC program
-    SBS.ShortByteString ->
-    SBS.ShortByteString
+applyDataParam
+    :: Data
+    -- ^ Encoded parameter value
+    -> SBS.ShortByteString
+    -- ^ Flat-encoded UPLC program
+    -> SBS.ShortByteString
 applyDataParam d sbs =
     let
         prog = uncheckedDeserialiseUPLC sbs
@@ -80,7 +80,7 @@ applyDataParam d sbs =
                 error $
                     "applyDataParam: "
                         <> show e
-     in
+    in
         serialiseUPLC applied
   where
     progVer (Program _ v _) = v
@@ -92,21 +92,21 @@ the deployment applies it three times. Wrapping the `Data` encoding here
 keeps the 'PlutusCore.Data' vocabulary inside this module, where the rest
 of the blueprint's encoding already lives.
 -}
-applyIntParam ::
-    -- | Encoded integer parameter
-    Integer ->
-    -- | Flat-encoded UPLC program
-    SBS.ShortByteString ->
-    SBS.ShortByteString
+applyIntParam
+    :: Integer
+    -- ^ Encoded integer parameter
+    -> SBS.ShortByteString
+    -- ^ Flat-encoded UPLC program
+    -> SBS.ShortByteString
 applyIntParam = applyDataParam . I
 
 -- | Apply a raw bytes parameter to a UPLC script.
-applyBytesParam ::
-    -- | Encoded bytes parameter
-    BS.ByteString ->
-    -- | Flat-encoded UPLC program
-    SBS.ShortByteString ->
-    SBS.ShortByteString
+applyBytesParam
+    :: BS.ByteString
+    -- ^ Encoded bytes parameter
+    -> SBS.ShortByteString
+    -- ^ Flat-encoded UPLC program
+    -> SBS.ShortByteString
 applyBytesParam bs =
     applyDataParam (B bs)
 
@@ -118,15 +118,15 @@ on-chain validator's parameter slot expects when the
 Aiken validator is parameterized by an
 @OutputReference@.
 -}
-applyOutputRef ::
-    -- | Output reference to apply as the seed parameter
-    OnChainTxOutRef ->
-    -- | Flat-encoded UPLC program
-    SBS.ShortByteString ->
-    SBS.ShortByteString
+applyOutputRef
+    :: OnChainTxOutRef
+    -- ^ Output reference to apply as the seed parameter
+    -> SBS.ShortByteString
+    -- ^ Flat-encoded UPLC program
+    -> SBS.ShortByteString
 applyOutputRef ref sbs =
     let BuiltinData d = toBuiltinData ref
-     in applyDataParam d sbs
+    in  applyDataParam d sbs
 
 {- | Apply the state validator's @previousPolicies@
 allowlist parameter. The on-chain parameter type is
@@ -135,26 +135,26 @@ allowlist parameter. The on-chain parameter type is
 genesis cage, which makes migration into it
 impossible).
 -}
-applyPreviousPolicies ::
-    -- | Predecessor policy-id bytes (28 bytes each); @[]@ for genesis
-    [BS.ByteString] ->
-    -- | Flat-encoded raw state UPLC program
-    SBS.ShortByteString ->
-    SBS.ShortByteString
+applyPreviousPolicies
+    :: [BS.ByteString]
+    -- ^ Predecessor policy-id bytes (28 bytes each); @[]@ for genesis
+    -> SBS.ShortByteString
+    -- ^ Flat-encoded raw state UPLC program
+    -> SBS.ShortByteString
 applyPreviousPolicies pids =
     applyDataParam (List (map B pids))
 
 {- | Apply request-validator parameters in source
 order: @statePolicyId@ first, then @cageTokenName@.
 -}
-applyRequestParams ::
-    -- | State policy id bytes
-    BS.ByteString ->
-    -- | Cage token asset name
-    OnChainTokenId ->
-    -- | Flat-encoded request UPLC program
-    SBS.ShortByteString ->
-    SBS.ShortByteString
+applyRequestParams
+    :: BS.ByteString
+    -- ^ State policy id bytes
+    -> OnChainTokenId
+    -- ^ Cage token asset name
+    -> SBS.ShortByteString
+    -- ^ Flat-encoded request UPLC program
+    -> SBS.ShortByteString
 applyRequestParams statePolicyId (OnChainTokenId (BuiltinByteString token)) sbs =
     applyBytesParam token $
         applyBytesParam statePolicyId sbs

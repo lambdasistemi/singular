@@ -3,16 +3,27 @@ Module      : Conformance.Run.CaRows
 Description : Split out of Conformance.Run (#263); see that module's header
 License     : Apache-2.0
 -}
-module Conformance.Run.CaRows (withCa, designateSplit, runCA01, runCA02, runCA03, runCA04, runCA05, canonicalStateUtxo, rivalStateUtxo, stateUtxoByToken) where
+module Conformance.Run.CaRows
+    ( withCa
+    , designateSplit
+    , runCA01
+    , runCA02
+    , runCA03
+    , runCA04
+    , runCA05
+    , canonicalStateUtxo
+    , rivalStateUtxo
+    , stateUtxoByToken
+    ) where
 
 import Conformance.Run.Control
+import Conformance.Run.Environment
+import Conformance.Run.Manifest
+import Conformance.Run.Observe
 import Conformance.Run.Receipts
+import Conformance.Run.Submit
 import Conformance.Run.Units
 import Conformance.Run.Wallet
-import Conformance.Run.Submit
-import Conformance.Run.Environment
-import Conformance.Run.Observe
-import Conformance.Run.Manifest
 
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (readIORef, writeIORef)
@@ -27,89 +38,91 @@ import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Ledger.Address (Addr (..))
 
-import Cardano.Ledger.Api.Tx (
-    mkBasicTx,
-    mkBasicTxBody,
- )
-import Cardano.Ledger.Api.Tx.Body (
-    feeTxBodyL,
-    inputsTxBodyL,
-    outputsTxBodyL,
- )
-import Cardano.Ledger.Api.Tx.Out (
-    addrTxOutL,
-    coinTxOutL,
-    datumTxOutL,
-    mkBasicTxOut,
-    valueTxOutL,
- )
+import Cardano.Ledger.Api.Tx
+    ( mkBasicTx
+    , mkBasicTxBody
+    )
+import Cardano.Ledger.Api.Tx.Body
+    ( feeTxBodyL
+    , inputsTxBodyL
+    , outputsTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( addrTxOutL
+    , coinTxOutL
+    , datumTxOutL
+    , mkBasicTxOut
+    , valueTxOutL
+    )
 import Cardano.Ledger.BaseTypes (Network (..))
-import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
+import Cardano.Ledger.Credential
+    ( Credential (..)
+    , StakeReference (..)
+    )
 import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 
+import Cardano.Node.Client.E2E.Setup (addKeyWitness)
+import Cardano.Node.Client.Submitter
+    ( SubmitResult (..)
+    , Submitter (..)
+    )
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (applyPreviousPolicies)
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (
-    AssetName (..),
-    Coin (..),
-    ConwayEra,
-    PolicyID (..),
-    TokenId (..),
-    TxOut,
- )
+import Singular.Registry.Ledger
+    ( AssetName (..)
+    , Coin (..)
+    , ConwayEra
+    , PolicyID (..)
+    , TokenId (..)
+    , TxOut
+    )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
-import Singular.Registry.TxBuilder.Internal (
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    computeScriptHash,
-    extractCageDatum,
-    findStateUtxo,
-    mkInlineDatum,
-    requestAddrFromCfg,
-    scriptHashBytes,
-    toPlcData,
-    txInToRef,
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainTxOutRef (..),
- )
-import Cardano.Node.Client.E2E.Setup (addKeyWitness)
-import Cardano.Node.Client.Submitter (
-    SubmitResult (..),
-    Submitter (..),
- )
+import Singular.Registry.TxBuilder.Internal
+    ( cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , computeScriptHash
+    , extractCageDatum
+    , findStateUtxo
+    , mkInlineDatum
+    , requestAddrFromCfg
+    , scriptHashBytes
+    , toPlcData
+    , txInToRef
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainTxOutRef (..)
+    )
 
-import Conformance.Authenticate (
-    AuthDecision (..),
-    AuthReject (..),
-    authenticate,
-    authenticateWeak,
- )
-import Conformance.Mirror (
-    emit,
-    failWith,
-    hex,
-    require,
-    txIdHex,
- )
-import Conformance.Receipt (
-    DerivationEvidence (..),
-    DerivationOutcome (..),
-    Outcome (..),
-    Verdict (..),
-    derivationMatches,
-    derivationVenue,
- )
+import Conformance.Authenticate
+    ( AuthDecision (..)
+    , AuthReject (..)
+    , authenticate
+    , authenticateWeak
+    )
+import Conformance.Mirror
+    ( emit
+    , failWith
+    , hex
+    , require
+    , txIdHex
+    )
+import Conformance.Receipt
+    ( DerivationEvidence (..)
+    , DerivationOutcome (..)
+    , Outcome (..)
+    , Verdict (..)
+    , derivationMatches
+    , derivationVenue
+    )
 
 withCa :: Env -> String -> (Env -> CaWorld -> IO ()) -> IO ()
 withCa env row f = case envCa env of
     Just w -> f env w
     Nothing -> failWith ("row " <> row <> " needs a CA session")
-
 
 -- ---------------------------------------------------------
 -- CA rows (issue #69): canonical identity authentication
@@ -121,8 +134,8 @@ the funding remainder. One seed candidate exists per split, so no
 boot can ever consume the wrong UTxO as its funder, and the seed's
 outRef is published by the split transaction itself.
 -}
-designateSplit ::
-    Cage.Provider IO -> Submitter IO -> String -> IO (TxIn, TxIn)
+designateSplit
+    :: Cage.Provider IO -> Submitter IO -> String -> IO (TxIn, TxIn)
 designateSplit prov submit label = do
     (gIn, gOut) <- largestWalletUtxo prov
     let Coin total = gOut ^. coinTxOutL
@@ -154,7 +167,8 @@ designateSplit prov submit label = do
     after <- Cage.queryUTxOs prov genesisAddr
     let txid = txIdHex tx
         mine =
-            sortOn (txInIndex . fst)
+            sortOn
+                (txInIndex . fst)
                 [p | p@(i, _) <- after, txInTxIdHex i == txid]
     case mine of
         [seed, funder] -> pure (fst seed, fst funder)
@@ -165,7 +179,6 @@ designateSplit prov submit label = do
                     <> " split, found "
                     <> show (length mine)
                 )
-
 
 {- | CA01: boot the canonical registry from the published seed, then
 recompute the token name in Haskell as SHA-256 of the seed's outRef
@@ -247,7 +260,8 @@ runCA01 env w = do
         env
         "CA01"
         Accepted
-        AgreesWithModel        [txIdHex signedBoot]
+        AgreesWithModel
+        [txIdHex signedBoot]
         Nothing
         Nothing
         (Just mem)
@@ -266,7 +280,6 @@ runCA01 env w = do
             <> " and does not match (control)"
         )
 
-
 {- | CA02: initialize a rival registry from a second seed through the
 same bootstrap path. The ledger ACCEPTS it — the settled finding
 (naming-correspondence.md, "What t50 settled"): a permissionless
@@ -283,7 +296,9 @@ registry.
 runCA02 :: Env -> CaWorld -> IO ()
 runCA02 env w = do
     tidC <- readIORef (caTidRef w)
-    require "CA02 needs CA01's canonical registry; run CA01 first" (isJust tidC)
+    require
+        "CA02 needs CA01's canonical registry; run CA01 first"
+        (isJust tidC)
     -- the second designation split: output 0 is the rival seed
     (rivalIn, _) <- designateSplit (envProv env) (envSubmit env) "rival"
     let rivalRef = txInToRef rivalIn
@@ -377,7 +392,8 @@ runCA02 env w = do
         env
         "CA02"
         Accepted
-        AgreesWithModel        [txIdHex signedRival]
+        AgreesWithModel
+        [txIdHex signedRival]
         Nothing
         Nothing
         (Just mem)
@@ -399,7 +415,6 @@ runCA02 env w = do
                \and datum bytes as the CA01 snapshot; authentication \
                \rejects the rival on the derived name"
         )
-
 
 {- | CA03: the executing negative control that makes CA02 worth
 anything. An authenticator checking only policy and address — not
@@ -455,7 +470,8 @@ runCA03 env w = do
                 env
                 "CA03"
                 Accepted
-                AgreesWithModel                [txid]
+                AgreesWithModel
+                [txid]
                 Nothing
                 Nothing
                 (Just mem)
@@ -472,7 +488,6 @@ runCA03 env w = do
             <> show strong
             <> "): the name is the only discriminator"
         )
-
 
 {- | CA04: identity derivation per validator by declared arity.
 The published manifest (@onchain/script-identity.json@) pins the
@@ -538,7 +553,7 @@ runCA04 env w = do
         -- out: they pass even if the normal comparison accepts all.
         checkDerivation dcfg =
             let actual = cageAddrFromCfg dcfg (network dcfg)
-             in derivationMatches actual chainAddr
+            in  derivationMatches actual chainAddr
         (normalAddr, normalMatches) = checkDerivation cfg
     emit
         "identity"
@@ -657,7 +672,8 @@ runCA04 env w = do
                 env
                 "CA04"
                 Accepted
-                AgreesWithModel                [txid]
+                AgreesWithModel
+                [txid]
                 Nothing
                 Nothing
                 (Just mem)
@@ -673,7 +689,6 @@ runCA04 env w = do
             <> show normalAddr
             <> " equals the chain-reported address; request arity 2 distinct; corrupted derivation refused via the same checker (receipt carries all three, off-chain venue)"
         )
-
 
 {- | CA05: a forged output at the canonical address carrying no
 registry token is not a registry — and creating it executes
@@ -715,7 +730,9 @@ runCA05 env w = do
                 & outputsTxBodyL .~ StrictSeq.fromList [forgedOut, changeOut]
                 & feeTxBodyL .~ Coin fee
         unsigned = mkBasicTx body
-    require "CA05: the funder is too small for the forgery" (change > forgedCoin)
+    require
+        "CA05: the funder is too small for the forgery"
+        (change > forgedCoin)
     require
         "CA05: the forged tx unexpectedly carries script witnesses"
         (null (txScriptWitnesses unsigned))
@@ -779,7 +796,8 @@ runCA05 env w = do
         env
         "CA05"
         Accepted
-        AgreesWithModel        [txIdHex signed]
+        AgreesWithModel
+        [txIdHex signed]
         Nothing
         Nothing
         (Just 0)
@@ -797,7 +815,6 @@ runCA05 env w = do
           \under the canonical policy"
         )
 
-
 -- ---------------------------------------------------------
 -- CA helpers
 -- ---------------------------------------------------------
@@ -811,7 +828,6 @@ canonicalStateUtxo env w = do
             failWith "the canonical registry is not booted; run CA01 first"
         Just t -> stateUtxoByToken env w t
 
-
 -- | The rival registry's state UTxO, read back from the chain.
 rivalStateUtxo :: Env -> CaWorld -> IO (TxIn, TxOut ConwayEra)
 rivalStateUtxo env w = do
@@ -820,8 +836,8 @@ rivalStateUtxo env w = do
         Nothing -> failWith "the rival registry is not booted; run CA02 first"
         Just t -> stateUtxoByToken env w t
 
-
-stateUtxoByToken :: Env -> CaWorld -> TokenId -> IO (TxIn, TxOut ConwayEra)
+stateUtxoByToken
+    :: Env -> CaWorld -> TokenId -> IO (TxIn, TxOut ConwayEra)
 stateUtxoByToken env w tid = do
     let cfg = caCfg w
     utxos <-

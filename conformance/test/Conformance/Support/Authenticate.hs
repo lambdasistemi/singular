@@ -12,19 +12,19 @@ accept would prove nothing.
 module Conformance.Support.Authenticate (spec) where
 
 import Data.Map.Strict qualified as Map
-import Test.Hspec (
-    Spec,
-    describe,
-    it,
-    shouldBe,
- )
+import Test.Hspec
+    ( Spec
+    , describe
+    , it
+    , shouldBe
+    )
 
-import Conformance.Authenticate (
-    AuthDecision (..),
-    AuthReject (..),
-    authenticate,
-    authenticateWeak,
- )
+import Conformance.Authenticate
+    ( AuthDecision (..)
+    , AuthReject (..)
+    , authenticate
+    , authenticateWeak
+    )
 
 spec :: Spec
 spec = describe "Appendix: recognising the intended registry" $ do
@@ -36,11 +36,13 @@ spec = describe "Appendix: recognising the intended registry" $ do
             Map.singleton policy (Map.singleton "rival-seed-name" 1)
         forged = Map.empty
 
-    it "Recognises the registry when its token has the expected policy, calculated name and quantity one" $
-        authenticate policy derived canonical `shouldBe` AuthAccept
+    it
+        "Recognises the registry when its token has the expected policy, calculated name and quantity one"
+        $ authenticate policy derived canonical `shouldBe` AuthAccept
 
-    it "Rejects a different registry token even when it uses the expected policy" $
-        authenticate policy derived rival
+    it
+        "Rejects a different registry token even when it uses the expected policy"
+        $ authenticate policy derived rival
             `shouldBe` AuthReject NameMismatch
 
     it "Rejects an output with no token under the expected policy" $
@@ -52,11 +54,13 @@ spec = describe "Appendix: recognising the intended registry" $ do
         authenticate policy derived two
             `shouldBe` AuthReject (QuantityNotOne 2)
 
-    it "Shows that checking only the policy mistakenly accepts a different registry token" $
-        authenticateWeak policy rival `shouldBe` AuthAccept
+    it
+        "Shows that checking only the policy mistakenly accepts a different registry token"
+        $ authenticateWeak policy rival `shouldBe` AuthAccept
 
-    it "Even the policy-only check rejects an output with no registry token" $
-        authenticateWeak policy forged `shouldBe` AuthReject PolicyAbsent
+    it
+        "Even the policy-only check rejects an output with no registry token"
+        $ authenticateWeak policy forged `shouldBe` AuthReject PolicyAbsent
 
     it "Both checks recognise the intended registry token" $ do
         authenticate policy derived canonical `shouldBe` AuthAccept

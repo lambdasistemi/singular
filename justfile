@@ -39,6 +39,8 @@ ci:
     bash tools/no-global-fixture-state.sh
     just inventory
     just inventory-controls
+    just format-check
+    just format-controls
 
 # #108: the rename tool must re-run cleanly on a pre-rename tree, be a no-op
 # on the second run, and its gate must catch strays planted in .sh files.
@@ -61,3 +63,26 @@ inventory:
 # source defect is ever committed.
 inventory-controls:
     bash tools/code_inventory_controls.sh
+
+# #278 S2: apply the house Fourmolu configuration (fourmolu.yaml at the
+# repository root) to every discovered Haskell source — offchain and
+# conformance, the formerly fenced verifier sources and the evaluation
+# spike included, no directory exclusions. Run within nix develop.
+format:
+    bash tools/format_haskell.sh inplace
+
+# The matching check over the same discovered extent with the same one
+# configuration; this is the carrier `just ci` and PR CI run.
+format-check:
+    bash tools/format_haskell.sh check
+
+# Negative and positive controls for the Haskell format check (#278 S2):
+# a source Fourmolu defaults accept but the house configuration rejects
+# must fail the check (proving the configuration is read) and its formatter
+# correction must pass it again; a tree without the configuration must
+# fail loudly rather than format with defaults; a newly tracked component
+# tree joins the check through the Git index while ignored untracked build
+# noise never enters it. Scratch copies only; the working tree is never
+# touched.
+format-controls:
+    bash tools/format_controls.sh

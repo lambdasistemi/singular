@@ -10,32 +10,32 @@ conversion helpers the codecs share. Depends on no sibling; nothing
 here is importable by a caller — the public surface is the
 "Singular.Registry.Types" facade.
 -}
-module Singular.Registry.Wire.Primitive (
-    -- * On-chain domain types (Plutus primitives)
-    OnChainTokenId (..),
-    OnChainTxOutRef (..),
-    OnChainRoot (..),
+module Singular.Registry.Wire.Primitive
+    ( -- * On-chain domain types (Plutus primitives)
+      OnChainTokenId (..)
+    , OnChainTxOutRef (..)
+    , OnChainRoot (..)
 
-    -- * Helpers for manual Data construction
-    mkD,
-    unD,
-    bsToD,
-    bsFromD,
-    bbsToD,
-    bbsFromD,
-) where
+      -- * Helpers for manual Data construction
+    , mkD
+    , unD
+    , bsToD
+    , bsFromD
+    , bbsToD
+    , bbsFromD
+    ) where
 
 import Data.ByteString (ByteString)
 import PlutusCore.Data (Data (..))
-import PlutusTx.Builtins.Internal (
-    BuiltinByteString (..),
-    BuiltinData (..),
- )
-import PlutusTx.IsData.Class (
-    FromData (..),
-    ToData (..),
-    UnsafeFromData (..),
- )
+import PlutusTx.Builtins.Internal
+    ( BuiltinByteString (..)
+    , BuiltinData (..)
+    )
+import PlutusTx.IsData.Class
+    ( FromData (..)
+    , ToData (..)
+    , UnsafeFromData (..)
+    )
 
 {- | On-chain token identifier (asset name as raw
 bytes). Matches Aiken @lib\/TokenId@.

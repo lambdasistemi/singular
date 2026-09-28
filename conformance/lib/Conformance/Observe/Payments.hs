@@ -16,30 +16,30 @@ reads those payments in the chain's own terms â€” addresses, keys and lovelace â
 and leaves their translation to model identities to the live runner, which
 allocated them.
 -}
-module Conformance.Observe.Payments (
-    FoldOutput (..),
-    ExitFacts (..),
-    Payee (..),
-    Payment (..),
-    foldPayments,
-    creditsOwner,
-    OwnerReading (..),
-    readOwner,
-    readBound,
-    ownerOutputObservation,
-    OwedPayee (..),
-    owedPayee,
-    owedOutputs,
-    OutputEdit (..),
-    tamperEdits,
-) where
+module Conformance.Observe.Payments
+    ( FoldOutput (..)
+    , ExitFacts (..)
+    , Payee (..)
+    , Payment (..)
+    , foldPayments
+    , creditsOwner
+    , OwnerReading (..)
+    , readOwner
+    , readBound
+    , ownerOutputObservation
+    , OwedPayee (..)
+    , owedPayee
+    , owedOutputs
+    , OutputEdit (..)
+    , tamperEdits
+    ) where
 
 import Conformance.Story.Live (Edge (..), Exit (..), Tamper (..))
 import Data.Aeson (Value (..), object, (.=))
 import Data.ByteString (ByteString)
 import Data.List (maximumBy, nub)
-import Data.Ord (comparing)
 import Data.Maybe (isJust)
+import Data.Ord (comparing)
 import Data.Text (Text)
 
 -- | One output of the fold's transaction, reduced to what settlement reads.
@@ -112,10 +112,20 @@ foldPayments facts outputs = (<>) <$> owed <*> refunds
             [custody] -> Right [Payment Custody (outputLovelace custody)]
             _ -> Left "insertAbsent locked no single custody output"
         OwedCarrier -> case owing of
-            [carrier] -> Right [Payment (Destination (outputAddress carrier)) (outputLovelace carrier)]
+            [carrier] ->
+                Right
+                    [ Payment (Destination (outputAddress carrier)) (outputLovelace carrier)
+                    ]
             _ -> Left "the delivered token is carried by no single output"
-        OwedOwner -> Right [Payment (Owner (factsOwner facts)) (sum (map outputLovelace owing))]
-        OwedBound -> Right [Payment (Owner (factsOwner facts)) (maximum (0 : map outputLovelace owing))]
+        OwedOwner ->
+            Right
+                [Payment (Owner (factsOwner facts)) (sum (map outputLovelace owing))]
+        OwedBound ->
+            Right
+                [ Payment
+                    (Owner (factsOwner facts))
+                    (maximum (0 : map outputLovelace owing))
+                ]
     -- A reject or a retraction consumes no custody, whatever edge it named.
     refunds = case (factsExit facts, factsEdge facts, factsRefund facts) of
         (Fold, UpdateActive, Just refund) -> custodyRefund refund
@@ -127,7 +137,13 @@ foldPayments facts outputs = (<>) <$> owed <*> refunds
         Right
             [ Payment
                 (Refund address)
-                (sum [outputLovelace out | out <- outputs, outputAddress out == address, not (outputCarrier out)])
+                ( sum
+                    [ outputLovelace out
+                    | out <- outputs
+                    , outputAddress out == address
+                    , not (outputCarrier out)
+                    ]
+                )
             ]
 
 {- | Whether the chain credits an output to an owner's key: it sits at that
@@ -139,8 +155,9 @@ creditsOwner owner out = outputKey out == owner && not (outputCarrier out)
 -- | Whom an exit owes its request's payment, and so which outputs pay it.
 data OwedPayee = OwedCustody | OwedCarrier | OwedOwner | OwedBound
 
--- | Whom this exit owes its request's payment: the model's rule, by edge for a
--- fold; a reject owes the owner, a retraction the owner through a bound output.
+{- | Whom this exit owes its request's payment: the model's rule, by edge for a
+fold; a reject owes the owner, a retraction the owner through a bound output.
+-}
 owedPayee :: ExitFacts -> OwedPayee
 owedPayee facts = case (factsExit facts, factsEdge facts) of
     (Reject, _) -> OwedOwner
@@ -158,7 +175,10 @@ and its inline datum presents the request's own output reference.
 -}
 bindsTo :: ByteString -> Maybe Text -> FoldOutput -> Bool
 bindsTo owner reference out =
-    creditsOwner owner out && outputDatum out == "inline" && isJust reference && outputReference out == reference
+    creditsOwner owner out
+        && outputDatum out == "inline"
+        && isJust reference
+        && outputReference out == reference
 
 {- | The positions of the outputs through which the chain settles what an exit
 owes for its request: the custody output an absent insertion locks, the
@@ -197,7 +217,8 @@ another output reference, and 'StateSpent' spends the registry's state beside
 the retraction; neither applies to another exit. 'ExtraSigner' changes no
 output.
 -}
-tamperEdits :: Tamper -> ExitFacts -> [FoldOutput] -> Either String [OutputEdit]
+tamperEdits
+    :: Tamper -> ExitFacts -> [FoldOutput] -> Either String [OutputEdit]
 tamperEdits alteration facts outputs = case (alteration, owedOutputs facts outputs) of
     (BeforePhase2, _) -> Left "a retraction's validity interval is not a payment edit"
     (AfterPhase2, _) -> Left "a retraction's validity interval is not a payment edit"
@@ -209,15 +230,19 @@ tamperEdits alteration facts outputs = case (alteration, owedOutputs facts outpu
     (_, []) -> Left "the transaction makes no output paying what the exit owes"
     (OtherAddress, owed) -> Right (map Readdress owed)
     (ShortByOne, first : rest)
-        | change == first -> Left "the output paying what the fold owes is its last; no change can take the lovelace"
-        | outputCarrier changed || outputCustody changed || outputReference changed /= Nothing
+        | change == first ->
+            Left
+                "the output paying what the fold owes is its last; no change can take the lovelace"
+        | outputCarrier changed
+            || outputCustody changed
+            || outputReference changed /= Nothing
             || (not retraction && not (null (outputApprovals changed))) ->
             Left "the last output is not change that pays nothing the exit owes"
         | otherwise ->
             Right
                 ( Relovelace first (outputLovelace (outputs !! first) - 1)
                     : map Readdress rest
-                    <> [Relovelace change (outputLovelace changed + 1)]
+                        <> [Relovelace change (outputLovelace changed + 1)]
                 )
     (_, _) -> Left ("no edit for " <> show alteration)
   where
@@ -226,7 +251,8 @@ tamperEdits alteration facts outputs = case (alteration, owedOutputs facts outpu
     -- A retraction's change may carry the approval the request held: it returns
     -- no bound output, so it pays nothing the retraction owes.
     retraction = factsExit facts == Retract
-    bindingOnly = "only a retraction is bound to its request or refused for what it spends"
+    bindingOnly =
+        "only a retraction is bound to its request or refused for what it spends"
 
 -- | The owner output as the ledger outputs crediting the owner present it.
 data OwnerReading = OwnerReading
@@ -243,7 +269,8 @@ data OwnerReading = OwnerReading
 nothing when no output credits it. Outputs presenting different datum forms
 cannot be read as one owner output, and are refused.
 -}
-readOwner :: ByteString -> [FoldOutput] -> Either String (Maybe OwnerReading)
+readOwner
+    :: ByteString -> [FoldOutput] -> Either String (Maybe OwnerReading)
 readOwner owner outputs = case filter (creditsOwner owner) outputs of
     [] -> Right Nothing
     credited -> case nub (map outputDatum credited) of
@@ -256,7 +283,8 @@ readOwner owner outputs = case filter (creditsOwner owner) outputs of
                         , readingApprovals = nub (concatMap outputApprovals credited)
                         }
                 )
-        _ -> Left "the outputs crediting the owner present different datum forms"
+        _ ->
+            Left "the outputs crediting the owner present different datum forms"
 
 {- | The observed owner output, in the model's vocabulary: the owner's
 identity, the lovelace and datum form read, the registry tokens and state
@@ -266,14 +294,21 @@ name no booking established. Whichever approval the ledger returns is the one
 reported, so another request's approval differs from the model's commitment. The
 output reference its datum presents, if any, arrives as its identity.
 -}
-ownerOutputObservation ::
-    Integer -> (Text -> Either String Integer) -> [Value] -> Integer -> Maybe Integer -> OwnerReading
+ownerOutputObservation
+    :: Integer
+    -> (Text -> Either String Integer)
+    -> [Value]
+    -> Integer
+    -> Maybe Integer
+    -> OwnerReading
     -> Either String Value
 ownerOutputObservation owner approvalOf assets stateTokens reference reading = do
     returned <- case readingApprovals reading of
         [] -> Right Null
         [name] -> Number . fromInteger <$> approvalOf name
-        _ -> Left "the owner is returned several approvals; the model's owner output names one"
+        _ ->
+            Left
+                "the owner is returned several approvals; the model's owner output names one"
     pure
         ( object
             [ "role" .= String "owner"
@@ -295,12 +330,16 @@ bound to it. The chain settles a retraction by one sufficient bound output, so
 the return is read as the largest of them, never a sum; whether it is enough
 is the judgement's, not the reader's.
 -}
-readBound :: ByteString -> Text -> [FoldOutput] -> Either String (Maybe OwnerReading)
+readBound
+    :: ByteString
+    -> Text
+    -> [FoldOutput]
+    -> Either String (Maybe OwnerReading)
 readBound owner reference outputs = case filter (bindsTo owner (Just reference)) outputs of
     [] -> Right Nothing
     bound@(_ : _) ->
         let largest = maximumBy (comparing outputLovelace) bound
-         in Right
+        in  Right
                 ( Just
                     OwnerReading
                         { readingLovelace = outputLovelace largest

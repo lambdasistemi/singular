@@ -23,81 +23,81 @@ import Data.IORef (newIORef, readIORef)
 import Test.Hspec
 
 import Cardano.Ledger.BaseTypes (Network (Testnet))
-import Cardano.Node.Client.E2E.Setup (
-    genesisAddr,
- )
+import Cardano.Node.Client.E2E.Setup
+    ( genesisAddr
+    )
 import Data.ByteString.Base16 qualified as Base16
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
-import Singular.Registry.Blueprint (
-    Blueprint,
-    extractCompiledCode,
-    loadRegistryCodesFromEnv,
- )
+import Singular.Registry.Blueprint
+    ( Blueprint
+    , extractCompiledCode
+    , loadRegistryCodesFromEnv
+    )
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (
-    Root (..),
- )
+import Singular.Registry.Ledger
+    ( Root (..)
+    )
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.TxBuilder.Internal (
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    evalScriptHash,
-    extractCageDatum,
-    findStateUtxo,
-    leafAbsent,
-    scriptHashBytes,
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainRoot (..),
-    OnChainTokenState (..),
-    edgeInsertAbsent,
- )
+import Singular.Registry.TxBuilder.Internal
+    ( cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , evalScriptHash
+    , extractCageDatum
+    , findStateUtxo
+    , leafAbsent
+    , scriptHashBytes
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
+    , edgeInsertAbsent
+    )
 
-import Singular.Registry.Driver (
-    bootRegistry,
-    foldEdge,
-    registryTokenId,
- )
-import Singular.Registry.E2E.CageSpec (
-    submitWithGenesis,
-    withE2E,
- )
+import Singular.Registry.Driver
+    ( bootRegistry
+    , foldEdge
+    , registryTokenId
+    )
+import Singular.Registry.E2E.CageSpec
+    ( submitWithGenesis
+    , withE2E
+    )
 
 -- mts pieces for the independent read-back recompute
 import Data.ByteString.Short qualified as SBS
 
-import MPF.Backend.Pure (
-    emptyMPFInMemoryDB,
-    runMPFPure,
-    runMPFPureTransaction,
- )
-import MPF.Backend.Standalone (
-    MPFStandalone (..),
-    MPFStandaloneCodecs (..),
- )
-import MPF.Hashes (
-    MPFHash,
-    isoMPFHash,
-    mkMPFHash,
-    mpfHashing,
-    renderMPFHash,
- )
-import MPF.Interface (
-    FromHexKV (..),
-    HexKey,
-    byteStringToHexKey,
-    hexKeyPrism,
- )
-import MPF.Proof.Insertion (
-    foldMPFProof,
-    mkMPFInclusionProof,
- )
+import MPF.Backend.Pure
+    ( emptyMPFInMemoryDB
+    , runMPFPure
+    , runMPFPureTransaction
+    )
+import MPF.Backend.Standalone
+    ( MPFStandalone (..)
+    , MPFStandaloneCodecs (..)
+    )
+import MPF.Hashes
+    ( MPFHash
+    , isoMPFHash
+    , mkMPFHash
+    , mpfHashing
+    , renderMPFHash
+    )
+import MPF.Interface
+    ( FromHexKV (..)
+    , HexKey
+    , byteStringToHexKey
+    , hexKeyPrism
+    )
+import MPF.Proof.Insertion
+    ( foldMPFProof
+    , mkMPFInclusionProof
+    )
 
-import Singular.Registry.Trie (
-    Trie (..),
- )
+import Singular.Registry.Trie
+    ( Trie (..)
+    )
 import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
 
 spec :: Blueprint -> Spec
@@ -112,64 +112,65 @@ spec bp = describe "Inserting an absent key through a single trie fork" $ do
                 expectationFailure
                     "state or request script not found in blueprint"
 
-fork81Spec ::
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    Spec
+fork81Spec
+    :: SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> Spec
 fork81Spec stateBytes requestBytes = do
-    it "when a key is absent, inserts it through the fork and reads it back" $
-        withE2E stateBytes requestBytes $
-            \cfg prov submit tm -> do
-                codes <- loadRegistryCodesFromEnv
-                reg <-
-                    bootRegistry cfg codes prov (submitWithGenesis submit) genesisAddr tm
-                let tokenId = registryTokenId reg
-                    foldInsert k = void (foldEdge reg k edgeInsertAbsent)
-                foldInsert "cs07-fork-A"
-                foldInsert "cs07-fork-B1294"
-                -- The previously-refused fold (CS07): its proof's sole step
-                -- is a root-level Fork with skip > 0.
-                foldInsert "cs07-fork-C11"
-                -- Read back from chain: the state datum root must equal an
-                -- independent {A,B,C} recompute, and an inclusion proof for
-                -- C built from the independent trie must fold to the chain
-                -- root (C provably present with value vc).
-                -- The cage address also holds the custody each absence
-                -- insertion created (#157 C6), so the state UTxO is the
-                -- one carrying the registry policy token, not the only one.
-                let stateAddr = cageAddrFromCfg cfg Testnet
-                stateUtxos <- Cage.queryUTxOs prov stateAddr
-                chainRoot <-
-                    case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId stateUtxos of
-                        Just (_, out) -> case extractCageDatum out of
-                            Just (StateDatum st) ->
-                                pure (unOnChainRoot (stateRoot st))
-                            _ -> error "fork81: state UTxO datum missing"
-                        Nothing ->
-                            error "fork81: no state UTxO carrying the policy token"
-                ref <- newIORef emptyMPFInMemoryDB
-                let trie = mkPureTrieFromRef ref
-                _ <- insert trie "cs07-fork-A" leafAbsent
-                _ <- insert trie "cs07-fork-B1294" leafAbsent
-                _ <- insert trie "cs07-fork-C11" leafAbsent
-                recomputed <- getRoot trie
-                unRoot recomputed `shouldBe` chainRoot
-                db <- readIORef ref
-                let (mProof, _) =
-                        runMPFPure db $
-                            runMPFPureTransaction
-                                codecs
-                                ( mkMPFInclusionProof
-                                    []
-                                    identityKV
-                                    mpfHashing
-                                    MPFStandaloneMPFCol
-                                    (hashPath "cs07-fork-C11")
-                                )
-                case mProof of
-                    Nothing -> error "fork81: no inclusion proof for C"
-                    Just p ->
-                        renderMPFHash (foldMPFProof mpfHashing p) `shouldBe` chainRoot
+    it
+        "when a key is absent, inserts it through the fork and reads it back"
+        $ withE2E stateBytes requestBytes
+        $ \cfg prov submit tm -> do
+            codes <- loadRegistryCodesFromEnv
+            reg <-
+                bootRegistry cfg codes prov (submitWithGenesis submit) genesisAddr tm
+            let tokenId = registryTokenId reg
+                foldInsert k = void (foldEdge reg k edgeInsertAbsent)
+            foldInsert "cs07-fork-A"
+            foldInsert "cs07-fork-B1294"
+            -- The previously-refused fold (CS07): its proof's sole step
+            -- is a root-level Fork with skip > 0.
+            foldInsert "cs07-fork-C11"
+            -- Read back from chain: the state datum root must equal an
+            -- independent {A,B,C} recompute, and an inclusion proof for
+            -- C built from the independent trie must fold to the chain
+            -- root (C provably present with value vc).
+            -- The cage address also holds the custody each absence
+            -- insertion created (#157 C6), so the state UTxO is the
+            -- one carrying the registry policy token, not the only one.
+            let stateAddr = cageAddrFromCfg cfg Testnet
+            stateUtxos <- Cage.queryUTxOs prov stateAddr
+            chainRoot <-
+                case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId stateUtxos of
+                    Just (_, out) -> case extractCageDatum out of
+                        Just (StateDatum st) ->
+                            pure (unOnChainRoot (stateRoot st))
+                        _ -> error "fork81: state UTxO datum missing"
+                    Nothing ->
+                        error "fork81: no state UTxO carrying the policy token"
+            ref <- newIORef emptyMPFInMemoryDB
+            let trie = mkPureTrieFromRef ref
+            _ <- insert trie "cs07-fork-A" leafAbsent
+            _ <- insert trie "cs07-fork-B1294" leafAbsent
+            _ <- insert trie "cs07-fork-C11" leafAbsent
+            recomputed <- getRoot trie
+            unRoot recomputed `shouldBe` chainRoot
+            db <- readIORef ref
+            let (mProof, _) =
+                    runMPFPure db $
+                        runMPFPureTransaction
+                            codecs
+                            ( mkMPFInclusionProof
+                                []
+                                identityKV
+                                mpfHashing
+                                MPFStandaloneMPFCol
+                                (hashPath "cs07-fork-C11")
+                            )
+            case mProof of
+                Nothing -> error "fork81: no inclusion proof for C"
+                Just p ->
+                    renderMPFHash (foldMPFProof mpfHashing p) `shouldBe` chainRoot
 
     it "when the key is already present, refuses a second insertion" $
         withE2E stateBytes requestBytes $

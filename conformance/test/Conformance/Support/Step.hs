@@ -18,12 +18,12 @@ import Cardano.Ledger.Api.Tx.Body (feeTxBodyL, mkBasicTxBody)
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
-import Conformance.Run.Step (
-    StepOutcome (..),
-    StepRejection (..),
-    judgedTransaction,
-    refusedOutcome,
- )
+import Conformance.Run.Step
+    ( StepOutcome (..)
+    , StepRejection (..)
+    , judgedTransaction
+    , refusedOutcome
+    )
 
 -- | A submitted transaction, told apart by its fee.
 submitted :: ConwayTx
@@ -39,11 +39,13 @@ marker = "874e476d"
 
 -- | The node's phase-2 refusal naming that script.
 scriptRefusal :: String
-scriptRefusal = "ConwayUtxowFailure/UtxoFailure/UtxosFailure/ValidationTagMismatch/FailedUnexpectedly/PlutusFailure | CekError: Caused by: error (PlutusWithContext {pwcScriptHash = ScriptHash 874e476d})"
+scriptRefusal =
+    "ConwayUtxowFailure/UtxoFailure/UtxosFailure/ValidationTagMismatch/FailedUnexpectedly/PlutusFailure | CekError: Caused by: error (PlutusWithContext {pwcScriptHash = ScriptHash 874e476d})"
 
 -- | The node's phase-1 refusal of a live retraction in run 36066233387.
 collateralRefusal :: String
-collateralRefusal = "HardForkApplyTxErrFromEra S (S (S (S (S (S (Z (WrapApplyTxErr {unwrapApplyTxErr = ConwayApplyTxError (ConwayUtxowFailure (UtxoFailure (InsufficientCollateral (DeltaCoin (-29999999081618799)) (Coin 1770845))) :| [ConwayUtxowFailure (UtxoFailure (IncorrectTotalCollateralField (DeltaCoin (-29999999081618799)) (Coin 511035)))])}))))))"
+collateralRefusal =
+    "HardForkApplyTxErrFromEra S (S (S (S (S (S (Z (WrapApplyTxErr {unwrapApplyTxErr = ConwayApplyTxError (ConwayUtxowFailure (UtxoFailure (InsufficientCollateral (DeltaCoin (-29999999081618799)) (Coin 1770845))) :| [ConwayUtxowFailure (UtxoFailure (IncorrectTotalCollateralField (DeltaCoin (-29999999081618799)) (Coin 511035)))])}))))))"
 
 -- | The id of the transaction the model is handed, if any.
 judgedId :: Value -> StepOutcome -> Maybe String
@@ -53,13 +55,21 @@ spec :: Spec
 spec = describe "Which submitted transaction the model judges" $ do
     let own = Just (show (txIdTx submitted))
     it "judges a transaction the chain accepted" $
-        judgedId (String "accepted") (StepAccepted submitted (0, 0, 0)) `shouldBe` own
-    it "judges a transaction the chain refused for a script it names" $
-        judgedId (String "accepted") (refusedOutcome marker submitted (rejection scriptRefusal))
+        judgedId (String "accepted") (StepAccepted submitted (0, 0, 0))
             `shouldBe` own
-    it "judges a transaction the node rejected for a reason it attributes to no script" $
-        judgedId (String "accepted") (refusedOutcome marker submitted (rejection collateralRefusal))
+    it "judges a transaction the chain refused for a script it names" $
+        judgedId
+            (String "accepted")
+            (refusedOutcome marker submitted (rejection scriptRefusal))
+            `shouldBe` own
+    it
+        "judges a transaction the node rejected for a reason it attributes to no script"
+        $ judgedId
+            (String "accepted")
+            (refusedOutcome marker submitted (rejection collateralRefusal))
             `shouldBe` own
     it "judges nothing the law already refused" $
-        judgedId (String "refused") (refusedOutcome marker submitted (rejection collateralRefusal))
+        judgedId
+            (String "refused")
+            (refusedOutcome marker submitted (rejection collateralRefusal))
             `shouldBe` Nothing

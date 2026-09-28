@@ -11,55 +11,55 @@ All keys and values are hashed through MPF
 conventions ('mkMPFHash') so proof paths match
 what the Aiken on-chain validator expects.
 -}
-module Singular.Registry.Trie.Pure (
-    -- * Construction
-    mkPureTrie,
-    mkPureTrieFromRef,
+module Singular.Registry.Trie.Pure
+    ( -- * Construction
+      mkPureTrie
+    , mkPureTrieFromRef
 
-    -- * Internals (for TrieManager)
-    getRootFromDb,
-) where
+      -- * Internals (for TrieManager)
+    , getRootFromDb
+    ) where
 
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as B
-import Data.IORef (
-    IORef,
-    modifyIORef',
-    newIORef,
-    readIORef,
- )
+import Data.IORef
+    ( IORef
+    , modifyIORef'
+    , newIORef
+    , readIORef
+    )
 
-import MPF.Backend.Pure (
-    MPFInMemoryDB,
-    MPFPure,
-    emptyMPFInMemoryDB,
-    runMPFPure,
-    runMPFPureTransaction,
- )
-import MPF.Backend.Standalone (
-    MPFStandalone (..),
-    MPFStandaloneCodecs (..),
- )
+import MPF.Backend.Pure
+    ( MPFInMemoryDB
+    , MPFPure
+    , emptyMPFInMemoryDB
+    , runMPFPure
+    , runMPFPureTransaction
+    )
+import MPF.Backend.Standalone
+    ( MPFStandalone (..)
+    , MPFStandaloneCodecs (..)
+    )
 import MPF.Deletion (deleting)
-import MPF.Hashes (
-    MPFHash,
-    isoMPFHash,
-    mkMPFHash,
-    mpfHashing,
-    renderMPFHash,
-    root,
- )
+import MPF.Hashes
+    ( MPFHash
+    , isoMPFHash
+    , mkMPFHash
+    , mpfHashing
+    , renderMPFHash
+    , root
+    )
 import MPF.Insertion (inserting)
-import MPF.Interface (
-    FromHexKV (..),
-    HexKey,
-    byteStringToHexKey,
-    hexKeyPrism,
- )
-import MPF.Proof.Insertion (
-    MPFProof,
-    mkMPFInclusionProof,
- )
+import MPF.Interface
+    ( FromHexKV (..)
+    , HexKey
+    , byteStringToHexKey
+    , hexKeyPrism
+    )
+import MPF.Proof.Insertion
+    ( MPFProof
+    , mkMPFInclusionProof
+    )
 
 import Singular.Registry.Ledger (Root (..))
 import Singular.Registry.Proof (toProofSteps)
@@ -146,11 +146,11 @@ mkPureTrieFromRef ref =
         }
 
 -- | Insert a key-value pair.
-pureInsert ::
-    IORef MPFInMemoryDB ->
-    ByteString ->
-    ByteString ->
-    IO Root
+pureInsert
+    :: IORef MPFInMemoryDB
+    -> ByteString
+    -> ByteString
+    -> IO Root
 pureInsert ref k v = do
     db <- readIORef ref
     let ((), db') =
@@ -159,10 +159,10 @@ pureInsert ref k v = do
     getRootFromDb db'
 
 -- | Delete a key from the trie.
-pureDelete ::
-    IORef MPFInMemoryDB ->
-    ByteString ->
-    IO Root
+pureDelete
+    :: IORef MPFInMemoryDB
+    -> ByteString
+    -> IO Root
 pureDelete ref k = do
     db <- readIORef ref
     let hexKey =
@@ -175,10 +175,10 @@ pureDelete ref k = do
     getRootFromDb db'
 
 -- | Look up a value by key.
-pureLookup ::
-    IORef MPFInMemoryDB ->
-    ByteString ->
-    IO (Maybe ByteString)
+pureLookup
+    :: IORef MPFInMemoryDB
+    -> ByteString
+    -> IO (Maybe ByteString)
 pureLookup ref k = do
     db <- readIORef ref
     let hexKey =
@@ -200,15 +200,15 @@ pureGetRoot ref = readIORef ref >>= getRootFromDb
 getRootFromDb :: MPFInMemoryDB -> IO Root
 getRootFromDb db =
     let (mHash, _) = runMPFPure db rootHashM
-     in pure $ case mHash of
+    in  pure $ case mHash of
             Nothing -> Root (B.replicate 32 0)
             Just h -> Root h
 
 -- | Generate on-chain proof steps for a key.
-pureGetProofSteps ::
-    IORef MPFInMemoryDB ->
-    ByteString ->
-    IO (Maybe [ProofStep])
+pureGetProofSteps
+    :: IORef MPFInMemoryDB
+    -> ByteString
+    -> IO (Maybe [ProofStep])
 pureGetProofSteps ref k = do
     db <- readIORef ref
     let hexKey =

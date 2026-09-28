@@ -39,6 +39,35 @@ controls: synthetic orphans injected into scratch copies of the classified
 tree, each required to produce its intended failure. The controls never
 touch the working tree.
 
+## Haskell formatting
+
+The repository's Haskell trees are formatted with Fourmolu under one house
+configuration, `fourmolu.yaml` at the repository root. Every formatter
+entrypoint — the off-chain lint check, the Conformance format check and the
+root recipes below — passes that file explicitly, so a missing configuration
+fails loudly instead of falling back to Fourmolu's defaults, and there is no
+per-tree configuration to drift from it.
+
+```sh
+nix develop --quiet -c just format        # apply to every discovered Haskell source
+nix develop --quiet -c just format-check  # the same check `just ci` carries
+```
+
+Discovery is dynamic: every Haskell source under `offchain/` and
+`conformance/` — the formerly fenced verifier sources and the evaluation
+spike included — with no directory exclusions, so a new file or component
+directory is covered with nothing to edit. The Conformance tree gets the
+same check in its own Nix source context through `nix run .#format-check`
+from `conformance/` (CI job 'Conformance Haskell format check'). `just
+format-controls` runs the negative and positive controls: a source that
+Fourmolu's defaults accept but the house configuration rejects must fail
+the check — proving the configuration is read — and its formatter correction
+must pass it again; a tree without the configuration must fail loudly rather
+than format with defaults; a newly tracked component tree outside the old
+directories joins the check through the Git index, while ignored untracked
+build noise never enters it and a tracked file under an ignored path stays.
+The controls run over scratch copies and never touch the working tree.
+
 ## Edit and serve
 
 The development shell has a separate CI build because packaged builds do not exercise it:

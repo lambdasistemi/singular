@@ -14,24 +14,24 @@ discipline as @offchain\/journey\/li-refusals\/Main.hs@ applies it.
 marker no node reason can ever contain, the matcher must fail naming
 what came back (@CONFORMANCE_CONTROL=wrong-reason@).
 -}
-module Conformance.Refusal (
-    RefusalMismatch (..),
-    RefusalRole (..),
-    attributeRefusalReceipt,
-    matchRefusal,
-    refusalScriptHashes,
-    refusalWritesReceipt,
-    trimRefusal,
-    wrongReasonMarker,
-) where
+module Conformance.Refusal
+    ( RefusalMismatch (..)
+    , RefusalRole (..)
+    , attributeRefusalReceipt
+    , matchRefusal
+    , refusalScriptHashes
+    , refusalWritesReceipt
+    , trimRefusal
+    , wrongReasonMarker
+    ) where
 
-import Conformance.Receipt (
-    Outcome (..),
-    Receipt (..),
-    RefusalInfo (..),
-    Verdict (..),
-    writeReceiptFile,
- )
+import Conformance.Receipt
+    ( Outcome (..)
+    , Receipt (..)
+    , RefusalInfo (..)
+    , Verdict (..)
+    , writeReceiptFile
+    )
 import Data.Char (isHexDigit)
 import Data.List (intercalate, isInfixOf, isPrefixOf, nub, sortOn)
 import Data.Text qualified as T
@@ -134,15 +134,14 @@ refusalScriptHashes text = nub (filter (not . null) (go text))
         Just after ->
             let digits = dropWhile isQuoteOrEscape after
                 h = takeWhile isHexDigit digits
-             in h : go (drop (length h) digits)
+            in  h : go (drop (length h) digits)
     -- Both node shapes: quoted ledger form and bare Haskell Show
     -- form. Only the marker-anchored hex run counts; unquoted
     -- ledger credentials never match this pattern.
     hashMarker = "ScriptHash "
     isQuoteOrEscape c = c == '"' || c == '\\'
 
-{- | The failed scripts' hashes joined as one @scriptHash=@ field.
--}
+-- | The failed scripts' hashes joined as one @scriptHash=@ field.
 scriptHashes :: String -> Maybe String
 scriptHashes text = case refusalScriptHashes text of
     [] -> Nothing
@@ -155,7 +154,10 @@ version line, whichever is nearer.
 cekError :: String -> Maybe String
 cekError text = do
     after <- findAfter "CekError " text
-    pure ("cek=" <> take 500 (takeUntilAny [") []", "\\nThe protocol version is:"] after))
+    pure
+        ( "cek="
+            <> take 500 (takeUntilAny [") []", "\\nThe protocol version is:"] after)
+        )
 
 -- | Text after the first occurrence of a marker.
 findAfter :: String -> String -> Maybe String
@@ -209,10 +211,11 @@ wrongReasonMarker =
 -- because its control was retired before the final runs, which is
 -- what isolated the cause.
 
--- | Whose refusal is being attributed: a refusal ROW's receipt IS
--- the row outcome and is written; a refused CONTROL's outcome is
--- run-log evidence under its own identity and must never overwrite
--- the row's receipt.
+{- | Whose refusal is being attributed: a refusal ROW's receipt IS
+the row outcome and is written; a refused CONTROL's outcome is
+run-log evidence under its own identity and must never overwrite
+the row's receipt.
+-}
 data RefusalRole = RefusalRow | RefusalControl
     deriving stock (Show, Eq)
 
@@ -242,31 +245,31 @@ run upstream of this call. The receipt carries the trimmed reason
 (volume trimmed, never the script identities), the submitted
 transaction's id under @rejected@, and the @node-submit@ venue.
 -}
-attributeRefusalReceipt ::
-    RefusalRole ->
-    -- | receipts directory (only touched when the policy writes)
-    FilePath ->
-    -- | row id
-    String ->
-    -- | verdict the receipt would carry
-    Verdict ->
-    -- | attributed script label
-    String ->
-    -- | expected marker (applied script hash hex)
-    String ->
-    -- | the node's refusal reason, verbatim
-    String ->
-    -- | the submitted transaction's id
-    String ->
-    -- | base commit
-    String ->
-    -- | dirty tree flag
-    Bool ->
-    -- | node identity
-    String ->
-    -- | blueprint identity
-    String ->
-    IO (Either RefusalMismatch ())
+attributeRefusalReceipt
+    :: RefusalRole
+    -> FilePath
+    -- ^ receipts directory (only touched when the policy writes)
+    -> String
+    -- ^ row id
+    -> Verdict
+    -- ^ verdict the receipt would carry
+    -> String
+    -- ^ attributed script label
+    -> String
+    -- ^ expected marker (applied script hash hex)
+    -> String
+    -- ^ the node's refusal reason, verbatim
+    -> String
+    -- ^ the submitted transaction's id
+    -> String
+    -- ^ base commit
+    -> Bool
+    -- ^ dirty tree flag
+    -> String
+    -- ^ node identity
+    -> String
+    -- ^ blueprint identity
+    -> IO (Either RefusalMismatch ())
 attributeRefusalReceipt role dir row verdict script marker text rejectedTxid base dirty node blueprint =
     case matchRefusal marker text of
         Left m -> pure (Left m)
@@ -305,11 +308,10 @@ attributeRefusalReceipt role dir row verdict script marker text rejectedTxid bas
                             , receiptRejected = Just (T.pack rejectedTxid)
                             , receiptDirty = dirty
                             , receiptPartial = Nothing
-
                             , receiptDerivation = Nothing
                             , receiptSteps = Nothing
                             }
-            else pure ()
+                else pure ()
             pure (Right ())
 
 {- | The reason a receipt records: trimmed to what attributes, but
@@ -320,4 +322,4 @@ Run.hs policy moved beside the write it feeds.
 recordedReason :: String -> String -> String
 recordedReason text marker =
     let trimmed = trimRefusal text
-     in if marker `isInfixOf` trimmed then trimmed else take 2000 text
+    in  if marker `isInfixOf` trimmed then trimmed else take 2000 text

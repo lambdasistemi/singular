@@ -53,59 +53,59 @@ chain's root, so a mirror that drifted (a run that died mid-fold, a copy
 belonging to another deployment) fails by name instead of building
 proofs against a trie the chain does not have.
 -}
-module Singular.Registry.Deployment (
-    -- * The manifest
-    Deployment (..),
-    ReferenceScript (..),
-    readDeployment,
-    writeDeployment,
+module Singular.Registry.Deployment
+    ( -- * The manifest
+      Deployment (..)
+    , ReferenceScript (..)
+    , readDeployment
+    , writeDeployment
 
-    -- * Choosing one
-    deploymentPathFromArgs,
-    deploymentPathFromEnvironment,
+      -- * Choosing one
+    , deploymentPathFromArgs
+    , deploymentPathFromEnvironment
 
-    -- * The release halves the manifest pins only by hash
-    CageParts (..),
-    cageConfigFor,
+      -- * The release halves the manifest pins only by hash
+    , CageParts (..)
+    , cageConfigFor
 
-    -- * Checking one against a node
-    verifyDeployment,
+      -- * Checking one against a node
+    , verifyDeployment
 
-    -- * Attaching a run to one
-    Attached (..),
-    attach,
+      -- * Attaching a run to one
+    , Attached (..)
+    , attach
 
-    -- * The proof mirror beside the manifest
-    mirrorPathFor,
-    loadMirror,
-    saveMirror,
+      -- * The proof mirror beside the manifest
+    , mirrorPathFor
+    , loadMirror
+    , saveMirror
 
-    -- * Output references
-    renderOutRef,
-    parseOutRef,
-    renderAddrBytes,
-) where
+      -- * Output references
+    , renderOutRef
+    , parseOutRef
+    , renderAddrBytes
+    ) where
 
-import Singular.Registry.Deployment.Attach (
-    Attached (..),
-    CageParts (..),
-    attach,
-    cageConfigFor,
-    verifyDeployment,
- )
-import Singular.Registry.Deployment.Manifest (
-    Deployment (..),
-    ReferenceScript (..),
-    deploymentPathFromArgs,
-    deploymentPathFromEnvironment,
-    mirrorPathFor,
-    parseOutRef,
-    readDeployment,
-    renderAddrBytes,
-    renderOutRef,
-    writeDeployment,
- )
-import Singular.Registry.Deployment.Mirror (
-    loadMirror,
-    saveMirror,
- )
+import Singular.Registry.Deployment.Attach
+    ( Attached (..)
+    , CageParts (..)
+    , attach
+    , cageConfigFor
+    , verifyDeployment
+    )
+import Singular.Registry.Deployment.Manifest
+    ( Deployment (..)
+    , ReferenceScript (..)
+    , deploymentPathFromArgs
+    , deploymentPathFromEnvironment
+    , mirrorPathFor
+    , parseOutRef
+    , readDeployment
+    , renderAddrBytes
+    , renderOutRef
+    , writeDeployment
+    )
+import Singular.Registry.Deployment.Mirror
+    ( loadMirror
+    , saveMirror
+    )

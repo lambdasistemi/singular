@@ -1,24 +1,24 @@
 -- | Discovered changes to every value the model declares observable.
-module Conformance.Compare.Perturbation (
-    Step (..),
-    leafPaths,
-    arrayPaths,
-    perturbAt,
-    appendAt,
-    isLovelaceFloor,
-    reportedDifferences,
-    differingPaths,
-    replacing,
-    discoveredChanges,
-    checkPerturbations,
-) where
+module Conformance.Compare.Perturbation
+    ( Step (..)
+    , leafPaths
+    , arrayPaths
+    , perturbAt
+    , appendAt
+    , isLovelaceFloor
+    , reportedDifferences
+    , differingPaths
+    , replacing
+    , discoveredChanges
+    , checkPerturbations
+    ) where
 
-import Conformance.Compare.Registration (
-    Declared (..),
-    Difference (..),
-    compareRegistration,
-    outputFloorAgrees,
- )
+import Conformance.Compare.Registration
+    ( Declared (..)
+    , Difference (..)
+    , compareRegistration
+    , outputFloorAgrees
+    )
 import Data.Aeson (Value (..))
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KM
@@ -33,14 +33,31 @@ data Step = Field Text | Index Int
 
 leafPaths :: Value -> [[Step]]
 leafPaths value = case value of
-    Object fields -> [Field (Key.toText name) : rest | (name, inner) <- KM.toList fields, rest <- leafPaths inner]
-    Array entries -> [Index index : rest | (index, inner) <- zip [0 ..] (V.toList entries), rest <- leafPaths inner]
+    Object fields ->
+        [ Field (Key.toText name) : rest
+        | (name, inner) <- KM.toList fields
+        , rest <- leafPaths inner
+        ]
+    Array entries ->
+        [ Index index : rest
+        | (index, inner) <- zip [0 ..] (V.toList entries)
+        , rest <- leafPaths inner
+        ]
     _ -> [[]]
 
 arrayPaths :: Value -> [[Step]]
 arrayPaths value = case value of
-    Object fields -> [Field (Key.toText name) : rest | (name, inner) <- KM.toList fields, rest <- arrayPaths inner]
-    Array entries -> [] : [Index index : rest | (index, inner) <- zip [0 ..] (V.toList entries), rest <- arrayPaths inner]
+    Object fields ->
+        [ Field (Key.toText name) : rest
+        | (name, inner) <- KM.toList fields
+        , rest <- arrayPaths inner
+        ]
+    Array entries ->
+        []
+            : [ Index index : rest
+              | (index, inner) <- zip [0 ..] (V.toList entries)
+              , rest <- arrayPaths inner
+              ]
     _ -> []
 
 perturbAt :: [Step] -> Value -> Value
@@ -52,11 +69,14 @@ perturbAt [] value = case value of
     other -> other
 perturbAt (Field name : rest) value = case value of
     Object fields -> case KM.lookup (Key.fromText name) fields of
-        Just inner -> Object (KM.insert (Key.fromText name) (perturbAt rest inner) fields)
+        Just inner ->
+            Object (KM.insert (Key.fromText name) (perturbAt rest inner) fields)
         Nothing -> value
     _ -> value
 perturbAt (Index index : rest) value = case value of
-    Array entries | index < V.length entries -> Array (entries V.// [(index, perturbAt rest (entries V.! index))])
+    Array entries
+        | index < V.length entries ->
+            Array (entries V.// [(index, perturbAt rest (entries V.! index))])
     _ -> value
 
 appendAt :: [Step] -> Value -> Value
@@ -65,11 +85,14 @@ appendAt [] value = case value of
     other -> other
 appendAt (Field name : rest) value = case value of
     Object fields -> case KM.lookup (Key.fromText name) fields of
-        Just inner -> Object (KM.insert (Key.fromText name) (appendAt rest inner) fields)
+        Just inner ->
+            Object (KM.insert (Key.fromText name) (appendAt rest inner) fields)
         Nothing -> value
     _ -> value
 appendAt (Index index : rest) value = case value of
-    Array entries | index < V.length entries -> Array (entries V.// [(index, appendAt rest (entries V.! index))])
+    Array entries
+        | index < V.length entries ->
+            Array (entries V.// [(index, appendAt rest (entries V.! index))])
     _ -> value
 
 {- | A leaf the model states as a lovelace floor: a transaction output's
@@ -89,7 +112,10 @@ reportedDifferences differences =
     [ (name, path)
     | difference <- differences
     , let name = differenceObservation difference
-    , path <- differingPaths (differenceExpected difference) (differenceObserved difference)
+    , path <-
+        differingPaths
+            (differenceExpected difference)
+            (differenceObserved difference)
     , not (surplusFloor name path difference)
     ]
 
@@ -151,7 +177,9 @@ valueAt (Field name : rest) value = case value of
     Object fields -> KM.lookup (Key.fromText name) fields >>= valueAt rest
     _ -> Nothing
 valueAt (Index index : rest) value = case value of
-    Array entries | index >= 0 && index < V.length entries -> valueAt rest (entries V.! index)
+    Array entries
+        | index >= 0 && index < V.length entries ->
+            valueAt rest (entries V.! index)
     _ -> Nothing
 
 replaceAt :: [Step] -> Value -> Value -> Value
@@ -159,18 +187,31 @@ replaceAt [] replacement _ = replacement
 replaceAt (Field name : rest) replacement value = case value of
     Object fields -> case KM.lookup (Key.fromText name) fields of
         Just inner ->
-            Object (KM.insert (Key.fromText name) (replaceAt rest replacement inner) fields)
+            Object
+                ( KM.insert
+                    (Key.fromText name)
+                    (replaceAt rest replacement inner)
+                    fields
+                )
         Nothing -> value
     _ -> value
 replaceAt (Index index : rest) replacement value = case value of
     Array entries
         | index >= 0 && index < V.length entries ->
-            Array (entries V.// [(index, replaceAt rest replacement (entries V.! index))])
+            Array
+                (entries V.// [(index, replaceAt rest replacement (entries V.! index))])
     _ -> value
 
-loweredOutputFloors :: Declared -> Value -> Value -> [(Text, [Step], Value)]
+loweredOutputFloors
+    :: Declared -> Value -> Value -> [(Text, [Step], Value)]
 loweredOutputFloors declared expected observed =
-    [ (name, path, replacing name (replaceAt path (Number (modelFloor - 1)) actual) observed)
+    [ ( name
+      , path
+      , replacing
+            name
+            (replaceAt path (Number (modelFloor - 1)) actual)
+            observed
+      )
     | name <- declaredObservations declared
     , Just model <- [observationAt name expected]
     , Just actual <- [observationAt name observed]
@@ -182,29 +223,76 @@ loweredOutputFloors declared expected observed =
 {- | Count every refused change by the observation the comparator named.
 The sole allowed passing change is surplus above a lovelace floor.
 -}
-checkPerturbations :: Declared -> Value -> Value -> Either String (Int, Map.Map Text Int, [String])
+checkPerturbations
+    :: Declared
+    -> Value
+    -> Value
+    -> Either String (Int, Map.Map Text Int, [String])
 checkPerturbations declared expected observed = do
     let changes = discoveredChanges declared observed
         lowerings = loweredOutputFloors declared expected observed
-        absent = [name | name <- declaredObservations declared, all (\(n, _, _) -> n /= name) changes]
-    if null absent then pure () else Left ("no discovered changes for " <> show absent)
+        absent =
+            [ name
+            | name <- declaredObservations declared
+            , all (\(n, _, _) -> n /= name) changes
+            ]
+    if null absent
+        then pure ()
+        else Left ("no discovered changes for " <> show absent)
     results <- mapM check changes
     lowered <- mapM checkLowering lowerings
     let refused = [name | Just name <- results <> lowered]
-        exempt = [show path | ((name, path, _), Nothing) <- zip changes results, isLovelaceFloor name path]
-    pure (length refused, Map.fromListWith (+) [(name, 1) | name <- refused], exempt)
+        exempt =
+            [ show path
+            | ((name, path, _), Nothing) <- zip changes results
+            , isLovelaceFloor name path
+            ]
+    pure
+        ( length refused
+        , Map.fromListWith (+) [(name, 1) | name <- refused]
+        , exempt
+        )
   where
     check (name, path, changed)
         | isLovelaceFloor name path = case compareRegistration declared expected changed of
             Right _ -> Right Nothing
-            Left differences -> Left ("outputMinimumAda was compared at " <> show path <> ": " <> show differences)
+            Left differences ->
+                Left
+                    ( "outputMinimumAda was compared at "
+                        <> show path
+                        <> ": "
+                        <> show differences
+                    )
         | otherwise = case compareRegistration declared expected changed of
-            Right _ -> Left ("changed " <> show name <> " at " <> show path <> " was accepted")
+            Right _ ->
+                Left
+                    ("changed " <> show name <> " at " <> show path <> " was accepted")
             Left differences
-                | name `elem` map differenceObservation differences -> Right (Just name)
-                | otherwise -> Left ("changed " <> show name <> " at " <> show path <> " was attributed elsewhere: " <> show differences)
+                | name `elem` map differenceObservation differences ->
+                    Right (Just name)
+                | otherwise ->
+                    Left
+                        ( "changed "
+                            <> show name
+                            <> " at "
+                            <> show path
+                            <> " was attributed elsewhere: "
+                            <> show differences
+                        )
     checkLowering (name, path, changed) = case compareRegistration declared expected changed of
-        Right _ -> Left ("lowered output lovelace below the model floor at " <> show path <> " was accepted")
+        Right _ ->
+            Left
+                ( "lowered output lovelace below the model floor at "
+                    <> show path
+                    <> " was accepted"
+                )
         Left differences
-            | name `elem` map differenceObservation differences -> Right (Just name)
-            | otherwise -> Left ("lowered output lovelace at " <> show path <> " was attributed elsewhere: " <> show differences)
+            | name `elem` map differenceObservation differences ->
+                Right (Just name)
+            | otherwise ->
+                Left
+                    ( "lowered output lovelace at "
+                        <> show path
+                        <> " was attributed elsewhere: "
+                        <> show differences
+                    )

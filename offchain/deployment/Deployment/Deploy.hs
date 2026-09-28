@@ -17,9 +17,9 @@ one nobody asked for; given one the node does not agree with, it refuses
 to overwrite the record of a deployment that may still be live
 elsewhere.
 -}
-module Deployment.Deploy (
-    deploy,
-) where
+module Deployment.Deploy
+    ( deploy
+    ) where
 
 import Control.Exception (SomeException, catch)
 import Control.Monad (when)
@@ -31,37 +31,42 @@ import System.Directory (doesFileExist)
 import Cardano.Ledger.Core (hashScript)
 import Ouroboros.Network.Magic (NetworkMagic (..))
 
-import Deployment.Compiled (Compiled (..), bindDeployment, loadCompiled, partsOf)
+import Deployment.Compiled
+    ( Compiled (..)
+    , bindDeployment
+    , loadCompiled
+    , partsOf
+    )
 import Deployment.Narration (emit, failWith, hexT, tokenText, txText)
-import Deployment.Node (
-    bootRegistry,
-    publishAll,
-    publishOne,
-    registerCredentials,
-    verifyRegisteredDeployment,
- )
+import Deployment.Node
+    ( bootRegistry
+    , publishAll
+    , publishOne
+    , registerCredentials
+    , verifyRegisteredDeployment
+    )
 import Deployment.Options (DeployOptions (..), deployOptions)
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Deployment (
-    Deployment (..),
-    readDeployment,
-    renderOutRef,
-    verifyDeployment,
-    writeDeployment,
- )
+import Singular.Registry.Deployment
+    ( Deployment (..)
+    , readDeployment
+    , renderOutRef
+    , verifyDeployment
+    , writeDeployment
+    )
 import Singular.Registry.Ledger (Coin (..))
-import Singular.Registry.Node (
-    NodeSession (..),
-    bech32Address,
-    funderAddr,
-    withNode,
- )
-import Singular.Registry.TxBuilder.Internal (
-    computeScriptHash,
-    mkRequestScript,
-    scriptFromBytes,
-    scriptHashBytes,
- )
+import Singular.Registry.Node
+    ( NodeSession (..)
+    , bech32Address
+    , funderAddr
+    , withNode
+    )
+import Singular.Registry.TxBuilder.Internal
+    ( computeScriptHash
+    , mkRequestScript
+    , scriptFromBytes
+    , scriptHashBytes
+    )
 
 -- | Make the deployment these arguments describe, once.
 deploy :: [String] -> IO ()
@@ -84,8 +89,14 @@ deploy args = do
         -- A registry boots only by reference: the state validator is
         -- published before the boot, which resolves it from there.
         (stateIn, _) <-
-            publishOne prov submit pp txs (scriptFromBytes "state" (cStateBytes unbound))
-        (cfg, tok, bootTx, seedIn, compiled) <- bootRegistry prov submit unbound txs processTime retractTime
+            publishOne
+                prov
+                submit
+                pp
+                txs
+                (scriptFromBytes "state" (cStateBytes unbound))
+        (cfg, tok, bootTx, seedIn, compiled) <-
+            bootRegistry prov submit unbound txs processTime retractTime
         registerCredentials sess prov submit compiled txs
         refs <- publishAll prov submit pp cfg tok compiled stateIn txs
         bootstrap <- reverse <$> readIORef txs
@@ -130,7 +141,8 @@ deploy args = do
 with, say so and stop, rather than booting a second registry that
 nothing recorded will ever point at.
 -}
-refuseIfAlreadyDeployed :: NodeSession -> FilePath -> Compiled -> IO ()
+refuseIfAlreadyDeployed
+    :: NodeSession -> FilePath -> Compiled -> IO ()
 refuseIfAlreadyDeployed sess out unbound = do
     there <- doesFileExist out
     when there $ do

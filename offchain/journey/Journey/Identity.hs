@@ -18,13 +18,13 @@ code with this instance's parameters — must be exactly what the boot and
 fold transactions carried to the node, through their witness sets or
 the reference outputs they resolved.
 -}
-module Journey.Identity (
-    ScriptIdentity (..),
-    ValidatorPin (..),
-    readScriptIdentity,
-    printIdentity,
-    stepDerivedIdentity,
-) where
+module Journey.Identity
+    ( ScriptIdentity (..)
+    , ValidatorPin (..)
+    , readScriptIdentity
+    , printIdentity
+    , stepDerivedIdentity
+    ) where
 
 import Control.Monad (unless)
 import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
@@ -49,12 +49,17 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Journey.Narration (emit, failWith, hex)
 import Singular.Registry.Blueprint (applyRequestParams)
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (AssetName (..), ConwayEra, TokenId (..), TxIn)
-import Singular.Registry.TxBuilder.Internal (
-    computeScriptHash,
-    onChainTokenId,
-    scriptHashBytes,
- )
+import Singular.Registry.Ledger
+    ( AssetName (..)
+    , ConwayEra
+    , TokenId (..)
+    , TxIn
+    )
+import Singular.Registry.TxBuilder.Internal
+    ( computeScriptHash
+    , onChainTokenId
+    , scriptHashBytes
+    )
 
 {- | The pinned identities in @onchain\/script-identity.json@:
 the upstream source revision, each validator's parameter
@@ -144,17 +149,17 @@ Any mismatch fails the run naming both hashes and the
 parameters used — the relationship between the layers is a
 check, not an assumption.
 -}
-stepDerivedIdentity ::
-    ScriptIdentity ->
-    CageConfig ->
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    TokenId ->
-    ConwayTx ->
-    ConwayTx ->
-    [(TxIn, TxOut ConwayEra)] ->
-    IO ()
+stepDerivedIdentity
+    :: ScriptIdentity
+    -> CageConfig
+    -> SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> TokenId
+    -> ConwayTx
+    -> ConwayTx
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO ()
 stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx refs = do
     let hashHex = hex . scriptHashBytes
         -- The unapplied layer: the blueprint's raw code hashes.
@@ -233,7 +238,11 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx re
                 <> " and 0x"
                 <> requestHex
                 <> " with the three pinned witness policies "
-                <> show (map pinHex [cfgAbsentPolicy cfg, cfgActivePolicy cfg, cfgTerminalPolicy cfg])
+                <> show
+                    ( map
+                        pinHex
+                        [cfgAbsentPolicy cfg, cfgActivePolicy cfg, cfgTerminalPolicy cfg]
+                    )
                 <> " (request parameters "
                 <> requestParams
                 <> ") but its script witness held "
@@ -316,8 +325,8 @@ resolves every purpose through published references, so its witness set
 is empty and the scripts it executed travel in the outputs its body
 names.
 -}
-carriedScriptHashes ::
-    [(TxIn, TxOut ConwayEra)] -> ConwayTx -> Set.Set String
+carriedScriptHashes
+    :: [(TxIn, TxOut ConwayEra)] -> ConwayTx -> Set.Set String
 carriedScriptHashes refs tx =
     witnessScriptHashes tx
         <> Set.fromList

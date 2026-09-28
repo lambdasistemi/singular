@@ -15,17 +15,17 @@ here: "Singular.Registry.Node" reads them when a session opens.
 Which verb runs is decided in @Main@: the first argument that is not a
 flag.
 -}
-module Deployment.Options (
-    usage,
-    flagValue,
-    requireEnv,
-    DeployOptions (..),
-    deployOptions,
-    verifyManifest,
-    CountOptions (..),
-    countOptions,
-    genesisKeyPath,
-) where
+module Deployment.Options
+    ( usage
+    , flagValue
+    , requireEnv
+    , DeployOptions (..)
+    , deployOptions
+    , verifyManifest
+    , CountOptions (..)
+    , countOptions
+    , genesisKeyPath
+    ) where
 
 import Data.List (isPrefixOf)
 import Data.Text (Text)
@@ -119,7 +119,8 @@ countOptions args = do
     what <- case flagValue "--what" args of
         Just w -> pure w
         Nothing -> failWith "count needs --what state|reference"
-    pure (CountOptions path what (flagValue "--reference-address-bytes" args))
+    pure
+        (CountOptions path what (flagValue "--reference-address-bytes" args))
 
 -- | Where @genesis-skey@ writes the key.
 genesisKeyPath :: [String] -> IO FilePath

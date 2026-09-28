@@ -2,19 +2,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 -- | Revision-bound Lean identities and statement anchors.
-module Conformance.Story.Binding (
-    BoundObligation (..),
-    Binding,
-    ManifestEntry (..),
-    mkBoundObligation,
-    firstExisting,
-    loadManifest,
-    resolveBinding,
-    loadStatementSource,
-    anchorsPresent,
-    nameViolation,
-    resolveClause
-) where
+module Conformance.Story.Binding
+    ( BoundObligation (..)
+    , Binding
+    , ManifestEntry (..)
+    , mkBoundObligation
+    , firstExisting
+    , loadManifest
+    , resolveBinding
+    , loadStatementSource
+    , anchorsPresent
+    , nameViolation
+    , resolveClause
+    ) where
 
 import Data.Aeson (FromJSON (..), eitherDecode, withObject, (.:))
 import Data.ByteString.Lazy qualified as BSL
@@ -59,17 +59,21 @@ firstExisting (p : ps) = do
 -- | Read the repository's own statement manifest.
 loadManifest :: IO (Either String [(String, String)])
 loadManifest = do
-    found <- firstExisting ["../lean/theorem-debt.json", "lean/theorem-debt.json"]
+    found <-
+        firstExisting ["../lean/theorem-debt.json", "lean/theorem-debt.json"]
     case found of
-        Nothing -> pure (Left "statement manifest not found: want ../lean/theorem-debt.json")
+        Nothing ->
+            pure
+                (Left "statement manifest not found: want ../lean/theorem-debt.json")
         Just path -> do
             content <- BSL.readFile path
             case eitherDecode content :: Either String [ManifestEntry] of
                 Left err -> pure (Left ("statement manifest does not parse: " <> err))
                 Right entries -> pure (Right [(meName e, meDigest e) | e <- entries])
 
--- | A binding resolves exactly when the manifest carries the named
--- declaration under the pinned digest.
+{- | A binding resolves exactly when the manifest carries the named
+declaration under the pinned digest.
+-}
 resolveBinding :: [(String, String)] -> Binding -> Bool
 resolveBinding manifest obligation =
     lookup (boName obligation) manifest == Just (boDigest obligation)
@@ -77,24 +81,35 @@ resolveBinding manifest obligation =
 -- | Read the bound Lean source.
 loadStatementSource :: IO (Either String String)
 loadStatementSource = do
-    found <- firstExisting ["../lean/Singular/Statements.lean", "lean/Singular/Statements.lean"]
+    found <-
+        firstExisting
+            ["../lean/Singular/Statements.lean", "lean/Singular/Statements.lean"]
     case found of
-        Nothing -> pure (Left "statement source not found: want ../lean/Singular/Statements.lean")
+        Nothing ->
+            pure
+                ( Left
+                    "statement source not found: want ../lean/Singular/Statements.lean"
+                )
         Just path -> Right <$> readFile path
 
--- | Every anchor quoted anywhere in the inventory appears verbatim in
--- the source.
+{- | Every anchor quoted anywhere in the inventory appears verbatim in
+the source.
+-}
 anchorsPresent :: String -> [(String, [String])] -> Bool
 anchorsPresent source inventory =
-    all (`isInfixOf` source) [anchor | (_, anchors) <- inventory, anchor <- anchors]
+    all
+        (`isInfixOf` source)
+        [anchor | (_, anchors) <- inventory, anchor <- anchors]
 
--- | Whether a clause or example name smuggles in a row ID or ticket
--- number. One predicate, used by every hygiene check.
+{- | Whether a clause or example name smuggles in a row ID or ticket
+number. One predicate, used by every hygiene check.
+-}
 nameViolation :: String -> Bool
 nameViolation n = "CG" `isInfixOf` n || '#' `elem` n
 
--- | A clause resolves exactly when every selected anchor belongs to
--- the named obligation's inventory.
+{- | A clause resolves exactly when every selected anchor belongs to
+the named obligation's inventory.
+-}
 resolveClause :: [(String, [String])] -> Binding -> [Text] -> Bool
 resolveClause inventory obligation anchors =
     not (null anchors)
@@ -103,4 +118,3 @@ resolveClause inventory obligation anchors =
     anchorsFor name = case lookup name inventory of
         Just listed -> listed
         Nothing -> []
-

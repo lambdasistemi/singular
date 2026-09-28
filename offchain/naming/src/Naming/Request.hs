@@ -14,31 +14,31 @@ number a non-negative integer, exactly as the reference decoders
 require. Where this module and the reference disagree, the reference
 is right and this module is wrong.
 -}
-module Naming.Request (
-    Representative (..),
-    InitialOutput (..),
-    InsertProposal (..),
-    InsertRequestShape (..),
-    RefundReason (..),
-    RefundComparison (..),
-    withdrawRefundAddress,
-    encodeInsertCommitment,
-    decodeInsertCommitment,
-    insertRequestShape,
-    serialiseInsertCommitment,
-    deserialiseInsertCommitment,
-    matchingInsertCommitment,
-    compareRefund,
-) where
+module Naming.Request
+    ( Representative (..)
+    , InitialOutput (..)
+    , InsertProposal (..)
+    , InsertRequestShape (..)
+    , RefundReason (..)
+    , RefundComparison (..)
+    , withdrawRefundAddress
+    , encodeInsertCommitment
+    , decodeInsertCommitment
+    , insertRequestShape
+    , serialiseInsertCommitment
+    , deserialiseInsertCommitment
+    , matchingInsertCommitment
+    , compareRefund
+    ) where
 
 import Data.ByteString (ByteString)
 
-import Naming.Wire (
-    WireData (..),
-    deserialiseWireData,
-    guardWire,
-    serialiseWireData,
- )
+import Naming.Wire
+    ( WireData (..)
+    , deserialiseWireData
+    , guardWire
+    , serialiseWireData
+    )
 
 -- | The representative asset identity inside the initial output.
 data Representative = Representative
@@ -146,7 +146,16 @@ decodeInsertCommitment _ = Nothing
 
 decodeProposal :: WireData -> Maybe InsertProposal
 decodeProposal
-    (Constr 0 [regData, keyData, policyData, refundData, outputData, WList scopeData]) = do
+    ( Constr
+            0
+            [ regData
+                , keyData
+                , policyData
+                , refundData
+                , outputData
+                , WList scopeData
+                ]
+        ) = do
         reg <- asNat regData
         k <- asNat keyData
         policy <- asNat policyData
@@ -166,7 +175,10 @@ decodeProposal _ = Nothing
 
 decodeOutput :: WireData -> Maybe InitialOutput
 decodeOutput
-    (Constr 0 [repData, WInt quantity, WInt destination, WInt datum, WInt value]) = do
+    ( Constr
+            0
+            [repData, WInt quantity, WInt destination, WInt datum, WInt value]
+        ) = do
         rep <- decodeRepresentative repData
         q <- asNat (WInt quantity)
         d <- asNat (WInt destination)
@@ -234,7 +246,8 @@ deserialiseInsertCommitment input = do
 bytes decode to a proposal only if that proposal equals the expected
 one — a redirected refund decodes fine but never matches the request.
 -}
-matchingInsertCommitment :: InsertProposal -> ByteString -> Maybe InsertProposal
+matchingInsertCommitment
+    :: InsertProposal -> ByteString -> Maybe InsertProposal
 matchingInsertCommitment expected input = do
     proposal <- deserialiseInsertCommitment input
     guardWire (proposal == expected)

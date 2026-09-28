@@ -18,13 +18,13 @@ ledger:
 
 Which validator must refuse each one, and why, is "Journey.Controls".
 -}
-module Journey.Malformations (
-    tamperRoot,
-    forgeContributeStateRef,
-    tamperStateOutputRoot,
-    dropModifyProof,
-    decodeUpdateRedeemer,
-) where
+module Journey.Malformations
+    ( tamperRoot
+    , forgeContributeStateRef
+    , tamperStateOutputRoot
+    , dropModifyProof
+    , decodeUpdateRedeemer
+    ) where
 
 import Data.Bits (complement)
 import Data.ByteString qualified as BS
@@ -33,35 +33,35 @@ import Lens.Micro ((%~), (&), (.~), (^.))
 
 import Cardano.Ledger.Api.Scripts.Data (Data (..))
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
-import Cardano.Ledger.Api.Tx.Body (
-    outputsTxBodyL,
-    scriptIntegrityHashTxBodyL,
- )
+import Cardano.Ledger.Api.Tx.Body
+    ( outputsTxBodyL
+    , scriptIntegrityHashTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.Out (datumTxOutL)
-import Cardano.Ledger.Api.Tx.Wits (
-    Redeemers (..),
-    rdmrsTxWitsL,
- )
+import Cardano.Ledger.Api.Tx.Wits
+    ( Redeemers (..)
+    , rdmrsTxWitsL
+    )
 import Cardano.Tx.Ledger (ConwayTx)
 import PlutusTx.Builtins.Internal (BuiltinData (..))
 import PlutusTx.IsData.Class (FromData (..))
 
 import Singular.Registry.Ledger (ConwayEra, PParams)
-import Singular.Registry.TxBuilder.Internal (
-    computeScriptIntegrity,
-    extractCageDatum,
-    mkInlineDatum,
-    toLedgerData,
-    toPlcData,
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainRoot (..),
-    OnChainTokenState (..),
-    OnChainTxOutRef,
-    RequestAction (Update),
-    UpdateRedeemer (..),
- )
+import Singular.Registry.TxBuilder.Internal
+    ( computeScriptIntegrity
+    , extractCageDatum
+    , mkInlineDatum
+    , toLedgerData
+    , toPlcData
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
+    , OnChainTxOutRef
+    , RequestAction (Update)
+    , UpdateRedeemer (..)
+    )
 
 -- | A same-shaped but wrong root: the byte complement.
 tamperRoot :: OnChainRoot -> OnChainRoot
@@ -72,11 +72,11 @@ names a forged state reference, and re-stamp the script
 integrity hash so ledger phase 1 stays valid. Everything
 else — inputs, outputs, fees — is untouched.
 -}
-forgeContributeStateRef ::
-    PParams ConwayEra ->
-    OnChainTxOutRef ->
-    ConwayTx ->
-    ConwayTx
+forgeContributeStateRef
+    :: PParams ConwayEra
+    -> OnChainTxOutRef
+    -> ConwayTx
+    -> ConwayTx
 forgeContributeStateRef pp forgedRef tx =
     tx
         & witsTxL . rdmrsTxWitsL .~ newRedeemers
@@ -98,7 +98,8 @@ datum: correct 'StateDatum' shape, wrong content. The value,
 size and address are untouched, so fee and min-UTxO rules
 still hold.
 -}
-tamperStateOutputRoot :: OnChainRoot -> OnChainRoot -> ConwayTx -> ConwayTx
+tamperStateOutputRoot
+    :: OnChainRoot -> OnChainRoot -> ConwayTx -> ConwayTx
 tamperStateOutputRoot expected tampered tx =
     tx & bodyTxL . outputsTxBodyL %~ fmap fixOutput
   where
@@ -119,10 +120,10 @@ script-integrity hash is re-stamped so ledger phase 1 stays valid,
 and only the on-chain proof verification stands between the
 transaction and the ledger.
 -}
-dropModifyProof ::
-    PParams ConwayEra ->
-    ConwayTx ->
-    ConwayTx
+dropModifyProof
+    :: PParams ConwayEra
+    -> ConwayTx
+    -> ConwayTx
 dropModifyProof pp tx =
     tx
         & witsTxL . rdmrsTxWitsL .~ newRedeemers

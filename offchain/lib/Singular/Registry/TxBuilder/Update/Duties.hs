@@ -19,10 +19,10 @@ This module owns no queries and no transaction assembly; see
 "Singular.Registry.TxBuilder.Update", which re-exports the duties
 unchanged (#267).
 -}
-module Singular.Registry.TxBuilder.Update.Duties (
-    RegistryDuties (..),
-    registryDuties,
-) where
+module Singular.Registry.TxBuilder.Update.Duties
+    ( RegistryDuties (..)
+    , registryDuties
+    ) where
 
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
@@ -30,50 +30,55 @@ import Data.Map.Strict qualified as Map
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    coinTxOutL,
-    datumTxOutL,
-    getMinCoinTxOut,
-    mkBasicTxOut,
-    valueTxOutL,
- )
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , coinTxOutL
+    , datumTxOutL
+    , getMinCoinTxOut
+    , mkBasicTxOut
+    , valueTxOutL
+    )
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.Keys (KeyHash)
-import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..), MultiAsset (..), PolicyID (..))
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID (..)
+    )
 import Cardano.Tx.Build (Guard)
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 
-import Singular.Registry.Config (
-    CageConfig (..),
- )
-import Singular.Registry.Ledger (
-    ConwayEra,
-    PParams,
-    TxIn,
- )
-import Singular.Registry.TxBuilder.ConnectedFold (
-    ConnectedMint (..),
-    ConnectedSpend (..),
-    RawRedeemer (..),
- )
+import Singular.Registry.Config
+    ( CageConfig (..)
+    )
+import Singular.Registry.Ledger
+    ( ConwayEra
+    , PParams
+    , TxIn
+    )
+import Singular.Registry.TxBuilder.ConnectedFold
+    ( ConnectedMint (..)
+    , ConnectedSpend (..)
+    , RawRedeemer (..)
+    )
 import Singular.Registry.TxBuilder.Internal.Edges
 import Singular.Registry.TxBuilder.Internal.Identity
-import Singular.Registry.TxBuilder.Update.Context (
-    RegistryContext (..),
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainRequest (..),
-    OnChainTokenState (..),
-    UpdateRedeemer (..),
-    edgeDeleteAbsent,
-    edgeDeleteActive,
-    edgeInsertAbsent,
-    edgeUpdateTerminal,
-    edgeWitnessTerminal,
- )
+import Singular.Registry.TxBuilder.Update.Context
+    ( RegistryContext (..)
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRequest (..)
+    , OnChainTokenState (..)
+    , UpdateRedeemer (..)
+    , edgeDeleteAbsent
+    , edgeDeleteActive
+    , edgeInsertAbsent
+    , edgeUpdateTerminal
+    , edgeWitnessTerminal
+    )
 
 -- ---------------------------------------------------------
 -- Registry-mode obligations (#157 C5, C6, T1-T6)
@@ -120,18 +125,18 @@ cannot be met. A fold whose duties cannot be built is a fold that would be
 refused on chain; failing here names why, in the builder, where it is
 cheap.
 -}
-registryDuties ::
-    CageConfig ->
-    PParams ConwayEra ->
-    OnChainTokenState ->
-    RegistryContext ->
-    [(TxIn, TxOut ConwayEra)] ->
-    {- | Whether each request is PROCESSED by this fold. A rejected
+registryDuties
+    :: CageConfig
+    -> PParams ConwayEra
+    -> OnChainTokenState
+    -> RegistryContext
+    -> [(TxIn, TxOut ConwayEra)]
+    -> [Bool]
+    {- ^ Whether each request is PROCESSED by this fold. A rejected
     request takes no edge: it owes its owner a refund, and the
     approval that certified it was never spent.
     -}
-    [Bool] ->
-    Either String RegistryDuties
+    -> Either String RegistryDuties
 registryDuties cfg pp st ctx reqUtxos processed = do
     perRequest <- mconcat <$> mapM one consumed
     returns <- depositReturns
@@ -187,7 +192,8 @@ registryDuties cfg pp st ctx reqUtxos processed = do
     of its own: left to the balancer it would settle in the folder's
     change, and the folder's wallet would stop being able to fund a fold
     at all, because collateral must be ada-only. -}
-    approvalReturn :: OnChainRequest -> TxOut ConwayEra -> Either String RegistryDuties
+    approvalReturn
+        :: OnChainRequest -> TxOut ConwayEra -> Either String RegistryDuties
     approvalReturn req reqOut = do
         let BuiltinByteString owner = requestOwner req
             carried = approvalsOn reqOut
@@ -236,11 +242,15 @@ registryDuties cfg pp st ctx reqUtxos processed = do
     dutiesFor edge key dest destAddr destHash floorAda
         | edge == 0 = lockCustody key destAddr floorAda
         | edge == 1 = deliver (cfgActivePolicy cfg) key dest destHash floorAda
-        | edge == 2 = (<>) <$> spendCustody key <*> deliver (cfgActivePolicy cfg) key dest destHash floorAda
+        | edge == 2 =
+            (<>)
+                <$> spendCustody key
+                <*> deliver (cfgActivePolicy cfg) key dest destHash floorAda
         | edge == 3 = burnSource (cfgActivePolicy cfg) key
         | edge == 4 = spendCustody key
         | edge == 5 = burnSource (cfgActivePolicy cfg) key
-        | edge == 6 = deliver (cfgTerminalPolicy cfg) key dest destHash floorAda
+        | edge == 6 =
+            deliver (cfgTerminalPolicy cfg) key dest destHash floorAda
         | otherwise = Left ("registryDuties: unknown edge " <> show edge)
     -- \| #177 I177-BUILDER, #236: the retirement and the deletion of an
     --    active key burn a token they must first hold. `deltaOf 3` and
@@ -268,7 +278,7 @@ registryDuties cfg pp st ctx reqUtxos processed = do
                 , let q = held o
                 , q /= 0
                 ]
-         in case candidates of
+        in  case candidates of
                 [(u, 1)] -> Right mempty{rdInputs = [u]}
                 -- A row that exists to watch the CHAIN refuse this edge
                 -- needs the transaction built, not withheld: the cage
@@ -306,7 +316,12 @@ registryDuties cfg pp st ctx reqUtxos processed = do
         let value =
                 MaryValue
                     (Coin floorAda)
-                    (MultiAsset (Map.singleton (policyIdOf (cfgAbsentPolicy cfg)) (Map.singleton (AssetName (SBS.toShort key)) 1)))
+                    ( MultiAsset
+                        ( Map.singleton
+                            (policyIdOf (cfgAbsentPolicy cfg))
+                            (Map.singleton (AssetName (SBS.toShort key)) 1)
+                        )
+                    )
             out =
                 mkBasicTxOut cageAddr value
                     & datumTxOutL .~ mkInlineDatum (toPlcData (AbsentCustody refund))
@@ -320,7 +335,12 @@ registryDuties cfg pp st ctx reqUtxos processed = do
         let value =
                 MaryValue
                     (Coin floorAda)
-                    (MultiAsset (Map.singleton (policyIdOf policy) (Map.singleton (AssetName (SBS.toShort key)) 1)))
+                    ( MultiAsset
+                        ( Map.singleton
+                            (policyIdOf policy)
+                            (Map.singleton (AssetName (SBS.toShort key)) 1)
+                        )
+                    )
             out = case datum of
                 Nothing -> mkBasicTxOut addr value
                 Just d -> mkBasicTxOut addr value & datumTxOutL .~ mkInlineDatum d
@@ -357,7 +377,8 @@ registryDuties cfg pp st ctx reqUtxos processed = do
                     \builder was given no cage script to spend it with"
         let refundAddr = case addrFromBytes refund of
                 Just a -> a
-                Nothing -> error "registryDuties: custody records an undecodable refund address"
+                Nothing ->
+                    error "registryDuties: custody records an undecodable refund address"
             out = mkBasicTxOut refundAddr (MaryValue (Coin owed) mempty)
         requireMinAda "refund" out
         pure
@@ -382,7 +403,9 @@ registryDuties cfg pp st ctx reqUtxos processed = do
              ] of
             [c] -> Right c
             [] -> Left ("registryDuties: no custody UTxO for key " <> show key)
-            _ -> Left ("registryDuties: more than one custody UTxO for key " <> show key)
+            _ ->
+                Left
+                    ("registryDuties: more than one custody UTxO for key " <> show key)
     custodyAssetOf out =
         case out ^. valueTxOutL of
             MaryValue _ (MultiAsset policies) ->
@@ -395,7 +418,7 @@ registryDuties cfg pp st ctx reqUtxos processed = do
     requireMinAda what out =
         let Coin minAda = getMinCoinTxOut @ConwayEra pp out
             Coin got = out ^. coinTxOutL
-         in if got >= minAda
+        in  if got >= minAda
                 then Right ()
                 else
                     Left

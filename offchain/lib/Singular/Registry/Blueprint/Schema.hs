@@ -14,24 +14,24 @@ This is the schema-and-validation owner extracted from
 @Singular.Registry.Blueprint@; the public module re-exports it and is
 its only intended consumer surface.
 -}
-module Singular.Registry.Blueprint.Schema (
-    -- * Schema types
-    Blueprint (..),
-    Validator (..),
-    Schema (..),
-    Constructor (..),
+module Singular.Registry.Blueprint.Schema
+    ( -- * Schema types
+      Blueprint (..)
+    , Validator (..)
+    , Schema (..)
+    , Constructor (..)
 
-    -- * Validation
-    validateData,
-) where
+      -- * Validation
+    , validateData
+    ) where
 
-import Data.Aeson (
-    FromJSON (..),
-    Value,
-    withObject,
-    (.:),
-    (.:?),
- )
+import Data.Aeson
+    ( FromJSON (..)
+    , Value
+    , withObject
+    , (.:)
+    , (.:?)
+    )
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types (Parser)
 import Data.Map.Strict (Map)
@@ -132,8 +132,8 @@ instance FromJSON Schema where
                         pure $ SConstructors cs
                     Nothing -> do
                         mDataType <-
-                            o .:? "dataType" ::
-                                Parser
+                            o .:? "dataType"
+                                :: Parser
                                     (Maybe Text)
                         case mDataType of
                             Just "bytes" ->
@@ -150,8 +150,8 @@ instance FromJSON Schema where
                                 -- a malformed tuple stays an error
                                 -- instead of silently becoming a list.
                                 items <-
-                                    o .: "items" ::
-                                        Parser Aeson.Value
+                                    o .: "items"
+                                        :: Parser Aeson.Value
                                 case items of
                                     Aeson.Array _ ->
                                         STuple <$> parseJSON items
@@ -222,14 +222,14 @@ stripPrefix pfx t =
 {- | Validate a 'Data' value against a 'Schema',
 resolving @$ref@ through the definitions map.
 -}
-validateData ::
-    -- | Named definitions for @$ref@ resolution
-    Map Text Schema ->
-    -- | Schema to validate against
-    Schema ->
-    -- | Value to validate
-    Data ->
-    Bool
+validateData
+    :: Map Text Schema
+    -- ^ Named definitions for @$ref@ resolution
+    -> Schema
+    -- ^ Schema to validate against
+    -> Data
+    -- ^ Value to validate
+    -> Bool
 validateData defs schema d = case (schema, d) of
     (SBytes, B _) -> True
     (SInteger, I _) -> True

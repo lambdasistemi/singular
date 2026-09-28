@@ -57,7 +57,11 @@ import Cardano.Ledger.Api.Tx (bodyTxL)
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
 import Cardano.Ledger.Api.Tx.Out (TxOut)
 import Cardano.Ledger.Core (valueTxOutL)
-import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..), MultiAsset (..))
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    )
 import Cardano.Node.Client.E2E.Setup (genesisAddr)
 import Cardano.Node.Client.Submitter (Submitter)
 import Cardano.Tx.Ledger (ConwayTx)
@@ -67,43 +71,43 @@ import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Lens.Micro ((^.))
 
-import Singular.Registry.Blueprint (
-    Blueprint,
-    NamingCodes,
-    extractCompiledCode,
-    loadRegistryCodesFromEnv,
- )
+import Singular.Registry.Blueprint
+    ( Blueprint
+    , NamingCodes
+    , extractCompiledCode
+    , loadRegistryCodesFromEnv
+    )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Driver qualified as Driver
 import Singular.Registry.Ledger (ConwayEra, Root (..), TokenId, TxIn)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.TxBuilder.Edges qualified as Edges
-import Singular.Registry.TxBuilder.Internal (
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    extractCageDatum,
-    findStateUtxo,
-    policyIdFromPin,
-    walkEdge,
- )
+import Singular.Registry.TxBuilder.Internal
+    ( cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , extractCageDatum
+    , findStateUtxo
+    , policyIdFromPin
+    , walkEdge
+    )
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
-import Singular.Registry.Types (
-    CageDatum (..),
-    Edge,
-    OnChainRoot (..),
-    OnChainTokenState (..),
-    edgeInsertAbsent,
-    edgeInsertActive,
-    edgeUpdateTerminal,
- )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , Edge
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
+    , edgeInsertAbsent
+    , edgeInsertActive
+    , edgeUpdateTerminal
+    )
 
-import Singular.Registry.E2E.CageSpec (
-    publishCageRefs,
-    registryContextFor,
-    submitWithGenesis,
-    withBootedCage,
- )
+import Singular.Registry.E2E.CageSpec
+    ( publishCageRefs
+    , registryContextFor
+    , submitWithGenesis
+    , withBootedCage
+    )
 
 spec :: Blueprint -> Spec
 spec bp = describe "Retiring an active key" $ do
@@ -116,25 +120,40 @@ spec bp = describe "Retiring an active key" $ do
             it "no compiled code" $
                 expectationFailure "state or request script not found"
 
-updateTerminalSpec :: SBS.ShortByteString -> SBS.ShortByteString -> Spec
+updateTerminalSpec
+    :: SBS.ShortByteString -> SBS.ShortByteString -> Spec
 updateTerminalSpec stateBytes requestBytes = do
-    it "when an active key is retired, burns its token and records a Terminal leaf" $
-        withBootedCage id stateBytes requestBytes $ \cfg prov submit tm reg -> do
+    it
+        "when an active key is retired, burns its token and records a Terminal leaf"
+        $ withBootedCage id stateBytes requestBytes
+        $ \cfg prov submit tm reg -> do
             let tokenId = Driver.registryTokenId reg
             refs <- publishCageRefs cfg prov submit tokenId
             codes <- loadRegistryCodesFromEnv
 
             -- 1. the prerequisite, executed rather than fabricated: the
             --    key becomes Active and the wallet holds its witness.
-            _ <- book cfg codes prov submit tokenId storyKey insertActive walletDestination
-            _ <- foldAndMirror cfg prov submit tm tokenId refs storyKey insertActive
+            _ <-
+                book
+                    cfg
+                    codes
+                    prov
+                    submit
+                    tokenId
+                    storyKey
+                    insertActive
+                    walletDestination
+            _ <-
+                foldAndMirror cfg prov submit tm tokenId refs storyKey insertActive
             heldBefore <- activeHeldAt prov cfg storyKey
             heldBefore `shouldBe` (1 :: Integer)
 
             -- 2. the edge under test, at the SAME key, in the SAME
             --    session, burning the witness step 1 delivered.
-            _ <- book cfg codes prov submit tokenId storyKey retire walletDestination
-            retireTx <- foldAndMirror cfg prov submit tm tokenId refs storyKey retire
+            _ <-
+                book cfg codes prov submit tokenId storyKey retire walletDestination
+            retireTx <-
+                foldAndMirror cfg prov submit tm tokenId refs storyKey retire
 
             -- The observation, in three independent directions.
             --
@@ -162,8 +181,10 @@ updateTerminalSpec stateBytes requestBytes = do
             chainRoot <- committedRoot prov cfg tokenId
             chainRoot `shouldBe` unRoot mirrorRoot
 
-    it "refuses updateTerminal for an unknown key while accepting an active key" $
-        withBootedCage id stateBytes requestBytes $ \cfg prov submit tm reg -> do
+    it
+        "refuses updateTerminal for an unknown key while accepting an active key"
+        $ withBootedCage id stateBytes requestBytes
+        $ \cfg prov submit tm reg -> do
             let tokenId = Driver.registryTokenId reg
             refs <- publishCageRefs cfg prov submit tokenId
             codes <- loadRegistryCodesFromEnv
@@ -171,10 +192,23 @@ updateTerminalSpec stateBytes requestBytes = do
             -- in this very cage, through this very builder. A failure
             -- here is reported as a broken control rather than silently
             -- making the refusal below vacuous.
-            _ <- book cfg codes prov submit tokenId storyKey insertActive walletDestination
-            _ <- foldAndMirror cfg prov submit tm tokenId refs storyKey insertActive
-            _ <- book cfg codes prov submit tokenId storyKey retire retireDestination
-            control <- try @SomeException (foldAndMirror cfg prov submit tm tokenId refs storyKey retire)
+            _ <-
+                book
+                    cfg
+                    codes
+                    prov
+                    submit
+                    tokenId
+                    storyKey
+                    insertActive
+                    walletDestination
+            _ <-
+                foldAndMirror cfg prov submit tm tokenId refs storyKey insertActive
+            _ <-
+                book cfg codes prov submit tokenId storyKey retire retireDestination
+            control <-
+                try @SomeException
+                    (foldAndMirror cfg prov submit tm tokenId refs storyKey retire)
             case control of
                 Left e ->
                     expectationFailure
@@ -188,8 +222,10 @@ updateTerminalSpec stateBytes requestBytes = do
             -- The refusal. Everything is held constant against the
             -- control except the one fact under test: this key was
             -- never inserted, so the trie does not bind it.
-            _ <- book cfg codes prov submit tokenId unknownKey retire retireDestination
-            outcome <- try @SomeException (foldOnce cfg prov submit tm tokenId refs)
+            _ <-
+                book cfg codes prov submit tokenId unknownKey retire retireDestination
+            outcome <-
+                try @SomeException (foldOnce cfg prov submit tm tokenId refs)
             case outcome of
                 Right _ ->
                     expectationFailure
@@ -197,16 +233,31 @@ updateTerminalSpec stateBytes requestBytes = do
                         \the trie does not bind — reported, not relabelled"
                 Left _ -> pure ()
 
-    it "refuses updateTerminal for an Absent key while accepting an active key" $
-        withBootedCage id stateBytes requestBytes $ \cfg prov submit tm reg -> do
+    it
+        "refuses updateTerminal for an Absent key while accepting an active key"
+        $ withBootedCage id stateBytes requestBytes
+        $ \cfg prov submit tm reg -> do
             let tokenId = Driver.registryTokenId reg
             refs <- publishCageRefs cfg prov submit tokenId
             codes <- loadRegistryCodesFromEnv
             -- The control, again first and in this same cage.
-            _ <- book cfg codes prov submit tokenId storyKey insertActive walletDestination
-            _ <- foldAndMirror cfg prov submit tm tokenId refs storyKey insertActive
-            _ <- book cfg codes prov submit tokenId storyKey retire retireDestination
-            control <- try @SomeException (foldAndMirror cfg prov submit tm tokenId refs storyKey retire)
+            _ <-
+                book
+                    cfg
+                    codes
+                    prov
+                    submit
+                    tokenId
+                    storyKey
+                    insertActive
+                    walletDestination
+            _ <-
+                foldAndMirror cfg prov submit tm tokenId refs storyKey insertActive
+            _ <-
+                book cfg codes prov submit tokenId storyKey retire retireDestination
+            control <-
+                try @SomeException
+                    (foldAndMirror cfg prov submit tm tokenId refs storyKey retire)
             case control of
                 Left e ->
                     expectationFailure
@@ -220,10 +271,22 @@ updateTerminalSpec stateBytes requestBytes = do
             -- The refusal. This key IS bound — it was witnessed absent
             -- by a real `insertAbsent` fold — and the only thing that
             -- differs from the control is the leaf it is bound to.
-            _ <- book cfg codes prov submit tokenId absentKey insertAbsent walletDestination
-            _ <- foldAndMirror cfg prov submit tm tokenId refs absentKey insertAbsent
-            _ <- book cfg codes prov submit tokenId absentKey retire retireDestination
-            outcome <- try @SomeException (foldOnce cfg prov submit tm tokenId refs)
+            _ <-
+                book
+                    cfg
+                    codes
+                    prov
+                    submit
+                    tokenId
+                    absentKey
+                    insertAbsent
+                    walletDestination
+            _ <-
+                foldAndMirror cfg prov submit tm tokenId refs absentKey insertAbsent
+            _ <-
+                book cfg codes prov submit tokenId absentKey retire retireDestination
+            outcome <-
+                try @SomeException (foldOnce cfg prov submit tm tokenId refs)
             case outcome of
                 Right _ ->
                     expectationFailure
@@ -241,16 +304,16 @@ insertAbsent = edgeInsertAbsent
 retire = edgeUpdateTerminal
 
 -- | Book one edge at an explicitly named destination.
-book ::
-    CageConfig ->
-    NamingCodes ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    TokenId ->
-    ByteString ->
-    Edge ->
-    (ByteString, ByteString) ->
-    IO TxIn
+book
+    :: CageConfig
+    -> NamingCodes
+    -> Cage.Provider IO
+    -> Submitter IO
+    -> TokenId
+    -> ByteString
+    -> Edge
+    -> (ByteString, ByteString)
+    -> IO TxIn
 book cfg codes prov submit =
     Edges.bookEdgeTo
         cfg
@@ -263,14 +326,14 @@ book cfg codes prov submit =
 The refusal rows use this: a fold that never lands must not move the
 committed trie.
 -}
-foldOnce ::
-    CageConfig ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    TrieManager IO ->
-    TokenId ->
-    [(TxIn, TxOut ConwayEra)] ->
-    IO ConwayTx
+foldOnce
+    :: CageConfig
+    -> Cage.Provider IO
+    -> Submitter IO
+    -> TrieManager IO
+    -> TokenId
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO ConwayTx
 foldOnce cfg prov submit tm tokenId refs = do
     ctx <- registryContextFor cfg prov tokenId refs
     unsigned <- updateTokenWithDuties cfg prov tm tokenId genesisAddr ctx
@@ -283,16 +346,16 @@ The mirror is not bookkeeping: the speculative session inside
 so a caller that skips it re-proves the next fold against a stale root.
 The root is read on either side and must move.
 -}
-foldAndMirror ::
-    CageConfig ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    TrieManager IO ->
-    TokenId ->
-    [(TxIn, TxOut ConwayEra)] ->
-    ByteString ->
-    Edge ->
-    IO ConwayTx
+foldAndMirror
+    :: CageConfig
+    -> Cage.Provider IO
+    -> Submitter IO
+    -> TrieManager IO
+    -> TokenId
+    -> [(TxIn, TxOut ConwayEra)]
+    -> ByteString
+    -> Edge
+    -> IO ConwayTx
 foldAndMirror cfg prov submit tm tokenId refs key edge = do
     rootBefore <- withTrie tm tokenId getRoot
     signed <- foldOnce cfg prov submit tm tokenId refs
@@ -315,7 +378,8 @@ foldAndMirror cfg prov submit tm tokenId refs key edge = do
     pure signed
 
 -- | The quantity held under the ACTIVE policy at this key, at the wallet.
-activeHeldAt :: Cage.Provider IO -> CageConfig -> ByteString -> IO Integer
+activeHeldAt
+    :: Cage.Provider IO -> CageConfig -> ByteString -> IO Integer
 activeHeldAt prov cfg key = do
     walletUtxos <- Cage.queryUTxOs prov genesisAddr
     let policy = policyIdFromPin (cfgActivePolicy cfg)
@@ -338,7 +402,7 @@ mintedActive :: ConwayTx -> CageConfig -> [(ByteString, Integer)]
 mintedActive tx cfg =
     let MultiAsset ma = tx ^. bodyTxL . mintTxBodyL
         policy = policyIdFromPin (cfgActivePolicy cfg)
-     in [ (SBS.fromShort n, q)
+    in  [ (SBS.fromShort n, q)
         | (p, names) <- Map.toList ma
         , p == policy
         , (AssetName n, q) <- Map.toList names
@@ -358,7 +422,8 @@ reached this root through the validator's own `mpf.update`, and the
 mirror reaches it through an independent local trie, so their equality
 is a statement about the leaf and not about either implementation.
 -}
-committedRoot :: Cage.Provider IO -> CageConfig -> TokenId -> IO ByteString
+committedRoot
+    :: Cage.Provider IO -> CageConfig -> TokenId -> IO ByteString
 committedRoot prov cfg tokenId = do
     utxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId utxos of

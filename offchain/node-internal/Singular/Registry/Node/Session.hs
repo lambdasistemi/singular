@@ -17,24 +17,30 @@ session's address reads and confirmations; an external node is left
 alone. Readers outside this module reach the open session only through
 'sessionFor', 'scriptStakeRegistered' and 'currentTipSlot'.
 -}
-module Singular.Registry.Node.Session (
-    -- * Session
-    NodeSession (..),
-    devnetGenesis,
-    withNode,
-    withNodeForPlannedFunding,
-    withNodeMode,
-    withNodeSocket,
-    awaitConnection,
+module Singular.Registry.Node.Session
+    ( -- * Session
+      NodeSession (..)
+    , devnetGenesis
+    , withNode
+    , withNodeForPlannedFunding
+    , withNodeMode
+    , withNodeSocket
+    , awaitConnection
 
-    -- * Open-session state
-    withOpenSession,
-    sessionFor,
-    scriptStakeRegistered,
-    currentTipSlot,
-) where
+      -- * Open-session state
+    , withOpenSession
+    , sessionFor
+    , scriptStakeRegistered
+    , currentTipSlot
+    ) where
 
-import Control.Concurrent.Async (Async, async, cancel, race, waitCatch)
+import Control.Concurrent.Async
+    ( Async
+    , async
+    , cancel
+    , race
+    , waitCatch
+    )
 import Control.Exception (bracket, bracket_)
 import Data.Foldable (for_)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
@@ -51,31 +57,39 @@ import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup (devnetMagic, genesisDir)
-import Cardano.Node.Client.N2C.Connection (
-    newLSQChannel,
-    newLTxSChannel,
-    runNodeClient,
- )
+import Cardano.Node.Client.N2C.Connection
+    ( newLSQChannel
+    , newLTxSChannel
+    , runNodeClient
+    )
 import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (Submitter)
 import Singular.Registry.Ledger (ConwayEra, PParams)
-import Singular.Registry.Node.Funding (FundingFloor, checkFunding, defaultFundingFloor)
-import Singular.Registry.Node.Indexer (
-    adaptProvider,
-    followChain,
-    followedProvider,
-    startingAt,
-    withDevnetIndexer,
- )
-import Singular.Registry.Node.Options (
-    ExternalNode (..),
-    NodeMode (..),
-    die,
-    runMode,
- )
-import Singular.Registry.Node.Wallet (Wallet (..), bech32Address, walletForMode)
+import Singular.Registry.Node.Funding
+    ( FundingFloor
+    , checkFunding
+    , defaultFundingFloor
+    )
+import Singular.Registry.Node.Indexer
+    ( adaptProvider
+    , followChain
+    , followedProvider
+    , startingAt
+    , withDevnetIndexer
+    )
+import Singular.Registry.Node.Options
+    ( ExternalNode (..)
+    , NodeMode (..)
+    , die
+    , runMode
+    )
+import Singular.Registry.Node.Wallet
+    ( Wallet (..)
+    , bech32Address
+    , walletForMode
+    )
 import Singular.Registry.Provider qualified as Cage
 
 -- | Everything a runner needs from the chain it runs against.
@@ -114,7 +128,9 @@ withNodeSocket :: (FilePath -> IO a) -> IO a
 withNodeSocket k = case runMode of
     Devnet -> do
         gDir <- genesisDir
-        withCardanoNode gDir (\sock _startMs -> withDevnetIndexer sock (k sock))
+        withCardanoNode
+            gDir
+            (\sock _startMs -> withDevnetIndexer sock (k sock))
     External e -> k (extSocket e)
 
 -- | 'withNodeMode' at this process's 'runMode'.
@@ -137,7 +153,8 @@ wallets that can afford those plans, and would block read-only estimates.
 withNodeForPlannedFunding :: (NodeSession -> IO a) -> IO a
 withNodeForPlannedFunding = withNodeModeAndFunding Nothing runMode
 
-withNodeModeAndFunding :: Maybe FundingFloor -> NodeMode -> (NodeSession -> IO a) -> IO a
+withNodeModeAndFunding
+    :: Maybe FundingFloor -> NodeMode -> (NodeSession -> IO a) -> IO a
 withNodeModeAndFunding fundingFloor mode k = case mode of
     Devnet -> do
         gDir <- genesisDir
@@ -175,7 +192,8 @@ withNodeModeAndFunding fundingFloor mode k = case mode of
                     , nsPParams = pp
                     , nsScriptRegistered = \h -> do
                         let credential = ScriptHashObj h
-                        Map.member credential <$> N2C.queryStakeRewards n2c (Set.singleton credential)
+                        Map.member credential
+                            <$> N2C.queryStakeRewards n2c (Set.singleton credential)
                     , nsTipSlot = N2C.ledgerTipSlot <$> N2C.queryLedgerSnapshot n2c
                     , nsMode = mode
                     }
@@ -206,11 +224,17 @@ withOpenSession sess =
 
 -- | Registration is global to a script credential, shared by registries.
 scriptStakeRegistered :: ScriptHash -> IO Bool
-scriptStakeRegistered h = readIORef openSession >>= maybe (die "scriptStakeRegistered called outside a node session") (`nsScriptRegistered` h)
+scriptStakeRegistered h =
+    readIORef openSession
+        >>= maybe
+            (die "scriptStakeRegistered called outside a node session")
+            (`nsScriptRegistered` h)
 
 -- | Read the live tip for a transaction built in the active session.
 currentTipSlot :: IO SlotNo
-currentTipSlot = readIORef openSession >>= maybe (die "currentTipSlot called outside a node session") nsTipSlot
+currentTipSlot =
+    readIORef openSession
+        >>= maybe (die "currentTipSlot called outside a node session") nsTipSlot
 
 -- | The open session, or name the confirmation called outside one.
 sessionFor :: String -> IO NodeSession
@@ -250,13 +274,13 @@ Either failure ends the client thread, so racing the first query
 against that ending waits exactly as long as the connection takes
 rather than a fixed settling sleep.
 -}
-awaitConnection ::
-    (Show a) =>
-    NetworkMagic ->
-    FilePath ->
-    Async a ->
-    Cage.Provider IO ->
-    IO ()
+awaitConnection
+    :: (Show a)
+    => NetworkMagic
+    -> FilePath
+    -> Async a
+    -> Cage.Provider IO
+    -> IO ()
 awaitConnection (NetworkMagic magic) sock nodeThread prov = do
     answered <-
         race (waitCatch nodeThread) (Cage.queryProtocolParams prov)

@@ -36,7 +36,11 @@ import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.PParams (emptyPParams)
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body (referenceInputsTxBodyL)
-import Cardano.Ledger.Api.Tx.Out (TxOut, mkBasicTxOut, referenceScriptTxOutL)
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , mkBasicTxOut
+    , referenceScriptTxOutL
+    )
 import Cardano.Ledger.Api.Tx.Wits (scriptTxWitsL)
 import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..))
@@ -50,35 +54,40 @@ import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.Provider (Provider (..))
-import Singular.Registry.TxBuilder.Boot (
-    BootRefusal (..),
-    bootTokenImpl,
- )
-import Singular.Registry.TxBuilder.Internal (
-    addrFromKeyHashBytes,
-    computeScriptHash,
-    scriptFromBytes,
-    txInToRef,
- )
+import Singular.Registry.TxBuilder.Boot
+    ( BootRefusal (..)
+    , bootTokenImpl
+    )
+import Singular.Registry.TxBuilder.Internal
+    ( addrFromKeyHashBytes
+    , computeScriptHash
+    , scriptFromBytes
+    , txInToRef
+    )
 
 spec :: Spec
 spec = describe "a registry boots only by reference" $ do
-    it "refuses a boot from a wallet holding no publication of the state validator, by name" $
-        boot [seedUtxo, fundUtxo]
+    it
+        "refuses a boot from a wallet holding no publication of the state validator, by name"
+        $ boot [seedUtxo, fundUtxo]
             `shouldThrow` (== StateValidatorNotPublished)
 
-    it "refuses a boot from a wallet whose only publication is another script" $
-        boot [seedUtxo, fundUtxo, (refIn, publication otherProgram)]
+    it
+        "refuses a boot from a wallet whose only publication is another script"
+        $ boot [seedUtxo, fundUtxo, (refIn, publication otherProgram)]
             `shouldThrow` (== StateValidatorNotPublished)
 
-    it "names the repair in the refusal: publish the state validator first" $
-        displayException StateValidatorNotPublished
+    it
+        "names the repair in the refusal: publish the state validator first"
+        $ displayException StateValidatorNotPublished
             `shouldSatisfy` isInfixOf "publish the state validator first"
 
-    it "boots from a wallet holding the publication, referencing it and carrying no script" $ do
-        tx <- boot [seedUtxo, fundUtxo, (refIn, publication stateProgram)]
-        tx ^. bodyTxL . referenceInputsTxBodyL `shouldBe` Set.singleton refIn
-        Map.keys (tx ^. witsTxL . scriptTxWitsL) `shouldBe` []
+    it
+        "boots from a wallet holding the publication, referencing it and carrying no script"
+        $ do
+            tx <- boot [seedUtxo, fundUtxo, (refIn, publication stateProgram)]
+            tx ^. bodyTxL . referenceInputsTxBodyL `shouldBe` Set.singleton refIn
+            Map.keys (tx ^. witsTxL . scriptTxWitsL) `shouldBe` []
 
 {- | Run the builder against a wallet and return the transaction it
 hands to evaluation. A refusal propagates; a builder that never asked
@@ -100,7 +109,8 @@ boot wallet = do
     -- Only the stub's IO error is absorbed: a 'BootRefusal' propagates
     -- to the row, and any earlier failure leaves nothing kept.
     _ <- try @IOException (bootTokenImpl cfg provider payer)
-    readIORef kept >>= maybe (fail "the boot never reached evaluation") pure
+    readIORef kept
+        >>= maybe (fail "the boot never reached evaluation") pure
 
 -- | A well-formed PlutusV3 program, distinguished by its arity.
 lambdas :: Int -> SBS.ShortByteString

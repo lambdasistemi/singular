@@ -1,11 +1,21 @@
--- | A request that is never folded: a folder rejects it once it may no longer be
--- folded, or its owner retracts it. Each owes the owner the deposit back, and a
--- retraction the tip too, through an output bound to the request it retracts.
+{- | A request that is never folded: a folder rejects it once it may no longer be
+folded, or its owner retracts it. Each owes the owner the deposit back, and a
+retraction the tip too, through an output bound to the request it retracts.
+-}
 module Conformance.Edge.Exit (story) where
 
 import Conformance.Story.Live
-    ( Context (Context), Edge (..), EdgeRequest (..), Exit (..), Story
-    , Tamper (..), compareWithModel, observe, reject, retract, tamperExit
+    ( Context (Context)
+    , Edge (..)
+    , EdgeRequest (..)
+    , Exit (..)
+    , Story
+    , Tamper (..)
+    , compareWithModel
+    , observe
+    , reject
+    , retract
+    , tamperExit
     )
 
 {- | Reject in one registry, retract in another: the rejection registry's
@@ -15,7 +25,8 @@ refused and leaves its request pending; the untampered one is its control.
 An update request cannot be retracted, and an insertion cannot be retracted
 without its owner's signature; the owner-signed insertion is their control.
 -}
-story :: Context reg wal -> Context reg wal -> Story reg wal step obs cmp ()
+story
+    :: Context reg wal -> Context reg wal -> Story reg wal step obs cmp ()
 story (Context rejection holder) (Context retraction _) = do
     let rejected = EdgeRequest InsertActive "rejected" holder
     tamperExit ShortByOne Reject rejection rejected >>= compared
@@ -26,7 +37,10 @@ story (Context rejection holder) (Context retraction _) = do
     tamperExit OtherAddress Retract retraction retracted >>= compared
     tamperExit OtherReference Retract retraction retracted >>= compared
     tamperExit StateSpent Retract retraction retracted >>= compared
-    retract retraction (EdgeRequest UpdateTerminal "pending-update" holder) >>= compared
+    retract
+        retraction
+        (EdgeRequest UpdateTerminal "pending-update" holder)
+        >>= compared
     tamperExit Unsigned Retract retraction retracted >>= compared
     retract retraction retracted >>= compared
   where

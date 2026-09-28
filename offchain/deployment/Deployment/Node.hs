@@ -18,14 +18,14 @@ bootstrap transactions.
   ('Singular.Registry.Deployment.verifyDeployment') plus the three stake
   credentials.
 -}
-module Deployment.Node (
-    verifyRegisteredDeployment,
-    bootRegistry,
-    registerCredentials,
-    publishAll,
-    publishOne,
-    submitted,
-) where
+module Deployment.Node
+    ( verifyRegisteredDeployment
+    , bootRegistry
+    , registerCredentials
+    , publishAll
+    , publishOne
+    , submitted
+    ) where
 
 import Control.Monad (unless)
 import Data.IORef (IORef, readIORef, writeIORef)
@@ -39,65 +39,74 @@ import Data.Text qualified as T
 import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx)
-import Cardano.Ledger.Api.Tx.Body (
-    feeTxBodyL,
-    inputsTxBodyL,
-    mintTxBodyL,
-    mkBasicTxBody,
-    outputsTxBodyL,
- )
+import Cardano.Ledger.Api.Tx.Body
+    ( feeTxBodyL
+    , inputsTxBodyL
+    , mintTxBodyL
+    , mkBasicTxBody
+    , outputsTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.In (TxIn (..))
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    coinTxOutL,
-    getMinCoinTxOut,
-    mkBasicTxOut,
-    referenceScriptTxOutL,
-    valueTxOutL,
- )
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , coinTxOutL
+    , getMinCoinTxOut
+    , mkBasicTxOut
+    , referenceScriptTxOutL
+    , valueTxOutL
+    )
 import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (..))
 import Cardano.Ledger.Core (Script, hashScript)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Node.Client.E2E.Setup (addKeyWitness)
-import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Cardano.Node.Client.Submitter
+    ( SubmitResult (..)
+    , Submitter (..)
+    )
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Deployment.Compiled (Compiled (..), bindSeed, partsOf)
 import Deployment.Narration (emit, failWith, hexT, tokenText, txText)
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Deployment (
-    CageParts (..),
-    Deployment,
-    ReferenceScript (..),
-    renderAddrBytes,
-    renderOutRef,
-    verifyDeployment,
- )
-import Singular.Registry.Ledger (Coin (..), ConwayEra, PParams, TokenId (..))
-import Singular.Registry.Node (
-    NodeSession (..),
-    awaitTx,
-    bech32Address,
-    funderAddr,
-    funderSignKey,
- )
+import Singular.Registry.Deployment
+    ( CageParts (..)
+    , Deployment
+    , ReferenceScript (..)
+    , renderAddrBytes
+    , renderOutRef
+    , verifyDeployment
+    )
+import Singular.Registry.Ledger
+    ( Coin (..)
+    , ConwayEra
+    , PParams
+    , TokenId (..)
+    )
+import Singular.Registry.Node
+    ( NodeSession (..)
+    , awaitTx
+    , bech32Address
+    , funderAddr
+    , funderSignKey
+    )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
-import Singular.Registry.TxBuilder.Internal (
-    cagePolicyIdFromCfg,
-    computeScriptHash,
-    mkCageScript,
-    mkRequestScript,
-    scriptFromBytes,
-    scriptHashBytes,
-    txInToRef,
- )
+import Singular.Registry.TxBuilder.Internal
+    ( cagePolicyIdFromCfg
+    , computeScriptHash
+    , mkCageScript
+    , mkRequestScript
+    , scriptFromBytes
+    , scriptHashBytes
+    , txInToRef
+    )
 import Singular.Registry.TxBuilder.Register (registerScriptImpl)
 
 {- | The manifest's claims against this node, then the three stake
 credentials a run withdraws from.
 -}
-verifyRegisteredDeployment :: NodeSession -> Deployment -> Compiled -> IO [String]
+verifyRegisteredDeployment
+    :: NodeSession -> Deployment -> Compiled -> IO [String]
 verifyRegisteredDeployment sess dep compiled = do
     claims <- verifyDeployment (nsProvider sess) dep (partsOf compiled)
     credentials <-
@@ -111,25 +120,28 @@ verifyRegisteredDeployment sess dep compiled = do
   where
     check (name, bytes) = do
         registered <- nsScriptRegistered sess (computeScriptHash bytes)
-        unless registered $ failWith (name <> " stake credential is not registered on this node")
+        unless registered $
+            failWith (name <> " stake credential is not registered on this node")
         pure (name <> " stake credential is registered on this node")
 
 -- | Boot one registry from the funding wallet's largest output.
-bootRegistry ::
-    Cage.Provider IO ->
-    Submitter IO ->
-    Compiled ->
-    IORef [Text] ->
-    Integer ->
-    -- | Process window (ms), from @--process-time@.
-    Integer ->
-    -- | Retract window (ms), from @--retract-time@.
-    IO (CageConfig, TokenId, ConwayTx, TxIn, Compiled)
+bootRegistry
+    :: Cage.Provider IO
+    -> Submitter IO
+    -> Compiled
+    -> IORef [Text]
+    -> Integer
+    -> Integer
+    -- ^ Process window (ms), from @--process-time@.
+    -> IO (CageConfig, TokenId, ConwayTx, TxIn, Compiled)
+    -- ^ Retract window (ms), from @--retract-time@.
 bootRegistry prov submit unbound txs processTime retractTime = do
     utxos <- Cage.queryUTxOs prov funderAddr
     -- Never seed from a reference publication: the boot references the
     -- state validator's and may not also spend it.
-    seedIn <- case sortOn (Down . (^. coinTxOutL) . snd) (filter (\(_, o) -> o ^. referenceScriptTxOutL == SNothing) utxos) of
+    seedIn <- case sortOn
+        (Down . (^. coinTxOutL) . snd)
+        (filter (\(_, o) -> o ^. referenceScriptTxOutL == SNothing) utxos) of
         [] -> failWith "the funding wallet has no outputs to seed from"
         ((i, _) : _) -> pure i
     let compiled = bindSeed unbound seedIn
@@ -181,13 +193,13 @@ refuse. The consumer credential is gone with the hook it served: a
 these itself (a second registration is refused), so a deployment missing
 one turns that runner's row into a refusal with no evidence behind it.
 -}
-registerCredentials ::
-    NodeSession ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    Compiled ->
-    IORef [Text] ->
-    IO ()
+registerCredentials
+    :: NodeSession
+    -> Cage.Provider IO
+    -> Submitter IO
+    -> Compiled
+    -> IORef [Text]
+    -> IO ()
 registerCredentials sess prov submit compiled txs = do
     let named name bytes = (name, scriptFromBytes name bytes)
     mapM_
@@ -200,7 +212,10 @@ registerCredentials sess prov submit compiled txs = do
     registerOne (name, script) = do
         registered <- nsScriptRegistered sess (hashScript script)
         if registered
-            then emit "credential" (name <> " stake credential already registered; reused")
+            then
+                emit
+                    "credential"
+                    (name <> " stake credential already registered; reused")
             else do
                 tx <- registerScriptImpl prov funderAddr (hashScript script)
                 _ <- submitted submit txs (name <> "-registration") tx
@@ -217,24 +232,28 @@ That is slower than batching and it is the shape that works on a public
 network without a funding pool: every step is confirmed before the next
 one needs its output.
 -}
-publishAll ::
-    Cage.Provider IO ->
-    Submitter IO ->
-    PParams ConwayEra ->
-    CageConfig ->
-    TokenId ->
-    Compiled ->
-    -- | The state validator's publication, made before the boot.
-    TxIn ->
-    IORef [Text] ->
-    IO [ReferenceScript]
+publishAll
+    :: Cage.Provider IO
+    -> Submitter IO
+    -> PParams ConwayEra
+    -> CageConfig
+    -> TokenId
+    -> Compiled
+    -> TxIn
+    -- ^ The state validator's publication, made before the boot.
+    -> IORef [Text]
+    -> IO [ReferenceScript]
 publishAll prov submit pp cfg tok compiled stateIn txs = do
     state <- record ("state", mkCageScript cfg) stateIn
     rest <-
         mapM
-            (\p@(_, script) -> publishOne prov submit pp txs script >>= record p . fst)
+            ( \p@(_, script) -> publishOne prov submit pp txs script >>= record p . fst
+            )
             [ ("request", mkRequestScript cfg tok)
-            , ("application", scriptFromBytes "naming-application" (cAppBytes compiled))
+            ,
+                ( "application"
+                , scriptFromBytes "naming-application" (cAppBytes compiled)
+                )
             , ("active", scriptFromBytes "active" (cActiveBytes compiled))
             , ("custody", scriptFromBytes "naming-custody" (cCustodyBytes compiled))
             ]
@@ -256,13 +275,13 @@ publishAll prov submit pp cfg tok compiled stateIn txs = do
                 , refAddressBytes = renderAddrBytes funderAddr
                 }
 
-publishOne ::
-    Cage.Provider IO ->
-    Submitter IO ->
-    PParams ConwayEra ->
-    IORef [Text] ->
-    Script ConwayEra ->
-    IO (TxIn, TxOut ConwayEra)
+publishOne
+    :: Cage.Provider IO
+    -> Submitter IO
+    -> PParams ConwayEra
+    -> IORef [Text]
+    -> Script ConwayEra
+    -> IO (TxIn, TxOut ConwayEra)
 publishOne prov submit pp txs script = do
     utxos <- Cage.queryUTxOs prov funderAddr
     fund <- case sortOn (Down . (^. coinTxOutL) . snd) (adaOnly utxos) of
@@ -273,7 +292,9 @@ publishOne prov submit pp txs script = do
                 & referenceScriptTxOutL .~ SJust script
         Coin minCoin = getMinCoinTxOut pp probe
         refOut =
-            mkBasicTxOut funderAddr (MaryValue (Coin (minCoin + 1_000_000)) mempty)
+            mkBasicTxOut
+                funderAddr
+                (MaryValue (Coin (minCoin + 1_000_000)) mempty)
                 & referenceScriptTxOutL .~ SJust script
         Coin inCoin = snd fund ^. coinTxOutL
         changeCoin = inCoin - 1_000_000 - (minCoin + 1_000_000)
@@ -319,7 +340,8 @@ publishOne prov submit pp txs script = do
         SNothing -> False
 
 -- | Sign with the funding wallet, submit, wait for the chain, record.
-submitted :: Submitter IO -> IORef [Text] -> String -> ConwayTx -> IO ConwayTx
+submitted
+    :: Submitter IO -> IORef [Text] -> String -> ConwayTx -> IO ConwayTx
 submitted submit txs label unsigned = do
     let signed = addKeyWitness funderSignKey unsigned
     result <- submitTx submit signed

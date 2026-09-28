@@ -26,15 +26,15 @@ import Data.ByteString qualified as BS
 import Data.List (isInfixOf)
 import Data.Maybe (fromMaybe, isJust)
 import Ouroboros.Network.Magic (NetworkMagic (..))
-import Test.Hspec (
-    Selector,
-    Spec,
-    describe,
-    it,
-    shouldBe,
-    shouldReturn,
-    shouldThrow,
- )
+import Test.Hspec
+    ( Selector
+    , Spec
+    , describe
+    , it
+    , shouldBe
+    , shouldReturn
+    , shouldThrow
+    )
 
 import Cardano.Crypto.Hash (hashFromBytes)
 import Cardano.Ledger.Address (Addr (..))
@@ -42,24 +42,35 @@ import Cardano.Ledger.Api.PParams (emptyPParams)
 import Cardano.Ledger.Api.Tx (mkBasicTx)
 import Cardano.Ledger.Api.Tx.Body (mkBasicTxBody)
 import Cardano.Ledger.BaseTypes (Network (..), SlotNo (..))
-import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
+import Cardano.Ledger.Credential
+    ( Credential (..)
+    , StakeReference (..)
+    )
 import Cardano.Ledger.Keys (KeyHash (..))
 import Cardano.Node.Client.Provider (Provider (..))
-import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
-import Cardano.Node.Client.UTxOIndexer.Indexer (
-    IndexerHandle,
-    withInMemoryIndexer,
- )
+import Cardano.Node.Client.Submitter
+    ( SubmitResult (..)
+    , Submitter (..)
+    )
+import Cardano.Node.Client.UTxOIndexer.Indexer
+    ( IndexerHandle
+    , withInMemoryIndexer
+    )
 import Cardano.Tx.Ledger (ConwayTx)
-import Singular.Registry.Node (
-    NodeMode (..),
-    NodeSession (..),
-    adaptProvider,
-    awaitIndexed,
-    currentTipSlot,
-    nodeAddressReads,
- )
-import Singular.Registry.Node.Indexer (Following (..), currentFollower, markFundingIndexed, withFollowing)
+import Singular.Registry.Node
+    ( NodeMode (..)
+    , NodeSession (..)
+    , adaptProvider
+    , awaitIndexed
+    , currentTipSlot
+    , nodeAddressReads
+    )
+import Singular.Registry.Node.Indexer
+    ( Following (..)
+    , currentFollower
+    , markFundingIndexed
+    , withFollowing
+    )
 import Singular.Registry.Node.Session (withOpenSession)
 import Singular.Registry.Provider qualified as Cage
 
@@ -167,13 +178,17 @@ unusedNode =
         { withAcquired = \k -> k (error "the cleanup spec never acquires a query handle")
         , queryUTxOs = \_ -> pure []
         , queryUTxOByTxIn = \_ -> error "the cleanup spec never queries by input"
-        , queryProtocolParams = pure (error "the cleanup spec never reads parameters")
-        , queryLedgerSnapshot = pure (error "the cleanup spec never reads a snapshot")
+        , queryProtocolParams =
+            pure (error "the cleanup spec never reads parameters")
+        , queryLedgerSnapshot =
+            pure (error "the cleanup spec never reads a snapshot")
         , queryStakeRewards = \_ -> pure (error "the cleanup spec never reads rewards")
         , queryRewardAccounts = \_ -> pure (error "the cleanup spec never reads accounts")
         , queryVoteDelegatees = \_ -> pure (error "the cleanup spec never reads delegates")
-        , queryTreasury = pure (error "the cleanup spec never reads the treasury")
-        , queryGovernanceState = pure (error "the cleanup spec never reads governance")
+        , queryTreasury =
+            pure (error "the cleanup spec never reads the treasury")
+        , queryGovernanceState =
+            pure (error "the cleanup spec never reads governance")
         , evaluateTx = \_ -> pure (error "the cleanup spec never evaluates a transaction")
         , posixMsToSlot = \_ -> pure (error "the cleanup spec never converts time to slots")
         , posixMsCeilSlot = \_ -> pure (error "the cleanup spec never converts time to slots")
@@ -185,7 +200,8 @@ neverQueried :: Cage.Provider IO
 neverQueried =
     Cage.Provider
         { Cage.queryUTxOs = \_ -> error "the stub session is never queried"
-        , Cage.queryProtocolParams = pure (error "the stub session is never queried")
+        , Cage.queryProtocolParams =
+            pure (error "the stub session is never queried")
         , Cage.evaluateTx = \_ -> pure (error "the stub session is never queried")
         , Cage.posixMsToSlot = \_ -> pure (error "the stub session is never queried")
         , Cage.posixMsCeilSlot = \_ -> pure (error "the stub session is never queried")

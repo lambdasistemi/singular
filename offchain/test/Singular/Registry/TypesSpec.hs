@@ -3,15 +3,15 @@ module Singular.Registry.TypesSpec (spec) where
 import Control.Exception (evaluate)
 import Data.ByteString qualified as BS
 import PlutusCore.Data (Data (..))
-import PlutusTx.Builtins.Internal (
-    BuiltinByteString (..),
-    BuiltinData (..),
- )
-import PlutusTx.IsData.Class (
-    FromData (..),
-    ToData (..),
-    UnsafeFromData (..),
- )
+import PlutusTx.Builtins.Internal
+    ( BuiltinByteString (..)
+    , BuiltinData (..)
+    )
+import PlutusTx.IsData.Class
+    ( FromData (..)
+    , ToData (..)
+    , UnsafeFromData (..)
+    )
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Types
 import Test.Hspec
@@ -157,10 +157,10 @@ genUpdateRedeemer =
 -- ---------------------------------------------------------
 
 -- | Roundtrip property via ToData/FromData.
-roundtrips ::
-    (ToData a, FromData a, Show a, Eq a) =>
-    a ->
-    Property
+roundtrips
+    :: (ToData a, FromData a, Show a, Eq a)
+    => a
+    -> Property
 roundtrips x =
     fromBuiltinData (toBuiltinData x) === Just x
 
@@ -168,7 +168,7 @@ roundtrips x =
 fieldAt :: (ToData a) => Int -> a -> Maybe Data
 fieldAt n x =
     let BuiltinData d = toBuiltinData x
-     in case d of
+    in  case d of
             Constr _ fields
                 | length fields > n -> Just (fields !! n)
             _ -> Nothing
@@ -177,7 +177,7 @@ fieldAt n x =
 constrIndex :: (ToData a) => a -> Integer
 constrIndex x =
     let BuiltinData d = toBuiltinData x
-     in case d of
+    in  case d of
             Constr n _ -> n
             _ -> error "expected Constr"
 
@@ -459,10 +459,12 @@ spec = do
         it "roundtrips via ToData/FromData" $
             property $
                 forAll genCageDatum roundtrips
-        it "decodes and re-encodes absent custody as refund-only constructor 2" $ do
-            let wire = BuiltinData (Constr 2 [B "refund-only"])
-                decoded = fromBuiltinData wire :: Maybe CageDatum
-            fmap toBuiltinData decoded `shouldBe` Just wire
+        it
+            "decodes and re-encodes absent custody as refund-only constructor 2"
+            $ do
+                let wire = BuiltinData (Constr 2 [B "refund-only"])
+                    decoded = fromBuiltinData wire :: Maybe CageDatum
+                fmap toBuiltinData decoded `shouldBe` Just wire
         it "rejects the retired two-field absent-custody payload" $ do
             let wire = BuiltinData (Constr 2 [B "duplicated-key", B "refund"])
             (fromBuiltinData wire :: Maybe CageDatum) `shouldBe` Nothing
@@ -680,8 +682,8 @@ spec = do
         it "the same malformed wire makes the unsafe decoder fail" $
             evaluate
                 ( unsafeFromBuiltinData
-                    (BuiltinData (Constr 0 [I 5])) ::
-                    OnChainTokenId
+                    (BuiltinData (Constr 0 [I 5]))
+                    :: OnChainTokenId
                 )
                 `shouldThrow` anyErrorCall
 
@@ -713,7 +715,7 @@ spec = do
                                         OnChainTxOutRef
                                             txId
                                             (abs n)
-                                 in deriveAssetName ref0
+                                in  deriveAssetName ref0
                                         =/= deriveAssetName ref1
         it "different txId gives different name" $
             property $
@@ -726,7 +728,7 @@ spec = do
                                         OnChainTxOutRef txId1 0
                                     ref2 =
                                         OnChainTxOutRef txId2 0
-                                 in deriveAssetName ref1
+                                in  deriveAssetName ref1
                                         =/= deriveAssetName ref2
 
     describe "requestPhase" $

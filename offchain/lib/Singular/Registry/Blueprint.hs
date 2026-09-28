@@ -25,59 +25,59 @@ implementations of its own and re-exports the focused owners
 @Singular.Registry.Blueprint.Params@ (parameter application) and
 @Singular.Registry.Blueprint.Load@ (loading and code selection).
 -}
-module Singular.Registry.Blueprint (
-    -- * Schema types
-    Blueprint (..),
-    Validator (..),
-    Schema (..),
-    Constructor (..),
+module Singular.Registry.Blueprint
+    ( -- * Schema types
+      Blueprint (..)
+    , Validator (..)
+    , Schema (..)
+    , Constructor (..)
 
-    -- * Loading
-    loadBlueprint,
+      -- * Loading
+    , loadBlueprint
 
-    -- * The compiled codes the four registry pins derive from
-    NamingCodes (..),
+      -- * The compiled codes the four registry pins derive from
+    , NamingCodes (..)
 
-    -- * The registry partition's own compiled code (#173 A173-BOOT)
-    loadRegistryCodesFromEnv,
+      -- * The registry partition's own compiled code (#173 A173-BOOT)
+    , loadRegistryCodesFromEnv
 
-    -- * Validation
-    validateData,
+      -- * Validation
+    , validateData
 
-    -- * Script hash extraction
-    extractScriptHash,
+      -- * Script hash extraction
+    , extractScriptHash
 
-    -- * Compiled code extraction
-    extractCompiledCode,
+      -- * Compiled code extraction
+    , extractCompiledCode
 
-    -- * Parameter application
-    applyDataParam,
-    applyIntParam,
-    applyBytesParam,
-    applyOutputRef,
-    applyPreviousPolicies,
-    applyRequestParams,
-) where
+      -- * Parameter application
+    , applyDataParam
+    , applyIntParam
+    , applyBytesParam
+    , applyOutputRef
+    , applyPreviousPolicies
+    , applyRequestParams
+    ) where
 
-import Singular.Registry.Blueprint.Load (
-    NamingCodes (..),
-    extractCompiledCode,
-    extractScriptHash,
-    loadBlueprint,
-    loadRegistryCodesFromEnv,
- )
-import Singular.Registry.Blueprint.Params (
-    applyBytesParam,
-    applyDataParam,
-    applyIntParam,
-    applyOutputRef,
-    applyPreviousPolicies,
-    applyRequestParams,
- )
-import Singular.Registry.Blueprint.Schema (
-    Blueprint (..),
-    Constructor (..),
-    Schema (..),
-    Validator (..),
-    validateData,
- )
+import Singular.Registry.Blueprint.Load
+    ( NamingCodes (..)
+    , extractCompiledCode
+    , extractScriptHash
+    , loadBlueprint
+    , loadRegistryCodesFromEnv
+    )
+import Singular.Registry.Blueprint.Params
+    ( applyBytesParam
+    , applyDataParam
+    , applyIntParam
+    , applyOutputRef
+    , applyPreviousPolicies
+    , applyRequestParams
+    )
+import Singular.Registry.Blueprint.Schema
+    ( Blueprint (..)
+    , Constructor (..)
+    , Schema (..)
+    , Validator (..)
+    , validateData
+    )

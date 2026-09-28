@@ -7,30 +7,30 @@ Supports two output formats:
 -}
 module Main (main) where
 
-import Aiken.Codegen (
-    BodyM,
-    Def (Blank, Test),
-    Expr,
-    ModuleM,
-    bind,
-    bindAs,
-    call,
-    comment,
-    emit,
-    field,
-    hex,
-    int,
-    item,
-    list,
-    record,
-    renderModule,
-    runBody,
-    runModule,
-    useAs,
-    useFrom,
-    var,
-    (.==),
- )
+import Aiken.Codegen
+    ( BodyM
+    , Def (Blank, Test)
+    , Expr
+    , ModuleM
+    , bind
+    , bindAs
+    , call
+    , comment
+    , emit
+    , field
+    , hex
+    , int
+    , item
+    , list
+    , record
+    , renderModule
+    , runBody
+    , runModule
+    , useAs
+    , useFrom
+    , var
+    , (.==)
+    )
 import Control.Lens (simple)
 import Crypto.Hash (Blake2b_256, Digest, hash)
 import Data.Aeson ((.=))
@@ -45,31 +45,31 @@ import Data.Char (isAlphaNum, toLower)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as T
-import MPF.Backend.Pure (
-    MPFInMemoryDB,
-    MPFPure,
-    emptyMPFInMemoryDB,
-    runMPFPure,
-    runMPFPureTransaction,
- )
-import MPF.Backend.Standalone (
-    MPFStandalone (..),
-    MPFStandaloneCodecs (..),
- )
-import MPF.Hashes (
-    MPFHash,
-    fromHexKVHashes,
-    isoMPFHash,
-    mpfHashing,
-    root,
- )
+import MPF.Backend.Pure
+    ( MPFInMemoryDB
+    , MPFPure
+    , emptyMPFInMemoryDB
+    , runMPFPure
+    , runMPFPureTransaction
+    )
+import MPF.Backend.Standalone
+    ( MPFStandalone (..)
+    , MPFStandaloneCodecs (..)
+    )
+import MPF.Hashes
+    ( MPFHash
+    , fromHexKVHashes
+    , isoMPFHash
+    , mpfHashing
+    , root
+    )
 import MPF.Insertion (inserting)
 import MPF.Proof.Insertion (MPFProof, mkMPFInclusionProof)
 import PlutusCore.Data (Data (..))
-import PlutusTx.Builtins.Internal (
-    BuiltinByteString (..),
-    BuiltinData (..),
- )
+import PlutusTx.Builtins.Internal
+    ( BuiltinByteString (..)
+    , BuiltinData (..)
+    )
 import PlutusTx.IsData.Class (ToData (..))
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Proof (serializeProof, toProofSteps)
@@ -124,10 +124,10 @@ buildTree kvs =
     snd $ runMPFPure emptyMPFInMemoryDB $ mapM_ (uncurry insertKV) kvs
 
 -- | Get proof and root from a database (must exist).
-getVec ::
-    MPFInMemoryDB ->
-    ByteString ->
-    (MPFProof MPFHash, ByteString)
+getVec
+    :: MPFInMemoryDB
+    -> ByteString
+    -> (MPFProof MPFHash, ByteString)
 getVec db k =
     case fst $ runMPFPure db $ (,) <$> getProof k <*> getRootHash of
         (Just p, Just r) -> (p, r)
@@ -225,10 +225,10 @@ buildTreeB2 :: [(ByteString, ByteString)] -> MPFInMemoryDB
 buildTreeB2 kvs = buildTree [(blake2b k, v) | (k, v) <- kvs]
 
 -- | Get proof and root using a blake2b-hashed key.
-getVecB2 ::
-    MPFInMemoryDB ->
-    ByteString ->
-    (MPFProof MPFHash, ByteString)
+getVecB2
+    :: MPFInMemoryDB
+    -> ByteString
+    -> (MPFProof MPFHash, ByteString)
 getVecB2 db k = getVec db $ blake2b k
 
 -- | Get just the root using a blake2b-hashed key.
@@ -240,44 +240,44 @@ rawProofVectors =
     [ -- 1. Insert into empty trie
       let db = buildTreeB2 [("ab", "cd")]
           (p, r) = getVecB2 db "ab"
-       in ProofVec "insert into empty trie" "ab" "cd" emptyRoot r p
+      in  ProofVec "insert into empty trie" "ab" "cd" emptyRoot r p
     , -- 2. Insert creating fork
       let db1 = buildTreeB2 [("k1", "v1")]
           r1 = getRootB2 db1 "k1"
           db2 = buildTreeB2 [("k1", "v1"), ("k2", "v2")]
           (p2, r2) = getVecB2 db2 "k2"
-       in ProofVec "insert creating fork" "k2" "v2" r1 r2 p2
+      in  ProofVec "insert creating fork" "k2" "v2" r1 r2 p2
     , -- 3. Insert with shared prefix
       let db1 = buildTreeB2 [("ka", "va")]
           r1 = getRootB2 db1 "ka"
           db2 = buildTreeB2 [("ka", "va"), ("kb", "vb")]
           (p2, r2) = getVecB2 db2 "kb"
-       in ProofVec "insert with shared prefix" "kb" "vb" r1 r2 p2
+      in  ProofVec "insert with shared prefix" "kb" "vb" r1 r2 p2
     , -- 4. Inclusion proof for existing key
       let db = buildTreeB2 [("x", "1"), ("y", "2"), ("z", "3")]
           (p, r) = getVecB2 db "y"
-       in ProofVec "inclusion proof for middle key" "y" "2" r r p
+      in  ProofVec "inclusion proof for middle key" "y" "2" r r p
     ]
 
 rawAssetNameVectors :: [AssetNameVec]
 rawAssetNameVectors =
     [ let txId = BS.pack [0x01 .. 0x20]
           ref = OnChainTxOutRef (BuiltinByteString txId) 0
-       in AssetNameVec
+      in  AssetNameVec
             "asset name from TxOutRef index 0"
             txId
             0
             $ deriveAssetName ref
     , let txId = BS.pack [0x01 .. 0x20]
           ref = OnChainTxOutRef (BuiltinByteString txId) 1
-       in AssetNameVec
+      in  AssetNameVec
             "asset name from TxOutRef index 1"
             txId
             1
             $ deriveAssetName ref
     , let txId = BS.replicate 32 0
           ref = OnChainTxOutRef (BuiltinByteString txId) 255
-       in AssetNameVec
+      in  AssetNameVec
             "asset name from zero txId index 255"
             txId
             255
@@ -332,7 +332,7 @@ datumEncodingVectors =
                 , stateTerminalPolicy =
                     BuiltinByteString $ BS.replicate 28 0xc0
                 }
-       in Aeson.object
+      in  Aeson.object
             [ "description" .= txt "StateDatum encoding"
             , "type" .= txt "CageDatum"
             , "plutusData" .= toDataJson (StateDatum state)
@@ -355,7 +355,7 @@ datumEncodingVectors =
                   requestDestination =
                     (BS.replicate 29 0x60, BS.empty)
                 }
-       in Aeson.object
+      in  Aeson.object
             [ "description" .= txt "RequestDatum at edge 1 (insertActive)"
             , "type" .= txt "CageDatum"
             , "plutusData" .= toDataJson (RequestDatum req)
@@ -364,7 +364,7 @@ datumEncodingVectors =
             OnChainTxOutRef
                 (BuiltinByteString $ BS.replicate 32 0xab)
                 1
-       in Aeson.object
+      in  Aeson.object
             [ "description" .= txt "MintRedeemer Minting"
             , "type" .= txt "MintRedeemer"
             , "plutusData" .= toDataJson (Minting ref)
@@ -373,7 +373,7 @@ datumEncodingVectors =
             OnChainTokenId $
                 BuiltinByteString $
                     BS.replicate 32 0xcc
-       in Aeson.object
+      in  Aeson.object
             [ "description" .= txt "MintRedeemer Burning"
             , "type" .= txt "MintRedeemer"
             , "plutusData" .= toDataJson (Burning tokenId)
@@ -387,7 +387,7 @@ datumEncodingVectors =
             OnChainTxOutRef
                 (BuiltinByteString $ BS.replicate 32 0xee)
                 0
-       in Aeson.object
+      in  Aeson.object
             [ "description" .= txt "UpdateRedeemer Sweep"
             , "type" .= txt "UpdateRedeemer"
             , "plutusData" .= toDataJson (Sweep ref)
@@ -421,9 +421,13 @@ datumEncodingVectors =
       -- What used to be an `OpUpdate` / `OpDelete` vector is a request
       -- at the edge that names that move, so the vectors cover the
       -- integer tag in the position the cage reads it from.
-      edgeVector "RequestDatum at edge 3 (updateTerminal)" edgeUpdateTerminal
+      edgeVector
+        "RequestDatum at edge 3 (updateTerminal)"
+        edgeUpdateTerminal
     , edgeVector "RequestDatum at edge 5 (deleteActive)" edgeDeleteActive
-    , edgeVector "RequestDatum at edge 6 (witnessTerminal)" edgeWitnessTerminal
+    , edgeVector
+        "RequestDatum at edge 6 (witnessTerminal)"
+        edgeWitnessTerminal
     ]
 
 {- | One request-datum vector at a named edge (#183). The token, owner,
@@ -528,7 +532,7 @@ proofVecToAiken ProofVec{..} =
                     pure $
                         call "mpf.root" [trie]
                             .== hex pvExpectedRoot
-     in Test name $ runBody body
+    in  Test name $ runBody body
 
 -- | Render an asset name vector as an Aiken 'Def'.
 assetNameVecToAiken :: AssetNameVec -> Def
@@ -540,7 +544,7 @@ assetNameVecToAiken AssetNameVec{..} =
                 field "transaction_id" $ hex anvTxId
                 field "output_index" $ int $ fromIntegral anvOutputIndex
             pure $ call "assetName" [ref] .== hex anvExpected
-     in Test name $ runBody body
+    in  Test name $ runBody body
 
 -- | Generate complete Aiken module.
 aikenModule :: ModuleM ()

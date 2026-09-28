@@ -25,14 +25,14 @@ fold's work is divided into (#267):
 
 No algorithm lives here; each decision has exactly one owner above.
 -}
-module Singular.Registry.TxBuilder.Update (
-    updateTokenImpl,
-    updateTokenWithDuties,
-    emptyRegistryContext,
-    RegistryDuties (..),
-    RegistryContext (..),
-    registryDuties,
-) where
+module Singular.Registry.TxBuilder.Update
+    ( updateTokenImpl
+    , updateTokenWithDuties
+    , emptyRegistryContext
+    , RegistryDuties (..)
+    , RegistryContext (..)
+    , registryDuties
+    ) where
 
 import Data.Void (Void)
 
@@ -40,63 +40,63 @@ import Cardano.Ledger.Address (Addr)
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
 
-import Singular.Registry.Config (
-    CageConfig (..),
- )
-import Singular.Registry.Ledger (
-    TokenId,
- )
-import Singular.Registry.Provider (
-    Provider (..),
- )
-import Singular.Registry.Trie (
-    TrieManager (..),
- )
-import Singular.Registry.TxBuilder.ConnectedFold (
-    ConnectedSpend (..),
- )
+import Singular.Registry.Config
+    ( CageConfig (..)
+    )
+import Singular.Registry.Ledger
+    ( TokenId
+    )
+import Singular.Registry.Provider
+    ( Provider (..)
+    )
+import Singular.Registry.Trie
+    ( TrieManager (..)
+    )
+import Singular.Registry.TxBuilder.ConnectedFold
+    ( ConnectedSpend (..)
+    )
 import Singular.Registry.TxBuilder.Internal.Identity
-import Singular.Registry.TxBuilder.Update.Build (
-    NoCtx,
-    buildProgram,
-    mkEvalTx,
- )
-import Singular.Registry.TxBuilder.Update.Context (
-    RegistryContext (..),
-    completeContext,
-    computeProofs,
-    computeUpperSlot,
-    emptyRegistryContext,
-    prepareState,
-    queryContext,
- )
-import Singular.Registry.TxBuilder.Update.Duties (
-    RegistryDuties (..),
-    registryDuties,
- )
+import Singular.Registry.TxBuilder.Update.Build
+    ( NoCtx
+    , buildProgram
+    , mkEvalTx
+    )
+import Singular.Registry.TxBuilder.Update.Context
+    ( RegistryContext (..)
+    , completeContext
+    , computeProofs
+    , computeUpperSlot
+    , emptyRegistryContext
+    , prepareState
+    , queryContext
+    )
+import Singular.Registry.TxBuilder.Update.Duties
+    ( RegistryDuties (..)
+    , registryDuties
+    )
 
 -- | Build an update-token transaction (fair fee).
-updateTokenImpl ::
-    CageConfig ->
-    Provider IO ->
-    TrieManager IO ->
-    TokenId ->
-    Addr ->
-    IO ConwayTx
+updateTokenImpl
+    :: CageConfig
+    -> Provider IO
+    -> TrieManager IO
+    -> TokenId
+    -> Addr
+    -> IO ConwayTx
 updateTokenImpl cfg prov tm tid addr =
     updateTokenWithDuties cfg prov tm tid addr emptyRegistryContext
 
 {- | Fold the pending requests, discharging every obligation the edges
 they take create (#157 C5, C6, T1-T6).
 -}
-updateTokenWithDuties ::
-    CageConfig ->
-    Provider IO ->
-    TrieManager IO ->
-    TokenId ->
-    Addr ->
-    RegistryContext ->
-    IO ConwayTx
+updateTokenWithDuties
+    :: CageConfig
+    -> Provider IO
+    -> TrieManager IO
+    -> TokenId
+    -> Addr
+    -> RegistryContext
+    -> IO ConwayTx
 updateTokenWithDuties cfg prov tm tid addr ctx0 = do
     (stateUtxo, reqUtxos, feeUtxo, pp) <-
         queryContext cfg prov tid addr
@@ -111,7 +111,13 @@ updateTokenWithDuties cfg prov tm tid addr ctx0 = do
         requestScript = mkRequestScript cfg tid
     ctx <-
         completeContext cfg prov addr script ctx0
-    duties <- case registryDuties cfg pp oldState ctx reqUtxos (map (const True) reqUtxos) of
+    duties <- case registryDuties
+        cfg
+        pp
+        oldState
+        ctx
+        reqUtxos
+        (map (const True) reqUtxos) of
         Right d -> pure d
         Left err -> error ("updateToken: " <> err)
     upperSlot <-

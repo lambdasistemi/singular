@@ -17,9 +17,9 @@ registers nothing would be a trap for the next reader. What remains is
 the generic credential registration the exhibit controls use directly;
 it authorizes nothing by itself.
 -}
-module Singular.Registry.TxBuilder.Register (
-    registerScriptImpl,
-) where
+module Singular.Registry.TxBuilder.Register
+    ( registerScriptImpl
+    ) where
 
 import Cardano.Ledger.Api.Tx.Out (coinTxOutL, referenceScriptTxOutL)
 import Cardano.Ledger.BaseTypes (StrictMaybe (..))
@@ -30,9 +30,9 @@ import Data.Void (Void)
 import Lens.Micro ((^.))
 
 import Cardano.Ledger.Alonzo.Scripts (AsIx)
-import Cardano.Ledger.Conway.Scripts (
-    ConwayPlutusPurpose (..),
- )
+import Cardano.Ledger.Conway.Scripts
+    ( ConwayPlutusPurpose (..)
+    )
 import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 
@@ -48,10 +48,10 @@ data NoCtx a
 {- | Wrap the Provider's evaluateTx for the DSL (no scripts execute
 here, but the DSL still calls back through this interface).
 -}
-mkEvalTx ::
-    Provider IO ->
-    ConwayTx ->
-    IO
+mkEvalTx
+    :: Provider IO
+    -> ConwayTx
+    -> IO
         ( Map.Map
             ( ConwayPlutusPurpose
                 AsIx
@@ -74,11 +74,11 @@ the common case; exhibit controls register further credentials the
 same way). Registration only makes a credential withdrawable; it
 authorizes nothing by itself.
 -}
-registerScriptImpl ::
-    Provider IO ->
-    Addr ->
-    ScriptHash ->
-    IO ConwayTx
+registerScriptImpl
+    :: Provider IO
+    -> Addr
+    -> ScriptHash
+    -> IO ConwayTx
 registerScriptImpl prov fundAddr credHash = do
     pp <- queryProtocolParams prov
     utxos <- queryUTxOs prov fundAddr

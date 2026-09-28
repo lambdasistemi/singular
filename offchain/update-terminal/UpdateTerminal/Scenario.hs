@@ -12,9 +12,9 @@ the Unknown leg in the second registry; it writes the observation and
 ends with the verdict the observation already states: the witness burned
 from its holder and the committed leaf Terminal, or a named failure.
 -}
-module UpdateTerminal.Scenario (
-    updateTerminal,
-) where
+module UpdateTerminal.Scenario
+    ( updateTerminal
+    ) where
 
 import Data.ByteString.Short qualified as SBS
 import Data.Text qualified as T
@@ -25,20 +25,24 @@ import Singular.Registry.Node (withNode)
 import Singular.Registry.Types (OnChainTokenState (..))
 import UpdateTerminal.Controls (absentRefusal, unknownRefusal)
 import UpdateTerminal.Narration (die, hex, say)
-import UpdateTerminal.Observation (Observed (..), observation, writeObservation)
+import UpdateTerminal.Observation
+    ( Observed (..)
+    , observation
+    , writeObservation
+    )
 import UpdateTerminal.Options (StoryInputs (..), readStoryInputs)
-import UpdateTerminal.Registry (
-    Registry (..),
-    bootRegistry,
-    bootStateOf,
-    openSession,
- )
-import UpdateTerminal.Steps (
-    Retirement (..),
-    bootObservation,
-    mintedActive,
-    retireStoryKey,
- )
+import UpdateTerminal.Registry
+    ( Registry (..)
+    , bootRegistry
+    , bootStateOf
+    , openSession
+    )
+import UpdateTerminal.Steps
+    ( Retirement (..)
+    , bootObservation
+    , mintedActive
+    , retireStoryKey
+    )
 
 -- | Run the story; write the observation to the path when one is given.
 updateTerminal :: Maybe FilePath -> IO ()
@@ -83,8 +87,12 @@ updateTerminal observedPath = do
         -- The exit code repeats what the observation already says, so a
         -- caller that does not read the JSON still fails on a broken run.
         let terminal = unRoot (retRootTerminal r)
-        if retHeldBefore r == 1 && retHeldAfter r == 0 && retChainRoot r == terminal
-            then say "OK — the witness was burned from its holder and the leaf is Terminal"
+        if retHeldBefore r == 1
+            && retHeldAfter r == 0
+            && retChainRoot r == terminal
+            then
+                say
+                    "OK — the witness was burned from its holder and the leaf is Terminal"
             else
                 die
                     ( "the retirement did not complete: held "

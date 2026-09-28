@@ -12,10 +12,10 @@ Builds a reject transaction that consumes expired
 refunds remaining ADA to request owners. The trie
 root does NOT change.
 -}
-module Singular.Registry.TxBuilder.Reject (
-    rejectRequestsImpl,
-    rejectRequestsWithRefs,
-) where
+module Singular.Registry.TxBuilder.Reject
+    ( rejectRequestsImpl
+    , rejectRequestsWithRefs
+    ) where
 
 import Control.Exception (SomeException, try)
 import Control.Monad (when)
@@ -23,60 +23,60 @@ import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Ord (Down (..))
 import Data.Time.Clock (getCurrentTime)
-import Data.Time.Clock.POSIX (
-    utcTimeToPOSIXSeconds,
- )
+import Data.Time.Clock.POSIX
+    ( utcTimeToPOSIXSeconds
+    )
 import Data.Void (Void)
 import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx)
-import Cardano.Ledger.Api.Tx (
-    bodyTxL,
- )
-import Cardano.Ledger.Api.Tx.Body (
-    feeTxBodyL,
- )
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    coinTxOutL,
-    datumTxOutL,
-    mkBasicTxOut,
-    referenceScriptTxOutL,
-    valueTxOutL,
- )
+import Cardano.Ledger.Api.Tx
+    ( bodyTxL
+    )
+import Cardano.Ledger.Api.Tx.Body
+    ( feeTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , coinTxOutL
+    , datumTxOutL
+    , mkBasicTxOut
+    , referenceScriptTxOutL
+    , valueTxOutL
+    )
 import Cardano.Ledger.BaseTypes (StrictMaybe (..))
-import Cardano.Ledger.Conway.Scripts (
-    ConwayPlutusPurpose,
- )
+import Cardano.Ledger.Conway.Scripts
+    ( ConwayPlutusPurpose
+    )
 import Cardano.Ledger.Core (Script)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits)
 
 import Cardano.Slotting.Slot (SlotNo)
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
-import Singular.Registry.Config (
-    CageConfig (..),
- )
-import Singular.Registry.Ledger (
-    Coin (..),
-    ConwayEra,
-    PParams,
-    TokenId,
-    TxIn,
- )
-import Singular.Registry.Provider (
-    Provider (..),
- )
+import Singular.Registry.Config
+    ( CageConfig (..)
+    )
+import Singular.Registry.Ledger
+    ( Coin (..)
+    , ConwayEra
+    , PParams
+    , TokenId
+    , TxIn
+    )
+import Singular.Registry.Provider
+    ( Provider (..)
+    )
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainRequest (..),
-    OnChainTokenState (..),
-    RequestAction (..),
-    UpdateRedeemer (..),
- )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRequest (..)
+    , OnChainTokenState (..)
+    , RequestAction (..)
+    , UpdateRedeemer (..)
+    )
 
 -- | Empty query GADT (no context needed).
 data NoCtx a
@@ -85,12 +85,12 @@ data NoCtx a
 requests, attaching the state and request scripts
 to the transaction itself.
 -}
-rejectRequestsImpl ::
-    CageConfig ->
-    Provider IO ->
-    TokenId ->
-    Addr ->
-    IO ConwayTx
+rejectRequestsImpl
+    :: CageConfig
+    -> Provider IO
+    -> TokenId
+    -> Addr
+    -> IO ConwayTx
 rejectRequestsImpl cfg prov tid addr =
     rejectRequestsWithRefs cfg prov tid addr []
 
@@ -105,14 +105,14 @@ every purpose resolves through them instead and the transaction carries
 neither. An empty list keeps the attaching form, for a caller that has
 nothing published.
 -}
-rejectRequestsWithRefs ::
-    CageConfig ->
-    Provider IO ->
-    TokenId ->
-    Addr ->
-    -- | Outputs carrying the reject's scripts as reference scripts
-    [(TxIn, TxOut ConwayEra)] ->
-    IO ConwayTx
+rejectRequestsWithRefs
+    :: CageConfig
+    -> Provider IO
+    -> TokenId
+    -> Addr
+    -> [(TxIn, TxOut ConwayEra)]
+    -- ^ Outputs carrying the reject's scripts as reference scripts
+    -> IO ConwayTx
 rejectRequestsWithRefs cfg prov tid addr refUtxos = do
     (stateUtxo, reqUtxos, feeUtxo, pp) <-
         queryRejectContext cfg prov tid addr
@@ -155,12 +155,12 @@ rejectRequestsWithRefs cfg prov tid addr refUtxos = do
 {- | Query cage UTxOs, find state, filter
 rejectable requests, pick fee UTxO.
 -}
-queryRejectContext ::
-    CageConfig ->
-    Provider IO ->
-    TokenId ->
-    Addr ->
-    IO
+queryRejectContext
+    :: CageConfig
+    -> Provider IO
+    -> TokenId
+    -> Addr
+    -> IO
         ( (TxIn, TxOut ConwayEra)
         , [(TxIn, TxOut ConwayEra)]
         , (TxIn, TxOut ConwayEra)
@@ -202,7 +202,7 @@ queryRejectContext cfg prov tid addr = do
                 Just (RequestDatum r) ->
                     let sa = requestSubmittedAt r
                         deadline = sa + pt + rt
-                     in now > deadline || sa > now
+                    in  now > deadline || sa > now
                 _ -> False
         reqUtxos = filter isRejectable allReqs
     when (null reqUtxos) $
@@ -227,10 +227,10 @@ queryRejectContext cfg prov tid addr = do
     pure (stateUtxo, reqUtxos, feeUtxo, pp)
 
 -- | Extract state, build new state output.
-prepareRejectState ::
-    CageConfig ->
-    TxOut ConwayEra ->
-    (OnChainTokenState, TxOut ConwayEra, Script ConwayEra)
+prepareRejectState
+    :: CageConfig
+    -> TxOut ConwayEra
+    -> (OnChainTokenState, TxOut ConwayEra, Script ConwayEra)
 prepareRejectState cfg stateOut =
     let scriptAddr =
             cageAddrFromCfg cfg (network cfg)
@@ -251,14 +251,14 @@ prepareRejectState cfg stateOut =
                             (StateDatum oldState)
                         )
         script = mkCageScript cfg
-     in (oldState, newStateOut, script)
+    in  (oldState, newStateOut, script)
 
 -- | Compute the validity lower slot.
-computeLowerSlot ::
-    Provider IO ->
-    OnChainTokenState ->
-    [(TxIn, TxOut ConwayEra)] ->
-    IO SlotNo
+computeLowerSlot
+    :: Provider IO
+    -> OnChainTokenState
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO SlotNo
 computeLowerSlot prov oldState reqUtxos = do
     let pt = stateProcessTime oldState
         rt = stateRetractTime oldState
@@ -293,10 +293,10 @@ computeLowerSlot prov oldState reqUtxos = do
                     [0, 5, 30]
 
 -- | Wrap the Provider's evaluateTx for the DSL.
-mkRejectEvalTx ::
-    Provider IO ->
-    ConwayTx ->
-    IO
+mkRejectEvalTx
+    :: Provider IO
+    -> ConwayTx
+    -> IO
         ( Map.Map
             (ConwayPlutusPurpose AsIx ConwayEra)
             (Either String ExUnits)
@@ -312,19 +312,19 @@ mkRejectEvalTx prov tx = do
             r
 
 -- | The TxBuild DSL program for a reject tx.
-buildRejectProgram ::
-    CageConfig ->
-    PParams ConwayEra ->
-    TxIn ->
-    [(TxIn, TxOut ConwayEra)] ->
-    (TxIn, TxOut ConwayEra) ->
-    OnChainTokenState ->
-    TxOut ConwayEra ->
-    Script ConwayEra ->
-    Script ConwayEra ->
-    SlotNo ->
-    [(TxIn, TxOut ConwayEra)] ->
-    Tx.TxBuild NoCtx Void ()
+buildRejectProgram
+    :: CageConfig
+    -> PParams ConwayEra
+    -> TxIn
+    -> [(TxIn, TxOut ConwayEra)]
+    -> (TxIn, TxOut ConwayEra)
+    -> OnChainTokenState
+    -> TxOut ConwayEra
+    -> Script ConwayEra
+    -> Script ConwayEra
+    -> SlotNo
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Tx.TxBuild NoCtx Void ()
 buildRejectProgram
     cfg
     pp
@@ -354,7 +354,7 @@ buildRejectProgram
         _ <- Tx.output newStateOut
         Coin _fee <- Tx.peek $ \tx ->
             let f = tx ^. bodyTxL . feeTxBodyL
-             in if f > Coin 0
+            in  if f > Coin 0
                     then Tx.Ok f
                     else Tx.Iterate f
         -- Rejected rows refund exactly `input − tip` floored at min-UTxO

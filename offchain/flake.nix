@@ -106,6 +106,21 @@
           inherit cardanoNode;
         };
 
+        # #278 S2: the pinned house formatter. Fourmolu is resolved by the
+        # locked dev-shell tool set; this extraction exposes exactly that
+        # binary as a package, so the root format recipes, the root format
+        # controls and this tree's lint check all run the one pinned
+        # Fourmolu — no second version source, no drift. The match is
+        # fail-closed: anything but exactly one Fourmolu tool in the shell
+        # aborts evaluation.
+        fourmoluTool =
+          let
+            matches = builtins.filter
+              (p: builtins.match "fourmolu-exe-fourmolu-.*" (p.name or "") != null)
+              project.project.shell.nativeBuildInputs;
+          in
+          assert builtins.length matches == 1; builtins.head matches;
+
         haskellApps = import ./nix/apps.nix {
           inherit pkgs;
           checks = haskellChecks;
@@ -401,6 +416,9 @@
           # #173 A173-COMMAND: the packaged verb, exposed so the release
           # archive's documented invocation resolves without a checkout.
           inherit insert-active update-terminal;
+          # #278 S2: the pinned house formatter, for the root format
+          # recipes and controls (same locked tool as the lint check).
+          fourmolu = fourmoluTool;
           # Mechanical adapter (D-008): exposes the cardano-node already
           # locked as this flake's input, so the devnet recipe consumes the
           # locked identity instead of re-resolving a remote tag.

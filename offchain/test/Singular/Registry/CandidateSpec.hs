@@ -1,15 +1,19 @@
 module Singular.Registry.CandidateSpec (spec) where
 
 import Control.Exception (finally)
-import Singular.Registry.Candidate (CandidateSource (..), resolveCandidate, sourceName)
-import System.Directory (
-    createDirectory,
-    getCurrentDirectory,
-    getTemporaryDirectory,
-    removeDirectoryRecursive,
-    removeFile,
-    setCurrentDirectory,
- )
+import Singular.Registry.Candidate
+    ( CandidateSource (..)
+    , resolveCandidate
+    , sourceName
+    )
+import System.Directory
+    ( createDirectory
+    , getCurrentDirectory
+    , getTemporaryDirectory
+    , removeDirectoryRecursive
+    , removeFile
+    , setCurrentDirectory
+    )
 import System.Environment (lookupEnv, setEnv, unsetEnv)
 import System.FilePath ((</>))
 import System.IO (hClose, openTempFile)
@@ -17,28 +21,33 @@ import Test.Hspec
 
 spec :: Spec
 spec = describe "Singular.Registry.Candidate" $ do
-    it "resolves a release archive's RELEASE-COMMIT walking up from the working directory" $ do
-        withSandbox $ \dir -> do
-            createDirectory (dir </> "offchain")
-            withoutCandidateOverride . within (dir </> "offchain") $ do
-                writeFile (dir </> "RELEASE-COMMIT") (candidateSha <> "\n")
-                result <- resolveCandidate
-                -- The sandbox is no git repository, so a readable
-                -- git status is impossible: dirty rides along True.
-                result
-                    `shouldBe` Right (candidateSha, True, CandidateFromReleaseCommit)
-        sourceName CandidateFromReleaseCommit `shouldBe` "release-commit"
+    it
+        "resolves a release archive's RELEASE-COMMIT walking up from the working directory"
+        $ do
+            withSandbox $ \dir -> do
+                createDirectory (dir </> "offchain")
+                withoutCandidateOverride . within (dir </> "offchain") $ do
+                    writeFile (dir </> "RELEASE-COMMIT") (candidateSha <> "\n")
+                    result <- resolveCandidate
+                    -- The sandbox is no git repository, so a readable
+                    -- git status is impossible: dirty rides along True.
+                    result
+                        `shouldBe` Right (candidateSha, True, CandidateFromReleaseCommit)
+            sourceName CandidateFromReleaseCommit `shouldBe` "release-commit"
 
-    it "fails closed with no override, no repository and no RELEASE-COMMIT" $ do
-        withSandbox $ \dir ->
-            withoutCandidateOverride . within dir $ do
-                result <- resolveCandidate
-                case result of
-                    Left err -> do
-                        err `shouldContain` "candidate: cannot establish repository revision"
-                        err `shouldContain` "RELEASE-COMMIT"
-                    Right got ->
-                        expectationFailure ("expected the fail-closed error, resolved " <> show got)
+    it
+        "fails closed with no override, no repository and no RELEASE-COMMIT"
+        $ do
+            withSandbox $ \dir ->
+                withoutCandidateOverride . within dir $ do
+                    result <- resolveCandidate
+                    case result of
+                        Left err -> do
+                            err `shouldContain` "candidate: cannot establish repository revision"
+                            err `shouldContain` "RELEASE-COMMIT"
+                        Right got ->
+                            expectationFailure
+                                ("expected the fail-closed error, resolved " <> show got)
 
 -- | A fixed sha-shaped revision the specs assert on.
 candidateSha :: String

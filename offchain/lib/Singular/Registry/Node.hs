@@ -52,101 +52,101 @@ rejection into a named diagnostic instead of a bare protocol error.
 Key material is read from the joiner's file and never printed; only the
 derived (public) address is reported.
 -}
-module Singular.Registry.Node (
-    -- * Mode
-    NodeMode (..),
-    ExternalNode (..),
-    nodeModeFromArgs,
-    nodeModeFromEnvironment,
-    runMode,
+module Singular.Registry.Node
+    ( -- * Mode
+      NodeMode (..)
+    , ExternalNode (..)
+    , nodeModeFromArgs
+    , nodeModeFromEnvironment
+    , runMode
 
-    -- * Wallet
-    Wallet (..),
-    loadWallet,
-    walletForMode,
-    funderAddr,
-    funderSignKey,
-    sessionMagic,
-    bech32Address,
+      -- * Wallet
+    , Wallet (..)
+    , loadWallet
+    , walletForMode
+    , funderAddr
+    , funderSignKey
+    , sessionMagic
+    , bech32Address
 
-    -- * Session
-    NodeSession (..),
-    awaitChain,
-    currentTipSlot,
-    scriptStakeRegistered,
-    awaitTx,
-    awaitTxId,
-    awaitTxWindow,
-    withDevnetIndexer,
-    awaitIndexed,
-    adaptProvider,
-    followedProvider,
-    nodeAddressReads,
-    awaitConnection,
-    confirmDeadline,
-    txUpperBoundSlot,
-    nodeIsExternal,
-    echoKoios,
-    confirmationDelay,
-    withNode,
-    withNodeForPlannedFunding,
-    withNodeMode,
-    withNodeSocket,
-    devnetGenesis,
+      -- * Session
+    , NodeSession (..)
+    , awaitChain
+    , currentTipSlot
+    , scriptStakeRegistered
+    , awaitTx
+    , awaitTxId
+    , awaitTxWindow
+    , withDevnetIndexer
+    , awaitIndexed
+    , adaptProvider
+    , followedProvider
+    , nodeAddressReads
+    , awaitConnection
+    , confirmDeadline
+    , txUpperBoundSlot
+    , nodeIsExternal
+    , echoKoios
+    , confirmationDelay
+    , withNode
+    , withNodeForPlannedFunding
+    , withNodeMode
+    , withNodeSocket
+    , devnetGenesis
 
-    -- * Funding
-    FundingFloor (..),
-    defaultFundingFloor,
-    checkFunding,
-) where
+      -- * Funding
+    , FundingFloor (..)
+    , defaultFundingFloor
+    , checkFunding
+    ) where
 
-import Singular.Registry.Node.Confirmation (
-    awaitChain,
-    awaitTx,
-    awaitTxId,
-    awaitTxWindow,
-    confirmDeadline,
-    confirmationDelay,
-    txUpperBoundSlot,
- )
-import Singular.Registry.Node.Funding (
-    FundingFloor (..),
-    checkFunding,
-    defaultFundingFloor,
- )
-import Singular.Registry.Node.Indexer (
-    adaptProvider,
-    awaitIndexed,
-    followedProvider,
-    nodeAddressReads,
-    withDevnetIndexer,
- )
-import Singular.Registry.Node.Options (
-    ExternalNode (..),
-    NodeMode (..),
-    echoKoios,
-    nodeIsExternal,
-    nodeModeFromArgs,
-    nodeModeFromEnvironment,
-    runMode,
- )
-import Singular.Registry.Node.Session (
-    NodeSession (..),
-    awaitConnection,
-    currentTipSlot,
-    devnetGenesis,
-    scriptStakeRegistered,
-    withNode,
-    withNodeForPlannedFunding,
-    withNodeMode,
-    withNodeSocket,
- )
-import Singular.Registry.Node.Wallet (
-    Wallet (..),
-    bech32Address,
-    funderAddr,
-    funderSignKey,
-    loadWallet,
-    sessionMagic,
-    walletForMode,
- )
+import Singular.Registry.Node.Confirmation
+    ( awaitChain
+    , awaitTx
+    , awaitTxId
+    , awaitTxWindow
+    , confirmDeadline
+    , confirmationDelay
+    , txUpperBoundSlot
+    )
+import Singular.Registry.Node.Funding
+    ( FundingFloor (..)
+    , checkFunding
+    , defaultFundingFloor
+    )
+import Singular.Registry.Node.Indexer
+    ( adaptProvider
+    , awaitIndexed
+    , followedProvider
+    , nodeAddressReads
+    , withDevnetIndexer
+    )
+import Singular.Registry.Node.Options
+    ( ExternalNode (..)
+    , NodeMode (..)
+    , echoKoios
+    , nodeIsExternal
+    , nodeModeFromArgs
+    , nodeModeFromEnvironment
+    , runMode
+    )
+import Singular.Registry.Node.Session
+    ( NodeSession (..)
+    , awaitConnection
+    , currentTipSlot
+    , devnetGenesis
+    , scriptStakeRegistered
+    , withNode
+    , withNodeForPlannedFunding
+    , withNodeMode
+    , withNodeSocket
+    )
+import Singular.Registry.Node.Wallet
+    ( Wallet (..)
+    , bech32Address
+    , funderAddr
+    , funderSignKey
+    , loadWallet
+    , sessionMagic
+    , walletForMode
+    )

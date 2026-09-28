@@ -11,18 +11,18 @@ same canonical heads, same refusals, same requirement to consume the
 whole input. Where this module and the reference disagree, the
 reference is right and this module is wrong.
 -}
-module Naming.Wire (
-    WireData (..),
-    serialiseWireData,
-    deserialiseWireData,
-    PaymentCredential (..),
-    AddressForm (..),
-    Address (..),
-    decodeAddress,
-    encodeAddress,
-    canonicalAddress,
-    guardWire,
-) where
+module Naming.Wire
+    ( WireData (..)
+    , serialiseWireData
+    , deserialiseWireData
+    , PaymentCredential (..)
+    , AddressForm (..)
+    , Address (..)
+    , decodeAddress
+    , encodeAddress
+    , canonicalAddress
+    , guardWire
+    ) where
 
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
@@ -65,7 +65,8 @@ serialiseWireData (WInt v)
     | v >= 0, v < 256 = pure (BS.pack [0x18, fromIntegral v])
     | v >= 0
     , v < 65536 =
-        pure (BS.pack [0x19, fromIntegral (v `div` 256), fromIntegral (v `mod` 256)])
+        pure
+            (BS.pack [0x19, fromIntegral (v `div` 256), fromIntegral (v `mod` 256)])
 serialiseWireData (WList fields) = do
     parts <- traverse serialiseWireData fields
     pure (BS.singleton 0x9f <> BS.concat parts <> BS.singleton 0xff)
@@ -109,14 +110,14 @@ parseWireData input = case BS.uncons input of
         | header >= 0x40
         , header < 0x58 ->
             let len = fromIntegral (header - 0x40)
-             in guardWire (BS.length rest >= len)
+            in  guardWire (BS.length rest >= len)
                     >> pure (WBytes (BS.take len rest), BS.drop len rest)
         | header == 0x58
         , Just (len8, rest2) <- BS.uncons rest
         , len8 >= 24
         , len8 <= 64 ->
             let len = fromIntegral len8
-             in guardWire (BS.length rest2 >= len)
+            in  guardWire (BS.length rest2 >= len)
                     >> pure (WBytes (BS.take len rest2), BS.drop len rest2)
         | header < 24 -> pure (WInt (fromIntegral header), rest)
         | header == 0x18
@@ -181,7 +182,8 @@ decodeAddress bytes = case BS.uncons bytes of
                     { addressBytes = bytes
                     , addressForm = EnterpriseForm
                     , addressNetwork = network
-                    , addressPaymentCredential = if kind == 6 then PaymentKey else ScriptCredential
+                    , addressPaymentCredential =
+                        if kind == 6 then PaymentKey else ScriptCredential
                     , addressPaymentHash = payload
                     , addressStakeCredential = Nothing
                     , addressStakeHash = BS.empty
@@ -192,9 +194,11 @@ decodeAddress bytes = case BS.uncons bytes of
                     { addressBytes = bytes
                     , addressForm = BaseForm
                     , addressNetwork = network
-                    , addressPaymentCredential = if even kind then PaymentKey else ScriptCredential
+                    , addressPaymentCredential =
+                        if even kind then PaymentKey else ScriptCredential
                     , addressPaymentHash = BS.take 28 payload
-                    , addressStakeCredential = Just (if kind < 2 then PaymentKey else ScriptCredential)
+                    , addressStakeCredential =
+                        Just (if kind < 2 then PaymentKey else ScriptCredential)
                     , addressStakeHash = BS.drop 28 payload
                     }
         | otherwise -> Nothing

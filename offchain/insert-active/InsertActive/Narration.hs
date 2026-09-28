@@ -13,11 +13,11 @@ outer handler it is reported a second time as
 @insert-active: FAILED: ExitFailure 1@. That double line is the command's
 existing diagnostic shape and is kept.
 -}
-module InsertActive.Narration (
-    say,
-    die,
-    hex,
-) where
+module InsertActive.Narration
+    ( say
+    , die
+    , hex
+    ) where
 
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as Base16

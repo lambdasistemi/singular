@@ -10,40 +10,40 @@ state, or the refund-only custody of an absent token. Reads
 "Singular.Registry.Wire.Request"; nothing here is importable by a
 caller — the public surface is the "Singular.Registry.Types" facade.
 -}
-module Singular.Registry.Wire.State (
-    -- * On-chain token state
-    OnChainTokenState (..),
-    stateActivePolicyBytes,
-    stateAppPolicyBytes,
-    stateAbsentPolicyBytes,
-    stateTerminalPolicyBytes,
+module Singular.Registry.Wire.State
+    ( -- * On-chain token state
+      OnChainTokenState (..)
+    , stateActivePolicyBytes
+    , stateAppPolicyBytes
+    , stateAbsentPolicyBytes
+    , stateTerminalPolicyBytes
 
-    -- * Cage datum
-    CageDatum (..),
-) where
+      -- * Cage datum
+    , CageDatum (..)
+    ) where
 
 import Data.ByteString (ByteString)
 import PlutusCore.Data (Data (..))
-import PlutusTx.Builtins.Internal (
-    BuiltinByteString (..),
- )
-import PlutusTx.IsData.Class (
-    FromData (..),
-    ToData (..),
-    UnsafeFromData (..),
- )
-import Singular.Registry.Wire.Primitive (
-    OnChainRoot (..),
-    bbsFromD,
-    bbsToD,
-    bsFromD,
-    bsToD,
-    mkD,
-    unD,
- )
-import Singular.Registry.Wire.Request (
-    OnChainRequest (..),
- )
+import PlutusTx.Builtins.Internal
+    ( BuiltinByteString (..)
+    )
+import PlutusTx.IsData.Class
+    ( FromData (..)
+    , ToData (..)
+    , UnsafeFromData (..)
+    )
+import Singular.Registry.Wire.Primitive
+    ( OnChainRoot (..)
+    , bbsFromD
+    , bbsToD
+    , bsFromD
+    , bsToD
+    , mkD
+    , unD
+    )
+import Singular.Registry.Wire.Request
+    ( OnChainRequest (..)
+    )
 
 {- | On-chain token state. Matches Aiken @types\/State@ (#157 C7: eight
 fields, replacing the six). `consumer_pin` is deleted with the pinned

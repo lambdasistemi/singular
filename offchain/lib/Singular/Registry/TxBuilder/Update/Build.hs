@@ -19,74 +19,74 @@ This module owns no queries and no duty decisions; see
 "Singular.Registry.TxBuilder.Update.Duties". The public surface stays
 "Singular.Registry.TxBuilder.Update" (#267).
 -}
-module Singular.Registry.TxBuilder.Update.Build (
-    NoCtx,
-    mkEvalTx,
-    buildProgram,
-) where
+module Singular.Registry.TxBuilder.Update.Build
+    ( NoCtx
+    , mkEvalTx
+    , buildProgram
+    ) where
 
 import Data.Map.Strict qualified as Map
 import Data.Void (Void)
 import Lens.Micro ((^.))
 
 import Cardano.Ledger.Alonzo.Scripts (AsIx)
-import Cardano.Ledger.Api.Tx (
-    bodyTxL,
- )
-import Cardano.Ledger.Api.Tx.Body (
-    feeTxBodyL,
- )
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
- )
+import Cardano.Ledger.Api.Tx
+    ( bodyTxL
+    )
+import Cardano.Ledger.Api.Tx.Body
+    ( feeTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    )
 import Cardano.Ledger.Coin (Coin (..))
-import Cardano.Ledger.Conway.Scripts (
-    ConwayPlutusPurpose,
- )
-import Cardano.Ledger.Core (
-    Script,
- )
+import Cardano.Ledger.Conway.Scripts
+    ( ConwayPlutusPurpose
+    )
+import Cardano.Ledger.Core
+    ( Script
+    )
 import Cardano.Ledger.Plutus.ExUnits (ExUnits)
 import Cardano.Slotting.Slot (SlotNo)
 import Cardano.Tx.Build qualified as Tx
-import Cardano.Tx.Ledger (
-    ConwayTx,
- )
+import Cardano.Tx.Ledger
+    ( ConwayTx
+    )
 
-import Singular.Registry.Config (
-    CageConfig (..),
- )
-import Singular.Registry.Ledger (
-    ConwayEra,
-    PParams,
-    TxIn,
- )
-import Singular.Registry.Provider (
-    Provider (..),
- )
-import Singular.Registry.TxBuilder.ConnectedFold (
-    ConnectedMint (..),
-    ConnectedSpend (..),
- )
+import Singular.Registry.Config
+    ( CageConfig (..)
+    )
+import Singular.Registry.Ledger
+    ( ConwayEra
+    , PParams
+    , TxIn
+    )
+import Singular.Registry.Provider
+    ( Provider (..)
+    )
+import Singular.Registry.TxBuilder.ConnectedFold
+    ( ConnectedMint (..)
+    , ConnectedSpend (..)
+    )
 import Singular.Registry.TxBuilder.Internal.Identity
-import Singular.Registry.TxBuilder.Update.Duties (
-    RegistryDuties (..),
- )
-import Singular.Registry.Types (
-    OnChainTokenState,
-    ProofStep,
-    RequestAction (..),
-    UpdateRedeemer (..),
- )
+import Singular.Registry.TxBuilder.Update.Duties
+    ( RegistryDuties (..)
+    )
+import Singular.Registry.Types
+    ( OnChainTokenState
+    , ProofStep
+    , RequestAction (..)
+    , UpdateRedeemer (..)
+    )
 
 -- | Empty query GADT (no context needed).
 data NoCtx a
 
 -- | Wrap the Provider's evaluateTx for the DSL.
-mkEvalTx ::
-    Provider IO ->
-    ConwayTx ->
-    IO
+mkEvalTx
+    :: Provider IO
+    -> ConwayTx
+    -> IO
         ( Map.Map
             ( ConwayPlutusPurpose
                 AsIx
@@ -105,22 +105,22 @@ mkEvalTx prov tx = do
             r
 
 -- | The TxBuild DSL program for an update tx.
-buildProgram ::
-    CageConfig ->
-    PParams ConwayEra ->
-    TxIn ->
-    TxOut ConwayEra ->
-    [(TxIn, TxOut ConwayEra)] ->
-    (TxIn, TxOut ConwayEra) ->
-    OnChainTokenState ->
-    TxOut ConwayEra ->
-    Script ConwayEra ->
-    Script ConwayEra ->
-    [[ProofStep]] ->
-    SlotNo ->
-    RegistryDuties ->
-    [(TxIn, TxOut ConwayEra)] ->
-    Tx.TxBuild NoCtx Void ()
+buildProgram
+    :: CageConfig
+    -> PParams ConwayEra
+    -> TxIn
+    -> TxOut ConwayEra
+    -> [(TxIn, TxOut ConwayEra)]
+    -> (TxIn, TxOut ConwayEra)
+    -> OnChainTokenState
+    -> TxOut ConwayEra
+    -> Script ConwayEra
+    -> Script ConwayEra
+    -> [[ProofStep]]
+    -> SlotNo
+    -> RegistryDuties
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Tx.TxBuild NoCtx Void ()
 buildProgram
     _cfg
     _pp
@@ -149,7 +149,7 @@ buildProgram
         _ <- Tx.output newStateOut
         Coin _fee <- Tx.peek $ \tx ->
             let f = tx ^. bodyTxL . feeTxBodyL
-             in if f > Coin 0
+            in  if f > Coin 0
                     then Tx.Ok f
                     else Tx.Iterate f
         -- #157 C10: the pinned consumer and its mandatory withdrawal are

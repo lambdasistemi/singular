@@ -27,16 +27,16 @@ claim is verified with a pure trie before anything touches a devnet:
 constructors for @C@. It fails loudly instead of printing keys whose
 proof lacks a `Fork`.
 -}
-module Conformance.ForkKeys (
-    findForkKeys,
-    findPresentForkKeys,
-    runCheckForkExclusion,
-    runGrindPresentFork,
-    runFindForkKeys,
-    runShowAllProofs,
-    runShowDProof,
-    runShowNibbles,
-) where
+module Conformance.ForkKeys
+    ( findForkKeys
+    , findPresentForkKeys
+    , runCheckForkExclusion
+    , runGrindPresentFork
+    , runFindForkKeys
+    , runShowAllProofs
+    , runShowDProof
+    , runShowNibbles
+    ) where
 
 import Control.Exception (ErrorCall (..), throwIO)
 import Data.ByteString (ByteString)
@@ -52,16 +52,22 @@ import MPF.Interface (HexDigit (..), byteStringToHexKey)
 
 import Cardano.Ledger.Mary.Value (AssetName (..))
 
+import Conformance.Mirror
+    ( mirrorExclusionSteps
+    , mirrorExclusionVerifies
+    , mirrorInsert
+    , newMirror
+    )
 import Singular.Registry.Ledger (Root (..), TokenId (..))
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie qualified as CageTrie
 import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.Types (Neighbor (..), ProofStep (..))
-import Conformance.Mirror (mirrorExclusionSteps, mirrorExclusionVerifies, mirrorInsert, newMirror)
 
--- | Hash pipeline nibbles for a candidate key: the exact mapping the
--- trie uses to place the key.
+{- | Hash pipeline nibbles for a candidate key: the exact mapping the
+trie uses to place the key.
+-}
 nibbles :: ByteString -> [Word8]
 nibbles =
     map unHexDigit
@@ -78,8 +84,9 @@ diffAt i xs ys = case (drop i xs, drop i ys) of
     (x : _, y : _) -> x /= y
     _ -> False
 
--- | Grind @prefix <> show n@ for the first @n@ satisfying @ok@ on its
--- nibbles. Fails loudly past @cap@ rather than looping forever.
+{- | Grind @prefix <> show n@ for the first @n@ satisfying @ok@ on its
+nibbles. Fails loudly past @cap@ rather than looping forever.
+-}
 grind :: ByteString -> Int -> ([Word8] -> Bool) -> IO ByteString
 grind prefix cap ok = go (0 :: Int)
   where
@@ -97,13 +104,26 @@ grind prefix cap ok = go (0 :: Int)
       where
         cand = prefix <> TE.encodeUtf8 (T.pack (show i))
 
--- | The five keys @(A,B,D,E,C)@ with the shape described above, plus
--- the verified proof constructors for @C@\'s inclusion proof.
--- | The seven keys @(A,B,D,E,F,G,C)@ with the shape described above, plus
--- the verified proof constructors for @C@\'s inclusion proof (over the full
--- set) and @A@\'s update proof (over the pre-@C@ set, mirroring the devnet
--- fold order).
-findForkKeys :: IO (ByteString, ByteString, ByteString, ByteString, ByteString, ByteString, ByteString, [String], [String], [String])
+{- | The five keys @(A,B,D,E,C)@ with the shape described above, plus
+the verified proof constructors for @C@\'s inclusion proof.
+| The seven keys @(A,B,D,E,F,G,C)@ with the shape described above, plus
+the verified proof constructors for @C@\'s inclusion proof (over the full
+set) and @A@\'s update proof (over the pre-@C@ set, mirroring the devnet
+fold order).
+-}
+findForkKeys
+    :: IO
+        ( ByteString
+        , ByteString
+        , ByteString
+        , ByteString
+        , ByteString
+        , ByteString
+        , ByteString
+        , [String]
+        , [String]
+        , [String]
+        )
 findForkKeys = do
     let keyA = "cs07-fork-A"
         na = nibbles keyA
@@ -135,7 +155,12 @@ findForkKeys = do
         grind
             "cs07-fork-G"
             500000
-            (\ng -> eqPrefix 3 ng na && diffAt 3 ng na3 && diffAt 3 ng nb3 && diffAt 3 ng nf3)
+            ( \ng ->
+                eqPrefix 3 ng na
+                    && diffAt 3 ng na3
+                    && diffAt 3 ng nb3
+                    && diffAt 3 ng nf3
+            )
     keyC <-
         grind
             "cs07-fork-C"
@@ -153,11 +178,21 @@ findForkKeys = do
     require
         ("A update proof lacks Branch: " <> show stepsA)
         ("Branch" `elem` stepsA)
-    pure (keyA, keyB, keyD, keyE, keyF, keyG, keyC, stepsC, stepsB, stepsA)
+    pure
+        (keyA, keyB, keyD, keyE, keyF, keyG, keyC, stepsC, stepsB, stepsA)
 
--- | Inclusion-proof constructors over a pure trie holding exactly the
--- given keys. No node, no chain: each shape claim, checked.
-proofConstrsFor :: ByteString -> ByteString -> ByteString -> ByteString -> ByteString -> ByteString -> ByteString -> IO [String]
+{- | Inclusion-proof constructors over a pure trie holding exactly the
+given keys. No node, no chain: each shape claim, checked.
+-}
+proofConstrsFor
+    :: ByteString
+    -> ByteString
+    -> ByteString
+    -> ByteString
+    -> ByteString
+    -> ByteString
+    -> ByteString
+    -> IO [String]
 proofConstrsFor keyA keyB keyD keyE keyF keyG keyC = do
     tm <- mkPureTrieManager
     let tid = TokenId (AssetName "cs07-fork-token")
@@ -175,8 +210,9 @@ proofConstrsFor keyA keyB keyD keyE keyF keyG keyC = do
             Nothing -> []
             Just steps -> map constrName steps
 
--- | @B@\'s inclusion proof over @{A,B}@ (mirrors devnet fold 2, which
--- proves after inserting, exactly like the builder\'s validProofs).
+{- | @B@\'s inclusion proof over @{A,B}@ (mirrors devnet fold 2, which
+proves after inserting, exactly like the builder\'s validProofs).
+-}
 proofConstrsOn :: ByteString -> ByteString -> IO [String]
 proofConstrsOn keyA keyB = do
     tm <- mkPureTrieManager
@@ -190,9 +226,17 @@ proofConstrsOn keyA keyB = do
             Nothing -> []
             Just steps -> map constrName steps
 
--- | @A@\'s update proof over @{A,B,D,E,F,G}@ (mirrors devnet fold 8,
--- which proves the existing value before replacing it).
-updateProofConstrsOn :: ByteString -> ByteString -> ByteString -> ByteString -> ByteString -> ByteString -> IO [String]
+{- | @A@\'s update proof over @{A,B,D,E,F,G}@ (mirrors devnet fold 8,
+which proves the existing value before replacing it).
+-}
+updateProofConstrsOn
+    :: ByteString
+    -> ByteString
+    -> ByteString
+    -> ByteString
+    -> ByteString
+    -> ByteString
+    -> IO [String]
 updateProofConstrsOn keyA keyB keyD keyE keyF keyG = do
     tm <- mkPureTrieManager
     let tid = TokenId (AssetName "cs07-fork-token")
@@ -229,8 +273,9 @@ runShowNibbles = do
         , "cs07-fork-C11"
         ]
 
--- | Full Fork details for @D@ over @{A,B}@ (the refused devnet shape):
--- skip, neighbor nibble, neighbor prefix, neighbor root.
+{- | Full Fork details for @D@ over @{A,B}@ (the refused devnet shape):
+skip, neighbor nibble, neighbor prefix, neighbor root.
+-}
 runShowDProof :: IO ()
 runShowDProof = do
     tm <- mkPureTrieManager
@@ -247,13 +292,22 @@ runShowDProof = do
     mapM_ (emit "d-step") strs
   where
     showStep (Branch sk nb) = "Branch skip=" <> show sk <> " neighbors=" <> show (BS.length nb)
-    showStep (Fork sk n) = "Fork skip=" <> show sk <> " nibble=" <> show (neighborNibble n) <> " prefix=" <> show (neighborPrefix n) <> " root=" <> show (neighborRoot n)
+    showStep (Fork sk n) =
+        "Fork skip="
+            <> show sk
+            <> " nibble="
+            <> show (neighborNibble n)
+            <> " prefix="
+            <> show (neighborPrefix n)
+            <> " root="
+            <> show (neighborRoot n)
     showStep (Leaf sk k v) = "Leaf skip=" <> show sk <> " key=" <> show k <> " value=" <> show v
 
--- | Inclusion proofs for every present key over the full seven-key set.
--- An update fold proves a PRESENT key (Aiken\'s including() path, no
--- excluding()), so a Fork here is witnessable even if absent-key Forks
--- are not.
+{- | Inclusion proofs for every present key over the full seven-key set.
+An update fold proves a PRESENT key (Aiken\'s including() path, no
+excluding()), so a Fork here is witnessable even if absent-key Forks
+are not.
+-}
 runShowAllProofs :: IO ()
 runShowAllProofs = do
     (keyA, keyB, keyD, keyE, keyF, keyG, keyC, _, _, _) <- findForkKeys
@@ -272,7 +326,7 @@ runShowAllProofs = do
     strs <- withSpeculativeTrie tm tid $ \trie -> do
         mapM_ (\(_, k, v) -> CageTrie.insert trie k v) keys
         mapM
-            (\(tag, k, _) -> do
+            ( \(tag, k, _) -> do
                 mSteps <- CageTrie.getProofSteps trie k
                 pure $ case mSteps of
                     Nothing -> tag <> ": none"
@@ -281,14 +335,15 @@ runShowAllProofs = do
             keys
     mapM_ (emit "present-proof") strs
 
--- | Offline verdict on the refused shape: cage/mirror backend root agreement
--- plus mts-core exclusion verification of @D@ over mirror @{A,B}@.
--- No node. A TRUE verdict with an on-chain refusal means the mts and
--- Aiken implementations diverge on Fork absence proofs; FALSE means mts
--- cannot verify the shape its sibling API generates.
--- | Proof constructors for @target@ over a pure cage trie holding exactly
--- @kvs@ (inserted in order). Present targets mirror update folds;
--- targets inserted last mirror insert folds. No node.
+{- | Offline verdict on the refused shape: cage/mirror backend root agreement
+plus mts-core exclusion verification of @D@ over mirror @{A,B}@.
+No node. A TRUE verdict with an on-chain refusal means the mts and
+Aiken implementations diverge on Fork absence proofs; FALSE means mts
+cannot verify the shape its sibling API generates.
+| Proof constructors for @target@ over a pure cage trie holding exactly
+@kvs@ (inserted in order). Present targets mirror update folds;
+targets inserted last mirror insert folds. No node.
+-}
 shapeOf :: [(ByteString, ByteString)] -> ByteString -> IO [String]
 shapeOf kvs target = do
     tm <- mkPureTrieManager
@@ -302,10 +357,12 @@ shapeOf kvs target = do
             Just steps -> map constrName steps
     pure strs
 
--- | Present-key `Fork` grind (P-A): fixed K1; P shares nibble `[0]`;
--- Q shares `[0]` with a fresh index-1 nibble. Verified in the pure
--- cage trie with builder-identical call order.
-findPresentForkKeys :: IO (ByteString, ByteString, ByteString, [String], [String], [String])
+{- | Present-key `Fork` grind (P-A): fixed K1; P shares nibble `[0]`;
+Q shares `[0]` with a fresh index-1 nibble. Verified in the pure
+cage trie with builder-identical call order.
+-}
+findPresentForkKeys
+    :: IO (ByteString, ByteString, ByteString, [String], [String], [String])
 findPresentForkKeys = do
     let keyK = "t81-k1"
         nk = nibbles keyK
@@ -324,11 +381,13 @@ findPresentForkKeys = do
     require
         ("P proof unexpected: " <> show stepsP)
         ("Leaf" `elem` stepsP && "Fork" `notElem` stepsP)
-    stepsQ <- shapeOf [(keyK, "t81-v1"), (keyP, "t81-vp"), (keyQ, "t81-vq")] keyQ
+    stepsQ <-
+        shapeOf [(keyK, "t81-v1"), (keyP, "t81-vp"), (keyQ, "t81-vq")] keyQ
     require
         ("Q proof unexpected: " <> show stepsQ)
         ("Fork" `notElem` stepsQ)
-    stepsK <- shapeOf [(keyK, "t81-v1"), (keyP, "t81-vp"), (keyQ, "t81-vq")] keyK
+    stepsK <-
+        shapeOf [(keyK, "t81-v1"), (keyP, "t81-vp"), (keyQ, "t81-vq")] keyK
     require
         ("K1 proof lacks Fork: " <> show stepsK)
         ("Fork" `elem` stepsK)
@@ -361,7 +420,11 @@ runCheckForkExclusion = do
     emit "mirror-root" (hexBytes mirrorRoot)
     emit "cage-root" (hexBytes cageRoot)
     require
-        ("cage and mirror roots disagree for {A,B}: " <> show (hexBytes cageRoot) <> " vs " <> show (hexBytes mirrorRoot))
+        ( "cage and mirror roots disagree for {A,B}: "
+            <> show (hexBytes cageRoot)
+            <> " vs "
+            <> show (hexBytes mirrorRoot)
+        )
         (cageRoot == mirrorRoot)
     verdict <- mirrorExclusionVerifies mirror "cs07-fork-D127" mirrorRoot
     emit "mts-exclusion-verifies" (show verdict)
@@ -370,7 +433,8 @@ runCheckForkExclusion = do
 
 runFindForkKeys :: IO ()
 runFindForkKeys = do
-    (keyA, keyB, keyD, keyE, keyF, keyG, keyC, stepsC, stepsB, stepsA) <- findForkKeys
+    (keyA, keyB, keyD, keyE, keyF, keyG, keyC, stepsC, stepsB, stepsA) <-
+        findForkKeys
     emit "fork-key-a" (show keyA)
     emit "fork-key-b" (show keyB)
     emit "fork-key-d" (show keyD)

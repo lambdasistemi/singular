@@ -24,9 +24,9 @@ The executing negative control (@CONFORMANCE_CONTROL=wrong-params@)
 demands 1 param for state: the real blueprint has 0, and the run
 must fail naming the mismatch.
 -}
-module Conformance.CS06 (
-    runCS06,
-) where
+module Conformance.CS06
+    ( runCS06
+    ) where
 
 import Control.Exception (ErrorCall (..), throwIO)
 import Data.Aeson qualified as Aeson
@@ -45,28 +45,28 @@ import System.Process (readProcess)
 
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 
-import Singular.Registry.Blueprint (
-    Blueprint (..),
-    Validator (..),
-    applyPreviousPolicies,
-    applyRequestParams,
-    extractCompiledCode,
-    loadBlueprint,
- )
-import Singular.Registry.TxBuilder.Internal (
-    computeScriptHash,
-    scriptHashBytes,
- )
-import Singular.Registry.Types (
-    OnChainTokenId (..),
- )
+import Singular.Registry.Blueprint
+    ( Blueprint (..)
+    , Validator (..)
+    , applyPreviousPolicies
+    , applyRequestParams
+    , extractCompiledCode
+    , loadBlueprint
+    )
+import Singular.Registry.TxBuilder.Internal
+    ( computeScriptHash
+    , scriptHashBytes
+    )
+import Singular.Registry.Types
+    ( OnChainTokenId (..)
+    )
 
-import Conformance.Receipt (
-    Outcome (..),
-    Receipt (..),
-    Verdict (..),
-    writeReceiptFile,
- )
+import Conformance.Receipt
+    ( Outcome (..)
+    , Receipt (..)
+    , Verdict (..)
+    , writeReceiptFile
+    )
 
 -- | Run CS06 against the blueprint at the given path.
 runCS06 :: FilePath -> FilePath -> String -> Bool -> IO ()
@@ -100,7 +100,6 @@ runCS06 blueprintPath receiptsDir base dirty = do
                 , receiptBase = T.pack base
                 , receiptDirty = dirty
                 , receiptPartial = Nothing
-
                 , receiptDerivation = Nothing
                 , receiptSteps = Nothing
                 , receiptNode = T.pack nodeVer
@@ -110,7 +109,11 @@ runCS06 blueprintPath receiptsDir base dirty = do
                 , receiptRejected = Nothing
                 }
     writeReceiptFile receiptsDir receipt
-    emit "row" ("CS06: ACCEPTED params state=0 request=2 staking=0, applied-size=" <> show appliedSize)
+    emit
+        "row"
+        ( "CS06: ACCEPTED params state=0 request=2 staking=0, applied-size="
+            <> show appliedSize
+        )
 
 -- ---------------------------------------------------------
 -- Parameter counts and schemas from the blueprint JSON
@@ -132,7 +135,9 @@ extractParams val =
         pure (Map.fromList pairs)
     parseValidator = AesonTypes.withObject "validator" $ \o -> do
         title <- o AesonTypes..: "title"
-        mParams <- o AesonTypes..:? "parameters" :: AesonTypes.Parser (Maybe [Aeson.Value])
+        mParams <-
+            o AesonTypes..:? "parameters"
+                :: AesonTypes.Parser (Maybe [Aeson.Value])
         case mParams of
             Nothing -> pure (title, Nothing)
             Just ps -> do
@@ -180,28 +185,46 @@ checkCounts params spoil = do
             emit "params-request" (show (length ps) <> " " <> show ps)
             if length ps == 2
                 then do
-                    requireParam ps ("statePolicyId", "#/definitions/cardano~1assets~1PolicyId")
-                    requireParam ps ("cageTokenName", "#/definitions/cardano~1assets~1AssetName")
+                    requireParam
+                        ps
+                        ("statePolicyId", "#/definitions/cardano~1assets~1PolicyId")
+                    requireParam
+                        ps
+                        ("cageTokenName", "#/definitions/cardano~1assets~1AssetName")
                     case ps of
                         [(t1, _), (t2, _)] ->
                             if t1 == "statePolicyId" && t2 == "cageTokenName"
                                 then emit "params-request" "count 2, order and encoding ok"
-                                else failWith ("CS06: request param order is " <> show [t1, t2] <> ", want [statePolicyId,cageTokenName]")
+                                else
+                                    failWith
+                                        ( "CS06: request param order is "
+                                            <> show [t1, t2]
+                                            <> ", want [statePolicyId,cageTokenName]"
+                                        )
                         _ -> failWith "CS06: request params shape unexpected"
-                else failWith ("CS06: request.request has " <> show (length ps) <> " params, want 2")
+                else
+                    failWith
+                        ("CS06: request.request has " <> show (length ps) <> " params, want 2")
     case lookupParams params "staking.staking" of
         Nothing -> failWith "CS06 gap: no staking.staking validator in blueprint"
         Just Nothing -> emit "params-staking" "count 0 (null) ok"
-        Just (Just ps) -> failWith ("CS06: staking.staking has " <> show (length ps) <> " params, want 0 (null)")
-    -- #157 C10: the consumer validator is deleted, so there is no
-    -- parameter declaration of its left to check. A row that kept
-    -- looking for it would report a gap that is the contract.
+        Just (Just ps) ->
+            failWith
+                ( "CS06: staking.staking has "
+                    <> show (length ps)
+                    <> " params, want 0 (null)"
+                )
+
+-- #157 C10: the consumer validator is deleted, so there is no
+-- parameter declaration of its left to check. A row that kept
+-- looking for it would report a gap that is the contract.
 
 requireParam :: [ParamInfo] -> ParamInfo -> IO ()
 requireParam ps want =
     if want `elem` ps
         then emit ("param-" <> T.unpack (fst want)) "encoding ok"
-        else failWith ("CS06: missing param " <> show want <> " in " <> show ps)
+        else
+            failWith ("CS06: missing param " <> show want <> " in " <> show ps)
 
 -- ---------------------------------------------------------
 -- Unapplied layer: Haskell hash equals the blueprint hash
@@ -220,10 +243,18 @@ checkUnapplied bp = do
             Just code -> do
                 let computed = hexBytes (scriptHashBytes (computeScriptHash code))
                     pinned = T.unpack (vHash v)
-                emit "unapplied-state" ("computed 0x" <> take 12 computed <> " pinned 0x" <> take 12 pinned)
+                emit
+                    "unapplied-state"
+                    ("computed 0x" <> take 12 computed <> " pinned 0x" <> take 12 pinned)
                 if computed == pinned
                     then emit "unapplied-state" "match ok"
-                    else failWith ("CS06: state unapplied hash " <> computed <> " /= blueprint " <> pinned)
+                    else
+                        failWith
+                            ( "CS06: state unapplied hash "
+                                <> computed
+                                <> " /= blueprint "
+                                <> pinned
+                            )
     case byTitle "request.request" of
         Nothing -> failWith "CS06 gap: no request.request validator"
         Just v -> case extractCompiledCode "request.request" bp of
@@ -231,10 +262,18 @@ checkUnapplied bp = do
             Just code -> do
                 let computed = hexBytes (scriptHashBytes (computeScriptHash code))
                     pinned = T.unpack (vHash v)
-                emit "unapplied-request" ("computed 0x" <> take 12 computed <> " pinned 0x" <> take 12 pinned)
+                emit
+                    "unapplied-request"
+                    ("computed 0x" <> take 12 computed <> " pinned 0x" <> take 12 pinned)
                 if computed == pinned
                     then emit "unapplied-request" "match ok"
-                    else failWith ("CS06: request unapplied hash " <> computed <> " /= blueprint " <> pinned)
+                    else
+                        failWith
+                            ( "CS06: request unapplied hash "
+                                <> computed
+                                <> " /= blueprint "
+                                <> pinned
+                            )
     case byTitle "staking.staking" of
         Nothing -> emit "unapplied-staking" "absent (ok if blueprint has none)"
         Just v -> case extractCompiledCode "staking.staking" bp of
@@ -244,7 +283,13 @@ checkUnapplied bp = do
                     pinned = T.unpack (vHash v)
                 if computed == pinned
                     then emit "unapplied-staking" "match ok"
-                    else failWith ("CS06: staking unapplied hash " <> computed <> " /= blueprint " <> pinned)
+                    else
+                        failWith
+                            ( "CS06: staking unapplied hash "
+                                <> computed
+                                <> " /= blueprint "
+                                <> pinned
+                            )
 
 -- ---------------------------------------------------------
 -- Applied layer: Haskell derivation discriminates
@@ -266,10 +311,18 @@ checkApplied bp = do
         corruptStateHash = computeScriptHash corruptStateBytes
         unappliedHex = hexBytes (scriptHashBytes unappliedStateHash)
         corruptHex = hexBytes (scriptHashBytes corruptStateHash)
-    emit "applied-state" ("deployed 0x" <> take 12 unappliedHex <> " corrupted-List[] 0x" <> take 12 corruptHex)
+    emit
+        "applied-state"
+        ( "deployed 0x"
+            <> take 12 unappliedHex
+            <> " corrupted-List[] 0x"
+            <> take 12 corruptHex
+        )
     if corruptHex /= unappliedHex
         then emit "applied-state" "extra application changes the hash ok"
-        else failWith "CS06 control failed: List[] application did not change the state hash"
+        else
+            failWith
+                "CS06 control failed: List[] application did not change the state hash"
     -- Request: source order vs swapped order must differ.
     let sampleToken = OnChainTokenId (BuiltinByteString "cs06-token")
         OnChainTokenId (BuiltinByteString tokenBytes) = sampleToken
@@ -278,16 +331,30 @@ checkApplied bp = do
         correctHash = hexBytes (scriptHashBytes (computeScriptHash correct))
         -- Swapped order: feed the token bytes as the policy id and
         -- the policy id as the token name.
-        swapped = applyRequestParams tokenBytes (OnChainTokenId (BuiltinByteString statePid)) requestBytes
+        swapped =
+            applyRequestParams
+                tokenBytes
+                (OnChainTokenId (BuiltinByteString statePid))
+                requestBytes
         swappedHash = hexBytes (scriptHashBytes (computeScriptHash swapped))
         unappliedReqHex = hexBytes (scriptHashBytes (computeScriptHash requestBytes))
-    emit "applied-request" ("unapplied 0x" <> take 12 unappliedReqHex <> " applied 0x" <> take 12 correctHash)
+    emit
+        "applied-request"
+        ( "unapplied 0x"
+            <> take 12 unappliedReqHex
+            <> " applied 0x"
+            <> take 12 correctHash
+        )
     if correctHash /= unappliedReqHex
         then emit "applied-request" "application changes the hash ok"
-        else failWith "CS06 control failed: request application did not change the hash"
+        else
+            failWith
+                "CS06 control failed: request application did not change the hash"
     if swappedHash /= correctHash
         then emit "applied-request" "param order discriminates ok"
-        else failWith "CS06 control failed: swapped request params give the same hash"
+        else
+            failWith
+                "CS06 control failed: swapped request params give the same hash"
     let stakingSize = case extractCompiledCode "staking.staking" bp of
             Nothing -> 0
             Just c -> SBS.length c
@@ -305,7 +372,9 @@ checkApplied bp = do
 
 blueprintId :: Blueprint -> IO String
 blueprintId bp =
-    case (extractCompiledCode "state.state" bp, extractCompiledCode "request.request" bp) of
+    case ( extractCompiledCode "state.state" bp
+         , extractCompiledCode "request.request" bp
+         ) of
         (Just stateBytes, Just requestBytes) -> do
             -- Zero-parameter state (NOTE-060/062): hash directly.
             let stateMarker = hexBytes (scriptHashBytes (computeScriptHash stateBytes))

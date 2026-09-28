@@ -90,13 +90,13 @@ Hermetic run (D-011), from @offchain/@:
 -}
 module Main (main) where
 
-import Control.Exception (
-    ErrorCall (..),
-    SomeException,
-    catch,
-    displayException,
-    throwIO,
- )
+import Control.Exception
+    ( ErrorCall (..)
+    , SomeException
+    , catch
+    , displayException
+    , throwIO
+    )
 import Control.Monad (unless, when)
 import Crypto.Hash (Blake2b_256, Digest, hash)
 import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
@@ -125,33 +125,37 @@ import System.IO (hPutStrLn, stderr)
 import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
-import Cardano.Ledger.Api.Scripts.Data (Data (..), Datum (..), binaryDataToData)
+import Cardano.Ledger.Api.Scripts.Data
+    ( Data (..)
+    , Datum (..)
+    , binaryDataToData
+    )
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
-import Cardano.Ledger.Api.Tx.Body (
-    collateralInputsTxBodyL,
-    inputsTxBodyL,
-    mintTxBodyL,
-    mkBasicTxBody,
-    outputsTxBodyL,
-    referenceInputsTxBodyL,
-    reqSignerHashesTxBodyL,
-    scriptIntegrityHashTxBodyL,
- )
+import Cardano.Ledger.Api.Tx.Body
+    ( collateralInputsTxBodyL
+    , inputsTxBodyL
+    , mintTxBodyL
+    , mkBasicTxBody
+    , outputsTxBodyL
+    , referenceInputsTxBodyL
+    , reqSignerHashesTxBodyL
+    , scriptIntegrityHashTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.In (TxIn (..))
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    addrTxOutL,
-    coinTxOutL,
-    datumTxOutL,
-    getMinCoinTxOut,
-    mkBasicTxOut,
-    valueTxOutL,
- )
-import Cardano.Ledger.Api.Tx.Wits (
-    Redeemers (..),
-    rdmrsTxWitsL,
-    scriptTxWitsL,
- )
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , addrTxOutL
+    , coinTxOutL
+    , datumTxOutL
+    , getMinCoinTxOut
+    , mkBasicTxOut
+    , valueTxOutL
+    )
+import Cardano.Ledger.Api.Tx.Wits
+    ( Redeemers (..)
+    , rdmrsTxWitsL
+    , scriptTxWitsL
+    )
 import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (extractHash, hashScript)
@@ -159,62 +163,65 @@ import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
-import Cardano.Node.Client.E2E.Setup (
-    Ed25519DSIGN,
-    SignKeyDSIGN,
-    addKeyWitness,
- )
+import Cardano.Node.Client.E2E.Setup
+    ( Ed25519DSIGN
+    , SignKeyDSIGN
+    , addKeyWitness
+    )
 import Cardano.Node.Client.Ledger (ConwayTx)
-import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Cardano.Node.Client.Submitter
+    ( SubmitResult (..)
+    , Submitter (..)
+    )
 import Data.Text (Text)
 import Naming.Datum
 import Naming.Wire
 import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Blueprint (
-    applyRequestParams,
-    extractCompiledCode,
-    loadBlueprint,
- )
+import Singular.Registry.Blueprint
+    ( applyRequestParams
+    , extractCompiledCode
+    , loadBlueprint
+    )
 import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
-import Singular.Registry.Ledger (
-    AssetName (..),
-    Coin (..),
-    ConwayEra,
-    PParams,
-    TokenId (..),
- )
-import Singular.Registry.Node (
-    NodeSession (..),
-    awaitTx,
-    funderAddr,
-    funderSignKey,
-    withNode,
- )
+import Singular.Registry.Ledger
+    ( AssetName (..)
+    , Coin (..)
+    , ConwayEra
+    , PParams
+    , TokenId (..)
+    )
+import Singular.Registry.Node
+    ( NodeSession (..)
+    , awaitTx
+    , funderAddr
+    , funderSignKey
+    , withNode
+    )
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.TxBuilder.Internal (
-    addrKeyHashBytes,
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    computeScriptHash,
-    computeScriptIntegrity,
-    emptyRoot,
-    evaluateAndBalance,
-    findStateUtxo,
-    mkCageScript,
-    mkInlineDatum,
-    onChainTokenId,
-    placeholderExUnits,
-    scriptHashBytes,
-    toLedgerData,
-    toPlcData,
-    txInToRef,
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    MintRedeemer (..),
-    OnChainRoot (..),
-    OnChainTxOutRef (..),
- )
+import Singular.Registry.TxBuilder.Internal
+    ( addrKeyHashBytes
+    , cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , computeScriptHash
+    , computeScriptIntegrity
+    , emptyRoot
+    , evaluateAndBalance
+    , findStateUtxo
+    , mkCageScript
+    , mkInlineDatum
+    , onChainTokenId
+    , placeholderExUnits
+    , scriptHashBytes
+    , toLedgerData
+    , toPlcData
+    , txInToRef
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , MintRedeemer (..)
+    , OnChainRoot (..)
+    , OnChainTxOutRef (..)
+    )
 
 -- ---------------------------------------------------------
 -- Entry point
@@ -396,12 +403,12 @@ genesisAddr = funderAddr
 genesisSignKey :: SignKeyDSIGN Ed25519DSIGN
 genesisSignKey = funderSignKey
 
-runLi01 ::
-    Control ->
-    ScriptIdentity ->
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    IO ()
+runLi01
+    :: Control
+    -> ScriptIdentity
+    -> SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> IO ()
 runLi01 control si stateBytes requestBytes = do
     withNode $ \sess -> do
         let prov = nsProvider sess
@@ -592,14 +599,14 @@ UTxO plus the naming checkpoint output carrying the four-field
 datum. Witness shape: seed spend present, everything else the
 row calls absent stays absent.
 -}
-buildLi01Tx ::
-    CageConfig ->
-    PParams ConwayEra ->
-    Cage.Provider IO ->
-    (TxIn, TxOut ConwayEra) ->
-    [(TxIn, TxOut ConwayEra)] ->
-    NamingDatum ->
-    IO ConwayTx
+buildLi01Tx
+    :: CageConfig
+    -> PParams ConwayEra
+    -> Cage.Provider IO
+    -> (TxIn, TxOut ConwayEra)
+    -> [(TxIn, TxOut ConwayEra)]
+    -> NamingDatum
+    -> IO ConwayTx
 buildLi01Tx cfg pp prov seedUtxo funders namingDatum = do
     let scriptAddr = cageAddrFromCfg cfg Testnet
         mintMA =
@@ -627,7 +634,7 @@ buildLi01Tx cfg pp prov seedUtxo funders namingDatum = do
                 & coinTxOutL
                     .~ Coin
                         ( let Coin c = getMinCoinTxOut pp probeOut
-                           in c + 1_000_000
+                          in  c + 1_000_000
                         )
         script = mkCageScript cfg
         scriptHash = hashScript script
@@ -698,8 +705,8 @@ nextControlCommitmentOf addressBytes0 =
             ( "singular/naming/next-control/v1"
                 <> BS.singleton 0x00
                 <> addressBytes0
-            ) ::
-            Digest Blake2b_256
+            )
+            :: Digest Blake2b_256
         )
 
 -- ---------------------------------------------------------
@@ -712,15 +719,15 @@ state policy's mint branch); the mint exactly the one bootstrap
 asset; no representative mint; no application spend; no
 reference inputs; no native scripts; no required signers.
 -}
-stepWitnessShape ::
-    Control ->
-    CageConfig ->
-    String ->
-    ByteString ->
-    ConwayTx ->
-    String ->
-    OnChainTxOutRef ->
-    IO ()
+stepWitnessShape
+    :: Control
+    -> CageConfig
+    -> String
+    -> ByteString
+    -> ConwayTx
+    -> String
+    -> OnChainTxOutRef
+    -> IO ()
 stepWitnessShape control cfg appliedHex seedName signed txid seedRef = do
     -- The mint is exactly the bootstrap asset: one token under the
     -- applied state policy, named by the canonical seed.
@@ -741,7 +748,11 @@ stepWitnessShape control cfg appliedHex seedName signed txid seedRef = do
     -- under any other policy is 0 (C2 raises the expectation to 1,
     -- and this check must then fail naming both quantities).
     let representativeQty =
-            sum (concatMap Map.elems (Map.elems (Map.delete (cagePolicyIdFromCfg cfg) mintMap)))
+            sum
+                ( concatMap
+                    Map.elems
+                    (Map.elems (Map.delete (cagePolicyIdFromCfg cfg) mintMap))
+                )
         expectedRepQty = case control of
             ControlRepresentative -> 1
             _ -> 0
@@ -809,13 +820,13 @@ The application policy is named by derivation from chain-read
 values; the representative policy has no on-chain object at
 initialization and is reported as absent rather than invented.
 -}
-stepBindingFromChain ::
-    CageConfig ->
-    String ->
-    String ->
-    ByteString ->
-    (TxIn, TxOut ConwayEra) ->
-    IO ()
+stepBindingFromChain
+    :: CageConfig
+    -> String
+    -> String
+    -> ByteString
+    -> (TxIn, TxOut ConwayEra)
+    -> IO ()
 stepBindingFromChain cfg appliedHex derivedRequestHex seedName (regIn, regOut) = do
     -- validatorScript: the output's address payment credential.
     chainScriptHex <- case regOut ^. addrTxOutL of
@@ -879,11 +890,11 @@ fixture, and compare the on-chain bytes with the codec's own
 encoding. C1 mutates the expected commitment and must fail
 naming expected vs decoded.
 -}
-stepDatumFromChain ::
-    Control ->
-    NamingDatum ->
-    [(TxIn, TxOut ConwayEra)] ->
-    IO ()
+stepDatumFromChain
+    :: Control
+    -> NamingDatum
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO ()
 stepDatumFromChain control expected scriptUtxos = do
     let withData =
             [ (i, d)
@@ -1024,13 +1035,13 @@ live at the application validator (queried here): consumedSeeds
 is [400]. C3 asserts a state that does not match result.state
 and must fail naming both states.
 -}
-stepStateMatchesRow ::
-    Control ->
-    CageConfig ->
-    OnChainTxOutRef ->
-    ByteString ->
-    [(TxIn, TxOut ConwayEra)] ->
-    IO ()
+stepStateMatchesRow
+    :: Control
+    -> CageConfig
+    -> OnChainTxOutRef
+    -> ByteString
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO ()
 stepStateMatchesRow control cfg seedRef seedName scriptUtxos = do
     let live =
             isJust
@@ -1105,4 +1116,4 @@ outRefSortKey :: TxIn -> (ByteString, Integer)
 outRefSortKey i =
     let r = txInToRef i
         BuiltinByteString b = txOutRefId r
-     in (b, txOutRefIdx r)
+    in  (b, txOutRefIdx r)

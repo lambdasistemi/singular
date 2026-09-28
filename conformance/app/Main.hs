@@ -13,30 +13,37 @@ against a real devnet.
 -}
 module Main (main) where
 
-import Control.Exception (
-    SomeException,
-    displayException,
-    try,
- )
+import Control.Exception
+    ( SomeException
+    , displayException
+    , try
+    )
 import Data.Text qualified as T
 import Data.Text.IO qualified as TIO
 import System.Environment (getArgs, lookupEnv)
 import System.Exit (ExitCode (..), exitFailure, exitWith)
 import System.IO (hPutStrLn, stderr)
 
-import Conformance.Receipt (
-    Receipt (..),
-    Verdict (..),
-    currentBase,
-    loadReceipts,
- )
 import Conformance.Book (renderBook)
-import Conformance.Rows (
-    loadRows,
-    renderInventory,
-    rowId,
- )
-import Conformance.ForkKeys (runCheckForkExclusion, runFindForkKeys, runGrindPresentFork, runShowAllProofs, runShowDProof, runShowNibbles)
+import Conformance.ForkKeys
+    ( runCheckForkExclusion
+    , runFindForkKeys
+    , runGrindPresentFork
+    , runShowAllProofs
+    , runShowDProof
+    , runShowNibbles
+    )
+import Conformance.Receipt
+    ( Receipt (..)
+    , Verdict (..)
+    , currentBase
+    , loadReceipts
+    )
+import Conformance.Rows
+    ( loadRows
+    , renderInventory
+    , rowId
+    )
 import Conformance.Run (runForkProbe, runRows)
 import Paths_conformance (getDataFileName)
 
@@ -67,8 +74,12 @@ usage :: IO ()
 usage = do
     hPutStrLn stderr "usage: conformance -- list [--receipts DIR]"
     hPutStrLn stderr "       conformance -- find-fork-keys"
-    hPutStrLn stderr "       conformance -- book --receipts-dir DIR [--output BOOK.md]"
-    hPutStrLn stderr "       conformance -- example registration|retirement --receipts-dir DIR"
+    hPutStrLn
+        stderr
+        "       conformance -- book --receipts-dir DIR [--output BOOK.md]"
+    hPutStrLn
+        stderr
+        "       conformance -- example registration|retirement --receipts-dir DIR"
     hPutStrLn
         stderr
         "       conformance -- run ROW... [--receipts-dir DIR]"
@@ -80,15 +91,22 @@ usage = do
         "env:   CONFORMANCE_CONTROL=wrong-reason|false-claim (run control)"
     exitFailure
 
--- | Execute every live chapter and the unnamed sequence first. A book cannot be generated from fixtures or
--- an old receipt directory supplied in place of an actual run.
+{- | Execute every live chapter and the unnamed sequence first. A book cannot be generated from fixtures or
+an old receipt directory supplied in place of an actual run.
+-}
 runBook :: FilePath -> Maybe FilePath -> IO ()
 runBook dir output = do
     runGuarded ["CG21", "CG22", "CG23", "CG07", "sequence"] dir
     receipts <- loadReceipts dir >>= either fail pure
-    let chapters = filter (\r -> receiptRow r `elem` ["CG21", "CG22", "CG23", "CG07", "sequence"]) receipts
-    if length chapters /= 5 || any ((/= AgreesWithModel) . receiptVerdict) chapters
-        then fail "the running book requires every live chapter and the unnamed sequence"
+    let chapters =
+            filter
+                (\r -> receiptRow r `elem` ["CG21", "CG22", "CG23", "CG07", "sequence"])
+                receipts
+    if length chapters /= 5
+        || any ((/= AgreesWithModel) . receiptVerdict) chapters
+        then
+            fail
+                "the running book requires every live chapter and the unnamed sequence"
         else do
             path <- getDataFileName "rows.json"
             rows <- loadRows path >>= either fail pure

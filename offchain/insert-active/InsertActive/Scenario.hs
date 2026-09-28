@@ -10,26 +10,30 @@ duplicate refusal, write the observation, and end with the verdict the
 observation already states — exactly one active token at the named
 wallet, or a named failure.
 -}
-module InsertActive.Scenario (
-    insertActive,
-) where
+module InsertActive.Scenario
+    ( insertActive
+    ) where
 
 import Data.ByteString.Short qualified as SBS
 import Data.Text qualified as T
 
 import InsertActive.Controls (duplicateRefusal, freshKeyControl)
 import InsertActive.Narration (die, hex, say)
-import InsertActive.Observation (Observed (..), observation, writeObservation)
+import InsertActive.Observation
+    ( Observed (..)
+    , observation
+    , writeObservation
+    )
 import InsertActive.Options (StoryInputs (..), readStoryInputs)
-import InsertActive.Steps (
-    Story (..),
-    activeHeldAt,
-    book,
-    bootStory,
-    foldOnce,
-    storyKey,
-    txIdOf,
- )
+import InsertActive.Steps
+    ( Story (..)
+    , activeHeldAt
+    , book
+    , bootStory
+    , foldOnce
+    , storyKey
+    , txIdOf
+    )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Node (withNode)
 import Singular.Registry.Types (OnChainTokenState (..))
@@ -67,7 +71,8 @@ insertActive observedPath = do
                     , obsControlTxid = controlTxid
                     }
         if held == 1
-            then say "OK — one active token at the named wallet, duplicate refused"
+            then
+                say "OK — one active token at the named wallet, duplicate refused"
             else
                 die
                     ( "the named wallet holds "

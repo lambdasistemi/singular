@@ -3,16 +3,21 @@ Module      : Conformance.Run.Manifest
 Description : Split out of Conformance.Run (#263); see that module's header
 License     : Apache-2.0
 -}
-module Conformance.Run.Manifest (ValidatorPin (..), ScriptManifest (..), readScriptManifest, manifestPath, pinsUnder) where
+module Conformance.Run.Manifest
+    ( ValidatorPin (..)
+    , ScriptManifest (..)
+    , readScriptManifest
+    , manifestPath
+    , pinsUnder
+    ) where
 
-
-import Data.Aeson (
-    FromJSON (..),
-    eitherDecode,
-    withObject,
-    (.:),
-    (.:?),
- )
+import Data.Aeson
+    ( FromJSON (..)
+    , eitherDecode
+    , withObject
+    , (.:)
+    , (.:?)
+    )
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as BSL
 import Data.Text qualified as T
@@ -39,13 +44,11 @@ instance FromJSON ValidatorPin where
             <*> o .: "hash"
             <*> o .:? "parameters"
 
-
 newtype ScriptManifest = ScriptManifest {smValidators :: [ValidatorPin]}
 
 instance FromJSON ScriptManifest where
     parseJSON = withObject "ScriptManifest" $ \o ->
         ScriptManifest <$> o .: "validators"
-
 
 {- | The manifest is a tracked file of the pinned onchain tree; the
 run reads it, never edits it. @REGISTRY_SCRIPT_IDENTITY@ overrides the
@@ -62,7 +65,6 @@ readScriptManifest = do
             failWith
                 ("the script manifest at " <> path <> " does not parse: " <> err)
 
-
 manifestPath :: IO FilePath
 manifestPath = do
     override <- lookupEnv "REGISTRY_SCRIPT_IDENTITY"
@@ -71,7 +73,6 @@ manifestPath = do
         Nothing -> do
             root <- readProcess "git" ["rev-parse", "--show-toplevel"] ""
             pure (filter (/= '\n') root </> "onchain" </> "script-identity.json")
-
 
 pinsUnder :: T.Text -> ScriptManifest -> [(T.Text, Maybe Int)]
 pinsUnder prefix m =

@@ -19,11 +19,11 @@ import Data.ByteString qualified as BS
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 import Naming.Register (representativeName)
-import Naming.Verify (
-    RetireEvidence (..),
-    positiveMintPolicy,
-    verifyRetireEvidence,
- )
+import Naming.Verify
+    ( RetireEvidence (..)
+    , positiveMintPolicy
+    , verifyRetireEvidence
+    )
 
 keyA, keyB, policyS, policyR, policyX, tokenT :: ByteString
 keyA = BS.replicate 28 0xaa
@@ -111,7 +111,8 @@ spec = describe "retirement binding predicates" $ do
         verifyRetireEvidence validRR{reSigners = [q1m, keyA]}
             `shouldSatisfy` isLeft
     it "refuses a creation mint missing the rep" $
-        verifyRetireEvidence validLT{reCreationMint = [("app-policy", "approval", -1)]}
+        verifyRetireEvidence
+            validLT{reCreationMint = [("app-policy", "approval", -1)]}
             `shouldSatisfy` isLeft
     it "derives the single positive mint policy" $
         positiveMintPolicy [("app", "a", -1), (policyR, repA, 1)]

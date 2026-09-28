@@ -12,22 +12,22 @@ This is the loading-and-code-selection owner extracted from
 @Singular.Registry.Blueprint@; the public module re-exports it and is
 its only intended consumer surface.
 -}
-module Singular.Registry.Blueprint.Load (
-    -- * Loading
-    loadBlueprint,
+module Singular.Registry.Blueprint.Load
+    ( -- * Loading
+      loadBlueprint
 
-    -- * The compiled codes the four registry pins derive from
-    NamingCodes (..),
+      -- * The compiled codes the four registry pins derive from
+    , NamingCodes (..)
 
-    -- * The registry partition's own compiled code (#173 A173-BOOT)
-    loadRegistryCodesFromEnv,
+      -- * The registry partition's own compiled code (#173 A173-BOOT)
+    , loadRegistryCodesFromEnv
 
-    -- * Script hash extraction
-    extractScriptHash,
+      -- * Script hash extraction
+    , extractScriptHash
 
-    -- * Compiled code extraction
-    extractCompiledCode,
-) where
+      -- * Compiled code extraction
+    , extractCompiledCode
+    ) where
 
 import Control.Exception (ErrorCall (..), throwIO)
 import Data.Aeson qualified as Aeson
@@ -37,7 +37,10 @@ import Data.Char (isDigit)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Word (Word8)
-import Singular.Registry.Blueprint.Schema (Blueprint (..), Validator (..))
+import Singular.Registry.Blueprint.Schema
+    ( Blueprint (..)
+    , Validator (..)
+    )
 import System.Environment (lookupEnv)
 
 -- ---------------------------------------------------------
@@ -47,10 +50,10 @@ import System.Environment (lookupEnv)
 {- | Load and parse a CIP-57 blueprint from a file
 path.
 -}
-loadBlueprint ::
-    -- | Path to the @plutus.json@ file
-    FilePath ->
-    IO (Either String Blueprint)
+loadBlueprint
+    :: FilePath
+    -- ^ Path to the @plutus.json@ file
+    -> IO (Either String Blueprint)
 loadBlueprint path = do
     bs <- BS.readFile path
     pure $ Aeson.eitherDecodeStrict' bs
@@ -62,12 +65,12 @@ loadBlueprint path = do
 {- | Find the first validator whose title starts with
 the given prefix and return its hash.
 -}
-extractScriptHash ::
-    -- | Title prefix to match
-    Text ->
-    -- | Blueprint to search
-    Blueprint ->
-    Maybe Text
+extractScriptHash
+    :: Text
+    -- ^ Title prefix to match
+    -> Blueprint
+    -- ^ Blueprint to search
+    -> Maybe Text
 extractScriptHash prefix bp =
     case filter
         (T.isPrefixOf prefix . vTitle)
@@ -85,12 +88,12 @@ bytes as a 'ShortByteString'. The hex-encoded
 @compiledCode@ is decoded to raw bytes suitable
 for 'PlutusBinary'.
 -}
-extractCompiledCode ::
-    -- | Title prefix to match
-    Text ->
-    -- | Blueprint to search
-    Blueprint ->
-    Maybe SBS.ShortByteString
+extractCompiledCode
+    :: Text
+    -- ^ Title prefix to match
+    -> Blueprint
+    -- ^ Blueprint to search
+    -> Maybe SBS.ShortByteString
 extractCompiledCode prefix bp = do
     v <-
         case filter

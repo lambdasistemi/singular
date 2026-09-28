@@ -10,11 +10,11 @@ it; nothing is a literal written here to make an assertion pass. The
 requested address and the wallet address are the same destination the
 booking named, read from 'walletDestination'.
 -}
-module InsertActive.Observation (
-    Observed (..),
-    observation,
-    writeObservation,
-) where
+module InsertActive.Observation
+    ( Observed (..)
+    , observation
+    , writeObservation
+    ) where
 
 import Data.Aeson (Value, object, (.=))
 import Data.Aeson.Encode.Pretty (encodePretty)

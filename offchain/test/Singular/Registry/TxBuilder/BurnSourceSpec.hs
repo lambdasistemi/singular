@@ -45,25 +45,25 @@ import Cardano.Ledger.Address (Addr, serialiseAddr)
 import Cardano.Ledger.Alonzo.TxBody (reqSignerHashesTxBodyL)
 import Cardano.Ledger.Api.PParams (emptyPParams)
 import Cardano.Ledger.Api.Tx (bodyTxL)
-import Cardano.Ledger.Api.Tx.Body (
-    inputsTxBodyL,
-    mintTxBodyL,
- )
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    coinTxOutL,
-    datumTxOutL,
-    mkBasicTxOut,
-    valueTxOutL,
- )
+import Cardano.Ledger.Api.Tx.Body
+    ( inputsTxBodyL
+    , mintTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , coinTxOutL
+    , datumTxOutL
+    , mkBasicTxOut
+    , valueTxOutL
+    )
 import Cardano.Ledger.BaseTypes (Network (Testnet), SlotNo (..))
 import Cardano.Ledger.Core (Script, hashScript)
-import Cardano.Ledger.Mary.Value (
-    AssetName (..),
-    MaryValue (..),
-    MultiAsset (..),
-    PolicyID (..),
- )
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID (..)
+    )
 import Cardano.Ledger.TxIn (TxIn)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
@@ -79,47 +79,47 @@ import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId (..))
 import Singular.Registry.Provider (Provider (..))
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
-import Singular.Registry.TxBuilder.ConnectedFold (
-    ConnectedMint (..),
-    ConnectedSpend (..),
- )
-import Singular.Registry.TxBuilder.Internal (
-    addrFromKeyHashBytes,
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    computeScriptHash,
-    extractCageDatum,
-    mkInlineDatum,
-    policyIdFromPin,
-    requestAddrFromCfg,
-    scriptFromBytes,
-    scriptHashBytes,
-    toPlcData,
-    txInToRef,
- )
-import Singular.Registry.TxBuilder.Update (
-    RegistryContext (..),
-    RegistryDuties (..),
-    emptyRegistryContext,
-    registryDuties,
-    updateTokenWithDuties,
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    Edge,
-    OnChainRequest (..),
-    OnChainRoot (..),
-    OnChainTokenId (..),
-    OnChainTokenState (..),
-    OnChainTxOutRef,
-    edgeDeleteAbsent,
-    edgeDeleteActive,
-    edgeInsertAbsent,
-    edgeInsertActive,
-    edgeUpdateActive,
-    edgeUpdateTerminal,
-    edgeWitnessTerminal,
- )
+import Singular.Registry.TxBuilder.ConnectedFold
+    ( ConnectedMint (..)
+    , ConnectedSpend (..)
+    )
+import Singular.Registry.TxBuilder.Internal
+    ( addrFromKeyHashBytes
+    , cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , computeScriptHash
+    , extractCageDatum
+    , mkInlineDatum
+    , policyIdFromPin
+    , requestAddrFromCfg
+    , scriptFromBytes
+    , scriptHashBytes
+    , toPlcData
+    , txInToRef
+    )
+import Singular.Registry.TxBuilder.Update
+    ( RegistryContext (..)
+    , RegistryDuties (..)
+    , emptyRegistryContext
+    , registryDuties
+    , updateTokenWithDuties
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , Edge
+    , OnChainRequest (..)
+    , OnChainRoot (..)
+    , OnChainTokenId (..)
+    , OnChainTokenState (..)
+    , OnChainTxOutRef
+    , edgeDeleteAbsent
+    , edgeDeleteActive
+    , edgeInsertAbsent
+    , edgeInsertActive
+    , edgeUpdateActive
+    , edgeUpdateTerminal
+    , edgeWitnessTerminal
+    )
 
 import Control.Monad (void)
 import Data.Map.Strict qualified as Map
@@ -177,7 +177,8 @@ tokenState =
         , stateAppPolicy = toBuiltin (SBS.fromShort (cfgApplicationPolicy cfg))
         , stateActivePolicy = toBuiltin (SBS.fromShort (cfgActivePolicy cfg))
         , stateAbsentPolicy = toBuiltin (SBS.fromShort (cfgAbsentPolicy cfg))
-        , stateTerminalPolicy = toBuiltin (SBS.fromShort (cfgTerminalPolicy cfg))
+        , stateTerminalPolicy =
+            toBuiltin (SBS.fromShort (cfgTerminalPolicy cfg))
         }
 
 requestIn :: TxIn
@@ -192,13 +193,16 @@ carrying none leaves it untouched.
 requestFor :: Edge -> (TxIn, TxOut ConwayEra)
 requestFor edge =
     ( requestIn
-    , mkBasicTxOut (cageAddrFromCfg cfg Testnet) (MaryValue (Coin 3000000) mempty)
+    , mkBasicTxOut
+        (cageAddrFromCfg cfg Testnet)
+        (MaryValue (Coin 3000000) mempty)
         & datumTxOutL .~ mkInlineDatum (toPlcData (RequestDatum req))
     )
   where
     req =
         OnChainRequest
-            { requestToken = OnChainTokenId (toBuiltin ("t177-registry" :: ByteString))
+            { requestToken =
+                OnChainTokenId (toBuiltin ("t177-registry" :: ByteString))
             , requestOwner = toBuiltin (BS.replicate 28 0x5a)
             , requestKey = keyA
             , requestEdge = edge
@@ -216,7 +220,11 @@ witnessScripts =
     emptyRegistryContext
         { rcWitnessScripts =
             Map.fromList
-                [ (k, scriptFromBytes "t177 witness" (SBS.toShort (BS.pack [0x59, fromIntegral k])))
+                [ ( k
+                  , scriptFromBytes
+                        "t177 witness"
+                        (SBS.toShort (BS.pack [0x59, fromIntegral k]))
+                  )
                 | k <- [0, 1, 2]
                 ]
         }
@@ -263,7 +271,8 @@ refundOnly, retiredTwoField :: PLC.Data
 refundOnly = PLC.Constr 2 [PLC.B refund]
 retiredTwoField = PLC.Constr 2 [PLC.B keyA, PLC.B refund]
 
-custodyValue :: SBS.ShortByteString -> ByteString -> Integer -> MaryValue
+custodyValue
+    :: SBS.ShortByteString -> ByteString -> Integer -> MaryValue
 custodyValue policy key quantity =
     MaryValue
         (Coin 10000000)
@@ -299,7 +308,8 @@ custodyWith datum value =
         & datumTxOutL .~ mkInlineDatum datum
     )
 
-decideCustody :: (TxIn, TxOut ConwayEra) -> Either String RegistryDuties
+decideCustody
+    :: (TxIn, TxOut ConwayEra) -> Either String RegistryDuties
 decideCustody held =
     registryDuties
         cfg
@@ -333,12 +343,16 @@ custodyIdentity = describe "#178: absent custody derives identity from its sole 
     it "does not use the retired datum key as an identity fallback" $
         void
             ( decideCustody
-                (custodyWith retiredTwoField (custodyValue (cfgAbsentPolicy cfg) keyA 1))
+                ( custodyWith
+                    retiredTwoField
+                    (custodyValue (cfgAbsentPolicy cfg) keyA 1)
+                )
             )
             `shouldSatisfy` isLeft
 
     it "refuses refund-only custody with no non-ADA asset" $
-        expectAssetRefusal (custodyWith refundOnly (MaryValue (Coin 10000000) mempty))
+        expectAssetRefusal
+            (custodyWith refundOnly (MaryValue (Coin 10000000) mempty))
 
     it "refuses refund-only custody with two non-ADA assets" $
         expectAssetRefusal (custodyWith refundOnly twoAssetCustodyValue)
@@ -352,28 +366,32 @@ custodyIdentity = describe "#178: absent custody derives identity from its sole 
             (custodyWith refundOnly (custodyValue (cfgAbsentPolicy cfg) keyA 2))
 
 burnSourceRequired :: Spec
-burnSourceRequired = describe "#177 I177-BUILDER: updateTerminal sources its burn from a holder" $ do
-    -- The row under test. With nothing in hand that carries the key's
-    -- active witness, the only transaction this edge could produce mints
-    -- `-1` against no input — the shape the cage refuses `token-missing`.
-    -- The builder must say so instead of handing back a fold.
-    it "refuses to build the retirement when nothing holds the key's active witness" $
-        decide retirement `shouldSatisfy` isLeft
+burnSourceRequired = describe
+    "#177 I177-BUILDER: updateTerminal sources its burn from a holder"
+    $ do
+        -- The row under test. With nothing in hand that carries the key's
+        -- active witness, the only transaction this edge could produce mints
+        -- `-1` against no input — the shape the cage refuses `token-missing`.
+        -- The builder must say so instead of handing back a fold.
+        it
+            "refuses to build the retirement when nothing holds the key's active witness"
+            $ decide retirement `shouldSatisfy` isLeft
 
-    -- The control for the row above, and the reason it is not vacuous:
-    -- `updateActive` at the same key, through the same call, with the
-    -- same empty context, ALREADY fails — for its own missing custody.
-    -- So `registryDuties` is demonstrably able to return `Left` here,
-    -- and a green row above is about the retirement, not about the
-    -- harness.
-    it "already refuses updateActive with no custody in hand (the harness can fail)" $
-        decide edgeUpdateActive `shouldSatisfy` isLeft
+        -- The control for the row above, and the reason it is not vacuous:
+        -- `updateActive` at the same key, through the same call, with the
+        -- same empty context, ALREADY fails — for its own missing custody.
+        -- So `registryDuties` is demonstrably able to return `Left` here,
+        -- and a green row above is about the retirement, not about the
+        -- harness.
+        it
+            "already refuses updateActive with no custody in hand (the harness can fail)"
+            $ decide edgeUpdateActive `shouldSatisfy` isLeft
 
-    -- The other direction: an edge that owes nothing beyond its mint
-    -- must still build from the same empty context, so `Left` above is
-    -- attributable to the missing witness rather than to the fixture.
-    it "still builds an edge that owes no external input (insertAbsent)" $
-        decide edgeInsertAbsent `shouldSatisfy` isRight
+        -- The other direction: an edge that owes nothing beyond its mint
+        -- must still build from the same empty context, so `Left` above is
+        -- attributable to the missing witness rather than to the fixture.
+        it "still builds an edge that owes no external input (insertAbsent)" $
+            decide edgeInsertAbsent `shouldSatisfy` isRight
 
 {- | The candidate burn-source inventory the builder selects from: wallet
 outputs that actually hold registry witnesses.
@@ -406,7 +424,13 @@ holderIn i = case parseOutRef (T.pack (replicate 63 '3' <> show i <> "#0")) of
 -- | What the builder decides, with a candidate inventory in hand.
 decideWith :: RegistryContext -> Edge -> Either String RegistryDuties
 decideWith ctx edge =
-    registryDuties cfg emptyPParams tokenState ctx [requestFor edge] [True]
+    registryDuties
+        cfg
+        emptyPParams
+        tokenState
+        ctx
+        [requestFor edge]
+        [True]
 
 {- | The same decision with the duties discarded. `RegistryDuties` holds
 ledger values that have no `Show`, and a row that only asks WHETHER the
@@ -430,7 +454,8 @@ holderSelection = describe "#177 I177-BUILDER: the burn source is selected exact
     -- too, so the wrong key is offered ALONE. Nothing else in the
     -- inventory can rescue it.
     it "does not sweep another key's holder" $
-        refusedWith (holding [holderOf 1 keyB 1]) retirement `shouldSatisfy` isLeft
+        refusedWith (holding [holderOf 1 keyB 1]) retirement
+            `shouldSatisfy` isLeft
 
     -- And with both in hand it must still take exactly the right one,
     -- which an inventory-order accident would not survive.
@@ -440,11 +465,14 @@ holderSelection = describe "#177 I177-BUILDER: the burn source is selected exact
             Right d -> map fst (rdInputs d) `shouldBe` [holderIn 2]
 
     it "refuses an inventory carrying the witness twice over" $
-        refusedWith (holding [holderOf 1 keyA 1, holderOf 2 keyA 1]) retirement
+        refusedWith
+            (holding [holderOf 1 keyA 1, holderOf 2 keyA 1])
+            retirement
             `shouldSatisfy` isLeft
 
     it "refuses a holder carrying more than one of the witness" $
-        refusedWith (holding [holderOf 1 keyA 2]) retirement `shouldSatisfy` isLeft
+        refusedWith (holding [holderOf 1 keyA 2]) retirement
+            `shouldSatisfy` isLeft
 
     -- The retirement creates no carrier: the Lean row has the active
     -- asset on an input and on no output at all. Its one output is the
@@ -505,8 +533,8 @@ boundHolder i key quantity =
         )
     )
 
-decideDeletion ::
-    [(TxIn, TxOut ConwayEra)] -> Either String RegistryDuties
+decideDeletion
+    :: [(TxIn, TxOut ConwayEra)] -> Either String RegistryDuties
 decideDeletion utxos =
     registryDuties
         boundCfg
@@ -558,8 +586,9 @@ deletionBurnSource =
 
         -- Two keys held, so a builder that swept the inventory, or took
         -- its head, cannot pass.
-        it "burns -1 from the one input holding the key's witness, outputs none" $
-            case decideDeletion [boundHolder 1 keyB 1, boundHolder 2 keyA 1] of
+        it
+            "burns -1 from the one input holding the key's witness, outputs none"
+            $ case decideDeletion [boundHolder 1 keyB 1, boundHolder 2 keyA 1] of
                 Left err -> expectationFailure err
                 Right d -> do
                     witnessShape keyA d
@@ -583,7 +612,9 @@ ownerKey = BS.replicate 28 0x5a
 -- | A plain payment of `lovelace` to `owner`'s key: what the cage counts.
 ownerPaid :: ByteString -> Integer -> TxOut ConwayEra
 ownerPaid owner lovelace =
-    mkBasicTxOut (addrFromKeyHashBytes Testnet owner) (MaryValue (Coin lovelace) mempty)
+    mkBasicTxOut
+        (addrFromKeyHashBytes Testnet owner)
+        (MaryValue (Coin lovelace) mempty)
 
 {- | A request of `owner` at `keyA` on `edge`, holding tip plus a deposit
 of 2 ada, at its own input `i`.
@@ -594,7 +625,7 @@ ownedRequest i owner edge =
         req = case extractCageDatum out of
             Just (RequestDatum r) -> r{requestOwner = toBuiltin owner}
             _ -> error "BurnSourceSpec fixture: requestFor carries no request"
-     in ( case parseOutRef (T.pack (replicate 64 '4' <> "#" <> show i)) of
+    in  ( case parseOutRef (T.pack (replicate 64 '4' <> "#" <> show i)) of
             Right r -> r
             Left e -> error ("BurnSourceSpec fixture: " <> e)
         , out & datumTxOutL .~ mkInlineDatum (toPlcData (RequestDatum req))
@@ -604,7 +635,8 @@ ownedRequest i owner edge =
 `rcAllowInadmissible` the builder emits the burn without a source, so the
 deposit leg is the only output an edge 3 or 5 request creates here.
 -}
-depositsOf :: [(TxIn, TxOut ConwayEra)] -> Either String RegistryDuties
+depositsOf
+    :: [(TxIn, TxOut ConwayEra)] -> Either String RegistryDuties
 depositsOf reqs =
     registryDuties
         cfg
@@ -616,49 +648,51 @@ depositsOf reqs =
 
 depositReturn :: Spec
 depositReturn =
-    describe "#253: the deposit of a fold that delivers nothing goes to its owner" $ do
-        it "pays a deletion's deposit to its owner's key" $
-            case depositsOf [ownedRequest 1 ownerKey edgeDeleteActive] of
-                Left err -> expectationFailure err
-                Right d -> rdOutputs d `shouldBe` [ownerPaid ownerKey 2000000]
+    describe
+        "#253: the deposit of a fold that delivers nothing goes to its owner"
+        $ do
+            it "pays a deletion's deposit to its owner's key" $
+                case depositsOf [ownedRequest 1 ownerKey edgeDeleteActive] of
+                    Left err -> expectationFailure err
+                    Right d -> rdOutputs d `shouldBe` [ownerPaid ownerKey 2000000]
 
-        -- Summed per owner: two deposits of one owner are one output, and
-        -- another owner's deposit is an output of its own.
-        it "pays one output per owner, summing that owner's deposits" $
-            case depositsOf
-                [ ownedRequest 1 ownerKey edgeUpdateTerminal
-                , ownedRequest 2 otherKey edgeDeleteActive
-                , ownedRequest 3 ownerKey edgeDeleteActive
-                ] of
-                Left err -> expectationFailure err
-                Right d ->
-                    rdOutputs d
-                        `shouldMatchList` [ownerPaid ownerKey 4000000, ownerPaid otherKey 2000000]
+            -- Summed per owner: two deposits of one owner are one output, and
+            -- another owner's deposit is an output of its own.
+            it "pays one output per owner, summing that owner's deposits" $
+                case depositsOf
+                    [ ownedRequest 1 ownerKey edgeUpdateTerminal
+                    , ownedRequest 2 otherKey edgeDeleteActive
+                    , ownedRequest 3 ownerKey edgeDeleteActive
+                    ] of
+                    Left err -> expectationFailure err
+                    Right d ->
+                        rdOutputs d
+                            `shouldMatchList` [ownerPaid ownerKey 4000000, ownerPaid otherKey 2000000]
 
-        -- The approval a deletion carried is not burned: it goes back to
-        -- the owner in the deposit's own output, never beside it.
-        it "returns a deletion's approval inside its deposit output" $
-            case depositsOf [approved (ownedRequest 1 ownerKey edgeDeleteActive)] of
-                Left err -> expectationFailure err
-                Right d ->
-                    rdOutputs d
-                        `shouldBe` [ mkBasicTxOut
-                                        (addrFromKeyHashBytes Testnet ownerKey)
-                                        (MaryValue (Coin 2000000) approvalAsset)
-                                   ]
+            -- The approval a deletion carried is not burned: it goes back to
+            -- the owner in the deposit's own output, never beside it.
+            it "returns a deletion's approval inside its deposit output" $
+                case depositsOf [approved (ownedRequest 1 ownerKey edgeDeleteActive)] of
+                    Left err -> expectationFailure err
+                    Right d ->
+                        rdOutputs d
+                            `shouldBe` [ mkBasicTxOut
+                                            (addrFromKeyHashBytes Testnet ownerKey)
+                                            (MaryValue (Coin 2000000) approvalAsset)
+                                       ]
 
-        -- A request the fold does not process (a rejected row) owes no
-        -- deposit output here; its refund is the reject builder's.
-        it "owes nothing for a request the fold does not process" $
-            case registryDuties
-                cfg
-                emptyPParams
-                tokenState
-                witnessScripts{rcAllowInadmissible = True}
-                [ownedRequest 1 ownerKey edgeDeleteActive]
-                [False] of
-                Left err -> expectationFailure err
-                Right d -> rdOutputs d `shouldBe` []
+            -- A request the fold does not process (a rejected row) owes no
+            -- deposit output here; its refund is the reject builder's.
+            it "owes nothing for a request the fold does not process" $
+                case registryDuties
+                    cfg
+                    emptyPParams
+                    tokenState
+                    witnessScripts{rcAllowInadmissible = True}
+                    [ownedRequest 1 ownerKey edgeDeleteActive]
+                    [False] of
+                    Left err -> expectationFailure err
+                    Right d -> rdOutputs d `shouldBe` []
   where
     otherKey = BS.replicate 28 0x6b
 
@@ -695,7 +729,7 @@ keyedRequest i key edge =
         req = case extractCageDatum out of
             Just (RequestDatum r) -> r{requestKey = key}
             _ -> error "BurnSourceSpec fixture: requestFor carries no request"
-     in ( case parseOutRef (T.pack (replicate 64 '5' <> "#" <> show i)) of
+    in  ( case parseOutRef (T.pack (replicate 64 '5' <> "#" <> show i)) of
             Right r -> r
             Left e -> error ("BurnSourceSpec fixture: " <> e)
         , out & datumTxOutL .~ mkInlineDatum (toPlcData (RequestDatum req))
@@ -728,12 +762,18 @@ requestOrder :: Spec
 requestOrder =
     describe "#267: accumulated duties preserve request order" $ do
         it "locks custody in request order" $
-            case orderOf [keyedRequest 1 keyB edgeInsertAbsent, keyedRequest 2 keyA edgeInsertAbsent] of
+            case orderOf
+                [ keyedRequest 1 keyB edgeInsertAbsent
+                , keyedRequest 2 keyA edgeInsertAbsent
+                ] of
                 Left err -> expectationFailure err
                 Right d -> map soleAssetKey (rdOutputs d) `shouldBe` [keyB, keyA]
 
         it "mints in request order" $
-            case orderOf [keyedRequest 1 keyB edgeInsertAbsent, keyedRequest 2 keyA edgeInsertAbsent] of
+            case orderOf
+                [ keyedRequest 1 keyB edgeInsertAbsent
+                , keyedRequest 2 keyA edgeInsertAbsent
+                ] of
                 Left err -> expectationFailure err
                 Right d -> map mintAssetKey (rdMints d) `shouldBe` [keyB, keyA]
 
@@ -755,7 +795,13 @@ requestOrder =
                 Right d -> map fst (rdInputs d) `shouldBe` [holderIn 2, holderIn 1]
   where
     orderOf reqs =
-        registryDuties cfg emptyPParams tokenState witnessScripts reqs (map (const True) reqs)
+        registryDuties
+            cfg
+            emptyPParams
+            tokenState
+            witnessScripts
+            reqs
+            (map (const True) reqs)
 
 -- ---------------------------------------------------------
 -- #267: no edge of a fold requires a signature
@@ -819,7 +865,7 @@ destinedRequest i edge =
             Just (RequestDatum r) ->
                 r{requestKey = edgeKey edge, requestDestination = (refund, "")}
             _ -> error "BurnSourceSpec fixture: requestFor carries no request"
-     in ( case parseOutRef (T.pack (replicate 64 '5' <> "#" <> show i)) of
+    in  ( case parseOutRef (T.pack (replicate 64 '5' <> "#" <> show i)) of
             Right r -> r
             Left e -> error ("BurnSourceSpec fixture: " <> e)
         , out & datumTxOutL .~ mkInlineDatum (toPlcData (RequestDatum req))
@@ -852,7 +898,8 @@ fullFoldContext =
         , boundHolder 12 (edgeKey edgeDeleteActive) 1
         ]
     )
-        { rcCageScript = Just (scriptFromBytes "t267 cage" (SBS.toShort (BS.pack [0x57])))
+        { rcCageScript =
+            Just (scriptFromBytes "t267 cage" (SBS.toShort (BS.pack [0x57])))
         , rcCageUtxos =
             [ keyedCustody 13 (edgeKey edgeUpdateActive)
             , keyedCustody 14 (edgeKey edgeDeleteAbsent)
@@ -959,8 +1006,10 @@ foldProvider =
 utxosAt :: Addr -> [(TxIn, TxOut ConwayEra)]
 utxosAt a
     | a == cageAddrFromCfg builtCfg Testnet = [stateUtxoFor]
-    | a == requestAddrFromCfg builtCfg foldTokenId Testnet = [requestFor edgeInsertAbsent]
-    | otherwise = [(feeIn, mkBasicTxOut a (MaryValue (Coin 100000000) mempty))]
+    | a == requestAddrFromCfg builtCfg foldTokenId Testnet =
+        [requestFor edgeInsertAbsent]
+    | otherwise =
+        [(feeIn, mkBasicTxOut a (MaryValue (Coin 100000000) mempty))]
 
 {- | The fold's promise that no signer is required is a promise about
 the transaction a caller SUBMITS, so the row drives the public

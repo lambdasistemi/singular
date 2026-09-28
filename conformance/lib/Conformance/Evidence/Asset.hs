@@ -9,18 +9,18 @@ which key a token belongs to. This module is the single owner of that
 shape and its JSON encoding; @Conformance.Receipt@ re-exports it, so the
 public import path a caller already uses is unchanged.
 -}
-module Conformance.Evidence.Asset (
-    AssetEntry (..),
-) where
+module Conformance.Evidence.Asset
+    ( AssetEntry (..)
+    ) where
 
-import Data.Aeson (
-    FromJSON (..),
-    ToJSON (..),
-    object,
-    withObject,
-    (.:),
-    (.=),
- )
+import Data.Aeson
+    ( FromJSON (..)
+    , ToJSON (..)
+    , object
+    , withObject
+    , (.:)
+    , (.=)
+    )
 import Data.Text (Text)
 
 {- | One asset movement, named by its policy and asset name.
@@ -43,4 +43,7 @@ instance FromJSON AssetEntry where
 instance ToJSON AssetEntry where
     toJSON a =
         object
-            ["policy" .= aePolicy a, "name" .= aeName a, "quantity" .= aeQuantity a]
+            [ "policy" .= aePolicy a
+            , "name" .= aeName a
+            , "quantity" .= aeQuantity a
+            ]

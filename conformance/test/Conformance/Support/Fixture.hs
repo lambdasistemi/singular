@@ -6,16 +6,16 @@ is an example whose result was decided by something other than the registry.
 -}
 module Conformance.Support.Fixture (spec) where
 
-import Conformance.Fixture.Receipt (
-    loadOne,
-    withScopedReceiptDir,
- )
-import Conformance.Support.FixtureChild (
-    childModeVariable,
-    claimedFile,
-    releaseFile,
-    waitForFile,
- )
+import Conformance.Fixture.Receipt
+    ( loadOne
+    , withScopedReceiptDir
+    )
+import Conformance.Support.FixtureChild
+    ( childModeVariable
+    , claimedFile
+    , releaseFile
+    , waitForFile
+    )
 import Control.Exception (ErrorCall (..), throwIO, try)
 import Data.IORef (newIORef, readIORef, writeIORef)
 import System.Directory (doesDirectoryExist, doesFileExist)
@@ -23,13 +23,13 @@ import System.Environment (getEnvironment, getExecutablePath)
 import System.Exit (ExitCode (..))
 import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
-import System.Process (
-    CreateProcess (..),
-    StdStream (..),
-    createProcess,
-    proc,
-    waitForProcess,
- )
+import System.Process
+    ( CreateProcess (..)
+    , StdStream (..)
+    , createProcess
+    , proc
+    , waitForProcess
+    )
 import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn)
 
 {- | How many directories the second process holds.
@@ -42,8 +42,10 @@ heldByTheOtherProcess = 256
 
 spec :: Spec
 spec = describe "How an example owns its temporary files" $ do
-    it "does not share its directory with a second process running the same example" $
-        withSystemTempDirectory "conformance-fixture-rendezvous" $ \rendezvous -> do
+    it
+        "does not share its directory with a second process running the same example"
+        $ withSystemTempDirectory "conformance-fixture-rendezvous"
+        $ \rendezvous -> do
             self <- getExecutablePath
             environment <- getEnvironment
             (_, _, _, child) <-
@@ -59,7 +61,8 @@ spec = describe "How an example owns its temporary files" $ do
             held <- lines <$> readFile (claimedFile rendezvous)
 
             result <- loadOne
-            survived <- mapM (\dir -> doesFileExist (dir </> "receipt-CG02.json")) held
+            survived <-
+                mapM (\dir -> doesFileExist (dir </> "receipt-CG02.json")) held
 
             writeFile (releaseFile rendezvous) ""
             exit <- waitForProcess child

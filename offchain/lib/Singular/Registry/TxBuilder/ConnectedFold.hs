@@ -21,15 +21,15 @@ proof computation, upper-slot rule and refund rule are transcribed from
 there, extended with the attached naming actions. The repair runner
 keeps its own copy; nothing here changes it.
 -}
-module Singular.Registry.TxBuilder.ConnectedFold (
-    RawRedeemer (..),
-    ConnectedSpend (..),
-    ConnectedMint (..),
-    ConnectedFoldArgs (..),
-    connectedFoldTx,
-    syncFoldedRequests,
-    generousUnits,
-) where
+module Singular.Registry.TxBuilder.ConnectedFold
+    ( RawRedeemer (..)
+    , ConnectedSpend (..)
+    , ConnectedMint (..)
+    , ConnectedFoldArgs (..)
+    , connectedFoldTx
+    , syncFoldedRequests
+    , generousUnits
+    ) where
 
 import Control.Exception (SomeException, try)
 import Data.Map.Strict qualified as Map
@@ -42,12 +42,12 @@ import PlutusCore.Data qualified as PLC
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body (feeTxBodyL)
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    datumTxOutL,
-    mkBasicTxOut,
-    valueTxOutL,
- )
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , datumTxOutL
+    , mkBasicTxOut
+    , valueTxOutL
+    )
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (Script)
@@ -61,30 +61,30 @@ import PlutusTx.IsData.Class (ToData (..))
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (
-    ConwayEra,
-    PParams,
-    Root (..),
-    TokenId,
-    TxIn,
- )
+import Singular.Registry.Ledger
+    ( ConwayEra
+    , PParams
+    , Root (..)
+    , TokenId
+    , TxIn
+    )
 import Singular.Registry.Provider (Provider (..))
-import Singular.Registry.Trie (
-    Trie (..),
-    TrieManager (..),
- )
+import Singular.Registry.Trie
+    ( Trie (..)
+    , TrieManager (..)
+    )
 import Singular.Registry.TxBuilder.Internal.Edges
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainRequest (..),
-    OnChainRoot (..),
-    OnChainTokenState (..),
-    ProofStep,
-    RequestAction (..),
-    UpdateRedeemer (..),
- )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRequest (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
+    , ProofStep
+    , RequestAction (..)
+    , UpdateRedeemer (..)
+    )
 
 -- | A raw Plutus-data redeemer for attached (non-registry) purposes.
 newtype RawRedeemer = RawRedeemer PLC.Data
@@ -219,11 +219,11 @@ generousUnits = ExUnits 14_000_000 1_000_000_000
 data NoCtx a
 
 -- | Run speculative trie operations to compute proofs and the new root.
-computeProofs ::
-    TrieManager IO ->
-    TokenId ->
-    [(TxIn, TxOut ConwayEra)] ->
-    IO ([[ProofStep]], Root)
+computeProofs
+    :: TrieManager IO
+    -> TokenId
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO ([[ProofStep]], Root)
 computeProofs tm tid reqUtxos =
     withSpeculativeTrie tm tid $ \trie -> do
         ps <- mapM (processRequest trie) reqUtxos
@@ -231,11 +231,11 @@ computeProofs tm tid reqUtxos =
         pure (ps, r)
 
 -- | Process a single registry request through the speculative trie.
-processRequest ::
-    (Monad m) =>
-    Trie m ->
-    (TxIn, TxOut ConwayEra) ->
-    m [ProofStep]
+processRequest
+    :: (Monad m)
+    => Trie m
+    -> (TxIn, TxOut ConwayEra)
+    -> m [ProofStep]
 processRequest trie (_txIn, txOut) =
     walkEdge trie (requestKey req) (requestEdge req)
   where
@@ -244,11 +244,11 @@ processRequest trie (_txIn, txOut) =
         _ -> error "connectedFold: invalid request datum"
 
 -- | Extract old state, build the new state output and the cage script.
-prepareState ::
-    CageConfig ->
-    TxOut ConwayEra ->
-    Root ->
-    (OnChainTokenState, TxOut ConwayEra, Script ConwayEra)
+prepareState
+    :: CageConfig
+    -> TxOut ConwayEra
+    -> Root
+    -> (OnChainTokenState, TxOut ConwayEra, Script ConwayEra)
 prepareState cfg stateOut newRoot =
     let scriptAddr = cageAddrFromCfg cfg (network cfg)
         oldState = case extractCageDatum stateOut of
@@ -262,14 +262,14 @@ prepareState cfg stateOut newRoot =
                 (stateOut ^. valueTxOutL)
                 & datumTxOutL .~ mkInlineDatum (toPlcData newStateDatum)
         script = mkCageScript cfg
-     in (oldState, newStateOut, script)
+    in  (oldState, newStateOut, script)
 
 -- | Compute the validity upper slot from the earliest request deadline.
-computeUpperSlot ::
-    Provider IO ->
-    OnChainTokenState ->
-    [(TxIn, TxOut ConwayEra)] ->
-    IO SlotNo
+computeUpperSlot
+    :: Provider IO
+    -> OnChainTokenState
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO SlotNo
 computeUpperSlot prov oldState reqUtxos = do
     let extractSubmittedAt (_, rOut) = case extractCageDatum rOut of
             Just (RequestDatum r) -> requestSubmittedAt r
@@ -280,7 +280,8 @@ computeUpperSlot prov oldState reqUtxos = do
                     (\u -> extractSubmittedAt u + stateProcessTime oldState)
                     reqUtxos
     mUpperSlot <-
-        try (posixMsToSlot prov earliestDeadline) :: IO (Either SomeException SlotNo)
+        try (posixMsToSlot prov earliestDeadline)
+            :: IO (Either SomeException SlotNo)
     case mUpperSlot of
         Right s -> pure s
         Left _ -> do
@@ -297,24 +298,24 @@ outputs, witnesses. Processed requests lock into the state output
 connected folds only ever process (`Update`); rejected rows are built
 by the reject path with `computeRefund`. No owner signature.
 -}
-buildProgram ::
-    CageConfig ->
-    TxIn ->
-    [(TxIn, TxOut ConwayEra)] ->
-    (TxIn, TxOut ConwayEra) ->
-    OnChainTokenState ->
-    TxOut ConwayEra ->
-    Script ConwayEra ->
-    Script ConwayEra ->
-    [[ProofStep]] ->
-    SlotNo ->
-    [ConnectedSpend] ->
-    [ConnectedMint] ->
-    [TxOut ConwayEra] ->
-    [KeyHash Guard] ->
-    [(TxIn, TxOut ConwayEra)] ->
-    [Script ConwayEra] ->
-    Tx.TxBuild NoCtx Void ()
+buildProgram
+    :: CageConfig
+    -> TxIn
+    -> [(TxIn, TxOut ConwayEra)]
+    -> (TxIn, TxOut ConwayEra)
+    -> OnChainTokenState
+    -> TxOut ConwayEra
+    -> Script ConwayEra
+    -> Script ConwayEra
+    -> [[ProofStep]]
+    -> SlotNo
+    -> [ConnectedSpend]
+    -> [ConnectedMint]
+    -> [TxOut ConwayEra]
+    -> [KeyHash Guard]
+    -> [(TxIn, TxOut ConwayEra)]
+    -> [Script ConwayEra]
+    -> Tx.TxBuild NoCtx Void ()
 buildProgram
     _cfg
     stateIn
@@ -347,7 +348,7 @@ buildProgram
         _ <- Tx.output newStateOut
         Coin _fee <- Tx.peek $ \tx ->
             let f = tx ^. bodyTxL . feeTxBodyL
-             in if f > Coin 0 then Tx.Ok f else Tx.Iterate f
+            in  if f > Coin 0 then Tx.Ok f else Tx.Iterate f
         mapM_ Tx.output extraOutputs
         -- #157 C10: the pinned consumer and its mandatory withdrawal are
         -- gone. Every rule it re-walked beside the fold — request value
@@ -375,10 +376,10 @@ buildProgram
 later proof computations start from the chain's root. Call only with
 inputs the ledger accepted, in fold order.
 -}
-syncFoldedRequests ::
-    TrieManager IO ->
-    TokenId ->
-    [(TxIn, TxOut ConwayEra)] ->
-    IO ()
+syncFoldedRequests
+    :: TrieManager IO
+    -> TokenId
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO ()
 syncFoldedRequests tm tok reqUtxos =
     withTrie tm tok $ \trie -> mapM_ (processRequest trie) reqUtxos

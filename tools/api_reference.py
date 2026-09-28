@@ -49,19 +49,26 @@ PRIVATE_OWNER_GUIDE_ANCHORS = {
 # The six source files are byte-identical between that ancestor and the
 # candidate while the frozen digests below match; a changed source refuses
 # the build instead of silently repointing a permalink.
-PRIVATE_OWNER_PERMALINK_REV = "9a74eae15a3fe75abf7bbdf4969c2d11d7d8e69d"
+# Binding history: 9a74eae15a3fe75abf7bbdf4969c2d11d7d8e69d (A-013) held
+# the pre-reformat bytes; #278's house Fourmolu reformat moved every
+# Haskell file's bytes, so the binding advanced to the reformat commit
+# 58d2d6aec0160786651d1c5a02e91d115e15e2aa — an immutable, pushed
+# revision — and the six digests below were derived from that revision.
+# The prior binding and its digests stay recorded in this file's history
+# at the parent of the advancing commit and in revision 9a74eae itself.
+PRIVATE_OWNER_PERMALINK_REV = "58d2d6aec0160786651d1c5a02e91d115e15e2aa"
 PRIVATE_OWNER_PERMALINK_URL = (
     "https://github.com/lambdasistemi/singular/blob/"
     + PRIVATE_OWNER_PERMALINK_REV
     + "/offchain/node-internal/Singular/Registry/Node/{owner}.hs"
 )
 PRIVATE_OWNER_SOURCE_SHA256 = {
-    "Singular.Registry.Node.Options": "93a2dbe505b3c48c161b90666341ded8ea79a2c30afdace68156ae725d1ea9ca",
-    "Singular.Registry.Node.Wallet": "86e041492d80fd9eafeb7257796bfff483aabd892f07a86a2937ab6b5a0cc165",
-    "Singular.Registry.Node.Session": "f0b06d739b99cae43b7891af33f4a580bb1eb2292261843a77f69bac1c810c24",
-    "Singular.Registry.Node.Indexer": "b30ba54a390550fb681bdd62e2c1d9a3939c6334e0207355096a4c8a0470a0a4",
-    "Singular.Registry.Node.Confirmation": "7cbb8c68723b3788b92db002bbb204f95bc35f63cd835b1a077bc02a9564f9a4",
-    "Singular.Registry.Node.Funding": "f6a70bcc695f0762aa2ea73909e73b88d5a7da4815aedb7f541d2069661bb768",
+    "Singular.Registry.Node.Options": "6eec1275e9955ec96df5eb352cdd2b01fa2c075f05b9d6f7e9d074fe746f83ba",
+    "Singular.Registry.Node.Wallet": "ff88f91a836e3f8e75d3baef18688954f1e26e75e908f6548994be73abe85180",
+    "Singular.Registry.Node.Session": "74231fd7e02daad1eb4b510d4e466ed7af22b8d38905f6285b698f3f4a2e900d",
+    "Singular.Registry.Node.Indexer": "8c59258b813f7476f022353fba1f9ccbf60ee5917db7aa2319a0c9e41507bf8f",
+    "Singular.Registry.Node.Confirmation": "4a5bb7a28ffc4141a9a10ba88099c67d564ef814568a2eb09ba793f47d374b43",
+    "Singular.Registry.Node.Funding": "beca2a439ce956c2df26b8503c78b40ed799725fe6bbdb1d55de6f0f104ea588",
 }
 class ReferenceLibrary(NamedTuple):
     """One Cabal library whose generated Haddock reference this site ships.

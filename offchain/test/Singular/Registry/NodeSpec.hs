@@ -26,13 +26,13 @@ import Cardano.Ledger.Api.Era (ConwayEra)
 import Cardano.Ledger.Api.Tx (mkBasicTx)
 import Cardano.Ledger.Api.Tx.Body (mkBasicTxBody, vldtTxBodyL)
 import Cardano.Ledger.BaseTypes (SlotNo (..), StrictMaybe (..))
-import Singular.Registry.Node (
-    ExternalNode (..),
-    NodeMode (..),
-    confirmDeadline,
-    nodeModeFromArgs,
-    txUpperBoundSlot,
- )
+import Singular.Registry.Node
+    ( ExternalNode (..)
+    , NodeMode (..)
+    , confirmDeadline
+    , nodeModeFromArgs
+    , txUpperBoundSlot
+    )
 import Singular.Registry.Provider qualified as Cage
 
 external :: FilePath -> Word -> FilePath -> NodeMode

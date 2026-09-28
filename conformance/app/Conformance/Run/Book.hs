@@ -3,13 +3,26 @@ Module      : Conformance.Run.Book
 Description : Split out of Conformance.Run (#263); see that module's header
 License     : Apache-2.0
 -}
-module Conformance.Run.Book (rowRequestInsert, speculativeInsert, speculativeApplyAll, rowCommit, paddedRequest, pendingRequests, commitTm, commitTmKey, bookEdge, edgeDestination, edgeDestinationFor, edgeReferences) where
+module Conformance.Run.Book
+    ( rowRequestInsert
+    , speculativeInsert
+    , speculativeApplyAll
+    , rowCommit
+    , paddedRequest
+    , pendingRequests
+    , commitTm
+    , commitTmKey
+    , bookEdge
+    , edgeDestination
+    , edgeDestinationFor
+    , edgeReferences
+    ) where
 
-import Conformance.Run.Control
 import Conformance.Run.Cage
-import Conformance.Run.Submit
+import Conformance.Run.Control
 import Conformance.Run.Environment
 import Conformance.Run.Observe
+import Conformance.Run.Submit
 
 import Control.Monad (unless)
 import Data.ByteString (ByteString)
@@ -24,86 +37,88 @@ import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Lens.Micro ((&), (.~), (^.))
 
-import Cardano.Ledger.Address (
-    Addr (..),
-    serialiseAddr,
- )
+import Cardano.Ledger.Address
+    ( Addr (..)
+    , serialiseAddr
+    )
 
-import Cardano.Ledger.Api.Tx (
-    mkBasicTx,
-    mkBasicTxBody,
-    txIdTx,
- )
-import Cardano.Ledger.Api.Tx.Body (
-    feeTxBodyL,
-    inputsTxBodyL,
-    outputsTxBodyL,
-    referenceInputsTxBodyL,
-    reqSignerHashesTxBodyL,
- )
-import Cardano.Ledger.Api.Tx.Out (
-    coinTxOutL,
-    datumTxOutL,
-    getMinCoinTxOut,
-    mkBasicTxOut,
-    valueTxOutL,
- )
+import Cardano.Ledger.Api.Tx
+    ( mkBasicTx
+    , mkBasicTxBody
+    , txIdTx
+    )
+import Cardano.Ledger.Api.Tx.Body
+    ( feeTxBodyL
+    , inputsTxBodyL
+    , outputsTxBodyL
+    , referenceInputsTxBodyL
+    , reqSignerHashesTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( coinTxOutL
+    , datumTxOutL
+    , getMinCoinTxOut
+    , mkBasicTxOut
+    , valueTxOutL
+    )
 import Cardano.Ledger.BaseTypes (TxIx (..))
-import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
+import Cardano.Ledger.Credential
+    ( Credential (..)
+    , StakeReference (..)
+    )
 import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 
+import Cardano.Node.Client.E2E.Setup
+    ( Ed25519DSIGN
+    , SignKeyDSIGN
+    , addKeyWitness
+    )
+import Cardano.Node.Client.Submitter (SubmitResult (..))
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (
-    Coin (..),
-    ConwayEra,
-    PolicyID (..),
-    Root (..),
-    TokenId (..),
-    TxOut,
- )
+import Singular.Registry.Ledger
+    ( Coin (..)
+    , ConwayEra
+    , PolicyID (..)
+    , Root (..)
+    , TokenId (..)
+    , TxOut
+    )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie qualified as CageTrie
 import Singular.Registry.TxBuilder.Edges qualified as RegistryEdges
-import Singular.Registry.TxBuilder.Internal (
-    walkEdge,
-    approvalName,
-    mkRequestDatumWith,
-    policyIdFromPin,
-    addrKeyHashBytes,
-    addrWitnessKeyHash,
-    policyIdFromPin,
-    computeScriptHash,
-    currentPosixMs,
-    extractCageDatum,
-    findRequestUtxos,
-    mkInlineDatum,
-    requestAddrFromCfg,
-    scriptHashBytes,
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    Edge,
-    edgeInsertAbsent,
-    edgeWitnessTerminal,
-    OnChainRequest (..),
-    ProofStep (..),
- )
-import Cardano.Node.Client.E2E.Setup (
-    addKeyWitness,
-    Ed25519DSIGN,
-    SignKeyDSIGN,
- )
-import Cardano.Node.Client.Submitter (SubmitResult (..))
+import Singular.Registry.TxBuilder.Internal
+    ( addrKeyHashBytes
+    , addrWitnessKeyHash
+    , approvalName
+    , computeScriptHash
+    , currentPosixMs
+    , extractCageDatum
+    , findRequestUtxos
+    , mkInlineDatum
+    , mkRequestDatumWith
+    , policyIdFromPin
+    , requestAddrFromCfg
+    , scriptHashBytes
+    , walkEdge
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , Edge
+    , OnChainRequest (..)
+    , ProofStep (..)
+    , edgeInsertAbsent
+    , edgeWitnessTerminal
+    )
 
-import Conformance.Mirror (
-    emit,
-    failWith,
-    hex,
-    require,
- )
+import Conformance.Mirror
+    ( emit
+    , failWith
+    , hex
+    , require
+    )
 
 {- | Book one absence on a row cage's registry (#157 A-009, D-001).
 
@@ -118,7 +133,12 @@ certifies it riding along.
 The key is the row's own; the value is the absent leaf, because that is
 what an absence witness says.
 -}
-rowRequestInsert :: Env -> RowCage -> ByteString -> ByteString -> IO (TxIn, TxOut ConwayEra)
+rowRequestInsert
+    :: Env
+    -> RowCage
+    -> ByteString
+    -> ByteString
+    -> IO (TxIn, TxOut ConwayEra)
 rowRequestInsert env cage key _val = do
     let cfg = rcCfg cage
     tid <- cageTid cage
@@ -137,10 +157,14 @@ rowRequestInsert env cage key _val = do
             (defaultTipCoin cfg + cgDeposit)
     pure (reqIn, reqOut)
 
-
 -- | Speculatively apply one request's insert; proof steps + new root.
-speculativeInsert ::
-    Env -> RowCage -> TokenId -> ByteString -> ByteString -> IO ([ProofStep], Root)
+speculativeInsert
+    :: Env
+    -> RowCage
+    -> TokenId
+    -> ByteString
+    -> ByteString
+    -> IO ([ProofStep], Root)
 speculativeInsert env _cage tid key val =
     withSpeculativeTrie (envTm env) tid $ \trie -> do
         _ <- CageTrie.insert trie key val
@@ -148,16 +172,15 @@ speculativeInsert env _cage tid key val =
         r <- CageTrie.getRoot trie
         pure (steps, r)
 
-
 {- | Speculatively apply every request's own op (read from its
 datum), keeping proof steps aligned with the request order given.
 -}
-speculativeApplyAll ::
-    Env ->
-    RowCage ->
-    TokenId ->
-    [(TxIn, TxOut ConwayEra)] ->
-    IO ([[ProofStep]], Root)
+speculativeApplyAll
+    :: Env
+    -> RowCage
+    -> TokenId
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO ([[ProofStep]], Root)
 speculativeApplyAll env _cage tid reqs =
     withSpeculativeTrie (envTm env) tid $ \trie -> do
         ps <- mapM (applyOne trie) reqs
@@ -175,14 +198,13 @@ speculativeApplyAll env _cage tid reqs =
                 (requestKey rq, requestEdge rq)
             _ -> error "speculative: pending UTxO has no request datum"
 
-
--- | Commit a landed edge to a row cage's trie (#157 C3: a read
--- commits nothing, which `walkEdge` already knows).
+{- | Commit a landed edge to a row cage's trie (#157 C3: a read
+commits nothing, which `walkEdge` already knows).
+-}
 rowCommit :: Env -> RowCage -> ByteString -> Edge -> IO ()
 rowCommit env cage key edge = do
     tid <- cageTid cage
     withTrie (envTm env) tid $ \t -> () <$ walkEdge t key edge
-
 
 {- | Book one absence on a row cage at an explicit bond (#157 A-009).
 
@@ -192,15 +214,15 @@ payment carrying a request datum is now a booking: the edge is certified,
 the destination names where the deposit comes back, and the approval rides
 the request to the fold.
 -}
-paddedRequest ::
-    Env ->
-    RowCage ->
-    Addr ->
-    SignKeyDSIGN Ed25519DSIGN ->
-    ByteString ->
-    ByteString ->
-    Integer ->
-    IO (TxIn, TxOut ConwayEra)
+paddedRequest
+    :: Env
+    -> RowCage
+    -> Addr
+    -> SignKeyDSIGN Ed25519DSIGN
+    -> ByteString
+    -> ByteString
+    -> Integer
+    -> IO (TxIn, TxOut ConwayEra)
 paddedRequest env cage payerAddr payerSk key _val bond = do
     let cfg = rcCfg cage
     tid <- cageTid cage
@@ -217,7 +239,6 @@ paddedRequest env cage payerAddr payerSk key _val bond = do
         []
         bond
 
-
 -- | Every pending request UTxO of a row cage, in tx-input order.
 pendingRequests :: Env -> RowCage -> IO [(TxIn, TxOut ConwayEra)]
 pendingRequests env cage = do
@@ -229,7 +250,6 @@ pendingRequests env cage = do
             (requestAddrFromCfg cfg tid (network cfg))
     pure (sortOn fst (findRequestUtxos tid reqUtxos))
 
-
 {- | Commit a landed op to the builder trie. Speculative folds never
 commit ('withSpeculativeTrie' discards), so the caller keeps the
 trie in step or the next fold proves against a stale root.
@@ -237,11 +257,9 @@ trie in step or the next fold proves against a stale root.
 commitTm :: Env -> Edge -> IO ()
 commitTm env = commitTmKey env cgKey
 
-
 commitTmKey :: Env -> ByteString -> Edge -> IO ()
 commitTmKey env cgKey' edge =
     withTrie (envTm env) (envTid env) $ \t -> () <$ walkEdge t cgKey' edge
-
 
 {- | Book one registry-mode edge (#157 C2, C4, D-DEST): create the request
 and, for a tree edge, mint the approval that certifies it under the
@@ -261,22 +279,22 @@ own business (R-NM4): an absence witness needs none, an activation needs
 the controller, and a deletion needs the custody's refund address and the
 custody itself in view.
 -}
-bookEdge ::
-    Env ->
-    CageConfig ->
-    TokenId ->
-    Addr ->
-    SignKeyDSIGN Ed25519DSIGN ->
-    -- | Registry key
-    ByteString ->
-    Edge ->
-    -- | Destination: address bytes and datum hash
-    (ByteString, ByteString) ->
-    -- | Reference inputs the certifying arm reads (custody, for a deletion)
-    [(TxIn, TxOut ConwayEra)] ->
-    -- | Bond: the tip plus the deposit that rides to the destination
-    Integer ->
-    IO (TxIn, TxOut ConwayEra)
+bookEdge
+    :: Env
+    -> CageConfig
+    -> TokenId
+    -> Addr
+    -> SignKeyDSIGN Ed25519DSIGN
+    -> ByteString
+    -- ^ Registry key
+    -> Edge
+    -> (ByteString, ByteString)
+    -- ^ Destination: address bytes and datum hash
+    -> [(TxIn, TxOut ConwayEra)]
+    -- ^ Reference inputs the certifying arm reads (custody, for a deletion)
+    -> Integer
+    -- ^ Bond: the tip plus the deposit that rides to the destination
+    -> IO (TxIn, TxOut ConwayEra)
 bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
     let (_, _, codes) = envCodes env
         prov = envProv env
@@ -301,8 +319,12 @@ bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
     -- whatever its input holds through to its own change, and collateral,
     -- spent only when an approval is minted, is taken from an ada-only
     -- output, which is all the ledger accepts.
-    collateralIn <- case sortOn (Down . (^. coinTxOutL) . snd) (filter (adaOnlyOut . snd) utxos) of
-        [] -> failWith "bookEdge: payer wallet has no ada-only output for collateral"
+    collateralIn <- case sortOn
+        (Down . (^. coinTxOutL) . snd)
+        (filter (adaOnlyOut . snd) utxos) of
+        [] ->
+            failWith
+                "bookEdge: payer wallet has no ada-only output for collateral"
         ((i, _) : _) -> pure i
     now <- currentPosixMs
     let MaryValue (Coin feeBal) carried = feeOut ^. valueTxOutL
@@ -321,7 +343,8 @@ bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
         -- would break the equality silently.
         datum = mkRequestDatumWith tid payerAddr key edge (bond - tipVal) now dest
         reqOut =
-            mkBasicTxOut requestAddr
+            mkBasicTxOut
+                requestAddr
                 (MaryValue (Coin bond) (maybe mempty RegistryEdges.baAsset approval))
                 & datumTxOutL .~ mkInlineDatum datum
         Coin minAda = getMinCoinTxOut @ConwayEra pp reqOut
@@ -366,11 +389,12 @@ bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
             <> show key
             <> maybe
                 " with no approval"
-                (const (" certified by approval 0x" <> hex (approvalName edge key owner dest)))
+                ( const
+                    (" certified by approval 0x" <> hex (approvalName edge key owner dest))
+                )
                 approval
         )
     pure (TxIn (txIdTx signed) (TxIx 0), reqOut)
-
 
 {- | Where an edge delivers (#157 D-DEST, R-NM4).
 
@@ -382,11 +406,11 @@ and a termination name nothing at all.
 edgeDestination :: Env -> Edge -> IO (ByteString, ByteString)
 edgeDestination env = edgeDestinationFor env genesisAddr
 
-
--- | `edgeDestination` for a named payer: an absence binds the address its
--- deposit comes back to, and that is the payer's own.
-edgeDestinationFor ::
-    Env -> Addr -> Edge -> IO (ByteString, ByteString)
+{- | `edgeDestination` for a named payer: an absence binds the address its
+deposit comes back to, and that is the payer's own.
+-}
+edgeDestinationFor
+    :: Env -> Addr -> Edge -> IO (ByteString, ByteString)
 edgeDestinationFor env payerAddr edge = do
     let (_, _, codes) = envCodes env
         appHash = computeScriptHash (ncApplication codes)
@@ -398,26 +422,25 @@ edgeDestinationFor env payerAddr edge = do
         6 -> (serialiseAddr payerAddr, BS.empty)
         _ -> (BS.empty, BS.empty)
 
-
 {- | What the certifying arm needs to read. A deletion is authorised by the
 custody's own refund address, which naming reads from the custody UTxO as a
 reference input.
 -}
-edgeReferences ::
-    Env -> ByteString -> Edge -> IO [(TxIn, TxOut ConwayEra)]
+edgeReferences
+    :: Env -> ByteString -> Edge -> IO [(TxIn, TxOut ConwayEra)]
 edgeReferences env key edge = case edge of
     4 -> do
         utxos <- cageUtxos env
         let absentPolicy =
                 scriptHashBytes
                     (policyID (policyIdFromPin (cfgAbsentPolicy (envCfg env))))
-        case
-            [ u
-            | u@(_, o) <- utxos
-            , Just (AbsentCustody _) <- [extractCageDatum o]
-            , outAssets o == Map.singleton absentPolicy (Map.singleton key 1)
-            ]
-            of
+        case [ u
+             | u@(_, o) <- utxos
+             , Just (AbsentCustody _) <- [extractCageDatum o]
+             , outAssets o == Map.singleton absentPolicy (Map.singleton key 1)
+             ] of
             [u] -> pure [u]
-            _ -> failWith ("edgeReferences: no single custody UTxO for key " <> show key)
+            _ ->
+                failWith
+                    ("edgeReferences: no single custody UTxO for key " <> show key)
     _ -> pure []

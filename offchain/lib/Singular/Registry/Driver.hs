@@ -33,30 +33,30 @@ What this module does NOT do is assert anything about the edge's meaning.
 Booting, folding and keeping the mirror in step are its whole subject;
 every caller keeps its own assertions and its own output.
 -}
-module Singular.Registry.Driver (
-    -- * The registry handle
-    Registry,
-    registryConfig,
-    registryTokenId,
-    registryRefs,
-    registryBootTx,
+module Singular.Registry.Driver
+    ( -- * The registry handle
+      Registry
+    , registryConfig
+    , registryTokenId
+    , registryRefs
+    , registryBootTx
 
-    -- * Booting
-    bootRegistry,
+      -- * Booting
+    , bootRegistry
 
-    -- * Folding one edge
-    foldEdge,
-    foldEdgeTo,
-    FoldOutcome (..),
+      -- * Folding one edge
+    , foldEdge
+    , foldEdgeTo
+    , FoldOutcome (..)
 
-    -- * Reading the two roots
-    chainRoot,
-    mirrorRoot,
-    renderRoot,
+      -- * Reading the two roots
+    , chainRoot
+    , mirrorRoot
+    , renderRoot
 
-    -- * Deriving the token a boot minted
-    tokenIdOfBootTx,
-) where
+      -- * Deriving the token a boot minted
+    , tokenIdOfBootTx
+    ) where
 
 import Control.Monad (unless, void, when)
 import Data.ByteString (ByteString)
@@ -68,12 +68,12 @@ import Data.Set qualified as Set
 import Lens.Micro ((^.))
 
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
-import Cardano.Ledger.Api.Tx.Body (
-    collateralInputsTxBodyL,
-    feeTxBodyL,
-    mintTxBodyL,
-    referenceInputsTxBodyL,
- )
+import Cardano.Ledger.Api.Tx.Body
+    ( collateralInputsTxBodyL
+    , feeTxBodyL
+    , mintTxBodyL
+    , referenceInputsTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.Out (coinTxOutL)
 import Cardano.Ledger.Api.Tx.Wits (scriptTxWitsL)
 import Cardano.Ledger.Binary (serialize)
@@ -83,35 +83,35 @@ import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.Blueprint.Load (NamingCodes)
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (
-    Addr,
-    AssetName (..),
-    Coin (..),
-    ConwayEra,
-    Root (..),
-    TokenId (..),
-    TxIn,
-    TxOut,
- )
+import Singular.Registry.Ledger
+    ( Addr
+    , AssetName (..)
+    , Coin (..)
+    , ConwayEra
+    , Root (..)
+    , TokenId (..)
+    , TxIn
+    , TxOut
+    )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Edges (SubmitSigned)
 import Singular.Registry.TxBuilder.Edges qualified as Edges
 import Singular.Registry.TxBuilder.Internal.Edges (walkEdge)
-import Singular.Registry.TxBuilder.Internal.Identity (
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    extractCageDatum,
- )
+import Singular.Registry.TxBuilder.Internal.Identity
+    ( cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , extractCageDatum
+    )
 import Singular.Registry.TxBuilder.Internal.Lookup (findStateUtxo)
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
-import Singular.Registry.Types (
-    CageDatum (..),
-    Edge,
-    OnChainRoot (..),
-    OnChainTokenState (..),
- )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , Edge
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
+    )
 
 {- | A booted registry, with everything a fold of its edges needs. The
 constructor is deliberately NOT exported: 'bootRegistry' is the only way
@@ -158,15 +158,15 @@ attached per fold ('Edges.publishCageRefs'). The boot itself resolves
 the state validator through a publication already in the payer's
 wallet, and is refused `StateValidatorNotPublished` without one.
 -}
-bootRegistry ::
-    CageConfig ->
-    NamingCodes ->
-    Cage.Provider IO ->
-    SubmitSigned ->
-    -- | The payer, which is also where boot outputs land
-    Addr ->
-    TrieManager IO ->
-    IO Registry
+bootRegistry
+    :: CageConfig
+    -> NamingCodes
+    -> Cage.Provider IO
+    -> SubmitSigned
+    -> Addr
+    -- ^ The payer, which is also where boot outputs land
+    -> TrieManager IO
+    -> IO Registry
 bootRegistry cfg codes prov submit payer tm = do
     bootWallet <- Cage.queryUTxOs prov payer
     unsignedBoot <- bootTokenImpl cfg prov payer
@@ -251,21 +251,21 @@ address; a harness that has no spending arm there names a wallet
 instead. That is the only difference, so it is a parameter here rather
 than a second driver.
 -}
-foldEdgeTo ::
-    Registry ->
-    ByteString ->
-    Edge ->
-    -- | destination address and datum, as `Edges.bookEdgeTo` takes them
-    (ByteString, ByteString) ->
-    IO FoldOutcome
+foldEdgeTo
+    :: Registry
+    -> ByteString
+    -> Edge
+    -> (ByteString, ByteString)
+    -- ^ destination address and datum, as `Edges.bookEdgeTo` takes them
+    -> IO FoldOutcome
 foldEdgeTo reg key edge dest = foldEdgeWith reg key edge (Just dest)
 
-foldEdgeWith ::
-    Registry ->
-    ByteString ->
-    Edge ->
-    Maybe (ByteString, ByteString) ->
-    IO FoldOutcome
+foldEdgeWith
+    :: Registry
+    -> ByteString
+    -> Edge
+    -> Maybe (ByteString, ByteString)
+    -> IO FoldOutcome
 foldEdgeWith reg key edge mDest = do
     rootBefore <- mirrorRoot reg
     onChainBefore <- chainRoot reg
@@ -365,7 +365,8 @@ address.
 chainRoot :: Registry -> IO OnChainRoot
 chainRoot reg = do
     let cfg = regCfg reg
-    utxos <- Cage.queryUTxOs (regProv reg) (cageAddrFromCfg cfg (network cfg))
+    utxos <-
+        Cage.queryUTxOs (regProv reg) (cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) (regTid reg) utxos of
         Nothing ->
             error "chainRoot: no state UTxO carrying the policy token"
@@ -379,7 +380,8 @@ Six harnesses each carried a copy of this; it belongs here.
 tokenIdOfBootTx :: CageConfig -> ConwayTx -> IO TokenId
 tokenIdOfBootTx cfg tx =
     let MultiAsset ma = tx ^. bodyTxL . mintTxBodyL
-     in case Map.toList (Map.findWithDefault Map.empty (cagePolicyIdFromCfg cfg) ma) of
+    in  case Map.toList
+            (Map.findWithDefault Map.empty (cagePolicyIdFromCfg cfg) ma) of
             [(AssetName an, _)] -> pure (TokenId (AssetName an))
             assets ->
                 error

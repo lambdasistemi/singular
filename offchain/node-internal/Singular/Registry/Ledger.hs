@@ -11,34 +11,34 @@ defines domain types that bridge the gap between
 cardano-ledger representations and the Aiken
 on-chain validator layout.
 -}
-module Singular.Registry.Ledger (
-    -- * Ledger re-exports
-    ConwayEra,
-    Addr,
-    TxId,
-    TxIn,
-    TxOut,
-    Coin (..),
-    MaryValue,
-    PolicyID (..),
-    AssetName (..),
-    SlotNo (..),
-    ScriptHash (..),
-    KeyHash,
-    KeyRole (..),
-    ExUnits (..),
-    PParams,
-    ConwayTxBody,
+module Singular.Registry.Ledger
+    ( -- * Ledger re-exports
+      ConwayEra
+    , Addr
+    , TxId
+    , TxIn
+    , TxOut
+    , Coin (..)
+    , MaryValue
+    , PolicyID (..)
+    , AssetName (..)
+    , SlotNo (..)
+    , ScriptHash (..)
+    , KeyHash
+    , KeyRole (..)
+    , ExUnits (..)
+    , PParams
+    , ConwayTxBody
 
-    -- * Token identification
-    TokenId (..),
+      -- * Token identification
+    , TokenId (..)
 
-    -- * Merkle Patricia Forestry
-    Root (..),
+      -- * Merkle Patricia Forestry
+    , Root (..)
 
-    -- * Token state
-    TokenState (..),
-) where
+      -- * Token state
+    , TokenState (..)
+    ) where
 
 import Data.ByteString (ByteString)
 
@@ -50,11 +50,11 @@ import Cardano.Ledger.Conway (ConwayEra)
 import Cardano.Ledger.Core (PParams)
 import Cardano.Ledger.Hashes (ScriptHash (..))
 import Cardano.Ledger.Keys (KeyHash, KeyRole (..))
-import Cardano.Ledger.Mary.Value (
-    AssetName (..),
-    MaryValue,
-    PolicyID (..),
- )
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue
+    , PolicyID (..)
+    )
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.Slot (SlotNo (..))
 import Cardano.Ledger.TxIn (TxId, TxIn)

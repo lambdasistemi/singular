@@ -14,81 +14,81 @@ should continue to. See the wire guide
 ("Singular.Registry.Wire.Primitive" and its siblings) for who owns
 what and the dependency direction between the owners.
 -}
-module Singular.Registry.Types (
-    -- * On-chain datum\/redeemer types
-    CageDatum (..),
-    MintRedeemer (..),
-    Migration (..),
-    UpdateRedeemer (..),
-    RequestAction (..),
+module Singular.Registry.Types
+    ( -- * On-chain datum\/redeemer types
+      CageDatum (..)
+    , MintRedeemer (..)
+    , Migration (..)
+    , UpdateRedeemer (..)
+    , RequestAction (..)
 
-    -- * On-chain domain types
-    OnChainTokenId (..),
-    Edge,
-    edgeInsertAbsent,
-    edgeInsertActive,
-    edgeUpdateActive,
-    edgeUpdateTerminal,
-    edgeDeleteAbsent,
-    edgeDeleteActive,
-    edgeWitnessTerminal,
-    edgeName,
-    RequestPhase (..),
-    requestPhase,
-    OnChainRoot (..),
-    OnChainRequest (..),
-    OnChainTokenState (..),
-    OnChainTxOutRef (..),
+      -- * On-chain domain types
+    , OnChainTokenId (..)
+    , Edge
+    , edgeInsertAbsent
+    , edgeInsertActive
+    , edgeUpdateActive
+    , edgeUpdateTerminal
+    , edgeDeleteAbsent
+    , edgeDeleteActive
+    , edgeWitnessTerminal
+    , edgeName
+    , RequestPhase (..)
+    , requestPhase
+    , OnChainRoot (..)
+    , OnChainRequest (..)
+    , OnChainTokenState (..)
+    , OnChainTxOutRef (..)
 
-    -- * Proof steps (Aiken MPF proof encoding)
-    ProofStep (..),
-    Neighbor (..),
+      -- * Proof steps (Aiken MPF proof encoding)
+    , ProofStep (..)
+    , Neighbor (..)
 
-    -- * State helpers
-    stateActivePolicyBytes,
-    stateAppPolicyBytes,
-    stateAbsentPolicyBytes,
-    stateTerminalPolicyBytes,
+      -- * State helpers
+    , stateActivePolicyBytes
+    , stateAppPolicyBytes
+    , stateAbsentPolicyBytes
+    , stateTerminalPolicyBytes
 
-    -- * Pinned-hook consumer redeemer (NOTE-021)
-    ConsumerRedeemer (..),
-) where
+      -- * Pinned-hook consumer redeemer (NOTE-021)
+    , ConsumerRedeemer (..)
+    ) where
 
-import Singular.Registry.Wire.Primitive (
-    OnChainRoot (..),
-    OnChainTokenId (..),
-    OnChainTxOutRef (..),
- )
-import Singular.Registry.Wire.Proof (
-    Neighbor (..),
-    ProofStep (..),
- )
-import Singular.Registry.Wire.Redeemer (
-    ConsumerRedeemer (..),
-    Migration (..),
-    MintRedeemer (..),
-    RequestAction (..),
-    UpdateRedeemer (..),
- )
-import Singular.Registry.Wire.Request (
-    Edge,
-    OnChainRequest (..),
-    RequestPhase (..),
-    edgeDeleteAbsent,
-    edgeDeleteActive,
-    edgeInsertAbsent,
-    edgeInsertActive,
-    edgeName,
-    edgeUpdateActive,
-    edgeUpdateTerminal,
-    edgeWitnessTerminal,
-    requestPhase,
- )
-import Singular.Registry.Wire.State (
-    CageDatum (..),
-    OnChainTokenState (..),
-    stateAbsentPolicyBytes,
-    stateActivePolicyBytes,
-    stateAppPolicyBytes,
-    stateTerminalPolicyBytes,
- )
+import Singular.Registry.Wire.Primitive
+    ( OnChainRoot (..)
+    , OnChainTokenId (..)
+    , OnChainTxOutRef (..)
+    )
+import Singular.Registry.Wire.Proof
+    ( Neighbor (..)
+    , ProofStep (..)
+    )
+import Singular.Registry.Wire.Redeemer
+    ( ConsumerRedeemer (..)
+    , Migration (..)
+    , MintRedeemer (..)
+    , RequestAction (..)
+    , UpdateRedeemer (..)
+    )
+import Singular.Registry.Wire.Request
+    ( Edge
+    , OnChainRequest (..)
+    , RequestPhase (..)
+    , edgeDeleteAbsent
+    , edgeDeleteActive
+    , edgeInsertAbsent
+    , edgeInsertActive
+    , edgeName
+    , edgeUpdateActive
+    , edgeUpdateTerminal
+    , edgeWitnessTerminal
+    , requestPhase
+    )
+import Singular.Registry.Wire.State
+    ( CageDatum (..)
+    , OnChainTokenState (..)
+    , stateAbsentPolicyBytes
+    , stateActivePolicyBytes
+    , stateAppPolicyBytes
+    , stateTerminalPolicyBytes
+    )

@@ -15,5 +15,7 @@ main = do
                 Left err -> do
                     putStrLn ("fold-budget regression: " <> displayException err)
                     exitFailure
-                Right () -> putStrLn "fold-budget regression: fixed fallback refused; evaluated interpreter accepted"
+                Right () ->
+                    putStrLn
+                        "fold-budget regression: fixed fallback refused; evaluated interpreter accepted"
         _ -> fail "usage: fold-budget-regression --receipts-dir DIR"

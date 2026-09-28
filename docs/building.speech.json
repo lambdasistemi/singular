@@ -11,6 +11,12 @@
       "pause": 400
     }
   ],
+  "haskell-formatting": [
+    {
+      "text": "The Haskell trees are formatted with Fourmolu under one house configuration, fourmolu yaml at the repository root. Every formatter entrypoint passes that file explicitly, so a missing configuration fails loudly instead of falling back to Fourmolu defaults, and there is no per-tree configuration to drift from it. Run just format to apply it to every discovered Haskell source and just format-check for the same check the CI carries; discovery covers both trees with no directory exclusions, the formerly fenced verifier sources and the evaluation spike included. The Conformance tree gets the same check in its own Nix source context through the format-check app. The format controls run over scratch copies: a source Fourmolu defaults accept but the house configuration rejects must fail the check, its formatter correction must pass it again, and a tree without the configuration must fail loudly.",
+      "pause": 400
+    }
+  ],
   "edit-and-serve": [
     {
       "text": "Use the Nix development shell for a strict MkDocs build or live local server. A separate CI build verifies that shell.",
@@ -39,6 +45,6 @@
   ],
   "_source": {
     "file": "building.md",
-    "sha256": "524f4851e8d70ef0813368bcc51dc66d1d72744b13cc667aa05b6ce10db2f4c0"
+    "sha256": "4f6ed2a720cebc0a331518770e5cded3bb38a5a6b845b930b5f8ac68075b03d6"
   }
 }

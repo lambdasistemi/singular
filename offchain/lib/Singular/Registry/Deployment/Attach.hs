@@ -20,18 +20,18 @@ surface. It reads manifest values, 'parseOutRef', 'renderOutRef',
 focused identity and lookup adapters from the builder's internal
 family.
 -}
-module Singular.Registry.Deployment.Attach (
-    -- * The release halves the manifest pins only by hash
-    CageParts (..),
-    cageConfigFor,
+module Singular.Registry.Deployment.Attach
+    ( -- * The release halves the manifest pins only by hash
+      CageParts (..)
+    , cageConfigFor
 
-    -- * Checking one against a node
-    verifyDeployment,
+      -- * Checking one against a node
+    , verifyDeployment
 
-    -- * Attaching a run to one
-    Attached (..),
-    attach,
-) where
+      -- * Attaching a run to one
+    , Attached (..)
+    , attach
+    ) where
 
 import Control.Monad (unless, when)
 import Data.ByteString.Base16 qualified as B16
@@ -50,35 +50,35 @@ import Cardano.Ledger.Core (hashScript)
 
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Deployment.Manifest (
-    Deployment (..),
-    ReferenceScript (..),
-    die,
-    hex,
-    parseOutRef,
-    renderOutRef,
- )
-import Singular.Registry.Ledger (
-    AssetName (..),
-    Coin (..),
-    ConwayEra,
-    TokenId (..),
- )
+import Singular.Registry.Deployment.Manifest
+    ( Deployment (..)
+    , ReferenceScript (..)
+    , die
+    , hex
+    , parseOutRef
+    , renderOutRef
+    )
+import Singular.Registry.Ledger
+    ( AssetName (..)
+    , Coin (..)
+    , ConwayEra
+    , TokenId (..)
+    )
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.TxBuilder.Internal.Identity (
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    computeScriptHash,
-    extractCageDatum,
-    scriptHashBytes,
-    txInToRef,
- )
+import Singular.Registry.TxBuilder.Internal.Identity
+    ( cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , computeScriptHash
+    , extractCageDatum
+    , scriptHashBytes
+    , txInToRef
+    )
 import Singular.Registry.TxBuilder.Internal.Lookup (findStateUtxo)
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainTokenState (..),
-    stateActivePolicyBytes,
- )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainTokenState (..)
+    , stateActivePolicyBytes
+    )
 
 -- ---------------------------------------------------------
 -- The release halves the manifest pins only by hash
@@ -120,8 +120,11 @@ cageConfigFor dep parts = do
     -- The manifest keeps its own vocabulary for the pin it recorded; the
     -- field it names is the one #157 C7 renamed the active policy.
     when
-        (T.pack (hex (SBS.fromShort (partsActivePolicy parts))) /= depRepresentativePolicy dep)
-        $ Left "this release's registry-bound active policy differs from the deployment"
+        ( T.pack (hex (SBS.fromShort (partsActivePolicy parts)))
+            /= depRepresentativePolicy dep
+        )
+        $ Left
+            "this release's registry-bound active policy differs from the deployment"
     let stateHash = computeScriptHash (partsStateBytes parts)
         stateHex = T.pack (hex (scriptHashBytes stateHash))
     if stateHex /= depStatePolicy dep
@@ -186,11 +189,11 @@ manifest pins, and the registry's state output carries the recorded
 token under the recorded policy. The first claim that fails is raised
 by name.
 -}
-verifyDeployment ::
-    Cage.Provider IO ->
-    Deployment ->
-    CageParts ->
-    IO [String]
+verifyDeployment
+    :: Cage.Provider IO
+    -> Deployment
+    -> CageParts
+    -> IO [String]
 verifyDeployment prov dep parts = do
     cfg <- either die pure (cageConfigFor dep parts)
     tok <- either die pure (tokenFor dep)
@@ -198,8 +201,11 @@ verifyDeployment prov dep parts = do
     (stateIn, stateOut) <- resolveStateUtxo prov cfg tok
     stateLive <- case extractCageDatum stateOut of
         Just (StateDatum st)
-            | stateActivePolicyBytes st == SBS.fromShort (partsActivePolicy parts) -> pure st
-        _ -> die "the live registry state does not configure this registry-bound representative policy"
+            | stateActivePolicyBytes st == SBS.fromShort (partsActivePolicy parts) ->
+                pure st
+        _ ->
+            die
+                "the live registry state does not configure this registry-bound representative policy"
     unless
         ( stateProcessTime stateLive == depProcessTime dep
             && stateRetractTime stateLive == depRetractTime dep
@@ -244,10 +250,10 @@ verifyDeployment prov dep parts = do
 {- | The recorded reference outputs, as the node reports them, checked
 one by one against the hash the manifest pins.
 -}
-resolveReferenceScripts ::
-    Cage.Provider IO ->
-    Deployment ->
-    IO [(ReferenceScript, (TxIn, TxOut ConwayEra))]
+resolveReferenceScripts
+    :: Cage.Provider IO
+    -> Deployment
+    -> IO [(ReferenceScript, (TxIn, TxOut ConwayEra))]
 resolveReferenceScripts prov dep =
     mapM one (depReferenceScripts dep)
   where
@@ -302,11 +308,11 @@ resolveReferenceScripts prov dep =
                 )
 
 -- | The registry's state output, by the token it must carry.
-resolveStateUtxo ::
-    Cage.Provider IO ->
-    CageConfig ->
-    TokenId ->
-    IO (TxIn, TxOut ConwayEra)
+resolveStateUtxo
+    :: Cage.Provider IO
+    -> CageConfig
+    -> TokenId
+    -> IO (TxIn, TxOut ConwayEra)
 resolveStateUtxo prov cfg tok = do
     let stateAddr = cageAddrFromCfg cfg Testnet
     utxos <- Cage.queryUTxOs prov stateAddr
@@ -340,11 +346,11 @@ resolved outputs a runner needs in hand. The live state's active policy
 and windows are not checked here; verification is the operation that
 reads them.
 -}
-attach ::
-    Cage.Provider IO ->
-    Deployment ->
-    CageParts ->
-    IO Attached
+attach
+    :: Cage.Provider IO
+    -> Deployment
+    -> CageParts
+    -> IO Attached
 attach prov dep parts = do
     cfg <- either die pure (cageConfigFor dep parts)
     tok <- either die pure (tokenFor dep)

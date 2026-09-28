@@ -16,19 +16,19 @@ surface. It reads 'mirrorPathFor', 'hex' and 'die' from
 "Singular.Registry.Deployment.Manifest", so the mirror's path has one
 owner.
 -}
-module Singular.Registry.Deployment.Mirror (
-    -- * The proof mirror
-    Mirror (..),
-    MirrorTrie (..),
-    loadMirror,
-    saveMirror,
-) where
+module Singular.Registry.Deployment.Mirror
+    ( -- * The proof mirror
+      Mirror (..)
+    , MirrorTrie (..)
+    , loadMirror
+    , saveMirror
+    ) where
 
-import Data.Aeson (
-    FromJSON (..),
-    ToJSON (..),
-    eitherDecodeFileStrict',
- )
+import Data.Aeson
+    ( FromJSON (..)
+    , ToJSON (..)
+    , eitherDecodeFileStrict'
+    )
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.ByteString.Base16 qualified as B16

@@ -13,11 +13,11 @@ The locked ADA includes the token's @tip@ plus a fee buffer for the
 oracle's update transaction, and the datum's deposit is exactly that
 lovelace less the tip, which is what the fold checks.
 -}
-module Singular.Registry.TxBuilder.Request (
-    requestEdgeImpl,
-    requestLockedAda,
-    settleRequestOutput,
-) where
+module Singular.Registry.TxBuilder.Request
+    ( requestEdgeImpl
+    , requestLockedAda
+    , settleRequestOutput
+    ) where
 
 import Data.ByteString (ByteString)
 import Data.List (sortOn)
@@ -26,43 +26,43 @@ import Data.Sequence.Strict qualified as StrictSeq
 import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.Tx (
-    mkBasicTx,
- )
-import Cardano.Ledger.Api.Tx.Body (
-    mkBasicTxBody,
-    outputsTxBodyL,
- )
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    coinTxOutL,
-    datumTxOutL,
-    getMinCoinTxOut,
-    mkBasicTxOut,
-    valueTxOutL,
- )
+import Cardano.Ledger.Api.Tx
+    ( mkBasicTx
+    )
+import Cardano.Ledger.Api.Tx.Body
+    ( mkBasicTxBody
+    , outputsTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , coinTxOutL
+    , datumTxOutL
+    , getMinCoinTxOut
+    , mkBasicTxOut
+    , valueTxOutL
+    )
 import Cardano.Ledger.BaseTypes (Inject (..))
 
-import Cardano.Tx.Balance (
-    BalanceResult (..),
-    balanceTx,
- )
+import Cardano.Tx.Balance
+    ( BalanceResult (..)
+    , balanceTx
+    )
 import Cardano.Tx.Ledger (ConwayTx)
-import Singular.Registry.Config (
-    CageConfig (..),
- )
-import Singular.Registry.Ledger (
-    Coin (..),
-    ConwayEra,
-    PParams,
-    TokenId,
- )
+import Singular.Registry.Config
+    ( CageConfig (..)
+    )
+import Singular.Registry.Ledger
+    ( Coin (..)
+    , ConwayEra
+    , PParams
+    , TokenId
+    )
 import Singular.Registry.Provider (Provider (..))
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
-import Singular.Registry.Types (
-    Edge,
- )
+import Singular.Registry.Types
+    ( Edge
+    )
 
 {- | Build the request transaction for one C2 edge (#183).
 
@@ -71,18 +71,18 @@ its leaf bytes, so no value travels here. The datum's deposit is the
 output's lovelace less the tip, settled with the sizing below because
 the deposit is itself a datum field.
 -}
-requestEdgeImpl ::
-    CageConfig ->
-    Provider IO ->
-    -- | Token tip (lovelace)
-    Coin ->
-    TokenId ->
-    -- | Key the edge moves
-    ByteString ->
-    -- | The C2 row index (0-6)
-    Edge ->
-    Addr ->
-    IO ConwayTx
+requestEdgeImpl
+    :: CageConfig
+    -> Provider IO
+    -> Coin
+    -- ^ Token tip (lovelace)
+    -> TokenId
+    -> ByteString
+    -- ^ Key the edge moves
+    -> Edge
+    -- ^ The C2 row index (0-6)
+    -> Addr
+    -> IO ConwayTx
 requestEdgeImpl cfg prov (Coin mf) tid key edge addr = do
     pp <- queryProtocolParams prov
     utxos <- queryUTxOs prov addr
@@ -139,21 +139,21 @@ by at most a few bytes, so it settles in one or two rounds. The bound
 is there so that a ledger whose minimum never stabilises fails loudly
 instead of looping.
 -}
-settleRequestOutput ::
-    PParams ConwayEra ->
-    -- | Token tip (lovelace)
-    Integer ->
-    -- | Output for a given (locked lovelace, deposit)
-    (Integer -> Integer -> TxOut ConwayEra) ->
-    -- | Starting locked lovelace
-    Integer ->
-    TxOut ConwayEra
+settleRequestOutput
+    :: PParams ConwayEra
+    -> Integer
+    -- ^ Token tip (lovelace)
+    -> (Integer -> Integer -> TxOut ConwayEra)
+    -- ^ Output for a given (locked lovelace, deposit)
+    -> Integer
+    -- ^ Starting locked lovelace
+    -> TxOut ConwayEra
 settleRequestOutput pp tip build = go (8 :: Int)
   where
     go rounds locked =
         let out = build locked (locked - tip)
             Coin need = getMinCoinTxOut pp out
-         in if need <= locked
+        in  if need <= locked
                 then out
                 else
                     if rounds <= 0
@@ -164,12 +164,12 @@ settleRequestOutput pp tip build = go (8 :: Int)
                         else go (rounds - 1) need
 
 -- | Compute the ADA to lock in a request output.
-requestLockedAda ::
-    PParams ConwayEra ->
-    TxOut ConwayEra ->
-    TxOut ConwayEra ->
-    Integer ->
-    Coin
+requestLockedAda
+    :: PParams ConwayEra
+    -> TxOut ConwayEra
+    -> TxOut ConwayEra
+    -> Integer
+    -> Coin
 requestLockedAda pp reqDraft refDraft tip =
     let Coin refMin =
             getMinCoinTxOut pp refDraft
@@ -182,4 +182,4 @@ requestLockedAda pp reqDraft refDraft tip =
                     & valueTxOutL
                         .~ inject (Coin locked)
                 )
-     in max adjusted (Coin locked)
+    in  max adjusted (Coin locked)

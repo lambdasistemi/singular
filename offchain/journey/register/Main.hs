@@ -78,16 +78,24 @@ Hermetic run (D-011), from @offchain/@:
 module Main (main) where
 
 import Control.Concurrent (threadDelay)
-import Control.Exception (
-    ErrorCall (..),
-    SomeException,
-    displayException,
-    throwIO,
-    try,
- )
+import Control.Exception
+    ( ErrorCall (..)
+    , SomeException
+    , displayException
+    , throwIO
+    , try
+    )
 import Control.Monad (forM, forM_, unless, when)
 import Crypto.Hash (Blake2b_256, Digest, hash)
-import Data.Aeson (FromJSON (..), Value, eitherDecode', object, withObject, (.:), (.=))
+import Data.Aeson
+    ( FromJSON (..)
+    , Value
+    , eitherDecode'
+    , object
+    , withObject
+    , (.:)
+    , (.=)
+    )
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
 import Data.Bits (complement)
@@ -99,7 +107,13 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.Coerce (coerce)
 import Data.Foldable (toList)
-import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
+import Data.IORef
+    ( IORef
+    , modifyIORef'
+    , newIORef
+    , readIORef
+    , writeIORef
+    )
 import Data.List (isInfixOf, sortBy, sortOn, stripPrefix)
 import Data.List qualified as List
 import Data.Map.Strict qualified as Map
@@ -118,167 +132,203 @@ import System.Directory (createDirectoryIfMissing)
 import System.Environment (getArgs, lookupEnv)
 import System.Exit (ExitCode (..), exitWith)
 import System.FilePath ((</>))
-import System.IO (BufferMode (..), hPutStrLn, hSetBuffering, stderr, stdout)
+import System.IO
+    ( BufferMode (..)
+    , hPutStrLn
+    , hSetBuffering
+    , stderr
+    , stdout
+    )
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
-import Cardano.Ledger.Address (Addr (..), Withdrawals (..), serialiseAddr)
+import Cardano.Ledger.Address
+    ( Addr (..)
+    , Withdrawals (..)
+    , serialiseAddr
+    )
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
-import Cardano.Ledger.Api.Scripts.Data (Data (..), Datum (..), binaryDataToData)
+import Cardano.Ledger.Api.Scripts.Data
+    ( Data (..)
+    , Datum (..)
+    , binaryDataToData
+    )
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
-import Cardano.Ledger.Api.Tx.Body (
-    collateralInputsTxBodyL,
-    feeTxBodyL,
-    inputsTxBodyL,
-    mintTxBodyL,
-    mkBasicTxBody,
-    outputsTxBodyL,
-    referenceInputsTxBodyL,
-    reqSignerHashesTxBodyL,
-    scriptIntegrityHashTxBodyL,
- )
+import Cardano.Ledger.Api.Tx.Body
+    ( collateralInputsTxBodyL
+    , feeTxBodyL
+    , inputsTxBodyL
+    , mintTxBodyL
+    , mkBasicTxBody
+    , outputsTxBodyL
+    , referenceInputsTxBodyL
+    , reqSignerHashesTxBodyL
+    , scriptIntegrityHashTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.In (TxIn (..))
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    coinTxOutL,
-    datumTxOutL,
-    getMinCoinTxOut,
-    mkBasicTxOut,
-    referenceScriptTxOutL,
-    valueTxOutL,
- )
-import Cardano.Ledger.Api.Tx.Wits (
-    Redeemers (..),
-    addrTxWitsL,
-    rdmrsTxWitsL,
-    scriptTxWitsL,
-    witVKeyHash,
- )
-import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (..), TxIx (..))
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , coinTxOutL
+    , datumTxOutL
+    , getMinCoinTxOut
+    , mkBasicTxOut
+    , referenceScriptTxOutL
+    , valueTxOutL
+    )
+import Cardano.Ledger.Api.Tx.Wits
+    ( Redeemers (..)
+    , addrTxWitsL
+    , rdmrsTxWitsL
+    , scriptTxWitsL
+    , witVKeyHash
+    )
+import Cardano.Ledger.BaseTypes
+    ( Network (..)
+    , StrictMaybe (..)
+    , TxIx (..)
+    )
 import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Binary.Version (Version)
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
-import Cardano.Ledger.Core (Script, extractHash, hashScript, withdrawalsTxBodyL)
-import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
+import Cardano.Ledger.Core
+    ( Script
+    , extractHash
+    , hashScript
+    , withdrawalsTxBodyL
+    )
+import Cardano.Ledger.Credential
+    ( Credential (..)
+    , StakeReference (..)
+    )
 import Cardano.Ledger.Hashes (ScriptHash, unKeyHash)
-import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..), PolicyID (..))
+import Cardano.Ledger.Mary.Value
+    ( MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID (..)
+    )
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
-import Cardano.Node.Client.E2E.Setup (
-    Ed25519DSIGN,
-    SignKeyDSIGN,
-    addKeyWitness,
-    enterpriseAddr,
-    keyHashFromSignKey,
-    mkSignKey,
- )
+import Cardano.Node.Client.E2E.Setup
+    ( Ed25519DSIGN
+    , SignKeyDSIGN
+    , addKeyWitness
+    , enterpriseAddr
+    , keyHashFromSignKey
+    , mkSignKey
+    )
 import Cardano.Node.Client.Ledger (ConwayTx)
-import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Cardano.Node.Client.Submitter
+    ( SubmitResult (..)
+    , Submitter (..)
+    )
 import Naming.Datum
 import Naming.Register
-import Naming.Wire (
-    Address (..),
-    WireData (..),
-    addressBytes,
-    decodeAddress,
-    serialiseWireData,
- )
+import Naming.Wire
+    ( Address (..)
+    , WireData (..)
+    , addressBytes
+    , decodeAddress
+    , serialiseWireData
+    )
 import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Blueprint (
-    applyBytesParam,
-    extractCompiledCode,
-    loadBlueprint,
- )
+import Singular.Registry.Blueprint
+    ( applyBytesParam
+    , extractCompiledCode
+    , loadBlueprint
+    )
 import Singular.Registry.Candidate (resolveCandidate, sourceName)
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Deployment (
-    Attached (..),
-    CageParts (..),
-    Deployment (..),
-    attach,
-    deploymentPathFromEnvironment,
-    loadMirror,
-    mirrorPathFor,
-    parseOutRef,
-    readDeployment,
-    saveMirror,
- )
-import Singular.Registry.Ledger (
-    AssetName (..),
-    Coin (..),
-    ConwayEra,
-    PParams,
-    Root (..),
-    TokenId (..),
- )
+import Singular.Registry.Deployment
+    ( Attached (..)
+    , CageParts (..)
+    , Deployment (..)
+    , attach
+    , deploymentPathFromEnvironment
+    , loadMirror
+    , mirrorPathFor
+    , parseOutRef
+    , readDeployment
+    , saveMirror
+    )
+import Singular.Registry.Ledger
+    ( AssetName (..)
+    , Coin (..)
+    , ConwayEra
+    , PParams
+    , Root (..)
+    , TokenId (..)
+    )
 import Singular.Registry.Lifecycle qualified as Lifecycle
-import Singular.Registry.Node (
-    NodeSession (..),
-    awaitChain,
-    awaitTx,
-    awaitTxWindow,
-    currentTipSlot,
-    echoKoios,
-    funderAddr,
-    funderSignKey,
-    scriptStakeRegistered,
-    withNodeForPlannedFunding,
- )
+import Singular.Registry.Node
+    ( NodeSession (..)
+    , awaitChain
+    , awaitTx
+    , awaitTxWindow
+    , currentTipSlot
+    , echoKoios
+    , funderAddr
+    , funderSignKey
+    , scriptStakeRegistered
+    , withNodeForPlannedFunding
+    )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie qualified as Trie
-import Singular.Registry.Trie.PureManager (
-    mkPureTrieManager,
-    mkPureTrieManagerFrom,
- )
+import Singular.Registry.Trie.PureManager
+    ( mkPureTrieManager
+    , mkPureTrieManagerFrom
+    )
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
-import Singular.Registry.TxBuilder.ConnectedFold (
-    ConnectedFoldArgs (..),
-    ConnectedMint (..),
-    ConnectedSpend (..),
-    RawRedeemer (..),
-    connectedFoldTx,
-    syncFoldedRequests,
- )
-import Singular.Registry.TxBuilder.Internal (
-    ConsumerBinding (..),
-    addrKeyHashBytes,
-    addrWitnessKeyHash,
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    computeScriptHash,
-    computeScriptIntegrity,
-    currentPosixMs,
-    deriveConsumerBinding,
-    extractCageDatum,
-    failedWitnessHash,
-    findStateUtxo,
-    hookAccountAddress,
-    isBudgetFailure,
-    mkCageScript,
-    mkInlineDatum,
-    mkRequestScript,
-    pinScriptHash,
-    requestAddrFromCfg,
-    scriptFromBytes,
-    scriptHashBytes,
-    spendingIndex,
-    toPlcData,
-    txInToRef,
- )
-import Singular.Registry.TxBuilder.Register (registerConsumerImpl, registerScriptImpl)
+import Singular.Registry.TxBuilder.ConnectedFold
+    ( ConnectedFoldArgs (..)
+    , ConnectedMint (..)
+    , ConnectedSpend (..)
+    , RawRedeemer (..)
+    , connectedFoldTx
+    , syncFoldedRequests
+    )
+import Singular.Registry.TxBuilder.Internal
+    ( ConsumerBinding (..)
+    , addrKeyHashBytes
+    , addrWitnessKeyHash
+    , cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , computeScriptHash
+    , computeScriptIntegrity
+    , currentPosixMs
+    , deriveConsumerBinding
+    , extractCageDatum
+    , failedWitnessHash
+    , findStateUtxo
+    , hookAccountAddress
+    , isBudgetFailure
+    , mkCageScript
+    , mkInlineDatum
+    , mkRequestScript
+    , pinScriptHash
+    , requestAddrFromCfg
+    , scriptFromBytes
+    , scriptHashBytes
+    , spendingIndex
+    , toPlcData
+    , txInToRef
+    )
+import Singular.Registry.TxBuilder.Register
+    ( registerConsumerImpl
+    , registerScriptImpl
+    )
 import Singular.Registry.TxBuilder.Reject (rejectRequestsImpl)
 import Singular.Registry.TxBuilder.Request (requestEdgeImpl)
 import Singular.Registry.TxBuilder.Retract (retractRequestAtTipImpl)
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainRequest (..),
-    OnChainRoot (..),
-    OnChainTokenState (..),
-    OnChainTxOutRef,
-    RequestPhase (..),
-    requestPhase,
- )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRequest (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
+    , OnChainTxOutRef
+    , RequestPhase (..)
+    , requestPhase
+    )
 
 -- ---------------------------------------------------------
 -- Run modes
@@ -314,7 +364,14 @@ wrongReasonMarker =
 -- Fixture seeds (each exactly 32 bytes for mkSignKey)
 -- ---------------------------------------------------------
 
-partySeed, folderSeed, secondSeed, advSeed, nextSeed, next2Seed, tamperSeed :: ByteString
+partySeed
+    , folderSeed
+    , secondSeed
+    , advSeed
+    , nextSeed
+    , next2Seed
+    , tamperSeed
+        :: ByteString
 partySeed = "s77-ordinary-party00000000000000"
 folderSeed = "s77-folder-ordinary0000000000000"
 secondSeed = "s77-second-controller00000000000"
@@ -337,7 +394,8 @@ spellingFromArgs [] = Right "alice"
 spellingFromArgs ("--spelling" : value : _) = Right (TE.encodeUtf8 (T.pack value))
 spellingFromArgs ["--spelling"] = Left "--spelling requires a spelling"
 spellingFromArgs (arg : rest)
-    | Just value <- stripPrefix "--spelling=" arg = Right (TE.encodeUtf8 (T.pack value))
+    | Just value <- stripPrefix "--spelling=" arg =
+        Right (TE.encodeUtf8 (T.pack value))
     | otherwise = spellingFromArgs rest
 
 bobSpelling :: ByteString
@@ -423,7 +481,8 @@ main = do
     namingPath <- requireEnv "NAMING_BLUEPRINT"
     registryPath <- requireEnv "REGISTRY_BLUEPRINT"
     outcome <-
-        try (runMode mode namingPath registryPath) :: IO (Either SomeException ())
+        try (runMode mode namingPath registryPath)
+            :: IO (Either SomeException ())
     case outcome of
         Right () -> pure ()
         Left e -> do
@@ -500,9 +559,12 @@ runMode mode namingPath registryPath = do
             submit = nsSubmitter sess
             pp = nsPParams sess
             lifecycle = Lifecycle.lifecycleRequested sess args
-        when ("--funding-only" `elem` args && not lifecycle) $ failWith "--funding-only requires a public node or --lifecycle"
+        when ("--funding-only" `elem` args && not lifecycle) $
+            failWith "--funding-only requires a public node or --lifecycle"
         mDeployment <- deploymentPathFromEnvironment
-        when (lifecycle && mDeployment == Nothing) $ failWith "the public lifecycle requires --deployment; deploy the registry once first"
+        when (lifecycle && mDeployment == Nothing) $
+            failWith
+                "the public lifecycle requires --deployment; deploy the registry once first"
         seedRef <- case mDeployment of
             Just path -> do
                 dep <- readDeployment path
@@ -520,8 +582,12 @@ runMode mode namingPath registryPath = do
             repUnappliedHex =
                 hex (scriptHashBytes (computeScriptHash repBytes))
             repAppliedBytes =
-                applyBytesParam (registryAssetId (scriptHashBytes (computeScriptHash stateBytes)) (deriveAssetName seedRef)) $
-                    applyBytesParam (scriptHashBytes appHash) repBytes
+                applyBytesParam
+                    ( registryAssetId
+                        (scriptHashBytes (computeScriptHash stateBytes))
+                        (deriveAssetName seedRef)
+                    )
+                    $ applyBytesParam (scriptHashBytes appHash) repBytes
             repAppliedHash = computeScriptHash repAppliedBytes
             repAppliedHex = hex (scriptHashBytes repAppliedHash)
             repAppliedPolicy = PolicyID repAppliedHash
@@ -537,7 +603,8 @@ runMode mode namingPath registryPath = do
         checkPinnedNamingApplication appHex
         checkPinnedRepresentative repUnappliedHex
         checkPinnedRegistryState stateUnappliedHex
-        checkPinnedConsumer (hex (scriptHashBytes (computeScriptHash consumerBytes)))
+        checkPinnedConsumer
+            (hex (scriptHashBytes (computeScriptHash consumerBytes)))
         emit
             "identity"
             ( "naming application 0x"
@@ -603,7 +670,7 @@ runMode mode namingPath registryPath = do
         let cageParts =
                 let ConsumerBinding{cbPin = pin, cbScriptBytes = consumerScript} =
                         deriveConsumerBinding consumerBytes
-                 in CageParts
+                in  CageParts
                         { partsStateBytes = stateBytes
                         , partsRequestBytes = requestBytes
                         , partsRepPolicy =
@@ -625,11 +692,31 @@ runMode mode namingPath registryPath = do
         evDir <- evidenceDirFromEnv
         createDirectoryIfMissing True evDir
         evNext <- newIORef (0 :: Int)
-        (candidate, worktreeDirty, source) <- either failWith pure =<< resolveCandidate
-        writeEvidenceMeta evDir candidate worktreeDirty (sourceName source) namingPath registryPath appHex repAppliedHex appliedStateHex
+        (candidate, worktreeDirty, source) <-
+            either failWith pure =<< resolveCandidate
+        writeEvidenceMeta
+            evDir
+            candidate
+            worktreeDirty
+            (sourceName source)
+            namingPath
+            registryPath
+            appHex
+            repAppliedHex
+            appliedStateHex
         (cfg, tok) <- case attached of
             Nothing ->
-                bootCage seedRef prov submit tm appliedStateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash)) consumerBytes evDir evNext
+                bootCage
+                    seedRef
+                    prov
+                    submit
+                    tm
+                    appliedStateBytes
+                    requestBytes
+                    (SBS.toShort (scriptHashBytes repAppliedHash))
+                    consumerBytes
+                    evDir
+                    evNext
             Just (path, att) -> do
                 emit
                     "attached"
@@ -658,46 +745,81 @@ runMode mode namingPath registryPath = do
                     \registered when the deployment was made; a run that \
                     \attaches registers nothing"
             Nothing -> do
-                consumerRegistered <- scriptStakeRegistered (pinScriptHash (SBS.fromShort (cfgConsumerPin cfg)))
+                consumerRegistered <-
+                    scriptStakeRegistered
+                        (pinScriptHash (SBS.fromShort (cfgConsumerPin cfg)))
                 if consumerRegistered
-                    then emit "consumer" "consumer stake credential already registered; reused"
+                    then
+                        emit "consumer" "consumer stake credential already registered; reused"
                     else do
                         unsignedReg <- registerConsumerImpl cfg prov genesisAddr
                         let signedReg = addKeyWitness genesisSignKey unsignedReg
-                        regResult <- submitRetainAt evDir evNext submit "consumer-registration" signedReg
+                        regResult <-
+                            submitRetainAt evDir evNext submit "consumer-registration" signedReg
                         case regResult of
                             Submitted _ -> pure ()
                             Rejected reason ->
                                 failWith ("consumer-registration: rejected: " <> show reason)
-                        _ <- waitConfirmationTx signedReg (txIdHex signedReg <> " (consumer-registration)")
-                        emit "consumer" "consumer stake credential registered; hook withdrawals are live"
+                        _ <-
+                            waitConfirmationTx
+                                signedReg
+                                (txIdHex signedReg <> " (consumer-registration)")
+                        emit
+                            "consumer"
+                            "consumer stake credential registered; hook withdrawals are live"
                 let stakingScript = scriptFromBytes "staking" stakingBytes
                 stakingRegistered <- scriptStakeRegistered (hashScript stakingScript)
                 if stakingRegistered
-                    then emit "consumer" "staking stake credential already registered; reused"
+                    then
+                        emit "consumer" "staking stake credential already registered; reused"
                     else do
-                        unsignedStakingReg <- registerScriptImpl prov genesisAddr (hashScript stakingScript)
+                        unsignedStakingReg <-
+                            registerScriptImpl prov genesisAddr (hashScript stakingScript)
                         let signedStakingReg = addKeyWitness genesisSignKey unsignedStakingReg
-                        stakingRegResult <- submitRetainAt evDir evNext submit "staking-registration" signedStakingReg
+                        stakingRegResult <-
+                            submitRetainAt
+                                evDir
+                                evNext
+                                submit
+                                "staking-registration"
+                                signedStakingReg
                         case stakingRegResult of
                             Submitted _ -> pure ()
                             Rejected reason ->
                                 failWith ("staking-registration: rejected: " <> show reason)
-                        _ <- waitConfirmationTx signedStakingReg (txIdHex signedStakingReg <> " (staking-registration)")
-                        emit "consumer" "staking stake credential registered for the swapped-hook control"
+                        _ <-
+                            waitConfirmationTx
+                                signedStakingReg
+                                (txIdHex signedStakingReg <> " (staking-registration)")
+                        emit
+                            "consumer"
+                            "staking stake credential registered for the swapped-hook control"
                 unsignedRepReg <- registerScriptImpl prov genesisAddr repAppliedHash
                 let signedRepReg = addKeyWitness genesisSignKey unsignedRepReg
-                repRegResult <- submitRetainAt evDir evNext submit "representative-registration" signedRepReg
+                repRegResult <-
+                    submitRetainAt
+                        evDir
+                        evNext
+                        submit
+                        "representative-registration"
+                        signedRepReg
                 case repRegResult of
                     Submitted _ -> pure ()
-                    Rejected reason -> failWith ("representative-registration: rejected: " <> show reason)
-                _ <- waitConfirmationTx signedRepReg (txIdHex signedRepReg <> " (representative-registration)")
-                emit "representative" "representative stake credential registered; retirement witness is live"
+                    Rejected reason ->
+                        failWith ("representative-registration: rejected: " <> show reason)
+                _ <-
+                    waitConfirmationTx
+                        signedRepReg
+                        (txIdHex signedRepReg <> " (representative-registration)")
+                emit
+                    "representative"
+                    "representative stake credential registered; retirement witness is live"
         -- The adversarial manager gets its own empty trie, never synced
         -- with the cage: proofs built against it fail on-chain, which is
         -- exactly the occupied-key refusal.
         createTrie tmFresh tok
-        pool <- if lifecycle then pure [] else faucetParty prov submit evDir evNext
+        pool <-
+            if lifecycle then pure [] else faucetParty prov submit evDir evNext
         poolRef <- newIORef pool
         scriptRefs <- case attached of
             Nothing -> do
@@ -707,7 +829,15 @@ runMode mode namingPath registryPath = do
                         , appScript
                         , repAppliedScript
                         ]
-                publishScripts prov submit pp poolRef refScripts partyAddr evDir evNext
+                publishScripts
+                    prov
+                    submit
+                    pp
+                    poolRef
+                    refScripts
+                    partyAddr
+                    evDir
+                    evNext
             Just (_, att) -> do
                 emit
                     "attached"
@@ -789,7 +919,11 @@ runMode mode namingPath registryPath = do
                     , "rows" .= reverse rows
                     ]
             )
-        emit "report" ("human-readable report (S3 reads raw evidence, not this): " <> (envEvDir env </> "report.json"))
+        emit
+            "report"
+            ( "human-readable report (S3 reads raw evidence, not this): "
+                <> (envEvDir env </> "report.json")
+            )
         forM_ attached $ \(path, _) -> do
             saveMirror path =<< dumpTries
             emit
@@ -802,32 +936,74 @@ runMode mode namingPath registryPath = do
 -- | One public claim and its connected fold; the full row suite stays below.
 runLifecycle :: Env -> (Value -> IO ()) -> IO ()
 runLifecycle env record = do
-    key <- setupKey env "alice" (envSpelling env) (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
+    key <-
+        setupKey
+            env
+            "alice"
+            (envSpelling env)
+            (envPartyCodec env)
+            (envPartyAddr env)
+            (envPartyHash env)
+            partySeed
+            nextSeed
     _ <- connectedAccept env record (envTrie env) key True "fold-active"
-    emit "complete" "public lifecycle: exact spelling claimed and folded into Active"
+    emit
+        "complete"
+        "public lifecycle: exact spelling claimed and folded into Active"
 
 fundPublicLifecycle :: Env -> IO ()
 fundPublicLifecycle env = do
     occupied <- withTrie (envTrie env) (envTok env) $ \trie -> Trie.lookup trie (envSpelling env)
-    when (occupied /= Nothing) $ failWith "public lifecycle: requested spelling is already claimed; choose an unclaimed spelling explicitly"
-    key <- setupKey env "alice" (envSpelling env) (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
+    when (occupied /= Nothing) $
+        failWith
+            "public lifecycle: requested spelling is already claimed; choose an unclaimed spelling explicitly"
+    key <-
+        setupKey
+            env
+            "alice"
+            (envSpelling env)
+            (envPartyCodec env)
+            (envPartyAddr env)
+            (envPartyHash env)
+            partySeed
+            nextSeed
     now <- currentPosixMs
     let pp = envPp env
         refs = envRefUtxos env
         approval = insertApprovalName (keyControlBytes key) (keyCommitment key)
-        tokens = MultiAsset (Map.singleton (envAppPolicy env) (Map.singleton (AssetName (SBS.toShort approval)) 1))
+        tokens =
+            MultiAsset
+                ( Map.singleton
+                    (envAppPolicy env)
+                    (Map.singleton (AssetName (SBS.toShort approval)) 1)
+                )
         claim = scriptOut pp (envAppAddr env) 0 tokens (keyDatum key)
         deposit = Lifecycle.minimumCoin pp claim
-        request = Lifecycle.requestLockedCoin pp (envCfg env) (envTok env) (envFolderAddr env) (envSpelling env) edgeInsertActive now
+        request =
+            Lifecycle.requestLockedCoin
+                pp
+                (envCfg env)
+                (envTok env)
+                (envFolderAddr env)
+                (envSpelling env)
+                edgeInsertActive
+                now
         outs =
             [ Lifecycle.fundedOutput pp refs (envPartyAddr env) deposit
             , Lifecycle.collateralOutput pp refs (envPartyAddr env)
-            , Lifecycle.fundedOutput pp refs (envFolderAddr env) (request <> Lifecycle.protocolFeeReserve pp refs)
+            , Lifecycle.fundedOutput
+                pp
+                refs
+                (envFolderAddr env)
+                (request <> Lifecycle.protocolFeeReserve pp refs)
             ]
     let Coin required = Lifecycle.fundingRequirement pp outs
-    emit "funding" ("lifecycle total requirement: " <> show required <> " lovelace")
+    emit
+        "funding"
+        ("lifecycle total requirement: " <> show required <> " lovelace")
     unless (envFundingOnly env) $ do
-        funded <- Lifecycle.fundLifecycle (envProv env) (envSubmit env) pp outs
+        funded <-
+            Lifecycle.fundLifecycle (envProv env) (envSubmit env) pp outs
         writeIORef (envPool env) (take 2 funded)
 
 data Env = Env
@@ -886,11 +1062,34 @@ data Env = Env
 -- not silently choose another key or rerun unrelated occupied fixtures.
 runAttachedDuplicate :: Env -> (Value -> IO ()) -> IO ()
 runAttachedDuplicate env record = do
-    original <- setupKey env "existing" (envSpelling env) (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
+    original <-
+        setupKey
+            env
+            "existing"
+            (envSpelling env)
+            (envPartyCodec env)
+            (envPartyAddr env)
+            (envPartyHash env)
+            partySeed
+            nextSeed
     before <- recordsForSpelling env original
-    duplicate <- setupKey env "duplicate" (envSpelling env) (envAdvCodec env) (envAdvAddr env) (envAdvHash env) advSeed next2Seed
+    duplicate <-
+        setupKey
+            env
+            "duplicate"
+            (envSpelling env)
+            (envAdvCodec env)
+            (envAdvAddr env)
+            (envAdvHash env)
+            advSeed
+            next2Seed
     runAdversarial env record (length before) original duplicate
-    emit "attached" ("spelling " <> show (envSpelling env) <> " is already held: duplicate insert refused; choose an explicit --spelling for a new claim")
+    emit
+        "attached"
+        ( "spelling "
+            <> show (envSpelling env)
+            <> " is already held: duplicate insert refused; choose an explicit --spelling for a new claim"
+        )
 
 runRows :: Env -> (Value -> IO ()) -> IO ()
 runRows env record = do
@@ -905,15 +1104,44 @@ runRows env record = do
             <> " read from the chain state datum — no name Active"
         )
     -- alice: the connected insert, accepted.
-    alice <- setupKey env "alice" (envSpelling env) (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
-    foldTxAlice <- connectedAccept env record (envTrie env) alice True "fold-active"
+    alice <-
+        setupKey
+            env
+            "alice"
+            (envSpelling env)
+            (envPartyCodec env)
+            (envPartyAddr env)
+            (envPartyHash env)
+            partySeed
+            nextSeed
+    foldTxAlice <-
+        connectedAccept env record (envTrie env) alice True "fold-active"
     -- Adversarial alice: same name, another controller — built with the
     -- guard bypassed, submitted, refused by the state validator.
-    advAlice <- setupKey env "alice-dup" (envSpelling env) (envAdvCodec env) (envAdvAddr env) (envAdvHash env) advSeed next2Seed
+    advAlice <-
+        setupKey
+            env
+            "alice-dup"
+            (envSpelling env)
+            (envAdvCodec env)
+            (envAdvAddr env)
+            (envAdvHash env)
+            advSeed
+            next2Seed
     runAdversarial env record 1 alice advAlice
     -- bob: the free-key control succeeds in the same run.
-    bob <- setupKey env "bob" bobSpelling (envSecondCodec env) (envSecondAddr env) (envSecondHash env) secondSeed nextSeed
-    _ <- connectedAccept env record (envTrie env) bob True "free-key-control"
+    bob <-
+        setupKey
+            env
+            "bob"
+            bobSpelling
+            (envSecondCodec env)
+            (envSecondAddr env)
+            (envSecondHash env)
+            secondSeed
+            nextSeed
+    _ <-
+        connectedAccept env record (envTrie env) bob True "free-key-control"
     emit
         "row"
         "free-key-control: bob folded clean in the same run — the \
@@ -921,20 +1149,41 @@ runRows env record = do
     -- E-001 (issue #77): a connected fold carrying the right name under a
     -- foreign always-true policy refuses on `representative-policy` while
     -- the honest folds above stay accepted in the same run.
-    eve <- setupKey env "eve" "eve" (envAdvCodec env) (envAdvAddr env) (envAdvHash env) advSeed nextSeed
+    eve <-
+        setupKey
+            env
+            "eve"
+            "eve"
+            (envAdvCodec env)
+            (envAdvAddr env)
+            (envAdvHash env)
+            advSeed
+            nextSeed
     rowForeignPolicyRefused env eve
     -- Mint negatives: the insert-approval arm refuses.
     rowMintBadName env
     rowMintNoSigner env
     -- key3: fold negatives against a live insert claim (naming only).
-    key3 <- setupKey env "key3" "carol" (mustCodecOf tamperSeed) (enterpriseAddr (keyHashFromSignKey (mkSignKey tamperSeed))) (addrKeyHashBytes (enterpriseAddr (keyHashFromSignKey (mkSignKey tamperSeed)))) tamperSeed nextSeed
+    key3 <-
+        setupKey
+            env
+            "key3"
+            "carol"
+            (mustCodecOf tamperSeed)
+            (enterpriseAddr (keyHashFromSignKey (mkSignKey tamperSeed)))
+            ( addrKeyHashBytes
+                (enterpriseAddr (keyHashFromSignKey (mkSignKey tamperSeed)))
+            )
+            tamperSeed
+            nextSeed
     (_claim3Tx, claim3In, _claim3Out) <- setupNamingClaim env key3
     rowFoldTamperedRep env key3
     rowFoldMissingRep env key3 claim3In
     rowFoldEmptyReps env key3 claim3In
     -- Withdraw-approval claim: an insert fold cannot consume it.
     claimWTx <- createWithdrawClaim env key3
-    claimWIn <- mustFindUTxO (envProv env) (envAppAddr env) claimWTx "withdraw claim"
+    claimWIn <-
+        mustFindUTxO (envProv env) (envAppAddr env) claimWTx "withdraw claim"
     rowFoldWithdrawApproval env key3 claimWIn
     -- Ownerless rows: submitted refusals on the same cage.
     runOwnerlessEnd env record False
@@ -952,7 +1201,8 @@ runRows env record = do
     -- an attached run reached the retract 457 s after submitting, with
     -- the window closed since 150 s. Ageing it deliberately, by waiting,
     -- is the same phase-2 evidence without the race.
-    supportReq <- submitSupportRequest env record "support-aging" "support-value"
+    supportReq <-
+        submitSupportRequest env record "support-aging" "support-value"
     runSupportFold env record
     runSupportRetract env record supportReq
     -- Hook exhibit (NOTE-020 item 4 + NOTE-021 consumer v2): cage-side
@@ -974,7 +1224,8 @@ runRows env record = do
 
 mustCodecOf :: ByteString -> Address
 mustCodecOf seed =
-    case decodeAddress (serialiseAddr (enterpriseAddr (keyHashFromSignKey (mkSignKey seed)))) of
+    case decodeAddress
+        (serialiseAddr (enterpriseAddr (keyHashFromSignKey (mkSignKey seed)))) of
         Just a -> a
         Nothing -> error "fixture: devnet address does not decode"
 
@@ -993,7 +1244,16 @@ data KeySetup = KeySetup
     , keyRepName :: ByteString
     }
 
-setupKey :: Env -> String -> ByteString -> Address -> Addr -> ByteString -> ByteString -> ByteString -> IO KeySetup
+setupKey
+    :: Env
+    -> String
+    -> ByteString
+    -> Address
+    -> Addr
+    -> ByteString
+    -> ByteString
+    -> ByteString
+    -> IO KeySetup
 setupKey env label spelling codec addr controllerHash controllerSeed revealSeed = do
     let revealAddr = enterpriseAddr (keyHashFromSignKey (mkSignKey revealSeed))
         commitment = nextControlCommitmentOf (serialiseAddr revealAddr)
@@ -1016,7 +1276,14 @@ setupKey env label spelling codec addr controllerHash controllerSeed revealSeed 
         repName = representativeName spelling
     if spelling == "alice"
         then putStrLn "printf %s alice | b2sum -l 256"
-        else putStrLn ("printf %s '" <> concatMap (\c -> if c == '\'' then "'\\''" else [c]) (T.unpack (TE.decodeUtf8 spelling)) <> "' | b2sum -l 256")
+        else
+            putStrLn
+                ( "printf %s '"
+                    <> concatMap
+                        (\c -> if c == '\'' then "'\\''" else [c])
+                        (T.unpack (TE.decodeUtf8 spelling))
+                    <> "' | b2sum -l 256"
+                )
     emit
         "key"
         ( label
@@ -1052,18 +1319,18 @@ accessor; use sites read `keyRepName ks` exactly as before).
 -- Cage boot and requests
 -- ---------------------------------------------------------
 
-bootCage ::
-    OnChainTxOutRef ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    TrieManager IO ->
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    FilePath ->
-    IORef Int ->
-    IO (CageConfig, TokenId)
+bootCage
+    :: OnChainTxOutRef
+    -> Cage.Provider IO
+    -> Submitter IO
+    -> TrieManager IO
+    -> SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> FilePath
+    -> IORef Int
+    -> IO (CageConfig, TokenId)
 bootCage seedRef prov submit tm stateBytes requestBytes repPolicy consumerBytes evDir evNext = do
     let ConsumerBinding
             { cbPin = consumerPin
@@ -1106,26 +1373,40 @@ bootCage seedRef prov submit tm stateBytes requestBytes repPolicy consumerBytes 
         [(an, _)] -> pure (TokenId an)
         _ -> failWith "boot: unexpected minted assets"
     createTrie tm tok
-    emit "boot" "booted the registry cage (permissionless folds from here)"
+    emit
+        "boot"
+        "booted the registry cage (permissionless folds from here)"
     pure (cfg, tok)
 
 {- | Submit one registry insert request: spelling -> representative name.
 Returns the request input and output.
 -}
-submitRegistryRequest :: Env -> ByteString -> ByteString -> IO (TxIn, TxOut ConwayEra)
+submitRegistryRequest
+    :: Env -> ByteString -> ByteString -> IO (TxIn, TxOut ConwayEra)
 submitRegistryRequest env spelling value = do
     let cfg = envCfg env
         tok = envTok env
     unsigned <-
-        requestEdgeImpl cfg (envProv env) (Coin 1_000_000) tok spelling edgeInsertActive (envFolderAddr env)
+        requestEdgeImpl
+            cfg
+            (envProv env)
+            (Coin 1_000_000)
+            tok
+            spelling
+            edgeInsertActive
+            (envFolderAddr env)
     let signed = addKeyWitness (mkSignKey folderSeed) unsigned
-    result <- submitRetain env ("blueprint-request-" <> show spelling) signed
+    result <-
+        submitRetain env ("blueprint-request-" <> show spelling) signed
     case result of
         Submitted _ -> pure ()
         Rejected reason ->
             failWith ("request: rejected: " <> show reason)
     let txid = txIdHex signed
-    _ <- waitConfirmationTx signed (txid <> " (registry request " <> show spelling <> ")")
+    _ <-
+        waitConfirmationTx
+            signed
+            (txid <> " (registry request " <> show spelling <> ")")
     let reqAddr = requestAddrFromCfg cfg tok Testnet
     reqIn <- mustFindUTxO (envProv env) reqAddr txid "registry request"
     reqOut <- mustOutAt (envProv env) reqAddr reqIn
@@ -1174,20 +1455,20 @@ trie only in the first case keeps the root check that follows honest:
 it compares what this run will build proofs from against what the chain
 says, whichever case it was.
 -}
-ensureTrie ::
-    TrieManager IO ->
-    Map.Map TokenId MPFInMemoryDB ->
-    TokenId ->
-    IO ()
+ensureTrie
+    :: TrieManager IO
+    -> Map.Map TokenId MPFInMemoryDB
+    -> TokenId
+    -> IO ()
 ensureTrie tm mirrorTries tok =
     unless (Map.member tok mirrorTries) (createTrie tm tok)
 
-assertMirrorMatchesChain ::
-    Cage.Provider IO ->
-    CageConfig ->
-    TokenId ->
-    TrieManager IO ->
-    IO ()
+assertMirrorMatchesChain
+    :: Cage.Provider IO
+    -> CageConfig
+    -> TokenId
+    -> TrieManager IO
+    -> IO ()
 assertMirrorMatchesChain prov cfg tok tm = do
     utxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
     chain <- case findStateUtxo (cagePolicyIdFromCfg cfg) tok utxos of
@@ -1220,7 +1501,7 @@ chainRootHex env = do
     case extractCageDatum stateOut of
         Just (StateDatum st) ->
             let OnChainRoot bs = stateRoot st
-             in pure (hex bs)
+            in  pure (hex bs)
         _ -> failWith "the state UTxO carries no state datum"
 
 -- | The registry token's asset-name bytes.
@@ -1237,7 +1518,8 @@ managerRootHex env tm = do
 -- Naming claims (approval mint + queued claim, controller-signed)
 -- ---------------------------------------------------------
 
-setupNamingClaim :: Env -> KeySetup -> IO (String, TxIn, TxOut ConwayEra)
+setupNamingClaim
+    :: Env -> KeySetup -> IO (String, TxIn, TxOut ConwayEra)
 setupNamingClaim env ks = do
     let approval = insertApprovalName (keyControlBytes ks) (keyCommitment ks)
         approvalMA =
@@ -1254,7 +1536,12 @@ setupNamingClaim env ks = do
                     claimCoin
                     approvalMA
                     (keyDatum ks)
-        change = changeOut (coinOf fund) (lifecycleFee env) [claimOut] (envPartyAddr env)
+        change =
+            changeOut
+                (coinOf fund)
+                (lifecycleFee env)
+                [claimOut]
+                (envPartyAddr env)
         redeemers =
             Redeemers $
                 Map.singleton
@@ -1289,11 +1576,22 @@ setupNamingClaim env ks = do
             addKeyWitness
                 (mkSignKey (keyControllerSeed ks))
                 (addKeyWitness (mkSignKey partySeed) evaluated)
-    assertOwnerAbsentTx env signed (keyLabel ks <> " insert-request creation")
+    assertOwnerAbsentTx
+        env
+        signed
+        (keyLabel ks <> " insert-request creation")
     submitAccepted env (keyLabel ks <> "-insert-request") signed
     let txid = txIdHex signed
-    _ <- waitConfirmationTx signed (txid <> " (" <> keyLabel ks <> " insert-request)")
-    claimIn <- mustFindUTxO (envProv env) (envAppAddr env) txid (keyLabel ks <> " claim")
+    _ <-
+        waitConfirmationTx
+            signed
+            (txid <> " (" <> keyLabel ks <> " insert-request)")
+    claimIn <-
+        mustFindUTxO
+            (envProv env)
+            (envAppAddr env)
+            txid
+            (keyLabel ks <> " claim")
     claimLive <- mustOutAt (envProv env) (envAppAddr env) claimIn
     emit
         "row"
@@ -1324,10 +1622,10 @@ the live registry request for the same spelling, or nothing. A fresh
 registry has neither, so only a run whose predecessor died between
 requesting and folding takes the resume path.
 -}
-findPendingInsert ::
-    Env ->
-    KeySetup ->
-    IO (Maybe ((TxIn, TxOut ConwayEra), (TxIn, TxOut ConwayEra)))
+findPendingInsert
+    :: Env
+    -> KeySetup
+    -> IO (Maybe ((TxIn, TxOut ConwayEra), (TxIn, TxOut ConwayEra)))
 findPendingInsert env ks = do
     let approval = insertApprovalName (keyControlBytes ks) (keyCommitment ks)
         reqAddr = requestAddrFromCfg (envCfg env) (envTok env) Testnet
@@ -1348,11 +1646,11 @@ findPendingInsert env ks = do
 selects the action. The message names the phase and both deadline slots
 so a refused build is attributable.
 -}
-classifyPending ::
-    Env ->
-    KeySetup ->
-    (TxIn, TxOut ConwayEra) ->
-    IO RequestPhase
+classifyPending
+    :: Env
+    -> KeySetup
+    -> (TxIn, TxOut ConwayEra)
+    -> IO RequestPhase
 classifyPending env ks (reqIn, reqOut) = do
     submittedAt <- case extractCageDatum reqOut of
         Just (RequestDatum r) -> pure (requestSubmittedAt r)
@@ -1393,15 +1691,22 @@ retractPendingRequest :: Env -> (TxIn, TxOut ConwayEra) -> IO ()
 retractPendingRequest env (reqIn, reqOut) = do
     submittedAt <- case extractCageDatum reqOut of
         Just (RequestDatum r) -> pure (requestSubmittedAt r)
-        _ -> failWith "resume retract: the pending request datum does not decode"
+        _ ->
+            failWith "resume retract: the pending request datum does not decode"
     waitForPhase2 env submittedAt
     built <-
         try
             ( retryHorizon 3 $ do
                 tip <- currentTipSlot
-                retractRequestAtTipImpl tip (envCfg env) (envProv env) (envTok env) reqIn (envFolderAddr env)
-            ) ::
-            IO (Either SomeException ConwayTx)
+                retractRequestAtTipImpl
+                    tip
+                    (envCfg env)
+                    (envProv env)
+                    (envTok env)
+                    reqIn
+                    (envFolderAddr env)
+            )
+            :: IO (Either SomeException ConwayTx)
     unsigned <- case built of
         Right tx -> pure tx
         Left err -> failWith ("resume retract build failed: " <> displayException err)
@@ -1410,7 +1715,9 @@ retractPendingRequest env (reqIn, reqOut) = do
     case result of
         Submitted _ -> do
             _ <- waitConfirmationTx signed (txIdHex signed <> " (resume retract)")
-            emit "resume" ("retract accepted: " <> txIdHex signed <> "; claiming fresh")
+            emit
+                "resume"
+                ("retract accepted: " <> txIdHex signed <> "; claiming fresh")
         Rejected reason ->
             failWith ("resume retract refused: " <> show reason)
 
@@ -1422,8 +1729,14 @@ run claims fresh.
 rejectPendingRequests :: Env -> IO ()
 rejectPendingRequests env = do
     built <-
-        try (rejectRequestsImpl (envCfg env) (envProv env) (envTok env) (envFolderAddr env)) ::
-            IO (Either SomeException ConwayTx)
+        try
+            ( rejectRequestsImpl
+                (envCfg env)
+                (envProv env)
+                (envTok env)
+                (envFolderAddr env)
+            )
+            :: IO (Either SomeException ConwayTx)
     signed <- case built of
         Right tx -> pure (addKeyWitness (mkSignKey folderSeed) tx)
         Left err -> failWith ("resume reject build failed: " <> displayException err)
@@ -1431,24 +1744,27 @@ rejectPendingRequests env = do
     case result of
         Submitted _ -> do
             _ <- waitConfirmationTx signed (txIdHex signed <> " (resume reject)")
-            emit "resume" ("reject accepted: " <> txIdHex signed <> "; claiming fresh")
+            emit
+                "resume"
+                ("reject accepted: " <> txIdHex signed <> "; claiming fresh")
         Rejected reason ->
             failWith ("resume reject refused: " <> show reason)
 
-connectedAccept ::
-    Env ->
-    (Value -> IO ()) ->
-    TrieManager IO ->
-    KeySetup ->
-    Bool ->
-    String ->
-    IO String
+connectedAccept
+    :: Env
+    -> (Value -> IO ())
+    -> TrieManager IO
+    -> KeySetup
+    -> Bool
+    -> String
+    -> IO String
 connectedAccept env record tm ks checkSync rowKind = do
     let fresh = do
             (_claimTx, cin, cout) <- setupNamingClaim env ks
             snap <- mustSnap env cin
             _ <- assertQueuedRequest env ks snap
-            (rin, rout) <- submitRegistryRequest env (keySpelling ks) (keyRepName ks)
+            (rin, rout) <-
+                submitRegistryRequest env (keySpelling ks) (keyRepName ks)
             pure (snap, cin, cout, rin, rout)
     prepared <-
         if envAttached env
@@ -1561,14 +1877,18 @@ connectedAccept env record tm ks checkSync rowKind = do
                 , cfaRefUtxos = envRefUtxos env
                 , cfaAdjustRoot = id
                 }
-    Lifecycle.verifyLifecycleBudget (envLifecycle env) (envPp env) unsigned
+    Lifecycle.verifyLifecycleBudget
+        (envLifecycle env)
+        (envPp env)
+        unsigned
     let signed = addKeyWitness (mkSignKey folderSeed) unsigned
     -- NOTE-001.2, pre-submit: the fold carries no registry-owner signer.
     assertFoldPermissionless env signed (keyLabel ks)
     retainListings env (keyLabel ks <> "-fold-pre")
     submitAccepted env (keyLabel ks <> "-fold") signed
     let txid = txIdHex signed
-    _ <- waitConfirmationTx signed (txid <> " (" <> keyLabel ks <> " fold)")
+    _ <-
+        waitConfirmationTx signed (txid <> " (" <> keyLabel ks <> " fold)")
     -- NOTE-001.3: the mint field carries the APPLIED representative
     -- identity with the expected name at +1.
     assertRepMintedByFold env signed (keySpelling ks) txid (keyLabel ks)
@@ -1586,18 +1906,27 @@ connectedAccept env record tm ks checkSync rowKind = do
                 <> " is not the computed new root "
                 <> hex (unRoot newRoot)
             )
-    reqLive <- isLiveAt (envProv env) (requestAddrFromCfg (envCfg env) (envTok env) Testnet) reqIn
+    reqLive <-
+        isLiveAt
+            (envProv env)
+            (requestAddrFromCfg (envCfg env) (envTok env) Testnet)
+            reqIn
     when reqLive $
         failWith (keyLabel ks <> ": the registry request survived the fold")
     claimLive <- isLiveAt (envProv env) (envAppAddr env) claimIn
     when claimLive $
         failWith (keyLabel ks <> ": the naming claim survived the fold")
     recordIn <-
-        mustFindUTxO (envProv env) (envAppAddr env) txid (keyLabel ks <> " record")
+        mustFindUTxO
+            (envProv env)
+            (envAppAddr env)
+            txid
+            (keyLabel ks <> " record")
     snapRecord <- mustSnap env recordIn
     decoded <- chainDatumOf snapRecord (keyLabel ks <> "-active")
     unless (decoded == keyDatum ks) $
-        failWith (keyLabel ks <> ": the Active datum is not the frozen proposal")
+        failWith
+            (keyLabel ks <> ": the Active datum is not the frozen proposal")
     assertChainBytes snapRecord (keyDatum ks) (keyLabel ks <> "-active")
     unless (lookupToken snapRecord (envRepPolicy env) repName == Just 1) $
         failWith
@@ -1633,9 +1962,15 @@ connectedAccept env record tm ks checkSync rowKind = do
             <> envRepHex env
         )
     contDatum <- stateDatumObject env
-    contIn <- mustFindUTxO (envProv env) (cageAddrFromCfg (envCfg env) Testnet) txid (keyLabel ks <> " continuation")
+    contIn <-
+        mustFindUTxO
+            (envProv env)
+            (cageAddrFromCfg (envCfg env) Testnet)
+            txid
+            (keyLabel ks <> " continuation")
     let distinctFromField
-            | rowKind == "free-key-control" = ["distinctFrom" .= ("occupied-key" :: String)]
+            | rowKind == "free-key-control" =
+                ["distinctFrom" .= ("occupied-key" :: String)]
             | otherwise = []
     record $
         object $
@@ -1666,7 +2001,8 @@ assertQueuedRequest :: Env -> KeySetup -> Snap -> IO ()
 assertQueuedRequest env ks snap = do
     decoded <- chainDatumOf snap (keyLabel ks <> "-queued")
     unless (decoded == keyDatum ks) $
-        failWith (keyLabel ks <> ": the queued claim datum is not the proposal datum")
+        failWith
+            (keyLabel ks <> ": the queued claim datum is not the proposal datum")
     assertChainBytes snap (keyDatum ks) (keyLabel ks <> "-queued")
     let approval = insertApprovalName (keyControlBytes ks) (keyCommitment ks)
     unless (lookupToken snap (envAppPolicy env) approval == Just 1) $
@@ -1684,12 +2020,14 @@ bypassed (proofs against a fresh trie that has never seen alice) and
 SUBMITTED. The state validator must refuse with the occupied name;
 the free name folds in the same run elsewhere.
 -}
-runAdversarial :: Env -> (Value -> IO ()) -> Int -> KeySetup -> KeySetup -> IO ()
+runAdversarial
+    :: Env -> (Value -> IO ()) -> Int -> KeySetup -> KeySetup -> IO ()
 runAdversarial env record expectedRecords ksAccepted ks = do
     (_claimTx, claimIn, claimOut) <- setupNamingClaim env ks
     snapClaim <- mustSnap env claimIn
     _ <- assertQueuedRequest env ks snapClaim
-    (reqIn, reqOut) <- submitRegistryRequest env (keySpelling ks) (keyRepName ks)
+    (reqIn, reqOut) <-
+        submitRegistryRequest env (keySpelling ks) (keyRepName ks)
     (stateIn, stateOut) <- queryStateUtxo env
     feeUtxo <- queryFeeUtxo env
     rootBefore <- chainRootHex env
@@ -1910,22 +2248,22 @@ endRedeemer = PLC.Constr 0 []
 burningRedeemer :: Env -> PLC.Data
 burningRedeemer env =
     let TokenId (AssetName sbs) = envTok env
-     in PLC.Constr 2 [PLC.Constr 0 [PLC.B (SBS.fromShort sbs)]]
+    in  PLC.Constr 2 [PLC.Constr 0 [PLC.B (SBS.fromShort sbs)]]
 
 {- | Require a phase-2 refusal naming the operation's script, assert the
 root did not move, and record the S3 row. Structural checks corroborate;
 the node's attribution decides (NOTE-011).
 -}
-requireRefusal ::
-    Env ->
-    (Value -> IO ()) ->
-    String ->
-    String ->
-    TxIn ->
-    String ->
-    ConwayTx ->
-    ByteString ->
-    IO ()
+requireRefusal
+    :: Env
+    -> (Value -> IO ())
+    -> String
+    -> String
+    -> TxIn
+    -> String
+    -> ConwayTx
+    -> ByteString
+    -> IO ()
 requireRefusal env record rowName operation stateIn rootBefore signed reason = do
     let reasonText = T.unpack (TE.decodeUtf8Lenient reason)
     -- Budget exhaustion is not a semantic refusal (NOTE-023 item 1):
@@ -1950,12 +2288,15 @@ requireRefusal env record rowName operation stateIn rootBefore signed reason = d
                         <> scriptHex
                     )
         Nothing ->
-            failWith (rowName <> ": no named failed-witness field in refusal reason")
+            failWith
+                (rowName <> ": no named failed-witness field in refusal reason")
     rootAfter <- chainRootHex env
     unless (rootAfter == rootBefore) $
         failWith (rowName <> ": refused operation moved the chain root")
     retainListings env (rowName <> "-post")
-    emit "row" (rowName <> ": refused by " <> scriptHex <> " as " <> txIdHex signed)
+    emit
+        "row"
+        (rowName <> ": refused by " <> scriptHex <> " as " <> txIdHex signed)
     record $
         object
             [ "row" .= (rowName :: String)
@@ -2011,12 +2352,17 @@ runOwnerlessEnd env record creatorSigned = do
                 Map.singleton policyId (Map.singleton assetName (-1))
     (fund, collateral) <- takeFundCollateral env
     let change =
-            changeOut (stateCoin + coinOf fund) flatFee [] (feeChangeAddr creatorSigned)
+            changeOut
+                (stateCoin + coinOf fund)
+                flatFee
+                []
+                (feeChangeAddr creatorSigned)
         redeemers =
             Redeemers $
                 Map.fromList
                     [
-                        ( ConwaySpending (AsIx (spendingIndex stateIn (Set.fromList [stateIn, fst fund])))
+                        ( ConwaySpending
+                            (AsIx (spendingIndex stateIn (Set.fromList [stateIn, fst fund])))
                         , (Data endRedeemer, maxUnits)
                         )
                     ,
@@ -2045,17 +2391,28 @@ runOwnerlessEnd env record creatorSigned = do
     result <- submitRetain env ("ownerless-end-" <> who) signed
     case result of
         Submitted _ ->
-            failWith ("ownerless-end: " <> who <> " End ACCEPTED as " <> txIdHex signed)
+            failWith
+                ("ownerless-end: " <> who <> " End ACCEPTED as " <> txIdHex signed)
         Rejected reason ->
-            requireRefusal env record "ownerless-end" "end" stateIn rootBefore signed reason
+            requireRefusal
+                env
+                record
+                "ownerless-end"
+                "end"
+                stateIn
+                rootBefore
+                signed
+                reason
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
     feeChangeAddr _ = envPartyAddr env
     signerSet
-        | creatorSigned = Set.singleton (addrWitnessKeyHash (envOwnerHash env))
+        | creatorSigned =
+            Set.singleton (addrWitnessKeyHash (envOwnerHash env))
         | otherwise = Set.empty
     signTx
-        | creatorSigned = addKeyWitness genesisSignKey . addKeyWitness (mkSignKey partySeed)
+        | creatorSigned =
+            addKeyWitness genesisSignKey . addKeyWitness (mkSignKey partySeed)
         | otherwise = addKeyWitness (mkSignKey partySeed)
 
 {- | Ownerless migration: mint under the state policy presenting the
@@ -2111,7 +2468,15 @@ runOwnerlessMigration env record = do
         Submitted _ ->
             failWith ("ownerless-migration: ACCEPTED as " <> txIdHex signed)
         Rejected reason ->
-            requireRefusal env record "ownerless-migration" "migration" stateIn rootBefore signed reason
+            requireRefusal
+                env
+                record
+                "ownerless-migration"
+                "migration"
+                stateIn
+                rootBefore
+                signed
+                reason
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
@@ -2158,7 +2523,15 @@ runOwnerlessBurning env record = do
         Submitted _ ->
             failWith ("ownerless-burning: ACCEPTED as " <> txIdHex signed)
         Rejected reason ->
-            requireRefusal env record "ownerless-burning" "burning" stateIn rootBefore signed reason
+            requireRefusal
+                env
+                record
+                "ownerless-burning"
+                "burning"
+                stateIn
+                rootBefore
+                signed
+                reason
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
@@ -2212,21 +2585,34 @@ runOwnerlessSweep env record creatorSigned = do
                     .~ Map.singleton (hashScript reqScript) reqScript
                 & witsTxL . rdmrsTxWitsL .~ redeemers
         signed = signTx tx
-    emit "row" ("ownerless-sweep-submitted: " <> who <> " Sweep submitted")
+    emit
+        "row"
+        ("ownerless-sweep-submitted: " <> who <> " Sweep submitted")
     retainListings env ("ownerless-sweep-" <> who <> "-pre")
     result <- submitRetain env ("ownerless-sweep-" <> who) signed
     case result of
         Submitted _ ->
-            failWith ("ownerless-sweep: " <> who <> " ACCEPTED as " <> txIdHex signed)
+            failWith
+                ("ownerless-sweep: " <> who <> " ACCEPTED as " <> txIdHex signed)
         Rejected reason ->
-            requireRefusal env record "ownerless-sweep" "sweep" stateIn rootBefore signed reason
+            requireRefusal
+                env
+                record
+                "ownerless-sweep"
+                "sweep"
+                stateIn
+                rootBefore
+                signed
+                reason
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
     signerSet
-        | creatorSigned = Set.singleton (addrWitnessKeyHash (envOwnerHash env))
+        | creatorSigned =
+            Set.singleton (addrWitnessKeyHash (envOwnerHash env))
         | otherwise = Set.empty
     signTx
-        | creatorSigned = addKeyWitness genesisSignKey . addKeyWitness (mkSignKey partySeed)
+        | creatorSigned =
+            addKeyWitness genesisSignKey . addKeyWitness (mkSignKey partySeed)
         | otherwise = addKeyWitness (mkSignKey partySeed)
 
 -- | Park a datum-less garbage output at an address from the manual pool.
@@ -2256,7 +2642,12 @@ parkGarbageAt env addr = do
 {- | A plain registry request for the supported-action rows (no naming
 parts): submitted early so it ages into the retract window.
 -}
-submitSupportRequest :: Env -> (Value -> IO ()) -> ByteString -> ByteString -> IO (TxIn, TxOut ConwayEra)
+submitSupportRequest
+    :: Env
+    -> (Value -> IO ())
+    -> ByteString
+    -> ByteString
+    -> IO (TxIn, TxOut ConwayEra)
 submitSupportRequest env record spelling value = do
     (reqIn, reqOut) <- submitRegistryRequest env spelling value
     retainListings env ("support-request-" <> show spelling <> "-post")
@@ -2328,7 +2719,8 @@ runSupportFold env record = do
             ]
 
 -- | Retract the aged support request in its phase-2 window.
-runSupportRetract :: Env -> (Value -> IO ()) -> (TxIn, TxOut ConwayEra) -> IO ()
+runSupportRetract
+    :: Env -> (Value -> IO ()) -> (TxIn, TxOut ConwayEra) -> IO ()
 runSupportRetract env record (reqIn, reqOut) = do
     submittedAt <- case extractCageDatum reqOut of
         Just (RequestDatum r) -> pure (requestSubmittedAt r)
@@ -2338,13 +2730,25 @@ runSupportRetract env record (reqIn, reqOut) = do
         try
             ( retryHorizon 3 $ do
                 tip <- currentTipSlot
-                emit "retract" ("building validity from live tip " <> show tip <> " within the deployed phase-2 window")
-                retractRequestAtTipImpl tip (envCfg env) (envProv env) (envTok env) reqIn (envFolderAddr env)
-            ) ::
-            IO (Either SomeException ConwayTx)
+                emit
+                    "retract"
+                    ( "building validity from live tip "
+                        <> show tip
+                        <> " within the deployed phase-2 window"
+                    )
+                retractRequestAtTipImpl
+                    tip
+                    (envCfg env)
+                    (envProv env)
+                    (envTok env)
+                    reqIn
+                    (envFolderAddr env)
+            )
+            :: IO (Either SomeException ConwayTx)
     unsigned <- case built of
         Right tx -> pure tx
-        Left err -> failWith ("support retract build failed: " <> displayException err)
+        Left err ->
+            failWith ("support retract build failed: " <> displayException err)
     let signed = addKeyWitness (mkSignKey folderSeed) unsigned
     retainListings env "support-retract-pre"
     result <- submitRetain env "support-retract" signed
@@ -2389,7 +2793,7 @@ stripHookWithdrawal env tx =
             scripts -> Map.delete consumerHash scripts
         consumerHash =
             pinScriptHash (SBS.fromShort (cfgConsumerPin (envCfg env)))
-     in stripped
+    in  stripped
             & bodyTxL . scriptIntegrityHashTxBodyL
                 .~ computeScriptIntegrity
                     (envPp env)
@@ -2426,7 +2830,7 @@ swapHookCredential env tx =
                     (Map.delete consumerHash scripts)
         consumerHash =
             pinScriptHash (SBS.fromShort (cfgConsumerPin (envCfg env)))
-     in swapped
+    in  swapped
 
 {- | Rewrite the state output's consumer pin (28 0xdd bytes): every
 other check passes, pin preservation refuses. Integrity covers
@@ -2452,21 +2856,21 @@ alterStatePin tx =
                                 )
                             )
             _ -> out
-     in tx & bodyTxL . outputsTxBodyL .~ StrictSeq.fromList outs'
+    in  tx & bodyTxL . outputsTxBodyL .~ StrictSeq.fromList outs'
 
 {- | Build an honest pure-registry fold, mutate the UNSIGNED transaction,
 sign with the folder key, submit, and require refusal attributed to
 the exact script. Used for omitted-hook, swapped-hook and pin
 mutants (the honest shape underneath isolates the mutant delta).
 -}
-runHookMutantRow ::
-    Env ->
-    (Value -> IO ()) ->
-    String ->
-    String ->
-    ByteString ->
-    (Env -> ConwayTx -> ConwayTx) ->
-    IO ()
+runHookMutantRow
+    :: Env
+    -> (Value -> IO ())
+    -> String
+    -> String
+    -> ByteString
+    -> (Env -> ConwayTx -> ConwayTx)
+    -> IO ()
 runHookMutantRow env record rowName operation spelling mutant = do
     (reqIn, reqOut) <- submitRegistryRequest env spelling "hook-value"
     (stateIn, _stateOut) <- queryStateUtxo env
@@ -2499,7 +2903,15 @@ runHookMutantRow env record rowName operation spelling mutant = do
     result <- submitRetain env rowName signed
     case result of
         Rejected reason ->
-            requireRefusal env record rowName operation stateIn rootBefore signed reason
+            requireRefusal
+                env
+                record
+                rowName
+                operation
+                stateIn
+                rootBefore
+                signed
+                reason
         Submitted _ ->
             failWith (rowName <> ": accepted (must refuse)")
 
@@ -2516,12 +2928,15 @@ runHookCrosswiredRow env record = do
             "henry"
             (mustCodecOf hookSeed)
             (enterpriseAddr (keyHashFromSignKey (mkSignKey hookSeed)))
-            (addrKeyHashBytes (enterpriseAddr (keyHashFromSignKey (mkSignKey hookSeed))))
+            ( addrKeyHashBytes
+                (enterpriseAddr (keyHashFromSignKey (mkSignKey hookSeed)))
+            )
             hookSeed
             hookRevealSeed
     (_claimTx, claimIn, claimOut) <- setupNamingClaim env ksA
     snapClaim <- mustSnap env claimIn
-    (reqInB, reqOutB) <- submitRegistryRequest env "hook-crosswire" "hook-B-value"
+    (reqInB, reqOutB) <-
+        submitRegistryRequest env "hook-crosswire" "hook-B-value"
     (stateIn, stateOut) <- queryStateUtxo env
     feeUtxo <- queryFeeUtxo env
     rootBefore <- chainRootHex env
@@ -2598,7 +3013,15 @@ runHookCrosswiredRow env record = do
     result <- submitRetain env "hook-crosswired" signed
     case result of
         Rejected reason ->
-            requireRefusal env record "hook-crosswired" "consumer" stateIn rootBefore signed reason
+            requireRefusal
+                env
+                record
+                "hook-crosswired"
+                "consumer"
+                stateIn
+                rootBefore
+                signed
+                reason
         Submitted _ ->
             failWith "hook-crosswired: accepted (must refuse)"
 
@@ -2607,7 +3030,13 @@ the withdrawal. The cage refuses for the missing pinned credential.
 -}
 rowHookOmitted :: Env -> (Value -> IO ()) -> IO ()
 rowHookOmitted env record =
-    runHookMutantRow env record "hook-omitted" "hook" "hook-omitted" stripHookWithdrawal
+    runHookMutantRow
+        env
+        record
+        "hook-omitted"
+        "hook"
+        "hook-omitted"
+        stripHookWithdrawal
 
 {- | Swapped hook (NOTE-013 control 2 on ledger): the withdrawal points
 at the staking script (whose withdraw arm always succeeds) instead
@@ -2616,14 +3045,26 @@ the wrong credential.
 -}
 rowHookSwapped :: Env -> (Value -> IO ()) -> IO ()
 rowHookSwapped env record =
-    runHookMutantRow env record "hook-swapped" "hook" "hook-swapped" swapHookCredential
+    runHookMutantRow
+        env
+        record
+        "hook-swapped"
+        "hook"
+        "hook-swapped"
+        swapHookCredential
 
 {- | Pin mutant on ledger: honest fold with the state output's pin
 rewritten. Pin preservation refuses; every other check passes.
 -}
 rowHookPin :: Env -> (Value -> IO ()) -> IO ()
 rowHookPin env record =
-    runHookMutantRow env record "hook-pin" "hook" "hook-pin" (const alterStatePin)
+    runHookMutantRow
+        env
+        record
+        "hook-pin"
+        "hook"
+        "hook-pin"
+        (const alterStatePin)
 
 {- | Cross-wired consumer-invalid batch (NOTE-013 corrected control 4):
 B's paid request consumed for A's claim. See `runHookCrosswiredRow`.
@@ -2642,8 +3083,14 @@ retryHorizon n act = do
     case outcome of
         Right x -> pure x
         Left e ->
-            if n > (0 :: Int) && "PastHorizon" `isInfixOf` displayException (e :: SomeException)
-                then emit "retry" "slot forecast horizon not yet covering a bound; retrying" >> threadDelay 2_000_000 >> retryHorizon (n - 1) act
+            if n > (0 :: Int)
+                && "PastHorizon" `isInfixOf` displayException (e :: SomeException)
+                then
+                    emit
+                        "retry"
+                        "slot forecast horizon not yet covering a bound; retrying"
+                        >> threadDelay 2_000_000
+                        >> retryHorizon (n - 1) act
                 else throwIO e
 
 -- | Sleep until the request's phase-2 window opens.
@@ -2707,7 +3154,7 @@ witnessHexes signed =
 mintFacts :: ConwayTx -> [Value]
 mintFacts signed =
     let MultiAsset ma = signed ^. bodyTxL . mintTxBodyL
-     in [ object ["policy" .= hex (scriptHashBytes h), "quantity" .= q]
+    in  [ object ["policy" .= hex (scriptHashBytes h), "quantity" .= q]
         | (PolicyID h, names) <- Map.toList ma
         , (_, q) <- Map.toList names
         ]
@@ -2719,7 +3166,7 @@ stateDatumObject env = do
     case extractCageDatum stateOut of
         Just (StateDatum st) ->
             let OnChainRoot bs = stateRoot st
-             in pure $
+            in  pure $
                     object
                         [ "root" .= hex bs
                         , "tip" .= stateMaxFee st
@@ -2761,7 +3208,8 @@ derived from the application and registry parameters — with the
 expected asset name at exactly +1. The unapplied manifest pin is
 recorded separately and is never accepted here.
 -}
-assertRepMintedByFold :: Env -> ConwayTx -> ByteString -> String -> String -> IO ()
+assertRepMintedByFold
+    :: Env -> ConwayTx -> ByteString -> String -> String -> IO ()
 assertRepMintedByFold env signed spelling txid label = do
     let repName = convert (hash spelling :: Digest Blake2b_256)
     let MultiAsset mintMap = signed ^. bodyTxL . mintTxBodyL
@@ -2801,7 +3249,8 @@ assertRepMintedByFold env signed spelling txid label = do
 {- | The vkey witnesses of the submitted transaction name no owner: the
 only witness is the ordinary party's fee key.
 -}
-assertOwnerAbsentWitnesses :: Env -> ConwayTx -> String -> String -> IO ()
+assertOwnerAbsentWitnesses
+    :: Env -> ConwayTx -> String -> String -> IO ()
 assertOwnerAbsentWitnesses env signed txid label = do
     let wits = Set.map witVKeyHash (signed ^. witsTxL . addrTxWitsL)
         owner = coerce (addrWitnessKeyHash (envOwnerHash env))
@@ -2846,7 +3295,13 @@ assertOwnerAbsentTx env signed label = do
 
 rowMintBadName :: Env -> IO ()
 rowMintBadName env = do
-    let badName = BS.map complement (insertApprovalName (serialiseAddr (envPartyAddr env)) (nextControlCommitmentOf (serialiseAddr (envPartyAddr env))))
+    let badName =
+            BS.map
+                complement
+                ( insertApprovalName
+                    (serialiseAddr (envPartyAddr env))
+                    (nextControlCommitmentOf (serialiseAddr (envPartyAddr env)))
+                )
         badMA =
             MultiAsset $
                 Map.singleton
@@ -2950,7 +3405,13 @@ to the application script); the honest alice/bob folds stay accepted.
 -}
 rowForeignPolicyRefused :: Env -> KeySetup -> IO ()
 rowForeignPolicyRefused env ks = do
-    (signed, snapClaim) <- policyRefusalTx env ks (envAttackerPolicy env) (envAttackerScript env) (PLC.B "")
+    (signed, snapClaim) <-
+        policyRefusalTx
+            env
+            ks
+            (envAttackerPolicy env)
+            (envAttackerScript env)
+            (PLC.B "")
     retainListings env "eve-fold-pre"
     expectRefused
         MainRun
@@ -2963,11 +3424,18 @@ rowForeignPolicyRefused env ks = do
     noTrace env snapClaim "fold-foreign-policy"
 
 -- | Build the same complete fold for foreign-policy and foreign-registry probes.
-policyRefusalTx :: Env -> KeySetup -> PolicyID -> Script ConwayEra -> PLC.Data -> IO (ConwayTx, Snap)
+policyRefusalTx
+    :: Env
+    -> KeySetup
+    -> PolicyID
+    -> Script ConwayEra
+    -> PLC.Data
+    -> IO (ConwayTx, Snap)
 policyRefusalTx env ks mintPolicy mintScript mintRedeemer = do
     (_claimTx, claimIn, claimOut) <- setupNamingClaim env ks
     snapClaim <- mustSnap env claimIn
-    (reqIn, reqOut) <- submitRegistryRequest env (keySpelling ks) (keyRepName ks)
+    (reqIn, reqOut) <-
+        submitRegistryRequest env (keySpelling ks) (keyRepName ks)
     (stateIn, stateOut) <- queryStateUtxo env
     feeUtxo <- queryFeeUtxo env
     let repName = keyRepName ks
@@ -3033,7 +3501,8 @@ policyRefusalTx env ks mintPolicy mintScript mintRedeemer = do
                 , cfaOutputs = [recordOut]
                 , cfaSigners = []
                 , cfaRefUtxos = envRefUtxos env
-                , cfaAttachScripts = if mintPolicy == envRepPolicy env then [] else [mintScript]
+                , cfaAttachScripts =
+                    if mintPolicy == envRepPolicy env then [] else [mintScript]
                 , cfaSkipEval = True
                 , cfaAdjustRoot = id
                 }
@@ -3052,9 +3521,12 @@ rowForeignRegistryRefused env alice = do
         foreignTokenBytes = deriveAssetName seedRef
         tokB = TokenId (AssetName (SBS.toShort foreignTokenBytes))
         policyB =
-            computeScriptHash $
-                applyBytesParam (registryAssetId (scriptHashBytes (envStateHash env)) foreignTokenBytes) $
-                    applyBytesParam (scriptHashBytes (envAppHash env)) (envRepUnapplied env)
+            computeScriptHash
+                $ applyBytesParam
+                    (registryAssetId (scriptHashBytes (envStateHash env)) foreignTokenBytes)
+                $ applyBytesParam
+                    (scriptHashBytes (envAppHash env))
+                    (envRepUnapplied env)
     unless (tokB /= envTok env && policyB /= envRepHash env) $
         failWith "registry B did not produce a distinct token and policy"
     unsignedBoot <- bootTokenImpl cfgB (envProv env) genesisAddr
@@ -3080,10 +3552,20 @@ rowForeignRegistryRefused env alice = do
                 , envTrie = trieB
                 , envRefUtxos = requestRefsB ++ envRefUtxos env
                 }
-        aliceB = alice{keyLabel = "alice-registry-b", keyRegistryToken = foreignTokenBytes}
+        aliceB =
+            alice
+                { keyLabel = "alice-registry-b"
+                , keyRegistryToken = foreignTokenBytes
+                }
     rootA <- chainRootHex env
     rootB <- chainRootHex envB
-    (signed, snapClaim) <- policyRefusalTx envB aliceB (envRepPolicy env) (envRepScript env) mintRepresentativeRedeemer
+    (signed, snapClaim) <-
+        policyRefusalTx
+            envB
+            aliceB
+            (envRepPolicy env)
+            (envRepScript env)
+            mintRepresentativeRedeemer
     expectRefusedBy
         (envRepHex env)
         MainRun
@@ -3095,7 +3577,8 @@ rowForeignRegistryRefused env alice = do
     noTrace envB snapClaim "foreign-registry"
     afterA <- chainRootHex env
     afterB <- chainRootHex envB
-    unless (afterA == rootA && afterB == rootB) $ failWith "foreign-registry refusal moved a root"
+    unless (afterA == rootA && afterB == rootB) $
+        failWith "foreign-registry refusal moved a root"
     emit
         "registry-binding"
         ( "registry A policy 0x"
@@ -3112,7 +3595,13 @@ the application must refuse the spelling/name mismatch.
 rowFoldTamperedRep :: Env -> KeySetup -> IO ()
 rowFoldTamperedRep env ks = do
     let tampered = ks{keyRepName = representativeName (keySpelling ks <> "\n")}
-    (signed, snapClaim) <- policyRefusalTx env tampered (envRepPolicy env) (envRepScript env) mintRepresentativeRedeemer
+    (signed, snapClaim) <-
+        policyRefusalTx
+            env
+            tampered
+            (envRepPolicy env)
+            (envRepScript env)
+            mintRepresentativeRedeemer
     expectRefused
         MainRun
         env
@@ -3333,7 +3822,10 @@ createWithdrawClaim env ks = do
                 (addKeyWitness (mkSignKey partySeed) tx)
     submitAccepted env (keyLabel ks <> "-withdraw-claim") signed
     let txid = txIdHex signed
-    _ <- waitConfirmationTx signed (txid <> " (" <> keyLabel ks <> " withdraw claim)")
+    _ <-
+        waitConfirmationTx
+            signed
+            (txid <> " (" <> keyLabel ks <> " withdraw claim)")
     pure txid
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
@@ -3492,7 +3984,16 @@ runControlValid env = do
 runControlWrongReason :: Env -> IO ()
 runControlWrongReason env = do
     -- An accept first, proving the runner ran.
-    alice <- setupKey env "alice" (envSpelling env) (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
+    alice <-
+        setupKey
+            env
+            "alice"
+            (envSpelling env)
+            (envPartyCodec env)
+            (envPartyAddr env)
+            (envPartyHash env)
+            partySeed
+            nextSeed
     (_txid, _claimIn, _claimOut) <- setupNamingClaim env alice
     emit
         "row"
@@ -3540,7 +4041,8 @@ runControlWrongReason env = do
         "insert-binding"
         "wrong-reason control: this matcher must fail"
         signed
-    failWith "CONTROL wrong-reason: the impossible marker unexpectedly matched"
+    failWith
+        "CONTROL wrong-reason: the impossible marker unexpectedly matched"
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
@@ -3555,14 +4057,30 @@ red log carries the expected applied identity alongside.
 -}
 runFaultRepPolicy :: Env -> IO ()
 runFaultRepPolicy env = do
-    alice <- setupKey env "alice" (envSpelling env) (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
+    alice <-
+        setupKey
+            env
+            "alice"
+            (envSpelling env)
+            (envPartyCodec env)
+            (envPartyAddr env)
+            (envPartyHash env)
+            partySeed
+            nextSeed
     (_claimTx, claimIn, claimOut) <- setupNamingClaim env alice
     snapClaim <- mustSnap env claimIn
-    (reqIn, reqOut) <- submitRegistryRequest env (keySpelling alice) (keyRepName alice)
+    (reqIn, reqOut) <-
+        submitRegistryRequest env (keySpelling alice) (keyRepName alice)
     (stateIn, stateOut) <- queryStateUtxo env
     feeUtxo <- queryFeeUtxo env
     let tamperedParam = BS.map complement (scriptHashBytes (envAppHash env))
-        tamperedBytes = applyBytesParam (registryAssetId (scriptHashBytes (envStateHash env)) (keyRegistryToken alice)) (applyBytesParam tamperedParam (envRepUnapplied env))
+        tamperedBytes =
+            applyBytesParam
+                ( registryAssetId
+                    (scriptHashBytes (envStateHash env))
+                    (keyRegistryToken alice)
+                )
+                (applyBytesParam tamperedParam (envRepUnapplied env))
         tamperedScript = scriptFromBytes "tampered-representative" tamperedBytes
         tamperedPolicy = PolicyID (computeScriptHash tamperedBytes)
         tamperedHex = hex (scriptHashBytes (computeScriptHash tamperedBytes))
@@ -3682,10 +4200,20 @@ no-owner assertion must fail naming the owner.
 -}
 runFaultOwnerSigned :: Env -> IO ()
 runFaultOwnerSigned env = do
-    alice <- setupKey env "alice" (envSpelling env) (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
+    alice <-
+        setupKey
+            env
+            "alice"
+            (envSpelling env)
+            (envPartyCodec env)
+            (envPartyAddr env)
+            (envPartyHash env)
+            partySeed
+            nextSeed
     (_claimTx, claimIn, claimOut) <- setupNamingClaim env alice
     snapClaim <- mustSnap env claimIn
-    (reqIn, reqOut) <- submitRegistryRequest env (keySpelling alice) (keyRepName alice)
+    (reqIn, reqOut) <-
+        submitRegistryRequest env (keySpelling alice) (keyRepName alice)
     (stateIn, stateOut) <- queryStateUtxo env
     feeUtxo <- queryFeeUtxo env
     let repName = keyRepName alice
@@ -3755,7 +4283,9 @@ runFaultOwnerSigned env = do
                 , cfaAdjustRoot = id
                 }
     let signed =
-            addKeyWitness genesisSignKey (addKeyWitness (mkSignKey folderSeed) unsigned)
+            addKeyWitness
+                genesisSignKey
+                (addKeyWitness (mkSignKey folderSeed) unsigned)
     -- Same assertion as the genuine path: it must fail naming the owner.
     assertFoldPermissionless env signed "alice"
     failWith
@@ -3769,7 +4299,16 @@ fail naming the disconnection.
 -}
 runFaultSeededActive :: Env -> IO ()
 runFaultSeededActive env = do
-    alice <- setupKey env "alice" (envSpelling env) (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
+    alice <-
+        setupKey
+            env
+            "alice"
+            (envSpelling env)
+            (envPartyCodec env)
+            (envPartyAddr env)
+            (envPartyHash env)
+            partySeed
+            nextSeed
     let decoy = serialiseAddr (envPartyAddr env)
         decoyMA =
             MultiAsset $
@@ -3864,7 +4403,12 @@ manually-tracked pool (party) and the largest-first cage funding
 (folder) can never select the same input: equal-value splits make
 largest-first meaningless within one address.
 -}
-faucetParty :: Cage.Provider IO -> Submitter IO -> FilePath -> IORef Int -> IO [(TxIn, TxOut ConwayEra)]
+faucetParty
+    :: Cage.Provider IO
+    -> Submitter IO
+    -> FilePath
+    -> IORef Int
+    -> IO [(TxIn, TxOut ConwayEra)]
 faucetParty prov submit evDir evNext = do
     let partyAddr =
             enterpriseAddr (keyHashFromSignKey (mkSignKey partySeed))
@@ -3899,7 +4443,13 @@ faucetParty prov submit evDir evNext = do
                     .~ StrictSeq.fromList (partyOuts <> folderOuts <> [changeOutTx])
                 & feeTxBodyL .~ Coin 1_000_000
         faucetTx = mkBasicTx body
-    result <- submitRetainAt evDir evNext submit "faucet" (addKeyWitness genesisSignKey faucetTx)
+    result <-
+        submitRetainAt
+            evDir
+            evNext
+            submit
+            "faucet"
+            (addKeyWitness genesisSignKey faucetTx)
     case result of
         Submitted _ -> pure ()
         Rejected reason ->
@@ -3946,15 +4496,22 @@ faucetParty prov submit evDir evNext = do
 
 lifecycleFee :: Env -> Integer
 lifecycleFee env
-    | envLifecycle env = let Coin fee = Lifecycle.protocolFeeReserve (envPp env) (envRefUtxos env) in fee
+    | envLifecycle env =
+        let Coin fee = Lifecycle.protocolFeeReserve (envPp env) (envRefUtxos env)
+        in  fee
     | otherwise = flatFee
 
 preparePublicTx :: Env -> Int -> ConwayTx -> IO ConwayTx
-preparePublicTx env = Lifecycle.prepareLifecycleTx (envLifecycle env) (envProv env) (envPp env) (envRefUtxos env)
+preparePublicTx env =
+    Lifecycle.prepareLifecycleTx
+        (envLifecycle env)
+        (envProv env)
+        (envPp env)
+        (envRefUtxos env)
 
-takeFundCollateral ::
-    Env ->
-    IO ((TxIn, TxOut ConwayEra), (TxIn, TxOut ConwayEra))
+takeFundCollateral
+    :: Env
+    -> IO ((TxIn, TxOut ConwayEra), (TxIn, TxOut ConwayEra))
 takeFundCollateral env = do
     pool <- readIORef (envPool env)
     case pool of
@@ -3968,34 +4525,37 @@ connected folds resolve every purpose through reference inputs
 instead of witnessing four scripts (which would breach max tx size).
 Returns the four reference UTxOs in script order.
 -}
-publishScripts ::
-    Cage.Provider IO ->
-    Submitter IO ->
-    PParams ConwayEra ->
-    IORef [(TxIn, TxOut ConwayEra)] ->
-    [Script ConwayEra] ->
-    Addr ->
-    FilePath ->
-    IORef Int ->
-    IO [(TxIn, TxOut ConwayEra)]
+publishScripts
+    :: Cage.Provider IO
+    -> Submitter IO
+    -> PParams ConwayEra
+    -> IORef [(TxIn, TxOut ConwayEra)]
+    -> [Script ConwayEra]
+    -> Addr
+    -> FilePath
+    -> IORef Int
+    -> IO [(TxIn, TxOut ConwayEra)]
 publishScripts prov submit pp poolRef scripts addr evDir evNext = do
     -- Batches of two: all four scripts in one transaction would breach
     -- max tx size, which is why they are published at all.
-    concat <$> mapM (\batch -> publishBatch prov submit pp poolRef addr batch evDir evNext) (batches scripts)
+    concat
+        <$> mapM
+            (\batch -> publishBatch prov submit pp poolRef addr batch evDir evNext)
+            (batches scripts)
   where
     batches [] = []
     batches xs = take 2 xs : batches (drop 2 xs)
 
-publishBatch ::
-    Cage.Provider IO ->
-    Submitter IO ->
-    PParams ConwayEra ->
-    IORef [(TxIn, TxOut ConwayEra)] ->
-    Addr ->
-    [Script ConwayEra] ->
-    FilePath ->
-    IORef Int ->
-    IO [(TxIn, TxOut ConwayEra)]
+publishBatch
+    :: Cage.Provider IO
+    -> Submitter IO
+    -> PParams ConwayEra
+    -> IORef [(TxIn, TxOut ConwayEra)]
+    -> Addr
+    -> [Script ConwayEra]
+    -> FilePath
+    -> IORef Int
+    -> IO [(TxIn, TxOut ConwayEra)]
 publishBatch prov submit pp poolRef addr scripts evDir evNext = do
     pool <- readIORef poolRef
     (fund, rest) <- case pool of
@@ -4007,7 +4567,7 @@ publishBatch prov submit pp poolRef addr scripts evDir evNext = do
                     mkBasicTxOut addr (MaryValue (Coin 0) mempty)
                         & referenceScriptTxOutL .~ SJust script
                 Coin minCoin = getMinCoinTxOut pp probe
-             in mkBasicTxOut
+            in  mkBasicTxOut
                     addr
                     (MaryValue (Coin (minCoin + 1_000_000)) mempty)
                     & referenceScriptTxOutL .~ SJust script
@@ -4025,7 +4585,13 @@ publishBatch prov submit pp poolRef addr scripts evDir evNext = do
                 & outputsTxBodyL .~ StrictSeq.fromList (outs <> [changeOutTx])
                 & feeTxBodyL .~ Coin 1_000_000
         tx = mkBasicTx body
-    result <- submitRetainAt evDir evNext submit "publish-scripts" (addKeyWitness (mkSignKey partySeed) tx)
+    result <-
+        submitRetainAt
+            evDir
+            evNext
+            submit
+            "publish-scripts"
+            (addKeyWitness (mkSignKey partySeed) tx)
     case result of
         Submitted _ -> pure ()
         Rejected reason ->
@@ -4052,41 +4618,42 @@ publishBatch prov submit pp poolRef addr scripts evDir evNext = do
 -- Transaction builders (naming half)
 -- ---------------------------------------------------------
 
-scriptOut ::
-    PParams ConwayEra ->
-    Addr ->
-    Integer ->
-    MultiAsset ->
-    NamingDatum ->
-    TxOut ConwayEra
+scriptOut
+    :: PParams ConwayEra
+    -> Addr
+    -> Integer
+    -> MultiAsset
+    -> NamingDatum
+    -> TxOut ConwayEra
 scriptOut pp addr coin tokens datum =
     let probe :: TxOut ConwayEra
         probe = mkBasicTxOut addr (MaryValue (Coin 0) tokens)
         minCoin = let Coin c = getMinCoinTxOut pp probe in c
         finalCoin = max coin (minCoin + 1_000_000)
-     in mkBasicTxOut
+    in  mkBasicTxOut
             addr
             (MaryValue (Coin finalCoin) tokens)
             & datumTxOutL .~ mkInlineDatum (namingDataToData datum)
 
-keyOut ::
-    PParams ConwayEra ->
-    Addr ->
-    Integer ->
-    MultiAsset ->
-    TxOut ConwayEra
+keyOut
+    :: PParams ConwayEra
+    -> Addr
+    -> Integer
+    -> MultiAsset
+    -> TxOut ConwayEra
 keyOut pp addr coin tokens =
     let probe :: TxOut ConwayEra
         probe = mkBasicTxOut addr (MaryValue (Coin 0) tokens)
         minCoin = let Coin c = getMinCoinTxOut pp probe in c
         finalCoin = max coin (minCoin + 1_000_000)
-     in mkBasicTxOut addr (MaryValue (Coin finalCoin) tokens)
+    in  mkBasicTxOut addr (MaryValue (Coin finalCoin) tokens)
 
-changeOut :: Integer -> Integer -> [TxOut ConwayEra] -> Addr -> TxOut ConwayEra
+changeOut
+    :: Integer -> Integer -> [TxOut ConwayEra] -> Addr -> TxOut ConwayEra
 changeOut inCoin fee outs addr =
     let spent = sum [c | o <- outs, let Coin c = o ^. coinTxOutL]
         change = inCoin - fee - spent
-     in if change <= 1_000_000
+    in  if change <= 1_000_000
             then error "register-rows: change underflow while balancing"
             else mkBasicTxOut addr (MaryValue (Coin change) mempty)
 
@@ -4118,7 +4685,8 @@ foldRedeemer :: [ByteString] -> PLC.Data
 foldRedeemer reps = PLC.Constr 2 [PLC.List (map PLC.B reps)]
 
 -- | Mint redeemer @InsertApproval { controller, control, commitment }@.
-insertApprovalRedeemer :: ByteString -> ByteString -> ByteString -> PLC.Data
+insertApprovalRedeemer
+    :: ByteString -> ByteString -> ByteString -> PLC.Data
 insertApprovalRedeemer controller control commitment =
     PLC.Constr 1 [PLC.B controller, PLC.B control, PLC.B commitment]
 
@@ -4155,7 +4723,7 @@ extractSnap (i, o) =
                 | (p, names) <- Map.toList ma
                 , (n, q) <- Map.toList names
                 ]
-     in Snap i c (Map.fromList triples) (datumDataOf o)
+    in  Snap i c (Map.fromList triples) (datumDataOf o)
 
 mustSnap :: Env -> TxIn -> IO Snap
 mustSnap env txin = do
@@ -4173,12 +4741,12 @@ lookupToken :: Snap -> PolicyID -> ByteString -> Maybe Integer
 lookupToken snap policy name =
     Map.lookup (policy, AssetName (SBS.toShort name)) (snapTokens snap)
 
-mustFindUTxO ::
-    Cage.Provider IO ->
-    Addr ->
-    String ->
-    String ->
-    IO TxIn
+mustFindUTxO
+    :: Cage.Provider IO
+    -> Addr
+    -> String
+    -> String
+    -> IO TxIn
 mustFindUTxO prov addr txid label =
     awaitChain
         ( label
@@ -4206,10 +4774,10 @@ isLiveAt prov addr txin = do
     utxos <- Cage.queryUTxOs prov addr
     pure (any ((== txin) . fst) utxos)
 
-utxosByTxId ::
-    [(TxIn, TxOut ConwayEra)] ->
-    String ->
-    [(TxIn, TxOut ConwayEra)]
+utxosByTxId
+    :: [(TxIn, TxOut ConwayEra)]
+    -> String
+    -> [(TxIn, TxOut ConwayEra)]
 utxosByTxId utxos txid = filter ((== txid) . txInTxIdHex . fst) utxos
 
 datumDataOf :: TxOut ConwayEra -> Maybe PLC.Data
@@ -4294,17 +4862,25 @@ submitAccepted env label signed =
                     <> T.unpack (TE.decodeUtf8Lenient reason)
                 )
 
-expectRefused ::
-    Mode ->
-    Env ->
-    String ->
-    String ->
-    String ->
-    ConwayTx ->
-    IO ()
+expectRefused
+    :: Mode
+    -> Env
+    -> String
+    -> String
+    -> String
+    -> ConwayTx
+    -> IO ()
 expectRefused mode env = expectRefusedBy (envAppHex env) mode env
 
-expectRefusedBy :: String -> Mode -> Env -> String -> String -> String -> ConwayTx -> IO ()
+expectRefusedBy
+    :: String
+    -> Mode
+    -> Env
+    -> String
+    -> String
+    -> String
+    -> ConwayTx
+    -> IO ()
 expectRefusedBy expectedScript mode env rowName modelReason guard signed = do
     let wrongReasonMode = mode == ControlWrongReason
         expectedMarker
@@ -4497,8 +5073,17 @@ evidenceDirFromEnv = do
             tmpdir <- fromMaybe "/tmp" <$> lookupEnv "TMPDIR"
             pure (tmpdir ++ "/register-evidence")
 
-writeEvidenceMeta ::
-    FilePath -> String -> Bool -> String -> FilePath -> FilePath -> String -> String -> String -> IO ()
+writeEvidenceMeta
+    :: FilePath
+    -> String
+    -> Bool
+    -> String
+    -> FilePath
+    -> FilePath
+    -> String
+    -> String
+    -> String
+    -> IO ()
 writeEvidenceMeta evDir candidate dirty candidateSource namingBp registryBp appH repH stateH =
     BSL.writeFile
         (evDir </> "meta.json")
@@ -4531,7 +5116,8 @@ retainTx :: Env -> String -> ConwayTx -> IO String
 retainTx env = retainTxAt (envEvDir env) (envEvNext env)
 
 -- | Retain the submission outcome.
-retainOutcomeAt :: FilePath -> String -> SubmitResult -> ConwayTx -> IO ()
+retainOutcomeAt
+    :: FilePath -> String -> SubmitResult -> ConwayTx -> IO ()
 retainOutcomeAt evDir tag result signed =
     BSL.writeFile
         (evDir </> ("tx-" <> tag <> ".outcome.json"))
@@ -4590,8 +5176,13 @@ submitRetain env label signed = do
     retainOutcome env tag result signed
     pure result
 
-submitRetainAt ::
-    FilePath -> IORef Int -> Submitter IO -> String -> ConwayTx -> IO SubmitResult
+submitRetainAt
+    :: FilePath
+    -> IORef Int
+    -> Submitter IO
+    -> String
+    -> ConwayTx
+    -> IO SubmitResult
 submitRetainAt evDir evNext submit label signed = do
     tag <- retainTxAt evDir evNext label signed
     result <- submitTx submit signed
@@ -4613,8 +5204,8 @@ nextControlCommitmentOf addressBytes0 =
             ( "singular/naming/next-control/v1"
                 <> BS.singleton 0x00
                 <> addressBytes0
-            ) ::
-            Digest Blake2b_256
+            )
+            :: Digest Blake2b_256
         )
 
 -- ---------------------------------------------------------

@@ -14,12 +14,21 @@ import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
-import Naming.Verify (
-    CompleteEvidence (..),
-    verifyCompletion,
- )
+import Naming.Verify
+    ( CompleteEvidence (..)
+    , verifyCompletion
+    )
 
-policyR, repA, rootOld, rootNew, ctrlA, q1m, q2m, feeK, otherK :: ByteString
+policyR
+    , repA
+    , rootOld
+    , rootNew
+    , ctrlA
+    , q1m
+    , q2m
+    , feeK
+    , otherK
+        :: ByteString
 policyR = BS.replicate 28 0x52
 repA = BS.replicate 32 0x41
 rootOld = BS.replicate 32 0x0a
@@ -86,7 +95,8 @@ spec = describe "Completion evidence" $ do
         verifyCompletion validComplete{ceCustodyQty = 2}
             `shouldSatisfy` isLeft
     it "refuses a mint that is not exactly the burn" $
-        verifyCompletion validComplete{ceMint = [(policyR, repA, -1), (policyR, repA, -1)]}
+        verifyCompletion
+            validComplete{ceMint = [(policyR, repA, -1), (policyR, repA, -1)]}
             `shouldSatisfy` isLeft
     it "refuses a missing burn" $
         verifyCompletion validComplete{ceMint = []}
@@ -110,7 +120,8 @@ spec = describe "Completion evidence" $ do
         verifyCompletion validComplete{ceWitnesses = [feeK, otherK]}
             `shouldSatisfy` isLeft
     it "refuses a route key witnessing" $
-        verifyCompletion validComplete{ceWitnesses = [ctrlA], ceFeeOwner = ctrlA}
+        verifyCompletion
+            validComplete{ceWitnesses = [ctrlA], ceFeeOwner = ctrlA}
             `shouldSatisfy` isLeft
   where
     isLeft (Left _) = True

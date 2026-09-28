@@ -15,24 +15,24 @@ fold-and-compare discipline) follows
 @offchain\/journey\/Main.hs@, the closest working example of
 everything this runner verifies.
 -}
-module Conformance.Mirror (
-    Mirror,
-    newMirror,
-    mirrorInsert,
-    mirrorDelete,
-    readChainState,
-    inclusionProofFrom,
-    mirrorExclusionSteps,
-    mirrorExclusionVerifies,
-    verifyPresentValue,
-    verifyAbsentKey,
-    emit,
-    failWith,
-    require,
-    hex,
-    textOf,
-    txIdHex,
-) where
+module Conformance.Mirror
+    ( Mirror
+    , newMirror
+    , mirrorInsert
+    , mirrorDelete
+    , readChainState
+    , inclusionProofFrom
+    , mirrorExclusionSteps
+    , mirrorExclusionVerifies
+    , verifyPresentValue
+    , verifyAbsentKey
+    , emit
+    , failWith
+    , require
+    , hex
+    , textOf
+    , txIdHex
+    ) where
 
 import Control.Exception (ErrorCall (..), throwIO)
 import Data.ByteString (ByteString)
@@ -48,59 +48,59 @@ import Cardano.Ledger.Api.Tx (txIdTx)
 import Cardano.Ledger.Core (extractHash)
 import Cardano.Ledger.TxIn (TxId (..))
 import Cardano.Tx.Ledger (ConwayTx)
-import MPF.Backend.Pure (
-    MPFInMemoryDB,
-    emptyMPFInMemoryDB,
-    runMPFPure,
-    runMPFPureTransaction,
- )
-import MPF.Backend.Standalone (
-    MPFStandalone (..),
-    MPFStandaloneCodecs (..),
- )
-import MPF.Hashes (
-    MPFHash,
-    isoMPFHash,
-    mkMPFHash,
-    mpfHashing,
-    parseMPFHash,
-    renderMPFHash,
- )
-import MPF.Interface (
-    FromHexKV (..),
-    HexKey,
-    byteStringToHexKey,
-    hexKeyPrism,
- )
-import MPF.Proof.Exclusion (
-    MPFExclusionProof,
-    mkMPFExclusionProof,
-    mpfExclusionProofSteps,
-    verifyMPFExclusionProof,
- )
-import MPF.Proof.Insertion (
-    MPFProof (..),
-    MPFProofStep (..),
-    foldMPFProof,
-    mkMPFInclusionProof,
- )
+import MPF.Backend.Pure
+    ( MPFInMemoryDB
+    , emptyMPFInMemoryDB
+    , runMPFPure
+    , runMPFPureTransaction
+    )
+import MPF.Backend.Standalone
+    ( MPFStandalone (..)
+    , MPFStandaloneCodecs (..)
+    )
+import MPF.Hashes
+    ( MPFHash
+    , isoMPFHash
+    , mkMPFHash
+    , mpfHashing
+    , parseMPFHash
+    , renderMPFHash
+    )
+import MPF.Interface
+    ( FromHexKV (..)
+    , HexKey
+    , byteStringToHexKey
+    , hexKeyPrism
+    )
+import MPF.Proof.Exclusion
+    ( MPFExclusionProof
+    , mkMPFExclusionProof
+    , mpfExclusionProofSteps
+    , verifyMPFExclusionProof
+    )
+import MPF.Proof.Insertion
+    ( MPFProof (..)
+    , MPFProofStep (..)
+    , foldMPFProof
+    , mkMPFInclusionProof
+    )
 
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (TokenId)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie qualified as CageTrie
 import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
-import Singular.Registry.TxBuilder.Internal (
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    extractCageDatum,
-    findStateUtxo,
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainRoot (..),
-    OnChainTokenState (..),
- )
+import Singular.Registry.TxBuilder.Internal
+    ( cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , extractCageDatum
+    , findStateUtxo
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
+    )
 
 -- | An in-memory trie kept in step with the chain.
 type Mirror = IORef MPFInMemoryDB
@@ -124,6 +124,7 @@ mirror\'s own root: prove via @mkMPFExclusionProof@, verify via
 builder emits steps mts-core itself rejects" from "mts verifies but
 the on-chain validator refuses".
 -}
+
 {- | Constructor names of mts-core\'s exclusion proof for @key@, if one is
 constructible. Compares against what the cage layer emits for the same
 key and trie: same shape means the refusal lies across the
@@ -141,7 +142,8 @@ mirrorExclusionSteps ref key = do
         ProofStepFork{} -> "Fork"
         ProofStepBranch{} -> "Branch"
 
-mirrorExclusionVerifies :: Mirror -> ByteString -> ByteString -> IO Bool
+mirrorExclusionVerifies
+    :: Mirror -> ByteString -> ByteString -> IO Bool
 mirrorExclusionVerifies ref key rootBytes = do
     db <- readIORef ref
     proof <- case exclusionProofFrom db key of
@@ -156,11 +158,11 @@ mirrorExclusionVerifies ref key rootBytes = do
 chain: the state UTxO at the cage address. This is the only
 comparison target for every verification below.
 -}
-readChainState ::
-    CageConfig ->
-    Cage.Provider IO ->
-    TokenId ->
-    IO OnChainTokenState
+readChainState
+    :: CageConfig
+    -> Cage.Provider IO
+    -> TokenId
+    -> IO OnChainTokenState
 readChainState cfg prov tid = do
     stateUtxos <-
         Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
@@ -180,18 +182,18 @@ executing negative control: the same proof bound to a forged value
 must imply a different root, or the row cannot discriminate and the
 run fails.
 -}
-verifyPresentValue ::
-    CageConfig ->
-    Cage.Provider IO ->
-    Mirror ->
-    TokenId ->
-    -- | Key under test
-    ByteString ->
-    -- | Value the chain must hold
-    ByteString ->
-    -- | Forged value the control binds
-    ByteString ->
-    IO ()
+verifyPresentValue
+    :: CageConfig
+    -> Cage.Provider IO
+    -> Mirror
+    -> TokenId
+    -> ByteString
+    -- ^ Key under test
+    -> ByteString
+    -- ^ Value the chain must hold
+    -> ByteString
+    -- ^ Forged value the control binds
+    -> IO ()
 verifyPresentValue cfg prov mirrorRef tid key val forged = do
     mirrorInsert mirrorRef key val
     chainRoot <- stateRoot <$> readChainState cfg prov tid
@@ -258,22 +260,22 @@ absence check cannot discriminate. With @spoil@ (the false-claim
 armed control) the check runs against the pre-delete root instead
 and must fail the run.
 -}
-verifyAbsentKey ::
-    CageConfig ->
-    Cage.Provider IO ->
-    Mirror ->
-    TokenId ->
-    -- | Key under test
-    ByteString ->
-    -- | Deleted value the control binds
-    ByteString ->
-    -- | Pre-delete inclusion proof the control binds it into
-    MPFProof MPFHash ->
-    -- | Pre-delete chain root the spoil mode checks against
-    OnChainRoot ->
-    -- | Spoil (false-claim armed control)
-    Bool ->
-    IO ()
+verifyAbsentKey
+    :: CageConfig
+    -> Cage.Provider IO
+    -> Mirror
+    -> TokenId
+    -> ByteString
+    -- ^ Key under test
+    -> ByteString
+    -- ^ Deleted value the control binds
+    -> MPFProof MPFHash
+    -- ^ Pre-delete inclusion proof the control binds it into
+    -> OnChainRoot
+    -- ^ Pre-delete chain root the spoil mode checks against
+    -> Bool
+    -- ^ Spoil (false-claim armed control)
+    -> IO ()
 verifyAbsentKey
     cfg
     prov
@@ -380,8 +382,8 @@ mpfKeyPath = byteStringToHexKey . renderMPFHash . mkMPFHash
 {- | Build the exclusion proof for a raw key against a snapshot of
 the mirror database.
 -}
-exclusionProofFrom ::
-    MPFInMemoryDB -> ByteString -> Maybe (MPFExclusionProof MPFHash)
+exclusionProofFrom
+    :: MPFInMemoryDB -> ByteString -> Maybe (MPFExclusionProof MPFHash)
 exclusionProofFrom db k =
     fst $
         runMPFPure db $
@@ -396,8 +398,8 @@ exclusionProofFrom db k =
 {- | Build the inclusion proof for a raw key against a snapshot of
 the mirror database.
 -}
-inclusionProofFrom ::
-    MPFInMemoryDB -> ByteString -> Maybe (MPFProof MPFHash)
+inclusionProofFrom
+    :: MPFInMemoryDB -> ByteString -> Maybe (MPFProof MPFHash)
 inclusionProofFrom db k =
     fst $
         runMPFPure db $
@@ -448,4 +450,4 @@ textOf = T.unpack . TE.decodeUtf8Lenient
 txIdHex :: ConwayTx -> String
 txIdHex tx =
     let TxId h = txIdTx tx
-     in hex (hashToBytes (extractHash h))
+    in  hex (hashToBytes (extractHash h))

@@ -179,27 +179,30 @@ POLICIES: dict[str, dict] = {
     # ---- format policies ---------------------------------------------------
     "fourmolu-offchain-active": {
         "kind": "format", "tool": "fourmolu", "status": "enforced",
-        "carrier": "offchain `nix run .#lint` — CI job 'Off-chain lint'",
-        "note": "Fourmolu defaults; no fourmolu.yaml is committed yet (the "
-                "house configuration lands in #278 S2). Extent is the "
-                "checker-visited component directories (Cabal hs-source-dirs "
-                "plus naming/test and naming/drift) minus the two #264 A-003 "
-                "fenced verifier sources; an offchain source outside the "
-                "visited extent fails closed, never claims enforcement.",
-    },
-    "fourmolu-offchain-fenced": {
-        "kind": "format", "tool": "fourmolu", "status": "pending",
-        "owner": "#278 S2",
-        "note": "journey/verifier and journey/retire-verify keep their intake "
-                "bytes behind the #264 A-003 source fence; S2 removes the "
-                "fence and reformats them.",
+        "carrier": "offchain `nix run .#lint` — CI job 'Off-chain lint', "
+                   "and the whole-tree `just format-check` inside "
+                   "`just ci` (CI job 'Development shell build')",
+        "note": "the committed house fourmolu.yaml at the repository "
+                "root (issue #278 S2), passed explicitly so a missing "
+                "configuration fails loudly; the #264 A-003 source fence "
+                "is removed and the extent is the checker's own "
+                "manifest-discovered set — every Cabal hs-source-dirs "
+                "stanza of singular-registry.cabal plus the two direct-GHC "
+                "naming sources — with no directory exclusions. An offchain "
+                "source outside that visited extent fails the inventory "
+                "instead of being claimed as enforced.",
     },
     "fourmolu-conformance": {
-        "kind": "format", "tool": "fourmolu", "status": "pending",
-        "owner": "#278 S2",
-        "note": "the Conformance cabal extent plus the #80 evaluation spike "
-                "harness; no Fourmolu carrier covers the conformance tree "
-                "today.",
+        "kind": "format", "tool": "fourmolu", "status": "enforced",
+        "carrier": "conformance `nix run .#format-check` — CI job "
+                   "'Conformance Haskell format check' (conformance.yml), "
+                   "and the whole-tree `just format-check` inside `just ci`",
+        "note": "the same committed house fourmolu.yaml, over the "
+                "Conformance Cabal extent plus the #80 evaluation spike "
+                "harness, discovered from the manifests at check time with "
+                "no exclusions; the conformance lock is byte-identical to "
+                "offchain's, so both checks resolve the same pinned "
+                "Fourmolu.",
     },
     "aiken-fmt": {
         "kind": "format", "tool": "aiken fmt", "status": "pending",
@@ -319,24 +322,18 @@ CODE_RULES: list[dict] = [
      "family": "aiken", "pattern": "naming-onchain/validators/**/*.ak",
      "lint": "aiken-check-naming", "format": "aiken-fmt",
      "generated": False},
-    # Haskell — the two A-003 fenced sources first (they sit under journey/).
+    # Haskell. The #264 A-003 source fence (journey/verifier and
+    # journey/retire-verify kept at intake bytes) is removed by #278 S2:
+    # every offchain Haskell source — the formerly fenced verifier sources
+    # included — is formatted under the house configuration, so they now
+    # match the journey debt rule below like every other journey source.
     # Every offchain rule is restricted ("where": "haskell-checker-extent")
     # to the checker's own manifest-discovered extent — the Cabal
     # hs-source-dirs plus naming/test and naming/drift, visited recursively
     # exactly as offchain/nix/checks.nix does — so an enforced policy is
     # never claimed for a file the checker does not visit; anything else
     # under offchain/ hits the reject rule below and fails closed.
-    {"id": "hs-offchain-fenced-verifier",
-     "family": "haskell", "pattern": "offchain/journey/verifier/**/*.hs",
-     "where": "haskell-checker-extent",
-     "lint": "hlint-offchain-debt", "format": "fourmolu-offchain-fenced",
-     "generated": False, "note": VENDOR_NOTE},
-    {"id": "hs-offchain-fenced-retire-verify",
-     "family": "haskell", "pattern": "offchain/journey/retire-verify/**/*.hs",
-     "where": "haskell-checker-extent",
-     "lint": "hlint-offchain-debt", "format": "fourmolu-offchain-fenced",
-     "generated": False, "note": VENDOR_NOTE},
-    # HLint debt directories: journey (root and every non-fenced sub-stanza),
+    # HLint debt directories: journey (root and every sub-stanza),
     # naming/test, naming/drift, update-terminal — the 13 #264 exclusions.
     {"id": "hs-offchain-debt-journey",
      "family": "haskell", "pattern": "offchain/journey/**/*.hs",
@@ -478,6 +475,14 @@ NONCODE_CLASSES: list[dict] = [
                    "compare every validator both directions"},
     {"id": "release-config", "pattern": "{.release-please-manifest.json,release-please-config.json}",
      "note": "release-please configuration"},
+    {"id": "formatter-config", "pattern": "fourmolu.yaml",
+     "note": "the one house Fourmolu configuration (issue #278 S2), read "
+             "explicitly by every Haskell format entrypoint — the offchain "
+             "lint app, the conformance format-check app and the root just "
+             "format/format-check recipes; the root-anchored pattern means "
+             "a second per-tree fourmolu.yaml stays unclassified and fails "
+             "closed, because per-tree divergence is exactly what the one "
+             "configuration forbids"},
     {"id": "lake-lock", "pattern": "lake-manifest.json",
      "generated": True,
      "provenance": "generated by lake from lakefile.toml and lean-toolchain; "
@@ -1110,13 +1115,14 @@ def render_report(rows: list[dict], root: Path, context: str) -> str:
     active = [r for r in hs if r["lint"] == "hlint-offchain-active"]
     debt = [r for r in hs if r["lint"] == "hlint-offchain-debt"]
     fmt_active = [r for r in hs if r["format"] == "fourmolu-offchain-active"]
-    fenced = [r for r in hs if r["format"] == "fourmolu-offchain-fenced"]
+    fmt_conf = [r for r in hs if r["format"] == "fourmolu-conformance"]
     conf = [r for r in hs if r["lint"] == "hlint-conformance"]
     lines.append(
         f"haskell extents reported independently: hlint active {len(active)} "
         f"files / debt-pending {len(debt)} files (13 #264 directories) / "
-        f"conformance-pending {len(conf)} files; fourmolu active "
-        f"{len(fmt_active)} files / fenced-pending {len(fenced)} files")
+        f"conformance-pending {len(conf)} files; fourmolu house-config "
+        f"active {len(fmt_active)} offchain files / {len(fmt_conf)} "
+        f"conformance files, no exclusions")
     return "\n".join(lines)
 
 

@@ -10,13 +10,13 @@ name and what was then observed, prefixed @deployment @. Every refusal is
 helpers spell identities the way the manifest and the narration do:
 lowercase hex.
 -}
-module Deployment.Narration (
-    emit,
-    failWith,
-    hexT,
-    tokenText,
-    txText,
-) where
+module Deployment.Narration
+    ( emit
+    , failWith
+    , hexT
+    , tokenText
+    , txText
+    ) where
 
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
