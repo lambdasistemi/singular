@@ -32,8 +32,9 @@ GIT = shutil.which("git")
 
 
 def git(repo, *args):
-    subprocess.run(["git", *args], cwd=repo, check=True,
-                   capture_output=True, text=True, timeout=60)
+    subprocess.run(
+        ["git", *args], cwd=repo, check=True, capture_output=True, text=True, timeout=60
+    )
 
 
 def build_sufficient_content(tree):
@@ -85,18 +86,26 @@ def build_sufficient_content(tree):
     record = {
         "schema": "singular-coverage-record-v1",
         "checks": [
-            check(o.name, o.statementSha256, layer, f"exec-synth-{o.name}-{layer}",
-                  f"C-synth-{o.name}-{layer}")
+            check(
+                o.name,
+                o.statementSha256,
+                layer,
+                f"exec-synth-{o.name}-{layer}",
+                f"C-synth-{o.name}-{layer}",
+            )
             for o in obligations
             for layer in ("property", "integration-story")
         ],
-        "mappings": [{
-            "obligation": o.name,
-            "statementSha256": o.statementSha256,
-            "storyId": f"SYNTH-{o.name}",
-            "clauses": {"then": ["x"]},
-            "vocabulary": {},
-        } for o in obligations],
+        "mappings": [
+            {
+                "obligation": o.name,
+                "statementSha256": o.statementSha256,
+                "storyId": f"SYNTH-{o.name}",
+                "clauses": {"then": ["x"]},
+                "vocabulary": {},
+            }
+            for o in obligations
+        ],
         "discoveredPopulation": sorted(build_inventory(tree).by_identity()),
     }
     path = tree / "conformance/coverage/record/record.json"
@@ -120,10 +129,24 @@ class ReleaseBindingTest(unittest.TestCase):
         self.record = build_sufficient_tree(self.repo)
         git(self.repo, "init", "-q")
         git(self.repo, "add", "-A")
-        git(self.repo, "-c", "user.email=binding@t", "-c", "user.name=binding",
-            "commit", "-qm", "sufficient fixture")
-        out = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
-                             check=True, capture_output=True, text=True, timeout=60)
+        git(
+            self.repo,
+            "-c",
+            "user.email=binding@t",
+            "-c",
+            "user.name=binding",
+            "commit",
+            "-qm",
+            "sufficient fixture",
+        )
+        out = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=self.repo,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
         self.head = out.stdout.strip()
         self.assertRegex(self.head, r"^[0-9a-f]{40}$")
 
@@ -143,17 +166,40 @@ class ReleaseBindingTest(unittest.TestCase):
 
     def test_committed_incomplete_record_still_refuses_as_debt(self):
         (self.repo / "conformance/coverage/record/record.json").write_text(
-            json.dumps({"schema": "singular-coverage-record-v1",
-                        "checks": [], "mappings": [],
-                        "discoveredPopulation": sorted(
-                            build_inventory(self.repo).by_identity())}))
+            json.dumps(
+                {
+                    "schema": "singular-coverage-record-v1",
+                    "checks": [],
+                    "mappings": [],
+                    "discoveredPopulation": sorted(
+                        build_inventory(self.repo).by_identity()
+                    ),
+                }
+            )
+        )
         git(self.repo, "add", "-A")
-        git(self.repo, "-c", "user.email=binding@t", "-c", "user.name=binding",
-            "commit", "-qm", "insufficient record")
-        out = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
-                             check=True, capture_output=True, text=True, timeout=60)
+        git(
+            self.repo,
+            "-c",
+            "user.email=binding@t",
+            "-c",
+            "user.name=binding",
+            "commit",
+            "-qm",
+            "insufficient record",
+        )
+        out = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=self.repo,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
         rc, err = self.release(self.repo, "--candidate", out.stdout.strip())
-        self.assertEqual(rc, 1, f"insufficient record must refuse as debt; stderr: {err}")
+        self.assertEqual(
+            rc, 1, f"insufficient record must refuse as debt; stderr: {err}"
+        )
 
     def test_committed_symlink_at_canonical_path_fails_closed(self):
         # The canonical path is a committed symlink to a SUFFICIENT record
@@ -161,15 +207,30 @@ class ReleaseBindingTest(unittest.TestCase):
         # are not candidate content. Must fail closed, not COMPLETE.
         external = Path(self._tmp.name) / "external-record.json"
         external.write_bytes(
-            (self.repo / "conformance/coverage/record/record.json").read_bytes())
+            (self.repo / "conformance/coverage/record/record.json").read_bytes()
+        )
         target = self.repo / "conformance/coverage/record/record.json"
         target.unlink()
         target.symlink_to(external)
         git(self.repo, "add", "-A")
-        git(self.repo, "-c", "user.email=binding@t", "-c", "user.name=binding",
-            "commit", "-qm", "symlinked record")
-        out = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
-                             check=True, capture_output=True, text=True, timeout=60)
+        git(
+            self.repo,
+            "-c",
+            "user.email=binding@t",
+            "-c",
+            "user.name=binding",
+            "commit",
+            "-qm",
+            "symlinked record",
+        )
+        out = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=self.repo,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
         rc, err = self.release(self.repo, "--candidate", out.stdout.strip())
         self.assertEqual(rc, 3)
         self.assertIn("not a regular blob", err)
@@ -180,12 +241,27 @@ class ReleaseBindingTest(unittest.TestCase):
         # not feed the verdict.
         git(self.repo, "rm", "-q", "conformance/coverage/record/record.json")
         (self.repo / ".gitignore").write_text(
-            "conformance/coverage/record/record.json\n")
+            "conformance/coverage/record/record.json\n"
+        )
         git(self.repo, "add", "-A")
-        git(self.repo, "-c", "user.email=binding@t", "-c", "user.name=binding",
-            "commit", "-qm", "unrecorded candidate")
-        out = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
-                             check=True, capture_output=True, text=True, timeout=60)
+        git(
+            self.repo,
+            "-c",
+            "user.email=binding@t",
+            "-c",
+            "user.name=binding",
+            "commit",
+            "-qm",
+            "unrecorded candidate",
+        )
+        out = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=self.repo,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
         rc, err = self.release(self.repo, "--candidate", out.stdout.strip())
         self.assertEqual(rc, 3)
         self.assertIn("not a single committed path", err)
@@ -198,10 +274,24 @@ class ReleaseBindingTest(unittest.TestCase):
         raw["checks"][0]["evidence"]["candidatePaths"] = ["../../outside-escape"]
         path.write_text(json.dumps(raw))
         git(self.repo, "add", "-A")
-        git(self.repo, "-c", "user.email=binding@t", "-c", "user.name=binding",
-            "commit", "-qm", "escaping record")
-        out = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
-                             check=True, capture_output=True, text=True, timeout=60)
+        git(
+            self.repo,
+            "-c",
+            "user.email=binding@t",
+            "-c",
+            "user.name=binding",
+            "commit",
+            "-qm",
+            "escaping record",
+        )
+        out = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=self.repo,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
         rc, err = self.release(self.repo, "--candidate", out.stdout.strip())
         self.assertEqual(rc, 3)
         self.assertIn("escapes the candidate root", err)
@@ -211,17 +301,35 @@ class ReleaseBindingTest(unittest.TestCase):
         # smuggled via --record must not authorize publication.
         external = Path(self._tmp.name) / "external-record.json"
         external.write_bytes(
-            (self.repo / "conformance/coverage/record/record.json").read_bytes())
+            (self.repo / "conformance/coverage/record/record.json").read_bytes()
+        )
         (self.repo / "conformance/coverage/record/record.json").write_text(
-            json.dumps({"schema": "singular-coverage-record-v1",
-                        "checks": [], "mappings": []}))
+            json.dumps(
+                {"schema": "singular-coverage-record-v1", "checks": [], "mappings": []}
+            )
+        )
         git(self.repo, "add", "-A")
-        git(self.repo, "-c", "user.email=binding@t", "-c", "user.name=binding",
-            "commit", "-qm", "insufficient record")
-        out = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
-                             check=True, capture_output=True, text=True, timeout=60)
-        rc, err = self.release(self.repo, "--record", str(external),
-                               "--candidate", out.stdout.strip())
+        git(
+            self.repo,
+            "-c",
+            "user.email=binding@t",
+            "-c",
+            "user.name=binding",
+            "commit",
+            "-qm",
+            "insufficient record",
+        )
+        out = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=self.repo,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        rc, err = self.release(
+            self.repo, "--record", str(external), "--candidate", out.stdout.strip()
+        )
         self.assertEqual(rc, 3)
         self.assertIn("unbound release input", err)
 

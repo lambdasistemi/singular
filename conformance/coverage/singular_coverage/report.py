@@ -27,11 +27,19 @@ def inventory_text(inventory: Inventory, root: Path) -> str:
         by_source[obligation.source] = by_source.get(obligation.source, 0) + 1
     for source in sorted(by_source):
         lines.append(f"    {source}: {by_source[source]}")
-    unclassified = [o for o in inventory.obligations if o.classification == "unclassified"]
+    unclassified = [
+        o for o in inventory.obligations if o.classification == "unclassified"
+    ]
     lines.append(f"  unclassified ({len(unclassified)}):")
     for obligation in unclassified:
-        lead = f", lexical-lead references={obligation.references}" if obligation.references else ", declaration-only (lexical lead)"
-        lines.append(f"    {obligation.name} [{obligation.source}:{obligation.line}]{lead}")
+        lead = (
+            f", lexical-lead references={obligation.references}"
+            if obligation.references
+            else ", declaration-only (lexical lead)"
+        )
+        lines.append(
+            f"    {obligation.name} [{obligation.source}:{obligation.line}]{lead}"
+        )
     lines.append(
         "  limits: lexical, not proof-term; reference counts are leads and never "
         "classify, exclude or shrink anything"
@@ -78,7 +86,9 @@ def debt_text(debts: list[ObligationDebt]) -> str:
             notes.append("unmapped")
         if d.layer_debt:
             achieved = ",".join(sorted(d.layers_achieved)) or "none"
-            notes.append(f"layers<{','.join(achieved)}>" if achieved != "none" else "no-layer")
+            notes.append(
+                f"layers<{','.join(achieved)}>" if achieved != "none" else "no-layer"
+            )
         for f in d.execution_findings:
             notes.append(f.code)
         if d.unclassified:
@@ -94,7 +104,8 @@ def debt_json(debts: list[ObligationDebt]) -> dict:
         "layerDebt": sorted(d.name for d in debts if d.layer_debt),
         "executionDebt": [
             {"obligation": d.name, "code": f.code, "detail": f.detail}
-            for d in debts for f in d.execution_findings
+            for d in debts
+            for f in d.execution_findings
         ],
         "unclassified": sorted(d.name for d in debts if d.unclassified),
     }
@@ -102,13 +113,19 @@ def debt_json(debts: list[ObligationDebt]) -> dict:
 
 def ratchet_text(result: RatchetResult) -> str:
     if result.passed:
-        lines = [f"RATCHET: PASS — no per-obligation regression against the protected base"]
+        lines = [
+            f"RATCHET: PASS — no per-obligation regression against the protected base"
+        ]
     else:
-        lines = [f"RATCHET: FAIL — {len(result.regressions)} per-obligation regression(s)"]
+        lines = [
+            f"RATCHET: FAIL — {len(result.regressions)} per-obligation regression(s)"
+        ]
     for r in result.regressions:
         lines.append(f"  {r.kind} {r.obligation}: {r.detail}")
     if result.additions:
-        lines.append(f"  additions (informational, never offset regressions): {len(result.additions)}")
+        lines.append(
+            f"  additions (informational, never offset regressions): {len(result.additions)}"
+        )
         for a in result.additions:
             lines.append(f"    + {a}")
     return "\n".join(lines)
@@ -135,7 +152,9 @@ def completion_text(verdict: CompletionVerdict) -> str:
         f"  stale bindings: {len(verdict.stale_bindings)}",
     ]
     if not verdict.complete:
-        lines.append("  strict completion requires every category zero — an incremental PR does not")
+        lines.append(
+            "  strict completion requires every category zero — an incremental PR does not"
+        )
     for s in verdict.stale_bindings:
         lines.append(f"    stale-binding {s}")
     return "\n".join(lines)

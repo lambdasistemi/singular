@@ -19,6 +19,7 @@ imported by ``tools/prepare_docs.py`` (staging links) and
 ``tools/check_site.py`` (independent checking), so every consumer derives
 the same extent from the same Cabal stanza instead of keeping a list.
 """
+
 import argparse
 import hashlib
 import json
@@ -54,6 +55,8 @@ PRIVATE_OWNER_PERMALINK_URL = (
     "https://github.com/lambdasistemi/singular/blob/main"
     "/offchain/node-internal/Singular/Registry/Node/{owner}.hs"
 )
+
+
 class ReferenceLibrary(NamedTuple):
     """One Cabal library whose generated Haddock reference this site ships.
 
@@ -118,7 +121,9 @@ AUTOLINK_SPAN = '<span class="api-autolink">{}</span>'
 INSTANCE_METHOD_SPAN = '<span class="api-instmethod">{}</span>'
 METHODS_DIV = '<div class="subs methods">'
 EXTERNAL_STYLESHEET = re.compile(r'<link\b[^>]*href="https?://[^"]*"[^>]*/?>', re.I)
-EXTERNAL_SCRIPT = re.compile(r'<script\b[^>]*src="https?://[^"]*"[^>]*>\s*</script>', re.I)
+EXTERNAL_SCRIPT = re.compile(
+    r'<script\b[^>]*src="https?://[^"]*"[^>]*>\s*</script>', re.I
+)
 MATHJAX_CONFIG = re.compile(r'<script type="text/x-mathjax-config">.*?</script>', re.S)
 ANCHOR = re.compile(r'<a\b[^>]*href="([^"]+)"[^>]*>(.*?)</a>', re.S)
 ID_ATTR = re.compile(r'id="([^"]+)"')
@@ -195,9 +200,13 @@ def _parse(cabal_file: Path) -> dict:
         elif field == "hs-source-dirs":
             extent["hs_source_dirs"].extend(value.split())
     if not extent["exposed"]:
-        raise SystemExit(f"api_reference: library stanza exposes no modules: {cabal_file}")
+        raise SystemExit(
+            f"api_reference: library stanza exposes no modules: {cabal_file}"
+        )
     if not extent["hs_source_dirs"]:
-        raise SystemExit(f"api_reference: library stanza declares no hs-source-dirs: {cabal_file}")
+        raise SystemExit(
+            f"api_reference: library stanza declares no hs-source-dirs: {cabal_file}"
+        )
     return extent
 
 
@@ -279,13 +288,20 @@ def parse_package_db(config_files: Path) -> list[dict]:
         )
     records: list[dict] = []
     for conf in sorted(dbs[0].glob("*.conf")):
-        record: dict = {"package": None, "lib": None, "modules": set(), "conf": conf.name}
+        record: dict = {
+            "package": None,
+            "lib": None,
+            "modules": set(),
+            "conf": conf.name,
+        }
         field = None
         for raw in conf.read_text(errors="replace").splitlines():
             if not raw.strip():
                 field = None
                 continue
-            m = re.match(r"^(package-name|lib-name|exposed-modules|hidden-modules):\s*(.*)$", raw)
+            m = re.match(
+                r"^(package-name|lib-name|exposed-modules|hidden-modules):\s*(.*)$", raw
+            )
             if m:
                 field, value = m.group(1), m.group(2).strip()
             elif raw.startswith(" ") or raw.startswith("\t"):
@@ -334,7 +350,9 @@ def transform_tree(
     # index pages carry their own entry ids and never own a referenced
     # fragment, so they are excluded from the map and from owner search.
     page_ids = {
-        p.relative_to(api_root).as_posix(): set(ID_ATTR.findall(p.read_text(errors="replace")))
+        p.relative_to(api_root).as_posix(): set(
+            ID_ATTR.findall(p.read_text(errors="replace"))
+        )
         for p in [*api_root.glob("*.html"), *api_root.glob("src/*.html")]
         if p.name in extent_pages or p.parent.name == "src"
     }
@@ -351,7 +369,9 @@ def transform_tree(
         """
         alias = title.replace("-", ".")
         candidates = {
-            m for m in extent if m == alias or m.endswith("." + alias) or m.startswith(alias + ".")
+            m
+            for m in extent
+            if m == alias or m.endswith("." + alias) or m.startswith(alias + ".")
         }
         if frag:
             component = frag.split(":", 1)[1] if ":" in frag else frag
@@ -359,8 +379,9 @@ def transform_tree(
             if qualified in page_of_module:
                 return page_of_module[qualified], None
             carrying = {
-                m for m in candidates if page_of_module[m] in page_ids
-                and frag in page_ids[page_of_module[m]]
+                m
+                for m in candidates
+                if page_of_module[m] in page_ids and frag in page_ids[page_of_module[m]]
             }
             if len(carrying) == 1:
                 return page_of_module[carrying.pop()], frag
@@ -413,7 +434,9 @@ def transform_tree(
                     spans.append((open_start, endp))
         return spans
 
-    def inside_instance_methods(page_text: str, pos: int, intervals: list[tuple[int, int]]) -> bool:
+    def inside_instance_methods(
+        page_text: str, pos: int, intervals: list[tuple[int, int]]
+    ) -> bool:
         """Positively inside an instance Methods list.
 
         The epic ruling covers an anchor only when a ``div.subs.methods``
@@ -451,10 +474,21 @@ def transform_tree(
             return False
         between = page_text[prior:div]
         return bool(
-            re.fullmatch(r"(?:\s|</td>|</tr>|</table>|</div>|</summary>|</p>|</details>)*", between)
+            re.fullmatch(
+                r"(?:\s|</td>|</tr>|</table>|</div>|</summary>|</p>|</details>)*",
+                between,
+            )
         )
 
-    def classify_missing_fragment(page_name: str, href: str, frag: str, plain: str, original: str, page_text: str = "", match_start: int = 0):
+    def classify_missing_fragment(
+        page_name: str,
+        href: str,
+        frag: str,
+        plain: str,
+        original: str,
+        page_text: str = "",
+        match_start: int = 0,
+    ):
         """A fragment absent from the page that should carry it, with no
         positively proven class.
 
@@ -466,15 +500,20 @@ def transform_tree(
         (A-010): they silently transformed outside-class broken fragments.
         Everything reaching here fails staging loudly.
         """
-        raise SystemExit(
-            f"API_LINK_MISSING scope=library staging {page_name}: {href}"
-        )
+        raise SystemExit(f"API_LINK_MISSING scope=library staging {page_name}: {href}")
 
-    def rewrite(match: re.Match, page_name: str, page_text: str, intervals: list[tuple[int, int]]) -> str:
+    def rewrite(
+        match: re.Match,
+        page_name: str,
+        page_text: str,
+        intervals: list[tuple[int, int]],
+    ) -> str:
         href, label = match.group(1), match.group(2)
         plain = re.sub(r"<[^>]+>", "", label).strip() or href
         original = match.group(0)
-        if re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", href) and not href.startswith("file://"):
+        if re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", href) and not href.startswith(
+            "file://"
+        ):
             return original
         if href.startswith("file://"):
             module = _module_of_page(href.partition("#")[0].rsplit("/", 1)[-1])
@@ -498,9 +537,8 @@ def transform_tree(
             # classification discipline.
             if not frag or frag in page_ids.get(page_name, ()):
                 return original
-            if (
-                frag.startswith("v:")
-                and inside_instance_methods(page_text, match.start(), intervals)
+            if frag.startswith("v:") and inside_instance_methods(
+                page_text, match.start(), intervals
             ):
                 stats["instance_method"] += 1
                 return INSTANCE_METHOD_SPAN.format(plain)
@@ -612,10 +650,7 @@ def _private_owner_links(
     candidate_sublib = library.sublibrary
 
     def is_candidate_sublib(record: dict) -> bool:
-        return (
-            record["package"] == candidate_lib
-            and record["lib"] == candidate_sublib
-        )
+        return record["package"] == candidate_lib and record["lib"] == candidate_sublib
 
     sublib_records = [r for r in db_records if is_candidate_sublib(r)]
     if len(sublib_records) != 1:
@@ -682,7 +717,14 @@ def _private_owner_links(
                 f"owner {module}: #{anchor} occurs {occurrences} times on "
                 f"{guide_page_rel}"
             )
-        located.append((guide_text.find(anchor_token), module, anchor, private_owners[module]["permalink"]))
+        located.append(
+            (
+                guide_text.find(anchor_token),
+                module,
+                anchor,
+                private_owners[module]["permalink"],
+            )
+        )
     located.sort()
     for i, (pos, module, anchor, url) in enumerate(located):
         end = located[i + 1][0] if i + 1 < len(located) else len(guide_text)
@@ -734,7 +776,9 @@ def copy_reference(
     html_root = find_haddock_root(haddock_out, modules)
     api_root = site.joinpath(*library.api_dir)
     if api_root.exists():
-        raise SystemExit(f"api_reference: {api_root} already exists; refusing to mix trees")
+        raise SystemExit(
+            f"api_reference: {api_root} already exists; refusing to mix trees"
+        )
     api_root.mkdir(parents=True)
     for entry in sorted(html_root.iterdir()):
         target = api_root / entry.name
@@ -774,7 +818,9 @@ def copy_reference(
         source_page = api_root / "src" / source_page_name(module)
         for page in (module_page, source_page):
             if not page.is_file():
-                raise SystemExit(f"api_reference: generated page missing for {module}: {page}")
+                raise SystemExit(
+                    f"api_reference: generated page missing for {module}: {page}"
+                )
         records.append(
             {
                 "module": module,
@@ -899,7 +945,7 @@ def archive_check(archive_dir: Path, site: Path) -> None:
                 if name.startswith(prefix) and member.isfile():
                     extracted = bundle.extractfile(member)
                     assert extracted is not None, f"unreadable archive member: {name}"
-                    archived_by_library[key][name[len(prefix):]] = hashlib.sha256(
+                    archived_by_library[key][name[len(prefix) :]] = hashlib.sha256(
                         extracted.read()
                     ).hexdigest()
     members = 0
@@ -913,16 +959,29 @@ def archive_check(archive_dir: Path, site: Path) -> None:
         archived = archived_by_library[key]
         missing = sorted(set(site_files) - set(archived))
         if missing:
-            detail = f"{missing[0]} (and {len(missing) - 1} more)" if len(missing) > 1 else missing[0]
-            print(f"API_ARCHIVE_MISSING library={library.name} {detail}", file=sys.stderr)
+            detail = (
+                f"{missing[0]} (and {len(missing) - 1} more)"
+                if len(missing) > 1
+                else missing[0]
+            )
+            print(
+                f"API_ARCHIVE_MISSING library={library.name} {detail}", file=sys.stderr
+            )
             raise SystemExit(1)
         extra = sorted(set(archived) - set(site_files))
         if extra:
-            print(f"API_ARCHIVE_EXTRA library={library.name} {extra[0]}", file=sys.stderr)
+            print(
+                f"API_ARCHIVE_EXTRA library={library.name} {extra[0]}", file=sys.stderr
+            )
             raise SystemExit(1)
-        drifted = sorted(name for name in site_files if archived[name] != site_files[name])
+        drifted = sorted(
+            name for name in site_files if archived[name] != site_files[name]
+        )
         if drifted:
-            print(f"API_ARCHIVE_BYTES library={library.name} {drifted[0]}", file=sys.stderr)
+            print(
+                f"API_ARCHIVE_BYTES library={library.name} {drifted[0]}",
+                file=sys.stderr,
+            )
             raise SystemExit(1)
         members += len(archived)
     print(f"api-archive-check libraries={len(LIBRARIES)} members={members}")
@@ -931,7 +990,9 @@ def archive_check(archive_dir: Path, site: Path) -> None:
 def main(argv: list[str]) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="mode", required=True)
-    manifest = sub.add_parser("manifest", help="copy the Haddock tree and write the manifest")
+    manifest = sub.add_parser(
+        "manifest", help="copy the Haddock tree and write the manifest"
+    )
     manifest.add_argument(
         "--library",
         choices=sorted(LIBRARIES),
@@ -948,7 +1009,9 @@ def main(argv: list[str]) -> None:
         default=None,
         help="Haddock tree of the sublibrary owning the re-exported implementations",
     )
-    archive = sub.add_parser("archive-check", help="compare the staged archive's API pages with the site")
+    archive = sub.add_parser(
+        "archive-check", help="compare the staged archive's API pages with the site"
+    )
     archive.add_argument("archive_dir")
     archive.add_argument("site")
     args = parser.parse_args(argv)

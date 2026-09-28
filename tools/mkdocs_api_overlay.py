@@ -7,6 +7,7 @@ built site's ``api/``, byte for byte, outside MkDocs' page processing. With
 nothing staged (the packaged build, which generates ``api/`` after MkDocs)
 it does nothing.
 """
+
 import shutil
 from pathlib import Path
 

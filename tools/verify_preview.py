@@ -1,4 +1,5 @@
 """Verify the published candidate and meaningful bytes against the local build."""
+
 from pathlib import Path
 import hashlib
 import json
@@ -35,8 +36,12 @@ names = [
     "artifacts/SHA256SUMS",
 ]
 for directory in ("model", "simulator"):
-    names.extend(str(path.relative_to(source)) for path in sorted((source / directory).rglob("*"))
-                 if path.is_file() and path.suffix in {".lean", ".json", ".js", ".mjs", ".css", ".html"})
+    names.extend(
+        str(path.relative_to(source))
+        for path in sorted((source / directory).rglob("*"))
+        if path.is_file()
+        and path.suffix in {".lean", ".json", ".js", ".mjs", ".css", ".html"}
+    )
 assert any(name.endswith("Model.lean") for name in names), "no published Lean source"
 for name in names:
     local = (source / name).read_bytes()

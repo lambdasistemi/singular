@@ -63,17 +63,23 @@ from .ratchet import ratchet
 GATE_DIR = Path(__file__).resolve().parent.parent
 
 EXIT_OK = 0
-EXIT_DEBT = 1        # completion INCOMPLETE / inventory failure
+EXIT_DEBT = 1  # completion INCOMPLETE / inventory failure
 EXIT_REGRESSION = 2  # ratchet regression
 EXIT_FAIL_CLOSED = 3
 EXIT_EXPECTATION = 4  # --expect mismatch
-EXIT_CRASH = 5       # release: unexpected checker exception (never green, never INCOMPLETE)
+EXIT_CRASH = 5  # release: unexpected checker exception (never green, never INCOMPLETE)
 
 
 def _defaults(args: argparse.Namespace) -> tuple[Path, Path, Path]:
     root = Path(args.root).resolve()
-    record_path = Path(args.record) if args.record else GATE_DIR / "record" / "record.json"
-    reference_path = Path(getattr(args, "reference", None)) if getattr(args, "reference", None) else GATE_DIR / "record" / "base-record.json"
+    record_path = (
+        Path(args.record) if args.record else GATE_DIR / "record" / "record.json"
+    )
+    reference_path = (
+        Path(getattr(args, "reference", None))
+        if getattr(args, "reference", None)
+        else GATE_DIR / "record" / "base-record.json"
+    )
     return root, record_path, reference_path
 
 
@@ -85,10 +91,13 @@ def cmd_inventory(args: argparse.Namespace) -> int:
     debts = compute_debt(inventory, record, root)
     print(debt_text(debts))
     if args.report:
-        write_report(Path(args.report), {
-            "inventory": inventory_json(inventory),
-            "debt": debt_json(debts),
-        })
+        write_report(
+            Path(args.report),
+            {
+                "inventory": inventory_json(inventory),
+                "debt": debt_json(debts),
+            },
+        )
     return EXIT_OK
 
 
@@ -164,7 +173,9 @@ def _git_bytes(root: Path, *git_args: str) -> bytes:
     except OSError as exc:
         raise ReleaseBindingError(f"git unavailable: {exc}") from exc
     if proc.returncode != 0:
-        raise ReleaseBindingError(f"git error: {proc.stderr.decode('utf-8', 'replace').strip()[:200]}")
+        raise ReleaseBindingError(
+            f"git error: {proc.stderr.decode('utf-8', 'replace').strip()[:200]}"
+        )
     return proc.stdout
 
 
@@ -269,7 +280,9 @@ def dispose_release_tree(scratch: Path) -> None:
     try:
         shutil.rmtree(scratch)
     except OSError as exc:
-        print(f"warning: release scratch not removed: {scratch}: {exc}", file=sys.stderr)
+        print(
+            f"warning: release scratch not removed: {scratch}: {exc}", file=sys.stderr
+        )
 
 
 @dataclass
@@ -357,7 +370,13 @@ def cmd_release(args: argparse.Namespace) -> int:
     except ReleaseInputError as exc:
         print(f"FAIL-CLOSED {exc}", file=sys.stderr)
         return EXIT_FAIL_CLOSED
-    except (InventoryError, RecordError, UnknownRowError, PopulationError, FileNotFoundError) as exc:
+    except (
+        InventoryError,
+        RecordError,
+        UnknownRowError,
+        PopulationError,
+        FileNotFoundError,
+    ) as exc:
         print(f"FAIL-CLOSED {type(exc).__name__}: {exc}", file=sys.stderr)
         return EXIT_FAIL_CLOSED
     except Exception as exc:  # never green, never INCOMPLETE
@@ -366,7 +385,12 @@ def cmd_release(args: argparse.Namespace) -> int:
         if args.report:
             write_report(
                 Path(args.report),
-                {"verdict": "CRASH", "command": "release", "candidate": candidate, "error": label},
+                {
+                    "verdict": "CRASH",
+                    "command": "release",
+                    "candidate": candidate,
+                    "error": label,
+                },
             )
         return EXIT_CRASH
     finally:
@@ -377,7 +401,9 @@ def cmd_release(args: argparse.Namespace) -> int:
     print(f"candidate: {candidate} ({binding.reason})")
     if args.report:
         payload = completion_json(verdict)
-        payload.update({"command": "release", "candidate": candidate, "binding": binding.reason})
+        payload.update(
+            {"command": "release", "candidate": candidate, "binding": binding.reason}
+        )
         write_report(Path(args.report), payload)
     return EXIT_OK if verdict.complete else EXIT_DEBT
 
@@ -402,30 +428,56 @@ def cmd_completion(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="coverage-gate", description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        prog="coverage-gate",
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("--root", default=".", help="repository root (default: cwd)")
     common = argparse.ArgumentParser(add_help=False)
-    common.add_argument("--record", help="current coverage record (default: <gate>/record/record.json)")
+    common.add_argument(
+        "--record", help="current coverage record (default: <gate>/record/record.json)"
+    )
     common.add_argument("--report", help="write the machine-readable verdict JSON here")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("inventory", parents=[common],
-                   help="manifest reconciliation + discovery over all of lean/")
+    sub.add_parser(
+        "inventory",
+        parents=[common],
+        help="manifest reconciliation + discovery over all of lean/",
+    )
 
-    p_ratchet = sub.add_parser("ratchet", parents=[common],
-                               help="per-obligation regression check vs the protected base")
-    p_ratchet.add_argument("--reference", help="base record (default: <gate>/record/base-record.json)")
+    p_ratchet = sub.add_parser(
+        "ratchet",
+        parents=[common],
+        help="per-obligation regression check vs the protected base",
+    )
+    p_ratchet.add_argument(
+        "--reference", help="base record (default: <gate>/record/base-record.json)"
+    )
 
-    p_completion = sub.add_parser("completion", parents=[common],
-                                  help="strict full-completion verdict (fails closed)")
-    p_completion.add_argument("--expect", choices=("INCOMPLETE", "COMPLETE"), default=None,
-                              help="assert the expected verdict (explicit nonzero baseline for CI)")
+    p_completion = sub.add_parser(
+        "completion",
+        parents=[common],
+        help="strict full-completion verdict (fails closed)",
+    )
+    p_completion.add_argument(
+        "--expect",
+        choices=("INCOMPLETE", "COMPLETE"),
+        default=None,
+        help="assert the expected verdict (explicit nonzero baseline for CI)",
+    )
 
-    p_release = sub.add_parser("release", parents=[common],
-                               help="release-boundary gate: candidate-bound strict verdict (blocking)")
-    p_release.add_argument("--candidate", required=True,
-                           help="exact release-candidate commit sha; HEAD must equal it")
+    p_release = sub.add_parser(
+        "release",
+        parents=[common],
+        help="release-boundary gate: candidate-bound strict verdict (blocking)",
+    )
+    p_release.add_argument(
+        "--candidate",
+        required=True,
+        help="exact release-candidate commit sha; HEAD must equal it",
+    )
 
     args = parser.parse_args(argv)
     try:

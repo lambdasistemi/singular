@@ -83,7 +83,9 @@ class RealInventoryTest(unittest.TestCase):
         by_name = inv.by_name()
         self.assertIn("Singular.Statements.biconditional_supply_sync", by_name)
         self.assertIn("Singular.step_ok_consistent", by_name)
-        self.assertEqual(by_name["Singular.step_ok_consistent"].classification, "unclassified")
+        self.assertEqual(
+            by_name["Singular.step_ok_consistent"].classification, "unclassified"
+        )
         self.assertEqual(
             by_name["Singular.Statements.biconditional_supply_sync"].classification,
             "manifest-bound",
@@ -129,7 +131,8 @@ class FixtureInventoryTest(unittest.TestCase):
             export_manifests(root)  # the honest re-export after a statement edit
             after = build_inventory(root).by_name()["Singular.Statements.greeter_iff"]
             self.assertNotEqual(
-                before.statementSha256, after.statementSha256,
+                before.statementSha256,
+                after.statementSha256,
                 "editing a statement must produce a new obligation identity",
             )
 
@@ -154,7 +157,8 @@ class CorpusTheoremBindingTest(unittest.TestCase):
     def test_every_corpus_theorem_row_binds_the_live_statement_identity(self):
         rows, by_name = self.live()
         self.assertGreater(
-            len(rows), 0,
+            len(rows),
+            0,
             "no corpus row cites a theorem: the quantifier has nothing to range "
             "over and would report success having compared nothing",
         )
@@ -187,7 +191,9 @@ class CorpusTheoremBindingTest(unittest.TestCase):
                     violations = binding_violations(rows, by_name)
                 finally:
                     row["statementSha256"] = held
-                self.assertIn(f"{path}: {row['theorem']} cites no statementSha256", violations)
+                self.assertIn(
+                    f"{path}: {row['theorem']} cites no statementSha256", violations
+                )
 
     def test_control_a_row_citing_an_undeclared_theorem_is_caught(self):
         rows, by_name = self.live()

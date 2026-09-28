@@ -1,4 +1,5 @@
 """Attach the raw, runnable review workspace after MkDocs renders the site."""
+
 import hashlib
 from pathlib import Path
 import shutil
@@ -16,12 +17,18 @@ shutil.copyfile(root / "docs/naming-lifecycle.md", contract)
 # Development evidence and generated build trees stay out of this copy.
 review = artifacts / "review"
 shutil.copytree(root / "release-review", review)
-shutil.copytree(root / "lean", review / "lean", ignore=shutil.ignore_patterns(
-    ".lake", "__pycache__", "*.olean", "*.ilean", "*.c", "*.o"
-))
-shutil.copytree(root / "simulator", review / "simulator", ignore=shutil.ignore_patterns(
-    "evidence", "node_modules", "__pycache__"
-))
+shutil.copytree(
+    root / "lean",
+    review / "lean",
+    ignore=shutil.ignore_patterns(
+        ".lake", "__pycache__", "*.olean", "*.ilean", "*.c", "*.o"
+    ),
+)
+shutil.copytree(
+    root / "simulator",
+    review / "simulator",
+    ignore=shutil.ignore_patterns("evidence", "node_modules", "__pycache__"),
+)
 (review / "tools").mkdir()
 for name in ("axioms.lean", "check_model.py"):
     shutil.copyfile(root / "tools" / name, review / "tools" / name)
@@ -30,7 +37,8 @@ for name in ("lakefile.toml", "lean-toolchain"):
 
 manifest = {
     str(path.relative_to(site)): hashlib.sha256(path.read_bytes()).hexdigest()
-    for path in sorted(artifacts.rglob("*")) if path.is_file()
+    for path in sorted(artifacts.rglob("*"))
+    if path.is_file()
 }
 for relative in (
     "model/corpus.json",

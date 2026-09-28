@@ -27,23 +27,38 @@ from .leanscan import Declaration, scan_tree_strict
 # tools/check_model.py's own pairing.
 STATEMENT_MODULES = [
     ("lean/Singular/Statements.lean", "Singular.Statements.", "lean/theorem-debt.json"),
-    ("lean/Singular/NamingStatements.lean", "Singular.NamingStatements.", "lean/naming-theorem-debt.json"),
-    ("lean/Singular/NamingLifecycleStatements.lean", "Singular.NamingLifecycleStatements.",
-     "lean/lifecycle-theorem-debt.json"),
-    ("lean/Singular/NamingWireStatements.lean", "Singular.NamingWireStatements.", "lean/wire-theorem-debt.json"),
+    (
+        "lean/Singular/NamingStatements.lean",
+        "Singular.NamingStatements.",
+        "lean/naming-theorem-debt.json",
+    ),
+    (
+        "lean/Singular/NamingLifecycleStatements.lean",
+        "Singular.NamingLifecycleStatements.",
+        "lean/lifecycle-theorem-debt.json",
+    ),
+    (
+        "lean/Singular/NamingWireStatements.lean",
+        "Singular.NamingWireStatements.",
+        "lean/wire-theorem-debt.json",
+    ),
 ]
 
 
 @dataclass(frozen=True)
 class Obligation:
-    name: str                 # qualified declaration name
-    statementSha256: str      # manifest digest for manifest-bound; signature digest otherwise
-    classification: str       # manifest-bound | unclassified
-    status: str               # PROVED | STATED | UNCLASSIFIED
-    source: str               # repo-relative module path
+    name: str  # qualified declaration name
+    statementSha256: (
+        str  # manifest digest for manifest-bound; signature digest otherwise
+    )
+    classification: str  # manifest-bound | unclassified
+    status: str  # PROVED | STATED | UNCLASSIFIED
+    source: str  # repo-relative module path
     line: int
     attributed: bool
-    references: int           # lexical occurrences beyond the declaration (a lead, never evidence)
+    references: (
+        int  # lexical occurrences beyond the declaration (a lead, never evidence)
+    )
 
     @property
     def identity(self) -> str:
@@ -67,6 +82,7 @@ def _load_check_model(root: Path):
     sys.path.insert(0, str(tools))
     try:
         import check_model  # noqa: PLC0415 — loaded from the audited tree, by design
+
         return check_model
     except Exception as exc:  # pragma: no cover - import failure is environmental
         raise InventoryError(f"cannot import tools/check_model.py: {exc}") from exc
@@ -125,44 +141,54 @@ def build_inventory(root: Path) -> Inventory:
             )
         for record in records:
             if record["name"] in manifest_records:
-                raise InventoryError(f"declaration inventory collides: {record['name']}")
+                raise InventoryError(
+                    f"declaration inventory collides: {record['name']}"
+                )
             manifest_records[record["name"]] = record
 
     declarations = scan_tree_strict(root / "lean")
-    refcounts = _lexical_reference_counts(root, {d.name.split(".")[-1] for d in declarations})
+    refcounts = _lexical_reference_counts(
+        root, {d.name.split(".")[-1] for d in declarations}
+    )
 
     obligations: list[Obligation] = []
     unclassified = 0
     seen_scan_names: set[str] = set()
     for decl in declarations:
         if decl.name in seen_scan_names:
-            raise InventoryError(f"discovery found duplicate declaration name: {decl.name}")
+            raise InventoryError(
+                f"discovery found duplicate declaration name: {decl.name}"
+            )
         seen_scan_names.add(decl.name)
         record = manifest_records.get(decl.name)
         short_refs = max(0, refcounts.get(decl.name.split(".")[-1], 1) - 1)
         if record is not None:
-            obligations.append(Obligation(
-                name=decl.name,
-                statementSha256=record["statementSha256"],
-                classification="manifest-bound",
-                status=record["status"],
-                source=decl.source,
-                line=decl.line,
-                attributed=decl.attributed,
-                references=short_refs,
-            ))
+            obligations.append(
+                Obligation(
+                    name=decl.name,
+                    statementSha256=record["statementSha256"],
+                    classification="manifest-bound",
+                    status=record["status"],
+                    source=decl.source,
+                    line=decl.line,
+                    attributed=decl.attributed,
+                    references=short_refs,
+                )
+            )
         else:
             unclassified += 1
-            obligations.append(Obligation(
-                name=decl.name,
-                statementSha256=decl.signatureSha256,
-                classification="unclassified",
-                status="UNCLASSIFIED",
-                source=decl.source,
-                line=decl.line,
-                attributed=decl.attributed,
-                references=short_refs,
-            ))
+            obligations.append(
+                Obligation(
+                    name=decl.name,
+                    statementSha256=decl.signatureSha256,
+                    classification="unclassified",
+                    status="UNCLASSIFIED",
+                    source=decl.source,
+                    line=decl.line,
+                    attributed=decl.attributed,
+                    references=short_refs,
+                )
+            )
 
     missing_from_scan = set(manifest_records) - seen_scan_names
     if missing_from_scan:
