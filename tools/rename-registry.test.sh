@@ -55,14 +55,14 @@ git -C "$src" worktree add --detach "$scratch" "$base" >/dev/null
 # Index state plus the content of every tracked file: anything a re-run
 # moves, rewrites or re-stamps shows up here.
 snapshot() {
-  ( cd "$scratch" \
+  (cd "$scratch" \
     && git ls-files -s \
     && echo '--- contents ---' \
-    && git ls-files -z | xargs -0 sha256sum )
+    && git ls-files -z | xargs -0 sha256sum)
 }
 
 run_rename() {
-  ( cd "$scratch" && "$script" "$@" )
+  (cd "$scratch" && "$script" "$@")
 }
 
 echo "positive: seeded MPFS in tracked .lean and .html must be rewritten"
@@ -70,8 +70,8 @@ pos_lean="$scratch/lean/Singular/Model.lean"
 pos_html="$scratch/simulator/index.html"
 [ -f "$pos_lean" ] || fail "positive setup: $pos_lean missing"
 [ -f "$pos_html" ] || fail "positive setup: $pos_html missing"
-printf '%s\n' '-- MPFS positive control lean' >> "$pos_lean"
-printf '%s\n' '<!-- MPFS positive control html -->' >> "$pos_html"
+printf '%s\n' '-- MPFS positive control lean' >>"$pos_lean"
+printf '%s\n' '<!-- MPFS positive control html -->' >>"$pos_html"
 grep -q 'MPFS positive control lean' "$pos_lean" \
   || fail "positive setup: lean seed missing"
 grep -q 'MPFS positive control html' "$pos_html" \
@@ -121,8 +121,8 @@ neg_lean="$scratch/simulator/formal/Model.lean"
 neg_html="$scratch/simulator/page-body.html"
 [ -f "$neg_lean" ] || fail "negative setup: $neg_lean missing"
 [ -f "$neg_html" ] || fail "negative setup: $neg_html missing"
-printf '%s\n' '-- MPFS residual negative control lean' >> "$neg_lean"
-printf '%s\n' '<!-- MPFS residual negative control html -->' >> "$neg_html"
+printf '%s\n' '-- MPFS residual negative control lean' >>"$neg_lean"
+printf '%s\n' '<!-- MPFS residual negative control html -->' >>"$neg_html"
 grep -q 'MPFS residual negative control lean' "$neg_lean" \
   || fail "negative setup: lean seed missing"
 grep -q 'MPFS residual negative control html' "$neg_html" \
@@ -146,7 +146,7 @@ grep -q 'MPFS residual negative control' "$neg_html" \
 
 echo "control: stray MPFS_BLUEPRINT in a .sh must fail the gate"
 planted="$scratch/offchain/naming/run-suite.sh"
-printf 'export MPFS_BLUEPRINT=/tmp/mpfs-blueprint.json\n' >> "$planted"
+printf 'export MPFS_BLUEPRINT=/tmp/mpfs-blueprint.json\n' >>"$planted"
 set +e
 gate_out="$(run_rename --gate-only 2>&1)"
 gate_rc=$?

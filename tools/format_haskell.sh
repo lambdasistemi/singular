@@ -42,21 +42,21 @@ root=$(cd "$here/.." && pwd)
 target=$(cd "$target" && pwd -P)
 
 case "$mode" in
-    check | inplace) ;;
-    *)
-        echo "usage: format_haskell.sh <check|inplace> [ROOT]" >&2
-        exit 2
-        ;;
+  check | inplace) ;;
+  *)
+    echo "usage: format_haskell.sh <check|inplace> [ROOT]" >&2
+    exit 2
+    ;;
 esac
 
 command -v fourmolu >/dev/null 2>&1 || {
-    echo "format: fourmolu is not on PATH — run within nix develop (the pinned house formatter)" >&2
-    exit 1
+  echo "format: fourmolu is not on PATH — run within nix develop (the pinned house formatter)" >&2
+  exit 1
 }
 
 [ -r "$target/fourmolu.yaml" ] || {
-    echo "format: the house fourmolu.yaml is missing under $target — refusing to run with Fourmolu defaults" >&2
-    exit 1
+  echo "format: the house fourmolu.yaml is missing under $target — refusing to run with Fourmolu defaults" >&2
+  exit 1
 }
 
 # The tracked/source projection (see the header). A repository root is its
@@ -66,15 +66,15 @@ command -v fourmolu >/dev/null 2>&1 || {
 # that outer index.
 top=$(git -C "$target" rev-parse --show-toplevel 2>/dev/null || true)
 if [ -n "$top" ] && [ "$(cd "$top" && pwd -P)" = "$target" ]; then
-    context="git-checkout (tracked files from the index; untracked noise skipped)"
-    files=$(git -C "$target" ls-files --cached -- '*.hs' | sort)
+  context="git-checkout (tracked files from the index; untracked noise skipped)"
+  files=$(git -C "$target" ls-files --cached -- '*.hs' | sort)
 else
-    context="git-free source (every present file is repository source)"
-    files=$(cd "$target" && find . -name '*.hs' -type f | sed 's|^\./||' | sort)
+  context="git-free source (every present file is repository source)"
+  files=$(cd "$target" && find . -name '*.hs' -type f | sed 's|^\./||' | sort)
 fi
 [ -n "$files" ] || {
-    echo "format: discovered no Haskell sources under $target ($context)" >&2
-    exit 1
+  echo "format: discovered no Haskell sources under $target ($context)" >&2
+  exit 1
 }
 count=$(printf '%s\n' "$files" | wc -l)
 echo "format: $count discovered Haskell sources, $context, house fourmolu.yaml, mode=$mode" >&2

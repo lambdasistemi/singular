@@ -58,7 +58,7 @@ echo "controls: baseline PASS — the tracked tree inventories clean"
 scratch() { # scratch <name> — fresh exported copy of the classified tree
   local dest="$work/$1"
   if ! python3 "$tool" --root "$root" --export-tree "$dest" \
-      >"$work/$1.export.log" 2>&1; then
+    >"$work/$1.export.log" 2>&1; then
     echo "controls: SETUP FAILURE — cannot export the classified tree:" >&2
     cat "$work/$1.export.log" >&2
     exit 1
@@ -66,7 +66,8 @@ scratch() { # scratch <name> — fresh exported copy of the classified tree
 }
 
 expect_reject() { # expect_reject <name> <required-substring> [more…]
-  local name=$1; shift
+  local name=$1
+  shift
   local log="$work/$name.log"
   if python3 "$tool" --root "$work/$name" >"$log" 2>&1; then
     echo "control $name FAILED: the inventory accepted a defective tree" >&2
@@ -94,7 +95,7 @@ expect_reject() { # expect_reject <name> <required-substring> [more…]
 scratch c1-new-directory-source
 mkdir -p "$work/c1-new-directory-source/orphan-lane"
 printf 'module Orphan () where\n' \
-  > "$work/c1-new-directory-source/orphan-lane/orphan.hs"
+  >"$work/c1-new-directory-source/orphan-lane/orphan.hs"
 expect_reject c1-new-directory-source \
   "unmapped haskell source: orphan-lane/orphan.hs"
 
@@ -102,7 +103,7 @@ expect_reject c1-new-directory-source \
 scratch c2-shebang-discovery
 mkdir -p "$work/c2-shebang-discovery/orphan-lane"
 printf '#!/usr/bin/env bash\nexit 0\n' \
-  > "$work/c2-shebang-discovery/orphan-lane/shebang-only"
+  >"$work/c2-shebang-discovery/orphan-lane/shebang-only"
 expect_reject c2-shebang-discovery \
   "unmapped shell source (discovered by shebang): orphan-lane/shebang-only"
 
@@ -110,7 +111,7 @@ expect_reject c2-shebang-discovery \
 scratch c3-executable-mode
 mkdir -p "$work/c3-executable-mode/orphan-lane"
 printf 'not a script, no shebang, no extension\n' \
-  > "$work/c3-executable-mode/orphan-lane/unknown-executable"
+  >"$work/c3-executable-mode/orphan-lane/unknown-executable"
 chmod +x "$work/c3-executable-mode/orphan-lane/unknown-executable"
 expect_reject c3-executable-mode \
   "unknown executable file (no extension, no shebang): orphan-lane/unknown-executable"
@@ -119,14 +120,14 @@ expect_reject c3-executable-mode \
 # the component by the manifest, not silently dropped as unknown data.
 scratch c4-manifest-nonstandard
 printf '%s\n' '-- hsc2hs source nobody registered' \
-  > "$work/c4-manifest-nonstandard/offchain/lib/Orphan.hsc"
+  >"$work/c4-manifest-nonstandard/offchain/lib/Orphan.hsc"
 expect_reject c4-manifest-nonstandard \
   "unmapped haskell source (nonstandard extension .hsc inside a declared component source directory): offchain/lib/Orphan.hsc"
 
 # c5 — an extension nobody recognizes anywhere fails closed.
 scratch c5-unknown-extension
 mkdir -p "$work/c5-unknown-extension/orphan-lane"
-printf 'opaque\n' > "$work/c5-unknown-extension/orphan-lane/mystery.zzz"
+printf 'opaque\n' >"$work/c5-unknown-extension/orphan-lane/mystery.zzz"
 expect_reject c5-unknown-extension \
   "unclassified file (unknown extension .zzz): orphan-lane/mystery.zzz"
 
@@ -134,9 +135,9 @@ expect_reject c5-unknown-extension \
 # registry edit; this is what a frozen per-file list could never do.
 scratch c6-covered-new-source
 printf 'module PositivelyNewModule () where\n' \
-  > "$work/c6-covered-new-source/offchain/lib/PositivelyNewModule.hs"
+  >"$work/c6-covered-new-source/offchain/lib/PositivelyNewModule.hs"
 if python3 "$tool" --root "$work/c6-covered-new-source" \
-    >"$work/c6-covered-new-source.log" 2>&1; then
+  >"$work/c6-covered-new-source.log" 2>&1; then
   echo "control c6-covered-new-source PASS: new covered source mapped automatically"
 else
   echo "control c6-covered-new-source FAILED: a new source in a covered directory was not mapped" >&2
@@ -151,7 +152,7 @@ fi
 scratch c7-offchain-outside-component
 mkdir -p "$work/c7-offchain-outside-component/offchain/unbuilt-component"
 printf 'module Unvisited () where\n' \
-  > "$work/c7-offchain-outside-component/offchain/unbuilt-component/Unvisited.hs"
+  >"$work/c7-offchain-outside-component/offchain/unbuilt-component/Unvisited.hs"
 expect_reject c7-offchain-outside-component \
   "haskell source outside every checker-visited component directory" \
   "offchain/unbuilt-component/Unvisited.hs"
@@ -163,8 +164,8 @@ expect_reject c7-offchain-outside-component \
 scratch c8-ignored-source-git-free
 mkdir -p "$work/c8-ignored-source-git-free/orphan-lane"
 printf 'module Hidden () where\n' \
-  > "$work/c8-ignored-source-git-free/orphan-lane/Hidden.hs"
-printf 'orphan-lane/\n' >> "$work/c8-ignored-source-git-free/.gitignore"
+  >"$work/c8-ignored-source-git-free/orphan-lane/Hidden.hs"
+printf 'orphan-lane/\n' >>"$work/c8-ignored-source-git-free/.gitignore"
 expect_reject c8-ignored-source-git-free \
   "unmapped haskell source: orphan-lane/Hidden.hs"
 
@@ -173,19 +174,19 @@ expect_reject c8-ignored-source-git-free \
 # only, and a tracked file is repository content (audit finding F-002).
 scratch c9-tracked-ignored-checkout
 if ! git -C "$work/c9-tracked-ignored-checkout" init -q \
-    || ! git -C "$work/c9-tracked-ignored-checkout" add -A; then
+  || ! git -C "$work/c9-tracked-ignored-checkout" add -A; then
   echo "controls: SETUP FAILURE — cannot stage the scratch checkout" >&2
   exit 1
 fi
 mkdir -p "$work/c9-tracked-ignored-checkout/ignored-lane"
 printf 'module Hidden () where\n' \
-  > "$work/c9-tracked-ignored-checkout/ignored-lane/Hidden.hs"
-printf 'ignored-lane/\n' >> "$work/c9-tracked-ignored-checkout/.gitignore"
+  >"$work/c9-tracked-ignored-checkout/ignored-lane/Hidden.hs"
+printf 'ignored-lane/\n' >>"$work/c9-tracked-ignored-checkout/.gitignore"
 git -C "$work/c9-tracked-ignored-checkout" add -f ignored-lane/Hidden.hs
 expect_reject c9-tracked-ignored-checkout \
   "unmapped haskell source: ignored-lane/Hidden.hs"
 
-if (( failures > 0 )); then
+if ((failures > 0)); then
   echo "controls: FAILED — $failures control(s) did not produce their intended outcome" >&2
   exit 1
 fi

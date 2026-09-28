@@ -19,14 +19,14 @@ while IFS= read -r line || [[ -n "$line" ]]; do
     found=true
     section="$line"$'\n'
   fi
-done < CHANGELOG.md
+done <CHANGELOG.md
 if ! $has_changes; then
   echo "FAIL: missing or empty CHANGELOG.md section for $DOCS_VERSION" >&2
   exit 1
 fi
 while [[ "$section" == *$'\n' ]]; do section="${section%$'\n'}"; done
-printf '%s\n\n' "$section" > "$download/release-notes.md"
-cat "${RELEASE_NOTES:-onchain-release/RELEASE.md}" >> "$download/release-notes.md"
+printf '%s\n\n' "$section" >"$download/release-notes.md"
+cat "${RELEASE_NOTES:-onchain-release/RELEASE.md}" >>"$download/release-notes.md"
 pr="$(gh pr list --repo lambdasistemi/singular --state merged --base main --limit 100 \
   --json number,mergeCommit,headRefName,labels | jq -er --arg sha "$expected_sha" \
   '[.[] | select(.mergeCommit.oid == $sha and (.headRefName | startswith("release-please--")))

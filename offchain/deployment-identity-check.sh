@@ -33,10 +33,10 @@ expect_refusal() {
   local want="$1"
   shift
   set +e
-  "$deployment" "$@" > "$work/refusal.out" 2>&1
+  "$deployment" "$@" >"$work/refusal.out" 2>&1
   local rc=$?
   set -e
-  if [ "$rc" -eq 0 ] || ! grep -F -- "$want" "$work/refusal.out" > /dev/null; then
+  if [ "$rc" -eq 0 ] || ! grep -F -- "$want" "$work/refusal.out" >/dev/null; then
     echo "FAIL: deployment $* exited $rc without: $want" >&2
     cat "$work/refusal.out" >&2
     exit 1
@@ -52,7 +52,7 @@ expect_refusal 'count needs --what state|reference' count --deployment "$work/un
 expect_refusal 'genesis-skey needs --out FILE' genesis-skey
 
 export TMPDIR="$work"
-nix run --quiet "$offchain#devnet" > "$work/devnet.out" 2> "$work/devnet.err" &
+nix run --quiet "$offchain#devnet" >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
 sock=
 for _ in $(seq 1 300); do
@@ -70,14 +70,14 @@ fi
 joiner="$work/joiner.skey"
 manifest="$work/deployment.json"
 nix run --quiet "$offchain#deployment" -- genesis-skey --out "$joiner"
-"$deployment" genesis-skey "--out=$work/joiner-equals.skey" > /dev/null
+"$deployment" genesis-skey "--out=$work/joiner-equals.skey" >/dev/null
 cmp -s "$joiner" "$work/joiner-equals.skey" || {
   echo 'FAIL: genesis-skey --out=FILE wrote a different key than --out FILE' >&2
   exit 1
 }
 external=(--node-socket "$sock" --network-magic 42 --wallet-skey "$joiner")
-nix run --quiet "$offchain#deployment" -- deploy "${external[@]}" --out "$manifest" --release identity-check > "$work/deploy.out"
-nix run --quiet "$offchain#deployment" -- verify "${external[@]}" --deployment "$manifest" > "$work/verify.out"
+nix run --quiet "$offchain#deployment" -- deploy "${external[@]}" --out "$manifest" --release identity-check >"$work/deploy.out"
+nix run --quiet "$offchain#deployment" -- verify "${external[@]}" --deployment "$manifest" >"$work/verify.out"
 grep -F 'deployment complete:' "$work/verify.out" >/dev/null || {
   echo 'FAIL: intact manifest did not reach completed node verification' >&2
   cat "$work/verify.out" >&2
@@ -101,13 +101,13 @@ fi
 expect_refusal 'count: --what must be state or reference, not registry' \
   count "${external[@]}" --deployment "$manifest" --what registry
 
-jq '.depRepresentativePolicy = ("00" * 28)' "$manifest" > "$work/wrong-policy.json"
+jq '.depRepresentativePolicy = ("00" * 28)' "$manifest" >"$work/wrong-policy.json"
 if cmp -s "$manifest" "$work/wrong-policy.json"; then
   echo 'SETUP-FAIL: policy mutation did not change the manifest' >&2
   exit 1
 fi
 set +e
-nix run --quiet "$offchain#deployment" -- verify "${external[@]}" --deployment "$work/wrong-policy.json" > "$work/wrong-policy.out" 2>&1
+nix run --quiet "$offchain#deployment" -- verify "${external[@]}" --deployment "$work/wrong-policy.json" >"$work/wrong-policy.out" 2>&1
 rc=$?
 set -e
 if [ "$rc" -eq 0 ]; then
