@@ -19,8 +19,13 @@
   # those declarations resolve to — no new upstream input is fetched or
   # created.
   inputs.conformance.url = "path:./?dir=conformance";
+  # The on-chain Aiken project the same way: its flake pins the Aiken
+  # compiler, and the site publishes the reference that compiler's
+  # `aiken docs` generates from this candidate's validators. Its
+  # dependencies keep their own locked revisions.
+  inputs.onchain.url = "path:./onchain";
   inputs.nixpkgs.follows = "dev-assets-mkdocs/nixpkgs";
-  outputs = { self, nixpkgs, dev-assets-mkdocs, dev-assets-playwright, offchain, conformance }:
+  outputs = { self, nixpkgs, dev-assets-mkdocs, dev-assets-playwright, offchain, conformance, onchain }:
     let
       systems = [ "x86_64-linux" "aarch64-linux" ];
       each = nixpkgs.lib.genAttrs systems;
@@ -30,7 +35,7 @@
         sharedShell = dev-assets-mkdocs.devShells.${system}.default;
         sharedSource = dev-assets-mkdocs;
         mermaidJs = dev-assets-mkdocs.packages.${system}.mermaid-js;
-        inherit offchain conformance;
+        inherit offchain conformance onchain;
       };
       model = system: import ./nix/model.nix { pkgs = import nixpkgs { inherit system; }; src = self; };
       coverage = system: import ./nix/coverage.nix { pkgs = import nixpkgs { inherit system; }; src = self; };

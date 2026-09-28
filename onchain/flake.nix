@@ -164,6 +164,25 @@
           installPhase = "touch $out";
         };
 
+        # The generated reference itself, as a package the repository's
+        # documentation site publishes (#278): the same pinned `aiken docs`
+        # over the same source the `aiken-docs` check reads. Source links
+        # take the repository named in aiken.toml; the site build binds
+        # them to the candidate revision and the onchain/ directory.
+        aiken-reference = pkgs.stdenv.mkDerivation {
+          pname = "singular-aiken-reference";
+          version = "0.0.0";
+          src = pkgs.lib.cleanSource ./.;
+          nativeBuildInputs = [ pkgs.aiken ];
+          buildPhase = ''
+            ${aikenPrelude}
+            aiken docs -o reference
+          '';
+          installPhase = ''
+            cp -r reference $out
+          '';
+        };
+
         # (Haskell block deleted: project, components, haskellChecks,
         #  haskellApps, test-vectors, test-vectors-json all move to
         #  offchain/flake.nix. Breaks 2-4.)
@@ -373,7 +392,7 @@
       {
         packages = {
           default = plutus-blueprint;
-          inherit plutus-blueprint;
+          inherit plutus-blueprint aiken-reference;
           # Same derivation as checks.script-identity; exposed as a
           # package so recipes and CI can address it without naming the
           # system (`nix build .#script-identity`).

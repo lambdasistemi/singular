@@ -1,4 +1,4 @@
-{ pkgs, src, sharedShell, sharedSource, mermaidJs, offchain, conformance }:
+{ pkgs, src, sharedShell, sharedSource, mermaidJs, offchain, conformance, onchain }:
 let
   tools = sharedShell.nativeBuildInputs ++ sharedShell.buildInputs ++ [ pkgs.python3 pkgs.just ];
   candidateRef = src.rev or (src.dirtyRev or "");
@@ -23,6 +23,11 @@ let
   apiConformanceHaddock = conformance.packages.${pkgs.system}.library-haddock;
   apiConformancePackageDb =
     conformance.packages.${pkgs.system}.library-haddock.configFiles;
+  # The generated Aiken reference for the registry validators, from the
+  # pinned compiler of the on-chain flake over this candidate's own
+  # onchain/ tree. Its "view source" links are bound to the candidate
+  # commit when the build has a clean one, and to main otherwise.
+  aikenReference = onchain.packages.${pkgs.system}.aiken-reference;
   # Material fetches Mermaid from unpkg at read time unless `mermaid` is already
   # defined. The shared toolchain pins a copy; serving it from the site keeps
   # every diagram inside the checked, byte-verified build.
@@ -38,6 +43,7 @@ let
       mkdocs build --strict
       python3 tools/api_reference.py manifest site ${apiHaddock.doc} ${offchain.outPath} ${apiPackageDb} ${apiReexportHaddock.doc}
       python3 tools/api_reference.py manifest --library conformance site ${apiConformanceHaddock.doc} ${conformance.outPath} ${apiConformancePackageDb}
+      python3 tools/aiken_reference.py publish site ${aikenReference} onchain ${pkgs.lib.escapeShellArg (src.rev or "")}
       python3 tools/prepare_release.py site
     '';
     installPhase = ''
@@ -67,6 +73,7 @@ let
       # The generated-site tree under check is overridable for the negative
       # controls; the candidate checkout and its ref binding never move.
       python3 tools/check_site.py "''${SINGULAR_API_SITE_OVERRIDE:-${docs}}"
+      python3 tools/aiken_reference.py controls "''${SINGULAR_API_SITE_OVERRIDE:-${docs}}" onchain "''${SINGULAR_CANDIDATE_REF:-}"
       python3 tools/check_presentation_repo.py
     '';
   };

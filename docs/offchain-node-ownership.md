@@ -63,29 +63,31 @@ imported `Singular.Registry.Ledger` before the split still does.
 | `Node.Confirmation` | Waiting for the chain to carry what a run submitted: transaction and window waits, deadlines, upper-bound slots, chain waits, and the confirmation delay the mode selects. |
 
 Each owner is package-private — not importable from the public library —
-and its implementation is one source file, pinned to the immutable
-revision these links name and reachable from the generated public pages
-through the owner entries below:
+so it has no page in the generated API reference: the reference documents
+the public library, and Haddock is not run over the owners on their own.
+Each owner's implementation is one source file, linked below on the
+default branch, and the generated public pages that re-export an owner's
+names link to its entry here:
 
 - <span id="options-owner"></span>**Options** — mode flags, environment
   precedence and the shared named-diagnostic helper —
-  <a href="https://github.com/lambdasistemi/singular/blob/58d2d6aec0160786651d1c5a02e91d115e15e2aa/offchain/node-internal/Singular/Registry/Node/Options.hs">source</a>.
+  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Options.hs">source</a>.
 - <span id="wallet-owner"></span>**Wallet** — keys, addresses and the
   funding identity —
-  <a href="https://github.com/lambdasistemi/singular/blob/58d2d6aec0160786651d1c5a02e91d115e15e2aa/offchain/node-internal/Singular/Registry/Node/Wallet.hs">source</a>.
+  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Wallet.hs">source</a>.
 - <span id="indexer-owner"></span>**Indexer** — the chain follower, the
   funding sweep, indexed reads, the node-read guard and the address-read
   counter —
-  <a href="https://github.com/lambdasistemi/singular/blob/58d2d6aec0160786651d1c5a02e91d115e15e2aa/offchain/node-internal/Singular/Registry/Node/Indexer.hs">source</a>.
+  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Indexer.hs">source</a>.
 - <span id="funding-owner"></span>**Funding** — the pre-run funding floor
   and its refusal diagnostic —
-  <a href="https://github.com/lambdasistemi/singular/blob/58d2d6aec0160786651d1c5a02e91d115e15e2aa/offchain/node-internal/Singular/Registry/Node/Funding.hs">source</a>.
+  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Funding.hs">source</a>.
 - <span id="session-owner"></span>**Session** — the connection lifecycle
   and the bracketed runner session —
-  <a href="https://github.com/lambdasistemi/singular/blob/58d2d6aec0160786651d1c5a02e91d115e15e2aa/offchain/node-internal/Singular/Registry/Node/Session.hs">source</a>.
+  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Session.hs">source</a>.
 - <span id="confirmation-owner"></span>**Confirmation** — confirmation
   waits, deadlines and windows —
-  <a href="https://github.com/lambdasistemi/singular/blob/58d2d6aec0160786651d1c5a02e91d115e15e2aa/offchain/node-internal/Singular/Registry/Node/Confirmation.hs">source</a>.
+  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Confirmation.hs">source</a>.
 
 ## Where common changes land
 

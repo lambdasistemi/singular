@@ -3,11 +3,11 @@ version = "0.0.0"
 compiler = "v1.1.16"
 plutus = "v3"
 license = "Apache-2.0"
-description = "Aiken contracts for project MPF"
+description = "Singular registry validators"
 
 [repository]
-user = "hal"
-project = "MPF"
+user = "lambdasistemi"
+project = "singular"
 platform = "github"
 
 [[dependencies]]

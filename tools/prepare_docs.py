@@ -1,10 +1,24 @@
-"""Stage canonical Markdown once for MkDocs; generated files are never edited."""
+"""Stage canonical Markdown once for MkDocs; generated files are never edited.
+
+``--api-site SITE`` also stages the generated API references (``SITE/api``)
+of a packaged site build — ``nix build .#docs`` — at ``.docs-api/``, which
+the MkDocs hook ``tools/mkdocs_api_overlay.py`` adds to every built site, so
+the local ``just build-docs`` and ``just serve-docs`` site carries the same
+generated pages the packaged site and its checks carry. The packaged build
+itself runs without it and generates those pages after MkDocs.
+"""
+import argparse
 import os
 from pathlib import Path
 import re
 import shutil
 
+import aiken_reference
 import api_reference
+
+arguments = argparse.ArgumentParser(description=__doc__)
+arguments.add_argument("--api-site", type=Path, help="a packaged site build whose api/ tree is staged")
+options = arguments.parse_args()
 
 root = Path(__file__).resolve().parent.parent
 stage = root / ".docs-source"
@@ -128,8 +142,58 @@ def restage_api_hrefs(stage: Path) -> int:
     return rewritten_total
 
 
+def restage_onchain_hrefs(stage: Path) -> int:
+    """Point staged validator anchors at the generated Aiken reference.
+
+    The same convention as the Haskell libraries: an authored anchor links
+    the repository's own source for GitHub rendering, and ``data-api``
+    names the generated page the site serves instead — ``module`` for the
+    page of one validators/ module (which must be a module the reference
+    documents, one with a public declaration) and ``index`` for the
+    reference's index, whose anchor names the onchain/ root.
+    """
+    documented = aiken_reference.documented_modules(root / "onchain")
+    pattern = re.compile(r'<a href="\.\./onchain/([^"]*)" data-api="(module|index)">')
+    prefix = "/".join(aiken_reference.API_DIR)
+
+    def replace(match: re.Match) -> str:
+        rel, kind = match.group(1), match.group(2)
+        if kind == "index":
+            if rel:
+                raise RuntimeError(f"aiken reference index anchor must name the onchain/ root, not {rel}")
+            return f'<a href="../../{prefix}/index.html">'
+        module = rel[len("validators/"):-len(".ak")] if rel.startswith("validators/") and rel.endswith(".ak") else None
+        if module not in documented:
+            raise RuntimeError(f"aiken reference anchor targets a module with no generated page: {rel}")
+        return f'<a href="../../{prefix}/{module}.html">'
+
+    rewritten = 0
+    for md in sorted(stage.glob("docs/**/*.md")):
+        text = md.read_text(encoding="utf-8")
+        new = pattern.sub(replace, text)
+        if new != text:
+            md.write_text(new, encoding="utf-8")
+            rewritten += 1
+    if rewritten == 0:
+        raise RuntimeError("no onchain source anchors rewritten for staging: the generated Aiken reference is unreachable")
+    return rewritten
+
+
 restage_lean_hrefs(stage)
 restage_api_hrefs(stage)
+restage_onchain_hrefs(stage)
+# Generated API references are staged beside, not inside, the MkDocs source:
+# tools/mkdocs_api_overlay.py copies them into every built site unchanged.
+overlay = root / ".docs-api"
+if overlay.exists():
+    shutil.rmtree(overlay)
+if options.api_site is not None:
+    generated = options.api_site / "api"
+    if not generated.is_dir():
+        raise SystemExit(f"prepare_docs: no generated API references under {generated}")
+    shutil.copytree(generated, overlay)
+    for path in [overlay, *overlay.rglob("*")]:
+        path.chmod(path.stat().st_mode | 0o200)
 # Ship the actual candidate sources and static simulator with the same site.
 # Generated build trees never become part of the publication.
 model = root / "lean"

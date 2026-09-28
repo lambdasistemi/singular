@@ -1,4 +1,5 @@
 /.docs-source/
+/.docs-api/
 /site/
 /result*
 .lake/

@@ -1,10 +1,13 @@
 # Run recipes within nix develop.
+# The generated API references (Haddock for the off-chain and Conformance
+# libraries, `aiken docs` for the validators) are staged from the packaged
+# site build, so the local site serves the same generated pages CI checks.
 build-docs:
-    python3 tools/prepare_docs.py
+    python3 tools/prepare_docs.py --api-site "$(nix build --quiet --no-link --print-out-paths .#docs)"
     mkdocs build --strict
 
 serve-docs:
-    python3 tools/prepare_docs.py
+    python3 tools/prepare_docs.py --api-site "$(nix build --quiet --no-link --print-out-paths .#docs)"
     mkdocs serve
 
 # Stories, diagrams, no index labels, and speech bound to each page's hash.

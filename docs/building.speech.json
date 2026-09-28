@@ -5,6 +5,20 @@
       "pause": 400
     }
   ],
+  "generated-api-references": [
+    {
+      "text": "The site ships a generated reference for each library a contributor calls into, built from the same revision as the pages that link it: Haddock for the off-chain library's public modules and for the Conformance library, and the pinned Aiken docs output for the registry validators.",
+      "pause": 450
+    },
+    {
+      "text": "The six package-private node owners, the executables and test suites, and the separate naming validators have no generated reference by decision; their owner pages link each source file, and the private library's ledger and provider types are documented where the public library re-exports them.",
+      "pause": 450
+    },
+    {
+      "text": "Each generated reference carries a manifest binding its pages to the digests of their source, and the documentation check fails when a page, its source or its link targets no longer agree.",
+      "pause": 450
+    }
+  ],
   "the-repository-code-inventory": [
     {
       "text": "The repository code inventory command maps every file the tree holds to a lint policy and a format policy, or to a named non-code class, and fails on anything unmapped. Discovery walks the tree through extensions, shebangs, executable mode and component manifests, so a new source file in a covered directory is mapped automatically while a file nobody classified fails with a named diagnostic. The same inventory runs over the Nix flake source, where no Git directory exists, and pull request CI runs both forms so the contexts cannot drift. The inventory is a mapping, not enforcement: the report names which policies CI executes today and which are pending debt owed by the remaining slices of the lint and format work, including the retained hint debt in the excluded offchain directories. A controls command injects synthetic orphans into scratch copies of the classified tree, each required to produce its intended failure, and never touches the working tree.",
@@ -20,6 +34,10 @@
   "edit-and-serve": [
     {
       "text": "Use the Nix development shell for a strict MkDocs build or live local server. A separate CI build verifies that shell.",
+      "pause": 400
+    },
+    {
+      "text": "The build and serve recipes stage the generated references from the packaged site build, so the local site links the same generated pages CI checks, while the Markdown pages still reload live.",
       "pause": 400
     }
   ],
@@ -45,6 +63,6 @@
   ],
   "_source": {
     "file": "building.md",
-    "sha256": "4f6ed2a720cebc0a331518770e5cded3bb38a5a6b845b930b5f8ac68075b03d6"
+    "sha256": "25240b1e3f65a2e4697e8edb9632d480e56f46257cf6d599ecdab1fa5c0094c8"
   }
 }

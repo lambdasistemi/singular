@@ -31,6 +31,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import unquote, urljoin, urlsplit
 from urllib.request import Request, urlopen
 
+import aiken_reference
 import api_reference
 
 SITE_URL = "https://lambdasistemi.github.io/singular/"
@@ -161,8 +162,9 @@ pages = {
     # sections, not by the MkDocs page/speech rules.
     if not path.is_relative_to(site / "artifacts")
     and not any(
-        path.is_relative_to(site.joinpath(*library.api_dir))
-        for library in api_reference.LIBRARIES.values()
+        path.is_relative_to(site.joinpath(*api_dir))
+        for api_dir in [library.api_dir for library in api_reference.LIBRARIES.values()]
+        + [aiken_reference.API_DIR]
     )
 }
 assert pages, "no rendered pages"
@@ -401,7 +403,7 @@ def is_repo_source_href(href):
     staged, on-host forms are the prepare_docs rewrites (model/ bytes and
     the generated api/ pages), proven where they are served — on the built
     page row, against this build's own sources."""
-    return not urlsplit(href).scheme and re.search(r"(?:^|/)(?:lean/|offchain/|conformance/)", href) is not None
+    return not urlsplit(href).scheme and re.search(r"(?:^|/)(?:lean/|offchain/|conformance/|onchain/)", href) is not None
 
 
 plans = []
@@ -678,6 +680,17 @@ for _library_key, library in api_reference.LIBRARIES.items():
         f"neutralized-dependency={spans_dep} neutralized-autolink={spans_auto} "
         f"neutralized-instance-method={spans_inst} external-anchors={external_anchors}"
     )
+
+# The generated Aiken reference (onchain/): presence, freshness against the
+# candidate's own validators, and every link inside it — local targets and
+# anchors, source links bound to this repository, the candidate ref and a
+# line range the source has, and no script or stylesheet from off the site.
+try:
+    aiken_summary = aiken_reference.check(site, root / "onchain", CANDIDATE_REF or "")
+except aiken_reference.RefusedReference as refused:
+    print(str(refused), file=sys.stderr)
+    sys.exit(1)
+print("api-reference library=aiken " + json.dumps(aiken_summary, sort_keys=True))
 
 # ---------------------------------------------------------------------------
 # Served routes (INV-29-PREFIX): what a server actually answers, for every
