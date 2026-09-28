@@ -1,4 +1,4 @@
-{ pkgs, src, sharedShell, sharedSource, mermaidJs, offchain }:
+{ pkgs, src, sharedShell, sharedSource, mermaidJs, offchain, conformance }:
 let
   tools = sharedShell.nativeBuildInputs ++ sharedShell.buildInputs ++ [ pkgs.python3 pkgs.just ];
   candidateRef = src.rev or (src.dirtyRev or "");
