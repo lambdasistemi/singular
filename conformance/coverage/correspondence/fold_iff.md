@@ -147,10 +147,18 @@ the zero-net / no-witness branch, where the antecedent is false.
 
 ## 4. Implementation boundary — where this must be checked, and what is known today
 
+Source locations: the line references in this section (`state.ak:N`) read
+`onchain/validators/state.ak` at the revisions pinned below, before the
+state validator was divided into owners. On the current tree `state.ak`
+keeps the `Modify` dispatch, `mkAction` lives in
+`onchain/validators/registry/fold.ak` and `validModify` in
+`onchain/validators/registry/modify.ak`; `docs/onchain-validator-owners.md`
+maps every moved declaration's owner.
+
 | clause | implementation boundary | status |
 |---|---|---|
-| per-request checks (1, 3, 4, 5 as exercised per action) | `mkAction` (`onchain/validators/state.ak:71`), driven per input by `validModify` (`state.ak:162`) | partially exercised by merged CG rows |
-| frame conditions (output tip, process/retract times, recomputed root, credential, lovelace, token) | `validModify` body (`state.ak:162-196`) | partially exercised by merged CG rows |
+| per-request checks (1, 3, 4, 5 as exercised per action) | `mkAction` (now `onchain/validators/registry/fold.ak`; `state.ak:71` at the pinned revision), driven per input by `validModify` (now `onchain/validators/registry/modify.ak`; `state.ak:162`) | partially exercised by merged CG rows |
+| frame conditions (output tip, process/retract times, recomputed root, credential, lovelace, token) | `validModify` body (now `onchain/validators/registry/modify.ak`; `state.ak:162-196` at the pinned revision) | partially exercised by merged CG rows |
 | 2 | `foldItems` sequencing vs the on-chain fold | exercised for single-item folds; multi-item sequencing not isolated |
 | **converse: nothing else required** | `state.ak` dispatches `Modify(actions) -> validModify(…)` with **no ownership check**; the site carries the comment *"Permissionless fold (issue #79, Defect 1): Modify must NOT require the owner"* | **repaired and landed**; confirmed by execution — CG20 `accepted`, verdict `agrees-with-model`, tx `4142f7d6…`. Historically **REFUSED** pre-#79 — both halves by execution |
 

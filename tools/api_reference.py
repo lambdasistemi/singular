@@ -45,39 +45,23 @@ PRIVATE_OWNER_GUIDE_ANCHORS = {
     "Singular.Registry.Node.Confirmation": "confirmation-owner",
     "Singular.Registry.Node.Funding": "funding-owner",
 }
-# The immutable revision the guide's owner permalinks point at (A-013).
-# The six source files are byte-identical between that ancestor and the
-# candidate while the frozen digests below match; a changed source refuses
-# the build instead of silently repointing a permalink.
-# Binding history: 9a74eae15a3fe75abf7bbdf4969c2d11d7d8e69d (A-013) held
-# the pre-reformat bytes; #278's house Fourmolu reformat moved every
-# Haskell file's bytes, so the binding advanced to the reformat commit
-# 58d2d6aec0160786651d1c5a02e91d115e15e2aa — an immutable, pushed
-# revision — and the six digests below were derived from that revision.
-# The prior binding and its digests stay recorded in this file's history
-# at the parent of the advancing commit and in revision 9a74eae itself.
-PRIVATE_OWNER_PERMALINK_REV = "58d2d6aec0160786651d1c5a02e91d115e15e2aa"
+# The guide's owner source links name the default branch, like every other
+# repository source link on the site: the documentation check resolves a
+# main-branch link against the candidate tree offline, where a link pinned
+# to another revision can only be reported as unverifiable. The owner's
+# source digest is recorded in the manifest beside it.
 PRIVATE_OWNER_PERMALINK_URL = (
-    "https://github.com/lambdasistemi/singular/blob/"
-    + PRIVATE_OWNER_PERMALINK_REV
-    + "/offchain/node-internal/Singular/Registry/Node/{owner}.hs"
+    "https://github.com/lambdasistemi/singular/blob/main"
+    "/offchain/node-internal/Singular/Registry/Node/{owner}.hs"
 )
-PRIVATE_OWNER_SOURCE_SHA256 = {
-    "Singular.Registry.Node.Options": "6eec1275e9955ec96df5eb352cdd2b01fa2c075f05b9d6f7e9d074fe746f83ba",
-    "Singular.Registry.Node.Wallet": "ff88f91a836e3f8e75d3baef18688954f1e26e75e908f6548994be73abe85180",
-    "Singular.Registry.Node.Session": "74231fd7e02daad1eb4b510d4e466ed7af22b8d38905f6285b698f3f4a2e900d",
-    "Singular.Registry.Node.Indexer": "8c59258b813f7476f022353fba1f9ccbf60ee5917db7aa2319a0c9e41507bf8f",
-    "Singular.Registry.Node.Confirmation": "4a5bb7a28ffc4141a9a10ba88099c67d564ef814568a2eb09ba793f47d374b43",
-    "Singular.Registry.Node.Funding": "beca2a439ce956c2df26b8503c78b40ed799725fe6bbdb1d55de6f0f104ea588",
-}
 class ReferenceLibrary(NamedTuple):
     """One Cabal library whose generated Haddock reference this site ships.
 
     ``sublibrary`` names the package-private sublibrary that owns the
     implementations behind the public facade's re-exports, when there is
     one; the re-export and private-owner provenance machinery runs only
-    for libraries that declare it. ``guide_anchors``, ``permalink_url``
-    and ``permalink_source_sha256`` carry that machinery's frozen data.
+    for libraries that declare it. ``guide_anchors`` and ``permalink_url``
+    carry that machinery's data.
     """
 
     name: str
@@ -88,7 +72,6 @@ class ReferenceLibrary(NamedTuple):
     sublibrary: str | None = None
     guide_anchors: dict[str, str] | None = None
     permalink_url: str | None = None
-    permalink_source_sha256: dict[str, str] | None = None
     autolinks: tuple[str, ...] = ()
 
 
@@ -101,7 +84,6 @@ OFFCHAIN = ReferenceLibrary(
     sublibrary="node-internal",
     guide_anchors=PRIVATE_OWNER_GUIDE_ANCHORS,
     permalink_url=PRIVATE_OWNER_PERMALINK_URL,
-    permalink_source_sha256=PRIVATE_OWNER_SOURCE_SHA256,
     # Prose autolinks Haddock emitted into the generated pages whose target
     # pages do not exist: the "one" multiplicity word, the blueprint
     # "schema" reference and the HEX encoding name.
@@ -617,8 +599,8 @@ def _private_owner_links(
 
     Modules of the one candidate-owned sublibrary the public library does
     not re-export. Each must have exactly one candidate-owned record and no
-    other owner, a rendered guide anchor, and a real source file with the
-    frozen digest, all verified here — the guide destination is checked,
+    other owner, a rendered guide anchor, and a real source file whose
+    digest the manifest records, all verified here — the guide destination is checked,
     never assumed. Each expected permalink is bound to its own rendered
     owner entry: the span between this owner's anchor and the next rendered
     owner anchor must carry exactly that owner's source link — no other
@@ -721,12 +703,6 @@ def _private_owner_links(
                 )
         source = module_source(library, library_root, module)
         digest = sha256_file(source)
-        frozen = (library.permalink_source_sha256 or {}).get(module)
-        if frozen is None or digest != frozen:
-            raise SystemExit(
-                f"api_reference: private owner source digest mismatch for "
-                f"{module}: {source} sha256={digest} expected={frozen}"
-            )
         private_owners[module]["source"] = source.relative_to(library_root).as_posix()
         private_owners[module]["source_sha256"] = digest
     return private_owners

@@ -94,16 +94,16 @@ Aiken tests assert the reason each of their refusal rows produces.
 
 | Owner | Holds | Refuses |
 | --- | --- | --- |
-| <a href="https://github.com/lambdasistemi/singular/blob/main/onchain/validators/state.ak">state.ak</a> | The validator: routing each purpose to its owner, identifying the state input's script and token, and `modifyRefusal` for the suite. | Every redeemer, datum or purpose no owner accepts; a missing datum or a malformed state input crashes. |
-| <a href="https://github.com/lambdasistemi/singular/blob/main/onchain/validators/registry/genesis.ak">registry/genesis</a> | Minting a registry's one state token from its seed into a state UTxO holding the empty trie's root. | A mint without the seed, with another quantity, or without that output — by crashing, with no reason. |
-| <a href="https://github.com/lambdasistemi/singular/blob/main/onchain/validators/registry/modify.ak">registry/modify</a> | The order above: continuation and pins, the fold, the batch-level checks, discharge, settlement. | `continuation-address`, `state-token`, `state-drain`, `pins-altered`, `empty-fold`, `surplus-actions`, `root`, `net-mint-mismatch` (named in `lib.ak`), and `refund` for a consumed custody that is not spent here or whose refund address decodes to nothing. |
-| <a href="https://github.com/lambdasistemi/singular/blob/main/onchain/validators/registry/fold.ak">registry/fold</a> | The per-input step: a request's carriage, a rejected row's refund, the phase, the edge tag, the approval, and the trie move with its mint delta and duties. | `tip-coverage`, `deposit-mismatch`, `missing-action`, `not-rejectable`, `not-phase1`, `edge-inadmissible`, `no-approval`, `approval-binding`, `read-root`, `key-exists` (named in `lib.ak`), and the trie's reasons. |
-| <a href="https://github.com/lambdasistemi/singular/blob/main/onchain/validators/registry/trie.ak">registry/trie</a> | Reading the leaf the trie actually binds for a retirement, a read, or a tree-changing edge on a terminal leaf, with the library's total checks. | `key-unknown`, `not-booked`, `terminal-immutable`, `read-absent`, `read-non-terminal`, `edge-from-terminal`. |
-| <a href="https://github.com/lambdasistemi/singular/blob/main/onchain/validators/registry/duty.ak">registry/duty</a> | What an admitted edge owes the transaction, and merging two deliveries of one token into one carrier. | Nothing; it only collects. |
-| <a href="https://github.com/lambdasistemi/singular/blob/main/onchain/validators/registry/discharge.ak">registry/discharge</a> | Checking each duty: a delivered token in its one named output, an absent token in the cage's custody, a burned token among the inputs. | `destination`, `absent-custody`, `burn-from-input`, `token-missing`, `deposit-returned`. |
-| <a href="https://github.com/lambdasistemi/singular/blob/main/onchain/validators/registry/settlement.ak">registry/settlement</a> | Custody refunds summed per address, rejected rows' refunds paid in order, and every obligation to one payee paid once on the summed outputs paying it. | `refund`, `deposit-returned`. |
-| <a href="https://github.com/lambdasistemi/singular/blob/main/onchain/validators/registry/custody.ak">registry/custody</a> | The absent-token custody spend, and reading a custody UTxO's key, refund address and lovelace. | `custody-spend`. |
-| <a href="https://github.com/lambdasistemi/singular/blob/main/onchain/validators/registry/refusal.ak">registry/refusal</a> | Reporting a refusal as one trace and `False`, and the reasons several owners share. | Nothing of its own. |
+| <a href="../onchain/validators/state.ak" data-api="module">state.ak</a> | The validator: routing each purpose to its owner, identifying the state input's script and token, and `modifyRefusal` for the suite. | Every redeemer, datum or purpose no owner accepts; a missing datum or a malformed state input crashes. |
+| <a href="../onchain/validators/registry/genesis.ak" data-api="module">registry/genesis</a> | Minting a registry's one state token from its seed into a state UTxO holding the empty trie's root. | A mint without the seed, with another quantity, or without that output — by crashing, with no reason. |
+| <a href="../onchain/validators/registry/modify.ak" data-api="module">registry/modify</a> | The order above: continuation and pins, the fold, the batch-level checks, discharge, settlement. | `continuation-address`, `state-token`, `state-drain`, `pins-altered`, `empty-fold`, `surplus-actions`, `root`, `net-mint-mismatch` (named in `lib.ak`), and `refund` for a consumed custody that is not spent here or whose refund address decodes to nothing. |
+| <a href="../onchain/validators/registry/fold.ak" data-api="module">registry/fold</a> | The per-input step: a request's carriage, a rejected row's refund, the phase, the edge tag, the approval, and the trie move with its mint delta and duties. | `tip-coverage`, `deposit-mismatch`, `missing-action`, `not-rejectable`, `not-phase1`, `edge-inadmissible`, `no-approval`, `approval-binding`, `read-root`, `key-exists` (named in `lib.ak`), and the trie's reasons. |
+| <a href="../onchain/validators/registry/trie.ak" data-api="module">registry/trie</a> | Reading the leaf the trie actually binds for a retirement, a read, or a tree-changing edge on a terminal leaf, with the library's total checks. | `key-unknown`, `not-booked`, `terminal-immutable`, `read-absent`, `read-non-terminal`, `edge-from-terminal`. |
+| <a href="../onchain/validators/registry/duty.ak" data-api="module">registry/duty</a> | What an admitted edge owes the transaction, and merging two deliveries of one token into one carrier. | Nothing; it only collects. |
+| <a href="../onchain/validators/registry/discharge.ak" data-api="module">registry/discharge</a> | Checking each duty: a delivered token in its one named output, an absent token in the cage's custody, a burned token among the inputs. | `destination`, `absent-custody`, `burn-from-input`, `token-missing`, `deposit-returned`. |
+| <a href="../onchain/validators/registry/settlement.ak" data-api="module">registry/settlement</a> | Custody refunds summed per address, rejected rows' refunds paid in order, and every obligation to one payee paid once on the summed outputs paying it. | `refund`, `deposit-returned`. |
+| <a href="../onchain/validators/registry/custody.ak" data-api="module">registry/custody</a> | The absent-token custody spend, and reading a custody UTxO's key, refund address and lovelace. | `custody-spend`. |
+| <a href="../onchain/validators/registry/refusal.ak" data-api="module">registry/refusal</a> | Reporting a refusal as one trace and `False`, and the reasons several owners share. | Nothing of its own. |
 
 ## Where a common change goes
 
@@ -147,6 +147,44 @@ The check establishes presence, not truth. Whether a sentence is true of the
 code is a review question; no doc comment is evidence of what the validator
 does.
 
+## The generated reference
+
+The site publishes the reference the pinned `aiken docs` generates from
+these doc comments: the
+<a href="../onchain/" data-api="index">generated Aiken reference</a> for
+the validators, built by the onchain flake's `aiken-reference` package
+from the same revision as the rest of the site. Each owner's name in the
+table above opens its generated page; each member's "view source" link
+opens the lines it documents in the repository, at the commit the site
+was built from.
+
+```mermaid
+flowchart LR
+    SRC[onchain/validators — doc comments] -->|pinned aiken docs| REF[generated pages]
+    REF -->|source links bound to the built commit and onchain/| PUB[site: api/onchain]
+    SRC -->|module and source digests| MAN[manifest]
+    PUB --> CHK{documentation check}
+    MAN --> CHK
+    CHK -->|a missing, stale or foreign page or link| X[refuse]
+```
+
+The reference covers every module under `validators/` that declares a
+public definition, the state validator and all its owners among them.
+Test and property modules are not documented, and the three modules with
+no public definition — the `open` approval policy, the `staking`
+validator and the `cage_vectors` table — have no page; their sources
+are the reference.
+
+The documentation check refuses the published reference when it is
+absent, when a page or the source it was generated from no longer
+matches the digest its manifest records, when a module that declares a
+public definition has no page, when a source link names another
+repository, another revision or a line the source does not have, when a
+page loads a script from off the site, or when this page stops linking
+it. Each of those refusals is also planted in a scratch copy of the
+built site on every check run, and the check must refuse each for that
+reason.
+
 ## Evidence and limits
 
 The compiled-identity and cost comparisons described in the story ran against
@@ -162,10 +200,9 @@ cost, so their evidence is their outcome, iteration count and counterexample
 under the fixed seed, not a cost.
 The comparison proves the move preserved behavior; it proves nothing about
 whether that behavior is right, which remains the accepted Lean model's
-question. The generated Aiken reference is checked but not yet published on
-this site: its source links come from the project's Aiken configuration,
-which names another repository. Publishing it, with that configuration
-corrected, belongs to
-[the issue that owns lint, formatting and generated-reference coverage across the repository](https://github.com/lambdasistemi/singular/issues/278);
-until then the links above point at the source. The documentation check proves that each
-description exists, not that it is accurate.
+question. The Aiken configuration that names the repository in the
+reference's source links also sets the blueprint's description; correcting
+it changed that description and no validator's compiled code or hash, which
+the script-identity check confirms against the committed manifest. The
+documentation check proves that each description exists, not that it is
+accurate.

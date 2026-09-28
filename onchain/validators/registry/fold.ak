@@ -213,7 +213,8 @@ fn stepRequest(
             } else {
               let checked =
                 if tag == edgeWitnessTerminal {
-                  // A read carries no approval and needs none (C4).
+                  // A read does not require an approval and does not check
+                  // its absence (C4).
                   popped
                 } else {
                   admitted(popped, pins, tag, request, input.output.value)

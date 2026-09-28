@@ -1,0 +1,30 @@
+{
+  "what-this-reference-contains": [
+    {
+      "pause": 450,
+      "text": "A contributor changing a registry validator wants to click a module and land on its real interface: every public function, type and constant, with its documentation and a link to the lines that define it. This page is the entry point of the reference the pinned Aiken docs command generates from the onchain project, rebuilt with the site from the same source tree."
+    },
+    {
+      "pause": 450,
+      "text": "On this site each link opens the generated page; read from the repository, it opens the source file. Inside a generated page, each member's view source link opens the lines it documents, at the commit the site was built from."
+    },
+    {
+      "pause": 450,
+      "text": "The list starts with the state validator and its owners: genesis, modify, fold, trie, duty, discharge, settlement, custody and refusal. Then the shared vocabulary and the other validators: lib, types, shared, request, witness and cage. Last, the two fixture modules, public to the tests."
+    }
+  ],
+  "what-it-leaves-out": [
+    {
+      "pause": 450,
+      "text": "A module gets a page when it declares a public definition. Test and property modules are not documented, and the open approval policy, the staking validator and the vector table declare nothing public, so their sources are their reference. The naming validators are a separate Aiken project with no generated reference on this site."
+    },
+    {
+      "pause": 500,
+      "text": "The documentation check fails when this list and the generated extent disagree, when a page or its source no longer matches the digest recorded at build time, and when a source link names another repository or revision."
+    }
+  ],
+  "_source": {
+    "file": "onchain-api-reference.md",
+    "sha256": "53d035fa8de2d3b6b1090a43cf7828a2d302b2f18d93d18b9b25f59c7b354f99"
+  }
+}

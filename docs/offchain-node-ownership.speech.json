@@ -15,6 +15,10 @@
     {
       "text": "The table then names each owner's responsibility in one line, from mode parsing through key handling, following, funding, connection and confirmation.",
       "pause": 300
+    },
+    {
+      "pause": 450,
+      "text": "The owners are package-private, so the generated API reference, which documents the public library, has no page for them. Each owner's entry links its one source file on the default branch, and the generated public pages that re-export an owner's names link to that entry."
     }
   ],
   "where-common-changes-land": [
@@ -89,6 +93,6 @@
   ],
   "_source": {
     "file": "offchain-node-ownership.md",
-    "sha256": "b637dba2c1c1e1fe0ddf277beca5e2498cdca1ba3d1e2bd8d36bca0ac42b8d5a"
+    "sha256": "205e5ccd262affde662090bf8b3586e7942dd4a419731a3b84a1253b58dbc563"
   }
 }

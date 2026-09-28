@@ -115,6 +115,24 @@
       "text": "The check establishes presence, not truth; no doc comment is evidence of what the validator does."
     }
   ],
+  "the-generated-reference": [
+    {
+      "pause": 450,
+      "text": "The site publishes the reference the pinned Aiken docs command generates from these doc comments, built from the same revision as the rest of the site. Each owner's name in the table opens its generated page, and each member's view source link opens the lines it documents, at the commit the site was built from."
+    },
+    {
+      "pause": 450,
+      "text": "The diagram follows the path: the doc comments become generated pages, their source links are bound to the built commit and the onchain directory, and a manifest records the digests the documentation check compares."
+    },
+    {
+      "pause": 450,
+      "text": "Every validators module that declares a public definition has a page. Test and property modules are not documented, and the open approval policy, the staking validator and the vector table declare nothing public, so their sources are the reference."
+    },
+    {
+      "pause": 500,
+      "text": "The check refuses a missing reference, a page or source that no longer matches its recorded digest, a module without its page, a source link to another repository, revision or line, a script loaded from off the site, or this page no longer linking it. Each refusal is planted in a scratch copy on every run, and must be refused for that reason."
+    }
+  ],
   "evidence-and-limits": [
     {
       "pause": 450,
@@ -130,11 +148,11 @@
     },
     {
       "pause": 500,
-      "text": "The generated Aiken reference is checked but not yet published, because its source links name another repository; publishing it belongs to the repository-wide lint, formatting and reference coverage issue. And the documentation check proves each description exists, not that it is accurate."
+      "text": "The Aiken configuration that names the repository in the source links also sets the blueprint's description; correcting it changed that description and no validator's compiled code or hash, as the script identity check confirms. And the documentation check proves each description exists, not that it is accurate."
     }
   ],
   "_source": {
     "file": "onchain-validator-owners.md",
-    "sha256": "40675f36e157eed08cc5960bfed68f37df14394b4093cae86379b0e5be17ad0e"
+    "sha256": "513864a6bd2c07a2222e2bc1f060a1a262f82a19a533b10d33e599e4bd2d7c67"
   }
 }
