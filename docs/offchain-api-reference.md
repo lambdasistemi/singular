@@ -159,11 +159,16 @@ command-local modules are documented with source links in
 library interfaces they call are the ones listed above. The conformance
 suite's own library now has its own generated reference — the
 [Conformance API reference](conformance-api-reference.md) — generated
-and checked by the same discipline from the Conformance tree, so
-between them the two references cover this repository's Haskell
-libraries; the on-chain validators are Aiken, and the coverage tree's
-evaluation spike is an executable, so neither carries a Haskell library
-reference. Nothing on
+and checked by the same discipline from the Conformance tree. Together
+the two references cover the documented module surfaces of the two
+public libraries, no more: this reference's extent is the off-chain
+public library's, with the six private node runtime owners staying
+outside it in [Node module ownership](offchain-node-ownership.md), and
+the conformance reference's extent is the conformance library's. The
+package-private node-internal library, the executables and the on-chain
+Aiken validators remain outside the generated references; wider
+generated coverage is a separate decision for the epic's owner, not a
+claim this page makes. Nothing on
 this page is a publication or release claim — the reference ships with
 the candidate site and its future archives, and no version is tagged or
 published by existing here. The behavioral evidence for the moved builder,

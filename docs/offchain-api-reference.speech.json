@@ -1,7 +1,7 @@
 {
   "_source": {
     "file": "offchain-api-reference.md",
-    "sha256": "375a990ab80afcb3cffd3310bb6b92755d33d29acedaf106a4ea38e7d8cc1b28"
+    "sha256": "af3cc747fe6d8e21ff47345b3765b4b8b2b0fcf61b0d84332fa5ca0a2050263d"
   },
   "how-the-reference-stays-honest": [
     {
@@ -28,7 +28,7 @@
   "what-the-reference-does-not-claim": [
     {
       "pause": 400,
-      "text": "This reference covers the off-chain registry library only. The four registry commands, the journey, insert active, update terminal and deployment, are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference, the Conformance API reference, generated and checked by the same discipline from the Conformance tree, so between them the two references cover this repository's Haskell libraries; the on-chain validators are Aiken, and the coverage tree's evaluation spike is an executable, so neither carries a Haskell library reference. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages."
+      "text": "This reference covers the off-chain registry library only. The four registry commands, the journey, insert active, update terminal and deployment, are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference, the Conformance API reference, generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain public library's, with the six private node runtime owners staying outside it in the node module ownership guide, and the conformance reference's extent is the conformance library's. The package-private node-internal library, the executables and the on-chain Aiken validators remain outside the generated references; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages."
     }
   ],
   "what-this-reference-contains": [
