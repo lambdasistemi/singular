@@ -12,11 +12,18 @@ import OpenDatumApplication
     caught by replay and by the corpus comparison, and a dropped ledger row by
     the ledger comparison;
   - each definition mutant of the law runs at least one scenario differently
-    from the committed corpus.
+    from the committed corpus;
+  - every genesis and accepted step of every scenario observes the invariant,
+    and every accepting constructor has a reached accepted step;
+  - at the invariant boundary the ordinary reached world is consistent and the
+    identical-duplicate world is not, its accepted update leaving two outputs
+    of one key, while the observation without its occurrence clause would
+    admit it.
 
 Any parse failure, unknown mode or failed check exits non-zero. -/
 
 open Lean
+open OpenDatumApplication
 open OpenDatumApplication.Driver
 
 def readStdin : IO String := do
@@ -68,6 +75,23 @@ def check (dir : String) : IO UInt32 := do
     let moved ← orFail s!"mutant {name}" (differingUnder law corpus)
     failed := failed + (← report (!moved.isEmpty)
       s!"control: definition mutant {name} runs {moved.length} scenarios differently: {moved}")
+  failed := failed + (← report inconsistentReached.isEmpty
+    s!"every genesis and every accepted step of every scenario observes the invariant ({inconsistentReached})")
+  let exercised := ["bookInsert", "bookTerminate", "update", "fold", "reject"]
+  failed := failed + (← report (exercised.all acceptedConstructors.contains)
+    s!"every accepting constructor has a reached accepted step: {acceptedConstructors}")
+  let ordinaryAfter := match appStep ordinaryWorld boundaryUpdate with
+    | .ok w' => appConsistentB w'
+    | .error _ => false
+  failed := failed + (← report (appConsistentB ordinaryWorld && ordinaryAfter)
+    "boundary: the ordinary reached world is consistent, and so is its updated successor")
+  let duplicateAfter := match appStep duplicatedWorld boundaryUpdate with
+    | .ok w' => some (appConsistentB w')
+    | .error _ => none
+  failed := failed + (← report (!appConsistentB duplicatedWorld && duplicateAfter == some false)
+    "boundary: the identical-duplicate world is outside the invariant; its accepted update leaves two outputs of one key")
+  failed := failed + (← report (appConsistentBWith false duplicatedWorld)
+    "control: without the occurrence clause the observation would admit the identical-duplicate world")
   IO.println s!"application checks: {failed} failed"
   pure (if failed == 0 then 0 else 1)
 

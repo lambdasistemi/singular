@@ -13,7 +13,7 @@
   ],
   "finding-dispositions-review-310-model-001": [
     {
-      "text": "Properties needing consistency now assume a reached world, with obligations that consistency holds at genesis and after every action; the counterexamples over arbitrary worlds stay published. Settlement is bound to the rows actually selected. A wrong registry name or policy is refused at booking. The fold's own mint, burning exactly each released key's token, is now stated.",
+      "text": "Properties needing consistency assume a reached world, and the invariant is stated with obligations that it holds at genesis and after each kind of accepted action. The invariant now also requires every output occurrence to be held once, which excludes the duplicated inventory the auditor found. A forged insertion is no longer a counterexample, because the fold re-checks it. Settlement is bound to the rows actually selected, a wrong registry is refused at booking, and the fold's burn is stated.",
       "pause": 400
     }
   ],
@@ -25,12 +25,18 @@
   ],
   "coverage": [
     {
-      "text": "Every statement is bound to a scenario, and each scenario publishes the world after every step. The corpus uses one controller, two keys and fixed amounts, so it exhibits the statements without covering their domains. All statements remain unproved.",
+      "text": "Every statement is bound to a scenario or a boundary world, and each scenario publishes the world and the invariant after every step. The corpus uses one controller, two keys and fixed amounts, so it exhibits the statements without covering their domains. All thirty-two statements remain unproved.",
+      "pause": 400
+    }
+  ],
+  "invariant-boundary-310-occurrence-001": [
+    {
+      "text": "The invariant is also observed executably at genesis and after every accepted step of every scenario, and the check requires it everywhere. Two boundary worlds are published: the ordinary world after an insertion is consistent and stays so after an update, while the same world holding its output twice is not consistent, and the same update would leave two outputs of one key. Without the occurrence clause the observation would admit that world, which shows the clause is what excludes it.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "model.md",
-    "sha256": "7fcc1b2709b5e37843f22264afc4ada984bca7452df90b0264631f61233332de"
+    "sha256": "e4245b31d966910e44e0844e50bab70485541952269939347a88970a852e4ce3"
   }
 }

@@ -1,4 +1,5 @@
 import OpenDatumApplication.Model
+import Singular.Driver
 
 /-! # The application's driver, corpus and ledgers
 
@@ -193,14 +194,47 @@ def scenarioFromJson (j : Json) : Except String Scenario := do
        , asset := ← j.getObjValAs? StateAsset "asset"
        , actions := ← (← j.getObjValAs? (Array Json) "actions").toList.mapM actionFromJson }
 
+/-- The executable observation of `AppConsistent` at the invariant boundary,
+conjunct by conjunct: the registry through the root driver's own finite
+`Singular.Driver.consistentB`, then the output, occurrence, key and booking
+clauses. Its correspondence with `AppConsistent` is a stated obligation
+(`appConsistentB_iff`), not an assumption. `checkOccurrences := false` is the
+weakened observation the check's control uses to show the occurrence clause is
+what excludes a duplicated inventory. -/
+def appConsistentBWith (checkOccurrences : Bool) (w : World) : Bool :=
+  Singular.Driver.consistentB w.registry &&
+  (!checkOccurrences ||
+    (w.outputs.map (·.ref)).eraseDups.length == w.outputs.length) &&
+  w.outputs.all (fun o =>
+    o.address == appAddress w.app &&
+    o.assets == [((.active, o.envelope.control.key), 1)] &&
+    o.envelope.control.registry == w.registryAsset &&
+    decide (o.envelope.control.deposit ≤ o.lovelace) &&
+    trieGet w.registry.trie o.envelope.control.key == .known .active &&
+    decide (o.ref < w.nextRef)) &&
+  w.outputs.all (fun o₁ => w.outputs.all fun o₂ =>
+    !(o₁.envelope.control.key == o₂.envelope.control.key || o₁.ref == o₂.ref) || o₁ == o₂) &&
+  w.pending.all (fun p =>
+    match p.request.edge, p.envelope with
+    | .insertActive, some e =>
+      p.request.output == destinationOf w.app e && e.control.deposit == p.request.deposit &&
+        e.control.key == p.request.key && e.control.registry == w.registryAsset
+    | .updateTerminal, none => true
+    | _, _ => false)
+
+/-- The invariant observation itself. -/
+def appConsistentB : World → Bool := appConsistentBWith true
+
 def stepToJson : Except String World → Json
-  | .ok w => Json.mkObj [("outcome", "accepted"), ("world", worldToJson w)]
+  | .ok w => Json.mkObj [("outcome", "accepted"), ("consistent", toJson (appConsistentB w))
+      , ("world", worldToJson w)]
   | .error why => Json.mkObj [("outcome", "refused"), ("reason", toJson why)]
 
 /-- The one surface: run a scenario's actions through the law from genesis,
 publishing every step's outcome and, for an accepted step, the world it reached. -/
 def runScenarioWith (law : Law) (s : Scenario) : Json :=
   Json.mkObj [("scenario", scenarioToJson s)
+    , ("genesisConsistent", toJson (appConsistentB (genesis s.app s.config s.asset)))
     , ("steps", Json.arr ((runActionsWith law (genesis s.app s.config s.asset) s.actions).map
         stepToJson).toArray)]
 
@@ -272,7 +306,10 @@ def corpus : List Scenario :=
       , "insertion_requires_registry_identity", "update_inversion", "update_keeps_registry"
       , "update_preserves_custody", "bookTerminate_inversion", "bookTerminate_keeps_locked"
       , "release_burns_atomically", "fold_settles_additively", "fold_signers_unchanged"
-      , "genesis_consistent", "appStep_preserves_consistent", "reachable_consistent" ]
+      , "genesis_consistent", "appStep_preserves_consistent", "reachable_consistent"
+      , "consistent_occurrences_distinct", "bookInsert_preserves_consistent"
+      , "fold_preserves_consistent", "update_preserves_consistent"
+      , "bookTerminate_preserves_consistent" ]
       (insertKey 5 ++ [.update 0 [successorOf 5 payload1 insertDeposit] [controller]] ++
         terminate5 1 (paid (insertDeposit + terminateDeposit)))
   , scenario "update-payload-a" "witness" ["update_payload_free"]
@@ -285,7 +322,8 @@ def corpus : List Scenario :=
         .update 0 [successorOf 5 payload1 insertDeposit] [controller],
         .fold [(.updateTerminal, 5)] (paid (insertDeposit + terminateDeposit))])
   , scenario "mixed-batch-one-controller" "witness"
-      ["fold_settles_additively", "release_burns_atomically", "insertion_binds_envelope"]
+      ["fold_settles_additively", "release_burns_atomically", "insertion_binds_envelope"
+      , "fold_preserves_consistent"]
       (insertKey 5 ++ [.bookTerminate (terminateRequest 5) 0 [controller], bookInsertKey 6,
         .fold [(.updateTerminal, 5), (.insertActive, 6)] (paid (insertDeposit + terminateDeposit))])
   , scenario "mixed-batch-short-by-one" "adverse-input" ["fold_settles_additively"]
@@ -323,7 +361,7 @@ def corpus : List Scenario :=
   , scenario "early-withdrawal" "adverse-input" ["withdraw_inversion", "only_fold_releases"]
       (insertKey 5 ++ [.withdraw 0 (paid insertDeposit)])
   , scenario "reject-keeps-locked" "witness"
-      ["reject_inversion", "only_fold_releases", "withdraw_inversion"]
+      ["reject_inversion", "only_fold_releases", "withdraw_inversion", "reject_preserves_consistent"]
       (insertKey 5 ++ [.bookTerminate (terminateRequest 5) 0 [controller],
         .reject .updateTerminal 5 (paid terminateDeposit), .withdraw 0 (paid insertDeposit)])
   , scenario "book-deleteActive" "adverse-input" ["bookOther_refused"]
@@ -352,7 +390,61 @@ def corpus : List Scenario :=
       (insertKey 5 ++ terminate5 0 (paid (insertDeposit + terminateDeposit)) ++ insertKey 5)
   ]
 
-def corpusWith (law : Law) : Json := Json.arr (corpus.map (runScenarioWith law)).toArray
+/-! ## The invariant boundary
+
+The occurrence clause of `AppConsistent` excludes an inventory holding one
+output twice. The two worlds below exhibit it: the ordinary world reached by
+inserting key 5, and the same world with its one output occurrence duplicated —
+a world no action reaches, which the previous invariant admitted. On each the
+boundary publishes the invariant observation and the outcome of the same signed
+update: on the duplicate the update is accepted and leaves two different outputs
+of one key, the old counterexample, now outside the preservation domain because
+its starting world is not consistent. -/
+
+/-- The world reached by these actions from this corpus's genesis, keeping the
+world through a refused action. -/
+def reachWorld (actions : List AppAction) : World :=
+  actions.foldl (fun w a => match appStep w a with
+    | .ok w' => w'
+    | .error _ => w) (genesis app0 cfg0 app0.registry)
+
+def ordinaryWorld : World := reachWorld (insertKey 5)
+
+def duplicatedWorld : World :=
+  { ordinaryWorld with outputs := ordinaryWorld.outputs ++ ordinaryWorld.outputs }
+
+def boundaryUpdate : AppAction := .update 0 [successorOf 5 payload1 insertDeposit] [controller]
+
+/-- One boundary world: whether actions reach it, its invariant observation,
+the weakened observation without the occurrence clause, and the update. -/
+structure BoundaryWorld where
+  name : String
+  reached : Bool
+  statements : List String
+  world : World
+
+def boundaryWorlds : List BoundaryWorld :=
+  [ { name := "ordinary-after-insert", reached := true, world := ordinaryWorld
+    , statements := ["consistent_occurrences_distinct", "appConsistentB_iff", "update_preserves_consistent"] }
+  , { name := "identical-duplicate-occurrence", reached := false, world := duplicatedWorld
+    , statements := ["duplicate_occurrence_outside_invariant", "appConsistentB_iff"] } ]
+
+def boundaryUpdateJson (w : World) : Json :=
+  match appStep w boundaryUpdate with
+  | .ok w' => Json.mkObj [("outcome", "accepted"), ("consistentAfter", toJson (appConsistentB w'))
+      , ("world", worldToJson w')]
+  | .error why => Json.mkObj [("outcome", "refused"), ("reason", toJson why)]
+
+def boundaryToJson (b : BoundaryWorld) : Json :=
+  Json.mkObj [("name", toJson b.name), ("reached", toJson b.reached)
+    , ("statements", toJson b.statements)
+    , ("consistent", toJson (appConsistentB b.world))
+    , ("consistentWithoutOccurrenceClause", toJson (appConsistentBWith false b.world))
+    , ("world", worldToJson b.world), ("update", boundaryUpdateJson b.world)]
+
+def corpusWith (law : Law) : Json :=
+  Json.mkObj [("scenarios", Json.arr (corpus.map (runScenarioWith law)).toArray)
+    , ("invariantBoundary", Json.arr (boundaryWorlds.map boundaryToJson).toArray)]
 
 def corpusJson : Json := corpusWith Law.standard
 
@@ -364,7 +456,11 @@ def statementNames : List (String × String) :=
   , ("fold_inversion", "inversion"), ("appStep_fold", "inversion")
   , ("reject_inversion", "inversion"), ("withdraw_inversion", "inversion")
   , ("genesis_consistent", "invariant"), ("appStep_preserves_consistent", "invariant")
-  , ("reachable_consistent", "invariant")
+  , ("reachable_consistent", "invariant"), ("consistent_occurrences_distinct", "invariant")
+  , ("duplicate_occurrence_outside_invariant", "invariant"), ("appConsistentB_iff", "invariant")
+  , ("bookInsert_preserves_consistent", "invariant"), ("bookTerminate_preserves_consistent", "invariant")
+  , ("update_preserves_consistent", "invariant"), ("fold_preserves_consistent", "invariant")
+  , ("reject_preserves_consistent", "invariant")
   , ("update_requires_controller", "authorization"), ("update_preserves_custody", "custody")
   , ("update_payload_free", "payload"), ("update_keeps_registry", "composition")
   , ("insertion_requires_registry_identity", "evidence-binding")
@@ -377,7 +473,8 @@ def theoremLedger : Json :=
   Json.arr (statementNames.map fun (name, cls) =>
     Json.mkObj [("statement", toJson s!"OpenDatumApplication.Statements.{name}")
       , ("class", toJson cls), ("status", "stated-unproved")
-      , ("scenarios", toJson ((corpus.filter (·.statements.contains name)).map (·.name)))]).toArray
+      , ("scenarios", toJson ((corpus.filter (·.statements.contains name)).map (·.name)))
+      , ("boundary", toJson ((boundaryWorlds.filter (·.statements.contains name)).map (·.name)))]).toArray
 
 def atoms : List (String × String × String) :=
   [ ("A1", "authorization", "only the controller's signature admits an update or a booking")
@@ -388,7 +485,8 @@ def atoms : List (String × String × String) :=
   , ("A6", "terminality", "a release happens only in the registry's accepted fold of the same key's updateTerminal, whose own mint burns exactly that key's active token")
   , ("A7", "value", "each recipient receives the sum of every selected request's registry payment and every released deposit owed to it")
   , ("A8", "composition", "duplicate insertion and resurrection are refused by the registry fold, not the application")
-  , ("A9", "composition", "payload updates leave the registry and the bookings unchanged") ]
+  , ("A9", "composition", "payload updates leave the registry and the bookings unchanged")
+  , ("A10", "custody", "the inventory holds each output occurrence once: references are pairwise distinct and no key has two live outputs") ]
 
 def atomLedger : Json :=
   Json.arr (atoms.map fun (id, cls, text) =>
@@ -398,9 +496,13 @@ def ledgersJson : Json := Json.mkObj [("theorems", theoremLedger), ("atoms", ato
 
 /-! ## The checks and their own controls -/
 
+/-- The recorded scenario rows of a corpus. -/
+def scenarioRows (recorded : Json) : Except String (Array Json) :=
+  recorded.getObjValAs? (Array Json) "scenarios"
+
 /-- Rerun every recorded scenario from its own JSON; the names that differ. -/
 def replayDiffs (recorded : Json) : Except String (List String) := do
-  let rows ← recorded.getArr?
+  let rows ← scenarioRows recorded
   rows.toList.filterMapM fun row => do
     let s ← scenarioFromJson (← row.getObjVal? "scenario")
     pure (if runScenario s == row then none else some s.name)
@@ -408,11 +510,12 @@ def replayDiffs (recorded : Json) : Except String (List String) := do
 /-- The recorded corpus with its first recorded outcome replaced: the
 controlled alteration every check must notice. -/
 def alterFirstOutcome (recorded : Json) : Except String Json := do
-  let rows ← recorded.getArr?
+  let rows ← scenarioRows recorded
   let some first := rows[0]? | throw "empty corpus"
   let steps ← first.getObjValAs? (Array Json) "steps"
   let altered := steps.modify 0 fun _ => Json.mkObj [("outcome", "refused"), ("reason", "altered")]
-  pure (Json.arr (rows.modify 0 fun _ => first.setObjVal! "steps" (Json.arr altered)))
+  pure (recorded.setObjVal! "scenarios"
+    (Json.arr (rows.modify 0 fun _ => first.setObjVal! "steps" (Json.arr altered))))
 
 /-- The definition mutants: each switches one guard of the law off. -/
 def mutants : List (String × Law) :=
@@ -422,9 +525,37 @@ def mutants : List (String × Law) :=
 
 /-- The scenarios a law runs differently from the recorded corpus. -/
 def differingUnder (law : Law) (recorded : Json) : Except String (List String) := do
-  let rows ← recorded.getArr?
+  let rows ← scenarioRows recorded
   rows.toList.filterMapM fun row => do
     let s ← scenarioFromJson (← row.getObjVal? "scenario")
     pure (if runScenarioWith law s == row then none else some s.name)
+
+/-- The scenarios with a genesis or an accepted step whose world the invariant
+observation rejects. -/
+def inconsistentReached : List String :=
+  (corpus.filter fun s =>
+    !(appConsistentB (genesis s.app s.config s.asset) &&
+      (runActionsWith Law.standard (genesis s.app s.config s.asset) s.actions).all fun r =>
+        match r with
+        | .ok w => appConsistentB w
+        | .error _ => true)).map (·.name)
+
+/-- The accepted constructors each scenario's reached steps exercise. -/
+def constructorName : AppAction → String
+  | .bookInsert .. => "bookInsert"
+  | .bookTerminate .. => "bookTerminate"
+  | .bookOther .. => "bookOther"
+  | .update .. => "update"
+  | .fold .. => "fold"
+  | .reject .. => "reject"
+  | .withdraw .. => "withdraw"
+
+/-- Every constructor that at least one scenario takes to an accepted step. -/
+def acceptedConstructors : List String :=
+  (corpus.flatMap fun s =>
+    ((s.actions.zip (runActionsWith Law.standard (genesis s.app s.config s.asset) s.actions)).filterMap
+      fun (a, r) => match r with
+        | .ok _ => some (constructorName a)
+        | .error _ => none)).eraseDups
 
 end OpenDatumApplication.Driver

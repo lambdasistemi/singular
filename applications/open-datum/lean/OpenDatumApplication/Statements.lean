@@ -1,4 +1,5 @@
 import OpenDatumApplication.Model
+import OpenDatumApplication.Driver
 
 /-! # The open-datum application's intended statements and inversions
 
@@ -16,8 +17,11 @@ Three kinds of statement, kept apart:
   world (`reachable_consistent`);
 * **required properties** that depend on that consistency take `Reachable w`.
   Over unrestricted worlds they are false — an arbitrary `World` value can hold
-  a booked insertion whose envelope never bound it, or two outputs of one key —
-  and those counterexamples are published in the specification, not hidden.
+  two outputs of one key, or one output occurrence twice — and those
+  counterexamples are published in the specification, not hidden. The
+  invariant's own preservation obligations are stated over every consistent
+  world, not only reached ones, so its domain excludes those worlds by the
+  occurrence and key clauses, never by assuming reachability.
   Properties that are guards of a single step hold over any world and say so. -/
 
 namespace OpenDatumApplication.Statements
@@ -127,6 +131,59 @@ theorem appStep_preserves_consistent (w w' : World) (a : AppAction) :
 
 /-- Every reached world is consistent. -/
 theorem reachable_consistent (w : World) : Reachable w → AppConsistent w := by
+  sorry
+
+/-! ### Occurrences and the invariant boundary -/
+
+/-- A consistent inventory holds each output occurrence once: its outputs and
+their references are both duplicate-free. -/
+theorem consistent_occurrences_distinct (w : World) :
+    AppConsistent w → w.outputs.Nodup ∧ (w.outputs.map (·.ref)).Nodup := by
+  sorry
+
+/-- Holding any live output a second time leaves the invariant: an inventory
+with an identical duplicate occurrence is never consistent. This is the
+previous invariant's counterexample, `[o, o]`, excluded at the boundary. -/
+theorem duplicate_occurrence_outside_invariant (w : World) (o : AppOutput) :
+    o ∈ w.outputs → ¬ AppConsistent { w with outputs := w.outputs ++ [o] } := by
+  sorry
+
+/-- The executable observation the driver publishes at every step is exactly
+the invariant; the registry conjunct goes through the root driver's own
+`Singular.Driver.consistentB`. -/
+theorem appConsistentB_iff (w : World) :
+    OpenDatumApplication.Driver.appConsistentB w = true ↔ AppConsistent w := by
+  sorry
+
+/-! ### Preservation, constructor by constructor
+
+`bookOther` and `withdraw` accept nothing (`bookOther_refused`,
+`withdraw_inversion`), so they have no preservation obligation. -/
+
+theorem bookInsert_preserves_consistent (w w' : World) (r : Request) (e : Envelope)
+    (sigs : List Nat) :
+    AppConsistent w → appStep w (.bookInsert r e sigs) = .ok w' → AppConsistent w' := by
+  sorry
+
+theorem bookTerminate_preserves_consistent (w w' : World) (r : Request) (ref : Nat)
+    (sigs : List Nat) :
+    AppConsistent w → appStep w (.bookTerminate r ref sigs) = .ok w' → AppConsistent w' := by
+  sorry
+
+theorem update_preserves_consistent (w w' : World) (ref : Nat) (succs : List Successor)
+    (sigs : List Nat) :
+    AppConsistent w → appStep w (.update ref succs sigs) = .ok w' → AppConsistent w' := by
+  sorry
+
+/-- Every fold, mixed insertion and termination selections included. -/
+theorem fold_preserves_consistent (w w' : World) (sel : List (Edge × Key))
+    (outs : List TxOutput) :
+    AppConsistent w → appStep w (.fold sel outs) = .ok w' → AppConsistent w' := by
+  sorry
+
+theorem reject_preserves_consistent (w w' : World) (edge : Edge) (key : Key)
+    (outs : List TxOutput) :
+    AppConsistent w → appStep w (.reject edge key outs) = .ok w' → AppConsistent w' := by
   sorry
 
 /-! ## Required properties -/

@@ -408,12 +408,15 @@ inductive Reachable : World → Prop where
 and to be proved preserved (`OpenDatumApplication.Statements`): the registry is
 consistent; every live output sits at this contract holding exactly its key's
 active token, under an envelope naming the actual registry, with at least its
-protected deposit, while the registry's leaf for that key is Active; no two live
-outputs share a key or a reference, and every reference is below `nextRef`;
-every booked insertion is bound to its envelope and the actual registry, and
-every booked termination carries none. -/
+protected deposit, while the registry's leaf for that key is Active; the
+inventory holds each output occurrence once — its references are pairwise
+distinct, so no output, identical copies included, appears twice — and no two
+live outputs share a key, every reference being below `nextRef`; every booked
+insertion is bound to its envelope and the actual registry, and every booked
+termination carries none. -/
 def AppConsistent (w : World) : Prop :=
   Singular.Consistent w.registry ∧
+  (w.outputs.map (·.ref)).Nodup ∧
   (∀ o ∈ w.outputs, o.address = appAddress w.app ∧
     o.assets = [((.active, o.envelope.control.key), 1)] ∧
     o.envelope.control.registry = w.registryAsset ∧

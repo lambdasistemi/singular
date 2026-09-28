@@ -1,6 +1,6 @@
 # Open-datum application: executable model and intended statements
 
-Phase: MODEL + STATEMENTS + INVERSIONS, first repair. All 24 statements are **stated, unproved** (`sorry`). Nothing here is a validator, a compiled identity, a builder or ledger evidence.
+Phase: MODEL + STATEMENTS + INVERSIONS; occurrence-safe re-cut `310-occurrence-001` on the preserved first repair. All 32 statements are **stated, unproved** (`sorry`). Nothing here is a validator, a compiled identity, a builder or ledger evidence.
 
 ## Where it lives and how it builds
 
@@ -30,11 +30,8 @@ Phase: MODEL + STATEMENTS + INVERSIONS, first repair. All 24 statements are **st
 - **F310-001 (unrestricted-world statements).**
   - Properties that depend on consistency now take `Reachable w`. `AppConsistent` states that consistency, and three obligations cover every constructor: `genesis_consistent`, `appStep_preserves_consistent` and `reachable_consistent`.
   - Single-step guard properties and the exact inversions still hold over any world, and say so.
-  - The three published counterexamples remain true over unrestricted worlds (they are excluded by `AppConsistent`, not by the law):
-    - a booked insertion whose envelope never bound it;
-    - two outputs of one key, under update;
-    - two outputs of one key, under a fold.
-  - The fold now also re-checks each insertion's envelope binding.
+  - Over unrestricted worlds, `update_preserves_custody` and `release_burns_atomically` are false for a world holding two outputs of one key; `AppConsistent` excludes it, the law does not. A booked insertion whose envelope never bound its request is no longer such a counterexample: the fold re-checks the binding in `selectRow` and refuses `fold-envelope-binding`.
+  - Re-cut `310-occurrence-001` (finding F310-R1-001): the previous uniqueness clause compared output values, so an inventory holding one identical output twice, `[o, o]`, satisfied it; an accepted update erases only the first copy and appends a new reference, leaving two different outputs of one key, which made the preservation obligation false as typed. `AppConsistent` now also requires the references to be pairwise distinct, so every output occurrence is held once. Preservation is stated per accepted constructor (`bookInsert`, `bookTerminate`, `update`, `fold`, `reject`) over every consistent world; `bookOther` and `withdraw` accept nothing. `erase`, the law and the root model are unchanged.
 - **F310-002 (additive rows).** `fold_settles_additively` binds the rows to exactly what `selectRow` chose (`sel.mapM (selectRow …) = .ok rows`). Each release is the spent output's own protected deposit to its own controller. Every recipient receives at least the sum of its floors.
 - **F310-003 (registry identity).**
   - Booking requires the application's registry and the envelope's to equal the world's actual state asset. The fold re-checks both for insertions and terminations.
@@ -56,6 +53,16 @@ Phase: MODEL + STATEMENTS + INVERSIONS, first repair. All 24 statements are **st
 
 ## Coverage
 
-- Every statement is bound to at least one of 27 scenarios. Each scenario publishes the world after every accepted step: registry, outputs, bookings with their required signers, and the last mint. Intermediate conclusions are therefore observable, not only final worlds.
+- Every statement is bound to at least one of 27 scenarios or 2 boundary worlds. Each scenario publishes the world after every accepted step: registry, outputs, bookings with their required signers, and the last mint. Intermediate conclusions are therefore observable, not only final worlds.
 - The corpus exercises one controller, keys 5 and 6 and fixed amounts. It exhibits the statements and does not cover their domains.
 - The three definition mutants move 1, 3 and 3 scenarios respectively. They are controls on the checks, not a mutation campaign over the law.
+
+## Invariant boundary (310-occurrence-001)
+
+- `appConsistentB` observes `AppConsistent` conjunct by conjunct, the registry through the root driver's own `Singular.Driver.consistentB`; its exact correspondence is the stated obligation `appConsistentB_iff`, unproved.
+- Every scenario publishes the observation at genesis and after every accepted step. `check` requires it true for all of them, and requires an accepted step for each accepting constructor: `bookInsert`, `bookTerminate`, `update`, `fold` (insert, terminate and mixed) and `reject`.
+- The corpus publishes two boundary worlds:
+  - `ordinary-after-insert`, reached: consistent; the signed update is accepted and its successor is consistent;
+  - `identical-duplicate-occurrence`, the same world with its output held twice, not reached: not consistent; the same update is accepted and leaves two different outputs of key 5, the previous counterexample now outside the preservation domain.
+- Control: the observation without its occurrence clause admits the duplicate world, so the clause is what excludes it.
+- These are bounded executed observations of the published worlds, not proofs of the universal statements.
