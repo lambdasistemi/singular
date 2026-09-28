@@ -275,6 +275,9 @@ data LiveStep = LiveStep
     , lsAfter :: Maybe OnChainTokenState
     , lsWitness :: Maybe (TxIn, TxOut ConwayEra)
     , lsCustody :: Maybe (TxIn, TxOut ConwayEra)
+    , lsStateUtxo :: Maybe (TxIn, TxOut ConwayEra)
+    -- ^ the state input the accepted step spent, retained so observation can
+    -- read what the ledger physically held; @Nothing@ where no step spent one
     , lsSpent :: [Integer]
     -- ^ the state tokens each input of the submitted transaction held
     , lsOutcome :: StepOutcome
@@ -556,6 +559,7 @@ submitEdge env state cage exit alteration request = do
                         Nothing
                         Nothing
                         Nothing
+                        Nothing
                         []
                         (StepUnsupported Nothing (T.pack nodeReason) Nothing)
                     )
@@ -798,6 +802,7 @@ submitEdge env state cage exit alteration request = do
                             (Just after)
                             witness
                             (custodyOf refs)
+                            Nothing
                             spent
                             (StepAccepted signed (mem, cpu, txSizeBytes signed))
                         )
@@ -833,6 +838,7 @@ submitEdge env state cage exit alteration request = do
                             Nothing
                             witness
                             (custodyOf refs)
+                            Nothing
                             spent
                             (refusedOutcome marker signed diagnostic)
                         )
