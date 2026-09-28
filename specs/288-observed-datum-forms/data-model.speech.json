@@ -1,11 +1,17 @@
 {
   "_source": {
     "file": "data-model.md",
-    "sha256": "e720eb0d07c36b7b222fafba6cb83a53508705dc5875c39bfec9a1d2a012a2d4"
+    "sha256": "1be83188acc40f9c9c24d91fb4fe60bf1f47f6a4d9079bed929ce5b81879bc2a"
   },
   "data-contract": [
     {
       "text": "Inline, hashed, and absent datums remain distinct. Attribute each observation to its real input reference or destination output. Missing evidence is an error, never an invented inline value.",
+      "pause": 350
+    }
+  ],
+  "retained-state-input": [
+    {
+      "text": "Retain the actual state output from before submission. A reported state input must have unique corresponding evidence. A retraction reports no state input. This field carries observations only; it changes no transaction or model behavior.",
       "pause": 350
     }
   ]

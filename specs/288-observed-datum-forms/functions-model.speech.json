@@ -1,11 +1,11 @@
 {
   "_source": {
     "file": "functions-model.md",
-    "sha256": "b50dcf241f446569802936b56d632e0bfb92df87893e7476210b70de5a8c2110"
+    "sha256": "128d541c2af202845682e1729b6daee85ddf68b91c14bd14984a69e7cf58b276"
   },
   "interface-contract": [
     {
-      "text": "Keep the existing live transaction observation interface. Return any necessary signature change to the coordinating owner before implementation. Preserve the comparator and Lean driver interfaces.",
+      "text": "Keep the existing live transaction observation interface. Return any necessary signature change to the coordinating owner before implementation. Preserve the comparator and Lean driver interfaces. The coordinating owner approved an internal retained state-output field before implementation. The observation and submission entry point types remain unchanged; no booking or model change follows.",
       "pause": 350
     }
   ]
