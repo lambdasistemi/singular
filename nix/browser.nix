@@ -1,4 +1,8 @@
-{ pkgs, browserPkgs, src }:
+{
+  pkgs,
+  browserPkgs,
+  src,
+}:
 let
   environment = {
     PLAYWRIGHT_MODULE = "${browserPkgs.playwright-driver}/index.mjs";
@@ -11,15 +15,22 @@ let
     runtimeEnv = environment;
     text = ''node ${src}/tools/browser-check.mjs ${src}'';
   };
-in {
+in
+{
   inherit checker environment;
-  apps.browser-check = { type = "app"; program = pkgs.lib.getExe checker; };
-  check = pkgs.runCommand "singular-browser-check" {
-    nativeBuildInputs = [ pkgs.glibcLocales ];
-    LANG = "C.UTF-8";
-    LC_ALL = "C.UTF-8";
-  } ''
-    ${pkgs.lib.getExe checker}
-    touch "$out"
-  '';
+  apps.browser-check = {
+    type = "app";
+    program = pkgs.lib.getExe checker;
+  };
+  check =
+    pkgs.runCommand "singular-browser-check"
+      {
+        nativeBuildInputs = [ pkgs.glibcLocales ];
+        LANG = "C.UTF-8";
+        LC_ALL = "C.UTF-8";
+      }
+      ''
+        ${pkgs.lib.getExe checker}
+        touch "$out"
+      '';
 }

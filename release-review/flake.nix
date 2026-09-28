@@ -3,18 +3,28 @@
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/117cc7f94e8072499b0a7aa4c52084fa4e11cc9b";
 
-  outputs = { self, nixpkgs }:
+  outputs =
+    { self, nixpkgs }:
     let
-      systems = [ "x86_64-linux" "aarch64-linux" ];
-    in {
-      packages = nixpkgs.lib.genAttrs systems (system:
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
+    in
+    {
+      packages = nixpkgs.lib.genAttrs systems (
+        system:
         let
           pkgs = import nixpkgs { inherit system; };
           checked = pkgs.stdenv.mkDerivation {
             pname = "singular-archive-review";
             version = "0.1.0";
             src = self;
-            nativeBuildInputs = [ pkgs.lean4 pkgs.nodejs pkgs.python3 ];
+            nativeBuildInputs = [
+              pkgs.lean4
+              pkgs.nodejs
+              pkgs.python3
+            ];
             buildPhase = ''
               runHook preBuild
               test "$(cat lean-toolchain)" = "leanprover/lean4:v4.25.0"
@@ -52,11 +62,13 @@
             name = "singular-archive-check";
             text = ''cat ${checked}/receipt.txt'';
           };
-        in {
+        in
+        {
           default = checked;
           check = checked;
           runner = runner;
-        });
+        }
+      );
 
       apps = nixpkgs.lib.genAttrs systems (system: {
         default = {

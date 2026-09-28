@@ -3,8 +3,7 @@
 
   nixConfig = {
     extra-substituters = [ "https://cache.iog.io" ];
-    extra-trusted-public-keys =
-      [ "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=" ];
+    extra-trusted-public-keys = [ "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=" ];
   };
 
   # The inputs block is kept verbatim from ../offchain/flake.nix, and this
@@ -25,13 +24,11 @@
     nixpkgs.follows = "haskellNix/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     iohkNix = {
-      url =
-        "github:input-output-hk/iohk-nix/0ce7cc21b9a4cfde41871ef486d01a8fafbf9627";
+      url = "github:input-output-hk/iohk-nix/0ce7cc21b9a4cfde41871ef486d01a8fafbf9627";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     CHaP = {
-      url =
-        "github:intersectmbo/cardano-haskell-packages/8479db771a3186eb326e42d8480eddc20a208275";
+      url = "github:intersectmbo/cardano-haskell-packages/8479db771a3186eb326e42d8480eddc20a208275";
       flake = false;
     };
     # Pinned cardano-node, used as a subprocess by the devnet run. The
@@ -153,61 +150,75 @@
           cp -r ${./.}/coverage $out/conformance/coverage
         '';
 
-        coverageGate = pkgs.runCommand "coverage-gate" {
-          # git rides the closure: the release boundary binds the tree via
-          # git and is fail-closed on unknown identity. A missing git must
-          # never stand in for honest debt.
-          buildInputs = [ pkgs.makeWrapper pkgs.python3 pkgs.git ];
-          meta = {
-            mainProgram = "coverage-gate";
-          };
-        } ''
-          mkdir -p $out/bin
-          makeWrapper ${pkgs.python3}/bin/python3 $out/bin/coverage-gate \
-            --prefix PYTHONPATH : ${coverageSrc}/conformance/coverage \
-            --prefix PATH : ${pkgs.git}/bin \
-            --add-flags "-m singular_coverage.gate"
-        '';
+        coverageGate =
+          pkgs.runCommand "coverage-gate"
+            {
+              # git rides the closure: the release boundary binds the tree via
+              # git and is fail-closed on unknown identity. A missing git must
+              # never stand in for honest debt.
+              buildInputs = [
+                pkgs.makeWrapper
+                pkgs.python3
+                pkgs.git
+              ];
+              meta = {
+                mainProgram = "coverage-gate";
+              };
+            }
+            ''
+              mkdir -p $out/bin
+              makeWrapper ${pkgs.python3}/bin/python3 $out/bin/coverage-gate \
+                --prefix PYTHONPATH : ${coverageSrc}/conformance/coverage \
+                --prefix PATH : ${pkgs.git}/bin \
+                --add-flags "-m singular_coverage.gate"
+            '';
 
         # Gate unit suite over the frozen snapshot, including every armed
         # failure control and the real-tree discovery/inventory assertions.
         # git rides along so the real-git candidate-binding controls run,
         # not skip, in this derivation.
-        coverageGateTests = pkgs.runCommand "coverage-gate-tests" {
-          buildInputs = [ pkgs.python3 pkgs.git ];
-        } ''
-          cd ${coverageSrc}/conformance/coverage
-          PYTHONPATH=$PWD ${pkgs.python3}/bin/python3 -m unittest discover -s tests
-          touch $out
-        '';
+        coverageGateTests =
+          pkgs.runCommand "coverage-gate-tests"
+            {
+              buildInputs = [
+                pkgs.python3
+                pkgs.git
+              ];
+            }
+            ''
+              cd ${coverageSrc}/conformance/coverage
+              PYTHONPATH=$PWD ${pkgs.python3}/bin/python3 -m unittest discover -s tests
+              touch $out
+            '';
 
         # The gate's own verdicts against the same frozen snapshot: inventory
         # reconciles, ratchet passes, completion honestly refuses.
-        coverageGateSnapshot = pkgs.runCommand "coverage-gate-snapshot" {
-          buildInputs = [ pkgs.python3 ];
-        } ''
-          export PYTHONPATH=${coverageSrc}/conformance/coverage
-          ${pkgs.python3}/bin/python3 -m singular_coverage.gate \
-            --root ${coverageSrc} inventory > /dev/null
-          ${pkgs.python3}/bin/python3 -m singular_coverage.gate \
-            --root ${coverageSrc} ratchet > /dev/null
-          if ${pkgs.python3}/bin/python3 -m singular_coverage.gate \
-              --root ${coverageSrc} completion > /dev/null 2>&1; then
-            echo "coverage gate: completion unexpectedly passed a nonzero-debt snapshot"
-            exit 1
-          fi
-          mkdir -p $out
-        '';
+        coverageGateSnapshot =
+          pkgs.runCommand "coverage-gate-snapshot"
+            {
+              buildInputs = [ pkgs.python3 ];
+            }
+            ''
+              export PYTHONPATH=${coverageSrc}/conformance/coverage
+              ${pkgs.python3}/bin/python3 -m singular_coverage.gate \
+                --root ${coverageSrc} inventory > /dev/null
+              ${pkgs.python3}/bin/python3 -m singular_coverage.gate \
+                --root ${coverageSrc} ratchet > /dev/null
+              if ${pkgs.python3}/bin/python3 -m singular_coverage.gate \
+                  --root ${coverageSrc} completion > /dev/null 2>&1; then
+                echo "coverage gate: completion unexpectedly passed a nonzero-debt snapshot"
+                exit 1
+              fi
+              mkdir -p $out
+            '';
 
         project = import ./nix/project.nix {
           inherit CHaP pkgs src;
         };
 
-        components =
-          project.project.hsPkgs.conformance.components;
+        components = project.project.hsPkgs.conformance.components;
 
-        cardanoNode =
-          cardano-node.packages.${system}.cardano-node;
+        cardanoNode = cardano-node.packages.${system}.cardano-node;
 
         # Compile the observation and its proof against this checkout's model.
         # The executable transports abstract IDs; Cardano bytes stay in Haskell.
@@ -219,26 +230,32 @@
         # the caller established, through the model's own driver. Edge-agnostic
         # on purpose, so #223's connected retirement is the same call with a
         # setup trace rather than a second adapter.
-        driverTransport = modelPkgs.runCommand "singular-driver-transport" {
-          nativeBuildInputs = [ modelPkgs.lean4 modelPkgs.stdenv.cc ];
-          meta.mainProgram = "driver-transport";
-        } ''
-          mkdir work
-          cp -r ${../lean} work/lean
-          cp ${../lakefile.toml} work/lakefile.toml
-          chmod -R u+w work
-          cp ${./lean/DriverTransport.lean} work/lean/DriverTransport.lean
-          cat >> work/lakefile.toml <<'EOF'
+        driverTransport =
+          modelPkgs.runCommand "singular-driver-transport"
+            {
+              nativeBuildInputs = [
+                modelPkgs.lean4
+                modelPkgs.stdenv.cc
+              ];
+              meta.mainProgram = "driver-transport";
+            }
+            ''
+              mkdir work
+              cp -r ${../lean} work/lean
+              cp ${../lakefile.toml} work/lakefile.toml
+              chmod -R u+w work
+              cp ${./lean/DriverTransport.lean} work/lean/DriverTransport.lean
+              cat >> work/lakefile.toml <<'EOF'
 
-          [[lean_exe]]
-          name = "driver-transport"
-          root = "DriverTransport"
-          EOF
-          cd work
-          lake build driver-transport
-          mkdir -p $out/bin
-          cp .lake/build/bin/driver-transport $out/bin/
-        '';
+              [[lean_exe]]
+              name = "driver-transport"
+              root = "DriverTransport"
+              EOF
+              cd work
+              lake build driver-transport
+              mkdir -p $out/bin
+              cp .lake/build/bin/driver-transport $out/bin/
+            '';
 
         # The row runner, wrapped so it brings the locked cardano-node
         # on its own PATH like the offchain journey runners, with the
@@ -254,54 +271,67 @@
         # approval and folds an edge per row, each its own transaction —
         # runs past it and cannot convert a deadline to a slot. Every
         # other file and parameter is byte-identical.
-        conformance = pkgs.runCommand "conformance" {
-          buildInputs = [ pkgs.makeWrapper ];
-          meta = (components.exes.conformance.meta or { }) // {
-            mainProgram = "conformance";
-          };
-        } ''
-          mkdir -p $out/bin
-          makeWrapper ${pkgs.lib.getExe components.exes.conformance} $out/bin/conformance \
-            --prefix PATH : ${cardanoNode}/bin \
-            --set CONFORMANCE_DRIVER_CORPUS ${../lean/driver-corpus.json} \
-            --set CONFORMANCE_MODEL_EVALUATOR ${pkgs.lib.getExe driverTransport} \
-            --set-default E2E_GENESIS_DIR ${src}/conformance/genesis \
-            --set-default NAMING_BLUEPRINT ${naming-blueprint}
-        '';
+        conformance =
+          pkgs.runCommand "conformance"
+            {
+              buildInputs = [ pkgs.makeWrapper ];
+              meta = (components.exes.conformance.meta or { }) // {
+                mainProgram = "conformance";
+              };
+            }
+            ''
+              mkdir -p $out/bin
+              makeWrapper ${pkgs.lib.getExe components.exes.conformance} $out/bin/conformance \
+                --prefix PATH : ${cardanoNode}/bin \
+                --set CONFORMANCE_DRIVER_CORPUS ${../lean/driver-corpus.json} \
+                --set CONFORMANCE_MODEL_EVALUATOR ${pkgs.lib.getExe driverTransport} \
+                --set-default E2E_GENESIS_DIR ${src}/conformance/genesis \
+                --set-default NAMING_BLUEPRINT ${naming-blueprint}
+            '';
 
         # A separate test binary owns the deliberately insufficient budget.
         # The public conformance executable never links its fixture module.
-        foldBudgetRegression = pkgs.runCommand "fold-budget-regression" {
-          buildInputs = [ pkgs.makeWrapper ];
-          meta.mainProgram = "fold-budget-regression";
-        } ''
-          mkdir -p $out/bin
-          makeWrapper ${pkgs.lib.getExe components.exes.fold-budget-regression} $out/bin/fold-budget-regression \
-            --prefix PATH : ${cardanoNode}/bin \
-            --set CONFORMANCE_DRIVER_CORPUS ${../lean/driver-corpus.json} \
-            --set CONFORMANCE_MODEL_EVALUATOR ${pkgs.lib.getExe driverTransport} \
-            --set-default E2E_GENESIS_DIR ${src}/conformance/genesis \
-            --set-default NAMING_BLUEPRINT ${naming-blueprint}
-        '';
+        foldBudgetRegression =
+          pkgs.runCommand "fold-budget-regression"
+            {
+              buildInputs = [ pkgs.makeWrapper ];
+              meta.mainProgram = "fold-budget-regression";
+            }
+            ''
+              mkdir -p $out/bin
+              makeWrapper ${pkgs.lib.getExe components.exes.fold-budget-regression} $out/bin/fold-budget-regression \
+                --prefix PATH : ${cardanoNode}/bin \
+                --set CONFORMANCE_DRIVER_CORPUS ${../lean/driver-corpus.json} \
+                --set CONFORMANCE_MODEL_EVALUATOR ${pkgs.lib.getExe driverTransport} \
+                --set-default E2E_GENESIS_DIR ${src}/conformance/genesis \
+                --set-default NAMING_BLUEPRINT ${naming-blueprint}
+            '';
 
         # The appendix suite compares against the committed driver corpus, so
         # the corpus travels with the binary rather than being copied into the
         # test tree where it could drift from the model.
-        appendixTests = pkgs.runCommand "conformance-appendix-tests" {
-          nativeBuildInputs = [ pkgs.makeWrapper ];
-          meta.mainProgram = "conformance-tests";
-        } ''
-          mkdir -p $out/bin
-          makeWrapper ${pkgs.lib.getExe components.tests.conformance-tests} $out/bin/conformance-tests \
-            --set CONFORMANCE_DRIVER_CORPUS ${../lean/driver-corpus.json}
-        '';
+        appendixTests =
+          pkgs.runCommand "conformance-appendix-tests"
+            {
+              nativeBuildInputs = [ pkgs.makeWrapper ];
+              meta.mainProgram = "conformance-tests";
+            }
+            ''
+              mkdir -p $out/bin
+              makeWrapper ${pkgs.lib.getExe components.tests.conformance-tests} $out/bin/conformance-tests \
+                --set CONFORMANCE_DRIVER_CORPUS ${../lean/driver-corpus.json}
+            '';
 
         # The public test command executes the book, including fresh devnet
         # transactions. The cheap evidence-checker suite remains available by
         # its explicit appendix name; it cannot generate the product book.
         runningBook = pkgs.writeShellApplication {
           name = "conformance-tests";
-          runtimeInputs = [ pkgs.nix pkgs.git pkgs.coreutils ];
+          runtimeInputs = [
+            pkgs.nix
+            pkgs.git
+            pkgs.coreutils
+          ];
           text = ''
             book_args=()
             if [ "$#" -eq 2 ] && [ "$1" = "--book" ]; then
@@ -336,11 +366,12 @@
         shellTool =
           pattern:
           let
-            matches = builtins.filter
-              (p: builtins.match pattern (p.name or "") != null)
-              project.project.shell.nativeBuildInputs;
+            matches = builtins.filter (
+              p: builtins.match pattern (p.name or "") != null
+            ) project.project.shell.nativeBuildInputs;
           in
-          assert builtins.length matches == 1; builtins.head matches;
+          assert builtins.length matches == 1;
+          builtins.head matches;
         fourmoluTool = shellTool "fourmolu-exe-fourmolu-.*";
         # #278 S3: HLint from the same locked dev-shell tool set, so the
         # Conformance lint resolves the HLint the off-chain lint runs.
@@ -361,29 +392,29 @@
         # The Conformance Haskell extent, shared by the format and lint
         # checks so the two cannot visit different files.
         haskellDiscovery = ''
-            cd "${./.}"
-            conf_dirs=$(
-              awk '/^[ \t]*hs-source-dirs:/ {
-                sub(/^[ \t]*hs-source-dirs:[ \t]*/, "")
-                for (i = 1; i <= NF; i++) print $i
-              }' conformance.cabal
-            ) || { echo "format-check: source discovery failed: cannot read conformance.cabal (awk exit $?)" >&2; exit 1; }
-            [ -n "$conf_dirs" ] || { echo "format-check: source discovery found no hs-source-dirs in conformance.cabal" >&2; exit 1; }
-            spike_dirs=$(
-              awk '/^[ \t]*hs-source-dirs:/ {
-                sub(/^[ \t]*hs-source-dirs:[ \t]*/, "")
-                for (i = 1; i <= NF; i++) print "coverage/evaluation/" $i
-              }' coverage/evaluation/spike.cabal
-            ) || { echo "format-check: source discovery failed: cannot read coverage/evaluation/spike.cabal (awk exit $?)" >&2; exit 1; }
-            [ -n "$spike_dirs" ] || { echo "format-check: source discovery found no hs-source-dirs in coverage/evaluation/spike.cabal" >&2; exit 1; }
-            dirs=$(printf '%s\n%s\n' "$conf_dirs" "$spike_dirs" | sort -u)
-            [ -n "$dirs" ] || { echo "format-check: discovered no source directories" >&2; exit 1; }
-            for d in $dirs; do
-              [ -d "$d" ] || { echo "format-check: declared source directory missing: $d" >&2; exit 1; }
-            done
-            files=$(find $dirs -name '*.hs' | sort -u)
-            [ -n "$files" ] || { echo "format-check: no Haskell sources in the discovered extent" >&2; exit 1; }
-            echo "conformance haskell extent: $(printf '%s\n' $files | wc -l) Haskell sources over $(printf '%s\n' $dirs | wc -l) dirs, house fourmolu.yaml, no exclusions" >&2
+          cd "${./.}"
+          conf_dirs=$(
+            awk '/^[ \t]*hs-source-dirs:/ {
+              sub(/^[ \t]*hs-source-dirs:[ \t]*/, "")
+              for (i = 1; i <= NF; i++) print $i
+            }' conformance.cabal
+          ) || { echo "format-check: source discovery failed: cannot read conformance.cabal (awk exit $?)" >&2; exit 1; }
+          [ -n "$conf_dirs" ] || { echo "format-check: source discovery found no hs-source-dirs in conformance.cabal" >&2; exit 1; }
+          spike_dirs=$(
+            awk '/^[ \t]*hs-source-dirs:/ {
+              sub(/^[ \t]*hs-source-dirs:[ \t]*/, "")
+              for (i = 1; i <= NF; i++) print "coverage/evaluation/" $i
+            }' coverage/evaluation/spike.cabal
+          ) || { echo "format-check: source discovery failed: cannot read coverage/evaluation/spike.cabal (awk exit $?)" >&2; exit 1; }
+          [ -n "$spike_dirs" ] || { echo "format-check: source discovery found no hs-source-dirs in coverage/evaluation/spike.cabal" >&2; exit 1; }
+          dirs=$(printf '%s\n%s\n' "$conf_dirs" "$spike_dirs" | sort -u)
+          [ -n "$dirs" ] || { echo "format-check: discovered no source directories" >&2; exit 1; }
+          for d in $dirs; do
+            [ -d "$d" ] || { echo "format-check: declared source directory missing: $d" >&2; exit 1; }
+          done
+          files=$(find $dirs -name '*.hs' | sort -u)
+          [ -n "$files" ] || { echo "format-check: no Haskell sources in the discovered extent" >&2; exit 1; }
+          echo "conformance haskell extent: $(printf '%s\n' $files | wc -l) Haskell sources over $(printf '%s\n' $dirs | wc -l) dirs, house fourmolu.yaml, no exclusions" >&2
         '';
 
         formatCheck = pkgs.writeShellApplication {
@@ -394,7 +425,10 @@
             pkgs.gawk
             pkgs.findutils
           ];
-          excludeShellChecks = [ "SC2046" "SC2086" ];
+          excludeShellChecks = [
+            "SC2046"
+            "SC2086"
+          ];
           text = ''
             ${haskellDiscovery}
             # The GHC option matches the off-chain lint invocation so the
@@ -414,7 +448,10 @@
             pkgs.gawk
             pkgs.findutils
           ];
-          excludeShellChecks = [ "SC2046" "SC2086" ];
+          excludeShellChecks = [
+            "SC2046"
+            "SC2086"
+          ];
           text = ''
             ${haskellDiscovery}
             hlint $files

@@ -25,38 +25,104 @@
   # dependencies keep their own locked revisions.
   inputs.onchain.url = "path:./onchain";
   inputs.nixpkgs.follows = "dev-assets-mkdocs/nixpkgs";
-  outputs = { self, nixpkgs, dev-assets-mkdocs, dev-assets-playwright, offchain, conformance, onchain }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      dev-assets-mkdocs,
+      dev-assets-playwright,
+      offchain,
+      conformance,
+      onchain,
+    }:
     let
-      systems = [ "x86_64-linux" "aarch64-linux" ];
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
       each = nixpkgs.lib.genAttrs systems;
-      project = system: import ./nix/docs.nix {
-        pkgs = import nixpkgs { inherit system; };
-        src = self;
-        sharedShell = dev-assets-mkdocs.devShells.${system}.default;
-        sharedSource = dev-assets-mkdocs;
-        mermaidJs = dev-assets-mkdocs.packages.${system}.mermaid-js;
-        inherit offchain conformance onchain;
+      project =
+        system:
+        import ./nix/docs.nix {
+          pkgs = import nixpkgs { inherit system; };
+          src = self;
+          sharedShell = dev-assets-mkdocs.devShells.${system}.default;
+          sharedSource = dev-assets-mkdocs;
+          mermaidJs = dev-assets-mkdocs.packages.${system}.mermaid-js;
+          inherit offchain conformance onchain;
+        };
+      model =
+        system:
+        import ./nix/model.nix {
+          pkgs = import nixpkgs { inherit system; };
+          src = self;
+        };
+      coverage =
+        system:
+        import ./nix/coverage.nix {
+          pkgs = import nixpkgs { inherit system; };
+          src = self;
+        };
+      inventory =
+        system:
+        import ./nix/inventory.nix {
+          pkgs = import nixpkgs { inherit system; };
+          src = self;
+        };
+      simulator =
+        system:
+        import ./nix/simulator.nix {
+          pkgs = import nixpkgs { inherit system; };
+          src = self;
+        };
+      browser =
+        system:
+        import ./nix/browser.nix {
+          pkgs = import nixpkgs { inherit system; };
+          browserPkgs = import dev-assets-playwright.inputs.nixpkgs { inherit system; };
+          src = self;
+        };
+      packages = system: {
+        default = (project system).docs;
+        docs = (project system).docs;
+        docs-release = (project system).releaseArchive;
+        model = (model system).package;
       };
-      model = system: import ./nix/model.nix { pkgs = import nixpkgs { inherit system; }; src = self; };
-      coverage = system: import ./nix/coverage.nix { pkgs = import nixpkgs { inherit system; }; src = self; };
-      inventory = system: import ./nix/inventory.nix { pkgs = import nixpkgs { inherit system; }; src = self; };
-      simulator = system: import ./nix/simulator.nix { pkgs = import nixpkgs { inherit system; }; src = self; };
-      browser = system: import ./nix/browser.nix {
-        pkgs = import nixpkgs { inherit system; };
-        browserPkgs = import dev-assets-playwright.inputs.nixpkgs { inherit system; };
-        src = self;
-      };
-      packages = system: { default = (project system).docs; docs = (project system).docs; docs-release = (project system).releaseArchive; model = (model system).package; };
-      buildGate = system:
-        let pkgs = import nixpkgs { inherit system; };
-        # Build artifacts only; checks and check-running apps stay separate.
-        in pkgs.linkFarm "singular-build-gate" (
-          pkgs.lib.mapAttrsToList (name: path: { name = "package-${name}"; inherit path; }) (packages system)
+      buildGate =
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+          # Build artifacts only; checks and check-running apps stay separate.
+        in
+        pkgs.linkFarm "singular-build-gate" (
+          pkgs.lib.mapAttrsToList (name: path: {
+            name = "package-${name}";
+            inherit path;
+          }) (packages system)
         );
-    in {
+    in
+    {
       packages = each (system: packages system // { build-gate = buildGate system; });
-      checks = each (system: { docs = (project system).check; release = (project system).releaseCheck; model = (model system).check; simulator = (simulator system).check; browser = (browser system).check; coverage = (coverage system).check; inventory = (inventory system).check; });
-      apps = each (system: ((project system).apps // (model system).apps // (simulator system).apps // (browser system).apps // (coverage system).apps // (inventory system).apps));
+      checks = each (system: {
+        docs = (project system).check;
+        release = (project system).releaseCheck;
+        model = (model system).check;
+        simulator = (simulator system).check;
+        browser = (browser system).check;
+        coverage = (coverage system).check;
+        inventory = (inventory system).check;
+      });
+      apps = each (
+        system:
+        (
+          (project system).apps
+          // (model system).apps
+          // (simulator system).apps
+          // (browser system).apps
+          // (coverage system).apps
+          // (inventory system).apps
+        )
+      );
       # #278 S2: the root development shell carries the pinned house
       # formatter — the exact Fourmolu the off-chain lock resolves, exposed
       # by the offchain flake — so `just format`, `just format-check` and
@@ -64,6 +130,29 @@
       # binary the lint checks run. No second version source.
       # #278: it also carries the pinned lint and format tools `just lint`
       # runs over every other code family (tools/lint_code.py).
-      devShells = each (system: { default = (project system).shell.overrideAttrs (old: (browser system).environment // { nativeBuildInputs = (old.nativeBuildInputs or []) ++ [ offchain.packages.${system}.fourmolu ] ++ (with import nixpkgs { inherit system; }; [ lean4 nodejs nixfmt statix deadnix ruff shellcheck shfmt biome actionlint yamlfmt ]); }); });
+      devShells = each (system: {
+        default = (project system).shell.overrideAttrs (
+          old:
+          (browser system).environment
+          // {
+            nativeBuildInputs =
+              (old.nativeBuildInputs or [ ])
+              ++ [ offchain.packages.${system}.fourmolu ]
+              ++ (with import nixpkgs { inherit system; }; [
+                lean4
+                nodejs
+                nixfmt
+                statix
+                deadnix
+                ruff
+                shellcheck
+                shfmt
+                biome
+                actionlint
+                yamlfmt
+              ]);
+          }
+        );
+      });
     };
 }

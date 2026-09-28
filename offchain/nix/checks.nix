@@ -1,4 +1,9 @@
-{ pkgs, components, shell, cardanoNode }:
+{
+  pkgs,
+  components,
+  shell,
+  cardanoNode,
+}:
 let
   # The devnet E2E spawns cardano-node as a subprocess via
   # System.Process.proc, which looks the binary up on PATH.
@@ -6,16 +11,19 @@ let
   # pinned in the top-level flake.nix to match the devnet
   # Dockerfile.
   e2eTestsRaw = components.tests.e2e-tests;
-  e2eTestsWrapped = pkgs.runCommand "cage-tests-e2e" {
-    buildInputs = [ pkgs.makeWrapper ];
-    meta = (e2eTestsRaw.meta or { }) // {
-      mainProgram = "cage-tests-e2e";
-    };
-  } ''
-    mkdir -p $out/bin
-    makeWrapper ${pkgs.lib.getExe e2eTestsRaw} $out/bin/cage-tests-e2e \
-      --prefix PATH : ${cardanoNode}/bin
-  '';
+  e2eTestsWrapped =
+    pkgs.runCommand "cage-tests-e2e"
+      {
+        buildInputs = [ pkgs.makeWrapper ];
+        meta = (e2eTestsRaw.meta or { }) // {
+          mainProgram = "cage-tests-e2e";
+        };
+      }
+      ''
+        mkdir -p $out/bin
+        makeWrapper ${pkgs.lib.getExe e2eTestsRaw} $out/bin/cage-tests-e2e \
+          --prefix PATH : ${cardanoNode}/bin
+      '';
 in
 {
   library = components.library;
@@ -40,7 +48,10 @@ in
       pkgs.gnugrep
       pkgs.findutils
     ];
-    excludeShellChecks = [ "SC2046" "SC2086" ];
+    excludeShellChecks = [
+      "SC2046"
+      "SC2086"
+    ];
     text = ''
       cd "${../. + "/"}"
       # Active Haskell source extent, discovered at run time: every
