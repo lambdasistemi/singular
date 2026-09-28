@@ -54,6 +54,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as BSC
 import Data.ByteString.Short qualified as SBS
+import Data.Foldable (forM_)
 import Data.IORef (newIORef)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromJust, fromMaybe)
@@ -66,11 +67,13 @@ import Data.Word (Word8)
 import Lens.Micro ((&), (.~))
 import System.Environment (lookupEnv)
 import Test.Hspec (
+    Expectation,
     Spec,
     describe,
     expectationFailure,
     it,
     shouldBe,
+    shouldHaveLength,
     shouldSatisfy,
     shouldThrow,
  )
@@ -423,6 +426,95 @@ modelInlineForms observation = case observation of
         Array found' -> Array (fmap f found')
         _ -> value
 
+{- | One role of an accepted fold, and the step that hands the ledger a given
+form for it: what a case calls the role, the array the observation reports it
+in, the fold that spends it, and what that fold mints, pays and delivers.
+
+Every role's fold carries every other role inline, so a case that varies one
+role's form can say which role the observation read wrong.
+-}
+data Role = Role
+    { roleName :: String
+    , roleKey :: Text
+    , roleArray :: Text
+    , roleStep :: Datum ConwayEra -> LiveStep
+    , roleMint :: [Value]
+    , rolePayments :: [Payment]
+    , roleDestination :: Integer
+    }
+
+{- | The three forms the ledger can carry, and what reading each honestly must
+report: a carried datum is inline, one presented by hash is hashed, and one
+presenting nothing is none.
+-}
+carriedForms :: [(String, Datum ConwayEra, String)]
+carriedForms =
+    [ ("carrying its datum inline", inlineDatum, "inline")
+    , ("presenting its datum by hash", hashedDatum, "hashed")
+    , ("presenting no datum", NoDatum, "none")
+    ]
+
+-- | The forms a ledger output that is not inline can present.
+nonInlineForms :: [(String, Datum ConwayEra, String)]
+nonInlineForms = drop 1 carriedForms
+
+{- | One role's reported datum form, read off the observation of a fold the
+ledger answered exactly as the case told it to.
+-}
+reports
+    :: Text
+    -> Text
+    -> String
+    -> LiveStep
+    -> [Value]
+    -> [Payment]
+    -> Integer
+    -> Expectation
+reports array role reported step mint payments destination = do
+    observation <-
+        observedTx step (lsTransactionOf step) mint payments destination
+    datumFormOf (entry array role observation) `shouldBe` String reported
+
+{- | One role's reported datum field, reached by the same comparison the
+chapters run. A ledger form the model does not expect must reach it as a
+difference at that role's own datum field, and a fold where only that role
+differs must produce exactly one difference.
+-}
+differsAt
+    :: Text
+    -> LiveStep
+    -> [Value]
+    -> [Payment]
+    -> Integer
+    -> Expectation
+differsAt array step mint payments destination = do
+    surface <- declaredSurfaceOf
+    observation <-
+        observedTx step (lsTransactionOf step) mint payments destination
+    let model = modelInlineForms observation
+    case compareRegistration surface
+        (asObservations model)
+        (asObservations observation) of
+            Right _ ->
+                expectationFailure
+                    "a ledger datum form the model does not expect \
+                    \passed the comparison"
+            Left differences -> do
+                let paths = map snd (reportedDifferences differences)
+                paths `shouldHaveLength` 1
+                concatMap (filterFields array) paths
+                    `shouldSatisfy` any (== Field "datum")
+
+{- | The field names on a reported path that belong to the given array: a step
+reaching a datum field inside that array, and nothing else. A difference
+reported anywhere else, or on an array the case did not vary, fails here.
+-}
+filterFields :: Text -> [Step] -> [Step]
+filterFields array path =
+    case dropWhile (/= Field array) path of
+        rest@(_ : _) -> drop 1 rest
+        [] -> []
+
 spec :: Spec
 spec =
     describe "Reading an observed exit's datum forms off the ledger" $ do
@@ -473,111 +565,136 @@ spec =
                     )
             delivering =
                 [Payment (Destination "holder") 3_000_000]
+            activeMint = [mintedAsset "active" 1]
+            roles =
+                [ Role
+                    { roleName = "the spent state input"
+                    , roleKey = "state"
+                    , roleArray = "inputs"
+                    , roleStep = \form -> delivery cage form inlineDatum inlineDatum
+                    , roleMint = activeMint
+                    , rolePayments = delivering
+                    , roleDestination = 1
+                    }
+                , Role
+                    { roleName = "the spent request input"
+                    , roleKey = "request"
+                    , roleArray = "inputs"
+                    , roleStep = \form -> delivery cage inlineDatum inlineDatum form
+                    , roleMint = activeMint
+                    , rolePayments = delivering
+                    , roleDestination = 1
+                    }
+                , Role
+                    { roleName = "the spent custody input"
+                    , roleKey = "cage"
+                    , roleArray = "inputs"
+                    , roleStep = \form -> custodyFold cage inlineDatum form
+                    , roleMint = activeMint
+                    , rolePayments = delivering
+                    , roleDestination = 1
+                    }
+                , Role
+                    { roleName = "the spent witness input"
+                    , roleKey = "witness"
+                    , roleArray = "inputs"
+                    , roleStep = \form -> retirement cage inlineDatum form
+                    , roleMint = []
+                    , rolePayments = []
+                    , roleDestination = 0
+                    }
+                , Role
+                    { roleName = "the delivered output"
+                    , roleKey = "destination"
+                    , roleArray = "outputs"
+                    , roleStep = \form -> delivery cage inlineDatum form inlineDatum
+                    , roleMint = activeMint
+                    , rolePayments = delivering
+                    , roleDestination = 1
+                    }
+                ]
 
-        it "reports the spent state input's actual datum form" $ do
-            cage <- fixtureCage
-            let step = retirement cage hashedDatum NoDatum
-            observation <-
-                observedTx step (lsTransactionOf step) [] [] 0
-            datumFormOf (entry "inputs" "state" observation)
-                `shouldBe` String "hashed"
+        -- Every role, in all three forms: the inline leg of each role is its
+        -- control, and the two others are what the ledger can really carry.
+        forM_ roles $ \role ->
+            forM_ carriedForms $ \(told, form, reported) ->
+                it
+                    (roleName role <> ", " <> told <> ", is reported as " <> reported)
+                    ( reports
+                        (roleArray role)
+                        (roleKey role)
+                        reported
+                        (roleStep role form)
+                        (roleMint role)
+                        (rolePayments role)
+                        (roleDestination role)
+                    )
 
-        it "reports the spent request input's actual datum form" $ do
+        -- The same comparison the chapters run, one role at a time: a ledger
+        -- form the model does not expect must reach it at that role's field.
+        forM_ roles $ \role ->
+            forM_ nonInlineForms $ \(_, form, reported) ->
+                it
+                    ( "the ledger's " <> reported <> " " <> roleName role
+                        <> " reaches the comparison at its own datum field"
+                    )
+                    ( differsAt
+                        (roleArray role)
+                        (roleStep role form)
+                        (roleMint role)
+                        (rolePayments role)
+                        (roleDestination role)
+                    )
+
+        -- Each fold, with a distinct form per role, so reading any one role's
+        -- form off another role's output fails the case.
+        it "keeps each role's form bound to its own output on a delivery" $ do
             cage <- fixtureCage
             let step = delivery cage NoDatum inlineDatum hashedDatum
             observation <-
-                observedTx step (lsTransactionOf step) [] delivering 1
+                observedTx step (lsTransactionOf step) activeMint delivering 1
+            datumFormOf (entry "inputs" "state" observation)
+                `shouldBe` String "none"
             datumFormOf (entry "inputs" "request" observation)
                 `shouldBe` String "hashed"
+            datumFormOf (entry "outputs" "destination" observation)
+                `shouldBe` String "inline"
 
-        it "reports the spent witness input's actual datum form" $ do
-            cage <- fixtureCage
-            let step = retirement cage NoDatum NoDatum
-            observation <-
-                observedTx step (lsTransactionOf step) [] [] 0
-            datumFormOf (entry "inputs" "witness" observation)
-                `shouldBe` String "none"
-
-        it "reports the spent custody input's actual datum form" $ do
+        it "keeps each role's form bound to its own output on an update" $ do
             cage <- fixtureCage
             let step = custodyFold cage NoDatum hashedDatum
             observation <-
-                observedTx step (lsTransactionOf step)
-                    [mintedAsset "active" 1] delivering 1
+                observedTx step (lsTransactionOf step) activeMint delivering 1
+            datumFormOf (entry "inputs" "state" observation)
+                `shouldBe` String "none"
             datumFormOf (entry "inputs" "cage" observation)
                 `shouldBe` String "hashed"
 
-        it "reports the delivered output's actual datum form" $ do
+        it "keeps each role's form bound to its own output on a retirement" $ do
             cage <- fixtureCage
-            let step = delivery cage NoDatum NoDatum inlineDatum
-            observation <-
-                observedTx step (lsTransactionOf step)
-                    [mintedAsset "active" 1] delivering 1
-            datumFormOf (entry "outputs" "destination" observation)
-                `shouldBe` String "none"
-
-        it "keeps each role's form bound to its own output" $ do
-            cage <- fixtureCage
-            let step = delivery cage NoDatum hashedDatum hashedDatum
-            observation <-
-                observedTx step (lsTransactionOf step)
-                    [mintedAsset "active" 1] delivering 1
-            datumFormOf (entry "outputs" "destination" observation)
-                `shouldBe` String "hashed"
-            datumFormOf (entry "inputs" "request" observation)
-                `shouldBe` String "hashed"
+            let step = retirement cage hashedDatum NoDatum
+            observation <- observedTx step (lsTransactionOf step) [] [] 0
             datumFormOf (entry "inputs" "state" observation)
+                `shouldBe` String "hashed"
+            datumFormOf (entry "inputs" "witness" observation)
                 `shouldBe` String "none"
-
-        it "reports inline where the ledger holds inline" $ do
-            cage <- fixtureCage
-            let step = delivery cage inlineDatum inlineDatum inlineDatum
-            observation <-
-                observedTx step (lsTransactionOf step)
-                    [mintedAsset "active" 1] delivering 1
-            datumFormOf (entry "outputs" "destination" observation)
-                `shouldBe` String "inline"
-            datumFormOf (entry "inputs" "state" observation)
-                `shouldBe` String "inline"
-            datumFormOf (entry "inputs" "request" observation)
-                `shouldBe` String "inline"
-
-        it "a ledger form the model does not expect differs" $ do
-            surface <- declaredSurfaceOf
-            cage <- fixtureCage
-            let step = delivery cage NoDatum NoDatum inlineDatum
-            observation <-
-                observedTx step (lsTransactionOf step)
-                    [mintedAsset "active" 1] delivering 1
-            let model = modelInlineForms observation
-                expected = asObservations model
-                observed = asObservations observation
-            case compareRegistration surface expected observed of
-                Left differences ->
-                    reportedDifferences differences
-                        `shouldSatisfy` onDatumField
-                Right _ ->
-                    expectationFailure
-                        "a ledger datum form the model does not expect \
-                        \passed the comparison"
 
         it "an all-inline observation keeps the comparison green" $ do
             surface <- declaredSurfaceOf
             cage <- fixtureCage
             let step = delivery cage inlineDatum inlineDatum inlineDatum
             observation <-
-                observedTx step (lsTransactionOf step)
-                    [mintedAsset "active" 1] delivering 1
+                observedTx step (lsTransactionOf step) activeMint delivering 1
             let model = modelInlineForms observation
-                expected = asObservations model
-                observed = asObservations observation
-            case compareRegistration surface expected observed of
-                Left differences ->
-                    expectationFailure
-                        ( "an all-inline observation disagreed: "
-                            <> show differences
-                        )
-                Right _ -> pure ()
+            case compareRegistration surface
+                (asObservations model)
+                (asObservations observation) of
+                    Left differences ->
+                        expectationFailure
+                            ( "an all-inline observation disagreed: "
+                                <> show differences
+                            )
+                    Right _ -> pure ()
 
         it "a spent input the transaction did not spend" $ do
             cage <- fixtureCage
@@ -619,7 +736,7 @@ spec =
                         Nothing
                         request
                         tx
-            observedTx step tx [mintedAsset "active" 1] delivering 1
+            observedTx step tx activeMint delivering 1
                 `shouldThrow` errorMentioning "destination"
 
         it "an accepted fold retaining no state input" $ do
@@ -639,9 +756,8 @@ spec =
                         Nothing
                         request
                         tx
-            observedTx step tx [mintedAsset "active" 1] delivering 1
+            observedTx step tx activeMint delivering 1
                 `shouldThrow` errorMentioning "state"
-
 -- | The transaction a fixture step submitted, as its outcome carries it.
 lsTransactionOf :: LiveStep -> ConwayTx
 lsTransactionOf step = case lsOutcome step of
@@ -665,11 +781,6 @@ asObservations transaction =
         , "state" .= Null
         , "tx" .= transaction
         ]
-
--- | A reported difference that reached a role's datum field: the form the
--- observer read is the field the model and the ledger disagree on.
-onDatumField :: (Text, [Step]) -> Bool
-onDatumField (_, path) = Field "datum" `elem` path
 
 {- | Every refusal this observer raises on missing or ambiguous evidence
 names the role whose evidence it could not read, as its witness and custody
