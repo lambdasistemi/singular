@@ -78,9 +78,11 @@ format-check:
 
 # Negative and positive controls for the Haskell format check (#278 S2):
 # a source Fourmolu defaults accept but the house configuration rejects
-# must fail the check (proving the configuration is read), its formatter
-# correction must pass it again, and a tree without the configuration
-# must fail loudly rather than format with defaults. Scratch copies only;
-# the working tree is never touched.
+# must fail the check (proving the configuration is read) and its formatter
+# correction must pass it again; a tree without the configuration must
+# fail loudly rather than format with defaults; a newly tracked component
+# tree joins the check through the Git index while ignored untracked build
+# noise never enters it. Scratch copies only; the working tree is never
+# touched.
 format-controls:
     bash tools/format_controls.sh

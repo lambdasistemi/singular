@@ -69,23 +69,23 @@ through the owner entries below:
 
 - <span id="options-owner"></span>**Options** — mode flags, environment
   precedence and the shared named-diagnostic helper —
-  <a href="https://github.com/lambdasistemi/singular/blob/9a74eae15a3fe75abf7bbdf4969c2d11d7d8e69d/offchain/node-internal/Singular/Registry/Node/Options.hs">source</a>.
+  <a href="https://github.com/lambdasistemi/singular/blob/58d2d6aec0160786651d1c5a02e91d115e15e2aa/offchain/node-internal/Singular/Registry/Node/Options.hs">source</a>.
 - <span id="wallet-owner"></span>**Wallet** — keys, addresses and the
   funding identity —
-  <a href="https://github.com/lambdasistemi/singular/blob/9a74eae15a3fe75abf7bbdf4969c2d11d7d8e69d/offchain/node-internal/Singular/Registry/Node/Wallet.hs">source</a>.
+  <a href="https://github.com/lambdasistemi/singular/blob/58d2d6aec0160786651d1c5a02e91d115e15e2aa/offchain/node-internal/Singular/Registry/Node/Wallet.hs">source</a>.
 - <span id="indexer-owner"></span>**Indexer** — the chain follower, the
   funding sweep, indexed reads, the node-read guard and the address-read
   counter —
-  <a href="https://github.com/lambdasistemi/singular/blob/9a74eae15a3fe75abf7bbdf4969c2d11d7d8e69d/offchain/node-internal/Singular/Registry/Node/Indexer.hs">source</a>.
+  <a href="https://github.com/lambdasistemi/singular/blob/58d2d6aec0160786651d1c5a02e91d115e15e2aa/offchain/node-internal/Singular/Registry/Node/Indexer.hs">source</a>.
 - <span id="funding-owner"></span>**Funding** — the pre-run funding floor
   and its refusal diagnostic —
-  <a href="https://github.com/lambdasistemi/singular/blob/9a74eae15a3fe75abf7bbdf4969c2d11d7d8e69d/offchain/node-internal/Singular/Registry/Node/Funding.hs">source</a>.
+  <a href="https://github.com/lambdasistemi/singular/blob/58d2d6aec0160786651d1c5a02e91d115e15e2aa/offchain/node-internal/Singular/Registry/Node/Funding.hs">source</a>.
 - <span id="session-owner"></span>**Session** — the connection lifecycle
   and the bracketed runner session —
-  <a href="https://github.com/lambdasistemi/singular/blob/9a74eae15a3fe75abf7bbdf4969c2d11d7d8e69d/offchain/node-internal/Singular/Registry/Node/Session.hs">source</a>.
+  <a href="https://github.com/lambdasistemi/singular/blob/58d2d6aec0160786651d1c5a02e91d115e15e2aa/offchain/node-internal/Singular/Registry/Node/Session.hs">source</a>.
 - <span id="confirmation-owner"></span>**Confirmation** — confirmation
   waits, deadlines and windows —
-  <a href="https://github.com/lambdasistemi/singular/blob/9a74eae15a3fe75abf7bbdf4969c2d11d7d8e69d/offchain/node-internal/Singular/Registry/Node/Confirmation.hs">source</a>.
+  <a href="https://github.com/lambdasistemi/singular/blob/58d2d6aec0160786651d1c5a02e91d115e15e2aa/offchain/node-internal/Singular/Registry/Node/Confirmation.hs">source</a>.
 
 ## Where common changes land
 

@@ -63,8 +63,10 @@ format-controls` runs the negative and positive controls: a source that
 Fourmolu's defaults accept but the house configuration rejects must fail
 the check — proving the configuration is read — and its formatter correction
 must pass it again; a tree without the configuration must fail loudly rather
-than format with defaults. The controls run over scratch copies and never
-touch the working tree.
+than format with defaults; a newly tracked component tree outside the old
+directories joins the check through the Git index, while ignored untracked
+build noise never enters it and a tracked file under an ignored path stays.
+The controls run over scratch copies and never touch the working tree.
 
 ## Edit and serve
 

@@ -392,6 +392,17 @@
           '';
         };
 
+        # #278 S2, audit F003: the flake check EXECUTES the same app over
+        # the flake source it was built from — `nix build`/`nix flake
+        # check` on this attribute runs Fourmolu over the store copy, it
+        # does not merely build and shellcheck a wrapper. The app stays
+        # the single carrier (same binary CI runs); no divergent inline
+        # logic, strict runtime closure preserved.
+        formatCheckRun = pkgs.runCommand "singular-conformance-format-check" { } ''
+          ${pkgs.lib.getExe formatCheck}
+          touch "$out"
+        '';
+
       in
       {
         packages = {
@@ -431,7 +442,7 @@
         };
 
         checks = {
-          format-check = formatCheck;
+          format-check = formatCheckRun;
           conformance-exe = components.exes.conformance;
           conformance-tests = components.tests.conformance-tests;
           coverage-gate-tests = coverageGateTests;
