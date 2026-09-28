@@ -17,8 +17,7 @@
 //// Imports `registry/duty` (collecting duties), `registry/trie` (the trie's
 //// refusals), `shared` (phase windows), `lib` (the edge table, approval name,
 //// mint delta), `types` and the Merkle Patricia Forestry library. Imported by
-//// the `Modify` decision in `state`, which seeds the fold and judges its
-//// result. It checks nothing about outputs: that is the discharge owners'.
+//// `registry/modify`, which seeds the fold and judges its result. It checks nothing about outputs: that is the discharge owners'.
 ////
 //// ## Assumptions
 ////

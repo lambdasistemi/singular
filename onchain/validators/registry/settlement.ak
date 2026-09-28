@@ -13,7 +13,7 @@
 ////
 //// Imports `registry/duty` (the duties), `registry/custody` (reading the
 //// spent custody UTxO), `registry/refusal` (`deposit-returned`, `refund`),
-//// `types` and `lib`. Imported by the `Modify` decision in `state`.
+//// `types` and `lib`. Imported by `registry/modify`.
 ////
 //// ## Assumptions
 ////

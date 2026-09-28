@@ -13,8 +13,8 @@
 ////
 //// Imports `registry/duty` (the duties), `registry/custody` (reading a
 //// custody output), `registry/refusal` (`deposit-returned`), `types` and
-//// `lib`. Imported by the `Modify` decision in `state`, and by the Aiken
-//// suite for the `token-missing` reason.
+//// `lib`. Imported by `registry/modify`, and by the Aiken suite for the
+//// `token-missing` reason.
 ////
 //// ## Assumptions
 ////

@@ -12,9 +12,10 @@
 ////
 //// ## Dependencies
 ////
-//// Imports nothing from this project. `state` and the `registry/*` owners
-//// import it; it imports none of them, so it sits at the bottom of the
-//// registry's dependency order.
+//// Imports nothing from this project. `state`, `registry/custody`,
+//// `registry/discharge`, `registry/settlement` and `registry/modify` import
+//// it; it imports none of them, so it sits at the bottom of the registry's
+//// dependency order.
 ////
 //// ## Assumptions
 ////

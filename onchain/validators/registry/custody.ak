@@ -11,8 +11,9 @@
 //// ## Dependencies
 ////
 //// Imports `types` (datum shapes), `lib` (edge numbers, token and address
-//// helpers) and `registry/refusal`. Imported by `state` and by the owners
-//// of the fold's duties. It imports no fold owner: the custody spend does
+//// helpers) and `registry/refusal`. Imported by `state`, and by
+//// `registry/discharge` and `registry/settlement`, which read the custody a
+//// fold locks or consumes. It imports no fold owner: the custody spend does
 //// not run the fold, it requires the fold's state input to be spent with
 //// `Modify` in the same transaction, which makes the ledger run the state
 //// validator's fold on it.
