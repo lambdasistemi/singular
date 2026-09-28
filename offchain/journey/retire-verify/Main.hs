@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 
@@ -33,7 +32,7 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Short qualified as SBS
 import Data.Char (isHexDigit)
-import Data.List (isPrefixOf, tails)
+import Data.List (isPrefixOf, isSuffixOf, tails)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (mapMaybe)
 import System.Directory (listDirectory)
@@ -198,10 +197,8 @@ parseCreationLine line = do
     let kvs = take 4 (filter (elem '=') (words rest))
     case kvs of
         [rec, ctx, hsh, rep] ->
-            CreationUnit
-                <$> pure (snd (splitKv rec))
-                <*> pure (snd (splitKv ctx))
-                <*> hexBytes (strip0x (snd (splitKv hsh)))
+            CreationUnit (snd (splitKv rec)) (snd (splitKv ctx))
+                <$> hexBytes (strip0x (snd (splitKv hsh)))
                 <*> hexBytes (strip0x (snd (splitKv rep)))
         _ -> Nothing
   where
@@ -334,10 +331,10 @@ main = do
             | f <- files
             , ".cborhex" `isSuffixOf` f
             ]
-    txs <- mapM (\p -> (,) <$> pure p <*> decodeTxFile p) hexFiles
+    txs <- mapM (\p -> (,) p <$> decodeTxFile p) hexFiles
     index <-
-        fmap Map.fromList $
-            mapM
+        Map.fromList
+            <$> mapM
                 (\(p, tx) -> pure (txIdHexOf tx, (p, tx)))
                 txs
     namingManifest <- readManifest (argNamingManifest args)
@@ -357,7 +354,6 @@ main = do
             <> " retirement units from public evidence (no keys, no setup constants)"
         )
   where
-    isSuffixOf suf s = reverse suf `isPrefixOf` reverse s
     isInfixOf needle hay = any (needle `isPrefixOf`) (tails hay)
     maybeToList (Just x) = [x]
     maybeToList Nothing = []
@@ -542,15 +538,17 @@ verifyCompletionBody index label ctid tx custodyOut vr acceptedTxids = do
     -- its redeemer shape gives Modify-ness plus the action count
     -- (mirroring the scripts, which count rather than interpret).
     stateIns <-
-        fmap concat $
-            mapM
-                ( \inRef -> case resolveOut index inRef of
-                    Nothing -> pure []
-                    Just (_, out) -> case extractCageDatum out of
-                        Just (StateDatum st) -> pure [(inRef, st)]
-                        _ -> pure []
+        concat
+            <$> mapM
+                ( ( \inRef -> case resolveOut index inRef of
+                        Nothing -> pure []
+                        Just (_, out) -> case extractCageDatum out of
+                            Just (StateDatum st) -> pure [(inRef, st)]
+                            _ -> pure []
+                  )
+                    . txInOutRef
                 )
-                (map txInOutRef (txInputs tx))
+                (txInputs tx)
     (stateIn, stateSt) <- case stateIns of
         [(i, s)] -> pure (i, s)
         _ ->
@@ -566,7 +564,7 @@ verifyCompletionBody index label ctid tx custodyOut vr acceptedTxids = do
         _ ->
             failWith
                 (label <> ": expected exactly one redeemer at the state spend")
-    rootBefore <- pure (unOnChainRoot (stateRoot stateSt))
+    let rootBefore = unOnChainRoot (stateRoot stateSt)
     rootAfter <- case txOutputs tx of
         (o : _) -> case extractCageDatum o of
             Just (StateDatum st) -> pure (unOnChainRoot (stateRoot st))
@@ -575,15 +573,17 @@ verifyCompletionBody index label ctid tx custodyOut vr acceptedTxids = do
     -- Request fold: exactly one input resolving to a request datum;
     -- co-creation ties it to the retire (same creator txid).
     reqIns <-
-        fmap concat $
-            mapM
-                ( \inRef -> case resolveOut index inRef of
-                    Nothing -> pure []
-                    Just (_, out) -> case extractCageDatum out of
-                        Just (RequestDatum _) -> pure [inRef]
-                        _ -> pure []
+        concat
+            <$> mapM
+                ( ( \inRef -> case resolveOut index inRef of
+                        Nothing -> pure []
+                        Just (_, out) -> case extractCageDatum out of
+                            Just (RequestDatum _) -> pure [inRef]
+                            _ -> pure []
+                  )
+                    . txInOutRef
                 )
-                (map txInOutRef (txInputs tx))
+                (txInputs tx)
     reqIn <- case reqIns of
         [r] -> pure r
         _ ->
@@ -608,15 +608,17 @@ verifyCompletionBody index label ctid tx custodyOut vr acceptedTxids = do
     -- witness set is exactly that key (fee ownership mechanics — the
     -- Q-file on the no-signature criterion states the interpretation).
     feeOwners <-
-        fmap concat $
-            mapM
-                ( \inRef -> case resolveOut index inRef of
-                    Nothing -> failWith (label <> ": completion input does not resolve")
-                    Just (_, out) -> case paymentHashOfOut out of
-                        Just h -> pure [h]
-                        Nothing -> pure []
+        concat
+            <$> mapM
+                ( ( \inRef -> case resolveOut index inRef of
+                        Nothing -> failWith (label <> ": completion input does not resolve")
+                        Just (_, out) -> case paymentHashOfOut out of
+                            Just h -> pure [h]
+                            Nothing -> pure []
+                  )
+                    . txInOutRef
                 )
-                (map txInOutRef (txInputs tx))
+                (txInputs tx)
     feeOwner <- case feeOwners of
         (h : t) | all (== h) t -> pure h
         _ -> failWith (label <> ": fee inputs share no single owner")
@@ -763,17 +765,19 @@ claimControlsOf
     -> ConwayTx
     -> IO [(ByteString, String)]
 claimControlsOf index tx =
-    fmap concat $
-        mapM
-            ( \inRef -> case resolveOut index inRef of
-                Nothing -> pure []
-                Just (ctid, out) -> case namingDatumOfTxOut out of
-                    Just datum -> case controlHashOfDatumMaybe datum of
-                        Just h -> pure [(h, ctid)]
-                        Nothing -> pure []
+    concat
+        <$> mapM
+            ( ( \inRef -> case resolveOut index inRef of
                     Nothing -> pure []
+                    Just (ctid, out) -> case namingDatumOfTxOut out of
+                        Just datum -> case controlHashOfDatumMaybe datum of
+                            Just h -> pure [(h, ctid)]
+                            Nothing -> pure []
+                        Nothing -> pure []
+              )
+                . txInOutRef
             )
-            (map txInOutRef (txInputs tx))
+            (txInputs tx)
 
 -- | The registry request token names spent by a tx.
 creationRequestsOf
@@ -781,16 +785,18 @@ creationRequestsOf
     -> ConwayTx
     -> IO [(ByteString, ByteString)]
 creationRequestsOf index tx =
-    fmap concat $
-        mapM
-            ( \inRef -> case resolveOut index inRef of
-                Nothing -> pure []
-                Just (_, out) -> case extractCageDatum out of
-                    Just (RequestDatum req) ->
-                        pure [(tokenNameOf (requestToken req), requestKey req)]
-                    _ -> pure []
+    concat
+        <$> mapM
+            ( ( \inRef -> case resolveOut index inRef of
+                    Nothing -> pure []
+                    Just (_, out) -> case extractCageDatum out of
+                        Just (RequestDatum req) ->
+                            pure [(tokenNameOf (requestToken req), requestKey req)]
+                        _ -> pure []
+              )
+                . txInOutRef
             )
-            (map txInOutRef (txInputs tx))
+            (txInputs tx)
   where
     tokenNameOf (OnChainTokenId (BuiltinByteString bs)) = bs
 
@@ -844,7 +850,7 @@ must not link a rotation that is not there).
 -}
 recoverContinuation :: ConwayTx -> OutRef -> Maybe OutRef
 recoverContinuation tx ref = do
-    if recoverBoundTo tx ref then pure () else Nothing
+    unless (recoverBoundTo tx ref) Nothing
     let outs = txOutputs tx
         named =
             [ i
@@ -895,8 +901,8 @@ findRetireTx acceptedTxids index ref = do
                 (\(ctid, _) -> ctid `elem` acceptedTxids)
                 (spendingTxs index ref)
     bound <-
-        fmap concat $
-            mapM
+        concat
+            <$> mapM
                 (\(ctid, tx) -> pure [(ctid, tx, kh) | kh <- retireKeysFor tx ref])
                 spenders
     case bound of

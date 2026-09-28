@@ -42,6 +42,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
+import Data.Either (lefts)
 import Data.Foldable qualified as Foldable
 import Data.List (isInfixOf, isSuffixOf, nub, sortOn)
 import Data.Map.Strict qualified as Map
@@ -311,8 +312,8 @@ txTagOf name
 loadBodies
     :: FilePath -> [FilePath] -> IO (Either String (Map.Map String ConwayTx))
 loadBodies dir names = do
-    results <- mapM loadOne [t | Just t <- map txTagOf names]
-    case [e | Left e <- results] of
+    results <- mapM loadOne (mapMaybe txTagOf names)
+    case lefts results of
         (e : _) -> pure (Left e)
         [] -> pure (Right (Map.fromList [(t, tx) | Right (t, tx) <- results]))
   where
@@ -335,7 +336,7 @@ loadBodies dir names = do
 loadOutcomes
     :: FilePath -> [FilePath] -> IO (Map.Map String Aeson.Object)
 loadOutcomes dir names = do
-    pairs <- mapM loadOne [t | Just t <- map txTagOf names]
+    pairs <- mapM loadOne (mapMaybe txTagOf names)
     pure (Map.fromList [(t, o) | Just (t, o) <- pairs])
   where
     loadOne tag = do
@@ -371,7 +372,7 @@ loadListings dir names = do
         (Just (Aeson.String ref), Just (Aeson.String cborHex)) ->
             case hexDecode (T.unpack cborHex) of
                 Just bs -> case decodeFull' evidenceVersion bs of
-                    Right out -> [((T.unpack ref, out) :: (String, TxOut ConwayEra))]
+                    Right out -> [(T.unpack ref, out) :: (String, TxOut ConwayEra)]
                     Left _ -> []
                 Nothing -> []
         _ -> []
@@ -938,9 +939,7 @@ vConnectedRootAfter ctx = case foldActiveBody ctx of
                     "root-after equals root-before: the fold did not move the root"
         _ -> cne "roots do not both decode"
   where
-    rootOfConsumed c t = case vConnectedRootBefore' c t of
-        Just r -> Just r
-        Nothing -> Nothing
+    rootOfConsumed = vConnectedRootBefore'
     rootOfContinuation t = case txOutputs t of
         (out : _) -> case outCageDatum out of
             Just (StateDatum st) ->
@@ -1369,21 +1368,21 @@ vControlSupported ctx =
                       , isAccepted tag
                       , foldRequestProduced producers tx
                       ] of
-            (tx : _) -> Just (("fold" :: String), txIdHexTx tx)
+            (tx : _) -> Just ("fold" :: String, txIdHexTx tx)
             _ -> Nothing
         requestOk = case [ (tag, tx)
                          | (tag, tx) <- ctxBodies ctx
                          , isAccepted tag
                          , isRequestSubmission tx
                          ] of
-            ((_, tx) : _) -> Just ((("request" :: String)), txIdHexTx tx)
+            ((_, tx) : _) -> Just ("request" :: String, txIdHexTx tx)
             _ -> Nothing
         retractOk = case [ tx
                          | (tag, tx) <- ctxBodies ctx
                          , isAccepted tag
                          , Just _ <- [retractedRequest producers tx]
                          ] of
-            (tx : _) -> Just ((("retract" :: String)), txIdHexTx tx)
+            (tx : _) -> Just ("retract" :: String, txIdHexTx tx)
             _ -> Nothing
     in  case (foldOk, requestOk, retractOk) of
             (Just _, Just _, Just _) ->
@@ -1418,7 +1417,7 @@ vControlSupported ctx =
             && all producedAccepted reqIns
       where
         reqIns = [inp | RRequestSpend inp 1 <- resolved tx]
-        resolved t = resolvePurposes (ctxIdentities ctx) (evUtxos (ctxEvidence ctx)) t
+        resolved = resolvePurposes (ctxIdentities ctx) (evUtxos (ctxEvidence ctx))
         producedAccepted inp = case Map.lookup (showInShort inp) producers of
             Just (_, True) -> True
             _ -> False

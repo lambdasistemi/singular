@@ -44,7 +44,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.Char (isDigit, isHexDigit)
 import Data.List (group, intercalate, sort, stripPrefix)
-import Data.Maybe (mapMaybe)
+import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Word (Word8)
 
 import Naming.Datum
@@ -465,9 +465,7 @@ compareJ path (JObj vs) (JObj ls) =
     missingLive = [k | k <- vkeys, k `notElem` lkeys]
     extraLive = [k | k <- lkeys, k `notElem` vkeys]
     common = [k | k <- vkeys, k `elem` lkeys]
-    get k kvs = case lookup k kvs of
-        Just x -> x
-        Nothing -> JNull -- unreachable: k is common to both sides
+    get k kvs = fromMaybe JNull (lookup k kvs) -- unreachable: k is common to both sides
 compareJ path (JArr vs) (JArr ls)
     | length vs == length ls =
         concat
@@ -524,7 +522,7 @@ extractRelease src = case mapMaybe strip (lines src) of
     rs ->
         Left ("multiple release lines in the vendored module: " ++ show rs)
   where
-    strip l = stripPrefix "--   * release: " l
+    strip = stripPrefix "--   * release: "
 
 {- | The release asset sha256 recorded in the provenance header (the
 @\@<64 hex chars>\@@ value; the release commit is 40 chars and does
