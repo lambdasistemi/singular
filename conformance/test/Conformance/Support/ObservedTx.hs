@@ -436,7 +436,7 @@ data Role = Role
     { roleName :: String
     , roleKey :: Text
     , roleArray :: Text
-    , roleStep :: Datum ConwayEra -> LiveStep
+    , roleStep :: RowCage -> Datum ConwayEra -> LiveStep
     , roleMint :: [Value]
     , rolePayments :: [Payment]
     , roleDestination :: Integer
@@ -570,7 +570,7 @@ spec =
                     { roleName = "the spent state input"
                     , roleKey = "state"
                     , roleArray = "inputs"
-                    , roleStep = \form -> delivery cage form inlineDatum inlineDatum
+                    , roleStep = \cage form -> delivery cage form inlineDatum inlineDatum
                     , roleMint = activeMint
                     , rolePayments = delivering
                     , roleDestination = 1
@@ -579,7 +579,7 @@ spec =
                     { roleName = "the spent request input"
                     , roleKey = "request"
                     , roleArray = "inputs"
-                    , roleStep = \form -> delivery cage inlineDatum inlineDatum form
+                    , roleStep = \cage form -> delivery cage inlineDatum inlineDatum form
                     , roleMint = activeMint
                     , rolePayments = delivering
                     , roleDestination = 1
@@ -588,7 +588,7 @@ spec =
                     { roleName = "the spent custody input"
                     , roleKey = "cage"
                     , roleArray = "inputs"
-                    , roleStep = \form -> custodyFold cage inlineDatum form
+                    , roleStep = \cage form -> custodyFold cage inlineDatum form
                     , roleMint = activeMint
                     , rolePayments = delivering
                     , roleDestination = 1
@@ -597,7 +597,7 @@ spec =
                     { roleName = "the spent witness input"
                     , roleKey = "witness"
                     , roleArray = "inputs"
-                    , roleStep = \form -> retirement cage inlineDatum form
+                    , roleStep = \cage form -> retirement cage inlineDatum form
                     , roleMint = []
                     , rolePayments = []
                     , roleDestination = 0
@@ -606,7 +606,7 @@ spec =
                     { roleName = "the delivered output"
                     , roleKey = "destination"
                     , roleArray = "outputs"
-                    , roleStep = \form -> delivery cage inlineDatum form inlineDatum
+                    , roleStep = \cage form -> delivery cage inlineDatum form inlineDatum
                     , roleMint = activeMint
                     , rolePayments = delivering
                     , roleDestination = 1
@@ -619,14 +619,16 @@ spec =
             forM_ carriedForms $ \(told, form, reported) ->
                 it
                     (roleName role <> ", " <> told <> ", is reported as " <> reported)
-                    ( reports
-                        (roleArray role)
-                        (roleKey role)
-                        reported
-                        (roleStep role form)
-                        (roleMint role)
-                        (rolePayments role)
-                        (roleDestination role)
+                    ( do
+                        cage <- fixtureCage
+                        reports
+                            (roleArray role)
+                            (roleKey role)
+                            reported
+                            (roleStep role cage form)
+                            (roleMint role)
+                            (rolePayments role)
+                            (roleDestination role)
                     )
 
         -- The same comparison the chapters run, one role at a time: a ledger
@@ -637,12 +639,14 @@ spec =
                     ( "the ledger's " <> reported <> " " <> roleName role
                         <> " reaches the comparison at its own datum field"
                     )
-                    ( differsAt
-                        (roleArray role)
-                        (roleStep role form)
-                        (roleMint role)
-                        (rolePayments role)
-                        (roleDestination role)
+                    ( do
+                        cage <- fixtureCage
+                        differsAt
+                            (roleArray role)
+                            (roleStep role cage form)
+                            (roleMint role)
+                            (rolePayments role)
+                            (roleDestination role)
                     )
 
         -- Each fold, with a distinct form per role, so reading any one role's
