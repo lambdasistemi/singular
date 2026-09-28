@@ -13,7 +13,9 @@ flowchart LR
 
 Keep observation in its existing Conformance responsibility. Bind distinct datum values at the observer's actual input boundary, retain behavioral RED evidence, repair the observed values, then verify connected cases and current CI. Keep model-derived expectations separate from observed facts.
 
-One implementation slice, with RED, GREEN and pre-push checkpoints. The coordinating owner freezes CI commands; GLM owns tests/code/local commits; Sol reviews committed checkpoints independently. No extra seats. One task produces one final implementation commit after its evidence is retained.
+One implementation slice, with RED, GREEN and pre-push checkpoints. The ticket owner freezes CI commands; the coder owns tests, code and local commits; an independent reviewer checks committed checkpoints. No extra seats. One task produces one final implementation commit after its evidence is retained.
+
+The retained state input is bound through the data contract. The custody case uses a delivering fold, so its physical carrier exists. The witness is spent only by folds that deliver nothing, so its GREEN and every destination row of a fold delivering nothing wait on the ruling in #304; the observer neither reports an invented datum there nor drops the row. A delivered output the builder books without a datum differs from Lean's inline form; that difference is reported, not hidden, and holds acceptance until it is ruled.
 
 ## Boundary
 
