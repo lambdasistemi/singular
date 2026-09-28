@@ -21,8 +21,12 @@
 //// ## Assumptions
 ////
 //// - A custody UTxO carries exactly one non-ADA asset, at quantity one, and
-////   an inline `AbsentCustody` datum naming the refund address; anything
-////   else is not interpreted as custody for any key.
+////   an inline `AbsentCustody` datum naming the refund address.
+////   `custodyKeyOf` answers `None` for zero, several or a wrong quantity of
+////   non-ADA assets, but checks no policy: every caller compares the policy
+////   it returns with the registry's absent policy.
+//// - `custodyInput` expects the one custody input it finds to hold an inline
+////   `AbsentCustody` datum, and crashes otherwise.
 //// - The ledger runs the state validator on every input it spends, so a
 ////   state input spent with `Modify` is validated by the fold whatever this
 ////   module concludes.
@@ -221,9 +225,11 @@ fn paysAddressSomewhere(refund: ByteArray, self: Input, tx: Transaction) -> Bool
   ) != []
 }
 
-/// The custody identity encoded by the complete non-ADA value extent.
-/// Exactly one asset at quantity one is admissible; zero, extra, wrong-policy
-/// and wrong-quantity extents cannot be interpreted as custody for a key.
+/// The custody identity encoded by the complete non-ADA value extent: the
+/// policy and name of its one non-ADA asset when that asset is alone and at
+/// quantity one, else `None` (zero, extra and wrong-quantity extents). No
+/// policy is checked here; the caller compares the answered policy with the
+/// registry's absent policy.
 pub fn custodyKeyOf(value: Value) -> Option<(PolicyId, ByteArray)> {
   when
     filter(

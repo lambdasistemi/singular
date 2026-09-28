@@ -18,7 +18,7 @@
     },
     {
       "pause": 500,
-      "text": "Both comparisons ran after each of the four moves and found no difference."
+      "text": "Both comparisons ran after each of the four moves, and again on the final tree, and found no difference."
     }
   ],
   "one-owner-per-rule": [
@@ -32,7 +32,7 @@
     },
     {
       "pause": 450,
-      "text": "Dependencies run one way, from the dispatch down; no owner imports the state module, and refusal, duty, trie and genesis import no other owner."
+      "text": "Dependencies run one way, from the dispatch down; no owner imports the state module, and refusal, duty, trie and genesis import no other owner. A change inside a lower owner needs no edit above it while its exported names and types stay the same."
     },
     {
       "pause": 450,
@@ -40,7 +40,7 @@
     },
     {
       "pause": 500,
-      "text": "Two test modules now read the trie and retirement refusals from their owners, because Aiken has no re-export and a forwarding function would have changed the costs the tests pin."
+      "text": "Aiken has no re-export, so two test modules now call the trie and retirement refusals in their owners directly, and every test's measured cost is unchanged. A forwarding function was not built or measured."
     }
   ],
   "how-a-fold-is-judged": [
@@ -100,11 +100,15 @@
     },
     {
       "pause": 450,
-      "text": "The onchain flake check named aiken docs enforces this over an extent it discovers, on the source and on the reference the pinned Aiken generates."
+      "text": "The onchain flake check named aiken docs enforces this over an extent it discovers, on the source at any indentation the compiler accepts, and on the reference the pinned Aiken generates."
     },
     {
       "pause": 450,
-      "text": "It then plants each kind of gap in a copy and requires each layer to refuse it."
+      "text": "On the generated reference it reads each module's members off the page and reconciles them with the source inventory both ways, so a member the source reading missed still fails without a description."
+    },
+    {
+      "pause": 450,
+      "text": "It then plants each kind of gap in a copy, including an indented undocumented function, and requires each layer to refuse it for that reason; it accepts the same function once documented, and shows the reconciliation refusing a mismatch in either direction."
     },
     {
       "pause": 500,
@@ -114,7 +118,7 @@
   "evidence-and-limits": [
     {
       "pause": 450,
-      "text": "The identity and cost comparisons ran against the revision before the move after each of the four moves, and found nothing changed."
+      "text": "The identity and cost comparisons ran against the revision before the move, after each of the four moves and on the final tree, and found nothing changed."
     },
     {
       "pause": 450,
@@ -122,15 +126,15 @@
     },
     {
       "pause": 450,
-      "text": "Limits: property tests report no cost; the comparison proves preservation, not correctness, which stays the Lean model's question."
+      "text": "Limits: property tests report no cost, so their evidence is outcome, iterations and counterexample under the fixed seed; the comparison proves preservation, not correctness, which stays the Lean model's question."
     },
     {
       "pause": 500,
-      "text": "The generated Aiken reference is checked but not published, because its source links name another repository; and the documentation check proves each description exists, not that it is accurate."
+      "text": "The generated Aiken reference is checked but not yet published, because its source links name another repository; publishing it belongs to the repository-wide lint, formatting and reference coverage issue. And the documentation check proves each description exists, not that it is accurate."
     }
   ],
   "_source": {
     "file": "onchain-validator-owners.md",
-    "sha256": "f16b7fe0b8766d497014959ea6f1f5038ad09e72ede883afe96104ec7c72aa08"
+    "sha256": "40675f36e157eed08cc5960bfed68f37df14394b4093cae86379b0e5be17ad0e"
   }
 }

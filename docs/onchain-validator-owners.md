@@ -25,7 +25,8 @@ the revision before the move (compiled code, hash, title, parameters, datum,
 redeemer), and every Aiken test — three hundred sixty, three hundred forty of
 which report an execution cost — compared on its status, its memory and CPU
 cost, and its traces, under the same property-test seed. Both comparisons
-were run after each of the four moves and found no difference.
+were run after each of the four moves, and again on the final tree after
+the documentation was corrected, and found no difference.
 
 ## One owner per rule
 
@@ -48,8 +49,9 @@ flowchart TD
 
 Dependencies run one way, from the dispatch down. No owner imports
 `state.ak`, and `registry/refusal`, `registry/duty`, `registry/trie` and
-`registry/genesis` import no other owner, so a change to a lower owner never
-needs an edit above it to compile. `registry/discharge`,
+`registry/genesis` import no other owner, so a change inside a lower owner
+needs no edit above it to compile as long as the names and types it exports
+stay the same. `registry/discharge`,
 `registry/settlement` and `registry/custody` also import
 `registry/refusal` for the reasons they share; the diagram leaves those edges
 out to stay readable.
@@ -60,9 +62,9 @@ single file. Two Aiken test modules now read a refusal from its owner rather
 than from `state` — the retirement refusals from `registry/trie` and
 `registry/discharge`, the read refusals from `registry/trie` — and
 `modifyRefusal`, which the suite uses to ask for the one reason a fold is
-refused, stays in `state.ak`. Aiken has no re-export, and a forwarding
-function in `state.ak` would have added a call to the programs whose costs
-the tests pin, so the callers moved instead.
+refused, stays in `state.ak`. Aiken has no re-export, so those callers were
+pointed at the owners directly; every test's measured cost is unchanged. A
+forwarding function in `state.ak` was not built or measured.
 
 ## How a fold is judged
 
@@ -128,12 +130,18 @@ both directions, the assumptions it makes of its callers, and the invariants
 it keeps — and a description on every public declaration and on the
 validator. The onchain flake check `aiken-docs` enforces their presence over
 an extent it discovers at run time, `state.ak` plus every module under
-`registry/`, twice: on the source, and on the reference the pinned
-`aiken docs` generates from it, which is what a contributor browsing the
-reference reads. The same check then plants each kind of gap in a copy — a
-deleted module documentation, a deleted description, an undocumented public
-function, an undocumented module, an empty extent — and requires each layer to
-refuse it.
+`registry/`, twice: on the source, where it finds a public declaration at
+any indentation the compiler accepts, and on the reference the pinned
+`aiken docs` generates from it. On the generated reference it reads each
+module's members off the page the compiler wrote and reconciles them with
+the source inventory both ways, so a member the source reading missed still
+fails if it has no description. The same check then plants each kind of gap
+in a copy — a deleted module documentation, a deleted description, an
+undocumented public function at the margin and indented, an undocumented
+module, an empty extent — and requires each layer to refuse it for that
+reason, accepts the indented function once it is documented, and shows the
+reconciliation refusing a page member the source inventory lacks and a
+source export the page lacks.
 
 The check establishes presence, not truth. Whether a sentence is true of the
 code is a review question; no doc comment is evidence of what the validator
@@ -143,18 +151,21 @@ does.
 
 The compiled-identity and cost comparisons described in the story ran against
 the revision before the move with the pinned compiler, after each of the four
-moves, and found every validator field and every test's status, cost and
+moves and on the final tree, and found every validator field and every test's status, cost and
 traces unchanged. The continuous-integration carriers keep that promise from
 here on: the committed script-identity manifest compared with a fresh build,
 the Aiken suite, the cross-language vectors, and the devnet journeys run
 against a freshly built blueprint.
 
 Limits are named rather than implied. Property tests report no execution
-cost, so their evidence is their pass count under the fixed seed, not a cost.
+cost, so their evidence is their outcome, iteration count and counterexample
+under the fixed seed, not a cost.
 The comparison proves the move preserved behavior; it proves nothing about
 whether that behavior is right, which remains the accepted Lean model's
-question. The generated Aiken reference is checked but not published on this
-site: its source links come from the project's Aiken configuration, which
-names another repository, and changing that is outside this move; the links
-above point at the source instead. The documentation check proves that each
+question. The generated Aiken reference is checked but not yet published on
+this site: its source links come from the project's Aiken configuration,
+which names another repository. Publishing it, with that configuration
+corrected, belongs to
+[the issue that owns lint, formatting and generated-reference coverage across the repository](https://github.com/lambdasistemi/singular/issues/278);
+until then the links above point at the source. The documentation check proves that each
 description exists, not that it is accurate.

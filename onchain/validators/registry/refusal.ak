@@ -3,9 +3,12 @@
 ////
 //// ## Responsibility
 ////
-//// A refusal of the state validator is one user-defined trace followed by
-//// `False`, never a crash: a script that dies inside a library cannot say
-//// why. `traceFalse` is that report. `depositReturned` and `refundShort`
+//// A named refusal — one the `Modify` decision or the custody spending path
+//// gives a reason for — is one user-defined trace followed by `False`, never
+//// a crash: a script that dies inside a library cannot say why. `traceFalse`
+//// is that report. It covers only those paths: genesis, the unmatched arms
+//// of the validator and the `expect`s of the `Modify` decision (a malformed
+//// continuation, an invalid proof no named refusal covers) still crash. `depositReturned` and `refundShort`
 //// are the one construction site of the reasons `deposit-returned` and
 //// `refund` for every registry owner that emits them, so a test asserting
 //// either reason asserts the value the validator traces.

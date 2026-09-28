@@ -12,8 +12,11 @@
 //// `registry/genesis`, a spend of an `AbsentCustody` UTxO to
 //// `registry/custody`, and a `Modify` spend of the state UTxO to
 //// `registry/modify`, after identifying the state input's script and token
-//// (`stateIdentity`). Every other mint redeemer, spend redeemer, datum and
-//// purpose fails. `modifyRefusal` exposes the same `Modify` decision to the
+//// (`stateIdentity`). The custody arm does not read the spend redeemer:
+//// `registry/custody` decides that spend whatever redeemer it carries. Only
+//// the state UTxO's arm restricts the redeemer, to `Modify`. Every other
+//// mint redeemer, state-UTxO spend redeemer, datum and purpose fails.
+//// `modifyRefusal` exposes the same `Modify` decision to the
 //// Aiken suite, so a test asserting a reason asserts the one this validator
 //// traces.
 ////
@@ -58,7 +61,8 @@
 ////   if its UTxO carries exactly one asset under the pins's
 ////   `application_policy` whose asset name is the approval binding of that
 ////   request. No application script runs at fold time; the cage recomputes
-////   the name rather than trusting it. A read carries none and needs none.
+////   the name rather than trusting it. A read requires no approval: its
+////   admission is skipped, and an approval asset it carries is not checked.
 ////   (`registry/fold`)
 //// - **C5 the delta** — the cage sums the token column of C2 over the
 ////   requests it consumed, per key, and the transaction's mint under the
@@ -82,8 +86,10 @@
 //// FALSE after emitting exactly one user-defined trace, rather than
 //// crashing: a script that dies inside a library cannot tell anyone why,
 //// and each row of Gate S is bound to the single trace its refusal emits.
-//// Genesis, `End`, `Migrating`, `Burning` and every unmatched arm fail
-//// without a reason.
+//// That holds for the named refusals only. Genesis, `End`, `Migrating`,
+//// `Burning` and every unmatched arm fail without a reason, and a `Modify`
+//// still crashes on a malformed continuation output or on a wrong leaf or
+//// invalid proof that no named refusal covers.
 
 use aiken/collection/list.{find}
 use cardano/address
@@ -107,13 +113,14 @@ use types.{
 ///   justification; the constructors stay for the wire shape.
 /// - `spend`: the datum must be present and the spent input found among the
 ///   transaction's inputs, or the script crashes. An `AbsentCustody` UTxO is
-///   spent only under `registry/custody`'s rule. The state UTxO, whose
+///   spent only under `registry/custody`'s rule, which does not read the
+///   redeemer: any redeemer reaches it. The state UTxO, whose
 ///   script and one state token `stateIdentity` must establish (it crashes
 ///   otherwise), is spent only with `Modify`: `True` when
 ///   `registry/modify` finds no refusal, else its one reason is traced and
 ///   the handler answers `False`. The fold is permissionless — there is no
-///   registry-owner role. `End` and every other redeemer fail for every
-///   party, as does a spend of any other datum.
+///   registry-owner role. On the state UTxO, `End` and every other redeemer
+///   fail for every party; a spend of any other datum fails.
 /// - `else`: every other purpose fails.
 validator state() {
   mint(redeemer: MintRedeemer, policyId: PolicyId, tx: Transaction) {

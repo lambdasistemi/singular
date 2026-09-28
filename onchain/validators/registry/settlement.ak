@@ -18,8 +18,13 @@
 //// ## Assumptions
 ////
 //// - Every duty has already been discharged (`registry/discharge`), so each
-////   delivered token sits in its one carrier and each custody spent here is
-////   the one its `SpendCustody` names.
+////   delivered token sits in its one carrier. Discharge does not check
+////   `SpendCustody`: this module finds that custody itself (`custodyOwedOf`
+////   through `custodyInput`) as the one spent input at the cage's address
+////   whose sole asset is the key under the absent policy, and answers `None`
+////   when there is not exactly one or its refund address decodes to
+////   nothing. `custodyInput` crashes if that input's datum is not an inline
+////   `AbsentCustody`.
 //// - The refund outputs `refundFault` reads are the outputs after the state
 ////   continuation, and the refunds are in the order the rows were consumed.
 ////
