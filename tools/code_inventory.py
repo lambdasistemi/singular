@@ -289,10 +289,17 @@ POLICIES: dict[str, dict] = {
 # fails the run).
 # ---------------------------------------------------------------------------
 
+# The onchain/ and offchain/ trees descend from a frozen upstream import.
+# PROVENANCE.md is the authoritative citation surface for that import — the
+# upstream repository, the transfer method and the frozen revision — and the
+# rename gate permits the upstream product name only there and on its two
+# sanctioned citation lines, so this note names the revision and points at
+# PROVENANCE.md instead of restating the upstream name.
 VENDOR_NOTE = ("descends from the frozen upstream import documented in "
-               "PROVENANCE.md (cardano-foundation/cardano-mpfs-onchain at "
-               "34a5bfbb8cca2cb1911b7060d0e61db28ba21e83); maintained "
-               "in-repo since")
+               "PROVENANCE.md, the authoritative provenance record — see it "
+               "for the upstream repository and transfer method — at frozen "
+               "upstream revision 34a5bfbb8cca2cb1911b7060d0e61db28ba21e83; "
+               "maintained in-repo since")
 
 CODE_RULES: list[dict] = [
     {"id": "aiken-vectors-onchain",
