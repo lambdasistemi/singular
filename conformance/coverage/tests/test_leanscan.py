@@ -13,9 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tests.fixtures import REPO_ROOT, build_base_tree, build_variant
 from singular_coverage.leanscan import (
-    Declaration,
     clean_source,
-    keyword_accounting,
     scan_text,
     scan_tree_strict,
 )

@@ -879,7 +879,7 @@ def main():
     orphans = unreachable_modules(root)
     assert not orphans, f"modules lake will never build: {orphans}"
     print(
-        f"reachability: every module under lean/Singular is reachable from the library root"
+        "reachability: every module under lean/Singular is reachable from the library root"
     )
 
     binary = args.binary or root / ".lake/build/bin/singular-corpus"

@@ -262,8 +262,8 @@ if onchain_present:
         table_start = next(
             (
                 i
-                for i, l in enumerate(lines)
-                if "retained command" in l and l.lstrip().startswith("|")
+                for i, line in enumerate(lines)
+                if "retained command" in line and line.lstrip().startswith("|")
             ),
             None,
         )

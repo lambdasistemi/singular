@@ -74,7 +74,7 @@ def debt_text(debts: list[ObligationDebt]) -> str:
     execution = [(d, f) for d in debts for f in d.execution_findings]
     unclassified = [d for d in debts if d.unclassified]
     lines = [
-        f"DEBT axes (reported separately, never summed)",
+        "DEBT axes (reported separately, never summed)",
         f"  mapping debt: {len(mapping)} obligations without a bound story representation",
         f"  implementation-layer debt: {len(layer)} obligations with fewer than two distinct layers",
         f"  execution debt: {len(execution)} findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)",
@@ -114,7 +114,7 @@ def debt_json(debts: list[ObligationDebt]) -> dict:
 def ratchet_text(result: RatchetResult) -> str:
     if result.passed:
         lines = [
-            f"RATCHET: PASS — no per-obligation regression against the protected base"
+            "RATCHET: PASS — no per-obligation regression against the protected base"
         ]
     else:
         lines = [

@@ -25,7 +25,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from singular_coverage.gate import CandidateBinding, main
-from tests.fixtures import build_base_tree, export_manifests, identity_of, mapping_row
+from tests.fixtures import build_base_tree, export_manifests
 
 RECORD_REL = Path("conformance/coverage/record/record.json")
 """Authoritative record path under the candidate root."""

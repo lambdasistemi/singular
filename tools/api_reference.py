@@ -344,7 +344,6 @@ def transform_tree(
     become visible unlinked text. Anything else is a malformed library
     reference and fails the build loudly.
     """
-    library_pages = {p.name: p for p in api_root.glob("*.html")}
     extent_pages = {module_page_name(m) for m in extent}
     # Fragment anchors live on module pages and hyperlinked source pages;
     # index pages carry their own entry ids and never own a referenced

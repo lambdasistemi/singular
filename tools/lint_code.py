@@ -173,8 +173,18 @@ CHECKERS = {
     "html": styled,
 }
 
-TOOLS = ["nixfmt", "statix", "deadnix", "ruff", "shellcheck", "shfmt", "biome",
-         "just", "actionlint", "yamlfmt"]
+TOOLS = [
+    "nixfmt",
+    "statix",
+    "deadnix",
+    "ruff",
+    "shellcheck",
+    "shfmt",
+    "biome",
+    "just",
+    "actionlint",
+    "yamlfmt",
+]
 
 
 def main(argv: list[str]) -> int:
@@ -200,16 +210,21 @@ def main(argv: list[str]) -> int:
     groups: dict[object, list[str]] = {}
     for family in sorted(families):
         if family in ELSEWHERE:
-            print(f"lint: {family}: {len(families[family])} files, carried by "
-                  f"{ELSEWHERE[family]}")
+            print(
+                f"lint: {family}: {len(families[family])} files, carried by "
+                f"{ELSEWHERE[family]}"
+            )
             continue
         if wanted and family not in wanted:
             continue
         rows = families[family]
-        paths = sorted(r["path"] for r in rows
-                       if not r["generated"] or family == "lean")
-        print(f"lint: {family}: {len(paths)} files "
-              f"({len(rows) - len(paths)} generated, held by their generators)")
+        paths = sorted(
+            r["path"] for r in rows if not r["generated"] or family == "lean"
+        )
+        print(
+            f"lint: {family}: {len(paths)} files "
+            f"({len(rows) - len(paths)} generated, held by their generators)"
+        )
         groups.setdefault(CHECKERS[family], []).extend(paths)
     for checker, paths in groups.items():
         if paths:

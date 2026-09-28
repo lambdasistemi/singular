@@ -21,7 +21,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from .leanscan import Declaration, scan_tree_strict
+from .leanscan import scan_tree_strict
 
 # statements module -> (declaration prefix, manifest path), mirroring
 # tools/check_model.py's own pairing.
@@ -129,7 +129,6 @@ def build_inventory(root: Path) -> Inventory:
     check_model = _load_check_model(root)
 
     manifest_records: dict[str, dict] = {}
-    scanner_names_by_module: dict[str, set[str]] = {}
     for rel, prefix, manifest_rel in STATEMENT_MODULES:
         # The extraction itself, from the audited tool, against current source:
         records = check_model.statement_inventory(root / rel, prefix)

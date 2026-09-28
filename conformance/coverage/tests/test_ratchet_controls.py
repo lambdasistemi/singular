@@ -38,7 +38,6 @@ from singular_coverage.debt import (
 from singular_coverage.inventory import build_inventory
 from singular_coverage.ratchet import ratchet
 from tests.fixtures import (
-    REPO_ROOT,
     build_base_tree,
     build_variant,
     full_check,

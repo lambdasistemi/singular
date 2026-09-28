@@ -354,14 +354,13 @@ def cmd_release(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return EXIT_FAIL_CLOSED
-    # Authoritative record: the candidate's own, never the tool closure's.
-    record_path = root / "conformance/coverage/record/record.json"
     binding = check_candidate_binding(root, candidate)
     if not binding.ok:
         print(f"FAIL-CLOSED {binding.reason}", file=sys.stderr)
         return EXIT_FAIL_CLOSED
     scratch: Path | None = None
     try:
+        # Authoritative record: the candidate's own, never the tool closure's.
         scratch, record_text = prepare_release_tree(root, candidate)
         record = parse_record_text(record_text, f"{candidate}:{RECORD_REL}")
         inventory = build_inventory(scratch)

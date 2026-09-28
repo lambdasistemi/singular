@@ -18,8 +18,6 @@ from pathlib import Path
 
 from .debt import (
     MAX_DISCARD_RATIO,
-    PopulationError,
-    UnknownRowError,
     check_current_population,
     unknown_rows,
 )
@@ -76,7 +74,6 @@ def ratchet(
 
     regressions: list[Regression] = []
     identities = inventory.by_identity()
-    names = inventory.by_name()
 
     # every identity in the protected base population must still exist —
     # theorem removal cannot shrink the denominator, coverage record or not
