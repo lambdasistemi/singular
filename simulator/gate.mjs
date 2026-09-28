@@ -19,20 +19,15 @@ import {
   foldBatch,
   equal,
   initial,
-  trieGet,
-  witnesses,
   decodeState,
   encodeState,
   delta,
-  deltaSame,
   assetSame,
   rootOf,
-  readAt,
   EDGES,
-  KINDS,
   STATES,
 } from './core.mjs';
-import { approved, read, mismatched, otherPolicy, request } from './actions.mjs';
+import { approved, read, mismatched } from './actions.mjs';
 import { theoremReport, checks } from './properties.mjs';
 import { checkNamingCorpus, overWitnessJourney, NAMING_SECTIONS } from './naming.mjs';
 import { checkLifecycleCorpus, LIFECYCLE_SECTIONS } from './lifecycle.mjs';
@@ -336,8 +331,11 @@ for (const row of corpus.keyedMintRows) {
   // The keyed-mint law decides the verdict: keyed agreement accepts, keyed
   // disagreement refuses — while the per-kind totals agree, or the row would
   // not be a keyed control at all.
-  const byKind = (ds) =>
-    ds.reduce((a, d) => Object.assign(a, { [d.kind]: (a[d.kind] || 0) + d.quantity }), {});
+  const byKind = (ds) => {
+    const totals = {};
+    for (const d of ds) totals[d.kind] = (totals[d.kind] || 0) + d.quantity;
+    return totals;
+  };
   const kc = byKind(row.claimed),
     ac = byKind(row.actual);
   const perKindAgree = Object.keys({ ...kc, ...ac }).every((k) => (kc[k] || 0) === (ac[k] || 0));

@@ -17,7 +17,7 @@ import { step, witnesses, trieGet } from './core.mjs';
 export const checks = {
   active_witness_unique: {
     applies: () => true,
-    law: (before, action, after) => {
+    law: (_before, action, after) => {
       const leaf = trieGet(after.trie, action.key),
         w = witnesses(after, action.key);
       return w.active <= 1 && (w.active === 1) === (leaf === 'active');
@@ -25,7 +25,7 @@ export const checks = {
   },
   absent_witness_unique: {
     applies: () => true,
-    law: (before, action, after) => {
+    law: (_before, action, after) => {
       const leaf = trieGet(after.trie, action.key),
         w = witnesses(after, action.key);
       return w.absent <= 1 && (w.absent === 1) === (leaf === 'absent');
@@ -33,14 +33,14 @@ export const checks = {
   },
   witness_kinds_exclude: {
     applies: () => true,
-    law: (before, action, after) => {
+    law: (_before, action, after) => {
       const w = witnesses(after, action.key);
       return [w.active > 0, w.absent > 0, w.terminal > 0].filter(Boolean).length <= 1;
     },
   },
   biconditional_supply_sync: {
     applies: () => true,
-    law: (before, action, after) => {
+    law: (_before, action, after) => {
       const leaf = trieGet(after.trie, action.key),
         w = witnesses(after, action.key);
       return (
@@ -52,18 +52,18 @@ export const checks = {
     },
   },
   terminal_attestation_sound: {
-    applies: (before, action, after) => after.held.some((h) => h.kind === 'terminal'),
-    law: (before, action, after) =>
+    applies: (_before, _action, after) => after.held.some((h) => h.kind === 'terminal'),
+    law: (_before, _action, after) =>
       after.held
         .filter((h) => h.kind === 'terminal')
         .every((h) => trieGet(after.trie, h.key) === 'terminal'),
   },
   termination: {
     applies: (before, action) => trieGet(before.trie, action.key) === 'terminal',
-    law: (before, action, after) => trieGet(after.trie, action.key) === 'terminal',
+    law: (_before, action, after) => trieGet(after.trie, action.key) === 'terminal',
   },
   occupancy: {
-    applies: (before, action) => ['insertActive', 'updateActive'].includes(action.edge),
+    applies: (_before, action) => ['insertActive', 'updateActive'].includes(action.edge),
     law: (before, action, after) => {
       const was = trieGet(before.trie, action.key);
       return was !== 'active' && was !== 'terminal' && trieGet(after.trie, action.key) === 'active';

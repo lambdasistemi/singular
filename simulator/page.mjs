@@ -88,20 +88,19 @@ function renderBranches() {
     .join('');
   $('branches')
     .querySelectorAll('button')
-    .forEach(
-      (b, i) =>
-        (b.onclick = () => {
-          const f = forks[i];
-          let s = state;
-          for (const e of f.steps) {
-            const r = step(s, e.request);
-            narrate(`${e.what} → ${r.accepted ? 'admitted' : 'refused: ' + r.reason}`);
-            if (r.accepted) s = r.value.state;
-          }
-          state = s;
-          showWhere();
-        }),
-    );
+    .forEach((b, i) => {
+      b.onclick = () => {
+        const f = forks[i];
+        let s = state;
+        for (const e of f.steps) {
+          const r = step(s, e.request);
+          narrate(`${e.what} → ${r.accepted ? 'admitted' : 'refused: ' + r.reason}`);
+          if (r.accepted) s = r.value.state;
+        }
+        state = s;
+        showWhere();
+      };
+    });
 }
 
 function buildEdgeButtons() {

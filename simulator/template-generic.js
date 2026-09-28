@@ -1,3 +1,5 @@
+// biome-ignore-all lint/correctness/noUnusedVariables: these helpers are used by page.mjs,
+// which simulator/build.mjs concatenates into the same page script.
 // Small DOM helpers shared by the page. Kept separate so the page module reads
 // as behaviour rather than as string building.
 const $ = (id) => document.getElementById(id);

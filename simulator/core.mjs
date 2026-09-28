@@ -92,7 +92,9 @@ function validate(x, s, p) {
   }
   if (Array.isArray(s)) {
     if (!Array.isArray(x)) fail(`invalid-shape/${p}`);
-    x.forEach((v, i) => validate(v, s[0], `${p}.${i}`));
+    x.forEach((v, i) => {
+      validate(v, s[0], `${p}.${i}`);
+    });
     return;
   }
   if (!x || typeof x !== 'object' || Array.isArray(x)) fail(`invalid-shape/${p}`);

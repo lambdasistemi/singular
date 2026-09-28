@@ -770,7 +770,9 @@ function validate(x, s, p) {
   }
   if (Array.isArray(s)) {
     if (!Array.isArray(x)) fail(`invalid-shape/${p}`);
-    x.forEach((v, i) => validate(v, s[0], `${p}.${i}`));
+    x.forEach((v, i) => {
+      validate(v, s[0], `${p}.${i}`);
+    });
     return;
   }
   if (!x || typeof x !== 'object' || Array.isArray(x)) fail(`invalid-shape/${p}`);
@@ -1224,7 +1226,7 @@ const read = (key, output = 0) => request('witnessTerminal', key, { output });
 const checks = {
   active_witness_unique: {
     applies: () => true,
-    law: (before, action, after) => {
+    law: (_before, action, after) => {
       const leaf = trieGet(after.trie, action.key),
         w = witnesses(after, action.key);
       return w.active <= 1 && (w.active === 1) === (leaf === 'active');
@@ -1232,7 +1234,7 @@ const checks = {
   },
   absent_witness_unique: {
     applies: () => true,
-    law: (before, action, after) => {
+    law: (_before, action, after) => {
       const leaf = trieGet(after.trie, action.key),
         w = witnesses(after, action.key);
       return w.absent <= 1 && (w.absent === 1) === (leaf === 'absent');
@@ -1240,14 +1242,14 @@ const checks = {
   },
   witness_kinds_exclude: {
     applies: () => true,
-    law: (before, action, after) => {
+    law: (_before, action, after) => {
       const w = witnesses(after, action.key);
       return [w.active > 0, w.absent > 0, w.terminal > 0].filter(Boolean).length <= 1;
     },
   },
   biconditional_supply_sync: {
     applies: () => true,
-    law: (before, action, after) => {
+    law: (_before, action, after) => {
       const leaf = trieGet(after.trie, action.key),
         w = witnesses(after, action.key);
       return (
@@ -1259,18 +1261,18 @@ const checks = {
     },
   },
   terminal_attestation_sound: {
-    applies: (before, action, after) => after.held.some((h) => h.kind === 'terminal'),
-    law: (before, action, after) =>
+    applies: (_before, _action, after) => after.held.some((h) => h.kind === 'terminal'),
+    law: (_before, _action, after) =>
       after.held
         .filter((h) => h.kind === 'terminal')
         .every((h) => trieGet(after.trie, h.key) === 'terminal'),
   },
   termination: {
     applies: (before, action) => trieGet(before.trie, action.key) === 'terminal',
-    law: (before, action, after) => trieGet(after.trie, action.key) === 'terminal',
+    law: (_before, action, after) => trieGet(after.trie, action.key) === 'terminal',
   },
   occupancy: {
-    applies: (before, action) => ['insertActive', 'updateActive'].includes(action.edge),
+    applies: (_before, action) => ['insertActive', 'updateActive'].includes(action.edge),
     law: (before, action, after) => {
       const was = trieGet(before.trie, action.key);
       return was !== 'active' && was !== 'terminal' && trieGet(after.trie, action.key) === 'active';
@@ -6957,6 +6959,8 @@ const STORIES=[
   "wireTheoremManifestSha256": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65"
 }
 ;
+// biome-ignore-all lint/correctness/noUnusedVariables: these helpers are used by page.mjs,
+// which simulator/build.mjs concatenates into the same page script.
 // Small DOM helpers shared by the page. Kept separate so the page module reads
 // as behaviour rather than as string building.
 const $ = (id) => document.getElementById(id);
@@ -7070,20 +7074,19 @@ function renderBranches() {
     .join('');
   $('branches')
     .querySelectorAll('button')
-    .forEach(
-      (b, i) =>
-        (b.onclick = () => {
-          const f = forks[i];
-          let s = state;
-          for (const e of f.steps) {
-            const r = step(s, e.request);
-            narrate(`${e.what} → ${r.accepted ? 'admitted' : 'refused: ' + r.reason}`);
-            if (r.accepted) s = r.value.state;
-          }
-          state = s;
-          showWhere();
-        }),
-    );
+    .forEach((b, i) => {
+      b.onclick = () => {
+        const f = forks[i];
+        let s = state;
+        for (const e of f.steps) {
+          const r = step(s, e.request);
+          narrate(`${e.what} → ${r.accepted ? 'admitted' : 'refused: ' + r.reason}`);
+          if (r.accepted) s = r.value.state;
+        }
+        state = s;
+        showWhere();
+      };
+    });
 }
 
 function buildEdgeButtons() {
