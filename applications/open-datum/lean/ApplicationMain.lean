@@ -2,14 +2,19 @@ import OpenDatumApplication
 
 /-! # The application driver executable
 
-* `corpus` prints every corpus scenario run through `appStep`;
+* `corpus` / `ledgers` print the generated corpus / ledgers;
 * `run appStep` reads ONE scenario from standard input and prints its run;
-* `replay` reads a corpus from standard input, reruns every scenario from its
-  own recorded JSON through the same runner, and fails unless every recomputed
-  run equals the recorded one;
-* `ledgers` prints the theorem and semantic-atom ledgers.
+* `write DIR` writes `DIR/corpus.json` and `DIR/ledgers.json`;
+* `check DIR` fails unless:
+  - the regenerated corpus and ledgers equal the committed files;
+  - every committed scenario replays from its own JSON to its recorded run;
+  - each check notices a controlled alteration: a changed recorded outcome is
+    caught by replay and by the corpus comparison, and a dropped ledger row by
+    the ledger comparison;
+  - each definition mutant of the law runs at least one scenario differently
+    from the committed corpus.
 
-Any parse failure, unknown surface or mismatch exits non-zero. -/
+Any parse failure, unknown mode or failed check exits non-zero. -/
 
 open Lean
 open OpenDatumApplication.Driver
@@ -23,10 +28,48 @@ def readStdin : IO String := do
     text := text ++ line
   pure text
 
-def parseOrFail (text : String) : IO Json :=
+def parseOrFail (what text : String) : IO Json :=
   match Json.parse text with
   | .ok j => pure j
-  | .error e => throw (IO.userError s!"input is not JSON: {e}")
+  | .error e => throw (IO.userError s!"{what} is not JSON: {e}")
+
+def orFail {α : Type} (what : String) : Except String α → IO α
+  | .ok a => pure a
+  | .error e => throw (IO.userError s!"{what}: {e}")
+
+/-- Report one check and count it as failed unless it holds. -/
+def report (ok : Bool) (line : String) : IO Nat := do
+  let tag := if ok then "PASS" else "FAIL"
+  IO.println s!"{tag} {line}"
+  pure (if ok then 0 else 1)
+
+def check (dir : String) : IO UInt32 := do
+  let corpus ← parseOrFail "corpus.json" (← IO.FS.readFile s!"{dir}/corpus.json")
+  let ledgers ← parseOrFail "ledgers.json" (← IO.FS.readFile s!"{dir}/ledgers.json")
+  let mut failed := 0
+  failed := failed + (← report (corpusJson == corpus)
+    "the regenerated corpus equals the committed corpus")
+  failed := failed + (← report (ledgersJson == ledgers)
+    "the regenerated ledgers equal the committed ledgers")
+  let diffs ← orFail "replay" (replayDiffs corpus)
+  failed := failed + (← report diffs.isEmpty
+    s!"every committed scenario replays from its own JSON ({diffs.length} differing: {diffs})")
+  let altered ← orFail "alteration" (alterFirstOutcome corpus)
+  let alteredDiffs ← orFail "replay of the altered corpus" (replayDiffs altered)
+  failed := failed + (← report (!alteredDiffs.isEmpty)
+    s!"control: replay notices one altered recorded outcome ({alteredDiffs})")
+  failed := failed + (← report (corpusJson != altered)
+    "control: the corpus comparison notices one altered recorded outcome")
+  let droppedRow : Json := Json.mkObj [("theorems", Json.arr (theoremLedger.getArr?.toOption.getD #[]).pop)
+    , ("atoms", atomLedger)]
+  failed := failed + (← report (ledgersJson != droppedRow)
+    "control: the ledger comparison notices one dropped theorem row")
+  for (name, law) in mutants do
+    let moved ← orFail s!"mutant {name}" (differingUnder law corpus)
+    failed := failed + (← report (!moved.isEmpty)
+      s!"control: definition mutant {name} runs {moved.length} scenarios differently: {moved}")
+  IO.println s!"application checks: {failed} failed"
+  pure (if failed == 0 then 0 else 1)
 
 def main (args : List String) : IO UInt32 := do
   match args with
@@ -34,10 +77,16 @@ def main (args : List String) : IO UInt32 := do
     IO.println corpusJson.pretty
     pure 0
   | ["ledgers"] =>
-    IO.println (Json.mkObj [("theorems", theoremLedger), ("atoms", atomLedger)]).pretty
+    IO.println ledgersJson.pretty
     pure 0
+  | ["write", dir] =>
+    IO.FS.writeFile s!"{dir}/corpus.json" (corpusJson.pretty ++ "\n")
+    IO.FS.writeFile s!"{dir}/ledgers.json" (ledgersJson.pretty ++ "\n")
+    IO.println s!"wrote {dir}/corpus.json and {dir}/ledgers.json"
+    pure 0
+  | ["check", dir] => check dir
   | ["run", "appStep"] =>
-    let j ← parseOrFail (← readStdin)
+    let j ← parseOrFail "scenario" (← readStdin)
     match scenarioFromJson j with
     | .ok s =>
       IO.println (runScenario s).pretty
@@ -45,23 +94,6 @@ def main (args : List String) : IO UInt32 := do
     | .error e =>
       IO.eprintln s!"scenario does not decode: {e}"
       pure 2
-  | ["replay"] =>
-    let j ← parseOrFail (← readStdin)
-    let rows ← match j.getArr? with
-      | .ok a => pure a.toList
-      | .error e => throw (IO.userError s!"corpus is not an array: {e}")
-    let mut failures := 0
-    for row in rows do
-      match row.getObjVal? "scenario" >>= scenarioFromJson with
-      | .error e =>
-        IO.eprintln s!"scenario does not decode: {e}"
-        failures := failures + 1
-      | .ok s =>
-        if runScenario s != row then
-          IO.eprintln s!"replay differs: {s.name}"
-          failures := failures + 1
-    IO.println s!"replayed {rows.length} scenarios, {failures} differing"
-    pure (if failures == 0 && !rows.isEmpty then 0 else 1)
   | _ =>
-    IO.eprintln "usage: open-datum-application corpus | ledgers | run appStep | replay"
+    IO.eprintln "usage: open-datum-application corpus | ledgers | write DIR | check DIR | run appStep"
     pure 2

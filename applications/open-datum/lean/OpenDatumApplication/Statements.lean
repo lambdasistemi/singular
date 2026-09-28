@@ -3,97 +3,109 @@ import OpenDatumApplication.Model
 /-! # The open-datum application's intended statements and inversions
 
 STATED, UNPROVED. Every declaration below ends in `sorry` on purpose: this is
-the MODEL+STATEMENTS+INVERSIONS phase, and the statements are submitted for
-independent review before any proof. `#print axioms` reports `sorryAx` for each
-of them; none is evidence of anything until proved with its statement
-unchanged.
+the MODEL+STATEMENTS+INVERSIONS phase, submitted for independent review before
+any proof. `#print axioms` reports `sorryAx` for each; none is evidence until
+proved with its statement unchanged.
 
-The registry's own theorems are imported, not restated; where a statement
-relies on one it names it. -/
+Three kinds of statement, kept apart:
+
+* **inversions** are exact and hold over ANY `World`: they say what each
+  accepted branch of the law is, and nothing more;
+* **invariant obligations** say the consistency `AppConsistent` holds at every
+  genesis and is preserved by every accepted action, hence by every reached
+  world (`reachable_consistent`);
+* **required properties** that depend on that consistency take `Reachable w`.
+  Over unrestricted worlds they are false — an arbitrary `World` value can hold
+  a booked insertion whose envelope never bound it, or two outputs of one key —
+  and those counterexamples are published in the specification, not hidden.
+  Properties that are guards of a single step hold over any world and say so. -/
 
 namespace OpenDatumApplication.Statements
 
 open Singular
 open OpenDatumApplication
 
-/-! ## Public inversions: each accepted branch, exactly -/
+/-! ## Public inversions (any world) -/
 
-/-- An accepted insertion booking is exactly: the guards hold, and the booked
-request, with this application's approval and the edge's claimed delta, is
-appended with the envelope. Nothing else changes. -/
+/-- An accepted insertion booking is exactly: every guard holds, including that
+the application and the envelope name the actual registry state asset, and the
+booked request is appended with its envelope. Nothing else changes. -/
 theorem bookInsert_inversion (w w' : World) (r : Request) (e : Envelope)
     (sigs : List Nat) :
-    bookInsertStep w r e sigs = .ok w' ↔
+    bookInsertStep Law.standard w r e sigs = .ok w' ↔
       (r.edge = .insertActive ∧ w.registry.config.applicationPolicy = w.app.policy ∧
-        e.control.version = envelopeVersion ∧ e.control.registry = w.app.registry ∧
+        w.app.registry = w.registryAsset ∧ e.control.version = envelopeVersion ∧
+        e.control.registry = w.registryAsset ∧
         e.control.activePolicy = w.registry.config.activePolicy ∧ e.control.key = r.key ∧
         e.control.controller = r.owner ∧ e.control.controller ∈ sigs ∧
         r.output = destinationOf w.app e ∧ e.control.deposit = r.deposit ∧
-        w' = { w with pending := w.pending ++ [{ request := booked w.app r sigs
-                                                , envelope := some e }] }) := by
-  sorry
-
-/-- An accepted insertion fold is exactly the registry's accepted
-`insertActive` exit of the booked request, and one new output at this contract
-holding the key's token, the request's deposit and the bound envelope. -/
-theorem foldInsert_inversion (w w' : World) (key : Key) :
-    foldInsertStep w key = .ok w' ↔
-      ∃ p e t, pendingOf w .insertActive key = some p ∧ p.envelope = some e ∧
-        exitStep w.registry (.fold .insertActive) p.request = .ok t ∧
-        w' = { w with registry := t.state
-                    , outputs := w.outputs ++ [AppOutput.mk w.nextRef (appAddress w.app) p.request.deposit [((.active, key), 1)] e]
-                    , pending := w.pending.erase p, nextRef := w.nextRef + 1 } := by
-  sorry
-
-/-- An accepted update is exactly: the controller signed, one proposed output
-carries the token, at this contract, with the same control, the same assets and
-at least the deposit; it replaces the spent output. -/
-theorem update_inversion (w w' : World) (ref : Nat) (succs : List Successor)
-    (sigs : List Nat) :
-    updateStep w ref succs sigs = .ok w' ↔
-      ∃ o s, outputAt w ref = some o ∧
-        o.envelope.control.controller ∈ sigs ∧
-        succs.filter (fun x => carriesKey x.assets o.envelope.control.key) = [s] ∧
-        s.address = appAddress w.app ∧ s.envelope.control = o.envelope.control ∧
-        s.assets = o.assets ∧ o.envelope.control.deposit ≤ s.lovelace ∧
-        w' = { w with outputs := (w.outputs.erase o) ++
-                        [{ ref := w.nextRef, address := s.address, lovelace := s.lovelace
-                         , assets := s.assets, envelope := s.envelope }]
-                    , nextRef := w.nextRef + 1 } := by
+        w' = { w with pending := w.pending ++ [⟨booked w.app r sigs, some e⟩] }) := by
   sorry
 
 /-- An accepted termination booking is exactly: the guards hold and the booked
-request is appended; the outputs, and so the token and deposit, are unchanged. -/
+request is appended; outputs, registry and mint are unchanged. -/
 theorem bookTerminate_inversion (w w' : World) (r : Request) (ref : Nat)
     (sigs : List Nat) :
     bookTerminateStep w r ref sigs = .ok w' ↔
       ∃ o, r.edge = .updateTerminal ∧ w.registry.config.applicationPolicy = w.app.policy ∧
         outputAt w ref = some o ∧ o.address = appAddress w.app ∧ carriesKey o.assets r.key ∧
-        o.envelope.control.key = r.key ∧ o.envelope.control.registry = w.app.registry ∧
+        o.envelope.control.key = r.key ∧ o.envelope.control.registry = w.registryAsset ∧
         r.owner = o.envelope.control.controller ∧ o.envelope.control.controller ∈ sigs ∧
-        r.output = 0 ∧
-        w' = { w with pending := w.pending ++ [{ request := booked w.app r sigs
-                                                , envelope := none }] } := by
+        r.output = 0 ∧ w' = { w with pending := w.pending ++ [⟨booked w.app r sigs, none⟩] } := by
   sorry
 
-/-- An accepted release is exactly: a nonempty fold of `updateTerminal` on this
-application's registry, each key's booked request and live output with matching
-controller, the registry's accepted batch fold of those requests, and outputs
-settling the concatenated registry payments and deposit releases. -/
-theorem foldRelease_inversion (w w' : World) (keys : List Key) (exit : Exit)
-    (outs : List TxOutput) :
-    foldReleaseStep w keys exit outs = .ok w' ↔
-      ∃ (rows : List (Pending × AppOutput)) (t : Result), keys ≠ [] ∧ exit = .fold .updateTerminal ∧ w.registryAsset = w.app.registry ∧
-        rows.map (fun x : Pending × AppOutput => x.1.request.key) = keys ∧
-        (∀ x ∈ rows, pendingOf w .updateTerminal x.1.request.key = some x.1 ∧
-          outputOfKey w x.1.request.key = some x.2 ∧
-          x.1.request.owner = x.2.envelope.control.controller) ∧
-        foldBatch w.registry (rows.map (·.1.request)) = .ok t ∧
-        settle (registryPayments exit (rows.map (·.1.request)) ++
-          (rows.map (·.2)).map releaseOf) outs = none ∧
+/-- The application certifies no other edge. -/
+theorem bookOther_refused (w w' : World) (r : Request) (sigs : List Nat) :
+    appStep w (.bookOther r sigs) ≠ .ok w' := by
+  sorry
+
+/-- An accepted update is exactly: the controller signed, one proposed output
+carries the token, at this contract, with the same control, the same assets and
+at least the deposit; it replaces the spent output under a fresh reference. -/
+theorem update_inversion (w w' : World) (ref : Nat) (succs : List Successor)
+    (sigs : List Nat) :
+    updateStep Law.standard w ref succs sigs = .ok w' ↔
+      ∃ o s, outputAt w ref = some o ∧ o.envelope.control.controller ∈ sigs ∧
+        succs.filter (fun x => carriesKey x.assets o.envelope.control.key) = [s] ∧
+        s.address = appAddress w.app ∧ s.envelope.control = o.envelope.control ∧
+        s.assets = o.assets ∧ o.envelope.control.deposit ≤ s.lovelace ∧
+        w' = { w with outputs := (w.outputs.erase o) ++
+                        [⟨w.nextRef, s.address, s.lovelace, s.assets, s.envelope⟩]
+                    , nextRef := w.nextRef + 1 } := by
+  sorry
+
+/-- An accepted fold is exactly: the selected rows are the ones `selectRow`
+chooses, the registry's `foldBatch` accepts their requests with result `t`, the
+whole payment duty of those rows settles against the outputs and the created
+deliveries, and the world moves to the registry's state, drops exactly the spent
+outputs and folded bookings, adds the created outputs and keeps `t.mint`. -/
+theorem fold_inversion (w w' : World) (sel : List (Edge × Key)) (outs : List TxOutput)
+    (t : Result) :
+    foldEffect Law.standard w sel outs = .ok (w', t) ↔
+      ∃ rows, sel.mapM (selectRow Law.standard w) = .ok rows ∧
+        foldBatch w.registry (rows.map (·.pending.request)) = .ok t ∧
+        settle (foldPayments rows)
+          (outs ++ (createdOutputs w.app w.nextRef rows).map (deliveryOf w.app)) = none ∧
         w' = { w with registry := t.state
-                    , outputs := w.outputs.filter fun o => !(rows.map (·.2)).contains o
-                    , pending := w.pending.filter fun p => !(rows.map (·.1)).contains p } := by
+                    , outputs := (w.outputs.filter fun o => !(rows.filterMap (·.spent)).contains o) ++
+                        createdOutputs w.app w.nextRef rows
+                    , pending := w.pending.filter fun p => !(rows.map (·.pending)).contains p
+                    , nextRef := w.nextRef + (createdOutputs w.app w.nextRef rows).length
+                    , lastMint := t.mint } := by
+  sorry
+
+/-- The application step of a fold is the fold's world. -/
+theorem appStep_fold (w : World) (sel : List (Edge × Key)) (outs : List TxOutput) :
+    appStep w (.fold sel outs) = (foldEffect Law.standard w sel outs).map (·.1) := by
+  sorry
+
+/-- An accepted reject is exactly the registry's reject of the booked request,
+its refund settled; application outputs are untouched. -/
+theorem reject_inversion (w w' : World) (edge : Edge) (key : Key) (outs : List TxOutput) :
+    rejectStep w edge key outs = .ok w' ↔
+      ∃ p t, pendingOf w edge key = some p ∧ exitStep w.registry .reject p.request = .ok t ∧
+        settle (obligations .reject p.request) outs = none ∧
+        w' = { w with registry := t.state, pending := w.pending.erase p, lastMint := t.mint } := by
   sorry
 
 /-- No withdrawal is ever accepted. -/
@@ -101,118 +113,153 @@ theorem withdraw_inversion (w w' : World) (ref : Nat) (outs : List TxOutput) :
     withdrawStep w ref outs ≠ .ok w' := by
   sorry
 
+/-! ## The consistency of reached worlds -/
+
+/-- A genesis world is consistent. -/
+theorem genesis_consistent (app : App) (c : Config) (asset : StateAsset) :
+    AppConsistent (genesis app c asset) := by
+  sorry
+
+/-- Every accepted action of every constructor preserves consistency. -/
+theorem appStep_preserves_consistent (w w' : World) (a : AppAction) :
+    AppConsistent w → appStep w a = .ok w' → AppConsistent w' := by
+  sorry
+
+/-- Every reached world is consistent. -/
+theorem reachable_consistent (w : World) : Reachable w → AppConsistent w := by
+  sorry
+
 /-! ## Required properties -/
 
-/-- Authority: an accepted update was signed by the output's controller. -/
+/-- Authority (any world): an accepted update was signed by the output's
+controller. -/
 theorem update_requires_controller (w w' : World) (ref : Nat) (succs : List Successor)
     (sigs : List Nat) (o : AppOutput) :
-    outputAt w ref = some o → updateStep w ref succs sigs = .ok w' →
+    outputAt w ref = some o → appStep w (.update ref succs sigs) = .ok w' →
       o.envelope.control.controller ∈ sigs := by
   sorry
 
-/-- Custody: after an accepted update the key's token is still at this contract,
-under the same control, with at least the protected deposit, and no other live
-output of the contract changed. -/
+/-- Custody (reached worlds): after an accepted update the key's token is at this
+contract under the same control with at least the protected deposit, every other
+live output is unchanged, and the registry is untouched. -/
 theorem update_preserves_custody (w w' : World) (ref : Nat) (succs : List Successor)
     (sigs : List Nat) (o : AppOutput) :
-    outputAt w ref = some o → updateStep w ref succs sigs = .ok w' →
+    Reachable w → outputAt w ref = some o → appStep w (.update ref succs sigs) = .ok w' →
       ∃ o', outputOfKey w' o.envelope.control.key = some o' ∧
         o'.envelope.control = o.envelope.control ∧ o'.assets = o.assets ∧
         o.envelope.control.deposit ≤ o'.lovelace ∧
         (∀ x ∈ w.outputs, x ≠ o → x ∈ w'.outputs) ∧ w'.registry = w.registry := by
   sorry
 
-/-- Payload freedom: whether an update is accepted does not depend on the
-successor's payload. -/
+/-- Payload freedom (any world): whether an update is accepted does not depend
+on the successor's payload. -/
 theorem update_payload_free (w : World) (ref : Nat) (s : Successor) (sigs : List Nat)
     (p : PlutusData) :
-    (updateStep w ref [s] sigs).isOk =
-      (updateStep w ref [{ s with envelope := { s.envelope with payload := p } }] sigs).isOk := by
+    (appStep w (.update ref [s] sigs)).isOk =
+      (appStep w (.update ref [{ s with envelope := { s.envelope with payload := p } }] sigs)).isOk := by
   sorry
 
-/-- An update leaves the registry commitment unchanged: the payload is not the
-registry's. -/
+/-- An update (any world) leaves the registry and the booked requests unchanged. -/
 theorem update_keeps_registry (w w' : World) (ref : Nat) (succs : List Successor)
     (sigs : List Nat) :
-    updateStep w ref succs sigs = .ok w' → w'.registry = w.registry := by
+    appStep w (.update ref succs sigs) = .ok w' → w'.registry = w.registry ∧ w'.pending = w.pending := by
   sorry
 
-/-- Insertion binds: the delivered output carries exactly the envelope the
-approval's destination committed to, its deposit equals the insertion request's,
-and the registry's leaf for the key is Active. -/
-theorem insertion_binds_envelope (w w' : World) (key : Key) :
-    foldInsertStep w key = .ok w' →
-      ∃ o, outputOfKey w' key = some o ∧ o.address = appAddress w.app ∧
-        (∃ p, pendingOf w .insertActive key = some p ∧ p.envelope = some o.envelope ∧
-          p.request.output = destinationOf w.app o.envelope ∧
-          o.envelope.control.deposit = p.request.deposit ∧
-          o.lovelace = p.request.deposit) ∧
-        trieGet w'.registry.trie key = .known .active := by
+/-- Registry identity (any world): an insertion is booked only when the
+application and its envelope name the full state asset the world actually
+carries. -/
+theorem insertion_requires_registry_identity (w w' : World) (r : Request) (e : Envelope)
+    (sigs : List Nat) :
+    appStep w (.bookInsert r e sigs) = .ok w' →
+      w.app.registry = w.registryAsset ∧ e.control.registry = w.registryAsset := by
   sorry
 
-/-- Termination booking leaves every application output, and so every token
-and deposit, where it was. -/
+/-- Insertion binds (reached worlds): each output a fold creates holds exactly
+its key's token, the envelope its booking's destination committed to — naming
+the actual registry — and exactly the booking's deposit, which is the protected
+deposit; the registry's leaf for the key is Active. -/
+theorem insertion_binds_envelope (w w' : World) (sel : List (Edge × Key))
+    (outs : List TxOutput) (t : Result) (key : Key) :
+    Reachable w → foldEffect Law.standard w sel outs = .ok (w', t) →
+      (.insertActive, key) ∈ sel →
+      ∃ p e o, pendingOf w .insertActive key = some p ∧ p.envelope = some e ∧
+        outputOfKey w' key = some o ∧ o.envelope = e ∧ o.address = appAddress w.app ∧
+        o.assets = [((.active, key), 1)] ∧ p.request.output = destinationOf w.app e ∧
+        e.control.registry = w.registryAsset ∧ e.control.deposit = p.request.deposit ∧
+        o.lovelace = p.request.deposit ∧ trieGet w'.registry.trie key = .known .active := by
+  sorry
+
+/-- Termination booking (any world) leaves every application output, the
+registry and the recorded mint where they were. -/
 theorem bookTerminate_keeps_locked (w w' : World) (r : Request) (ref : Nat) (sigs : List Nat) :
-    bookTerminateStep w r ref sigs = .ok w' → w'.outputs = w.outputs ∧ w'.registry = w.registry := by
+    appStep w (.bookTerminate r ref sigs) = .ok w' →
+      w'.outputs = w.outputs ∧ w'.registry = w.registry ∧ w'.lastMint = w.lastMint := by
   sorry
 
-/-- Release is atomic with the registry's retirement: every released key is
-Terminal after the fold and its active token is burned in the fold's own mint. -/
-theorem release_is_terminal_fold (w w' : World) (keys : List Key) (exit : Exit)
-    (outs : List TxOutput) :
-    foldReleaseStep w keys exit outs = .ok w' →
-      exit = .fold .updateTerminal ∧
-      ∀ key ∈ keys, trieGet w'.registry.trie key = .known .terminal ∧
-        outputOfKey w' key = none := by
+/-- Atomic release and burn (reached worlds): for every selected termination,
+the output the fold spends is the key's live output, the fold's own mint is
+exactly the registry's summed delta of the selected requests and holds exactly
+`-1` of the key's active token, the key is Terminal after the fold, and the key
+has no live output after it. Abstract mint only: concrete policy and burn-source
+enforcement are later, compiled evidence. -/
+theorem release_burns_atomically (w w' : World) (sel : List (Edge × Key))
+    (outs : List TxOutput) (t : Result) (key : Key) :
+    Reachable w → foldEffect Law.standard w sel outs = .ok (w', t) →
+      (.updateTerminal, key) ∈ sel →
+      ∃ o, outputOfKey w key = some o ∧ o ∉ w'.outputs ∧
+        t.mint = w'.lastMint ∧
+        (∃ rows, sel.mapM (selectRow Law.standard w) = .ok rows ∧
+          assetSame t.mint (actualMint (rows.map (·.pending.request)))) ∧
+        assetKind t.mint (.active, key) = -1 ∧
+        trieGet w'.registry.trie key = .known .terminal ∧ outputOfKey w' key = none := by
   sorry
 
-/-- No other exit releases: a reject, a retract, a `deleteActive` or any other
-fold of booked requests spending application outputs is refused. -/
-theorem release_only_updateTerminal (w : World) (keys : List Key) (exit : Exit)
-    (outs : List TxOutput) :
-    exit ≠ .fold .updateTerminal → (foldReleaseStep w keys exit outs).isOk = false := by
+/-- Only a fold removes an application output (any world): every other accepted
+action keeps every live output's key held at this contract. -/
+theorem only_fold_releases (w w' : World) (a : AppAction) :
+    (∀ sel outs, a ≠ .fold sel outs) → appStep w a = .ok w' →
+      ∀ o ∈ w.outputs, ∃ o' ∈ w'.outputs, o'.envelope.control = o.envelope.control ∧
+        o'.assets = o.assets := by
   sorry
 
-/-- Additive settlement: an accepted release pays every controller at least the
-sum of the registry's payments owed to it and the deposits released to it. -/
-theorem release_settles_additively (w w' : World) (keys : List Key) (exit : Exit)
-    (outs : List TxOutput) :
-    foldReleaseStep w keys exit outs = .ok w' →
-      ∃ rows : List (Pending × AppOutput),
-        rows.map (fun x => x.1.request.key) = keys ∧
-        ∀ c, owedTo (.owner c)
-            (registryPayments exit (rows.map (·.1.request)) ++ (rows.map (·.2)).map releaseOf)
-          ≤ receivedBy (.owner c) outs := by
+/-- Additive settlement (any world, bound to the actual rows): an accepted fold's
+selected rows are those `selectRow` chose; its whole duty, the registry's payment
+for every selected request by its edge and each spent output's own protected
+deposit to its own controller, is paid, and every recipient — the same
+controller owed several floors included — receives at least their sum. -/
+theorem fold_settles_additively (w w' : World) (sel : List (Edge × Key))
+    (outs : List TxOutput) (t : Result) :
+    foldEffect Law.standard w sel outs = .ok (w', t) →
+      ∃ rows, sel.mapM (selectRow Law.standard w) = .ok rows ∧
+        releases rows = (rows.filterMap (·.spent)).map (fun o =>
+          { recipient := .owner o.envelope.control.controller
+          , atLeast := o.envelope.control.deposit : Payment }) ∧
+        (∀ o ∈ rows.filterMap (·.spent), o ∈ w.outputs ∧ o ∉ w'.outputs) ∧
+        ∀ rcp, owedTo rcp (foldPayments rows) ≤
+          receivedBy rcp (outs ++ (createdOutputs w.app w.nextRef rows).map (deliveryOf w.app)) := by
   sorry
 
-/-- Duplicate insertion is refused by the registry's law, not by the
-application: the booking is accepted, and the fold is refused `key-exists`. -/
+/-- Duplicate insertion (reached worlds) is refused by the registry's law, not by
+the application: the booking is accepted and the fold refused `key-exists`. -/
 theorem duplicate_refused_by_registry (w w₁ : World) (r : Request) (e : Envelope)
-    (sigs : List Nat) :
-    trieGet w.registry.trie r.key = .known .active →
-    bookInsertStep w r e sigs = .ok w₁ →
-    foldInsertStep w₁ r.key = .error "key-exists" := by
+    (sigs : List Nat) (outs : List TxOutput) :
+    Reachable w → trieGet w.registry.trie r.key = .known .active →
+    appStep w (.bookInsert r e sigs) = .ok w₁ →
+    appStep w₁ (.fold [(.insertActive, r.key)] outs) = .error "key-exists" := by
   sorry
 
-/-- Same-identity resurrection after Terminal is refused by the registry's law:
-the booking is accepted, and the fold is refused `key-exists`. -/
+/-- Same-identity resurrection after Terminal (reached worlds) is refused by the
+registry's law: the booking is accepted and the fold refused `key-exists`. -/
 theorem resurrection_refused_by_registry (w w₁ : World) (r : Request) (e : Envelope)
-    (sigs : List Nat) :
-    trieGet w.registry.trie r.key = .known .terminal →
-    bookInsertStep w r e sigs = .ok w₁ →
-    foldInsertStep w₁ r.key = .error "key-exists" := by
+    (sigs : List Nat) (outs : List TxOutput) :
+    Reachable w → trieGet w.registry.trie r.key = .known .terminal →
+    appStep w (.bookInsert r e sigs) = .ok w₁ →
+    appStep w₁ (.fold [(.insertActive, r.key)] outs) = .error "key-exists" := by
   sorry
 
-/-- The fold stays permissionless: the application adds no signer to a
-registry fold (the registry's own `fold_requires_no_signer`). -/
+/-- The fold stays permissionless: the application adds no signer to any request
+it books (the registry's own `fold_requires_no_signer`). -/
 theorem fold_signers_unchanged (r : Request) : requiredSigners r = [] := by
   sorry
-
-/-! ## Reached counterexamples the statements must survive
-
-Concrete scenarios live in the driver corpus (`OpenDatumApplication.Driver`),
-each executed through `appStep`: a payment meeting the registry's floor and the
-release's floor separately but not their sum is refused `deposit-returned`, and
-two releases to one controller in one fold owe the sum of four floors. -/
 
 end OpenDatumApplication.Statements

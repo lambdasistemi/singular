@@ -1,30 +1,36 @@
 {
   "where-it-lives-and-how-it-builds": [
     {
-      "text": "The application is its own small Lean project, applications open-datum, built on the unchanged registry model. It uses the repository's pinned Lean, and the application-model recipe checks that pin, builds the project, regenerates the corpus and ledgers, and replays every scenario.",
+      "text": "The application is its own small Lean project over the unchanged registry model, run on the repository's pinned Lean. Its check mode regenerates the corpus and ledgers, replays every scenario, and proves its own checks can fail: an altered outcome, a dropped ledger row and three mutants of the law must each be noticed.",
       "pause": 400
     }
   ],
-  "ruling-model-statement": [
+  "the-law": [
     {
-      "text": "Each operator requirement maps to one step of the law and to the statements about it: booking with the controller's signature, the unchanged permissionless fold, payload updates that keep control, token and deposit, termination only through the registry's own retirement fold, and payment of the sum of what the registry owes and the released deposits.",
+      "text": "Booking an insertion needs the controller's signature and the full actual registry identity in the envelope. Termination is booked the same way and keeps the token locked. Updates change only the payload. A fold of any selected bookings goes through the registry's own batch fold, releases deposits for terminated keys, and pays every recipient the sum of what it is owed. Rejects release nothing, and every other spend is refused.",
       "pause": 400
     }
   ],
-  "representation-choices-technical-not-rulings": [
+  "finding-dispositions-review-310-model-001": [
     {
-      "text": "Plutus data is modelled abstractly, and its hash stands in for the real one without claiming byte agreement. One identity serves as both the policy and the contract address, and a destination packs the contract and the envelope hash into one number.",
+      "text": "Properties needing consistency now assume a reached world, with obligations that consistency holds at genesis and after every action; the counterexamples over arbitrary worlds stay published. Settlement is bound to the rows actually selected. A wrong registry name or policy is refused at booking. The fold's own mint, burning exactly each released key's token, is now stated.",
       "pause": 400
     }
   ],
-  "limits": [
+  "correspondence-limits-implementation-boundary": [
     {
-      "text": "Every statement is stated and not yet proved. Seven have no scenario bound to them, the corpus is small and fixed, and the replay check has not yet been shown to fail on a mutated corpus. On-chain cost and binding questions are later work.",
+      "text": "Tips, fees and minimum-output funding are outside the model and never absorb a protected deposit. Retraction admission is not exposed, the hashes are stand-ins, and the destination row of a non-delivering fold remains issue 304's question.",
+      "pause": 400
+    }
+  ],
+  "coverage": [
+    {
+      "text": "Every statement is bound to a scenario, and each scenario publishes the world after every step. The corpus uses one controller, two keys and fixed amounts, so it exhibits the statements without covering their domains. All statements remain unproved.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "model.md",
-    "sha256": "d222794b2ec941f0ae9a4013151de331d22f8fe13d3339bba65df086b2f309ff"
+    "sha256": "7fcc1b2709b5e37843f22264afc4ada984bca7452df90b0264631f61233332de"
   }
 }

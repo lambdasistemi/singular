@@ -23,15 +23,15 @@ model:
     python3 tools/check_model.py
 
 # #310: the open-datum application, an isolated Lake project over the unchanged
-# root model. The selected compiler must be the root pin; the corpus and ledgers
-# are regenerated from the model surface and must equal the committed ones, and
-# every committed scenario must replay from its own JSON to the same run.
+# root model. The selected compiler must be the root pin. `check` regenerates the
+# corpus and ledgers from the model surface against the committed ones, replays
+# every committed scenario from its own JSON, and runs its own controls: a
+# controlled alteration each comparison must notice and definition mutants each
+# of which must move at least one scenario.
 application-model:
     lean --version | grep -q "version $(sed 's/.*:v//' lean-toolchain),"
     lake -d applications/open-datum --keep-toolchain build
-    lake -d applications/open-datum --keep-toolchain exe open-datum-application corpus | diff - applications/open-datum/corpus.json
-    lake -d applications/open-datum --keep-toolchain exe open-datum-application ledgers | diff - applications/open-datum/ledgers.json
-    lake -d applications/open-datum --keep-toolchain exe open-datum-application replay < applications/open-datum/corpus.json
+    lake -d applications/open-datum --keep-toolchain exe open-datum-application check applications/open-datum
 
 simulator:
     node simulator/mirror-check.mjs
