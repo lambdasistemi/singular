@@ -130,6 +130,20 @@
           '';
         };
 
+        # #278: every hand-written and generated Aiken source is in the
+        # pinned formatter's canonical form; `aiken fmt --check` visits the
+        # whole project (lib/ and validators/) with no exclusions.
+        aiken-fmt = pkgs.stdenv.mkDerivation {
+          pname = "mpf-aiken-fmt";
+          version = "0.0.0";
+          src = pkgs.lib.cleanSource ./.;
+          nativeBuildInputs = [ pkgs.aiken ];
+          buildPhase = ''
+            aiken fmt --check
+          '';
+          installPhase = "touch $out";
+        };
+
         aiken-check = pkgs.stdenv.mkDerivation {
           pname = "mpf-aiken-check";
           version = "0.0.0";
@@ -192,7 +206,7 @@
         # of falling back to `nix develop .#aiken --command aiken …`.
         aikenChecks = {
           aiken-build = plutus-blueprint;
-          inherit aiken-check aiken-docs;
+          inherit aiken-check aiken-docs aiken-fmt;
         };
 
         # -------------------------------------------------------

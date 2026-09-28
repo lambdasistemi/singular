@@ -62,6 +62,8 @@
       # by the offchain flake — so `just format`, `just format-check` and
       # `just format-controls` (all inside `just ci`) run the one pinned
       # binary the lint checks run. No second version source.
-      devShells = each (system: { default = (project system).shell.overrideAttrs (old: (browser system).environment // { nativeBuildInputs = (old.nativeBuildInputs or []) ++ [ offchain.packages.${system}.fourmolu ] ++ (with import nixpkgs { inherit system; }; [ lean4 nodejs ]); }); });
+      # #278: it also carries the pinned lint and format tools `just lint`
+      # runs over every other code family (tools/lint_code.py).
+      devShells = each (system: { default = (project system).shell.overrideAttrs (old: (browser system).environment // { nativeBuildInputs = (old.nativeBuildInputs or []) ++ [ offchain.packages.${system}.fourmolu ] ++ (with import nixpkgs { inherit system; }; [ lean4 nodejs nixfmt statix deadnix ruff shellcheck shfmt biome actionlint yamlfmt ]); }); });
     };
 }

@@ -112,6 +112,20 @@
           '';
         };
 
+        # #278: every hand-written and generated Aiken source is in the
+        # pinned formatter's canonical form; `aiken fmt --check` visits the
+        # whole project (lib/ and validators/) with no exclusions.
+        aiken-fmt = pkgs.stdenv.mkDerivation {
+          pname = "singular-naming-aiken-fmt";
+          version = "0.0.0";
+          src = pkgs.lib.cleanSource ./.;
+          nativeBuildInputs = [ pkgs.aiken ];
+          buildPhase = ''
+            aiken fmt --check
+          '';
+          installPhase = "touch $out";
+        };
+
         aiken-check = pkgs.stdenv.mkDerivation {
           pname = "singular-naming-aiken-check";
           version = "0.1.0";
@@ -190,7 +204,7 @@
         };
 
         checks = {
-          inherit aiken-check script-identity;
+          inherit aiken-check aiken-fmt script-identity;
         };
 
         apps = { };

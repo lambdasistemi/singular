@@ -44,6 +44,7 @@ ci:
     just inventory-controls
     just format-check
     just format-controls
+    just lint
 
 # #108: the rename tool must re-run cleanly on a pre-rename tree, be a no-op
 # on the second run, and its gate must catch strays planted in .sh files.
@@ -89,3 +90,16 @@ format-check:
 # touched.
 format-controls:
     bash tools/format_controls.sh
+
+# #278: lint and format checks over every other code family the inventory
+# discovers — Nix, Python, shell, JavaScript/CSS, justfiles, workflow YAML,
+# Lean and HTML — with the pinned tools of the development shell. The
+# extent is the inventory's own, so a new file or directory is checked with
+# nothing to edit, and a code family with no checker fails the run. Pass
+# family names to narrow the run. Run within nix develop.
+lint *families:
+    python3 tools/lint_code.py check {{families}}
+
+# Apply the formatters (and safe lint fixes) of `just lint` in place.
+lint-fix *families:
+    python3 tools/lint_code.py fix {{families}}
