@@ -142,6 +142,28 @@
           installPhase = "touch $out";
         };
 
+        # The state validator's owners document themselves (#271): every
+        # module under validators/registry/ and state.ak carries the four
+        # module-doc sections, and every public declaration and validator a
+        # doc comment. Checked twice — on the source, and on the reference
+        # the pinned `aiken docs` generates from it — over an extent
+        # discovered at run time, then the controls plant each kind of gap
+        # in a copy and require each layer to refuse it. Presence only: no
+        # doc comment is evidence of validator behavior.
+        aiken-docs = pkgs.stdenv.mkDerivation {
+          pname = "mpf-aiken-docs-check";
+          version = "0.0.0";
+          src = pkgs.lib.cleanSource ./.;
+          nativeBuildInputs = [ pkgs.aiken ];
+          buildPhase = ''
+            ${aikenPrelude}
+            aiken docs -o reference
+            bash doc-guard/check.sh validators --reference reference
+            bash doc-guard/controls.sh doc-guard/check.sh . ${pkgs.aiken}/bin/aiken
+          '';
+          installPhase = "touch $out";
+        };
+
         # (Haskell block deleted: project, components, haskellChecks,
         #  haskellApps, test-vectors, test-vectors-json all move to
         #  offchain/flake.nix. Breaks 2-4.)
@@ -151,7 +173,7 @@
         # of falling back to `nix develop .#aiken --command aiken …`.
         aikenChecks = {
           aiken-build = plutus-blueprint;
-          inherit aiken-check;
+          inherit aiken-check aiken-docs;
         };
 
         # -------------------------------------------------------

@@ -3,6 +3,8 @@ use aiken/merkle_patricia_forestry as mpf
 use cardano/assets.{Value}
 use cardano/transaction.{InlineDatum, Input, Output}
 use lib
+use registry/discharge
+use registry/trie
 use state
 use registry_fixtures as fx
 use types.{Modify, StateDatum, UpdateAction}
@@ -31,8 +33,8 @@ use types.{Modify, StateDatum, UpdateAction}
 ///
 /// The refusal NAMES cannot be read back from an Aiken test — a `trace`
 /// is not observable — so each one is asserted at the single
-/// construction site the validator itself reads (`state.terminalFault`,
-/// `state.tokenMissingRefusal`), the pattern #173 fixed for
+/// construction site the validator itself reads (`trie.terminalFault`,
+/// `discharge.tokenMissingRefusal`), the pattern #173 fixed for
 /// `lib.occupiedRefusal` and `lib.mintRefusal`.
 ///
 /// Each refusal carries an ACCEPTING control that repairs ONLY the named
@@ -299,13 +301,13 @@ test delete_active_still_folds() {
 /// helper nothing calls. An Aiken test cannot read a `trace` back, and
 /// this is the repository's answer to that.
 test unknown_key_reason_is_key_unknown() {
-  state.terminalFault(mpf.from_root(fx.emptyRoot()), fx.keyA, []) == Some(
+  trie.terminalFault(mpf.from_root(fx.emptyRoot()), fx.keyA, []) == Some(
     @"key-unknown",
   )
 }
 
 test absent_key_reason_is_not_booked() {
-  state.terminalFault(
+  trie.terminalFault(
     mpf.from_root(fx.oneLeaf(fx.keyA, fx.absentLeaf)),
     fx.keyA,
     [],
@@ -313,7 +315,7 @@ test absent_key_reason_is_not_booked() {
 }
 
 test terminal_key_reason_is_terminal_immutable() {
-  state.terminalFault(
+  trie.terminalFault(
     mpf.from_root(fx.oneLeaf(fx.keyA, fx.terminalLeaf)),
     fx.keyA,
     [],
@@ -325,7 +327,7 @@ test terminal_key_reason_is_terminal_immutable() {
 /// a refusal and the accepting control would be the only thing left to
 /// notice it.
 test an_active_leaf_is_not_a_trie_fault() {
-  state.terminalFault(
+  trie.terminalFault(
     mpf.from_root(fx.oneLeaf(fx.keyA, fx.activeLeaf)),
     fx.keyA,
     [],
@@ -333,7 +335,7 @@ test an_active_leaf_is_not_a_trie_fault() {
 }
 
 test missing_witness_reason_is_token_missing() {
-  state.tokenMissingRefusal() == @"token-missing"
+  discharge.tokenMissingRefusal() == @"token-missing"
 }
 
 /// The reasons are pairwise distinct, asserted by NAME rather than by
@@ -342,20 +344,20 @@ test missing_witness_reason_is_token_missing() {
 /// unimplemented.
 test the_reasons_are_distinct_names() {
   and {
-    state.terminalFault(mpf.from_root(fx.emptyRoot()), fx.keyA, []) == Some(
+    trie.terminalFault(mpf.from_root(fx.emptyRoot()), fx.keyA, []) == Some(
       @"key-unknown",
     ),
-    state.terminalFault(
+    trie.terminalFault(
       mpf.from_root(fx.oneLeaf(fx.keyA, fx.absentLeaf)),
       fx.keyA,
       [],
     ) == Some(@"not-booked"),
-    state.terminalFault(
+    trie.terminalFault(
       mpf.from_root(fx.oneLeaf(fx.keyA, fx.terminalLeaf)),
       fx.keyA,
       [],
     ) == Some(@"terminal-immutable"),
-    state.tokenMissingRefusal() == @"token-missing",
+    discharge.tokenMissingRefusal() == @"token-missing",
     lib.occupiedRefusal() == Some(@"key-exists"),
     lib.mintRefusal() == Some(@"net-mint-mismatch"),
   }
