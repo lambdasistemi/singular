@@ -11,16 +11,19 @@ use cardano/address.{Address, PaymentCredential}
 use cardano/assets
 use cardano/assets.{PolicyId, Value, from_asset, lovelace_of, quantity_of}
 use cardano/transaction.{
-  Spend,
-  Datum, InlineDatum, Input, Output, OutputReference, Transaction, find_input,
+  InlineDatum, Input, Output, OutputReference, Transaction, find_input,
 }
 use lib.{
   approvalName, assetName, deltaOf, destinationMatches,
   edgeDeleteAbsent, edgeDeleteActive, edgeInsertAbsent, edgeInsertActive,
   edgeUpdateActive, edgeUpdateTerminal, edgeWitnessTerminal, exactQuantity,
-  kindAbsent, kindActive, leafAbsent, leafActive, leafTerminal, paysAddress,
+  kindAbsent, kindActive, leafAbsent, leafActive, leafTerminal,
   tokenFromPolicy,
 }
+use registry/custody.{
+  custodyDatumIs, custodyInput, custodyKeyOf, validCustodySpend,
+}
+use registry/refusal.{depositReturned, refundShort, traceFalse}
 use shared.{in_phase1, is_rejectable}
 use types.{
   AbsentCustody, Burning, CageDatum, End, Migrating,
@@ -1046,86 +1049,12 @@ pub fn readFault(
   }
 }
 
-fn traceFalse(reason: String) -> Bool {
-  trace reason
-  False
-}
-
 fn carriersOf(
   outputs: List<Output>,
   policy: PolicyId,
   key: ByteArray,
 ) -> List<Output> {
   filter(outputs, fn(out) { quantity_of(out.value, policy, key) != 0 })
-}
-
-fn custodyDatumIs(datum: Datum, refund: ByteArray) -> Bool {
-  when datum is {
-    InlineDatum(inline) ->
-      if inline is AbsentCustody { refund: heldRefund }: CageDatum {
-        heldRefund == refund
-      } else {
-        False
-      }
-    _ -> False
-  }
-}
-
-/// The custody UTxO for this key among the spent inputs, with the refund
-/// address it recorded and the lovelace it holds.
-fn custodyInput(
-  cageAddress: Address,
-  policy: PolicyId,
-  key: ByteArray,
-  inputs: List<Input>,
-) -> Option<(ByteArray, Int)> {
-  when
-    filter(
-      inputs,
-      fn(i) {
-        i.output.address == cageAddress && custodyKeyOf(i.output.value) == Some((
-          policy,
-          key,
-        ))
-      },
-    )
-  is {
-    [held] -> {
-      expect Some(refund) = custodyRefundOf(held.output.datum)
-      Some((refund, lovelace_of(held.output.value)))
-    }
-    _ -> None
-  }
-}
-
-/// The custody identity encoded by the complete non-ADA value extent.
-/// Exactly one asset at quantity one is admissible; zero, extra, wrong-policy
-/// and wrong-quantity extents cannot be interpreted as custody for a key.
-fn custodyKeyOf(value: Value) -> Option<(PolicyId, ByteArray)> {
-  when
-    filter(
-      assets.flatten(value),
-      fn(entry) {
-        let (policy, _, _) = entry
-        policy != #""
-      },
-    )
-  is {
-    [(policy, key, 1)] -> Some((policy, key))
-    _ -> None
-  }
-}
-
-fn custodyRefundOf(datum: Datum) -> Option<ByteArray> {
-  when datum is {
-    InlineDatum(inline) ->
-      if inline is AbsentCustody { refund }: CageDatum {
-        Some(refund)
-      } else {
-        None
-      }
-    _ -> None
-  }
 }
 
 // ----------------------------------------------------------------------------
@@ -1291,180 +1220,6 @@ fn mintMatches(pins: State, expected: Value, mint: Value) -> Bool {
 }
 
 // ----------------------------------------------------------------------------
-// The custody spending path (#157 C6, T5)
-// ----------------------------------------------------------------------------
-
-/// The cage's own spending path for a custody UTxO: spent in a `Modify`
-/// of THIS registry that consumes a request for ITS key with edge 2
-/// (`updateActive`) or edge 4 (`deleteAbsent`), and nothing else. A plain
-/// spend, a fold for another key, a fold whose request for this key is a
-/// read, and a fold of another registry sharing the state script all
-/// refuse here. The refund leg is the fold's duty (`refund`), checked by
-/// `validModify` on the same transaction.
-fn validCustodySpend(
-  refund: ByteArray,
-  self: Input,
-  tx: Transaction,
-) -> Bool {
-  when (custodyKeyOf(self.output.value), foldAuthenticated(self.output.address, tx)) is {
-    (Some((custodyPolicy, key)), Some((cageToken, absentPolicy))) ->
-      if custodyPolicy != absentPolicy {
-        traceFalse(@"custody-spend")
-      } else if filter(
-        tx.inputs,
-        fn(i) { consumesAbsent(i.output.datum, key, cageToken) },
-      ) == [] {
-        traceFalse(@"custody-spend")
-      } else if !paysAddressSomewhere(refund, self, tx) {
-        traceFalse(@"custody-spend")
-      } else {
-        True
-      }
-    _ ->
-      // The fold itself, authenticated: the registry's own state token,
-      // at the cage's own address, SPENT with `Modify`. Without it a
-      // request-shaped neighbour would be enough, and custody would be
-      // spendable outside the fold that is supposed to consume it.
-      traceFalse(@"custody-spend")
-  }
-}
-
-/// Is this transaction a fold of the registry this custody belongs to,
-/// and if so, which registry (#157 F-001, NOTE-004)?
-///
-/// Exactly one input at the cage's OWN address, carrying the state datum,
-/// SPENT with `Modify` — and the answer is that state's own cage token.
-/// The `Modify` is not a label a caller can assert: the ledger cannot let
-/// such an input be spent without executing this very validator on it,
-/// and `validModify` then proves the state token, the preserved pins, the
-/// new root and the minted deltas. Answering the token, rather than a
-/// bare yes, is what stops one registry's fold from authorizing another's
-/// custody when both are held by this same script: the caller must then
-/// show a request bound to the very registry whose fold it rode in on.
-fn foldAuthenticated(
-  cageAddress: Address,
-  tx: Transaction,
-) -> Option<(TokenId, PolicyId)> {
-  when
-    filter(
-      tx.inputs,
-      fn(i) {
-        i.output.address == cageAddress && holdsState(i.output.datum) && spentModifying(
-          i.output_reference,
-          tx,
-        )
-      },
-    )
-  is {
-    [stateIn] ->
-      when cageAddress.payment_credential is {
-        address.Script(policyId) ->
-          when
-            (
-              tokenFromPolicy(policyId, stateIn.output.value),
-              stateAbsentPolicy(stateIn.output.datum),
-            )
-          is {
-            (Some(cageToken), Some(absentPolicy)) ->
-              Some((cageToken, absentPolicy))
-            _ -> None
-          }
-        _ -> None
-      }
-    _ -> None
-  }
-}
-
-/// `CageDatum`'s constructor tags, with the payloads left as `Data`
-/// (#157 F-001). Which arm a neighbouring UTxO carries is all this needs
-/// to know, and deciding it on the tag costs a fraction of decoding the
-/// eight-field state a second time.
-type DatumTag {
-  RequestTag(Data)
-  StateTag(Data)
-  CustodyTag(Data)
-}
-
-fn stateAbsentPolicy(datum: Datum) -> Option<PolicyId> {
-  when datum is {
-    InlineDatum(inline) ->
-      if inline is StateDatum(pins): CageDatum {
-        Some(pins.absent_policy)
-      } else {
-        None
-      }
-    _ -> None
-  }
-}
-
-/// `UpdateRedeemer`'s constructor tags, likewise: the real redeemer
-/// carries the batch's whole MPF proofs, and this asks only which arm it
-/// is.
-type RedeemerTag {
-  EndTag
-  ContributeTag(Data)
-  ModifyTag(Data)
-  RetractTag(Data)
-  SweepTag(Data)
-}
-
-fn holdsState(datum: Datum) -> Bool {
-  when datum is {
-    InlineDatum(inline) ->
-      if inline is StateTag(_): DatumTag {
-        True
-      } else {
-        False
-      }
-    _ -> False
-  }
-}
-
-fn spentModifying(reference: OutputReference, tx: Transaction) -> Bool {
-  when pairs.get_first(tx.redeemers, Spend(reference)) is {
-    Some(data) ->
-      if data is ModifyTag(_): RedeemerTag {
-        True
-      } else {
-        False
-      }
-    None -> False
-  }
-}
-
-/// A request datum of THIS registry, for this key, whose edge consumes
-/// the absent token: edge 2 (`updateActive`) or edge 4 (`deleteAbsent`;
-/// #183 slice b).
-///
-/// The `requestToken` binding (NOTE-004) is what makes the authenticated
-/// fold above conclusive rather than circumstantial: `validModify`
-/// processes only the requests naming its own cage token, so a request
-/// carrying this token is one that fold must have processed. Without it a
-/// second registry on the same script could lend its `Modify` to a
-/// request it will never touch.
-fn consumesAbsent(datum: Datum, key: ByteArray, cageToken: TokenId) -> Bool {
-  when datum is {
-    InlineDatum(inline) ->
-      if inline is RequestDatum(request): CageDatum {
-        request.requestKey == key && request.requestToken == cageToken && (
-          request.edge == edgeUpdateActive || request.edge == edgeDeleteAbsent
-        )
-      } else {
-        False
-      }
-    _ -> False
-  }
-}
-
-fn paysAddressSomewhere(refund: ByteArray, self: Input, tx: Transaction) -> Bool {
-  let owed = lovelace_of(self.output.value)
-  filter(
-    tx.outputs,
-    fn(out) { paysAddress(refund, out) && lovelace_of(out.value) >= owed },
-  ) != []
-}
-
-// ----------------------------------------------------------------------------
 // Genesis
 // ----------------------------------------------------------------------------
 
@@ -1490,13 +1245,3 @@ pub fn validateMint(seed: OutputReference, policyId: PolicyId, tx: Transaction) 
 
 // #183 slice b: `insertEdgeOf` is gone with the `Operation` wire —
 // an insert names its edge in the request's own tag.
-
-/// A payment the fold owes a payee is short, misdirected or missing.
-fn depositReturned() -> Option<String> {
-  Some(@"deposit-returned")
-}
-
-/// A custody refund is not paid to the address its custody recorded.
-fn refundShort() -> Option<String> {
-  Some(@"refund")
-}
