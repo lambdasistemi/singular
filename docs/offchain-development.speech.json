@@ -11,7 +11,7 @@
       "pause": 350
     },
     {
-      "text": "The source-derived inventory at the ticket 267 candidate measures 89 discovered Haskell files in 23 source directories: Fourmolu selects 87 after the two verifier exclusions, and HLint selects 76 within ten directories. The added end-to-end witness belongs to all three sets. At ae4fe9a, the lint app passed in the final Gate S off-chain lint row and in pushed-head continuous integration; that gate row reported 89 discovered files in 23 directories, Fourmolu over 87 files, and HLint over ten directories with no hints. These green receipts cover only the selected extents. Thirteen directory names remain excluded from HLint under the same hint-debt boundary. Compare the next actual lint output with this inventory.",
+      "text": "The source-derived inventory at the ticket 267 candidate measures 89 discovered Haskell files in 23 source directories: Fourmolu selects 87 after the two verifier exclusions, and HLint selects 76 within ten directories. The added end-to-end witness belongs to all three sets. At ae4fe9a, the lint app passed in the final Gate S off-chain lint row and in pushed-head continuous integration; that gate row reported 89 discovered files in 23 directories, Fourmolu over 87 files, and HLint over ten directories with no hints. These green receipts cover only the selected extents. Thirteen directory names remain excluded from HLint under the same hint-debt boundary. At the ticket 270 candidate the same app reported 128 discovered files in 23 directories, Fourmolu over 126, and HLint over ten directories with no hints. The thirty new command modules sit inside already declared source directories, so discovery found them without a configuration change, and those under the journey and update terminal directories inherit those directories' HLint exclusion. Compare the next actual lint output with this inventory.",
       "pause": 500
     },
     {
@@ -27,12 +27,12 @@
   ],
   "module-ownership-maps": [
     {
-      "text": "The builder and blueprint modules, the node runtime, and the registry fold now each have a contributor map: which module owns a concern, where common edits land, and which decisions the extraction recorded. They are Builder and blueprint modules, Node module ownership, and Who owns a registry fold.",
+      "text": "The builder and blueprint modules, the node runtime, the registry fold, and the four registry commands now each have a contributor map: which module owns a concern, where common edits land, and which decisions the extraction recorded. They are Builder and blueprint modules, Node module ownership, Who owns a registry fold, and Who owns a registry command.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "offchain-development.md",
-    "sha256": "c5d15c6e5897e286b67cf5c031ae0ec632c7218f620ea6795b8e29f7941e6b49"
+    "sha256": "90a88677a51c3e627f0532a109d9564e2583b6c83cca69e6a56e01430dc3d6ce"
   }
 }

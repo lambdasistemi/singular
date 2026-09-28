@@ -1,11 +1,17 @@
 {
   "_source": {
     "file": "tasks.md",
-    "sha256": "0459ef52f55a387afcb9a1e62eeb2a1b2e0ed059b5e134e175f76c6d51262841"
+    "sha256": "d3f90903875e438a6f23fac119c004fde90d93e464a148423937a910ab49863b"
   },
   "work-items": [
     {
-      "text": "The task ledger tracks intake, each of the four command extractions, high-level documentation, and exact-candidate audit and handoff. Task stamps never replace actual command, archive or continuous integration receipts.",
+      "text": "The implementation tasks are accepted at the named audited candidate. The finalization task is complete only when that final pushed head passes its local gate, remote continuous integration, and metadata and finalization checks. The linked pull request records readiness. This stamp does not replace command, archive, audit or integration receipts.",
+      "pause": 500
+    }
+  ],
+  "acceptance-and-finalization-evidence": [
+    {
+      "text": "The independent audit approves seven rows at the named candidate. The executed runtime observations belong to the earlier named implementation revision, followed only by comments and prose changes. The finalization task requires the exact final pushed head to pass its local gate, remote continuous integration and finalization and metadata checks. The linked pull request becomes ready only after that evidence is available.",
       "pause": 500
     }
   ]

@@ -219,6 +219,17 @@ executable journey
   default-language: GHC2021
   hs-source-dirs:   journey
   main-is:          Main.hs
+  other-modules:
+    Journey.Chain
+    Journey.Controls
+    Journey.Identity
+    Journey.Malformations
+    Journey.Narration
+    Journey.Options
+    Journey.Proofs
+    Journey.Scenario
+    Journey.Steps
+
   build-depends:
     , aeson
     , base               >=4.14 && <5
@@ -557,6 +568,16 @@ executable deployment
   default-language: GHC2021
   hs-source-dirs:   deployment
   main-is:          Main.hs
+  other-modules:
+    Deployment.Compiled
+    Deployment.Count
+    Deployment.Deploy
+    Deployment.GenesisKey
+    Deployment.Narration
+    Deployment.Node
+    Deployment.Options
+    Deployment.Verify
+
   build-depends:
     , base               >=4.14 && <5
     , base16-bytestring
@@ -729,6 +750,14 @@ executable insert-active
   default-language: GHC2021
   hs-source-dirs:   insert-active
   main-is:          Main.hs
+  other-modules:
+    InsertActive.Controls
+    InsertActive.Narration
+    InsertActive.Observation
+    InsertActive.Options
+    InsertActive.Scenario
+    InsertActive.Steps
+
   build-depends:
     , aeson
     , aeson-pretty
@@ -761,6 +790,15 @@ executable update-terminal
   default-language: GHC2021
   hs-source-dirs:   update-terminal
   main-is:          Main.hs
+  other-modules:
+    UpdateTerminal.Controls
+    UpdateTerminal.Narration
+    UpdateTerminal.Observation
+    UpdateTerminal.Options
+    UpdateTerminal.Registry
+    UpdateTerminal.Scenario
+    UpdateTerminal.Steps
+
   build-depends:
     , aeson
     , aeson-pretty

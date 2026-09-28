@@ -17,7 +17,39 @@ trap cleanup EXIT
 registry="$(nix build --quiet --no-link --print-out-paths "$repo/onchain#plutus-blueprint")"
 naming="$(nix build --quiet --no-link --print-out-paths "$repo/naming-onchain#plutus-blueprint")"
 export REGISTRY_BLUEPRINT="$registry" NAMING_BLUEPRINT="$naming"
-nix build --quiet --no-link "$offchain#devnet" "$offchain#deployment"
+built="$(nix build --quiet --no-link --print-out-paths "$offchain#devnet" "$offchain#deployment")"
+# The same wrapped command `nix run .#deployment` launches, invoked directly
+# for the checks below so they add no Nix start.
+deployment="$(printf '%s\n' "$built" | grep -E -- '-deployment$')/bin/deployment"
+if [ ! -x "$deployment" ]; then
+  echo 'SETUP-FAIL: the build produced no deployment command' >&2
+  exit 1
+fi
+
+# The verb router needs no node. The first argument that is not a flag
+# selects one of the four verbs; anything else is the usage refusal, and
+# each verb refuses its missing required flag by name.
+expect_refusal() {
+  local want="$1"
+  shift
+  set +e
+  "$deployment" "$@" > "$work/refusal.out" 2>&1
+  local rc=$?
+  set -e
+  if [ "$rc" -eq 0 ] || ! grep -F -- "$want" "$work/refusal.out" > /dev/null; then
+    echo "FAIL: deployment $* exited $rc without: $want" >&2
+    cat "$work/refusal.out" >&2
+    exit 1
+  fi
+}
+usage='usage: deployment deploy --out MANIFEST'
+expect_refusal "$usage"
+expect_refusal "$usage" --out stray count
+expect_refusal 'deploy needs --out MANIFEST' deploy
+expect_refusal 'verify needs --deployment MANIFEST' verify
+expect_refusal 'count needs --deployment MANIFEST' count
+expect_refusal 'count needs --what state|reference' count --deployment "$work/unread.json"
+expect_refusal 'genesis-skey needs --out FILE' genesis-skey
 
 export TMPDIR="$work"
 nix run --quiet "$offchain#devnet" > "$work/devnet.out" 2> "$work/devnet.err" &
@@ -38,6 +70,11 @@ fi
 joiner="$work/joiner.skey"
 manifest="$work/deployment.json"
 nix run --quiet "$offchain#deployment" -- genesis-skey --out "$joiner"
+"$deployment" genesis-skey "--out=$work/joiner-equals.skey" > /dev/null
+cmp -s "$joiner" "$work/joiner-equals.skey" || {
+  echo 'FAIL: genesis-skey --out=FILE wrote a different key than --out FILE' >&2
+  exit 1
+}
 external=(--node-socket "$sock" --network-magic 42 --wallet-skey "$joiner")
 nix run --quiet "$offchain#deployment" -- deploy "${external[@]}" --out "$manifest" --release identity-check > "$work/deploy.out"
 nix run --quiet "$offchain#deployment" -- verify "${external[@]}" --deployment "$manifest" > "$work/verify.out"
@@ -46,6 +83,23 @@ grep -F 'deployment complete:' "$work/verify.out" >/dev/null || {
   cat "$work/verify.out" >&2
   exit 1
 }
+
+# count against the deployment just made: one registry output under the
+# recorded state policy, and exactly the reference outputs the manifest
+# records, asked with both flag spellings; an unknown --what is refused.
+states="$("$deployment" count "${external[@]}" --deployment "$manifest" --what state)"
+if [ "$states" != 1 ]; then
+  echo "FAIL: count --what state reported '$states' registry outputs, not 1" >&2
+  exit 1
+fi
+recorded="$(jq '.depReferenceScripts | length' "$manifest")"
+references="$("$deployment" count "${external[@]}" "--deployment=$manifest" --what=reference)"
+if [ "$references" != "$recorded" ]; then
+  echo "FAIL: count --what=reference reported '$references', the manifest records $recorded" >&2
+  exit 1
+fi
+expect_refusal 'count: --what must be state or reference, not registry' \
+  count "${external[@]}" --deployment "$manifest" --what registry
 
 jq '.depRepresentativePolicy = ("00" * 28)' "$manifest" > "$work/wrong-policy.json"
 if cmp -s "$manifest" "$work/wrong-policy.json"; then
@@ -66,4 +120,4 @@ grep -F "this release's registry-bound active policy differs from the deployment
   exit 1
 }
 
-echo "PASS: intact node verification reached completion; changed representative policy exited $rc with identity diagnostic"
+echo "PASS: verb router refusals held; intact node verification reached completion; count found $states registry output and $references of $recorded recorded reference outputs; changed representative policy exited $rc with identity diagnostic"
