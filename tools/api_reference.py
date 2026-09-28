@@ -1,15 +1,18 @@
 """Cabal-derived generated API reference: extent, digests, manifest, archive parity.
 
-One helper for the generated off-chain Haddock reference:
+One helper for every Cabal library whose generated Haddock reference this
+site ships (currently the off-chain registry library and the Conformance
+library):
 
-* ``manifest SITE HADDOCK_OUT OFFCHAIN_ROOT`` (site build time): copy the
-  Haddock HTML tree into ``SITE/api/offchain`` and write a per-module
-  manifest whose source digests are computed from ``OFFCHAIN_ROOT`` — the
-  same off-chain flake input Haddock documented — and whose page digests
-  are the actual generated pages' bytes.
+* ``manifest [--library NAME] SITE HADDOCK_OUT LIBRARY_ROOT CONFIG_FILES
+  [REEXPORT_HADDOCK_OUT]`` (site build time): copy that library's Haddock
+  HTML tree into ``SITE/api/<name>`` and write a per-module manifest whose
+  source digests are computed from ``LIBRARY_ROOT`` — the same source the
+  Haddock run documented — and whose page digests are the actual generated
+  pages' bytes.
 * ``archive-check ARCHIVE_DIR SITE`` (release-check time): the staged docs
-  archive must carry the candidate site's generated API pages,
-  member-for-member and byte-for-byte.
+  archive must carry the candidate site's generated API pages for every
+  library, member-for-member and byte-for-byte.
 
 The library part (extent parsing, module resolution, page naming) is
 imported by ``tools/prepare_docs.py`` (staging links) and
@@ -26,8 +29,8 @@ import stat
 import sys
 import tarfile
 from pathlib import Path
+from typing import NamedTuple
 
-API_DIR = ("api", "offchain")
 MANIFEST_NAME = "manifest.json"
 STANZA_HEADERS = ("library", "common")
 # Stable anchors in the rendered Node ownership guide (docs/offchain-node-
@@ -60,10 +63,62 @@ PRIVATE_OWNER_SOURCE_SHA256 = {
     "Singular.Registry.Node.Confirmation": "7cbb8c68723b3788b92db002bbb204f95bc35f63cd835b1a077bc02a9564f9a4",
     "Singular.Registry.Node.Funding": "f6a70bcc695f0762aa2ea73909e73b88d5a7da4815aedb7f541d2069661bb768",
 }
-# Non-module autolinks the A-006 repair may neutralize to visible text when
-# no local target exists; everything else unresolvable stays a library
-# reference and must resolve or fail.
-ENUMERATED_AUTOLINKS = ("one", "schema", "HEX.html")
+class ReferenceLibrary(NamedTuple):
+    """One Cabal library whose generated Haddock reference this site ships.
+
+    ``sublibrary`` names the package-private sublibrary that owns the
+    implementations behind the public facade's re-exports, when there is
+    one; the re-export and private-owner provenance machinery runs only
+    for libraries that declare it. ``guide_anchors``, ``permalink_url``
+    and ``permalink_source_sha256`` carry that machinery's frozen data.
+    """
+
+    name: str
+    repo_dir: str
+    cabal_file: str
+    api_dir: tuple[str, ...]
+    index_page: str
+    sublibrary: str | None = None
+    guide_anchors: dict[str, str] | None = None
+    permalink_url: str | None = None
+    permalink_source_sha256: dict[str, str] | None = None
+    autolinks: tuple[str, ...] = ()
+
+
+OFFCHAIN = ReferenceLibrary(
+    name="singular-registry",
+    repo_dir="offchain",
+    cabal_file="singular-registry.cabal",
+    api_dir=("api", "offchain"),
+    index_page="docs/offchain-api-reference",
+    sublibrary="node-internal",
+    guide_anchors=PRIVATE_OWNER_GUIDE_ANCHORS,
+    permalink_url=PRIVATE_OWNER_PERMALINK_URL,
+    permalink_source_sha256=PRIVATE_OWNER_SOURCE_SHA256,
+    # Prose autolinks Haddock emitted into the generated pages whose target
+    # pages do not exist: the "one" multiplicity word, the blueprint
+    # "schema" reference and the HEX encoding name.
+    autolinks=("one", "schema", "HEX.html"),
+)
+CONFORMANCE = ReferenceLibrary(
+    name="conformance",
+    repo_dir="conformance",
+    cabal_file="conformance.cabal",
+    api_dir=("api", "conformance"),
+    index_page="docs/conformance-api-reference",
+    # The receipt documentation's "receipt-ROW.json" placeholder: Haddock
+    # autolinks the word ROW to a page that does not exist. The text stays
+    # visible and only the dead anchor is removed, exactly as the off-chain
+    # reference treats its own prose autolinks.
+    autolinks=("ROW",),
+)
+LIBRARIES = {"offchain": OFFCHAIN, "conformance": CONFORMANCE}
+
+# Non-module autolinks may be neutralized to visible text when no local
+# target exists; everything else unresolvable stays a library reference and
+# must resolve or fail. Which autolinks those are is per library (see
+# ReferenceLibrary.autolinks): each entry names a generator-emitted prose
+# autolink in that library's pages whose target page does not exist.
 DEP_SPAN = '<span class="api-dep">{}</span>'
 AUTOLINK_SPAN = '<span class="api-autolink">{}</span>'
 # The epic-ruled structural class: a generator-emitted same-page method
@@ -160,33 +215,33 @@ def _parse(cabal_file: Path) -> dict:
 _EXTENT_CACHE: dict[str, dict] = {}
 
 
-def parse_cabal_library(offchain_root: Path) -> dict:
-    key = str(offchain_root.resolve())
+def parse_cabal_library(library: ReferenceLibrary, root: Path) -> dict:
+    key = f"{library.name}:{root.resolve()}"
     if key not in _EXTENT_CACHE:
-        _EXTENT_CACHE[key] = _parse(offchain_root / "singular-registry.cabal")
+        _EXTENT_CACHE[key] = _parse(root / library.cabal_file)
     return _EXTENT_CACHE[key]
 
 
-def library_modules(offchain_root: Path) -> list[str]:
+def library_modules(library: ReferenceLibrary, root: Path) -> list[str]:
     """Sorted complete library module extent (exposed, other, re-exported)."""
-    extent = parse_cabal_library(offchain_root)
+    extent = parse_cabal_library(library, root)
     modules = sorted(set(extent["exposed"]) | set(extent["other"]))
     if not modules:
         raise SystemExit("api_reference: empty library extent")
     return modules
 
 
-def module_source(offchain_root: Path, module: str) -> Path:
+def module_source(library: ReferenceLibrary, root: Path, module: str) -> Path:
     """Resolve one module through every declared hs-source-dir (exactly one)."""
-    extent = parse_cabal_library(offchain_root)
+    extent = parse_cabal_library(library, root)
     rel = Path(*module.split(".")).with_suffix(".hs")
-    hits = [d / rel for d in extent["hs_source_dirs"] if (offchain_root / d / rel).is_file()]
+    hits = [d / rel for d in extent["hs_source_dirs"] if (root / d / rel).is_file()]
     if len(hits) != 1:
         raise SystemExit(
             f"api_reference: module {module} resolves to {len(hits)} source files "
             f"({[str(h) for h in hits]}) under {extent['hs_source_dirs']}"
         )
-    return offchain_root / hits[0]
+    return root / hits[0]
 
 
 def module_page_name(module: str) -> str:
@@ -270,8 +325,9 @@ def transform_tree(
     api_root: Path,
     extent: list[str],
     dep_modules: set[str],
-    offchain_root: Path,
+    library_root: Path,
     private_owners: dict[str, dict] | None = None,
+    enumerated_autolinks: tuple[str, ...] = (),
 ) -> dict:
     """Repair same-library links, neutralize proven dependency links, and
     strip external assets from the copied generated tree.
@@ -523,7 +579,7 @@ def transform_tree(
                 {"page": page_name, "from": href, "to": replacement}
             )
             return original.replace(href, replacement, 1)
-        if path in ENUMERATED_AUTOLINKS or title in ENUMERATED_AUTOLINKS:
+        if path in enumerated_autolinks or title in enumerated_autolinks:
             stats["autolink"] += 1
             return AUTOLINK_SPAN.format(plain)
         raise SystemExit(
@@ -543,14 +599,141 @@ def transform_tree(
     return stats
 
 
+def _private_owner_links(
+    library: ReferenceLibrary,
+    site: Path,
+    db_records: list[dict],
+    reexported: list[str],
+    library_root: Path,
+) -> dict[str, dict]:
+    """Package-private owners of a library that declares a sublibrary.
+
+    Modules of the one candidate-owned sublibrary the public library does
+    not re-export. Each must have exactly one candidate-owned record and no
+    other owner, a rendered guide anchor, and a real source file with the
+    frozen digest, all verified here — the guide destination is checked,
+    never assumed. Each expected permalink is bound to its own rendered
+    owner entry: the span between this owner's anchor and the next rendered
+    owner anchor must carry exactly that owner's source link — no other
+    owner's URL — so a swapped or duplicated link is refused even though
+    every URL occurs somewhere on the page. Anchors are ordered by their
+    rendered position, so the guide's authored entry order is free.
+    """
+    candidate_lib = library.name
+    candidate_sublib = library.sublibrary
+
+    def is_candidate_sublib(record: dict) -> bool:
+        return (
+            record["package"] == candidate_lib
+            and record["lib"] == candidate_sublib
+        )
+
+    sublib_records = [r for r in db_records if is_candidate_sublib(r)]
+    if len(sublib_records) != 1:
+        raise SystemExit(
+            "api_reference: expected exactly one candidate-owned "
+            f"{candidate_lib}/{candidate_sublib} package-db record, found "
+            f"{len(sublib_records)}"
+        )
+    private_modules = sorted(set(sublib_records[0]["modules"]) - set(reexported))
+    private_owners: dict[str, dict] = {}
+    guide_page_rel = "docs/offchain-node-ownership/index.html"
+    guide_page = site / guide_page_rel
+    guide_text = ""
+    if private_modules:
+        if not guide_page.is_file():
+            raise SystemExit(
+                f"api_reference: rendered owner guide page missing for private "
+                f"owners: {guide_page}"
+            )
+        guide_text = guide_page.read_text(errors="replace")
+    for module in private_modules:
+        anchor = (library.guide_anchors or {}).get(module)
+        if anchor is None:
+            raise SystemExit(
+                f"api_reference: no guide anchor mapping for private owner {module}"
+            )
+        owners = [r for r in db_records if module in r["modules"]]
+        same = [r for r in owners if is_candidate_sublib(r)]
+        others = [r for r in owners if not is_candidate_sublib(r)]
+        if len(same) != 1 or others:
+            raise SystemExit(
+                f"api_reference: private owner {module} requires exactly one "
+                f"candidate-owned {candidate_lib}/{candidate_sublib} record and "
+                f"no other owner; owners: "
+                f"{[(r['package'], r['lib'], r['conf']) for r in owners]}"
+            )
+        if f'id="{anchor}"' not in guide_text:
+            raise SystemExit(
+                f"api_reference: rendered guide anchor missing for private "
+                f"owner {module}: #{anchor} on {guide_page_rel}"
+            )
+        owner = module.rsplit(".", 1)[-1]
+        expected_url = (library.permalink_url or "").format(owner=owner)
+        private_owners[module] = {
+            "href": "../../" + guide_page_rel + "#" + anchor,
+            "anchor": anchor,
+            "source": None,
+            "source_sha256": None,
+            "permalink": expected_url,
+        }
+    located = []
+    for module in private_modules:
+        anchor = private_owners[module]["anchor"]
+        anchor_token = f'id="{anchor}"'
+        occurrences = guide_text.count(anchor_token)
+        if occurrences < 1:
+            raise SystemExit(
+                f"api_reference: rendered guide anchor missing for private "
+                f"owner {module}: #{anchor} on {guide_page_rel}"
+            )
+        if occurrences > 1:
+            raise SystemExit(
+                f"api_reference: ambiguous rendered guide anchor for private "
+                f"owner {module}: #{anchor} occurs {occurrences} times on "
+                f"{guide_page_rel}"
+            )
+        located.append((guide_text.find(anchor_token), module, anchor, private_owners[module]["permalink"]))
+    located.sort()
+    for i, (pos, module, anchor, url) in enumerate(located):
+        end = located[i + 1][0] if i + 1 < len(located) else len(guide_text)
+        entry = guide_text[pos:end]
+        url_token = f'href="{url}"'
+        if entry.count(url_token) != 1:
+            raise SystemExit(
+                f"api_reference: owner permalink missing, wrong or duplicated "
+                f"for private owner {module}: expected exactly one {url} "
+                f"bound to entry #{anchor} on {guide_page_rel}"
+            )
+        for _, other_module, _, other_url in located:
+            if other_module != module and f'href="{other_url}"' in entry:
+                raise SystemExit(
+                    f"api_reference: ambiguous owner entry #{anchor} on "
+                    f"{guide_page_rel}: another owner's permalink is bound to "
+                    f"{module}'s entry"
+                )
+        source = module_source(library, library_root, module)
+        digest = sha256_file(source)
+        frozen = (library.permalink_source_sha256 or {}).get(module)
+        if frozen is None or digest != frozen:
+            raise SystemExit(
+                f"api_reference: private owner source digest mismatch for "
+                f"{module}: {source} sha256={digest} expected={frozen}"
+            )
+        private_owners[module]["source"] = source.relative_to(library_root).as_posix()
+        private_owners[module]["source_sha256"] = digest
+    return private_owners
+
+
 def copy_reference(
+    library: ReferenceLibrary,
     site: Path,
     haddock_out: Path,
-    offchain_root: Path,
+    library_root: Path,
     config_files: Path,
     reexport_haddock_out: Path | None = None,
 ) -> dict:
-    """Copy the generated tree into the site and build the manifest.
+    """Copy one library's generated tree into the site and build the manifest.
 
     When the public library re-exports modules whose implementations live
     in a package-private sublibrary, those re-exports' generated pages come
@@ -558,13 +741,15 @@ def copy_reference(
     the re-exported modules' page pairs are taken from it — nothing else —
     and each must exist there; a missing page fails the build rather than
     publishing a silent gap. The private owners that are not re-exported
-    never enter the public reference.
+    never enter the public reference. Both mechanisms run only for a
+    library that declares a sublibrary; the Conformance library has none,
+    so its manifest is the plain extent-and-digest binding.
     """
-    extent = parse_cabal_library(offchain_root)
+    extent = parse_cabal_library(library, library_root)
     modules = sorted(set(extent["exposed"]) | set(extent["other"]))
     reexported = sorted(set(extent["reexported"]) & set(modules))
     html_root = find_haddock_root(haddock_out, modules)
-    api_root = site.joinpath(*API_DIR)
+    api_root = site.joinpath(*library.api_dir)
     if api_root.exists():
         raise SystemExit(f"api_reference: {api_root} already exists; refusing to mix trees")
     api_root.mkdir(parents=True)
@@ -601,7 +786,7 @@ def copy_reference(
                 shutil.copyfile(origin, target)
     records = []
     for module in modules:
-        source = module_source(offchain_root, module)
+        source = module_source(library, library_root, module)
         module_page = api_root / module_page_name(module)
         source_page = api_root / "src" / source_page_name(module)
         for page in (module_page, source_page):
@@ -610,27 +795,28 @@ def copy_reference(
         records.append(
             {
                 "module": module,
-                "source": source.relative_to(offchain_root).as_posix(),
+                "source": source.relative_to(library_root).as_posix(),
                 "source_sha256": sha256_file(source),
                 "module_page": module_page.relative_to(api_root).as_posix(),
                 "source_page": source_page.relative_to(api_root).as_posix(),
             }
         )
     db_records = parse_package_db(config_files)
-    candidate_lib = "singular-registry"
-    candidate_sublib = "node-internal"
+    candidate_lib = library.name
+    candidate_sublib = library.sublibrary
 
     def is_candidate_sublib(record: dict) -> bool:
         return (
-            record["package"] == candidate_lib
+            library.sublibrary is not None
+            and record["package"] == candidate_lib
             and record["lib"] == candidate_sublib
         )
 
     # Each re-exported module is a same-package public re-export only when
     # the public stanza names it (the extent's ``reexported``), exactly one
-    # candidate-owned singular-registry/node-internal record owns it, and
-    # no other record — candidate or external — claims it. Anything else is
-    # a missing, ambiguous or externally owned re-export and fails loudly.
+    # candidate-owned sublibrary record owns it, and no other record —
+    # candidate or external — claims it. Anything else is a missing,
+    # ambiguous or externally owned re-export and fails loudly.
     for module in reexported:
         owners = [r for r in db_records if module in r["modules"]]
         same = [r for r in owners if is_candidate_sublib(r)]
@@ -644,10 +830,11 @@ def copy_reference(
             )
 
     # Dependency modules are decided per record, from each record's typed
-    # identity: the one candidate-owned sublibrary record is the same
-    # package, not a dependency; every other record contributes all of its
-    # modules exactly as before. No name is subtracted from a flat set and
-    # no singular-registry-wide exemption exists.
+    # identity: a candidate-owned sublibrary record is the same package,
+    # not a dependency; every other record contributes all of its modules.
+    # No name is subtracted from a flat set and no candidate-wide exemption
+    # exists. A library without a sublibrary owns no record, so every
+    # record is a dependency.
     dep_modules: set[str] = set()
     for record in db_records:
         if is_candidate_sublib(record):
@@ -659,118 +846,19 @@ def copy_reference(
             f"api_reference: package db claims library modules as dependencies: {overlap[:5]}"
         )
 
-    # Package-private owners: modules of the one candidate sublibrary that
-    # the public library does not re-export. Each must have exactly one
-    # candidate-owned record and no other owner, a rendered guide anchor,
-    # and a real source file, all verified here — the guide destination is
-    # checked, never assumed.
-    sublib_records = [r for r in db_records if is_candidate_sublib(r)]
-    if len(sublib_records) != 1:
-        raise SystemExit(
-            "api_reference: expected exactly one candidate-owned "
-            f"{candidate_lib}/{candidate_sublib} package-db record, found "
-            f"{len(sublib_records)}"
-        )
-    private_modules = sorted(set(sublib_records[0]["modules"]) - set(reexported))
     private_owners: dict[str, dict] = {}
-    guide_page_rel = "docs/offchain-node-ownership/index.html"
-    guide_page = site / guide_page_rel
-    guide_text = ""
-    if private_modules:
-        if not guide_page.is_file():
-            raise SystemExit(
-                f"api_reference: rendered owner guide page missing for private "
-                f"owners: {guide_page}"
-            )
-        guide_text = guide_page.read_text(errors="replace")
-    for module in private_modules:
-        anchor = PRIVATE_OWNER_GUIDE_ANCHORS.get(module)
-        if anchor is None:
-            raise SystemExit(
-                f"api_reference: no guide anchor mapping for private owner {module}"
-            )
-        owners = [r for r in db_records if module in r["modules"]]
-        same = [r for r in owners if is_candidate_sublib(r)]
-        others = [r for r in owners if not is_candidate_sublib(r)]
-        if len(same) != 1 or others:
-            raise SystemExit(
-                f"api_reference: private owner {module} requires exactly one "
-                f"candidate-owned {candidate_lib}/{candidate_sublib} record and "
-                f"no other owner; owners: "
-                f"{[(r['package'], r['lib'], r['conf']) for r in owners]}"
-            )
-        if f'id="{anchor}"' not in guide_text:
-            raise SystemExit(
-                f"api_reference: rendered guide anchor missing for private "
-                f"owner {module}: #{anchor} on {guide_page_rel}"
-            )
-        owner = module.rsplit(".", 1)[-1]
-        expected_url = PRIVATE_OWNER_PERMALINK_URL.format(owner=owner)
-        private_owners[module] = {
-            "href": "../../" + guide_page_rel + "#" + anchor,
-            "anchor": anchor,
-            "source": None,
-            "source_sha256": None,
-            "permalink": expected_url,
-        }
-
-    # Bind each expected permalink to its own rendered owner entry: the
-    # span between this owner's anchor and the next rendered owner anchor
-    # must carry exactly that owner's source link — no other owner's URL —
-    # so a swapped or duplicated link is refused even though every URL
-    # occurs somewhere on the page. Anchors are ordered by their rendered
-    # position, so the guide's authored entry order is free.
-    located = []
-    for module in private_modules:
-        anchor = private_owners[module]["anchor"]
-        anchor_token = f'id="{anchor}"'
-        occurrences = guide_text.count(anchor_token)
-        if occurrences < 1:
-            raise SystemExit(
-                f"api_reference: rendered guide anchor missing for private "
-                f"owner {module}: #{anchor} on {guide_page_rel}"
-            )
-        if occurrences > 1:
-            raise SystemExit(
-                f"api_reference: ambiguous rendered guide anchor for private "
-                f"owner {module}: #{anchor} occurs {occurrences} times on "
-                f"{guide_page_rel}"
-            )
-        located.append((guide_text.find(anchor_token), module, anchor, private_owners[module]["permalink"]))
-    located.sort()
-    for i, (pos, module, anchor, url) in enumerate(located):
-        end = located[i + 1][0] if i + 1 < len(located) else len(guide_text)
-        entry = guide_text[pos:end]
-        url_token = f'href="{url}"'
-        if entry.count(url_token) != 1:
-            raise SystemExit(
-                f"api_reference: owner permalink missing, wrong or duplicated "
-                f"for private owner {module}: expected exactly one {url} "
-                f"bound to entry #{anchor} on {guide_page_rel}"
-            )
-        for _, other_module, _, other_url in located:
-            if other_module != module and f'href="{other_url}"' in entry:
-                raise SystemExit(
-                    f"api_reference: ambiguous owner entry #{anchor} on "
-                    f"{guide_page_rel}: another owner's permalink is bound to "
-                    f"{module}'s entry"
-                )
-        source = module_source(offchain_root, module)
-        digest = sha256_file(source)
-        frozen = PRIVATE_OWNER_SOURCE_SHA256.get(module)
-        if frozen is None or digest != frozen:
-            raise SystemExit(
-                f"api_reference: private owner source digest mismatch for "
-                f"{module}: {source} sha256={digest} expected={frozen}"
-            )
-        private_owners[module]["source"] = source.relative_to(offchain_root).as_posix()
-        private_owners[module]["source_sha256"] = digest
-    transform = transform_tree(api_root, modules, dep_modules, offchain_root, private_owners)
+    if library.sublibrary is not None:
+        private_owners = _private_owner_links(
+            library, site, db_records, reexported, library_root
+        )
+    transform = transform_tree(
+        api_root, modules, dep_modules, library_root, private_owners, library.autolinks
+    )
     for record in records:
         record["module_page_sha256"] = sha256_file(api_root / record["module_page"])
         record["source_page_sha256"] = sha256_file(api_root / record["source_page"])
     manifest = {
-        "package": "singular-registry",
+        "package": library.name,
         "generator": "tools/api_reference.py",
         "other_modules": extent["other"],
         "modules": records,
@@ -789,7 +877,7 @@ def copy_reference(
         },
         "private_owner_links": {
             module: {
-                "guide_page": guide_page_rel,
+                "guide_page": "docs/offchain-node-ownership/index.html",
                 "anchor": info["anchor"],
                 "source": info["source"],
                 "source_sha256": info["source_sha256"],
@@ -815,45 +903,61 @@ def api_file_inventory(root: Path) -> dict[str, str]:
 
 
 def archive_check(archive_dir: Path, site: Path) -> None:
-    """The staged docs archive carries the candidate API pages, exactly."""
+    """The staged docs archive carries every library's API pages, exactly."""
     bundles = sorted(archive_dir.glob("singular-docs-*.tar.gz"))
     if len(bundles) != 1:
         raise SystemExit(f"api_reference: expected one docs archive, found {bundles}")
-    site_files = api_file_inventory(site.joinpath(*API_DIR))
-    if not site_files:
-        raise SystemExit("api_reference: candidate site carries no generated API pages")
-    archived: dict[str, str] = {}
+    archived_by_library: dict[str, dict[str, str]] = {name: {} for name in LIBRARIES}
     with tarfile.open(bundles[0]) as bundle:
         for member in bundle.getmembers():
             name = member.name.removeprefix("./")
-            prefix = "/".join(API_DIR) + "/"
-            if name.startswith(prefix) and member.isfile():
-                extracted = bundle.extractfile(member)
-                assert extracted is not None, f"unreadable archive member: {name}"
-                archived[name[len(prefix):]] = hashlib.sha256(extracted.read()).hexdigest()
-    missing = sorted(set(site_files) - set(archived))
-    if missing:
-        detail = f"{missing[0]} (and {len(missing) - 1} more)" if len(missing) > 1 else missing[0]
-        print(f"API_ARCHIVE_MISSING {detail}", file=sys.stderr)
-        raise SystemExit(1)
-    extra = sorted(set(archived) - set(site_files))
-    if extra:
-        print(f"API_ARCHIVE_EXTRA {extra[0]}", file=sys.stderr)
-        raise SystemExit(1)
-    drifted = sorted(name for name in site_files if archived[name] != site_files[name])
-    if drifted:
-        print(f"API_ARCHIVE_BYTES {drifted[0]}", file=sys.stderr)
-        raise SystemExit(1)
-    print(f"api-archive-check members={len(archived)}")
+            for key, library in LIBRARIES.items():
+                prefix = "/".join(library.api_dir) + "/"
+                if name.startswith(prefix) and member.isfile():
+                    extracted = bundle.extractfile(member)
+                    assert extracted is not None, f"unreadable archive member: {name}"
+                    archived_by_library[key][name[len(prefix):]] = hashlib.sha256(
+                        extracted.read()
+                    ).hexdigest()
+    members = 0
+    for key, library in LIBRARIES.items():
+        site_files = api_file_inventory(site.joinpath(*library.api_dir))
+        if not site_files:
+            raise SystemExit(
+                f"api_reference: candidate site carries no generated API pages "
+                f"for {library.name}"
+            )
+        archived = archived_by_library[key]
+        missing = sorted(set(site_files) - set(archived))
+        if missing:
+            detail = f"{missing[0]} (and {len(missing) - 1} more)" if len(missing) > 1 else missing[0]
+            print(f"API_ARCHIVE_MISSING library={library.name} {detail}", file=sys.stderr)
+            raise SystemExit(1)
+        extra = sorted(set(archived) - set(site_files))
+        if extra:
+            print(f"API_ARCHIVE_EXTRA library={library.name} {extra[0]}", file=sys.stderr)
+            raise SystemExit(1)
+        drifted = sorted(name for name in site_files if archived[name] != site_files[name])
+        if drifted:
+            print(f"API_ARCHIVE_BYTES library={library.name} {drifted[0]}", file=sys.stderr)
+            raise SystemExit(1)
+        members += len(archived)
+    print(f"api-archive-check libraries={len(LIBRARIES)} members={members}")
 
 
 def main(argv: list[str]) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="mode", required=True)
     manifest = sub.add_parser("manifest", help="copy the Haddock tree and write the manifest")
+    manifest.add_argument(
+        "--library",
+        choices=sorted(LIBRARIES),
+        default="offchain",
+        help="which Cabal library's reference to stage",
+    )
     manifest.add_argument("site")
     manifest.add_argument("haddock_out")
-    manifest.add_argument("offchain_root")
+    manifest.add_argument("library_root")
     manifest.add_argument("config_files")
     manifest.add_argument(
         "reexport_haddock_out",
@@ -867,15 +971,16 @@ def main(argv: list[str]) -> None:
     args = parser.parse_args(argv)
     if args.mode == "manifest":
         built = copy_reference(
+            LIBRARIES[args.library],
             Path(args.site),
             Path(args.haddock_out),
-            Path(args.offchain_root),
+            Path(args.library_root),
             Path(args.config_files),
             Path(args.reexport_haddock_out) if args.reexport_haddock_out else None,
         )
         neutral = built["neutralization"]
         print(
-            f"api-reference modules={len(built['modules'])} "
+            f"api-reference library={args.library} modules={len(built['modules'])} "
             f"other-modules={len(built['other_modules'])} "
             f"dependency-modules={built['package_inventory']['dependency_module_count']} "
             f"neutralized-dependency={neutral['dependency']} "

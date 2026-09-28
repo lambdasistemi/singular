@@ -16,6 +16,13 @@ let
   # dependency owns, used to neutralize (never merely unlink) the generated
   # references to dependency documentation this site does not bundle.
   apiPackageDb = offchain.packages.${pkgs.system}.library-haddock.configFiles;
+  # The generated Conformance library reference, from this tree's own
+  # Conformance input the same way: Haddock runs on the candidate's source,
+  # and the manifest binds that source's digests to the generated pages so
+  # the checker can prove the reference describes this candidate.
+  apiConformanceHaddock = conformance.packages.${pkgs.system}.library-haddock;
+  apiConformancePackageDb =
+    conformance.packages.${pkgs.system}.library-haddock.configFiles;
   # Material fetches Mermaid from unpkg at read time unless `mermaid` is already
   # defined. The shared toolchain pins a copy; serving it from the site keeps
   # every diagram inside the checked, byte-verified build.
@@ -30,6 +37,7 @@ let
       python3 tools/prepare_docs.py
       mkdocs build --strict
       python3 tools/api_reference.py manifest site ${apiHaddock.doc} ${offchain.outPath} ${apiPackageDb} ${apiReexportHaddock.doc}
+      python3 tools/api_reference.py manifest --library conformance site ${apiConformanceHaddock.doc} ${conformance.outPath} ${apiConformancePackageDb}
       python3 tools/prepare_release.py site
     '';
     installPhase = ''
