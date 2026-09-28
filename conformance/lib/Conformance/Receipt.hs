@@ -45,6 +45,7 @@ module Conformance.Receipt (
     currentBase,
 ) where
 
+import Conformance.Evidence.Asset (AssetEntry (..))
 import Conformance.NodeRejection (boundedNodeReason)
 import Conformance.Story.Live (Edge (..), Tamper (..), edgeName, tamperName)
 import Control.Exception (ErrorCall (..), throwIO)
@@ -1075,29 +1076,3 @@ currentBase = do
                 "conformance list: git base unknown; \
                 \printing the declared plan"
             pure Nothing
-
--- ---------------------------------------------------------
--- Edge evidence (#173)
--- ---------------------------------------------------------
-
-{- | One asset movement, named by its policy and asset name.
-
-The registry's token identity is @(policy, key)@ and nothing else, so a
-row about a keyed mint has to report both. A quantity alone cannot
-distinguish "one token at this key" from "one token at some other key".
--}
-data AssetEntry = AssetEntry
-    { aePolicy :: !Text
-    , aeName :: !Text
-    , aeQuantity :: !Integer
-    }
-    deriving stock (Show, Eq)
-
-instance FromJSON AssetEntry where
-    parseJSON = withObject "AssetEntry" $ \o ->
-        AssetEntry <$> o .: "policy" <*> o .: "name" <*> o .: "quantity"
-
-instance ToJSON AssetEntry where
-    toJSON a =
-        object
-            ["policy" .= aePolicy a, "name" .= aeName a, "quantity" .= aeQuantity a]
