@@ -8,7 +8,8 @@ checks fails the run instead of passing silently. There is no file list.
 
 Families and their checkers (pinned by the root development shell):
 
-  nix            nixfmt (format), statix and deadnix (lint)
+  nix            nixfmt (format), statix and deadnix (lint), and the
+                 Conformance flake lock held byte-equal to the off-chain lock
   python         ruff format (format), ruff check (lint)
   shell          shfmt -i 2 -ci -bn (format), shellcheck (lint)
   javascript,css biome check: formatter and recommended lint rules,
@@ -42,6 +43,7 @@ import sys
 import tempfile
 from pathlib import Path
 
+sys.dont_write_bytecode = True  # a Git-free tree would see the cache as source
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import code_inventory  # noqa: E402
 
@@ -112,6 +114,22 @@ def style_rules(paths: list[str]) -> bool:
     return ok
 
 
+# The Conformance flake declares the off-chain flake's inputs verbatim and
+# carries a byte copy of its lock (conformance/flake.nix), so both trees
+# resolve one dependency graph. Merging the two flakes would rewrite both
+# locks; instead the copy is held equal here, so the duplicate cannot drift.
+LOCK_PAIRS = [("offchain/flake.lock", "conformance/flake.lock")]
+
+
+def lock_parity() -> bool:
+    ok = True
+    for canonical, copy in LOCK_PAIRS:
+        if (ROOT / canonical).read_bytes() != (ROOT / copy).read_bytes():
+            print(f"nix: {copy} differs from {canonical}", file=sys.stderr)
+            ok = False
+    return ok
+
+
 def nix(paths: list[str], fix: bool) -> bool:
     if fix:
         ok = run(["deadnix", "--edit", *paths])
@@ -119,13 +137,18 @@ def nix(paths: list[str], fix: bool) -> bool:
         return ok & run(["nixfmt", *paths])
     ok = run(["nixfmt", "--check", *paths])
     ok &= each(["statix", "check"], paths)
-    return ok & run(["deadnix", "--fail", *paths])
+    ok &= run(["deadnix", "--fail", *paths])
+    return ok & lock_parity()
 
 
 def python(paths: list[str], fix: bool) -> bool:
     if fix:
-        return run(["ruff", "check", "--fix", *paths]) & run(["ruff", "format", *paths])
-    return run(["ruff", "check", *paths]) & run(["ruff", "format", "--check", *paths])
+        return run(["ruff", "check", "--no-cache", "--fix", *paths]) & run(
+            ["ruff", "format", "--no-cache", *paths]
+        )
+    return run(["ruff", "check", "--no-cache", *paths]) & run(
+        ["ruff", "format", "--no-cache", "--check", *paths]
+    )
 
 
 def shell(paths: list[str], fix: bool) -> bool:
@@ -137,7 +160,9 @@ def shell(paths: list[str], fix: bool) -> bool:
 def web(paths: list[str], fix: bool) -> bool:
     if fix:
         return run(["biome", "check", "--write", *paths])
-    return run(["biome", "check", "--error-on-warnings", *paths])
+    return run(
+        ["biome", "check", "--error-on-warnings", "--diagnostic-level=warn", *paths]
+    )
 
 
 def just(paths: list[str], fix: bool) -> bool:
@@ -223,7 +248,7 @@ def main(argv: list[str]) -> int:
         )
         print(
             f"lint: {family}: {len(paths)} files "
-            f"({len(rows) - len(paths)} generated, held by their generators)"
+            f"({len(rows) - len(paths)} generated files skipped, held by their generators)"
         )
         groups.setdefault(CHECKERS[family], []).extend(paths)
     for checker, paths in groups.items():

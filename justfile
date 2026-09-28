@@ -47,6 +47,7 @@ ci:
     just format-check
     just format-controls
     just lint
+    just lint-controls
 
 # #108: the rename tool must re-run cleanly on a pre-rename tree, be a no-op
 # on the second run, and its gate must catch strays planted in .sh files.
@@ -59,8 +60,7 @@ rename-registry-test:
 # lint and format policy — or to a named non-code class — discovered from
 # the tree itself (extensions, shebangs, executable mode, component
 # manifests). Fails closed on anything unmapped. Mapping is not enforcement:
-# the report names which policies CI executes today and which are pending
-# debt owned by the remaining slices of the lint-and-format work.
+# the report names the CI carrier that executes each policy.
 
 # Map every file to its lint and format policy.
 inventory:
@@ -119,3 +119,11 @@ lint *families:
 # Apply the formatters (and safe lint fixes) of `just lint` in place.
 lint-fix *families:
     python3 tools/lint_code.py fix {{ families }}
+
+# Negative controls for `just lint`: one planted defect per checker family,
+# including a new source under a new directory, in scratch copies of the
+# classified tree. The working tree is never touched.
+
+# Run the lint and format checks' negative controls.
+lint-controls:
+    bash tools/lint_controls.sh

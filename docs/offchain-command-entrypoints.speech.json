@@ -127,7 +127,7 @@
   ],
   "evidence-and-limits": [
     {
-      "text": "The lint app formats every command module, and runs HLint over the insert active and deployment directories; the journey and update terminal directories stay outside HLint under the existing debt boundary, so their hint state is recorded in the change's evidence. The component build compiles all four commands.",
+      "text": "The lint app formats every command module, and runs HLint over all of them, the journey and update terminal directories included, with no directory exclusions. The component build compiles all four commands.",
       "pause": 400
     },
     {
@@ -141,6 +141,6 @@
   ],
   "_source": {
     "file": "offchain-command-entrypoints.md",
-    "sha256": "a410340d2c2700cd378055e11684f7bf92c63033bbcbb3f6a8aee2897d1da6ea"
+    "sha256": "fe2e4ca591356805a636dc7e471a6ec1d67f6d1cc1f93236738a26a7060a2bae"
   }
 }

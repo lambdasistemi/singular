@@ -15,11 +15,12 @@ file with an extension nobody classified, an extensionless executable with no
 shebang, an unknown interpreter, an inert registry rule, or a dead policy.
 
 The registry states enforcement HONESTLY. A policy is `enforced` only where a
-checker actually runs in CI today, with its carrier named; everything else is
-`pending` with the slice that owns it (#278 S2-S4) — pending policies are
-visible debt, never green language coverage. This inventory is a mapping, not
-enforcement: it proves every file is CLAIMED by a policy, and says which
-claims are currently executed.
+checker actually runs in CI today, with its carrier named; a policy without a
+carrier would be `pending` with an owner — visible debt, never green language
+coverage. This inventory is a mapping, not enforcement: it proves every file
+is CLAIMED by a policy and says which carrier executes each claim; the
+carriers themselves (tools/lint_code.py behind `just lint`, the Haskell and
+Aiken checks) do the checking.
 
 Reproducibility across contexts: in a Git checkout the walk skips `.git`
 and skips an ignore-matched path ONLY when it is not tracked — a tracked
@@ -71,30 +72,24 @@ POLICIES: dict[str, dict] = {
         "hs-source-dirs stanza of singular-registry.cabal (visited "
         "recursively, as the checker's find does) plus the two "
         "direct-GHC naming sources — the same discovery "
-        "offchain/nix/checks.nix performs — minus the 13 HLint debt "
-        "directories (see hlint-offchain-debt). An offchain source "
+        "offchain/nix/checks.nix performs — with no exclusions: the 13 "
+        "directories #264 excluded (journey and its sub-stanzas, "
+        "naming/test, naming/drift, update-terminal) had their baseline "
+        "hints resolved at the source by #278 S3. An offchain source "
         "outside that visited extent fails the inventory instead of "
         "being claimed as enforced.",
-    },
-    "hlint-offchain-debt": {
-        "kind": "lint",
-        "tool": "hlint",
-        "status": "pending",
-        "owner": "#278 S3",
-        "note": "the 13 directories excluded by #264 (journey and its nine "
-        "sub-stanza dirs, naming/test, naming/drift, update-terminal) "
-        "carry the baseline hint debt: 218 hints at #264 intake, 214 "
-        "re-measured at cc6ea00 (offchain/nix/checks.nix). Debt is "
-        "retained here as pending work, not converted to green.",
     },
     "hlint-conformance": {
         "kind": "lint",
         "tool": "hlint",
-        "status": "pending",
-        "owner": "#278 S3/S4",
-        "note": "every Haskell source under conformance/, whatever component "
-        "owns it (the Cabal stanzas and the #80 evaluation spike "
-        "today); no HLint carrier covers this tree yet.",
+        "status": "enforced",
+        "carrier": "conformance `nix run .#hlint-check` — CI job "
+        "'Conformance Haskell format and lint check' (conformance.yml)",
+        "note": "every Haskell source under conformance/, discovered from "
+        "the Cabal manifests at check time (the Conformance stanzas and "
+        "the #80 evaluation spike), the same extent the format check "
+        "visits, with the HLint the conformance lock pins; no "
+        "exclusions and no ignore file.",
     },
     "aiken-check-onchain": {
         "kind": "lint",
@@ -116,46 +111,44 @@ POLICIES: dict[str, dict] = {
     },
     "lean-static": {
         "kind": "lint",
-        "tool": "none adopted",
-        "status": "pending",
-        "owner": "#278 S4",
-        "note": "lake build plus the theorem-debt reconciliation are semantic "
-        "carriers, not lint; no Lean linter/style checker is adopted "
-        "yet. S4 must adopt a policy (an explicit enforced style "
-        "policy if no linter fits).",
+        "tool": "Lean style rules (tools/lint_code.py)",
+        "status": "enforced",
+        "carrier": "`just lint` inside `just ci` — CI job 'Development shell build'",
+        "note": "no general Lean linter or formatter is adopted, so an "
+        "explicit style policy is enforced instead: no tab character and "
+        "no carriage return. The simulator mirror is held to the same "
+        "rules. Semantic checking stays with the model build and the "
+        "theorem-debt reconciliation.",
     },
     "nix-lint": {
         "kind": "lint",
-        "tool": "none adopted",
-        "status": "pending",
-        "owner": "#278 S4",
-        "note": "flake evaluations and builds are build carriers, not lint.",
+        "tool": "statix + deadnix",
+        "status": "enforced",
+        "carrier": "`just lint` inside `just ci` — CI job 'Development shell build'",
+        "note": "the same run holds conformance/flake.lock byte-equal to "
+        "offchain/flake.lock, the dependency graph the Conformance flake "
+        "declares verbatim.",
     },
     "python-lint": {
         "kind": "lint",
-        "tool": "none adopted",
-        "status": "pending",
-        "owner": "#278 S4",
-        "note": "the Python tools execute inside CI carriers (model check, "
-        "coverage gate, docs preparation); execution is not lint.",
+        "tool": "ruff check",
+        "status": "enforced",
+        "carrier": "`just lint` inside `just ci` — CI job 'Development shell build'",
+        "note": "ruff's default rule set, no per-file ignores.",
     },
     "shell-lint": {
         "kind": "lint",
-        "tool": "none adopted",
-        "status": "pending",
-        "owner": "#278 S4",
-        "note": "scripts execute inside CI carriers; the only shellcheck "
-        "reach today is actionlint's embedded-shell checking of "
-        ".github/workflows/conformance.yml alone.",
+        "tool": "shellcheck",
+        "status": "enforced",
+        "carrier": "`just lint` inside `just ci` — CI job 'Development shell build'",
+        "note": "every severity fails; the two inline directives carry their reasons.",
     },
     "js-lint": {
         "kind": "lint",
-        "tool": "none adopted",
-        "status": "pending",
-        "owner": "#278 S4",
-        "note": "the simulator corpus, gate and browser carriers exercise "
-        "these modules functionally; functional execution is not a "
-        "JavaScript linter.",
+        "tool": "biome lint (recommended rules, warnings are errors)",
+        "status": "enforced",
+        "carrier": "`just lint` inside `just ci` — CI job 'Development shell build'",
+        "note": "configuration: biome.json at the repository root.",
     },
     "html-simulator-lint": {
         "kind": "lint",
@@ -178,31 +171,29 @@ POLICIES: dict[str, dict] = {
     },
     "css-lint": {
         "kind": "lint",
-        "tool": "none adopted",
-        "status": "pending",
-        "owner": "#278 S4",
-        "note": "the stylesheet is hashed into the shipped page by "
-        "simulator/build.mjs and exercised by the browser check; no "
-        "CSS checker is adopted.",
+        "tool": "biome lint (recommended rules, warnings are errors)",
+        "status": "enforced",
+        "carrier": "`just lint` inside `just ci` — CI job 'Development shell build'",
     },
     "workflow-yaml-lint": {
         "kind": "lint",
         "tool": "yq parse + actionlint",
-        "status": "enforced-partial",
-        "carrier": "conformance.yml job 'Workflow parses, lints clean, owned "
-        "docs page bound': yq-go parses every .github/workflows/"
-        "*.yml; actionlint (with shellcheck) runs over "
-        "conformance.yml ONLY",
-        "note": "actionlint over the other four workflow files is pending "
-        "#278 S4 (which must re-check actionlint findings #191/#248).",
+        "status": "enforced",
+        "carrier": "`just lint` inside `just ci` — CI job 'Development shell "
+        "build' (actionlint with shellcheck over every "
+        ".github/workflows/*.yml), and conformance.yml job 'Workflow "
+        "parses, lints clean, owned docs page bound' (yq-go parse of "
+        "every workflow)",
+        "note": "actionlint reports no finding on any workflow, #191/#248 included.",
     },
     "just-lint": {
         "kind": "lint",
-        "tool": "none adopted",
-        "status": "pending",
-        "owner": "#278 S4",
-        "note": "a justfile parses whenever `just` loads its tree's recipes; "
-        "no dedicated check covers all four files' embedded shell.",
+        "tool": "just --fmt --check (parse)",
+        "status": "enforced",
+        "carrier": "`just lint` inside `just ci` — CI job 'Development shell build'",
+        "note": "the formatter parses every justfile, so a malformed recipe "
+        "file fails; the embedded shell is checked where a carrier "
+        "executes it.",
     },
     # ---- format policies ---------------------------------------------------
     "fourmolu-offchain-active": {
@@ -214,8 +205,7 @@ POLICIES: dict[str, dict] = {
         "`just ci` (CI job 'Development shell build')",
         "note": "the committed house fourmolu.yaml at the repository "
         "root (issue #278 S2), passed explicitly so a missing "
-        "configuration fails loudly; the #264 A-003 source fence "
-        "is removed and the extent is the checker's own "
+        "configuration fails loudly; the extent is the checker's own "
         "manifest-discovered set — every Cabal hs-source-dirs "
         "stanza of singular-registry.cabal plus the two direct-GHC "
         "naming sources — with no directory exclusions. An offchain "
@@ -227,7 +217,7 @@ POLICIES: dict[str, dict] = {
         "tool": "fourmolu",
         "status": "enforced",
         "carrier": "conformance `nix run .#format-check` — CI job "
-        "'Conformance Haskell format check' (conformance.yml), "
+        "'Conformance Haskell format and lint check' (conformance.yml), "
         "and the whole-tree `just format-check` inside `just ci`",
         "note": "the same committed house fourmolu.yaml, over the "
         "Conformance Cabal extent plus the #80 evaluation spike "
@@ -238,10 +228,14 @@ POLICIES: dict[str, dict] = {
     },
     "aiken-fmt": {
         "kind": "format",
-        "tool": "aiken fmt",
-        "status": "pending",
-        "owner": "#278 S4",
-        "note": "hand-written validators; `aiken fmt --check` is not a CI carrier yet.",
+        "tool": "aiken fmt --check",
+        "status": "enforced",
+        "carrier": "the onchain and naming-onchain flake checks (aiken-fmt), "
+        "run by registry.yml jobs 'Run the onchain Aiken suite as a "
+        "flake check' and 'Naming validators build, refuse, and match "
+        "their pinned identity' (nix flake check)",
+        "note": "the Aiken each flake pins; formatting leaves every "
+        "compiled validator and hash unchanged (script-identity).",
     },
     "aiken-fmt-generated": {
         "kind": "format",
@@ -251,15 +245,18 @@ POLICIES: dict[str, dict] = {
         "(offchain just vectors-check: generator output formatted "
         "with the pinned Aiken, diffed against the committed file)",
         "note": "the generated vectors file is never hand-formatted; the "
-        "freshness check enforces the formatted generator output.",
+        "freshness check enforces the formatted generator output, and "
+        "the onchain aiken-fmt check visits it too.",
     },
     "lean-fmt": {
         "kind": "format",
-        "tool": "none adopted",
-        "status": "pending",
-        "owner": "#278 S4",
-        "note": "no Lean formatter is adopted (candidate: lake fmt); S4 "
-        "rules the policy.",
+        "tool": "Lean style rules (tools/lint_code.py)",
+        "status": "enforced",
+        "carrier": "`just lint` inside `just ci` — CI job 'Development shell build'",
+        "note": "no Lean formatter exists, so the layout policy is explicit: "
+        "no trailing whitespace, exactly one final newline, no blank "
+        "lines at end of file. No line-length cap is imposed; the tree "
+        "meets none below 253 columns.",
     },
     "lean-fmt-mirror": {
         "kind": "format",
@@ -274,56 +271,56 @@ POLICIES: dict[str, dict] = {
     },
     "nix-fmt": {
         "kind": "format",
-        "tool": "none adopted",
-        "status": "pending",
-        "owner": "#278 S4",
+        "tool": "nixfmt",
+        "status": "enforced",
+        "carrier": "`just lint` inside `just ci` — CI job 'Development shell build'",
     },
     "python-fmt": {
         "kind": "format",
-        "tool": "none adopted",
-        "status": "pending",
-        "owner": "#278 S4",
+        "tool": "ruff format",
+        "status": "enforced",
+        "carrier": "`just lint` inside `just ci` — CI job 'Development shell build'",
     },
     "shell-fmt": {
         "kind": "format",
-        "tool": "none adopted",
-        "status": "pending",
-        "owner": "#278 S4",
+        "tool": "shfmt -i 2 -ci -bn",
+        "status": "enforced",
+        "carrier": "`just lint` inside `just ci` — CI job 'Development shell build'",
     },
     "js-fmt": {
         "kind": "format",
-        "tool": "none adopted",
-        "status": "pending",
-        "owner": "#278 S4",
+        "tool": "biome format",
+        "status": "enforced",
+        "carrier": "`just lint` inside `just ci` — CI job 'Development shell build'",
+        "note": "configuration: biome.json at the repository root; the "
+        "shipped page is rebuilt from the formatted modules.",
     },
     "html-fmt": {
         "kind": "format",
-        "tool": "none adopted",
-        "status": "pending",
-        "owner": "#278 S4 ruling",
-        "note": "no general HTML formatter is adopted; the issue requires an "
-        "explicit enforced style policy rather than a false coverage "
-        "claim.",
+        "tool": "HTML style rules (tools/lint_code.py)",
+        "status": "enforced",
+        "carrier": "`just lint` inside `just ci` — CI job 'Development shell build'",
+        "note": "no general HTML formatter is adopted; the explicit policy "
+        "over the hand-written templates is: no tab, no carriage "
+        "return, no trailing whitespace, exactly one final newline.",
     },
     "css-fmt": {
         "kind": "format",
-        "tool": "none adopted",
-        "status": "pending",
-        "owner": "#278 S4 ruling",
-        "note": "no general CSS formatter is adopted; explicit style policy pending.",
+        "tool": "biome format",
+        "status": "enforced",
+        "carrier": "`just lint` inside `just ci` — CI job 'Development shell build'",
     },
     "workflow-yaml-fmt": {
         "kind": "format",
-        "tool": "none adopted",
-        "status": "pending",
-        "owner": "#278 S4",
+        "tool": "yamlfmt",
+        "status": "enforced",
+        "carrier": "`just lint` inside `just ci` — CI job 'Development shell build'",
     },
     "just-fmt": {
         "kind": "format",
-        "tool": "none adopted",
-        "status": "pending",
-        "owner": "#278 S4",
-        "note": "candidate: `just --fmt`; not a carrier yet.",
+        "tool": "just --fmt",
+        "status": "enforced",
+        "carrier": "`just lint` inside `just ci` — CI job 'Development shell build'",
     },
     "page-build-generated": {
         "kind": "format",
@@ -390,59 +387,14 @@ CODE_RULES: list[dict] = [
         "format": "aiken-fmt",
         "generated": False,
     },
-    # Haskell. The #264 A-003 source fence (journey/verifier and
-    # journey/retire-verify kept at intake bytes) is removed by #278 S2:
-    # every offchain Haskell source — the formerly fenced verifier sources
-    # included — is formatted under the house configuration, so they now
-    # match the journey debt rule below like every other journey source.
-    # Every offchain rule is restricted ("where": "haskell-checker-extent")
-    # to the checker's own manifest-discovered extent — the Cabal
-    # hs-source-dirs plus naming/test and naming/drift, visited recursively
-    # exactly as offchain/nix/checks.nix does — so an enforced policy is
-    # never claimed for a file the checker does not visit; anything else
-    # under offchain/ hits the reject rule below and fails closed.
-    # HLint debt directories: journey (root and every sub-stanza),
-    # naming/test, naming/drift, update-terminal — the 13 #264 exclusions.
-    {
-        "id": "hs-offchain-debt-journey",
-        "family": "haskell",
-        "pattern": "offchain/journey/**/*.hs",
-        "where": "haskell-checker-extent",
-        "lint": "hlint-offchain-debt",
-        "format": "fourmolu-offchain-active",
-        "generated": False,
-        "note": VENDOR_NOTE,
-    },
-    {
-        "id": "hs-offchain-debt-naming-test",
-        "family": "haskell",
-        "pattern": "offchain/naming/test/**/*.hs",
-        "where": "haskell-checker-extent",
-        "lint": "hlint-offchain-debt",
-        "format": "fourmolu-offchain-active",
-        "generated": False,
-        "note": VENDOR_NOTE,
-    },
-    {
-        "id": "hs-offchain-debt-naming-drift",
-        "family": "haskell",
-        "pattern": "offchain/naming/drift/**/*.hs",
-        "where": "haskell-checker-extent",
-        "lint": "hlint-offchain-debt",
-        "format": "fourmolu-offchain-active",
-        "generated": False,
-        "note": VENDOR_NOTE,
-    },
-    {
-        "id": "hs-offchain-debt-update-terminal",
-        "family": "haskell",
-        "pattern": "offchain/update-terminal/**/*.hs",
-        "where": "haskell-checker-extent",
-        "lint": "hlint-offchain-debt",
-        "format": "fourmolu-offchain-active",
-        "generated": False,
-        "note": VENDOR_NOTE,
-    },
+    # Haskell. Every offchain rule is restricted ("where":
+    # "haskell-checker-extent") to the checker's own manifest-discovered
+    # extent — the Cabal hs-source-dirs plus naming/test and naming/drift,
+    # visited recursively exactly as offchain/nix/checks.nix does — so an
+    # enforced policy is never claimed for a file the checker does not
+    # visit; anything else under offchain/ hits the reject rule below and
+    # fails closed. Fourmolu and HLint visit the same extent with no
+    # directory exclusions (#278 S2/S3).
     {
         "id": "hs-offchain",
         "family": "haskell",
@@ -464,8 +416,7 @@ CODE_RULES: list[dict] = [
         "reject": "haskell source outside every checker-visited component "
         "directory (the offchain lint discovers its extent from "
         "singular-registry.cabal hs-source-dirs plus naming/test and "
-        "naming/drift; add the component to the Cabal manifest or map "
-        "an explicit pending policy)",
+        "naming/drift; add the component to the Cabal manifest)",
     },
     {
         "id": "hs-conformance",
@@ -670,6 +621,12 @@ NONCODE_CLASSES: list[dict] = [
         "a second per-tree fourmolu.yaml stays unclassified and fails "
         "closed, because per-tree divergence is exactly what the one "
         "configuration forbids",
+    },
+    {
+        "id": "biome-config",
+        "pattern": "biome.json",
+        "note": "the one Biome configuration (issue #278), read by `just "
+        "lint` for the JavaScript and CSS formatter and linter",
     },
     {
         "id": "lake-lock",
@@ -1424,7 +1381,7 @@ def render_report(rows: list[dict], root: Path, context: str) -> str:
     lines.append(
         "lint policies over code files: "
         + ", ".join(f"{k} {v}" for k, v in lint.items())
-        + "  (pending rows are debt owned by #278 S2-S4, not coverage)"
+        + "  (pending rows would be debt, not coverage)"
     )
     lines.append(
         "format policies over code files: "
@@ -1435,19 +1392,18 @@ def render_report(rows: list[dict], root: Path, context: str) -> str:
     lines.append(
         "non-code classes: " + ", ".join(f"{k} {v}" for k, v in s["classes"].items())
     )
-    # The two #264 extents, reported independently as the issue requires.
+    # The HLint and Fourmolu extents, reported independently as the issue
+    # requires.
     hs = [r for r in rows if r["kind"] == "code" and r["family"] == "haskell"]
-    active = [r for r in hs if r["lint"] == "hlint-offchain-active"]
-    debt = [r for r in hs if r["lint"] == "hlint-offchain-debt"]
-    fmt_active = [r for r in hs if r["format"] == "fourmolu-offchain-active"]
+    hlint_off = [r for r in hs if r["lint"] == "hlint-offchain-active"]
+    hlint_conf = [r for r in hs if r["lint"] == "hlint-conformance"]
+    fmt_off = [r for r in hs if r["format"] == "fourmolu-offchain-active"]
     fmt_conf = [r for r in hs if r["format"] == "fourmolu-conformance"]
-    conf = [r for r in hs if r["lint"] == "hlint-conformance"]
     lines.append(
-        f"haskell extents reported independently: hlint active {len(active)} "
-        f"files / debt-pending {len(debt)} files (13 #264 directories) / "
-        f"conformance-pending {len(conf)} files; fourmolu house-config "
-        f"active {len(fmt_active)} offchain files / {len(fmt_conf)} "
-        f"conformance files, no exclusions"
+        f"haskell extents reported independently: hlint {len(hlint_off)} "
+        f"offchain / {len(hlint_conf)} conformance files; fourmolu "
+        f"house-config {len(fmt_off)} offchain / {len(fmt_conf)} "
+        f"conformance files; no exclusions"
     )
     return "\n".join(lines)
 
