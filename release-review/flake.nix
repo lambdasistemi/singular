@@ -66,7 +66,7 @@
         {
           default = checked;
           check = checked;
-          runner = runner;
+          inherit runner;
         }
       );
 

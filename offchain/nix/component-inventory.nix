@@ -18,7 +18,7 @@
 # whole package.
 { pkgs, components }:
 let
-  lib = pkgs.lib;
+  inherit (pkgs) lib;
 
   # Derived at intake 2026-09-24 from the live workflow commands (see the
   # table in the ticket evidence; every consumer is cited there):

@@ -39,8 +39,6 @@
       flake-utils,
       haskellNix,
       iohkNix,
-      CHaP,
-      cardano-node,
       ...
     }:
     flake-utils.lib.eachDefaultSystem (

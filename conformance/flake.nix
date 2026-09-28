@@ -216,7 +216,7 @@
           inherit CHaP pkgs src;
         };
 
-        components = project.project.hsPkgs.conformance.components;
+        inherit (project.project.hsPkgs.conformance) components;
 
         cardanoNode = cardano-node.packages.${system}.cardano-node;
 
@@ -516,7 +516,7 @@
           format-check = formatCheckRun;
           hlint-check = hlintCheckRun;
           conformance-exe = components.exes.conformance;
-          conformance-tests = components.tests.conformance-tests;
+          inherit (components.tests) conformance-tests;
           coverage-gate-tests = coverageGateTests;
           coverage-gate-snapshot = coverageGateSnapshot;
         };
@@ -553,7 +553,7 @@
         };
 
         devShells = {
-          default = project.devShells.default;
+          inherit (project.devShells) default;
         };
       }
     );

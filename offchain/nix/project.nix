@@ -40,7 +40,7 @@ let
     };
 
   project = pkgs.haskell-nix.cabalProject' (
-    { lib, pkgs, ... }:
+    { pkgs, ... }:
     {
       name = "singular-registry";
       src = ./..;

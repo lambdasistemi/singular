@@ -6,7 +6,7 @@ let
     src = pkgs.lib.cleanSourceWith {
       inherit src;
       filter =
-        path: type:
+        path: _type:
         !(builtins.elem (builtins.baseNameOf path) [
           ".lake"
           ".git"

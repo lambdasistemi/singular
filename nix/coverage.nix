@@ -34,17 +34,19 @@ let
   };
 in
 {
-  apps.coverage-check = {
-    type = "app";
-    program = pkgs.lib.getExe checker;
-  };
-  apps.coverage-gate = {
-    type = "app";
-    program = pkgs.lib.getExe gate;
-  };
-  apps.coverage-tests = {
-    type = "app";
-    program = pkgs.lib.getExe tests;
+  apps = {
+    coverage-check = {
+      type = "app";
+      program = pkgs.lib.getExe checker;
+    };
+    coverage-gate = {
+      type = "app";
+      program = pkgs.lib.getExe gate;
+    };
+    coverage-tests = {
+      type = "app";
+      program = pkgs.lib.getExe tests;
+    };
   };
   check = pkgs.runCommand "singular-coverage-check" { } ''
     ${pkgs.lib.getExe checker}

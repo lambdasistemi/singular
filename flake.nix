@@ -1,30 +1,32 @@
 {
   description = "Singular executable model, statement debt and documentation";
-  inputs.dev-assets-mkdocs.url = "github:paolino/dev-assets/34c7df6959c9fa36c6927808de6712b939e7a7fb?dir=mkdocs";
-  inputs.dev-assets-playwright.url = "github:paolino/dev-assets/a8f2ff7603bc793794d3e4459b2d5510a57e72a2?dir=playwright";
-  # This repository's own off-chain tree, as a relative in-tree input: the
-  # generated API reference's Haddock build and its manifest source digests
-  # come from exactly this source. Its dependencies keep their own locked
-  # revisions (no follows rebinding), and offchain/flake.lock stays as is.
-  inputs.offchain.url = "path:./offchain";
-  # The Conformance tree the same way, as a relative path input that keeps
-  # the whole repository as the flake's source (dir=conformance): the
-  # Conformance build root synthesizes from sibling trees (offchain, lean,
-  # tools), so a bare subdirectory input could not evaluate, and the flake's
-  # outPath is the conformance directory itself. Its generated library
-  # reference binds to this candidate's own source, with its dependencies
-  # keeping their own locked revisions and conformance/flake.lock staying as
-  # is. The Conformance flake's inputs are declared verbatim from the
-  # off-chain flake's, so the lock node shares the already-locked revisions
-  # those declarations resolve to — no new upstream input is fetched or
-  # created.
-  inputs.conformance.url = "path:./?dir=conformance";
-  # The on-chain Aiken project the same way: its flake pins the Aiken
-  # compiler, and the site publishes the reference that compiler's
-  # `aiken docs` generates from this candidate's validators. Its
-  # dependencies keep their own locked revisions.
-  inputs.onchain.url = "path:./onchain";
-  inputs.nixpkgs.follows = "dev-assets-mkdocs/nixpkgs";
+  inputs = {
+    dev-assets-mkdocs.url = "github:paolino/dev-assets/34c7df6959c9fa36c6927808de6712b939e7a7fb?dir=mkdocs";
+    dev-assets-playwright.url = "github:paolino/dev-assets/a8f2ff7603bc793794d3e4459b2d5510a57e72a2?dir=playwright";
+    # This repository's own off-chain tree, as a relative in-tree input: the
+    # generated API reference's Haddock build and its manifest source digests
+    # come from exactly this source. Its dependencies keep their own locked
+    # revisions (no follows rebinding), and offchain/flake.lock stays as is.
+    offchain.url = "path:./offchain";
+    # The Conformance tree the same way, as a relative path input that keeps
+    # the whole repository as the flake's source (dir=conformance): the
+    # Conformance build root synthesizes from sibling trees (offchain, lean,
+    # tools), so a bare subdirectory input could not evaluate, and the flake's
+    # outPath is the conformance directory itself. Its generated library
+    # reference binds to this candidate's own source, with its dependencies
+    # keeping their own locked revisions and conformance/flake.lock staying as
+    # is. The Conformance flake's inputs are declared verbatim from the
+    # off-chain flake's, so the lock node shares the already-locked revisions
+    # those declarations resolve to — no new upstream input is fetched or
+    # created.
+    conformance.url = "path:./?dir=conformance";
+    # The on-chain Aiken project the same way: its flake pins the Aiken
+    # compiler, and the site publishes the reference that compiler's
+    # `aiken docs` generates from this candidate's validators. Its
+    # dependencies keep their own locked revisions.
+    onchain.url = "path:./onchain";
+    nixpkgs.follows = "dev-assets-mkdocs/nixpkgs";
+  };
   outputs =
     {
       self,
@@ -84,7 +86,7 @@
         };
       packages = system: {
         default = (project system).docs;
-        docs = (project system).docs;
+        inherit (project system) docs;
         docs-release = (project system).releaseArchive;
         model = (model system).package;
       };

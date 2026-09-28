@@ -39,7 +39,7 @@ let
     };
 
   project = pkgs.haskell-nix.cabalProject' (
-    { lib, pkgs, ... }:
+    { pkgs, ... }:
     {
       name = "singular-conformance";
       inherit src;

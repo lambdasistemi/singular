@@ -26,11 +26,11 @@ let
       '';
 in
 {
-  library = components.library;
-  cage-tests = components.tests.cage-tests;
-  record-value-tests = components.tests.record-value-tests;
+  inherit (components) library;
+  inherit (components.tests) cage-tests;
+  inherit (components.tests) record-value-tests;
   cage-tests-e2e = e2eTestsWrapped;
-  cage-test-vectors = components.exes.cage-test-vectors;
+  inherit (components.exes) cage-test-vectors;
   lint = pkgs.writeShellApplication {
     name = "lint";
     # Strict runtime closure for every external tool the text execs. The

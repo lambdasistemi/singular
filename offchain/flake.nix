@@ -64,7 +64,7 @@
           inherit CHaP pkgs;
         };
 
-        components = project.project.hsPkgs.singular-registry.components;
+        inherit (project.project.hsPkgs.singular-registry) components;
 
         # #264 T264-05 (epic answers A-005 and A-008/A-009/A-010): the
         # classified supported component carrier. EVERY declared Cabal
@@ -97,7 +97,7 @@
 
         haskellChecks = import ./nix/checks.nix {
           inherit pkgs components;
-          shell = project.project.shell;
+          inherit (project.project) shell;
           inherit cardanoNode;
         };
 
@@ -468,7 +468,7 @@
           # Mechanical adapter (D-008): exposes the cardano-node already
           # locked as this flake's input, so the devnet recipe consumes the
           # locked identity instead of re-resolving a remote tag.
-          cardano-node = cardano-node.packages.${system}.cardano-node;
+          inherit (cardano-node.packages.${system}) cardano-node;
         };
 
         # vectors-freshness was deleted from ./nix/checks.nix (break 5,
@@ -529,7 +529,7 @@
         };
 
         devShells = {
-          default = project.devShells.default;
+          inherit (project.devShells) default;
         };
       }
     );
