@@ -27,15 +27,18 @@ export const LIFECYCLE_TITLES = {
  * construction and the page labels say "inspected". */
 export function checkLifecycleCorpus(corpus) {
   if (!corpus || typeof corpus !== 'object') throw Error('no lifecycle corpus');
-  let discovered = 0, executed = 0;
-  const ids = new Set(), rows = [];
+  let discovered = 0,
+    executed = 0;
+  const ids = new Set(),
+    rows = [];
   for (const section of LIFECYCLE_SECTIONS) {
     const found = corpus[section];
     if (!Array.isArray(found) || found.length === 0)
       throw Error(`empty lifecycle corpus section: ${section}`);
     for (const row of found) {
       discovered++;
-      if (typeof row.id !== 'string' || !row.id) throw Error(`lifecycle row without an id in ${section}`);
+      if (typeof row.id !== 'string' || !row.id)
+        throw Error(`lifecycle row without an id in ${section}`);
       if (ids.has(row.id)) throw Error(`duplicate lifecycle row: ${row.id}`);
       ids.add(row.id);
       if (typeof row.ok !== 'boolean') throw Error(`lifecycle row has no verdict: ${row.id}`);
@@ -47,8 +50,14 @@ export function checkLifecycleCorpus(corpus) {
     }
   }
   if (discovered !== executed) throw Error('lifecycle denominator');
-  return { discovered, inspected: executed, executed: 0,
-    sections: LIFECYCLE_SECTIONS.length, rows, boundary: 'evidence' };
+  return {
+    discovered,
+    inspected: executed,
+    executed: 0,
+    sections: LIFECYCLE_SECTIONS.length,
+    rows,
+    boundary: 'evidence',
+  };
 }
 
 /** The reason a row records, when it records one rather than a plain `true`. */
