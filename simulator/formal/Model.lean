@@ -272,12 +272,33 @@ structure Custody where
   value : Nat
   deriving Repr, BEq, DecidableEq, ToJson, FromJson
 
-/-- One active or terminal token routed to the output the request named. -/
+/-- How an output presents its datum: inline, by hash, or not at all. -/
+inductive DatumForm where
+  | inline | hashed | none
+  deriving Repr, BEq, DecidableEq
+
+/-- One active or terminal token routed to the output the request named. The
+output presents the datum form the delivering fold gave it (`deliveredDatum`),
+which is what a later fold spending it as a witness finds there. -/
 structure Holding where
   key : Key
   kind : TokenKind
   output : Nat
-  deriving Repr, BEq, DecidableEq, ToJson, FromJson
+  datum : DatumForm := .none
+  deriving Repr, BEq, DecidableEq
+
+/-- A holding's JSON is its `held` observation: key, kind and output. Its datum
+form is observed on the transaction that spends it, not here. -/
+instance : ToJson Holding where
+  toJson h := Json.mkObj
+    [("key", toJson h.key), ("kind", toJson h.kind), ("output", toJson h.output)]
+
+instance : FromJson Holding where
+  fromJson? j := do
+    let key ← j.getObjValAs? Key "key"
+    let kind ← j.getObjValAs? TokenKind "kind"
+    let output ← j.getObjValAs? Nat "output"
+    pure { key, kind, output }
 
 /-- The registry state. -/
 structure RegistryState where
@@ -388,6 +409,11 @@ instance : ToJson Request where
     , ("approval", match r.approval with | none => Json.null | some a => toJson a)
     , ("claimed", Json.arr ((r.claimed.map fun d =>
         Json.mkObj [("kind", toJson d.1), ("quantity", toJson d.2)]).toArray)) ]
+
+/-- The datum form a fold gives the output it delivers to: inline when the request
+names a datum, none when it names none, as the chain requires (#304). -/
+def deliveredDatum (r : Request) : DatumForm :=
+  if r.namesDatum then .inline else .none
 
 /-- The destination a request names: the cage-custody sentinel `0` for
 `insertAbsent`, whose token goes to the cage; otherwise the output the request
@@ -549,13 +575,15 @@ def applyEdge (s : RegistryState) (a : Action) : Result :=
       let trie := trieSet s.trie a.key (.known .active)
       { s with trie := trie
              , config := { s.config with root := rootOf trie }
-             , held := { key := a.key, kind := .active, output := a.output } :: s.held }
+             , held := { key := a.key, kind := .active, output := a.output
+                        , datum := deliveredDatum a } :: s.held }
     | .updateActive =>
       let trie := trieSet s.trie a.key (.known .active)
       { s with trie := trie
              , config := { s.config with root := rootOf trie }
              , custody := s.custody.filter (·.key != a.key)
-             , held := { key := a.key, kind := .active, output := a.output } :: s.held }
+             , held := { key := a.key, kind := .active, output := a.output
+                        , datum := deliveredDatum a } :: s.held }
     | .updateTerminal =>
       let trie := trieSet s.trie a.key (.known .terminal)
       { s with trie := trie
@@ -572,7 +600,8 @@ def applyEdge (s : RegistryState) (a : Action) : Result :=
              , config := { s.config with root := rootOf trie }
              , held := s.held.filter fun h => !(h.key == a.key && h.kind == .active) }
     | .witnessTerminal =>
-      { s with held := { key := a.key, kind := .terminal, output := a.output } :: s.held }
+      { s with held := { key := a.key, kind := .terminal, output := a.output
+                           , datum := deliveredDatum a } :: s.held }
   let paid : List (Nat × Nat) :=
     match a.edge, entry with
     | .updateActive, some c => [(c.refundAddress, c.value)]
@@ -645,11 +674,6 @@ such: the registry is a single state UTxO carrying one state token (`step`
 consumes one state and produces one), and both the state datum and the
 destination datum are inline because the cage reads them without a preimage.
 Everything else below is read off the model. -/
-
-/-- How an output presents its datum: inline, by hash, or not at all. -/
-inductive DatumForm where
-  | inline | hashed | none
-  deriving Repr, BEq, DecidableEq
 
 /-- The state token count of the registry's single state UTxO. -/
 def registryStateTokens : Nat := 1
@@ -836,14 +860,33 @@ def burnSourceRole (d : Destination) : TxRole :=
   | .cageCustody => .cage
   | .requestOutput => .witness
 
+/-- The datum form of the output holding a token of this kind at this key: the
+form the fold that delivered it gave it (`deliveredDatum`). A fold burning a
+witness is refused `token-missing` unless the state holds one, so the fallback
+is never read for an admitted fold. -/
+def heldDatum (s : RegistryState) (key : Key) (kind : TokenKind) : DatumForm :=
+  match s.held.find? (fun h => h.key == key && h.kind == kind) with
+  | some h => h.datum
+  | none => registryDatumForm
+
+/-- The datum form of the UTxO a burned token is spent from: cage custody carries
+its custody datum inline, and a witness carries whatever its delivering fold gave
+the output it sits at (#304). -/
+def burnSourceDatum (s : RegistryState) (d : Destination) (asset : Asset) : DatumForm :=
+  match d with
+  | .cageCustody => registryDatumForm
+  | .requestOutput => heldDatum s asset.2 asset.1
+
 /-- The inputs that supply the tokens this fold destroys: one UTxO per burned
 asset, carrying exactly that asset in the quantity the mint takes away, at the
-place the model says that kind of token lives. A fold that burns nothing spends
-none of them, which is why `insertActive` still has two inputs. -/
-def txBurnInputs (t : Result) (r : Request) : List TxInput :=
+place the model says that kind of token lives, presenting the datum the state
+before the fold says it carries. A fold that burns nothing spends none of them,
+which is why `insertActive` still has two inputs. -/
+def txBurnInputs (s : RegistryState) (t : Result) (r : Request) : List TxInput :=
   t.mint.filterMap fun p =>
     if p.2 < 0 then
-      some { role := burnSourceRole (route p.1.1 r), datum := registryDatumForm
+      some { role := burnSourceRole (route p.1.1 r)
+           , datum := burnSourceDatum s (route p.1.1 r) p.1
            , stateTokens := 0, approvals := 0, lovelace := 0
            , assets := [(p.1, -p.2)] }
     else none
@@ -865,7 +908,7 @@ def txDestinationOutputs (t : Result) (r : Request) : List TxOutput :=
   let assets := routedPayment t r .requestOutput
   if assets.isEmpty then []
   else [{ role := .destination
-        , datum := if r.namesDatum then registryDatumForm else .none
+        , datum := deliveredDatum r
         , address := some (requestDestination r), stateTokens := 0, config := none
         , commitment := some (datumHash (destinationDatum r))
         , assets := assets }]
@@ -1051,7 +1094,7 @@ def txOfExit (state : RegistryState) (exit : Exit) (request : Request) (lovelace
     match exit with
     | .fold _ =>
       let destinationFloor := owedTo (.destination (requestDestination request)) owed
-      .ok { inputs := [stateInput, requestInput] ++ txBurnInputs t request
+      .ok { inputs := [stateInput, requestInput] ++ txBurnInputs state t request
           , outputs := txStateOutput t
               :: (txDestinationOutputs t request).map
                   (fun o => { o with lovelace := destinationFloor })

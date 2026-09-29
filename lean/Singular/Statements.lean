@@ -484,7 +484,8 @@ theorem insert_active_inversion (s : RegistryState) (r : Request) (t : Result)
     t.state.trie = trieSet s.trie r.key (.known .active) ∧
     t.state.config = { s.config with root := rootOf (trieSet s.trie r.key (.known .active)) } ∧
     t.state.custody = s.custody ∧
-    t.state.held = { key := r.key, kind := .active, output := r.output } :: s.held ∧
+    t.state.held = { key := r.key, kind := .active, output := r.output
+                     , datum := deliveredDatum r } :: s.held ∧
     t.mint = [((.active, r.key), 1)] ∧ t.paid = [] := by
   constructor
   · intro hok
@@ -547,7 +548,8 @@ theorem update_active_inversion (s : RegistryState) (r : Request) (t : Result)
     t.state.trie = trieSet s.trie r.key (.known .active) ∧
     t.state.config = { s.config with root := rootOf (trieSet s.trie r.key (.known .active)) } ∧
     t.state.custody = s.custody.filter (·.key != r.key) ∧
-    t.state.held = { key := r.key, kind := .active, output := r.output } :: s.held ∧
+    t.state.held = { key := r.key, kind := .active, output := r.output
+                     , datum := deliveredDatum r } :: s.held ∧
     t.mint = [((.absent, r.key), -1), ((.active, r.key), 1)] ∧
     t.paid = [(c.refundAddress, c.value)] := by
   constructor
@@ -796,7 +798,8 @@ theorem witness_terminal_inversion (s : RegistryState) (r : Request) (t : Result
     step s r = .ok t ↔
     trieGet s.trie r.key = .known .terminal ∧ s.config.root = rootOf s.trie ∧
     t.state.trie = s.trie ∧ t.state.config = s.config ∧ t.state.custody = s.custody ∧
-    t.state.held = { key := r.key, kind := .terminal, output := r.output } :: s.held ∧
+    t.state.held = { key := r.key, kind := .terminal, output := r.output
+                     , datum := deliveredDatum r } :: s.held ∧
     t.mint = [((.terminal, r.key), 1)] ∧ t.paid = [] := by
   obtain ⟨h1, h2, h3, h4, h5, h6⟩ := applyEdge_witnessTerminal s r he
   constructor
@@ -947,7 +950,7 @@ theorem insert_absent_transaction_row (s : RegistryState) (r : Request) (t : Res
        , assets := [((.absent, r.key), 1)]
        , custodyDatum := some [r.refundAddress], lovelace := r.deposit }] := by
     simp +decide [txCageOutputs, routedPayment, mintRoutedTo, hmint, route, registryDatumForm]
-  have hburn : txBurnInputs t r = [] := by simp [txBurnInputs, hmint]
+  have hburn : txBurnInputs s t r = [] := by simp [txBurnInputs, hmint]
   have htx : txOf s r lovelace =
       .ok { inputs :=
               [ { role := .state, datum := .inline, stateTokens := 1
@@ -1023,7 +1026,8 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
     t.state.config.root = rootOf t.state.trie ∧
     t.state.custody = s.custody ∧
     kindCount t.state .active r.key = 1 ∧
-    ({ key := r.key, kind := .active, output := r.output } : Holding) ∈ t.state.held ∧
+    ({ key := r.key, kind := .active, output := r.output
+      , datum := deliveredDatum r } : Holding) ∈ t.state.held ∧
     kindPolicy s.config .active = s.config.activePolicy ∧
     tokenAssetName .active r.key = r.key ∧
     openPolicyParameters = [] ∧
@@ -1106,7 +1110,7 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
     unfold routedPayment mintRoutedTo; rw [hmint]; simp [route] <;> decide
   have hcage : txCageOutputs t r = [] := by
     unfold txCageOutputs routedPayment mintRoutedTo; rw [hmint]; simp [route] <;> decide
-  have hburn : txBurnInputs t r = [] := by
+  have hburn : txBurnInputs s t r = [] := by
     unfold txBurnInputs; rw [hmint]; simp
   have htx : txOf s r lovelace =
       .ok { inputs :=
@@ -1126,7 +1130,7 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
           , refunds := [(r.output, r.deposit)] } := by
     rw [txOf_of_step_ok s r lovelace t hok]
     simp [he, obligations, owedTo, ownerOutputs, paymentPaid, txStateOutput,
-      txDestinationOutputs, hcage, hburn, happrovals, hdest, hrouted, hbind, hpaid, hmint,
+      txDestinationOutputs, deliveredDatum, hcage, hburn, happrovals, hdest, hrouted, hbind, hpaid, hmint,
       requiredSigners, registryDatumForm, registryStateTokens]
   have hsigtx : ∀ sigs : List (List Nat),
       txOf s { r with approval := some { ap with signatures := sigs } } lovelace
@@ -1142,14 +1146,14 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
       unfold routedPayment mintRoutedTo; rw [hmint]; simp [route] <;> decide
     have hc : txCageOutputs t { r with approval := some { ap with signatures := sigs } } = [] := by
       unfold txCageOutputs routedPayment mintRoutedTo; rw [hmint]; simp [route] <;> decide
-    have hbi : txBurnInputs t { r with approval := some { ap with signatures := sigs } } = [] := by
+    have hbi : txBurnInputs s t { r with approval := some { ap with signatures := sigs } } = [] := by
       unfold txBurnInputs; rw [hmint]; simp
     have hb : datumHash (destinationDatum
         { r with approval := some { ap with signatures := sigs } }) = ap.assetName := by
       unfold datumHash destinationDatum
       simp only [hd]
       rw [hasset, hedge, hkey, hown, hdst, hdest]
-    simp only [txStateOutput, txDestinationOutputs, hc, hbi, ha, hd, hr, hb, hpaid, hmint,
+    simp only [txStateOutput, txDestinationOutputs, deliveredDatum, hc, hbi, ha, hd, hr, hb, hpaid, hmint,
       requiredSigners, registryDatumForm, registryStateTokens]
     simp [he, obligations, owedTo, ownerOutputs, paymentPaid, requestDestination]
   have hsecondtx : ∀ r₂ : Request, r₂.edge = .insertActive → r₂.key = r.key →
@@ -1205,7 +1209,7 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
                 , approvals := 0, lovelace := 0, assets := [] }
               , { role := .request, datum := .inline, stateTokens := 0
                 , approvals := 1, lovelace := lovelace, assets := [] }
-              , { role := .witness, datum := .inline, stateTokens := 0
+              , { role := .witness, datum := heldDatum s r.key .active, stateTokens := 0
                 , approvals := 0, lovelace := 0
                 , assets := [((.active, r.key), 1)] } ]
           , outputs :=
@@ -1308,18 +1312,18 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
     unfold routedPayment mintRoutedTo; rw [hmint]; simp [route]
   have hcage : txCageOutputs t r = [] := by
     unfold txCageOutputs routedPayment mintRoutedTo; rw [hmint]; simp [route]
-  have hburn : txBurnInputs t r =
-      [ { role := .witness, datum := registryDatumForm, stateTokens := 0
+  have hburn : txBurnInputs s t r =
+      [ { role := .witness, datum := heldDatum s r.key .active, stateTokens := 0
         , approvals := 0, lovelace := 0
         , assets := [((TokenKind.active, r.key), 1)] } ] := by
-    unfold txBurnInputs; rw [hmint]; simp [route, burnSourceRole]
+    unfold txBurnInputs; rw [hmint]; simp [route, burnSourceRole, burnSourceDatum]
   have htx : txOf s r lovelace =
       .ok { inputs :=
               [ { role := .state, datum := .inline, stateTokens := 1
                 , approvals := 0, lovelace := 0, assets := [] }
               , { role := .request, datum := .inline, stateTokens := 0
                 , approvals := 1, lovelace := lovelace, assets := [] }
-              , { role := .witness, datum := .inline, stateTokens := 0
+              , { role := .witness, datum := heldDatum s r.key .active, stateTokens := 0
                 , approvals := 0, lovelace := 0
                 , assets := [((.active, r.key), 1)] } ]
           , outputs :=
@@ -1359,11 +1363,11 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
       unfold routedPayment mintRoutedTo; rw [hmint]; simp [route]
     have hc : txCageOutputs t { r with approval := some { ap with signatures := sigs } } = [] := by
       unfold txCageOutputs routedPayment mintRoutedTo; rw [hmint]; simp [route]
-    have hbi : txBurnInputs t { r with approval := some { ap with signatures := sigs } } =
-        [ { role := .witness, datum := registryDatumForm, stateTokens := 0
+    have hbi : txBurnInputs s t { r with approval := some { ap with signatures := sigs } } =
+        [ { role := .witness, datum := heldDatum s r.key .active, stateTokens := 0
           , approvals := 0, lovelace := 0
           , assets := [((TokenKind.active, r.key), 1)] } ] := by
-      unfold txBurnInputs; rw [hmint]; simp [route, burnSourceRole]
+      unfold txBurnInputs; rw [hmint]; simp [route, burnSourceRole, burnSourceDatum]
     have hb : datumHash (destinationDatum
         { r with approval := some { ap with signatures := sigs } }) = ap.assetName := by
       unfold datumHash destinationDatum
@@ -1803,17 +1807,50 @@ theorem delivered_datum_follows_request (s : RegistryState) (r : Request)
     obtain ⟨p, -, hp⟩ := ho
     split at hp <;> (cases hp <;> simp at hrole)
 
+/-- **#304** — a witness a fold spends presents the datum its holding carries: for
+every state, request, lovelace and admitted fold, over all seven edges, each input
+in the witness role presents, for the asset it supplies, the datum form the state
+records for that holding. A holding records the form the fold that delivered it
+gave its output (`deliveredDatum`, as the inversions state), so a retirement or a
+deletion spends a witness as the chain holds it, never as an inline datum the
+delivery did not write. -/
+theorem witness_input_datum_is_held (s : RegistryState) (r : Request) (lovelace : Nat)
+    (t : Result) (tx : Tx) (hok : step s r = .ok t) (htx : txOf s r lovelace = .ok tx) :
+    ∀ i ∈ tx.inputs, i.role = .witness → ∀ a ∈ i.assets, i.datum = heldDatum s a.1.2 a.1.1 := by
+  rw [txOf_of_step_ok s r lovelace t hok] at htx
+  injection htx with htx
+  subst htx
+  intro i hi hrole a ha
+  dsimp only at hi
+  rw [List.mem_append, List.mem_cons, List.mem_cons] at hi
+  rcases hi with (hi | hi | hi) | hi
+  · subst hi
+    simp at hrole
+  · subst hi
+    simp at hrole
+  · simp at hi
+  · rw [txBurnInputs, List.mem_filterMap] at hi
+    obtain ⟨p, -, hp⟩ := hi
+    split at hp
+    · cases hp
+      simp only [List.mem_singleton] at ha
+      subst ha
+      simp only [burnSourceRole] at hrole
+      simp only [burnSourceDatum]
+      split at hrole <;> simp_all
+    · cases hp
+
 /-- By value: a delivered output carries an inline datum when its request names
 one and none when it names none. -/
 example (s : RegistryState) (k : Key) :
     (txDestinationOutputs { state := s, mint := [((.active, k), 1)], paid := [] }
       { edge := .insertActive, key := k, namesDatum := true }).map (·.datum) = [.inline] := by
-  simp +decide [txDestinationOutputs, routedPayment, mintRoutedTo, route, registryDatumForm]
+  simp +decide [txDestinationOutputs, routedPayment, mintRoutedTo, route, deliveredDatum]
 
 example (s : RegistryState) (k : Key) :
     (txDestinationOutputs { state := s, mint := [((.active, k), 1)], paid := [] }
       { edge := .insertActive, key := k }).map (·.datum) = [.none] := by
-  simp +decide [txDestinationOutputs, routedPayment, mintRoutedTo, route]
+  simp +decide [txDestinationOutputs, routedPayment, mintRoutedTo, route, deliveredDatum]
 
 /-- By value, one edge each way: an absent insertion routes its token to custody
 and describes no destination output. -/

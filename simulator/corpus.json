@@ -2681,7 +2681,7 @@
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "7f9ea639eefc72915d55183dfc162d44a830c1f278026aafd601371c3f1c9fcb",
+  "corpusSourceSha256": "62e7f254b0a6b430704d69f9fb849fcb1f8337d14f8c88307173ccd842e489b2",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -2810,20 +2810,20 @@
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "3d0e40ddcd264aa3e41d6d23c4685a5ae969cb50950851a7f1617acaa0dd23a2",
-  "payloadSha256": "28f340c12a3c9c48dd3b09b171324a07efa28c213b86e83cf5310e874177f4af",
+  "modelSha256": "ad725b24a02e6d83e1422231810a6d6238d0f9e525616c5df620413b3f6597f7",
+  "payloadSha256": "d6fde22d83b70b87150a4eccba4ddf314c2ff757e9f359342ce7e3a1de2d10d2",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "7f9ea639eefc72915d55183dfc162d44a830c1f278026aafd601371c3f1c9fcb",
+    "lean/Main.lean": "62e7f254b0a6b430704d69f9fb849fcb1f8337d14f8c88307173ccd842e489b2",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "lean/Singular/Driver.lean": "52ed3c6db8ff0e0c2db2e07f8358ceba87ee74a671cdd6a096bedaacd2aa630a",
-    "lean/Singular/Lemmas.lean": "4cdd95fb0f3d145b89f68e86191b1ad2391a3adffb57c90e898fe7201dfd7fbf",
-    "lean/Singular/Model.lean": "3d0e40ddcd264aa3e41d6d23c4685a5ae969cb50950851a7f1617acaa0dd23a2",
-    "lean/Singular/Statements.lean": "b3b55b917b20e93a3c58b45344b56c5ee8f4d6eb3e00e6340557fb817d10a2ab"
+    "lean/Singular/Lemmas.lean": "c8aa4ea4585fd53a41d75ca817e229019ad59517c79cd6da6f9242f2c27c857c",
+    "lean/Singular/Model.lean": "ad725b24a02e6d83e1422231810a6d6238d0f9e525616c5df620413b3f6597f7",
+    "lean/Singular/Statements.lean": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9"
   },
-  "statementsSha256": "b3b55b917b20e93a3c58b45344b56c5ee8f4d6eb3e00e6340557fb817d10a2ab",
-  "theoremManifestSha256": "c84c6ae5480e796f364bc5ef9eefdafeb033f8bc1e058a16d62e34fecd08a45c",
+  "statementsSha256": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9",
+  "theoremManifestSha256": "91ed0116194b64bb71af402619e120e3190874b66ea5698555c73c4220b44162",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
@@ -2857,7 +2857,7 @@
         "accepted": false,
         "reason": "key-exists"
       },
-      "statementSha256": "a483afddc1afaeea11a5a2680321abcfe6a56e3b73c959e0ac7dea665625847f",
+      "statementSha256": "83dd1fefbe6b00be6adcb57d84b4321b9507649b6566c79eecd9f6015551ecb4",
       "theorem": "Singular.Statements.insert_active_transaction_row",
       "tip": 1,
       "transaction": {
@@ -3149,7 +3149,7 @@
           "quantity": 1
         }
       ],
-      "statementSha256": "6e7c651930b814a376c74b4b6b8dec08fecbe2db44693fe9a82985957d602493",
+      "statementSha256": "8ea765f55d3a5187b8a9abc3430b3125406c5ce6c09407322443cc268dcd1079",
       "theorem": "Singular.Statements.update_terminal_transaction_row",
       "tip": 1,
       "transaction": {
@@ -3181,7 +3181,7 @@
                 "quantity": 1
               }
             ],
-            "datum": "inline",
+            "datum": "none",
             "lovelace": 0,
             "role": "witness",
             "stateToken": 0

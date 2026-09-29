@@ -67,16 +67,16 @@ def insertAbsentDigest : String :=
   "a7e93824be2944e55b6482d0836111450522a7ed04eb57c262656f8903adaec6"
 def insertActiveTheorem : String := "Singular.Statements.insert_active_transaction_row"
 def insertActiveDigest : String :=
-  "a483afddc1afaeea11a5a2680321abcfe6a56e3b73c959e0ac7dea665625847f"
+  "83dd1fefbe6b00be6adcb57d84b4321b9507649b6566c79eecd9f6015551ecb4"
 def updateTerminalTheorem : String := "Singular.Statements.update_terminal_transaction_row"
 def updateTerminalDigest : String :=
-  "6e7c651930b814a376c74b4b6b8dec08fecbe2db44693fe9a82985957d602493"
+  "8ea765f55d3a5187b8a9abc3430b3125406c5ce6c09407322443cc268dcd1079"
 def insertAbsentInversion : String := "Singular.Statements.insert_absent_inversion"
 def insertAbsentInversionDigest : String :=
   "b2ca14e3aa29caef0841c246964e5e64b600eef9ff64c0865677a1219d31525d"
 def insertActiveInversion : String := "Singular.Statements.insert_active_inversion"
 def insertActiveInversionDigest : String :=
-  "8b5794d17bf859cb01ceae53f2c487cbb22a251464c51364778234f978a9f98b"
+  "6ed0639458ff3086da939df84bcb8578a7ffea396441560382897ba4c245a160"
 def updateTerminalInversion : String := "Singular.Statements.update_terminal_inversion"
 def updateTerminalInversionDigest : String :=
   "55610f5a33da76d49c9f8e5eee2170af33700b0222530d6548629960133bc470"

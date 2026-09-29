@@ -5,10 +5,10 @@ registry-mode model supplies, that each one is proved, and from which axioms.
 Every declaration keeps its qualified name and a digest of its statement text, so
 a changed or missing obligation is detectable rather than merely unlikely.
 
-All 41 declarations of the registry's own statement module are **PROVED**
+All 42 declarations of the registry's own statement module are **PROVED**
 from the standard axioms — `propext`, `Classical.choice`, `Quot.sound` — and
 nothing else. The naming instance adds 7, its lifecycle 9
-and its wire encoding 5, for **62** in total, each with its own
+and its wire encoding 5, for **63** in total, each with its own
 manifest and its own compiled gate.
 
 ## What the eleven promises are
@@ -57,8 +57,8 @@ consequences rather than as separate arguments.
 | `Singular.Statements.fold_requires_no_signer` | T1 — no fold requires a signer: at every one of the seven edges the transaction the model builds has an empty signer list, and neither the step nor the transaction changes when the approval carries a different signature set | `7c24885ca77300bda88d97830ff54d237ddca2de3e3fdbd93cb1239a51a3eece` | PROVED |
 | `Singular.Statements.insert_absent_inversion` | — | `b2ca14e3aa29caef0841c246964e5e64b600eef9ff64c0865677a1219d31525d` | PROVED |
 | `Singular.Statements.insert_absent_transaction_row` | Complete absent-insertion transaction: refund-only custody, sole-asset key, the deposit locked at the cage and listed as its one payment, root and custody effects, keyed mint, no required signers, and no destination output | `a7e93824be2944e55b6482d0836111450522a7ed04eb57c262656f8903adaec6` | PROVED |
-| `Singular.Statements.insert_active_inversion` | — | `8b5794d17bf859cb01ceae53f2c487cbb22a251464c51364778234f978a9f98b` | PROVED |
-| `Singular.Statements.insert_active_transaction_row` | T1 — the transaction an admitted `insertActive` builds: the whole constructed value — two inputs, two outputs, their datums, addresses and assets, the destination output holding the deposit with the token and carrying the datum the request named, inline or none, the deposit to the destination as its one payment, the keyed mint, no required signer — plus universal open admission and the duplicate-key refusal | `a483afddc1afaeea11a5a2680321abcfe6a56e3b73c959e0ac7dea665625847f` | PROVED |
+| `Singular.Statements.insert_active_inversion` | — | `6ed0639458ff3086da939df84bcb8578a7ffea396441560382897ba4c245a160` | PROVED |
+| `Singular.Statements.insert_active_transaction_row` | T1 — the transaction an admitted `insertActive` builds: the whole constructed value — two inputs, two outputs, their datums, addresses and assets, the destination output holding the deposit with the token and carrying the datum the request named, inline or none, the deposit to the destination as its one payment, the keyed mint, no required signer — plus universal open admission and the duplicate-key refusal | `83dd1fefbe6b00be6adcb57d84b4321b9507649b6566c79eecd9f6015551ecb4` | PROVED |
 | `Singular.Statements.no_exit_strands_the_deposit` | No exit strands a deposit: for every exit and every request, some payment the exit owes is at least the request's deposit | `d8e6d7f1148b6f328d7dcb5cbf9f32d760b0dcd4809257f2947946031353eaa5` | PROVED |
 | `Singular.Statements.no_tree_change_without_approval` | P1 — no tree change without an approval under the pinned policy; the pins never move | `a2fa6756fc4504f0ee55be8013dfb05cf94fde2ae06777cf62c25cfd5352ca1b` | PROVED |
 | `Singular.Statements.obligations_read_only_the_request` | What an exit owes is read off the request alone: for every exit, two requests with the same owner, deposit, tip, destination and output reference are owed the same payments; the obligations take no registry state as input | `f85c95b87c9edfa7a2e246542784c7b59e6c83642481520fa996747110481ecc` | PROVED |
@@ -75,11 +75,12 @@ consequences rather than as separate arguments.
 | `Singular.Statements.terminal_mint_only_by_read` | S1 — provenance: a terminal token is minted only by a folded, verified read | `287bddd3ed1888a07b163f247fb4bdda6a4de049f26d815c5d52be9c82617639` | PROVED |
 | `Singular.Statements.terminal_witness_plural` | W3 — the terminal witness is plural | `68beea77527a148a61f7f055d065aec3d1d2c3acdb25231c5c8db851a747efff` | PROVED |
 | `Singular.Statements.termination` | T1 — a Terminal leaf is never moved, so the key is never re-booked | `daae0dd7f3dbce91850f546e619f4247a3a7688fbdaf6018f96e7213b5f91027` | PROVED |
-| `Singular.Statements.update_active_inversion` | — | `fccc7684da82d92656d5ea79fe3d80749245000052a088a97742ae1df7b20982` | PROVED |
+| `Singular.Statements.update_active_inversion` | — | `768068239bbc8835f2a0d2666a0bdcddd6cab388ca07eac13abbfeb3fa496855` | PROVED |
 | `Singular.Statements.update_terminal_inversion` | — | `55610f5a33da76d49c9f8e5eee2170af33700b0222530d6548629960133bc470` | PROVED |
-| `Singular.Statements.update_terminal_transaction_row` | T1 — the transaction an admitted `updateTerminal` builds: three inputs, the third spending the key's one active witness so the burn has a source, two outputs — the state and an owner output with no datum returning the deposit and naming the approval it returns — the keyed mint of `-1`, the deposit to the owner as its one payment, no required signer — plus the `terminal-immutable`, `key-unknown`, `not-booked` and `token-missing` refusals, each exhibited | `6e7c651930b814a376c74b4b6b8dec08fecbe2db44693fe9a82985957d602493` | PROVED |
+| `Singular.Statements.update_terminal_transaction_row` | T1 — the transaction an admitted `updateTerminal` builds: three inputs, the third spending the key's one active witness so the burn has a source, presenting the datum its holding carries, two outputs — the state and an owner output with no datum returning the deposit and naming the approval it returns — the keyed mint of `-1`, the deposit to the owner as its one payment, no required signer — plus the `terminal-immutable`, `key-unknown`, `not-booked` and `token-missing` refusals, each exhibited | `8ea765f55d3a5187b8a9abc3430b3125406c5ce6c09407322443cc268dcd1079` | PROVED |
 | `Singular.Statements.witness_kinds_exclude` | W4 — the three kinds exclude each other | `7013211d47dd903d511e417866114e9beac7d125ce81f40d3a08efbe996bfd1a` | PROVED |
-| `Singular.Statements.witness_terminal_inversion` | — | `1c7af35ddacb820a451811ad329012ea5e45797da9878d2d8681b31589b02288` | PROVED |
+| `Singular.Statements.witness_input_datum_is_held` | #304 — a witness a fold spends presents the datum its holding carries, over all seven edges: the form the delivering fold gave the output, so a retirement or deletion never spends a witness as an inline datum the delivery did not write | `c0676968ffc94970d7e4d813131e2cec3942ca72067c26ef78df858e7c795090` | PROVED |
+| `Singular.Statements.witness_terminal_inversion` | — | `11a6149a03e2edd93e254994428f7f1bcd73c05566f57260f201df28dcd2fc61` | PROVED |
 
 The naming, lifecycle and wire declarations are listed in their own manifests:
 [naming-theorem-debt.json](../lean/naming-theorem-debt.json),

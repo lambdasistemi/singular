@@ -232,7 +232,7 @@ manifest detaches the row from its proof and is caught there. -/
 
 def transactionRowTheorem : String := "Singular.Statements.insert_active_transaction_row"
 def transactionRowStatement : String :=
-  "a483afddc1afaeea11a5a2680321abcfe6a56e3b73c959e0ac7dea665625847f"
+  "83dd1fefbe6b00be6adcb57d84b4321b9507649b6566c79eecd9f6015551ecb4"
 def keyedMintTheorem : String := "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
 def keyedMintStatement : String :=
   "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988"
@@ -356,7 +356,7 @@ step. -/
 
 def retirementRowTheorem : String := "Singular.Statements.update_terminal_transaction_row"
 def retirementRowStatement : String :=
-  "6e7c651930b814a376c74b4b6b8dec08fecbe2db44693fe9a82985957d602493"
+  "8ea765f55d3a5187b8a9abc3430b3125406c5ce6c09407322443cc268dcd1079"
 
 /-- The state an accepted `insertActive` at key 42 produced: the leaf reads
 `Active` and its one active token is held at output 555. -/

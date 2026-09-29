@@ -3,7 +3,8 @@
 
 Run from the repository's Nix development shell with an evidence directory.
 Only temporary copies are mutated. Each mutant brings back one fabrication: a
-destination row on every fold, or an inline datum on every delivered output.
+destination row on every fold, an inline datum on every delivered output, or an
+inline datum on every spent witness.
 The driver binary depends on the model alone, so it is built and run first, and
 the fabrication must be visible by value in its output while the baseline shows
 none. Then the statements module is elaborated, and the mutant must fail inside
@@ -32,11 +33,17 @@ MUTANTS = {
         "statement": "theorem destination_output_iff_delivers",
     },
     "unconditional-inline": {
-        "before": "datum := if r.namesDatum then registryDatumForm else .none",
-        "after": "datum := registryDatumForm",
+        "before": "def deliveredDatum (r : Request) : DatumForm :=\n  if r.namesDatum then .inline else .none",
+        "after": "def deliveredDatum (r : Request) : DatumForm :=\n  .inline",
         "statement": "theorem delivered_datum_follows_request",
     },
+    "unconditional-inline-witness": {
+        "before": "  | .requestOutput => heldDatum s asset.2 asset.1",
+        "after": "  | .requestOutput => registryDatumForm",
+        "statement": "theorem witness_input_datum_is_held",
+    },
 }
+DELIVERING_EDGES = ("insertActive", "updateActive", "witnessTerminal")
 
 
 def run(command, cwd, log):
@@ -56,10 +63,28 @@ def destination_outputs(driver_output):
                 for o in s["observations"]["tx"]["outputs"]
                 if o["role"] == "destination"
             ],
+            "witnesses": [
+                i["datum"]
+                for i in s["observations"]["tx"]["inputs"]
+                if i["role"] == "witness"
+            ],
+            "witnessDelivered": delivered_form(s),
         }
         for s in scenarios
         if (s.get("observations") or {}).get("tx") is not None
     }
+
+
+def delivered_form(scenario):
+    """The datum form the fold that delivered this key's witness gave it, if any."""
+    forms = [
+        "inline" if step["request"].get("namesDatum") else "none"
+        for step in scenario.get("setup") or []
+        if step.get("accepted")
+        and step["request"]["key"] == scenario["request"]["key"]
+        and step["request"]["edge"] in DELIVERING_EDGES
+    ]
+    return forms[-1] if forms else None
 
 
 def lines_of(statements, header):
@@ -79,6 +104,11 @@ def fabrications(rows):
         for datum in row["datums"]:
             if datum != want:
                 found.append(f"{i}: delivered datum {datum}, request names {want}")
+        for datum in row["witnesses"]:
+            if row["witnessDelivered"] and datum != row["witnessDelivered"]:
+                found.append(
+                    f"{i}: witness datum {datum}, delivered as {row['witnessDelivered']}"
+                )
     return found
 
 

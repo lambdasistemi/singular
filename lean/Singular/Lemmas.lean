@@ -232,7 +232,7 @@ theorem applyEdge_insertActive (s : RegistryState) (a : Action) (he : a.edge = .
     (applyEdge s a).state.config = { s.config with root := rootOf (trieSet s.trie a.key (.known .active)) } ∧
     (applyEdge s a).state.custody = s.custody ∧
     (applyEdge s a).state.held =
-      { key := a.key, kind := .active, output := a.output } :: s.held ∧
+      { key := a.key, kind := .active, output := a.output, datum := deliveredDatum a } :: s.held ∧
     (applyEdge s a).mint = [((.active, a.key), 1)] ∧ (applyEdge s a).paid = [] := by
   simp [applyEdge, he, delta, assetDelta]
 
@@ -243,7 +243,7 @@ theorem applyEdge_updateActive (s : RegistryState) (a : Action) (he : a.edge = .
     (applyEdge s a).state.config = { s.config with root := rootOf (trieSet s.trie a.key (.known .active)) } ∧
     (applyEdge s a).state.custody = s.custody.filter (·.key != a.key) ∧
     (applyEdge s a).state.held =
-      { key := a.key, kind := .active, output := a.output } :: s.held ∧
+      { key := a.key, kind := .active, output := a.output, datum := deliveredDatum a } :: s.held ∧
     (applyEdge s a).mint = [((.absent, a.key), -1), ((.active, a.key), 1)] ∧
     (applyEdge s a).paid = [(c.refundAddress, c.value)] := by
   simp [applyEdge, he, hc, delta, assetDelta]
@@ -311,7 +311,7 @@ theorem applyEdge_witnessTerminal (s : RegistryState) (a : Action)
     (applyEdge s a).state.config = s.config ∧
     (applyEdge s a).state.custody = s.custody ∧
     (applyEdge s a).state.held =
-      { key := a.key, kind := .terminal, output := a.output } :: s.held ∧
+      { key := a.key, kind := .terminal, output := a.output, datum := deliveredDatum a } :: s.held ∧
     (applyEdge s a).mint = [((.terminal, a.key), 1)] ∧ (applyEdge s a).paid = [] := by
   simp [applyEdge, he, delta, assetDelta]
 
@@ -1013,7 +1013,7 @@ theorem txOf_of_step_ok (s : RegistryState) (r : Request) (lovelace : Nat) (t : 
                 , stateTokens := registryStateTokens, approvals := 0, lovelace := 0 }
               , { role := .request, datum := registryDatumForm
                 , stateTokens := 0, approvals := approvalsIn r, lovelace := lovelace } ]
-              ++ txBurnInputs t r
+              ++ txBurnInputs s t r
           , outputs := txStateOutput t
               :: (txDestinationOutputs t r).map
                   (fun o => { o with

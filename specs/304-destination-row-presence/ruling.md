@@ -54,3 +54,13 @@ reports the ledger's form rather than one the model invented.
 - One statement over all seven edges: every delivered output presents an inline datum when its
   request names one, and none otherwise. A mutant that restores an unconditional inline datum
   must fail it.
+
+## The spent witness carries the datum its delivery gave it
+
+The same ruling reaches the other end of a delivered token's life. The witness a retirement
+or a deletion spends is the very output an earlier fold delivered, so it presents the datum
+form that fold gave it. It was modelled as always inline, and the live retirement of a key
+registered without a named datum observed none. The state now records, with each holding, the
+form its delivery wrote. A spent witness presents that form, stated over all seven edges, and a
+mutant that makes every witness inline must fail. The `held` observation is unchanged: a
+holding's datum is observed on the transaction that spends it.
