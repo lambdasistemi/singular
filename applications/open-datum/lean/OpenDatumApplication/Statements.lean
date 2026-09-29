@@ -3,7 +3,7 @@ import OpenDatumApplication.Driver
 
 /-! # The open-datum application's intended statements and inversions
 
-Ten declarations were previously proved. This bounded slice targets four further unchanged declarations; the other18 remain UNPROVED. Only captured #print axioms results establish each target's proof status; the current ledger remains a historical statement-phase artifact.
+Fourteen declarations were previously proved. This bounded slice targets three further unchanged declarations; the other15 remain UNPROVED. Only captured #print axioms results establish each target's proof status; the current ledger remains a historical statement-phase artifact.
 
 Three kinds of statement, kept apart:
 
@@ -326,7 +326,135 @@ theorem update_inversion (w w' : World) (ref : Nat) (succs : List Successor)
         w' = { w with outputs := (w.outputs.erase o) ++
                         [⟨w.nextRef, s.address, s.lovelace, s.assets, s.envelope⟩]
                     , nextRef := w.nextRef + 1 } := by
-  sorry
+  have control_sound : ∀ a b : Control, (a == b) = true → a = b := by
+    intro a b hab
+    obtain ⟨v1, ⟨p1, n1⟩, ap1, k1, c1, d1⟩ := a
+    obtain ⟨v2, ⟨p2, n2⟩, ap2, k2, c2, d2⟩ := b
+    simp only [reduceBEq, Bool.and_eq_true, beq_iff_eq] at hab
+    first
+      | (simp only [hab]; done)
+      | simp [hab]
+      | simp_all
+  have control_refl : ∀ a : Control, (a == a) = true := by
+    intro a
+    obtain ⟨v, ⟨p, n⟩, ap, k, c, d⟩ := a
+    simp [reduceBEq]
+  have bind_ok : ∀ {α β : Type} (x : Except String α) (f : α → Except String β) (b : β),
+      x >>= f = Except.ok b → ∃ a, x = Except.ok a ∧ f a = Except.ok b := by
+    intro α β x f b hx
+    cases x with
+    | error e =>
+      first
+        | exact Except.noConfusion hx
+        | cases hx
+        | (simp [bind, Except.bind] at hx)
+    | ok a => exact ⟨a, rfl, hx⟩
+  have bind_ok_intro : ∀ {α β : Type} {x : Except String α} {f : α → Except String β} {a : α}
+      {b : β}, x = Except.ok a → f a = Except.ok b → x >>= f = Except.ok b := by
+    intro α β x f a b hx hf
+    subst hx
+    exact hf
+  have ens : ∀ (c : Bool) (why : String) (u : Unit), ensure c why = .ok u → c = true := by
+    intro c why u hc
+    cases c with
+    | false =>
+      first
+        | exact Except.noConfusion hc
+        | (simp [ensure] at hc)
+    | true => rfl
+  have ens_ok : ∀ (c : Bool) (why : String), c = true → ensure c why = Except.ok () := by
+    intro c why hc
+    subst hc
+    rfl
+  have ok_inj : ∀ {α : Type} {a b : α}, (Except.ok a : Except String α) = Except.ok b → a = b := by
+    intro α a b hab
+    first
+      | (injection hab with h'; exact h')
+      | (cases hab; rfl)
+  have hupd : ∀ b : Bool, (!Law.standard.checkUpdateSigner || b) = true → b = true := by
+    intro b hb
+    first
+      | (cases b with
+          | false => exact absurd hb (by decide)
+          | true => rfl)
+      | simpa [Law.standard] using hb
+  have hupd_intro : ∀ b : Bool, b = true → (!Law.standard.checkUpdateSigner || b) = true := by
+    intro b hb
+    subst hb
+    first
+      | rfl
+      | decide
+      | simp [Law.standard]
+  constructor
+  · intro h
+    first
+      | unfold updateStep at h
+      | simp only [updateStep] at h
+      | skip
+    cases ho : outputAt w ref with
+    | none =>
+      first
+        | (simp only [ho] at h; exact Except.noConfusion h)
+        | (simp only [ho] at h)
+        | (simp [ho] at h)
+    | some o =>
+      simp only [ho] at h
+      obtain ⟨_, e1, h⟩ := bind_ok _ _ _ h
+      cases hcar : List.filter (fun x => carriesKey x.assets o.envelope.control.key) succs with
+      | nil =>
+        first
+          | (simp only [hcar] at h; exact Except.noConfusion h)
+          | (simp only [hcar] at h)
+          | (simp [hcar] at h)
+      | cons s rest =>
+        cases rest with
+        | cons s2 rest2 =>
+          first
+            | (simp only [hcar] at h; exact Except.noConfusion h)
+            | (simp only [hcar] at h)
+            | (simp [hcar] at h)
+        | nil =>
+          simp only [hcar] at h
+          obtain ⟨_, e2, h⟩ := bind_ok _ _ _ h
+          obtain ⟨_, e3, h⟩ := bind_ok _ _ _ h
+          obtain ⟨_, e4, h⟩ := bind_ok _ _ _ h
+          obtain ⟨_, e5, h⟩ := bind_ok _ _ _ h
+          have hsig : o.envelope.control.controller ∈ sigs :=
+            List.contains_iff.1 (hupd _ (ens _ _ _ e1))
+          have haddr : s.address = appAddress w.app := eq_of_beq (ens _ _ _ e2)
+          have hctrl : s.envelope.control = o.envelope.control := control_sound _ _ (ens _ _ _ e3)
+          have hassets : s.assets = o.assets := by
+            first
+              | exact eq_of_beq (ens _ _ _ e4)
+              | exact beq_iff_eq.1 (ens _ _ _ e4)
+              | simpa using ens _ _ _ e4
+          have hdep : o.envelope.control.deposit ≤ s.lovelace := of_decide_eq_true (ens _ _ _ e5)
+          exact ⟨o, s, rfl, hsig, hcar, haddr, hctrl, hassets, hdep, (ok_inj h).symm⟩
+  · rintro ⟨o, s, ho, hsig, hcar, haddr, hctrl, hassets, hdep, hw⟩
+    subst hw
+    first
+      | unfold updateStep
+      | simp only [updateStep]
+      | skip
+    simp only [ho]
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact hupd_intro _ (List.contains_iff.2 hsig)
+    simp only [hcar]
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact beq_iff_eq.2 haddr
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · first
+        | (rw [hctrl]; exact control_refl _)
+        | (rw [hctrl]; done)
+        | simp [hctrl, control_refl]
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · first
+        | exact beq_iff_eq.2 hassets
+        | (rw [hassets]; exact beq_self_eq_true _)
+        | simp [hassets]
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact decide_eq_true hdep
+    rfl
 
 /-- An accepted fold is exactly: the selected rows are the ones `selectRow`
 chooses, the registry's `foldBatch` accepts their requests with result `t`, the
@@ -426,7 +554,62 @@ theorem reject_inversion (w w' : World) (edge : Edge) (key : Key) (outs : List T
       ∃ p t, pendingOf w edge key = some p ∧ exitStep w.registry .reject p.request = .ok t ∧
         settle (obligations .reject p.request) outs = none ∧
         w' = { w with registry := t.state, pending := w.pending.erase p, lastMint := t.mint } := by
-  sorry
+  have bind_ok : ∀ {α β : Type} (x : Except String α) (f : α → Except String β) (b : β),
+      x >>= f = Except.ok b → ∃ a, x = Except.ok a ∧ f a = Except.ok b := by
+    intro α β x f b hx
+    cases x with
+    | error e =>
+      first
+        | exact Except.noConfusion hx
+        | cases hx
+        | (simp [bind, Except.bind] at hx)
+    | ok a => exact ⟨a, rfl, hx⟩
+  have bind_ok_intro : ∀ {α β : Type} {x : Except String α} {f : α → Except String β} {a : α}
+      {b : β}, x = Except.ok a → f a = Except.ok b → x >>= f = Except.ok b := by
+    intro α β x f a b hx hf
+    subst hx
+    exact hf
+  have ok_inj : ∀ {α : Type} {a b : α}, (Except.ok a : Except String α) = Except.ok b → a = b := by
+    intro α a b hab
+    first
+      | (injection hab with h'; exact h')
+      | (cases hab; rfl)
+  constructor
+  · intro h
+    first
+      | unfold rejectStep at h
+      | simp only [rejectStep] at h
+      | skip
+    cases hp : pendingOf w edge key with
+    | none =>
+      first
+        | (simp only [hp] at h; exact Except.noConfusion h)
+        | (simp only [hp] at h)
+        | (simp [hp] at h)
+    | some p =>
+      simp only [hp] at h
+      obtain ⟨t, ht, h⟩ := bind_ok _ _ _ h
+      cases hs : settle (obligations .reject p.request) outs with
+      | some why =>
+        first
+          | (simp only [hs] at h; exact Except.noConfusion h)
+          | (simp only [hs] at h)
+          | (simp [hs] at h)
+      | none =>
+        simp only [hs] at h
+        exact ⟨p, t, rfl, ht, hs, (ok_inj h).symm⟩
+  · rintro ⟨p, t, hp, ht, hs, hw⟩
+    subst hw
+    first
+      | unfold rejectStep
+      | simp only [rejectStep]
+      | skip
+    simp only [hp]
+    refine bind_ok_intro ht ?_
+    first
+      | (simp only [hs]; done)
+      | (simp only [hs]; rfl)
+      | (split <;> simp_all)
 
 /-- No withdrawal is ever accepted. -/
 theorem withdraw_inversion (w w' : World) (ref : Nat) (outs : List TxOutput) :
@@ -556,7 +739,40 @@ theorem update_requires_controller (w w' : World) (ref : Nat) (succs : List Succ
     (sigs : List Nat) (o : AppOutput) :
     outputAt w ref = some o → appStep w (.update ref succs sigs) = .ok w' →
       o.envelope.control.controller ∈ sigs := by
-  sorry
+  intro ho h
+  have bind_ok : ∀ {α β : Type} (x : Except String α) (f : α → Except String β) (b : β),
+      x >>= f = Except.ok b → ∃ a, x = Except.ok a ∧ f a = Except.ok b := by
+    intro α β x f b hx
+    cases x with
+    | error e =>
+      first
+        | exact Except.noConfusion hx
+        | cases hx
+        | (simp [bind, Except.bind] at hx)
+    | ok a => exact ⟨a, rfl, hx⟩
+  have ens : ∀ (c : Bool) (why : String) (u : Unit), ensure c why = .ok u → c = true := by
+    intro c why u hc
+    cases c with
+    | false =>
+      first
+        | exact Except.noConfusion hc
+        | (simp [ensure] at hc)
+    | true => rfl
+  have hupd : ∀ b : Bool, (!Law.standard.checkUpdateSigner || b) = true → b = true := by
+    intro b hb
+    first
+      | (cases b with
+          | false => exact absurd hb (by decide)
+          | true => rfl)
+      | simpa [Law.standard] using hb
+  change updateStep Law.standard w ref succs sigs = .ok w' at h
+  first
+    | unfold updateStep at h
+    | simp only [updateStep] at h
+    | skip
+  simp only [ho] at h
+  obtain ⟨_, e1, _⟩ := bind_ok _ _ _ h
+  exact List.contains_iff.1 (hupd _ (ens _ _ _ e1))
 
 /-- Custody (reached worlds): after an accepted update the key's token is at this
 contract under the same control with at least the protected deposit, every other
@@ -922,3 +1138,7 @@ end OpenDatumApplication.Statements
 #print axioms OpenDatumApplication.Statements.bookTerminate_inversion
 #print axioms OpenDatumApplication.Statements.fold_inversion
 #print axioms OpenDatumApplication.Statements.update_payload_free
+
+#print axioms OpenDatumApplication.Statements.update_inversion
+#print axioms OpenDatumApplication.Statements.reject_inversion
+#print axioms OpenDatumApplication.Statements.update_requires_controller
