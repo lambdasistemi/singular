@@ -411,6 +411,27 @@ spec =
                                 awaitTxId (txIdHex basicTxId)
                         theReadFailure w basicTxId
 
+            it "counts the window reads in awaitTx's elapsed time" $
+                withFollowedIndexer $ \_ ->
+                    withOpenSession slowSlotSession $ do
+                        w <-
+                            theWaitFailure 20_000_000 "awaitTx" $
+                                awaitTx txWithBoundOutput
+                        waitStage w `shouldBe` SessionConfirmationWait
+                        waitElapsed w
+                            `shouldSatisfy` (\s -> s >= 7.9 && s < 14)
+
+            it "counts the window read in awaitTxId's elapsed time" $
+                withFollowedIndexer $ \_ ->
+                    withOpenSession slowPastSession $ do
+                        w <-
+                            theWaitFailure 15_000_000 "awaitTxId" $
+                                awaitTxId (txIdHex basicTxId)
+                        waitStage w `shouldBe` SessionConfirmationWait
+                        show w `shouldSatisfy` isInfixOf "closed at slot"
+                        waitElapsed w
+                            `shouldSatisfy` (\s -> s >= 3.9 && s < 10)
+
         describe "the production bounds" $ do
             it
                 "keeps the submission bound inside the confirmation \
@@ -629,6 +650,27 @@ unconvertibleBlockedTipSession released =
                     \_ -> throwIO (userError "the time cannot be converted")
                 }
         }
+
+{- | The one-slot-per-second session whose time-to-slot conversion
+answers only after two seconds.
+-}
+slowSlotSession :: NodeSession
+slowSlotSession =
+    slotSession
+        { nsProvider =
+            slotProv
+                { Cage.posixMsToSlot =
+                    \ms -> threadDelay 2_000_000 >> pure (slotOfMs ms)
+                }
+        }
+
+-- | The slow session with its tip long past any confirmation window.
+slowPastSession :: NodeSession
+slowPastSession = slowSlotSession{nsTipSlot = pure (SlotNo 4_000_000_000)}
+
+-- | The slot of a POSIX time in milliseconds on the one-slot-per-second chain.
+slotOfMs :: Integer -> SlotNo
+slotOfMs = SlotNo . fromIntegral . (`div` 1000)
 
 {- | The one-slot-per-second session whose tip is long past the window
 of a transaction valid until slot 1000.
