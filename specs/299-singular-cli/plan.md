@@ -1,0 +1,21 @@
+# Delivery plan
+
+Read spec.md for authority, story, invariants and model binding. Architecture models own changed decisions. Final PR binds accepted #278 and only #299 delta. Rebase requires gate/base rebinding before dispatch.
+
+One vertical OWNER slice: CLI, persisted public identity/authenticated state, read-only ledger observation, archive and actual instructions. Existing Driver/Edges/Deployment/Trie/Node/provider facades provide production primitives; expected CLI placement is offchain/cli. Small helper additions may expose missing read-only/session/attach/seed-reservation primitives within the explicit fence; preserve all existing public facades/executables and semantics. No global refactor or Conformance edit.
+
+Task order: T299-01 explicit commands/configuration/validation; T299-02 seed-safe create and persisted attachment; T299-03 insert/terminate and truthful partial receipts; T299-04 fresh key/proof inspection without signing/funding; T299-05 packaging/classified build/archive separate-process CI/controls; T299-06 supported demo docs and correspondence/limits. Completion is the whole reusable journey, not isolated fixed-key scenarios. Each acceptance line is a persistent-auditor checkpoint at a committed SHA; implementer continues while owner forwards reviews, push waits for all approvals.
+
+Team: compact epic owner Sol/high also owns ticket contract/gate/tasks/PR/acceptance; approved Opus/high implementation owner; approved Sol/high persistent independent auditor, mute toward implementer. draft=NONE, no gate-author seats or terminal inspector. Runtime contract and command schedules are frozen outside Git, receipts counted before executions. Operator supplied no token/dollar/build cap; owner-defined bounds do not claim otherwise.
+
+Baseline before behavior edits: classified component build, root `nix develop --quiet -c just ci`, offchain lint and cage-tests. Frozen Gate-S maps every requirement to existing CI commands or a new ordinary-CLI archive CI command carried by this PR. RED/control receipts distinguish missing product behavior, setup failure, node failure, timeout, client refusal and ledger refusal. New archive command must be carried in registry.yml and executed remotely at the exact pushed SHA. Existing scenario controls remain executed and unchanged.
+
+Archive check starts one persistent external development node, runs ordinary CLI processes with actual generated development wallet/seed/key and release-provided blueprint identities, and retains five-process continuity evidence plus relevant failure controls. It runs outside the checkout and never hides the journey in one lifecycle process. Readbacks bind fresh state output/reference/datum/commitment and actual holdings/mint/returns to chain points. Local proof/state and observed ledger facts are separately labelled.
+
+Exact overlapping surfaces: Cabal/component inventory/offchain flake, registry workflow, archive assembly/check, first-demo/speech/mkdocs. E209 Conformance remains untouched; E272/#278/#302 continue. Refresh immediate owner receipts and exact path diffs at dispatch/integration; serialize only actual intersections. No reset/rebase/interrupt of foreign lanes.
+
+Local source/build, Lean, compiled scripts, development node, remote CI, acceptance, merge, release and preprod are separate claims. #300 owns the concrete pinned artifact/public-chain checkpoint and publication; #299 performs none of those external actions.
+
+Artifact ceilings: spec8KiB; plan4KiB; each model3KiB; tasks2KiB; combined planning20KiB; worker packet10KiB. Exact bytes/lines and hashes go in runtime manifest before launch. Signature/placement ambiguity returns to owner before changing architecture; affected behavioral ambiguity routes to operator under constitution.
+
+Dispatch base: accepted #278 merge 09026002e78f5b1e4d09cbd93ca2e7e7e356e4f2, tree-identical to selected 6b0feb5. E272 parked after S2; E209 retains #288/#304. The destination-row ruling holds termination correspondence acceptance; independent work continues.
