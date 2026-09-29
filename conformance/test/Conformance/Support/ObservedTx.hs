@@ -40,6 +40,7 @@ import Conformance.Run.Live
     , newLiveIdentities
     , observedStepTx
     , prepareRegistrationIdentities
+    , walletHoldingsOf
     )
 import Conformance.Story.Live qualified as Live
 import Control.Exception (ErrorCall, displayException)
@@ -908,6 +909,45 @@ spec =
                         tx
             observedTx step tx activeMint delivering 1
                 `shouldThrow` errorMentioning "custody"
+
+        -- A held token sits on the output its delivery wrote: the census
+        -- reads that output's own datum form for each token it carries.
+        forM_ carriedForms $ \(told, form, reported) ->
+            it
+                ( "a held token on an output "
+                    <> told
+                    <> " is held as "
+                    <> reported
+                )
+                ( do
+                    forms <- heldForms [(custodyIn, carrier form)]
+                    forms `shouldBe` [String (T.pack reported)]
+                )
+
+        it "keeps each held token's form bound to its own output" $ do
+            forms <-
+                heldForms
+                    [ (custodyIn, carrier hashedDatum)
+                    , (elsewhere, carrier NoDatum)
+                    ]
+            forms `shouldBe` [String "hashed", String "none"]
+
+{- | The datum form of every holding the census reads off a holder's outputs,
+in the order it reads them.
+-}
+heldForms :: [(TxIn, TxOut ConwayEra)] -> IO [Value]
+heldForms outputs = do
+    ids <- newLiveIdentities
+    cage <- fixtureCage
+    prepareRegistrationIdentities ids cage keyBytes holderWallet
+    holdings <-
+        walletHoldingsOf
+            ids
+            [keyBytes]
+            [("active", SBS.fromShort (cfgActivePolicy fixtureCfg))]
+            holderWallet
+            outputs
+    pure (map datumFormOf holdings)
 
 -- | The transaction a fixture step submitted, as its outcome carries it.
 lsTransactionOf :: LiveStep -> ConwayTx

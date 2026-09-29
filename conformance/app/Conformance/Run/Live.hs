@@ -19,6 +19,7 @@ module Conformance.Run.Live
     , observeAcceptedStep
     , classifyLeaves
     , observeCustody
+    , walletHoldingsOf
     , observePaid
     , observeSigner
     , observeStepMint
@@ -1598,31 +1599,45 @@ observeAcceptedStep env state step transaction = do
         pure (identifier, ordinal, name)
     -- A wallet holds the active and terminal witnesses the folds routed to
     -- it; the absent witness stays in the cage's custody.
-    walletHoldings identities keys kinds wallet = do
-        utxos <- Cage.queryUTxOs (envProv env) wallet
-        addressId <-
-            observeIdentity
-                (liveWallets identities)
-                (WalletIdentity (serialiseAddr wallet))
-        concat
-            <$> mapM
-                ( \key -> do
-                    keyId <- observeIdentity (liveKeys identities) (KeyIdentity key)
-                    pure
-                        [ object ["key" .= keyId, "kind" .= String kind, "output" .= addressId]
-                        | (kind, policyBytes) <- kinds
-                        , _ <-
-                            [ 1
-                            .. sum
-                                [ q
-                                | (_, out) <- utxos
-                                , Just names <- [Map.lookup policyBytes (outAssets out)]
-                                , Just q <- [Map.lookup key names]
-                                ]
+    walletHoldings identities keys kinds wallet =
+        Cage.queryUTxOs (envProv env) wallet
+            >>= walletHoldingsOf identities keys kinds wallet
+
+{- | The holdings one wallet's outputs carry, one entry per token unit of each
+registry key under each witness policy: its key, kind and the wallet's
+identity.
+-}
+walletHoldingsOf
+    :: LiveIdentities
+    -> [ByteString]
+    -> [(T.Text, ByteString)]
+    -> Addr
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO [Value]
+walletHoldingsOf identities keys kinds wallet utxos = do
+    addressId <-
+        observeIdentity
+            (liveWallets identities)
+            (WalletIdentity (serialiseAddr wallet))
+    concat
+        <$> mapM
+            ( \key -> do
+                keyId <- observeIdentity (liveKeys identities) (KeyIdentity key)
+                pure
+                    [ object ["key" .= keyId, "kind" .= String kind, "output" .= addressId]
+                    | (kind, policyBytes) <- kinds
+                    , _ <-
+                        [ 1
+                        .. sum
+                            [ q
+                            | (_, out) <- utxos
+                            , Just names <- [Map.lookup policyBytes (outAssets out)]
+                            , Just q <- [Map.lookup key names]
                             ]
                         ]
-                )
-                keys
+                    ]
+            )
+            keys
 
 classifyLeaves
     :: [(ByteString, Bool)] -> ByteString -> IO [(ByteString, ByteString)]
