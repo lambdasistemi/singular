@@ -261,7 +261,7 @@ stateOutput = outAt (walletAt 0x23) 2_000_000 mempty inlineDatum
 
 -- | The spent state input of a fixture step, presenting the form it is told to.
 spentState :: Datum ConwayEra -> TxOut ConwayEra
-spentState form = outAt (walletAt 0x24) 2_000_000 mempty form
+spentState = outAt (walletAt 0x24) 2_000_000 mempty
 
 -- | The spent active witness of a retirement, presenting the form it is told to.
 spentWitness :: Datum ConwayEra -> TxOut ConwayEra
