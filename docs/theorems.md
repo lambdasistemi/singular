@@ -8,7 +8,7 @@ a changed or missing obligation is detectable rather than merely unlikely.
 All 41 declarations of the registry's own statement module are **PROVED**
 from the standard axioms — `propext`, `Classical.choice`, `Quot.sound` — and
 nothing else. The naming instance adds 7, its lifecycle 9
-and its wire encoding 5, for **60** in total, each with its own
+and its wire encoding 5, for **62** in total, each with its own
 manifest and its own compiled gate.
 
 ## What the eleven promises are
