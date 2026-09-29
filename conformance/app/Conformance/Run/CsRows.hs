@@ -120,11 +120,13 @@ import Singular.Registry.Ledger
 import Singular.Registry.Node
     ( adaptProvider
     , awaitConnection
+    , boundedSubmitter
     , checkFunding
     , defaultFundingFloor
     , followedProvider
     , funderAddr
     , sessionMagic
+    , submissionBound
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
@@ -219,7 +221,7 @@ runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty
                 ltxsCh
     let nodeProv = adaptProvider (mkN2CProvider lsqCh)
     awaitConnection sessionMagic sock nodeThread nodeProv
-    let submit = mkN2CSubmitter ltxsCh
+    let submit = boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
     prov <- followedProvider nodeProv submit
     let stateMarker = hex (scriptHashBytes (computeScriptHash stateBytes))
         blueprintIdStr =

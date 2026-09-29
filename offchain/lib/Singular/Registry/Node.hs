@@ -94,6 +94,13 @@ module Singular.Registry.Node
     , withNodeSocket
     , devnetGenesis
 
+      -- * Bounded waits
+    , WaitStage (..)
+    , WaitFailure (..)
+    , submissionBound
+    , boundedSubmitter
+    , tryOutcome
+
       -- * Funding
     , FundingFloor (..)
     , defaultFundingFloor
@@ -140,6 +147,13 @@ import Singular.Registry.Node.Session
     , withNodeForPlannedFunding
     , withNodeMode
     , withNodeSocket
+    )
+import Singular.Registry.Node.Wait
+    ( WaitFailure (..)
+    , WaitStage (..)
+    , boundedSubmitter
+    , submissionBound
+    , tryOutcome
     )
 import Singular.Registry.Node.Wallet
     ( Wallet (..)

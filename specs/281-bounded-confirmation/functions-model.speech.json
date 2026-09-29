@@ -1,0 +1,12 @@
+{
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "c01f5d3f0311efe7cb70a40b88f61fb776d0c20ab873613f6064792f148ab1ff"
+  },
+  "signatures": [
+    {
+      "text": "One function bounds any whole wait and throws the named failure. A bounded submitter wraps any node submitter. Indexed and session confirmation gain forms that take an explicit bound for tests. Session confirmation raises the named failure when its limit fires and when its window closes, and every node read it makes, including the window computation, is inside a bound. The public confirmation functions keep their signatures. A wait-aware catch replaces every catch-all that classifies failures.",
+      "pause": 500
+    }
+  ]
+}

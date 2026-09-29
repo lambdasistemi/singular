@@ -1,0 +1,18 @@
+{
+  "_source": {
+    "file": "spec.md",
+    "sha256": "75ed795a3bb5b2267072d6cb3196ba4f844b32faf4ee983bf256f248c137fb8f"
+  },
+  "requirements": [
+    {
+      "text": "A submission with no node verdict, an output that never reaches the indexer, and a session confirmation on a stopped chain or a stalled node read each end within a finite bound. That includes the reads that compute the confirmation window. The failure names the transaction and the elapsed time, and a closed confirmation window ends as the same failure. Prompt answers behave as before, and nothing is left running when a bound fires. No wait failure is ever published as a refusal, a control outcome, a row outcome or an acceptance, and no catch that classifies or retries failures swallows it.",
+      "pause": 500
+    }
+  ],
+  "authority-and-evidence": [
+    {
+      "text": "The Lean model and constitution are unchanged, because a bound on a wait is runner infrastructure, not a model outcome. The historical run stopped while waiting for the node's submission verdict, which the pinned client awaits without a limit. The session confirmation could wait forever on a stopped chain.",
+      "pause": 500
+    }
+  ]
+}

@@ -43,7 +43,7 @@ refusal of a second insert on a bound key with its accepting control.
 -}
 module Singular.Registry.E2E.InsertActiveSpec (spec) where
 
-import Control.Exception (SomeException, try)
+import Control.Exception (SomeException)
 import Control.Monad (unless)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
@@ -65,6 +65,7 @@ import Singular.Registry.Blueprint
     )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (AssetName (..), Root (..))
+import Singular.Registry.Node (tryOutcome)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Internal (policyIdFromPin)
 import Singular.Registry.Types (edgeInsertActive)
@@ -137,7 +138,7 @@ insertActiveSpec stateBytes requestBytes = do
             --    runs before the duplicate so a failure here is reported
             --    as a broken control rather than silently making step 3
             --    vacuous.
-            control <- try @SomeException (fold controlKey)
+            control <- tryOutcome (fold controlKey)
             case control of
                 Left e ->
                     expectationFailure
@@ -152,7 +153,7 @@ insertActiveSpec stateBytes requestBytes = do
             --    against step 2 — same cage, same builder, same
             --    destination, same fee wallet holding no active token.
             --    The only difference is that this key is already bound.
-            duplicate <- try @SomeException (fold refusalKey)
+            duplicate <- tryOutcome (fold refusalKey)
             case duplicate of
                 Right _ ->
                     expectationFailure

@@ -120,12 +120,14 @@ import Singular.Registry.Ledger
 import Singular.Registry.Node
     ( adaptProvider
     , awaitConnection
+    , boundedSubmitter
     , checkFunding
     , defaultFundingFloor
     , devnetGenesis
     , followedProvider
     , funderAddr
     , sessionMagic
+    , submissionBound
     , withNodeSocket
     )
 import Singular.Registry.Provider qualified as Cage
@@ -359,7 +361,7 @@ runSession
                     ltxsCh
         let nodeProv = adaptProvider (mkN2CProvider lsqCh)
         awaitConnection sessionMagic sock nodeThread nodeProv
-        let submit = mkN2CSubmitter ltxsCh
+        let submit = boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
         prov <- followedProvider nodeProv submit
         checkFunding prov funderAddr defaultFundingFloor
         tm <- mkPureTrieManager

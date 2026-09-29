@@ -1,0 +1,24 @@
+{
+  "_source": {
+    "file": "plan.md",
+    "sha256": "a26e46017090ace786ed24a5f9f4dbdacf3e088a9c64268288491ca28637ac18"
+  },
+  "delivery": [
+    {
+      "text": "One coder, first GLM and then Sonnet by the operator's instruction, commits failing specs first, with every negative case failing on its own time guard. It then commits the shared bound applied to every wait, with the wait-aware catch at every classifier that reaches a submission, and deletes the old window path. The ticket owner audits that exact candidate before it is pushed to the draft pull request. Continuous integration on the exact head carries format, lint, compile and devnet compatibility.",
+      "pause": 500
+    }
+  ],
+  "execution-budget": [
+    {
+      "text": "Eight local invocations were granted and all are spent. Two builds did not compile. After them came a red and a green run for the fix, for its audit repair, and for the whole-call elapsed repair. The audit reads source and receipts, and continuous integration on the exact head carries every compile, lint and devnet run.",
+      "pause": 500
+    }
+  ],
+  "evidence-limits": [
+    {
+      "text": "The unit specs establish the bound over stubs and a real in-memory indexer, not a real node withholding its verdict. Devnet compatibility comes from continuous integration on the exact head. Other node reads and the upstream client library are unchanged.",
+      "pause": 500
+    }
+  ]
+}

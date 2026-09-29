@@ -1,0 +1,12 @@
+{
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "249e56780d6eec179d7c4c57ddddd4d324f5b849a1e8fb59990ac62cb45ba748"
+  },
+  "boundaries": [
+    {
+      "text": "The named wait failure is the one way a wait on a submitted transaction gives up. That is when its bound fires, or when the chain passes the confirmation deadline first. It names the stage, the transaction, the elapsed seconds and the bound, and it is never an error a classifier could read as a refusal. The submission bound is a named finite constant no larger than the five-minute confirmation window. The indexed window stays five minutes, and the session limit is derived from the transaction's own confirmation window. Tests inject shorter values. Nothing is written to a receipt.",
+      "pause": 500
+    }
+  ]
+}

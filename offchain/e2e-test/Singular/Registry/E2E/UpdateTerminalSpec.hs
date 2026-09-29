@@ -45,7 +45,6 @@ the BOOT state and the retirement submits a proof for the wrong root.
 -}
 module Singular.Registry.E2E.UpdateTerminalSpec (spec) where
 
-import Control.Exception (SomeException, try)
 import Control.Monad (when)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
@@ -80,6 +79,7 @@ import Singular.Registry.Blueprint
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Driver qualified as Driver
 import Singular.Registry.Ledger (ConwayEra, Root (..), TokenId, TxIn)
+import Singular.Registry.Node (tryOutcome)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.TxBuilder.Edges qualified as Edges
@@ -207,7 +207,7 @@ updateTerminalSpec stateBytes requestBytes = do
             _ <-
                 book cfg codes prov submit tokenId storyKey retire retireDestination
             control <-
-                try @SomeException
+                tryOutcome
                     (foldAndMirror cfg prov submit tm tokenId refs storyKey retire)
             case control of
                 Left e ->
@@ -225,7 +225,7 @@ updateTerminalSpec stateBytes requestBytes = do
             _ <-
                 book cfg codes prov submit tokenId unknownKey retire retireDestination
             outcome <-
-                try @SomeException (foldOnce cfg prov submit tm tokenId refs)
+                tryOutcome (foldOnce cfg prov submit tm tokenId refs)
             case outcome of
                 Right _ ->
                     expectationFailure
@@ -256,7 +256,7 @@ updateTerminalSpec stateBytes requestBytes = do
             _ <-
                 book cfg codes prov submit tokenId storyKey retire retireDestination
             control <-
-                try @SomeException
+                tryOutcome
                     (foldAndMirror cfg prov submit tm tokenId refs storyKey retire)
             case control of
                 Left e ->
@@ -286,7 +286,7 @@ updateTerminalSpec stateBytes requestBytes = do
             _ <-
                 book cfg codes prov submit tokenId absentKey retire retireDestination
             outcome <-
-                try @SomeException (foldOnce cfg prov submit tm tokenId refs)
+                tryOutcome (foldOnce cfg prov submit tm tokenId refs)
             case outcome of
                 Right _ ->
                     expectationFailure

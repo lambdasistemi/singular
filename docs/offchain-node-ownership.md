@@ -11,11 +11,11 @@ keeps, and what the checks establish about the split.
 
 ## One owner per runtime concern
 
-The six owners and the two chain-facing types they read live in one
+The seven owners and the two chain-facing types they read live in one
 package-private internal library. The public module
 <a href="../offchain/lib/Singular/Registry/Node.hs" data-api="module">Singular.Registry.Node</a>
-is a facade: it owns nothing, keeps the exact export list the library
-always had, and every original caller — the focused node tests, the
+is a facade: it owns nothing, keeps the export list the library had
+before the split, adds only the five wait names, and every original caller — the focused node tests, the
 journey runner, the end-to-end suite, the shipped commands — keeps
 compiling against it unchanged.
 
@@ -28,6 +28,7 @@ flowchart TD
     F -->|public names| FU[Node.Funding — pre-run funding floor]
     F -->|public names| S[Node.Session — connection and runner lifecycle]
     F -->|public names| C[Node.Confirmation — waits, deadlines, chain observation]
+    F -->|public names| WT[Node.Wait — wait bound, wait failure, bounded submitter, wait-aware catch]
     L[Singular.Registry.Ledger] -->|era, coin, pparams types| I
     L -->|era, coin| FU
     P[Singular.Registry.Provider] -->|provider record| I
@@ -39,16 +40,19 @@ flowchart TD
     FU --> S
     S --> C
     I --> C
+    WT -->|bounds the waits| I
+    WT -->|bounds the waits| S
+    WT -->|bounds the waits| C
     T[Cage test observers] -->|same compiled instance| S
     T -->|same compiled instance| I
     T -->|public readers| F
 ```
 
-The dependency direction is acyclic and downward: options depend on
-nothing local, wallet reads options, the indexer and the funding check
+The dependency direction is acyclic and downward: options and the wait
+owner depend on nothing local, wallet reads options, the indexer and the funding check
 read wallet and options, the session brackets the indexer and the
-funding check, and confirmation reads the session and the indexer —
-never the other way. Ledger and provider sit beside the owners in the
+funding check, and confirmation reads the session and the indexer — all three wait
+under the wait owner's bound — never the other way. Ledger and provider sit beside the owners in the
 private library because the owners read them; the public library
 re-exports both under their original import paths, so a module that
 imported `Singular.Registry.Ledger` before the split still does.
@@ -57,10 +61,11 @@ imported `Singular.Registry.Ledger` before the split still does.
 | --- | --- |
 | `Node.Options` | Parsing mode flags and environment into the process mode, the external-node shape, the external-mode echo diagnostic (a preprod Koios query; a no-op on the devnet), and the shared named-diagnostic helper. No dependency on any runtime module. |
 | `Node.Wallet` | Loading and deriving the process wallet: signing keys, addresses, the funder identity the run pays from, network magic, and bech32 rendering. Key bytes are never logged. |
-| `Node.Indexer` | The chain follower a session reads through: installing it for an action, sweeping the devnet's genesis funding into a block-carried output, answering address reads from the index, refusing node address reads once the funding sweep is done, and counting the node's address queries. |
+| `Node.Indexer` | The chain follower a session reads through: installing it for an action, sweeping the devnet's genesis funding into a block-carried output, answering address reads from the index, refusing node address reads once the funding sweep is done, and counting the node's address queries. Waiting for a submitted transaction's output to be indexed, under the wait bound. |
 | `Node.Funding` | The pre-run funding floor: what the funding wallet must hold before the first transaction, the address-naming diagnostic when it does not, and lovelace rendering. |
 | `Node.Session` | The runner's connection lifecycle: connecting to the node socket, the bracketed session a body runs inside, announcing and awaiting the connection, and the session readers (tip, stake registration). |
-| `Node.Confirmation` | Waiting for the chain to carry what a run submitted: transaction and window waits, deadlines, upper-bound slots, chain waits, and the confirmation delay the mode selects. |
+| `Node.Confirmation` | Waiting for the chain to carry what a run submitted, under the wait bound: transaction and window waits, the node reads that derive a window, deadlines, upper-bound slots, chain waits, and the confirmation delay the mode selects. |
+| `Node.Wait` | What a bounded wait is: the wait stages, the named wait failure a bound raises, the whole-wait bound, the bounded submitter every runner submits through, and the wait-aware catch that keeps that failure out of refusal classifiers. It depends on no other node module. |
 
 Each owner is package-private — not importable from the public library —
 so it has no page in the generated API reference: the reference documents
@@ -88,6 +93,10 @@ names link to its entry here:
 - <span id="confirmation-owner"></span>**Confirmation** — confirmation
   waits, deadlines and windows —
   <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Confirmation.hs">source</a>.
+- <span id="wait-owner"></span>**Wait** — the wait stages, the named wait
+  failure, the whole-wait bound, the bounded submitter and the
+  wait-aware catch —
+  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Wait.hs">source</a>.
 
 ## Where common changes land
 
@@ -103,6 +112,9 @@ names link to its entry here:
   it cannot pay: `Node.Funding`.
 - A confirmation wait, deadline or window rule changes:
   `Node.Confirmation`.
+- What a bounded wait is, how its failure reads, the submission bound, or
+  which failures a classifier must let through: `Node.Wait`. No other
+  module adds a timeout of its own.
 - A shared named failure the runner prints: the diagnostic helper in
   `Node.Options`, the one cross-owner utility, at the graph's root.
 
@@ -191,10 +203,13 @@ there, exactly as before the split.
 
 ## Facade, callers and the private boundary
 
-The facade's export list is unchanged, token for token. Modules that
+The split left the facade's export list unchanged, token for token; the
+bounded waits then added five names, which the facade re-exports from
+`Node.Wait`: `WaitStage (..)`, `WaitFailure (..)`, `submissionBound`,
+`boundedSubmitter` and `tryOutcome`. Modules that
 imported `Singular.Registry.Ledger` or `Singular.Registry.Provider`
 keep their import paths through the public library's re-exports. The
-six owners themselves are not importable from the public library: they
+seven owners themselves are not importable from the public library: they
 live in the package's private internal library. By Cabal's own rule a
 named library without public visibility can be depended on only by
 components of this same package. Two of them do: the public library,

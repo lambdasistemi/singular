@@ -27,7 +27,7 @@ module InsertActive.Controls
     , refusalTrace
     ) where
 
-import Control.Exception (SomeException, displayException, try)
+import Control.Exception (displayException)
 import Data.Aeson (Value (..))
 import Data.ByteString (ByteString)
 import Data.List (isInfixOf)
@@ -35,6 +35,7 @@ import Data.Text qualified as T
 
 import InsertActive.Narration (die, hex, say)
 import InsertActive.Steps (Story, book, foldOnce, storyKey, txIdOf)
+import Singular.Registry.Node (tryOutcome)
 
 -- | A second, never-booked key: the accepting control.
 controlKey :: ByteString
@@ -44,7 +45,7 @@ controlKey = "insert-active-demo-control"
 freshKeyControl :: Story -> IO T.Text
 freshKeyControl story = do
     book story controlKey
-    controlOutcome <- try @SomeException (foldOnce story controlKey)
+    controlOutcome <- tryOutcome (foldOnce story controlKey)
     case controlOutcome of
         Right tx -> pure (hex (txIdOf tx))
         Left e ->
@@ -58,7 +59,7 @@ freshKeyControl story = do
 duplicateRefusal :: Story -> IO String
 duplicateRefusal story = do
     book story storyKey
-    duplicate <- try @SomeException (foldOnce story storyKey)
+    duplicate <- tryOutcome (foldOnce story storyKey)
     dupRefusal <- case duplicate of
         Right _ ->
             die

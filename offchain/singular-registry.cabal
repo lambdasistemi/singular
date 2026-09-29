@@ -152,6 +152,7 @@ library node-internal
     Singular.Registry.Provider
     Singular.Registry.Node.Options
     Singular.Registry.Node.Wallet
+    Singular.Registry.Node.Wait
     Singular.Registry.Node.Indexer
     Singular.Registry.Node.Session
     Singular.Registry.Node.Confirmation
@@ -657,6 +658,7 @@ test-suite cage-tests
     Singular.Registry.FailureMatchSpec
     Singular.Registry.NodeCleanupSpec
     Singular.Registry.NodeSpec
+    Singular.Registry.NodeWaitSpec
     Singular.Registry.LifecycleSpec
     Singular.Registry.TypesSpec
     Naming.CompleteVerifySpec
@@ -675,6 +677,7 @@ test-suite cage-tests
     , cardano-crypto-class
     , cardano-node-clients
     , cardano-node-clients:utxo-indexer-lib
+    , cardano-strict-containers
     , cardano-tx-tools:tx-build
     , containers
     , base16-bytestring

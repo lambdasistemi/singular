@@ -34,12 +34,13 @@ module UpdateTerminal.Controls
     , refusalTrace
     ) where
 
-import Control.Exception (SomeException, displayException, try)
+import Control.Exception (displayException)
 import Data.Aeson (Value (..))
 import Data.ByteString (ByteString)
 import Data.List (isInfixOf)
 import Data.Text qualified as T
 
+import Singular.Registry.Node (tryOutcome)
 import UpdateTerminal.Narration (die, hex, say)
 import UpdateTerminal.Registry
     ( Registry
@@ -72,7 +73,7 @@ absentRefusal story = do
     book story absentKey absentOp
     _ <- foldAndMirror story absentKey absentOp
     book story absentKey retireOp
-    absentOutcome <- try @SomeException (foldInadmissible story)
+    absentOutcome <- tryOutcome (foldInadmissible story)
     absentDetail <- case absentOutcome of
         Right _ ->
             die
@@ -95,7 +96,7 @@ unknownRefusal reg = do
     _ <- foldAndMirror reg controlKey insertOp
     book reg controlKey retireOp
     controlOutcome <-
-        try @SomeException (foldAndMirror reg controlKey retireOp)
+        tryOutcome (foldAndMirror reg controlKey retireOp)
     controlTxid <- case controlOutcome of
         Right tx -> pure (hex (txIdOf tx))
         Left e ->
@@ -105,7 +106,7 @@ unknownRefusal reg = do
                     <> displayException e
                 )
     book reg unknownKey retireOp
-    unknownOutcome <- try @SomeException (foldInadmissible reg)
+    unknownOutcome <- tryOutcome (foldInadmissible reg)
     detail <- case unknownOutcome of
         Right _ ->
             die
