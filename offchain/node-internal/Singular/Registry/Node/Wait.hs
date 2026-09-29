@@ -47,6 +47,7 @@ import GHC.Clock (getMonotonicTime)
 
 import Cardano.Crypto.Hash (hashToBytes)
 import Cardano.Ledger.Api.Tx (txIdTx)
+import Cardano.Ledger.BaseTypes (SlotNo)
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.TxIn (TxId (..))
 import Cardano.Node.Client.Submitter
@@ -79,7 +80,10 @@ data WaitFailure = WaitFailure
     -- ^ Seconds measured on the monotonic clock from the start of the
     -- whole wait
     , waitBound :: Int
-    -- ^ The bound the wait exceeded, in seconds
+    -- ^ The bound the wait was under, in seconds
+    , waitClosedAt :: Maybe SlotNo
+    -- ^ The deadline slot the chain's tip passed, when a session
+    -- confirmation ended because its window closed before the bound
     }
 
 instance Show WaitFailure where
@@ -147,6 +151,7 @@ boundWait stage tid bound action = do
                     , waitTxId = tid
                     , waitElapsed = end - start
                     , waitBound = bound
+                    , waitClosedAt = Nothing
                     }
 
 {- | The production bound on a submission, in seconds: the widest the

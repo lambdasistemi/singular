@@ -16,8 +16,9 @@ refusal or an acceptance.
 Every negative case runs its subject under its own time guard, so a
 wait that does not end fails the case instead of hanging the suite.
 The prompt halves prove those guards are not vacuous: a verdict, an
-indexed output and a closed confirmation window all still return or
-fail exactly as before.
+indexed output and a still-open window all return as before, and a
+closed confirmation window ends as the same named failure, never as a
+refusal a classifier could publish.
 -}
 module Singular.Registry.NodeWaitSpec (spec) where
 
@@ -25,7 +26,6 @@ import Control.Concurrent (forkIO, myThreadId, threadDelay)
 import Control.Exception
     ( AsyncException (UserInterrupt)
     , ErrorCall (..)
-    , SomeException
     , finally
     , fromException
     , getMaskingState
@@ -92,7 +92,13 @@ import Cardano.Node.Client.UTxOIndexer.Indexer
 import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
 import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger (Coin (..))
-import Singular.Registry.Node.Confirmation (awaitTx, confirmWithin)
+import Singular.Registry.Node.Confirmation
+    ( awaitTx
+    , awaitTxId
+    , awaitTxWindow
+    , confirmWithin
+    , windowReadBound
+    )
 import Singular.Registry.Node.Indexer
     ( Following (..)
     , awaitIndexedWithin
@@ -280,21 +286,54 @@ spec =
                             )
                     r `shouldBe` Just ()
 
-            it "still ends at the window the tip deadline closes" $
+            it "ends at the window the tip deadline closes, as the wait \
+               \failure carrying the deadline slot" $
                 withFollowedIndexer $ \_ -> do
-                    r <-
-                        try
-                            ( timeout
-                                12_000_000
-                                ( confirmWithin
-                                    10
-                                    pastDeadlineSession
-                                    "a closed window"
-                                    basicTxId
-                                    (SlotNo 100)
+                    w <-
+                        theWaitFailure 12_000_000 "a closed window" $
+                            confirmWithin
+                                10
+                                pastDeadlineSession
+                                "a closed window"
+                                basicTxId
+                                (SlotNo 100)
+                    waitStage w `shouldBe` SessionConfirmationWait
+                    waitTxId w `shouldBe` basicTxId
+                    waitBound w `shouldBe` 10
+                    waitClosedAt w `shouldBe` Just (SlotNo 100)
+                    waitElapsed w `shouldSatisfy` (< 5)
+                    show w `shouldSatisfy` isInfixOf "closed at slot 100"
+
+            it "ends the public awaitTx on a closed window as the wait \
+               \failure naming its deadline slot" $
+                withFollowedIndexer $ \_ ->
+                    withOpenSession pastWindowSession $ do
+                        w <-
+                            theWaitFailure 12_000_000 "awaitTx" $
+                                awaitTx txWithBoundOutput
+                        waitStage w `shouldBe` SessionConfirmationWait
+                        waitTxId w `shouldBe` txIdTx txWithBoundOutput
+                        waitClosedAt w `shouldBe` Just (SlotNo 1120)
+                        show w `shouldSatisfy` isInfixOf "closed at slot 1120"
+
+            it "does not let a closed window read as a refusal" $
+                withFollowedIndexer $ \_ ->
+                    withOpenSession pastWindowSession $ do
+                        r <-
+                            try
+                                ( timeout
+                                    12_000_000
+                                    (tryOutcome (awaitTx txWithBoundOutput))
                                 )
-                            )
-                    theClosedWindow r
+                        case r of
+                            Left w ->
+                                waitClosedAt w `shouldBe` Just (SlotNo 1120)
+                            Right Nothing ->
+                                fail "the closed window never ended"
+                            Right (Just (Left e)) ->
+                                fail ("classified a closed window: " <> show e)
+                            Right (Just (Right ())) ->
+                                fail "confirmed a transaction never shown"
 
             it "bounds the public awaitTx with the derived window" $
                 withFollowedIndexer $ \_ ->
@@ -320,6 +359,45 @@ spec =
                                 5_000_000
                                 (awaitTx (txWithOutput SNothing))
                         r `shouldBe` Nothing
+
+        describe "the reads that derive a confirmation's window" $ do
+            it "ends awaitTx when the time-to-slot read never returns" $
+                withFollowedIndexer $ \_ ->
+                    withOpenSession blockedSlotSession $ do
+                        w <-
+                            theWaitFailure 45_000_000 "awaitTx" $
+                                awaitTx txWithBoundOutput
+                        theReadFailure w (txIdTx txWithBoundOutput)
+
+            it "ends awaitTxWindow when the time-to-slot read never \
+               \returns" $
+                withFollowedIndexer $ \_ ->
+                    withOpenSession blockedSlotSession $ do
+                        w <-
+                            theWaitFailure 45_000_000 "awaitTxWindow" $
+                                awaitTxWindow
+                                    txWithBoundOutput
+                                    (txIdHex (txIdTx txWithBoundOutput))
+                        theReadFailure w (txIdTx txWithBoundOutput)
+
+            it "ends awaitTx when the fallback tip read never returns" $
+                withFollowedIndexer $ \_ -> do
+                    released <- newIORef False
+                    let session = unconvertibleBlockedTipSession released
+                    withOpenSession session $ do
+                        w <-
+                            theWaitFailure 45_000_000 "awaitTx" $
+                                awaitTx txWithBoundOutput
+                        theReadFailure w (txIdTx txWithBoundOutput)
+                        readIORef released `shouldReturn` True
+
+            it "ends awaitTxId when the time-to-slot read never returns" $
+                withFollowedIndexer $ \_ ->
+                    withOpenSession blockedSlotSession $ do
+                        w <-
+                            theWaitFailure 45_000_000 "awaitTxId" $
+                                awaitTxId (txIdHex basicTxId)
+                        theReadFailure w basicTxId
 
         describe "the production bounds" $ do
             it "keeps the submission bound inside the confirmation \
@@ -388,20 +466,20 @@ theWaitFailure guardMicros what action = do
                 Nothing -> fail (what <> " failed as " <> show e)
                 Just w -> pure w
 
-{- | What a closed confirmation window's wait must end as: the window's
-own refusal, never a wait failure and never a confirmation of a
-transaction the indexer never showed.
+{- | What a stalled node read while a confirmation derives its window
+must end as: the wait failure of the session confirmation stage, on the
+transaction, under the read bound, after that long.
 -}
-theClosedWindow :: Either SomeException (Maybe ()) -> IO ()
-theClosedWindow r = case r of
-    Right Nothing -> fail "the closed window never ended"
-    Left e
-        | Just (_ :: WaitFailure) <- fromException e ->
-            fail "ended as a wait failure"
-        | Just (err :: ErrorCall) <- fromException e ->
-            show err `shouldSatisfy` isInfixOf "closed at slot"
-        | otherwise -> fail ("failed as " <> show e)
-    Right (Just ()) -> fail "confirmed a transaction never shown"
+theReadFailure :: WaitFailure -> TxId -> IO ()
+theReadFailure w tid = do
+    waitStage w `shouldBe` SessionConfirmationWait
+    waitTxId w `shouldBe` tid
+    waitBound w `shouldBe` windowReadBound
+    waitElapsed w
+        `shouldSatisfy` ( \s ->
+                            s >= fromIntegral windowReadBound - 0.1
+                                && s < fromIntegral windowReadBound + 10
+                        )
 
 {- | The elapsed seconds a wait failure's rendering carries, read back
 out of it: the rendering must say what was measured, not something a
@@ -508,6 +586,39 @@ blockedTipSession released =
 pastDeadlineSession :: NodeSession
 pastDeadlineSession = stubSession{nsTipSlot = pure (SlotNo 200)}
 
+{- | The one-slot-per-second session whose time-to-slot conversion never
+returns.
+-}
+blockedSlotSession :: NodeSession
+blockedSlotSession =
+    slotSession
+        { nsProvider =
+            slotProv
+                { Cage.posixMsToSlot =
+                    \_ -> threadDelay 600_000_000 >> pure (SlotNo 0)
+                }
+        }
+
+{- | A session whose time-to-slot conversion fails at once, so the wait
+falls back to the tip, and whose tip read never returns, releasing the
+marker when the read is cancelled.
+-}
+unconvertibleBlockedTipSession :: IORef Bool -> NodeSession
+unconvertibleBlockedTipSession released =
+    (blockedTipSession released)
+        { nsProvider =
+            slotProv
+                { Cage.posixMsToSlot =
+                    \_ -> throwIO (userError "the time cannot be converted")
+                }
+        }
+
+{- | The one-slot-per-second session whose tip is long past the window
+of a transaction valid until slot 1000.
+-}
+pastWindowSession :: NodeSession
+pastWindowSession = slotSession{nsTipSlot = pure (SlotNo 5000)}
+
 {- | The stub session over the one-slot-per-second provider: the
 public confirmation path derives its window through it.
 -}
@@ -558,6 +669,7 @@ theFailure =
         , waitTxId = basicTxId
         , waitElapsed = 1
         , waitBound = 1
+        , waitClosedAt = Nothing
         }
 
 {- | A transaction that creates one output and pins a validity upper

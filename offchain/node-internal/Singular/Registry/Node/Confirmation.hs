@@ -20,6 +20,7 @@ module Singular.Registry.Node.Confirmation
     , awaitTxId
     , awaitTxWindow
     , confirmWithin
+    , windowReadBound
     , confirmDeadline
     , txUpperBoundSlot
     , awaitChain
@@ -27,7 +28,6 @@ module Singular.Registry.Node.Confirmation
     ) where
 
 import Control.Concurrent (threadDelay)
-import Control.Exception (SomeException, try)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.Foldable (toList)
@@ -62,7 +62,7 @@ import Singular.Registry.Node.Session
     ( NodeSession (..)
     , sessionFor
     )
-import Singular.Registry.Node.Wait (WaitStage (..), boundWait)
+import Singular.Registry.Node.Wait (WaitStage (..), boundWait, tryOutcome)
 import Singular.Registry.Provider qualified as Cage
 
 {- | Wait until a submitted transaction is visible on the chain.
@@ -192,14 +192,18 @@ total.
 -}
 windowFor :: NodeSession -> ConwayTx -> IO (SlotNo, Int)
 windowFor sess tx = do
-    r <-
-        try (confirmWindow (nsProvider sess) tx)
-            :: IO (Either SomeException (SlotNo, Int))
+    r <- tryOutcome (confirmWindow (nsProvider sess) tx)
     case r of
         Right w -> pure w
         Left _ -> do
             tip <- nsTipSlot sess
             pure (tip + fromIntegral fixedWindow, fixedLimit)
+
+{- | The bound on the node reads that derive a confirmation's window, in
+seconds: a healthy node answers them at once.
+-}
+windowReadBound :: Int
+windowReadBound = 30
 
 -- | The historical fixed confirmation window, in seconds.
 fixedWindow :: Int
