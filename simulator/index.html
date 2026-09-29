@@ -747,6 +747,7 @@ const requestSchema = {
   tip: N,
   reference: N,
   output: N,
+  namesDatum: B,
   approval: { $option: approval },
   claimed: [{ kind: { $enum: KINDS }, quantity: I }],
 };
@@ -1160,6 +1161,7 @@ const request = (edge, key, opts = {}) => ({
   tip: opts.tip ?? 0,
   reference: opts.reference ?? 0,
   output: opts.output ?? 0,
+  namesDatum: opts.namesDatum ?? false,
   approval: null,
   claimed: opts.claimed ?? [],
 });
@@ -1555,6 +1557,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "insertActive",
@@ -1584,6 +1587,7 @@ const STORIES=[
        "tip": 0,
        "reference": 0,
        "output": 555,
+       "namesDatum": false,
        "approval": {
         "policy": 7,
         "edge": "insertActive",
@@ -1617,6 +1621,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 0,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "insertAbsent",
@@ -1641,6 +1646,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "updateActive",
@@ -1670,6 +1676,7 @@ const STORIES=[
        "tip": 0,
        "reference": 0,
        "output": 0,
+       "namesDatum": false,
        "approval": {
         "policy": 7,
         "edge": "deleteAbsent",
@@ -1703,6 +1710,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "insertActive",
@@ -1727,6 +1735,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "updateTerminal",
@@ -1751,6 +1760,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 700,
+     "namesDatum": false,
      "approval": null,
      "claimed": []
     },
@@ -1767,6 +1777,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 701,
+     "namesDatum": false,
      "approval": null,
      "claimed": []
     },
@@ -1788,6 +1799,7 @@ const STORIES=[
        "tip": 0,
        "reference": 0,
        "output": 555,
+       "namesDatum": false,
        "approval": {
         "policy": 7,
         "edge": "deleteActive",
@@ -1821,6 +1833,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 700,
+     "namesDatum": false,
      "approval": null,
      "claimed": []
     },
@@ -1837,6 +1850,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "insertActive",
@@ -1861,6 +1875,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 700,
+     "namesDatum": false,
      "approval": null,
      "claimed": []
     },
@@ -1877,6 +1892,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "updateTerminal",
@@ -1906,6 +1922,7 @@ const STORIES=[
        "tip": 0,
        "reference": 0,
        "output": 555,
+       "namesDatum": false,
        "approval": {
         "policy": 7,
         "edge": "updateTerminal",
@@ -1935,6 +1952,7 @@ const STORIES=[
        "tip": 0,
        "reference": 0,
        "output": 555,
+       "namesDatum": false,
        "approval": {
         "policy": 99,
         "edge": "updateTerminal",
@@ -1964,6 +1982,7 @@ const STORIES=[
        "tip": 0,
        "reference": 0,
        "output": 555,
+       "namesDatum": false,
        "approval": null,
        "claimed": []
       },
@@ -1989,6 +2008,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "insertActive",
@@ -2013,6 +2033,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "deleteActive",
@@ -2037,6 +2058,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "insertActive",

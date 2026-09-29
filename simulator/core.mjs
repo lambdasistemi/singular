@@ -69,6 +69,7 @@ const requestSchema = {
   tip: N,
   reference: N,
   output: N,
+  namesDatum: B,
   approval: { $option: approval },
   claimed: [{ kind: { $enum: KINDS }, quantity: I }],
 };
