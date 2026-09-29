@@ -276,8 +276,9 @@ data LiveStep = LiveStep
     , lsWitness :: Maybe (TxIn, TxOut ConwayEra)
     , lsCustody :: Maybe (TxIn, TxOut ConwayEra)
     , lsStateUtxo :: Maybe (TxIn, TxOut ConwayEra)
-    -- ^ the state input the accepted step spent, retained so observation can
-    -- read what the ledger physically held; @Nothing@ where no step spent one
+    {- ^ the state input the accepted step spent, retained so observation can
+    read what the ledger physically held; @Nothing@ where no step spent one
+    -}
     , lsSpent :: [Integer]
     -- ^ the state tokens each input of the submitted transaction held
     , lsOutcome :: StepOutcome

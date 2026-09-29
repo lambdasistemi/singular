@@ -24,30 +24,30 @@ import Conformance.Compare.Perturbation
     ( Step (..)
     , reportedDifferences
     )
-import Conformance.Compare.Registration (
-    Declared (..),
-    compareRegistration,
-    declaredSurface,
- )
-import Conformance.Observe.Payments (
-    Payee (..),
-    Payment (..),
- )
+import Conformance.Compare.Registration
+    ( Declared (..)
+    , compareRegistration
+    , declaredSurface
+    )
+import Conformance.Observe.Payments
+    ( Payee (..)
+    , Payment (..)
+    )
 import Conformance.Run.Environment (RowCage (..))
-import Conformance.Run.Live (
-    LiveStep (..),
-    StepOutcome (..),
-    newLiveIdentities,
-    observedStepTx,
- )
+import Conformance.Run.Live
+    ( LiveStep (..)
+    , StepOutcome (..)
+    , newLiveIdentities
+    , observedStepTx
+    )
 import Conformance.Story.Live qualified as Live
 import Control.Exception (ErrorCall, displayException)
-import Data.Aeson (
-    Value (..),
-    eitherDecodeFileStrict,
-    object,
-    (.=),
- )
+import Data.Aeson
+    ( Value (..)
+    , eitherDecodeFileStrict
+    , object
+    , (.=)
+    )
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString (ByteString)
@@ -66,28 +66,28 @@ import Data.Vector qualified as V
 import Data.Word (Word8)
 import Lens.Micro ((&), (.~))
 import System.Environment (lookupEnv)
-import Test.Hspec (
-    Expectation,
-    Spec,
-    describe,
-    expectationFailure,
-    it,
-    shouldBe,
-    shouldSatisfy,
-    shouldThrow,
- )
+import Test.Hspec
+    ( Expectation
+    , Spec
+    , describe
+    , expectationFailure
+    , it
+    , shouldBe
+    , shouldSatisfy
+    , shouldThrow
+    )
 
 import Cardano.Crypto.Hash.Class (hashFromBytes)
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Scripts.Data (Datum (..))
 import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx)
-import Cardano.Ledger.Api.Tx.Body (
-    feeTxBodyL,
-    inputsTxBodyL,
-    mintTxBodyL,
-    mkBasicTxBody,
-    outputsTxBodyL,
- )
+import Cardano.Ledger.Api.Tx.Body
+    ( feeTxBodyL
+    , inputsTxBodyL
+    , mintTxBodyL
+    , mkBasicTxBody
+    , outputsTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL, mkBasicTxOut)
 import Cardano.Ledger.BaseTypes (Network (..), TxIx (..))
 import Cardano.Ledger.Coin (Coin (..))
@@ -106,17 +106,17 @@ import Singular.Registry.Ledger
     , PolicyID (..)
     , TokenId (..)
     )
-import Singular.Registry.TxBuilder.Internal (
-    addrFromKeyHashBytes,
-    mkInlineDatum,
-    toPlcData,
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainRoot (..),
-    OnChainTokenState (..),
-    OnChainTxOutRef (..),
- )
+import Singular.Registry.TxBuilder.Internal
+    ( addrFromKeyHashBytes
+    , mkInlineDatum
+    , toPlcData
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
+    , OnChainTxOutRef (..)
+    )
 
 -- | The committed corpus, wired in by the package rather than copied here.
 declaredSurfaceOf :: IO Declared
@@ -144,8 +144,9 @@ fixtureSeed :: OnChainTxOutRef
 fixtureSeed =
     OnChainTxOutRef (BuiltinByteString (BS.replicate 32 0x13)) 0
 
--- | The fixture's registry: a config whose pins and script hash are distinct
--- byte strings, in a cage no live run booted.
+{- | The fixture's registry: a config whose pins and script hash are distinct
+byte strings, in a cage no live run booted.
+-}
 fixtureCfg :: CageConfig
 fixtureCfg =
     CageConfig
@@ -219,9 +220,10 @@ keyBytes = BSC.pack "fixture-key"
 activeAsset :: MultiAsset
 activeAsset =
     MultiAsset
-        (Map.singleton
+        ( Map.singleton
             (PolicyID (scriptHashOf 0x15))
-            (Map.singleton (AssetName (SBS.toShort keyBytes)) 1))
+            (Map.singleton (AssetName (SBS.toShort keyBytes)) 1)
+        )
 
 -- | An output carrying an ada value, presenting its datum as told.
 outAt
@@ -269,8 +271,9 @@ carrier form = outAt holderWallet 3_000_000 activeAsset form
 ownerOutput :: Integer -> TxOut ConwayEra
 ownerOutput lovelace = outAt ownerWallet lovelace mempty NoDatum
 
--- | The submitted transaction of a fixture step: the inputs it spent, the
--- outputs it produced and the token it minted.
+{- | The submitted transaction of a fixture step: the inputs it spent, the
+outputs it produced and the token it minted.
+-}
 submitted :: [TxIn] -> [TxOut ConwayEra] -> MultiAsset -> ConwayTx
 submitted ins outs minted =
     mkBasicTx
@@ -324,8 +327,9 @@ fixtureStep cage edge state witness custody requestOut transaction =
         , lsOutcome = StepAccepted transaction (0, 0, 0)
         }
 
--- | The observed transaction of one fixture fold, through the live chapters'
--- own observation entry point.
+{- | The observed transaction of one fixture fold, through the live chapters'
+own observation entry point.
+-}
 observedTx
     :: LiveStep
     -> ConwayTx
@@ -389,13 +393,16 @@ datumFormOf value = case value of
         fromMaybe Null (KM.lookup (Key.fromText "datum") fields)
     _ -> Null
 
--- | The model's side of the same transaction: every spent input and the
--- destination output present their datum inline, as @registryDatumForm@ says.
+{- | The model's side of the same transaction: every spent input and the
+destination output present their datum inline, as @registryDatumForm@ says.
+-}
 modelInlineForms :: Value -> Value
 modelInlineForms observation = case observation of
     Object fields ->
         Object
-            ( adjustEntries "inputs" inlineForm
+            ( adjustEntries
+                "inputs"
+                inlineForm
                 (adjustEntries "outputs" inlineDestination fields)
             )
     _ -> observation
@@ -491,18 +498,19 @@ differsAt array step mint payments destination = do
     observation <-
         observedTx step (lsTransactionOf step) mint payments destination
     let model = modelInlineForms observation
-    case compareRegistration surface
+    case compareRegistration
+        surface
         (asObservations model)
         (asObservations observation) of
-            Right _ ->
-                expectationFailure
-                    "a ledger datum form the model does not expect \
-                    \passed the comparison"
-            Left differences -> do
-                let paths = map snd (reportedDifferences differences)
-                length paths `shouldBe` 1
-                concatMap (filterFields array) paths
-                    `shouldSatisfy` any (== Field "datum")
+        Right _ ->
+            expectationFailure
+                "a ledger datum form the model does not expect \
+                \passed the comparison"
+        Left differences -> do
+            let paths = map snd (reportedDifferences differences)
+            length paths `shouldBe` 1
+            concatMap (filterFields array) paths
+                `shouldSatisfy` any (== Field "datum")
 
 {- | The field names on a reported path that belong to the given array: a step
 reaching a datum field inside that array, and nothing else. A difference
@@ -636,7 +644,10 @@ spec =
         forM_ roles $ \role ->
             forM_ nonInlineForms $ \(_, form, reported) ->
                 it
-                    ( "the ledger's " <> reported <> " " <> roleName role
+                    ( "the ledger's "
+                        <> reported
+                        <> " "
+                        <> roleName role
                         <> " reaches the comparison at its own datum field"
                     )
                     ( do
@@ -689,15 +700,16 @@ spec =
             observation <-
                 observedTx step (lsTransactionOf step) activeMint delivering 1
             let model = modelInlineForms observation
-            case compareRegistration surface
+            case compareRegistration
+                surface
                 (asObservations model)
                 (asObservations observation) of
-                    Left differences ->
-                        expectationFailure
-                            ( "an all-inline observation disagreed: "
-                                <> show differences
-                            )
-                    Right _ -> pure ()
+                Left differences ->
+                    expectationFailure
+                        ( "an all-inline observation disagreed: "
+                            <> show differences
+                        )
+                Right _ -> pure ()
 
         it "a spent input the transaction did not spend" $ do
             cage <- fixtureCage
@@ -714,7 +726,8 @@ spec =
                         request
                         tx
                     )
-                        {lsRequestIn = Just elsewhere}
+                        { lsRequestIn = Just elsewhere
+                        }
             observedTx step tx [] [] 0
                 `shouldThrow` errorMentioning "request"
 
@@ -761,16 +774,18 @@ spec =
                         tx
             observedTx step tx activeMint delivering 1
                 `shouldThrow` errorMentioning "state"
+
 -- | The transaction a fixture step submitted, as its outcome carries it.
 lsTransactionOf :: LiveStep -> ConwayTx
 lsTransactionOf step = case lsOutcome step of
     StepAccepted transaction _ -> transaction
     _ -> error "a fixture step is always accepted"
 
--- | One transaction observation inside the full observations object the
--- registration comparison compares: every declared name present, every other
--- observation empty and equal on both sides, so only the transaction's own
--- fields can differ.
+{- | One transaction observation inside the full observations object the
+registration comparison compares: every declared name present, every other
+observation empty and equal on both sides, so only the transaction's own
+fields can differ.
+-}
 asObservations :: Value -> Value
 asObservations transaction =
     object
