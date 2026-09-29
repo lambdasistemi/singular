@@ -1,13 +1,14 @@
 {"theorems":
  [{"status": "PROVED",
    "statementSha256":
-   "5ded7ac3793c8659181a312a7a969be0a0b479e1bf1a7d1a307a2567873c833c",
+   "8fa1e83820c5041b894beed24171b08ae267128785a16a49ef4108230f691acf",
    "statement": "OpenDatumApplication.Statements.bookInsert_inversion",
    "scenarios":
    ["lifecycle",
     "booking-unsigned",
     "booking-other-destination",
-    "booking-deposit-mismatch"],
+    "booking-deposit-mismatch",
+    "booking-no-datum"],
    "class": "inversion",
    "boundary": [],
    "axioms": ["Classical.choice", "Quot.sound", "propext"]},
@@ -277,6 +278,25 @@
     "mixed-batch-one-controller",
     "two-releases-one-controller"],
    "class": "custody",
+   "boundary": [],
+   "axioms": ["Classical.choice", "Quot.sound", "propext"]},
+  {"status": "PROVED",
+   "statementSha256":
+   "55d7db9a3f8c6e27b0a4a0bb35b19946752bee131a2e3de7f2b62a91e49634ce",
+   "statement":
+   "OpenDatumApplication.Statements.selectRow_requires_named_datum",
+   "scenarios": ["lifecycle"],
+   "class": "evidence-binding",
+   "boundary":
+   ["booked-insertion-names-datum", "pending-insertion-names-no-datum"],
+   "axioms": ["Quot.sound", "propext"]},
+  {"status": "PROVED",
+   "statementSha256":
+   "00fb84e4307c41b9743c052983771844dace5a15d4a671ec9895e98d88d2b4b0",
+   "statement": "OpenDatumApplication.Statements.insertion_holding_inline",
+   "scenarios":
+   ["lifecycle", "mixed-batch-one-controller", "two-releases-one-controller"],
+   "class": "evidence-binding",
    "boundary": [],
    "axioms": ["Classical.choice", "Quot.sound", "propext"]},
   {"status": "PROVED",

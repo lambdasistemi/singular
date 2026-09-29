@@ -4,7 +4,7 @@ import OpenDatumApplication.ProofSupport
 
 /-! # The open-datum application's intended statements and inversions
 
-Twenty-one declarations were previously proved. This slice proves the remaining twelve unchanged declarations over the helper lemmas of `OpenDatumApplication.ProofSupport`, so all thirty-three are proved. Only captured #print axioms results establish each declaration's proof status; the current ledger remains a historical statement-phase artifact.
+Thirty-five declarations, all proved over the root model at main a0770318. An insertion names its envelope datum: `bookInsert_inversion` states it, `selectRow_requires_named_datum` re-checks it at selection, and `insertion_holding_inline` proves the reached delivery carries it inline. Only captured #print axioms results establish each declaration's proof status; the generated ledger computes it from the build.
 
 Three kinds of statement, kept apart:
 
@@ -40,7 +40,7 @@ theorem bookInsert_inversion (w w' : World) (r : Request) (e : Envelope)
         e.control.registry = w.registryAsset ∧
         e.control.activePolicy = w.registry.config.activePolicy ∧ e.control.key = r.key ∧
         e.control.controller = r.owner ∧ e.control.controller ∈ sigs ∧
-        r.output = destinationOf w.app e ∧ e.control.deposit = r.deposit ∧
+        r.output = destinationOf w.app e ∧ r.namesDatum = true ∧ e.control.deposit = r.deposit ∧
         w' = { w with pending := w.pending ++ [⟨booked w.app r sigs, some e⟩] }) := by
   have bind_ok : ∀ {α β : Type} (x : Except String α) (f : α → Except String β) (b : β),
       x >>= f = Except.ok b → ∃ a, x = Except.ok a ∧ f a = Except.ok b := by
@@ -132,12 +132,13 @@ theorem bookInsert_inversion (w w' : World) (r : Request) (e : Envelope)
     obtain ⟨_, e9, h⟩ := bind_ok _ _ _ h
     obtain ⟨_, e10, h⟩ := bind_ok _ _ _ h
     obtain ⟨_, e11, h⟩ := bind_ok _ _ _ h
+    obtain ⟨_, e12, h⟩ := bind_ok _ _ _ h
     exact ⟨edge_sound _ _ (ens _ _ _ e1), eq_of_beq (ens _ _ _ e2),
       beq_sound _ _ (hreg _ (ens _ _ _ e3)), eq_of_beq (ens _ _ _ e4),
       beq_sound _ _ (hreg _ (ens _ _ _ e5)), eq_of_beq (ens _ _ _ e6),
       eq_of_beq (ens _ _ _ e7), eq_of_beq (ens _ _ _ e8), List.contains_iff.1 (ens _ _ _ e9),
-      eq_of_beq (ens _ _ _ e10), eq_of_beq (ens _ _ _ e11), (ok_inj h).symm⟩
-  · rintro ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, hw⟩
+      eq_of_beq (ens _ _ _ e10), ens _ _ _ e11, eq_of_beq (ens _ _ _ e12), (ok_inj h).symm⟩
+  · rintro ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, hnd, h11, hw⟩
     subst hw
     first
       | unfold bookInsertStep
@@ -175,6 +176,8 @@ theorem bookInsert_inversion (w w' : World) (r : Request) (e : Envelope)
     · exact List.contains_iff.2 h9
     refine bind_ok_intro (ens_ok _ _ ?_) ?_
     · exact beq_iff_eq.2 h10
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact hnd
     refine bind_ok_intro (ens_ok _ _ ?_) ?_
     · exact beq_iff_eq.2 h11
     rfl
@@ -663,7 +666,7 @@ theorem appStep_preserves_consistent (w w' : World) (a : AppAction) :
   intro hc h
   cases a with
   | bookInsert r e sigs =>
-    obtain ⟨hedge, _, _, _, hreg2, _, hkey, _, _, hout, hdep, hw⟩ :=
+    obtain ⟨hedge, _, _, _, hreg2, _, hkey, _, _, hout, _, hdep, hw⟩ :=
       (bookInsert_inversion w w' r e sigs).1 h
     subst hw
     obtain ⟨h1, h2, h3, h4, h5⟩ := hc
@@ -832,7 +835,7 @@ theorem bookInsert_preserves_consistent (w w' : World) (r : Request) (e : Envelo
     (sigs : List Nat) :
     AppConsistent w → appStep w (.bookInsert r e sigs) = .ok w' → AppConsistent w' := by
   intro hc h
-  obtain ⟨hedge, _, _, _, hreg2, _, hkey, _, _, hout, hdep, hw⟩ :=
+  obtain ⟨hedge, _, _, _, hreg2, _, hkey, _, _, hout, _, hdep, hw⟩ :=
     (bookInsert_inversion w w' r e sigs).1 h
   subst hw
   obtain ⟨h1, h2, h3, h4, h5⟩ := hc
@@ -1393,6 +1396,63 @@ theorem insertion_binds_envelope (w w' : World) (sel : List (Edge × Key))
       rfl
   · simp at he
 
+/-- Selection names the datum (any world): an insertion the fold selects names
+its envelope datum, so a pending insertion naming none is refused before the
+registry folds anything. -/
+theorem selectRow_requires_named_datum (w : World) (key : Key) (row : FoldRow) :
+    selectRow Law.standard w (.insertActive, key) = .ok row →
+      row.pending.request.namesDatum = true := by
+  intro h
+  exact ProofSupport.selectRow_insert_names_datum w key row h
+
+/-- Inline delivery (reached worlds): after an accepted fold selecting an
+insertion, the registry holds that key's active token at an output carrying its
+datum inline — the envelope the booking named. -/
+theorem insertion_holding_inline (w w' : World) (sel : List (Edge × Key))
+    (outs : List TxOutput) (t : Result) (key : Key) :
+    Reachable w → foldEffect Law.standard w sel outs = .ok (w', t) →
+      (.insertActive, key) ∈ sel →
+      ∃ h ∈ w'.registry.held, h.key = key ∧ h.kind = .active ∧ h.datum = .inline := by
+  intro hr h hsel
+  have hc := reachable_consistent w hr
+  obtain ⟨rows, hrows, ht, _, hw⟩ := (fold_inversion w w' sel outs t).1 h
+  obtain ⟨hr1, hr2, hE⟩ := ProofSupport.rows_spec w sel rows hrows
+  obtain ⟨row, hrow, hx⟩ := hr2 _ hsel
+  obtain ⟨_, _, hedge, hk, _⟩ := ProofSupport.selectRow_spec w _ row hx
+  have hnd := ProofSupport.selectRow_insert_names_datum w key row hx
+  obtain ⟨_, hacts⟩ := foldBatch_inv _ _ _ ht
+  have hb : row.pending.request ∈ rows.map (·.pending.request) := List.mem_map.2 ⟨row, hrow, rfl⟩
+  have hnoterm : ∀ c ∈ rows.map (·.pending.request), c.edge = .updateTerminal →
+      c.key ≠ row.pending.request.key := by
+    intro c hcm hce hck
+    obtain ⟨row', hrow', rfl⟩ := List.mem_map.1 hcm
+    obtain ⟨x, _, hx'⟩ := hr1 row' hrow'
+    obtain ⟨_, _, hedge', hk', hcase⟩ := ProofSupport.selectRow_spec w x row' hx'
+    rcases hcase with ⟨he, _⟩ | ⟨_, o, ho, _⟩
+    · rw [he] at hedge'
+      rw [hedge'] at hce
+      exact absurd hce (by decide)
+    · have hact := (ProofSupport.outputOfKey_consistent w hc _ o ho).2.2
+      rw [← hk', hck] at hact
+      obtain ⟨_, hkcase⟩ := ProofSupport.foldActions_key row.pending.request.key _ _ _ hacts hE
+      have hrec := ProofSupport.edge_mem_key_record _ _ hb
+      rw [hedge] at hrec
+      rcases hkcase with ⟨e, _⟩ | ⟨_, l, _⟩ | ⟨e, _⟩ | ⟨_, l, _⟩
+      · rw [e] at hrec
+        exact absurd hrec (by simp)
+      · rw [hact] at l
+        exact absurd l (by decide)
+      · rw [e] at hrec
+        exact absurd hrec (by simp)
+      · rw [hact] at l
+        exact absurd l (by decide)
+  obtain ⟨x, hxm, hxk, hxkind, hxd⟩ := ProofSupport.foldActions_insert_holding _ _ _ hacts hE
+    row.pending.request hb hedge hnoterm
+  subst hw
+  refine ⟨x, hxm, by rw [hxk, hk], hxkind, ?_⟩
+  rw [hxd]
+  simp [deliveredDatum, hnd]
+
 /-- Termination booking (any world) leaves every application output, the
 registry and the recorded mint where they were. -/
 theorem bookTerminate_keeps_locked (w w' : World) (r : Request) (ref : Nat) (sigs : List Nat) :
@@ -1506,7 +1566,7 @@ theorem only_fold_releases (w w' : World) (a : AppAction) :
   intro hnf h o ho
   cases a with
   | bookInsert r e sigs =>
-    obtain ⟨_, _, _, _, _, _, _, _, _, _, _, hw⟩ := (bookInsert_inversion w w' r e sigs).1 h
+    obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, hw⟩ := (bookInsert_inversion w w' r e sigs).1 h
     subst hw
     exact ⟨o, ho, rfl, rfl⟩
   | bookTerminate r ref sigs =>
@@ -1598,7 +1658,7 @@ private theorem reachable_pending_booked (w : World) (hr : Reachable w) :
     intro p hp
     cases a with
     | bookInsert r e sigs =>
-      obtain ⟨_, _, _, _, _, _, _, _, _, _, _, hv⟩ := (bookInsert_inversion v v' r e sigs).1 hstep
+      obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, hv⟩ := (bookInsert_inversion v v' r e sigs).1 hstep
       subst hv
       rcases List.mem_append.1 hp with hold | hnew
       · exact ih p hold
@@ -1639,6 +1699,60 @@ private theorem reachable_pending_booked (w : World) (hr : Reachable w) :
       exact ih p (List.mem_of_mem_erase hp)
     | withdraw ref outs => exact absurd hstep (withdraw_inversion v v' ref outs)
 
+/-- Every booked insertion of a reached world names its datum. -/
+private theorem reachable_pending_names_datum (w : World) (hr : Reachable w) :
+    ∀ p ∈ w.pending, p.request.edge = .insertActive → p.request.namesDatum = true := by
+  induction hr with
+  | start app c asset =>
+    intro p hp
+    simp [genesis] at hp
+  | @next v v' a _ hstep ih =>
+    intro p hp hedge
+    cases a with
+    | bookInsert r e sigs =>
+      obtain ⟨_, _, _, _, _, _, _, _, _, _, hnd, _, hv⟩ := (bookInsert_inversion v v' r e sigs).1 hstep
+      subst hv
+      rcases List.mem_append.1 hp with hold | hnew
+      · exact ih p hold hedge
+      · rw [List.mem_singleton.1 hnew]
+        exact hnd
+    | bookTerminate r ref sigs =>
+      obtain ⟨_, hre, _, _, _, _, _, _, _, _, _, hv⟩ :=
+        (bookTerminate_inversion v v' r ref sigs).1 hstep
+      subst hv
+      rcases List.mem_append.1 hp with hold | hnew
+      · exact ih p hold hedge
+      · rw [List.mem_singleton.1 hnew] at hedge
+        have : r.edge = .insertActive := hedge
+        rw [hre] at this
+        exact absurd this (by decide)
+    | bookOther r sigs => exact absurd hstep (bookOther_refused v v' r sigs)
+    | update ref succs sigs =>
+      change updateStep Law.standard v ref succs sigs = .ok v' at hstep
+      obtain ⟨_, _, _, _, _, _, _, _, _, hv⟩ := (update_inversion v v' ref succs sigs).1 hstep
+      subst hv
+      exact ih p hp hedge
+    | fold sel outs =>
+      rw [appStep_fold] at hstep
+      cases hf : foldEffect Law.standard v sel outs with
+      | error e =>
+        rw [hf] at hstep
+        exact Except.noConfusion hstep
+      | ok res =>
+        rw [hf] at hstep
+        have hres : res.1 = v' := ProofSupport.ok_inj hstep
+        obtain ⟨v1, t⟩ := res
+        obtain ⟨_, _, _, _, hv1⟩ := (fold_inversion v v1 sel outs t).1 hf
+        subst hres
+        subst hv1
+        exact ih p (List.mem_filter.1 hp).1 hedge
+    | reject edge key outs =>
+      change rejectStep v edge key outs = .ok v' at hstep
+      obtain ⟨_, _, _, _, _, hv⟩ := (reject_inversion v v' edge key outs).1 hstep
+      subst hv
+      exact ih p (List.mem_of_mem_erase hp) hedge
+    | withdraw ref outs => exact absurd hstep (withdraw_inversion v v' ref outs)
+
 /-- A booking of an insertion at an Active or Terminal key of a reached world
 is folded into the registry's `key-exists` refusal. -/
 private theorem refused_by_registry (w w₁ : World) (r : Request) (e : Envelope)
@@ -1648,7 +1762,8 @@ private theorem refused_by_registry (w w₁ : World) (r : Request) (e : Envelope
     (h1 : appStep w (.bookInsert r e sigs) = .ok w₁) :
     appStep w₁ (.fold [(.insertActive, r.key)] outs) = .error "key-exists" := by
   have hc := reachable_consistent w hr
-  obtain ⟨hedge, hpol, _, _, _, _, _, _, _, _, _, hw⟩ := (bookInsert_inversion w w₁ r e sigs).1 h1
+  obtain ⟨hedge, hpol, _, _, _, _, _, _, _, _, _, _, hw⟩ :=
+    (bookInsert_inversion w w₁ r e sigs).1 h1
   have hr1 : Reachable w₁ := Reachable.next hr h1
   have hc1 : AppConsistent w₁ := bookInsert_preserves_consistent w w₁ r e sigs hc h1
   have hnew : (⟨booked w.app r sigs, some e⟩ : Pending) ∈ w₁.pending := by
@@ -1663,10 +1778,11 @@ private theorem refused_by_registry (w w₁ : World) (r : Request) (e : Envelope
     | some p0 => exact ⟨p0, rfl⟩
   obtain ⟨hp0m, hp0e, hp0k⟩ := ProofSupport.pendingOf_spec w₁ _ _ p0 hp0
   rcases hc1.2.2.2.2 p0 hp0m with ⟨_, e0, he0, hout0, hdep0, _, hreg0⟩ | ⟨he, _⟩
-  · have hsel : selectRow Law.standard w₁ (.insertActive, r.key) = .ok ⟨p0, none⟩ := by
+  · have hnd0 := reachable_pending_names_datum w₁ hr1 p0 hp0m hp0e
+    have hsel : selectRow Law.standard w₁ (.insertActive, r.key) = .ok ⟨p0, none⟩ := by
       unfold selectRow
       simp only [hp0, he0]
-      simp [ensure, hout0, hdep0, hreg0, Law.standard]
+      simp [ensure, hout0, hdep0, hreg0, hnd0, Law.standard]
       all_goals rfl
     obtain ⟨r0, sigs0, hreq⟩ := reachable_pending_booked w₁ hr1 p0 hp0m
     have hr0e : r0.edge = .insertActive := by rw [← hp0e, hreq]; rfl
@@ -1768,3 +1884,6 @@ end OpenDatumApplication.Statements
 #print axioms OpenDatumApplication.Statements.fold_spent_disappears
 #print axioms OpenDatumApplication.Statements.duplicate_refused_by_registry
 #print axioms OpenDatumApplication.Statements.resurrection_refused_by_registry
+
+#print axioms OpenDatumApplication.Statements.selectRow_requires_named_datum
+#print axioms OpenDatumApplication.Statements.insertion_holding_inline

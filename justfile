@@ -33,6 +33,8 @@ model:
 # into the executable from the statements the build elaborated; the saved axiom
 # report is then cross-checked against the ledger and the statement source by an
 # independent bridge.
+
+# Build, check and cross-check the open-datum application model.
 application-model:
     lean --version | grep -q "version $(sed 's/.*:v//' lean-toolchain),"
     lake -d applications/open-datum --keep-toolchain build

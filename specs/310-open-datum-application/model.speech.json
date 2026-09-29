@@ -11,7 +11,7 @@
   ],
   "the-law": [
     {
-      "text": "Booking an insertion needs the controller's signature and the full actual registry identity in the envelope. Termination is booked the same way and keeps the token locked. Updates change only the payload. A fold of any selected bookings goes through the registry's own batch fold, releases deposits for terminated keys, and pays every recipient the sum of what it is owed. Rejects release nothing, and every other spend is refused.",
+      "text": "Booking an insertion needs the controller's signature, the full actual registry identity in the envelope, and a request that names its datum, so the token arrives carrying the envelope inline; the payload itself may be any Plutus data. Termination is booked the same way and keeps the token locked. Updates change only the payload. A fold of any selected bookings re-checks each insertion, goes through the registry's own batch fold, releases deposits for terminated keys, and pays every recipient the sum of what it is owed. Rejects release nothing, and every other spend is refused.",
       "pause": 400
     }
   ],
@@ -27,13 +27,13 @@
   ],
   "correspondence-limits-implementation-boundary": [
     {
-      "text": "Tips, fees and minimum-output funding are outside the model and never absorb a protected deposit. Retraction admission is not exposed, the hashes are stand-ins, payload equality is structural and proved exact, and the destination row of a non-delivering fold remains issue 304's question.",
+      "text": "Tips, fees and minimum-output funding are outside the model and never absorb a protected deposit. Retraction admission is not exposed, the hashes are stand-ins, and payload equality is structural and proved exact. A termination names no destination, the current root describes no destination output for it, and the token it burns is spent from the output carrying the inline envelope.",
       "pause": 400
     }
   ],
   "coverage": [
     {
-      "text": "Every statement is bound to a scenario or a boundary world, and each scenario publishes the world and the invariant after every step. The corpus uses one controller, two keys and fixed amounts, so it exhibits the statements without covering their domains. All thirty-three statements are proved, over the historical root model. A proved statement is a property of the model, not product coverage: no validator, transaction or chain claim follows from it.",
+      "text": "Every statement is bound to a scenario or a boundary world, and each scenario publishes the world and the invariant after every step. The corpus uses one controller, two keys and fixed amounts, so it exhibits the statements without covering their domains. All thirty-five statements are proved over the current root model. A proved statement is a property of the model, not product coverage: no validator, transaction or chain claim follows from it.",
       "pause": 400
     }
   ],
@@ -45,6 +45,6 @@
   ],
   "_source": {
     "file": "model.md",
-    "sha256": "3de7ff196e2bd4f099db364231e483f2a1ad1a966b08b2b095d26332e240b093"
+    "sha256": "b7f0c58e24ec7527d8c4fe180fcbb3076c6355b46c405464107c3ef543b0c25f"
   }
 }

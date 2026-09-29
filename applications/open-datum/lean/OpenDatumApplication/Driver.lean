@@ -88,16 +88,22 @@ def optNat (j : Json) (field : String) : Nat :=
   (j.getObjValAs? Nat field).toOption.getD 0
 
 /-- A request as a scenario states it: no approval and no claim, which the
-application's booking supplies. -/
+application's booking supplies. Whether it names its destination datum is read
+as written; a request that does not say names none, the root model's default,
+and a flag that is not a Boolean is refused. -/
 def requestFromJson (j : Json) : Except String Request := do
+  let namesDatum ← match j.getObjVal? "namesDatum" with
+    | .error _ => pure false
+    | .ok v => fromJson? v
   pure { edge := ← j.getObjValAs? Edge "edge", key := ← j.getObjValAs? Nat "key"
        , owner := optNat j "owner", refundAddress := optNat j "refundAddress"
-       , deposit := optNat j "deposit", output := optNat j "output", tip := optNat j "tip" }
+       , deposit := optNat j "deposit", output := optNat j "output", tip := optNat j "tip"
+       , namesDatum }
 
 def requestToJson (r : Request) : Json :=
   Json.mkObj [("edge", toJson r.edge), ("key", toJson r.key), ("owner", toJson r.owner)
     , ("refundAddress", toJson r.refundAddress), ("deposit", toJson r.deposit)
-    , ("output", toJson r.output), ("tip", toJson r.tip)]
+    , ("output", toJson r.output), ("tip", toJson r.tip), ("namesDatum", toJson r.namesDatum)]
 
 /-- A payment output at a key, the only output kind a release is judged on. -/
 def ownerOutput (key lovelace : Nat) : TxOutput :=
@@ -267,9 +273,12 @@ def envelopeFor (key : Key) (payload : PlutusData) : Envelope :=
                , key := key, controller := controller, deposit := insertDeposit }
   , payload := payload }
 
+/-- A valid insertion request: its destination is this contract with the
+envelope's hash, and it names that datum, so the delivery carries the envelope
+inline. -/
 def insertRequest (key : Key) (e : Envelope) : Request :=
   { edge := .insertActive, key := key, owner := controller, deposit := insertDeposit
-  , output := destinationOf app0 e }
+  , output := destinationOf app0 e, namesDatum := true }
 
 def terminateRequest (key : Key) : Request :=
   { edge := .updateTerminal, key := key, owner := controller, deposit := terminateDeposit }
@@ -297,6 +306,12 @@ def otherRegistryEnvelope : Envelope :=
   { envelopeFor 5 payload0 with
     control := { (envelopeFor 5 payload0).control with registry := { policy := 50, assetName := 52 } } }
 
+/-- A booking identical to a valid insertion of key 5 except that its request
+names no datum: the delivered output would carry no envelope. -/
+def bookingNoDatum : AppAction :=
+  .bookInsert { insertRequest 5 (envelopeFor 5 payload0) with namesDatum := false }
+    (envelopeFor 5 payload0) [controller]
+
 /-- Book and fold the termination of key 5, whose output reference is `ref`. -/
 def terminate5 (ref : Nat) (outs : List TxOutput) : List AppAction :=
   [.bookTerminate (terminateRequest 5) ref [controller], .fold [(.updateTerminal, 5)] outs]
@@ -307,6 +322,7 @@ def corpus : List Scenario :=
       , "insertion_requires_registry_identity", "update_inversion", "update_keeps_registry"
       , "update_preserves_custody", "bookTerminate_inversion", "bookTerminate_keeps_locked"
       , "release_burns_atomically", "fold_settles_additively", "fold_spent_disappears"
+      , "selectRow_requires_named_datum", "insertion_holding_inline"
       , "fold_signers_unchanged", "genesis_consistent", "appStep_preserves_consistent", "reachable_consistent"
       , "consistent_occurrences_distinct", "bookInsert_preserves_consistent"
       , "fold_preserves_consistent", "update_preserves_consistent"
@@ -325,7 +341,7 @@ def corpus : List Scenario :=
         .fold [(.updateTerminal, 5)] (paid (insertDeposit + terminateDeposit))])
   , scenario "mixed-batch-one-controller" "witness"
       ["fold_settles_additively", "fold_spent_disappears", "release_burns_atomically"
-      , "insertion_binds_envelope", "fold_preserves_consistent"]
+      , "insertion_binds_envelope", "insertion_holding_inline", "fold_preserves_consistent"]
       (insertKey 5 ++ [.bookTerminate (terminateRequest 5) 0 [controller], bookInsertKey 6,
         .fold [(.updateTerminal, 5), (.insertActive, 6)] (paid (insertDeposit + terminateDeposit))])
   , scenario "mixed-batch-short-by-one" "adverse-input" ["fold_settles_additively"]
@@ -333,7 +349,8 @@ def corpus : List Scenario :=
         .fold [(.updateTerminal, 5), (.insertActive, 6)]
           (paid (insertDeposit + terminateDeposit - 1))])
   , scenario "two-releases-one-controller" "witness"
-      ["fold_settles_additively", "fold_spent_disappears", "release_burns_atomically"]
+      ["fold_settles_additively", "fold_spent_disappears", "release_burns_atomically"
+      , "insertion_holding_inline"]
       (insertKey 5 ++ insertKey 6 ++
         [.bookTerminate (terminateRequest 5) 0 [controller],
          .bookTerminate (terminateRequest 6) 1 [controller],
@@ -385,6 +402,8 @@ def corpus : List Scenario :=
   , scenario "booking-deposit-mismatch" "adverse-input" ["bookInsert_inversion"]
       [.bookInsert { insertRequest 5 (envelopeFor 5 payload0) with deposit := insertDeposit + 1 }
         (envelopeFor 5 payload0) [controller]]
+  , scenario "booking-no-datum" "adverse-input" ["bookInsert_inversion"]
+      [bookingNoDatum]
   , scenario "terminate-booking-by-stranger" "adverse-input" ["bookTerminate_inversion"]
       (insertKey 5 ++ [.bookTerminate { terminateRequest 5 with owner := stranger } 0 [stranger]])
   , scenario "duplicate-insertion" "adverse-input" ["duplicate_refused_by_registry"]
@@ -432,6 +451,42 @@ def boundaryWorlds : List BoundaryWorld :=
   , { name := "identical-duplicate-occurrence", reached := false, world := duplicatedWorld
     , statements := ["duplicate_occurrence_outside_invariant", "appConsistentB_iff"] } ]
 
+/-! ## The selection boundary
+
+A pending insertion reaches a fold only through a booking, which requires it to
+name its datum. The fold's selection re-checks it anyway, so a world no action
+reaches — the booked insertion of key 5 with its flag cleared — cannot turn into
+an envelope the registry never delivers: the same fold that accepts the reached
+booking refuses it at selection. -/
+
+def bookedWorld : World := reachWorld [bookInsertKey 5]
+
+def unnamedPendingWorld : World :=
+  { bookedWorld with pending := bookedWorld.pending.map fun p =>
+      { p with request := { p.request with namesDatum := false } } }
+
+def selectionFold : AppAction := .fold [(.insertActive, 5)] []
+
+/-- One selection-boundary world and the outcome of the same fold on it. -/
+structure SelectionWorld where
+  name : String
+  reached : Bool
+  statements : List String
+  world : World
+
+def selectionWorlds : List SelectionWorld :=
+  [ { name := "booked-insertion-names-datum", reached := true, world := bookedWorld
+    , statements := ["selectRow_requires_named_datum"] }
+  , { name := "pending-insertion-names-no-datum", reached := false, world := unnamedPendingWorld
+    , statements := ["selectRow_requires_named_datum"] } ]
+
+def selectionWorldToJson (s : SelectionWorld) : Json :=
+  Json.mkObj [("name", toJson s.name), ("reached", toJson s.reached)
+    , ("statements", toJson s.statements), ("world", worldToJson s.world)
+    , ("fold", match appStep s.world selectionFold with
+        | .ok w' => Json.mkObj [("outcome", "accepted"), ("world", worldToJson w')]
+        | .error why => Json.mkObj [("outcome", "refused"), ("reason", toJson why)])]
+
 def boundaryUpdateJson (w : World) : Json :=
   match appStep w boundaryUpdate with
   | .ok w' => Json.mkObj [("outcome", "accepted"), ("consistentAfter", toJson (appConsistentB w'))
@@ -447,7 +502,8 @@ def boundaryToJson (b : BoundaryWorld) : Json :=
 
 def corpusWith (law : Law) : Json :=
   Json.mkObj [("scenarios", Json.arr (corpus.map (runScenarioWith law)).toArray)
-    , ("invariantBoundary", Json.arr (boundaryWorlds.map boundaryToJson).toArray)]
+    , ("invariantBoundary", Json.arr (boundaryWorlds.map boundaryToJson).toArray)
+    , ("selectionBoundary", Json.arr (selectionWorlds.map selectionWorldToJson).toArray)]
 
 def corpusJson : Json := corpusWith Law.standard
 
@@ -559,6 +615,7 @@ def statementNames : List (String × String) :=
   , ("insertion_binds_envelope", "evidence-binding"), ("bookTerminate_keeps_locked", "custody")
   , ("release_burns_atomically", "terminality"), ("only_fold_releases", "refusal")
   , ("fold_settles_additively", "value"), ("fold_spent_disappears", "custody")
+  , ("selectRow_requires_named_datum", "evidence-binding"), ("insertion_holding_inline", "evidence-binding")
   , ("duplicate_refused_by_registry", "refusal")
   , ("resurrection_refused_by_registry", "terminality"), ("fold_signers_unchanged", "authorization") ]
 
@@ -612,7 +669,8 @@ def theoremLedgerOf (rows : List StatementStatus) : Json :=
       , ("axioms", toJson ((row.map (·.axioms)).getD []))
       , ("statementSha256", toJson ((row.map (·.statementSha256)).getD ""))
       , ("scenarios", toJson ((corpus.filter (·.statements.contains name)).map (·.name)))
-      , ("boundary", toJson ((boundaryWorlds.filter (·.statements.contains name)).map (·.name)))]).toArray
+      , ("boundary", toJson ((boundaryWorlds.filter (·.statements.contains name)).map (·.name) ++
+          (selectionWorlds.filter (·.statements.contains name)).map (·.name)))]).toArray
 
 def atoms : List (String × String × String) :=
   [ ("A1", "authorization", "only the controller's signature admits an update or a booking")

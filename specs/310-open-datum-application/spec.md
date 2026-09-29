@@ -4,6 +4,8 @@
 
 As the controller, I want my registry token to carry arbitrary Plutus data at an application contract, so I can change the data with my Cardano key while my original deposit remains protected until I terminate that token.
 
+The data is the payload of a protected envelope, which the delivered output carries inline: the payload is any valid Plutus data, and the envelope's control fields — controller key, registry, key and deposit — are required and cannot be edited through a payload update ([the envelope ruling](ruling-envelope-datum-20260929.md)).
+
 ## Protected control and a free payload
 
 Insertion binds the registry state asset, active token asset/key, controller payment key and original insertion deposit in protected control data. The payload is separate and accepts valid Plutus constructors, maps, lists, signed integers and bytes. A payload edit preserves every control field, the token at the governing contract, the deposit floor and the registry lifecycle commitment. MPFS commits the key's lifecycle, not every later external payload hash.

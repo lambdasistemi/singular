@@ -439,6 +439,7 @@ theorem selectRow_spec (w : World) (x : Edge × Key) (row : FoldRow)
       | some en =>
         simp only [he] at h
         obtain ⟨_, e1, h⟩ := bind_ok h
+        obtain ⟨_, _, h⟩ := bind_ok h
         obtain ⟨_, e2, h⟩ := bind_ok h
         have g1 := ensure_ok e1
         have g2 := ensure_ok e2
@@ -466,6 +467,34 @@ theorem selectRow_spec (w : World) (x : Edge × Key) (row : FoldRow)
       first
         | exact Except.noConfusion h
         | (simp at h)
+
+/-- An insertion `selectRow` accepts names its datum. -/
+theorem selectRow_insert_names_datum (w : World) (key : Key) (row : FoldRow)
+    (h : selectRow Law.standard w (.insertActive, key) = .ok row) :
+    row.pending.request.namesDatum = true := by
+  unfold selectRow at h
+  cases hp : pendingOf w .insertActive key with
+  | none =>
+    simp only [hp] at h
+    first
+      | exact Except.noConfusion h
+      | (simp at h)
+  | some p =>
+    simp only [hp] at h
+    cases he : p.envelope with
+    | none =>
+      simp only [he] at h
+      first
+        | exact Except.noConfusion h
+        | (simp at h)
+    | some en =>
+      simp only [he] at h
+      obtain ⟨_, _, h⟩ := bind_ok h
+      obtain ⟨_, e2, h⟩ := bind_ok h
+      obtain ⟨_, _, h⟩ := bind_ok h
+      have hrow := (ok_inj h).symm
+      subst hrow
+      exact ensure_ok e2
 
 theorem mapM_ok_mem {α β : Type} (f : α → Except String β) : ∀ (xs : List α) (ys : List β),
     xs.mapM f = .ok ys → (∀ y ∈ ys, ∃ x ∈ xs, f x = .ok y) ∧ (∀ x ∈ xs, ∃ y ∈ ys, f x = .ok y)
@@ -1154,5 +1183,68 @@ decreasing_by
     have := List.length_filter_le (fun b => !b == a) as
     simp only [List.length_cons]
     omega
+
+
+/-! ## Holdings through a fold -/
+
+/-- A holding survives one accepted step of an insertion, or of a termination
+of another key. -/
+theorem step_keeps_holding (s : RegistryState) (a : Request) (r : Result) (h : step s a = .ok r)
+    (he : a.edge = .insertActive ∨ a.edge = .updateTerminal) (x : Holding) (hx : x ∈ s.held)
+    (hk : a.edge = .updateTerminal → a.key ≠ x.key) : x ∈ r.state.held := by
+  obtain ⟨_, hr⟩ := step_eq_ok s a r h
+  subst hr
+  rcases he with he | he
+  · obtain ⟨_, _, _, hheld, _, _⟩ := applyEdge_insertActive s a he
+    rw [hheld]
+    exact List.mem_cons_of_mem _ hx
+  · obtain ⟨_, _, _, hheld, _, _⟩ := applyEdge_updateTerminal s a he
+    rw [hheld]
+    refine List.mem_filter.2 ⟨hx, ?_⟩
+    have hne : (x.key == a.key) = false := by simpa using (hk he).symm
+    simp [hne]
+
+/-- A holding survives a whole fold of insertions and of terminations of other
+keys. -/
+theorem foldActions_keeps_holding (x : Holding) : ∀ (batch : List Request) (s : RegistryState)
+    (t : Result), foldActions s batch = .ok t →
+    (∀ b ∈ batch, b.edge = .insertActive ∨ b.edge = .updateTerminal) →
+    (∀ b ∈ batch, b.edge = .updateTerminal → b.key ≠ x.key) →
+    x ∈ s.held → x ∈ t.state.held
+  | [], s, t, h, _, _, hx => by
+    rw [foldActions_nil_ok s t h]
+    exact hx
+  | b :: bs, s, t, h, hE, hT, hx => by
+    obtain ⟨m, r, hs, hr, rfl⟩ := foldActions_cons_ok s b bs t h
+    have hm := step_keeps_holding s b m hs (hE b (List.mem_cons_self ..)) x hx
+      (hT b (List.mem_cons_self ..))
+    exact foldActions_keeps_holding x bs m.state r hr
+      (fun c hc => hE c (List.mem_cons_of_mem _ hc)) (fun c hc => hT c (List.mem_cons_of_mem _ hc)) hm
+
+/-- Every insertion of a fold that terminates no request of its key leaves an
+active holding of that key carrying the datum form the insertion delivered. -/
+theorem foldActions_insert_holding : ∀ (batch : List Request) (s : RegistryState) (t : Result),
+    foldActions s batch = .ok t →
+    (∀ b ∈ batch, b.edge = .insertActive ∨ b.edge = .updateTerminal) →
+    ∀ b ∈ batch, b.edge = .insertActive →
+      (∀ c ∈ batch, c.edge = .updateTerminal → c.key ≠ b.key) →
+      ∃ x ∈ t.state.held, x.key = b.key ∧ x.kind = .active ∧ x.datum = deliveredDatum b
+  | [], _, _, _, _, b, hb, _, _ => absurd hb (List.not_mem_nil)
+  | b0 :: bs, s, t, h, hE, b, hb, hins, hT => by
+    obtain ⟨m, r, hs, hr, rfl⟩ := foldActions_cons_ok s b0 bs t h
+    have hEbs : ∀ c ∈ bs, c.edge = .insertActive ∨ c.edge = .updateTerminal :=
+      fun c hc => hE c (List.mem_cons_of_mem _ hc)
+    rcases List.mem_cons.1 hb with rfl | hb'
+    · obtain ⟨_, hm⟩ := step_eq_ok s b m hs
+      have hheld := (applyEdge_insertActive s b hins).2.2.2.1
+      let x : Holding := { key := b.key, kind := .active, output := b.output, datum := deliveredDatum b }
+      have hxm : x ∈ m.state.held := by
+        rw [hm, hheld]
+        exact List.mem_cons_self ..
+      refine ⟨x, ?_, rfl, rfl, rfl⟩
+      exact foldActions_keeps_holding x bs m.state r hr hEbs
+        (fun c hc => hT c (List.mem_cons_of_mem _ hc)) hxm
+    · exact foldActions_insert_holding bs m.state r hr hEbs b hb' hins
+        (fun c hc => hT c (List.mem_cons_of_mem _ hc))
 
 end OpenDatumApplication.ProofSupport

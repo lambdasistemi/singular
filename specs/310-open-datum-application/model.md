@@ -1,6 +1,6 @@
 # Open-datum application: executable model and intended statements
 
-Phase: MODEL + STATEMENTS + INVERSIONS + PROOFS; occurrence-safe re-cut `310-occurrence-001` on the preserved first repair, then the two model repairs of [the 29 September rulings](ruling-model-repairs-20260929.md). There are 33 statements, and all 33 are proved: the compiled environment reports each depending on the standard axioms alone. The generated theorem ledger records that status as the build computes it, never as typed. Every proof is of the historical root model this project was accepted against; the pending root destination-row change (#304) has not been consumed. Nothing here is a validator, a compiled identity, a builder or ledger evidence.
+Phase: MODEL + STATEMENTS + INVERSIONS + PROOFS; occurrence-safe re-cut `310-occurrence-001` on the preserved first repair, then the two model repairs of [the 29 September rulings](ruling-model-repairs-20260929.md). There are 35 statements, and all 35 are proved over root main a0770318: the compiled environment reports each depending on the standard axioms alone. The generated theorem ledger records that status as the build computes it, never as typed. An insertion names its envelope datum, as [the envelope ruling](ruling-envelope-datum-20260929.md) records. Nothing here is a validator, a compiled identity, a builder or ledger evidence.
 
 ## Where it lives and how it builds
 
@@ -15,12 +15,12 @@ Phase: MODEL + STATEMENTS + INVERSIONS + PROOFS; occurrence-safe re-cut `310-occ
 
 ## The law
 
-- **Book an insertion.** The controller signs. The application serves the registry whose full state asset (policy and name) the world actually carries, and the envelope names that same asset. The destination is this contract with the envelope's hash. The protected deposit is the request's deposit.
+- **Book an insertion.** The controller signs. The application serves the registry whose full state asset (policy and name) the world actually carries, and the envelope names that same asset. The destination is this contract with the envelope's hash, and the request names that datum, so the delivered output carries the envelope inline; a request naming no datum is refused `app-envelope-datum`. The protected deposit is the request's deposit. The payload is any valid Plutus data; there is no initial-value predicate.
 - **Book a termination.** The controller signs an `updateTerminal` approval for the key its live output holds, naming no destination. Token and deposit stay locked.
 - **Book any other edge.** Refused: this application certifies only insertions and terminations.
 - **Update.** The controller signs. Exactly one proposed output carries the token, at this contract, with the same control and assets and at least the deposit. The payload is free.
 - **Fold.** Any selection of booked requests is folded by the registry's own `foldBatch`:
-  - insertions create this contract's outputs, re-checking their envelope binding and registry;
+  - insertions create this contract's outputs, re-checking their envelope binding, that the request names its datum (`fold-envelope-datum` otherwise) and the registry;
   - terminations spend their keys' outputs and release their deposits;
   - the whole payment duty — each selected request's `Singular.obligations` by its edge, plus every release — settles through the unchanged `Singular.settle`, against the outputs plus the created deliveries;
   - the world records the fold's own mint.
@@ -54,11 +54,11 @@ Phase: MODEL + STATEMENTS + INVERSIONS + PROOFS; occurrence-safe re-cut `310-occ
   - `PlutusData` equality is the structural `PlutusData.beq`; a fixed differential table shows it gives the old compiled equality's results, and the proved laws are the universal claim.
   - `App.policy` is both the policy and the address.
   - A destination is `address · 2^64 + envelopeHash`.
-  - A termination names no destination (`output = 0`). The generic model's destination row for a non-delivering fold is #304's held question.
+  - A termination names no destination (`output = 0`), and at root main a0770318 a fold that delivers nothing describes no destination output. The token it burns is spent from the output its insertion delivered, carrying the inline envelope.
 
 ## Coverage
 
-- Every statement is bound to at least one of 27 scenarios or 2 boundary worlds. Each scenario publishes the world after every accepted step: registry, outputs, bookings with their required signers, and the last mint. Intermediate conclusions are therefore observable, not only final worlds.
+- Every statement is bound to at least one of 28 scenarios, 2 invariant boundary worlds or 2 selection boundary worlds. Each scenario publishes the world after every accepted step: registry, outputs, bookings with their required signers, and the last mint. Intermediate conclusions are therefore observable, not only final worlds.
 - The corpus exercises one controller, keys 5 and 6 and fixed amounts. It exhibits the statements and does not cover their domains.
 - The three definition mutants move 1, 3 and 3 scenarios respectively. They are controls on the checks, not a mutation campaign over the law.
 - A proved statement is a property of the model. The ledger's scenario and boundary bindings say which published cases exhibit it; they are not product coverage, and no validator, transaction or chain claim follows from them.

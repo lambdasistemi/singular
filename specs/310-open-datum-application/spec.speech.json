@@ -3,6 +3,10 @@
     {
       "text": "As the controller, I want my registry token to carry arbitrary Plutus data at an application contract, so I can change that data with my Cardano key while my original deposit stays protected until I terminate the token.",
       "pause": 400
+    },
+    {
+      "text": "That data is the payload of a protected envelope the delivered output carries inline. The payload may be any Plutus data; the envelope's controller, registry, key and deposit are required, and a payload update cannot change them.",
+      "pause": 400
     }
   ],
   "protected-control-and-a-free-payload": [
@@ -49,6 +53,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "84f5365d107148d7ad02326b44989b6165a869df82daf1d4a552c61835f380fe"
+    "sha256": "52de1d69b8ce63da5f4a188d1f2cab0f309a55e21749446686158f1ac0f8c287"
   }
 }

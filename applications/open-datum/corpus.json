@@ -1,4 +1,120 @@
-{"scenarios":
+{"selectionBoundary":
+ [{"world":
+   {"registryAsset": {"policy": 50, "assetName": 51},
+    "registry":
+    {"trie": [],
+     "held": [],
+     "custody": [],
+     "config":
+     {"terminalPolicy": 10,
+      "root": [203, 242, 156, 228, 132, 34, 35, 37],
+      "retractTime": 0,
+      "processTime": 0,
+      "maxFee": 0,
+      "applicationPolicy": 7,
+      "activePolicy": 8,
+      "absentPolicy": 9}},
+    "pending":
+    [{"requiredSigners": [],
+      "request":
+      {"tip": 0,
+       "refundAddress": 0,
+       "owner": 42,
+       "output": 142440061848682405091,
+       "namesDatum": true,
+       "key": 5,
+       "edge": "insertActive",
+       "deposit": 3000000}}],
+    "outputs": [],
+    "nextRef": 0,
+    "lastMint": []},
+   "statements": ["selectRow_requires_named_datum"],
+   "reached": true,
+   "name": "booked-insertion-names-datum",
+   "fold":
+   {"world":
+    {"registryAsset": {"policy": 50, "assetName": 51},
+     "registry":
+     {"trie": [{"leaf": "active", "key": 5}],
+      "held":
+      [{"output": 142440061848682405091,
+        "kind": "active",
+        "key": 5,
+        "datum": "inline"}],
+      "custody": [],
+      "config":
+      {"terminalPolicy": 10,
+       "root": [76, 17, 37, 97, 140, 77, 124, 246],
+       "retractTime": 0,
+       "processTime": 0,
+       "maxFee": 0,
+       "applicationPolicy": 7,
+       "activePolicy": 8,
+       "absentPolicy": 9}},
+     "pending": [],
+     "outputs":
+     [{"ref": 0,
+       "lovelace": 3000000,
+       "envelopeHash": 13312853332715543779,
+       "envelope":
+       {"payload":
+        {"tag": "constr",
+         "index": 0,
+         "fields":
+         [{"value": 1, "tag": "int"},
+          {"value": [202, 254], "tag": "bytes"},
+          {"tag": "map",
+           "entries":
+           [[{"value": [1], "tag": "bytes"},
+             {"tag": "list",
+              "items":
+              [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+        "control":
+        {"version": 1,
+         "registry": {"policy": 50, "assetName": 51},
+         "key": 5,
+         "deposit": 3000000,
+         "controller": 42,
+         "activePolicy": 8}},
+       "assets": [{"quantity": 1, "kind": "active", "key": 5}],
+       "address": 7}],
+     "nextRef": 1,
+     "lastMint": [{"quantity": 1, "kind": "active", "key": 5}]},
+    "outcome": "accepted"}},
+  {"world":
+   {"registryAsset": {"policy": 50, "assetName": 51},
+    "registry":
+    {"trie": [],
+     "held": [],
+     "custody": [],
+     "config":
+     {"terminalPolicy": 10,
+      "root": [203, 242, 156, 228, 132, 34, 35, 37],
+      "retractTime": 0,
+      "processTime": 0,
+      "maxFee": 0,
+      "applicationPolicy": 7,
+      "activePolicy": 8,
+      "absentPolicy": 9}},
+    "pending":
+    [{"requiredSigners": [],
+      "request":
+      {"tip": 0,
+       "refundAddress": 0,
+       "owner": 42,
+       "output": 142440061848682405091,
+       "namesDatum": false,
+       "key": 5,
+       "edge": "insertActive",
+       "deposit": 3000000}}],
+    "outputs": [],
+    "nextRef": 0,
+    "lastMint": []},
+   "statements": ["selectRow_requires_named_datum"],
+   "reached": false,
+   "name": "pending-insertion-names-no-datum",
+   "fold": {"reason": "fold-envelope-datum", "outcome": "refused"}}],
+ "scenarios":
  [{"steps":
    [{"world":
      {"registryAsset": {"policy": 50, "assetName": 51},
@@ -22,6 +138,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -34,7 +151,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -80,7 +201,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -118,7 +243,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -136,6 +265,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 0,
+         "namesDatum": false,
          "key": 5,
          "edge": "updateTerminal",
          "deposit": 2000000}}],
@@ -197,6 +327,8 @@
      "release_burns_atomically",
      "fold_settles_additively",
      "fold_spent_disappears",
+     "selectRow_requires_named_datum",
+     "insertion_holding_inline",
      "fold_signers_unchanged",
      "genesis_consistent",
      "appStep_preserves_consistent",
@@ -226,6 +358,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -278,6 +411,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 0,
+       "namesDatum": false,
        "key": 5,
        "edge": "updateTerminal",
        "deposit": 2000000},
@@ -310,6 +444,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -322,7 +457,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -368,7 +507,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -424,6 +567,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -494,6 +638,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -506,7 +651,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -552,7 +701,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -610,6 +763,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -682,6 +836,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -694,7 +849,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -740,7 +899,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -758,6 +921,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 0,
+         "namesDatum": false,
          "key": 5,
          "edge": "updateTerminal",
          "deposit": 2000000}}],
@@ -795,7 +959,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -813,6 +981,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 0,
+         "namesDatum": false,
          "key": 5,
          "edge": "updateTerminal",
          "deposit": 2000000}}],
@@ -885,6 +1054,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -918,6 +1088,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 0,
+       "namesDatum": false,
        "key": 5,
        "edge": "updateTerminal",
        "deposit": 2000000},
@@ -969,6 +1140,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -981,7 +1153,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -1027,7 +1203,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -1045,6 +1225,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 0,
+         "namesDatum": false,
          "key": 5,
          "edge": "updateTerminal",
          "deposit": 2000000}}],
@@ -1082,7 +1263,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -1100,6 +1285,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 0,
+         "namesDatum": false,
          "key": 5,
          "edge": "updateTerminal",
          "deposit": 2000000}},
@@ -1109,6 +1295,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 145401620482453453290,
+         "namesDatum": true,
          "key": 6,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -1146,7 +1333,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 6}, {"leaf": "terminal", "key": 5}],
-       "held": [{"output": 145401620482453453290, "kind": "active", "key": 6}],
+       "held":
+       [{"output": 145401620482453453290,
+         "kind": "active",
+         "key": 6,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -1196,6 +1387,7 @@
      "fold_spent_disappears",
      "release_burns_atomically",
      "insertion_binds_envelope",
+     "insertion_holding_inline",
      "fold_preserves_consistent"],
     "name": "mixed-batch-one-controller",
     "kind": "witness",
@@ -1217,6 +1409,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -1250,6 +1443,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 0,
+       "namesDatum": false,
        "key": 5,
        "edge": "updateTerminal",
        "deposit": 2000000},
@@ -1261,6 +1455,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 145401620482453453290,
+       "namesDatum": true,
        "key": 6,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -1314,6 +1509,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -1326,7 +1522,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -1372,7 +1572,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -1390,6 +1594,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 0,
+         "namesDatum": false,
          "key": 5,
          "edge": "updateTerminal",
          "deposit": 2000000}}],
@@ -1427,7 +1632,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -1445,6 +1654,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 0,
+         "namesDatum": false,
          "key": 5,
          "edge": "updateTerminal",
          "deposit": 2000000}},
@@ -1454,6 +1664,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 145401620482453453290,
+         "namesDatum": true,
          "key": 6,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -1510,6 +1721,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -1543,6 +1755,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 0,
+       "namesDatum": false,
        "key": 5,
        "edge": "updateTerminal",
        "deposit": 2000000},
@@ -1554,6 +1767,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 145401620482453453290,
+       "namesDatum": true,
        "key": 6,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -1607,6 +1821,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -1619,7 +1834,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -1665,7 +1884,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -1683,6 +1906,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 145401620482453453290,
+         "namesDatum": true,
          "key": 6,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -1721,8 +1945,14 @@
       "registry":
       {"trie": [{"leaf": "active", "key": 6}, {"leaf": "active", "key": 5}],
        "held":
-       [{"output": 145401620482453453290, "kind": "active", "key": 6},
-        {"output": 142440061848682405091, "kind": "active", "key": 5}],
+       [{"output": 145401620482453453290,
+         "kind": "active",
+         "key": 6,
+         "datum": "inline"},
+        {"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -1794,8 +2024,14 @@
       "registry":
       {"trie": [{"leaf": "active", "key": 6}, {"leaf": "active", "key": 5}],
        "held":
-       [{"output": 145401620482453453290, "kind": "active", "key": 6},
-        {"output": 142440061848682405091, "kind": "active", "key": 5}],
+       [{"output": 145401620482453453290,
+         "kind": "active",
+         "key": 6,
+         "datum": "inline"},
+        {"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -1813,6 +2049,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 0,
+         "namesDatum": false,
          "key": 5,
          "edge": "updateTerminal",
          "deposit": 2000000}}],
@@ -1876,8 +2113,14 @@
       "registry":
       {"trie": [{"leaf": "active", "key": 6}, {"leaf": "active", "key": 5}],
        "held":
-       [{"output": 145401620482453453290, "kind": "active", "key": 6},
-        {"output": 142440061848682405091, "kind": "active", "key": 5}],
+       [{"output": 145401620482453453290,
+         "kind": "active",
+         "key": 6,
+         "datum": "inline"},
+        {"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -1895,6 +2138,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 0,
+         "namesDatum": false,
          "key": 5,
          "edge": "updateTerminal",
          "deposit": 2000000}},
@@ -1904,6 +2148,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 0,
+         "namesDatum": false,
          "key": 6,
          "edge": "updateTerminal",
          "deposit": 2000000}}],
@@ -1989,7 +2234,8 @@
    {"statements":
     ["fold_settles_additively",
      "fold_spent_disappears",
-     "release_burns_atomically"],
+     "release_burns_atomically",
+     "insertion_holding_inline"],
     "name": "two-releases-one-controller",
     "kind": "witness",
     "config":
@@ -2010,6 +2256,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -2043,6 +2290,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 145401620482453453290,
+       "namesDatum": true,
        "key": 6,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -2076,6 +2324,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 0,
+       "namesDatum": false,
        "key": 5,
        "edge": "updateTerminal",
        "deposit": 2000000},
@@ -2087,6 +2336,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 0,
+       "namesDatum": false,
        "key": 6,
        "edge": "updateTerminal",
        "deposit": 2000000},
@@ -2121,6 +2371,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -2133,7 +2384,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -2179,7 +2434,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -2197,6 +2456,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 145401620482453453290,
+         "namesDatum": true,
          "key": 6,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -2235,8 +2495,14 @@
       "registry":
       {"trie": [{"leaf": "active", "key": 6}, {"leaf": "active", "key": 5}],
        "held":
-       [{"output": 145401620482453453290, "kind": "active", "key": 6},
-        {"output": 142440061848682405091, "kind": "active", "key": 5}],
+       [{"output": 145401620482453453290,
+         "kind": "active",
+         "key": 6,
+         "datum": "inline"},
+        {"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -2308,8 +2574,14 @@
       "registry":
       {"trie": [{"leaf": "active", "key": 6}, {"leaf": "active", "key": 5}],
        "held":
-       [{"output": 145401620482453453290, "kind": "active", "key": 6},
-        {"output": 142440061848682405091, "kind": "active", "key": 5}],
+       [{"output": 145401620482453453290,
+         "kind": "active",
+         "key": 6,
+         "datum": "inline"},
+        {"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -2327,6 +2599,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 0,
+         "namesDatum": false,
          "key": 5,
          "edge": "updateTerminal",
          "deposit": 2000000}}],
@@ -2390,8 +2663,14 @@
       "registry":
       {"trie": [{"leaf": "active", "key": 6}, {"leaf": "active", "key": 5}],
        "held":
-       [{"output": 145401620482453453290, "kind": "active", "key": 6},
-        {"output": 142440061848682405091, "kind": "active", "key": 5}],
+       [{"output": 145401620482453453290,
+         "kind": "active",
+         "key": 6,
+         "datum": "inline"},
+        {"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -2409,6 +2688,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 0,
+         "namesDatum": false,
          "key": 5,
          "edge": "updateTerminal",
          "deposit": 2000000}},
@@ -2418,6 +2698,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 0,
+         "namesDatum": false,
          "key": 6,
          "edge": "updateTerminal",
          "deposit": 2000000}}],
@@ -2499,6 +2780,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -2532,6 +2814,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 145401620482453453290,
+       "namesDatum": true,
        "key": 6,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -2565,6 +2848,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 0,
+       "namesDatum": false,
        "key": 5,
        "edge": "updateTerminal",
        "deposit": 2000000},
@@ -2576,6 +2860,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 0,
+       "namesDatum": false,
        "key": 6,
        "edge": "updateTerminal",
        "deposit": 2000000},
@@ -2610,6 +2895,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -2622,7 +2908,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -2668,7 +2958,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -2686,6 +2980,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 0,
+         "namesDatum": false,
          "key": 5,
          "edge": "updateTerminal",
          "deposit": 2000000}}],
@@ -2742,6 +3037,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -2775,6 +3071,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 0,
+       "namesDatum": false,
        "key": 5,
        "edge": "updateTerminal",
        "deposit": 2000000},
@@ -2807,6 +3104,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -2819,7 +3117,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -2884,6 +3186,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -2954,6 +3257,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -2966,7 +3270,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -3031,6 +3339,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -3101,6 +3410,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -3113,7 +3423,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -3178,6 +3492,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -3248,6 +3563,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -3260,7 +3576,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -3325,6 +3645,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -3395,6 +3716,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -3407,7 +3729,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -3472,6 +3798,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -3542,6 +3869,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -3554,7 +3882,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -3619,6 +3951,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -3673,6 +4006,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -3685,7 +4019,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -3731,7 +4069,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -3749,6 +4091,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 0,
+         "namesDatum": false,
          "key": 5,
          "edge": "updateTerminal",
          "deposit": 2000000}}],
@@ -3786,7 +4129,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -3855,6 +4202,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -3888,6 +4236,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 0,
+       "namesDatum": false,
        "key": 5,
        "edge": "updateTerminal",
        "deposit": 2000000},
@@ -3924,6 +4273,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -3936,7 +4286,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -4001,6 +4355,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -4034,6 +4389,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 0,
+       "namesDatum": false,
        "key": 5,
        "edge": "deleteActive",
        "deposit": 2000000},
@@ -4062,6 +4418,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -4074,7 +4431,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -4139,6 +4500,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -4195,6 +4557,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -4248,6 +4611,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -4299,6 +4663,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 135530014275023298678,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -4347,6 +4712,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -4395,6 +4761,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 99,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -4443,9 +4810,59 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000001},
+      "envelope":
+      {"payload":
+       {"tag": "constr",
+        "index": 0,
+        "fields":
+        [{"value": 1, "tag": "int"},
+         {"value": [202, 254], "tag": "bytes"},
+         {"tag": "map",
+          "entries":
+          [[{"value": [1], "tag": "bytes"},
+            {"tag": "list",
+             "items":
+             [{"value": -3, "tag": "int"}, {"value": 7, "tag": "int"}]}]]}]},
+       "control":
+       {"version": 1,
+        "registry": {"policy": 50, "assetName": 51},
+        "key": 5,
+        "deposit": 3000000,
+        "controller": 42,
+        "activePolicy": 8}},
+      "action": "bookInsert"}]},
+   "genesisConsistent": true},
+  {"steps": [{"reason": "app-envelope-datum", "outcome": "refused"}],
+   "scenario":
+   {"statements": ["bookInsert_inversion"],
+    "name": "booking-no-datum",
+    "kind": "adverse-input",
+    "config":
+    {"terminalPolicy": 10,
+     "root": [203, 242, 156, 228, 132, 34, 35, 37],
+     "retractTime": 0,
+     "processTime": 0,
+     "maxFee": 0,
+     "applicationPolicy": 7,
+     "activePolicy": 8,
+     "absentPolicy": 9},
+    "asset": {"policy": 50, "assetName": 51},
+    "app": {"registry": {"policy": 50, "assetName": 51}, "policy": 7},
+    "actions":
+    [{"signatures": [42],
+      "request":
+      {"tip": 0,
+       "refundAddress": 0,
+       "owner": 42,
+       "output": 142440061848682405091,
+       "namesDatum": false,
+       "key": 5,
+       "edge": "insertActive",
+       "deposit": 3000000},
       "envelope":
       {"payload":
        {"tag": "constr",
@@ -4491,6 +4908,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -4503,7 +4921,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -4568,6 +4990,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -4601,6 +5024,7 @@
        "refundAddress": 0,
        "owner": 43,
        "output": 0,
+       "namesDatum": false,
        "key": 5,
        "edge": "updateTerminal",
        "deposit": 2000000},
@@ -4630,6 +5054,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -4642,7 +5067,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -4688,7 +5117,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -4706,6 +5139,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -4762,6 +5196,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -4795,6 +5230,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -4846,6 +5282,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -4858,7 +5295,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -4904,7 +5345,11 @@
      {"registryAsset": {"policy": 50, "assetName": 51},
       "registry":
       {"trie": [{"leaf": "active", "key": 5}],
-       "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+       "held":
+       [{"output": 142440061848682405091,
+         "kind": "active",
+         "key": 5,
+         "datum": "inline"}],
        "custody": [],
        "config":
        {"terminalPolicy": 10,
@@ -4922,6 +5367,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 0,
+         "namesDatum": false,
          "key": 5,
          "edge": "updateTerminal",
          "deposit": 2000000}}],
@@ -4998,6 +5444,7 @@
          "refundAddress": 0,
          "owner": 42,
          "output": 142440061848682405091,
+         "namesDatum": true,
          "key": 5,
          "edge": "insertActive",
          "deposit": 3000000}}],
@@ -5029,6 +5476,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -5062,6 +5510,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 0,
+       "namesDatum": false,
        "key": 5,
        "edge": "updateTerminal",
        "deposit": 2000000},
@@ -5076,6 +5525,7 @@
        "refundAddress": 0,
        "owner": 42,
        "output": 142440061848682405091,
+       "namesDatum": true,
        "key": 5,
        "edge": "insertActive",
        "deposit": 3000000},
@@ -5109,7 +5559,11 @@
    {"registryAsset": {"policy": 50, "assetName": 51},
     "registry":
     {"trie": [{"leaf": "active", "key": 5}],
-     "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+     "held":
+     [{"output": 142440061848682405091,
+       "kind": "active",
+       "key": 5,
+       "datum": "inline"}],
      "custody": [],
      "config":
      {"terminalPolicy": 10,
@@ -5154,7 +5608,11 @@
     {"registryAsset": {"policy": 50, "assetName": 51},
      "registry":
      {"trie": [{"leaf": "active", "key": 5}],
-      "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+      "held":
+      [{"output": 142440061848682405091,
+        "kind": "active",
+        "key": 5,
+        "datum": "inline"}],
       "custody": [],
       "config":
       {"terminalPolicy": 10,
@@ -5200,7 +5658,11 @@
    {"registryAsset": {"policy": 50, "assetName": 51},
     "registry":
     {"trie": [{"leaf": "active", "key": 5}],
-     "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+     "held":
+     [{"output": 142440061848682405091,
+       "kind": "active",
+       "key": 5,
+       "datum": "inline"}],
      "custody": [],
      "config":
      {"terminalPolicy": 10,
@@ -5270,7 +5732,11 @@
     {"registryAsset": {"policy": 50, "assetName": 51},
      "registry":
      {"trie": [{"leaf": "active", "key": 5}],
-      "held": [{"output": 142440061848682405091, "kind": "active", "key": 5}],
+      "held":
+      [{"output": 142440061848682405091,
+        "kind": "active",
+        "key": 5,
+        "datum": "inline"}],
       "custody": [],
       "config":
       {"terminalPolicy": 10,

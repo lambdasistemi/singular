@@ -31,6 +31,7 @@ Any parse failure, unknown mode or failed check exits non-zero. -/
 open Lean
 open OpenDatumApplication
 open OpenDatumApplication.Driver
+open Singular
 
 def readStdin : IO String := do
   let stdin ← IO.getStdin
@@ -72,6 +73,60 @@ def flipFirstStatus (ledgers : Json) : Json :=
     let flipped := rows.modify 0 fun row => row.setObjVal! "status" (toJson "STATED")
     Json.mkObj [("theorems", Json.arr flipped), ("atoms", atoms)]
   | _, _ => Json.null
+
+/-- The inserted envelope, observed: the request codec, the booking and
+selection refusals, the registry holding and the root transaction a fold builds.
+Every value is computed by the model or the root; none is typed. -/
+def datumChecks : IO Nat := do
+  let mut failed := 0
+  let valid := insertRequest 5 (envelopeFor 5 payload0)
+  let roundTrips := fun (r : Request) => (requestFromJson (requestToJson r)).toOption == some r
+  failed := failed + (← report (roundTrips valid && roundTrips { valid with namesDatum := false })
+    "codec: a request naming its datum and one naming none each round-trip exactly")
+  let unflagged := Json.mkObj [("edge", toJson Edge.insertActive), ("key", toJson (5 : Nat))]
+  failed := failed + (← report
+    ((requestFromJson unflagged).toOption.map (·.namesDatum) == some false)
+    "codec: a request that does not say names no datum, the root default")
+  let badFlag := Json.mkObj [("edge", toJson Edge.insertActive), ("key", toJson (5 : Nat))
+    , ("namesDatum", toJson "yes")]
+  failed := failed + (← report (requestFromJson badFlag).toOption.isNone
+    "codec: a namesDatum that is not a Boolean is refused")
+  let g := genesis app0 cfg0 app0.registry
+  let refusedNoDatum := match appStep g bookingNoDatum with
+    | .error why => why == "app-envelope-datum"
+    | .ok _ => false
+  failed := failed + (← report (refusedNoDatum && (appStep g (bookInsertKey 5)).toOption.isSome)
+    "booking: the valid insertion is accepted, and the same booking naming no datum is refused app-envelope-datum")
+  let selected := (appStep bookedWorld selectionFold).toOption.isSome
+  let unselected := match appStep unnamedPendingWorld selectionFold with
+    | .error why => why == "fold-envelope-datum"
+    | .ok _ => false
+  failed := failed + (← report (selected && unselected)
+    "selection: the fold accepts the booked insertion, and refuses fold-envelope-datum when its pending request names no datum")
+  let inlineHeld := ordinaryWorld.registry.held.any fun h =>
+    h.key == 5 && h.kind == .active && h.datum == .inline
+  failed := failed + (← report inlineHeld
+    "delivery: after the insertion fold the registry holds key 5's active token with its datum inline")
+  let insertion? := bookedWorld.pending.head?.map (·.request)
+  let destinations := match insertion? with
+    | some r => match Singular.txOf bookedWorld.registry r (r.deposit + r.tip) with
+      | .ok tx => (tx.outputs.filter (·.role == .destination)).map (·.datum)
+      | .error _ => []
+    | none => []
+  failed := failed + (← report (destinations == [.inline])
+    "delivery: the transaction the root builds for that insertion has one destination output, its datum inline")
+  let terminating := reachWorld (insertKey 5 ++ [.bookTerminate (terminateRequest 5) 0 [controller]])
+  let termination? := (terminating.pending.find? (·.request.edge == .updateTerminal)).map (·.request)
+  let termOk := match termination? with
+    | some r => match Singular.txOf terminating.registry r (r.deposit + r.tip) with
+      | .ok tx =>
+        !(tx.outputs.any (·.role == .destination)) &&
+          (tx.inputs.filter (·.role == .witness)).map (·.datum) == [.inline]
+      | .error _ => false
+    | none => false
+  failed := failed + (← report termOk
+    "termination: the root transaction has no destination output, and the witness it burns is spent with the inline datum its insertion delivered")
+  pure failed
 
 def check (dir : String) : IO UInt32 := do
   let corpus ← parseOrFail "corpus.json" (← IO.FS.readFile s!"{dir}/corpus.json")
@@ -157,6 +212,7 @@ def check (dir : String) : IO UInt32 := do
     "boundary: the identical-duplicate world is outside the invariant; its accepted update leaves two outputs of one key")
   failed := failed + (← report (appConsistentBWith false duplicatedWorld)
     "control: without the occurrence clause the observation would admit the identical-duplicate world")
+  failed := failed + (← datumChecks)
   IO.println s!"application checks: {failed} failed"
   pure (if failed == 0 then 0 else 1)
 
