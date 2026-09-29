@@ -1347,6 +1347,16 @@ storyModelRequest ids cfg exit request deposit tip reference requestOut = do
     approval <- case requestOut of
         Left decided -> pure (canonical decided)
         Right out -> canonical . snd <$> storyApprovalOn cfg out
+    -- Whether the request names a datum for its delivered output: read off the
+    -- booked request's own datum, whose destination names a datum hash or, when
+    -- empty, none. A refused booking left no request UTxO; there it is the
+    -- destination the booking decision named.
+    namesDatum <- case requestOut of
+        Left _ -> pure (not (BS.null (snd (storyDestination request))))
+        Right out -> case extractCageDatum out of
+            Just (RequestDatum booked) ->
+                pure (not (BS.null (snd (requestDestination booked))))
+            _ -> failWith "booked request output carries no request datum"
     pure $
         object $
             [ "edge" .= Live.edgeName (Live.requestEdge request)
@@ -1358,6 +1368,7 @@ storyModelRequest ids cfg exit request deposit tip reference requestOut = do
             , "applicationPolicy" .= application
             , "approval" .= approval
             , "tip" .= tip
+            , "namesDatum" .= namesDatum
             ]
                 <> [ "reference" .= bound | exit == Live.Retract, Just bound <- [reference]
                    ]
