@@ -109,11 +109,14 @@ class TrickyNameGrammarTest(unittest.TestCase):
 
 
 class RealTreeDiscoveryTest(unittest.TestCase):
-    """The frozen tree: 113 = 60 manifest-bound + 53 unclassified.
+    """The frozen tree: 116 = 63 manifest-bound + 53 unclassified.
 
-    The registry's 39 statements include the absent-insertion transaction
-    row, the statement that no fold requires a signer, the four statements
-    of where every exit's deposit goes, the statement that every
+    The registry's 42 statements include the three of the destination-row
+    ruling (#304) — a fold describes a destination output only when it
+    delivers, a delivered output carries the datum its request named, a spent
+    witness carries the datum its holding records — and the absent-insertion
+    transaction row, the statement that no fold requires a signer, the four
+    statements of where every exit's deposit goes, the statement that every
     transaction an exit builds settles what it owes, the statement that
     a retract pays exactly its obligations and the four statements of
     retraction admission; naming contributes 7, lifecycle 9 and wire
@@ -121,7 +124,8 @@ class RealTreeDiscoveryTest(unittest.TestCase):
     transaction from its step and the three lemmas settling one payment;
     three more read a retraction's bound return as its largest output, and
     two read retraction admission's edge and window checks as propositions.
-    The predecessor populations were 107 = 56 + 51 and 104 = 56 + 48.
+    The predecessor populations were 113 = 60 + 53, 107 = 56 + 51 and
+    104 = 56 + 48.
     """
 
     def test_population_at_base(self):
@@ -129,11 +133,11 @@ class RealTreeDiscoveryTest(unittest.TestCase):
         decls = scan_tree_strict(inv_root / "lean")
         self.assertEqual(
             len(decls),
-            113,
+            116,
             "base population drifted; the denominator must be re-examined",
         )
         statements = [d for d in decls if d.source.endswith("Statements.lean")]
-        self.assertEqual(len(statements), 60)
+        self.assertEqual(len(statements), 63)
 
     def test_attributed_count_at_base(self):
         # The fourth is the @[simp] on trieGet_erase_eq.
