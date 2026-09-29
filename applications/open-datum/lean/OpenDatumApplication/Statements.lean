@@ -3,10 +3,7 @@ import OpenDatumApplication.Driver
 
 /-! # The open-datum application's intended statements and inversions
 
-STATED, UNPROVED. Every declaration below ends in `sorry` on purpose: this is
-the MODEL+STATEMENTS+INVERSIONS phase, submitted for independent review before
-any proof. `#print axioms` reports `sorryAx` for each; none is evidence until
-proved with its statement unchanged.
+This bounded proof slice targets six independent declarations; the other26 declarations remain UNPROVED. Only captured #print axioms results establish each target's proof status; the current ledger remains a historical statement-phase artifact.
 
 Three kinds of statement, kept apart:
 
@@ -61,7 +58,11 @@ theorem bookTerminate_inversion (w w' : World) (r : Request) (ref : Nat)
 /-- The application certifies no other edge. -/
 theorem bookOther_refused (w w' : World) (r : Request) (sigs : List Nat) :
     appStep w (.bookOther r sigs) ≠ .ok w' := by
-  sorry
+  intro h
+  first
+    | exact Except.noConfusion h
+    | (simp [appStep, appStepWith, bookOtherStep] at h)
+    | cases h
 
 /-- An accepted update is exactly: the controller signed, one proposed output
 carries the token, at this contract, with the same control, the same assets and
@@ -101,7 +102,9 @@ theorem fold_inversion (w w' : World) (sel : List (Edge × Key)) (outs : List Tx
 /-- The application step of a fold is the fold's world. -/
 theorem appStep_fold (w : World) (sel : List (Edge × Key)) (outs : List TxOutput) :
     appStep w (.fold sel outs) = (foldEffect Law.standard w sel outs).map (·.1) := by
-  sorry
+  first
+    | rfl
+    | simp [appStep, appStepWith]
 
 /-- An accepted reject is exactly the registry's reject of the booked request,
 its refund settled; application outputs are untouched. -/
@@ -115,7 +118,13 @@ theorem reject_inversion (w w' : World) (edge : Edge) (key : Key) (outs : List T
 /-- No withdrawal is ever accepted. -/
 theorem withdraw_inversion (w w' : World) (ref : Nat) (outs : List TxOutput) :
     withdrawStep w ref outs ≠ .ok w' := by
-  sorry
+  intro h
+  first
+    | (unfold withdrawStep at h; split at h <;> exact Except.noConfusion h)
+    | (simp only [withdrawStep] at h; split at h <;> exact Except.noConfusion h)
+    | (unfold withdrawStep at h
+       cases ho : outputAt w ref <;> rw [ho] at h <;> exact Except.noConfusion h)
+    | (cases ho : outputAt w ref <;> simp [withdrawStep, ho] at h)
 
 /-! ## The consistency of reached worlds -/
 
@@ -220,7 +229,31 @@ theorem update_payload_free (w : World) (ref : Nat) (s : Successor) (sigs : List
 theorem update_keeps_registry (w w' : World) (ref : Nat) (succs : List Successor)
     (sigs : List Nat) :
     appStep w (.update ref succs sigs) = .ok w' → w'.registry = w.registry ∧ w'.pending = w.pending := by
-  sorry
+  intro h
+  have bind_ok : ∀ {α β : Type} (x : Except String α) (f : α → Except String β) (b : β),
+      x >>= f = Except.ok b → ∃ a, x = Except.ok a ∧ f a = Except.ok b := by
+    intro α β x f b hx
+    cases x with
+    | error e =>
+      first
+        | exact Except.noConfusion hx
+        | cases hx
+        | (simp [bind, Except.bind] at hx)
+    | ok a => exact ⟨a, rfl, hx⟩
+  change updateStep Law.standard w ref succs sigs = .ok w' at h
+  first
+    | unfold updateStep at h
+    | simp only [updateStep] at h
+    | skip
+  repeat' (first
+    | exact Except.noConfusion h
+    | (obtain ⟨_, _, h⟩ := bind_ok _ _ _ h)
+    | (split at h)
+    | (simp only at h))
+  all_goals first
+    | (injection h with h'; subst h'; exact ⟨rfl, rfl⟩)
+    | (cases h; exact ⟨rfl, rfl⟩)
+    | (subst h; exact ⟨rfl, rfl⟩)
 
 /-- Registry identity (any world): an insertion is booked only when the
 application and its envelope name the full state asset the world actually
@@ -251,7 +284,31 @@ registry and the recorded mint where they were. -/
 theorem bookTerminate_keeps_locked (w w' : World) (r : Request) (ref : Nat) (sigs : List Nat) :
     appStep w (.bookTerminate r ref sigs) = .ok w' →
       w'.outputs = w.outputs ∧ w'.registry = w.registry ∧ w'.lastMint = w.lastMint := by
-  sorry
+  intro h
+  have bind_ok : ∀ {α β : Type} (x : Except String α) (f : α → Except String β) (b : β),
+      x >>= f = Except.ok b → ∃ a, x = Except.ok a ∧ f a = Except.ok b := by
+    intro α β x f b hx
+    cases x with
+    | error e =>
+      first
+        | exact Except.noConfusion hx
+        | cases hx
+        | (simp [bind, Except.bind] at hx)
+    | ok a => exact ⟨a, rfl, hx⟩
+  change bookTerminateStep w r ref sigs = .ok w' at h
+  first
+    | unfold bookTerminateStep at h
+    | simp only [bookTerminateStep] at h
+    | skip
+  repeat' (first
+    | exact Except.noConfusion h
+    | (obtain ⟨_, _, h⟩ := bind_ok _ _ _ h)
+    | (split at h)
+    | (simp only at h))
+  all_goals first
+    | (injection h with h'; subst h'; exact ⟨rfl, rfl, rfl⟩)
+    | (cases h; exact ⟨rfl, rfl, rfl⟩)
+    | (subst h; exact ⟨rfl, rfl, rfl⟩)
 
 /-- Atomic release and burn (reached worlds): for every selected termination,
 the output the fold spends is the key's live output, the fold's own mint is
@@ -317,6 +374,15 @@ theorem resurrection_refused_by_registry (w w₁ : World) (r : Request) (e : Env
 /-- The fold stays permissionless: the application adds no signer to any request
 it books (the registry's own `fold_requires_no_signer`). -/
 theorem fold_signers_unchanged (r : Request) : requiredSigners r = [] := by
-  sorry
+  first
+    | rfl
+    | simp [requiredSigners]
 
 end OpenDatumApplication.Statements
+
+#print axioms OpenDatumApplication.Statements.bookOther_refused
+#print axioms OpenDatumApplication.Statements.appStep_fold
+#print axioms OpenDatumApplication.Statements.withdraw_inversion
+#print axioms OpenDatumApplication.Statements.fold_signers_unchanged
+#print axioms OpenDatumApplication.Statements.bookTerminate_keeps_locked
+#print axioms OpenDatumApplication.Statements.update_keeps_registry
