@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {- |
 Module      : Main
 Description : A devnet that outlives the process that needed it
@@ -25,8 +26,9 @@ printed; only its public address is reported, on standard error.
 module Main (main) where
 
 import Control.Concurrent (threadDelay)
-import Control.Monad (forM_, forever, unless)
+import Control.Monad (forever, unless)
 import Data.List (isPrefixOf, sortOn)
+import Data.Maybe (fromMaybe)
 import Data.Ord (Down (..))
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
@@ -93,18 +95,26 @@ main = do
     funding <- fundingFrom <$> getArgs
     gDir <- genesisDir
     withCardanoNode gDir $ \sock _startMs -> do
-        forM_ funding (fund sock)
+        mapM_ (fund sock) funding
         putStrLn sock
         forever (threadDelay 3_600_000_000)
 
--- | Read the three funding flags; all three or none.
-fundingFrom :: [String] -> Maybe Funding
-fundingFrom args = do
-    key <- flag "--fund-skey"
+{- | Read the funding flags: every @--fund-skey@ given (it may repeat, one
+wallet each), all paid the same @--fund-outputs@ of @--fund-lovelace@.
+None when any of the three is absent.
+-}
+fundingFrom :: [String] -> [Funding]
+fundingFrom args = fromMaybe [] $ do
     outputs <- flag "--fund-outputs" >>= readMaybe
     lovelace <- flag "--fund-lovelace" >>= readMaybe
-    pure (Funding key outputs lovelace)
+    pure [Funding key outputs lovelace | key <- every "--fund-skey" args]
   where
+    every name = \case
+        (a : v : rest) | a == name -> v : every name rest
+        (a : rest)
+            | (name <> "=") `isPrefixOf` a -> drop (length name + 1) a : every name rest
+            | otherwise -> every name rest
+        [] -> []
     flag name = go args
       where
         go (a : rest)
