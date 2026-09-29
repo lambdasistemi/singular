@@ -22,6 +22,7 @@ module Singular.Registry.Node.Wait
 
       -- * The whole-wait bound
     , boundWait
+    , boundWaitClosing
 
       -- * The bounded submitter
     , submissionBound
@@ -47,7 +48,7 @@ import GHC.Clock (getMonotonicTime)
 
 import Cardano.Crypto.Hash (hashToBytes)
 import Cardano.Ledger.Api.Tx (txIdTx)
-import Cardano.Ledger.BaseTypes (SlotNo)
+import Cardano.Ledger.BaseTypes (SlotNo (..))
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.TxIn (TxId (..))
 import Cardano.Node.Client.Submitter
@@ -87,7 +88,14 @@ data WaitFailure = WaitFailure
     }
 
 instance Show WaitFailure where
-    show WaitFailure{waitStage, waitTxId, waitElapsed, waitBound} =
+    show
+        WaitFailure
+            { waitStage
+            , waitTxId
+            , waitElapsed
+            , waitBound
+            , waitClosedAt
+            } =
         "the "
             <> stageLabel waitStage
             <> " wait for transaction "
@@ -97,7 +105,7 @@ instance Show WaitFailure where
             <> " s against its "
             <> show waitBound
             <> " s bound: "
-            <> stageDetail waitStage
+            <> stageDetail waitStage waitClosedAt
 
 instance Exception WaitFailure
 
@@ -108,17 +116,21 @@ stageLabel = \case
     IndexedConfirmationWait -> "indexed confirmation"
     SessionConfirmationWait -> "session confirmation"
 
--- | What the stage's wait was still waiting for when its bound fired.
-stageDetail :: WaitStage -> String
-stageDetail = \case
-    SubmissionWait ->
+-- | What the stage's wait was still waiting for when it gave up.
+stageDetail :: WaitStage -> Maybe SlotNo -> String
+stageDetail stage closedAt = case (stage, closedAt) of
+    (SubmissionWait, _) ->
         "the node returned no verdict for the transaction"
-    IndexedConfirmationWait ->
+    (IndexedConfirmationWait, _) ->
         "the node accepted the transaction but its first output never \
         \reached the followed indexer"
-    SessionConfirmationWait ->
+    (SessionConfirmationWait, Nothing) ->
         "the chain neither showed the transaction's first output nor \
         \closed its confirmation window in time"
+    (SessionConfirmationWait, Just slot) ->
+        "the transaction was accepted by the node but has not appeared \
+        \in a block: its confirmation window closed at slot "
+            <> show (unSlotNo slot)
 
 -- | A transaction id's hex rendering.
 txIdHex :: TxId -> String
@@ -138,21 +150,34 @@ unchanged, and the action's own asynchronous exceptions reach it
 exactly as without the wrap: nothing here masks them.
 -}
 boundWait :: WaitStage -> TxId -> Int -> IO a -> IO a
-boundWait stage tid bound action = do
+boundWait stage tid bound action =
+    boundWaitClosing stage tid bound (Right <$> action)
+
+{- | 'boundWait' for a wait that can also give up on its own: an action
+that finds the confirmation window closed returns 'Left' the deadline
+slot, and the wait ends at once with the same failure, carrying that
+slot. The failure a closed window raises is the one a bound raises, so
+no caller can read it as a refusal.
+-}
+boundWaitClosing
+    :: WaitStage -> TxId -> Int -> IO (Either SlotNo a) -> IO a
+boundWaitClosing stage tid bound action = do
     start <- getMonotonicTime
     outcome <- race (threadDelay (bound * 1_000_000)) action
-    case outcome of
-        Right a -> pure a
-        Left () -> do
-            end <- getMonotonicTime
+    end <- getMonotonicTime
+    let giveUp closedAt =
             throwIO
                 WaitFailure
                     { waitStage = stage
                     , waitTxId = tid
                     , waitElapsed = end - start
                     , waitBound = bound
-                    , waitClosedAt = Nothing
+                    , waitClosedAt = closedAt
                     }
+    case outcome of
+        Left () -> giveUp Nothing
+        Right (Left slot) -> giveUp (Just slot)
+        Right (Right a) -> pure a
 
 {- | The production bound on a submission, in seconds: the widest the
 confirmation window allows, so no verdict a run could still use is cut

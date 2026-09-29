@@ -62,7 +62,12 @@ import Singular.Registry.Node.Session
     ( NodeSession (..)
     , sessionFor
     )
-import Singular.Registry.Node.Wait (WaitStage (..), boundWait, tryOutcome)
+import Singular.Registry.Node.Wait
+    ( WaitStage (..)
+    , boundWait
+    , boundWaitClosing
+    , tryOutcome
+    )
 import Singular.Registry.Provider qualified as Cage
 
 {- | Wait until a submitted transaction is visible on the chain.
@@ -93,8 +98,7 @@ awaitTx tx = do
                     <> show (txIdTx tx)
                     <> ": it creates no output to observe"
                 )
-    (deadline, limit) <- windowFor sess tx
-    confirmWithin limit sess (show (txIdTx tx)) (txIdTx tx) deadline
+    confirmTxWindow sess tx (show (txIdTx tx)) (txIdTx tx)
 
 {- | Confirm a just-submitted transaction by observing output zero.
 Call before a dependent transaction spends that output. This supports
@@ -108,7 +112,12 @@ awaitTxId :: String -> IO ()
 awaitTxId txid = do
     sess <- sessionFor "awaitTxId"
     wanted <- txIdFromHex "awaitTxId" txid
-    deadline <- fixedWindowDeadline (nsProvider sess)
+    deadline <-
+        boundWait
+            SessionConfirmationWait
+            wanted
+            windowReadBound
+            (fixedWindowDeadline (nsProvider sess))
     confirmWithin fixedLimit sess txid wanted deadline
 
 {- | Confirm a just-submitted transaction by observing output zero,
@@ -122,9 +131,24 @@ window of 'awaitTxId' stays its bound.
 awaitTxWindow :: ConwayTx -> String -> IO ()
 awaitTxWindow tx txid = do
     sess <- sessionFor "awaitTxWindow"
-    (deadline, limit) <- windowFor sess tx
     wanted <- txIdFromHex "awaitTxWindow" txid
-    confirmWithin limit sess txid wanted deadline
+    confirmTxWindow sess tx txid wanted
+
+{- | Confirm a transaction under the window its validity gives it. The
+node reads that derive the window run under 'windowReadBound', before
+the wait starts, because the wait's limit is not known until they
+return: a node that never answers them ends the wait as the same wait
+failure. The wait itself then obeys the limit the window yields.
+-}
+confirmTxWindow :: NodeSession -> ConwayTx -> String -> TxId -> IO ()
+confirmTxWindow sess tx label tid = do
+    (deadline, limit) <-
+        boundWait
+            SessionConfirmationWait
+            tid
+            windowReadBound
+            (windowFor sess tx)
+    confirmWithin limit sess label tid deadline
 
 -- | A transaction id from its hex rendering.
 txIdFromHex :: String -> String -> IO TxId
@@ -146,12 +170,13 @@ block that carries output zero of a transaction, or the chain's tip
 passes the deadline — the whole wait obeying the named wall-clock
 limit (in seconds), tip reads included. The node is asked only for its
 tip, and only while the output has not appeared. A tip that passes the
-deadline ends the wait earlier, with its own refusal; the limit is the
-backstop for a chain that never gets there.
+deadline ends the wait earlier, as the same wait failure carrying the
+deadline slot; the limit is the backstop for a chain that never gets
+there.
 -}
 confirmWithin :: Int -> NodeSession -> String -> TxId -> SlotNo -> IO ()
 confirmWithin limit sess label tid deadline =
-    boundWait
+    boundWaitClosing
         SessionConfirmationWait
         tid
         limit
@@ -159,10 +184,11 @@ confirmWithin limit sess label tid deadline =
 
 {- | Wait until the indexer following the session's chain reports the
 block that carries output zero of a transaction, or the chain's tip
-passes the deadline. The node is asked only for its tip, and only
-while the output has not appeared.
+passes the deadline, which it answers with the deadline slot. The node
+is asked only for its tip, and only while the output has not appeared.
 -}
-confirmOutputZero :: NodeSession -> String -> TxId -> SlotNo -> IO ()
+confirmOutputZero
+    :: NodeSession -> String -> TxId -> SlotNo -> IO (Either SlotNo ())
 confirmOutputZero sess label tid deadline =
     currentFollower
         >>= maybe
@@ -177,10 +203,12 @@ confirmOutputZero sess label tid deadline =
                 (Indexer.TxIn (hashToBytes (extractHash h)) 0)
                 (Just confirmationPollSeconds)
         case seen of
-            Just _ -> pure ()
+            Just _ -> pure (Right ())
             Nothing -> do
                 tip <- nsTipSlot sess
-                whenExpired label tip deadline (indexed idx)
+                if tip >= deadline
+                    then pure (Left deadline)
+                    else indexed idx
 
 {- | The poll-until deadline for a transaction and the wall-clock limit
 of its wait: its own validity upper bound plus a two-minute margin; the
@@ -280,20 +308,6 @@ txUpperBoundSlot tx =
     in  case invalidHereafter vldt of
             SJust bound -> Just bound
             SNothing -> Nothing
-
--- | Die once the chain's tip passes the deadline; run the retry otherwise.
-whenExpired :: (Show a, Ord a) => String -> a -> a -> IO () -> IO ()
-whenExpired txid tip deadline retry
-    | tip >= deadline =
-        die
-            ( "transaction "
-                <> txid
-                <> " was accepted by the node but has not appeared in a block: \
-                   \its confirmation window (the transaction's validity upper \
-                   \bound plus a two-minute polling margin) closed at slot "
-                <> show deadline
-            )
-    | otherwise = retry
 
 {- | Retry a chain observation until it yields, then return it; name
 what never appeared when it does not.
