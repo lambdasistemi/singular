@@ -39,6 +39,7 @@ import Conformance.Run.Live
     , StepOutcome (..)
     , newLiveIdentities
     , observedStepTx
+    , prepareRegistrationIdentities
     )
 import Conformance.Story.Live qualified as Live
 import Control.Exception (ErrorCall, displayException)
@@ -351,6 +352,13 @@ observedTx
     -> IO Value
 observedTx step transaction mint payments destination = do
     ids <- newLiveIdentities
+    -- The bindings the live run makes before a step: the request's key and
+    -- wallet and the registry's policies, so observation only looks them up.
+    prepareRegistrationIdentities
+        ids
+        (lsCage step)
+        (BSC.pack (Live.requestKey (lsRequest step)))
+        (Live.requestWallet (lsRequest step))
     observedStepTx
         undefined
         ids
