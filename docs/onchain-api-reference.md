@@ -34,6 +34,10 @@ way the dependencies run is on the
 - <a href="../onchain/validators/registry/custody.ak" data-api="module">registry/custody</a> — the cage's custody of absent tokens
 - <a href="../onchain/validators/registry/refusal.ak" data-api="module">registry/refusal</a> — how a refusal is reported, and the shared reasons
 
+The open-datum application's protected envelope:
+
+- <a href="../onchain/validators/application/envelope.ak" data-api="module">application/envelope</a> — the controller, registry binding, deposit and arbitrary payload representation
+
 The shared vocabulary and the other validators:
 
 - <a href="../onchain/validators/lib.ak" data-api="module">lib</a> — the edge table, the approval name and the named refusal reasons
@@ -51,10 +55,10 @@ Test support, documented because it is public to the test modules:
 ## What it leaves out
 
 A module gets a page when it declares a public definition. Test and
-property modules are not documented, and three modules declare nothing
-public — the `open` approval policy, the `staking` validator and the
-`cage_vectors` table — so their sources are their reference. The naming
-application's validators under `naming-onchain/` are a separate Aiken
+property modules are not documented, and four modules declare nothing
+public — the `open` approval policy, `open_datum` validator, `staking`
+validator and `cage_vectors` table — so their sources are their reference.
+The naming application's validators under `naming-onchain/` are a separate Aiken
 project and have no generated reference on this site. Members that belong
 to Aiken's standard library link to its own published documentation.
 

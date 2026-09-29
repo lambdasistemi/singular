@@ -10,13 +10,13 @@
     },
     {
       "pause": 450,
-      "text": "The list starts with the state validator and its owners: genesis, modify, fold, trie, duty, discharge, settlement, custody and refusal. Then the shared vocabulary and the other validators: lib, types, shared, request, witness and cage. Last, the two fixture modules, public to the tests."
+      "text": "The list starts with the state validator and its owners: genesis, modify, fold, trie, duty, discharge, settlement, custody and refusal. It includes the open-datum application envelope that protects controller, registry binding and deposit around an arbitrary payload. Then come the shared vocabulary and other validators: lib, types, shared, request, witness and cage. Last are the two fixture modules public to the tests."
     }
   ],
   "what-it-leaves-out": [
     {
       "pause": 450,
-      "text": "A module gets a page when it declares a public definition. Test and property modules are not documented, and the open approval policy, the staking validator and the vector table declare nothing public, so their sources are their reference. The naming validators are a separate Aiken project with no generated reference on this site."
+      "text": "A module gets a page when it declares a public definition. Test and property modules are not documented. The open approval policy, open-datum validator, staking validator and vector table declare nothing public, so their sources are their reference. The naming validators are a separate Aiken project with no generated reference on this site."
     },
     {
       "pause": 500,
@@ -25,6 +25,6 @@
   ],
   "_source": {
     "file": "onchain-api-reference.md",
-    "sha256": "53d035fa8de2d3b6b1090a43cf7828a2d302b2f18d93d18b9b25f59c7b354f99"
+    "sha256": "bd2887acd04a3e69c06504fd65dc519460b942531958966664c3ef50f443afde"
   }
 }

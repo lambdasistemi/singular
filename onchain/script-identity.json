@@ -16,6 +16,21 @@
       "parameters": 0
     },
     {
+      "title": "open_datum.open_datum.mint",
+      "hash": "01524a2c4b3b54eb315979b910c7b24daa07666900aad5b0d7ade3c6",
+      "parameters": 1
+    },
+    {
+      "title": "open_datum.open_datum.spend",
+      "hash": "01524a2c4b3b54eb315979b910c7b24daa07666900aad5b0d7ade3c6",
+      "parameters": 1
+    },
+    {
+      "title": "open_datum.open_datum.else",
+      "hash": "01524a2c4b3b54eb315979b910c7b24daa07666900aad5b0d7ade3c6",
+      "parameters": 1
+    },
+    {
       "title": "request.request.spend",
       "hash": "7ce2f0ecec6d6310891f82a84c433f01eaa722f3ea346abd0e231827",
       "parameters": 2

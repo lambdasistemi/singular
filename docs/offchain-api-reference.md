@@ -25,8 +25,8 @@ viewing.
 
 The module extent is the public library of the off-chain Cabal file — every
 exposed module, every internal module, and every module the library
-re-exports under its own name. That complete extent is 47 modules in
-three kinds: 34 explicitly exposed modules and two re-exported modules
+re-exports under its own name. That complete extent is 48 modules in
+three kinds: 35 explicitly exposed modules and two re-exported modules
 are what a caller imports; the three fold owners behind the `Update`
 facade — `Singular.Registry.TxBuilder.Update.Build`, `.Context` and
 `.Duties` — the five wire owners behind the `Types` facade —
@@ -49,6 +49,7 @@ the complete documented module surface — exposed, re-exported and
 package-internal alike; the site check fails until it and this list
 agree.
 
+- <a href="../offchain/lib/Singular/Application/OpenDatum/Envelope.hs" data-api="module">Singular.Application.OpenDatum.Envelope</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Envelope.hs" data-api="source">source</a>
 - <a href="../offchain/naming/src/Naming/Datum.hs" data-api="module">Naming.Datum</a> — <a href="../offchain/naming/src/Naming/Datum.hs" data-api="source">source</a>
 - <a href="../offchain/naming/src/Naming/Register.hs" data-api="module">Naming.Register</a> — <a href="../offchain/naming/src/Naming/Register.hs" data-api="source">source</a>
 - <a href="../offchain/naming/src/Naming/Request.hs" data-api="module">Naming.Request</a> — <a href="../offchain/naming/src/Naming/Request.hs" data-api="source">source</a>
