@@ -1,9 +1,10 @@
 import OpenDatumApplication.Model
 import OpenDatumApplication.Driver
+import OpenDatumApplication.ProofSupport
 
 /-! # The open-datum application's intended statements and inversions
 
-Twenty declarations were previously proved. This slice proves one further unchanged declaration, `update_preserves_consistent`, over the repaired structural payload equality, and splits the disappearance of spent outputs out of `fold_settles_additively` into `fold_spent_disappears`, stated over consistent worlds and not yet proved; twelve declarations remain UNPROVED. Only captured #print axioms results establish each declaration's proof status; the current ledger remains a historical statement-phase artifact.
+Twenty-one declarations were previously proved. This slice proves eleven further unchanged declarations over the helper lemmas of `OpenDatumApplication.ProofSupport`; `appConsistentB_iff` remains UNPROVED. Only captured #print axioms results establish each declaration's proof status; the current ledger remains a historical statement-phase artifact.
 
 Three kinds of statement, kept apart:
 
@@ -659,11 +660,84 @@ theorem genesis_consistent (app : App) (c : Config) (asset : StateAsset) :
 /-- Every accepted action of every constructor preserves consistency. -/
 theorem appStep_preserves_consistent (w w' : World) (a : AppAction) :
     AppConsistent w → appStep w a = .ok w' → AppConsistent w' := by
-  sorry
+  intro hc h
+  cases a with
+  | bookInsert r e sigs =>
+    obtain ⟨hedge, _, _, _, hreg2, _, hkey, _, _, hout, hdep, hw⟩ :=
+      (bookInsert_inversion w w' r e sigs).1 h
+    subst hw
+    obtain ⟨h1, h2, h3, h4, h5⟩ := hc
+    refine ⟨h1, h2, h3, h4, ?_⟩
+    intro p hp
+    rcases List.mem_append.1 hp with hold | hnew
+    · exact h5 p hold
+    · rw [List.mem_singleton.1 hnew]
+      exact Or.inl ⟨hedge, e, rfl, hout, hdep, hkey, hreg2⟩
+  | bookTerminate r ref sigs =>
+    obtain ⟨_, hedge, _, _, _, _, _, _, _, _, _, hw⟩ :=
+      (bookTerminate_inversion w w' r ref sigs).1 h
+    subst hw
+    obtain ⟨h1, h2, h3, h4, h5⟩ := hc
+    refine ⟨h1, h2, h3, h4, ?_⟩
+    intro p hp
+    rcases List.mem_append.1 hp with hold | hnew
+    · exact h5 p hold
+    · rw [List.mem_singleton.1 hnew]
+      exact Or.inr ⟨hedge, rfl⟩
+  | bookOther r sigs => exact absurd h (bookOther_refused w w' r sigs)
+  | update ref succs sigs =>
+    change updateStep Law.standard w ref succs sigs = .ok w' at h
+    obtain ⟨o, s, ho, _, _, haddr, hctrl, hassets, hdep, hw⟩ :=
+      (update_inversion w w' ref succs sigs).1 h
+    subst hw
+    exact ProofSupport.update_consistent_core w hc o s (ProofSupport.outputAt_mem w ref o ho)
+      haddr hctrl hassets hdep
+  | fold sel outs =>
+    rw [appStep_fold] at h
+    cases hf : foldEffect Law.standard w sel outs with
+    | error e =>
+      rw [hf] at h
+      exact Except.noConfusion h
+    | ok res =>
+      rw [hf] at h
+      have hres : res.1 = w' := ProofSupport.ok_inj h
+      obtain ⟨w1, t⟩ := res
+      obtain ⟨rows, hrows, ht, _, hw1⟩ := (fold_inversion w w1 sel outs t).1 hf
+      subst hres
+      subst hw1
+      exact ProofSupport.fold_consistent_core w hc sel rows t hrows ht
+  | reject edge key outs =>
+    change rejectStep w edge key outs = .ok w' at h
+    obtain ⟨p, t, _, ht, _, hw⟩ := (reject_inversion w w' edge key outs).1 h
+    have hstate : t.state = w.registry := by
+      first
+        | (cases ht; rfl)
+        | (simp only [exitStep, emptyResult] at ht
+           injection ht with h'
+           subst h'
+           rfl)
+    subst hw
+    obtain ⟨h1, h2, h3, h4, h5⟩ := hc
+    refine ⟨?_, h2, ?_, h4, ?_⟩
+    · show Singular.Consistent t.state
+      rw [hstate]
+      exact h1
+    · intro o ho
+      obtain ⟨g1, g2, g3, g4, g5, g6⟩ := h3 o ho
+      refine ⟨g1, g2, g3, g4, ?_, g6⟩
+      show trieGet t.state.trie o.envelope.control.key = .known .active
+      rw [hstate]
+      exact g5
+    · intro q hq
+      exact h5 q (List.mem_of_mem_erase hq)
+  | withdraw ref outs => exact absurd h (withdraw_inversion w w' ref outs)
 
 /-- Every reached world is consistent. -/
 theorem reachable_consistent (w : World) : Reachable w → AppConsistent w := by
-  sorry
+  intro hr
+  induction hr with
+  | start app c asset => exact genesis_consistent app c asset
+  | next _ hstep ih => exact appStep_preserves_consistent _ _ _ ih hstep
 
 /-! ### Occurrences and the invariant boundary -/
 
@@ -835,7 +909,20 @@ theorem update_preserves_consistent (w w' : World) (ref : Nat) (succs : List Suc
 theorem fold_preserves_consistent (w w' : World) (sel : List (Edge × Key))
     (outs : List TxOutput) :
     AppConsistent w → appStep w (.fold sel outs) = .ok w' → AppConsistent w' := by
-  sorry
+  intro hc h
+  rw [appStep_fold] at h
+  cases hf : foldEffect Law.standard w sel outs with
+  | error e =>
+    rw [hf] at h
+    exact Except.noConfusion h
+  | ok res =>
+    rw [hf] at h
+    have hres : res.1 = w' := ProofSupport.ok_inj h
+    obtain ⟨w1, t⟩ := res
+    obtain ⟨rows, hrows, ht, _, hw1⟩ := (fold_inversion w w1 sel outs t).1 hf
+    subst hres
+    subst hw1
+    exact ProofSupport.fold_consistent_core w hc sel rows t hrows ht
 
 theorem reject_preserves_consistent (w w' : World) (edge : Edge) (key : Key)
     (outs : List TxOutput) :
@@ -924,7 +1011,46 @@ theorem update_preserves_custody (w w' : World) (ref : Nat) (succs : List Succes
         o'.envelope.control = o.envelope.control ∧ o'.assets = o.assets ∧
         o.envelope.control.deposit ≤ o'.lovelace ∧
         (∀ x ∈ w.outputs, x ≠ o → x ∈ w'.outputs) ∧ w'.registry = w.registry := by
-  sorry
+  intro hr ho h
+  have hc := reachable_consistent w hr
+  change updateStep Law.standard w ref succs sigs = .ok w' at h
+  obtain ⟨o0, s, ho0, _, _, haddr, hctrl, hassets, hdep, hw⟩ :=
+    (update_inversion w w' ref succs sigs).1 h
+  have hoo : o = o0 := Option.some.inj (ho.symm.trans ho0)
+  subst hoo
+  subst hw
+  have hmem := ProofSupport.outputAt_mem w ref o ho
+  have hnd := ProofSupport.outputs_nodup w hc
+  have hnot : o ∉ w.outputs.erase o := by
+    first
+      | exact hnd.not_mem_erase
+      | exact List.Nodup.not_mem_erase hnd
+  refine ⟨⟨w.nextRef, s.address, s.lovelace, s.assets, s.envelope⟩, ?_, hctrl, hassets, hdep, ?_, rfl⟩
+  · show (w.outputs.erase o ++ [(⟨w.nextRef, s.address, s.lovelace, s.assets, s.envelope⟩ : AppOutput)]).find?
+        (fun x : AppOutput => x.address == appAddress w.app && carriesKey x.assets o.envelope.control.key) =
+      some (⟨w.nextRef, s.address, s.lovelace, s.assets, s.envelope⟩ : AppOutput)
+    rw [List.find?_append]
+    have hnone : (w.outputs.erase o).find?
+        (fun x => x.address == appAddress w.app && carriesKey x.assets o.envelope.control.key) =
+          none := by
+      rw [List.find?_eq_none]
+      intro x hx hpx
+      have hxm := List.mem_of_mem_erase hx
+      simp only [Bool.and_eq_true, beq_iff_eq] at hpx
+      have hxk := (ProofSupport.carries_iff w hc x hxm _).1 hpx.2
+      have hxo : x = o := hc.2.2.2.1 x hxm o hmem (Or.inl hxk)
+      subst hxo
+      exact hnot hx
+    rw [hnone]
+    have hpred : (s.address == appAddress w.app && carriesKey s.assets o.envelope.control.key) =
+        true := by
+      simp only [Bool.and_eq_true, beq_iff_eq]
+      refine ⟨haddr, ?_⟩
+      rw [hassets]
+      exact (ProofSupport.carries_iff w hc o hmem _).2 rfl
+    simp [List.find?, hpred]
+  · intro x hx hxo
+    exact List.mem_append.2 (Or.inl ((List.mem_erase_of_ne hxo).2 hx))
 
 /-- Payload freedom (any world): whether an update is accepted does not depend
 on the successor's payload. -/
@@ -1159,7 +1285,64 @@ theorem insertion_binds_envelope (w w' : World) (sel : List (Edge × Key))
         o.assets = [((.active, key), 1)] ∧ p.request.output = destinationOf w.app e ∧
         e.control.registry = w.registryAsset ∧ e.control.deposit = p.request.deposit ∧
         o.lovelace = p.request.deposit ∧ trieGet w'.registry.trie key = .known .active := by
-  sorry
+  intro hr h hsel
+  have hc := reachable_consistent w hr
+  obtain ⟨rows, hrows, ht, _, hw⟩ := (fold_inversion w w' sel outs t).1 h
+  obtain ⟨_, hr2, _⟩ := ProofSupport.rows_spec w sel rows hrows
+  obtain ⟨row, hrow, hx⟩ := hr2 _ hsel
+  obtain ⟨hpend, hpm, hedge, hk, hcase⟩ := ProofSupport.selectRow_spec w _ row hx
+  rcases hcase with ⟨_, _, e, henv, hout, hdep, hreg⟩ | ⟨he, _⟩
+  · obtain ⟨o, ho, hoe, hoassets, hlove, haddr⟩ :=
+      ProofSupport.createdOutputs_of_row w.app w.nextRef rows row e hrow hedge henv
+    obtain ⟨_, _, hfresh, hkeys, _, _⟩ := ProofSupport.fold_shape w hc sel rows t hrows ht
+    obtain ⟨hunk, hact, _, _, _, _⟩ := hfresh o ho
+    have hek : e.control.key = key := by
+      rcases hc.2.2.2.2 row.pending hpm with ⟨_, e', he', _, _, hek', _⟩ | ⟨he, _⟩
+      · rw [henv] at he'
+        have hee : e = e' := Option.some.inj he'
+        subst hee
+        rw [hek']
+        exact hk
+      · rw [hedge] at he
+        simp at he
+    have hok : o.envelope.control.key = key := by rw [hoe]; exact hek
+    subst hw
+    refine ⟨row.pending, e, o, hpend, henv, ?_, hoe, haddr, by rw [hoassets, hk], hout, hreg, hdep,
+      hlove, by rw [← hok]; exact hact⟩
+    show ((w.outputs.filter fun o => !(rows.filterMap (·.spent)).contains o) ++
+        createdOutputs w.app w.nextRef rows).find?
+        (fun x => x.address == appAddress w.app && carriesKey x.assets key) = some o
+    rw [List.find?_append]
+    have hnone : (w.outputs.filter fun o => !(rows.filterMap (·.spent)).contains o).find?
+        (fun x => x.address == appAddress w.app && carriesKey x.assets key) = none := by
+      rw [List.find?_eq_none]
+      intro q hq hpq
+      have hqm := (List.mem_filter.1 hq).1
+      simp only [Bool.and_eq_true, beq_iff_eq] at hpq
+      have hqk := (ProofSupport.carries_iff w hc q hqm _).1 hpq.2
+      have hqa := (hc.2.2.1 q hqm).2.2.2.2.1
+      rw [hqk, ← hok, hunk] at hqa
+      exact absurd hqa (by decide)
+    rw [hnone]
+    cases hf : (createdOutputs w.app w.nextRef rows).find?
+        (fun x => x.address == appAddress w.app && carriesKey x.assets key) with
+    | none =>
+      have := List.find?_eq_none.1 hf o ho
+      simp only [Bool.and_eq_true, beq_iff_eq, not_and] at this
+      exact absurd ((ProofSupport.carriesKey_single _ _).2 hk) (by
+        rw [← hoassets]
+        exact this haddr)
+    | some x =>
+      have hxm := List.mem_of_find?_eq_some hf
+      have hpx := List.find?_some hf
+      simp only [Bool.and_eq_true, beq_iff_eq] at hpx
+      obtain ⟨_, _, _, hxassets, _, _⟩ := hfresh x hxm
+      rw [hxassets] at hpx
+      have hxk := (ProofSupport.carriesKey_single _ _).1 hpx.2
+      have hxo : x = o := ProofSupport.nodup_map_inj _ hkeys x hxm o ho (hxk.trans hok.symm)
+      rw [hxo]
+      rfl
+  · simp at he
 
 /-- Termination booking (any world) leaves every application output, the
 registry and the recorded mint where they were. -/
@@ -1208,7 +1391,62 @@ theorem release_burns_atomically (w w' : World) (sel : List (Edge × Key))
           assetSame t.mint (actualMint (rows.map (·.pending.request)))) ∧
         assetKind t.mint (.active, key) = -1 ∧
         trieGet w'.registry.trie key = .known .terminal ∧ outputOfKey w' key = none := by
-  sorry
+  intro hr h hsel
+  have hc := reachable_consistent w hr
+  obtain ⟨rows, hrows, ht, _, hw⟩ := (fold_inversion w w' sel outs t).1 h
+  obtain ⟨_, hr2, hE⟩ := ProofSupport.rows_spec w sel rows hrows
+  obtain ⟨row, hrow, hx⟩ := hr2 _ hsel
+  obtain ⟨_, _, hedge, hk, hcase⟩ := ProofSupport.selectRow_spec w _ row hx
+  rcases hcase with ⟨he, _⟩ | ⟨_, o, ho, hsp⟩
+  · simp at he
+  · obtain ⟨hom, hok, hact⟩ := ProofSupport.outputOfKey_consistent w hc key o ho
+    have hosp : o ∈ rows.filterMap (·.spent) := List.mem_filterMap.2 ⟨row, hrow, hsp⟩
+    obtain ⟨_, hacts⟩ := foldBatch_inv _ _ _ ht
+    obtain ⟨_, hkcase⟩ := ProofSupport.foldActions_key key _ _ _ hacts hE
+    have hrec : Edge.updateTerminal ∈
+        ((rows.map (·.pending.request)).filter (·.key == key)).map (·.edge) := by
+      have := ProofSupport.edge_mem_key_record (rows.map (·.pending.request)) row.pending.request
+        (List.mem_map.2 ⟨row, hrow, rfl⟩)
+      rw [hedge, hk] at this
+      exact this
+    obtain ⟨_, _, hfresh, _, _, _⟩ := ProofSupport.fold_shape w hc sel rows t hrows ht
+    rcases hkcase with ⟨e, _⟩ | ⟨_, l, _⟩ | ⟨_, _, lterm, hmint⟩ | ⟨_, l, _⟩
+    · rw [e] at hrec
+      exact absurd hrec (by simp)
+    · rw [hact] at l
+      exact absurd l (by decide)
+    · subst hw
+      refine ⟨o, ho, ?_, rfl, ⟨rows, hrows,
+        ProofSupport.assetSame_of_eq _ _ (ProofSupport.foldActions_mint _ _ _ hacts)⟩, hmint, lterm,
+        ?_⟩
+      · intro hmem
+        rcases List.mem_append.1 hmem with hkept | hnew
+        · have := (List.mem_filter.1 hkept).2
+          rw [List.contains_iff_mem.2 hosp] at this
+          exact absurd this (by decide)
+        · have hlt := (hc.2.2.1 o hom).2.2.2.2.2
+          have hge := (ProofSupport.createdOutputs_ref_bounds _ _ _ o hnew).1
+          omega
+      · show ((w.outputs.filter fun o => !(rows.filterMap (·.spent)).contains o) ++
+            createdOutputs w.app w.nextRef rows).find?
+            (fun x => x.address == appAddress w.app && carriesKey x.assets key) = none
+        rw [List.find?_eq_none]
+        intro q hq hpq
+        simp only [Bool.and_eq_true, beq_iff_eq] at hpq
+        rcases List.mem_append.1 hq with hkept | hnew
+        · obtain ⟨hqm, hqn⟩ := List.mem_filter.1 hkept
+          have hqk := (ProofSupport.carries_iff w hc q hqm _).1 hpq.2
+          have hqo : q = o := hc.2.2.2.1 q hqm o hom (Or.inl (hqk.trans hok.symm))
+          subst hqo
+          rw [List.contains_iff_mem.2 hosp] at hqn
+          exact absurd hqn (by decide)
+        · obtain ⟨hunk, _, _, hqassets, _, _⟩ := hfresh q hnew
+          rw [hqassets] at hpq
+          have hqk := (ProofSupport.carriesKey_single _ _).1 hpq.2
+          rw [hqk, hact] at hunk
+          exact absurd hunk (by decide)
+    · rw [hact] at l
+      exact absurd l (by decide)
 
 /-- Only a fold removes an application output (any world): every other accepted
 action keeps every live output's key held at this contract. -/
@@ -1216,7 +1454,33 @@ theorem only_fold_releases (w w' : World) (a : AppAction) :
     (∀ sel outs, a ≠ .fold sel outs) → appStep w a = .ok w' →
       ∀ o ∈ w.outputs, ∃ o' ∈ w'.outputs, o'.envelope.control = o.envelope.control ∧
         o'.assets = o.assets := by
-  sorry
+  intro hnf h o ho
+  cases a with
+  | bookInsert r e sigs =>
+    obtain ⟨_, _, _, _, _, _, _, _, _, _, _, hw⟩ := (bookInsert_inversion w w' r e sigs).1 h
+    subst hw
+    exact ⟨o, ho, rfl, rfl⟩
+  | bookTerminate r ref sigs =>
+    obtain ⟨_, _, _, _, _, _, _, _, _, _, _, hw⟩ := (bookTerminate_inversion w w' r ref sigs).1 h
+    subst hw
+    exact ⟨o, ho, rfl, rfl⟩
+  | bookOther r sigs => exact absurd h (bookOther_refused w w' r sigs)
+  | update ref succs sigs =>
+    change updateStep Law.standard w ref succs sigs = .ok w' at h
+    obtain ⟨o0, s, _, _, _, _, hctrl, hassets, _, hw⟩ := (update_inversion w w' ref succs sigs).1 h
+    subst hw
+    by_cases hx : o = o0
+    · subst hx
+      exact ⟨⟨w.nextRef, s.address, s.lovelace, s.assets, s.envelope⟩,
+        List.mem_append.2 (Or.inr (List.mem_singleton_self _)), hctrl, hassets⟩
+    · exact ⟨o, List.mem_append.2 (Or.inl ((List.mem_erase_of_ne hx).2 ho)), rfl, rfl⟩
+  | fold sel outs => exact absurd rfl (hnf sel outs)
+  | reject edge key outs =>
+    change rejectStep w edge key outs = .ok w' at h
+    obtain ⟨_, _, _, _, _, hw⟩ := (reject_inversion w w' edge key outs).1 h
+    subst hw
+    exact ⟨o, ho, rfl, rfl⟩
+  | withdraw ref outs => exact absurd h (withdraw_inversion w w' ref outs)
 
 /-- Additive settlement (any world, bound to the actual rows): an accepted fold's
 selected rows are those `selectRow` chose; every output they spend was a live
@@ -1235,7 +1499,20 @@ theorem fold_settles_additively (w w' : World) (sel : List (Edge × Key))
         (∀ o ∈ rows.filterMap (·.spent), o ∈ w.outputs) ∧
         ∀ rcp, owedTo rcp (foldPayments rows) ≤
           receivedBy rcp (outs ++ (createdOutputs w.app w.nextRef rows).map (deliveryOf w.app)) := by
-  sorry
+  intro h
+  obtain ⟨rows, hrows, _, hs, _⟩ := (fold_inversion w w' sel outs t).1 h
+  refine ⟨rows, hrows, rfl, ?_, ProofSupport.settle_none_le _ _ hs⟩
+  intro o ho
+  obtain ⟨row, hr, hsp⟩ := List.mem_filterMap.1 ho
+  obtain ⟨x, _, hx⟩ := (ProofSupport.rows_spec w sel rows hrows).1 row hr
+  obtain ⟨_, _, _, _, hcase⟩ := ProofSupport.selectRow_spec w x row hx
+  rcases hcase with ⟨_, hnone, _⟩ | ⟨_, o', ho', hsp'⟩
+  · rw [hnone] at hsp
+    exact Option.noConfusion hsp
+  · rw [hsp] at hsp'
+    have hoo : o = o' := Option.some.inj hsp'
+    subst hoo
+    exact (ProofSupport.outputOfKey_spec w _ _ ho').1
 
 /-- Spent outputs disappear (consistent worlds): an accepted fold's selected rows
 are those `selectRow` chose, and no output they spend is live afterwards. The
@@ -1247,7 +1524,123 @@ theorem fold_spent_disappears (w w' : World) (sel : List (Edge × Key))
     AppConsistent w → foldEffect Law.standard w sel outs = .ok (w', t) →
       ∃ rows, sel.mapM (selectRow Law.standard w) = .ok rows ∧
         ∀ o ∈ rows.filterMap (·.spent), o ∉ w'.outputs := by
-  sorry
+  intro hc h
+  obtain ⟨rows, hrows, ht, _, hw⟩ := (fold_inversion w w' sel outs t).1 h
+  refine ⟨rows, hrows, ?_⟩
+  intro o ho hmem
+  subst hw
+  obtain ⟨_, hspent, _, _, _, _⟩ := ProofSupport.fold_shape w hc sel rows t hrows ht
+  rcases List.mem_append.1 hmem with hkept | hnew
+  · have := (List.mem_filter.1 hkept).2
+    rw [List.contains_iff_mem.2 ho] at this
+    exact absurd this (by decide)
+  · have hlt := (hc.2.2.1 o (hspent o ho)).2.2.2.2.2
+    have hge := (ProofSupport.createdOutputs_ref_bounds _ _ _ o hnew).1
+    omega
+
+/-- Every booked request of a reached world is one the application booked. -/
+private theorem reachable_pending_booked (w : World) (hr : Reachable w) :
+    ∀ p ∈ w.pending, ∃ r sigs, p.request = booked w.app r sigs := by
+  induction hr with
+  | start app c asset =>
+    intro p hp
+    simp [genesis] at hp
+  | @next v v' a _ hstep ih =>
+    intro p hp
+    cases a with
+    | bookInsert r e sigs =>
+      obtain ⟨_, _, _, _, _, _, _, _, _, _, _, hv⟩ := (bookInsert_inversion v v' r e sigs).1 hstep
+      subst hv
+      rcases List.mem_append.1 hp with hold | hnew
+      · exact ih p hold
+      · rw [List.mem_singleton.1 hnew]
+        exact ⟨r, sigs, rfl⟩
+    | bookTerminate r ref sigs =>
+      obtain ⟨_, _, _, _, _, _, _, _, _, _, _, hv⟩ :=
+        (bookTerminate_inversion v v' r ref sigs).1 hstep
+      subst hv
+      rcases List.mem_append.1 hp with hold | hnew
+      · exact ih p hold
+      · rw [List.mem_singleton.1 hnew]
+        exact ⟨r, sigs, rfl⟩
+    | bookOther r sigs => exact absurd hstep (bookOther_refused v v' r sigs)
+    | update ref succs sigs =>
+      change updateStep Law.standard v ref succs sigs = .ok v' at hstep
+      obtain ⟨_, _, _, _, _, _, _, _, _, hv⟩ := (update_inversion v v' ref succs sigs).1 hstep
+      subst hv
+      exact ih p hp
+    | fold sel outs =>
+      rw [appStep_fold] at hstep
+      cases hf : foldEffect Law.standard v sel outs with
+      | error e =>
+        rw [hf] at hstep
+        exact Except.noConfusion hstep
+      | ok res =>
+        rw [hf] at hstep
+        have hres : res.1 = v' := ProofSupport.ok_inj hstep
+        obtain ⟨v1, t⟩ := res
+        obtain ⟨_, _, _, _, hv1⟩ := (fold_inversion v v1 sel outs t).1 hf
+        subst hres
+        subst hv1
+        exact ih p (List.mem_filter.1 hp).1
+    | reject edge key outs =>
+      change rejectStep v edge key outs = .ok v' at hstep
+      obtain ⟨_, _, _, _, _, hv⟩ := (reject_inversion v v' edge key outs).1 hstep
+      subst hv
+      exact ih p (List.mem_of_mem_erase hp)
+    | withdraw ref outs => exact absurd hstep (withdraw_inversion v v' ref outs)
+
+/-- A booking of an insertion at an Active or Terminal key of a reached world
+is folded into the registry's `key-exists` refusal. -/
+private theorem refused_by_registry (w w₁ : World) (r : Request) (e : Envelope)
+    (sigs : List Nat) (outs : List TxOutput) (hr : Reachable w)
+    (hleaf : trieGet w.registry.trie r.key = .known .active ∨
+      trieGet w.registry.trie r.key = .known .terminal)
+    (h1 : appStep w (.bookInsert r e sigs) = .ok w₁) :
+    appStep w₁ (.fold [(.insertActive, r.key)] outs) = .error "key-exists" := by
+  have hc := reachable_consistent w hr
+  obtain ⟨hedge, hpol, _, _, _, _, _, _, _, _, _, hw⟩ := (bookInsert_inversion w w₁ r e sigs).1 h1
+  have hr1 : Reachable w₁ := Reachable.next hr h1
+  have hc1 : AppConsistent w₁ := bookInsert_preserves_consistent w w₁ r e sigs hc h1
+  have hnew : (⟨booked w.app r sigs, some e⟩ : Pending) ∈ w₁.pending := by
+    rw [hw]
+    exact List.mem_append.2 (Or.inr (List.mem_singleton_self _))
+  obtain ⟨p0, hp0⟩ : ∃ p0, pendingOf w₁ .insertActive r.key = some p0 := by
+    cases hf : pendingOf w₁ .insertActive r.key with
+    | none =>
+      exfalso
+      have := List.find?_eq_none.1 hf _ hnew
+      simp [booked, hedge] at this
+    | some p0 => exact ⟨p0, rfl⟩
+  obtain ⟨hp0m, hp0e, hp0k⟩ := ProofSupport.pendingOf_spec w₁ _ _ p0 hp0
+  rcases hc1.2.2.2.2 p0 hp0m with ⟨_, e0, he0, hout0, hdep0, _, hreg0⟩ | ⟨he, _⟩
+  · have hsel : selectRow Law.standard w₁ (.insertActive, r.key) = .ok ⟨p0, none⟩ := by
+      unfold selectRow
+      simp only [hp0, he0]
+      simp [ensure, hout0, hdep0, hreg0, Law.standard]
+      all_goals rfl
+    obtain ⟨r0, sigs0, hreq⟩ := reachable_pending_booked w₁ hr1 p0 hp0m
+    have hr0e : r0.edge = .insertActive := by rw [← hp0e, hreq]; rfl
+    have hr0k : r0.key = r.key := by rw [← hp0k, hreq]; rfl
+    have hreg1 : w₁.registry = w.registry := by rw [hw]
+    have happ1 : w₁.app = w.app := by rw [hw]
+    have hstep : step w₁.registry p0.request = .error "key-exists" := by
+      apply error_of_refusal
+      rw [hreq, happ1, hreg1]
+      exact ProofSupport.booked_insert_refusal _ _ _ _ hr0e hpol (by rw [hr0k]; exact hleaf)
+    have hfb : foldBatch w₁.registry [p0.request] = .error "key-exists" := by
+      unfold foldBatch
+      simp only [List.isEmpty_cons, Bool.false_eq_true, if_false]
+      unfold foldActions
+      rw [hstep]
+      rfl
+    rw [appStep_fold]
+    unfold foldEffect
+    simp only [List.mapM_cons, List.mapM_nil, hsel]
+    simp only [bind, Except.bind, pure, Except.pure, List.map_cons, List.map_nil, hfb]
+    rfl
+  · rw [hp0e] at he
+    exact absurd he (by decide)
 
 /-- Duplicate insertion (reached worlds) is refused by the registry's law, not by
 the application: the booking is accepted and the fold refused `key-exists`. -/
@@ -1256,7 +1649,8 @@ theorem duplicate_refused_by_registry (w w₁ : World) (r : Request) (e : Envelo
     Reachable w → trieGet w.registry.trie r.key = .known .active →
     appStep w (.bookInsert r e sigs) = .ok w₁ →
     appStep w₁ (.fold [(.insertActive, r.key)] outs) = .error "key-exists" := by
-  sorry
+  intro hr hact h1
+  exact refused_by_registry w w₁ r e sigs outs hr (Or.inl hact) h1
 
 /-- Same-identity resurrection after Terminal (reached worlds) is refused by the
 registry's law: the booking is accepted and the fold refused `key-exists`. -/
@@ -1265,7 +1659,8 @@ theorem resurrection_refused_by_registry (w w₁ : World) (r : Request) (e : Env
     Reachable w → trieGet w.registry.trie r.key = .known .terminal →
     appStep w (.bookInsert r e sigs) = .ok w₁ →
     appStep w₁ (.fold [(.insertActive, r.key)] outs) = .error "key-exists" := by
-  sorry
+  intro hr hterm h1
+  exact refused_by_registry w w₁ r e sigs outs hr (Or.inr hterm) h1
 
 /-- The fold stays permissionless: the application adds no signer to any request
 it books (the registry's own `fold_requires_no_signer`). -/
@@ -1311,3 +1706,16 @@ end OpenDatumApplication.Statements
 #print axioms OpenDatumApplication.instLawfulBEqControl
 #print axioms OpenDatumApplication.instLawfulBEqEnvelope
 #print axioms OpenDatumApplication.instLawfulBEqAppOutput
+
+#print axioms OpenDatumApplication.Statements.appStep_preserves_consistent
+#print axioms OpenDatumApplication.Statements.reachable_consistent
+#print axioms OpenDatumApplication.Statements.appConsistentB_iff
+#print axioms OpenDatumApplication.Statements.fold_preserves_consistent
+#print axioms OpenDatumApplication.Statements.update_preserves_custody
+#print axioms OpenDatumApplication.Statements.insertion_binds_envelope
+#print axioms OpenDatumApplication.Statements.release_burns_atomically
+#print axioms OpenDatumApplication.Statements.only_fold_releases
+#print axioms OpenDatumApplication.Statements.fold_settles_additively
+#print axioms OpenDatumApplication.Statements.fold_spent_disappears
+#print axioms OpenDatumApplication.Statements.duplicate_refused_by_registry
+#print axioms OpenDatumApplication.Statements.resurrection_refused_by_registry
