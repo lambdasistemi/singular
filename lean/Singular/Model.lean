@@ -277,6 +277,23 @@ inductive DatumForm where
   | inline | hashed | none
   deriving Repr, BEq, DecidableEq
 
+/-- A datum form's name, as every consumer spells it. -/
+def datumFormName : DatumForm → String
+  | .inline => "inline"
+  | .hashed => "hashed"
+  | .none => "none"
+
+instance : ToJson DatumForm where
+  toJson d := toJson (datumFormName d)
+
+instance : FromJson DatumForm where
+  fromJson? j := do
+    match (← fromJson? j : String) with
+    | "inline" => pure .inline
+    | "hashed" => pure .hashed
+    | "none" => pure .none
+    | other => throw s!"no datum form is named {other}"
+
 /-- One active or terminal token routed to the output the request named. The
 output presents the datum form the delivering fold gave it (`deliveredDatum`),
 which is what a later fold spending it as a witness finds there. -/
@@ -287,18 +304,29 @@ structure Holding where
   datum : DatumForm := .none
   deriving Repr, BEq, DecidableEq
 
-/-- A holding's JSON is its `held` observation: key, kind and output. Its datum
-form is observed on the transaction that spends it, not here. -/
+/-- A holding serialises completely, its datum form included, so a saved state
+replays with the witness its delivery wrote (#304). -/
 instance : ToJson Holding where
   toJson h := Json.mkObj
-    [("key", toJson h.key), ("kind", toJson h.kind), ("output", toJson h.output)]
+    [ ("key", toJson h.key), ("kind", toJson h.kind), ("output", toJson h.output)
+    , ("datum", toJson h.datum) ]
 
+/-- A holding a caller spells without a datum form presents none, as a delivery
+under a request naming no datum does. -/
 instance : FromJson Holding where
   fromJson? j := do
     let key ← j.getObjValAs? Key "key"
     let kind ← j.getObjValAs? TokenKind "kind"
     let output ← j.getObjValAs? Nat "output"
-    pure { key, kind, output }
+    let datum ← match j.getObjVal? "datum" with
+      | .error _ => pure DatumForm.none
+      | .ok d => fromJson? d
+    pure { key, kind, output, datum }
+
+/-- The `held` observation of one holding: the census reads its key, kind and
+output. Its datum form is observed on the transaction that spends it. -/
+def heldObservationJson (h : Holding) : Json :=
+  Json.mkObj [("key", toJson h.key), ("kind", toJson h.kind), ("output", toJson h.output)]
 
 /-- The registry state. -/
 structure RegistryState where

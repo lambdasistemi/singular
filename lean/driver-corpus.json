@@ -1,7 +1,7 @@
 {
   "corpusSourceSha256": "ddc1d6f6a796e4d2dcff508b6aed83b90b90fe44c79ad2646eae4ec5cd398862",
-  "modelSha256": "ad725b24a02e6d83e1422231810a6d6238d0f9e525616c5df620413b3f6597f7",
-  "payloadSha256": "390cf37b6797675656216a074628e3bcd05e3acaaeec54bf71f120403aa8fbe4",
+  "modelSha256": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
+  "payloadSha256": "2d12cc1344a173d4da05bec255cf709a4bdd0c93bd3eb811db4ce2ffe71fa204",
   "scenarios": [
     {
       "id": "DR01-register-absent",
@@ -327,6 +327,7 @@
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "active",
               "output": 555
@@ -741,6 +742,7 @@
             "custody": [],
             "held": [
               {
+                "datum": "none",
                 "key": 42,
                 "kind": "active",
                 "output": 555
@@ -920,6 +922,7 @@
             "custody": [],
             "held": [
               {
+                "datum": "none",
                 "key": 42,
                 "kind": "active",
                 "output": 555
@@ -1098,6 +1101,7 @@
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "active",
               "output": 555
@@ -1260,6 +1264,7 @@
             "custody": [],
             "held": [
               {
+                "datum": "none",
                 "key": 42,
                 "kind": "active",
                 "output": 555
@@ -1546,6 +1551,7 @@
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "active",
               "output": 555
@@ -1672,6 +1678,7 @@
             "custody": [],
             "held": [
               {
+                "datum": "none",
                 "key": 42,
                 "kind": "active",
                 "output": 555
@@ -1805,6 +1812,7 @@
             "custody": [],
             "held": [
               {
+                "datum": "none",
                 "key": 42,
                 "kind": "active",
                 "output": 555
@@ -1938,6 +1946,7 @@
             "custody": [],
             "held": [
               {
+                "datum": "none",
                 "key": 42,
                 "kind": "active",
                 "output": 555
@@ -2070,6 +2079,7 @@
             "custody": [],
             "held": [
               {
+                "datum": "none",
                 "key": 42,
                 "kind": "active",
                 "output": 555
@@ -2203,6 +2213,7 @@
             "custody": [],
             "held": [
               {
+                "datum": "none",
                 "key": 42,
                 "kind": "active",
                 "output": 555
@@ -2257,12 +2268,12 @@
   "schema": "singular-driver-corpus-v1",
   "sourceHashes": {
     "lean/DriverMain.lean": "ddc1d6f6a796e4d2dcff508b6aed83b90b90fe44c79ad2646eae4ec5cd398862",
-    "lean/Main.lean": "62e7f254b0a6b430704d69f9fb849fcb1f8337d14f8c88307173ccd842e489b2",
+    "lean/Main.lean": "70491ac5ea1cfacdab355af57717576ecabd560096df1029372c4d352fc70241",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "52ed3c6db8ff0e0c2db2e07f8358ceba87ee74a671cdd6a096bedaacd2aa630a",
+    "lean/Singular/Driver.lean": "97c79d1caca2938e3e99a4d45ce18cb73ff1d35e4b35b91ca16dced19334a70d",
     "lean/Singular/Lemmas.lean": "c8aa4ea4585fd53a41d75ca817e229019ad59517c79cd6da6f9242f2c27c857c",
-    "lean/Singular/Model.lean": "ad725b24a02e6d83e1422231810a6d6238d0f9e525616c5df620413b3f6597f7",
+    "lean/Singular/Model.lean": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
     "lean/Singular/Statements.lean": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9"
   },
   "statementsSha256": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9",

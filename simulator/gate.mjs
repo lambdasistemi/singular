@@ -165,7 +165,7 @@ for (const edge of EDGES)
       trie,
       config: { ...s.config, root: rootOf(trie) },
       custody: leaf === 'absent' ? [{ key, refundAddress: 91, value: 200 }] : [],
-      held: leaf === 'active' ? [{ key, kind: 'active', output: 555 }] : [],
+      held: leaf === 'active' ? [{ key, kind: 'active', output: 555, datum: 'none' }] : [],
     };
     const r = step(
       s,
@@ -481,8 +481,8 @@ if (selftest) {
     const s = {
       ...initial(),
       held: [
-        { key: 1, kind: 'active', output: 1 },
-        { key: 1, kind: 'active', output: 2 },
+        { key: 1, kind: 'active', output: 1, datum: 'none' },
+        { key: 1, kind: 'active', output: 2, datum: 'none' },
       ],
     };
     const c = checks.active_witness_unique;

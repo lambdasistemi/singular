@@ -17,8 +17,9 @@ request names: inline when `Singular.Request.namesDatum` holds, none otherwise, 
 all seven edges by `Singular.Statements.delivered_datum_follows_request`; a request names none
 unless it says so. A witness a fold spends presents the datum its holding records,
 the form its delivery wrote (`Singular.heldDatum`), proved over all seven edges by
-`Singular.Statements.witness_input_datum_is_held`; the `held` observation keeps its three
-fields. Deposit recipients, phase windows, signer requirements and the destination
+`Singular.Statements.witness_input_datum_is_held`; the complete `RegistryState` serialization carries
+each holding's datum form, so a saved state replays with the witness its delivery wrote,
+while the `held` observation keeps its three fields. Deposit recipients, phase windows, signer requirements and the destination
 output's commitment are unchanged.
 Consumers: `lean/driver-corpus.json` (DR01 and DR03 lose their destination row; DR02 keeps
 it, with no datum, since its request names none; every request row carries `namesDatum`),

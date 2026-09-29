@@ -197,6 +197,7 @@
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "active",
               "output": 555
@@ -297,6 +298,7 @@
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "active",
               "output": 555
@@ -357,6 +359,7 @@
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -540,6 +543,7 @@
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -655,6 +659,7 @@
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "terminal",
               "output": 700
@@ -715,6 +720,7 @@
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -781,6 +787,7 @@
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -1088,6 +1095,7 @@
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -1450,6 +1458,7 @@
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -1757,6 +1766,7 @@
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -2127,6 +2137,7 @@
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "terminal",
               "output": 700
@@ -2394,6 +2405,7 @@
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "active",
               "output": 555
@@ -2681,7 +2693,7 @@
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "62e7f254b0a6b430704d69f9fb849fcb1f8337d14f8c88307173ccd842e489b2",
+  "corpusSourceSha256": "70491ac5ea1cfacdab355af57717576ecabd560096df1029372c4d352fc70241",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -2810,16 +2822,16 @@
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "ad725b24a02e6d83e1422231810a6d6238d0f9e525616c5df620413b3f6597f7",
-  "payloadSha256": "d6fde22d83b70b87150a4eccba4ddf314c2ff757e9f359342ce7e3a1de2d10d2",
+  "modelSha256": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
+  "payloadSha256": "de8eb81bb2fd5fa50c4cf0d1b66d87f6ea2d3e662f9719e535d78e13caa312c8",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "62e7f254b0a6b430704d69f9fb849fcb1f8337d14f8c88307173ccd842e489b2",
+    "lean/Main.lean": "70491ac5ea1cfacdab355af57717576ecabd560096df1029372c4d352fc70241",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "52ed3c6db8ff0e0c2db2e07f8358ceba87ee74a671cdd6a096bedaacd2aa630a",
+    "lean/Singular/Driver.lean": "97c79d1caca2938e3e99a4d45ce18cb73ff1d35e4b35b91ca16dced19334a70d",
     "lean/Singular/Lemmas.lean": "c8aa4ea4585fd53a41d75ca817e229019ad59517c79cd6da6f9242f2c27c857c",
-    "lean/Singular/Model.lean": "ad725b24a02e6d83e1422231810a6d6238d0f9e525616c5df620413b3f6597f7",
+    "lean/Singular/Model.lean": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
     "lean/Singular/Statements.lean": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9"
   },
   "statementsSha256": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9",

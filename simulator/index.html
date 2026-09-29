@@ -731,7 +731,12 @@ const configSchema = {
   terminalPolicy: N,
 };
 const custody = { key: N, refundAddress: N, value: N };
-const holding = { key: N, kind: { $enum: KINDS }, output: N };
+const DATUM_FORMS = ['inline', 'hashed', 'none'];
+const holding = { key: N, kind: { $enum: KINDS }, output: N, datum: { $enum: DATUM_FORMS } };
+// The datum form a fold gives the output it delivers to (#304): inline when the
+// request names a datum, none when it names none. A holding keeps it, so a later
+// fold spends the witness as the chain holds it.
+const deliveredDatum = (r) => (r.namesDatum ? 'inline' : 'none');
 const stateSchema = {
   config: configSchema,
   trie: [{ key: N, leaf }],
@@ -990,7 +995,7 @@ function applyEdge(s, a) {
     case 'insertActive': {
       const t = withTrie('active');
       return {
-        state: { ...s, ...t, held: [{ key: a.key, kind: 'active', output: a.output }, ...s.held] },
+        state: { ...s, ...t, held: [{ key: a.key, kind: 'active', output: a.output, datum: deliveredDatum(a) }, ...s.held] },
         mint: delta(a.edge),
         paid: [],
       };
@@ -1002,7 +1007,7 @@ function applyEdge(s, a) {
           ...s,
           ...t,
           custody: s.custody.filter((c) => c.key !== a.key),
-          held: [{ key: a.key, kind: 'active', output: a.output }, ...s.held],
+          held: [{ key: a.key, kind: 'active', output: a.output, datum: deliveredDatum(a) }, ...s.held],
         },
         mint: delta(a.edge),
         paid: entry ? [{ destination: entry.refundAddress, value: entry.value }] : [],
@@ -1044,7 +1049,7 @@ function applyEdge(s, a) {
     }
     case 'witnessTerminal':
       return {
-        state: { ...s, held: [{ key: a.key, kind: 'terminal', output: a.output }, ...s.held] },
+        state: { ...s, held: [{ key: a.key, kind: 'terminal', output: a.output, datum: deliveredDatum(a) }, ...s.held] },
         mint: delta(a.edge),
         paid: [],
       };
@@ -2275,6 +2280,7 @@ const STORIES=[
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "active",
               "output": 555
@@ -2375,6 +2381,7 @@ const STORIES=[
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "active",
               "output": 555
@@ -2435,6 +2442,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -2618,6 +2626,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -2733,6 +2742,7 @@ const STORIES=[
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "terminal",
               "output": 700
@@ -2793,6 +2803,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -2859,6 +2870,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -3166,6 +3178,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -3528,6 +3541,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -3835,6 +3849,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -4205,6 +4220,7 @@ const STORIES=[
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "terminal",
               "output": 700
@@ -4472,6 +4488,7 @@ const STORIES=[
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "active",
               "output": 555
@@ -4759,7 +4776,7 @@ const STORIES=[
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "62e7f254b0a6b430704d69f9fb849fcb1f8337d14f8c88307173ccd842e489b2",
+  "corpusSourceSha256": "70491ac5ea1cfacdab355af57717576ecabd560096df1029372c4d352fc70241",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -4888,16 +4905,16 @@ const STORIES=[
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "ad725b24a02e6d83e1422231810a6d6238d0f9e525616c5df620413b3f6597f7",
-  "payloadSha256": "d6fde22d83b70b87150a4eccba4ddf314c2ff757e9f359342ce7e3a1de2d10d2",
+  "modelSha256": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
+  "payloadSha256": "de8eb81bb2fd5fa50c4cf0d1b66d87f6ea2d3e662f9719e535d78e13caa312c8",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "62e7f254b0a6b430704d69f9fb849fcb1f8337d14f8c88307173ccd842e489b2",
+    "lean/Main.lean": "70491ac5ea1cfacdab355af57717576ecabd560096df1029372c4d352fc70241",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "52ed3c6db8ff0e0c2db2e07f8358ceba87ee74a671cdd6a096bedaacd2aa630a",
+    "lean/Singular/Driver.lean": "97c79d1caca2938e3e99a4d45ce18cb73ff1d35e4b35b91ca16dced19334a70d",
     "lean/Singular/Lemmas.lean": "c8aa4ea4585fd53a41d75ca817e229019ad59517c79cd6da6f9242f2c27c857c",
-    "lean/Singular/Model.lean": "ad725b24a02e6d83e1422231810a6d6238d0f9e525616c5df620413b3f6597f7",
+    "lean/Singular/Model.lean": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
     "lean/Singular/Statements.lean": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9"
   },
   "statementsSha256": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9",
@@ -5600,12 +5617,12 @@ const STORIES=[
   ],
   "files": {
     "formal/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "formal/Driver.lean": "52ed3c6db8ff0e0c2db2e07f8358ceba87ee74a671cdd6a096bedaacd2aa630a",
+    "formal/Driver.lean": "97c79d1caca2938e3e99a4d45ce18cb73ff1d35e4b35b91ca16dced19334a70d",
     "formal/DriverMain.lean": "ddc1d6f6a796e4d2dcff508b6aed83b90b90fe44c79ad2646eae4ec5cd398862",
     "formal/Lemmas.lean": "c8aa4ea4585fd53a41d75ca817e229019ad59517c79cd6da6f9242f2c27c857c",
     "formal/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "formal/Main.lean": "62e7f254b0a6b430704d69f9fb849fcb1f8337d14f8c88307173ccd842e489b2",
-    "formal/Model.lean": "ad725b24a02e6d83e1422231810a6d6238d0f9e525616c5df620413b3f6597f7",
+    "formal/Main.lean": "70491ac5ea1cfacdab355af57717576ecabd560096df1029372c4d352fc70241",
+    "formal/Model.lean": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
     "formal/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "formal/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "formal/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -5623,7 +5640,7 @@ const STORIES=[
     "formal/naming-theorem-debt.json": "968246a3d0f585c5ecaebaa800564dbaa9f51ffd4fb3bad0a08af9cd4324d658",
     "formal/theorem-debt.json": "91ed0116194b64bb71af402619e120e3190874b66ea5698555c73c4220b44162",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "59389d405db4cfc5ffd491220cf86918518638e5d3813a293d437eb3c5fe3a0f"
+    "corpus.json": "85630340079f6a69cd22be7da9b7134741db8480a61986b3899c01e0dcf91e5d"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 38,
@@ -5672,9 +5689,9 @@ const STORIES=[
       "id": "NF07-attestation-minted-by-read"
     }
   ],
-  "modelSha256": "ad725b24a02e6d83e1422231810a6d6238d0f9e525616c5df620413b3f6597f7",
+  "modelSha256": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
   "namingStatementsSha256": "c96207b951c8566499aa564429f33962535ad0862d18dc1b7484a0a73be0504d",
-  "payloadSha256": "0db049bfa1e31fe76938ac7cff535ac7ae752c80ab8a35a44c9d97318ef18653",
+  "payloadSha256": "db39c7ee8b507eb029df1aab816ac71512eda2ae69e4f37fe95ab9a86477d152",
   "queues": [
     {
       "actual": true,
@@ -5766,13 +5783,13 @@ const STORIES=[
   "sourceHashes": {
     "lean/DriverMain.lean": "ddc1d6f6a796e4d2dcff508b6aed83b90b90fe44c79ad2646eae4ec5cd398862",
     "lean/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "lean/Main.lean": "62e7f254b0a6b430704d69f9fb849fcb1f8337d14f8c88307173ccd842e489b2",
+    "lean/Main.lean": "70491ac5ea1cfacdab355af57717576ecabd560096df1029372c4d352fc70241",
     "lean/NamingMain.lean": "f026113e6b13604012fe817a7c38b4c2f19a469db443c263593b49e5daac8c24",
     "lean/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "52ed3c6db8ff0e0c2db2e07f8358ceba87ee74a671cdd6a096bedaacd2aa630a",
+    "lean/Singular/Driver.lean": "97c79d1caca2938e3e99a4d45ce18cb73ff1d35e4b35b91ca16dced19334a70d",
     "lean/Singular/Lemmas.lean": "c8aa4ea4585fd53a41d75ca817e229019ad59517c79cd6da6f9242f2c27c857c",
-    "lean/Singular/Model.lean": "ad725b24a02e6d83e1422231810a6d6238d0f9e525616c5df620413b3f6597f7",
+    "lean/Singular/Model.lean": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
     "lean/Singular/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -5901,7 +5918,7 @@ const STORIES=[
   ],
   "lifecycleStatementsSha256": "4df67ab2a8e6684dbb05524aab68e8cb8dd0391298a62fbb16c247a7987a88cd",
   "modelSha256": "ac2c5ef33d34084c32c37b701e8ec9c4ab5b088cab75190e675b1f1686fb5f56",
-  "payloadSha256": "997197896a2c4ec3ada08d0a0e09d4ed1a8dbad82183b483f080498ef1f5dc97",
+  "payloadSha256": "f01324b74fc544d0e2d937d969f1eada99499215c7a0e066868cae5eb0d167fe",
   "recovery": [
     {
       "detail": true,
@@ -5974,13 +5991,13 @@ const STORIES=[
   "sourceHashes": {
     "lean/DriverMain.lean": "ddc1d6f6a796e4d2dcff508b6aed83b90b90fe44c79ad2646eae4ec5cd398862",
     "lean/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "lean/Main.lean": "62e7f254b0a6b430704d69f9fb849fcb1f8337d14f8c88307173ccd842e489b2",
+    "lean/Main.lean": "70491ac5ea1cfacdab355af57717576ecabd560096df1029372c4d352fc70241",
     "lean/NamingMain.lean": "f026113e6b13604012fe817a7c38b4c2f19a469db443c263593b49e5daac8c24",
     "lean/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "52ed3c6db8ff0e0c2db2e07f8358ceba87ee74a671cdd6a096bedaacd2aa630a",
+    "lean/Singular/Driver.lean": "97c79d1caca2938e3e99a4d45ce18cb73ff1d35e4b35b91ca16dced19334a70d",
     "lean/Singular/Lemmas.lean": "c8aa4ea4585fd53a41d75ca817e229019ad59517c79cd6da6f9242f2c27c857c",
-    "lean/Singular/Model.lean": "ad725b24a02e6d83e1422231810a6d6238d0f9e525616c5df620413b3f6597f7",
+    "lean/Singular/Model.lean": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
     "lean/Singular/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -7081,7 +7098,7 @@ function renderRefusals() {
         config: { ...s.config, root: rootOf(leaf === null ? [] : [{ key, leaf }]) },
       };
       if (leaf === 'absent') s = { ...s, custody: [{ key, refundAddress: 91, value: 200 }] };
-      if (leaf === 'active') s = { ...s, held: [{ key, kind: 'active', output: 555 }] };
+      if (leaf === 'active') s = { ...s, held: [{ key, kind: 'active', output: 555, datum: 'none' }] };
       const r = step(
         s,
         approved(edge, key, { owner: 42, output: 555, refundAddress: 91, deposit: 200 }),

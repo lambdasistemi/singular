@@ -31,11 +31,6 @@ open Lean
 
 /-! ## Serialization, promoted from the corpus producer -/
 
-def datumFormName : DatumForm → String
-  | .inline => "inline"
-  | .hashed => "hashed"
-  | .none => "none"
-
 /-- One keyed asset, spelled with the on-chain identity the model pins: the
 kind's policy and the asset name, which is the key. -/
 def assetJson (c : Config) (p : Asset × Int) : Json :=
@@ -264,7 +259,7 @@ def observationsJson (c : Config) (r : Request) (res : Result) (tx : Tx) : Json 
   Json.mkObj
     [ ("config", toJson res.state.config)
     , ("custody", toJson res.state.custody)
-    , ("held", toJson res.state.held)
+    , ("held", Json.arr (res.state.held.map heldObservationJson).toArray)
     , ("leaf", leafJson (trieGet res.state.trie r.key))
     , ("mint", assetsJson c res.mint)
     , ("paid", Json.arr ((res.paid.map fun p =>

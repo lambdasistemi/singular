@@ -1142,6 +1142,14 @@ def judgementFailures : List String :=
 #guard (txOutputs (txOfExit exitState .reject (exitStepRequest .insertActive 9) 3)).length == 2
 #guard (txOutputs (txOf exitState (exitStepRequest .insertActive 9) 3)).length ≥ 2
 
+-- A saved state replays with the datum form each holding's delivery wrote (#304):
+-- a holding serialised and read back is the same holding, for every form.
+#guard [DatumForm.inline, .hashed, .none].all fun d =>
+  let h : Holding := { key := 42, kind := .active, output := 555, datum := d }
+  match (fromJson? (toJson h) : Except String Holding) with
+  | .ok back => back == h
+  | .error _ => false
+
 def main : IO Unit := do
   let stdout ← IO.getStdout
   for c in cases do

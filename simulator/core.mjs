@@ -53,7 +53,12 @@ const configSchema = {
   terminalPolicy: N,
 };
 const custody = { key: N, refundAddress: N, value: N };
-const holding = { key: N, kind: { $enum: KINDS }, output: N };
+const DATUM_FORMS = ['inline', 'hashed', 'none'];
+const holding = { key: N, kind: { $enum: KINDS }, output: N, datum: { $enum: DATUM_FORMS } };
+// The datum form a fold gives the output it delivers to (#304): inline when the
+// request names a datum, none when it names none. A holding keeps it, so a later
+// fold spends the witness as the chain holds it.
+export const deliveredDatum = (r) => (r.namesDatum ? 'inline' : 'none');
 const stateSchema = {
   config: configSchema,
   trie: [{ key: N, leaf }],
@@ -312,7 +317,7 @@ export function applyEdge(s, a) {
     case 'insertActive': {
       const t = withTrie('active');
       return {
-        state: { ...s, ...t, held: [{ key: a.key, kind: 'active', output: a.output }, ...s.held] },
+        state: { ...s, ...t, held: [{ key: a.key, kind: 'active', output: a.output, datum: deliveredDatum(a) }, ...s.held] },
         mint: delta(a.edge),
         paid: [],
       };
@@ -324,7 +329,7 @@ export function applyEdge(s, a) {
           ...s,
           ...t,
           custody: s.custody.filter((c) => c.key !== a.key),
-          held: [{ key: a.key, kind: 'active', output: a.output }, ...s.held],
+          held: [{ key: a.key, kind: 'active', output: a.output, datum: deliveredDatum(a) }, ...s.held],
         },
         mint: delta(a.edge),
         paid: entry ? [{ destination: entry.refundAddress, value: entry.value }] : [],
@@ -366,7 +371,7 @@ export function applyEdge(s, a) {
     }
     case 'witnessTerminal':
       return {
-        state: { ...s, held: [{ key: a.key, kind: 'terminal', output: a.output }, ...s.held] },
+        state: { ...s, held: [{ key: a.key, kind: 'terminal', output: a.output, datum: deliveredDatum(a) }, ...s.held] },
         mint: delta(a.edge),
         paid: [],
       };
