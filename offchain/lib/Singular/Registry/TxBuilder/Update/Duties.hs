@@ -66,7 +66,8 @@ import Singular.Registry.TxBuilder.ConnectedFold
 import Singular.Registry.TxBuilder.Internal.Edges
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Update.Context
-    ( RegistryContext (..)
+    ( HolderRelease (..)
+    , RegistryContext (..)
     )
 import Singular.Registry.Types
     ( CageDatum (..)
@@ -139,7 +140,7 @@ registryDuties
     -> Either String RegistryDuties
 registryDuties cfg pp st ctx reqUtxos processed = do
     perRequest <- mconcat <$> mapM one consumed
-    returns <- depositReturns
+    returns <- depositReturns (releasesIn perRequest)
     pure (perRequest <> returns)
   where
     -- Unmatched requests are NOT processed: a deficit fold has more
@@ -279,7 +280,21 @@ registryDuties cfg pp st ctx reqUtxos processed = do
                 , q /= 0
                 ]
         in  case candidates of
-                [(u, 1)] -> Right mempty{rdInputs = [u]}
+                -- #299: a holder at an application script is spent with
+                -- that application's witness; one at a key is a plain
+                -- input, signed by the key that owns it.
+                [(u, 1)] -> Right $ case holderRelease u of
+                    Just release ->
+                        mempty
+                            { rdSpends =
+                                [ ConnectedSpend
+                                    { csUtxo = u
+                                    , csRedeemer = RawRedeemer (hrRedeemer release)
+                                    , csScript = hrScript release
+                                    }
+                                ]
+                            }
+                    Nothing -> mempty{rdInputs = [u]}
                 -- A row that exists to watch the CHAIN refuse this edge
                 -- needs the transaction built, not withheld: the cage
                 -- refuses `key-unknown` or `not-booked` before it ever
@@ -441,19 +456,40 @@ registryDuties cfg pp st ctx reqUtxos processed = do
     -- be mistaken for a custody refund of the same address and amount.
     returnsDeposit edge =
         edge `elem` [edgeUpdateTerminal, edgeDeleteAbsent, edgeDeleteActive]
-    depositReturns = do
-        outs <- mapM depositOutput (Map.toList owedByOwner)
+    --
+    -- #299: an application holder the fold spends releases what its
+    -- application owes, to its recipient's key. That is owed in the same
+    -- sum, in the same output, as every deposit the fold returns to that
+    -- key: one output never pays two floors.
+    depositReturns releases = do
+        outs <- mapM depositOutput (Map.toList (owedByOwner releases))
         pure mempty{rdOutputs = outs}
-    owedByOwner =
+    -- A holder is looked up only when some application releases one: a
+    -- key-held witness is never keyed into the map.
+    holderRelease u
+        | Map.null (rcHolderReleases ctx) = Nothing
+        | otherwise = Map.lookup (fst u) (rcHolderReleases ctx)
+    -- Only a spend under an application's release script can release:
+    -- custody spends run the cage script and are never looked up.
+    releasesIn duties =
+        [ (hrRecipient release, (hrReleased release, Map.empty))
+        | spend <- rdSpends duties
+        , hashScript (csScript spend) `elem` releaseScripts
+        , Just release <-
+            [Map.lookup (fst (csUtxo spend)) (rcHolderReleases ctx)]
+        ]
+    releaseScripts = map (hashScript . hrScript) (Map.elems (rcHolderReleases ctx))
+    owedByOwner releases =
         Map.fromListWith
             (\(a, x) (b, y) -> (a + b, Map.unionWith (Map.unionWith (+)) x y))
-            [ (owner, (held - tip, approvalsOn reqOut))
-            | ((_, reqOut), True) <- consumed
-            , Just (RequestDatum req) <- [extractCageDatum reqOut]
-            , returnsDeposit (requestEdge req)
-            , let BuiltinByteString owner = requestOwner req
-                  Coin held = reqOut ^. coinTxOutL
-            ]
+            $ releases
+                <> [ (owner, (held - tip, approvalsOn reqOut))
+                   | ((_, reqOut), True) <- consumed
+                   , Just (RequestDatum req) <- [extractCageDatum reqOut]
+                   , returnsDeposit (requestEdge req)
+                   , let BuiltinByteString owner = requestOwner req
+                         Coin held = reqOut ^. coinTxOutL
+                   ]
     depositOutput (owner, (owed, approvals)) = do
         let out =
                 mkBasicTxOut

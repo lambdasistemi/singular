@@ -47,6 +47,7 @@ module Singular.Registry.TxBuilder.Edges
     , certifyBooking
     , bookEdge
     , bookEdgeTo
+    , bookEdgeWith
     , edgeDeposit
     , edgeDestinationOf
     , edgeRecordDatum
@@ -78,6 +79,7 @@ import Cardano.Ledger.Api.Tx.Body
     , mintTxBodyL
     , mkBasicTxBody
     , outputsTxBodyL
+    , referenceInputsTxBodyL
     , reqSignerHashesTxBodyL
     , scriptIntegrityHashTxBodyL
     )
@@ -403,7 +405,12 @@ data BookingApproval = BookingApproval
     [destinationAddress, destinationDatumHash]]@.
     -}
     , baScript :: Script ConwayEra
-    -- ^ The naming application script, the mint's witness.
+    -- ^ The application script, the mint's witness.
+    , baReferenceInputs :: Set.Set TxIn
+    {- ^ Outputs the application reads without spending: the registry
+    state, and for a termination the live output it releases. Empty for
+    the naming and open applications.
+    -}
     }
 
 {- | The booking certification decision, in one place (#240): which
@@ -444,6 +451,7 @@ bookingApproval codes edge key owner dest
                         , PLC.List [PLC.B destAddr, PLC.B destHash]
                         ]
                 , baScript = appScript
+                , baReferenceInputs = Set.empty
                 }
   where
     name = approvalName edge key owner dest
@@ -481,6 +489,7 @@ certifyBooking pp collateral mApproval unsigned =
             in  unsigned
                     & bodyTxL . mintTxBodyL .~ baAsset approval
                     & bodyTxL . collateralInputsTxBodyL .~ Set.singleton collateral
+                    & bodyTxL . referenceInputsTxBodyL .~ baReferenceInputs approval
                     & bodyTxL
                         . scriptIntegrityHashTxBodyL
                         .~ computeScriptIntegrity pp redeemers
@@ -543,7 +552,42 @@ bookEdgeTo
     -> Edge
     -> (ByteString, ByteString)
     -> IO TxIn
-bookEdgeTo cfg codes prov submit payerAddr tokenId key edge dest0 = do
+bookEdgeTo cfg codes prov submit payerAddr tokenId key edge dest = do
+    signed <-
+        bookEdgeWith
+            cfg
+            prov
+            submit
+            payerAddr
+            tokenId
+            key
+            edge
+            dest
+            edgeDeposit
+            (bookingApproval codes edge key (addrKeyHashBytes payerAddr) dest)
+    pure (TxIn (txIdTx signed) (TxIx 0))
+
+{- | Book an edge with the certification and deposit the caller's
+application decides (#299): the approval it mints, with any outputs it
+reads by reference, and the deposit the request rides with over the tip.
+The booker's own key is the request's owner and its required signer.
+Returns the signed booking as the submission callback handed it back;
+the request is its first output.
+-}
+bookEdgeWith
+    :: CageConfig
+    -> Cage.Provider IO
+    -> SubmitSigned
+    -> Addr
+    -> TokenId
+    -> ByteString
+    -> Edge
+    -> (ByteString, ByteString)
+    -> Integer
+    -- ^ The deposit, over and above the tip
+    -> Maybe BookingApproval
+    -> IO ConwayTx
+bookEdgeWith cfg prov submit payerAddr tokenId key edge dest deposit approval = do
     -- #183: the tag IS the edge. A booking states its own C2 row, and a
     -- row outside the table is one only an adversarial caller wants, so
     -- it is refused here rather than carried to a fold that would refuse
@@ -567,12 +611,10 @@ bookEdgeTo cfg codes prov submit payerAddr tokenId key edge dest0 = do
     now <- currentPosixMs
     let MaryValue (Coin feeBal) carried = feeOut ^. valueTxOutL
         Coin tipVal = defaultTip cfg
-        bond = tipVal + edgeDeposit
+        bond = tipVal + deposit
         fee = 2_000_000
         change = feeBal - bond - fee
         owner = addrKeyHashBytes payerAddr
-        dest = dest0
-        approval = bookingApproval codes edge key owner dest
         requestAddr = requestAddrFromCfg cfg tokenId (network cfg)
         -- #183: the datum binds the DEPOSIT, not the tip. The output
         -- holds `bond` = tip + deposit, and the fold checks
@@ -580,7 +622,7 @@ bookEdgeTo cfg codes prov submit payerAddr tokenId key edge dest0 = do
         -- written once each. The min-ADA check below is what keeps
         -- them equal: a bond raised to meet min-ADA would break the
         -- equality silently, so the booking refuses instead.
-        datum = mkRequestDatumWith tokenId payerAddr key edge edgeDeposit now dest
+        datum = mkRequestDatumWith tokenId payerAddr key edge deposit now dest
         reqOut =
             mkBasicTxOut
                 requestAddr
@@ -604,8 +646,7 @@ bookEdgeTo cfg codes prov submit payerAddr tokenId key edge dest0 = do
                 & reqSignerHashesTxBodyL
                     .~ Set.singleton (addrWitnessKeyHash owner)
         unsigned = certifyBooking pp feeIn approval (mkBasicTx body)
-    signed <- submit unsigned
-    pure (TxIn (txIdTx signed) (TxIx 0))
+    submit unsigned
 
 {- | What a fold of tree edges needs in hand: the three token policies
 this registry pins, the cage script custody spends run, the cage's own

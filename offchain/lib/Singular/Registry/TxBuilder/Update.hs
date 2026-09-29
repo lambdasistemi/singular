@@ -31,6 +31,7 @@ module Singular.Registry.TxBuilder.Update
     , emptyRegistryContext
     , RegistryDuties (..)
     , RegistryContext (..)
+    , HolderRelease (..)
     , registryDuties
     ) where
 
@@ -62,7 +63,8 @@ import Singular.Registry.TxBuilder.Update.Build
     , mkEvalTx
     )
 import Singular.Registry.TxBuilder.Update.Context
-    ( RegistryContext (..)
+    ( HolderRelease (..)
+    , RegistryContext (..)
     , completeContext
     , computeProofs
     , computeUpperSlot

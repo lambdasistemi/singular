@@ -33,6 +33,7 @@ built body, not only the duties the fold accumulated.
 -}
 module Singular.Registry.TxBuilder.BurnSourceSpec (spec) where
 
+import Data.Bifunctor (second)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
@@ -41,35 +42,68 @@ import Data.Set qualified as Set
 import Data.Word (Word8)
 import Test.Hspec
 
-import Cardano.Ledger.Address (Addr, serialiseAddr)
+import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Alonzo.TxBody (reqSignerHashesTxBodyL)
 import Cardano.Ledger.Api.PParams (emptyPParams)
-import Cardano.Ledger.Api.Tx (bodyTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( inputsTxBodyL
     , mintTxBodyL
+    , outputsTxBodyL
+    , referenceInputsTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
+    , addrTxOutL
     , coinTxOutL
     , datumTxOutL
     , mkBasicTxOut
+    , referenceScriptTxOutL
     , valueTxOutL
     )
-import Cardano.Ledger.BaseTypes (Network (Testnet), SlotNo (..))
+import Cardano.Ledger.Api.Tx.Wits
+    ( Redeemers (..)
+    , rdmrsTxWitsL
+    , scriptTxWitsL
+    )
+import Cardano.Ledger.BaseTypes
+    ( Network (Testnet)
+    , SlotNo (..)
+    , StrictMaybe (..)
+    )
 import Cardano.Ledger.Core (Script, hashScript)
+import Cardano.Ledger.Credential
+    ( Credential (..)
+    , StakeReference (..)
+    )
+import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
     , MultiAsset (..)
     , PolicyID (..)
     )
+import Cardano.Ledger.Plutus.Data (getPlutusData)
 import Cardano.Ledger.TxIn (TxIn)
+import Cardano.Tx.Ledger (ConwayTx)
+import Data.Foldable (toList)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 import PlutusCore.Version (plcVersion110)
 import PlutusLedgerApi.V3 (serialiseUPLC)
 import PlutusTx.Builtins (toBuiltin)
+import Singular.Application.OpenDatum.Envelope
+    ( Control (..)
+    , Envelope (..)
+    , StateAsset (..)
+    , envelopeHash
+    , envelopeToData
+    , envelopeVersion
+    )
+import Singular.Application.OpenDatum.Release
+    ( releaseOf
+    , withApplication
+    )
 import UntypedPlutusCore qualified as UPLC
 import UntypedPlutusCore.DeBruijn ()
 
@@ -77,7 +111,7 @@ import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId (..))
 import Singular.Registry.Provider (Provider (..))
-import Singular.Registry.Trie (TrieManager (..))
+import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.ConnectedFold
     ( ConnectedMint (..)
@@ -89,6 +123,7 @@ import Singular.Registry.TxBuilder.Internal
     , cagePolicyIdFromCfg
     , computeScriptHash
     , extractCageDatum
+    , leafActive
     , mkInlineDatum
     , policyIdFromPin
     , requestAddrFromCfg
@@ -98,7 +133,8 @@ import Singular.Registry.TxBuilder.Internal
     , txInToRef
     )
 import Singular.Registry.TxBuilder.Update
-    ( RegistryContext (..)
+    ( HolderRelease (..)
+    , RegistryContext (..)
     , RegistryDuties (..)
     , emptyRegistryContext
     , registryDuties
@@ -256,6 +292,9 @@ spec = do
     requestOrder
     noFoldSigner
     builtFoldBody
+    applicationRelease
+    openDatumFold
+    releaseResolution
 
 -- ---------------------------------------------------------
 -- #178: absent custody identity comes from its sole asset
@@ -1040,3 +1079,345 @@ builtFoldBody =
                 `shouldSatisfy` (\ins -> Set.member stateIn ins && Set.member requestIn ins)
             case body ^. mintTxBodyL of
                 MultiAsset m -> m `shouldSatisfy` (not . Map.null)
+
+-- ---------------------------------------------------------
+-- #299: a burn sourced from an application's holding
+-- ---------------------------------------------------------
+
+-- | A retirement of `owner` at `key`, at its own input `i`.
+retirementAt
+    :: Int -> ByteString -> ByteString -> (TxIn, TxOut ConwayEra)
+retirementAt i owner key =
+    let (_, out) = requestFor retirement
+        req = case extractCageDatum out of
+            Just (RequestDatum r) -> r{requestOwner = toBuiltin owner, requestKey = key}
+            _ -> error "BurnSourceSpec fixture: requestFor carries no request"
+    in  ( case parseOutRef (T.pack (replicate 64 '4' <> "#" <> show i)) of
+            Right r -> r
+            Left e -> error ("BurnSourceSpec fixture: " <> e)
+        , out & datumTxOutL .~ mkInlineDatum (toPlcData (RequestDatum req))
+        )
+
+-- | The application's own script, the release spend's witness.
+applicationScript :: Script ConwayEra
+applicationScript = scriptFromBytes "t299 application" (SBS.toShort (BS.pack [0x61]))
+
+releaseRedeemerData :: PLC.Data
+releaseRedeemerData = PLC.Constr 1 []
+
+-- | Releasing `lovelace` to `ownerKey` when the holder at `i` is spent.
+releasing :: Int -> Integer -> (TxIn, HolderRelease)
+releasing i lovelace =
+    ( holderIn i
+    , HolderRelease
+        { hrRedeemer = releaseRedeemerData
+        , hrScript = applicationScript
+        , hrRecipient = ownerKey
+        , hrReleased = lovelace
+        }
+    )
+
+releaseDuties
+    :: [(TxIn, TxOut ConwayEra)]
+    -> [(TxIn, TxOut ConwayEra)]
+    -> [(TxIn, HolderRelease)]
+    -> Either String RegistryDuties
+releaseDuties reqs holders releases =
+    registryDuties
+        cfg
+        emptyPParams
+        tokenState
+        witnessScripts
+            { rcHolderUtxos = holders
+            , rcHolderReleases = Map.fromList releases
+            }
+        reqs
+        (map (const True) reqs)
+
+applicationRelease :: Spec
+applicationRelease =
+    describe "#299: a burn sourced from an application's holding" $ do
+        it
+            "spends the holding with the application's witness, not as a plain input"
+            $ case releaseDuties
+                [retirementAt 1 ownerKey keyA]
+                [holderOf 1 keyA 1]
+                [releasing 1 2000000] of
+                Left err -> expectationFailure err
+                Right d -> do
+                    map (fst . csUtxo) (rdSpends d) `shouldBe` [holderIn 1]
+                    map csScript (rdSpends d) `shouldBe` [applicationScript]
+                    map fst (rdInputs d) `shouldBe` []
+        it "leaves a key-held witness a plain input (the control)" $
+            case releaseDuties [retirementAt 1 ownerKey keyA] [holderOf 1 keyA 1] [] of
+                Left err -> expectationFailure err
+                Right d -> do
+                    map fst (rdInputs d) `shouldBe` [holderIn 1]
+                    map (fst . csUtxo) (rdSpends d) `shouldBe` []
+        it
+            "pays the release with the returned deposit, in one output to the key"
+            $ case releaseDuties
+                [retirementAt 1 ownerKey keyA]
+                [holderOf 1 keyA 1]
+                [releasing 1 2000000] of
+                Left err -> expectationFailure err
+                Right d -> rdOutputs d `shouldBe` [ownerPaid ownerKey (2000000 + 2000000)]
+        it
+            "sums two releases and two deposits to one controller in one output"
+            $ case releaseDuties
+                [retirementAt 1 ownerKey keyA, retirementAt 2 ownerKey keyB]
+                [holderOf 1 keyA 1, holderOf 2 keyB 1]
+                [releasing 1 2000000, releasing 2 2000000] of
+                Left err -> expectationFailure err
+                Right d -> rdOutputs d `shouldBe` [ownerPaid ownerKey (4 * 2000000)]
+        it "owes no release for a holding the fold does not spend" $
+            case releaseDuties
+                [retirementAt 1 ownerKey keyA]
+                [holderOf 1 keyA 1]
+                [releasing 1 2000000, releasing 2 5000000] of
+                Left err -> expectationFailure err
+                Right d -> rdOutputs d `shouldBe` [ownerPaid ownerKey (2000000 + 2000000)]
+
+-- ---------------------------------------------------------
+-- #299: the open-datum application's part of a fold, as BUILT
+-- ---------------------------------------------------------
+
+{- $buildOnly
+Transaction-build evidence only. These rows drive the real
+'updateTokenWithDuties' with the application's context and read the
+body it assembles: which inputs it spends, with which redeemers, paying
+which outputs. The scripts are the synthetic 'program', the pins are the
+synthetic 'cfg' ones, and the envelope names a synthetic registry, so
+nothing here evaluates the applied open_datum script or shows a ledger
+would accept the transaction. That acceptance is the devnet journey's
+evidence, not these rows'.
+-}
+
+-- | The application's live-output address: the applied script's own hash.
+applicationAddr :: Addr
+applicationAddr =
+    Addr Testnet (ScriptHashObj (computeScriptHash program)) StakeRefNull
+
+-- | An envelope for `keyA`, controlled by `ownerKey`.
+openEnvelope :: Envelope
+openEnvelope =
+    Envelope
+        { envControl =
+            Control
+                { ctlVersion = envelopeVersion
+                , ctlRegistry = StateAsset (BS.replicate 28 0x01) "t177-registry"
+                , ctlActivePolicy = SBS.fromShort (cfgActivePolicy cfg)
+                , ctlKey = keyA
+                , ctlController = ownerKey
+                , ctlDeposit = 2000000
+                }
+        , envPayload = PLC.List [PLC.I 1, PLC.B "payload"]
+        }
+
+-- | The key's live output at the application, holding its one token.
+liveOutput :: (TxIn, TxOut ConwayEra)
+liveOutput =
+    ( holderIn 1
+    , mkBasicTxOut
+        applicationAddr
+        (custodyValue (cfgActivePolicy cfg) keyA 1)
+        & datumTxOutL .~ mkInlineDatum (envelopeToData openEnvelope)
+    )
+
+-- | A stub provider whose one pending request is `request`.
+providerWith :: (TxIn, TxOut ConwayEra) -> Provider IO
+providerWith request =
+    foldProvider
+        { queryUTxOs = \a ->
+            pure $
+                if a == requestAddrFromCfg builtCfg foldTokenId Testnet
+                    then [request]
+                    else utxosAt a
+        }
+
+-- | An in-memory trie whose `keyA` leaf is `leaf`, or empty.
+trieWith :: Maybe ByteString -> IO (TrieManager IO)
+trieWith leaf = do
+    tm <- mkPureTrieManager
+    createTrie tm foldTokenId
+    case leaf of
+        Nothing -> pure ()
+        Just l -> withTrie tm foldTokenId $ \t -> void (insert t keyA l)
+    pure tm
+
+spendRedeemers :: ConwayTx -> [PLC.Data]
+spendRedeemers tx =
+    let Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
+    in  [getPlutusData d | (_, (d, _)) <- Map.toList m]
+
+bodyOutputs :: ConwayTx -> [TxOut ConwayEra]
+bodyOutputs tx = toList (tx ^. bodyTxL . outputsTxBodyL)
+
+openDatumFold :: Spec
+openDatumFold =
+    describe
+        "#299 (build only): the open-datum application's part of a fold"
+        $ do
+            it
+                "reads the live envelope and releases its deposit to the controller"
+                $ releaseOf program liveOutput
+                    `shouldBe` Right
+                        ( holderIn 1
+                        , HolderRelease
+                            { hrRedeemer = PLC.Constr 1 []
+                            , hrScript = scriptFromBytes "open-datum" program
+                            , hrRecipient = ownerKey
+                            , hrReleased = 2000000
+                            }
+                        )
+            it "refuses a live output without an envelope, naming it" $
+                releaseOf program (holderOf 1 keyA 1) `shouldSatisfy` isLeft
+            it "refuses a live output holding two of its key's token" $
+                releaseOf
+                    program
+                    ( second
+                        (valueTxOutL .~ custodyValue (cfgActivePolicy cfg) keyA 2)
+                        liveOutput
+                    )
+                    `shouldSatisfy` isLeft
+            it
+                "retires the key by spending its live output with Release, paying deposit and release together"
+                $ do
+                    tm <- trieWith (Just leafActive)
+                    ctx <-
+                        either
+                            fail
+                            pure
+                            (withApplication program Nothing [] [liveOutput] witnessScripts)
+                    tx <-
+                        updateTokenWithDuties
+                            builtCfg
+                            (providerWith (retirementAt 1 ownerKey keyA))
+                            tm
+                            foldTokenId
+                            payer
+                            ctx
+                    tx ^. bodyTxL . inputsTxBodyL `shouldSatisfy` Set.member (holderIn 1)
+                    spendRedeemers tx `shouldSatisfy` elem (PLC.Constr 1 [])
+                    bodyOutputs tx
+                        `shouldSatisfy` elem (ownerPaid ownerKey (2000000 + 2000000))
+            it
+                "delivers an insertion's token to an output carrying its envelope inline"
+                $ do
+                    tm <- trieWith Nothing
+                    let destination =
+                            (serialiseAddr applicationAddr, envelopeHash openEnvelope)
+                        request =
+                            let (i, out) = requestFor edgeInsertActive
+                                req = case extractCageDatum out of
+                                    Just (RequestDatum r) ->
+                                        r
+                                            { requestOwner = toBuiltin ownerKey
+                                            , requestDestination = destination
+                                            }
+                                    _ -> error "BurnSourceSpec fixture: no request"
+                            in  (i, out & datumTxOutL .~ mkInlineDatum (toPlcData (RequestDatum req)))
+                    ctx <-
+                        either
+                            fail
+                            pure
+                            (withApplication program Nothing [openEnvelope] [] witnessScripts)
+                    tx <-
+                        updateTokenWithDuties
+                            builtCfg
+                            (providerWith request)
+                            tm
+                            foldTokenId
+                            payer
+                            ctx
+                    [ ()
+                      | out <- bodyOutputs tx
+                      , out ^. addrTxOutL == applicationAddr
+                      , out ^. datumTxOutL == mkInlineDatum (envelopeToData openEnvelope)
+                      ]
+                        `shouldBe` [()]
+
+-- ---------------------------------------------------------
+-- #299 F299-T6-001: the release script beside the registry's references
+-- ---------------------------------------------------------
+
+-- | An application program distinct from the registry's own `program`.
+appProgram :: SBS.ShortByteString
+appProgram =
+    serialiseUPLC
+        ( UPLC.Program
+            ()
+            plcVersion110
+            (UPLC.LamAbs () (UPLC.DeBruijn 0) (UPLC.Var () (UPLC.DeBruijn 1)))
+        )
+
+appScript :: Script ConwayEra
+appScript = scriptFromBytes "open-datum" appProgram
+
+-- | A published reference output carrying `script`, at input `c`.
+referenceOf :: Char -> Script ConwayEra -> (TxIn, TxOut ConwayEra)
+referenceOf c script =
+    ( case parseOutRef (T.pack (replicate 64 c <> "#0")) of
+        Right r -> r
+        Left e -> error ("BurnSourceSpec fixture: " <> e)
+    , mkBasicTxOut payer (MaryValue (Coin 20000000) mempty)
+        & referenceScriptTxOutL .~ SJust script
+    )
+
+-- | The registry's own published reference: its state script.
+registryReference :: (TxIn, TxOut ConwayEra)
+registryReference = referenceOf '8' (scriptFromBytes "state" program)
+
+appReference :: (TxIn, TxOut ConwayEra)
+appReference = referenceOf '9' appScript
+
+-- | Retire keyA with the registry's references in hand, and the app's if given.
+retireWithReferences :: Maybe (TxIn, TxOut ConwayEra) -> IO ConwayTx
+retireWithReferences app = do
+    tm <- trieWith (Just leafActive)
+    ctx <-
+        either
+            fail
+            pure
+            ( withApplication
+                appProgram
+                app
+                []
+                [liveOutput]
+                witnessScripts{rcRefUtxos = [registryReference]}
+            )
+    updateTokenWithDuties
+        builtCfg
+        (providerWith (retirementAt 1 ownerKey keyA))
+        tm
+        foldTokenId
+        payer
+        ctx
+
+witnessedScripts :: ConwayTx -> [ScriptHash]
+witnessedScripts tx = Map.keys (tx ^. witsTxL . scriptTxWitsL)
+
+releaseResolution :: Spec
+releaseResolution =
+    describe
+        "#299 (build only): the release script resolves beside the registry's references"
+        $ do
+            it "attaches the release script when no reference carries it" $ do
+                tx <- retireWithReferences Nothing
+                tx ^. bodyTxL . referenceInputsTxBodyL
+                    `shouldSatisfy` Set.member (fst registryReference)
+                witnessedScripts tx `shouldSatisfy` elem (hashScript appScript)
+                witnessedScripts tx
+                    `shouldSatisfy` notElem (hashScript (scriptFromBytes "state" program))
+                spendRedeemers tx `shouldSatisfy` elem (PLC.Constr 1 [])
+            it
+                "references the release script, attaching nothing, when its output is given"
+                $ do
+                    tx <- retireWithReferences (Just appReference)
+                    tx ^. bodyTxL . referenceInputsTxBodyL
+                        `shouldSatisfy` ( \refs ->
+                                            Set.member (fst appReference) refs
+                                                && Set.member (fst registryReference) refs
+                                        )
+                    witnessedScripts tx `shouldSatisfy` notElem (hashScript appScript)
+                    spendRedeemers tx `shouldSatisfy` elem (PLC.Constr 1 [])

@@ -38,13 +38,16 @@ import Cardano.Ledger.Api.Tx.Body
     )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
+    , referenceScriptTxOutL
     )
+import Cardano.Ledger.BaseTypes (StrictMaybe (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway.Scripts
     ( ConwayPlutusPurpose
     )
 import Cardano.Ledger.Core
     ( Script
+    , hashScript
     )
 import Cardano.Ledger.Plutus.ExUnits (ExUnits)
 import Cardano.Slotting.Slot (SlotNo)
@@ -179,6 +182,24 @@ buildProgram
                 Tx.attachScript requestScript
                 mapM_ (Tx.attachScript . csScript) (rdSpends duties)
                 mapM_ (Tx.attachScript . cmScript) (rdMints duties)
-            else mapM_ (Tx.reference . fst) refUtxos
+            else do
+                mapM_ (Tx.reference . fst) refUtxos
+                -- #299: a script no reference output carries — an
+                -- application's release spend when its script was not
+                -- published — is attached, so every purpose resolves.
+                -- The registry's own scripts are all referenced, so for
+                -- them this attaches nothing.
+                let carried =
+                        [ hashScript s
+                        | (_, o) <- refUtxos
+                        , SJust s <- [o ^. referenceScriptTxOutL]
+                        ]
+                    uncarried s = hashScript s `notElem` carried
+                mapM_
+                    Tx.attachScript
+                    ( filter
+                        uncarried
+                        (map csScript (rdSpends duties) <> map cmScript (rdMints duties))
+                    )
         Tx.collateral (fst feeUtxo)
         Tx.validTo upperSlot
