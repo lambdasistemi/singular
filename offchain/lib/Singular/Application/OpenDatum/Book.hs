@@ -118,6 +118,7 @@ approvalOf applied name redeemer references =
                 )
         , baRedeemer = redeemer
         , baScript = script
+        , baScriptReference = Nothing
         , baReferenceInputs = references
         }
   where

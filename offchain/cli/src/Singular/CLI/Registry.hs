@@ -80,13 +80,21 @@ import Cardano.Ledger.Api.Tx.Out (TxOut)
 import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.TxIn (TxIn)
 
-import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Application.OpenDatum.Script
+    ( Application (..)
+    , applicationTitle
+    , loadApplicationCodes
+    )
 import Singular.Registry.Blueprint
     ( NamingCodes (..)
     , extractCompiledCode
     , loadBlueprint
     )
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Config.Application
+    ( RegistryEconomics (..)
+    , configForApplication
+    )
 import Singular.Registry.Deployment
     ( CageParts (..)
     , Deployment
@@ -96,11 +104,8 @@ import Singular.Registry.Deployment
     )
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.Node (bech32Address)
-import Singular.Registry.TxBuilder.Edges (adaOnlyOut, namingPins)
-import Singular.Registry.TxBuilder.Internal
-    ( computeScriptHash
-    , scriptHashBytes
-    )
+import Singular.Registry.TxBuilder.Edges (adaOnlyOut)
+import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
 import Singular.Registry.Types (OnChainTxOutRef)
 
 -- | The pins a registry identity carries, as hex.
@@ -165,7 +170,7 @@ mkRegistryConfig magic addr pins dep =
         , confNetworkMagic = magic
         , confWalletAddress = renderAddrBytes addr
         , confWalletBech32 = T.pack (bech32Address addr)
-        , confApplication = "open.open"
+        , confApplication = applicationTitle OpenDatumApplication
         , confPins = pins
         , confDeployment = dep
         }
@@ -179,7 +184,9 @@ data Release = Release
     { releaseState :: SBS.ShortByteString
     , releaseRequest :: SBS.ShortByteString
     , releaseCodes :: NamingCodes
-    -- ^ @open.open@ and @witness.witness@, from the same blueprint
+    {- ^ @open_datum.open_datum@ unapplied and @witness.witness@, from the
+    same blueprint
+    -}
     }
 
 -- | Read the registry blueprint a command was given.
@@ -197,34 +204,32 @@ loadRelease path = do
         Release
             <$> code "state.state"
             <*> code "request.request"
-            <*> (NamingCodes <$> code "open.open" <*> code "witness.witness")
+            <*> loadApplicationCodes OpenDatumApplication bp
 
-{- | The configuration of the open registry this release boots from this
-seed: the state and request validators, the parameterless open
-application, and @witness(kind, registry)@ at kinds 0, 1 and 2. The
-request windows and tip are the ones a deployment records.
+-- | The windows and tip a registry this command creates is booted with.
+economics :: RegistryEconomics
+economics =
+    RegistryEconomics
+        { reProcessTime = 120_000
+        , reRetractTime = 30_000
+        , reTip = Coin 1_000_000
+        }
+
+{- | The configuration of the open-datum registry this release boots from
+this seed, and the codes as that registry runs them: the application
+applied to the registry identity the seed determines, and
+@witness(kind, registry)@ at kinds 0, 1 and 2.
 -}
-registryConfigFor :: Release -> OnChainTxOutRef -> CageConfig
-registryConfigFor rel seed =
-    let stateHash = computeScriptHash (releaseState rel)
-        registryId = scriptHashBytes stateHash <> deriveAssetName seed
-        (appPin, absentPin, activePin, terminalPin) =
-            namingPins (releaseCodes rel) registryId
-    in  CageConfig
-            { cageScriptBytes = releaseState rel
-            , requestScriptBytes = releaseRequest rel
-            , cfgScriptHash = stateHash
-            , cageSeed = seed
-            , defaultProcessTime = 120_000
-            , defaultRetractTime = 30_000
-            , defaultTip = Coin 1_000_000
-            , cfgApplicationPolicy = appPin
-            , cfgActivePolicy = activePin
-            , cfgAbsentPolicy = absentPin
-            , cfgTerminalPolicy = terminalPin
-            , cfgConsumerScript = SBS.empty
-            , network = Testnet
-            }
+registryConfigFor
+    :: Release -> OnChainTxOutRef -> (CageConfig, NamingCodes)
+registryConfigFor rel =
+    configForApplication
+        OpenDatumApplication
+        (releaseCodes rel)
+        (releaseState rel)
+        (releaseRequest rel)
+        economics
+        Testnet
 
 -- | The pins a configuration carries, as a saved identity names them.
 pinsOf :: CageConfig -> Pins

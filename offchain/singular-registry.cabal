@@ -722,6 +722,7 @@ test-suite cage-tests
     , temporary
     , text
     , time
+    , unix
 
 test-suite e2e-tests
   import:           warnings
@@ -859,9 +860,14 @@ executable singular
   other-modules:
     Singular.CLI
     Singular.CLI.Command
+    Singular.CLI.Create
+    Singular.CLI.Entry
+    Singular.CLI.Inspect
+    Singular.CLI.Live
     Singular.CLI.Proof
     Singular.CLI.Receipt
     Singular.CLI.Registry
+    Singular.CLI.Session
 
   build-depends:
     , aeson
@@ -877,5 +883,15 @@ executable singular
     , mts:mpf-write
     , singular-registry
     , text
+    , unix
+    , cardano-crypto-class
+    , cardano-ledger-binary
+    , cardano-ledger-mary
+    , cardano-node-clients:devnet
+    , cardano-node-clients
+    , cardano-slotting
+    , cardano-tx-tools:tx-build
+    , microlens
+    , singular-registry:node-internal
 
   ghc-options:      -threaded -with-rtsopts=-N

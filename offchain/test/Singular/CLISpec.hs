@@ -106,8 +106,8 @@ commandLine = describe "the command line" $ do
         parseCommand ["--help"] `shouldBe` Right Help
         parseCommand ["registry", "--help"] `shouldBe` Right Help
         parseCommand [] `shouldBe` Right Help
-    it "names the four commands and only them in its usage" $ do
-        forM4 ["create", "insert", "terminate", "inspect"] $ \c ->
+    it "names the five commands and only them in its usage" $ do
+        forM5 ["create", "insert", "update", "terminate", "inspect"] $ \c ->
             usage `shouldSatisfy` isInfixOf ("singular registry " <> c)
         usage `shouldNotSatisfy` isInfixOf "registry delete"
     it "refuses a command it does not support" $
@@ -131,9 +131,13 @@ commandLine = describe "the command line" $ do
                         , createReceipt = Nothing
                         }
                 )
-    it "reads an insert at a hex key" $
+    it "reads an insert at a hex key with its envelope" $
         parseCommand
-            (["registry", "insert", "--key", "6b6579"] <> reg <> node <> wallet)
+            ( ["registry", "insert", "--key", "6b6579", "--envelope", "/e.json"]
+                <> reg
+                <> node
+                <> wallet
+            )
             `shouldBe` Right
                 ( Insert
                     EntryArgs
@@ -141,9 +145,27 @@ commandLine = describe "the command line" $ do
                         , entryBlueprint = "/srv/plutus.json"
                         , entryWrite = writeSettings
                         , entryKey = Key "key"
+                        , entryDocument = Just "/e.json"
                         , entryReceipt = Nothing
                         }
                 )
+    it "refuses an insert without its envelope" $
+        parseCommand
+            (["registry", "insert", "--key", "6b6579"] <> reg <> node <> wallet)
+            `shouldSatisfy` isLeftWith isMissing
+    it "reads an update with its payload, and refuses one without" $ do
+        parseCommand
+            ( ["registry", "update", "--key", "6b6579", "--payload", "/p.json"]
+                <> reg
+                <> node
+                <> wallet
+            )
+            `shouldSatisfy` \case
+                Right (Update e) -> entryDocument e == Just "/p.json"
+                _ -> False
+        parseCommand
+            (["registry", "update", "--key", "6b6579"] <> reg <> node <> wallet)
+            `shouldSatisfy` isLeftWith isMissing
     it "refuses a key that is not hex" $ do
         parseCommand
             (["registry", "insert", "--key", "zz"] <> reg <> node <> wallet)
@@ -178,7 +200,7 @@ commandLine = describe "the command line" $ do
         $ do
             let insert extra =
                     parseCommand
-                        ( ["registry", "insert", "--key", "6b6579"]
+                        ( ["registry", "insert", "--key", "6b6579", "--envelope", "/e.json"]
                             <> reg
                             <> node
                             <> wallet
@@ -206,7 +228,7 @@ commandLine = describe "the command line" $ do
             (["registry", "inspect", "--key", "6b6579", "--blueprint", "b"] <> node)
             `shouldBe` Left (MissingFlag "--registry")
   where
-    forM4 xs f = mapM_ f xs
+    forM5 xs f = mapM_ f xs
     writeSettings =
         WriteSettings
             { writeNode = NodeSettings "/run/node.socket" 42
@@ -215,6 +237,7 @@ commandLine = describe "the command line" $ do
             }
     isUnknown = \case UnknownCommand _ -> True; _ -> False
     isMalformed = \case KeyMalformed _ -> True; _ -> False
+    isMissing = \case MissingFlag _ -> True; _ -> False
     isUnsafe = \case UnsafeSettings _ -> True; _ -> False
     unsafeMentions s = \case
         UnsafeSettings m -> s `isInfixOf` m
@@ -364,8 +387,20 @@ journal = describe "the journal of a write" $ do
         exitCodeOf Success `shouldBe` ExitSuccess
         Aeson.encode (map outcomeName classes) `shouldSatisfy` (not . BL.null)
   where
-    submitted s t = JournalEntry "insert" s t "submitted" Nothing
-    confirmed s t = JournalEntry "insert" s t "confirmed" Nothing
+    submitted s t = phase s t "submitted"
+    confirmed s t = phase s t "observed"
+    phase s t e =
+        JournalEntry
+            "insert"
+            s
+            t
+            e
+            Nothing
+            Nothing
+            Nothing
+            Nothing
+            Nothing
+            Nothing
 
 -- ---------------------------------------------------------
 -- The local proof of a leaf

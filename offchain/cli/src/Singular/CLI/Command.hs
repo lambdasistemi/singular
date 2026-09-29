@@ -102,6 +102,10 @@ data EntryArgs = EntryArgs
     , entryBlueprint :: FilePath
     , entryWrite :: WriteSettings
     , entryKey :: Key
+    , entryDocument :: Maybe FilePath
+    {- ^ @insert@: the envelope's detailed-schema JSON (@--envelope@);
+    @update@: the new payload's (@--payload@); @terminate@: none
+    -}
     , entryReceipt :: Maybe FilePath
     }
     deriving stock (Eq, Show)
@@ -121,6 +125,7 @@ data Command
     = Help
     | Create CreateArgs
     | Insert EntryArgs
+    | Update EntryArgs
     | Terminate EntryArgs
     | Inspect InspectArgs
     deriving stock (Eq, Show)
@@ -150,8 +155,9 @@ parseCommand args = do
             [] -> Right Help
             ["registry"] -> Right Help
             ["registry", "create"] -> Create <$> createArgs flags
-            ["registry", "insert"] -> Insert <$> entryArgs flags
-            ["registry", "terminate"] -> Terminate <$> entryArgs flags
+            ["registry", "insert"] -> Insert <$> entryArgs (Just "--envelope") flags
+            ["registry", "update"] -> Update <$> entryArgs (Just "--payload") flags
+            ["registry", "terminate"] -> Terminate <$> entryArgs Nothing flags
             ["registry", "inspect"] -> Inspect <$> inspectArgs flags
             _ -> Left (UnknownCommand words')
   where
@@ -176,17 +182,19 @@ parseCommand args = do
                 , createPreview = preview
                 , createReceipt = optional "--receipt" flags
                 }
-    entryArgs flags = do
+    entryArgs document flags = do
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
         key <- keyFrom flags
         write <- writeSettings flags
+        doc <- traverse (`required` flags) document
         pure
             EntryArgs
                 { entryRegistry = dir
                 , entryBlueprint = bp
                 , entryWrite = write
                 , entryKey = key
+                , entryDocument = doc
                 , entryReceipt = optional "--receipt" flags
                 }
     inspectArgs flags = do
@@ -287,6 +295,8 @@ tokens = go [] []
         , "--key"
         , "--receipt"
         , "--confirm-timeout"
+        , "--envelope"
+        , "--payload"
         ]
 
 -- | One line naming the refusal.
@@ -315,6 +325,10 @@ usage =
         , "      (--seed TXID#IX | --preview)"
         , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "  singular registry insert --registry DIR --blueprint PLUTUS_JSON --key HEX"
+        , "      --envelope ENVELOPE_JSON"
+        , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "  singular registry update --registry DIR --blueprint PLUTUS_JSON --key HEX"
+        , "      --payload DATUM_JSON"
         , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "  singular registry terminate --registry DIR --blueprint PLUTUS_JSON --key HEX"
         , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"

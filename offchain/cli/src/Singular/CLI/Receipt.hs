@@ -6,10 +6,23 @@ Description : The journal a write appends and the receipt a command prints
 License     : Apache-2.0
 
 A write submits several transactions, and a process can die between any
-two of them. The journal is appended BEFORE each submission is awaited
-and again when it is confirmed, so every transaction id that reached a
-node survives the process, and a later write can see that an earlier one
-never finished and refuse rather than silently repair or resubmit.
+two of them. Each submission is journalled in four phases, each line
+appended before the next step starts:
+
+1. @prepared@: the signed body is saved beside the journal with its
+   transaction id, inputs and the tip slot the node reported just
+   before the send. This proves only that the transaction was built.
+2. @submitted@, @rejected@ or @submit-unknown@: the node's answer to the
+   send, or that none arrived (a timeout, a dropped connection, a
+   process killed between the send and the answer).
+3. @confirmed@ or @unconfirmed@: whether it was seen on chain before the
+   deadline.
+4. @observed@: a fresh readback of what it made.
+
+A transaction whose last phase is not @observed@, @rejected@ or
+@excluded@ is unresolved. Every write refuses while one exists, and
+nothing is resubmitted or rebooted implicitly; @inspect@ resolves one
+only from chain evidence about that exact transaction.
 
 A receipt is what one command prints: its public identity, what it
 submitted, what it read back from the ledger and how, and its outcome.
@@ -24,6 +37,8 @@ module Singular.CLI.Receipt
     , appendJournal
     , readJournal
     , unresolved
+    , bodiesDir
+    , durableWrite
 
       -- * Outcomes
     , OutcomeClass (..)
@@ -31,26 +46,48 @@ module Singular.CLI.Receipt
     , exitCodeOf
     ) where
 
-import Control.Exception (ErrorCall (..), throwIO)
+import Control.Exception (ErrorCall (..), bracket, throwIO)
 import Data.Aeson (FromJSON (..), ToJSON (..))
 import Data.Aeson qualified as Aeson
 import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
+import Data.List (nub)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import System.Directory (doesFileExist)
 import System.Exit (ExitCode (..))
-import System.FilePath ((</>))
+import System.FilePath (takeDirectory, (</>))
+import System.Posix.IO
+    ( OpenFileFlags (..)
+    , OpenMode (..)
+    , closeFd
+    , defaultFileFlags
+    , openFd
+    )
+import System.Posix.IO.ByteString (fdWrite)
+import System.Posix.Unistd (fileSynchronise)
 
--- | One journal line: a submission or its confirmation.
+-- | One journal line: one phase of one submission.
 data JournalEntry = JournalEntry
     { journalCommand :: Text
     , journalStep :: Text
     , journalTxId :: Text
     , journalEvent :: Text
-    -- ^ @submitted@, @confirmed@ or @failed@
+    {- ^ @prepared@, @submitted@, @rejected@, @submit-unknown@,
+    @confirmed@, @unconfirmed@, @observed@ or @excluded@
+    -}
     , journalDetail :: Maybe Text
+    , journalInputs :: Maybe [Text]
+    -- ^ At @prepared@: the exact inputs the body spends
+    , journalTipSlot :: Maybe Integer
+    -- ^ At @prepared@: the node's tip slot just before the send
+    , journalBody :: Maybe FilePath
+    -- ^ At @prepared@: where the signed transaction's CBOR is saved
+    , journalBodyHash :: Maybe Text
+    -- ^ At @prepared@: BLAKE2b-256 of those saved bytes
+    , journalChainPoint :: Maybe Text
+    -- ^ At @prepared@: the node's chain point, @slot.headerhash@
     }
     deriving stock (Eq, Show, Generic)
 
@@ -62,10 +99,56 @@ instance FromJSON JournalEntry where
 journalPath :: FilePath -> FilePath
 journalPath dir = dir </> "journal.jsonl"
 
--- | Append one line, flushed before the caller goes on to wait.
+{- | Append one line and make it durable — the file and its directory
+synchronised to disk — before the caller takes the next step.
+-}
 appendJournal :: FilePath -> JournalEntry -> IO ()
 appendJournal dir entry =
-    BL.appendFile (journalPath dir) (Aeson.encode entry <> "\n")
+    durableAppend
+        (journalPath dir)
+        (BL.toStrict (Aeson.encode entry <> "\n"))
+
+-- | Append bytes to a file, creating it, and synchronise file and directory.
+durableAppend :: FilePath -> BS.ByteString -> IO ()
+durableAppend path bytes = do
+    bracket
+        ( openFd
+            path
+            WriteOnly
+            defaultFileFlags{append = True, creat = Just 0o644}
+        )
+        closeFd
+        (\fd -> writeAll fd bytes >> fileSynchronise fd)
+    syncDirectory (takeDirectory path)
+  where
+    writeAll fd b
+        | BS.null b = pure ()
+        | otherwise = do
+            n <- fdWrite fd b
+            writeAll fd (BS.drop (fromIntegral n) b)
+
+-- | Write a new file whole, synchronised with its directory.
+durableWrite :: FilePath -> BS.ByteString -> IO ()
+durableWrite path bytes = do
+    bracket
+        ( openFd
+            path
+            WriteOnly
+            defaultFileFlags{trunc = True, creat = Just 0o644}
+        )
+        closeFd
+        (\fd -> writeAll fd bytes >> fileSynchronise fd)
+    syncDirectory (takeDirectory path)
+  where
+    writeAll fd b
+        | BS.null b = pure ()
+        | otherwise = do
+            n <- fdWrite fd b
+            writeAll fd (BS.drop (fromIntegral n) b)
+
+syncDirectory :: FilePath -> IO ()
+syncDirectory dir =
+    bracket (openFd dir ReadOnly defaultFileFlags) closeFd fileSynchronise
 
 -- | Every line, in the order it was appended; a missing journal is empty.
 readJournal :: FilePath -> IO [JournalEntry]
@@ -84,19 +167,25 @@ readJournal dir = do
             pure
             (Aeson.eitherDecodeStrict' l)
 
--- | The first submission the journal never saw confirmed, if any.
+{- | The latest line of the first transaction whose last phase does not
+settle it, if any.
+-}
 unresolved :: [JournalEntry] -> Maybe JournalEntry
 unresolved entries =
-    case [ e
-         | e <- entries
-         , journalEvent e == "submitted"
-         , journalTxId e `notElem` confirmedIds
+    case [ lastOf t
+         | t <- txIds
+         , journalEvent (lastOf t) `notElem` settled
          ] of
         (e : _) -> Just e
         [] -> Nothing
   where
-    confirmedIds =
-        [journalTxId e | e <- entries, journalEvent e == "confirmed"]
+    settled = ["observed", "rejected", "excluded"]
+    txIds = nub (map journalTxId entries)
+    lastOf t = last [e | e <- entries, journalTxId e == t]
+
+-- | The journal's directory of saved signed bodies.
+bodiesDir :: FilePath -> FilePath
+bodiesDir dir = dir </> "submissions"
 
 -- | The attributable classes a command ends in.
 data OutcomeClass
@@ -107,6 +196,9 @@ data OutcomeClass
     | Timeout
     | StaleState
     | Partial
+    | ConcurrentWriter
+    | ProofMissing
+    | ProofInconsistent
     deriving stock (Eq, Show, Enum, Bounded)
 
 -- | The class as a receipt names it.
@@ -119,6 +211,9 @@ outcomeName = \case
     Timeout -> "timeout"
     StaleState -> "stale-state"
     Partial -> "partial"
+    ConcurrentWriter -> "concurrent-writer"
+    ProofMissing -> "proof-missing"
+    ProofInconsistent -> "proof-inconsistent"
 
 -- | The exit status of each class; 2 stays the command line's own.
 exitCodeOf :: OutcomeClass -> ExitCode
@@ -130,3 +225,6 @@ exitCodeOf = \case
     Timeout -> ExitFailure 13
     StaleState -> ExitFailure 14
     Partial -> ExitFailure 15
+    ConcurrentWriter -> ExitFailure 16
+    ProofMissing -> ExitFailure 17
+    ProofInconsistent -> ExitFailure 18

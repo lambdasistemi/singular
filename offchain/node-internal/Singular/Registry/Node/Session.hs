@@ -27,6 +27,10 @@ module Singular.Registry.Node.Session
     , withNodeSocket
     , awaitConnection
 
+      -- * Key-free reads (#299)
+    , NodeReads (..)
+    , withNodeReads
+
       -- * Open-session state
     , withOpenSession
     , sessionFor
@@ -66,6 +70,9 @@ import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (Submitter)
+import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
+import Data.ByteString (ByteString)
+import Data.Word (Word32, Word64)
 import Singular.Registry.Ledger (ConwayEra, PParams)
 import Singular.Registry.Node.Funding
     ( FundingFloor
@@ -112,9 +119,49 @@ data NodeSession = NodeSession
     -- ^ Whether this script has a registered reward account, including zero balance
     , nsTipSlot :: IO SlotNo
     -- ^ Current chain tip queried from this session
+    , nsChainPoint :: IO (Maybe (Word64, ByteString))
+    {- ^ The node's current chain point as slot and header hash; none at
+    genesis. What a write journals just before a send, so a later reader
+    can follow the chain from there.
+    -}
     , nsMode :: NodeMode
     -- ^ Mode this session was opened in
     }
+
+{- | What a key-free reader holds: ledger queries over one connection,
+and the node's chain point and tip. No wallet, no funding check, no
+submitter, no follower: nothing here can sign or send.
+-}
+data NodeReads = NodeReads
+    { nrProvider :: Cage.Provider IO
+    , nrChainPoint :: IO (Maybe (Word64, ByteString))
+    -- ^ Slot and header hash of the node's current chain point
+    , nrTipSlot :: IO SlotNo
+    }
+
+{- | Connect to an existing node by its socket and magic alone, for reads
+(#299 inspect). Refuses, as 'withNodeMode' does, when the node does not
+answer or carries another magic.
+-}
+withNodeReads :: Word32 -> FilePath -> (NodeReads -> IO a) -> IO a
+withNodeReads magicWord sock k = do
+    let magic = NetworkMagic magicWord
+    lsqCh <- newLSQChannel 16
+    ltxsCh <- newLTxSChannel 16
+    bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $ \nodeThread -> do
+        let n2c = mkN2CProvider lsqCh
+            prov = adaptProvider n2c
+        awaitConnection magic sock nodeThread prov
+        k
+            NodeReads
+                { nrProvider = prov
+                , nrChainPoint =
+                    fmap (\(Indexer.SlotNo slot, Indexer.BlockHash h) -> (slot, h))
+                        . startingAt
+                        . N2C.ledgerChainPoint
+                        <$> N2C.queryLedgerSnapshot n2c
+                , nrTipSlot = N2C.ledgerTipSlot <$> N2C.queryLedgerSnapshot n2c
+                }
 
 -- | The devnet genesis directory, or 'Nothing' in external mode.
 devnetGenesis :: IO (Maybe FilePath)
@@ -200,6 +247,11 @@ withNodeModeAndFunding fundingFloor mode k = case mode of
                         Map.member credential
                             <$> N2C.queryStakeRewards n2c (Set.singleton credential)
                     , nsTipSlot = N2C.ledgerTipSlot <$> N2C.queryLedgerSnapshot n2c
+                    , nsChainPoint =
+                        fmap (\(Indexer.SlotNo slot, Indexer.BlockHash h) -> (slot, h))
+                            . startingAt
+                            . N2C.ledgerChainPoint
+                            <$> N2C.queryLedgerSnapshot n2c
                     , nsMode = mode
                     }
         withOpenSession sess (k sess)

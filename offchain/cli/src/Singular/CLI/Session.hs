@@ -1,0 +1,329 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+
+{- |
+Module      : Singular.CLI.Session
+Description : The node and wallet a write command runs with, and its journalled submissions
+License     : Apache-2.0
+
+A write command connects to the node its caller named — never one of its
+own — loads the caller's signing key, and hands every transaction it
+builds to 'journalledSubmit', which signs it and walks the first three
+journal phases of "Singular.CLI.Receipt": prepared, the node's answer,
+the confirmation. Each phase is synchronised to disk before the next
+step starts, so a process killed anywhere leaves the journal saying how
+far that transaction got.
+
+The fourth phase, @observed@, is the command's own: 'journalObserved'
+records it only after the command has read back what the transaction
+made. A confirmation proves inclusion, not that readback, so a
+transaction confirmed but never read back stays unresolved.
+
+A failure is a 'CommandFailure' naming its outcome class; the command
+prints it and exits with that class's status.
+-}
+module Singular.CLI.Session
+    ( -- * Failures
+      CommandFailure (..)
+    , failWith
+
+      -- * Writes
+    , WriteContext (..)
+    , withWrite
+    , withSession
+    , journalledSubmit
+    , journalObserved
+    , journalObservedId
+    , txIdHex
+    , refuseUnresolved
+    ) where
+
+import Control.Exception
+    ( Exception
+    , IOException
+    , SomeException
+    , bracket
+    , throwIO
+    , try
+    )
+import Data.ByteString (ByteString)
+import Data.ByteString.Base16 qualified as B16
+import Data.ByteString.Char8 qualified as BC
+import Data.Foldable (toList)
+import Data.IORef (newIORef, readIORef, writeIORef)
+import Data.Text (Text)
+import Data.Text qualified as T
+import Lens.Micro ((^.))
+import System.Directory (createDirectoryIfMissing)
+import System.FilePath ((</>))
+import System.IO (SeekMode (..))
+import System.Posix.IO
+    ( LockRequest (..)
+    , OpenFileFlags (..)
+    , OpenMode (..)
+    , closeFd
+    , defaultFileFlags
+    , openFd
+    , setLock
+    )
+import System.Timeout (timeout)
+
+import Cardano.Crypto.Hash.Blake2b (Blake2b_256)
+import Cardano.Crypto.Hash.Class (hashToBytes, hashWith)
+import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
+import Cardano.Ledger.Api.Tx.Body (inputsTxBodyL)
+import Cardano.Ledger.Binary (serialize')
+import Cardano.Ledger.Core (eraProtVerHigh)
+import Cardano.Ledger.Hashes (extractHash)
+import Cardano.Ledger.TxIn (TxId (..))
+import Cardano.Node.Client.E2E.Setup (addKeyWitness)
+import Cardano.Node.Client.Submitter
+    ( SubmitResult (..)
+    , Submitter (..)
+    )
+import Cardano.Slotting.Slot (SlotNo (..))
+import Cardano.Tx.Ledger (ConwayTx)
+import Singular.Registry.Ledger (ConwayEra)
+
+import Singular.CLI.Command (NodeSettings (..), WriteSettings (..))
+import Singular.CLI.Receipt
+    ( JournalEntry (..)
+    , OutcomeClass (..)
+    , appendJournal
+    , bodiesDir
+    , durableWrite
+    , readJournal
+    , unresolved
+    )
+import Singular.Registry.Deployment (renderOutRef)
+import Singular.Registry.Node
+    ( ExternalNode (..)
+    , NodeMode (..)
+    , NodeSession (..)
+    , Wallet (..)
+    , awaitTxWindow
+    , loadWallet
+    , withNodeMode
+    )
+
+-- | Why a command stopped, in its outcome class.
+data CommandFailure = CommandFailure OutcomeClass String
+    deriving stock (Show)
+
+instance Exception CommandFailure
+
+failWith :: OutcomeClass -> String -> IO a
+failWith c why = throwIO (CommandFailure c why)
+
+-- | Everything a write's submissions need.
+data WriteContext = WriteContext
+    { wcDir :: FilePath
+    , wcCommand :: Text
+    , wcWallet :: Wallet
+    , wcSession :: NodeSession
+    , wcTimeout :: Maybe Int
+    }
+
+{- | Take the target directory's write lock, connect to the named node with
+the caller's wallet, and run the body holding the lock throughout. A
+second writer on the same directory is refused @concurrent-writer@
+before it reads the journal or contacts the node; the lock is the
+operating system's, released when the process ends however it ends,
+so a crash leaves no stale lock. A node that cannot be used before the
+body starts is @node-unavailable@; once connected, failures are the
+body's own.
+-}
+withWrite
+    :: FilePath
+    -> Text
+    -> WriteSettings
+    -> (WriteContext -> IO a)
+    -> IO a
+withWrite dir command ws body = withTargetLock dir (withSession dir command ws body)
+
+{- | The node and wallet without the target's lock: for a command that
+writes nothing to its target (a create preview), so the target directory
+is neither created nor touched.
+-}
+withSession
+    :: FilePath
+    -> Text
+    -> WriteSettings
+    -> (WriteContext -> IO a)
+    -> IO a
+withSession dir command ws body = do
+    let NodeSettings sock magic = writeNode ws
+    wallet <- loadWallet magic (writeWalletKey ws)
+    connected <- newIORef False
+    result <-
+        try $
+            withNodeMode (External (ExternalNode sock magic (writeWalletKey ws))) $ \sess -> do
+                writeIORef connected True
+                body
+                    WriteContext
+                        { wcDir = dir
+                        , wcCommand = command
+                        , wcWallet = wallet
+                        , wcSession = sess
+                        , wcTimeout = writeConfirmTimeout ws
+                        }
+    case result of
+        Right a -> pure a
+        Left (e :: SomeException) -> do
+            was <- readIORef connected
+            if was
+                then throwIO e
+                else
+                    failWith
+                        NodeUnavailable
+                        ("the node at " <> sock <> " could not be used: " <> show e)
+
+{- | Hold an exclusive advisory lock on @dir/.lock@ for the action, or
+refuse at once when another process holds it.
+-}
+withTargetLock :: FilePath -> IO a -> IO a
+withTargetLock dir action = do
+    createDirectoryIfMissing True dir
+    bracket
+        ( openFd
+            (dir </> ".lock")
+            WriteOnly
+            defaultFileFlags{creat = Just 0o644}
+        )
+        closeFd
+        ( \fd -> do
+            taken <- try (setLock fd (WriteLock, AbsoluteSeek, 0, 0))
+            case taken of
+                Left (_ :: IOException) ->
+                    failWith
+                        ConcurrentWriter
+                        ( "another singular process is writing to "
+                            <> dir
+                            <> "; nothing was read or submitted"
+                        )
+                Right () -> action
+        )
+
+-- | A write refuses while any journalled submission is unresolved.
+refuseUnresolved :: FilePath -> IO ()
+refuseUnresolved dir = do
+    entries <- readJournal dir
+    case unresolved entries of
+        Nothing -> pure ()
+        Just e ->
+            failWith
+                Partial
+                ( "the journal holds an unresolved submission "
+                    <> T.unpack (journalTxId e)
+                    <> " ("
+                    <> T.unpack (journalStep e)
+                    <> ", last phase "
+                    <> T.unpack (journalEvent e)
+                    <> "); inspect resolves it only from chain evidence, \
+                       \and nothing is resubmitted"
+                )
+
+-- | A transaction's id, as hex.
+txIdHex :: ConwayTx -> Text
+txIdHex tx =
+    let TxId h = txIdTx tx
+    in  hexT (hashToBytes (extractHash h))
+
+blankEntry :: WriteContext -> Text -> Text -> Text -> JournalEntry
+blankEntry wc step txid event =
+    JournalEntry
+        { journalCommand = wcCommand wc
+        , journalStep = step
+        , journalTxId = txid
+        , journalEvent = event
+        , journalDetail = Nothing
+        , journalInputs = Nothing
+        , journalTipSlot = Nothing
+        , journalBody = Nothing
+        , journalBodyHash = Nothing
+        , journalChainPoint = Nothing
+        }
+
+{- | Sign; save the signed transaction and journal @prepared@ with its
+inputs, body hash and the node's chain point; send; journal the answer;
+await the confirmation; journal it. Returns the signed transaction once
+confirmed. The command journals @observed@ after its own readback.
+-}
+journalledSubmit :: WriteContext -> Text -> ConwayTx -> IO ConwayTx
+journalledSubmit wc step unsigned = do
+    let signed = addKeyWitness (walletSignKey (wcWallet wc)) unsigned
+        txid = txIdHex signed
+        dir = wcDir wc
+        sess = wcSession wc
+        journal event detail =
+            appendJournal
+                dir
+                (blankEntry wc step txid event){journalDetail = detail}
+        bytes = serialize' (eraProtVerHigh @ConwayEra) signed
+        bodyPath = bodiesDir dir </> T.unpack txid <> ".cbor.hex"
+    createDirectoryIfMissing True (bodiesDir dir)
+    durableWrite bodyPath (B16.encode bytes)
+    SlotNo tip <- nsTipSlot sess
+    point <- nsChainPoint sess
+    appendJournal
+        dir
+        (blankEntry wc step txid "prepared")
+            { journalInputs =
+                Just (map renderOutRef (toList (signed ^. bodyTxL . inputsTxBodyL)))
+            , journalTipSlot = Just (fromIntegral tip)
+            , journalBody = Just bodyPath
+            , journalBodyHash =
+                Just (hexT (hashToBytes (hashWith @Blake2b_256 id bytes)))
+            , journalChainPoint =
+                Just $ case point of
+                    Nothing -> "genesis"
+                    Just (slot, h) -> T.pack (show slot) <> "." <> hexT h
+            }
+    answer <- try (submitTx (nsSubmitter sess) signed)
+    case answer of
+        Left (e :: SomeException) -> do
+            journal "submit-unknown" (Just (T.pack (show e)))
+            failWith
+                Partial
+                ( "no answer from the node for "
+                    <> T.unpack txid
+                    <> "; it may or may not have been accepted: "
+                    <> show e
+                )
+        Right (Rejected reason) -> do
+            journal "rejected" (Just (T.pack (show reason)))
+            failWith
+                LedgerRefusal
+                (T.unpack step <> " refused by the node: " <> show reason)
+        Right (Submitted _) -> journal "submitted" Nothing
+    let limit = maybe (-1) (* 1_000_000) (wcTimeout wc)
+    seen <- timeout limit (awaitTxWindow signed (T.unpack txid))
+    case seen of
+        Nothing -> do
+            journal "unconfirmed" (Just "the confirmation deadline passed")
+            failWith
+                Timeout
+                ( T.unpack txid
+                    <> " was accepted but not seen on chain in time; it is \
+                       \journalled and never resubmitted"
+                )
+        Just () -> do
+            journal "confirmed" Nothing
+            pure signed
+
+{- | Journal the fourth phase: the command read back what a confirmed
+transaction made, and says what it read.
+-}
+journalObserved :: WriteContext -> Text -> ConwayTx -> Text -> IO ()
+journalObserved wc step tx = journalObservedId wc step (txIdHex tx)
+
+-- | The same, for a transaction known by its id.
+journalObservedId :: WriteContext -> Text -> Text -> Text -> IO ()
+journalObservedId wc step txid detail =
+    appendJournal
+        (wcDir wc)
+        (blankEntry wc step txid "observed"){journalDetail = Just detail}
+
+hexT :: ByteString -> Text
+hexT = T.pack . BC.unpack . B16.encode
