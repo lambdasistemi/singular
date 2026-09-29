@@ -74,7 +74,10 @@ def main():
                 assert original.count(before) == 1, (name, "mutation site changed")
                 mutated = original.replace(before, after)
                 (tree / MODEL).write_text(mutated)
-                assert (tree / MODEL).read_text() != original, (name, "mutation not applied")
+                assert (tree / MODEL).read_text() != original, (
+                    name,
+                    "mutation not applied",
+                )
             (evidence / f"{name}-Model.lean").write_text(mutated)
             binary_status = run(
                 ["lake", "build", "singular-driver"],
@@ -97,7 +100,9 @@ def main():
             proof_text = (evidence / f"{name}-proof.log").read_text()
             errors = [
                 int(n)
-                for n in re.findall(r"error: lean/Singular/Statements.lean:(\d+):", proof_text)
+                for n in re.findall(
+                    r"error: lean/Singular/Statements.lean:(\d+):", proof_text
+                )
             ]
             assert rows[DELIVERING] == 1, (name, "the delivering control lost its row")
             if name == "baseline":
