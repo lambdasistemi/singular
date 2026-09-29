@@ -1,7 +1,7 @@
 {
-  "corpusSourceSha256": "9dbe166ab1e1b1bd704f623c94e5a397d1516e242f38e6de85884a60ad6553ea",
-  "modelSha256": "ed1f2ce494ed2eb5db69adde52fe937c3a9587e11d39fef7a469bf374f4f6177",
-  "payloadSha256": "9c778fb469a27715c112129c4b31067d979149d2b7a26f771c9d8ab699ca09ff",
+  "corpusSourceSha256": "df23d1fb8b7ee55630360678aa5331169b7723eb335c75a77471611b9e672996",
+  "modelSha256": "59d913954200e6be5f67d4e161f02a1a5f8eb1ada8ecdd1ca1c8978a69a6f1dc",
+  "payloadSha256": "8e8d54a785555c28aa269ebd2f48d5d0c7cc4c4530e157b48e3479ab44fbdf04",
   "scenarios": [
     {
       "id": "DR01-register-absent",
@@ -158,18 +158,6 @@
             },
             {
               "address": 0,
-              "assets": [],
-              "commitment": 372747933,
-              "custodyDatum": null,
-              "datum": "inline",
-              "inlineConfig": null,
-              "lovelace": 0,
-              "reference": null,
-              "role": "destination",
-              "stateToken": 0
-            },
-            {
-              "address": 0,
               "assets": [
                 {
                   "assetName": 5,
@@ -253,7 +241,7 @@
         "held": [],
         "trie": []
       },
-      "statementSha256": "8c63e568b81b4e4a81cf3832c88d324ef910925e2733b6593c8e337c81357b3f",
+      "statementSha256": "a7e93824be2944e55b6482d0836111450522a7ed04eb57c262656f8903adaec6",
       "theorem": "Singular.Statements.insert_absent_transaction_row"
     },
     {
@@ -653,18 +641,6 @@
               "stateToken": 1
             },
             {
-              "address": 555,
-              "assets": [],
-              "commitment": 2958227895,
-              "custodyDatum": null,
-              "datum": "inline",
-              "inlineConfig": null,
-              "lovelace": 0,
-              "reference": null,
-              "role": "destination",
-              "stateToken": 0
-            },
-            {
               "address": 42,
               "assets": [],
               "commitment": 2958227895,
@@ -799,7 +775,7 @@
         "held": [],
         "trie": []
       },
-      "statementSha256": "6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068",
+      "statementSha256": "6e7c651930b814a376c74b4b6b8dec08fecbe2db44693fe9a82985957d602493",
       "theorem": "Singular.Statements.update_terminal_transaction_row"
     },
     {
@@ -2259,16 +2235,16 @@
   ],
   "schema": "singular-driver-corpus-v1",
   "sourceHashes": {
-    "lean/DriverMain.lean": "9dbe166ab1e1b1bd704f623c94e5a397d1516e242f38e6de85884a60ad6553ea",
-    "lean/Main.lean": "b55b058b687731b51fb620dc0ee42177cec9be86713a6906065a8ef735f3eedd",
+    "lean/DriverMain.lean": "df23d1fb8b7ee55630360678aa5331169b7723eb335c75a77471611b9e672996",
+    "lean/Main.lean": "f437c0cdc725a864914dabe105a2d65666213fd675f98ed64df3b44dff6b4cde",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "lean/Singular/Driver.lean": "52ed3c6db8ff0e0c2db2e07f8358ceba87ee74a671cdd6a096bedaacd2aa630a",
-    "lean/Singular/Lemmas.lean": "829d42c109a7d9ec8c7ab30bb42041f7d362fb5306277b84726e6fd0df0de899",
-    "lean/Singular/Model.lean": "ed1f2ce494ed2eb5db69adde52fe937c3a9587e11d39fef7a469bf374f4f6177",
-    "lean/Singular/Statements.lean": "609a512e59051bee36093bd1fc5014ba92991223894b5e60f7b1a33c58b9f838"
+    "lean/Singular/Lemmas.lean": "4cdd95fb0f3d145b89f68e86191b1ad2391a3adffb57c90e898fe7201dfd7fbf",
+    "lean/Singular/Model.lean": "59d913954200e6be5f67d4e161f02a1a5f8eb1ada8ecdd1ca1c8978a69a6f1dc",
+    "lean/Singular/Statements.lean": "24cf71dfdd11db3375ff1b728374fdaa5cb208f43390acfde26245dfb337f29e"
   },
-  "statementsSha256": "609a512e59051bee36093bd1fc5014ba92991223894b5e60f7b1a33c58b9f838",
+  "statementsSha256": "24cf71dfdd11db3375ff1b728374fdaa5cb208f43390acfde26245dfb337f29e",
   "surface": {
     "declaration": "Singular.Driver.runSurface",
     "definitionDigest": "13086894509481008378",
@@ -2308,5 +2284,5 @@
       "utxoReference"
     ]
   },
-  "theoremManifestSha256": "033ed0ad432d838c592a4f40ad00688ca235c6b41b54a72a274d643f7dfd0fec"
+  "theoremManifestSha256": "bd3d06609ce478a1159ea9da18fb8258a97a44a05ac493f6b781ab3752e7133b"
 }

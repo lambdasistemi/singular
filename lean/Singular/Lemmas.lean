@@ -1015,16 +1015,17 @@ theorem txOf_of_step_ok (s : RegistryState) (r : Request) (lovelace : Nat) (t : 
                 , stateTokens := 0, approvals := approvalsIn r, lovelace := lovelace } ]
               ++ txBurnInputs t r
           , outputs := txStateOutput t
-              :: { txDestinationOutput t r with
-                   lovelace := owedTo (.destination (requestDestination r))
-                     (obligations (.fold r.edge) r) }
-              :: txCageOutputs t r
+              :: (txDestinationOutputs t r).map
+                  (fun o => { o with
+                    lovelace := owedTo (.destination (requestDestination r))
+                      (obligations (.fold r.edge) r) })
+              ++ txCageOutputs t r
               ++ ownerOutputs .none (r.approval.map (·.assetName)) (obligations (.fold r.edge) r)
           , mint := t.mint
           , signers := requiredSigners r
           , refunds := (obligations (.fold r.edge) r).map paymentPaid ++ t.paid } := by
   simp [txOf, txOfExit, exitStep, h, txStateOutput, txBurnInputs, txCageOutputs,
-    routedPayment, mintRoutedTo, txDestinationOutput]
+    routedPayment, mintRoutedTo, txDestinationOutputs]
 
 /-! ### Settling one payment -/
 

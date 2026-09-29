@@ -896,6 +896,7 @@ theorem read_changes_nothing (s : RegistryState) (r : Request) (t : Result)
 payload has one field, the refund address; its identity is recovered from its
 sole absent asset. The deposit is held: the cage output carries it, and the
 transaction's one payment is that deposit, to custody at the cage's address.
+It has no destination output: it delivers no token to the requester (#304).
 Reachability supplies witness uniqueness, not the transaction equation. -/
 theorem insert_absent_transaction_row (s : RegistryState) (r : Request) (t : Result)
     (ap : Approval) (lovelace : Nat) (h : Reachable s) (he : r.edge = .insertAbsent)
@@ -910,9 +911,6 @@ theorem insert_absent_transaction_row (s : RegistryState) (r : Request) (t : Res
           , outputs :=
               [ { role := .state, datum := .inline, address := none, stateTokens := 1
                 , config := some t.state.config, commitment := none, assets := [] }
-              , { role := .destination, datum := .inline, address := some 0
-                , stateTokens := 0, config := none, commitment := some ap.assetName
-                , assets := [] }
               , { role := .cage, datum := .inline, address := some 0
                 , stateTokens := 0, config := none, commitment := none
                 , assets := [((.absent, r.key), 1)]
@@ -959,9 +957,6 @@ theorem insert_absent_transaction_row (s : RegistryState) (r : Request) (t : Res
           , outputs :=
               [ { role := .state, datum := .inline, address := none, stateTokens := 1
                 , config := some t.state.config, commitment := none, assets := [] }
-              , { role := .destination, datum := .inline, address := some 0
-                , stateTokens := 0, config := none, commitment := some ap.assetName
-                , assets := [] }
               , { role := .cage, datum := .inline, address := some 0
                 , stateTokens := 0, config := none, commitment := none
                 , assets := [((.absent, r.key), 1)]
@@ -970,7 +965,7 @@ theorem insert_absent_transaction_row (s : RegistryState) (r : Request) (t : Res
           , refunds := [(0, r.deposit)] } := by
     rw [txOf_of_step_ok s r lovelace t hok]
     simp [he, obligations, owedTo, ownerOutputs, paymentPaid, cageAddress, txStateOutput,
-      txDestinationOutput, hcage, hburn, happrovals, hdest, hrouted, hbind, hpaid, hmint,
+      txDestinationOutputs, hcage, hburn, happrovals, hdest, hrouted, hpaid, hmint,
       requiredSigners, registryDatumForm, registryStateTokens]
   have hcount : custodyCount t.state r.key = 1 :=
     (absent_witness_unique t.state (Reachable.next h hok) r.key).2.mpr
@@ -1127,7 +1122,7 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
           , refunds := [(r.output, r.deposit)] } := by
     rw [txOf_of_step_ok s r lovelace t hok]
     simp [he, obligations, owedTo, ownerOutputs, paymentPaid, txStateOutput,
-      txDestinationOutput, hcage, hburn, happrovals, hdest, hrouted, hbind, hpaid, hmint,
+      txDestinationOutputs, hcage, hburn, happrovals, hdest, hrouted, hbind, hpaid, hmint,
       requiredSigners, registryDatumForm, registryStateTokens]
   have hsigtx : ∀ sigs : List (List Nat),
       txOf s { r with approval := some { ap with signatures := sigs } } lovelace
@@ -1150,7 +1145,7 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
       unfold datumHash destinationDatum
       simp only [hd]
       rw [hasset, hedge, hkey, hown, hdst, hdest]
-    simp only [txStateOutput, txDestinationOutput, hc, hbi, ha, hd, hr, hb, hpaid, hmint,
+    simp only [txStateOutput, txDestinationOutputs, hc, hbi, ha, hd, hr, hb, hpaid, hmint,
       requiredSigners, registryDatumForm, registryStateTokens]
     simp [he, obligations, owedTo, ownerOutputs, paymentPaid, requestDestination]
   have hsecondtx : ∀ r₂ : Request, r₂.edge = .insertActive → r₂.key = r.key →
@@ -1175,11 +1170,9 @@ holding this key's one active token, spent so the burn has a source — and
 produces two outputs: the state UTxO moved, still carrying one state token under
 an inline datum, whose eight-field configuration differs from the input's in the
 root alone and whose root commits a map where the key now reads `Terminal`; and
-a destination output routed to the address the request named, whose inline datum
-presents the very commitment the approval the fold verified carries, holding no
-token at all, because a burn pays nobody; and an output paying the request's
-owner the deposit back, since a retirement delivers nothing, with no datum and
-naming the approval it returns. The mint is `-1` at
+an output paying the request's owner the deposit back, since a retirement
+delivers nothing, with no datum and naming the approval it returns. There is no
+destination output: a burn routes no token to the requester (#304). The mint is `-1` at
 `(activePolicy, key)` and nothing else, the transaction's one payment is that
 deposit, to the owner, and the signer set is empty.
 
@@ -1214,9 +1207,6 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
           , outputs :=
               [ { role := .state, datum := .inline, address := none, stateTokens := 1
                 , config := some t.state.config, commitment := none, assets := [] }
-              , { role := .destination, datum := .inline, address := some r.output
-                , stateTokens := 0, config := none, commitment := some ap.assetName
-                , assets := [] }
               , { role := .owner, datum := .none, address := some r.owner
                 , stateTokens := 0, config := none, commitment := some ap.assetName
                 , assets := [], lovelace := r.deposit } ]
@@ -1331,9 +1321,6 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
           , outputs :=
               [ { role := .state, datum := .inline, address := none, stateTokens := 1
                 , config := some t.state.config, commitment := none, assets := [] }
-              , { role := .destination, datum := .inline, address := some r.output
-                , stateTokens := 0, config := none, commitment := some ap.assetName
-                , assets := [] }
               , { role := .owner, datum := .none, address := some r.owner
                 , stateTokens := 0, config := none, commitment := some ap.assetName
                 , assets := [], lovelace := r.deposit } ]
@@ -1342,7 +1329,7 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
           , refunds := [(r.owner, r.deposit)] } := by
     rw [txOf_of_step_ok s r lovelace t hok]
     simp [he, hap, obligations, owedTo, ownerOutputs, paymentPaid, txStateOutput,
-      txDestinationOutput, hcage, hburn, happrovals, hdest, hrouted, hbind, hpaid, hmint,
+      txDestinationOutputs, hcage, hburn, happrovals, hdest, hrouted, hpaid, hmint,
       requiredSigners, registryDatumForm, registryStateTokens]
   -- no signature is read
   have hstep : ∀ sigs : List (List Nat),
@@ -1378,7 +1365,7 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
       unfold datumHash destinationDatum
       simp only [hd]
       rw [hasset, hedge, hkey, hown, hdst, hdest]
-    simp only [txStateOutput, txDestinationOutput, hc, hbi, ha, hd, hr, hb, hpaid, hmint,
+    simp only [txStateOutput, txDestinationOutputs, hc, hbi, ha, hd, hr, hb, hpaid, hmint,
       requiredSigners, registryDatumForm, registryStateTokens]
     simp [he, obligations, owedTo, ownerOutputs, paymentPaid]
   -- retirement completes, and the two leaves that never admit it
@@ -1632,7 +1619,7 @@ theorem built_transaction_settles (state : RegistryState) (exit : Exit) (request
           simp only [txOfExit, exitStep, beq_self_eq_true, if_true, hs, Except.ok.injEq] at built
           subst built
           cases hedge : request.edge <;> simp only [hedge, obligations] <;> apply settle_one <;>
-            simp +decide [paysRecipient, txDestinationOutput, owedTo, ownerOutputs, txCageOutputs,
+            simp +decide [paysRecipient, txDestinationOutputs, owedTo, ownerOutputs, txCageOutputs,
               routedPayment, mintRoutedTo, happ, applyEdge, assetDelta, hedge, delta, route,
               requestDestination]
       · simp [he] at hstep
@@ -1726,6 +1713,66 @@ theorem admitted_exit_is_the_exit (s : RegistryState) (exit : Exit) (r : Request
     | fold e => rfl
     | reject => rfl
   simp [admittedExitStep, admittedTxOfExit, none]
+
+/-- **#304** — a fold's transaction describes a destination output exactly when
+the fold routes a token to the requester.
+
+For every state, request, lovelace and admitted fold, over all seven edges: the
+built outputs contain an output in the destination role if and only if the
+edge's routing sends a token to the request's output. A fold that delivers
+nothing — an absent insertion, whose token goes to custody, or a retirement or
+deletion, which burn — describes no destination output, so none can be invented
+for a comparison to agree with. The state, custody and owner outputs never take
+the destination role. -/
+theorem destination_output_iff_delivers (s : RegistryState) (r : Request) (lovelace : Nat)
+    (t : Result) (tx : Tx) (hok : step s r = .ok t) (htx : txOf s r lovelace = .ok tx) :
+    tx.outputs.any (·.role == .destination) = !(routedPayment t r .requestOutput).isEmpty := by
+  rw [txOf_of_step_ok s r lovelace t hok] at htx
+  injection htx with htx
+  subst htx
+  have hcage : (txCageOutputs t r).any (·.role == .destination) = false := by
+    unfold txCageOutputs
+    dsimp only
+    split <;> rfl
+  have howner : ∀ (d : DatumForm) (c : Option Nat) (ps : List Payment),
+      (ownerOutputs d c ps).any (·.role == .destination) = false := by
+    intro d c ps
+    simp only [ownerOutputs, List.any_eq_false, List.mem_filterMap]
+    rintro o ⟨p, -, hp⟩
+    split at hp <;> (cases hp; try (intro h; cases h))
+  have hdest : ∀ f : TxOutput → TxOutput, (∀ o, (f o).role = o.role) →
+      ((txDestinationOutputs t r).map f).any (·.role == .destination)
+        = !(routedPayment t r .requestOutput).isEmpty := by
+    intro f hf
+    unfold txDestinationOutputs
+    dsimp only
+    split
+    · rename_i h
+      simp [h]
+    · rename_i h
+      rw [Bool.eq_false_iff.mpr h]
+      simp only [List.map_cons, List.map_nil, List.any_cons, List.any_nil, hf,
+        Bool.or_false, Bool.not_false]
+      rfl
+  simp only [List.any_cons, List.any_append, hcage, howner, Bool.or_false]
+  rw [hdest]
+  · rfl
+  · intro o
+    rfl
+
+/-- By value, one edge each way: an absent insertion routes its token to custody
+and describes no destination output. -/
+example (s : RegistryState) (k : Key) :
+    txDestinationOutputs { state := s, mint := [((.absent, k), 1)], paid := [] }
+      { edge := .insertAbsent, key := k } = [] := by
+  simp +decide [txDestinationOutputs, routedPayment, mintRoutedTo, route]
+
+/-- By value: an active insertion routes its token to the requester and
+describes exactly one destination output. -/
+example (s : RegistryState) (k : Key) :
+    (txDestinationOutputs { state := s, mint := [((.active, k), 1)], paid := [] }
+      { edge := .insertActive, key := k }).length = 1 := by
+  simp +decide [txDestinationOutputs, routedPayment, mintRoutedTo, route]
 
 /-- Admission refuses before what a retraction spends or pays is judged.
 

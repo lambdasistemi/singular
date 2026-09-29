@@ -1,0 +1,40 @@
+[
+  {
+    "mutation": "baseline",
+    "before": "",
+    "after": "",
+    "driverBuildExit": 0,
+    "driverExit": 0,
+    "destinationRows": {
+      "DR01-register-absent": 0,
+      "DR03-retire-registered": 0,
+      "DR02-register-active": 1
+    },
+    "proofExit": 0,
+    "statementErrorLines": [],
+    "modelSha256": "59d913954200e6be5f67d4e161f02a1a5f8eb1ada8ecdd1ca1c8978a69a6f1dc",
+    "statementsSha256": "24cf71dfdd11db3375ff1b728374fdaa5cb208f43390acfde26245dfb337f29e"
+  },
+  {
+    "mutation": "unconditional-row",
+    "before": "  if assets.isEmpty then []\n  else [{ role := .destination",
+    "after": "  [{ role := .destination",
+    "driverBuildExit": 0,
+    "driverExit": 0,
+    "destinationRows": {
+      "DR01-register-absent": 1,
+      "DR03-retire-registered": 1,
+      "DR02-register-active": 1
+    },
+    "proofExit": 1,
+    "statementErrorLines": [
+      965,
+      1329,
+      1346,
+      1749,
+      1767
+    ],
+    "modelSha256": "609e5382e39a2ff078e5c154597d48438266d81bbb250a6c89e8e7a46fd67579",
+    "statementsSha256": "24cf71dfdd11db3375ff1b728374fdaa5cb208f43390acfde26245dfb337f29e"
+  }
+]

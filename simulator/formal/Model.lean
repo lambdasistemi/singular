@@ -850,14 +850,18 @@ def txStateOutput (t : Result) : TxOutput :=
   , stateTokens := registryStateTokens, config := some t.state.config
   , commitment := none, assets := [] }
 
-/-- The destination output: routed to the address the request named, carrying an
-inline datum whose commitment is the scoping tuple's, and holding exactly the
-tokens the edge routed to the requester. -/
-def txDestinationOutput (t : Result) (r : Request) : TxOutput :=
-  { role := .destination, datum := registryDatumForm
-  , address := some (requestDestination r), stateTokens := 0, config := none
-  , commitment := some (datumHash (destinationDatum r))
-  , assets := routedPayment t r .requestOutput }
+/-- The destination output, present only when this edge routes a token to the
+requester: routed to the address the request named, carrying an inline datum
+whose commitment is the scoping tuple's, and holding exactly the tokens the edge
+routed there. A fold that delivers nothing has no such output, so the model
+describes only outputs that exist (#304). -/
+def txDestinationOutputs (t : Result) (r : Request) : List TxOutput :=
+  let assets := routedPayment t r .requestOutput
+  if assets.isEmpty then []
+  else [{ role := .destination, datum := registryDatumForm
+        , address := some (requestDestination r), stateTokens := 0, config := none
+        , commitment := some (datumHash (destinationDatum r))
+        , assets := assets }]
 
 /-- The address custody outputs sit at: the cage. -/
 abbrev cageAddress : Nat := 0
@@ -1042,8 +1046,9 @@ def txOfExit (state : RegistryState) (exit : Exit) (request : Request) (lovelace
       let destinationFloor := owedTo (.destination (requestDestination request)) owed
       .ok { inputs := [stateInput, requestInput] ++ txBurnInputs t request
           , outputs := txStateOutput t
-              :: { txDestinationOutput t request with lovelace := destinationFloor }
-              :: txCageOutputs t request
+              :: (txDestinationOutputs t request).map
+                  (fun o => { o with lovelace := destinationFloor })
+              ++ txCageOutputs t request
               ++ ownerOutputs .none (request.approval.map (·.assetName)) owed
           , mint := t.mint
           , signers := requiredSigners request

@@ -64,13 +64,13 @@ def lovelace : Nat := 5
 
 def insertAbsentTheorem : String := "Singular.Statements.insert_absent_transaction_row"
 def insertAbsentDigest : String :=
-  "8c63e568b81b4e4a81cf3832c88d324ef910925e2733b6593c8e337c81357b3f"
+  "a7e93824be2944e55b6482d0836111450522a7ed04eb57c262656f8903adaec6"
 def insertActiveTheorem : String := "Singular.Statements.insert_active_transaction_row"
 def insertActiveDigest : String :=
   "f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508"
 def updateTerminalTheorem : String := "Singular.Statements.update_terminal_transaction_row"
 def updateTerminalDigest : String :=
-  "6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068"
+  "6e7c651930b814a376c74b4b6b8dec08fecbe2db44693fe9a82985957d602493"
 def insertAbsentInversion : String := "Singular.Statements.insert_absent_inversion"
 def insertAbsentInversionDigest : String :=
   "b2ca14e3aa29caef0841c246964e5e64b600eef9ff64c0865677a1219d31525d"

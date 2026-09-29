@@ -303,7 +303,7 @@ def absentResult : Except String Result := step s0 absentRequest
 def absentTx : Except String Tx := txOf s0 absentRequest txLovelace
 
 def absentRowTheorem : String := "Singular.Statements.insert_absent_transaction_row"
-def absentRowStatement : String := "8c63e568b81b4e4a81cf3832c88d324ef910925e2733b6593c8e337c81357b3f"
+def absentRowStatement : String := "a7e93824be2944e55b6482d0836111450522a7ed04eb57c262656f8903adaec6"
 
 /-- Check the constructed value independently of its constructors, so changing
 those constructors cannot silently change the exported expectations. -/
@@ -318,9 +318,6 @@ def absentTxCorrect : Bool :=
       , outputs :=
           [ { role := .state, datum := .inline, address := none, stateTokens := 1
             , config := some t.state.config, commitment := none, assets := [] }
-          , { role := .destination, datum := .inline, address := some 0, stateTokens := 0
-            , config := none, commitment := some (approvalAssetName .insertAbsent 42 91 0)
-            , assets := [] }
           , { role := .cage, datum := .inline, address := some 0, stateTokens := 0
             , config := none, commitment := none, assets := [((.absent, 42), 1)]
             , custodyDatum := some [91], lovelace := 200 } ]
@@ -359,7 +356,7 @@ step. -/
 
 def retirementRowTheorem : String := "Singular.Statements.update_terminal_transaction_row"
 def retirementRowStatement : String :=
-  "6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068"
+  "6e7c651930b814a376c74b4b6b8dec08fecbe2db44693fe9a82985957d602493"
 
 /-- The state an accepted `insertActive` at key 42 produced: the leaf reads
 `Active` and its one active token is held at output 555. -/
@@ -934,14 +931,15 @@ def returnsDeposit (e : Edge) : Bool := foldPaysDepositTo e == 42
 
 -- A fold's transaction carries the deposit in the output that pays it: the
 -- destination output of a delivering edge, one owner output of an edge that
--- delivers nothing, with no datum and naming the approval it returns; and it
--- refunds exactly what the exit pays.
+-- delivers nothing, with no datum and naming the approval it returns; an edge
+-- that delivers nothing has no destination output (#304); and it refunds exactly
+-- what the exit pays.
 #guard exitEdges.all fun e => paidKeys.all fun k =>
   match exitStep paidState (.fold e) (exitStepRequest e k),
         txOfExit paidState (.fold e) (exitStepRequest e k) 3 with
   | .ok t, .ok tx =>
     (tx.outputs.filter (·.role == .destination)).map (·.lovelace)
-        == [if deliversToken e then 55 else 0] &&
+        == (if deliversToken e then [55] else []) &&
       tx.outputs.filter (·.role == .owner)
         == (if returnsDeposit e then
               [{ ownerOutput 42 55 with
