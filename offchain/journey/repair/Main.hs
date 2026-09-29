@@ -146,6 +146,7 @@ import Singular.Registry.Ledger
     , Root (..)
     , TokenId (..)
     )
+import Singular.Registry.Node (boundedSubmitter, submissionBound)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
@@ -256,7 +257,7 @@ runRepair blueprintPath = do
         threadDelay 3_000_000
         verifyConnection nodeThread
         let prov = adaptProvider (mkN2CProvider lsqCh)
-            submit = mkN2CSubmitter ltxsCh
+            submit = boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
         _ <- Cage.queryProtocolParams prov
         tm <- mkPureTrieManager
         tmFresh <- mkPureTrieManager

@@ -19,10 +19,8 @@ import Conformance.Run.Environment
 
 import Control.Concurrent (threadDelay)
 import Control.Exception
-    ( SomeException
-    , displayException
+    ( displayException
     , throwIO
-    , try
     )
 import Data.List (isInfixOf)
 import Data.Text qualified as T
@@ -40,6 +38,7 @@ import Singular.Registry.Node
     ( NodeMode (..)
     , awaitIndexed
     , runMode
+    , tryOutcome
     )
 
 import Conformance.Mirror
@@ -198,7 +197,7 @@ submitTxResilient submit tx = do
   where
     go 0 = submitTx submit tx
     go n = do
-        r <- try @SomeException (submitTx submit tx)
+        r <- tryOutcome (submitTx submit tx)
         case r of
             Right res -> pure res
             Left e

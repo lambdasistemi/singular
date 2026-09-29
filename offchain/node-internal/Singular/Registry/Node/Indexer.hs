@@ -45,7 +45,7 @@ module Singular.Registry.Node.Indexer
 
 import Control.Concurrent.Async (link)
 import Control.Exception (bracket_)
-import Control.Monad (unless, when)
+import Control.Monad (unless, void, when)
 import Control.Tracer (nullTracer)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
@@ -115,6 +115,7 @@ import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
 import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.Node.Options (NodeMode (..), die)
+import Singular.Registry.Node.Wait (WaitStage (..), boundWait)
 import Singular.Registry.Node.Wallet
     ( Wallet (..)
     , bech32Address
@@ -213,18 +214,11 @@ startingAt = \case
 
 {- | Wait until the followed chain's indexer has applied the block
 carrying a submitted transaction, observed as the transaction's first
-output, or fail within the named window (in seconds).
+output; name the transaction when it is not indexed within the
+window (in seconds).
 -}
 awaitIndexedWithin :: Int -> ConwayTx -> IO ()
-awaitIndexedWithin _window = awaitIndexed
-
-{- | Wait until the followed chain's indexer has applied the block
-carrying a submitted transaction, observed as the transaction's first
-output; name the transaction when it is not indexed within the
-confirmation window.
--}
-awaitIndexed :: ConwayTx -> IO ()
-awaitIndexed tx = do
+awaitIndexedWithin window tx = do
     idx <-
         readIORef chainFollower
             >>= maybe
@@ -233,24 +227,21 @@ awaitIndexed tx = do
                     \a runner must confirm inside the chain it follows"
                 )
                 (pure . followingIndexer)
-    let TxId h = txIdTx tx
-    seen <-
-        awaitTxIn
-            idx
-            (Indexer.TxIn (hashToBytes (extractHash h)) 0)
-            (Just window)
-    case seen of
-        Just _ -> pure ()
-        Nothing ->
-            die
-                ( "transaction "
-                    <> show (txIdTx tx)
-                    <> " was accepted by the node but not indexed within "
-                    <> show window
-                    <> " seconds"
-                )
-  where
-    window = confirmationAttempts * confirmationPollSeconds
+    let tid@(TxId h) = txIdTx tx
+    boundWait IndexedConfirmationWait tid window $
+        void $
+            awaitTxIn
+                idx
+                (Indexer.TxIn (hashToBytes (extractHash h)) 0)
+                Nothing
+
+{- | 'awaitIndexedWithin' the production confirmation window: five
+minutes, which covers a public test network's block time with room for
+a slow epoch boundary.
+-}
+awaitIndexed :: ConwayTx -> IO ()
+awaitIndexed =
+    awaitIndexedWithin (confirmationAttempts * confirmationPollSeconds)
 
 {- | The provider a runner reads the chain through.
 

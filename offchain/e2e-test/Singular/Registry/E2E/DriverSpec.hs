@@ -28,7 +28,6 @@ later, at a fold that has nothing to do with the omission.
 -}
 module Singular.Registry.E2E.DriverSpec (spec) where
 
-import Control.Exception (SomeException, try)
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.List (isInfixOf)
@@ -58,6 +57,7 @@ import Singular.Registry.Driver
     , renderRoot
     )
 import Singular.Registry.Ledger (Root (..))
+import Singular.Registry.Node (tryOutcome)
 import Singular.Registry.TxBuilder.Edges qualified as Edges
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
 import Singular.Registry.Types (OnChainRoot (..), edgeInsertAbsent)
@@ -153,7 +153,7 @@ driverSpec stateBytes requestBytes = do
             staleHex `shouldNotBe` chainHex
 
             result <-
-                try @SomeException (foldEdge reg afterSeededKey edgeInsertAbsent)
+                tryOutcome (foldEdge reg afterSeededKey edgeInsertAbsent)
             case result of
                 Right _ ->
                     expectationFailure

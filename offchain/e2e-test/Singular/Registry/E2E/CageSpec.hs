@@ -112,7 +112,9 @@ import Singular.Registry.Node
     ( adaptProvider
     , awaitConnection
     , awaitIndexed
+    , boundedSubmitter
     , followedProvider
+    , submissionBound
     , withDevnetIndexer
     )
 import Singular.Registry.Provider qualified as Cage
@@ -610,7 +612,7 @@ withE2E stateBytes requestBytes action = do
                     ltxsCh
         let nodeProv = adaptProvider (mkN2CProvider lsqCh)
         awaitConnection (NetworkMagic 42) sock nodeThread nodeProv
-        let submit = mkN2CSubmitter ltxsCh
+        let submit = boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
         -- Address reads from here on are the indexer's.
         prov <- followedProvider nodeProv submit
         -- Build TrieManager

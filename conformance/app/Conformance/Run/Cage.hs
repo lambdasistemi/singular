@@ -30,10 +30,8 @@ import Conformance.Run.Wallet
 
 import Control.Concurrent (threadDelay)
 import Control.Exception
-    ( SomeException
-    , displayException
+    ( displayException
     , throwIO
-    , try
     )
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
@@ -106,6 +104,7 @@ import Singular.Registry.Ledger
     , TokenId (..)
     , TxOut
     )
+import Singular.Registry.Node (tryOutcome)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
@@ -168,7 +167,7 @@ ensureRowCage env name processMs retractMs = do
             pure w
   where
     bootCageAttempt n = do
-        r <- try @SomeException bootOnce
+        r <- tryOutcome bootOnce
         case r of
             Right w -> pure w
             Left e

@@ -85,6 +85,10 @@ import Singular.Registry.Node.Options
     , die
     , runMode
     )
+import Singular.Registry.Node.Wait
+    ( boundedSubmitter
+    , submissionBound
+    )
 import Singular.Registry.Node.Wallet
     ( Wallet (..)
     , bech32Address
@@ -178,7 +182,8 @@ withNodeModeAndFunding fundingFloor mode k = case mode of
     session magic sock n2c ltxsCh = do
         wallet <- walletForMode mode
         let nodeProv = adaptProvider n2c
-            submitter = mkN2CSubmitter ltxsCh
+            submitter =
+                boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
         pp <- Cage.queryProtocolParams nodeProv
         prov <- followedProvider nodeProv submitter
         for_ fundingFloor (checkFunding prov (walletAddr wallet))

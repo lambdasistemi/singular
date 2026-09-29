@@ -62,6 +62,7 @@ import Singular.Registry.Node.Session
     ( NodeSession (..)
     , sessionFor
     )
+import Singular.Registry.Node.Wait (WaitStage (..), boundWait)
 import Singular.Registry.Provider qualified as Cage
 
 {- | Wait until a submitted transaction is visible on the chain.
@@ -92,8 +93,8 @@ awaitTx tx = do
                     <> show (txIdTx tx)
                     <> ": it creates no output to observe"
                 )
-    deadline <- windowDeadlineFor sess tx
-    confirmOutputZero sess (show (txIdTx tx)) (txIdTx tx) deadline
+    (deadline, limit) <- windowFor sess tx
+    confirmWithin limit sess (show (txIdTx tx)) (txIdTx tx) deadline
 
 {- | Confirm a just-submitted transaction by observing output zero.
 Call before a dependent transaction spends that output. This supports
@@ -108,7 +109,7 @@ awaitTxId txid = do
     sess <- sessionFor "awaitTxId"
     wanted <- txIdFromHex "awaitTxId" txid
     deadline <- fixedWindowDeadline (nsProvider sess)
-    confirmOutputZero sess txid wanted deadline
+    confirmWithin fixedLimit sess txid wanted deadline
 
 {- | Confirm a just-submitted transaction by observing output zero,
 until the transaction's own validity upper bound plus a two-minute
@@ -121,9 +122,9 @@ window of 'awaitTxId' stays its bound.
 awaitTxWindow :: ConwayTx -> String -> IO ()
 awaitTxWindow tx txid = do
     sess <- sessionFor "awaitTxWindow"
-    deadline <- windowDeadlineFor sess tx
+    (deadline, limit) <- windowFor sess tx
     wanted <- txIdFromHex "awaitTxWindow" txid
-    confirmOutputZero sess txid wanted deadline
+    confirmWithin limit sess txid wanted deadline
 
 -- | A transaction id from its hex rendering.
 txIdFromHex :: String -> String -> IO TxId
@@ -144,11 +145,17 @@ txIdFromHex what txid = do
 block that carries output zero of a transaction, or the chain's tip
 passes the deadline — the whole wait obeying the named wall-clock
 limit (in seconds), tip reads included. The node is asked only for its
-tip, and only while the output has not appeared.
+tip, and only while the output has not appeared. A tip that passes the
+deadline ends the wait earlier, with its own refusal; the limit is the
+backstop for a chain that never gets there.
 -}
 confirmWithin :: Int -> NodeSession -> String -> TxId -> SlotNo -> IO ()
-confirmWithin _limit sess label tid deadline =
-    confirmOutputZero sess label tid deadline
+confirmWithin limit sess label tid deadline =
+    boundWait
+        SessionConfirmationWait
+        tid
+        limit
+        (confirmOutputZero sess label tid deadline)
 
 {- | Wait until the indexer following the session's chain reports the
 block that carries output zero of a transaction, or the chain's tip
@@ -175,33 +182,70 @@ confirmOutputZero sess label tid deadline =
                 tip <- nsTipSlot sess
                 whenExpired label tip deadline (indexed idx)
 
-{- | The poll-until deadline for a transaction: its own validity upper
-bound plus a two-minute margin; the historical fixed window when it
-carries no upper bound. The margin is measured in slots through the
-node's own time-to-slot conversion, so it means two minutes on every
-network. If that conversion fails the run is dying anyway; the fixed
-window restated in slots keeps the deadline total.
+{- | The poll-until deadline for a transaction and the wall-clock limit
+of its wait: its own validity upper bound plus a two-minute margin; the
+historical fixed window when it carries no upper bound. The margin is
+measured in slots through the node's own time-to-slot conversion, so it
+means two minutes on every network. If that conversion fails the run is
+dying anyway; the fixed window restated in slots keeps the deadline
+total.
 -}
-windowDeadlineFor :: NodeSession -> ConwayTx -> IO SlotNo
-windowDeadlineFor sess tx = do
+windowFor :: NodeSession -> ConwayTx -> IO (SlotNo, Int)
+windowFor sess tx = do
     r <-
-        try (confirmDeadline (nsProvider sess) tx)
-            :: IO (Either SomeException SlotNo)
+        try (confirmWindow (nsProvider sess) tx)
+            :: IO (Either SomeException (SlotNo, Int))
     case r of
-        Right d -> pure d
+        Right w -> pure w
         Left _ -> do
             tip <- nsTipSlot sess
-            pure
-                (tip + fromIntegral (confirmationAttempts * confirmationPollSeconds))
+            pure (tip + fromIntegral fixedWindow, fixedLimit)
 
--- | Two minutes expressed in slots of the chain the provider talks to.
-twoMinutesInSlots :: Cage.Provider IO -> IO SlotNo
-twoMinutesInSlots prov = do
+-- | The historical fixed confirmation window, in seconds.
+fixedWindow :: Int
+fixedWindow = confirmationAttempts * confirmationPollSeconds
+
+-- | The wall-clock limit of the fixed window: the window, then the backstop.
+fixedLimit :: Int
+fixedLimit = backstop fixedWindow
+
+{- | A wall-clock limit that lets the chain's own deadline end a live
+wait first: two polls after the window it backs, the tip has been read
+past the deadline and its refusal has been raised. Only a chain that
+never gets there reaches the limit.
+-}
+backstop :: Int -> Int
+backstop window = window + 2 * confirmationPollSeconds
+
+{- | The slot of now and how many slots two minutes span, in the chain
+the provider talks to.
+-}
+slotClock :: Cage.Provider IO -> IO (SlotNo, SlotNo)
+slotClock prov = do
     now <- getCurrentTime
     let nowMs = round (utcTimeToPOSIXSeconds now * 1000) :: Integer
     s0 <- Cage.posixMsToSlot prov nowMs
     s1 <- Cage.posixMsToSlot prov (nowMs + 120_000)
-    pure (s1 - s0)
+    pure (s0, s1 - s0)
+
+{- | The slot after which a submitted transaction can no longer land,
+and the wall-clock seconds from now until the chain reaches it: its
+validity upper bound plus a two-minute margin. A transaction with no
+upper bound never expires, so the historical fixed window
+('confirmationAttempts' polls) stays its deadline and its limit.
+-}
+confirmWindow :: Cage.Provider IO -> ConwayTx -> IO (SlotNo, Int)
+confirmWindow prov tx =
+    case txUpperBoundSlot tx of
+        Just bound -> do
+            (now, twoMinutes) <- slotClock prov
+            let ahead = toInteger (unSlotNo bound) - toInteger (unSlotNo now)
+                slots = max 1 (toInteger (unSlotNo twoMinutes))
+                seconds = ahead * 120 `div` slots + 120
+            pure (bound + twoMinutes, backstop (fromInteger (max 0 seconds)))
+        Nothing -> do
+            deadline <- fixedWindowDeadline prov
+            pure (deadline, fixedLimit)
 
 {- | The slot after which a submitted transaction can no longer land:
 its validity upper bound plus a two-minute margin. A transaction with
@@ -209,10 +253,7 @@ no upper bound never expires, so the historical fixed window
 ('confirmationAttempts' polls) stays its deadline.
 -}
 confirmDeadline :: Cage.Provider IO -> ConwayTx -> IO SlotNo
-confirmDeadline prov tx =
-    case txUpperBoundSlot tx of
-        Just bound -> (bound +) <$> twoMinutesInSlots prov
-        Nothing -> fixedWindowDeadline prov
+confirmDeadline prov tx = fst <$> confirmWindow prov tx
 
 -- | The slot the historical fixed confirmation window ends at, from now.
 fixedWindowDeadline :: Cage.Provider IO -> IO SlotNo
@@ -222,7 +263,7 @@ fixedWindowDeadline prov = do
     Cage.posixMsToSlot
         prov
         ( nowMs
-            + fromIntegral (confirmationAttempts * confirmationPollSeconds) * 1000
+            + fromIntegral fixedWindow * 1000
         )
 
 {- | The validity upper bound a transaction carries, if any. The fold,

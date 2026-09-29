@@ -220,6 +220,7 @@ import Singular.Registry.Ledger
     , PParams
     , TokenId (..)
     )
+import Singular.Registry.Node (boundedSubmitter, submissionBound)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
@@ -383,7 +384,7 @@ runMode mode registryPath namingPath = do
         threadDelay 3_000_000
         verifyConnection nodeThread
         let prov = adaptProvider (mkN2CProvider lsqCh)
-            submit = mkN2CSubmitter ltxsCh
+            submit = boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
         _ <- Cage.queryProtocolParams prov
         pp <- Cage.queryProtocolParams prov
         -- Identity: the pinned unapplied state hash must equal the hash

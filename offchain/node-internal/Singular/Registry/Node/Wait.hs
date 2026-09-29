@@ -31,9 +31,19 @@ module Singular.Registry.Node.Wait
     , tryOutcome
     ) where
 
-import Control.Exception (Exception, SomeException, try)
+import Control.Concurrent (threadDelay)
+import Control.Concurrent.Async (race)
+import Control.Exception
+    ( Exception
+    , SomeAsyncException
+    , SomeException
+    , fromException
+    , throwIO
+    , try
+    )
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
+import GHC.Clock (getMonotonicTime)
 
 import Cardano.Crypto.Hash (hashToBytes)
 import Cardano.Ledger.Api.Tx (txIdTx)
@@ -124,7 +134,20 @@ unchanged, and the action's own asynchronous exceptions reach it
 exactly as without the wrap: nothing here masks them.
 -}
 boundWait :: WaitStage -> TxId -> Int -> IO a -> IO a
-boundWait _stage _tid _bound action = action
+boundWait stage tid bound action = do
+    start <- getMonotonicTime
+    outcome <- race (threadDelay (bound * 1_000_000)) action
+    case outcome of
+        Right a -> pure a
+        Left () -> do
+            end <- getMonotonicTime
+            throwIO
+                WaitFailure
+                    { waitStage = stage
+                    , waitTxId = tid
+                    , waitElapsed = end - start
+                    , waitBound = bound
+                    }
 
 {- | The production bound on a submission, in seconds: the widest the
 confirmation window allows, so no verdict a run could still use is cut
@@ -159,4 +182,12 @@ through this, so a wait that gave up on a stalled node is never
 published as a ledger refusal nor retried as one.
 -}
 tryOutcome :: IO a -> IO (Either SomeException a)
-tryOutcome = try
+tryOutcome action = do
+    outcome <- try action
+    case outcome of
+        Right a -> pure (Right a)
+        Left e
+            | Just (_ :: SomeAsyncException) <- fromException e ->
+                throwIO e
+            | Just (_ :: WaitFailure) <- fromException e -> throwIO e
+            | otherwise -> pure (Left e)

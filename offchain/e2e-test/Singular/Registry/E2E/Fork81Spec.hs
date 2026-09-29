@@ -16,7 +16,7 @@ on the real packaged patched validator, a fresh devnet must
 -}
 module Singular.Registry.E2E.Fork81Spec (spec) where
 
-import Control.Exception (ErrorCall, fromException, try)
+import Control.Exception (ErrorCall, fromException)
 import Control.Monad (void)
 import Data.ByteString (ByteString)
 import Data.IORef (newIORef, readIORef)
@@ -38,6 +38,7 @@ import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
     ( Root (..)
     )
+import Singular.Registry.Node (tryOutcome)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
@@ -188,7 +189,7 @@ fork81Spec stateBytes requestBytes = do
                 -- Through the driver, so the refusal observed is the one a
                 -- production caller meets: the driver books, finds the
                 -- manager in step, builds, and the cage refuses the build.
-                res <- try (foldEdge reg "cs07-fork-C11" edgeInsertAbsent)
+                res <- tryOutcome (foldEdge reg "cs07-fork-C11" edgeInsertAbsent)
                 case res of
                     Right _ ->
                         expectationFailure "occupied-key insert was accepted"
