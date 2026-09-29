@@ -3,7 +3,7 @@ import OpenDatumApplication.Driver
 
 /-! # The open-datum application's intended statements and inversions
 
-Six declarations were previously proved. This bounded slice targets four further unchanged declarations; the other22 remain UNPROVED. Only captured #print axioms results establish each target's proof status; the current ledger remains a historical statement-phase artifact.
+Ten declarations were previously proved. This bounded slice targets four further unchanged declarations; the other18 remain UNPROVED. Only captured #print axioms results establish each target's proof status; the current ledger remains a historical statement-phase artifact.
 
 Three kinds of statement, kept apart:
 
@@ -41,7 +41,142 @@ theorem bookInsert_inversion (w w' : World) (r : Request) (e : Envelope)
         e.control.controller = r.owner ∧ e.control.controller ∈ sigs ∧
         r.output = destinationOf w.app e ∧ e.control.deposit = r.deposit ∧
         w' = { w with pending := w.pending ++ [⟨booked w.app r sigs, some e⟩] }) := by
-  sorry
+  have bind_ok : ∀ {α β : Type} (x : Except String α) (f : α → Except String β) (b : β),
+      x >>= f = Except.ok b → ∃ a, x = Except.ok a ∧ f a = Except.ok b := by
+    intro α β x f b hx
+    cases x with
+    | error e =>
+      first
+        | exact Except.noConfusion hx
+        | cases hx
+        | (simp [bind, Except.bind] at hx)
+    | ok a => exact ⟨a, rfl, hx⟩
+  have bind_ok_intro : ∀ {α β : Type} {x : Except String α} {f : α → Except String β} {a : α}
+      {b : β}, x = Except.ok a → f a = Except.ok b → x >>= f = Except.ok b := by
+    intro α β x f a b hx hf
+    subst hx
+    exact hf
+  have ens : ∀ (c : Bool) (why : String) (u : Unit), ensure c why = .ok u → c = true := by
+    intro c why u hc
+    cases c with
+    | false =>
+      first
+        | exact Except.noConfusion hc
+        | (simp [ensure] at hc)
+    | true => rfl
+  have ens_ok : ∀ (c : Bool) (why : String), c = true → ensure c why = Except.ok () := by
+    intro c why hc
+    subst hc
+    rfl
+  have ok_inj : ∀ {α : Type} {a b : α}, (Except.ok a : Except String α) = Except.ok b → a = b := by
+    intro α a b hab
+    first
+      | (injection hab with h'; exact h')
+      | (cases hab; rfl)
+  have edge_sound : ∀ x y : Edge, (x == y) = true → x = y := by
+    intro x y hxy
+    first
+      | exact eq_of_beq hxy
+      | (cases x <;> cases y <;> first | rfl | exact absurd hxy (by decide))
+  have hreg : ∀ b : Bool, (!Law.standard.checkRegistryAsset || b) = true → b = true := by
+    intro b hb
+    first
+      | (cases b with
+          | false => exact absurd hb (by decide)
+          | true => rfl)
+      | simpa [Law.standard] using hb
+  have hreg_intro : ∀ b : Bool, b = true → (!Law.standard.checkRegistryAsset || b) = true := by
+    intro b hb
+    subst hb
+    first
+      | rfl
+      | decide
+      | simp [Law.standard]
+  have beq_sound : ∀ a b : StateAsset, (a == b) = true → a = b := by
+    intro a b hab
+    first
+      | exact eq_of_beq hab
+      | (cases a
+         cases b
+         simp only [reduceBEq, Bool.and_eq_true, beq_iff_eq] at hab
+         obtain ⟨h1, h2⟩ := hab
+         subst h1
+         subst h2
+         rfl)
+      | (cases a
+         cases b
+         simp_all [reduceBEq])
+  have beq_refl : ∀ a : StateAsset, (a == a) = true := by
+    intro a
+    first
+      | exact beq_self_eq_true a
+      | (cases a
+         simp [reduceBEq])
+      | (cases a
+         rfl)
+  constructor
+  · intro h
+    first
+      | unfold bookInsertStep at h
+      | simp only [bookInsertStep] at h
+      | skip
+    obtain ⟨_, e1, h⟩ := bind_ok _ _ _ h
+    obtain ⟨_, e2, h⟩ := bind_ok _ _ _ h
+    obtain ⟨_, e3, h⟩ := bind_ok _ _ _ h
+    obtain ⟨_, e4, h⟩ := bind_ok _ _ _ h
+    obtain ⟨_, e5, h⟩ := bind_ok _ _ _ h
+    obtain ⟨_, e6, h⟩ := bind_ok _ _ _ h
+    obtain ⟨_, e7, h⟩ := bind_ok _ _ _ h
+    obtain ⟨_, e8, h⟩ := bind_ok _ _ _ h
+    obtain ⟨_, e9, h⟩ := bind_ok _ _ _ h
+    obtain ⟨_, e10, h⟩ := bind_ok _ _ _ h
+    obtain ⟨_, e11, h⟩ := bind_ok _ _ _ h
+    exact ⟨edge_sound _ _ (ens _ _ _ e1), eq_of_beq (ens _ _ _ e2),
+      beq_sound _ _ (hreg _ (ens _ _ _ e3)), eq_of_beq (ens _ _ _ e4),
+      beq_sound _ _ (hreg _ (ens _ _ _ e5)), eq_of_beq (ens _ _ _ e6),
+      eq_of_beq (ens _ _ _ e7), eq_of_beq (ens _ _ _ e8), List.contains_iff.1 (ens _ _ _ e9),
+      eq_of_beq (ens _ _ _ e10), eq_of_beq (ens _ _ _ e11), (ok_inj h).symm⟩
+  · rintro ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, hw⟩
+    subst hw
+    first
+      | unfold bookInsertStep
+      | simp only [bookInsertStep]
+      | skip
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · first
+        | (rw [h1]; done)
+        | (rw [h1]; rfl)
+        | (rw [h1]; decide)
+        | simp [h1]
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact beq_iff_eq.2 h2
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact hreg_intro _ (by
+        first
+          | (rw [h3]; exact beq_refl _)
+          | (rw [h3]; done)
+          | simp [h3, beq_refl])
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact beq_iff_eq.2 h4
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact hreg_intro _ (by
+        first
+          | (rw [h5]; exact beq_refl _)
+          | (rw [h5]; done)
+          | simp [h5, beq_refl])
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact beq_iff_eq.2 h6
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact beq_iff_eq.2 h7
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact beq_iff_eq.2 h8
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact List.contains_iff.2 h9
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact beq_iff_eq.2 h10
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact beq_iff_eq.2 h11
+    rfl
 
 /-- An accepted termination booking is exactly: the guards hold and the booked
 request is appended; outputs, registry and mint are unchanged. -/
@@ -53,7 +188,121 @@ theorem bookTerminate_inversion (w w' : World) (r : Request) (ref : Nat)
         o.envelope.control.key = r.key ∧ o.envelope.control.registry = w.registryAsset ∧
         r.owner = o.envelope.control.controller ∧ o.envelope.control.controller ∈ sigs ∧
         r.output = 0 ∧ w' = { w with pending := w.pending ++ [⟨booked w.app r sigs, none⟩] } := by
-  sorry
+  have bind_ok : ∀ {α β : Type} (x : Except String α) (f : α → Except String β) (b : β),
+      x >>= f = Except.ok b → ∃ a, x = Except.ok a ∧ f a = Except.ok b := by
+    intro α β x f b hx
+    cases x with
+    | error e =>
+      first
+        | exact Except.noConfusion hx
+        | cases hx
+        | (simp [bind, Except.bind] at hx)
+    | ok a => exact ⟨a, rfl, hx⟩
+  have bind_ok_intro : ∀ {α β : Type} {x : Except String α} {f : α → Except String β} {a : α}
+      {b : β}, x = Except.ok a → f a = Except.ok b → x >>= f = Except.ok b := by
+    intro α β x f a b hx hf
+    subst hx
+    exact hf
+  have ens : ∀ (c : Bool) (why : String) (u : Unit), ensure c why = .ok u → c = true := by
+    intro c why u hc
+    cases c with
+    | false =>
+      first
+        | exact Except.noConfusion hc
+        | (simp [ensure] at hc)
+    | true => rfl
+  have ens_ok : ∀ (c : Bool) (why : String), c = true → ensure c why = Except.ok () := by
+    intro c why hc
+    subst hc
+    rfl
+  have ok_inj : ∀ {α : Type} {a b : α}, (Except.ok a : Except String α) = Except.ok b → a = b := by
+    intro α a b hab
+    first
+      | (injection hab with h'; exact h')
+      | (cases hab; rfl)
+  have edge_sound : ∀ x y : Edge, (x == y) = true → x = y := by
+    intro x y hxy
+    first
+      | exact eq_of_beq hxy
+      | (cases x <;> cases y <;> first | rfl | exact absurd hxy (by decide))
+  have beq_sound : ∀ a b : StateAsset, (a == b) = true → a = b := by
+    intro a b hab
+    first
+      | exact eq_of_beq hab
+      | (cases a
+         cases b
+         simp only [reduceBEq, Bool.and_eq_true, beq_iff_eq] at hab
+         obtain ⟨h1, h2⟩ := hab
+         subst h1
+         subst h2
+         rfl)
+      | (cases a
+         cases b
+         simp_all [reduceBEq])
+  have beq_refl : ∀ a : StateAsset, (a == a) = true := by
+    intro a
+    first
+      | exact beq_self_eq_true a
+      | (cases a
+         simp [reduceBEq])
+      | (cases a
+         rfl)
+  constructor
+  · intro h
+    first
+      | unfold bookTerminateStep at h
+      | simp only [bookTerminateStep] at h
+      | skip
+    obtain ⟨_, e1, h⟩ := bind_ok _ _ _ h
+    obtain ⟨_, e2, h⟩ := bind_ok _ _ _ h
+    cases ho : outputAt w ref with
+    | none =>
+      first
+        | (simp only [ho] at h; exact Except.noConfusion h)
+        | (simp only [ho] at h)
+        | (simp [ho] at h)
+    | some o =>
+      simp only [ho] at h
+      obtain ⟨_, e3, h⟩ := bind_ok _ _ _ h
+      obtain ⟨_, e4, h⟩ := bind_ok _ _ _ h
+      obtain ⟨_, e5, h⟩ := bind_ok _ _ _ h
+      obtain ⟨_, e6, h⟩ := bind_ok _ _ _ h
+      obtain ⟨_, e7, h⟩ := bind_ok _ _ _ h
+      obtain ⟨ga, gb⟩ := Bool.and_eq_true_iff.1 (ens _ _ _ e3)
+      obtain ⟨gc, gd⟩ := Bool.and_eq_true_iff.1 (ens _ _ _ e4)
+      exact ⟨o, edge_sound _ _ (ens _ _ _ e1), eq_of_beq (ens _ _ _ e2), rfl, eq_of_beq ga, gb,
+        eq_of_beq gc, beq_sound _ _ gd, eq_of_beq (ens _ _ _ e5),
+        List.contains_iff.1 (ens _ _ _ e6), eq_of_beq (ens _ _ _ e7), (ok_inj h).symm⟩
+  · rintro ⟨o, h1, h2, ho, h3, h4, h5, h6, h7, h8, h9, hw⟩
+    subst hw
+    first
+      | unfold bookTerminateStep
+      | simp only [bookTerminateStep]
+      | skip
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · first
+        | (rw [h1]; done)
+        | (rw [h1]; rfl)
+        | (rw [h1]; decide)
+        | simp [h1]
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact beq_iff_eq.2 h2
+    simp only [ho]
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact Bool.and_eq_true_iff.2 ⟨beq_iff_eq.2 h3, h4⟩
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact Bool.and_eq_true_iff.2 ⟨beq_iff_eq.2 h5, by
+        first
+          | (rw [h6]; exact beq_refl _)
+          | (rw [h6]; done)
+          | simp [h6, beq_refl]⟩
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact beq_iff_eq.2 h7
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact List.contains_iff.2 h8
+    refine bind_ok_intro (ens_ok _ _ ?_) ?_
+    · exact beq_iff_eq.2 h9
+    rfl
 
 /-- The application certifies no other edge. -/
 theorem bookOther_refused (w w' : World) (r : Request) (sigs : List Nat) :
@@ -97,7 +346,71 @@ theorem fold_inversion (w w' : World) (sel : List (Edge × Key)) (outs : List Tx
                     , pending := w.pending.filter fun p => !(rows.map (·.pending)).contains p
                     , nextRef := w.nextRef + (createdOutputs w.app w.nextRef rows).length
                     , lastMint := t.mint } := by
-  sorry
+  have bind_ok : ∀ {α β : Type} (x : Except String α) (f : α → Except String β) (b : β),
+      x >>= f = Except.ok b → ∃ a, x = Except.ok a ∧ f a = Except.ok b := by
+    intro α β x f b hx
+    cases x with
+    | error e =>
+      first
+        | exact Except.noConfusion hx
+        | cases hx
+        | (simp [bind, Except.bind] at hx)
+    | ok a => exact ⟨a, rfl, hx⟩
+  have bind_ok_intro : ∀ {α β : Type} {x : Except String α} {f : α → Except String β} {a : α}
+      {b : β}, x = Except.ok a → f a = Except.ok b → x >>= f = Except.ok b := by
+    intro α β x f a b hx hf
+    subst hx
+    exact hf
+  have ok_inj : ∀ {α : Type} {a b : α}, (Except.ok a : Except String α) = Except.ok b → a = b := by
+    intro α a b hab
+    first
+      | (injection hab with h'; exact h')
+      | (cases hab; rfl)
+  constructor
+  · intro h
+    first
+      | unfold foldEffect at h
+      | simp only [foldEffect] at h
+      | skip
+    obtain ⟨rows, hrows, h⟩ := bind_ok _ _ _ h
+    obtain ⟨t0, ht, h⟩ := bind_ok _ _ _ h
+    first
+      | simp only at h
+      | skip
+    cases hs : settleFold Law.standard rows
+        (outs ++ (createdOutputs w.app w.nextRef rows).map (deliveryOf w.app)) with
+    | some why =>
+      first
+        | (simp only [hs] at h; exact Except.noConfusion h)
+        | (simp only [hs] at h)
+        | (rw [hs] at h; exact Except.noConfusion h)
+    | none =>
+      first
+        | simp only [hs] at h
+        | rw [hs] at h
+      obtain ⟨hw, ht0⟩ := Prod.mk.inj (ok_inj h)
+      subst ht0
+      first
+        | exact ⟨rows, hrows, ht, hs, hw.symm⟩
+        | exact ⟨rows, hrows, ht, by simpa [settleFold, Law.standard] using hs, hw.symm⟩
+  · rintro ⟨rows, hrows, ht, hs, hw⟩
+    subst hw
+    first
+      | unfold foldEffect
+      | simp only [foldEffect]
+      | skip
+    refine bind_ok_intro hrows ?_
+    refine bind_ok_intro ht ?_
+    have hs' : settleFold Law.standard rows
+        (outs ++ (createdOutputs w.app w.nextRef rows).map (deliveryOf w.app)) = none := by
+      first
+        | exact hs
+        | simpa [settleFold, Law.standard] using hs
+    first
+      | (simp only [hs']; done)
+      | (simp only [hs']; rfl)
+      | (simp only; rw [hs']; rfl)
+      | (simp only [hs'])
 
 /-- The application step of a fold is the fold's world. -/
 theorem appStep_fold (w : World) (sel : List (Edge × Key)) (outs : List TxOutput) :
@@ -263,7 +576,128 @@ theorem update_payload_free (w : World) (ref : Nat) (s : Successor) (sigs : List
     (p : PlutusData) :
     (appStep w (.update ref [s] sigs)).isOk =
       (appStep w (.update ref [{ s with envelope := { s.envelope with payload := p } }] sigs)).isOk := by
-  sorry
+  have bind_ok : ∀ {α β : Type} (x : Except String α) (f : α → Except String β) (b : β),
+      x >>= f = Except.ok b → ∃ a, x = Except.ok a ∧ f a = Except.ok b := by
+    intro α β x f b hx
+    cases x with
+    | error e =>
+      first
+        | exact Except.noConfusion hx
+        | cases hx
+        | (simp [bind, Except.bind] at hx)
+    | ok a => exact ⟨a, rfl, hx⟩
+  have bind_ok_intro : ∀ {α β : Type} {x : Except String α} {f : α → Except String β} {a : α}
+      {b : β}, x = Except.ok a → f a = Except.ok b → x >>= f = Except.ok b := by
+    intro α β x f a b hx hf
+    subst hx
+    exact hf
+  have ens : ∀ (c : Bool) (why : String) (u : Unit), ensure c why = .ok u → c = true := by
+    intro c why u hc
+    cases c with
+    | false =>
+      first
+        | exact Except.noConfusion hc
+        | (simp [ensure] at hc)
+    | true => rfl
+  have ens_ok : ∀ (c : Bool) (why : String), c = true → ensure c why = Except.ok () := by
+    intro c why hc
+    subst hc
+    rfl
+  have isOk_iff : ∀ x : Except String World, x.isOk = true ↔ ∃ a, x = Except.ok a := by
+    intro x
+    cases x with
+    | error e =>
+      constructor
+      · intro hx
+        first
+          | exact Bool.noConfusion hx
+          | cases hx
+          | (simp [Except.isOk, Except.toBool] at hx)
+      · intro ⟨_, hx⟩
+        exact Except.noConfusion hx
+    | ok a => exact ⟨fun _ => ⟨a, rfl⟩, fun _ => rfl⟩
+  have fwd : ∀ (succ : Successor) (w1 : World),
+      updateStep Law.standard w ref [succ] sigs = Except.ok w1 →
+      ∃ o, outputAt w ref = some o ∧
+        (!Law.standard.checkUpdateSigner || sigs.contains o.envelope.control.controller) = true ∧
+        carriesKey succ.assets o.envelope.control.key = true ∧
+        (succ.address == appAddress w.app) = true ∧
+        (succ.envelope.control == o.envelope.control) = true ∧
+        (succ.assets == o.assets) = true ∧
+        decide (o.envelope.control.deposit ≤ succ.lovelace) = true := by
+    intro succ w1 h
+    first
+      | unfold updateStep at h
+      | simp only [updateStep] at h
+      | skip
+    cases ho : outputAt w ref with
+    | none =>
+      first
+        | (simp only [ho] at h; exact Except.noConfusion h)
+        | (simp only [ho] at h)
+        | (simp [ho] at h)
+    | some o =>
+      simp only [ho] at h
+      obtain ⟨_, e1, h⟩ := bind_ok _ _ _ h
+      cases hc : carriesKey succ.assets o.envelope.control.key with
+      | false =>
+        first
+          | (simp only [List.filter, hc] at h; exact Except.noConfusion h)
+          | (simp only [List.filter, hc] at h)
+          | (simp [List.filter, hc] at h)
+      | true =>
+        simp only [List.filter, hc] at h
+        obtain ⟨_, e2, h⟩ := bind_ok _ _ _ h
+        obtain ⟨_, e3, h⟩ := bind_ok _ _ _ h
+        obtain ⟨_, e4, h⟩ := bind_ok _ _ _ h
+        obtain ⟨_, e5, h⟩ := bind_ok _ _ _ h
+        exact ⟨o, rfl, ens _ _ _ e1, hc, ens _ _ _ e2, ens _ _ _ e3, ens _ _ _ e4, ens _ _ _ e5⟩
+  have bwd : ∀ succ : Successor,
+      (∃ o, outputAt w ref = some o ∧
+        (!Law.standard.checkUpdateSigner || sigs.contains o.envelope.control.controller) = true ∧
+        carriesKey succ.assets o.envelope.control.key = true ∧
+        (succ.address == appAddress w.app) = true ∧
+        (succ.envelope.control == o.envelope.control) = true ∧
+        (succ.assets == o.assets) = true ∧
+        decide (o.envelope.control.deposit ≤ succ.lovelace) = true) →
+      (updateStep Law.standard w ref [succ] sigs).isOk = true := by
+    rintro succ ⟨o, ho, g1, hc, g2, g3, g4, g5⟩
+    refine (isOk_iff _).2 ⟨{ w with
+        outputs := (w.outputs.erase o) ++
+          [{ ref := w.nextRef, address := succ.address, lovelace := succ.lovelace,
+             assets := succ.assets, envelope := succ.envelope }]
+        nextRef := w.nextRef + 1 }, ?_⟩
+    first
+      | unfold updateStep
+      | simp only [updateStep]
+      | skip
+    simp only [ho]
+    refine bind_ok_intro (ens_ok _ _ g1) ?_
+    simp only [List.filter, hc]
+    refine bind_ok_intro (ens_ok _ _ g2) ?_
+    refine bind_ok_intro (ens_ok _ _ g3) ?_
+    refine bind_ok_intro (ens_ok _ _ g4) ?_
+    refine bind_ok_intro (ens_ok _ _ g5) ?_
+    rfl
+  change (updateStep Law.standard w ref [s] sigs).isOk =
+    (updateStep Law.standard w ref [{ s with envelope := { s.envelope with payload := p } }]
+      sigs).isOk
+  apply Bool.eq_iff_iff.2
+  constructor
+  · intro hx
+    obtain ⟨w1, h1⟩ := (isOk_iff _).1 hx
+    have q := fwd s w1 h1
+    first
+      | exact bwd _ q
+      | (obtain ⟨o, g0, g1, g2, g3, g4, g5, g6⟩ := q
+         exact bwd _ ⟨o, g0, g1, g2, g3, g4, g5, g6⟩)
+  · intro hx
+    obtain ⟨w1, h1⟩ := (isOk_iff _).1 hx
+    have q := fwd { s with envelope := { s.envelope with payload := p } } w1 h1
+    first
+      | exact bwd _ q
+      | (obtain ⟨o, g0, g1, g2, g3, g4, g5, g6⟩ := q
+         exact bwd _ ⟨o, g0, g1, g2, g3, g4, g5, g6⟩)
 
 /-- An update (any world) leaves the registry and the booked requests unchanged. -/
 theorem update_keeps_registry (w w' : World) (ref : Nat) (succs : List Successor)
@@ -483,3 +917,8 @@ end OpenDatumApplication.Statements
 #print axioms OpenDatumApplication.Statements.consistent_occurrences_distinct
 #print axioms OpenDatumApplication.Statements.duplicate_occurrence_outside_invariant
 #print axioms OpenDatumApplication.Statements.insertion_requires_registry_identity
+
+#print axioms OpenDatumApplication.Statements.bookInsert_inversion
+#print axioms OpenDatumApplication.Statements.bookTerminate_inversion
+#print axioms OpenDatumApplication.Statements.fold_inversion
+#print axioms OpenDatumApplication.Statements.update_payload_free
