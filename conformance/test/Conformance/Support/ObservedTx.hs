@@ -359,32 +359,52 @@ observedTx step transaction mint payments destination = do
 entry :: Text -> Text -> Value -> Value
 entry array role observation = case found of
     [one] -> one
-    _ ->
-        error
-            ( "expected exactly one "
-                <> T.unpack role
-                <> " in "
-                <> T.unpack array
-                <> ", found "
-                <> show (length found)
-            )
+    _ -> error (wrongCount array role (length found))
   where
     found =
         [ v
         | v <- entriesOf array observation
         , roleOf v == String role
         ]
-    entriesOf name value = case value of
-        Object fields -> case KM.lookup (Key.fromText name) fields of
-            Just (Array found') -> V.toList found'
-            _ ->
-                error
-                    ("observation has no " <> T.unpack name <> " array")
-        _ -> error "observation is not an object"
-    roleOf value = case value of
-        Object fields' ->
-            fromMaybe Null (KM.lookup (Key.fromText "role") fields')
-        _ -> Null
+
+{- | The position the role's own entry holds in the observed array, so a
+reported difference can be bound to that entry and not merely to its array.
+-}
+entryIndex :: Text -> Text -> Value -> Int
+entryIndex array role observation = case found of
+    [one] -> one
+    _ -> error (wrongCount array role (length found))
+  where
+    found =
+        [ i
+        | (i, v) <- indexed (entriesOf array observation)
+        , roleOf v == String role
+        ]
+
+indexed :: [a] -> [(Int, a)]
+indexed = zip [0 ..]
+
+wrongCount :: Text -> Text -> Int -> String
+wrongCount array role count =
+    "expected exactly one "
+        <> T.unpack role
+        <> " in "
+        <> T.unpack array
+        <> ", found "
+        <> show count
+
+entriesOf :: Text -> Value -> [Value]
+entriesOf name value = case value of
+    Object fields -> case KM.lookup (Key.fromText name) fields of
+        Just (Array found) -> V.toList found
+        _ -> error ("no such array: " <> T.unpack name)
+    _ -> error "observation is not an object"
+
+roleOf :: Value -> Value
+roleOf value = case value of
+    Object fields ->
+        fromMaybe Null (KM.lookup (Key.fromText "role") fields)
+    _ -> Null
 
 -- | The form an observed input or output reports for its datum.
 datumFormOf :: Value -> Value
@@ -442,7 +462,7 @@ data Role = Role
     { roleName :: String
     , roleKey :: Text
     , roleArray :: Text
-    , roleStep :: RowCage -> Datum ConwayEra -> LiveStep
+    , roleStep :: Datum ConwayEra -> RowCage -> LiveStep
     , roleMint :: [Value]
     , rolePayments :: [Payment]
     , roleDestination :: Integer
@@ -476,8 +496,9 @@ reports
     -> Integer
     -> Expectation
 reports array role reported step mint payments destination = do
+    let transaction = lsTransactionOf step
     observation <-
-        observedTx step (lsTransactionOf step) mint payments destination
+        observedTx step transaction mint payments destination
     datumFormOf (entry array role observation)
         `shouldBe` String (T.pack reported)
 
@@ -488,15 +509,17 @@ differs must produce exactly one difference.
 -}
 differsAt
     :: Text
+    -> Text
     -> LiveStep
     -> [Value]
     -> [Payment]
     -> Integer
     -> Expectation
-differsAt array step mint payments destination = do
+differsAt array role step mint payments destination = do
     surface <- declaredSurfaceOf
+    let transaction = lsTransactionOf step
     observation <-
-        observedTx step (lsTransactionOf step) mint payments destination
+        observedTx step transaction mint payments destination
     let model = modelInlineForms observation
     case compareRegistration
         surface
@@ -509,68 +532,105 @@ differsAt array step mint payments destination = do
         Left differences -> do
             let paths = map snd (reportedDifferences differences)
             length paths `shouldBe` 1
-            concatMap (filterFields array) paths
-                `shouldSatisfy` any (== Field "datum")
+            -- The one difference must be the named role's own entry: a form
+            -- read off another role's output lands on another path and fails.
+            paths
+                `shouldSatisfy` any
+                    (== [ Field array
+                        , Index (entryIndex array role observation)
+                        , Field "datum"
+                        ]
+                    )
 
-{- | The field names on a reported path that belong to the given array: a step
-reaching a datum field inside that array, and nothing else. A difference
-reported anywhere else, or on an array the case did not vary, fails here.
+{- | The folds these cases book. Each takes the cage to run in and the forms
+its own spent outputs present; a per-role fold below pins every other role it
+touches to inline, so a case varying one role can say which role was misread.
 -}
-filterFields :: Text -> [Step] -> [Step]
-filterFields array path =
-    case dropWhile (/= Field array) path of
-        rest@(_ : _) -> drop 1 rest
-        [] -> []
+
+-- | A retirement spends a state, a request and an active witness, and
+-- delivers no token: the witness is the only witness it can spend.
+retirement
+    :: RowCage
+    -> Datum ConwayEra
+    -> Datum ConwayEra
+    -> LiveStep
+retirement cage stateForm witnessForm =
+    fixtureStep
+        cage
+        Live.UpdateTerminal
+        (Just (stateIn, spentState stateForm))
+        (Just (witnessIn, spentWitness witnessForm))
+        Nothing
+        (spentRequest inlineDatum)
+        ( submitted
+            [stateIn, requestIn, witnessIn]
+            [stateOutput, ownerOutput 4_000_000]
+            mempty
+        )
+
+-- | An update spends a state, a request and an absent custody, and delivers a
+-- token, so its destination is a physical carrier.
+update :: RowCage -> Datum ConwayEra -> Datum ConwayEra -> LiveStep
+update cage stateForm custodyForm =
+    fixtureStep
+        cage
+        Live.UpdateActive
+        (Just (stateIn, spentState stateForm))
+        Nothing
+        (Just (custodyIn, spentCustody custodyForm))
+        (spentRequest inlineDatum)
+        ( submitted
+            [stateIn, requestIn, custodyIn]
+            [stateOutput, carrier inlineDatum]
+            activeAsset
+        )
+
+-- | An insertion spends a state and a request, and delivers the active token
+-- in the one output that carries it.
+delivery
+    :: RowCage
+    -> Datum ConwayEra
+    -> Datum ConwayEra
+    -> Datum ConwayEra
+    -> LiveStep
+delivery cage stateForm carrierForm requestForm =
+    fixtureStep
+        cage
+        Live.InsertActive
+        (Just (stateIn, spentState stateForm))
+        Nothing
+        Nothing
+        (spentRequest requestForm)
+        ( submitted
+            [stateIn, requestIn]
+            [stateOutput, carrier carrierForm]
+            activeAsset
+        )
+
+-- | A fold whose only non-inline role is the state input it spends.
+stateFold :: Datum ConwayEra -> RowCage -> LiveStep
+stateFold form cage = delivery cage form inlineDatum inlineDatum
+
+-- | A fold whose only non-inline role is the request input it spends.
+requestFold :: Datum ConwayEra -> RowCage -> LiveStep
+requestFold form cage = delivery cage inlineDatum inlineDatum form
+
+-- | A fold whose only non-inline role is the absent custody it spends.
+custodyFold :: Datum ConwayEra -> RowCage -> LiveStep
+custodyFold form cage = update cage inlineDatum form
+
+-- | A fold whose only non-inline role is the active witness it spends.
+witnessFold :: Datum ConwayEra -> RowCage -> LiveStep
+witnessFold form cage = retirement cage inlineDatum form
+
+-- | A fold whose only non-inline role is the output it delivers.
+destinationFold :: Datum ConwayEra -> RowCage -> LiveStep
+destinationFold form cage = delivery cage inlineDatum form inlineDatum
 
 spec :: Spec
 spec =
     describe "Reading an observed exit's datum forms off the ledger" $ do
-        -- A retirement spends a state, a request and an active witness, and
-        -- delivers no token: the witness is the only witness it can spend.
-        let retirement cage stateForm witnessForm =
-                fixtureStep
-                    cage
-                    Live.UpdateTerminal
-                    (Just (stateIn, spentState stateForm))
-                    (Just (witnessIn, spentWitness witnessForm))
-                    Nothing
-                    (spentRequest hashedDatum)
-                    ( submitted
-                        [stateIn, requestIn, witnessIn]
-                        [stateOutput, ownerOutput 4_000_000]
-                        mempty
-                    )
-            -- An update spends a state, a request and an absent custody, and
-            -- delivers a token, so its destination is a physical carrier.
-            custodyFold cage stateForm custodyForm =
-                fixtureStep
-                    cage
-                    Live.UpdateActive
-                    (Just (stateIn, spentState stateForm))
-                    Nothing
-                    (Just (custodyIn, spentCustody custodyForm))
-                    (spentRequest hashedDatum)
-                    ( submitted
-                        [stateIn, requestIn, custodyIn]
-                        [stateOutput, carrier inlineDatum]
-                        activeAsset
-                    )
-            -- An insertion spends a state and a request, and delivers the
-            -- active token in the one output that carries it.
-            delivery cage stateForm carrierForm requestForm =
-                fixtureStep
-                    cage
-                    Live.InsertActive
-                    (Just (stateIn, spentState stateForm))
-                    Nothing
-                    Nothing
-                    (spentRequest requestForm)
-                    ( submitted
-                        [stateIn, requestIn]
-                        [stateOutput, carrier carrierForm]
-                        activeAsset
-                    )
-            delivering =
+        let delivering =
                 [Payment (Destination "holder") 3_000_000]
             activeMint = [mintedAsset "active" 1]
             roles =
@@ -578,7 +638,7 @@ spec =
                     { roleName = "the spent state input"
                     , roleKey = "state"
                     , roleArray = "inputs"
-                    , roleStep = \cage form -> delivery cage form inlineDatum inlineDatum
+                    , roleStep = stateFold
                     , roleMint = activeMint
                     , rolePayments = delivering
                     , roleDestination = 1
@@ -587,7 +647,7 @@ spec =
                     { roleName = "the spent request input"
                     , roleKey = "request"
                     , roleArray = "inputs"
-                    , roleStep = \cage form -> delivery cage inlineDatum inlineDatum form
+                    , roleStep = requestFold
                     , roleMint = activeMint
                     , rolePayments = delivering
                     , roleDestination = 1
@@ -596,7 +656,7 @@ spec =
                     { roleName = "the spent custody input"
                     , roleKey = "cage"
                     , roleArray = "inputs"
-                    , roleStep = \cage form -> custodyFold cage inlineDatum form
+                    , roleStep = custodyFold
                     , roleMint = activeMint
                     , rolePayments = delivering
                     , roleDestination = 1
@@ -605,7 +665,7 @@ spec =
                     { roleName = "the spent witness input"
                     , roleKey = "witness"
                     , roleArray = "inputs"
-                    , roleStep = \cage form -> retirement cage inlineDatum form
+                    , roleStep = witnessFold
                     , roleMint = []
                     , rolePayments = []
                     , roleDestination = 0
@@ -614,7 +674,7 @@ spec =
                     { roleName = "the delivered output"
                     , roleKey = "destination"
                     , roleArray = "outputs"
-                    , roleStep = \cage form -> delivery cage inlineDatum form inlineDatum
+                    , roleStep = destinationFold
                     , roleMint = activeMint
                     , rolePayments = delivering
                     , roleDestination = 1
@@ -626,14 +686,19 @@ spec =
         forM_ roles $ \role ->
             forM_ carriedForms $ \(told, form, reported) ->
                 it
-                    (roleName role <> ", " <> told <> ", is reported as " <> reported)
+                    ( roleName role
+                        <> ", "
+                        <> told
+                        <> ", is reported as "
+                        <> reported
+                    )
                     ( do
                         cage <- fixtureCage
                         reports
                             (roleArray role)
                             (roleKey role)
                             reported
-                            (roleStep role cage form)
+                            (roleStep role form cage)
                             (roleMint role)
                             (rolePayments role)
                             (roleDestination role)
@@ -654,7 +719,8 @@ spec =
                         cage <- fixtureCage
                         differsAt
                             (roleArray role)
-                            (roleStep role cage form)
+                            (roleKey role)
+                            (roleStep role form cage)
                             (roleMint role)
                             (rolePayments role)
                             (roleDestination role)
@@ -666,7 +732,8 @@ spec =
             cage <- fixtureCage
             let step = delivery cage NoDatum inlineDatum hashedDatum
             observation <-
-                observedTx step (lsTransactionOf step) activeMint delivering 1
+                observedTx step (lsTransactionOf step)
+                    activeMint delivering 1
             datumFormOf (entry "inputs" "state" observation)
                 `shouldBe` String "none"
             datumFormOf (entry "inputs" "request" observation)
@@ -676,29 +743,37 @@ spec =
 
         it "keeps each role's form bound to its own output on an update" $ do
             cage <- fixtureCage
-            let step = custodyFold cage NoDatum hashedDatum
+            let step = update cage NoDatum hashedDatum
             observation <-
-                observedTx step (lsTransactionOf step) activeMint delivering 1
+                observedTx step (lsTransactionOf step)
+                    activeMint delivering 1
             datumFormOf (entry "inputs" "state" observation)
                 `shouldBe` String "none"
             datumFormOf (entry "inputs" "cage" observation)
                 `shouldBe` String "hashed"
+            datumFormOf (entry "inputs" "request" observation)
+                `shouldBe` String "inline"
 
         it "keeps each role's form bound to its own output on a retirement" $ do
             cage <- fixtureCage
             let step = retirement cage hashedDatum NoDatum
-            observation <- observedTx step (lsTransactionOf step) [] [] 0
+            observation <-
+                observedTx step (lsTransactionOf step) [] [] 0
             datumFormOf (entry "inputs" "state" observation)
                 `shouldBe` String "hashed"
             datumFormOf (entry "inputs" "witness" observation)
                 `shouldBe` String "none"
+            datumFormOf (entry "inputs" "request" observation)
+                `shouldBe` String "inline"
 
         it "an all-inline observation keeps the comparison green" $ do
             surface <- declaredSurfaceOf
             cage <- fixtureCage
-            let step = delivery cage inlineDatum inlineDatum inlineDatum
+            let step =
+                    delivery cage inlineDatum inlineDatum inlineDatum
             observation <-
-                observedTx step (lsTransactionOf step) activeMint delivering 1
+                observedTx step (lsTransactionOf step)
+                    activeMint delivering 1
             let model = modelInlineForms observation
             case compareRegistration
                 surface
@@ -714,7 +789,7 @@ spec =
         it "a spent input the transaction did not spend" $ do
             cage <- fixtureCage
             let state = Just (stateIn, spentState inlineDatum)
-                request = spentRequest hashedDatum
+                request = spentRequest inlineDatum
                 tx = submitted [stateIn] [stateOutput] mempty
                 step =
                     ( fixtureStep
@@ -734,7 +809,7 @@ spec =
         it "a delivery more than one output carries is an error" $ do
             cage <- fixtureCage
             let state = Just (stateIn, spentState inlineDatum)
-                request = spentRequest hashedDatum
+                request = spentRequest inlineDatum
                 tx =
                     submitted
                         [stateIn, requestIn]
@@ -757,7 +832,7 @@ spec =
 
         it "an accepted fold retaining no state input" $ do
             cage <- fixtureCage
-            let request = spentRequest hashedDatum
+            let request = spentRequest inlineDatum
                 tx =
                     submitted
                         [stateIn, requestIn]
@@ -774,6 +849,48 @@ spec =
                         tx
             observedTx step tx activeMint delivering 1
                 `shouldThrow` errorMentioning "state"
+
+        it "a witness the transaction did not spend" $ do
+            cage <- fixtureCage
+            let state = Just (stateIn, spentState inlineDatum)
+                request = spentRequest inlineDatum
+                tx =
+                    submitted
+                        [stateIn, requestIn]
+                        [stateOutput, ownerOutput 4_000_000]
+                        mempty
+                step =
+                    fixtureStep
+                        cage
+                        Live.UpdateTerminal
+                        state
+                        (Just (witnessIn, spentWitness inlineDatum))
+                        Nothing
+                        request
+                        tx
+            observedTx step tx [] [] 0
+                `shouldThrow` errorMentioning "witness"
+
+        it "a custody the transaction did not spend" $ do
+            cage <- fixtureCage
+            let state = Just (stateIn, spentState inlineDatum)
+                request = spentRequest inlineDatum
+                tx =
+                    submitted
+                        [stateIn, requestIn]
+                        [stateOutput, carrier inlineDatum]
+                        activeAsset
+                step =
+                    fixtureStep
+                        cage
+                        Live.UpdateActive
+                        state
+                        Nothing
+                        (Just (custodyIn, spentCustody inlineDatum))
+                        request
+                        tx
+            observedTx step tx activeMint delivering 1
+                `shouldThrow` errorMentioning "custody"
 
 -- | The transaction a fixture step submitted, as its outcome carries it.
 lsTransactionOf :: LiveStep -> ConwayTx
