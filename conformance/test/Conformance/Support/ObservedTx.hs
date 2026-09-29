@@ -436,11 +436,9 @@ modelInlineForms observation = case observation of
         _ -> value
     inlineDestination value = case value of
         Object fields'
-            | roleOf fields' == String "destination" ->
+            | roleOf value == String "destination" ->
                 Object (KM.insert datumKey inline fields')
         _ -> value
-    roleOf fields' =
-        fromMaybe Null (KM.lookup (Key.fromText "role") fields')
     adjustEntries name f entries =
         case KM.lookup (Key.fromText name) entries of
             Just found -> KM.insert key (mapArray f found) entries
@@ -531,24 +529,24 @@ differsAt array role step mint payments destination = do
                 \passed the comparison"
         Left differences -> do
             let paths = map snd (reportedDifferences differences)
+                ownDatum =
+                    [ Field array
+                    , Index (entryIndex array role observation)
+                    , Field "datum"
+                    ]
             length paths `shouldBe` 1
             -- The one difference must be the named role's own entry: a form
             -- read off another role's output lands on another path and fails.
-            paths
-                `shouldSatisfy` any
-                    (== [ Field array
-                        , Index (entryIndex array role observation)
-                        , Field "datum"
-                        ]
-                    )
+            paths `shouldSatisfy` elem ownDatum
 
-{- | The folds these cases book. Each takes the cage to run in and the forms
-its own spent outputs present; a per-role fold below pins every other role it
-touches to inline, so a case varying one role can say which role was misread.
+-- The folds these cases book. Each takes the cage to run in and the forms
+-- its own spent outputs present; a per-role fold below pins every other role
+-- it touches to inline, so a case varying one role can say which role was
+-- misread.
+
+{- | A retirement spends a state, a request and an active witness, and
+delivers no token: the witness is the only witness it can spend.
 -}
-
--- | A retirement spends a state, a request and an active witness, and
--- delivers no token: the witness is the only witness it can spend.
 retirement
     :: RowCage
     -> Datum ConwayEra
@@ -568,8 +566,9 @@ retirement cage stateForm witnessForm =
             mempty
         )
 
--- | An update spends a state, a request and an absent custody, and delivers a
--- token, so its destination is a physical carrier.
+{- | An update spends a state, a request and an absent custody, and delivers a
+token, so its destination is a physical carrier.
+-}
 update :: RowCage -> Datum ConwayEra -> Datum ConwayEra -> LiveStep
 update cage stateForm custodyForm =
     fixtureStep
@@ -585,8 +584,9 @@ update cage stateForm custodyForm =
             activeAsset
         )
 
--- | An insertion spends a state and a request, and delivers the active token
--- in the one output that carries it.
+{- | An insertion spends a state and a request, and delivers the active token
+in the one output that carries it.
+-}
 delivery
     :: RowCage
     -> Datum ConwayEra
@@ -732,8 +732,7 @@ spec =
             cage <- fixtureCage
             let step = delivery cage NoDatum inlineDatum hashedDatum
             observation <-
-                observedTx step (lsTransactionOf step)
-                    activeMint delivering 1
+                observedTx step (lsTransactionOf step) activeMint delivering 1
             datumFormOf (entry "inputs" "state" observation)
                 `shouldBe` String "none"
             datumFormOf (entry "inputs" "request" observation)
@@ -745,8 +744,7 @@ spec =
             cage <- fixtureCage
             let step = update cage NoDatum hashedDatum
             observation <-
-                observedTx step (lsTransactionOf step)
-                    activeMint delivering 1
+                observedTx step (lsTransactionOf step) activeMint delivering 1
             datumFormOf (entry "inputs" "state" observation)
                 `shouldBe` String "none"
             datumFormOf (entry "inputs" "cage" observation)
@@ -772,8 +770,7 @@ spec =
             let step =
                     delivery cage inlineDatum inlineDatum inlineDatum
             observation <-
-                observedTx step (lsTransactionOf step)
-                    activeMint delivering 1
+                observedTx step (lsTransactionOf step) activeMint delivering 1
             let model = modelInlineForms observation
             case compareRegistration
                 surface
