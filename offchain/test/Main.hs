@@ -6,6 +6,7 @@ import Naming.RegisterSpec qualified
 import Naming.RetireVerifySpec qualified
 import Singular.Application.OpenDatum.BuildersSpec qualified
 import Singular.Application.OpenDatum.EnvelopeSpec qualified
+import Singular.CLISpec qualified
 import Singular.Registry.BlueprintParametersSpec qualified
 import Singular.Registry.CandidateSpec qualified
 import Singular.Registry.DeploymentSpec qualified
@@ -40,3 +41,4 @@ main = hspec $ do
     Naming.RecordValueSpec.spec
     Singular.Application.OpenDatum.EnvelopeSpec.spec
     Singular.Application.OpenDatum.BuildersSpec.spec
+    Singular.CLISpec.spec

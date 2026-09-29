@@ -18,6 +18,10 @@ module Singular.Registry.Trie.Pure
 
       -- * Internals (for TrieManager)
     , getRootFromDb
+
+      -- * Proofs against a trusted root
+    , provesMember
+    , provesAbsent
     ) where
 
 import Data.ByteString (ByteString)
@@ -46,6 +50,8 @@ import MPF.Hashes
     , isoMPFHash
     , mkMPFHash
     , mpfHashing
+    , nullHash
+    , parseMPFHash
     , renderMPFHash
     , root
     )
@@ -56,13 +62,19 @@ import MPF.Interface
     , byteStringToHexKey
     , hexKeyPrism
     )
+import MPF.Proof.Exclusion
+    ( MPFExclusionProof
+    , mkMPFExclusionProof
+    , verifyMPFExclusionProof
+    )
 import MPF.Proof.Insertion
     ( MPFProof
     , mkMPFInclusionProof
     )
+import MPF.Verify (verifyAikenInclusionProof)
 
 import Singular.Registry.Ledger (Root (..))
-import Singular.Registry.Proof (toProofSteps)
+import Singular.Registry.Proof (serializeProof, toProofSteps)
 import Singular.Registry.Trie (Trie (..))
 import Singular.Registry.Types (ProofStep)
 
@@ -118,6 +130,44 @@ proofMPFM k =
             mpfHashing
             MPFStandaloneMPFCol
             k
+
+exclusionMPFM :: HexKey -> MPFPure (Maybe (MPFExclusionProof MPFHash))
+exclusionMPFM k =
+    runMPFPureTransaction mpfHashCodecs $
+        mkMPFExclusionProof
+            []
+            fromHexKVIdentity
+            mpfHashing
+            MPFStandaloneMPFCol
+            k
+
+{- | Whether the tree nodes of a database prove this key bound to this
+value under a trusted root (#299). Only the tree the root commits to is
+read, never the key index kept beside it, and the proof is checked in
+the encoding the on-chain validator folds, against the trusted root
+rather than the database's own.
+-}
+provesMember
+    :: MPFInMemoryDB -> ByteString -> ByteString -> ByteString -> Bool
+provesMember db trusted key value =
+    case fst (runMPFPure db (proofMPFM (hashKeyPath key))) of
+        Nothing -> False
+        Just proof ->
+            verifyAikenInclusionProof trusted key value (serializeProof proof)
+
+{- | Whether the tree nodes of a database prove this key bound to
+nothing under a trusted root (#299), from the tree alone, as
+'provesMember' does. The all-zero root is the empty tree's.
+-}
+provesAbsent :: MPFInMemoryDB -> ByteString -> ByteString -> Bool
+provesAbsent db trusted key =
+    case fst (runMPFPure db (exclusionMPFM (hashKeyPath key))) of
+        Nothing -> False
+        Just proof -> verifyMPFExclusionProof mpfHashing trustedRoot proof
+  where
+    trustedRoot
+        | trusted == renderMPFHash nullHash = Nothing
+        | otherwise = parseMPFHash trusted
 
 rootHashM :: MPFPure (Maybe ByteString)
 rootHashM =

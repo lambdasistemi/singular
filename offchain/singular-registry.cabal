@@ -566,7 +566,18 @@ executable devnet
   main-is:          Main.hs
   build-depends:
     , base                        >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-mary
+    , cardano-node-clients
     , cardano-node-clients:devnet
+    , cardano-strict-containers
+    , containers
+    , directory
+    , filepath
+    , microlens
+    , singular-registry
 
   ghc-options:      -threaded -with-rtsopts=-N
 
@@ -652,11 +663,16 @@ test-suite cage-tests
   import:           warnings
   type:             exitcode-stdio-1.0
   default-language: GHC2021
-  hs-source-dirs:   test
+  hs-source-dirs:   test cli/src
   main-is:          Main.hs
   other-modules:
     Singular.Application.OpenDatum.BuildersSpec
     Singular.Application.OpenDatum.EnvelopeSpec
+    Singular.CLISpec
+    Singular.CLI.Command
+    Singular.CLI.Proof
+    Singular.CLI.Receipt
+    Singular.CLI.Registry
     Singular.Registry.BlueprintParametersSpec
     Singular.Registry.DeploymentSpec
     Singular.Registry.TxBuilder.BookEdgeSpec
@@ -827,6 +843,39 @@ executable update-terminal
     , cardano-tx-tools:tx-build
     , containers
     , microlens
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
+-- #299: the packaged `singular registry create|insert|terminate|inspect`
+-- commands. One ordinary process per command over a saved registry
+-- directory: the node and wallet are the caller's, the registry is the
+-- one the directory records, and nothing is booted a second time.
+executable singular
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   cli cli/src
+  main-is:          Main.hs
+  other-modules:
+    Singular.CLI
+    Singular.CLI.Command
+    Singular.CLI.Proof
+    Singular.CLI.Receipt
+    Singular.CLI.Registry
+
+  build-depends:
+    , aeson
+    , aeson-pretty
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-core
+    , containers
+    , directory
+    , filepath
+    , mts:mpf-write
+    , singular-registry
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
