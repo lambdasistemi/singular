@@ -3,7 +3,7 @@ import OpenDatumApplication.Driver
 
 /-! # The open-datum application's intended statements and inversions
 
-Fourteen declarations were previously proved. This bounded slice targets three further unchanged declarations; the other15 remain UNPROVED. Only captured #print axioms results establish each target's proof status; the current ledger remains a historical statement-phase artifact.
+Seventeen declarations were previously proved. This bounded slice targets two further unchanged declarations; the other13 remain UNPROVED. Only captured #print axioms results establish each target's proof status; the current ledger remains a historical statement-phase artifact.
 
 Three kinds of statement, kept apart:
 
@@ -708,12 +708,45 @@ theorem appConsistentB_iff (w : World) :
 theorem bookInsert_preserves_consistent (w w' : World) (r : Request) (e : Envelope)
     (sigs : List Nat) :
     AppConsistent w → appStep w (.bookInsert r e sigs) = .ok w' → AppConsistent w' := by
-  sorry
+  intro hc h
+  obtain ⟨hedge, _, _, _, hreg2, _, hkey, _, _, hout, hdep, hw⟩ :=
+    (bookInsert_inversion w w' r e sigs).1 h
+  subst hw
+  obtain ⟨h1, h2, h3, h4, h5⟩ := hc
+  refine ⟨h1, h2, h3, h4, ?_⟩
+  intro p hp
+  have hp' : p ∈ w.pending ∨ p = ⟨booked w.app r sigs, some e⟩ := by
+    first
+      | exact (List.mem_append.1 hp).imp id List.mem_singleton.1
+      | (simp only [List.mem_append, List.mem_singleton] at hp; exact hp)
+      | simpa using hp
+  rcases hp' with hold | hnew
+  · exact h5 p hold
+  · subst hnew
+    first
+      | exact Or.inl ⟨hedge, e, rfl, hout, hdep, hkey, hreg2⟩
+      | (left; exact ⟨hedge, e, rfl, hout, hdep, hkey, hreg2⟩)
 
 theorem bookTerminate_preserves_consistent (w w' : World) (r : Request) (ref : Nat)
     (sigs : List Nat) :
     AppConsistent w → appStep w (.bookTerminate r ref sigs) = .ok w' → AppConsistent w' := by
-  sorry
+  intro hc h
+  obtain ⟨_, hedge, _, _, _, _, _, _, _, _, _, hw⟩ := (bookTerminate_inversion w w' r ref sigs).1 h
+  subst hw
+  obtain ⟨h1, h2, h3, h4, h5⟩ := hc
+  refine ⟨h1, h2, h3, h4, ?_⟩
+  intro p hp
+  have hp' : p ∈ w.pending ∨ p = ⟨booked w.app r sigs, none⟩ := by
+    first
+      | exact (List.mem_append.1 hp).imp id List.mem_singleton.1
+      | (simp only [List.mem_append, List.mem_singleton] at hp; exact hp)
+      | simpa using hp
+  rcases hp' with hold | hnew
+  · exact h5 p hold
+  · subst hnew
+    first
+      | exact Or.inr ⟨hedge, rfl⟩
+      | (right; exact ⟨hedge, rfl⟩)
 
 theorem update_preserves_consistent (w w' : World) (ref : Nat) (succs : List Successor)
     (sigs : List Nat) :
@@ -1142,3 +1175,6 @@ end OpenDatumApplication.Statements
 #print axioms OpenDatumApplication.Statements.update_inversion
 #print axioms OpenDatumApplication.Statements.reject_inversion
 #print axioms OpenDatumApplication.Statements.update_requires_controller
+
+#print axioms OpenDatumApplication.Statements.bookInsert_preserves_consistent
+#print axioms OpenDatumApplication.Statements.bookTerminate_preserves_consistent
