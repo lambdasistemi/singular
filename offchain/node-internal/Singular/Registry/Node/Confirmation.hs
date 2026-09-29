@@ -63,9 +63,11 @@ import Singular.Registry.Node.Session
     , sessionFor
     )
 import Singular.Registry.Node.Wait
-    ( WaitStage (..)
-    , boundWait
-    , boundWaitClosing
+    ( WaitClock
+    , WaitStage (..)
+    , boundWaitClosingSince
+    , boundWaitSince
+    , startWaitClock
     , tryOutcome
     )
 import Singular.Registry.Provider qualified as Cage
@@ -89,6 +91,7 @@ stays its only bound.
 -}
 awaitTx :: ConwayTx -> IO ()
 awaitTx tx = do
+    clock <- startWaitClock
     sess <- sessionFor "awaitTx"
     case toList (tx ^. bodyTxL . outputsTxBodyL) of
         _ : _ -> pure ()
@@ -98,7 +101,7 @@ awaitTx tx = do
                     <> show (txIdTx tx)
                     <> ": it creates no output to observe"
                 )
-    confirmTxWindow sess tx (show (txIdTx tx)) (txIdTx tx)
+    confirmTxWindow clock sess tx (show (txIdTx tx)) (txIdTx tx)
 
 {- | Confirm a just-submitted transaction by observing output zero.
 Call before a dependent transaction spends that output. This supports
@@ -110,15 +113,17 @@ rather than by this fixed window.
 -}
 awaitTxId :: String -> IO ()
 awaitTxId txid = do
+    clock <- startWaitClock
     sess <- sessionFor "awaitTxId"
     wanted <- txIdFromHex "awaitTxId" txid
     deadline <-
-        boundWait
+        boundWaitSince
+            clock
             SessionConfirmationWait
             wanted
             windowReadBound
             (fixedWindowDeadline (nsProvider sess))
-    confirmWithin fixedLimit sess txid wanted deadline
+    confirmSince clock fixedLimit sess txid wanted deadline
 
 {- | Confirm a just-submitted transaction by observing output zero,
 until the transaction's own validity upper bound plus a two-minute
@@ -130,25 +135,30 @@ window of 'awaitTxId' stays its bound.
 -}
 awaitTxWindow :: ConwayTx -> String -> IO ()
 awaitTxWindow tx txid = do
+    clock <- startWaitClock
     sess <- sessionFor "awaitTxWindow"
     wanted <- txIdFromHex "awaitTxWindow" txid
-    confirmTxWindow sess tx txid wanted
+    confirmTxWindow clock sess tx txid wanted
 
 {- | Confirm a transaction under the window its validity gives it. The
 node reads that derive the window run under 'windowReadBound', before
 the wait starts, because the wait's limit is not known until they
 return: a node that never answers them ends the wait as the same wait
-failure. The wait itself then obeys the limit the window yields.
+failure. The wait itself then obeys the limit the window yields. The
+clock is the public call's, so a failure reports the time of the whole
+call.
 -}
-confirmTxWindow :: NodeSession -> ConwayTx -> String -> TxId -> IO ()
-confirmTxWindow sess tx label tid = do
+confirmTxWindow
+    :: WaitClock -> NodeSession -> ConwayTx -> String -> TxId -> IO ()
+confirmTxWindow clock sess tx label tid = do
     (deadline, limit) <-
-        boundWait
+        boundWaitSince
+            clock
             SessionConfirmationWait
             tid
             windowReadBound
             (windowFor sess tx)
-    confirmWithin limit sess label tid deadline
+    confirmSince clock limit sess label tid deadline
 
 -- | A transaction id from its hex rendering.
 txIdFromHex :: String -> String -> IO TxId
@@ -176,8 +186,22 @@ there.
 -}
 confirmWithin
     :: Int -> NodeSession -> String -> TxId -> SlotNo -> IO ()
-confirmWithin limit sess label tid deadline =
-    boundWaitClosing
+confirmWithin limit sess label tid deadline = do
+    clock <- startWaitClock
+    confirmSince clock limit sess label tid deadline
+
+-- | 'confirmWithin' under the clock of the public call that waits.
+confirmSince
+    :: WaitClock
+    -> Int
+    -> NodeSession
+    -> String
+    -> TxId
+    -> SlotNo
+    -> IO ()
+confirmSince clock limit sess label tid deadline =
+    boundWaitClosingSince
+        clock
         SessionConfirmationWait
         tid
         limit

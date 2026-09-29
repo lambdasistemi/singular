@@ -115,7 +115,11 @@ import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
 import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.Node.Options (NodeMode (..), die)
-import Singular.Registry.Node.Wait (WaitStage (..), boundWait)
+import Singular.Registry.Node.Wait
+    ( WaitStage (..)
+    , boundWaitSince
+    , startWaitClock
+    )
 import Singular.Registry.Node.Wallet
     ( Wallet (..)
     , bech32Address
@@ -219,6 +223,7 @@ window (in seconds).
 -}
 awaitIndexedWithin :: Int -> ConwayTx -> IO ()
 awaitIndexedWithin window tx = do
+    clock <- startWaitClock
     idx <-
         readIORef chainFollower
             >>= maybe
@@ -228,7 +233,7 @@ awaitIndexedWithin window tx = do
                 )
                 (pure . followingIndexer)
     let tid@(TxId h) = txIdTx tx
-    boundWait IndexedConfirmationWait tid window $
+    boundWaitSince clock IndexedConfirmationWait tid window $
         void $
             awaitTxIn
                 idx
