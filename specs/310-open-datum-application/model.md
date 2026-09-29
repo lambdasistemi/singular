@@ -65,7 +65,7 @@ Phase: MODEL + STATEMENTS + INVERSIONS + PROOFS; occurrence-safe re-cut `310-occ
 
 ## Invariant boundary (310-occurrence-001)
 
-- `appConsistentB` observes `AppConsistent` conjunct by conjunct, the registry through the root driver's own `Singular.Driver.consistentB`; its exact correspondence is the stated obligation `appConsistentB_iff`, unproved.
+- `appConsistentB` observes `AppConsistent` conjunct by conjunct, the registry through the root driver's own `Singular.Driver.consistentB`. Their exact correspondence is `appConsistentB_iff`, proved: the compiled report shows it depending on the standard axioms alone. The correspondence is a statement about the model; the observations below remain bounded executions of the published worlds.
 - Every scenario publishes the observation at genesis and after every accepted step. `check` requires it true for all of them, and requires an accepted step for each accepting constructor: `bookInsert`, `bookTerminate`, `update`, `fold` (insert, terminate and mixed) and `reject`.
 - The corpus publishes two boundary worlds:
   - `ordinary-after-insert`, reached: consistent; the signed update is accepted and its successor is consistent;

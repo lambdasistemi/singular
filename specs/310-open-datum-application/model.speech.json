@@ -39,12 +39,12 @@
   ],
   "invariant-boundary-310-occurrence-001": [
     {
-      "text": "The invariant is also observed executably at genesis and after every accepted step of every scenario, and the check requires it everywhere. Two boundary worlds are published: the ordinary world after an insertion is consistent and stays so after an update, while the same world holding its output twice is not consistent, and the same update would leave two outputs of one key. Without the occurrence clause the observation would admit that world, which shows the clause is what excludes it.",
+      "text": "The executable observation of the invariant is proved to correspond exactly to the invariant itself. It is also run at genesis and after every accepted step of every scenario, and the check requires it everywhere. Two boundary worlds are published: the ordinary world after an insertion is consistent and stays so after an update, while the same world holding its output twice is not consistent, and the same update would leave two outputs of one key. Without the occurrence clause the observation would admit that world, which shows the clause is what excludes it. These runs are bounded observations of the published worlds, not proofs.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "model.md",
-    "sha256": "f859920898bf1da1e74f23986ed9371f29b702ce8801669bf788a47e2bd9c370"
+    "sha256": "3de7ff196e2bd4f099db364231e483f2a1ad1a966b08b2b095d26332e240b093"
   }
 }
