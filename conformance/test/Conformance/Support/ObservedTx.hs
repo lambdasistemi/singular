@@ -243,6 +243,18 @@ hashedDatum :: Datum ConwayEra
 hashedDatum =
     DatumHash (hashData (Data (PLC.Constr 0 []) :: Data ConwayEra))
 
+{- | The inline datum a non-state output carries: one it really holds, and no
+registry datum, so a fold's continued state output stays its only state output.
+-}
+plainDatum :: Datum ConwayEra
+plainDatum = mkInlineDatum (PLC.I 0)
+
+-- | A form told to a non-state output: told inline, it carries 'plainDatum'.
+nonState :: Datum ConwayEra -> Datum ConwayEra
+nonState form = case form of
+    Datum _ -> plainDatum
+    _ -> form
+
 -- | The transaction's continued state output, as the ledger writes it.
 stateOutput :: TxOut ConwayEra
 stateOutput = outAt (walletAt 0x23) 2_000_000 mempty inlineDatum
@@ -253,19 +265,19 @@ spentState form = outAt (walletAt 0x24) 2_000_000 mempty form
 
 -- | The spent active witness of a retirement, presenting the form it is told to.
 spentWitness :: Datum ConwayEra -> TxOut ConwayEra
-spentWitness form = outAt holderWallet 1_000_000 activeAsset form
+spentWitness form = outAt holderWallet 1_000_000 activeAsset (nonState form)
 
 -- | The spent absent custody of a fold, presenting the form it is told to.
 spentCustody :: Datum ConwayEra -> TxOut ConwayEra
-spentCustody form = outAt (walletAt 0x26) 3_000_000 mempty form
+spentCustody form = outAt (walletAt 0x26) 3_000_000 mempty (nonState form)
 
 -- | The spent request output of a fixture step, presenting the form it is told to.
 spentRequest :: Datum ConwayEra -> TxOut ConwayEra
-spentRequest form = outAt (walletAt 0x25) 4_000_000 mempty form
+spentRequest form = outAt (walletAt 0x25) 4_000_000 mempty (nonState form)
 
 -- | The destination output of a delivering fold, presenting the form it is told to.
 carrier :: Datum ConwayEra -> TxOut ConwayEra
-carrier form = outAt holderWallet 3_000_000 activeAsset form
+carrier form = outAt holderWallet 3_000_000 activeAsset (nonState form)
 
 -- | An owner output paying a fold's owner, as the ledger writes it.
 ownerOutput :: Integer -> TxOut ConwayEra
