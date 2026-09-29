@@ -317,7 +317,14 @@ export function applyEdge(s, a) {
     case 'insertActive': {
       const t = withTrie('active');
       return {
-        state: { ...s, ...t, held: [{ key: a.key, kind: 'active', output: a.output, datum: deliveredDatum(a) }, ...s.held] },
+        state: {
+          ...s,
+          ...t,
+          held: [
+            { key: a.key, kind: 'active', output: a.output, datum: deliveredDatum(a) },
+            ...s.held,
+          ],
+        },
         mint: delta(a.edge),
         paid: [],
       };
@@ -329,7 +336,10 @@ export function applyEdge(s, a) {
           ...s,
           ...t,
           custody: s.custody.filter((c) => c.key !== a.key),
-          held: [{ key: a.key, kind: 'active', output: a.output, datum: deliveredDatum(a) }, ...s.held],
+          held: [
+            { key: a.key, kind: 'active', output: a.output, datum: deliveredDatum(a) },
+            ...s.held,
+          ],
         },
         mint: delta(a.edge),
         paid: entry ? [{ destination: entry.refundAddress, value: entry.value }] : [],
@@ -371,7 +381,13 @@ export function applyEdge(s, a) {
     }
     case 'witnessTerminal':
       return {
-        state: { ...s, held: [{ key: a.key, kind: 'terminal', output: a.output, datum: deliveredDatum(a) }, ...s.held] },
+        state: {
+          ...s,
+          held: [
+            { key: a.key, kind: 'terminal', output: a.output, datum: deliveredDatum(a) },
+            ...s.held,
+          ],
+        },
         mint: delta(a.edge),
         paid: [],
       };
