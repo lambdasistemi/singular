@@ -11,6 +11,12 @@ import OpenDatumApplication
   - each check notices a controlled alteration: a changed recorded outcome is
     caught by replay and by the corpus comparison, and a dropped ledger row by
     the ledger comparison;
+  - the ledger's proof status is the one the compiled statements establish
+    (`OpenDatumApplication.Audit.compiledStatements`), and the reconciliation
+    refuses each tampered report: a missing, extra, renamed or duplicated
+    statement and a custom axiom; while a report of `sorryAx` for a row the
+    ledger calls proved, a changed declaration header and a flipped status are
+    each noticed by the ledger comparison;
   - each definition mutant of the law runs at least one scenario differently
     from the committed corpus;
   - every genesis and accepted step of every scenario observes the invariant,
@@ -50,13 +56,32 @@ def report (ok : Bool) (line : String) : IO Nat := do
   IO.println s!"{tag} {line}"
   pure (if ok then 0 else 1)
 
+/-- The ledger rows the compiled statements establish. -/
+def compiledRows : IO (List StatementStatus) :=
+  orFail "compiled statements" (reconcileStatements OpenDatumApplication.Audit.compiledStatements)
+
+/-- Whether an attempted reconciliation is refused for the intended reason. -/
+def refusedFor (reason : String) : Except String (List StatementStatus) → Bool
+  | .error e => e.startsWith reason
+  | .ok _ => false
+
+/-- One ledger row's status replaced, as a hand edit of the committed file would. -/
+def flipFirstStatus (ledgers : Json) : Json :=
+  match ledgers.getObjVal? "theorems", ledgers.getObjVal? "atoms" with
+  | .ok (.arr rows), .ok atoms =>
+    let flipped := rows.modify 0 fun row => row.setObjVal! "status" (toJson "STATED")
+    Json.mkObj [("theorems", Json.arr flipped), ("atoms", atoms)]
+  | _, _ => Json.null
+
 def check (dir : String) : IO UInt32 := do
   let corpus ← parseOrFail "corpus.json" (← IO.FS.readFile s!"{dir}/corpus.json")
   let ledgers ← parseOrFail "ledgers.json" (← IO.FS.readFile s!"{dir}/ledgers.json")
+  let rows ← compiledRows
+  let ledgersNow := ledgersJsonOf rows
   let mut failed := 0
   failed := failed + (← report (corpusJson == corpus)
     "the regenerated corpus equals the committed corpus")
-  failed := failed + (← report (ledgersJson == ledgers)
+  failed := failed + (← report (ledgersNow == ledgers)
     "the regenerated ledgers equal the committed ledgers")
   let diffs ← orFail "replay" (replayDiffs corpus)
   failed := failed + (← report diffs.isEmpty
@@ -67,10 +92,50 @@ def check (dir : String) : IO UInt32 := do
     s!"control: replay notices one altered recorded outcome ({alteredDiffs})")
   failed := failed + (← report (corpusJson != altered)
     "control: the corpus comparison notices one altered recorded outcome")
-  let droppedRow : Json := Json.mkObj [("theorems", Json.arr (theoremLedger.getArr?.toOption.getD #[]).pop)
+  let droppedRow : Json := Json.mkObj
+    [("theorems", Json.arr ((theoremLedgerOf rows).getArr?.toOption.getD #[]).pop)
     , ("atoms", atomLedger)]
-  failed := failed + (← report (ledgersJson != droppedRow)
+  failed := failed + (← report (ledgersNow != droppedRow)
     "control: the ledger comparison notices one dropped theorem row")
+  -- The proof status is compiled, and every tampered report is refused.
+  let audited := OpenDatumApplication.Audit.compiledStatements
+  let proved := rows.filter (·.status == "PROVED")
+  failed := failed + (← report (audited.length == statementNames.length)
+    s!"the compiled statements are the ledger's extent: {audited.length} discovered, {statementNames.length} in the ledger, {proved.length} proved")
+  failed := failed + (← report
+    (sha256Hex "abc" == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad" &&
+      sha256Hex "" == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+    "control: SHA-256 answers its published test vectors")
+  match audited with
+  | first@(name, axioms, header) :: rest =>
+    failed := failed + (← report (refusedFor "missing-report" (reconcileStatements rest))
+      "control: a report missing one statement is refused")
+    failed := failed + (← report (refusedFor "extra-report" (reconcileStatements
+        (audited ++ [("OpenDatumApplication.Statements.not_a_statement", axioms, header)])))
+      "control: a report naming a statement the ledger lacks is refused")
+    failed := failed + (← report (refusedFor "missing-report" (reconcileStatements
+        ((name ++ "_renamed", axioms, header) :: rest)))
+      "control: a report renaming one statement is refused")
+    failed := failed + (← report (refusedFor "duplicate-report" (reconcileStatements
+        (first :: audited)))
+      "control: a report listing one statement twice is refused")
+    failed := failed + (← report (refusedFor "custom-axiom" (reconcileStatements
+        ((name, axioms ++ ["OpenDatumApplication.customAxiom"], header) :: rest)))
+      "control: a statement depending on a custom axiom is refused")
+    failed := failed + (← report (refusedFor "missing-report" (reconcileStatements []))
+      "control: an empty report is refused")
+    let sorried := (reconcileStatements ((name, axioms ++ ["sorryAx"], header) :: rest)).toOption
+    failed := failed + (← report (sorried.any fun rs =>
+        (rs.find? (·.name == name)).any (·.status == "STATED") && ledgersJsonOf rs != ledgers)
+      "control: a statement depending on sorryAx is computed STATED, and the ledger calling it proved notices")
+    let rehashed := (reconcileStatements ((name, axioms, header ++ " ") :: rest)).toOption
+    failed := failed + (← report (rehashed.any fun rs => ledgersJsonOf rs != ledgers)
+      "control: a declaration header changed by one byte changes its row's hash, and the ledger comparison notices")
+    failed := failed + (← report (flipFirstStatus ledgers != ledgersNow &&
+        flipFirstStatus ledgers != Json.null)
+      "control: a hand-flipped status in the committed ledger is noticed")
+  | [] =>
+    failed := failed + (← report false "the compiled statement table is empty")
   for (name, law) in mutants do
     let moved ← orFail s!"mutant {name}" (differingUnder law corpus)
     failed := failed + (← report (!moved.isEmpty)
@@ -101,11 +166,11 @@ def main (args : List String) : IO UInt32 := do
     IO.println corpusJson.pretty
     pure 0
   | ["ledgers"] =>
-    IO.println ledgersJson.pretty
+    IO.println (ledgersJsonOf (← compiledRows)).pretty
     pure 0
   | ["write", dir] =>
     IO.FS.writeFile s!"{dir}/corpus.json" (corpusJson.pretty ++ "\n")
-    IO.FS.writeFile s!"{dir}/ledgers.json" (ledgersJson.pretty ++ "\n")
+    IO.FS.writeFile s!"{dir}/ledgers.json" ((ledgersJsonOf (← compiledRows)).pretty ++ "\n")
     IO.println s!"wrote {dir}/corpus.json and {dir}/ledgers.json"
     pure 0
   | ["check", dir] => check dir

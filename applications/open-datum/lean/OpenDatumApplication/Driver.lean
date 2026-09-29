@@ -12,8 +12,9 @@ here restates the law; every outcome is computed.
 
 The corpus below is the witness and adverse-input scenarios, each bound to the
 statements it exhibits or attacks. Its outcomes are produced by running them,
-never typed. The theorem and semantic-atom ledgers are creator claims for
-independent review, not certified coverage. -/
+never typed. The theorem ledger's proof status is computed from the compiled
+statements, never typed; the semantic atoms are creator claims for independent
+review, and neither is certified coverage. -/
 
 namespace OpenDatumApplication.Driver
 
@@ -450,7 +451,96 @@ def corpusWith (law : Law) : Json :=
 
 def corpusJson : Json := corpusWith Law.standard
 
-/-! ## Ledgers: creator claims, not certified coverage -/
+/-! ## SHA-256
+
+FIPS 180-4, over bytes. It binds each ledger row to the exact text of its
+declaration header, so a statement that moves makes its row stale. -/
+
+private def sha256K : Array UInt32 :=
+  #[0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2]
+
+private def rotr (x n : UInt32) : UInt32 := (x >>> n) ||| (x <<< (32 - n))
+
+/-- The SHA-256 digest of a byte string. -/
+def sha256 (msg : ByteArray) : ByteArray := Id.run do
+  let mut padded := msg.push 0x80
+  while padded.size % 64 != 56 do
+    padded := padded.push 0
+  let bits := msg.size * 8
+  for i in [0:8] do
+    padded := padded.push ((bits >>> (8 * (7 - i))) % 256).toUInt8
+  let mut h : Array UInt32 :=
+    #[0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]
+  for blk in [0:padded.size / 64] do
+    let byte := fun (i : Nat) => (padded.get! (blk * 64 + i)).toUInt32
+    let mut w : Array UInt32 := #[]
+    for t in [0:16] do
+      w := w.push ((byte (4 * t) <<< 24) ||| (byte (4 * t + 1) <<< 16) |||
+        (byte (4 * t + 2) <<< 8) ||| byte (4 * t + 3))
+    for t in [16:64] do
+      let s0 := rotr w[t - 15]! 7 ^^^ rotr w[t - 15]! 18 ^^^ (w[t - 15]! >>> 3)
+      let s1 := rotr w[t - 2]! 17 ^^^ rotr w[t - 2]! 19 ^^^ (w[t - 2]! >>> 10)
+      w := w.push (w[t - 16]! + s0 + w[t - 7]! + s1)
+    let mut a := h[0]!
+    let mut b := h[1]!
+    let mut c := h[2]!
+    let mut d := h[3]!
+    let mut e := h[4]!
+    let mut f := h[5]!
+    let mut g := h[6]!
+    let mut hh := h[7]!
+    for t in [0:64] do
+      let s1 := rotr e 6 ^^^ rotr e 11 ^^^ rotr e 25
+      let ch := (e &&& f) ^^^ ((~~~e) &&& g)
+      let t1 := hh + s1 + ch + sha256K[t]! + w[t]!
+      let s0 := rotr a 2 ^^^ rotr a 13 ^^^ rotr a 22
+      let maj := (a &&& b) ^^^ (a &&& c) ^^^ (b &&& c)
+      let t2 := s0 + maj
+      hh := g
+      g := f
+      f := e
+      e := d + t1
+      d := c
+      c := b
+      b := a
+      a := t1 + t2
+    h := #[h[0]! + a, h[1]! + b, h[2]! + c, h[3]! + d, h[4]! + e, h[5]! + f, h[6]! + g,
+      h[7]! + hh]
+  let mut out := ByteArray.empty
+  for word in h do
+    for s in [24, 16, 8, 0] do
+      out := out.push ((word >>> s.toUInt32) &&& 0xff).toUInt8
+  return out
+
+/-- Lower-case hexadecimal of a byte string. -/
+def hexOf (bytes : ByteArray) : String :=
+  bytes.foldl (fun acc b =>
+    let digit := fun (n : Nat) => "0123456789abcdef".get ⟨n⟩
+    (acc.push (digit (b.toNat / 16))).push (digit (b.toNat % 16))) ""
+
+/-- The SHA-256 of a text's UTF-8 bytes, in hexadecimal. -/
+def sha256Hex (text : String) : String := hexOf (sha256 text.toUTF8)
+
+/-! ## Ledgers: compiled proof status, not coverage
+
+The theorem ledger's `status` is never typed. The generator receives the
+statements the compiled environment actually declares
+(`OpenDatumApplication.Audit.compiledStatements`: each public theorem of
+`OpenDatumApplication.Statements`, the axioms the kernel reports it depending
+on, and its declaration header as written), reconciles them with the ledger's
+statement extent in both directions, and derives each row's status and header
+hash from them. `PROVED` means the standard axioms alone; `STATED` means
+`sorryAx` and nothing non-standard besides; any other axiom is refused. A proved
+statement is a property of the model; its row's `scenarios` and `boundary` say
+which published cases exhibit it, not that any product claim was executed. The
+semantic atoms remain creator claims for review. -/
 
 def statementNames : List (String × String) :=
   [ ("bookInsert_inversion", "inversion"), ("bookTerminate_inversion", "inversion")
@@ -472,10 +562,55 @@ def statementNames : List (String × String) :=
   , ("duplicate_refused_by_registry", "refusal")
   , ("resurrection_refused_by_registry", "terminality"), ("fold_signers_unchanged", "authorization") ]
 
-def theoremLedger : Json :=
+/-- A statement's qualified name. -/
+def qualified (name : String) : String := s!"OpenDatumApplication.Statements.{name}"
+
+/-- The axioms a proof may rest on and still be called proved. -/
+def standardAxioms : List String := ["propext", "Classical.choice", "Quot.sound"]
+
+/-- One compiled statement: its qualified name, the axioms the kernel reports
+it depending on, and its declaration header as written. -/
+abbrev AuditedStatement := String × List String × String
+
+/-- A ledger row's computed proof status. -/
+structure StatementStatus where
+  name : String
+  status : String
+  axioms : List String
+  statementSha256 : String
+
+/-- The status the axioms establish: `PROVED` on the standard axioms alone,
+`STATED` when `sorryAx` is the only other one; any other axiom is refused. -/
+def statusOf (name : String) (axioms : List String) : Except String String :=
+  if axioms.all standardAxioms.contains then .ok "PROVED"
+  else if axioms.contains "sorryAx" &&
+      axioms.all (fun a => a == "sorryAx" || standardAxioms.contains a) then .ok "STATED"
+  else .error s!"custom-axiom: {name} depends on {axioms.filter (!standardAxioms.contains ·)}"
+
+/-- Reconcile the compiled statements with the ledger's extent, in both
+directions, and compute each row's status and header hash. -/
+def reconcileStatements (audited : List AuditedStatement) :
+    Except String (List StatementStatus) := do
+  let names := audited.map (·.1)
+  let expected := statementNames.map (qualified ·.1)
+  if names.eraseDups.length != names.length then
+    throw s!"duplicate-report: {names.filter fun n => (names.filter (· == n)).length > 1}"
+  for n in expected do
+    unless names.contains n do throw s!"missing-report: {n} has no compiled statement"
+  for n in names do
+    unless expected.contains n do throw s!"extra-report: {n} is not a ledger statement"
+  audited.mapM fun (name, axioms, header) => do
+    let status ← statusOf name axioms
+    pure { name, status, axioms, statementSha256 := sha256Hex header }
+
+def theoremLedgerOf (rows : List StatementStatus) : Json :=
   Json.arr (statementNames.map fun (name, cls) =>
-    Json.mkObj [("statement", toJson s!"OpenDatumApplication.Statements.{name}")
-      , ("class", toJson cls), ("status", "stated-unproved")
+    let row := rows.find? (·.name == qualified name)
+    Json.mkObj [("statement", toJson (qualified name))
+      , ("class", toJson cls)
+      , ("status", toJson ((row.map (·.status)).getD "missing"))
+      , ("axioms", toJson ((row.map (·.axioms)).getD []))
+      , ("statementSha256", toJson ((row.map (·.statementSha256)).getD ""))
       , ("scenarios", toJson ((corpus.filter (·.statements.contains name)).map (·.name)))
       , ("boundary", toJson ((boundaryWorlds.filter (·.statements.contains name)).map (·.name)))]).toArray
 
@@ -495,7 +630,8 @@ def atomLedger : Json :=
   Json.arr (atoms.map fun (id, cls, text) =>
     Json.mkObj [("atom", toJson id), ("class", toJson cls), ("claim", toJson text)]).toArray
 
-def ledgersJson : Json := Json.mkObj [("theorems", theoremLedger), ("atoms", atomLedger)]
+def ledgersJsonOf (rows : List StatementStatus) : Json :=
+  Json.mkObj [("theorems", theoremLedgerOf rows), ("atoms", atomLedger)]
 
 /-! ## The checks and their own controls -/
 

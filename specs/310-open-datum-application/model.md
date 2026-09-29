@@ -1,15 +1,17 @@
 # Open-datum application: executable model and intended statements
 
-Phase: MODEL + STATEMENTS + INVERSIONS + PROOFS; occurrence-safe re-cut `310-occurrence-001` on the preserved first repair, then the two model repairs of [the 29 September rulings](ruling-model-repairs-20260929.md). There are 33 statements. A statement is proved only where a captured `#print axioms` report shows standard axioms alone; at this revision 21 are, and 12 are **stated, unproved** (`sorry`). The generated ledger still lists every statement as stated, unproved. Nothing here is a validator, a compiled identity, a builder or ledger evidence.
+Phase: MODEL + STATEMENTS + INVERSIONS + PROOFS; occurrence-safe re-cut `310-occurrence-001` on the preserved first repair, then the two model repairs of [the 29 September rulings](ruling-model-repairs-20260929.md). There are 33 statements, and all 33 are proved: the compiled environment reports each depending on the standard axioms alone. The generated theorem ledger records that status as the build computes it, never as typed. Every proof is of the historical root model this project was accepted against; the pending root destination-row change (#304) has not been consumed. Nothing here is a validator, a compiled identity, a builder or ledger evidence.
 
 ## Where it lives and how it builds
 
 - `applications/open-datum/` is an isolated Lake project. `lakefile.lean` requires the unchanged root project (`require singular from "../.."`). It has no `lean-toolchain` of its own: the root `application-model` recipe checks the selected `lean --version` against the root pin `leanprover/lean4:v4.25.0`. The Lean-DSL manifest is used because the repository inventory classifies `lakefile.toml` and `lean-toolchain` only at the root.
-- Library `OpenDatumApplication`: `Model` (the law), `Statements` (statements and inversions) and `Driver` (codecs, corpus, ledgers, checks). The executable `open-datum-application` has these modes:
+- Library `OpenDatumApplication`: `Model` (the law), `Statements` (statements and inversions), `ProofSupport` (lemmas the proofs use, not statements), `Driver` (codecs, corpus, ledgers, checks) and `Audit` (the compiled proof status). The executable `open-datum-application` has these modes:
   - `write DIR` writes the corpus and the ledgers;
   - `check DIR` regenerates both and compares them with the committed files, and replays every scenario;
   - `check DIR` also runs its own controls: a changed recorded outcome must be noticed by replay and by the corpus comparison, a dropped theorem row by the ledger comparison, and each of three definition mutants of the law (no update signer check, no registry-asset check, per-floor instead of additive settlement) must run at least one scenario differently;
+  - `check DIR` also requires the theorem ledger's proof status to be the one the compiled statements establish, and shows that the reconciliation refuses a report missing, adding, renaming or repeating a statement or naming a custom axiom, while a `sorryAx` report for a row called proved, a declaration header changed by one byte and a hand-flipped status are each noticed;
   - `run appStep` runs one scenario from standard input.
+- Proof status is computed, never typed. `Audit` discovers every public theorem of `Statements` from the compiled environment, with the axioms the kernel reports and its header as written; the build fails on any axiom other than the standard three or `sorryAx`. The executable compiles that table in and derives each row's status (`PROVED` on the standard axioms alone, `STATED` with `sorryAx`) and the SHA-256 of its header. `lean/AuditReport.lean` prints the same report afresh, and `tools/check_application_model.py` cross-checks it against the ledger and the statement source, with its own controls.
 
 ## The law
 
@@ -59,6 +61,7 @@ Phase: MODEL + STATEMENTS + INVERSIONS + PROOFS; occurrence-safe re-cut `310-occ
 - Every statement is bound to at least one of 27 scenarios or 2 boundary worlds. Each scenario publishes the world after every accepted step: registry, outputs, bookings with their required signers, and the last mint. Intermediate conclusions are therefore observable, not only final worlds.
 - The corpus exercises one controller, keys 5 and 6 and fixed amounts. It exhibits the statements and does not cover their domains.
 - The three definition mutants move 1, 3 and 3 scenarios respectively. They are controls on the checks, not a mutation campaign over the law.
+- A proved statement is a property of the model. The ledger's scenario and boundary bindings say which published cases exhibit it; they are not product coverage, and no validator, transaction or chain claim follows from them.
 
 ## Invariant boundary (310-occurrence-001)
 

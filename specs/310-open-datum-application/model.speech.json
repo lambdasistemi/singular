@@ -3,6 +3,10 @@
     {
       "text": "The application is its own small Lean project over the unchanged registry model, run on the repository's pinned Lean. Its check mode regenerates the corpus and ledgers, replays every scenario, and proves its own checks can fail: an altered outcome, a dropped ledger row and three mutants of the law must each be noticed.",
       "pause": 400
+    },
+    {
+      "text": "Proof status is computed, never typed. The build discovers every statement from the compiled environment with the axioms the kernel reports, and the generator writes each row's status and the hash of its header from that. The check refuses tampered reports, a separate report is cross-checked by an independent script, and a custom axiom fails the build.",
+      "pause": 400
     }
   ],
   "the-law": [
@@ -29,7 +33,7 @@
   ],
   "coverage": [
     {
-      "text": "Every statement is bound to a scenario or a boundary world, and each scenario publishes the world and the invariant after every step. The corpus uses one controller, two keys and fixed amounts, so it exhibits the statements without covering their domains. Of thirty-three statements, twenty-one have clean kernel reports at this revision and twelve remain unproved.",
+      "text": "Every statement is bound to a scenario or a boundary world, and each scenario publishes the world and the invariant after every step. The corpus uses one controller, two keys and fixed amounts, so it exhibits the statements without covering their domains. All thirty-three statements are proved, over the historical root model. A proved statement is a property of the model, not product coverage: no validator, transaction or chain claim follows from it.",
       "pause": 400
     }
   ],
@@ -41,6 +45,6 @@
   ],
   "_source": {
     "file": "model.md",
-    "sha256": "4735d364a115d08f1005499eb5455192994256c13e1b45f7bd34044fcce6f161"
+    "sha256": "f859920898bf1da1e74f23986ed9371f29b702ce8801669bf788a47e2bd9c370"
   }
 }
