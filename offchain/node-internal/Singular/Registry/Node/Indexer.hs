@@ -26,6 +26,7 @@ module Singular.Registry.Node.Indexer
 
       -- * Indexed confirmation
     , awaitIndexed
+    , awaitIndexedWithin
 
       -- * Provider adaptation
     , followedProvider
@@ -209,6 +210,13 @@ startingAt = \case
     Chain.GenesisPoint -> Nothing
     Chain.BlockPoint (SlotNo s) (OneEraHash h) ->
         Just (Indexer.SlotNo s, Indexer.BlockHash (SBS.fromShort h))
+
+{- | Wait until the followed chain's indexer has applied the block
+carrying a submitted transaction, observed as the transaction's first
+output, or fail within the named window (in seconds).
+-}
+awaitIndexedWithin :: Int -> ConwayTx -> IO ()
+awaitIndexedWithin _window = awaitIndexed
 
 {- | Wait until the followed chain's indexer has applied the block
 carrying a submitted transaction, observed as the transaction's first

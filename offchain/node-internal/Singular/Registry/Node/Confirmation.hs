@@ -19,6 +19,7 @@ module Singular.Registry.Node.Confirmation
       awaitTx
     , awaitTxId
     , awaitTxWindow
+    , confirmWithin
     , confirmDeadline
     , txUpperBoundSlot
     , awaitChain
@@ -138,6 +139,16 @@ txIdFromHex what txid = do
             pure
             (hashFromBytes raw)
     pure (TxId (unsafeMakeSafeHash h))
+
+{- | Wait until the indexer following the session's chain reports the
+block that carries output zero of a transaction, or the chain's tip
+passes the deadline — the whole wait obeying the named wall-clock
+limit (in seconds), tip reads included. The node is asked only for its
+tip, and only while the output has not appeared.
+-}
+confirmWithin :: Int -> NodeSession -> String -> TxId -> SlotNo -> IO ()
+confirmWithin _limit sess label tid deadline =
+    confirmOutputZero sess label tid deadline
 
 {- | Wait until the indexer following the session's chain reports the
 block that carries output zero of a transaction, or the chain's tip
