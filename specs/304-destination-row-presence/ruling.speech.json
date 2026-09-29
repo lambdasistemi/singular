@@ -1,4 +1,40 @@
 {
+  "story": [
+    {
+      "text": "A conformance reader folds a fresh absent insertion and receives only the ledger outputs that actually exist, so the suite cannot invent a destination output or its datum to make a comparison pass.",
+      "pause": 400
+    }
+  ],
+  "what-changes": [
+    {
+      "text": "The model's fold carries a destination output only when it routes a token to the requester. One statement over all seven edges says so, a mutant restoring the unconditional output must fail it, and the corpus, its simulator mirror and the constitution follow.",
+      "pause": 400
+    }
+  ],
+  "what-does-not-change": [
+    {
+      "text": "Deposit recipients, phase windows, signer requirements, and the inline datum and commitment of a delivering fold's destination output stay as they were.",
+      "pause": 400
+    }
+  ],
+  "story_1": [
+    {
+      "text": "A conformance reader folds an active insertion whose request names no datum, and the model describes the delivered output with no datum, as the chain holds it, so the comparison reports the ledger's form rather than one the model invented.",
+      "pause": 400
+    }
+  ],
+  "what-changes_1": [
+    {
+      "text": "A request records whether it names a datum for its delivered output, and names none unless it says so. One statement over all seven edges ties the delivered form to that flag, and a mutant restoring an unconditional inline datum must fail it.",
+      "pause": 400
+    }
+  ],
+  "extension-the-spent-witness": [
+    {
+      "text": "The holding keeps the datum form its delivering fold carried, and a fold that spends it as a witness reports that form; the spending request's own flag does not decide it. The held observation keeps its three fields, and the form is observed on the transaction that spends the holding.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "ruling.md",
     "sha256": "554635d28e877f4d7c50b283b12a089cda0bd5603277017e8f61b2ed5cfce183"
