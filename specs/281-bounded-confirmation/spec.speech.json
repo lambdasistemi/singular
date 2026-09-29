@@ -1,0 +1,18 @@
+{
+  "_source": {
+    "file": "spec.md",
+    "sha256": "e9f6d19c458441ebb52a95926a955f9665785d8f0aeb8ed3424eaaf6dba289f8"
+  },
+  "requirements": [
+    {
+      "text": "A submission with no node verdict, an output that never reaches the indexer, and a session confirmation on a stopped chain or a stalled tip read each end within a finite bound. The failure names the transaction and the elapsed time. Prompt answers behave as before, nothing is left running when a bound fires, and no bound is ever recorded as a refusal, a row outcome or an acceptance.",
+      "pause": 500
+    }
+  ],
+  "authority-and-evidence": [
+    {
+      "text": "The Lean model and constitution are unchanged, because a bound on a wait is runner infrastructure, not a model outcome. The historical run stopped while waiting for the node's submission verdict, which the pinned client awaits without a limit. The session confirmation could wait forever on a stopped chain.",
+      "pause": 500
+    }
+  ]
+}

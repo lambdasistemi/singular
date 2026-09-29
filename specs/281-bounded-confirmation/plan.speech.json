@@ -1,0 +1,24 @@
+{
+  "_source": {
+    "file": "plan.md",
+    "sha256": "3e2ddf412605da75e61c496f02a2d19454ed1c48770ef89cbf75dce6cbad6ecc"
+  },
+  "delivery": [
+    {
+      "text": "The coder commits failing specs first, with every negative case failing on its own time guard, then commits the shared bound applied to every wait, deleting the old window path. The ticket owner audits that exact candidate before it is pushed to the draft pull request, and continuous integration on the exact head carries format, lint, compile and devnet compatibility.",
+      "pause": 500
+    }
+  ],
+  "execution-budget": [
+    {
+      "text": "Four local invocations in total: a failing run and a passing run of the off-chain unit suite for the coder, one repair the ticket owner releases, and one audit run for the ticket owner.",
+      "pause": 500
+    }
+  ],
+  "evidence-limits": [
+    {
+      "text": "The unit specs establish the bound over stubs and a real in-memory indexer, not a real node withholding its verdict. Devnet compatibility comes from continuous integration on the exact head. Other node reads and the upstream client library are unchanged.",
+      "pause": 500
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "2c0890227d25403fc90c21557d39efc0bb300c6e89feefc1823da8fb26fc6764"
+  },
+  "work-items": [
+    {
+      "text": "Intake and this mandate are done. Next come the failing specs, the fix with a passing run, the ticket owner's audit of the exact candidate, and the push with continuous integration green on the exact head. No merge is authorized yet.",
+      "pause": 500
+    }
+  ]
+}

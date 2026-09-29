@@ -1,0 +1,12 @@
+{
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "bd5a04a9df9d7f5fd4f80a60febfcd6dcbfe657e2f89fec2d174f2a034238b9c"
+  },
+  "boundaries": [
+    {
+      "text": "Each failure names one wait stage, the transaction id, the elapsed seconds measured from the start of the whole wait, and the bound. The submission bound is a named finite constant no larger than the five-minute confirmation window. The indexed window stays five minutes, and the session limit is derived from the transaction's own confirmation window, so a healthy transaction keeps its full time. Tests inject shorter values. Nothing is written to a receipt.",
+      "pause": 500
+    }
+  ]
+}
