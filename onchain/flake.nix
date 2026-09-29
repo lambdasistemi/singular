@@ -3,8 +3,7 @@
 
   nixConfig = {
     extra-substituters = [ "https://cache.iog.io" ];
-    extra-trusted-public-keys =
-      [ "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=" ];
+    extra-trusted-public-keys = [ "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=" ];
   };
 
   inputs = {
@@ -19,13 +18,11 @@
     nixpkgs.follows = "haskellNix/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     iohkNix = {
-      url =
-        "github:input-output-hk/iohk-nix/0ce7cc21b9a4cfde41871ef486d01a8fafbf9627";
+      url = "github:input-output-hk/iohk-nix/0ce7cc21b9a4cfde41871ef486d01a8fafbf9627";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     CHaP = {
-      url =
-        "github:intersectmbo/cardano-haskell-packages/8479db771a3186eb326e42d8480eddc20a208275";
+      url = "github:intersectmbo/cardano-haskell-packages/8479db771a3186eb326e42d8480eddc20a208275";
       flake = false;
     };
     # Pinned cardano-node, used as a subprocess by the devnet E2E
@@ -42,8 +39,6 @@
       flake-utils,
       haskellNix,
       iohkNix,
-      CHaP,
-      cardano-node,
       ...
     }:
     flake-utils.lib.eachDefaultSystem (
@@ -130,6 +125,20 @@
           '';
         };
 
+        # #278: every hand-written and generated Aiken source is in the
+        # pinned formatter's canonical form; `aiken fmt --check` visits the
+        # whole project (lib/ and validators/) with no exclusions.
+        aiken-fmt = pkgs.stdenv.mkDerivation {
+          pname = "mpf-aiken-fmt";
+          version = "0.0.0";
+          src = pkgs.lib.cleanSource ./.;
+          nativeBuildInputs = [ pkgs.aiken ];
+          buildPhase = ''
+            aiken fmt --check
+          '';
+          installPhase = "touch $out";
+        };
+
         aiken-check = pkgs.stdenv.mkDerivation {
           pname = "mpf-aiken-check";
           version = "0.0.0";
@@ -192,7 +201,7 @@
         # of falling back to `nix develop .#aiken --command aiken …`.
         aikenChecks = {
           aiken-build = plutus-blueprint;
-          inherit aiken-check aiken-docs;
+          inherit aiken-check aiken-docs aiken-fmt;
         };
 
         # -------------------------------------------------------
@@ -214,81 +223,84 @@
         # validator set, so a validator added or removed cannot pass
         # silently, and a manifest or blueprint with zero validators is
         # a failure rather than a vacuous pass.
-        script-identity = pkgs.runCommand "mpf-script-identity-check" {
-          nativeBuildInputs = [ pkgs.jq ];
-          blueprint = plutus-blueprint;
-          manifest = scriptIdentityManifest;
-          witnessSource = ./validators/witness.ak;
-        } ''
-          set -euo pipefail
-          problems="$(jq -r -n \
-            --slurpfile bp "$blueprint" \
-            --slurpfile man "$manifest" \
-            '
-              ($bp[0].validators | map({key: .title, value: .hash}) | from_entries) as $built
-              | ($man[0].validators | map({key: .title, value: .hash}) | from_entries) as $pinned
-              | (if ($built | length) == 0
-                 then ["FAIL: the blueprint reports zero validators"] else [] end)
-                + (if ($pinned | length) == 0
-                 then ["FAIL: the manifest records zero validators"] else [] end)
-                + (if $man[0].compiler != $bp[0].preamble.compiler.version then
-                     ["FAIL: compiler moved: manifest records \($man[0].compiler), blueprint reports \($bp[0].preamble.compiler.version)"]
-                   else [] end)
-                + [$built | to_entries[] | .key as $k |
-                     if ($pinned | has($k) | not) then
-                       "FAIL: validator \($k) is missing from the manifest (built hash \(.value))"
-                     elif $pinned[$k] != .value then
-                       "FAIL: validator \($k) moved: manifest expects \($pinned[$k]), build produced \(.value)"
-                     else empty end]
-                + [$pinned | to_entries[] | .key as $k |
-                     if ($built | has($k) | not) then
-                       "FAIL: manifest entry \($k) (hash \(.value)) has no counterpart in the build"
-                     else empty end]
-              | .[]
-            ')" || {
-            echo "FAIL: jq could not parse the blueprint or the manifest" >&2
-            exit 1
-          }
-          if [ -n "$problems" ]; then
-            echo "script-identity check FAILED:" >&2
-            printf '%s\n' "$problems" >&2
-            exit 1
-          fi
-          # #177 I177-COPIES: the witness's registry pin, enforced here
-          # rather than left to whichever devnet row next moves a token.
-          #
-          # `witness.ak` names the state script's hash as a CONSTANT —
-          # Aiken cannot name a validator's own hash, and deriving it
-          # from the `registry` parameter would admit a witness
-          # parametrised against a fabricated script. A stale constant
-          # is silent at compile time and costs a whole devnet run to
-          # discover (muse finding F1).
-          #
-          # So the source pin is read out of the file and required to
-          # EQUAL the `state.state.spend` hash of the blueprint this
-          # derivation just built. Both sides fail closed: a pin that
-          # cannot be read at all, and a blueprint with no
-          # `state.state.spend`, are failures rather than a vacuous
-          # match.
-          pin="$(sed -n 's/^  #"\([0-9a-f]\{56\}\)"$/\1/p' "$witnessSource" | head -n1)"
-          if [ -z "$pin" ]; then
-            echo "FAIL: no registryStateHash pin found in witness.ak" >&2
-            exit 1
-          fi
-          built="$(jq -r '.validators[] | select(.title == "state.state.spend") | .hash' "$blueprint")"
-          if [ -z "$built" ] || [ "$built" = "null" ]; then
-            echo "FAIL: the built blueprint carries no state.state.spend validator" >&2
-            exit 1
-          fi
-          if [ "$pin" != "$built" ]; then
-            echo "script-identity check FAILED:" >&2
-            echo "FAIL: witness.ak pins the registry state hash at $pin, the built state.state.spend is $built" >&2
-            exit 1
-          fi
-          echo "script-identity: witness.ak pin $pin equals the built state.state.spend"
-          echo "script-identity: OK — $(jq '.validators | length' "$manifest") validators pinned, manifest matches the built blueprint (compiler $(jq -r '.compiler' "$manifest"))"
-          touch $out
-        '';
+        script-identity =
+          pkgs.runCommand "mpf-script-identity-check"
+            {
+              nativeBuildInputs = [ pkgs.jq ];
+              blueprint = plutus-blueprint;
+              manifest = scriptIdentityManifest;
+              witnessSource = ./validators/witness.ak;
+            }
+            ''
+              set -euo pipefail
+              problems="$(jq -r -n \
+                --slurpfile bp "$blueprint" \
+                --slurpfile man "$manifest" \
+                '
+                  ($bp[0].validators | map({key: .title, value: .hash}) | from_entries) as $built
+                  | ($man[0].validators | map({key: .title, value: .hash}) | from_entries) as $pinned
+                  | (if ($built | length) == 0
+                     then ["FAIL: the blueprint reports zero validators"] else [] end)
+                    + (if ($pinned | length) == 0
+                     then ["FAIL: the manifest records zero validators"] else [] end)
+                    + (if $man[0].compiler != $bp[0].preamble.compiler.version then
+                         ["FAIL: compiler moved: manifest records \($man[0].compiler), blueprint reports \($bp[0].preamble.compiler.version)"]
+                       else [] end)
+                    + [$built | to_entries[] | .key as $k |
+                         if ($pinned | has($k) | not) then
+                           "FAIL: validator \($k) is missing from the manifest (built hash \(.value))"
+                         elif $pinned[$k] != .value then
+                           "FAIL: validator \($k) moved: manifest expects \($pinned[$k]), build produced \(.value)"
+                         else empty end]
+                    + [$pinned | to_entries[] | .key as $k |
+                         if ($built | has($k) | not) then
+                           "FAIL: manifest entry \($k) (hash \(.value)) has no counterpart in the build"
+                         else empty end]
+                  | .[]
+                ')" || {
+                echo "FAIL: jq could not parse the blueprint or the manifest" >&2
+                exit 1
+              }
+              if [ -n "$problems" ]; then
+                echo "script-identity check FAILED:" >&2
+                printf '%s\n' "$problems" >&2
+                exit 1
+              fi
+              # #177 I177-COPIES: the witness's registry pin, enforced here
+              # rather than left to whichever devnet row next moves a token.
+              #
+              # `witness.ak` names the state script's hash as a CONSTANT —
+              # Aiken cannot name a validator's own hash, and deriving it
+              # from the `registry` parameter would admit a witness
+              # parametrised against a fabricated script. A stale constant
+              # is silent at compile time and costs a whole devnet run to
+              # discover (muse finding F1).
+              #
+              # So the source pin is read out of the file and required to
+              # EQUAL the `state.state.spend` hash of the blueprint this
+              # derivation just built. Both sides fail closed: a pin that
+              # cannot be read at all, and a blueprint with no
+              # `state.state.spend`, are failures rather than a vacuous
+              # match.
+              pin="$(sed -n 's/^  #"\([0-9a-f]\{56\}\)"$/\1/p' "$witnessSource" | head -n1)"
+              if [ -z "$pin" ]; then
+                echo "FAIL: no registryStateHash pin found in witness.ak" >&2
+                exit 1
+              fi
+              built="$(jq -r '.validators[] | select(.title == "state.state.spend") | .hash' "$blueprint")"
+              if [ -z "$built" ] || [ "$built" = "null" ]; then
+                echo "FAIL: the built blueprint carries no state.state.spend validator" >&2
+                exit 1
+              fi
+              if [ "$pin" != "$built" ]; then
+                echo "script-identity check FAILED:" >&2
+                echo "FAIL: witness.ak pins the registry state hash at $pin, the built state.state.spend is $built" >&2
+                exit 1
+              fi
+              echo "script-identity: witness.ak pin $pin equals the built state.state.spend"
+              echo "script-identity: OK — $(jq '.validators | length' "$manifest") validators pinned, manifest matches the built blueprint (compiler $(jq -r '.compiler' "$manifest"))"
+              touch $out
+            '';
 
         # -------------------------------------------------------
         # Reference-publication size (issue #253)
@@ -321,7 +333,10 @@
 
         referencePublicationSizeCheck = pkgs.writeShellApplication {
           name = "reference-publication-size-check";
-          runtimeInputs = [ pkgs.jq pkgs.gnugrep ];
+          runtimeInputs = [
+            pkgs.jq
+            pkgs.gnugrep
+          ];
           text = ''
             blueprint="$1"
             maxTxSize="$2"
@@ -340,29 +355,32 @@
           '';
         };
 
-        reference-publication-size = pkgs.runCommand "mpf-reference-publication-size-check" {
-          blueprint = plutus-blueprint;
-          genesis = ../offchain/e2e-test/genesis/shelley-genesis.json;
-          nativeBuildInputs = [ pkgs.jq ];
-        } ''
-          set -euo pipefail
-          maxTxSize="$(jq -e '.protocolParams.maxTxSize' "$genesis")"
-          ${pkgs.lib.getExe referencePublicationSizeCheck} "$blueprint" "$maxTxSize"
-          limit=$(( maxTxSize - ${toString publishOverhead} - ${toString publishMargin} ))
-          padded="$(mktemp)"
-          jq --argjson limit "$limit" '
-            .validators |= map(
-              if .title == "state.state.spend" then
-                .compiledCode += ("00" * ([$limit + 1 - (.compiledCode | length / 2), 1] | max))
-              else . end)
-          ' "$blueprint" > "$padded"
-          if ${pkgs.lib.getExe referencePublicationSizeCheck} "$padded" "$maxTxSize" 2>/dev/null; then
-            echo "FAIL: the size check accepted a state validator padded past the limit" >&2
-            exit 1
-          fi
-          echo "reference-publication-size: control refused the padded state validator"
-          touch $out
-        '';
+        reference-publication-size =
+          pkgs.runCommand "mpf-reference-publication-size-check"
+            {
+              blueprint = plutus-blueprint;
+              genesis = ../offchain/e2e-test/genesis/shelley-genesis.json;
+              nativeBuildInputs = [ pkgs.jq ];
+            }
+            ''
+              set -euo pipefail
+              maxTxSize="$(jq -e '.protocolParams.maxTxSize' "$genesis")"
+              ${pkgs.lib.getExe referencePublicationSizeCheck} "$blueprint" "$maxTxSize"
+              limit=$(( maxTxSize - ${toString publishOverhead} - ${toString publishMargin} ))
+              padded="$(mktemp)"
+              jq --argjson limit "$limit" '
+                .validators |= map(
+                  if .title == "state.state.spend" then
+                    .compiledCode += ("00" * ([$limit + 1 - (.compiledCode | length / 2), 1] | max))
+                  else . end)
+              ' "$blueprint" > "$padded"
+              if ${pkgs.lib.getExe referencePublicationSizeCheck} "$padded" "$maxTxSize" 2>/dev/null; then
+                echo "FAIL: the size check accepted a state validator padded past the limit" >&2
+                exit 1
+              fi
+              echo "reference-publication-size: control refused the padded state validator"
+              touch $out
+            '';
 
         scriptIdentityChecks = { inherit script-identity reference-publication-size; };
 

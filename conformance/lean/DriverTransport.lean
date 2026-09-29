@@ -31,6 +31,13 @@ def optionalNat (j : Json) (name : String) : Except String Nat :=
   | .ok Json.null => pure 0
   | .ok v => fromJson? v
 
+/-- A flag a caller may leave out, read as false when absent or null. -/
+def optionalBool (j : Json) (name : String) : Except String Bool :=
+  match j.getObjVal? name with
+  | .error _ => pure false
+  | .ok Json.null => pure false
+  | .ok v => fromJson? v
+
 /-- The model's own decoders do not cover `Request`, which carries defaults. -/
 def toRequest (j : Json) : Except String Request := do
   let edge ← (j.getObjVal? "edge") >>= fromJson?
@@ -47,9 +54,12 @@ def toRequest (j : Json) : Except String Request := do
   -- that names neither describes a request holding its deposit alone, at reference 0.
   let tip ← optionalNat j "tip"
   let reference ← optionalNat j "reference"
+  -- Whether the request names a datum for its delivered output: a caller that
+  -- says nothing describes a booking naming an empty datum hash, which names none.
+  let namesDatum ← optionalBool j "namesDatum"
   let base : Request :=
     { edge, key, owner, refundAddress, deposit, output, approval := none, claimed := [], tip
-    , reference }
+    , reference, namesDatum }
   let approval ←
     match j.getObjVal? "approval" with
     | .error _ => pure none

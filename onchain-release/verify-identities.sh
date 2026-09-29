@@ -9,7 +9,10 @@
 # hash and parameter count, every pin must have a counterpart in the
 # blueprint, no side may be empty, and the compiler string must agree.
 set -euo pipefail
-command -v jq >/dev/null 2>&1 || { echo "error: jq is required" >&2; exit 1; }
+command -v jq >/dev/null 2>&1 || {
+  echo "error: jq is required" >&2
+  exit 1
+}
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 status=0
 for partition in onchain naming-onchain; do

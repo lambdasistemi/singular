@@ -296,9 +296,7 @@ assembleFoldSpec env fs = do
         Just s -> pure s
         Nothing -> trySlots prov [nowMs + 2_000, nowMs + 1_500, nowMs + 1_000]
     let tipAmount = stateMaxFee oldState
-        feeAmt = case fsFee fs of
-            Just f -> f
-            Nothing -> 0
+        feeAmt = fromMaybe 0 (fsFee fs)
         nReqs = toInteger (length (fsReqs fs))
     refunds <- case fsRefunds fs of
         [] -> deriveRefunds tipAmount feeAmt
@@ -331,9 +329,7 @@ assembleFoldSpec env fs = do
         makeChange pp funder feeAmt (map outCoin (refundOuts refunds)) duties
     redeemers <- makeRedeemers fs funder duties
     scripts <- makeScripts fs refs duties
-    let signers = case fsSigners fs of
-            Nothing -> harnessSigners
-            Just ss -> ss
+    let signers = fromMaybe harnessSigners (fsSigners fs)
         inputs =
             Set.fromList
                 ( fst (fsState fs)
@@ -549,8 +545,8 @@ assembleFoldSpec env fs = do
                     <> (if null refs then requestScripts else [])
                     <> stakeScript
                     <> [ (hashScript (cmScript m), cmScript m)
-                       | m <- rdMints duties
-                       , null refs
+                       | null refs
+                       , m <- rdMints duties
                        ]
                 )
             )

@@ -24,7 +24,7 @@ import Conformance.Run.Environment
 import Conformance.Run.Observe
 import Conformance.Run.Submit
 
-import Control.Monad (unless)
+import Control.Monad (unless, void)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.List (sortOn)
@@ -204,7 +204,7 @@ commits nothing, which `walkEdge` already knows).
 rowCommit :: Env -> RowCage -> ByteString -> Edge -> IO ()
 rowCommit env cage key edge = do
     tid <- cageTid cage
-    withTrie (envTm env) tid $ \t -> () <$ walkEdge t key edge
+    withTrie (envTm env) tid $ \t -> void (walkEdge t key edge)
 
 {- | Book one absence on a row cage at an explicit bond (#157 A-009).
 
@@ -259,7 +259,7 @@ commitTm env = commitTmKey env cgKey
 
 commitTmKey :: Env -> ByteString -> Edge -> IO ()
 commitTmKey env cgKey' edge =
-    withTrie (envTm env) (envTid env) $ \t -> () <$ walkEdge t cgKey' edge
+    withTrie (envTm env) (envTid env) $ \t -> void (walkEdge t cgKey' edge)
 
 {- | Book one registry-mode edge (#157 C2, C4, D-DEST): create the request
 and, for a tree edge, mint the approval that certifies it under the
@@ -436,8 +436,8 @@ edgeReferences env key edge = case edge of
                     (policyID (policyIdFromPin (cfgAbsentPolicy (envCfg env))))
         case [ u
              | u@(_, o) <- utxos
-             , Just (AbsentCustody _) <- [extractCageDatum o]
              , outAssets o == Map.singleton absentPolicy (Map.singleton key 1)
+             , Just (AbsentCustody _) <- [extractCageDatum o]
              ] of
             [u] -> pure [u]
             _ ->

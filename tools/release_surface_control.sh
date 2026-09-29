@@ -39,18 +39,22 @@
 # stated reason. Needs: bash, tar, gzip, sha256sum, python3 with pyyaml
 # (the assembler's own environment provides all of these).
 set -euo pipefail
-root="$1"; archive="$2"
+root="$1"
+archive="$2"
 onchain_tarball="$(echo "$archive"/singular-onchain-*.tar.gz)"
-[ -f "$onchain_tarball" ] || { echo "CONTROL-ERROR: no onchain tarball in $archive" >&2; exit 2; }
+[ -f "$onchain_tarball" ] || {
+  echo "CONTROL-ERROR: no onchain tarball in $archive" >&2
+  exit 2
+}
 
 # 0. Sanity: the ordinary assembled archive passes the checker.
-python3 "$root/tools/check_release.py" "$root" "$archive" > /dev/null
+python3 "$root/tools/check_release.py" "$root" "$archive" >/dev/null
 echo "control: ordinary archive passes check_release.py"
 
 # Manifest writer with the assembler's exact bytes: `<hex>␣␣<relpath>`,
 # sorted, trailing newline (tools/assemble_onchain_release.py).
 write_manifest() { # $1 = dir
-  python3 - "$1" << 'EOF'
+  python3 - "$1" <<'EOF'
 import hashlib, sys
 from pathlib import Path
 work = Path(sys.argv[1])
@@ -67,7 +71,7 @@ EOF
 # meaningful): the archive-internal manifest against every file, and the
 # release-directory manifest against the two tarballs.
 prove_integrity() { # $1 = dir, $2 = label
-  python3 - "$1" << 'EOF'
+  python3 - "$1" <<'EOF'
 import hashlib, sys
 from pathlib import Path
 work = Path(sys.argv[1])
@@ -86,7 +90,7 @@ EOF
 }
 
 prove_release_dir_integrity() { # $1 = release dir, $2 = label
-  python3 - "$1" << 'EOF'
+  python3 - "$1" <<'EOF'
 import hashlib, sys
 from pathlib import Path
 release = Path(sys.argv[1])
@@ -105,7 +109,7 @@ EOF
 
 # Variant A: remove the verified lifecycle command the README promises.
 mutate_missing_verified_command() {
-  grep -v "nix run .#journey" "$1/README.md" > "$1/README.md.new"
+  grep -v "nix run .#journey" "$1/README.md" >"$1/README.md.new"
   mv "$1/README.md.new" "$1/README.md"
 }
 
@@ -113,7 +117,7 @@ mutate_missing_verified_command() {
 # promises (the table, its header, the marker sentence, the limit sentence).
 mutate_removed_disclosure() {
   grep -vE 'nix run \.#(li01|li-refusals|naming-rows|register-rows|recovery-rows|retirement-rows|retirement-verify)|repair-rows|connected-verifier|not currently buildable or verified|already published archives are never rewritten|retained command \|' \
-    "$1/README.md" > "$1/README.md.new"
+    "$1/README.md" >"$1/README.md.new"
   mv "$1/README.md.new" "$1/README.md"
 }
 
@@ -127,7 +131,7 @@ mutate_status_flip() {
 # release text (all other bytes untouched — the source byte-comparison,
 # not a checksum, is the assertion this variant exercises).
 mutate_release_text_tamper() {
-  cat >> "$1/RELEASE.md" << 'EOF'
+  cat >>"$1/RELEASE.md" <<'EOF'
 
 Recovery and retirement belong to epic 17 as future work with their own evidence.
 EOF
@@ -141,28 +145,35 @@ run_variant() { # $1 = name, $2 = mutator, $3 = expected reason fragment
   write_manifest "$work"
   prove_integrity "$work" "$name"
   vdir="$(mktemp -d)"
-  tar --sort=name --mtime=@1 --owner=0 --group=0 --numeric-owner -C "$work" -cf - . | gzip -n > "$vdir/$(basename "$onchain_tarball")"
+  tar --sort=name --mtime=@1 --owner=0 --group=0 --numeric-owner -C "$work" -cf - . | gzip -n >"$vdir/$(basename "$onchain_tarball")"
   # The docs tarball rides along unchanged (the checker requires it);
   # outer sums cover exactly the two tarballs in assembler format.
   for docs_tarball in "$archive"/singular-docs-*.tar.gz; do
     cp "$docs_tarball" "$vdir/"
   done
-  ( cd "$vdir" && sha256sum ./*.tar.gz | sed 's|  \./|  |' > SHA256SUMS )
+  (cd "$vdir" && sha256sum ./*.tar.gz | sed 's|  \./|  |' >SHA256SUMS)
   prove_release_dir_integrity "$vdir" "$name"
   local out rc=0
   out="$(python3 "$root/tools/check_release.py" "$root" "$vdir" 2>&1)" && rc=$? || rc=$?
   rm -rf "$work" "$vdir"
   if [ "$rc" -eq 0 ]; then
-    echo "CONTROL-FAIL: variant $name unexpectedly PASSED" >&2; exit 1
+    echo "CONTROL-FAIL: variant $name unexpectedly PASSED" >&2
+    exit 1
   fi
   case "$out" in
-    *"checksum manifest drift"*|*"checksum"*)
+    *"checksum manifest drift"* | *"checksum"*)
       echo "CONTROL-FAIL: variant $name refused at checksums, not the surface:" >&2
-      echo "$out" >&2; exit 1 ;;
+      echo "$out" >&2
+      exit 1
+      ;;
   esac
   case "$out" in
     *"$3"*) echo "control: variant $name refused specifically ($3)" ;;
-    *) echo "CONTROL-FAIL: variant $name refused, but not for the surface reason:" >&2; echo "$out" >&2; exit 1 ;;
+    *)
+      echo "CONTROL-FAIL: variant $name refused, but not for the surface reason:" >&2
+      echo "$out" >&2
+      exit 1
+      ;;
   esac
 }
 

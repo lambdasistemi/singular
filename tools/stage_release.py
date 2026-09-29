@@ -1,4 +1,5 @@
 """Materialize a release tree without symlinks or shared file inodes."""
+
 import argparse
 import hashlib
 import io
@@ -14,7 +15,9 @@ def _directory_key(path: Path) -> tuple[int, int]:
     return metadata.st_dev, metadata.st_ino
 
 
-def _copy_directory(source: Path, destination: Path, active: frozenset[tuple[int, int]]) -> None:
+def _copy_directory(
+    source: Path, destination: Path, active: frozenset[tuple[int, int]]
+) -> None:
     resolved = source.resolve(strict=True)
     key = _directory_key(resolved)
     if key in active:
@@ -50,7 +53,9 @@ def assert_regular_tree(root: Path) -> None:
             raise AssertionError(f"staged release contains special entry: {path}")
         key = metadata.st_dev, metadata.st_ino
         if key in file_inodes:
-            raise AssertionError(f"staged release contains hard link: {path} -> {file_inodes[key]}")
+            raise AssertionError(
+                f"staged release contains hard link: {path} -> {file_inodes[key]}"
+            )
         file_inodes[key] = path
 
 
@@ -97,8 +102,12 @@ def selftest() -> None:
         destination = root / "staged"
         stage_release(source, destination)
         assert_regular_tree(destination)
-        assert (destination / "file-link.txt").read_text(encoding="utf-8") == "materialized\n"
-        assert (destination / "directory-link/payload.txt").read_text(encoding="utf-8") == "materialized\n"
+        assert (destination / "file-link.txt").read_text(
+            encoding="utf-8"
+        ) == "materialized\n"
+        assert (destination / "directory-link/payload.txt").read_text(
+            encoding="utf-8"
+        ) == "materialized\n"
 
         cyclic = root / "cyclic"
         cyclic.mkdir()
@@ -149,9 +158,10 @@ def selftest() -> None:
         with tarfile.open(tampered) as bundle:
             got2 = read_all_forward(bundle, {"a.txt", "sub/b.txt", "sub/c.txt"})
         assert got2["sub/b.txt"] == b"BETA-CORRUPT\n", "reader hid corruption"
-        assert hashlib.sha256(got2["sub/b.txt"]).hexdigest() != hashlib.sha256(
-            b"beta\n"
-        ).hexdigest(), "corrupted bytes hash identically"
+        assert (
+            hashlib.sha256(got2["sub/b.txt"]).hexdigest()
+            != hashlib.sha256(b"beta\n").hexdigest()
+        ), "corrupted bytes hash identically"
 
 
 def main() -> None:

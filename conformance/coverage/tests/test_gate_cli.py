@@ -42,16 +42,29 @@ class GateCliTest(unittest.TestCase):
         empty = {"schema": "singular-coverage-record-v1", "checks": [], "mappings": []}
         write_record(self.tree, empty, "record.json")
         write_record(self.tree, empty, "base.json")
-        self.assertEqual(self.gate("ratchet", "--record", str(self.tree / "record.json"),
-                                   "--reference", str(self.tree / "base.json")), 0)
+        self.assertEqual(
+            self.gate(
+                "ratchet",
+                "--record",
+                str(self.tree / "record.json"),
+                "--reference",
+                str(self.tree / "base.json"),
+            ),
+            0,
+        )
 
     def test_completion_is_incomplete_at_nonzero_debt_and_exits_nonzero(self):
         from tests.fixtures import write_record
 
         empty = {"schema": "singular-coverage-record-v1", "checks": [], "mappings": []}
         write_record(self.tree, empty, "record.json")
-        rc = self.gate("completion", "--record", str(self.tree / "record.json"),
-                       "--report", str(self.tree / "completion.json"))
+        rc = self.gate(
+            "completion",
+            "--record",
+            str(self.tree / "record.json"),
+            "--report",
+            str(self.tree / "completion.json"),
+        )
         self.assertEqual(rc, 1, "strict completion must not pass a nonzero baseline")
         payload = json.loads((self.tree / "completion.json").read_text())
         self.assertEqual(payload["verdict"], "INCOMPLETE")
@@ -62,57 +75,130 @@ class GateCliTest(unittest.TestCase):
 
         empty = {"schema": "singular-coverage-record-v1", "checks": [], "mappings": []}
         write_record(self.tree, empty, "record.json")
-        self.assertEqual(self.gate("completion", "--record", str(self.tree / "record.json"),
-                                   "--expect", "INCOMPLETE"), 0)
+        self.assertEqual(
+            self.gate(
+                "completion",
+                "--record",
+                str(self.tree / "record.json"),
+                "--expect",
+                "INCOMPLETE",
+            ),
+            0,
+        )
 
     def test_expect_complete_fails_while_debt_is_nonzero(self):
         from tests.fixtures import write_record
 
         empty = {"schema": "singular-coverage-record-v1", "checks": [], "mappings": []}
         write_record(self.tree, empty, "record.json")
-        self.assertEqual(self.gate("completion", "--record", str(self.tree / "record.json"),
-                                   "--expect", "COMPLETE"), 4,
-                         "claiming completion without zero debt must be impossible")
+        self.assertEqual(
+            self.gate(
+                "completion",
+                "--record",
+                str(self.tree / "record.json"),
+                "--expect",
+                "COMPLETE",
+            ),
+            4,
+            "claiming completion without zero debt must be impossible",
+        )
 
     def test_lying_population_fails_closed(self):
         from tests.fixtures import write_record
 
-        empty = {"schema": "singular-coverage-record-v1", "checks": [], "mappings": [],
-                 "discoveredPopulation": ["Singular.Statements.greeter_iff@" + "0" * 64]}
+        empty = {
+            "schema": "singular-coverage-record-v1",
+            "checks": [],
+            "mappings": [],
+            "discoveredPopulation": ["Singular.Statements.greeter_iff@" + "0" * 64],
+        }
         write_record(self.tree, empty, "record.json")
-        rc = self.gate("ratchet", "--record", str(self.tree / "record.json"),
-                       "--reference", str(self.tree / "record.json"))
-        self.assertEqual(rc, 3, "a record claiming a population discovery refutes fails closed")
+        rc = self.gate(
+            "ratchet",
+            "--record",
+            str(self.tree / "record.json"),
+            "--reference",
+            str(self.tree / "record.json"),
+        )
+        self.assertEqual(
+            rc, 3, "a record claiming a population discovery refutes fails closed"
+        )
 
     def test_ratchet_reports_regression_distinctly(self):
         from singular_coverage.inventory import build_inventory
 
         population = sorted(build_inventory(self.tree).by_identity())
-        base = {"schema": "singular-coverage-record-v1", "checks": [], "mappings": [
-            {"obligation": "Singular.Statements.greeter_iff", "statementSha256":
-             json.loads((self.tree / "lean/theorem-debt.json").read_text())[0]["statementSha256"],
-             "storyId": "S-1", "clauses": {"then": ["x"]}, "vocabulary": {}},
-        ], "discoveredPopulation": population}
+        base = {
+            "schema": "singular-coverage-record-v1",
+            "checks": [],
+            "mappings": [
+                {
+                    "obligation": "Singular.Statements.greeter_iff",
+                    "statementSha256": json.loads(
+                        (self.tree / "lean/theorem-debt.json").read_text()
+                    )[0]["statementSha256"],
+                    "storyId": "S-1",
+                    "clauses": {"then": ["x"]},
+                    "vocabulary": {},
+                },
+            ],
+            "discoveredPopulation": population,
+        }
         (self.tree / "base.json").write_text(json.dumps(base))
-        (self.tree / "current.json").write_text(json.dumps(
-            {"schema": "singular-coverage-record-v1", "checks": [], "mappings": [],
-             "discoveredPopulation": population}))
-        rc = main(["--root", str(self.tree), "ratchet",
-                   "--record", str(self.tree / "current.json"),
-                   "--reference", str(self.tree / "base.json")])
-        self.assertEqual(rc, 2, "regression exit code must differ from fail-closed and ok")
+        (self.tree / "current.json").write_text(
+            json.dumps(
+                {
+                    "schema": "singular-coverage-record-v1",
+                    "checks": [],
+                    "mappings": [],
+                    "discoveredPopulation": population,
+                }
+            )
+        )
+        rc = main(
+            [
+                "--root",
+                str(self.tree),
+                "ratchet",
+                "--record",
+                str(self.tree / "current.json"),
+                "--reference",
+                str(self.tree / "base.json"),
+            ]
+        )
+        self.assertEqual(
+            rc, 2, "regression exit code must differ from fail-closed and ok"
+        )
 
     def test_unknown_row_fails_closed_distinctly(self):
         from singular_coverage.inventory import build_inventory
 
-        current = {"schema": "singular-coverage-record-v1", "checks": [], "mappings": [
-            {"obligation": "Singular.Statements.nonexistent_row", "statementSha256": "a" * 64,
-             "storyId": "S-9", "clauses": {"then": ["x"]}, "vocabulary": {}},
-        ], "discoveredPopulation": sorted(build_inventory(self.tree).by_identity())}
+        current = {
+            "schema": "singular-coverage-record-v1",
+            "checks": [],
+            "mappings": [
+                {
+                    "obligation": "Singular.Statements.nonexistent_row",
+                    "statementSha256": "a" * 64,
+                    "storyId": "S-9",
+                    "clauses": {"then": ["x"]},
+                    "vocabulary": {},
+                },
+            ],
+            "discoveredPopulation": sorted(build_inventory(self.tree).by_identity()),
+        }
         (self.tree / "current.json").write_text(json.dumps(current))
-        rc = main(["--root", str(self.tree), "ratchet",
-                   "--record", str(self.tree / "current.json"),
-                   "--reference", str(self.tree / "current.json")])
+        rc = main(
+            [
+                "--root",
+                str(self.tree),
+                "ratchet",
+                "--record",
+                str(self.tree / "current.json"),
+                "--reference",
+                str(self.tree / "current.json"),
+            ]
+        )
         self.assertEqual(rc, 3, "unrecognized rows fail closed, not as regression")
 
     def test_fail_closed_on_drifted_manifest(self):

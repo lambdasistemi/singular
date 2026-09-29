@@ -1,12 +1,11 @@
 use aiken/crypto.{VerificationKeyHash}
 use cardano/address
-use cardano/assets.{add, from_lovelace, zero, Value}
+use cardano/assets.{Value, add, from_lovelace, zero}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, ScriptPurpose, Spend, Transaction,
 }
 use naming.{
-  NamingDatum,
-  NamingRecord, NoDestination, PaymentDestination, RetirementQuorum,
+  NamingDatum, NamingRecord, NoDestination, PaymentDestination, RetirementQuorum,
   SomeDestination, mpfs_state_hash,
 }
 
@@ -50,17 +49,13 @@ pub const commitment =
 pub const tampered_commitment =
   #"1561c15b4980857fb06e4ab35cc9bcecaf090b0aa8bdef19f6331565a333204f"
 
-pub const member1 =
-  #"0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c"
+pub const member1 = #"0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c"
 
-pub const member2 =
-  #"1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738"
+pub const member2 = #"1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738"
 
-pub const member3 =
-  #"393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f5051525354"
+pub const member3 = #"393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f5051525354"
 
-pub const short_member =
-  #"0102030405060708090a0b0c0d0e0f1011121314151617181a1b"
+pub const short_member = #"0102030405060708090a0b0c0d0e0f1011121314151617181a1b"
 
 pub const refund_destination =
   #"61a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbc"
@@ -111,7 +106,10 @@ pub const self_ref =
 /// Distinct out-ref for the mock registry state input (issue #77, E-001):
 /// never equal to `self_ref`, so claim and state inputs coexist.
 pub const state_ref =
-  OutputReference { transaction_id: "73746174650000000000000000000000", output_index: 0 }
+  OutputReference {
+    transaction_id: "73746174650000000000000000000000",
+    output_index: 0,
+  }
 
 /// Mock cage token name (NOTE-007): the registry identity the mock state
 /// authenticates. Mirrors in tests recompute representative names over
@@ -139,7 +137,10 @@ pub fn state_datum() -> Data {
 
 /// Attach spent-or-reference registry inputs to a built transaction
 /// (NOTE-014 item A1 tests): record update keeps every other field.
-pub fn with_state_reference(base: Transaction, state_ref_input: Input) -> Transaction {
+pub fn with_state_reference(
+  base: Transaction,
+  state_ref_input: Input,
+) -> Transaction {
   Transaction { ..base, reference_inputs: [state_ref_input] }
 }
 
@@ -209,6 +210,7 @@ pub fn state_input_foreign_datum() -> Input {
     },
   }
 }
+
 /// token — requests and forgeries at the address carry none and must refuse.
 pub fn state_input_no_token() -> Input {
   Input {

@@ -3,8 +3,7 @@
 
   nixConfig = {
     extra-substituters = [ "https://cache.iog.io" ];
-    extra-trusted-public-keys =
-      [ "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=" ];
+    extra-trusted-public-keys = [ "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=" ];
   };
 
   inputs = {
@@ -19,13 +18,11 @@
     nixpkgs.follows = "haskellNix/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     iohkNix = {
-      url =
-        "github:input-output-hk/iohk-nix/0ce7cc21b9a4cfde41871ef486d01a8fafbf9627";
+      url = "github:input-output-hk/iohk-nix/0ce7cc21b9a4cfde41871ef486d01a8fafbf9627";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     CHaP = {
-      url =
-        "github:intersectmbo/cardano-haskell-packages/8479db771a3186eb326e42d8480eddc20a208275";
+      url = "github:intersectmbo/cardano-haskell-packages/8479db771a3186eb326e42d8480eddc20a208275";
       flake = false;
     };
     # Pinned cardano-node, used as a subprocess by the devnet E2E
@@ -67,8 +64,7 @@
           inherit CHaP pkgs;
         };
 
-        components =
-          project.project.hsPkgs.singular-registry.components;
+        inherit (project.project.hsPkgs.singular-registry) components;
 
         # #264 T264-05 (epic answers A-005 and A-008/A-009/A-010): the
         # classified supported component carrier. EVERY declared Cabal
@@ -97,12 +93,11 @@
             paths = inventory.memberPaths ++ [ inventory.inventoryGate ];
           };
 
-        cardanoNode =
-          cardano-node.packages.${system}.cardano-node;
+        cardanoNode = cardano-node.packages.${system}.cardano-node;
 
         haskellChecks = import ./nix/checks.nix {
           inherit pkgs components;
-          shell = project.project.shell;
+          inherit (project.project) shell;
           inherit cardanoNode;
         };
 
@@ -115,11 +110,12 @@
         # aborts evaluation.
         fourmoluTool =
           let
-            matches = builtins.filter
-              (p: builtins.match "fourmolu-exe-fourmolu-.*" (p.name or "") != null)
-              project.project.shell.nativeBuildInputs;
+            matches = builtins.filter (
+              p: builtins.match "fourmolu-exe-fourmolu-.*" (p.name or "") != null
+            ) project.project.shell.nativeBuildInputs;
           in
-          assert builtins.length matches == 1; builtins.head matches;
+          assert builtins.length matches == 1;
+          builtins.head matches;
 
         haskellApps = import ./nix/apps.nix {
           inherit pkgs;
@@ -134,108 +130,129 @@
         # The blueprint and the identity manifest come from the
         # caller at run time (REGISTRY_BLUEPRINT, REGISTRY_SCRIPT_IDENTITY);
         # no store path is baked in.
-        journey = pkgs.runCommand "journey" {
-          buildInputs = [ pkgs.makeWrapper ];
-          meta = (components.exes.journey.meta or { }) // {
-            mainProgram = "journey";
-          };
-        } ''
-          mkdir -p $out/bin
-          makeWrapper ${pkgs.lib.getExe components.exes.journey} $out/bin/journey \
-            --prefix PATH : ${cardanoNode}/bin
-        '';
+        journey =
+          pkgs.runCommand "journey"
+            {
+              buildInputs = [ pkgs.makeWrapper ];
+              meta = (components.exes.journey.meta or { }) // {
+                mainProgram = "journey";
+              };
+            }
+            ''
+              mkdir -p $out/bin
+              makeWrapper ${pkgs.lib.getExe components.exes.journey} $out/bin/journey \
+                --prefix PATH : ${cardanoNode}/bin
+            '';
 
         # #173 A173-COMMAND: the packaged `insert-active` verb, wrapped
         # exactly like journey so the locked cardano-node rides on its
         # own PATH. The blueprint comes from the caller at run time
         # (REGISTRY_BLUEPRINT); no store path is baked in, which is what
         # lets it run from an EXTRACTED ARCHIVE with no checkout.
-        insert-active = pkgs.runCommand "insert-active" {
-          buildInputs = [ pkgs.makeWrapper ];
-          meta = (components.exes.insert-active.meta or { }) // {
-            mainProgram = "insert-active";
-          };
-        } ''
-          mkdir -p $out/bin
-          makeWrapper ${pkgs.lib.getExe components.exes.insert-active} $out/bin/insert-active \
-            --prefix PATH : ${cardanoNode}/bin
-        '';
+        insert-active =
+          pkgs.runCommand "insert-active"
+            {
+              buildInputs = [ pkgs.makeWrapper ];
+              meta = (components.exes.insert-active.meta or { }) // {
+                mainProgram = "insert-active";
+              };
+            }
+            ''
+              mkdir -p $out/bin
+              makeWrapper ${pkgs.lib.getExe components.exes.insert-active} $out/bin/insert-active \
+                --prefix PATH : ${cardanoNode}/bin
+            '';
 
         # #177 I177-COMMAND: the packaged `update-terminal` verb, wrapped
         # exactly like insert-active so the locked cardano-node rides on
         # its own PATH. The blueprint comes from the caller at run time
         # (REGISTRY_BLUEPRINT); no store path is baked in, which is what
         # lets it run from an EXTRACTED ARCHIVE with no checkout.
-        update-terminal = pkgs.runCommand "update-terminal" {
-          buildInputs = [ pkgs.makeWrapper ];
-          meta = (components.exes.update-terminal.meta or { }) // {
-            mainProgram = "update-terminal";
-          };
-        } ''
-          mkdir -p $out/bin
-          makeWrapper ${pkgs.lib.getExe components.exes.update-terminal} $out/bin/update-terminal \
-            --prefix PATH : ${cardanoNode}/bin
-        '';
+        update-terminal =
+          pkgs.runCommand "update-terminal"
+            {
+              buildInputs = [ pkgs.makeWrapper ];
+              meta = (components.exes.update-terminal.meta or { }) // {
+                mainProgram = "update-terminal";
+              };
+            }
+            ''
+              mkdir -p $out/bin
+              makeWrapper ${pkgs.lib.getExe components.exes.update-terminal} $out/bin/update-terminal \
+                --prefix PATH : ${cardanoNode}/bin
+            '';
 
         # The LI01 canonical-initialization runner (issue #47),
         # wrapped the same way as journey: the locked cardano-node
         # on its own PATH, no store path baked in.
-        li01 = pkgs.runCommand "li01" {
-          buildInputs = [ pkgs.makeWrapper ];
-          meta = (components.exes.li01.meta or { }) // {
-            mainProgram = "li01";
-          };
-        } ''
-          mkdir -p $out/bin
-          makeWrapper ${pkgs.lib.getExe components.exes.li01} $out/bin/li01 \
-            --prefix PATH : ${cardanoNode}/bin
-        '';
+        li01 =
+          pkgs.runCommand "li01"
+            {
+              buildInputs = [ pkgs.makeWrapper ];
+              meta = (components.exes.li01.meta or { }) // {
+                mainProgram = "li01";
+              };
+            }
+            ''
+              mkdir -p $out/bin
+              makeWrapper ${pkgs.lib.getExe components.exes.li01} $out/bin/li01 \
+                --prefix PATH : ${cardanoNode}/bin
+            '';
 
         # The LM/LC maintenance and cancellation row runner (issue
         # #56), wrapped the same way as journey and li01: the locked
         # cardano-node on its own PATH, no store path baked in. The
         # naming-onchain blueprint comes from the caller at run time
         # (NAMING_BLUEPRINT).
-        naming-rows = pkgs.runCommand "naming-rows" {
-          buildInputs = [ pkgs.makeWrapper ];
-          meta = (components.exes.naming-rows.meta or { }) // {
-            mainProgram = "naming-rows";
-          };
-        } ''
-          mkdir -p $out/bin
-          makeWrapper ${pkgs.lib.getExe components.exes.naming-rows} $out/bin/naming-rows \
-            --prefix PATH : ${cardanoNode}/bin
-        '';
+        naming-rows =
+          pkgs.runCommand "naming-rows"
+            {
+              buildInputs = [ pkgs.makeWrapper ];
+              meta = (components.exes.naming-rows.meta or { }) // {
+                mainProgram = "naming-rows";
+              };
+            }
+            ''
+              mkdir -p $out/bin
+              makeWrapper ${pkgs.lib.getExe components.exes.naming-rows} $out/bin/naming-rows \
+                --prefix PATH : ${cardanoNode}/bin
+            '';
 
         # The LR recovery rows (issue #62), wrapped the same way as
         # journey, li01 and naming-rows: the locked cardano-node on its
         # own PATH, no store path baked in. The naming-onchain blueprint
         # comes from the caller at run time (NAMING_BLUEPRINT).
-        recovery-rows = pkgs.runCommand "recovery-rows" {
-          buildInputs = [ pkgs.makeWrapper ];
-          meta = (components.exes.recovery-rows.meta or { }) // {
-            mainProgram = "recovery-rows";
-          };
-        } ''
-          mkdir -p $out/bin
-          makeWrapper ${pkgs.lib.getExe components.exes.recovery-rows} $out/bin/recovery-rows \
-            --prefix PATH : ${cardanoNode}/bin
-        '';
+        recovery-rows =
+          pkgs.runCommand "recovery-rows"
+            {
+              buildInputs = [ pkgs.makeWrapper ];
+              meta = (components.exes.recovery-rows.meta or { }) // {
+                mainProgram = "recovery-rows";
+              };
+            }
+            ''
+              mkdir -p $out/bin
+              makeWrapper ${pkgs.lib.getExe components.exes.recovery-rows} $out/bin/recovery-rows \
+                --prefix PATH : ${cardanoNode}/bin
+            '';
 
         # The LT retirement rows (issue #66), wrapped the same way as
         # recovery-rows: the locked cardano-node on its own PATH, no store
         # path baked in. The naming-onchain blueprint comes from the caller
         # at run time (NAMING_BLUEPRINT).
-        retirement-rows = pkgs.runCommand "retirement-rows" {
-          buildInputs = [ pkgs.makeWrapper ];
-          meta = (components.exes.retirement-rows.meta or { }) // {
-            mainProgram = "retirement-rows";
-          };
-        } ''
-          mkdir -p $out/bin
-          makeWrapper ${pkgs.lib.getExe components.exes.retirement-rows} $out/bin/retirement-rows \
-            --prefix PATH : ${cardanoNode}/bin
-        '';
+        retirement-rows =
+          pkgs.runCommand "retirement-rows"
+            {
+              buildInputs = [ pkgs.makeWrapper ];
+              meta = (components.exes.retirement-rows.meta or { }) // {
+                mainProgram = "retirement-rows";
+              };
+            }
+            ''
+              mkdir -p $out/bin
+              makeWrapper ${pkgs.lib.getExe components.exes.retirement-rows} $out/bin/retirement-rows \
+                --prefix PATH : ${cardanoNode}/bin
+            '';
 
         # The seven wrong canonical initialization refusals (issue
         # #50), wrapped the same way as journey, li01 and naming-rows:
@@ -243,107 +260,128 @@
         # in. Both blueprints (the registry bootstrap and the naming
         # policies) come from the caller at run time (REGISTRY_BLUEPRINT,
         # NAMING_BLUEPRINT).
-        li-refusals = pkgs.runCommand "li-refusals" {
-          buildInputs = [ pkgs.makeWrapper ];
-          meta = (components.exes.li-refusals.meta or { }) // {
-            mainProgram = "li-refusals";
-          };
-        } ''
-          mkdir -p $out/bin
-          makeWrapper ${pkgs.lib.getExe components.exes.li-refusals} $out/bin/li-refusals \
-            --prefix PATH : ${cardanoNode}/bin
-        '';
+        li-refusals =
+          pkgs.runCommand "li-refusals"
+            {
+              buildInputs = [ pkgs.makeWrapper ];
+              meta = (components.exes.li-refusals.meta or { }) // {
+                mainProgram = "li-refusals";
+              };
+            }
+            ''
+              mkdir -p $out/bin
+              makeWrapper ${pkgs.lib.getExe components.exes.li-refusals} $out/bin/li-refusals \
+                --prefix PATH : ${cardanoNode}/bin
+            '';
 
         # The genuine insert rows (issue #77), wrapped the same way as the
         # other row runners: the locked cardano-node on its own PATH, no
         # store path baked in. The naming-onchain blueprint comes from the
         # caller at run time (NAMING_BLUEPRINT).
-        register-rows = pkgs.runCommand "register-rows" {
-          buildInputs = [ pkgs.makeWrapper ];
-          meta = (components.exes.register-rows.meta or { }) // {
-            mainProgram = "register-rows";
-          };
-        } ''
-          mkdir -p $out/bin
-          makeWrapper ${pkgs.lib.getExe components.exes.register-rows} $out/bin/register-rows \
-            --prefix PATH : ${cardanoNode}/bin
-        '';
+        register-rows =
+          pkgs.runCommand "register-rows"
+            {
+              buildInputs = [ pkgs.makeWrapper ];
+              meta = (components.exes.register-rows.meta or { }) // {
+                mainProgram = "register-rows";
+              };
+            }
+            ''
+              mkdir -p $out/bin
+              makeWrapper ${pkgs.lib.getExe components.exes.register-rows} $out/bin/register-rows \
+                --prefix PATH : ${cardanoNode}/bin
+            '';
 
         # The deployment tool (issue #102): boots one registry, publishes
         # one set of reference scripts, records the manifest, and checks a
         # recorded manifest against a node. Wrapped like the runners so the
         # locked cardano-node is on its own PATH when the devnet path is
         # taken.
-        deployment = pkgs.runCommand "deployment" {
-          buildInputs = [ pkgs.makeWrapper ];
-          meta = (components.exes.deployment.meta or { }) // {
-            mainProgram = "deployment";
-          };
-        } ''
-          mkdir -p $out/bin
-          makeWrapper ${pkgs.lib.getExe components.exes.deployment} $out/bin/deployment \
-            --prefix PATH : ${cardanoNode}/bin
-        '';
+        deployment =
+          pkgs.runCommand "deployment"
+            {
+              buildInputs = [ pkgs.makeWrapper ];
+              meta = (components.exes.deployment.meta or { }) // {
+                mainProgram = "deployment";
+              };
+            }
+            ''
+              mkdir -p $out/bin
+              makeWrapper ${pkgs.lib.getExe components.exes.deployment} $out/bin/deployment \
+                --prefix PATH : ${cardanoNode}/bin
+            '';
 
         # A devnet that outlives the process that needed it (issue #102):
         # a deployment is attached to by later runs, so proving attachment
         # works needs one chain several processes can reach.
-        devnet = pkgs.runCommand "devnet" {
-          buildInputs = [ pkgs.makeWrapper ];
-          meta = (components.exes.devnet.meta or { }) // {
-            mainProgram = "devnet";
-          };
-        } ''
-          mkdir -p $out/bin
-          makeWrapper ${pkgs.lib.getExe components.exes.devnet} $out/bin/devnet \
-            --prefix PATH : ${cardanoNode}/bin
-        '';
+        devnet =
+          pkgs.runCommand "devnet"
+            {
+              buildInputs = [ pkgs.makeWrapper ];
+              meta = (components.exes.devnet.meta or { }) // {
+                mainProgram = "devnet";
+              };
+            }
+            ''
+              mkdir -p $out/bin
+              makeWrapper ${pkgs.lib.getExe components.exes.devnet} $out/bin/devnet \
+                --prefix PATH : ${cardanoNode}/bin
+            '';
 
         # The connected verifier (issue #77, S3): recomputes verdicts from
         # raw run evidence. Pure offline tool: no node on PATH needed, but
         # wrapped like the runners for uniformity. Blueprints come from the
         # caller at run time (--blueprint/--blueprint-blueprint).
-        connected-verifier = pkgs.runCommand "connected-verifier" {
-          buildInputs = [ pkgs.makeWrapper ];
-          meta = (components.exes.connected-verifier.meta or { }) // {
-            mainProgram = "connected-verifier";
-          };
-        } ''
-          mkdir -p $out/bin
-          makeWrapper ${pkgs.lib.getExe components.exes.connected-verifier} $out/bin/connected-verifier \
-            --prefix PATH : ${cardanoNode}/bin
-        '';
+        connected-verifier =
+          pkgs.runCommand "connected-verifier"
+            {
+              buildInputs = [ pkgs.makeWrapper ];
+              meta = (components.exes.connected-verifier.meta or { }) // {
+                mainProgram = "connected-verifier";
+              };
+            }
+            ''
+              mkdir -p $out/bin
+              makeWrapper ${pkgs.lib.getExe components.exes.connected-verifier} $out/bin/connected-verifier \
+                --prefix PATH : ${cardanoNode}/bin
+            '';
 
         # The issue #79 repair rows (permissionless fold + insert-only
         # retract), wrapped the same way as the other row runners: the
         # locked cardano-node on its own PATH, no store path baked in.
         # The registry blueprint comes from the caller at run time
         # (REGISTRY_BLUEPRINT).
-        repair-rows = pkgs.runCommand "repair-rows" {
-          buildInputs = [ pkgs.makeWrapper ];
-          meta = (components.exes.repair-rows.meta or { }) // {
-            mainProgram = "repair-rows";
-          };
-        } ''
-          mkdir -p $out/bin
-          makeWrapper ${pkgs.lib.getExe components.exes.repair-rows} $out/bin/repair-rows \
-            --prefix PATH : ${cardanoNode}/bin
-        '';
+        repair-rows =
+          pkgs.runCommand "repair-rows"
+            {
+              buildInputs = [ pkgs.makeWrapper ];
+              meta = (components.exes.repair-rows.meta or { }) // {
+                mainProgram = "repair-rows";
+              };
+            }
+            ''
+              mkdir -p $out/bin
+              makeWrapper ${pkgs.lib.getExe components.exes.repair-rows} $out/bin/repair-rows \
+                --prefix PATH : ${cardanoNode}/bin
+            '';
 
         # The public retirement reader (independent verification from
         # retained evidence only): needs neither the locked cardano-node
         # (it never touches a node) nor any baked-in blueprint — the
         # evidence directory, run log and naming manifest all come from
         # the caller at run time, so plain wrapping suffices.
-        retirement-verify = pkgs.runCommand "retirement-verify" {
-          buildInputs = [ pkgs.makeWrapper ];
-          meta = (components.exes.retirement-verify.meta or { }) // {
-            mainProgram = "retirement-verify";
-          };
-        } ''
-          mkdir -p $out/bin
-          makeWrapper ${pkgs.lib.getExe components.exes.retirement-verify} $out/bin/retirement-verify
-        '';
+        retirement-verify =
+          pkgs.runCommand "retirement-verify"
+            {
+              buildInputs = [ pkgs.makeWrapper ];
+              meta = (components.exes.retirement-verify.meta or { }) // {
+                mainProgram = "retirement-verify";
+              };
+            }
+            ''
+              mkdir -p $out/bin
+              makeWrapper ${pkgs.lib.getExe components.exes.retirement-verify} $out/bin/retirement-verify
+            '';
 
         # -------------------------------------------------------
         # Test vectors (from local Haskell package)
@@ -409,7 +447,15 @@
           # Issue #66: same for retirement-rows.
           # Issue #79: same for repair-rows.
           # Issue #77: same for register-rows.
-          inherit naming-rows li-refusals recovery-rows retirement-rows repair-rows register-rows connected-verifier;
+          inherit
+            naming-rows
+            li-refusals
+            recovery-rows
+            retirement-rows
+            repair-rows
+            register-rows
+            connected-verifier
+            ;
           # Issue #102: the deployment tool and the devnet a deployment can
           # outlive, both exposed so the attach check can reach them.
           inherit deployment devnet;
@@ -422,7 +468,7 @@
           # Mechanical adapter (D-008): exposes the cardano-node already
           # locked as this flake's input, so the devnet recipe consumes the
           # locked identity instead of re-resolving a remote tag.
-          cardano-node = cardano-node.packages.${system}.cardano-node;
+          inherit (cardano-node.packages.${system}) cardano-node;
         };
 
         # vectors-freshness was deleted from ./nix/checks.nix (break 5,
@@ -483,7 +529,7 @@
         };
 
         devShells = {
-          default = project.devShells.default;
+          inherit (project.devShells) default;
         };
       }
     );

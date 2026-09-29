@@ -2,18 +2,18 @@ use aiken/collection/list
 use aiken/crypto.{blake2b_256}
 use aiken/fuzz
 use aiken/primitive/bytearray
-use application
 use application.{Approve, Maintain, Recover, Retire}
 use cardano/address
-use cardano/assets
 use cardano/assets.{add, from_lovelace, zero}
-use cardano/transaction
 use cardano/transaction.{
   InlineDatum, Input, NoDatum, Output, OutputReference, Spend, Transaction,
 }
 use fixtures
-use naming
 use naming.{NamingRecord, RetirementQuorum}
+
+// ----------------------------------------------------------------------------
+// Fixtures
+// ----------------------------------------------------------------------------
 
 /// Registry-mode rows for naming (#157 Gate S): the six approval arms,
 /// the fold-created record, retirement's authority, completion, and the
@@ -23,11 +23,6 @@ use naming.{NamingRecord, RetirementQuorum}
 /// time: the approval its mint purpose certifies is evidence the cage
 /// recomputes, and the witness policies only refuse to let a token move
 /// when the cage is not there to say how many.
-
-// ----------------------------------------------------------------------------
-// Fixtures
-// ----------------------------------------------------------------------------
-
 /// The application policy's own script hash — 28 bytes, because a record
 /// destination names the application's own address and the mint purpose
 /// compares the two.
@@ -239,16 +234,7 @@ fn deleteAbsentCertified(
     registryKey,
     owner,
     noDestination(),
-    mintTx(
-      4,
-      registryKey,
-      owner,
-      noDestination(),
-      signers,
-      [],
-      references,
-      [],
-    ),
+    mintTx(4, registryKey, owner, noDestination(), signers, [], references, []),
   )
 }
 
@@ -384,7 +370,12 @@ fn custodyOutput() -> Output {
 /// The approval a retirement must mint: the `updateTerminal` edge bound
 /// to this key, the completion request's owner, and no destination.
 fn terminateApproval() -> assets.Value {
-  add(zero, appPolicy, approvalOf(3, registryKey, controllerKey, noDestination()), 1)
+  add(
+    zero,
+    appPolicy,
+    approvalOf(3, registryKey, controllerKey, noDestination()),
+    1,
+  )
 }
 
 /// The completion request the retirement must co-create: at the cage's
@@ -393,11 +384,18 @@ fn terminateApproval() -> assets.Value {
 fn completionRequestOutput() -> Output {
   Output {
     address: address.from_script(naming.mpfs_state_hash),
-    value: add(from_lovelace(3_000_000), appPolicy, approvalOf(3, registryKey, controllerKey, noDestination()), 1),
+    value: add(
+      from_lovelace(3_000_000),
+      appPolicy,
+      approvalOf(3, registryKey, controllerKey, noDestination()),
+      1,
+    ),
     datum: InlineDatum(
       naming.MRequestDatum(
         naming.MRequest {
-          requestToken: naming.MTokenId { assetName: fixtures.mock_registry_token },
+          requestToken: naming.MTokenId {
+            assetName: fixtures.mock_registry_token,
+          },
           requestOwner: controllerKey,
           requestKey: registryKey,
           requestValue: naming.MUpdate(#"01", #"02"),
@@ -584,10 +582,7 @@ test n7_record_with_a_second_asset_refuses() fail {
     Some(fixtures.as_datum(retirementRecord())),
     Retire { key: registryKey, revealed_control: recoveryReveal },
     fixtures.self_ref,
-    retireTx(
-      [recoveryKey],
-      add(recordValue(), terminalPolicy, otherKey, 1),
-    ),
+    retireTx([recoveryKey], add(recordValue(), terminalPolicy, otherKey, 1)),
   )
 }
 
@@ -679,7 +674,6 @@ test n9_recover_without_the_registry_accepts() {
     },
   )
 }
-
 // ============================================================================
 // P1, P2 — the three token policies
 // ============================================================================

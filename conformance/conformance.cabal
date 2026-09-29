@@ -183,13 +183,27 @@ executable fold-budget-regression
 test-suite conformance-tests
   import:           warnings
   type:             exitcode-stdio-1.0
-  hs-source-dirs:   test app
+  hs-source-dirs:   test app app-default
   main-is:          Main.hs
   other-modules:
+    Conformance.Mirror
+    Conformance.FoldFixture
+    Conformance.Run.Control
+    Conformance.Run.Environment
+    Conformance.Run.Manifest
+    Conformance.Run.Observe
+    Conformance.Run.Cage
+    Conformance.Run.Wallet
+    Conformance.Run.Submit
+    Conformance.Run.Book
+    Conformance.Run.Units
+    Conformance.Run.Fold
+    Conformance.Run.Live
     Conformance.Run.Retraction
     Conformance.Run.Step
     Conformance.Support.Retraction
     Conformance.Support.Step
+    Conformance.Support.ObservedTx
     Conformance.Fixture.Receipt
     Conformance.Fixture.NodeRejection
     Conformance.Story.Usage
@@ -211,8 +225,18 @@ test-suite conformance-tests
   build-depends:
     , aeson >=2.1 && <2.3
     , base >=4.14 && <5
+    , base16-bytestring
     , bytestring >=0.11 && <0.13
+    , cardano-crypto-class
+    , cardano-ledger-binary
+    , cardano-node-clients
+    , cardano-node-clients:devnet
     , conformance
+    , mts:mpf-write
+    , plutus-core
+    , plutus-tx
+    , time
+    , unix
     , cardano-ledger-alonzo
     , cardano-ledger-api
     , cardano-ledger-babbage

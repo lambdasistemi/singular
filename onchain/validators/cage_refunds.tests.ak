@@ -3,36 +3,31 @@ use aiken/fuzz
 use aiken/interval
 use aiken/merkle_patricia_forestry.{empty, root}
 use aiken/merkle_patricia_forestry as mpf
+use cage_fixtures.{
+  aRequest, endRedeemerData, feeApproval, feeDelivery, feeOwner, feeRequestInput,
+  feeStateDatum, feeStateInput, feeStateOutput, legacyApproval, legacyDelivery,
+  legacyDestination, legacyKey, legacyMint, legacyRoot, legacyWallet,
+  modifyRedeemerData, noDestination, output, owner_fuzzer, phase1Range,
+  phase2Range, phase3Range, rawStateDatum, refundOutput, rejectedActionData,
+  rejectedStateOutput, request, state, stateDatum, stateSpendRedeemerData,
+  testAbsentPolicy, testAppPolicy, testProcessTime, testRepPolicy,
+  testRequestRef, testRetractTime, testScriptAddress, testSeed, testStakeScript,
+  testStateRef, testTerminalPolicy, testToken, testValue, update,
+  updateActionData, zfDelivery,
+}
 use cardano/address.{from_script}
 use cardano/assets.{PolicyId, from_asset, from_lovelace, zero}
 use cardano/transaction.{
   InlineDatum, Input, NoDatum, Output, OutputReference, ScriptPurpose, Spend,
   Transaction,
 }
-use lib
 use lib.{assetName, valueFromToken}
 use request as request_validator
 use state as state_validator
 use types.{
   Burning, CageDatum, Contribute, End, Migrating, Migration, MintRedeemer,
-  TokenId,
   Minting, Modify, Rejected, Request, RequestDatum, Retract, State, StateDatum,
-  Sweep, UpdateAction, UpdateRedeemer,
-}
-
-use cage_fixtures.{
-  aRequest, endRedeemerData, feeApproval, feeDelivery, feeOwner,
-  feeRequestInput, feeStateDatum, feeStateInput, feeStateOutput, legacyApproval,
-  legacyDelivery,
-  legacyDestination, legacyKey, legacyMint, legacyRoot, legacyWallet,
-  modifyRedeemerData, noDestination, output, owner_fuzzer, refundOutput,
-  rejectedStateOutput,
-  phase1Range, phase2Range, phase3Range, rawStateDatum, rejectedActionData,
-  request, state, stateDatum, stateSpendRedeemerData,
-  testAbsentPolicy, testAppPolicy, testProcessTime, testRepPolicy,
-  testRequestRef, testScriptAddress, testSeed, testStakeScript, testStateRef,
-  testRetractTime, testTerminalPolicy, testToken, testValue, update,
-  updateActionData, zfDelivery,
+  Sweep, TokenId, UpdateAction, UpdateRedeemer,
 }
 
 fn spend(
@@ -236,7 +231,7 @@ test modify_zero_fee() {
       application_policy: testAppPolicy,
       active_policy: testRepPolicy,
       absent_policy: testAbsentPolicy,
-      terminal_policy: testTerminalPolicy
+      terminal_policy: testTerminalPolicy,
     }
   let zf_request =
     RequestDatum(
@@ -284,7 +279,7 @@ test modify_zero_fee() {
             application_policy: testAppPolicy,
             active_policy: testRepPolicy,
             absent_policy: testAbsentPolicy,
-            terminal_policy: testTerminalPolicy
+            terminal_policy: testTerminalPolicy,
           },
         ),
       ),

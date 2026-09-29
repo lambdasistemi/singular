@@ -47,7 +47,7 @@ import Conformance.Receipt (Receipt (..), Verdict (..))
 CG20, the F-002 permissionless-folder regression, CG21, #173's
 insertActive fold and its two refusal fixtures, CG22, #177's
 updateTerminal retirement and its two refusal fixtures, and CG23,
-#258's reject and retract with their tampered refunds) plus CK06,
+issue #258's reject and retract with their tampered refunds) plus CK06,
 cardano-keri's checkpoint policy, recorded as out-of-scope so the
 boundary is visible instead of forgotten.
 -}
@@ -144,7 +144,7 @@ validateInventory rows
             )
     | length (nub ids) /= length ids =
         Left "inventory has duplicate row ids"
-    | any T.null (map rowGroup rows) =
+    | any (T.null . rowGroup) rows =
         Left "inventory has a row with an empty group"
     | otherwise = Right rows
   where

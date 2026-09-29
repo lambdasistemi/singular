@@ -1,6 +1,8 @@
 # Build the plutus.json blueprint via Nix — print the store path and
 # leave no `result` symlink (Singular's `/result*` ignore is
 # root-anchored and does not cover onchain/result).
+
+# Build the blueprint via Nix.
 build:
     nix build --no-link --print-out-paths
 
@@ -14,6 +16,8 @@ develop-aiken:
 
 # Build the blueprint directly with aiken — pinned toolchain (D-006),
 # never whatever aiken happens to be on the caller's PATH.
+
+# Build the blueprint with the pinned aiken.
 aiken-build:
     nix develop --command aiken build
 
@@ -26,6 +30,8 @@ test:
 # hash, a validator missing from the manifest, a manifest entry with no
 # counterpart in the build, or a stale compiler string. Runs the
 # checks.script-identity derivation.
+
+# Compare the compiled validators with the committed manifest.
 script-identity:
     nix build --no-link --print-out-paths .#script-identity
 
@@ -38,6 +44,8 @@ script-identity:
 # `parameters` array (absent for a zero-parameter validator), so a
 # regeneration reproduces the committed manifest byte for byte instead
 # of silently dropping the counts (issue #43).
+
+# Regenerate the committed identity manifest.
 script-identity-regen:
     #!/usr/bin/env bash
     set -euo pipefail

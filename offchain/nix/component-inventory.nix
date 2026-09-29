@@ -18,7 +18,7 @@
 # whole package.
 { pkgs, components }:
 let
-  lib = pkgs.lib;
+  inherit (pkgs) lib;
 
   # Derived at intake 2026-09-24 from the live workflow commands (see the
   # table in the ticket evidence; every consumer is cited there):
@@ -93,74 +93,70 @@ let
       kind = "exe";
       name = "recovery-rows";
       issue = "#172";
-      reason =
-        "D6-retired NYA journey (registry.yml:258-269); journey/recovery/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157); direct carrier-build RED on record at an earlier pre-rebase revision (exact receipt retained in ticket evidence)";
+      reason = "D6-retired NYA journey (registry.yml:258-269); journey/recovery/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157); direct carrier-build RED on record at an earlier pre-rebase revision (exact receipt retained in ticket evidence)";
     }
     {
       kind = "exe";
       name = "li01";
       issue = "#172";
-      reason =
-        "D6-retired NYA journey (registry.yml:258-269); journey/li01/Main.hs sets removed CageConfig fields cfgRepPolicy/cfgConsumerPin (#157); direct carrier-build RED on record at an earlier pre-rebase revision (exact receipt retained in ticket evidence)";
+      reason = "D6-retired NYA journey (registry.yml:258-269); journey/li01/Main.hs sets removed CageConfig fields cfgRepPolicy/cfgConsumerPin (#157); direct carrier-build RED on record at an earlier pre-rebase revision (exact receipt retained in ticket evidence)";
     }
     {
       kind = "exe";
       name = "li-refusals";
       issue = "#172";
-      reason =
-        "D6-retired NYA journey (registry.yml:258-269); journey/li-refusals/Main.hs references identifiers removed by #157 (cfgRepPolicy/cfgConsumerPin class) — source-level evidence, no individual carrier receipt";
+      reason = "D6-retired NYA journey (registry.yml:258-269); journey/li-refusals/Main.hs references identifiers removed by #157 (cfgRepPolicy/cfgConsumerPin class) — source-level evidence, no individual carrier receipt";
     }
     {
       kind = "exe";
       name = "naming-rows";
       issue = "#172";
-      reason =
-        "D6-retired NYA journey (lmlc; registry.yml:258-269); source inspection finds none of the four removed #157 identifiers in use and there is no individual build receipt either way — retired by the current-required-use criterion, unverified for current behavior; no required consumer";
+      reason = "D6-retired NYA journey (lmlc; registry.yml:258-269); source inspection finds none of the four removed #157 identifiers in use and there is no individual build receipt either way — retired by the current-required-use criterion, unverified for current behavior; no required consumer";
     }
     {
       kind = "exe";
       name = "retirement-rows";
       issue = "#172";
-      reason =
-        "D6-retired NYA journey (registry.yml:258-269); journey/retirement/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157) — source-level evidence, no individual carrier receipt";
+      reason = "D6-retired NYA journey (registry.yml:258-269); journey/retirement/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157) — source-level evidence, no individual carrier receipt";
     }
     {
       kind = "exe";
       name = "retirement-verify";
       issue = "#172";
-      reason =
-        "D6-retired retained exhibit of the retirement journey (registry.yml:258-269); source inspection finds none of the four removed #157 identifiers in use and there is no individual build receipt either way — retired by the current-required-use criterion, unverified for current behavior; no required consumer";
+      reason = "D6-retired retained exhibit of the retirement journey (registry.yml:258-269); source inspection finds none of the four removed #157 identifiers in use and there is no individual build receipt either way — retired by the current-required-use criterion, unverified for current behavior; no required consumer";
     }
     {
       kind = "exe";
       name = "repair-rows";
       issue = "#172";
-      reason =
-        "D6-retired NYA journey (registry.yml:258-269); journey/repair/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157) — source-level evidence, no individual carrier receipt";
+      reason = "D6-retired NYA journey (registry.yml:258-269); journey/repair/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157) — source-level evidence, no individual carrier receipt";
     }
     {
       kind = "exe";
       name = "register-rows";
       issue = "#283";
-      reason =
-        "not on the D6 retired list; #283 owns its migration or retirement; journey/register/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157) — source-level evidence, no individual carrier receipt";
+      reason = "not on the D6 retired list; #283 owns its migration or retirement; journey/register/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157) — source-level evidence, no individual carrier receipt";
     }
     {
       kind = "exe";
       name = "connected-verifier";
       issue = "#282";
-      reason =
-        "imports the removed stateRepPolicyBytes accessor and expects the removed representative-policy blueprint (both still absent from the library at this head — source-level lead, not a build); direct build failures on record from earlier pre-rebase revisions (exact receipts retained in ticket evidence); no passing build evidence at this head; repair owned by #282, no required workflow consumes it";
+      reason = "imports the removed stateRepPolicyBytes accessor and expects the removed representative-policy blueprint (both still absent from the library at this head — source-level lead, not a build); direct build failures on record from earlier pre-rebase revisions (exact receipts retained in ticket evidence); no passing build evidence at this head; repair owned by #282, no required workflow consumes it";
     }
   ];
 
   kindOf =
     set: name:
-    if lib.elem name set.library then "library"
-    else if lib.elem name set.exes then "exe"
-    else if lib.elem name set.tests then "test"
-    else if lib.elem name set.sublibs then "sublib"
-    else throw "component-inventory: unknown kind for ${name}";
+    if lib.elem name set.library then
+      "library"
+    else if lib.elem name set.exes then
+      "exe"
+    else if lib.elem name set.tests then
+      "test"
+    else if lib.elem name set.sublibs then
+      "sublib"
+    else
+      throw "component-inventory: unknown kind for ${name}";
 
   rows =
     map (name: {
@@ -180,7 +176,16 @@ let
       detail = "${row.issue} ${row.reason}";
     }) unverified;
 
-  renderRow = row: lib.concatStringsSep "\t" ([ row.class row.kind row.name ] ++ lib.optional (row.detail != "") row.detail);
+  renderRow =
+    row:
+    lib.concatStringsSep "\t" (
+      [
+        row.class
+        row.kind
+        row.name
+      ]
+      ++ lib.optional (row.detail != "") row.detail
+    );
 
   manifest = pkgs.writeText "component-build-manifest" (
     lib.concatStringsSep "\n" (map renderRow rows) + "\n"
@@ -194,7 +199,12 @@ let
   # time, not by inspection.
   checker = pkgs.writeShellApplication {
     name = "component-inventory-check";
-    runtimeInputs = with pkgs; [ coreutils gawk gnugrep diffutils ];
+    runtimeInputs = with pkgs; [
+      coreutils
+      gawk
+      gnugrep
+      diffutils
+    ];
     text = ''
       usage() { echo "usage: component-inventory-check <singular-registry.cabal> <manifest>" >&2; exit 2; }
       [ "$#" -eq 2 ] || usage
@@ -281,11 +291,12 @@ let
     install -m 0444 ${manifest} "$out/share/component-build-manifest"
   '';
 
-  memberPaths =
-    [ components.library ]
-    ++ map (name: components.exes.${name}) builtHere.exes
-    ++ map (name: components.tests.${name}) builtHere.tests
-    ++ map (name: components.sublibs.${name}) builtHere.sublibs;
+  memberPaths = [
+    components.library
+  ]
+  ++ map (name: components.exes.${name}) builtHere.exes
+  ++ map (name: components.tests.${name}) builtHere.tests
+  ++ map (name: components.sublibs.${name}) builtHere.sublibs;
 in
 {
   inherit memberPaths manifest inventoryGate;

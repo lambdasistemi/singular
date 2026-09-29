@@ -19,6 +19,8 @@ module Conformance.Run.Live
     , observeAcceptedStep
     , classifyLeaves
     , observeCustody
+    , walletHoldingsOf
+    , heldObservation
     , observePaid
     , observeSigner
     , observeStepMint
@@ -75,7 +77,7 @@ import Conformance.PurposeUnits
     , budgetRefusalPurposes
     , missingPurposeBudgets
     )
-import Conformance.Receipt (maxLiveStepReasonChars)
+import Conformance.Receipt (AssetEntry (..), maxLiveStepReasonChars)
 import Conformance.Story.Binding qualified as Binding
 import Conformance.Story.Identity qualified as Identity
 import Conformance.Story.Live qualified as Live
@@ -88,7 +90,7 @@ import Control.Exception
     , throwIO
     , try
     )
-import Control.Monad (forM_, when)
+import Control.Monad (forM_, replicateM, void, when)
 import Control.Monad.Operational qualified as Operational
 import Data.Aeson
     ( Value (..)
@@ -245,7 +247,6 @@ import Conformance.Mirror
     , require
     , txIdHex
     )
-import Conformance.Receipt (AssetEntry (..))
 import Conformance.Run.Retraction (declareRetraction)
 import Conformance.Run.Step
     ( StepOutcome (..)
@@ -276,6 +277,10 @@ data LiveStep = LiveStep
     , lsAfter :: Maybe OnChainTokenState
     , lsWitness :: Maybe (TxIn, TxOut ConwayEra)
     , lsCustody :: Maybe (TxIn, TxOut ConwayEra)
+    , lsStateUtxo :: Maybe (TxIn, TxOut ConwayEra)
+    {- ^ the state input the accepted step spent, retained so observation can
+    read what the ledger physically held; @Nothing@ where no step spent one
+    -}
     , lsSpent :: [Integer]
     -- ^ the state tokens each input of the submitted transaction held
     , lsOutcome :: StepOutcome
@@ -557,6 +562,7 @@ submitEdge env state cage exit alteration request = do
                         Nothing
                         Nothing
                         Nothing
+                        Nothing
                         []
                         (StepUnsupported Nothing (T.pack nodeReason) Nothing)
                     )
@@ -698,15 +704,16 @@ submitEdge env state cage exit alteration request = do
                 (filter (`elem` map fst pending) allInputs == [reqIn])
             let wanted = Set.insert collateral (unsigned ^. bodyTxL . inputsTxBodyL)
             visible <-
-                fmap Map.fromList $
-                    fmap concat $
-                        mapM
-                            (Cage.queryUTxOs (envProv env))
-                            [ genesisAddr
-                            , wallet
-                            , requestAddrFromCfg cfg tid (network cfg)
-                            , cageAddrFromCfg cfg (network cfg)
-                            ]
+                fmap
+                    (Map.fromList . concat)
+                    ( mapM
+                        (Cage.queryUTxOs (envProv env))
+                        [ genesisAddr
+                        , wallet
+                        , requestAddrFromCfg cfg tid (network cfg)
+                        , cageAddrFromCfg cfg (network cfg)
+                        ]
+                    )
             emit
                 "step-inputs"
                 ( "request="
@@ -737,6 +744,17 @@ submitEdge env state cage exit alteration request = do
                         (Map.lookup input visible)
                     | input <- allInputs
                     ]
+                -- The state input the step spends, as the chain held it before
+                -- submission: the one spent output holding a state token. None,
+                -- or more than one, retains nothing, and observation refuses.
+                retainedState =
+                    case [ (input, out)
+                         | (input, held) <- zip allInputs spent
+                         , held > 0
+                         , Just out <- [Map.lookup input visible]
+                         ] of
+                        [one] -> Just one
+                        _ -> Nothing
             require
                 "assembled fold changed its per-purpose declarations"
                 (submittedBudgets == declaredPairs)
@@ -798,6 +816,7 @@ submitEdge env state cage exit alteration request = do
                             (Just after)
                             witness
                             (custodyOf refs)
+                            retainedState
                             spent
                             (StepAccepted signed (mem, cpu, txSizeBytes signed))
                         )
@@ -833,6 +852,7 @@ submitEdge env state cage exit alteration request = do
                             Nothing
                             witness
                             (custodyOf refs)
+                            Nothing
                             spent
                             (refusedOutcome marker signed diagnostic)
                         )
@@ -1240,8 +1260,8 @@ storyReferences env cage key edge
             Cage.queryUTxOs (envProv env) (cageAddrFromCfg cfg (network cfg))
         case [ u
              | u@(_, out) <- utxos
-             , Just (AbsentCustody _) <- [extractCageDatum out]
              , outAssets out == Map.singleton absentPolicy (Map.singleton key 1)
+             , Just (AbsentCustody _) <- [extractCageDatum out]
              ] of
             [u] -> pure [u]
             _ -> failWith ("no single observed custody UTxO for " <> show key)
@@ -1347,6 +1367,16 @@ storyModelRequest ids cfg exit request deposit tip reference requestOut = do
     approval <- case requestOut of
         Left decided -> pure (canonical decided)
         Right out -> canonical . snd <$> storyApprovalOn cfg out
+    -- Whether the request names a datum for its delivered output: read off the
+    -- booked request's own datum, whose destination names a datum hash or, when
+    -- empty, none. A refused booking left no request UTxO; there it is the
+    -- destination the booking decision named.
+    namesDatum <- case requestOut of
+        Left _ -> pure (not (BS.null (snd (storyDestination request))))
+        Right out -> case extractCageDatum out of
+            Just (RequestDatum booked) ->
+                pure (not (BS.null (snd (requestDestination booked))))
+            _ -> failWith "booked request output carries no request datum"
     pure $
         object $
             [ "edge" .= Live.edgeName (Live.requestEdge request)
@@ -1358,6 +1388,7 @@ storyModelRequest ids cfg exit request deposit tip reference requestOut = do
             , "applicationPolicy" .= application
             , "approval" .= approval
             , "tip" .= tip
+            , "namesDatum" .= namesDatum
             ]
                 <> [ "reference" .= bound | exit == Live.Retract, Just bound <- [reference]
                    ]
@@ -1370,10 +1401,11 @@ observeStep env state step = case lsOutcome step of
     StepAccepted transaction _ -> do
         control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
         when (control == Just "unknown-identity") $
-            ()
-                <$ observeIdentity
+            void
+                ( observeIdentity
                     (liveWallets (liveIds state))
                     (WalletIdentity (BS.replicate 28 0xAB))
+                )
         observeAcceptedStep env state step transaction
     _ -> pure Null
 
@@ -1432,10 +1464,9 @@ observeAcceptedStep env state step transaction = do
     let config = abstractConfig after application active absent terminal root
         activeBytes = SBS.fromShort (cfgActivePolicy cfg)
         terminalBytes = SBS.fromShort (cfgTerminalPolicy cfg)
-        activePolicy = policyIdFromPin (cfgActivePolicy cfg)
     holdings <-
-        fmap concat $
-            mapM
+        concat
+            <$> mapM
                 ( walletHoldings
                     ids
                     keys
@@ -1449,8 +1480,8 @@ observeAcceptedStep env state step transaction = do
             (observeCustody ids cfg)
             [ out
             | (_, out) <- cageOutputs
-            , Just (AbsentCustody _) <- [extractCageDatum out]
             , Map.member (SBS.fromShort (cfgAbsentPolicy cfg)) (outAssets out)
+            , Just (AbsentCustody _) <- [extractCageDatum out]
             ]
     let MultiAsset minted = transaction ^. bodyTxL . mintTxBodyL
     mint <-
@@ -1471,15 +1502,10 @@ observeAcceptedStep env state step transaction = do
     let paid = map snd payments
     -- Only a fold delivers: a reject and a retraction deliver nothing, whatever
     -- edge their request named.
-    destination <- case (lsExit step, Live.requestEdge (lsRequest step)) of
-        (Live.Fold, Live.InsertActive) -> observedDelivery activePolicy requestedKey wallets
-        (Live.Fold, Live.UpdateActive) -> observedDelivery activePolicy requestedKey wallets
-        (Live.Fold, Live.WitnessTerminal) ->
-            observedDelivery
-                (policyIdFromPin (cfgTerminalPolicy cfg))
-                requestedKey
-                wallets
-        _ -> pure 0
+    destination <-
+        case deliveredPolicy cfg (lsExit step) (Live.requestEdge (lsRequest step)) of
+            Just policy -> observedDelivery policy requestedKey wallets
+            Nothing -> pure 0
     let owner =
             object
                 [ "config" .= config
@@ -1528,7 +1554,7 @@ observeAcceptedStep env state step transaction = do
         object
             [ "config" .= config
             , "custody" .= custody
-            , "held" .= holdings
+            , "held" .= map heldObservation holdings
             , "leaf" .= leaf
             , "mint" .= orderedMint
             , "paid" .= paid
@@ -1574,45 +1600,70 @@ observeAcceptedStep env state step transaction = do
         pure (identifier, ordinal, name)
     -- A wallet holds the active and terminal witnesses the folds routed to
     -- it; the absent witness stays in the cage's custody.
-    walletHoldings identities keys kinds wallet = do
-        utxos <- Cage.queryUTxOs (envProv env) wallet
-        addressId <-
-            observeIdentity
-                (liveWallets identities)
-                (WalletIdentity (serialiseAddr wallet))
-        fmap concat $
-            mapM
-                ( \key -> do
-                    keyId <- observeIdentity (liveKeys identities) (KeyIdentity key)
-                    pure
-                        [ object ["key" .= keyId, "kind" .= String kind, "output" .= addressId]
-                        | (kind, policyBytes) <- kinds
-                        , _ <-
-                            [ 1
-                            .. sum
-                                [ q
-                                | (_, out) <- utxos
-                                , Just names <- [Map.lookup policyBytes (outAssets out)]
-                                , Just q <- [Map.lookup key names]
-                                ]
-                            ]
+    walletHoldings identities keys kinds wallet =
+        Cage.queryUTxOs (envProv env) wallet
+            >>= walletHoldingsOf identities keys kinds wallet
+
+{- | The holdings one wallet's outputs carry, one entry per token unit of each
+registry key under each witness policy: its key, kind, the wallet's identity,
+and the datum form of the very output carrying it, read off the ledger's own
+datum constructor. The state reports the form; the `held` census drops it
+('heldObservation').
+-}
+walletHoldingsOf
+    :: LiveIdentities
+    -> [ByteString]
+    -> [(T.Text, ByteString)]
+    -> Addr
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO [Value]
+walletHoldingsOf identities keys kinds wallet utxos = do
+    addressId <-
+        observeIdentity
+            (liveWallets identities)
+            (WalletIdentity (serialiseAddr wallet))
+    concat
+        <$> mapM
+            ( \key -> do
+                keyId <- observeIdentity (liveKeys identities) (KeyIdentity key)
+                pure
+                    [ object
+                        [ "key" .= keyId
+                        , "kind" .= String kind
+                        , "output" .= addressId
+                        , "datum" .= datumForm out
                         ]
-                )
-                keys
+                    | (kind, policyBytes) <- kinds
+                    , (_, out) <- utxos
+                    , Just names <- [Map.lookup policyBytes (outAssets out)]
+                    , Just q <- [Map.lookup key names]
+                    , _ <- [1 .. q]
+                    ]
+            )
+            keys
+
+{- | One holding as the `held` census reports it: key, kind and output. Its datum
+form belongs to the complete state, as the model's own projection has it.
+-}
+heldObservation :: Value -> Value
+heldObservation holding = case holding of
+    Object fields -> Object (KM.delete "datum" fields)
+    _ -> holding
 
 classifyLeaves
     :: [(ByteString, Bool)] -> ByteString -> IO [(ByteString, ByteString)]
 classifyLeaves membership observedRoot = do
     let present = [key | (key, True) <- membership]
         assignments =
-            sequence
-                (replicate (length present) [leafAbsent, leafActive, leafTerminal])
+            replicateM
+                (length present)
+                [leafAbsent, leafActive, leafTerminal]
     candidates <-
         mapM
             ( \values -> do
                 trie <- mkPureTrie
                 mapM_
-                    (\(key, value) -> CageTrie.insert trie key value)
+                    (uncurry (CageTrie.insert trie))
                     (zip present values)
                 root <- CageTrie.getRoot trie
                 pure (zip present values, unRoot root)
@@ -1652,6 +1703,41 @@ observeCustody ids cfg out = do
             ["key" .= keyId, "refundAddress" .= refundId, "value" .= amount]
         )
 
+{- | The form a ledger output presents its datum in, read off the ledger's own
+datum constructor: carried inline, presented by hash, or not presented.
+-}
+datumForm :: TxOut ConwayEra -> T.Text
+datumForm out = case out ^. datumTxOutL of
+    NoDatum -> "none"
+    DatumHash _ -> "hashed"
+    Datum _ -> "inline"
+
+{- | The policy of the token an exit delivers to the request's destination:
+only a fold delivers, and only these edges hand the requester a token. Every
+other exit delivers nothing and has no destination output.
+-}
+deliveredPolicy
+    :: CageConfig -> Live.Exit -> Live.Edge -> Maybe PolicyID
+deliveredPolicy cfg exit edge = case (exit, edge) of
+    (Live.Fold, Live.InsertActive) -> Just (policyIdFromPin (cfgActivePolicy cfg))
+    (Live.Fold, Live.UpdateActive) -> Just (policyIdFromPin (cfgActivePolicy cfg))
+    (Live.Fold, Live.WitnessTerminal) ->
+        Just (policyIdFromPin (cfgTerminalPolicy cfg))
+    _ -> Nothing
+
+-- | The transaction's outputs holding the token named @key@ under @policy@.
+carriersOf :: PolicyID -> ByteString -> ConwayTx -> [TxOut ConwayEra]
+carriersOf policy key tx =
+    [o | o <- toList (tx ^. bodyTxL . outputsTxBodyL), holds o]
+  where
+    holds o =
+        or
+            [ SBS.fromShort an == key
+            | (p, names) <- Map.toList (rawAssets o)
+            , p == policy
+            , (AssetName an, _) <- Map.toList names
+            ]
+
 {- | The fold's outputs, each beside the reading settlement makes of it: its
 address, payment key, lovelace, whether it carries a token this fold
 delivers (a positive active or terminal mint), its datum form, the
@@ -1666,10 +1752,7 @@ foldOutputsOf cfg transaction =
             , Payments.outputKey = addrKeyHashBytes (out ^. addrTxOutL)
             , Payments.outputLovelace = let Coin c = out ^. coinTxOutL in c
             , Payments.outputCarrier = carries out
-            , Payments.outputDatum = case out ^. datumTxOutL of
-                NoDatum -> "none"
-                DatumHash _ -> "hashed"
-                Datum _ -> "inline"
+            , Payments.outputDatum = datumForm out
             , Payments.outputApprovals =
                 [ hexT name
                 | (name, quantity) <-
@@ -1868,8 +1951,8 @@ observeOwnerOutputs
     -> [Payments.Payment]
     -> IO [Value]
 observeOwnerOutputs ids wallets cfg tid step transaction payments =
-    fmap concat $
-        mapM
+    concat
+        <$> mapM
             ownerOutput
             [key | Payments.Payment (Payments.Owner key) _ <- payments]
   where
@@ -2051,7 +2134,7 @@ observedStepTx
             require
                 "accepted fold has no unique chain state output"
                 (length stateOutputs == 1)
-        let witnessInput what source = do
+        let witnessInput what (source, spentOutput) = do
                 require
                     (what <> " did not spend its observed active witness")
                     (source `Set.member` actualInputs)
@@ -2065,7 +2148,7 @@ observedStepTx
                 pure
                     [ object
                         [ "role" .= String "witness"
-                        , "datum" .= String "inline"
+                        , "datum" .= String (datumForm spentOutput)
                         , "stateToken" .= (0 :: Integer)
                         , "approvalQuantity" .= (0 :: Integer)
                         , "lovelace" .= (0 :: Integer)
@@ -2079,17 +2162,17 @@ observedStepTx
             if not folded
                 then pure []
                 else case (edge, lsWitness step) of
-                    (Live.UpdateTerminal, Just (source, _)) -> witnessInput "retirement" source
+                    (Live.UpdateTerminal, Just held) -> witnessInput "retirement" held
                     (Live.UpdateTerminal, Nothing) -> failWith "retirement has no observed active witness"
-                    (Live.DeleteActive, Just (source, _)) -> witnessInput "deletion" source
+                    (Live.DeleteActive, Just held) -> witnessInput "deletion" held
                     (Live.DeleteActive, Nothing) -> failWith "deletion has no observed active witness"
                     _ -> pure []
         custodyInputs <-
             if not folded
                 then pure []
                 else case (edge, lsCustody step) of
-                    (Live.UpdateActive, Just (source, _)) -> custodyInput source
-                    (Live.DeleteAbsent, Just (source, _)) -> custodyInput source
+                    (Live.UpdateActive, Just held) -> custodyInput held
+                    (Live.DeleteAbsent, Just held) -> custodyInput held
                     (Live.UpdateActive, Nothing) -> failWith "updateActive has no custody input"
                     (Live.DeleteAbsent, Nothing) -> failWith "deleteAbsent has no custody input"
                     _ -> pure []
@@ -2140,7 +2223,7 @@ observedStepTx
                             pure
                                 [ object
                                     [ "role" .= String "cage"
-                                    , "datum" .= String "inline"
+                                    , "datum" .= String (datumForm out)
                                     , "address" .= (0 :: Integer)
                                     , "stateToken" .= (0 :: Integer)
                                     , "inlineConfig" .= Null
@@ -2157,25 +2240,27 @@ observedStepTx
         let requestInput =
                 object
                     [ "role" .= String "request"
-                    , "datum" .= String "inline"
+                    , "datum" .= String (datumForm requestOut)
                     , "stateToken" .= (0 :: Integer)
                     , "approvalQuantity" .= requestQuantity
                     , "lovelace" .= lsRequestLovelace step
                     , "assets" .= ([] :: [Value])
                     ]
-            stateInput =
+            stateInput form =
                 object
                     [ "role" .= String "state"
-                    , "datum" .= String "inline"
+                    , "datum" .= String form
                     , "stateToken" .= (1 :: Integer)
                     , "approvalQuantity" .= (0 :: Integer)
                     , "lovelace" .= (0 :: Integer)
                     , "assets" .= ([] :: [Value])
                     ]
-            stateOutput =
-                object
+            -- The one continued state output a fold or reject has, as required
+            -- above; a retraction continues none.
+            stateOutputRows =
+                [ object
                     [ "role" .= String "state"
-                    , "datum" .= String "inline"
+                    , "datum" .= String (datumForm out)
                     , "address" .= Null
                     , "stateToken" .= (1 :: Integer)
                     , "inlineConfig" .= config
@@ -2185,10 +2270,12 @@ observedStepTx
                     , "lovelace" .= (0 :: Integer)
                     , "reference" .= Null
                     ]
-            destinationOutput =
+                | out <- stateOutputs
+                ]
+            destinationOutput form =
                 object
                     [ "role" .= String "destination"
-                    , "datum" .= String "inline"
+                    , "datum" .= String form
                     , "address" .= destination
                     , "stateToken" .= (0 :: Integer)
                     , "inlineConfig" .= Null
@@ -2200,6 +2287,39 @@ observedStepTx
                             [value | Payments.Payment (Payments.Destination _) value <- payments]
                     , "reference" .= Null
                     ]
+        -- Every exit spends the request it booked; its form is the booked output's.
+        case lsRequestIn step of
+            Just source ->
+                require
+                    "the booked request input was not spent by the accepted step"
+                    (source `Set.member` actualInputs)
+            Nothing -> failWith "accepted step retained no booked request input"
+        -- A fold and a reject spend the state the step retained from the chain
+        -- before submission; a retraction spends none.
+        stateInputs <-
+            if lsExit step == Live.Retract
+                then pure []
+                else case lsStateUtxo step of
+                    Just (source, spentOutput) -> do
+                        require
+                            "the retained state input was not spent by the accepted step"
+                            (source `Set.member` actualInputs)
+                        pure [stateInput (datumForm spentOutput)]
+                    Nothing ->
+                        failWith "accepted step retained no unique spent state input"
+        -- Only a fold that delivers a token has a destination: the one output
+        -- carrying it. A fold delivering nothing reports no destination output.
+        destinationOutputs <-
+            case deliveredPolicy cfg (lsExit step) edge of
+                Nothing -> pure []
+                Just policy -> case carriersOf policy requestKeyBytes transaction of
+                    [carrier] -> pure [destinationOutput (datumForm carrier)]
+                    carriers ->
+                        failWith
+                            ( "the fold has "
+                                <> show (length carriers)
+                                <> " destination outputs carrying its delivered token, want one"
+                            )
         signers <-
             mapM
                 (observeSigner ids wallets)
@@ -2210,10 +2330,11 @@ observedStepTx
         -- the owner; a retraction spends the request alone and returns it.
         let (inputs, outputs) = case lsExit step of
                 Live.Fold ->
-                    ( stateInput : requestInput : custodyInputs <> witnessInputs
-                    , stateOutput : destinationOutput : cageOutputs <> ownerOutputs
+                    ( stateInputs <> (requestInput : custodyInputs <> witnessInputs)
+                    , stateOutputRows <> destinationOutputs <> cageOutputs <> ownerOutputs
                     )
-                Live.Reject -> ([stateInput, requestInput], stateOutput : ownerOutputs)
+                Live.Reject ->
+                    (stateInputs <> [requestInput], stateOutputRows <> ownerOutputs)
                 Live.Retract -> ([requestInput], ownerOutputs)
         pure
             ( object
@@ -2225,7 +2346,7 @@ observedStepTx
                 ]
             )
       where
-        custodyInput source = do
+        custodyInput (source, spentOutput) = do
             require
                 "absent custody was not spent by the accepted fold"
                 (source `Set.member` (transaction ^. bodyTxL . inputsTxBodyL))
@@ -2236,7 +2357,7 @@ observedStepTx
             pure
                 [ object
                     [ "role" .= String "cage"
-                    , "datum" .= String "inline"
+                    , "datum" .= String (datumForm spentOutput)
                     , "stateToken" .= (0 :: Integer)
                     , "approvalQuantity" .= (0 :: Integer)
                     , "lovelace" .= (0 :: Integer)
@@ -2262,8 +2383,7 @@ askModel _env state step judged = do
             . Map.lookup registry
             =<< readIORef (liveStarts state)
     setup <-
-        pure . Map.findWithDefault [] registry
-            =<< readIORef (liveTraces state)
+        Map.findWithDefault [] registry <$> readIORef (liveTraces state)
     (application, active, absent, terminal) <-
         observePins ids (rcCfg (lsCage step))
     let startValue =
@@ -2520,7 +2640,7 @@ compareStep env state step observation = do
             when (chainOutcome == String "accepted" && lsExit step == Live.Fold) $
                 modifyIORef'
                     (liveTraces state)
-                    (Map.insertWith (\new old -> old <> new) registry [lsModelRequest step])
+                    (Map.insertWith (flip (<>)) registry [lsModelRequest step])
         "unsupported" -> case lsOutcome step of
             StepUnsupported _ reason _ ->
                 emit
@@ -2968,7 +3088,7 @@ address back would compare a value with itself.
 storyDelivery
     :: PolicyID -> ByteString -> ConwayTx -> IO (T.Text, [AssetEntry])
 storyDelivery policy key tx =
-    case [o | o <- toList (tx ^. bodyTxL . outputsTxBodyL), holds o] of
+    case carriersOf policy key tx of
         [o] ->
             pure
                 ( hexT (serialiseAddr (o ^. addrTxOutL))
@@ -2985,14 +3105,6 @@ storyDelivery policy key tx =
                     <> show (length outs)
                     <> " outputs carrying the active token at this key, want one"
                 )
-  where
-    holds o =
-        or
-            [ SBS.fromShort an == key
-            | (p, names) <- Map.toList (rawAssets o)
-            , p == policy
-            , (AssetName an, _) <- Map.toList names
-            ]
 
 {- | The approval the booked request UTxO carries, read off the chain as
 FR-4 counts it: the total quantity under the application policy, paired

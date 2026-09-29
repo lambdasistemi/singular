@@ -483,7 +483,7 @@ cageCfgWith stateBytes requestBytes namingCodes seed processMs retractMs =
             }
 
 shortMarker :: String -> String
-shortMarker marker = take 12 marker
+shortMarker = take 12
 
 extractTokenId :: CageConfig -> ConwayTx -> IO TokenId
 extractTokenId cfg tx =

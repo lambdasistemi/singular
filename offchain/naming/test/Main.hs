@@ -7,7 +7,7 @@ module Main (main) where
 
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
-import Data.Maybe (isNothing)
+import Data.Maybe (fromMaybe, isNothing)
 import System.Exit (exitFailure)
 
 import Naming.Datum
@@ -97,7 +97,7 @@ checks =
                 Just datum ->
                     expectBytesEqual
                         "re-encoded bytes != expectedBytes"
-                        (maybe mempty id (serialiseNamingDatum datum))
+                        (fromMaybe mempty (serialiseNamingDatum datum))
                         wd01ExpectedBytes
         )
     ,
@@ -179,7 +179,7 @@ checks =
                 Just proposal ->
                     expectBytesEqual
                         "re-encoded bytes != expectedBytes"
-                        (maybe mempty id (serialiseInsertCommitment proposal))
+                        (fromMaybe mempty (serialiseInsertCommitment proposal))
                         wr01ExpectedBytes
         )
     ,

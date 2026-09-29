@@ -61,7 +61,7 @@ attributeSubmitRefusal env row verdict marker text rejectedTxid = do
     -- the expected script is AMONG them (the reason text is matched
     -- raw, never a single first hash). The write policy lives in the
     -- library (A-002): a refusal ROW's receipt IS the row outcome.
-    let script = if row `elem` ["CG07"] then "request" else "state"
+    let script = if row == "CG07" then "request" else "state"
     r <-
         attributeRefusalReceipt
             RefusalRow
@@ -129,7 +129,7 @@ submitExpectRefusedControl env row verdict marker tx = do
 attributeControlRefusal
     :: Env -> String -> Verdict -> String -> String -> String -> IO ()
 attributeControlRefusal env row verdict marker text rejectedTxid = do
-    let script = if row `elem` ["CG07"] then "request" else "state"
+    let script = if row == "CG07" then "request" else "state"
     r <-
         attributeRefusalReceipt
             RefusalControl

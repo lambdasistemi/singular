@@ -342,8 +342,218 @@
   #selftest-out { white-space: pre-wrap; font-family: var(--mono); font-size: .78rem; background: var(--card); border: 1px solid var(--line); margin: 14px; padding: 10px; border-radius: 8px; }
 </style><style>
 /* Singular-specific additions; the shared first style block remains byte-identical. */
-.status-pill{padding:5px 10px;background:var(--warn-bg);color:var(--warn);border-radius:20px;font-size:.8rem}.manual-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}fieldset{border:1px solid var(--line);border-radius:10px;margin:10px 0;padding:14px}legend{font-weight:600;color:var(--accent)}fieldset label{display:block;margin:8px 0}fieldset button{margin:4px 4px 4px 0;padding:7px 11px;background:var(--card);border:1px solid var(--line);border-radius:6px}fieldset button.primary{background:var(--accent);color:var(--on-accent)}fieldset p{font-size:.8rem;color:var(--muted)}#ledger{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px}#ledger details{padding:9px;border:1px solid var(--line);border-radius:7px;overflow-wrap:anywhere}#ledger .lit{border-color:var(--ok);background:var(--ok-bg)}#ledger .broken{border-color:var(--bad);background:var(--bad-bg)}#ledger .gap{color:var(--muted)}#tree{min-width:640px;width:100%;height:auto}#tree-wrap{overflow:auto}#tree text,#scene text{fill:var(--ink);font-family:system-ui;font-size:12px}#tree .node{cursor:pointer}#tree .node:focus{outline:2px solid var(--accent)}#where{font-weight:600;padding:15px;background:var(--accent-bg);border-radius:8px}#narration{padding:14px;min-height:70px}#branches button{display:block;width:100%;text-align:left;padding:12px;margin:6px 0;background:var(--accent-bg);border:1px solid var(--accent);border-radius:8px}textarea{display:block;width:100%;background:var(--card);color:var(--ink);font-family:var(--mono);border:1px solid var(--line);padding:12px;margin:10px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.78rem}#ui-error{color:var(--bad);font-weight:600}#resolve-output{display:inline-block;padding:8px;color:var(--accent)}#custody{display:flex;flex-wrap:wrap;gap:10px;padding:12px}.custody-card{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--card)}#batch-composer label{display:flex;gap:12px;align-items:center}#batch-effects pre{border-left:3px solid var(--accent);padding:10px}#scene-drawer{overflow:auto}#scene{min-width:600px;width:100%;height:auto}#stage,#next-card,#lamps{padding:18px}dl dt{font-weight:600;margin-top:10px}dl dd{margin-left:0;color:var(--muted)}#identity{font-size:.68rem}.flow-token{fill:var(--accent);stroke:var(--on-accent)}@media(max-width:600px){header h1 small{display:none}.manual-grid{display:block}#stage,#next-card,#lamps{padding:10px}#playbar{flex-wrap:wrap}}
-#next-moves{display:block}#branches button{color:var(--ink)}#branches button.on{color:var(--ink);background:var(--accent-bg)}#tree .node.here circle{stroke:var(--accent);stroke-width:4}#tree .node.ok circle{stroke:var(--ok)}#tree .node.no circle{stroke:var(--bad)}
+.status-pill {
+  padding: 5px 10px;
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-radius: 20px;
+  font-size: 0.8rem;
+}
+.manual-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+fieldset {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin: 10px 0;
+  padding: 14px;
+}
+legend {
+  font-weight: 600;
+  color: var(--accent);
+}
+fieldset label {
+  display: block;
+  margin: 8px 0;
+}
+fieldset button {
+  margin: 4px 4px 4px 0;
+  padding: 7px 11px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+fieldset button.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+fieldset p {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+#ledger {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 8px;
+}
+#ledger details {
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  overflow-wrap: anywhere;
+}
+#ledger .lit {
+  border-color: var(--ok);
+  background: var(--ok-bg);
+}
+#ledger .broken {
+  border-color: var(--bad);
+  background: var(--bad-bg);
+}
+#ledger .gap {
+  color: var(--muted);
+}
+#tree {
+  min-width: 640px;
+  width: 100%;
+  height: auto;
+}
+#tree-wrap {
+  overflow: auto;
+}
+#tree text,
+#scene text {
+  fill: var(--ink);
+  font-family: system-ui;
+  font-size: 12px;
+}
+#tree .node {
+  cursor: pointer;
+}
+#tree .node:focus {
+  outline: 2px solid var(--accent);
+}
+#where {
+  font-weight: 600;
+  padding: 15px;
+  background: var(--accent-bg);
+  border-radius: 8px;
+}
+#narration {
+  padding: 14px;
+  min-height: 70px;
+}
+#branches button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px;
+  margin: 6px 0;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+}
+textarea {
+  display: block;
+  width: 100%;
+  background: var(--card);
+  color: var(--ink);
+  font-family: var(--mono);
+  border: 1px solid var(--line);
+  padding: 12px;
+  margin: 10px 0;
+}
+pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.78rem;
+}
+#ui-error {
+  color: var(--bad);
+  font-weight: 600;
+}
+#resolve-output {
+  display: inline-block;
+  padding: 8px;
+  color: var(--accent);
+}
+#custody {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px;
+}
+.custody-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--card);
+}
+#batch-composer label {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+#batch-effects pre {
+  border-left: 3px solid var(--accent);
+  padding: 10px;
+}
+#scene-drawer {
+  overflow: auto;
+}
+#scene {
+  min-width: 600px;
+  width: 100%;
+  height: auto;
+}
+#stage,
+#next-card,
+#lamps {
+  padding: 18px;
+}
+dl dt {
+  font-weight: 600;
+  margin-top: 10px;
+}
+dl dd {
+  margin-left: 0;
+  color: var(--muted);
+}
+#identity {
+  font-size: 0.68rem;
+}
+.flow-token {
+  fill: var(--accent);
+  stroke: var(--on-accent);
+}
+@media (max-width: 600px) {
+  header h1 small {
+    display: none;
+  }
+  .manual-grid {
+    display: block;
+  }
+  #stage,
+  #next-card,
+  #lamps {
+    padding: 10px;
+  }
+  #playbar {
+    flex-wrap: wrap;
+  }
+}
+#next-moves {
+  display: block;
+}
+#branches button {
+  color: var(--ink);
+}
+#branches button.on {
+  color: var(--ink);
+  background: var(--accent-bg);
+}
+#tree .node.here circle {
+  stroke: var(--accent);
+  stroke-width: 4;
+}
+#tree .node.ok circle {
+  stroke: var(--ok);
+}
+#tree .node.no circle {
+  stroke: var(--bad);
+}
 </style></head><body>
 <main id="app">
   <header class="hdr">
@@ -472,297 +682,554 @@
 // This file is written from the frozen Lean interface. Where it and the Lean
 // disagree, the Lean is right and this is a defect: the corpus replay in
 // gate.mjs exists to find exactly that disagreement.
-const canonical=x=>JSON.stringify(x,(_,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a.localeCompare(b))):v);
-const equal=(a,b)=>canonical(a)===canonical(b);
-const fail=reason=>{throw new Error(reason)};
-const N='nat',I='int',B='bool';
+const canonical = (x) =>
+  JSON.stringify(x, (_, v) =>
+    v && typeof v === 'object' && !Array.isArray(v)
+      ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)))
+      : v,
+  );
+const equal = (a, b) => canonical(a) === canonical(b);
+const fail = (reason) => {
+  throw new Error(reason);
+};
+const N = 'nat',
+  I = 'int',
+  B = 'bool';
 
 // ---- the alphabet (R1) ------------------------------------------------------
-const STATES=['absent','active','terminal'];
-const EDGES=['insertAbsent','insertActive','updateActive','updateTerminal',
-  'deleteAbsent','deleteActive','witnessTerminal'];
-const KINDS=['active','absent','terminal'];
-const leaf={$option:{$enum:STATES}};            // null is Unknown, else Known s
+const STATES = ['absent', 'active', 'terminal'];
+const EDGES = [
+  'insertAbsent',
+  'insertActive',
+  'updateActive',
+  'updateTerminal',
+  'deleteAbsent',
+  'deleteActive',
+  'witnessTerminal',
+];
+const KINDS = ['active', 'absent', 'terminal'];
+const leaf = { $option: { $enum: STATES } }; // null is Unknown, else Known s
 
 // ---- schemas ---------------------------------------------------------------
-const approval={policy:N,edge:{$enum:EDGES},key:N,owner:N,destination:N,assetName:N,
-  signatures:[[N]]};
-const configSchema={root:[N],maxFee:N,processTime:N,retractTime:N,applicationPolicy:N,
-  activePolicy:N,absentPolicy:N,terminalPolicy:N};
-const custody={key:N,refundAddress:N,value:N};
-const holding={key:N,kind:{$enum:KINDS},output:N};
-const stateSchema={config:configSchema,trie:[{key:N,leaf}],custody:[custody],held:[holding]};
-const requestSchema={edge:{$enum:EDGES},key:N,owner:N,refundAddress:N,deposit:N,tip:N,reference:N,output:N,
-  approval:{$option:approval},claimed:[{kind:{$enum:KINDS},quantity:I}]};
+const approval = {
+  policy: N,
+  edge: { $enum: EDGES },
+  key: N,
+  owner: N,
+  destination: N,
+  assetName: N,
+  signatures: [[N]],
+};
+const configSchema = {
+  root: [N],
+  maxFee: N,
+  processTime: N,
+  retractTime: N,
+  applicationPolicy: N,
+  activePolicy: N,
+  absentPolicy: N,
+  terminalPolicy: N,
+};
+const custody = { key: N, refundAddress: N, value: N };
+const DATUM_FORMS = ['inline', 'hashed', 'none'];
+const holding = { key: N, kind: { $enum: KINDS }, output: N, datum: { $enum: DATUM_FORMS } };
+// The datum form a fold gives the output it delivers to (#304): inline when the
+// request names a datum, none when it names none. A holding keeps it, so a later
+// fold spends the witness as the chain holds it.
+const deliveredDatum = (r) => (r.namesDatum ? 'inline' : 'none');
+const stateSchema = {
+  config: configSchema,
+  trie: [{ key: N, leaf }],
+  custody: [custody],
+  held: [holding],
+};
+const requestSchema = {
+  edge: { $enum: EDGES },
+  key: N,
+  owner: N,
+  refundAddress: N,
+  deposit: N,
+  tip: N,
+  reference: N,
+  output: N,
+  namesDatum: B,
+  approval: { $option: approval },
+  claimed: [{ kind: { $enum: KINDS }, quantity: I }],
+};
 
-function validate(x,s,p){
- if(s===N||s===I){if(!Number.isSafeInteger(x)||(s===N&&x<0))fail(`invalid-${s}/${p}`);return;}
- if(s===B){if(typeof x!=='boolean')fail(`invalid-shape/${p}`);return;}
- if(s.$option){if(x!==null)validate(x,s.$option,p);return;}
- if(s.$enum){if(!s.$enum.includes(x))fail(`invalid-shape/${p}`);return;}
- if(Array.isArray(s)){if(!Array.isArray(x))fail(`invalid-shape/${p}`);x.forEach((v,i)=>validate(v,s[0],`${p}.${i}`));return;}
- if(!x||typeof x!=='object'||Array.isArray(x))fail(`invalid-shape/${p}`);
- if(!equal(Object.keys(x).sort(),Object.keys(s).sort()))fail(`invalid-shape/${p}`);
- for(const k of Object.keys(s))validate(x[k],s[k],`${p}.${k}`);
+function validate(x, s, p) {
+  if (s === N || s === I) {
+    if (!Number.isSafeInteger(x) || (s === N && x < 0)) fail(`invalid-${s}/${p}`);
+    return;
+  }
+  if (s === B) {
+    if (typeof x !== 'boolean') fail(`invalid-shape/${p}`);
+    return;
+  }
+  if (s.$option) {
+    if (x !== null) validate(x, s.$option, p);
+    return;
+  }
+  if (s.$enum) {
+    if (!s.$enum.includes(x)) fail(`invalid-shape/${p}`);
+    return;
+  }
+  if (Array.isArray(s)) {
+    if (!Array.isArray(x)) fail(`invalid-shape/${p}`);
+    x.forEach((v, i) => {
+      validate(v, s[0], `${p}.${i}`);
+    });
+    return;
+  }
+  if (!x || typeof x !== 'object' || Array.isArray(x)) fail(`invalid-shape/${p}`);
+  if (!equal(Object.keys(x).sort(), Object.keys(s).sort())) fail(`invalid-shape/${p}`);
+  for (const k of Object.keys(s)) validate(x[k], s[k], `${p}.${k}`);
 }
 
 // ---- the commitment function ----------------------------------------------
-const MASK=(1n<<64n)-1n;
-const fnv1a=bs=>bs.reduce((h,b)=>((h^BigInt(b))*16777619n)&MASK,14695981039346656037n);
-const u64bytes=n=>[56n,48n,40n,32n,24n,16n,8n,0n].map(s=>Number((n>>s)&0xffn));
-const u8=n=>Number(BigInt(n)&0xffn);
-const stateByte=s=>({absent:0x00,active:0x01,terminal:0x02})[s];
-const leafByte=l=>l===null?0xFF:stateByte(l);
-const rootOf=trie=>{
- const sorted=[...trie].sort((a,b)=>a.key-b.key);
- const bytes=sorted.flatMap(p=>[...u64bytes(fnv1a([u8(p.key)])),u8(p.key),leafByte(p.leaf)]);
- return u64bytes(fnv1a(bytes));
+const MASK = (1n << 64n) - 1n;
+const fnv1a = (bs) =>
+  bs.reduce((h, b) => ((h ^ BigInt(b)) * 16777619n) & MASK, 14695981039346656037n);
+const u64bytes = (n) =>
+  [56n, 48n, 40n, 32n, 24n, 16n, 8n, 0n].map((s) => Number((n >> s) & 0xffn));
+const u8 = (n) => Number(BigInt(n) & 0xffn);
+const stateByte = (s) => ({ absent: 0x00, active: 0x01, terminal: 0x02 })[s];
+const leafByte = (l) => (l === null ? 0xff : stateByte(l));
+const rootOf = (trie) => {
+  const sorted = [...trie].sort((a, b) => a.key - b.key);
+  const bytes = sorted.flatMap((p) => [
+    ...u64bytes(fnv1a([u8(p.key)])),
+    u8(p.key),
+    leafByte(p.leaf),
+  ]);
+  return u64bytes(fnv1a(bytes));
 };
 
 // ---- the leaf codec (D-CODEC) ----------------------------------------------
-const encodeState=s=>[stateByte(s)];
-const decodeState=bytes=>{
- if(!Array.isArray(bytes)||bytes.length!==1)return null;
- const i=[0x00,0x01,0x02].indexOf(bytes[0]);
- return i<0?null:STATES[i];
+const encodeState = (s) => [stateByte(s)];
+const decodeState = (bytes) => {
+  if (!Array.isArray(bytes) || bytes.length !== 1) return null;
+  const i = [0x00, 0x01, 0x02].indexOf(bytes[0]);
+  return i < 0 ? null : STATES[i];
 };
 
 // ---- trie ------------------------------------------------------------------
-const trieGet=(t,k)=>{const e=t.find(p=>p.key===k);return e===undefined?null:e.leaf;};
-const trieSet=(t,k,l)=>[{key:k,leaf:l},...t.filter(p=>p.key!==k)];
+const trieGet = (t, k) => {
+  const e = t.find((p) => p.key === k);
+  return e === undefined ? null : e.leaf;
+};
+const trieSet = (t, k, l) => [{ key: k, leaf: l }, ...t.filter((p) => p.key !== k)];
 
 // ---- deltas (R2) -----------------------------------------------------------
-const DELTA={insertAbsent:[['absent',1]],insertActive:[['active',1]],
- updateActive:[['absent',-1],['active',1]],updateTerminal:[['active',-1]],
- deleteAbsent:[['absent',-1]],deleteActive:[['active',-1]],
- witnessTerminal:[['terminal',1]]};
-const delta=e=>DELTA[e].map(([kind,quantity])=>({kind,quantity}));
-const deltaKind=(ds,k)=>ds.reduce((n,d)=>d.kind===k?n+d.quantity:n,0);
-const deltaSame=(a,b)=>[...a,...b].every(d=>deltaKind(a,d.kind)===deltaKind(b,d.kind));
-const deltaPlus=(a,b)=>[...new Set([...a,...b].map(d=>d.kind))]
-  .map(kind=>({kind,quantity:deltaKind(a,kind)+deltaKind(b,kind)}));
+const DELTA = {
+  insertAbsent: [['absent', 1]],
+  insertActive: [['active', 1]],
+  updateActive: [
+    ['absent', -1],
+    ['active', 1],
+  ],
+  updateTerminal: [['active', -1]],
+  deleteAbsent: [['absent', -1]],
+  deleteActive: [['active', -1]],
+  witnessTerminal: [['terminal', 1]],
+};
+const delta = (e) => DELTA[e].map(([kind, quantity]) => ({ kind, quantity }));
+const deltaKind = (ds, k) => ds.reduce((n, d) => (d.kind === k ? n + d.quantity : n), 0);
+const deltaSame = (a, b) =>
+  [...a, ...b].every((d) => deltaKind(a, d.kind) === deltaKind(b, d.kind));
+const deltaPlus = (a, b) =>
+  [...new Set([...a, ...b].map((d) => d.kind))].map((kind) => ({
+    kind,
+    quantity: deltaKind(a, kind) + deltaKind(b, kind),
+  }));
 
 // The fold's mint accounting is keyed by (kind, key), matching the Lean model's
 // assetDelta/requestClaim/assetSame. A per-kind sum accepts a batch that claims
 // one key's token twice and another's not at all; the keyed one refuses it.
-const assetDelta=r=>delta(r.edge).map(d=>({kind:d.kind,key:r.key,quantity:d.quantity}));
-const requestClaim=r=>(r.claimed||[]).map(d=>({kind:d.kind,key:r.key,quantity:d.quantity}));
-const assetKind=(ds,kind,key)=>
-  ds.reduce((n,d)=>d.kind===kind&&d.key===key?n+d.quantity:n,0);
-const assetPlus=(a,b)=>[...new Map([...a,...b]
-  .map(d=>[`${d.kind}@${d.key}`,{kind:d.kind,key:d.key}])).values()]
-  .map(x=>({kind:x.kind,key:x.key,quantity:assetKind(a,x.kind,x.key)+assetKind(b,x.kind,x.key)}));
-const assetSame=(a,b)=>[...a,...b]
-  .every(d=>assetKind(a,d.kind,d.key)===assetKind(b,d.kind,d.key));
+const assetDelta = (r) =>
+  delta(r.edge).map((d) => ({ kind: d.kind, key: r.key, quantity: d.quantity }));
+const requestClaim = (r) =>
+  (r.claimed || []).map((d) => ({ kind: d.kind, key: r.key, quantity: d.quantity }));
+const assetKind = (ds, kind, key) =>
+  ds.reduce((n, d) => (d.kind === kind && d.key === key ? n + d.quantity : n), 0);
+const assetPlus = (a, b) =>
+  [
+    ...new Map(
+      [...a, ...b].map((d) => [`${d.kind}@${d.key}`, { kind: d.kind, key: d.key }]),
+    ).values(),
+  ].map((x) => ({
+    kind: x.kind,
+    key: x.key,
+    quantity: assetKind(a, x.kind, x.key) + assetKind(b, x.kind, x.key),
+  }));
+const assetSame = (a, b) =>
+  [...a, ...b].every((d) => assetKind(a, d.kind, d.key) === assetKind(b, d.kind, d.key));
 
 // ---- the R2 from→to column -------------------------------------------------
-const transition=(e,before)=>{
- const k=`${e}/${before===null?'unknown':before}`;
- return ({'insertAbsent/unknown':'absent','insertActive/unknown':'active',
-  'updateActive/absent':'active','updateTerminal/active':'terminal',
-  'deleteAbsent/absent':null,'deleteActive/active':null,
-  'witnessTerminal/terminal':'terminal'})[k] ?? (k in
-  {'deleteAbsent/absent':0,'deleteActive/active':0} ? null : undefined);
+const transition = (e, before) => {
+  const k = `${e}/${before === null ? 'unknown' : before}`;
+  return (
+    {
+      'insertAbsent/unknown': 'absent',
+      'insertActive/unknown': 'active',
+      'updateActive/absent': 'active',
+      'updateTerminal/active': 'terminal',
+      'deleteAbsent/absent': null,
+      'deleteActive/active': null,
+      'witnessTerminal/terminal': 'terminal',
+    }[k] ?? (k in { 'deleteAbsent/absent': 0, 'deleteActive/active': 0 } ? null : undefined)
+  );
 };
 
 // ---- admission (R4, D-APPROVAL, D-SELF) ------------------------------------
-const EDGE_ORDINAL=Object.fromEntries(EDGES.map((e,i)=>[e,i]));
+const EDGE_ORDINAL = Object.fromEntries(EDGES.map((e, i) => [e, i]));
 // masked to 32 bits, as the model is: a JSON number cannot carry 64 bits, and
 // every consumer must agree on this value exactly
-const approvalAssetName=(e,key,owner,destination)=>
-  Number(fnv1a([EDGE_ORDINAL[e],u8(key),u8(owner),u8(destination)])&0xFFFFFFFFn);
-const requestDestination=r=>r.edge==='insertAbsent'?0:r.output;
-const admitsFor=(config,r,ap)=>{
- if(r.edge==='witnessTerminal')return true;
- if(ap===null||ap===undefined)return false;
- return ap.policy===config.applicationPolicy&&ap.edge===r.edge&&ap.key===r.key&&
-   ap.owner===r.owner&&ap.destination===requestDestination(r)&&
-   ap.assetName===approvalAssetName(ap.edge,ap.key,ap.owner,ap.destination);
+const approvalAssetName = (e, key, owner, destination) =>
+  Number(fnv1a([EDGE_ORDINAL[e], u8(key), u8(owner), u8(destination)]) & 0xffffffffn);
+const requestDestination = (r) => (r.edge === 'insertAbsent' ? 0 : r.output);
+const admitsFor = (config, r, ap) => {
+  if (r.edge === 'witnessTerminal') return true;
+  if (ap === null || ap === undefined) return false;
+  return (
+    ap.policy === config.applicationPolicy &&
+    ap.edge === r.edge &&
+    ap.key === r.key &&
+    ap.owner === r.owner &&
+    ap.destination === requestDestination(r) &&
+    ap.assetName === approvalAssetName(ap.edge, ap.key, ap.owner, ap.destination)
+  );
 };
 
 // ---- the read (R5) ---------------------------------------------------------
-const readAt=(s,_position,key,value)=>
-  equal(s.config.root,rootOf(s.trie))&&trieGet(s.trie,key)===value&&value==='terminal';
+const readAt = (s, _position, key, value) =>
+  equal(s.config.root, rootOf(s.trie)) && trieGet(s.trie, key) === value && value === 'terminal';
 
 // ---- refusal: the complement of the R2 table (R3) --------------------------
-function refusal(s,a){
- const before=trieGet(s.trie,a.key);
- if(a.edge==='witnessTerminal')
-  return readAt(s,0,a.key,'terminal')?null:
-    ({null:'read-unknown',absent:'read-absent',active:'read-active',terminal:'read-invalid'})[String(before)];
- const ap=a.approval;
- if(ap===null||ap===undefined)return 'no-approval';
- if(ap.policy!==s.config.applicationPolicy)return 'no-approval';
- if(!admitsFor(s.config,a,ap))return 'approval-mismatch';
- const custodyPresent=s.custody.some(c=>c.key===a.key);
- const activePresent=s.held.some(h=>h.key===a.key&&h.kind==='active');
- const at=`${a.edge}/${before===null?'unknown':before}`;
- switch(at){
-  case 'insertAbsent/unknown': case 'insertActive/unknown': return null;
-  case 'insertAbsent/absent': case 'insertAbsent/active': case 'insertAbsent/terminal':
-  case 'insertActive/absent': case 'insertActive/active': case 'insertActive/terminal':
-   return 'key-exists';
-  case 'updateActive/absent': return custodyPresent?null:'custody-missing';
-  case 'updateActive/unknown': return 'key-unknown';
-  case 'updateActive/active': return 'already-booked';
-  case 'updateActive/terminal': return 'terminal-immutable';
-  case 'updateTerminal/active': return activePresent?null:'token-missing';
-  case 'updateTerminal/unknown': return 'key-unknown';
-  case 'updateTerminal/absent': return 'not-booked';
-  case 'updateTerminal/terminal': return 'terminal-immutable';
-  case 'deleteAbsent/absent': return custodyPresent?null:'custody-missing';
-  case 'deleteAbsent/unknown': return 'key-unknown';
-  case 'deleteAbsent/active': return 'not-absent';
-  case 'deleteAbsent/terminal': return 'terminal-immutable';
-  case 'deleteActive/active': return activePresent?null:'token-missing';
-  case 'deleteActive/unknown': return 'key-unknown';
-  case 'deleteActive/absent': return 'not-active';
-  case 'deleteActive/terminal': return 'terminal-immutable';
-  default: return 'read-invalid';
- }
+function refusal(s, a) {
+  const before = trieGet(s.trie, a.key);
+  if (a.edge === 'witnessTerminal')
+    return readAt(s, 0, a.key, 'terminal')
+      ? null
+      : {
+          null: 'read-unknown',
+          absent: 'read-absent',
+          active: 'read-active',
+          terminal: 'read-invalid',
+        }[String(before)];
+  const ap = a.approval;
+  if (ap === null || ap === undefined) return 'no-approval';
+  if (ap.policy !== s.config.applicationPolicy) return 'no-approval';
+  if (!admitsFor(s.config, a, ap)) return 'approval-mismatch';
+  const custodyPresent = s.custody.some((c) => c.key === a.key);
+  const activePresent = s.held.some((h) => h.key === a.key && h.kind === 'active');
+  const at = `${a.edge}/${before === null ? 'unknown' : before}`;
+  switch (at) {
+    case 'insertAbsent/unknown':
+    case 'insertActive/unknown':
+      return null;
+    case 'insertAbsent/absent':
+    case 'insertAbsent/active':
+    case 'insertAbsent/terminal':
+    case 'insertActive/absent':
+    case 'insertActive/active':
+    case 'insertActive/terminal':
+      return 'key-exists';
+    case 'updateActive/absent':
+      return custodyPresent ? null : 'custody-missing';
+    case 'updateActive/unknown':
+      return 'key-unknown';
+    case 'updateActive/active':
+      return 'already-booked';
+    case 'updateActive/terminal':
+      return 'terminal-immutable';
+    case 'updateTerminal/active':
+      return activePresent ? null : 'token-missing';
+    case 'updateTerminal/unknown':
+      return 'key-unknown';
+    case 'updateTerminal/absent':
+      return 'not-booked';
+    case 'updateTerminal/terminal':
+      return 'terminal-immutable';
+    case 'deleteAbsent/absent':
+      return custodyPresent ? null : 'custody-missing';
+    case 'deleteAbsent/unknown':
+      return 'key-unknown';
+    case 'deleteAbsent/active':
+      return 'not-absent';
+    case 'deleteAbsent/terminal':
+      return 'terminal-immutable';
+    case 'deleteActive/active':
+      return activePresent ? null : 'token-missing';
+    case 'deleteActive/unknown':
+      return 'key-unknown';
+    case 'deleteActive/absent':
+      return 'not-active';
+    case 'deleteActive/terminal':
+      return 'terminal-immutable';
+    default:
+      return 'read-invalid';
+  }
 }
 
 // ---- applying an admitted edge (R2, R6, R-ADA) ------------------------------
-function applyEdge(s,a){
- const entry=s.custody.find(c=>c.key===a.key);
- const withTrie=(l)=>{const trie=trieSet(s.trie,a.key,l);
-   return {trie,config:{...s.config,root:rootOf(trie)}};};
- switch(a.edge){
-  case 'insertAbsent':{const t=withTrie('absent');
-   return {state:{...s,...t,custody:[{key:a.key,refundAddress:a.refundAddress,value:a.deposit},...s.custody]},
-     mint:delta(a.edge),paid:[]};}
-  case 'insertActive':{const t=withTrie('active');
-   return {state:{...s,...t,held:[{key:a.key,kind:'active',output:a.output},...s.held]},
-     mint:delta(a.edge),paid:[]};}
-  case 'updateActive':{const t=withTrie('active');
-   return {state:{...s,...t,custody:s.custody.filter(c=>c.key!==a.key),
-     held:[{key:a.key,kind:'active',output:a.output},...s.held]},
-     mint:delta(a.edge),paid:entry?[{destination:entry.refundAddress,value:entry.value}]:[]};}
-  case 'updateTerminal':{const t=withTrie('terminal');
-   return {state:{...s,...t,held:s.held.filter(h=>!(h.key===a.key&&h.kind==='active'))},
-     mint:delta(a.edge),paid:[]};}
-  case 'deleteAbsent':{const trie=s.trie.filter(p=>p.key!==a.key),t={trie,config:{...s.config,root:rootOf(trie)}};
-   return {state:{...s,...t,custody:s.custody.filter(c=>c.key!==a.key)},
-     mint:delta(a.edge),paid:entry?[{destination:entry.refundAddress,value:entry.value}]:[]};}
-  case 'deleteActive':{const trie=s.trie.filter(p=>p.key!==a.key),t={trie,config:{...s.config,root:rootOf(trie)}};
-   return {state:{...s,...t,held:s.held.filter(h=>!(h.key===a.key&&h.kind==='active'))},
-     mint:delta(a.edge),paid:[]};}
-  case 'witnessTerminal':
-   return {state:{...s,held:[{key:a.key,kind:'terminal',output:a.output},...s.held]},
-     mint:delta(a.edge),paid:[]};
- }
+function applyEdge(s, a) {
+  const entry = s.custody.find((c) => c.key === a.key);
+  const withTrie = (l) => {
+    const trie = trieSet(s.trie, a.key, l);
+    return { trie, config: { ...s.config, root: rootOf(trie) } };
+  };
+  switch (a.edge) {
+    case 'insertAbsent': {
+      const t = withTrie('absent');
+      return {
+        state: {
+          ...s,
+          ...t,
+          custody: [{ key: a.key, refundAddress: a.refundAddress, value: a.deposit }, ...s.custody],
+        },
+        mint: delta(a.edge),
+        paid: [],
+      };
+    }
+    case 'insertActive': {
+      const t = withTrie('active');
+      return {
+        state: {
+          ...s,
+          ...t,
+          held: [
+            { key: a.key, kind: 'active', output: a.output, datum: deliveredDatum(a) },
+            ...s.held,
+          ],
+        },
+        mint: delta(a.edge),
+        paid: [],
+      };
+    }
+    case 'updateActive': {
+      const t = withTrie('active');
+      return {
+        state: {
+          ...s,
+          ...t,
+          custody: s.custody.filter((c) => c.key !== a.key),
+          held: [
+            { key: a.key, kind: 'active', output: a.output, datum: deliveredDatum(a) },
+            ...s.held,
+          ],
+        },
+        mint: delta(a.edge),
+        paid: entry ? [{ destination: entry.refundAddress, value: entry.value }] : [],
+      };
+    }
+    case 'updateTerminal': {
+      const t = withTrie('terminal');
+      return {
+        state: {
+          ...s,
+          ...t,
+          held: s.held.filter((h) => !(h.key === a.key && h.kind === 'active')),
+        },
+        mint: delta(a.edge),
+        paid: [],
+      };
+    }
+    case 'deleteAbsent': {
+      const trie = s.trie.filter((p) => p.key !== a.key),
+        t = { trie, config: { ...s.config, root: rootOf(trie) } };
+      return {
+        state: { ...s, ...t, custody: s.custody.filter((c) => c.key !== a.key) },
+        mint: delta(a.edge),
+        paid: entry ? [{ destination: entry.refundAddress, value: entry.value }] : [],
+      };
+    }
+    case 'deleteActive': {
+      const trie = s.trie.filter((p) => p.key !== a.key),
+        t = { trie, config: { ...s.config, root: rootOf(trie) } };
+      return {
+        state: {
+          ...s,
+          ...t,
+          held: s.held.filter((h) => !(h.key === a.key && h.kind === 'active')),
+        },
+        mint: delta(a.edge),
+        paid: [],
+      };
+    }
+    case 'witnessTerminal':
+      return {
+        state: {
+          ...s,
+          held: [
+            { key: a.key, kind: 'terminal', output: a.output, datum: deliveredDatum(a) },
+            ...s.held,
+          ],
+        },
+        mint: delta(a.edge),
+        paid: [],
+      };
+  }
 }
 
 // ---- step and the fold ------------------------------------------------------
-function step(s,a){
- try{
-  validate(s,stateSchema,'state');validate(a,requestSchema,'request');
-  const why=refusal(s,a);
-  if(why!==null)return {accepted:false,reason:why};
-  const value=applyEdge(s,a);
-  validate(value.state,stateSchema,'result.state');
-  return {accepted:true,value};
- }catch(e){return {accepted:false,reason:e.message};}
+function step(s, a) {
+  try {
+    validate(s, stateSchema, 'state');
+    validate(a, requestSchema, 'request');
+    const why = refusal(s, a);
+    if (why !== null) return { accepted: false, reason: why };
+    const value = applyEdge(s, a);
+    validate(value.state, stateSchema, 'result.state');
+    return { accepted: true, value };
+  } catch (e) {
+    return { accepted: false, reason: e.message };
+  }
 }
 
-function foldActions(s,batch){
- let state=s,mint=[],paid=[];
- for(const b of batch){
-  const r=step(state,b);
-  if(!r.accepted)return r;
-  state=r.value.state;mint=deltaPlus(mint,r.value.mint);paid=[...paid,...r.value.paid];
- }
- return {accepted:true,value:{state,mint,paid}};
+function foldActions(s, batch) {
+  let state = s,
+    mint = [],
+    paid = [];
+  for (const b of batch) {
+    const r = step(state, b);
+    if (!r.accepted) return r;
+    state = r.value.state;
+    mint = deltaPlus(mint, r.value.mint);
+    paid = [...paid, ...r.value.paid];
+  }
+  return { accepted: true, value: { state, mint, paid } };
 }
 
-function foldBatch(s,batch){
- try{
-  validate(s,stateSchema,'state');validate(batch,[requestSchema],'batch');
-  if(batch.length===0)return {accepted:false,reason:'empty-fold'};
-  const r=foldActions(s,batch);
-  if(!r.accepted)return r;
-  const claimed=batch.reduce((acc,b)=>assetPlus(acc,requestClaim(b)),[]);
-  const actual=batch.reduce((acc,b)=>assetPlus(acc,assetDelta(b)),[]);
-  if(!assetSame(claimed,actual))return {accepted:false,reason:'net-mint-mismatch'};
-  return r;
- }catch(e){return {accepted:false,reason:e.message};}
+function foldBatch(s, batch) {
+  try {
+    validate(s, stateSchema, 'state');
+    validate(batch, [requestSchema], 'batch');
+    if (batch.length === 0) return { accepted: false, reason: 'empty-fold' };
+    const r = foldActions(s, batch);
+    if (!r.accepted) return r;
+    const claimed = batch.reduce((acc, b) => assetPlus(acc, requestClaim(b)), []);
+    const actual = batch.reduce((acc, b) => assetPlus(acc, assetDelta(b)), []);
+    if (!assetSame(claimed, actual)) return { accepted: false, reason: 'net-mint-mismatch' };
+    return r;
+  } catch (e) {
+    return { accepted: false, reason: e.message };
+  }
 }
 
 // ---- the consumer's view (interface §7): tokens, never the root -------------
-const witnesses=(s,key)=>({
- active:s.held.filter(h=>h.key===key&&h.kind==='active').length,
- absent:s.custody.filter(c=>c.key===key).length,
- terminal:s.held.filter(h=>h.key===key&&h.kind==='terminal').length});
+const witnesses = (s, key) => ({
+  active: s.held.filter((h) => h.key === key && h.kind === 'active').length,
+  absent: s.custody.filter((c) => c.key === key).length,
+  terminal: s.held.filter((h) => h.key === key && h.kind === 'terminal').length,
+});
 
-function view(s,key){
- validate(s,stateSchema,'state');validate(key,N,'key');
- return {leaf:trieGet(s.trie,key),witnesses:witnesses(s,key),root:s.config.root};
+function view(s, key) {
+  validate(s, stateSchema, 'state');
+  validate(key, N, 'key');
+  return { leaf: trieGet(s.trie, key), witnesses: witnesses(s, key), root: s.config.root };
 }
 
-const initial=(config)=>({config:{root:rootOf([]),maxFee:1,processTime:2,
- retractTime:3,applicationPolicy:7,activePolicy:8,absentPolicy:9,terminalPolicy:10,...config},
- trie:[],custody:[],held:[]});
+const initial = (config) => ({
+  config: {
+    root: rootOf([]),
+    maxFee: 1,
+    processTime: 2,
+    retractTime: 3,
+    applicationPolicy: 7,
+    activePolicy: 8,
+    absentPolicy: 9,
+    terminalPolicy: 10,
+    ...config,
+  },
+  trie: [],
+  custody: [],
+  held: [],
+});
 
-function inspect(s,a){
- const verdict=step(s,a);
- return {before:s,action:a,result:verdict,committed:verdict.accepted};
+function inspect(s, a) {
+  const verdict = step(s, a);
+  return { before: s, action: a, result: verdict, committed: verdict.accepted };
 }
 
-function replay(s,actions){
- validate(s,stateSchema,'state');validate(actions,[requestSchema],'actions');
- return actions.reduce((acc,a)=>{const r=inspect(acc.state,a);
-  return {state:r.result.accepted?r.result.value.state:acc.state,records:[...acc.records,r]};},
-  {state:s,records:[]});
+function replay(s, actions) {
+  validate(s, stateSchema, 'state');
+  validate(actions, [requestSchema], 'actions');
+  return actions.reduce(
+    (acc, a) => {
+      const r = inspect(acc.state, a);
+      return {
+        state: r.result.accepted ? r.result.value.state : acc.state,
+        records: [...acc.records, r],
+      };
+    },
+    { state: s, records: [] },
+  );
 }
 
 // Request and approval builders. An approval's asset name commits to the tuple
 // it scopes (D-APPROVAL), so a builder is the only honest way to make one: a
 // hand-written name would not match and the fold would refuse it.
 
-const POLICY=7;
+const POLICY = 7;
 
-const request=(edge,key,opts={})=>({
-  edge,key,
-  owner:opts.owner??0,
-  refundAddress:opts.refundAddress??0,
-  deposit:opts.deposit??0,
-  tip:opts.tip??0,
-  reference:opts.reference??0,
-  output:opts.output??0,
-  approval:null,
-  claimed:opts.claimed??[]});
+const request = (edge, key, opts = {}) => ({
+  edge,
+  key,
+  owner: opts.owner ?? 0,
+  refundAddress: opts.refundAddress ?? 0,
+  deposit: opts.deposit ?? 0,
+  tip: opts.tip ?? 0,
+  reference: opts.reference ?? 0,
+  output: opts.output ?? 0,
+  namesDatum: opts.namesDatum ?? false,
+  approval: null,
+  claimed: opts.claimed ?? [],
+});
 
 /** An approval scoped to exactly this request. */
-const approvalFor=(r,opts={})=>{
-  const destination=requestDestination(r);
-  return {policy:opts.policy??POLICY,edge:r.edge,key:r.key,owner:r.owner,destination,
-    assetName:opts.assetName??approvalAssetName(r.edge,r.key,r.owner,destination),
-    signatures:opts.signatures??[]};
+const approvalFor = (r, opts = {}) => {
+  const destination = requestDestination(r);
+  return {
+    policy: opts.policy ?? POLICY,
+    edge: r.edge,
+    key: r.key,
+    owner: r.owner,
+    destination,
+    assetName: opts.assetName ?? approvalAssetName(r.edge, r.key, r.owner, destination),
+    signatures: opts.signatures ?? [],
+  };
 };
 
 /** A request carrying a matching approval: the normal case. */
-const approved=(edge,key,opts={})=>{
-  const r=request(edge,key,opts);
-  return {...r,approval:approvalFor(r,opts)};
+const approved = (edge, key, opts = {}) => {
+  const r = request(edge, key, opts);
+  return { ...r, approval: approvalFor(r, opts) };
 };
 
 /** A request whose approval is under the correct policy but names another
  * tuple — the case D-APPROVAL exists to refuse. */
-const mismatched=(edge,key,opts={})=>{
-  const r=request(edge,key,opts);
-  const ap=approvalFor(r,opts);
-  return {...r,approval:{...ap,key:ap.key+1,
-    assetName:approvalAssetName(ap.edge,ap.key+1,ap.owner,ap.destination)}};
+const mismatched = (edge, key, opts = {}) => {
+  const r = request(edge, key, opts);
+  const ap = approvalFor(r, opts);
+  return {
+    ...r,
+    approval: {
+      ...ap,
+      key: ap.key + 1,
+      assetName: approvalAssetName(ap.edge, ap.key + 1, ap.owner, ap.destination),
+    },
+  };
 };
 
 /** A request whose approval is under some other policy entirely. */
-const otherPolicy=(edge,key,opts={})=>{
-  const r=request(edge,key,opts);
-  return {...r,approval:approvalFor(r,{...opts,policy:99})};
+const otherPolicy = (edge, key, opts = {}) => {
+  const r = request(edge, key, opts);
+  return { ...r, approval: approvalFor(r, { ...opts, policy: 99 }) };
 };
 
 /** The read needs no approval at all. */
-const read=(key,output=0)=>request('witnessTerminal',key,{output});
+const read = (key, output = 0) => request('witnessTerminal', key, { output });
 
 // What the corpus exhibits, per statement. This is a coverage report, not a
 // proof: a finite row can exhibit a theorem's consequent, never its quantifier.
@@ -779,41 +1246,61 @@ const read=(key,output=0)=>request('witnessTerminal',key,{output});
  * halves included. Only the statements with real hypotheses (termination's
  * terminal leaf, occupancy's booking edges, S1's existing attestation) leave
  * rows outside `applies`; those count as vacuous, never as exhibited. */
-const checks={
-  active_witness_unique:{
-    applies:()=>true,
-    law:(before,action,after)=>{
-      const leaf=trieGet(after.trie,action.key),w=witnesses(after,action.key);
-      return w.active<=1&&(w.active===1)===(leaf==='active');}},
-  absent_witness_unique:{
-    applies:()=>true,
-    law:(before,action,after)=>{
-      const leaf=trieGet(after.trie,action.key),w=witnesses(after,action.key);
-      return w.absent<=1&&(w.absent===1)===(leaf==='absent');}},
-  witness_kinds_exclude:{
-    applies:()=>true,
-    law:(before,action,after)=>{
-      const w=witnesses(after,action.key);
-      return [w.active>0,w.absent>0,w.terminal>0].filter(Boolean).length<=1;}},
-  biconditional_supply_sync:{
-    applies:()=>true,
-    law:(before,action,after)=>{
-      const leaf=trieGet(after.trie,action.key),w=witnesses(after,action.key);
-      return (w.active===1)===(leaf==='active')&&(w.active===0)===(leaf!=='active')&&
-             (w.absent===1)===(leaf==='absent')&&(w.absent===0)===(leaf!=='absent');}},
-  terminal_attestation_sound:{
-    applies:(before,action,after)=>after.held.some(h=>h.kind==='terminal'),
-    law:(before,action,after)=>
-      after.held.filter(h=>h.kind==='terminal')
-        .every(h=>trieGet(after.trie,h.key)==='terminal')},
-  termination:{
-    applies:(before,action)=>trieGet(before.trie,action.key)==='terminal',
-    law:(before,action,after)=>trieGet(after.trie,action.key)==='terminal'},
-  occupancy:{
-    applies:(before,action)=>['insertActive','updateActive'].includes(action.edge),
-    law:(before,action,after)=>{
-      const was=trieGet(before.trie,action.key);
-      return was!=='active'&&was!=='terminal'&&trieGet(after.trie,action.key)==='active';}},
+const checks = {
+  active_witness_unique: {
+    applies: () => true,
+    law: (_before, action, after) => {
+      const leaf = trieGet(after.trie, action.key),
+        w = witnesses(after, action.key);
+      return w.active <= 1 && (w.active === 1) === (leaf === 'active');
+    },
+  },
+  absent_witness_unique: {
+    applies: () => true,
+    law: (_before, action, after) => {
+      const leaf = trieGet(after.trie, action.key),
+        w = witnesses(after, action.key);
+      return w.absent <= 1 && (w.absent === 1) === (leaf === 'absent');
+    },
+  },
+  witness_kinds_exclude: {
+    applies: () => true,
+    law: (_before, action, after) => {
+      const w = witnesses(after, action.key);
+      return [w.active > 0, w.absent > 0, w.terminal > 0].filter(Boolean).length <= 1;
+    },
+  },
+  biconditional_supply_sync: {
+    applies: () => true,
+    law: (_before, action, after) => {
+      const leaf = trieGet(after.trie, action.key),
+        w = witnesses(after, action.key);
+      return (
+        (w.active === 1) === (leaf === 'active') &&
+        (w.active === 0) === (leaf !== 'active') &&
+        (w.absent === 1) === (leaf === 'absent') &&
+        (w.absent === 0) === (leaf !== 'absent')
+      );
+    },
+  },
+  terminal_attestation_sound: {
+    applies: (_before, _action, after) => after.held.some((h) => h.kind === 'terminal'),
+    law: (_before, _action, after) =>
+      after.held
+        .filter((h) => h.kind === 'terminal')
+        .every((h) => trieGet(after.trie, h.key) === 'terminal'),
+  },
+  termination: {
+    applies: (before, action) => trieGet(before.trie, action.key) === 'terminal',
+    law: (_before, action, after) => trieGet(after.trie, action.key) === 'terminal',
+  },
+  occupancy: {
+    applies: (_before, action) => ['insertActive', 'updateActive'].includes(action.edge),
+    law: (before, action, after) => {
+      const was = trieGet(before.trie, action.key);
+      return was !== 'active' && was !== 'terminal' && trieGet(after.trie, action.key) === 'active';
+    },
+  },
 };
 
 /** One row per statement: whether the corpus exhibits it, and whether the
@@ -822,30 +1309,39 @@ const checks={
  * laws (W1, W2, W4, S3) that is zero by construction and every accepted row's
  * consequent is evaluated. A law with no applicable example is never reported
  * as exercised. */
-function theoremReport(manifest,corpus){
-  const rows=[];
-  for(const decl of manifest){
-    const short=decl.name.split('.').at(-1);
-    const entry=checks[short];
-    let applicable=0,held=0,vacuous=0;
-    if(entry)for(const row of corpus.cases){
-      if(!row.expectedAccept)continue;
-      const r=step(row.before,row.action);
-      if(!r.accepted)continue;
-      if(entry.applies(row.before,row.action,r.value.state)){
-        applicable++;
-        if(entry.law(row.before,row.action,r.value.state))held++;
-      }else vacuous++;
-    }
-    const exercised=!!entry&&applicable>0&&held===applicable;
-    rows.push({name:decl.name,status:`${decl.status} / ${decl.debt}`,
-      coverage:entry?'controlled-check':'proved-only',
-      applicable,held,vacuous,exercised,
-      note:entry
-        ?(exercised
-          ?'Finite applicable examples over the corpus; the quantified statement is proved in Lean.'
-          :'No applicable example in this corpus; only the Lean proof covers this statement.')
-        :'No executable exhibit here; the quantified statement is proved in Lean.'});
+function theoremReport(manifest, corpus) {
+  const rows = [];
+  for (const decl of manifest) {
+    const short = decl.name.split('.').at(-1);
+    const entry = checks[short];
+    let applicable = 0,
+      held = 0,
+      vacuous = 0;
+    if (entry)
+      for (const row of corpus.cases) {
+        if (!row.expectedAccept) continue;
+        const r = step(row.before, row.action);
+        if (!r.accepted) continue;
+        if (entry.applies(row.before, row.action, r.value.state)) {
+          applicable++;
+          if (entry.law(row.before, row.action, r.value.state)) held++;
+        } else vacuous++;
+      }
+    const exercised = !!entry && applicable > 0 && held === applicable;
+    rows.push({
+      name: decl.name,
+      status: `${decl.status} / ${decl.debt}`,
+      coverage: entry ? 'controlled-check' : 'proved-only',
+      applicable,
+      held,
+      vacuous,
+      exercised,
+      note: entry
+        ? exercised
+          ? 'Finite applicable examples over the corpus; the quantified statement is proved in Lean.'
+          : 'No applicable example in this corpus; only the Lean proof covers this statement.'
+        : 'No executable exhibit here; the quantified statement is proved in Lean.',
+    });
   }
   return rows;
 }
@@ -858,18 +1354,18 @@ function theoremReport(manifest,corpus){
 // Re-implementing naming in JavaScript is what the previous simulator did, and
 // it is how a mirror drifts from what it mirrors.
 
-const NAMING_SECTIONS=['spellings','queues','folds','steps','resolves','replays'];
+const NAMING_SECTIONS = ['spellings', 'queues', 'folds', 'steps', 'resolves', 'replays'];
 
 /** The observations each section's rows must carry. The rows are verdicts the
  * Lean computed; a row that carries only an id is not evidence, and a checker
  * that waved it through would report rows it never looked at. */
-const NAMING_OBSERVATIONS={
-  spellings:['spelling','resolved'],
-  queues:['expected','actual'],
-  folds:['expected','actual'],
-  steps:['expected','actual'],
-  replays:['expected','actual'],
-  resolves:['leaf','active','absent','terminal'],
+const NAMING_OBSERVATIONS = {
+  spellings: ['spelling', 'resolved'],
+  queues: ['expected', 'actual'],
+  folds: ['expected', 'actual'],
+  steps: ['expected', 'actual'],
+  replays: ['expected', 'actual'],
+  resolves: ['leaf', 'active', 'absent', 'terminal'],
 };
 
 /** A resolve row's observations must agree with the model's own laws: the
@@ -882,20 +1378,28 @@ const NAMING_OBSERVATIONS={
  * failing exclusion always fails the biconditional or the terminal check
  * first. A row that claims witnesses and the wrong leaf contradicts itself
  * and is not evidence. */
-function checkResolveObservations(row){
-  const leaf=row.leaf==='unknown'?null
-    :(row.leaf&&typeof row.leaf==='object'&&row.leaf.known?row.leaf.known.s:undefined);
-  if(leaf!==null&&!['absent','active','terminal'].includes(leaf))
+function checkResolveObservations(row) {
+  const leaf =
+    row.leaf === 'unknown'
+      ? null
+      : row.leaf && typeof row.leaf === 'object' && row.leaf.known
+        ? row.leaf.known.s
+        : undefined;
+  if (leaf !== null && !['absent', 'active', 'terminal'].includes(leaf))
     throw Error(`naming resolve row with an unreadable leaf: ${row.id}`);
-  for(const k of ['active','absent','terminal'])
-    if(!Number.isSafeInteger(row[k])||row[k]<0)
+  for (const k of ['active', 'absent', 'terminal'])
+    if (!Number.isSafeInteger(row[k]) || row[k] < 0)
       throw Error(`naming resolve row without a witness count: ${row.id}`);
-  if((row.active===1)!==(leaf==='active')||(row.active===0)!==(leaf!=='active')||
-     (row.absent===1)!==(leaf==='absent')||(row.absent===0)!==(leaf!=='absent'))
+  if (
+    (row.active === 1) !== (leaf === 'active') ||
+    (row.active === 0) !== (leaf !== 'active') ||
+    (row.absent === 1) !== (leaf === 'absent') ||
+    (row.absent === 0) !== (leaf !== 'absent')
+  )
     throw Error(`naming resolve row contradicts the supply biconditional: ${row.id}`);
-  if(leaf===null&&(row.active>0||row.absent>0||row.terminal>0))
+  if (leaf === null && (row.active > 0 || row.absent > 0 || row.terminal > 0))
     throw Error(`naming resolve row claims witnesses on an unknown leaf: ${row.id}`);
-  if(leaf!=='terminal'&&row.terminal>0)
+  if (leaf !== 'terminal' && row.terminal > 0)
     throw Error(`naming resolve row attests a leaf that is not terminal: ${row.id}`);
 }
 
@@ -907,71 +1411,87 @@ function checkResolveObservations(row){
  * The receipt reports INSPECTION, never execution: nothing here runs a
  * transition, so `executed` is zero by construction and the page labels say
  * "inspected", not "replayed". */
-function checkNamingCorpus(corpus){
-  let discovered=0,inspected=0;
-  const ids=new Set(),bySection={};
-  for(const section of NAMING_SECTIONS){
-    const rows=corpus[section];
-    if(!Array.isArray(rows)||rows.length===0)
+function checkNamingCorpus(corpus) {
+  let discovered = 0,
+    inspected = 0;
+  const ids = new Set(),
+    bySection = {};
+  for (const section of NAMING_SECTIONS) {
+    const rows = corpus[section];
+    if (!Array.isArray(rows) || rows.length === 0)
       throw Error(`empty naming corpus section: ${section}`);
-    bySection[section]=0;
-    for(const row of rows){
+    bySection[section] = 0;
+    for (const row of rows) {
       discovered++;
-      if(typeof row.id!=='string'||!row.id)
+      if (typeof row.id !== 'string' || !row.id)
         throw Error(`naming row without an id in ${section}`);
-      if(ids.has(row.id))throw Error(`duplicate naming row: ${row.id}`);
+      if (ids.has(row.id)) throw Error(`duplicate naming row: ${row.id}`);
       ids.add(row.id);
-      for(const field of NAMING_OBSERVATIONS[section])
-        if(!(field in row))
-          throw Error(`naming row missing its ${field} observation: ${row.id}`);
-      if(section==='spellings'){
-        if(typeof row.resolved!=='boolean')
+      for (const field of NAMING_OBSERVATIONS[section])
+        if (!(field in row)) throw Error(`naming row missing its ${field} observation: ${row.id}`);
+      if (section === 'spellings') {
+        if (typeof row.resolved !== 'boolean')
           throw Error(`naming row without a boolean verdict: ${row.id}`);
-        if(row.resolved&&(!Number.isSafeInteger(row.key)||row.key<0))
+        if (row.resolved && (!Number.isSafeInteger(row.key) || row.key < 0))
           throw Error(`naming row claims a resolution without the key: ${row.id}`);
-      }else if(section==='resolves'){
+      } else if (section === 'resolves') {
         checkResolveObservations(row);
-      }else{
-        if(typeof row.expected!=='boolean'||typeof row.actual!=='boolean')
+      } else {
+        if (typeof row.expected !== 'boolean' || typeof row.actual !== 'boolean')
           throw Error(`naming row without a boolean verdict: ${row.id}`);
-        if(row.expected!==row.actual)
+        if (row.expected !== row.actual)
           throw Error(`naming row disagrees with its own expectation: ${row.id}`);
       }
       bySection[section]++;
       inspected++;
     }
   }
-  if(discovered!==inspected)throw Error('naming denominator');
-  return {discovered,inspected,executed:0,sections:NAMING_SECTIONS.length,
-    bySection,boundary:'evidence'};
+  if (discovered !== inspected) throw Error('naming denominator');
+  return {
+    discovered,
+    inspected,
+    executed: 0,
+    sections: NAMING_SECTIONS.length,
+    bySection,
+    boundary: 'evidence',
+  };
 }
 
 /** The Over witness, played rather than asserted: book a name, retire it, and
  * watch the attestation minted by a folded read — twice, because it is plural —
  * then burned, because an implicational witness may be. Unlike the corpus
  * checks above this EXECUTES behavior: each step runs the engine. */
-function overWitnessJourney(key=42,owner=42,output=555){
-  const steps=[];
-  let state=initial();
-  const take=(what,req)=>{
-    const r=step(state,req);
-    steps.push({what,edge:req.edge,accepted:r.accepted,
-      reason:r.accepted?'':r.reason,
-      witnesses:r.accepted?witnesses(r.value.state,key):witnesses(state,key),
-      leaf:r.accepted?trieGet(r.value.state.trie,key):trieGet(state.trie,key)});
-    if(r.accepted)state=r.value.state;
+function overWitnessJourney(key = 42, owner = 42, output = 555) {
+  const steps = [];
+  let state = initial();
+  const take = (what, req) => {
+    const r = step(state, req);
+    steps.push({
+      what,
+      edge: req.edge,
+      accepted: r.accepted,
+      reason: r.accepted ? '' : r.reason,
+      witnesses: r.accepted ? witnesses(r.value.state, key) : witnesses(state, key),
+      leaf: r.accepted ? trieGet(r.value.state.trie, key) : trieGet(state.trie, key),
+    });
+    if (r.accepted) state = r.value.state;
     return r;
   };
-  take('the controller books the name',approved('insertActive',key,{owner,output}));
-  take('the quorum retires it: updateTerminal',approved('updateTerminal',key,{owner,output}));
-  take('a folded read mints the Over witness',read(key,700));
-  take('and another: the terminal witness is plural',read(key,701));
+  take('the controller books the name', approved('insertActive', key, { owner, output }));
+  take('the quorum retires it: updateTerminal', approved('updateTerminal', key, { owner, output }));
+  take('a folded read mints the Over witness', read(key, 700));
+  take('and another: the terminal witness is plural', read(key, 701));
   // burning is free: an implicational witness may be dropped and stays true
-  const burned={...state,held:state.held.filter(h=>h.kind!=='terminal')};
-  steps.push({what:'both Over witnesses burned; the leaf is still terminal',
-    edge:'(burn)',accepted:true,reason:'',
-    witnesses:witnesses(burned,key),leaf:trieGet(burned.trie,key)});
-  return {steps,final:burned};
+  const burned = { ...state, held: state.held.filter((h) => h.kind !== 'terminal') };
+  steps.push({
+    what: 'both Over witnesses burned; the leaf is still terminal',
+    edge: '(burn)',
+    accepted: true,
+    reason: '',
+    witnesses: witnesses(burned, key),
+    leaf: trieGet(burned.trie, key),
+  });
+  return { steps, final: burned };
 }
 
 // The naming lifecycle — maintenance, recovery, retirement, the consumer
@@ -1003,15 +1523,18 @@ const LIFECYCLE_TITLES = {
  * construction and the page labels say "inspected". */
 function checkLifecycleCorpus(corpus) {
   if (!corpus || typeof corpus !== 'object') throw Error('no lifecycle corpus');
-  let discovered = 0, executed = 0;
-  const ids = new Set(), rows = [];
+  let discovered = 0,
+    executed = 0;
+  const ids = new Set(),
+    rows = [];
   for (const section of LIFECYCLE_SECTIONS) {
     const found = corpus[section];
     if (!Array.isArray(found) || found.length === 0)
       throw Error(`empty lifecycle corpus section: ${section}`);
     for (const row of found) {
       discovered++;
-      if (typeof row.id !== 'string' || !row.id) throw Error(`lifecycle row without an id in ${section}`);
+      if (typeof row.id !== 'string' || !row.id)
+        throw Error(`lifecycle row without an id in ${section}`);
       if (ids.has(row.id)) throw Error(`duplicate lifecycle row: ${row.id}`);
       ids.add(row.id);
       if (typeof row.ok !== 'boolean') throw Error(`lifecycle row has no verdict: ${row.id}`);
@@ -1023,8 +1546,14 @@ function checkLifecycleCorpus(corpus) {
     }
   }
   if (discovered !== executed) throw Error('lifecycle denominator');
-  return { discovered, inspected: executed, executed: 0,
-    sections: LIFECYCLE_SECTIONS.length, rows, boundary: 'evidence' };
+  return {
+    discovered,
+    inspected: executed,
+    executed: 0,
+    sections: LIFECYCLE_SECTIONS.length,
+    rows,
+    boundary: 'evidence',
+  };
 }
 
 /** The reason a row records, when it records one rather than a plain `true`. */
@@ -1049,6 +1578,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "insertActive",
@@ -1078,6 +1608,7 @@ const STORIES=[
        "tip": 0,
        "reference": 0,
        "output": 555,
+       "namesDatum": false,
        "approval": {
         "policy": 7,
         "edge": "insertActive",
@@ -1111,6 +1642,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 0,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "insertAbsent",
@@ -1135,6 +1667,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "updateActive",
@@ -1164,6 +1697,7 @@ const STORIES=[
        "tip": 0,
        "reference": 0,
        "output": 0,
+       "namesDatum": false,
        "approval": {
         "policy": 7,
         "edge": "deleteAbsent",
@@ -1197,6 +1731,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "insertActive",
@@ -1221,6 +1756,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "updateTerminal",
@@ -1245,6 +1781,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 700,
+     "namesDatum": false,
      "approval": null,
      "claimed": []
     },
@@ -1261,6 +1798,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 701,
+     "namesDatum": false,
      "approval": null,
      "claimed": []
     },
@@ -1282,6 +1820,7 @@ const STORIES=[
        "tip": 0,
        "reference": 0,
        "output": 555,
+       "namesDatum": false,
        "approval": {
         "policy": 7,
         "edge": "deleteActive",
@@ -1315,6 +1854,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 700,
+     "namesDatum": false,
      "approval": null,
      "claimed": []
     },
@@ -1331,6 +1871,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "insertActive",
@@ -1355,6 +1896,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 700,
+     "namesDatum": false,
      "approval": null,
      "claimed": []
     },
@@ -1371,6 +1913,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "updateTerminal",
@@ -1400,6 +1943,7 @@ const STORIES=[
        "tip": 0,
        "reference": 0,
        "output": 555,
+       "namesDatum": false,
        "approval": {
         "policy": 7,
         "edge": "updateTerminal",
@@ -1429,6 +1973,7 @@ const STORIES=[
        "tip": 0,
        "reference": 0,
        "output": 555,
+       "namesDatum": false,
        "approval": {
         "policy": 99,
         "edge": "updateTerminal",
@@ -1458,6 +2003,7 @@ const STORIES=[
        "tip": 0,
        "reference": 0,
        "output": 555,
+       "namesDatum": false,
        "approval": null,
        "claimed": []
       },
@@ -1483,6 +2029,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "insertActive",
@@ -1507,6 +2054,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "deleteActive",
@@ -1531,6 +2079,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "insertActive",
@@ -1579,6 +2128,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "insertAbsent",
         "key": 8,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -1687,6 +2237,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "insertActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -1745,6 +2296,7 @@ const STORIES=[
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "active",
               "output": 555
@@ -1775,6 +2327,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -1844,6 +2397,7 @@ const STORIES=[
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "active",
               "output": 555
@@ -1874,6 +2428,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -1903,6 +2458,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -1967,6 +2523,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -2055,6 +2612,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteActive",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 42,
         "reference": 0,
@@ -2084,6 +2642,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -2135,6 +2694,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "witnessTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 700,
         "owner": 0,
         "reference": 0,
@@ -2198,6 +2758,7 @@ const STORIES=[
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "terminal",
               "output": 700
@@ -2228,6 +2789,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "insertAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -2257,6 +2819,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -2293,6 +2856,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "insertActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -2322,6 +2886,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -2358,6 +2923,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "insertAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -2417,6 +2983,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "insertActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -2476,6 +3043,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "insertActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -2541,6 +3109,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -2595,6 +3164,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -2624,6 +3194,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -2660,6 +3231,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -2719,6 +3291,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -2773,6 +3346,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -2838,6 +3412,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -2897,6 +3472,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -2951,6 +3527,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -2980,6 +3557,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -3016,6 +3594,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -3075,6 +3654,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteActive",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 42,
         "reference": 0,
@@ -3129,6 +3709,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteActive",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 42,
         "reference": 0,
@@ -3194,6 +3775,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteActive",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 42,
         "reference": 0,
@@ -3253,6 +3835,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "witnessTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 700,
         "owner": 0,
         "reference": 0,
@@ -3282,6 +3865,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -3318,6 +3902,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "witnessTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 700,
         "owner": 0,
         "reference": 0,
@@ -3383,6 +3968,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "witnessTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 700,
         "owner": 0,
         "reference": 0,
@@ -3429,6 +4015,7 @@ const STORIES=[
         "deposit": 200,
         "edge": "insertAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -3483,6 +4070,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "insertActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -3537,6 +4125,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "insertActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -3583,6 +4172,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "witnessTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 700,
         "owner": 0,
         "reference": 0,
@@ -3646,6 +4236,7 @@ const STORIES=[
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "terminal",
               "output": 700
@@ -3668,6 +4259,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "witnessTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 700,
         "owner": 0,
         "reference": 0,
@@ -3722,6 +4314,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -3781,6 +4374,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -3840,6 +4434,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -3909,6 +4504,7 @@ const STORIES=[
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "active",
               "output": 555
@@ -3939,6 +4535,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -4027,6 +4624,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -4086,6 +4684,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -4193,7 +4792,7 @@ const STORIES=[
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "b55b058b687731b51fb620dc0ee42177cec9be86713a6906065a8ef735f3eedd",
+  "corpusSourceSha256": "70491ac5ea1cfacdab355af57717576ecabd560096df1029372c4d352fc70241",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -4322,20 +4921,20 @@ const STORIES=[
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "ed1f2ce494ed2eb5db69adde52fe937c3a9587e11d39fef7a469bf374f4f6177",
-  "payloadSha256": "6e5870a86d1ff0f214bf969cc8ac4614b20b3c78191e745f2c65805dd206a958",
+  "modelSha256": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
+  "payloadSha256": "de8eb81bb2fd5fa50c4cf0d1b66d87f6ea2d3e662f9719e535d78e13caa312c8",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "b55b058b687731b51fb620dc0ee42177cec9be86713a6906065a8ef735f3eedd",
+    "lean/Main.lean": "70491ac5ea1cfacdab355af57717576ecabd560096df1029372c4d352fc70241",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "52ed3c6db8ff0e0c2db2e07f8358ceba87ee74a671cdd6a096bedaacd2aa630a",
-    "lean/Singular/Lemmas.lean": "829d42c109a7d9ec8c7ab30bb42041f7d362fb5306277b84726e6fd0df0de899",
-    "lean/Singular/Model.lean": "ed1f2ce494ed2eb5db69adde52fe937c3a9587e11d39fef7a469bf374f4f6177",
-    "lean/Singular/Statements.lean": "609a512e59051bee36093bd1fc5014ba92991223894b5e60f7b1a33c58b9f838"
+    "lean/Singular/Driver.lean": "97c79d1caca2938e3e99a4d45ce18cb73ff1d35e4b35b91ca16dced19334a70d",
+    "lean/Singular/Lemmas.lean": "c8aa4ea4585fd53a41d75ca817e229019ad59517c79cd6da6f9242f2c27c857c",
+    "lean/Singular/Model.lean": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
+    "lean/Singular/Statements.lean": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9"
   },
-  "statementsSha256": "609a512e59051bee36093bd1fc5014ba92991223894b5e60f7b1a33c58b9f838",
-  "theoremManifestSha256": "033ed0ad432d838c592a4f40ad00688ca235c6b41b54a72a274d643f7dfd0fec",
+  "statementsSha256": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9",
+  "theoremManifestSha256": "91ed0116194b64bb71af402619e120e3190874b66ea5698555c73c4220b44162",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
@@ -4369,7 +4968,7 @@ const STORIES=[
         "accepted": false,
         "reason": "key-exists"
       },
-      "statementSha256": "f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508",
+      "statementSha256": "83dd1fefbe6b00be6adcb57d84b4321b9507649b6566c79eecd9f6015551ecb4",
       "theorem": "Singular.Statements.insert_active_transaction_row",
       "tip": 1,
       "transaction": {
@@ -4444,7 +5043,7 @@ const STORIES=[
             ],
             "commitment": 1604014105,
             "custodyDatum": null,
-            "datum": "inline",
+            "datum": "none",
             "inlineConfig": null,
             "lovelace": 0,
             "reference": null,
@@ -4499,6 +5098,7 @@ const STORIES=[
         "deposit": 200,
         "edge": "insertAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -4506,7 +5106,7 @@ const STORIES=[
         "tip": 0
       },
       "rootMatchesTrie": true,
-      "statementSha256": "8c63e568b81b4e4a81cf3832c88d324ef910925e2733b6593c8e337c81357b3f",
+      "statementSha256": "a7e93824be2944e55b6482d0836111450522a7ed04eb57c262656f8903adaec6",
       "theorem": "Singular.Statements.insert_absent_transaction_row",
       "transaction": {
         "inputs": [
@@ -4566,18 +5166,6 @@ const STORIES=[
             "reference": null,
             "role": "state",
             "stateToken": 1
-          },
-          {
-            "address": 0,
-            "assets": [],
-            "commitment": 3021472884,
-            "custodyDatum": null,
-            "datum": "inline",
-            "inlineConfig": null,
-            "lovelace": 0,
-            "reference": null,
-            "role": "destination",
-            "stateToken": 0
           },
           {
             "address": 0,
@@ -4672,7 +5260,7 @@ const STORIES=[
           "quantity": 1
         }
       ],
-      "statementSha256": "6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068",
+      "statementSha256": "8ea765f55d3a5187b8a9abc3430b3125406c5ce6c09407322443cc268dcd1079",
       "theorem": "Singular.Statements.update_terminal_transaction_row",
       "tip": 1,
       "transaction": {
@@ -4704,7 +5292,7 @@ const STORIES=[
                 "quantity": 1
               }
             ],
-            "datum": "inline",
+            "datum": "none",
             "lovelace": 0,
             "role": "witness",
             "stateToken": 0
@@ -4749,18 +5337,6 @@ const STORIES=[
             "reference": null,
             "role": "state",
             "stateToken": 1
-          },
-          {
-            "address": 555,
-            "assets": [],
-            "commitment": 2958227895,
-            "custodyDatum": null,
-            "datum": "inline",
-            "inlineConfig": null,
-            "lovelace": 0,
-            "reference": null,
-            "role": "destination",
-            "stateToken": 0
           },
           {
             "address": 42,
@@ -4881,13 +5457,13 @@ const STORIES=[
     "name": "Singular.Statements.insert_active_inversion",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "8b5794d17bf859cb01ceae53f2c487cbb22a251464c51364778234f978a9f98b"
+    "statementSha256": "6ed0639458ff3086da939df84bcb8578a7ffea396441560382897ba4c245a160"
   },
   {
     "name": "Singular.Statements.update_active_inversion",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "fccc7684da82d92656d5ea79fe3d80749245000052a088a97742ae1df7b20982"
+    "statementSha256": "768068239bbc8835f2a0d2666a0bdcddd6cab388ca07eac13abbfeb3fa496855"
   },
   {
     "name": "Singular.Statements.update_terminal_inversion",
@@ -4911,7 +5487,7 @@ const STORIES=[
     "name": "Singular.Statements.witness_terminal_inversion",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "1c7af35ddacb820a451811ad329012ea5e45797da9878d2d8681b31589b02288"
+    "statementSha256": "11a6149a03e2edd93e254994428f7f1bcd73c05566f57260f201df28dcd2fc61"
   },
   {
     "name": "Singular.Statements.empty_fold_error",
@@ -4935,19 +5511,19 @@ const STORIES=[
     "name": "Singular.Statements.insert_absent_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "8c63e568b81b4e4a81cf3832c88d324ef910925e2733b6593c8e337c81357b3f"
+    "statementSha256": "a7e93824be2944e55b6482d0836111450522a7ed04eb57c262656f8903adaec6"
   },
   {
     "name": "Singular.Statements.insert_active_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508"
+    "statementSha256": "83dd1fefbe6b00be6adcb57d84b4321b9507649b6566c79eecd9f6015551ecb4"
   },
   {
     "name": "Singular.Statements.update_terminal_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068"
+    "statementSha256": "8ea765f55d3a5187b8a9abc3430b3125406c5ce6c09407322443cc268dcd1079"
   },
   {
     "name": "Singular.Statements.fold_batch_claimed_mint_by_kind_key",
@@ -5016,6 +5592,24 @@ const STORIES=[
     "statementSha256": "3182f6fcacacf71f257ba4ddd17ec276302e04ba5342726b4833a8be51d68c38"
   },
   {
+    "name": "Singular.Statements.destination_output_iff_delivers",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "9fd337105c38a57f0413922e5eafc62bac2e388314b290e614d0ea805dd3a38b"
+  },
+  {
+    "name": "Singular.Statements.delivered_datum_follows_request",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "1f1031d1eee7290ff9a377b25f11487de4ae14515e4b35eda90e07c7121806a1"
+  },
+  {
+    "name": "Singular.Statements.witness_input_datum_is_held",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "c0676968ffc94970d7e4d813131e2cec3942ca72067c26ef78df858e7c795090"
+  },
+  {
     "name": "Singular.Statements.admission_refuses_first",
     "status": "PROVED",
     "debt": "none",
@@ -5039,12 +5633,12 @@ const STORIES=[
   ],
   "files": {
     "formal/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "formal/Driver.lean": "52ed3c6db8ff0e0c2db2e07f8358ceba87ee74a671cdd6a096bedaacd2aa630a",
-    "formal/DriverMain.lean": "9dbe166ab1e1b1bd704f623c94e5a397d1516e242f38e6de85884a60ad6553ea",
-    "formal/Lemmas.lean": "829d42c109a7d9ec8c7ab30bb42041f7d362fb5306277b84726e6fd0df0de899",
+    "formal/Driver.lean": "97c79d1caca2938e3e99a4d45ce18cb73ff1d35e4b35b91ca16dced19334a70d",
+    "formal/DriverMain.lean": "ddc1d6f6a796e4d2dcff508b6aed83b90b90fe44c79ad2646eae4ec5cd398862",
+    "formal/Lemmas.lean": "c8aa4ea4585fd53a41d75ca817e229019ad59517c79cd6da6f9242f2c27c857c",
     "formal/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "formal/Main.lean": "b55b058b687731b51fb620dc0ee42177cec9be86713a6906065a8ef735f3eedd",
-    "formal/Model.lean": "ed1f2ce494ed2eb5db69adde52fe937c3a9587e11d39fef7a469bf374f4f6177",
+    "formal/Main.lean": "70491ac5ea1cfacdab355af57717576ecabd560096df1029372c4d352fc70241",
+    "formal/Model.lean": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
     "formal/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "formal/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "formal/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -5057,19 +5651,19 @@ const STORIES=[
     "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "formal/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
     "formal/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
-    "formal/Statements.lean": "609a512e59051bee36093bd1fc5014ba92991223894b5e60f7b1a33c58b9f838",
+    "formal/Statements.lean": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9",
     "formal/lifecycle-theorem-debt.json": "4146c8eba1aedae5f40384816b11d3d892ed9632dd4d1838fab51d62eeca8ea3",
     "formal/naming-theorem-debt.json": "968246a3d0f585c5ecaebaa800564dbaa9f51ffd4fb3bad0a08af9cd4324d658",
-    "formal/theorem-debt.json": "033ed0ad432d838c592a4f40ad00688ca235c6b41b54a72a274d643f7dfd0fec",
+    "formal/theorem-debt.json": "91ed0116194b64bb71af402619e120e3190874b66ea5698555c73c4220b44162",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "deb3d30d081fb069d7113bb222a085974c8d7ce13e394d546c34931a55470533"
+    "corpus.json": "85630340079f6a69cd22be7da9b7134741db8480a61986b3899c01e0dcf91e5d"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 38,
   "corpusFolds": 3,
   "corpusCodec": 7,
   "corpusAda": 2,
-  "theorems": 39,
+  "theorems": 42,
   "namingTheorems": 7
 }
 ;const NAMINGCORPUS={
@@ -5111,9 +5705,9 @@ const STORIES=[
       "id": "NF07-attestation-minted-by-read"
     }
   ],
-  "modelSha256": "ed1f2ce494ed2eb5db69adde52fe937c3a9587e11d39fef7a469bf374f4f6177",
+  "modelSha256": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
   "namingStatementsSha256": "c96207b951c8566499aa564429f33962535ad0862d18dc1b7484a0a73be0504d",
-  "payloadSha256": "87aa4cc632def830876d8c82b7b88eba3522d5128732eedf1fea5ddab3915e21",
+  "payloadSha256": "db39c7ee8b507eb029df1aab816ac71512eda2ae69e4f37fe95ab9a86477d152",
   "queues": [
     {
       "actual": true,
@@ -5203,15 +5797,15 @@ const STORIES=[
   ],
   "schema": "singular-naming-corpus-v2",
   "sourceHashes": {
-    "lean/DriverMain.lean": "9dbe166ab1e1b1bd704f623c94e5a397d1516e242f38e6de85884a60ad6553ea",
+    "lean/DriverMain.lean": "ddc1d6f6a796e4d2dcff508b6aed83b90b90fe44c79ad2646eae4ec5cd398862",
     "lean/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "lean/Main.lean": "b55b058b687731b51fb620dc0ee42177cec9be86713a6906065a8ef735f3eedd",
+    "lean/Main.lean": "70491ac5ea1cfacdab355af57717576ecabd560096df1029372c4d352fc70241",
     "lean/NamingMain.lean": "f026113e6b13604012fe817a7c38b4c2f19a469db443c263593b49e5daac8c24",
     "lean/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "52ed3c6db8ff0e0c2db2e07f8358ceba87ee74a671cdd6a096bedaacd2aa630a",
-    "lean/Singular/Lemmas.lean": "829d42c109a7d9ec8c7ab30bb42041f7d362fb5306277b84726e6fd0df0de899",
-    "lean/Singular/Model.lean": "ed1f2ce494ed2eb5db69adde52fe937c3a9587e11d39fef7a469bf374f4f6177",
+    "lean/Singular/Driver.lean": "97c79d1caca2938e3e99a4d45ce18cb73ff1d35e4b35b91ca16dced19334a70d",
+    "lean/Singular/Lemmas.lean": "c8aa4ea4585fd53a41d75ca817e229019ad59517c79cd6da6f9242f2c27c857c",
+    "lean/Singular/Model.lean": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
     "lean/Singular/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -5222,7 +5816,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
-    "lean/Singular/Statements.lean": "609a512e59051bee36093bd1fc5014ba92991223894b5e60f7b1a33c58b9f838"
+    "lean/Singular/Statements.lean": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9"
   },
   "spellings": [
     {
@@ -5340,7 +5934,7 @@ const STORIES=[
   ],
   "lifecycleStatementsSha256": "4df67ab2a8e6684dbb05524aab68e8cb8dd0391298a62fbb16c247a7987a88cd",
   "modelSha256": "ac2c5ef33d34084c32c37b701e8ec9c4ab5b088cab75190e675b1f1686fb5f56",
-  "payloadSha256": "7f386e0f16fe0771710b5e2813ea5c907fc7c4c06a09a065c319e09b9d8c2b26",
+  "payloadSha256": "f01324b74fc544d0e2d937d969f1eada99499215c7a0e066868cae5eb0d167fe",
   "recovery": [
     {
       "detail": true,
@@ -5411,15 +6005,15 @@ const STORIES=[
   ],
   "schema": "singular-naming-lifecycle-corpus-v2",
   "sourceHashes": {
-    "lean/DriverMain.lean": "9dbe166ab1e1b1bd704f623c94e5a397d1516e242f38e6de85884a60ad6553ea",
+    "lean/DriverMain.lean": "ddc1d6f6a796e4d2dcff508b6aed83b90b90fe44c79ad2646eae4ec5cd398862",
     "lean/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "lean/Main.lean": "b55b058b687731b51fb620dc0ee42177cec9be86713a6906065a8ef735f3eedd",
+    "lean/Main.lean": "70491ac5ea1cfacdab355af57717576ecabd560096df1029372c4d352fc70241",
     "lean/NamingMain.lean": "f026113e6b13604012fe817a7c38b4c2f19a469db443c263593b49e5daac8c24",
     "lean/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "52ed3c6db8ff0e0c2db2e07f8358ceba87ee74a671cdd6a096bedaacd2aa630a",
-    "lean/Singular/Lemmas.lean": "829d42c109a7d9ec8c7ab30bb42041f7d362fb5306277b84726e6fd0df0de899",
-    "lean/Singular/Model.lean": "ed1f2ce494ed2eb5db69adde52fe937c3a9587e11d39fef7a469bf374f4f6177",
+    "lean/Singular/Driver.lean": "97c79d1caca2938e3e99a4d45ce18cb73ff1d35e4b35b91ca16dced19334a70d",
+    "lean/Singular/Lemmas.lean": "c8aa4ea4585fd53a41d75ca817e229019ad59517c79cd6da6f9242f2c27c857c",
+    "lean/Singular/Model.lean": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
     "lean/Singular/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -5430,7 +6024,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
-    "lean/Singular/Statements.lean": "609a512e59051bee36093bd1fc5014ba92991223894b5e60f7b1a33c58b9f838"
+    "lean/Singular/Statements.lean": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9"
   },
   "steps": [
     {
@@ -6453,141 +7047,233 @@ const STORIES=[
   "wireTheoremManifestSha256": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65"
 }
 ;
+// biome-ignore-all lint/correctness/noUnusedVariables: these helpers are used by page.mjs,
+// which simulator/build.mjs concatenates into the same page script.
 // Small DOM helpers shared by the page. Kept separate so the page module reads
 // as behaviour rather than as string building.
-const $=id=>document.getElementById(id);
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
-const rows=(tbody,data,cells)=>{tbody.innerHTML=data.map(d=>'<tr>'+cells(d).map(c=>`<td>${esc(c)}</td>`).join('')+'</tr>').join('');};
-const button=(label,attrs='')=>`<button type="button" ${attrs}>${esc(label)}</button>`;
-const leafName=l=>l===null?'Unknown':`Known ${l}`;
+const $ = (id) => document.getElementById(id);
+const esc = (s) =>
+  String(s).replace(
+    /[&<>"]/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c],
+  );
+const rows = (tbody, data, cells) => {
+  tbody.innerHTML = data
+    .map(
+      (d) =>
+        '<tr>' +
+        cells(d)
+          .map((c) => `<td>${esc(c)}</td>`)
+          .join('') +
+        '</tr>',
+    )
+    .join('');
+};
+const button = (label, attrs = '') => `<button type="button" ${attrs}>${esc(label)}</button>`;
+const leafName = (l) => (l === null ? 'Unknown' : `Known ${l}`);
 
 // The page. Every verdict shown here comes from the transcribed engine running
 // in the reader's browser — nothing is pre-rendered, so what you see is what the
 // model does, or a defect in this transcription.
 
-const PROFILE={generic:'generic-profile',naming:'naming-profile'};
-let state=initial(),story=null,cursor=0,prefix=[];
+const PROFILE = { generic: 'generic-profile', naming: 'naming-profile' };
+let state = initial(),
+  story = null,
+  cursor = 0,
+  prefix = [];
 
-const witnessShape={active:'biconditional',absent:'biconditional',terminal:'implicational'};
+const witnessShape = {
+  active: 'biconditional',
+  absent: 'biconditional',
+  terminal: 'implicational',
+};
 
-function showWhere(){
-  const key=Number($('key-input').value||42);
-  const leaf=trieGet(state.trie,key),w=witnesses(state,key);
-  $('where').textContent=`key ${key} · leaf ${leafName(leaf)} · active ${w.active} · absent ${w.absent} · terminal ${w.terminal}`;
-  rows($('witnesses'),KINDS.map(k=>({k,n:w[k]})),d=>[d.k,d.n,witnessShape[d.k]]);
-  $('root').textContent='root '+state.config.root.join(' ');
+function showWhere() {
+  const key = Number($('key-input').value || 42);
+  const leaf = trieGet(state.trie, key),
+    w = witnesses(state, key);
+  $('where').textContent =
+    `key ${key} · leaf ${leafName(leaf)} · active ${w.active} · absent ${w.absent} · terminal ${w.terminal}`;
+  rows(
+    $('witnesses'),
+    KINDS.map((k) => ({ k, n: w[k] })),
+    (d) => [d.k, d.n, witnessShape[d.k]],
+  );
+  $('root').textContent = 'root ' + state.config.root.join(' ');
 }
 
-function renderRefusals(){
-  const key=999,data=[];
-  for(const edge of EDGES)for(const leaf of [null,'absent','active','terminal']){
-    let s=initial();
-    s={...s,trie:leaf===null?[]:[{key,leaf}],config:{...s.config,root:rootOf(leaf===null?[]:[{key,leaf}])}};
-    if(leaf==='absent')s={...s,custody:[{key,refundAddress:91,value:200}]};
-    if(leaf==='active')s={...s,held:[{key,kind:'active',output:555}]};
-    const r=step(s,approved(edge,key,{owner:42,output:555,refundAddress:91,deposit:200}));
-    data.push({edge,leaf:leafName(leaf),reason:r.accepted?'— admitted —':r.reason});
-  }
-  rows($('refusals'),data,d=>[d.edge,d.leaf,d.reason]);
+function renderRefusals() {
+  const key = 999,
+    data = [];
+  for (const edge of EDGES)
+    for (const leaf of [null, 'absent', 'active', 'terminal']) {
+      let s = initial();
+      s = {
+        ...s,
+        trie: leaf === null ? [] : [{ key, leaf }],
+        config: { ...s.config, root: rootOf(leaf === null ? [] : [{ key, leaf }]) },
+      };
+      if (leaf === 'absent') s = { ...s, custody: [{ key, refundAddress: 91, value: 200 }] };
+      if (leaf === 'active')
+        s = { ...s, held: [{ key, kind: 'active', output: 555, datum: 'none' }] };
+      const r = step(
+        s,
+        approved(edge, key, { owner: 42, output: 555, refundAddress: 91, deposit: 200 }),
+      );
+      data.push({ edge, leaf: leafName(leaf), reason: r.accepted ? '— admitted —' : r.reason });
+    }
+  rows($('refusals'), data, (d) => [d.edge, d.leaf, d.reason]);
 }
 
-function narrate(text){$('narration').textContent=text;}
-
-function loadStory(id){
-  story=STORIES.find(s=>s.id===id)||STORIES[0];
-  $('story-picker').value=story.id;
-  $('story-blurb').textContent=story.blurb;
-  cursor=0;replayTo(0);
+function narrate(text) {
+  $('narration').textContent = text;
 }
 
-function replayTo(n){
-  state=initial();prefix=[state];
-  for(let i=0;i<n&&i<story.steps.length;i++){
-    const r=step(state,story.steps[i].request);
-    if(r.accepted)state=r.value.state;
+function loadStory(id) {
+  story = STORIES.find((s) => s.id === id) || STORIES[0];
+  $('story-picker').value = story.id;
+  $('story-blurb').textContent = story.blurb;
+  cursor = 0;
+  replayTo(0);
+}
+
+function replayTo(n) {
+  state = initial();
+  prefix = [state];
+  for (let i = 0; i < n && i < story.steps.length; i++) {
+    const r = step(state, story.steps[i].request);
+    if (r.accepted) state = r.value.state;
     prefix.push(state);
   }
-  cursor=n;
-  const e=n===0?null:story.steps[n-1];
-  narrate(e?`${e.what} → ${e.expect==='accept'?'admitted':'refused: '+e.expect}`
-           :`${story.title}. Press ▶ to fold the first request.`);
-  renderBranches();showWhere();
+  cursor = n;
+  const e = n === 0 ? null : story.steps[n - 1];
+  narrate(
+    e
+      ? `${e.what} → ${e.expect === 'accept' ? 'admitted' : 'refused: ' + e.expect}`
+      : `${story.title}. Press ▶ to fold the first request.`,
+  );
+  renderBranches();
+  showWhere();
 }
 
-function renderBranches(){
-  const forks=(story.forks||[]).filter(f=>f.at===cursor);
-  $('branches').innerHTML=forks.map((f,i)=>button(f.steps[0].what,`data-fork="${i}"`)).join('');
-  $('branches').querySelectorAll('button').forEach((b,i)=>b.onclick=()=>{
-    const f=forks[i];let s=state;
-    for(const e of f.steps){const r=step(s,e.request);
-      narrate(`${e.what} → ${r.accepted?'admitted':'refused: '+r.reason}`);
-      if(r.accepted)s=r.value.state;}
-    state=s;showWhere();
-  });
+function renderBranches() {
+  const forks = (story.forks || []).filter((f) => f.at === cursor);
+  $('branches').innerHTML = forks
+    .map((f, i) => button(f.steps[0].what, `data-fork="${i}"`))
+    .join('');
+  $('branches')
+    .querySelectorAll('button')
+    .forEach((b, i) => {
+      b.onclick = () => {
+        const f = forks[i];
+        let s = state;
+        for (const e of f.steps) {
+          const r = step(s, e.request);
+          narrate(`${e.what} → ${r.accepted ? 'admitted' : 'refused: ' + r.reason}`);
+          if (r.accepted) s = r.value.state;
+        }
+        state = s;
+        showWhere();
+      };
+    });
 }
 
-function buildEdgeButtons(){
-  $('edges').innerHTML=EDGES.map(e=>button(e,`id="edge-${e}"`)).join('');
-  for(const edge of EDGES)$('edge-'+edge).onclick=()=>{
-    const key=Number($('key-input').value||42),owner=Number($('owner-input').value||42);
-    const output=Number($('output-input').value||555),deposit=Number($('deposit-input').value||0);
-    const kind=$('approval-picker').value;
-    const opts={owner,output,deposit,refundAddress:owner};
-    const req=edge==='witnessTerminal'?read(key,output)
-      :kind==='matching'?approved(edge,key,opts)
-      :kind==='mismatched'?mismatched(edge,key,opts)
-      :kind==='other'?otherPolicy(edge,key,opts)
-      :request(edge,key,opts);
-    const r=step(state,req);
-    $('edge-result').textContent=`${edge} → ${r.accepted?'admitted':'refused: '+r.reason}`;
-    if(r.accepted)state=r.value.state;
-    showWhere();
-  };
+function buildEdgeButtons() {
+  $('edges').innerHTML = EDGES.map((e) => button(e, `id="edge-${e}"`)).join('');
+  for (const edge of EDGES)
+    $('edge-' + edge).onclick = () => {
+      const key = Number($('key-input').value || 42),
+        owner = Number($('owner-input').value || 42);
+      const output = Number($('output-input').value || 555),
+        deposit = Number($('deposit-input').value || 0);
+      const kind = $('approval-picker').value;
+      const opts = { owner, output, deposit, refundAddress: owner };
+      const req =
+        edge === 'witnessTerminal'
+          ? read(key, output)
+          : kind === 'matching'
+            ? approved(edge, key, opts)
+            : kind === 'mismatched'
+              ? mismatched(edge, key, opts)
+              : kind === 'other'
+                ? otherPolicy(edge, key, opts)
+                : request(edge, key, opts);
+      const r = step(state, req);
+      $('edge-result').textContent =
+        `${edge} → ${r.accepted ? 'admitted' : 'refused: ' + r.reason}`;
+      if (r.accepted) state = r.value.state;
+      showWhere();
+    };
 }
 
-function renderCorpusAndTheorems(){
-  let agree=0;
-  for(const row of CORPUS.cases){
-    const r=step(row.before,row.action);
-    const got=r.accepted?'accept':r.reason;
-    const want=row.expectedAccept?'accept':row.expectedReason;
-    if(got===want)agree++;
+function renderCorpusAndTheorems() {
+  let agree = 0;
+  for (const row of CORPUS.cases) {
+    const r = step(row.before, row.action);
+    const got = r.accepted ? 'accept' : r.reason;
+    const want = row.expectedAccept ? 'accept' : row.expectedReason;
+    if (got === want) agree++;
   }
-  $('corpus-status').textContent=
-    `${agree}/${CORPUS.cases.length} Lean corpus rows reproduced in your browser · model ${CORPUS.modelSha256.slice(0,12)}`;
-  const report=theoremReport(THEOREMS,CORPUS);
-  rows($('theorems'),report,d=>[d.name.split('.').at(-1),d.coverage,d.applicable,d.vacuous,d.held,
-    d.exercised?'exercised':'not exercised']);
+  $('corpus-status').textContent =
+    `${agree}/${CORPUS.cases.length} Lean corpus rows reproduced in your browser · model ${CORPUS.modelSha256.slice(0, 12)}`;
+  const report = theoremReport(THEOREMS, CORPUS);
+  rows($('theorems'), report, (d) => [
+    d.name.split('.').at(-1),
+    d.coverage,
+    d.applicable,
+    d.vacuous,
+    d.held,
+    d.exercised ? 'exercised' : 'not exercised',
+  ]);
 }
 
-function renderNaming(){
-  const j=overWitnessJourney();
-  rows($('naming-journey'),j.steps,d=>[d.what,d.edge,d.accepted?'admitted':'refused: '+d.reason,
-    leafName(d.leaf),d.witnesses.active,d.witnesses.absent,d.witnesses.terminal]);
-  const c=checkNamingCorpus(NAMINGCORPUS);
-  $('naming-status').textContent=
+function renderNaming() {
+  const j = overWitnessJourney();
+  rows($('naming-journey'), j.steps, (d) => [
+    d.what,
+    d.edge,
+    d.accepted ? 'admitted' : 'refused: ' + d.reason,
+    leafName(d.leaf),
+    d.witnesses.active,
+    d.witnesses.absent,
+    d.witnesses.terminal,
+  ]);
+  const c = checkNamingCorpus(NAMINGCORPUS);
+  $('naming-status').textContent =
     `${c.inspected}/${c.discovered} naming rows across ${c.sections} sections inspected · Lean evidence, not replayed`;
-  const l=checkLifecycleCorpus(LIFECYCLECORPUS);
-  rows($('lifecycle'),l.rows,d=>[LIFECYCLE_TITLES[d.section],d.id,lifecycleReason(d)]);
-  $('lifecycle-status').textContent=
+  const l = checkLifecycleCorpus(LIFECYCLECORPUS);
+  rows($('lifecycle'), l.rows, (d) => [LIFECYCLE_TITLES[d.section], d.id, lifecycleReason(d)]);
+  $('lifecycle-status').textContent =
     `${l.inspected}/${l.discovered} lifecycle rows across ${l.sections} sections inspected · Lean evidence, not replayed`;
 }
 
-function boot(){
-  $('story-picker').innerHTML=STORIES.map(s=>`<option value="${s.id}">${s.title}</option>`).join('');
+function boot() {
+  $('story-picker').innerHTML = STORIES.map(
+    (s) => `<option value="${s.id}">${s.title}</option>`,
+  ).join('');
   loadStory(STORIES[0].id);
-  $('story-picker').onchange=e=>loadStory(e.target.value);
-  $('hist-first').onclick=()=>replayTo(0);
-  $('hist-prev').onclick=()=>replayTo(Math.max(0,cursor-1));
-  $('hist-next').onclick=()=>replayTo(Math.min(story.steps.length,cursor+1));
-  $('hist-last').onclick=()=>replayTo(story.steps.length);
-  $('btn-reset').onclick=()=>{state=initial();narrate('Reset to genesis.');showWhere();};
-  $('btn-theme').onclick=()=>document.documentElement.classList.toggle('dark');
-  $('profile-picker').onchange=e=>{
-    for(const [k,id] of Object.entries(PROFILE))$(id).hidden=(k!==e.target.value);};
-  $('key-input').onchange=showWhere;
-  $('identity').textContent=`${IDENTITY.theorems} statements · ${IDENTITY.corpusCases} corpus rows`;
-  buildEdgeButtons();renderRefusals();renderCorpusAndTheorems();renderNaming();showWhere();
+  $('story-picker').onchange = (e) => loadStory(e.target.value);
+  $('hist-first').onclick = () => replayTo(0);
+  $('hist-prev').onclick = () => replayTo(Math.max(0, cursor - 1));
+  $('hist-next').onclick = () => replayTo(Math.min(story.steps.length, cursor + 1));
+  $('hist-last').onclick = () => replayTo(story.steps.length);
+  $('btn-reset').onclick = () => {
+    state = initial();
+    narrate('Reset to genesis.');
+    showWhere();
+  };
+  $('btn-theme').onclick = () => document.documentElement.classList.toggle('dark');
+  $('profile-picker').onchange = (e) => {
+    for (const [k, id] of Object.entries(PROFILE)) $(id).hidden = k !== e.target.value;
+  };
+  $('key-input').onchange = showWhere;
+  $('identity').textContent =
+    `${IDENTITY.theorems} statements · ${IDENTITY.corpusCases} corpus rows`;
+  buildEdgeButtons();
+  renderRefusals();
+  renderCorpusAndTheorems();
+  renderNaming();
+  showWhere();
 }
 boot();
 

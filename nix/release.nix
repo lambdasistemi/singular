@@ -1,4 +1,8 @@
-{ pkgs, src, docs }:
+{
+  pkgs,
+  src,
+  docs,
+}:
 let
   version = pkgs.lib.removeSuffix "\n" (builtins.readFile (src + "/version.txt"));
   python = pkgs.python3.withPackages (ps: [ ps.pyyaml ]);
@@ -25,8 +29,17 @@ let
   assembler = pkgs.writeShellApplication {
     name = "assemble-onchain-release";
     runtimeInputs = [
-      pkgs.bash pkgs.coreutils pkgs.findutils pkgs.gnugrep pkgs.gnused
-      pkgs.gnutar pkgs.gzip pkgs.jq pkgs.nix pkgs.git python
+      pkgs.bash
+      pkgs.coreutils
+      pkgs.findutils
+      pkgs.gnugrep
+      pkgs.gnused
+      pkgs.gnutar
+      pkgs.gzip
+      pkgs.jq
+      pkgs.nix
+      pkgs.git
+      python
     ];
     text = ''
       usage() { echo "usage: assemble-onchain-release <repo-root> <docs-dir> <out-dir>" >&2; exit 2; }
@@ -75,19 +88,34 @@ let
     '';
   };
 
-  archive = pkgs.runCommand "singular-docs-release-${version}" {
-    nativeBuildInputs = [ pkgs.gnutar pkgs.gzip pkgs.coreutils pkgs.python3 ];
-  } ''
-    mkdir -p "$out"
-    python3 ${src}/tools/stage_release.py ${docs} release-stage
-    tar --sort=name --mtime=@1 --owner=0 --group=0 --numeric-owner \
-      -C release-stage -cf - . | gzip -n > "$out/singular-docs-${version}.tar.gz"
-    (cd "$out" && sha256sum "singular-docs-${version}.tar.gz" > SHA256SUMS)
-  '';
+  archive =
+    pkgs.runCommand "singular-docs-release-${version}"
+      {
+        nativeBuildInputs = [
+          pkgs.gnutar
+          pkgs.gzip
+          pkgs.coreutils
+          pkgs.python3
+        ];
+      }
+      ''
+        mkdir -p "$out"
+        python3 ${src}/tools/stage_release.py ${docs} release-stage
+        tar --sort=name --mtime=@1 --owner=0 --group=0 --numeric-owner \
+          -C release-stage -cf - . | gzip -n > "$out/singular-docs-${version}.tar.gz"
+        (cd "$out" && sha256sum "singular-docs-${version}.tar.gz" > SHA256SUMS)
+      '';
 
   checker = pkgs.writeShellApplication {
     name = "release-check";
-    runtimeInputs = [ python pkgs.actionlint pkgs.bash pkgs.jq pkgs.coreutils pkgs.diffutils ];
+    runtimeInputs = [
+      python
+      pkgs.actionlint
+      pkgs.bash
+      pkgs.jq
+      pkgs.coreutils
+      pkgs.diffutils
+    ];
     text = ''
       python3 ${src}/tools/stage_release.py --selftest
       python3 ${src}/tools/check_release.py ${src} ${archive}
@@ -98,7 +126,13 @@ let
 
   publisher = pkgs.writeShellApplication {
     name = "publish-docs";
-    runtimeInputs = [ pkgs.gh pkgs.git pkgs.jq pkgs.coreutils pkgs.diffutils ];
+    runtimeInputs = [
+      pkgs.gh
+      pkgs.git
+      pkgs.jq
+      pkgs.coreutils
+      pkgs.diffutils
+    ];
     text = ''
       export DOCS_VERSION=${version}
       export RELEASE_NOTES=${src}/onchain-release/RELEASE.md
@@ -132,8 +166,14 @@ let
       ${builtins.readFile ../tools/publish_docs.sh}
     '';
   };
-in {
-  inherit archive checker publisher releaseArtifacts;
+in
+{
+  inherit
+    archive
+    checker
+    publisher
+    releaseArtifacts
+    ;
   check = pkgs.runCommand "singular-release-check" { nativeBuildInputs = [ publisher ]; } ''
     ${pkgs.lib.getExe checker}
     touch "$out"

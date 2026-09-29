@@ -30,14 +30,25 @@ class CompletionVerdict:
         return self.verdict == "COMPLETE"
 
 
-def completion(inventory: Inventory, record: Record, debts: list[ObligationDebt]) -> CompletionVerdict:
+def completion(
+    inventory: Inventory, record: Record, debts: list[ObligationDebt]
+) -> CompletionVerdict:
     mapping = tuple(sorted(d.name for d in debts if d.mapping_debt))
     layer = tuple(sorted(d.name for d in debts if d.layer_debt))
     execution = tuple(
-        sorted(f"{d.name} [{f.code}] {f.detail}" for d in debts for f in d.execution_findings)
+        sorted(
+            f"{d.name} [{f.code}] {f.detail}"
+            for d in debts
+            for f in d.execution_findings
+        )
     )
     unclassified = tuple(sorted(d.name for d in debts if d.unclassified))
-    stale = tuple(sorted(f"{obligation}: {detail}" for _k, obligation, detail in find_stale_bindings(inventory, record)))
+    stale = tuple(
+        sorted(
+            f"{obligation}: {detail}"
+            for _k, obligation, detail in find_stale_bindings(inventory, record)
+        )
+    )
     complete = not (mapping or layer or execution or unclassified or stale)
     return CompletionVerdict(
         verdict="COMPLETE" if complete else "INCOMPLETE",

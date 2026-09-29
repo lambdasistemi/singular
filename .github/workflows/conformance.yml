@@ -54,7 +54,7 @@ jobs:
       - name: Owned docs page passes the presentation gate
         run: nix develop --quiet --command python3 tools/check_presentation.py --front README.md --register docs/model-ledger.md --register docs/theorems.md --register docs/mutants.md docs/consumer-conformance.md
   format-check:
-    name: Conformance Haskell format check
+    name: Conformance Haskell format and lint check
     runs-on: nixos
     timeout-minutes: 20
     steps:
@@ -83,6 +83,10 @@ jobs:
       # format-check` inside the dev-shell job's `just ci`; the negative
       # and positive controls run there too via `just format-controls`.
       - run: nix run --quiet .#format-check
+        working-directory: conformance
+      # #278 S3: HLint over the same discovered extent, with the pinned
+      # HLint the off-chain lint resolves; no exclusions, no ignore file.
+      - run: nix run --quiet .#hlint-check
         working-directory: conformance
   conformance:
     name: Generic, canonical-identity and serialization rows on a real devnet

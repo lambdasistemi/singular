@@ -77,7 +77,12 @@ fn refusesDepositReturned(s: Scenario) -> Bool {
 
 /// A request of `owner` for `key` on a non-delivering edge, with its
 /// approval and exactly `tip + deposit`.
-fn ownedRequest(index: Int, key: ByteArray, edge: Int, owner: ByteArray) -> Input {
+fn ownedRequest(
+  index: Int,
+  key: ByteArray,
+  edge: Int,
+  owner: ByteArray,
+) -> Input {
   fx.requestInput(
     index,
     key,
@@ -283,7 +288,13 @@ fn bookAndDelete(outputs: List<Output>) -> Scenario {
 }
 
 fn carrierOf(lovelace: Int) -> Output {
-  fx.deliveryOutput(fx.activePolicy, fx.keyB, fx.bookerAddress, NoDatum, lovelace)
+  fx.deliveryOutput(
+    fx.activePolicy,
+    fx.keyB,
+    fx.bookerAddress,
+    NoDatum,
+    lovelace,
+  )
 }
 
 test carrier_and_deposit_in_two_outputs_accepts() {
@@ -621,12 +632,20 @@ fn updateOwnAbsent(outputs: List<Output>) -> Scenario {
 }
 
 fn ownCarrier(lovelace: Int) -> Output {
-  fx.deliveryOutput(fx.activePolicy, fx.keyA, fx.inserterAddress, NoDatum, lovelace)
+  fx.deliveryOutput(
+    fx.activePolicy,
+    fx.keyA,
+    fx.inserterAddress,
+    NoDatum,
+    lovelace,
+  )
 }
 
 test own_refund_and_delivery_at_one_address_accepts() {
   accepts(
-    updateOwnAbsent([ownCarrier(fx.deposit), paid(fx.inserterAddress, fx.deposit)]),
+    updateOwnAbsent(
+      [ownCarrier(fx.deposit), paid(fx.inserterAddress, fx.deposit)],
+    ),
   )
 }
 

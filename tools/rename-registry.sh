@@ -81,8 +81,8 @@ cd "$ROOT"
 scan_files() {
   git ls-files -z \
     -- '*.hs' '*.cabal' 'cabal.project' '*/cabal.project' '*.nix' '*.md' \
-       '*.json' '*.ak' '*.yml' '*.yaml' '*.toml' '*justfile' '*.sh' '*.py' \
-       '*.lean' '*.html' \
+    '*.json' '*.ak' '*.yml' '*.yaml' '*.toml' '*justfile' '*.sh' '*.py' \
+    '*.lean' '*.html' \
     ':!PROVENANCE.md' ':!docs/prior-art.md' ':!docs/prior-art.speech.json' \
     ':!CHANGELOG.md' ':!site' ':!.docs-source' \
     ':!conformance/coverage/evaluation/evidence' \
@@ -147,8 +147,8 @@ step4_workflow() {
   fi
   if [ -n "$wf" ]; then
     sed -i -e 's/^name: MPFS$/name: Registry/' \
-           -e 's/^# MPFS cross-tree gates/# Registry cross-tree gates/' \
-           -e 's/# MPFS blueprint (each built here/# Registry blueprint (each built here/' \
+      -e 's/^# MPFS cross-tree gates/# Registry cross-tree gates/' \
+      -e 's/# MPFS blueprint (each built here/# Registry blueprint (each built here/' \
       "$wf"
   fi
   # Every remaining mpfs.yml file reference points at the renamed workflow.
@@ -164,22 +164,31 @@ step5_aiken_and_identities() {
   # instead of against a remote-tracking ref that has moved since.
   local base_ref="${RENAME_REGISTRY_BASE:-origin/main}"
   git rev-parse --verify --quiet "$base_ref" >/dev/null \
-    || { echo "error: $base_ref is required for the identity diff" >&2; exit 1; }
+    || {
+      echo "error: $base_ref is required for the identity diff" >&2
+      exit 1
+    }
   sed -i -e 's/^name = "hal\/mpf"$/name = "singular\/registry"/' onchain/aiken.toml
   sed -i -e 's/^name = "singular\/naming-onchain"$/name = "singular\/naming-app"/' \
     naming-onchain/aiken.toml
   grep -q '^name = "singular/registry"$' onchain/aiken.toml \
-    || { echo "error: onchain/aiken.toml name not set" >&2; exit 1; }
+    || {
+      echo "error: onchain/aiken.toml name not set" >&2
+      exit 1
+    }
   grep -q '^name = "singular/naming-app"$' naming-onchain/aiken.toml \
-    || { echo "error: naming-onchain/aiken.toml name not set" >&2; exit 1; }
+    || {
+      echo "error: naming-onchain/aiken.toml name not set" >&2
+      exit 1
+    }
   # The repository's own derivations: a moved hash fails the build.
   nix build ./onchain#script-identity ./naming-onchain#script-identity
   echo "  script-identity derivations build: hashes unmoved"
   # The committed manifests must be byte-identical to the baseline commit.
   diff <(git show "$base_ref:onchain/script-identity.json") \
-       onchain/script-identity.json
+    onchain/script-identity.json
   diff <(git show "$base_ref:naming-onchain/script-identity.json") \
-       naming-onchain/script-identity.json
+    naming-onchain/script-identity.json
   echo "  script-identity.json manifests byte-identical to $base_ref"
 }
 
@@ -225,8 +234,9 @@ step6_prose() {
     offchain/singular-registry.cabal
   sed_present -e 's/Existing MPFS is a separate application/The product it was imported from is a separate application/' \
     README.md
+  # shellcheck disable=SC2016 # the backticks are literal Markdown, not expansions
   sed_present -e 's|`docs/design/registry-as-mpfs.md`|the registry design rulings|' \
-              -e 's/Upstream cardano-mpfs-onchain$/Upstream/' \
+    -e 's/Upstream cardano-mpfs-onchain$/Upstream/' \
     docs/consumer-conformance.md
   sed_present -e 's/^MPFS has no concept of/The registry has no concept of/' \
     offchain/naming-correspondence.md
@@ -235,11 +245,11 @@ step6_prose() {
   sed_present -e 's|/// MPFS state address|/// Registry state address|' \
     naming-onchain/validators/fixtures.ak
   sed_present -e 's/, an MPFS insert request/, a registry insert request/' \
-              -e 's/-- MPFS side consumes/-- The registry side consumes/' \
+    -e 's/-- MPFS side consumes/-- The registry side consumes/' \
     offchain/journey/register/Main.hs
   # CLI surface follows the rename (flag verified against its --help text).
   sed_present -e 's/--mpfs-blueprint/--registry-blueprint/g' \
-              -e 's/argMpfsBlueprint/argRegistryBlueprint/g' \
+    -e 's/argMpfsBlueprint/argRegistryBlueprint/g' \
     offchain/journey/verifier/Main.hs
   sed_present -e 's/mpfs_bp/registry_bp/g' nix/release.nix
   # General rules, whole-word only (MPF trie names, camelCase/snake_case

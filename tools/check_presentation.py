@@ -15,6 +15,7 @@ edited without its speech being redone and re-stamped fails.
 
 Exit 1 with a JSON report of every violation; exit 0 with a JSON summary.
 """
+
 import hashlib
 import json
 import re
@@ -26,7 +27,9 @@ FENCE = re.compile(r"^```")
 MERMAID = re.compile(r"^```mermaid\b")
 HEADING = re.compile(r"^(#{1,6})\s+(.*)$")
 STORY = re.compile(r"\b(stor(y|ies)|who (this|it) is for|what you can do)\b", re.I)
-STRUCTURAL = re.compile(r"(architecture|design|lifecycle|flow|protocol|overview|spec)", re.I)
+STRUCTURAL = re.compile(
+    r"(architecture|design|lifecycle|flow|protocol|overview|spec)", re.I
+)
 
 
 def parse_args(argv):
@@ -65,16 +68,41 @@ def check_speech(md, headings):
     stamp = (data.get("_source") or {}).get("sha256")
     actual = hashlib.sha256(md.read_bytes()).hexdigest()
     if stamp != actual:
-        out.append({"file": str(speech), "rule": "speech-stale", "stamped": (stamp or "")[:12], "page": actual[:12]})
+        out.append(
+            {
+                "file": str(speech),
+                "rule": "speech-stale",
+                "stamped": (stamp or "")[:12],
+                "page": actual[:12],
+            }
+        )
     keys = {k for k in data if not k.startswith("_")}
     # Speech covers the sections a reader can play: h2 and h3, as the reader and the generator do.
     ids = {slugify(text) for level, text in headings if level in (2, 3)}
     if keys != ids:
-        out.append({"file": str(speech), "rule": "speech-headings-mismatch", "missing": sorted(ids - keys), "extra": sorted(keys - ids)})
+        out.append(
+            {
+                "file": str(speech),
+                "rule": "speech-headings-mismatch",
+                "missing": sorted(ids - keys),
+                "extra": sorted(keys - ids),
+            }
+        )
     for k in keys:
         segs = data[k]
-        if not (isinstance(segs, list) and segs and all(isinstance(s, dict) and isinstance(s.get("text"), str) and s["text"].strip() for s in segs)):
-            out.append({"file": str(speech), "rule": "speech-empty-section", "section": k})
+        if not (
+            isinstance(segs, list)
+            and segs
+            and all(
+                isinstance(s, dict)
+                and isinstance(s.get("text"), str)
+                and s["text"].strip()
+                for s in segs
+            )
+        ):
+            out.append(
+                {"file": str(speech), "rule": "speech-empty-section", "section": k}
+            )
     return out
 
 
@@ -116,7 +144,10 @@ def main(argv):
                     break
             if front:
                 break
-    violations, summary = [], {"files": len(files), "diagrams": 0, "registers": len(registers)}
+    violations, summary = (
+        [],
+        {"files": len(files), "diagrams": 0, "registers": len(registers)},
+    )
     summary["speechBound"] = 0
     for f in files:
         labels, mermaid, headings = scan(f)
@@ -128,13 +159,24 @@ def main(argv):
             summary["speechBound"] += not sv
         if labels and not is_register(f, registers):
             sample = ", ".join(f"{n}:{lab}" for n, lab in labels[:6])
-            violations.append({"file": rel, "rule": "index-labels", "count": len(labels), "sample": sample})
+            violations.append(
+                {
+                    "file": rel,
+                    "rule": "index-labels",
+                    "count": len(labels),
+                    "sample": sample,
+                }
+            )
         if STRUCTURAL.search(f.stem) or STRUCTURAL.search(str(f.parent.name)):
             if mermaid == 0 and not is_register(f, registers):
-                violations.append({"file": rel, "rule": "structural-page-without-diagram"})
+                violations.append(
+                    {"file": rel, "rule": "structural-page-without-diagram"}
+                )
         if front and f == front:
             if not any(STORY.search(text) for _, text in headings):
-                violations.append({"file": rel, "rule": "front-page-without-story-heading"})
+                violations.append(
+                    {"file": rel, "rule": "front-page-without-story-heading"}
+                )
             if mermaid == 0:
                 violations.append({"file": rel, "rule": "front-page-without-diagram"})
     if front is None:

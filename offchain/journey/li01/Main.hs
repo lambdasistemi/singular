@@ -373,17 +373,15 @@ printRow control = do
         )
     emit
         "row"
-        ( "attempt {registry: 1, applicationPolicy: 7, \
-          \representativePolicy: 8, seed: 400, seedConsumed: true, \
-          \validatorScript: 12}"
-        )
+        "attempt {registry: 1, applicationPolicy: 7, \
+        \representativePolicy: 8, seed: 400, seedConsumed: true, \
+        \validatorScript: 12}"
     emit
         "row"
-        ( "executingWitness {seedSpend: true, applicationMint: \
-          \false, applicationSpend: false, representativeMint: \
-          \false, authenticatedRead: false, nativeSpend: false, \
-          \requiredSigners: [], quorumSigners: []}"
-        )
+        "executingWitness {seedSpend: true, applicationMint: \
+        \false, applicationSpend: false, representativeMint: \
+        \false, authenticatedRead: false, nativeSpend: false, \
+        \requiredSigners: [], quorumSigners: []}"
     emit "row" "result.state consumedSeeds=[400]"
 
 -- ---------------------------------------------------------
@@ -583,9 +581,8 @@ runLi01 control si stateBytes requestBytes = do
         stepStateMatchesRow control cfg seedRef seedName scriptUtxos
         emit
             "complete"
-            ( "LI01-canonical-initialization-accepts executed and \
-              \verified on a real devnet"
-            )
+            "LI01-canonical-initialization-accepts executed and \
+            \verified on a real devnet"
 
 -- ---------------------------------------------------------
 -- The initialization transaction

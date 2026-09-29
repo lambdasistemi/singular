@@ -3,33 +3,29 @@ use aiken/fuzz
 use aiken/interval
 use aiken/merkle_patricia_forestry.{empty, root}
 use aiken/merkle_patricia_forestry as mpf
+use cage_fixtures.{
+  aRequest, endRedeemerData, feeDelivery, legacyApproval, legacyDelivery,
+  legacyDestination, legacyKey, legacyMint, legacyRoot, legacyWallet,
+  modifyRedeemerData, noDestination, output, owner_fuzzer, phase1Range,
+  phase2Range, phase3Range, rawStateDatum, rejectedActionData, request, state,
+  stateDatum, stateSpendRedeemerData, testAbsentPolicy, testAppPolicy,
+  testProcessTime, testRepPolicy, testRequestRef, testRetractTime,
+  testScriptAddress, testSeed, testStakeScript, testStateRef, testTerminalPolicy,
+  testToken, testValue, update, updateActionData, zfDelivery,
+}
 use cardano/address.{from_script}
 use cardano/assets.{PolicyId, from_asset, from_lovelace, zero}
 use cardano/transaction.{
   InlineDatum, Input, NoDatum, Output, OutputReference, ScriptPurpose, Spend,
   Transaction,
 }
-use lib
 use lib.{assetName, valueFromToken}
 use request as request_validator
 use state as state_validator
 use types.{
   Burning, CageDatum, Contribute, End, Migrating, Migration, MintRedeemer,
-  TokenId,
   Minting, Modify, Rejected, Request, RequestDatum, Retract, State, StateDatum,
-  Sweep, UpdateAction, UpdateRedeemer,
-}
-
-use cage_fixtures.{
-  aRequest, endRedeemerData, feeDelivery, legacyApproval, legacyDelivery,
-  legacyDestination, legacyKey, legacyMint, legacyRoot, legacyWallet,
-  modifyRedeemerData, noDestination, output, owner_fuzzer,
-  phase1Range, phase2Range, phase3Range, rawStateDatum, rejectedActionData,
-  request, state, stateDatum, stateSpendRedeemerData,
-  testAbsentPolicy, testAppPolicy, testProcessTime, testRepPolicy,
-  testRequestRef, testScriptAddress, testSeed, testStakeScript, testStateRef,
-  testRetractTime, testTerminalPolicy, testToken, testValue, update,
-  updateActionData, zfDelivery,
+  Sweep, TokenId, UpdateAction, UpdateRedeemer,
 }
 
 fn mint(redeemer: MintRedeemer, policyId: PolicyId, tx: Transaction) -> Bool {
@@ -63,7 +59,7 @@ const minted =
           application_policy: testAppPolicy,
           active_policy: testRepPolicy,
           absent_policy: testAbsentPolicy,
-          terminal_policy: testTerminalPolicy
+          terminal_policy: testTerminalPolicy,
         },
       ),
     ),
@@ -97,7 +93,6 @@ test canMint() {
     },
   )
 }
-
 
 // ============================================================================
 // Minting failure tests
@@ -182,7 +177,7 @@ test mint_nonempty_root() fail {
             application_policy: testAppPolicy,
             active_policy: testRepPolicy,
             absent_policy: testAbsentPolicy,
-            terminal_policy: testTerminalPolicy
+            terminal_policy: testTerminalPolicy,
           },
         ),
       ),
@@ -255,7 +250,6 @@ test mint_output_must_hold_token() fail {
   )
 }
 
-
 /// **Property: Minting works for any valid OutputReference.**
 ///
 /// Generates random (tx_id, output_index) pairs and verifies that the full
@@ -287,7 +281,7 @@ test prop_mint_roundtrip(
             application_policy: testAppPolicy,
             active_policy: testRepPolicy,
             absent_policy: testAbsentPolicy,
-            terminal_policy: testTerminalPolicy
+            terminal_policy: testTerminalPolicy,
           },
         ),
       ),

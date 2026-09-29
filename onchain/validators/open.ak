@@ -1,8 +1,6 @@
-use aiken/collection/dict
 use aiken/collection/dict.{get, keys}
 use cardano/assets.{PolicyId, tokens}
 use cardano/transaction.{Transaction}
-use lib
 use lib.{approvalName}
 use types.{Approve, OpenRedeemer}
 

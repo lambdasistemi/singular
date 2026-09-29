@@ -8,7 +8,6 @@ use cardano/assets.{PolicyId, Value, flatten, lovelace_of, quantity_of, tokens}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Spend, Transaction,
 }
-use naming
 use naming.{NamingRecord, RetirementQuorum, mpfs_state_hash}
 
 /// The registry's own active-token policy (#157 C7): genesis sets it,
@@ -157,15 +156,7 @@ validator application {
       Retire { key, revealed_control } ->
         when single_asset_name(claim.output.value) is {
           Some(stored) ->
-            retire(
-              record,
-              claim,
-              stored,
-              key,
-              revealed_control,
-              own_hash,
-              tx,
-            )
+            retire(record, claim, stored, key, revealed_control, own_hash, tx)
           None -> {
             trace @"record-single-asset"
             False
@@ -178,16 +169,20 @@ validator application {
             False
           }
           Some(stored) ->
-            recover(record, stored, revealed_control, registry, claim, own_hash, tx)
+            recover(
+              record,
+              stored,
+              revealed_control,
+              registry,
+              claim,
+              own_hash,
+              tx,
+            )
         }
     }
   }
 
-  mint(
-    redeemer: ApplicationMintRedeemer,
-    policy_id: PolicyId,
-    tx: Transaction,
-  ) {
+  mint(redeemer: ApplicationMintRedeemer, policy_id: PolicyId, tx: Transaction) {
     let policy_tokens = tokens(tx.mint, policy_id)
     // Exactly one asset moves under our policy per transaction: one
     // approval minted, one request certified.
@@ -380,19 +375,20 @@ fn governs_key(
   policy_id: PolicyId,
   active: PolicyId,
 ) -> Bool {
-  input.output.address.payment_credential == address.Script(policy_id) && (
-    when input.output.datum is {
-      InlineDatum(datum) -> naming.is_naming_datum(datum)
-      _ -> False
-    }
-  ) && quantity_of(input.output.value, active, key) == 1
+  input.output.address.payment_credential == address.Script(policy_id) && when
+    input.output.datum
+  is {
+    InlineDatum(datum) -> naming.is_naming_datum(datum)
+    _ -> False
+  } && quantity_of(input.output.value, active, key) == 1
 }
 
 /// That input is being spent with a `Retire` naming this key.
 fn spent_retiring(input: Input, key: ByteArray, tx: Transaction) -> Bool {
   when pairs.get_first(tx.redeemers, Spend(input.output_reference)) is {
     Some(data) ->
-      if data is Retire { key: retired, revealed_control: _ }: ApplicationRedeemer {
+      if data
+      is Retire { key: retired, revealed_control: _ }: ApplicationRedeemer {
         retired == key
       } else {
         False
@@ -432,9 +428,7 @@ fn custody_refund_signs(
   when
     find(
       tx.reference_inputs,
-      fn(input) {
-        is_cage_address(input) && custody_key_of(input) == Some(key)
-      },
+      fn(input) { is_cage_address(input) && custody_key_of(input) == Some(key) },
     )
   is {
     Some(custody) ->
@@ -564,7 +558,8 @@ fn recover(
     expect Some(shape) = naming.decode_address(revealed_control)
     expect shape.payment_key
     expect bytearray.length(next_control_commitment(revealed_control)) == 32
-    expect next_control_commitment(revealed_control) == record.next_control_commitment
+    expect
+      next_control_commitment(revealed_control) == record.next_control_commitment
     expect has(extra_signatories, shape.payment_hash)
     // Exactly one continuation at the application address; its control is
     // exactly the reveal, and its destination and quorum are unchanged

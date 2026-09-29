@@ -19,6 +19,7 @@ External URLs are requested with a bounded timeout and bounded concurrency;
 confirmed 404/410 is a failure, while 403/429/5xx and network denial are
 distinct "blocked" outcomes that are named but do not pass.
 """
+
 from html.parser import HTMLParser
 from concurrent.futures import ThreadPoolExecutor
 import json
@@ -59,19 +60,31 @@ def candidate_git_context():
     if explicit_ref:
         return explicit_ref, explicit_ref
     try:
-        sha = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
-                             capture_output=True, text=True, timeout=60)
+        sha = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
     except OSError:
         return None, None
     if sha.returncode != 0:
         return None, None
     try:
-        branch_out = subprocess.run(["git", "-C", str(root), "rev-parse", "--abbrev-ref", "HEAD"],
-                                    capture_output=True, text=True, timeout=60)
+        branch_out = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--abbrev-ref", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
     except OSError:
         return sha.stdout.strip(), sha.stdout.strip()
     branch = branch_out.stdout.strip()
-    ref = branch if branch_out.returncode == 0 and branch and branch != "HEAD" else sha.stdout.strip()
+    ref = (
+        branch
+        if branch_out.returncode == 0 and branch and branch != "HEAD"
+        else sha.stdout.strip()
+    )
     return ref, sha.stdout.strip()
 
 
@@ -128,6 +141,7 @@ class Page(HTMLParser):
         self.refs, self.anchors = [], []
         self._anchor, self._buf = None, None
         self.feed(text)
+
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
         if tag == "script" and "src" in attrs:
@@ -146,13 +160,16 @@ class Page(HTMLParser):
         for kind in ("href", "src"):
             if kind in attrs and not (tag == "a" and kind == "href"):
                 self.refs.append((tag, attrs[kind], attrs.get("rel", "")))
+
     def handle_data(self, data):
         if self._buf is not None:
             self._buf.append(data)
+
     def handle_endtag(self, tag):
         if tag == "a" and self._anchor is not None:
             self.anchors.append((self._anchor, "".join(self._buf).strip()))
             self._anchor = self._buf = None
+
 
 pages = {
     path: Page(path.read_text())
@@ -170,15 +187,23 @@ pages = {
 assert pages, "no rendered pages"
 # Every script and stylesheet a reader loads comes from this site: a CDN fetch at
 # read time would put the diagrams outside the pinned, byte-verified build.
-external = [(path, src) for path, page in pages.items() for src in page.scripts + page.stylesheets
-            if urlsplit(src).scheme or urlsplit(src).netloc]
+external = [
+    (path, src)
+    for path, page in pages.items()
+    for src in page.scripts + page.stylesheets
+    if urlsplit(src).scheme or urlsplit(src).netloc
+]
 assert not external, f"external resources: {external[:5]}"
 mermaid_pages = [path for path, page in pages.items() if page.mermaid]
 assert mermaid_pages, "no page carries a diagram"
 for path in mermaid_pages:
-    assert any(s.endswith("assets/mermaid.min.js") for s in pages[path].scripts), f"{path}: diagram without vendored mermaid"
+    assert any(s.endswith("assets/mermaid.min.js") for s in pages[path].scripts), (
+        f"{path}: diagram without vendored mermaid"
+    )
 mermaid_js = site / "assets" / "mermaid.min.js"
-assert mermaid_js.is_file() and b"mermaid" in mermaid_js.read_bytes()[:4096], "vendored mermaid missing"
+assert mermaid_js.is_file() and b"mermaid" in mermaid_js.read_bytes()[:4096], (
+    "vendored mermaid missing"
+)
 links = 0
 for path, page in pages.items():
     for href in page.links:
@@ -190,7 +215,9 @@ for path, page in pages.items():
             target = target / "index.html"
         assert target.exists(), f"{path}: missing {href}"
         if url.fragment and target in pages:
-            assert unquote(url.fragment) in pages[target].ids, f"{path}: missing anchor {href}"
+            assert unquote(url.fragment) in pages[target].ids, (
+                f"{path}: missing anchor {href}"
+            )
         links += 1
     if path.name == "404.html" or path.is_relative_to(site / "simulator"):
         continue
@@ -200,22 +227,40 @@ for path, page in pages.items():
     # for them may not be authored — the directories are ticket-owner owned.
     # Speech coverage continues to bind every reader-facing page, including
     # all nav-reachable specs pages.
-    if path.is_relative_to(site / "specs" / "26-live-links") or path.is_relative_to(site / "specs" / "29-docs-links-recut"):
+    if path.is_relative_to(site / "specs" / "26-live-links") or path.is_relative_to(
+        site / "specs" / "29-docs-links-recut"
+    ):
         continue
-    speech = path.parent.with_suffix(".speech.json") if path.parent != site else site / "index.speech.json"
+    speech = (
+        path.parent.with_suffix(".speech.json")
+        if path.parent != site
+        else site / "index.speech.json"
+    )
     assert speech.exists(), f"missing speech: {speech}"
     data = json.loads(speech.read_text())
     # `_source` binds the companion to the page hash; tools/check_presentation.py verifies it.
     spoken = {k: v for k, v in data.items() if not k.startswith("_")}
-    assert page.headings <= spoken.keys(), f"missing spoken sections: {path}: {page.headings - spoken.keys()}"
+    assert page.headings <= spoken.keys(), (
+        f"missing spoken sections: {path}: {page.headings - spoken.keys()}"
+    )
     for key, segments in spoken.items():
         assert key in page.ids and segments, f"invalid speech heading: {path}: {key}"
         assert all(isinstance(x.get("text"), str) and x["text"] for x in segments)
-for required in ("docs/naming-demo/index.html", "docs/naming-lifecycle/index.html", "specs/protocol/spec/index.html", "docs/prior-art/index.html", "docs/design/index.html", "docs/decisions/index.html", "docs/simulation/index.html"):
+for required in (
+    "docs/naming-demo/index.html",
+    "docs/naming-lifecycle/index.html",
+    "specs/protocol/spec/index.html",
+    "docs/prior-art/index.html",
+    "docs/design/index.html",
+    "docs/decisions/index.html",
+    "docs/simulation/index.html",
+):
     assert (site / required).exists(), required
 home = (site / "index.html").read_text()
-assert 'data-md-color-scheme="default"' in home and 'data-md-color-scheme="slate"' in home
-assert 'assets/read-aloud.js' in home and 'rel="speech"' in home
+assert (
+    'data-md-color-scheme="default"' in home and 'data-md-color-scheme="slate"' in home
+)
+assert "assets/read-aloud.js" in home and 'rel="speech"' in home
 
 
 # ---------------------------------------------------------------------------
@@ -225,7 +270,9 @@ FENCE = re.compile(r"```.*?```", re.S)
 CODE_SPAN = re.compile(r"`[^`]*`")
 MDLINK = re.compile(r"(?<!\!)\[[^\]]+\]\(([^)\s]+)[^)]*\)")
 RAWANCHOR = re.compile(r'<a\s+href="([^"]+)"[^>]*>(.*?)</a>', re.S)
-SELF_GITHUB = re.compile(r"^/lambdasistemi/singular/(?P<kind>blob|tree)/(?P<ref>[^/]+)/(?P<rest>.+)$")
+SELF_GITHUB = re.compile(
+    r"^/lambdasistemi/singular/(?P<kind>blob|tree)/(?P<ref>[^/]+)/(?P<rest>.+)$"
+)
 
 
 def github_readme_url(href):
@@ -259,7 +306,10 @@ def md_links(text):
 
 def raw_anchors(text):
     text = FENCE.sub("", CODE_SPAN.sub("", text))
-    return [(href, re.sub(r"<[^>]+>", "", label).strip()) for href, label in RAWANCHOR.findall(text)]
+    return [
+        (href, re.sub(r"<[^>]+>", "", label).strip())
+        for href, label in RAWANCHOR.findall(text)
+    ]
 
 
 def classify(url):
@@ -288,16 +338,26 @@ def check_resolved(url):
     kind = classify(url)
     if kind == "internal-site":
         if not parts.path.startswith(PREFIX):
-            result = ("fail", f"outside project prefix {PREFIX}: {parts.path} is not served by this site")
+            result = (
+                "fail",
+                f"outside project prefix {PREFIX}: {parts.path} is not served by this site",
+            )
             _resolved_cache[url] = result
             return result
-        rel = unquote(parts.path[len(PREFIX):])
+        rel = unquote(parts.path[len(PREFIX) :])
         target = site / rel
         if rel.endswith("/") or target.is_dir():
             target = target / "index.html"
         if not target.is_file():
-            result = ("fail", f"HTTP 404: nothing served at {parts.path} under the {PREFIX} prefix")
-        elif parts.fragment and (page := pages.get(target)) is not None and unquote(parts.fragment) not in page.ids:
+            result = (
+                "fail",
+                f"HTTP 404: nothing served at {parts.path} under the {PREFIX} prefix",
+            )
+        elif (
+            parts.fragment
+            and (page := pages.get(target)) is not None
+            and unquote(parts.fragment) not in page.ids
+        ):
             result = ("fail", f"missing anchor #{parts.fragment}")
         else:
             result = ("pass", f"served {parts.path}")
@@ -305,12 +365,18 @@ def check_resolved(url):
         # Refs may contain slashes (feature branches like docs/live-links), so
         # the derived candidate ref is matched as an exact path prefix first;
         # only foreign refs go through the simple-label parse.
-        m = re.match(r"^/lambdasistemi/singular/(?P<kind>blob|tree)/(?P<remainder>.+)$", parts.path)
+        m = re.match(
+            r"^/lambdasistemi/singular/(?P<kind>blob|tree)/(?P<remainder>.+)$",
+            parts.path,
+        )
         kind_name, remainder = m.group("kind"), m.group("remainder")
         if CANDIDATE_REF and remainder.startswith(f"{CANDIDATE_REF}/"):
-            rel = unquote(remainder[len(CANDIDATE_REF) + 1:]).split("#")[0].rstrip("/")
+            rel = unquote(remainder[len(CANDIDATE_REF) + 1 :]).split("#")[0].rstrip("/")
             if not (root / rel).exists():
-                result = ("fail", f"GitHub {kind_name}/{CANDIDATE_REF} 404: {rel} is not in the repository")
+                result = (
+                    "fail",
+                    f"GitHub {kind_name}/{CANDIDATE_REF} 404: {rel} is not in the repository",
+                )
             else:
                 # Candidate model evidence reaches the shipped lean/ sources
                 # only through the inspected candidate's own ref; navigation
@@ -325,18 +391,30 @@ def check_resolved(url):
             # Candidate model evidence bound to a foreign ref is the moving
             # alias class: it claims a version this candidate did not inspect
             # and fails for that reason — never an existence pass.
-            model_evidence = kind_name == "blob" and re.search(r"(?:^|/)lean/", remainder) is not None
+            model_evidence = (
+                kind_name == "blob"
+                and re.search(r"(?:^|/)lean/", remainder) is not None
+            )
             if model_evidence:
                 rel = unquote(remainder).split("#")[0].rstrip("/")
-                result = ("fail", f"moving alias rejected: GitHub {kind_name}/{ref} is not bound to inspected candidate ref {CANDIDATE_REF}: {rel}")
+                result = (
+                    "fail",
+                    f"moving alias rejected: GitHub {kind_name}/{ref} is not bound to inspected candidate ref {CANDIDATE_REF}: {rel}",
+                )
             elif ref == "main":
                 rel = unquote(rest).split("#")[0].rstrip("/")
                 if not (root / rel).exists():
-                    result = ("fail", f"GitHub {kind_name}/main 404: {rel} is not in the repository")
+                    result = (
+                        "fail",
+                        f"GitHub {kind_name}/main 404: {rel} is not in the repository",
+                    )
                 else:
                     result = ("pass", f"GitHub {kind_name}/main:{rel}")
             else:
-                result = ("blocked", f"self-repo pinned ref {ref} not verifiable offline")
+                result = (
+                    "blocked",
+                    f"self-repo pinned ref {ref} not verifiable offline",
+                )
     elif kind == "non-http":
         result = ("blocked", f"non-http scheme {parts.scheme!r} not requested")
     else:
@@ -380,7 +458,7 @@ def deployed_url(path):
     if rel == "index.html":
         return SITE_URL
     if rel.endswith("/index.html"):
-        return SITE_URL + rel[:-len("index.html")]
+        return SITE_URL + rel[: -len("index.html")]
     return SITE_URL + rel
 
 
@@ -391,7 +469,11 @@ def authored_production_alias(href):
     absolute production URL resolves to whatever main currently deploys, so
     it cannot carry a candidate's identity."""
     parts = urlsplit(href)
-    return bool(parts.scheme) and parts.netloc == urlsplit(SITE_URL).netloc and parts.path.startswith(PREFIX + "model/")
+    return (
+        bool(parts.scheme)
+        and parts.netloc == urlsplit(SITE_URL).netloc
+        and parts.path.startswith(PREFIX + "model/")
+    )
 
 
 production_alias_rows = []
@@ -403,7 +485,11 @@ def is_repo_source_href(href):
     staged, on-host forms are the prepare_docs rewrites (model/ bytes and
     the generated api/ pages), proven where they are served — on the built
     page row, against this build's own sources."""
-    return not urlsplit(href).scheme and re.search(r"(?:^|/)(?:lean/|offchain/|conformance/|onchain/)", href) is not None
+    return (
+        not urlsplit(href).scheme
+        and re.search(r"(?:^|/)(?:lean/|offchain/|conformance/|onchain/)", href)
+        is not None
+    )
 
 
 plans = []
@@ -422,7 +508,11 @@ for href, label in raw_anchors(readme_text):
     plan_row(
         "README.md",
         href,
-        [github_readme_url(href), docs_url(SITE_URL, href, True), docs_url(SITE_URL, href, False)],
+        [
+            github_readme_url(href),
+            docs_url(SITE_URL, href, True),
+            docs_url(SITE_URL, href, False),
+        ],
         require_playable=any(c in label for c in CTA_LABELS),
     )
     if authored_production_alias(href):
@@ -441,12 +531,24 @@ for md in sorted((root / "docs").glob("*.md")):
     for href, label in raw_anchors(text):
         resolved = [github_blob_url(f"docs/{md.name}", href)]
         if built in pages and not is_repo_source_href(href):
-            resolved += [docs_url(page_dir, href, True), docs_url(page_dir, href, False)]
-        plan_row(f"docs/{md.name}", href, resolved, require_playable=any(c in label for c in CTA_LABELS))
+            resolved += [
+                docs_url(page_dir, href, True),
+                docs_url(page_dir, href, False),
+            ]
+        plan_row(
+            f"docs/{md.name}",
+            href,
+            resolved,
+            require_playable=any(c in label for c in CTA_LABELS),
+        )
         if authored_production_alias(href):
             production_alias_rows.append((f"docs/{md.name}", href))
     for href in md_links(text):
-        plan_row(f"docs/{md.name} (markdown)", href, [github_blob_url(f"docs/{md.name}", href)])
+        plan_row(
+            f"docs/{md.name} (markdown)",
+            href,
+            [github_blob_url(f"docs/{md.name}", href)],
+        )
         if authored_production_alias(href):
             production_alias_rows.append((f"docs/{md.name} (markdown)", href))
 
@@ -456,20 +558,30 @@ for md in sorted((root / "docs").glob("*.md")):
 # rows: the theme computes every relative URL for the directory URL that Pages
 # redirects to, and that theme-wide property is outside this slice's fence.
 no_slash = {"pass": 0, "fail": 0}
+
+
 def speech_scoped(path):
     """Pages whose speech companions are intentionally absent (see the speech
     loop): the theme-injected <link rel=speech> reference is machine-facing
     metadata for the read-aloud companion, not a reader-navigable href, and its
     absence is governed by the speech-coverage assertion above."""
-    return (path.name == "404.html" or path.is_relative_to(site / "simulator")
-            or path.is_relative_to(site / "specs" / "26-live-links")
-            or path.is_relative_to(site / "specs" / "29-docs-links-recut"))
+    return (
+        path.name == "404.html"
+        or path.is_relative_to(site / "simulator")
+        or path.is_relative_to(site / "specs" / "26-live-links")
+        or path.is_relative_to(site / "specs" / "29-docs-links-recut")
+    )
+
 
 for path, page in sorted(pages.items()):
     base = deployed_url(path)
     authored = authored_by_page.get(path, set())
     pairs = [(href, label) for href, label in page.anchors if href not in authored]
-    pairs += [(href, f"<{tag}>") for tag, href, rel in page.refs if not (rel == "speech" and speech_scoped(path))]
+    pairs += [
+        (href, f"<{tag}>")
+        for tag, href, rel in page.refs
+        if not (rel == "speech" and speech_scoped(path))
+    ]
     for href, label in pairs:
         resolved = urljoin(base, href)
         plan_row(f"{path.relative_to(site).as_posix()} ({label})", href, [resolved])
@@ -486,14 +598,27 @@ if routes_only:
     # deployment-identity comparisons. No verdicts, no assertions. The route
     # set uses exactly the served path's flatten/filter logic so the extracted
     # inventory and the served verification agree on what an internal route is.
-    print(json.dumps({
-        "renderedPages": len(pages),
-        "routes": sorted({u for _, _, resolved, _ in plans for u in resolved if classify(u) == "internal-site"}),
-    }))
+    print(
+        json.dumps(
+            {
+                "renderedPages": len(pages),
+                "routes": sorted(
+                    {
+                        u
+                        for _, _, resolved, _ in plans
+                        for u in resolved
+                        if classify(u) == "internal-site"
+                    }
+                ),
+            }
+        )
+    )
     sys.exit(0)
 
 # External requests up front, bounded concurrency, one request per distinct URL.
-external_urls = sorted({u for _, _, resolved, _ in plans for u in resolved if classify(u) == "external"})
+external_urls = sorted(
+    {u for _, _, resolved, _ in plans for u in resolved if classify(u) == "external"}
+)
 with ThreadPoolExecutor(max_workers=EXTERNAL_CONCURRENCY) as pool:
     list(pool.map(check_resolved, external_urls))
 
@@ -503,15 +628,28 @@ for source, href, resolved, require_playable in plans:
     kinds = sorted({classify(u) for u in resolved})
     bad = [e for r, e in outcomes if r == "fail"]
     off = [e for r, e in outcomes if r == "blocked"]
-    if require_playable and any(u.rstrip("/") != PLAYABLE.rstrip("/") for u in resolved):
-        result, evidence = "fail", f"dual-context CTA resolves to {', '.join(resolved)}, not the canonical {PLAYABLE}"
+    if require_playable and any(
+        u.rstrip("/") != PLAYABLE.rstrip("/") for u in resolved
+    ):
+        result, evidence = (
+            "fail",
+            f"dual-context CTA resolves to {', '.join(resolved)}, not the canonical {PLAYABLE}",
+        )
     elif bad:
         result, evidence = "fail", "; ".join(bad)
     elif off:
         result, evidence = "blocked", "; ".join(off)
     else:
         result, evidence = "pass", "; ".join(sorted({e for _, e in outcomes}))
-    rows.append({"source": source, "href": href, "kind": "+".join(kinds), "result": result, "evidence": evidence})
+    rows.append(
+        {
+            "source": source,
+            "href": href,
+            "kind": "+".join(kinds),
+            "result": result,
+            "evidence": evidence,
+        }
+    )
 
 failures = [r for r in rows if r["result"] == "fail"]
 
@@ -524,15 +662,25 @@ for _, _, resolved, _ in plans:
     for u in resolved:
         parts = urlsplit(u)
         if classify(u) == "internal-site" and parts.path.startswith(PREFIX + "model/"):
-            model_rows.add((parts.path, site / unquote(parts.path[len(PREFIX):])))
-assert model_rows, "no staged model/ artifacts reached by the inventory: shipped-model proof found nothing"
+            model_rows.add((parts.path, site / unquote(parts.path[len(PREFIX) :])))
+assert model_rows, (
+    "no staged model/ artifacts reached by the inventory: shipped-model proof found nothing"
+)
 model_mismatch = []
 for url_path, served in sorted(model_rows):
-    source = root / "lean" / url_path[len(PREFIX) + len("model/"):]
-    if not served.is_file() or not source.is_file() or served.read_bytes() != source.read_bytes():
+    source = root / "lean" / url_path[len(PREFIX) + len("model/") :]
+    if (
+        not served.is_file()
+        or not source.is_file()
+        or served.read_bytes() != source.read_bytes()
+    ):
         model_mismatch.append(url_path)
-assert not model_mismatch, f"staged model/ bytes differ from lean/ sources: {model_mismatch}"
-assert not production_alias_rows, f"production model alias is not candidate identity evidence (moving alias): {production_alias_rows}"
+assert not model_mismatch, (
+    f"staged model/ bytes differ from lean/ sources: {model_mismatch}"
+)
+assert not production_alias_rows, (
+    f"production model alias is not candidate identity evidence (moving alias): {production_alias_rows}"
+)
 
 # ---------------------------------------------------------------------------
 # Generated API references: for every library, the manifest's extent and
@@ -566,7 +714,9 @@ for _library_key, library in api_reference.LIBRARIES.items():
     api_pages_verified = 0
     for record in api_manifest["modules"]:
         source = library_root / record["source"]
-        assert source.is_file(), f"API manifest names a missing candidate source: {record['source']}"
+        assert source.is_file(), (
+            f"API manifest names a missing candidate source: {record['source']}"
+        )
         if api_reference.sha256_file(source) != record["source_sha256"]:
             print(
                 f"API_SOURCE_STALE library={library.name} leg=source-digest "
@@ -579,7 +729,10 @@ for _library_key, library in api_reference.LIBRARIES.items():
             ("source_page", "source_page_sha256"),
         ):
             page = api_root / record[page_field]
-            if not page.is_file() or api_reference.sha256_file(page) != record[digest_field]:
+            if (
+                not page.is_file()
+                or api_reference.sha256_file(page) != record[digest_field]
+            ):
                 print(
                     f"API_SOURCE_STALE library={library.name} leg=page-digest "
                     f"page={record[page_field]}",
@@ -591,8 +744,12 @@ for _library_key, library in api_reference.LIBRARIES.items():
     # Dependency ownership comes from the manifest's recorded build package-db
     # inventory — positive evidence, independent of any target's existence —
     # and may never claim a module of this library.
-    dep_modules = set(api_manifest.get("package_inventory", {}).get("dependency_modules", []))
-    assert dep_modules, f"API manifest for {library.name} carries no dependency module inventory"
+    dep_modules = set(
+        api_manifest.get("package_inventory", {}).get("dependency_modules", [])
+    )
+    assert dep_modules, (
+        f"API manifest for {library.name} carries no dependency module inventory"
+    )
     overlap = sorted(dep_modules & set(root_extent))
     assert not overlap, (
         f"API_DEPENDENCY_INVENTORY_CONTRADICTION library={library.name} "
@@ -600,7 +757,9 @@ for _library_key, library in api_reference.LIBRARIES.items():
     )
 
     api_page_ids = {
-        path.resolve(): set(re.findall(r'id="([^"]+)"', path.read_text(errors="replace")))
+        path.resolve(): set(
+            re.findall(r'id="([^"]+)"', path.read_text(errors="replace"))
+        )
         for path in sorted(api_root.rglob("*.html"))
     }
     resolved_library = external_anchors = 0
@@ -613,15 +772,24 @@ for _library_key, library in api_reference.LIBRARIES.items():
         parsed = Page(text)
         for asset in parsed.scripts + parsed.stylesheets:
             if re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", asset):
-                print(f"API_EXTERNAL_ASSET {page.relative_to(site)} {asset}", file=sys.stderr)
+                print(
+                    f"API_EXTERNAL_ASSET {page.relative_to(site)} {asset}",
+                    file=sys.stderr,
+                )
                 sys.exit(1)
             target = (page.parent / unquote(asset)).resolve()
             if not target.exists():
-                print(f"API_EXTERNAL_ASSET {page.relative_to(site)} {asset}", file=sys.stderr)
+                print(
+                    f"API_EXTERNAL_ASSET {page.relative_to(site)} {asset}",
+                    file=sys.stderr,
+                )
                 sys.exit(1)
         for href in parsed.links:
             if href.startswith("file://"):
-                print(f"API_DEPENDENCY_LINK_FORBIDDEN {page.relative_to(site)} {href}", file=sys.stderr)
+                print(
+                    f"API_DEPENDENCY_LINK_FORBIDDEN {page.relative_to(site)} {href}",
+                    file=sys.stderr,
+                )
                 sys.exit(1)
             if re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", href):
                 external_anchors += 1
@@ -629,24 +797,43 @@ for _library_key, library in api_reference.LIBRARIES.items():
             path_part, _, frag = href.partition("#")
             # An empty path is a same-page reference: its fragment is checked
             # against this page's own ids, never skipped.
-            target = (page.parent / unquote(path_part)).resolve() if path_part else page.resolve()
+            target = (
+                (page.parent / unquote(path_part)).resolve()
+                if path_part
+                else page.resolve()
+            )
             if path_part and not target.exists():
-                module = re.sub(r"\.html$", "", path_part.rsplit("/", 1)[-1]).replace("-", ".")
+                module = re.sub(r"\.html$", "", path_part.rsplit("/", 1)[-1]).replace(
+                    "-", "."
+                )
                 if module in dep_modules and module not in set(root_extent):
-                    print(f"API_DEPENDENCY_LINK_FORBIDDEN {page.relative_to(site)} {href}", file=sys.stderr)
+                    print(
+                        f"API_DEPENDENCY_LINK_FORBIDDEN {page.relative_to(site)} {href}",
+                        file=sys.stderr,
+                    )
                     sys.exit(1)
-                print(f"API_LINK_MISSING scope=library {page.relative_to(site)} {href}", file=sys.stderr)
+                print(
+                    f"API_LINK_MISSING scope=library {page.relative_to(site)} {href}",
+                    file=sys.stderr,
+                )
                 sys.exit(1)
             if frag and target in api_page_ids:
                 if unquote(frag) not in api_page_ids[target]:
-                    print(f"API_LINK_MISSING scope=library {page.relative_to(site)} {href}", file=sys.stderr)
+                    print(
+                        f"API_LINK_MISSING scope=library {page.relative_to(site)} {href}",
+                        file=sys.stderr,
+                    )
                     sys.exit(1)
             resolved_library += 1
     neutral = api_manifest.get("neutralization", {})
     recorded_dep = neutral.get("dependency", 0)
     recorded_auto = neutral.get("autolink", 0)
     recorded_inst = neutral.get("instance_method", 0)
-    if spans_dep != recorded_dep or spans_auto != recorded_auto or spans_inst != recorded_inst:
+    if (
+        spans_dep != recorded_dep
+        or spans_auto != recorded_auto
+        or spans_inst != recorded_inst
+    ):
         print(
             f"API_NEUTRALIZATION_DRIFT library={library.name} "
             f"spans-dep={spans_dep} recorded={recorded_dep} "
@@ -700,8 +887,17 @@ print("api-reference library=aiken " + json.dumps(aiken_summary, sort_keys=True)
 # ---------------------------------------------------------------------------
 served_report, served_failures, served_blocked = {}, [], []
 if served_bases and not failures:
-    routes = sorted({u for _, _, resolved, _ in plans for u in resolved if classify(u) == "internal-site"})
-    assert routes, "served-route check found no internal routes: the inventory discovered nothing"
+    routes = sorted(
+        {
+            u
+            for _, _, resolved, _ in plans
+            for u in resolved
+            if classify(u) == "internal-site"
+        }
+    )
+    assert routes, (
+        "served-route check found no internal routes: the inventory discovered nothing"
+    )
     route_sources = {}
     for source, href, resolved, _ in plans:
         for u in resolved:
@@ -709,8 +905,13 @@ if served_bases and not failures:
                 route_sources.setdefault(u, set()).add(source)
 
     def commit_exists(sha):
-        return subprocess.run(["git", "-C", str(root), "cat-file", "-e", f"{sha}^{{commit}}"],
-                              capture_output=True).returncode == 0
+        return (
+            subprocess.run(
+                ["git", "-C", str(root), "cat-file", "-e", f"{sha}^{{commit}}"],
+                capture_output=True,
+            ).returncode
+            == 0
+        )
 
     surface_meta, surface_outcomes, surface_probes = {}, {}, {}
     for name, base in served_bases:
@@ -721,18 +922,34 @@ if served_bases and not failures:
         marker_url = served_markers.get(name)
         if marker_url:
             _, marker_status, marker_body, marker_err = served_get(marker_url)
-            token = marker_body.decode("utf-8", "replace").strip() if marker_status == 200 and marker_err is None else None
+            token = (
+                marker_body.decode("utf-8", "replace").strip()
+                if marker_status == 200 and marker_err is None
+                else None
+            )
             if token == CANDIDATE_SHA:
-                identity, identity_evidence = "candidate", f"marker {marker_url} == this candidate"
-            elif token and re.fullmatch(r"[0-9a-f]{40}", token) and commit_exists(token):
-                identity, identity_evidence = f"prior:{token}", f"marker {marker_url} -> verified commit {token}"
+                identity, identity_evidence = (
+                    "candidate",
+                    f"marker {marker_url} == this candidate",
+                )
+            elif (
+                token and re.fullmatch(r"[0-9a-f]{40}", token) and commit_exists(token)
+            ):
+                identity, identity_evidence = (
+                    f"prior:{token}",
+                    f"marker {marker_url} -> verified commit {token}",
+                )
             else:
-                identity_evidence = f"marker {marker_url} -> {token!r} (not a verified commit)"
+                identity_evidence = (
+                    f"marker {marker_url} -> {token!r} (not a verified commit)"
+                )
         elif served_refs.get(name):
             token = served_refs[name]
             if re.fullmatch(r"[0-9a-f]{40}", token) and commit_exists(token):
                 identity = "candidate" if token == CANDIDATE_SHA else f"prior:{token}"
-                identity_evidence = f"explicit deployment ref {token} (publisher record)"
+                identity_evidence = (
+                    f"explicit deployment ref {token} (publisher record)"
+                )
             else:
                 identity_evidence = f"explicit ref {token!r} not a verified commit"
 
@@ -742,7 +959,7 @@ if served_bases and not failures:
             PATH component — never the raw URL string."""
             parts = urlsplit(route)
             assert parts.path.startswith(PREFIX), route
-            mapped = base + parts.path[len(PREFIX):]
+            mapped = base + parts.path[len(PREFIX) :]
             if parts.query:
                 mapped += "?" + parts.query
             if parts.fragment:
@@ -762,12 +979,33 @@ if served_bases and not failures:
             if status >= 400:
                 return ("blocked", route, target, final, status, f"HTTP {status}")
             if urlsplit(final).path.rstrip("/") != parts.path.rstrip("/"):
-                return ("fail", route, target, final, status, f"redirect landed at {final}, not the requested document {target}")
+                return (
+                    "fail",
+                    route,
+                    target,
+                    final,
+                    status,
+                    f"redirect landed at {final}, not the requested document {target}",
+                )
             if parts.fragment:
                 ids = Page(body.decode("utf-8", "replace")).ids if body else set()
                 if unquote(parts.fragment) not in ids:
-                    return ("fail", route, target, final, status, f"missing anchor #{parts.fragment}")
-            return ("pass", route, target, final, status, "redirected" if urlsplit(final).path != parts.path else "direct")
+                    return (
+                        "fail",
+                        route,
+                        target,
+                        final,
+                        status,
+                        f"missing anchor #{parts.fragment}",
+                    )
+            return (
+                "pass",
+                route,
+                target,
+                final,
+                status,
+                "redirected" if urlsplit(final).path != parts.path else "direct",
+            )
 
         def probe_no_slash(route):
             target = mapped[route][:-1]
@@ -787,8 +1025,15 @@ if served_bases and not failures:
         directory_routes = [r for r in routes if r.endswith("/")]
         with ThreadPoolExecutor(max_workers=EXTERNAL_CONCURRENCY) as pool:
             outcomes = list(pool.map(check_route, routes))
-            probes = dict(zip(directory_routes, pool.map(probe_no_slash, directory_routes)))
-        surface_meta[name] = {"base": base, "identity": identity, "identityEvidence": identity_evidence, "githubIo": github_io}
+            probes = dict(
+                zip(directory_routes, pool.map(probe_no_slash, directory_routes))
+            )
+        surface_meta[name] = {
+            "base": base,
+            "identity": identity,
+            "identityEvidence": identity_evidence,
+            "githubIo": github_io,
+        }
         surface_outcomes[name] = outcomes
         surface_probes[name] = probes
 
@@ -806,7 +1051,9 @@ if served_bases and not failures:
     # preview AND the supported archive server (A-001's three-condition
     # proof). While the preview is a prior deployment, the class cannot fire
     # and rows stay pendingVerification instead.
-    required_candidate_surfaces = {n for n in surface_meta if n in ("archive", "preview")}
+    required_candidate_surfaces = {
+        n for n in surface_meta if n in ("archive", "preview")
+    }
 
     for name, outcomes in surface_outcomes.items():
         meta = surface_meta[name]
@@ -824,13 +1071,22 @@ if served_bases and not failures:
         strict_candidate = name in served_strict_candidate
         strict_failures = []
         if strict_candidate and identity != "candidate":
-            strict_failures.append(f"strict candidate verification cannot succeed: surface identity {identity} (evidence: {meta['identityEvidence']})")
+            strict_failures.append(
+                f"strict candidate verification cannot succeed: surface identity {identity} (evidence: {meta['identityEvidence']})"
+            )
 
         def row_for(route, target, final, status, detail):
-            return {"route": route, "source": sorted(route_sources.get(route, [])),
-                    "requested": target, "final": final, "http": status,
-                    "candidateIdentity": CANDIDATE_SHA, "deploymentIdentity": identity,
-                    "identityEvidence": meta["identityEvidence"], "detail": detail}
+            return {
+                "route": route,
+                "source": sorted(route_sources.get(route, [])),
+                "requested": target,
+                "final": final,
+                "http": status,
+                "candidateIdentity": CANDIDATE_SHA,
+                "deploymentIdentity": identity,
+                "identityEvidence": meta["identityEvidence"],
+                "detail": detail,
+            }
 
         pending_until_release, pending_verification, classified_fails = [], [], []
         canonical_kind = {}
@@ -838,7 +1094,9 @@ if served_bases and not failures:
             canonical_kind[route] = kind
             if kind != "notfound":
                 if kind == "fail":
-                    classified_fails.append(row_for(route, target, final, status, detail))
+                    classified_fails.append(
+                        row_for(route, target, final, status, detail)
+                    )
                 continue
             # Fail-closed 404 ladder (deployment-bound, never inferred):
             #   candidate-identified surface -> must serve every route: fail.
@@ -851,21 +1109,42 @@ if served_bases and not failures:
             #     its reason named, owned by the post-publication check.
             row = row_for(route, target, final, status, detail)
             if identity == "candidate":
-                row.update(classification="fail", reason="candidate-identified surface must serve every discovered route")
+                row.update(
+                    classification="fail",
+                    reason="candidate-identified surface must serve every discovered route",
+                )
                 classified_fails.append(row)
             elif deployed_routes is not None and route in deployed_routes:
-                row.update(classification="fail", reason=f"route is in the rendered route inventory of deployment {identity}: regression, not pending publication")
+                row.update(
+                    classification="fail",
+                    reason=f"route is in the rendered route inventory of deployment {identity}: regression, not pending publication",
+                )
                 classified_fails.append(row)
-            elif identity.startswith("prior:") and required_candidate_surfaces and required_candidate_surfaces <= candidate_verified.get(route, set()):
-                row.update(classification="absentUntilRelease", reason=f"not yet published: absent from deployment {identity}; proven served by candidate-identified surfaces {sorted(candidate_verified[route])}")
+            elif (
+                identity.startswith("prior:")
+                and required_candidate_surfaces
+                and required_candidate_surfaces <= candidate_verified.get(route, set())
+            ):
+                row.update(
+                    classification="absentUntilRelease",
+                    reason=f"not yet published: absent from deployment {identity}; proven served by candidate-identified surfaces {sorted(candidate_verified[route])}",
+                )
                 pending_until_release.append(row)
             else:
                 missing = []
                 if not identity.startswith("prior:"):
-                    missing.append(f"surface identity {identity} (evidence: {meta['identityEvidence']})")
+                    missing.append(
+                        f"surface identity {identity} (evidence: {meta['identityEvidence']})"
+                    )
                 if not candidate_verified.get(route):
-                    missing.append("route not yet proven on candidate-identified surfaces (exact-candidate preview pending push)")
-                row.update(classification="pendingVerification", reason="deferred to the post-publication check: " + "; ".join(missing))
+                    missing.append(
+                        "route not yet proven on candidate-identified surfaces (exact-candidate preview pending push)"
+                    )
+                row.update(
+                    classification="pendingVerification",
+                    reason="deferred to the post-publication check: "
+                    + "; ".join(missing),
+                )
                 pending_verification.append(row)
         no_slash_counts = {}
         for outcome in probes.values():
@@ -873,10 +1152,17 @@ if served_bases and not failures:
         # GitHub Pages must redirect the no-slash form of a served directory
         # URL to the canonical document; judged only where the canonical route
         # itself resolved, so pending pages are counted once, not twice.
-        no_slash_violations = [f"{route}: {outcome}" for route, outcome in probes.items()
-                               if meta["githubIo"] and canonical_kind.get(route) == "pass" and outcome != "redirectedToCanonical"]
+        no_slash_violations = [
+            f"{route}: {outcome}"
+            for route, outcome in probes.items()
+            if meta["githubIo"]
+            and canonical_kind.get(route) == "pass"
+            and outcome != "redirectedToCanonical"
+        ]
         if strict_candidate and (pending_until_release or pending_verification):
-            strict_failures.append("strict candidate surface emitted pending rows: candidate evidence must be complete, not pending")
+            strict_failures.append(
+                "strict candidate surface emitted pending rows: candidate evidence must be complete, not pending"
+            )
         pass_routes = [t for t in outcomes if t[0] == "pass"]
         block_routes = [t for t in outcomes if t[0] == "blocked"]
         served_report[name] = {
@@ -898,9 +1184,14 @@ if served_bases and not failures:
             "noSlashViolations": no_slash_violations,
             "strictFailures": strict_failures,
         }
-        served_failures += [(name, json.dumps(row, sort_keys=True)) for row in classified_fails]
+        served_failures += [
+            (name, json.dumps(row, sort_keys=True)) for row in classified_fails
+        ]
         served_failures += [(name, e) for e in strict_failures]
-        served_failures += [(name, f"no-slash not redirected on GitHub Pages surface: {v}") for v in no_slash_violations]
+        served_failures += [
+            (name, f"no-slash not redirected on GitHub Pages surface: {v}")
+            for v in no_slash_violations
+        ]
         served_blocked += [(name, t[5]) for t in outcomes if t[0] == "blocked"]
 
 blocked_rows = [r for r in rows if r["result"] == "blocked"]
@@ -911,22 +1202,36 @@ counts = {
     "fail": len(failures),
     "blocked": len(blocked_rows),
 }
-print(json.dumps({
-    "renderedPages": len(pages),
-    "localLinksAndAnchors": links,
-    "speechCoverage": "PASS",
-    "externalResources": 0,
-    "diagramPages": len(mermaid_pages),
-    "diagrams": sum(p.mermaid for p in pages.values()),
-    "scope": "rendered documentation; model and simulator checked separately",
-    "inventory": counts,
-    "inventoryFailures": failures,
-    "externalBlocked": blocked_rows,
-    "noTrailingSlashPolicy": {"authored": "enforced-in-row", "generated": "advisory (GitHub Pages 301; mkdocs out of fence)"},
-    "noTrailingSlashAdvisory": no_slash,
-    "modelArtifactBytes": {"servedModelPaths": len(model_rows), "mismatches": 0},
-    "servedRoutes": served_report,
-}))
+print(
+    json.dumps(
+        {
+            "renderedPages": len(pages),
+            "localLinksAndAnchors": links,
+            "speechCoverage": "PASS",
+            "externalResources": 0,
+            "diagramPages": len(mermaid_pages),
+            "diagrams": sum(p.mermaid for p in pages.values()),
+            "scope": "rendered documentation; model and simulator checked separately",
+            "inventory": counts,
+            "inventoryFailures": failures,
+            "externalBlocked": blocked_rows,
+            "noTrailingSlashPolicy": {
+                "authored": "enforced-in-row",
+                "generated": "advisory (GitHub Pages 301; mkdocs out of fence)",
+            },
+            "noTrailingSlashAdvisory": no_slash,
+            "modelArtifactBytes": {
+                "servedModelPaths": len(model_rows),
+                "mismatches": 0,
+            },
+            "servedRoutes": served_report,
+        }
+    )
+)
 assert not failures, f"link inventory failures: {json.dumps(failures, indent=2)}"
-assert not served_failures, f"served-route failures: {json.dumps(served_failures, indent=2)}"
-assert not served_blocked, f"served-route blocked: {json.dumps(served_blocked, indent=2)}"
+assert not served_failures, (
+    f"served-route failures: {json.dumps(served_failures, indent=2)}"
+)
+assert not served_blocked, (
+    f"served-route blocked: {json.dumps(served_blocked, indent=2)}"
+)

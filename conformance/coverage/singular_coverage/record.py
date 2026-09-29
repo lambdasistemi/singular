@@ -28,7 +28,9 @@ class RecordError(Exception):
 
 def _require_hex64(value, what: str) -> str:
     if not isinstance(value, str) or not _HEX64.match(value):
-        raise RecordError(f"{what} must be a 64-char lowercase hex sha256, got {value!r}")
+        raise RecordError(
+            f"{what} must be a 64-char lowercase hex sha256, got {value!r}"
+        )
     return value
 
 
@@ -119,8 +121,15 @@ def _parse_evidence(raw, where: str) -> Evidence:
     if not isinstance(raw, dict):
         raise RecordError(f"{where}.evidence must be an object")
     allowed = {
-        "status", "candidateDigest", "candidatePaths", "command", "seed",
-        "cases", "discards", "thenAssertions", "resultDigest",
+        "status",
+        "candidateDigest",
+        "candidatePaths",
+        "command",
+        "seed",
+        "cases",
+        "discards",
+        "thenAssertions",
+        "resultDigest",
     }
     unknown = set(raw) - allowed
     if unknown:
@@ -130,16 +139,24 @@ def _parse_evidence(raw, where: str) -> Evidence:
         raise RecordError(f"{where}.evidence is missing fields: {sorted(missing)}")
     status = raw["status"]
     if status not in EVIDENCE_STATUSES:
-        raise RecordError(f"{where}.evidence.status must be one of {EVIDENCE_STATUSES}, got {status!r}")
+        raise RecordError(
+            f"{where}.evidence.status must be one of {EVIDENCE_STATUSES}, got {status!r}"
+        )
     candidate = raw["candidateDigest"]
     if status in ("pass", "fail") or candidate:
         _require_hex64(candidate, f"{where}.evidence.candidateDigest")
     paths = raw["candidatePaths"]
     if not isinstance(paths, list) or not all(isinstance(p, str) and p for p in paths):
-        raise RecordError(f"{where}.evidence.candidatePaths must be a list of non-empty strings")
+        raise RecordError(
+            f"{where}.evidence.candidatePaths must be a list of non-empty strings"
+        )
     if status in ("pass", "fail") and not paths:
-        raise RecordError(f"{where}.evidence.candidatePaths must bind the candidate for {status} evidence")
-    _require_str(raw["command"], f"{where}.evidence.command", allow_empty=status == "unexecuted")
+        raise RecordError(
+            f"{where}.evidence.candidatePaths must bind the candidate for {status} evidence"
+        )
+    _require_str(
+        raw["command"], f"{where}.evidence.command", allow_empty=status == "unexecuted"
+    )
     _require_str(raw["seed"], f"{where}.evidence.seed", allow_empty=True)
     cases = _require_int(raw["cases"], f"{where}.evidence.cases")
     discards = _require_int(raw["discards"], f"{where}.evidence.discards")
@@ -148,13 +165,21 @@ def _parse_evidence(raw, where: str) -> Evidence:
     then = _require_int(raw["thenAssertions"], f"{where}.evidence.thenAssertions")
     result = raw["resultDigest"]
     if status == "pass":
-        _require_hex64(result, f"{where}.evidence.resultDigest (required for pass evidence)")
+        _require_hex64(
+            result, f"{where}.evidence.resultDigest (required for pass evidence)"
+        )
     elif result != "":
         _require_hex64(result, f"{where}.evidence.resultDigest")
     return Evidence(
-        status=status, candidateDigest=candidate, candidatePaths=tuple(paths),
-        command=raw["command"], seed=raw["seed"], cases=cases, discards=discards,
-        thenAssertions=then, resultDigest=result,
+        status=status,
+        candidateDigest=candidate,
+        candidatePaths=tuple(paths),
+        command=raw["command"],
+        seed=raw["seed"],
+        cases=cases,
+        discards=discards,
+        thenAssertions=then,
+        resultDigest=result,
     )
 
 
@@ -183,8 +208,15 @@ def _parse_check(raw, where: str) -> Check:
     if not isinstance(raw, dict):
         raise RecordError(f"{where} must be an object")
     allowed = {
-        "checkId", "obligation", "statementSha256", "layer", "executionIdentity",
-        "entryPoints", "definitionDigests", "evidence", "control",
+        "checkId",
+        "obligation",
+        "statementSha256",
+        "layer",
+        "executionIdentity",
+        "entryPoints",
+        "definitionDigests",
+        "evidence",
+        "control",
     }
     unknown = set(raw) - allowed
     if unknown:
@@ -202,14 +234,20 @@ def _parse_check(raw, where: str) -> Check:
         _require_str(name, f"{where}.definitionDigests key")
         _require_hex64(dig, f"{where}.definitionDigests[{name}]")
     entry_points = raw["entryPoints"]
-    if not isinstance(entry_points, list) or not all(isinstance(p, str) and p for p in entry_points):
+    if not isinstance(entry_points, list) or not all(
+        isinstance(p, str) and p for p in entry_points
+    ):
         raise RecordError(f"{where}.entryPoints must be a list of non-empty strings")
     return Check(
         checkId=_require_str(raw["checkId"], f"{where}.checkId"),
         obligation=_require_str(raw["obligation"], f"{where}.obligation"),
-        statementSha256=_require_hex64(raw["statementSha256"], f"{where}.statementSha256"),
+        statementSha256=_require_hex64(
+            raw["statementSha256"], f"{where}.statementSha256"
+        ),
         layer=layer,
-        executionIdentity=_require_str(raw["executionIdentity"], f"{where}.executionIdentity"),
+        executionIdentity=_require_str(
+            raw["executionIdentity"], f"{where}.executionIdentity"
+        ),
         entryPoints=tuple(entry_points),
         definitionDigests=dict(digests),
         evidence=_parse_evidence(raw["evidence"], where),
@@ -231,10 +269,14 @@ def _parse_mapping(raw, where: str) -> Mapping:
         if not isinstance(raw[clause], dict):
             raise RecordError(f"{where}.{clause} must be an object")
     if not raw["clauses"]:
-        raise RecordError(f"{where}.clauses must not be empty (a story with no clauses is not a story)")
+        raise RecordError(
+            f"{where}.clauses must not be empty (a story with no clauses is not a story)"
+        )
     return Mapping(
         obligation=_require_str(raw["obligation"], f"{where}.obligation"),
-        statementSha256=_require_hex64(raw["statementSha256"], f"{where}.statementSha256"),
+        statementSha256=_require_hex64(
+            raw["statementSha256"], f"{where}.statementSha256"
+        ),
         storyId=_require_str(raw["storyId"], f"{where}.storyId"),
         clauses=raw["clauses"],
         vocabulary=raw["vocabulary"],
@@ -249,7 +291,9 @@ def parse_record_text(text: str, label: str) -> Record:
     if not isinstance(raw, dict):
         raise RecordError(f"record must be a JSON object: {label}")
     if raw.get("schema") != SCHEMA:
-        raise RecordError(f"record schema must be {SCHEMA!r}, got {raw.get('schema')!r}")
+        raise RecordError(
+            f"record schema must be {SCHEMA!r}, got {raw.get('schema')!r}"
+        )
     unknown = set(raw) - {"schema", "checks", "mappings", "discoveredPopulation"}
     if unknown:
         raise RecordError(f"record has unknown top-level fields: {sorted(unknown)}")
@@ -262,7 +306,9 @@ def parse_record_text(text: str, label: str) -> Record:
     if not isinstance(population, list) or not all(
         isinstance(i, str) and "@" in i for i in population
     ):
-        raise RecordError("discoveredPopulation must be a list of name@digest identity strings")
+        raise RecordError(
+            "discoveredPopulation must be a list of name@digest identity strings"
+        )
     if len(set(population)) != len(population):
         raise RecordError("discoveredPopulation contains duplicate identities")
     checks_raw = raw.get("checks", [])
@@ -270,7 +316,9 @@ def parse_record_text(text: str, label: str) -> Record:
     if not isinstance(checks_raw, list) or not isinstance(mappings_raw, list):
         raise RecordError("record checks/mappings must be lists")
     checks = tuple(_parse_check(c, f"checks[{i}]") for i, c in enumerate(checks_raw))
-    mappings = tuple(_parse_mapping(m, f"mappings[{i}]") for i, m in enumerate(mappings_raw))
+    mappings = tuple(
+        _parse_mapping(m, f"mappings[{i}]") for i, m in enumerate(mappings_raw)
+    )
     ids = [c.checkId for c in checks]
     if len(set(ids)) != len(ids):
         raise RecordError("duplicate checkId in record")
@@ -315,10 +363,14 @@ def candidate_digest(root: Path, paths: tuple[str, ...]) -> str:
         try:
             shown = path.relative_to(root)
         except ValueError:
-            raise RecordError(f"candidatePath escapes the candidate root: {path}") from None
+            raise RecordError(
+                f"candidatePath escapes the candidate root: {path}"
+            ) from None
         accumulator.update(str(shown).encode())
         accumulator.update(hashlib.sha256(path.read_bytes()).digest())
     return accumulator.hexdigest()
+
+
 def definition_digest(root: Path, qualified: str) -> str | None:
     """Digest of a named definition's full source span.
 
@@ -363,6 +415,6 @@ def definition_digest(root: Path, qualified: str) -> str | None:
             if name != qualified:
                 continue
             limit = events[idx + 1][0] if idx + 1 < len(events) else len(clean)
-            span = " ".join(clean[m.start():limit].split())
+            span = " ".join(clean[m.start() : limit].split())
             return hashlib.sha256((name + "\n" + span).encode()).hexdigest()
     return None

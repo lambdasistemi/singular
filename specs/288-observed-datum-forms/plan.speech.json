@@ -1,0 +1,24 @@
+{
+  "_source": {
+    "file": "plan.md",
+    "sha256": "304cd96636f27be5a488a2e3542a0dfa959a6a2c9dd133666d78825e5ae73d8f"
+  },
+  "delivery": [
+    {
+      "text": "Actual transaction and spent output evidence flows through the existing observer into the comparator. The fixed Lean driver independently supplies expectations. One coder repairs the code while a separate reviewer checks committed milestones. The custody case uses a delivering fold. The witness, and the destination of a fold that delivers nothing, wait on the open model ruling; a delivered output booked without a datum is reported as it is, and holds acceptance until ruled.",
+      "pause": 350
+    }
+  ],
+  "boundary": [
+    {
+      "text": "Keep the repair in the existing live observation modules and their tests. Do not move modules or edit offchain, validators, Lean, shared configuration, or generated books.",
+      "pause": 350
+    }
+  ],
+  "verification-limits": [
+    {
+      "text": "Run existing tests and connected devnet cases. A fixture demonstrates observation behavior, not live validator acceptance.",
+      "pause": 350
+    }
+  ]
+}

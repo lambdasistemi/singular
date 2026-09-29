@@ -10,7 +10,7 @@ import Cardano.Ledger.Api.Tx (witsTxL)
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Node.Client.Submitter (SubmitResult (..))
 import Cardano.Tx.Ledger (ConwayTx)
-import Control.Monad (unless)
+import Control.Monad (unless, when)
 import Data.IORef (IORef, atomicModifyIORef', newIORef)
 import Data.List (sort)
 import Data.Map.Strict qualified as Map
@@ -32,14 +32,14 @@ prepare
     -> ExUnits
     -> IO ExUnits
 prepare (Fixture used) provider assemble submit declared = do
-    alreadyUsed <- atomicModifyIORef' used (\old -> (True, old))
+    alreadyUsed <- atomicModifyIORef' used (True,)
     if alreadyUsed
         then pure declared
         else do
             template <- assemble declared
             let Redeemers redeemers = template ^. witsTxL . rdmrsTxWitsL
                 purposes = Map.keys redeemers
-            unless (not (null purposes)) $ fail "A1 fold has no redeemer purposes"
+            when (null purposes) $ fail "A1 fold has no redeemer purposes"
             pp <- Cage.queryProtocolParams provider
             let ExUnits maxMem maxCpu = pp ^. ppMaxTxExUnitsL
                 count = fromIntegral (length purposes)
@@ -58,7 +58,7 @@ prepare (Fixture used) provider assemble submit declared = do
                     | (purpose, ExUnits mem cpu) <- Map.toList measured
                     , mem > peakMem - 1 || cpu > peakCpu - 1
                     ]
-            unless (not (null overBudget)) $
+            when (null overBudget) $
                 fail "A1 fallback did not underbudget a purpose"
             putStrLn ("A1 node evaluation map: " <> show measured)
             putStrLn

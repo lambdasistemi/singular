@@ -122,7 +122,7 @@ use types.{
 ///   registry-owner role. On the state UTxO, `End` and every other redeemer
 ///   fail for every party; a spend of any other datum fails.
 /// - `else`: every other purpose fails.
-validator state() {
+validator state {
   mint(redeemer: MintRedeemer, policyId: PolicyId, tx: Transaction) {
     when redeemer is {
       Minting(seed) -> validateMint(seed, policyId, tx)

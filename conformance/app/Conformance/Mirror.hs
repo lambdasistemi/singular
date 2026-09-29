@@ -302,9 +302,8 @@ verifyAbsentKey
             then do
                 trustedSpoiled <- trustedRootFromChain preRoot
                 require
-                    ( "false-claim armed: CG absence check against the \
-                      \pre-delete root did not fail the run"
-                    )
+                    "false-claim armed: CG absence check against the \
+                    \pre-delete root did not fail the run"
                     ( verifyMPFExclusionProof
                         mpfHashing
                         trustedSpoiled

@@ -115,14 +115,16 @@ pub fn dutiesOf(
   if edge == edgeInsertAbsent {
     [LockCustody { key, refund, floor }]
   } else if edge == edgeInsertActive {
-    [DeliverToken {
+    [
+      DeliverToken {
         policy: pins.active_policy,
         key,
         destination,
         floor,
         count: 1,
         agreed: True,
-      }]
+      },
+    ]
   } else if edge == edgeUpdateActive {
     [
       SpendCustody { key },
@@ -143,14 +145,16 @@ pub fn dutiesOf(
   } else if edge == edgeDeleteAbsent {
     [SpendCustody { key }, ReturnDeposit { owner, floor }]
   } else if edge == edgeWitnessTerminal {
-    [DeliverToken {
-      policy: pins.terminal_policy,
-      key,
-      destination,
-      floor,
-      count: 1,
-      agreed: True,
-    }]
+    [
+      DeliverToken {
+        policy: pins.terminal_policy,
+        key,
+        destination,
+        floor,
+        count: 1,
+        agreed: True,
+      },
+    ]
   } else {
     // `deleteActive` (edge 5) burns the active token the request names;
     // the cage requires it as an input, exactly as the terminal update
@@ -220,11 +224,22 @@ fn mergeDeliver(
           } else {
             [
               head,
-              ..mergeDeliver(rest, policy, key, destination, floor, count, agreed)
+              ..mergeDeliver(
+                rest,
+                policy,
+                key,
+                destination,
+                floor,
+                count,
+                agreed,
+              )
             ]
           }
         _ ->
-          [head, ..mergeDeliver(rest, policy, key, destination, floor, count, agreed)]
+          [
+            head,
+            ..mergeDeliver(rest, policy, key, destination, floor, count, agreed)
+          ]
       }
   }
 }

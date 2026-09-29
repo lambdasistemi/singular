@@ -1,4 +1,9 @@
-{ pkgs, components, shell, cardanoNode }:
+{
+  pkgs,
+  components,
+  shell,
+  cardanoNode,
+}:
 let
   # The devnet E2E spawns cardano-node as a subprocess via
   # System.Process.proc, which looks the binary up on PATH.
@@ -6,23 +11,26 @@ let
   # pinned in the top-level flake.nix to match the devnet
   # Dockerfile.
   e2eTestsRaw = components.tests.e2e-tests;
-  e2eTestsWrapped = pkgs.runCommand "cage-tests-e2e" {
-    buildInputs = [ pkgs.makeWrapper ];
-    meta = (e2eTestsRaw.meta or { }) // {
-      mainProgram = "cage-tests-e2e";
-    };
-  } ''
-    mkdir -p $out/bin
-    makeWrapper ${pkgs.lib.getExe e2eTestsRaw} $out/bin/cage-tests-e2e \
-      --prefix PATH : ${cardanoNode}/bin
-  '';
+  e2eTestsWrapped =
+    pkgs.runCommand "cage-tests-e2e"
+      {
+        buildInputs = [ pkgs.makeWrapper ];
+        meta = (e2eTestsRaw.meta or { }) // {
+          mainProgram = "cage-tests-e2e";
+        };
+      }
+      ''
+        mkdir -p $out/bin
+        makeWrapper ${pkgs.lib.getExe e2eTestsRaw} $out/bin/cage-tests-e2e \
+          --prefix PATH : ${cardanoNode}/bin
+      '';
 in
 {
-  library = components.library;
-  cage-tests = components.tests.cage-tests;
-  record-value-tests = components.tests.record-value-tests;
+  inherit (components) library;
+  inherit (components.tests) cage-tests;
+  inherit (components.tests) record-value-tests;
   cage-tests-e2e = e2eTestsWrapped;
-  cage-test-vectors = components.exes.cage-test-vectors;
+  inherit (components.exes) cage-test-vectors;
   lint = pkgs.writeShellApplication {
     name = "lint";
     # Strict runtime closure for every external tool the text execs. The
@@ -40,7 +48,10 @@ in
       pkgs.gnugrep
       pkgs.findutils
     ];
-    excludeShellChecks = [ "SC2046" "SC2086" ];
+    excludeShellChecks = [
+      "SC2046"
+      "SC2086"
+    ];
     text = ''
       cd "${../. + "/"}"
       # Active Haskell source extent, discovered at run time: every
@@ -90,25 +101,13 @@ in
       # imports of the two direct-GHC naming sources; sources without that
       # syntax format exactly as before (ruling A-002, configuration only).
       fourmolu --config ${../../fourmolu.yaml} --ghc-opt=-XImportQualifiedPost -m check $files
-      # HLint runs on the discovered extent minus the directories carrying
-      # baseline hint debt (ruling A-002 D1-a). The debt is retained, not
-      # reclassified green and not blanket-ignored. Measured per directory
-      # at cc6ea00 for the formatted sources and at intake b382604 for the
-      # two restored verifier sources: journey 104, journey/retirement 24,
-      # journey/retire-verify 19 (intake bytes), journey/lmlc 14,
-      # journey/recovery 13, journey/verifier 11 (intake bytes),
-      # journey/register 9, journey/repair 7, journey/li-refusals 5,
-      # journey/li01 3, naming/test 2, naming/drift 2, update-terminal 1
-      # — 214 hints, all semantic (eta-reduce, use-void, fewer-imports
-      # class), unfixable inside this ticket's no-semantic-rewrite fence.
-      # Every exclusion here and the retained debt are owned by #278 S3; a newly added directory joins HLint
-      # automatically, and adding one of these names back requires
-      # clearing its debt.
-      hlint_excluded="journey journey/li01 journey/lmlc journey/recovery journey/retirement journey/register journey/li-refusals journey/repair journey/retire-verify journey/verifier naming/test naming/drift update-terminal"
-      hlint_dirs=$(printf '%s\n' $dirs | grep -vxF -f <(printf '%s\n' $hlint_excluded))
-      [ -n "$hlint_dirs" ] || { echo "lint: HLint covered set is empty" >&2; exit 1; }
-      echo "lint inventory: $(printf '%s\n' $files | wc -l) files in $(printf '%s\n' $dirs | wc -l) dirs; fourmolu over $(printf '%s\n' $files | wc -l) files under the house fourmolu.yaml, no exclusions; hlint over $(printf '%s\n' $hlint_dirs | wc -l) dirs ($(printf '%s\n' $hlint_excluded | wc -w) excluded, debt to #278 S3)" >&2
-      hlint $hlint_dirs
+      # #278 S3: HLint runs over the SAME discovered extent as Fourmolu,
+      # with no directory exclusions: the #264 baseline hint debt in the
+      # journey, naming/test, naming/drift and update-terminal trees is
+      # resolved at the source. A newly added directory joins HLint
+      # automatically through the Cabal manifest.
+      echo "lint inventory: $(printf '%s\n' $files | wc -l) files in $(printf '%s\n' $dirs | wc -l) dirs; fourmolu and hlint over the same files, house fourmolu.yaml, no exclusions" >&2
+      hlint $files
     '';
   };
 }

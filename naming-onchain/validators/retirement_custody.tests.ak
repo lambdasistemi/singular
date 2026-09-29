@@ -1,20 +1,21 @@
-use retirement_custody
 use cardano/address
 use cardano/assets.{add, zero}
-use cardano/transaction.{InlineDatum, Input, NoDatum, Output, OutputReference, Spend}
+use cardano/transaction.{
+  InlineDatum, Input, NoDatum, Output, OutputReference, Spend,
+}
 use fixtures.{
   app_address, app_policy, controller, mock_registry_token, record_value,
-  rep_policy, registry_key, self_ref, state_datum, state_input, state_ref,
+  registry_key, rep_policy, self_ref, state_datum, state_input, state_ref,
 }
 use naming.{
   MARejected, MAUpdate, MInsert, MLeaf, MRequest, MRequestDatum, MTokenId,
   MUpdate, MirrorEnd, MirrorModify, mpfs_state_datum_with_root, mpfs_state_hash,
 }
+use retirement_custody
 
 /// Completion-only custody (issue #66): the representative it holds is
 /// burned exactly once, by anybody. Spending it is the next child
 /// (`LT04`/`LT07`); these unit tests pin the shape this slice creates.
-
 fn custody_input(value) {
   Input {
     output_reference: self_ref,
@@ -90,10 +91,9 @@ fn state_output_new() {
   Output {
     address: address.from_script(mpfs_state_hash),
     value: state_input().output.value,
-    datum:
-      InlineDatum(
-        mpfs_state_datum_with_root(#"01", rep_policy, app_policy),
-      ),
+    datum: InlineDatum(
+      mpfs_state_datum_with_root(#"01", rep_policy, app_policy),
+    ),
     reference_script: None,
   }
 }
@@ -126,10 +126,9 @@ fn modify_singleton() {
 
 fn modify_batch() {
   state_redeemers(
-    MirrorModify([
-      MAUpdate([MLeaf { skip: 0, key: #"", value: #"" }]),
-      MARejected,
-    ]),
+    MirrorModify(
+      [MAUpdate([MLeaf { skip: 0, key: #"", value: #"" }]), MARejected],
+    ),
   )
 }
 
@@ -298,7 +297,11 @@ test custody_non_request_datum_refuses() fail {
     #"00",
     self_ref,
     custody_completion_tx(
-      [custody_input(held_value()), state_input(), request_input_with(state_datum())],
+      [
+        custody_input(held_value()),
+        state_input(),
+        request_input_with(state_datum()),
+      ],
       [state_output_new()],
       burn_held(),
       modify_singleton(),
@@ -365,11 +368,7 @@ test custody_wrong_old_value_refuses() fail {
       [
         custody_input(held_value()),
         state_input(),
-        request_input_with(
-          request_datum_with(
-            MUpdate(#"ffff", #"02"),
-          ),
-        ),
+        request_input_with(request_datum_with(MUpdate(#"ffff", #"02"))),
       ],
       [state_output_new()],
       burn_held(),
@@ -407,8 +406,7 @@ test custody_wrong_new_value_refuses() fail {
 /// path, so custody is the single executing check on the burn's
 /// policy.
 test custody_foreign_policy_lookalike_refuses() fail {
-  let foreign_held =
-    add(zero, #"666f726569676e2d706f6c696379", registry_key, 1)
+  let foreign_held = add(zero, #"666f726569676e2d706f6c696379", registry_key, 1)
   let foreign_burn =
     add(zero, #"666f726569676e2d706f6c696379", registry_key, -1)
   retirement_custody.retirement_custody.spend(
@@ -437,8 +435,7 @@ test custody_without_burn_refuses() fail {
 /// Negation: a wrong quantity is not the representative leaving exactly
 /// once.
 test custody_double_burn_refuses() fail {
-  let double =
-    add(burn_held(), app_policy, fixtures.registry_key, -1)
+  let double = add(burn_held(), app_policy, fixtures.registry_key, -1)
   retirement_custody.retirement_custody.spend(
     None,
     #"00",
@@ -449,17 +446,27 @@ test custody_double_burn_refuses() fail {
 
 /// The correct old/new values and burn cannot conceal a different key.
 test custody_wrong_spelling_refuses() fail {
-  let datum: Data = MRequestDatum(MRequest {
-    requestToken: MTokenId { assetName: fixtures.mock_registry_token },
-    requestOwner: #"abcd", requestKey: "bob",
-    requestValue: MUpdate(#"01", #"02"),
-    tip: 1000000, submitted_at: 0, destination: (#"", #""),
-  })
+  let datum: Data =
+    MRequestDatum(
+      MRequest {
+        requestToken: MTokenId { assetName: fixtures.mock_registry_token },
+        requestOwner: #"abcd",
+        requestKey: "bob",
+        requestValue: MUpdate(#"01", #"02"),
+        tip: 1000000,
+        submitted_at: 0,
+        destination: (#"", #""),
+      },
+    )
   retirement_custody.retirement_custody.spend(
-    None, #"00", self_ref,
+    None,
+    #"00",
+    self_ref,
     custody_completion_tx(
       [custody_input(held_value()), state_input(), request_input_with(datum)],
-      [state_output_new()], burn_held(), modify_singleton(),
+      [state_output_new()],
+      burn_held(),
+      modify_singleton(),
     ),
   )
 }

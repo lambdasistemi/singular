@@ -7,6 +7,7 @@ the local ``just build-docs`` and ``just serve-docs`` site carries the same
 generated pages the packaged site and its checks carry. The packaged build
 itself runs without it and generates those pages after MkDocs.
 """
+
 import argparse
 import os
 from pathlib import Path
@@ -17,7 +18,9 @@ import aiken_reference
 import api_reference
 
 arguments = argparse.ArgumentParser(description=__doc__)
-arguments.add_argument("--api-site", type=Path, help="a packaged site build whose api/ tree is staged")
+arguments.add_argument(
+    "--api-site", type=Path, help="a packaged site build whose api/ tree is staged"
+)
 options = arguments.parse_args()
 
 root = Path(__file__).resolve().parent.parent
@@ -48,7 +51,7 @@ def restage_lean_hrefs(stage: Path) -> int:
         # would fail strict docs_dir validation — raw anchors are exempt and
         # already the established form for prefix-crossing links.
         new = re.sub(
-            r'\[([^\]]+)\]\(((?:\.\./)*)((?:[\w.-]+/)*)lean/([^)]*)\)',
+            r"\[([^\]]+)\]\(((?:\.\./)*)((?:[\w.-]+/)*)lean/([^)]*)\)",
             lambda m: f'<a href="../../model/{m.group(4)}">{m.group(1)}</a>',
             text,
         )
@@ -62,7 +65,9 @@ def restage_lean_hrefs(stage: Path) -> int:
             md.write_text(new, encoding="utf-8")
             rewritten += 1
     if rewritten == 0:
-        raise RuntimeError("no lean/ evidence hrefs rewritten for staging: the shipped model/ mechanism found nothing")
+        raise RuntimeError(
+            "no lean/ evidence hrefs rewritten for staging: the shipped model/ mechanism found nothing"
+        )
     return rewritten
 
 
@@ -93,14 +98,16 @@ def restage_api_hrefs(stage: Path) -> int:
             )["hs_source_dirs"]:
                 prefix = source_dir.strip("/") + "/"
                 if rel_path.startswith(prefix):
-                    module = rel_path[len(prefix):-len(".hs")].replace("/", ".")
+                    module = rel_path[len(prefix) : -len(".hs")].replace("/", ".")
                     if module not in extent:
                         raise RuntimeError(
                             f"api anchor targets a file outside the {library.name} "
                             f"Cabal library extent: {rel_path}"
                         )
                     return module
-            raise RuntimeError(f"api anchor is not under a declared hs-source-dir: {rel_path}")
+            raise RuntimeError(
+                f"api anchor is not under a declared hs-source-dir: {rel_path}"
+            )
 
         pattern = re.compile(
             rf'<a href="\.\./{library.repo_dir}/([^"]*)" data-api="(module|source|index|symbols)">'
@@ -160,11 +167,19 @@ def restage_onchain_hrefs(stage: Path) -> int:
         rel, kind = match.group(1), match.group(2)
         if kind == "index":
             if rel:
-                raise RuntimeError(f"aiken reference index anchor must name the onchain/ root, not {rel}")
+                raise RuntimeError(
+                    f"aiken reference index anchor must name the onchain/ root, not {rel}"
+                )
             return f'<a href="../../{prefix}/index.html">'
-        module = rel[len("validators/"):-len(".ak")] if rel.startswith("validators/") and rel.endswith(".ak") else None
+        module = (
+            rel[len("validators/") : -len(".ak")]
+            if rel.startswith("validators/") and rel.endswith(".ak")
+            else None
+        )
         if module not in documented:
-            raise RuntimeError(f"aiken reference anchor targets a module with no generated page: {rel}")
+            raise RuntimeError(
+                f"aiken reference anchor targets a module with no generated page: {rel}"
+            )
         return f'<a href="../../{prefix}/{module}.html">'
 
     rewritten = 0
@@ -175,7 +190,9 @@ def restage_onchain_hrefs(stage: Path) -> int:
             md.write_text(new, encoding="utf-8")
             rewritten += 1
     if rewritten == 0:
-        raise RuntimeError("no onchain source anchors rewritten for staging: the generated Aiken reference is unreachable")
+        raise RuntimeError(
+            "no onchain source anchors rewritten for staging: the generated Aiken reference is unreachable"
+        )
     return rewritten
 
 
@@ -198,9 +215,13 @@ if options.api_site is not None:
 # Generated build trees never become part of the publication.
 model = root / "lean"
 if model.is_dir():
-    shutil.copytree(model, stage / "model", ignore=shutil.ignore_patterns(
-        ".lake", "node_modules", "__pycache__", "*.olean", "*.ilean", "*.c", "*.o"
-    ))
+    shutil.copytree(
+        model,
+        stage / "model",
+        ignore=shutil.ignore_patterns(
+            ".lake", "node_modules", "__pycache__", "*.olean", "*.ilean", "*.c", "*.o"
+        ),
+    )
 # The simulator is self-contained. Its development snapshots and test evidence
 # stay in Git; publishing another copy of the formal corpus also creates archive
 # hardlinks after Nix store deduplication.
@@ -217,8 +238,8 @@ shutil.copyfile(root / "README.speech.json", stage / "index.speech.json")
 shared = Path(os.environ["DOCS_SHARED_SOURCE"])
 reader = (shared / "docs/js/read-aloud.js").read_text()
 reader, replacements = re.subn(
-    r'  var pagePath = window.location.pathname.*?\n  fetch\(speechUrl\)',
-    '  var speechUrl = document.querySelector(\'link[rel="speech"]\').href;\n\n  fetch(speechUrl)',
+    r"  var pagePath = window.location.pathname.*?\n  fetch\(speechUrl\)",
+    "  var speechUrl = document.querySelector('link[rel=\"speech\"]').href;\n\n  fetch(speechUrl)",
     reader,
     flags=re.S,
 )

@@ -54,14 +54,13 @@ no Git directory exists, through `nix run .#inventory-check`; pull-request
 CI runs both forms so the two contexts cannot drift. The checked registry
 lives in `tools/code_inventory.py`.
 
-The inventory is a mapping, not enforcement: its report names which
-policies CI executes today and which are pending debt owned by the
-remaining slices of the lint-and-format work — including the retained HLint
-hint debt in the excluded offchain directories, which stays visible until
-it is resolved. `just inventory-controls` runs the negative and positive
-controls: synthetic orphans injected into scratch copies of the classified
-tree, each required to produce its intended failure. The controls never
-touch the working tree.
+The inventory is a mapping, not enforcement: its report names the CI
+carrier that executes each policy, and every lint and format policy is
+enforced — no code family is left without a checker, and no source
+directory is excluded. `just inventory-controls` runs the negative and
+positive controls: synthetic orphans injected into scratch copies of the
+classified tree, each required to produce its intended failure. The
+controls never touch the working tree.
 
 ## Haskell formatting
 
@@ -82,7 +81,7 @@ Discovery is dynamic: every Haskell source under `offchain/` and
 spike included — with no directory exclusions, so a new file or component
 directory is covered with nothing to edit. The Conformance tree gets the
 same check in its own Nix source context through `nix run .#format-check`
-from `conformance/` (CI job 'Conformance Haskell format check'). `just
+from `conformance/` (CI job 'Conformance Haskell format and lint check'). `just
 format-controls` runs the negative and positive controls: a source that
 Fourmolu's defaults accept but the house configuration rejects must fail
 the check — proving the configuration is read — and its formatter correction
@@ -91,6 +90,43 @@ than format with defaults; a newly tracked component tree outside the old
 directories joins the check through the Git index, while ignored untracked
 build noise never enters it and a tracked file under an ignored path stays.
 The controls run over scratch copies and never touch the working tree.
+
+HLint runs over the same discovered extent with no exclusions and no ignore
+file: `nix run .#lint` from `offchain/` (CI job 'Off-chain lint') checks both
+formats and hints, and `nix run .#hlint-check` from `conformance/` runs
+beside the Conformance format check.
+
+## Other languages
+
+Every other code family the inventory discovers is linted and
+format-checked by one command, over the inventory's own extent, with the
+tools the development shell pins:
+
+```sh
+nix develop --quiet -c just lint           # the check `just ci` carries
+nix develop --quiet -c just lint-fix       # apply the formatters in place
+nix develop --quiet -c just lint-controls  # planted defects must fail it
+```
+
+| Family | Format | Lint |
+| --- | --- | --- |
+| Nix | nixfmt | statix, deadnix, Conformance lock equal to the off-chain lock |
+| Python | ruff format | ruff check |
+| Shell | shfmt `-i 2 -ci -bn` | shellcheck |
+| JavaScript, CSS | Biome (`biome.json`) | Biome recommended rules |
+| justfiles | `just --fmt` | the same parse |
+| Workflow YAML | yamlfmt | actionlint with shellcheck |
+| Lean, HTML templates | style rules | style rules |
+
+Lean and HTML have no general formatter here, so the explicit style rules
+are the policy: no tab, no carriage return, no trailing whitespace, and
+exactly one final newline. Aiken sources are checked by `aiken fmt --check`
+inside the `onchain/` and `naming-onchain/` flake checks, with the Aiken
+each flake pins; formatting leaves every compiled validator and its hash
+unchanged. Generated files — the shipped simulator page, the Lean mirror
+and the cage vectors — are regenerated from their formatted sources, and
+their freshness checks stay the policy. A code family nobody checks fails
+`just lint` instead of passing silently.
 
 ## Edit and serve
 

@@ -41,11 +41,9 @@
 //// - A short, misdirected or missing payment to an owner's key refuses
 ////   `deposit-returned`, whether positional or summed.
 
-use aiken/collection/list
 use aiken/collection/list.{foldl}
 use aiken/collection/pairs
 use aiken/crypto.{VerificationKeyHash}
-use cardano/address
 use cardano/address.{Address, PaymentCredential}
 use cardano/assets.{PolicyId, lovelace_of, quantity_of}
 use cardano/transaction.{Input, Output}
@@ -167,9 +165,9 @@ pub fn refundFault(
     [Pair(owner, owed), ..rest] ->
       when outputs is {
         [output, ..remaining] ->
-          if output.address.payment_credential == address.VerificationKey(
-            owner,
-          ) && lovelace_of(output.value) >= owed {
+          if output.address.payment_credential == address.VerificationKey(owner) && lovelace_of(
+            output.value,
+          ) >= owed {
             refundFault(remaining, rest)
           } else {
             depositReturned()

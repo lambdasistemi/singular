@@ -39,10 +39,8 @@
 ////   and the mint under the three pinned token policies equals the summed
 ////   edge deltas exactly.
 
-use aiken/collection/list
 use aiken/collection/list.{foldl, head}
 use aiken/merkle_patricia_forestry as mpf
-use cardano/assets
 use cardano/assets.{PolicyId, Value, lovelace_of}
 use cardano/transaction.{InlineDatum, Input, Transaction}
 use lib.{exactQuantity}
@@ -144,7 +142,9 @@ pub fn validModify(
                   settlesOf(cageAddress.payment_credential, folded.duties)
                 when custodyFault(outputs, settles, custodyOwed) is {
                   None ->
-                    when refundFault(refundOutputs, list.reverse(folded.refunds)) is {
+                    when
+                      refundFault(refundOutputs, list.reverse(folded.refunds))
+                    is {
                       None -> payeeFault(outputs, settles, owed)
                       refusal -> refusal
                     }
