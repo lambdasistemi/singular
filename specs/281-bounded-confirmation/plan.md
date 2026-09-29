@@ -4,7 +4,7 @@ As the ticket owner, I want one mechanism for bounding a wait, applied to submis
 
 ## Delivery
 
-1. Intake is done: the source map, the historical evidence, the frozen base and draft PR #314. The approved GLM coder owns all production code, tests and local commits. The ticket owner is the final auditor and commissions no other seat.
+1. Intake is done: the source map, the historical evidence, the frozen base and draft PR #314. One approved coder owns all production code, tests and local commits: first GLM 5.3, then Claude Sonnet 5.5 on the operator's instruction. The ticket owner is the final auditor and commissions no other seat.
 2. RED commit: the new specs and any behavior-neutral seams they need to compile. Each negative spec executes its subject under its own time guard and fails because the wait does not end. Pre-existing specs pass. A compile or setup failure is not a RED.
 3. Fix commit: the shared wait bound, the bounded submitter at every construction site, indexed and session confirmation under the bound, the wait-aware catch at every classifier that reaches a submission or confirmation, and the old window failure path deleted.
 4. The ticket owner audits the exact candidate with the coder parked. The audit covers semantics, negative-control adequacy, cancellation and cleanup, whole-wait coverage and unchanged success.
@@ -12,7 +12,7 @@ As the ticket owner, I want one mechanism for bounding a wait, applied to submis
 
 ## Execution budget
 
-There are four local invocations, 15 minutes each and 30 minutes in total. Every Nix, build, test, format and lint command counts; reading an existing build log is not an invocation. No repair or audit invocation remains, so the audit reads source and receipts, and CI on the exact head carries every further compile.
+There were four local invocations, 15 minutes each and 30 minutes in total. Every Nix, build, test, format and lint command counts; reading an existing build log is not an invocation. All four are spent. The audit reads source and receipts, and the repair from the first audit is verified as the parent rules. CI on the exact head carries every further compile.
 
 | Slot | Owner | Command | Expected |
 | --- | --- | --- | --- |

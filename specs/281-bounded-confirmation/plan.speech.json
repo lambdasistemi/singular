@@ -1,17 +1,17 @@
 {
   "_source": {
     "file": "plan.md",
-    "sha256": "b257ac0af6fa07e328a5856c166346af4379e9b97ff3568b6560ff57b99a3f62"
+    "sha256": "ef4f35d42c00a2cc6a7713c1f5972705c0c7ba76e71db086f4885191a8db8f3f"
   },
   "delivery": [
     {
-      "text": "The coder commits failing specs first, with every negative case failing on its own time guard. It then commits the shared bound applied to every wait, with the wait-aware catch at every classifier that reaches a submission, and deletes the old window path. The ticket owner audits that exact candidate before it is pushed to the draft pull request. Continuous integration on the exact head carries format, lint, compile and devnet compatibility.",
+      "text": "One coder, first GLM and then Sonnet by the operator's instruction, commits failing specs first, with every negative case failing on its own time guard. It then commits the shared bound applied to every wait, with the wait-aware catch at every classifier that reaches a submission, and deletes the old window path. The ticket owner audits that exact candidate before it is pushed to the draft pull request. Continuous integration on the exact head carries format, lint, compile and devnet compatibility.",
       "pause": 500
     }
   ],
   "execution-budget": [
     {
-      "text": "Two of the four local invocations are spent: neither the first nor the second build compiled, so neither showed a failing test. The two that remain are the red run and the green run. The audit reads source and receipts, and continuous integration carries every further compile.",
+      "text": "All four local invocations are spent: two builds that did not compile, then the red run and the green run. The audit reads source and receipts. The repair from the first audit is verified as the parent rules, and continuous integration carries every further compile.",
       "pause": 500
     }
   ],
