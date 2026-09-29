@@ -5,15 +5,27 @@
     "after": "",
     "driverBuildExit": 0,
     "driverExit": 0,
-    "destinationRows": {
-      "DR01-register-absent": 0,
-      "DR03-retire-registered": 0,
-      "DR02-register-active": 1
+    "destinationOutputs": {
+      "DR01-register-absent": {
+        "namesDatum": false,
+        "datums": []
+      },
+      "DR03-retire-registered": {
+        "namesDatum": false,
+        "datums": []
+      },
+      "DR02-register-active": {
+        "namesDatum": false,
+        "datums": [
+          "none"
+        ]
+      }
     },
+    "fabrications": [],
     "proofExit": 0,
     "statementErrorLines": [],
-    "modelSha256": "59d913954200e6be5f67d4e161f02a1a5f8eb1ada8ecdd1ca1c8978a69a6f1dc",
-    "statementsSha256": "24cf71dfdd11db3375ff1b728374fdaa5cb208f43390acfde26245dfb337f29e"
+    "modelSha256": "3d0e40ddcd264aa3e41d6d23c4685a5ae969cb50950851a7f1617acaa0dd23a2",
+    "statementsSha256": "b3b55b917b20e93a3c58b45344b56c5ee8f4d6eb3e00e6340557fb817d10a2ab"
   },
   {
     "mutation": "unconditional-row",
@@ -21,20 +33,77 @@
     "after": "  [{ role := .destination",
     "driverBuildExit": 0,
     "driverExit": 0,
-    "destinationRows": {
-      "DR01-register-absent": 1,
-      "DR03-retire-registered": 1,
-      "DR02-register-active": 1
+    "destinationOutputs": {
+      "DR01-register-absent": {
+        "namesDatum": false,
+        "datums": [
+          "none"
+        ]
+      },
+      "DR03-retire-registered": {
+        "namesDatum": false,
+        "datums": [
+          "none"
+        ]
+      },
+      "DR02-register-active": {
+        "namesDatum": false,
+        "datums": [
+          "none"
+        ]
+      }
     },
+    "fabrications": [
+      "DR01-register-absent: destination row on a fold delivering nothing",
+      "DR03-retire-registered: destination row on a fold delivering nothing"
+    ],
     "proofExit": 1,
     "statementErrorLines": [
       965,
-      1329,
-      1346,
-      1749,
-      1767
+      1333,
+      1350,
+      1754,
+      1757,
+      1791,
+      1794,
+      1822
     ],
-    "modelSha256": "609e5382e39a2ff078e5c154597d48438266d81bbb250a6c89e8e7a46fd67579",
-    "statementsSha256": "24cf71dfdd11db3375ff1b728374fdaa5cb208f43390acfde26245dfb337f29e"
+    "modelSha256": "04adfbcc0758754941cce0410e8244cc76e018d4be003bd014300d6aeef203ea",
+    "statementsSha256": "b3b55b917b20e93a3c58b45344b56c5ee8f4d6eb3e00e6340557fb817d10a2ab"
+  },
+  {
+    "mutation": "unconditional-inline",
+    "before": "datum := if r.namesDatum then registryDatumForm else .none",
+    "after": "datum := registryDatumForm",
+    "driverBuildExit": 0,
+    "driverExit": 0,
+    "destinationOutputs": {
+      "DR01-register-absent": {
+        "namesDatum": false,
+        "datums": []
+      },
+      "DR03-retire-registered": {
+        "namesDatum": false,
+        "datums": []
+      },
+      "DR02-register-active": {
+        "namesDatum": false,
+        "datums": [
+          "inline"
+        ]
+      }
+    },
+    "fabrications": [
+      "DR02-register-active: delivered datum inline, request names none"
+    ],
+    "proofExit": 1,
+    "statementErrorLines": [
+      1126,
+      1133,
+      1794,
+      1815
+    ],
+    "modelSha256": "c7a484c7f1cf85ea97e8dd52b4aaf41db9be2e60964038b8c37329bdac697131",
+    "statementsSha256": "b3b55b917b20e93a3c58b45344b56c5ee8f4d6eb3e00e6340557fb817d10a2ab"
   }
 ]

@@ -232,7 +232,7 @@ manifest detaches the row from its proof and is caught there. -/
 
 def transactionRowTheorem : String := "Singular.Statements.insert_active_transaction_row"
 def transactionRowStatement : String :=
-  "f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508"
+  "a483afddc1afaeea11a5a2680321abcfe6a56e3b73c959e0ac7dea665625847f"
 def keyedMintTheorem : String := "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
 def keyedMintStatement : String :=
   "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988"

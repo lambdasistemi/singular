@@ -28,3 +28,29 @@ output or its datum to make a comparison pass.
 
 Deposit recipients, phase windows, signer requirements, and the inline datum and commitment
 of a delivering fold's destination output.
+
+# Ruling: the delivered output's datum follows the request
+
+Operator ruling, 2026-09-29 ("ok" to option B). The question it answers: the model made every
+delivered output inline, while the deployed state script requires no datum when the request
+names an empty destination-datum hash, and refuses an inline one (`datumMatches`,
+onchain/validators/lib.ak). Adding a datum in the builder alone was refused on chain in an
+execution control.
+
+The ruling: amend the model so the delivered output's datum form follows the request. It is
+inline, carrying the named datum, when the request names a hash, and none when it names none.
+Deposit routing, the commitment where a datum exists, and the presence rule above are unchanged.
+
+## Story
+
+As a conformance reader, I fold an active insertion whose request names no datum, and the
+model describes the delivered output with no datum, as the chain holds it. The comparison then
+reports the ledger's form rather than one the model invented.
+
+## What changes
+
+- A request records whether it names a datum for its delivered output (`namesDatum`, false
+  unless the caller says so). A booking naming an empty hash names none.
+- One statement over all seven edges: every delivered output presents an inline datum when its
+  request names one, and none otherwise. A mutant that restores an unconditional inline datum
+  must fail it.

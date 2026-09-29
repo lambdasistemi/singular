@@ -67,7 +67,7 @@ def insertAbsentDigest : String :=
   "a7e93824be2944e55b6482d0836111450522a7ed04eb57c262656f8903adaec6"
 def insertActiveTheorem : String := "Singular.Statements.insert_active_transaction_row"
 def insertActiveDigest : String :=
-  "f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508"
+  "a483afddc1afaeea11a5a2680321abcfe6a56e3b73c959e0ac7dea665625847f"
 def updateTerminalTheorem : String := "Singular.Statements.update_terminal_transaction_row"
 def updateTerminalDigest : String :=
   "6e7c651930b814a376c74b4b6b8dec08fecbe2db44693fe9a82985957d602493"

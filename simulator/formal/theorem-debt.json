@@ -153,7 +153,7 @@
     "name": "Singular.Statements.insert_active_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508"
+    "statementSha256": "a483afddc1afaeea11a5a2680321abcfe6a56e3b73c959e0ac7dea665625847f"
   },
   {
     "name": "Singular.Statements.update_terminal_transaction_row",
@@ -232,6 +232,12 @@
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "9fd337105c38a57f0413922e5eafc62bac2e388314b290e614d0ea805dd3a38b"
+  },
+  {
+    "name": "Singular.Statements.delivered_datum_follows_request",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "1f1031d1eee7290ff9a377b25f11487de4ae14515e4b35eda90e07c7121806a1"
   },
   {
     "name": "Singular.Statements.admission_refuses_first",

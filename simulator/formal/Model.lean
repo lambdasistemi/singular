@@ -363,13 +363,17 @@ structure Request where
   claimed : List (TokenKind × Int) := []
   tip : Nat := 0
   reference : Nat := 0
+  /-- Whether the request names a datum for its delivered output. On chain a request
+  names its destination as an address and a datum hash, and an empty hash names
+  none: the output must then carry no datum. -/
+  namesDatum : Bool := false
   deriving Repr, BEq, DecidableEq
 
 /-- A request that holds nothing beyond its deposit, given field by field in
 declaration order. It sits at reference 0. -/
 @[reducible] def Request.mk (edge : Edge) (key : Key) (owner refundAddress deposit output : Nat)
     (approval : Option Approval) (claimed : List (TokenKind × Int)) : Request :=
-  Request.make edge key owner refundAddress deposit output approval claimed 0 0
+  Request.make edge key owner refundAddress deposit output approval claimed 0 0 false
 
 /-- A request serialises completely too, so a corpus row carries the exact input
 the fold was given. -/
@@ -380,6 +384,7 @@ instance : ToJson Request where
     , ("tip", toJson r.tip)
     , ("reference", toJson r.reference)
     , ("output", toJson r.output)
+    , ("namesDatum", toJson r.namesDatum)
     , ("approval", match r.approval with | none => Json.null | some a => toJson a)
     , ("claimed", Json.arr ((r.claimed.map fun d =>
         Json.mkObj [("kind", toJson d.1), ("quantity", toJson d.2)]).toArray)) ]
@@ -851,14 +856,16 @@ def txStateOutput (t : Result) : TxOutput :=
   , commitment := none, assets := [] }
 
 /-- The destination output, present only when this edge routes a token to the
-requester: routed to the address the request named, carrying an inline datum
-whose commitment is the scoping tuple's, and holding exactly the tokens the edge
-routed there. A fold that delivers nothing has no such output, so the model
-describes only outputs that exist (#304). -/
+requester: routed to the address the request named, carrying the datum the
+request named — inline when it names one, none when it names none, as the chain
+requires — with the scoping tuple's commitment, and holding exactly the tokens
+the edge routed there. A fold that delivers nothing has no such output, so the
+model describes only outputs that exist (#304). -/
 def txDestinationOutputs (t : Result) (r : Request) : List TxOutput :=
   let assets := routedPayment t r .requestOutput
   if assets.isEmpty then []
-  else [{ role := .destination, datum := registryDatumForm
+  else [{ role := .destination
+        , datum := if r.namesDatum then registryDatumForm else .none
         , address := some (requestDestination r), stateTokens := 0, config := none
         , commitment := some (datumHash (destinationDatum r))
         , assets := assets }]

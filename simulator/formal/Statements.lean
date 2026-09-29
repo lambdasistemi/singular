@@ -984,8 +984,10 @@ lovelace that covers the tip — and produces exactly two outputs: the state UTx
 moved, still carrying one state token under an inline datum, whose eight-field
 configuration differs from the input's in the root alone and whose root commits
 the map the fold produced; and a destination output routed to the address the
-request named, whose inline datum presents the very commitment the approval the
-fold verified carries, holding exactly one active token and the deposit. The
+request named, presenting the very commitment the approval the fold verified
+carries, holding exactly one active token and the deposit, and carrying the
+datum the request named — inline when it names one, none when it names none, as
+the chain requires. The
 mint is `+1` at `(activePolicy, key)` and nothing else, the transaction's one
 payment is that deposit, to the destination, and the signer set is empty.
 
@@ -1008,7 +1010,8 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
           , outputs :=
               [ { role := .state, datum := .inline, address := none, stateTokens := 1
                 , config := some t.state.config, commitment := none, assets := [] }
-              , { role := .destination, datum := .inline, address := some r.output
+              , { role := .destination, datum := if r.namesDatum then .inline else .none
+                , address := some r.output
                 , stateTokens := 0, config := none, commitment := some ap.assetName
                 , assets := [((.active, r.key), 1)], lovelace := r.deposit } ]
           , mint := [((.active, r.key), 1)]
@@ -1114,7 +1117,8 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
           , outputs :=
               [ { role := .state, datum := .inline, address := none, stateTokens := 1
                 , config := some t.state.config, commitment := none, assets := [] }
-              , { role := .destination, datum := .inline, address := some r.output
+              , { role := .destination, datum := if r.namesDatum then .inline else .none
+                , address := some r.output
                 , stateTokens := 0, config := none, commitment := some ap.assetName
                 , assets := [((.active, r.key), 1)], lovelace := r.deposit } ]
           , mint := [((.active, r.key), 1)]
@@ -1475,10 +1479,10 @@ theorem fold_requires_no_signer (s : RegistryState) (r : Request) (lovelace : Na
     (∀ tx : Tx, txOf s r lovelace = .ok tx → tx.signers = []) ∧
     step s (withSignatures r sigs) = step s r ∧
     txOf s (withSignatures r sigs) lovelace = txOf s r lovelace := by
-  obtain ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference⟩ := r
+  obtain ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference, namesDatum⟩ := r
   refine ⟨?_, ?_, ?_⟩
   · intro tx h
-    cases hs : step s ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference⟩ with
+    cases hs : step s ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference, namesDatum⟩ with
     | error why => rw [txOf_of_step_error _ _ _ _ hs] at h; exact Except.noConfusion h
     | ok t =>
       rw [txOf_of_step_ok _ _ _ _ hs] at h
@@ -1759,6 +1763,57 @@ theorem destination_output_iff_delivers (s : RegistryState) (r : Request) (lovel
   · rfl
   · intro o
     rfl
+
+/-- **#304** — a delivered output carries the datum its request named: for every
+state, request, lovelace and admitted fold, over all seven edges, each output in
+the destination role presents an inline datum when the request names one and no
+datum when it names none, because the chain refuses a delivery carrying a datum
+its request did not name. -/
+theorem delivered_datum_follows_request (s : RegistryState) (r : Request)
+    (lovelace : Nat) (t : Result) (tx : Tx) (hok : step s r = .ok t)
+    (htx : txOf s r lovelace = .ok tx) :
+    ∀ o ∈ tx.outputs, o.role = .destination →
+      o.datum = if r.namesDatum then .inline else .none := by
+  rw [txOf_of_step_ok s r lovelace t hok] at htx
+  injection htx with htx
+  subst htx
+  intro o ho hrole
+  dsimp only at ho
+  rw [List.mem_append, List.mem_append, List.mem_cons] at ho
+  rcases ho with ((ho | ho) | ho) | ho
+  · subst ho
+    simp [txStateOutput] at hrole
+  · rw [List.mem_map] at ho
+    obtain ⟨d, hd, rfl⟩ := ho
+    unfold txDestinationOutputs at hd
+    dsimp only at hd
+    split at hd
+    · simp at hd
+    · rw [List.mem_singleton] at hd
+      subst hd
+      rfl
+  · unfold txCageOutputs at ho
+    dsimp only at ho
+    split at ho
+    · simp at ho
+    · rw [List.mem_singleton] at ho
+      subst ho
+      simp at hrole
+  · rw [ownerOutputs, List.mem_filterMap] at ho
+    obtain ⟨p, -, hp⟩ := ho
+    split at hp <;> (cases hp <;> simp at hrole)
+
+/-- By value: a delivered output carries an inline datum when its request names
+one and none when it names none. -/
+example (s : RegistryState) (k : Key) :
+    (txDestinationOutputs { state := s, mint := [((.active, k), 1)], paid := [] }
+      { edge := .insertActive, key := k, namesDatum := true }).map (·.datum) = [.inline] := by
+  simp +decide [txDestinationOutputs, routedPayment, mintRoutedTo, route, registryDatumForm]
+
+example (s : RegistryState) (k : Key) :
+    (txDestinationOutputs { state := s, mint := [((.active, k), 1)], paid := [] }
+      { edge := .insertActive, key := k }).map (·.datum) = [.none] := by
+  simp +decide [txDestinationOutputs, routedPayment, mintRoutedTo, route]
 
 /-- By value, one edge each way: an absent insertion routes its token to custody
 and describes no destination output. -/
