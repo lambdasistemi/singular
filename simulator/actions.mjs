@@ -14,6 +14,7 @@ export const request = (edge, key, opts = {}) => ({
   tip: opts.tip ?? 0,
   reference: opts.reference ?? 0,
   output: opts.output ?? 0,
+  namesDatum: opts.namesDatum ?? false,
   approval: null,
   claimed: opts.claimed ?? [],
 });

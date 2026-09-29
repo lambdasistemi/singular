@@ -1,0 +1,18 @@
+{
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "b5bc8246ddf3d07a16a03efd13e7be5e510bf547382b6306bb0c9cfbd878e807"
+  },
+  "implementation": [
+    {
+      "text": "Repair the affected datum observations and preserve executable failing and passing evidence without changing the model or refactor-owned files.",
+      "pause": 350
+    }
+  ],
+  "acceptance": [
+    {
+      "text": "The parent checks all requirements, checkpoint approvals, final gates and continuous integration before recording acceptance.",
+      "pause": 350
+    }
+  ]
+}

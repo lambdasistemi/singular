@@ -1,7 +1,7 @@
 {
-  "corpusSourceSha256": "9dbe166ab1e1b1bd704f623c94e5a397d1516e242f38e6de85884a60ad6553ea",
-  "modelSha256": "ed1f2ce494ed2eb5db69adde52fe937c3a9587e11d39fef7a469bf374f4f6177",
-  "payloadSha256": "9c778fb469a27715c112129c4b31067d979149d2b7a26f771c9d8ab699ca09ff",
+  "corpusSourceSha256": "ddc1d6f6a796e4d2dcff508b6aed83b90b90fe44c79ad2646eae4ec5cd398862",
+  "modelSha256": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
+  "payloadSha256": "2d12cc1344a173d4da05bec255cf709a4bdd0c93bd3eb811db4ce2ffe71fa204",
   "scenarios": [
     {
       "id": "DR01-register-absent",
@@ -158,18 +158,6 @@
             },
             {
               "address": 0,
-              "assets": [],
-              "commitment": 372747933,
-              "custodyDatum": null,
-              "datum": "inline",
-              "inlineConfig": null,
-              "lovelace": 0,
-              "reference": null,
-              "role": "destination",
-              "stateToken": 0
-            },
-            {
-              "address": 0,
               "assets": [
                 {
                   "assetName": 5,
@@ -221,6 +209,7 @@
         "deposit": 55,
         "edge": "insertAbsent",
         "key": 5,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -253,7 +242,7 @@
         "held": [],
         "trie": []
       },
-      "statementSha256": "8c63e568b81b4e4a81cf3832c88d324ef910925e2733b6593c8e337c81357b3f",
+      "statementSha256": "a7e93824be2944e55b6482d0836111450522a7ed04eb57c262656f8903adaec6",
       "theorem": "Singular.Statements.insert_absent_transaction_row"
     },
     {
@@ -338,6 +327,7 @@
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "active",
               "output": 555
@@ -422,7 +412,7 @@
               ],
               "commitment": 1604014105,
               "custodyDatum": null,
-              "datum": "inline",
+              "datum": "none",
               "inlineConfig": null,
               "lovelace": 55,
               "reference": null,
@@ -460,6 +450,7 @@
         "deposit": 55,
         "edge": "insertActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -492,7 +483,7 @@
         "held": [],
         "trie": []
       },
-      "statementSha256": "f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508",
+      "statementSha256": "83dd1fefbe6b00be6adcb57d84b4321b9507649b6566c79eecd9f6015551ecb4",
       "theorem": "Singular.Statements.insert_active_transaction_row"
     },
     {
@@ -606,7 +597,7 @@
                   "quantity": 1
                 }
               ],
-              "datum": "inline",
+              "datum": "none",
               "lovelace": 0,
               "role": "witness",
               "stateToken": 0
@@ -653,18 +644,6 @@
               "stateToken": 1
             },
             {
-              "address": 555,
-              "assets": [],
-              "commitment": 2958227895,
-              "custodyDatum": null,
-              "datum": "inline",
-              "inlineConfig": null,
-              "lovelace": 0,
-              "reference": null,
-              "role": "destination",
-              "stateToken": 0
-            },
-            {
               "address": 42,
               "assets": [],
               "commitment": 2958227895,
@@ -707,6 +686,7 @@
         "deposit": 55,
         "edge": "updateTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -732,6 +712,7 @@
             "deposit": 55,
             "edge": "insertActive",
             "key": 42,
+            "namesDatum": false,
             "output": 555,
             "owner": 42,
             "reference": 0,
@@ -761,6 +742,7 @@
             "custody": [],
             "held": [
               {
+                "datum": "none",
                 "key": 42,
                 "kind": "active",
                 "output": 555
@@ -799,7 +781,7 @@
         "held": [],
         "trie": []
       },
-      "statementSha256": "6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068",
+      "statementSha256": "8ea765f55d3a5187b8a9abc3430b3125406c5ce6c09407322443cc268dcd1079",
       "theorem": "Singular.Statements.update_terminal_transaction_row"
     },
     {
@@ -821,6 +803,7 @@
         "deposit": 55,
         "edge": "insertAbsent",
         "key": 5,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -883,6 +866,7 @@
         "deposit": 55,
         "edge": "insertActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -908,6 +892,7 @@
             "deposit": 55,
             "edge": "insertActive",
             "key": 42,
+            "namesDatum": false,
             "output": 555,
             "owner": 42,
             "reference": 0,
@@ -937,6 +922,7 @@
             "custody": [],
             "held": [
               {
+                "datum": "none",
                 "key": 42,
                 "kind": "active",
                 "output": 555
@@ -975,7 +961,7 @@
         "held": [],
         "trie": []
       },
-      "statementSha256": "8b5794d17bf859cb01ceae53f2c487cbb22a251464c51364778234f978a9f98b",
+      "statementSha256": "6ed0639458ff3086da939df84bcb8578a7ffea396441560382897ba4c245a160",
       "theorem": "Singular.Statements.insert_active_inversion"
     },
     {
@@ -1005,6 +991,7 @@
         "deposit": 55,
         "edge": "updateTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -1114,6 +1101,7 @@
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "active",
               "output": 555
@@ -1220,6 +1208,7 @@
         "deposit": 55,
         "edge": "insertActive",
         "key": 42,
+        "namesDatum": false,
         "output": 556,
         "owner": 43,
         "reference": 0,
@@ -1245,6 +1234,7 @@
             "deposit": 55,
             "edge": "insertActive",
             "key": 42,
+            "namesDatum": false,
             "output": 555,
             "owner": 42,
             "reference": 0,
@@ -1274,6 +1264,7 @@
             "custody": [],
             "held": [
               {
+                "datum": "none",
                 "key": 42,
                 "kind": "active",
                 "output": 555
@@ -1442,6 +1433,7 @@
         "deposit": 55,
         "edge": "insertActive",
         "key": 7,
+        "namesDatum": false,
         "output": 777,
         "owner": 77,
         "reference": 0,
@@ -1559,6 +1551,7 @@
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "active",
               "output": 555
@@ -1629,6 +1622,7 @@
         "deposit": 55,
         "edge": "insertActive",
         "key": 7,
+        "namesDatum": false,
         "output": 777,
         "owner": 77,
         "reference": 0,
@@ -1654,6 +1648,7 @@
             "deposit": 55,
             "edge": "insertActive",
             "key": 42,
+            "namesDatum": false,
             "output": 555,
             "owner": 42,
             "reference": 0,
@@ -1683,6 +1678,7 @@
             "custody": [],
             "held": [
               {
+                "datum": "none",
                 "key": 42,
                 "kind": "active",
                 "output": 555
@@ -1760,6 +1756,7 @@
         "deposit": 55,
         "edge": "updateActive",
         "key": 7,
+        "namesDatum": false,
         "output": 777,
         "owner": 77,
         "reference": 0,
@@ -1785,6 +1782,7 @@
             "deposit": 55,
             "edge": "insertActive",
             "key": 42,
+            "namesDatum": false,
             "output": 555,
             "owner": 42,
             "reference": 0,
@@ -1814,6 +1812,7 @@
             "custody": [],
             "held": [
               {
+                "datum": "none",
                 "key": 42,
                 "kind": "active",
                 "output": 555
@@ -1891,6 +1890,7 @@
         "deposit": 55,
         "edge": "insertActive",
         "key": 7,
+        "namesDatum": false,
         "output": 777,
         "owner": 77,
         "reference": 0,
@@ -1916,6 +1916,7 @@
             "deposit": 55,
             "edge": "insertActive",
             "key": 42,
+            "namesDatum": false,
             "output": 555,
             "owner": 42,
             "reference": 0,
@@ -1945,6 +1946,7 @@
             "custody": [],
             "held": [
               {
+                "datum": "none",
                 "key": 42,
                 "kind": "active",
                 "output": 555
@@ -2021,6 +2023,7 @@
         "deposit": 55,
         "edge": "insertActive",
         "key": 7,
+        "namesDatum": false,
         "output": 777,
         "owner": 77,
         "reference": 0,
@@ -2046,6 +2049,7 @@
             "deposit": 55,
             "edge": "insertActive",
             "key": 42,
+            "namesDatum": false,
             "output": 555,
             "owner": 42,
             "reference": 0,
@@ -2075,6 +2079,7 @@
             "custody": [],
             "held": [
               {
+                "datum": "none",
                 "key": 42,
                 "kind": "active",
                 "output": 555
@@ -2152,6 +2157,7 @@
         "deposit": 55,
         "edge": "insertActive",
         "key": 7,
+        "namesDatum": false,
         "output": 777,
         "owner": 77,
         "reference": 0,
@@ -2177,6 +2183,7 @@
             "deposit": 55,
             "edge": "insertActive",
             "key": 42,
+            "namesDatum": false,
             "output": 555,
             "owner": 42,
             "reference": 0,
@@ -2206,6 +2213,7 @@
             "custody": [],
             "held": [
               {
+                "datum": "none",
                 "key": 42,
                 "kind": "active",
                 "output": 555
@@ -2259,16 +2267,16 @@
   ],
   "schema": "singular-driver-corpus-v1",
   "sourceHashes": {
-    "lean/DriverMain.lean": "9dbe166ab1e1b1bd704f623c94e5a397d1516e242f38e6de85884a60ad6553ea",
-    "lean/Main.lean": "b55b058b687731b51fb620dc0ee42177cec9be86713a6906065a8ef735f3eedd",
+    "lean/DriverMain.lean": "ddc1d6f6a796e4d2dcff508b6aed83b90b90fe44c79ad2646eae4ec5cd398862",
+    "lean/Main.lean": "70491ac5ea1cfacdab355af57717576ecabd560096df1029372c4d352fc70241",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "52ed3c6db8ff0e0c2db2e07f8358ceba87ee74a671cdd6a096bedaacd2aa630a",
-    "lean/Singular/Lemmas.lean": "829d42c109a7d9ec8c7ab30bb42041f7d362fb5306277b84726e6fd0df0de899",
-    "lean/Singular/Model.lean": "ed1f2ce494ed2eb5db69adde52fe937c3a9587e11d39fef7a469bf374f4f6177",
-    "lean/Singular/Statements.lean": "609a512e59051bee36093bd1fc5014ba92991223894b5e60f7b1a33c58b9f838"
+    "lean/Singular/Driver.lean": "97c79d1caca2938e3e99a4d45ce18cb73ff1d35e4b35b91ca16dced19334a70d",
+    "lean/Singular/Lemmas.lean": "c8aa4ea4585fd53a41d75ca817e229019ad59517c79cd6da6f9242f2c27c857c",
+    "lean/Singular/Model.lean": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
+    "lean/Singular/Statements.lean": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9"
   },
-  "statementsSha256": "609a512e59051bee36093bd1fc5014ba92991223894b5e60f7b1a33c58b9f838",
+  "statementsSha256": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9",
   "surface": {
     "declaration": "Singular.Driver.runSurface",
     "definitionDigest": "13086894509481008378",
@@ -2308,5 +2316,5 @@
       "utxoReference"
     ]
   },
-  "theoremManifestSha256": "033ed0ad432d838c592a4f40ad00688ca235c6b41b54a72a274d643f7dfd0fec"
+  "theoremManifestSha256": "91ed0116194b64bb71af402619e120e3190874b66ea5698555c73c4220b44162"
 }

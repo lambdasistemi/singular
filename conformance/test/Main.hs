@@ -9,6 +9,7 @@ import Conformance.Support.FixtureChild
     , holdScopedDirectories
     )
 import Conformance.Support.Identity qualified as Identity
+import Conformance.Support.ObservedTx qualified as ObservedTx
 import Conformance.Support.Oracle qualified as Oracle
 import Conformance.Support.Payments qualified as Payments
 import Conformance.Support.PurposeUnits qualified as PurposeUnits
@@ -45,6 +46,7 @@ suite = do
         Fixture.spec
         RegistrationComparison.spec
         Payments.spec
+        ObservedTx.spec
         Oracle.spec
         Step.spec
         Retraction.spec

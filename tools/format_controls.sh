@@ -16,13 +16,13 @@
 #       the check through the Git index (audit F001: two fixed root
 #       directory names missed it). A deliberately misformatted source in
 #       the new tree must fail the check naming it; formatting the tree
-#       (the positive correction) must bring it in — 203 discovered
+#       (the positive correction) must bring it in — baseline + 1 discovered
 #       sources — and pass the same check.
 #   f4  ignored untracked build noise never enters the set, while a
 #       TRACKED file under an ignored path stays in it (audit F002): with
 #       an untracked offchain/dist-newstyle/Noise.hs present and a
 #       force-added offchain/dist-newstyle/Kept.hs tracked, the check
-#       must pass over exactly 202 + 1 sources — never 204.
+#       must pass over exactly baseline + 1 sources — never baseline + 2.
 #
 # Every control runs over a scratch copy of the Haskell trees; the
 # working tree is never touched and no deliberate defect is ever
@@ -51,6 +51,14 @@ if ! bash "$check" check >"$work/baseline.log" 2>&1; then
   cat "$work/baseline.log" >&2
   exit 1
 fi
+# The extent is read from the baseline's own discovery, never typed: f3 and
+# f4 each add exactly one tracked source to it.
+baseline=$(sed -n 's/^format: \([0-9][0-9]*\) discovered Haskell sources.*/\1/p' "$work/baseline.log")
+if [[ -z "$baseline" ]]; then
+  echo "controls: SETUP FAILURE — the baseline did not report its discovered extent" >&2
+  exit 1
+fi
+expected=$((baseline + 1))
 echo "controls: baseline PASS — the tracked tree is formatted under the house configuration"
 
 # f1 — misformatted source: accepted by Fourmolu defaults, rejected by the
@@ -125,7 +133,7 @@ elif ! grep -qF "new-haskell-component/NewComponentControl.hs" "$log"; then
   echo "control f3-new-tracked-tree FAILED: rejected for the wrong reason (no diagnostic naming the new-tree file)" >&2
   sed 's/^/  | /' "$log" >&2
   failures=$((failures + 1))
-elif ! grep -qF "203 discovered Haskell sources" "$log"; then
+elif ! grep -qF "$expected discovered Haskell sources" "$log"; then
   echo "control f3-new-tracked-tree FAILED: the new tracked tree did not join the discovered extent" >&2
   sed 's/^/  | /' "$log" >&2
   failures=$((failures + 1))
@@ -137,7 +145,7 @@ fi
 # the house configuration and the SAME check passes over 203 sources.
 if bash "$check" inplace "$work/f3-new-tracked-tree" >>"$log" 2>&1; then
   if bash "$check" check "$work/f3-new-tracked-tree" >"$work/f3-positive.log" 2>&1 \
-    && grep -qF "203 discovered Haskell sources" "$work/f3-positive.log"; then
+    && grep -qF "$expected discovered Haskell sources" "$work/f3-positive.log"; then
     echo "control f3-positive PASS: the corrected new tree passes the same check"
   else
     echo "control f3-positive FAILED: the corrected new tree still fails the check" >&2
@@ -154,7 +162,7 @@ fi
 # under an ignored path stays in it (audit F002). With an untracked,
 # ignore-matched offchain/dist-newstyle/Noise.hs present AND a
 # force-added tracked offchain/dist-newstyle/Kept.hs, the check must pass
-# over exactly 202 + 1 sources — never 204, never a failure on the noise.
+# over exactly baseline + 1 sources — never baseline + 2, never a failure on the noise.
 scratch f4-ignored-noise
 git -C "$work/f4-ignored-noise" init -q
 git -C "$work/f4-ignored-noise" add -A
@@ -166,7 +174,7 @@ printf '%s\n' 'module Kept () where' \
 git -C "$work/f4-ignored-noise" add -f offchain/dist-newstyle/Kept.hs
 log="$work/f4-ignored-noise.log"
 if bash "$check" check "$work/f4-ignored-noise" >"$log" 2>&1 \
-  && grep -qF "203 discovered Haskell sources" "$log"; then
+  && grep -qF "$expected discovered Haskell sources" "$log"; then
   if grep -qF "dist-newstyle/Noise.hs" "$log"; then
     echo "control f4-ignored-noise FAILED: ignored build noise entered the discovered extent" >&2
     failures=$((failures + 1))
@@ -174,7 +182,7 @@ if bash "$check" check "$work/f4-ignored-noise" >"$log" 2>&1 \
     echo "control f4-ignored-noise PASS: ignored noise excluded, tracked file under the ignored path retained"
   fi
 else
-  echo "control f4-ignored-noise FAILED: the check did not pass over exactly 202+1 sources with the noise present" >&2
+  echo "control f4-ignored-noise FAILED: the check did not pass over exactly baseline+1 sources with the noise present" >&2
   sed 's/^/  | /' "$log" >&2
   failures=$((failures + 1))
 fi

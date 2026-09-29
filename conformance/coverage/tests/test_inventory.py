@@ -66,14 +66,18 @@ def binding_violations(
 
 class RealInventoryTest(unittest.TestCase):
     def test_real_tree_reconciles(self):
-        # Retraction admission adds four statements and two helpers reading
+        # The destination-row ruling (#304) adds three statements: a fold
+        # describes a destination output only when it delivers, a delivered
+        # output carries the datum its request named, and a spent witness
+        # carries the datum its holding records: 116 = 63 + 53. Before it,
+        # retraction admission added four statements and two helpers reading
         # its edge and window checks as propositions: 113 = 60 + 53, previously
-        # 107 = 56 + 51 (and before that 104 = 56 + 48). The registry has 39
+        # 107 = 56 + 51 (and before that 104 = 56 + 48). The registry has 42
         # statements; naming, lifecycle and wire retain 7, 9 and 5.
         inv = build_inventory(REPO_ROOT)
-        self.assertEqual(inv.manifest_bound, 60)
+        self.assertEqual(inv.manifest_bound, 63)
         self.assertEqual(inv.unclassified, 53)
-        self.assertEqual(inv.manifest_bound + inv.unclassified, 113)
+        self.assertEqual(inv.manifest_bound + inv.unclassified, 116)
 
     def test_real_manifests_match_extraction_byte_for_byte(self):
         # build_inventory re-runs check_model.statement_inventory and compares

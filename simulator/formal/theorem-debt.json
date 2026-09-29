@@ -93,13 +93,13 @@
     "name": "Singular.Statements.insert_active_inversion",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "8b5794d17bf859cb01ceae53f2c487cbb22a251464c51364778234f978a9f98b"
+    "statementSha256": "6ed0639458ff3086da939df84bcb8578a7ffea396441560382897ba4c245a160"
   },
   {
     "name": "Singular.Statements.update_active_inversion",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "fccc7684da82d92656d5ea79fe3d80749245000052a088a97742ae1df7b20982"
+    "statementSha256": "768068239bbc8835f2a0d2666a0bdcddd6cab388ca07eac13abbfeb3fa496855"
   },
   {
     "name": "Singular.Statements.update_terminal_inversion",
@@ -123,7 +123,7 @@
     "name": "Singular.Statements.witness_terminal_inversion",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "1c7af35ddacb820a451811ad329012ea5e45797da9878d2d8681b31589b02288"
+    "statementSha256": "11a6149a03e2edd93e254994428f7f1bcd73c05566f57260f201df28dcd2fc61"
   },
   {
     "name": "Singular.Statements.empty_fold_error",
@@ -147,19 +147,19 @@
     "name": "Singular.Statements.insert_absent_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "8c63e568b81b4e4a81cf3832c88d324ef910925e2733b6593c8e337c81357b3f"
+    "statementSha256": "a7e93824be2944e55b6482d0836111450522a7ed04eb57c262656f8903adaec6"
   },
   {
     "name": "Singular.Statements.insert_active_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508"
+    "statementSha256": "83dd1fefbe6b00be6adcb57d84b4321b9507649b6566c79eecd9f6015551ecb4"
   },
   {
     "name": "Singular.Statements.update_terminal_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068"
+    "statementSha256": "8ea765f55d3a5187b8a9abc3430b3125406c5ce6c09407322443cc268dcd1079"
   },
   {
     "name": "Singular.Statements.fold_batch_claimed_mint_by_kind_key",
@@ -226,6 +226,24 @@
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "3182f6fcacacf71f257ba4ddd17ec276302e04ba5342726b4833a8be51d68c38"
+  },
+  {
+    "name": "Singular.Statements.destination_output_iff_delivers",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "9fd337105c38a57f0413922e5eafc62bac2e388314b290e614d0ea805dd3a38b"
+  },
+  {
+    "name": "Singular.Statements.delivered_datum_follows_request",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "1f1031d1eee7290ff9a377b25f11487de4ae14515e4b35eda90e07c7121806a1"
+  },
+  {
+    "name": "Singular.Statements.witness_input_datum_is_held",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "c0676968ffc94970d7e4d813131e2cec3942ca72067c26ef78df858e7c795090"
   },
   {
     "name": "Singular.Statements.admission_refuses_first",

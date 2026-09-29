@@ -731,7 +731,12 @@ const configSchema = {
   terminalPolicy: N,
 };
 const custody = { key: N, refundAddress: N, value: N };
-const holding = { key: N, kind: { $enum: KINDS }, output: N };
+const DATUM_FORMS = ['inline', 'hashed', 'none'];
+const holding = { key: N, kind: { $enum: KINDS }, output: N, datum: { $enum: DATUM_FORMS } };
+// The datum form a fold gives the output it delivers to (#304): inline when the
+// request names a datum, none when it names none. A holding keeps it, so a later
+// fold spends the witness as the chain holds it.
+const deliveredDatum = (r) => (r.namesDatum ? 'inline' : 'none');
 const stateSchema = {
   config: configSchema,
   trie: [{ key: N, leaf }],
@@ -747,6 +752,7 @@ const requestSchema = {
   tip: N,
   reference: N,
   output: N,
+  namesDatum: B,
   approval: { $option: approval },
   claimed: [{ kind: { $enum: KINDS }, quantity: I }],
 };
@@ -989,7 +995,14 @@ function applyEdge(s, a) {
     case 'insertActive': {
       const t = withTrie('active');
       return {
-        state: { ...s, ...t, held: [{ key: a.key, kind: 'active', output: a.output }, ...s.held] },
+        state: {
+          ...s,
+          ...t,
+          held: [
+            { key: a.key, kind: 'active', output: a.output, datum: deliveredDatum(a) },
+            ...s.held,
+          ],
+        },
         mint: delta(a.edge),
         paid: [],
       };
@@ -1001,7 +1014,10 @@ function applyEdge(s, a) {
           ...s,
           ...t,
           custody: s.custody.filter((c) => c.key !== a.key),
-          held: [{ key: a.key, kind: 'active', output: a.output }, ...s.held],
+          held: [
+            { key: a.key, kind: 'active', output: a.output, datum: deliveredDatum(a) },
+            ...s.held,
+          ],
         },
         mint: delta(a.edge),
         paid: entry ? [{ destination: entry.refundAddress, value: entry.value }] : [],
@@ -1043,7 +1059,13 @@ function applyEdge(s, a) {
     }
     case 'witnessTerminal':
       return {
-        state: { ...s, held: [{ key: a.key, kind: 'terminal', output: a.output }, ...s.held] },
+        state: {
+          ...s,
+          held: [
+            { key: a.key, kind: 'terminal', output: a.output, datum: deliveredDatum(a) },
+            ...s.held,
+          ],
+        },
         mint: delta(a.edge),
         paid: [],
       };
@@ -1160,6 +1182,7 @@ const request = (edge, key, opts = {}) => ({
   tip: opts.tip ?? 0,
   reference: opts.reference ?? 0,
   output: opts.output ?? 0,
+  namesDatum: opts.namesDatum ?? false,
   approval: null,
   claimed: opts.claimed ?? [],
 });
@@ -1555,6 +1578,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "insertActive",
@@ -1584,6 +1608,7 @@ const STORIES=[
        "tip": 0,
        "reference": 0,
        "output": 555,
+       "namesDatum": false,
        "approval": {
         "policy": 7,
         "edge": "insertActive",
@@ -1617,6 +1642,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 0,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "insertAbsent",
@@ -1641,6 +1667,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "updateActive",
@@ -1670,6 +1697,7 @@ const STORIES=[
        "tip": 0,
        "reference": 0,
        "output": 0,
+       "namesDatum": false,
        "approval": {
         "policy": 7,
         "edge": "deleteAbsent",
@@ -1703,6 +1731,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "insertActive",
@@ -1727,6 +1756,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "updateTerminal",
@@ -1751,6 +1781,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 700,
+     "namesDatum": false,
      "approval": null,
      "claimed": []
     },
@@ -1767,6 +1798,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 701,
+     "namesDatum": false,
      "approval": null,
      "claimed": []
     },
@@ -1788,6 +1820,7 @@ const STORIES=[
        "tip": 0,
        "reference": 0,
        "output": 555,
+       "namesDatum": false,
        "approval": {
         "policy": 7,
         "edge": "deleteActive",
@@ -1821,6 +1854,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 700,
+     "namesDatum": false,
      "approval": null,
      "claimed": []
     },
@@ -1837,6 +1871,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "insertActive",
@@ -1861,6 +1896,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 700,
+     "namesDatum": false,
      "approval": null,
      "claimed": []
     },
@@ -1877,6 +1913,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "updateTerminal",
@@ -1906,6 +1943,7 @@ const STORIES=[
        "tip": 0,
        "reference": 0,
        "output": 555,
+       "namesDatum": false,
        "approval": {
         "policy": 7,
         "edge": "updateTerminal",
@@ -1935,6 +1973,7 @@ const STORIES=[
        "tip": 0,
        "reference": 0,
        "output": 555,
+       "namesDatum": false,
        "approval": {
         "policy": 99,
         "edge": "updateTerminal",
@@ -1964,6 +2003,7 @@ const STORIES=[
        "tip": 0,
        "reference": 0,
        "output": 555,
+       "namesDatum": false,
        "approval": null,
        "claimed": []
       },
@@ -1989,6 +2029,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "insertActive",
@@ -2013,6 +2054,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "deleteActive",
@@ -2037,6 +2079,7 @@ const STORIES=[
      "tip": 0,
      "reference": 0,
      "output": 555,
+     "namesDatum": false,
      "approval": {
       "policy": 7,
       "edge": "insertActive",
@@ -2085,6 +2128,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "insertAbsent",
         "key": 8,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -2193,6 +2237,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "insertActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -2251,6 +2296,7 @@ const STORIES=[
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "active",
               "output": 555
@@ -2281,6 +2327,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -2350,6 +2397,7 @@ const STORIES=[
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "active",
               "output": 555
@@ -2380,6 +2428,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -2409,6 +2458,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -2473,6 +2523,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -2561,6 +2612,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteActive",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 42,
         "reference": 0,
@@ -2590,6 +2642,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -2641,6 +2694,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "witnessTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 700,
         "owner": 0,
         "reference": 0,
@@ -2704,6 +2758,7 @@ const STORIES=[
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "terminal",
               "output": 700
@@ -2734,6 +2789,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "insertAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -2763,6 +2819,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -2799,6 +2856,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "insertActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -2828,6 +2886,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -2864,6 +2923,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "insertAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -2923,6 +2983,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "insertActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -2982,6 +3043,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "insertActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -3047,6 +3109,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -3101,6 +3164,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -3130,6 +3194,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -3166,6 +3231,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -3225,6 +3291,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -3279,6 +3346,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -3344,6 +3412,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -3403,6 +3472,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -3457,6 +3527,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -3486,6 +3557,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -3522,6 +3594,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -3581,6 +3654,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteActive",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 42,
         "reference": 0,
@@ -3635,6 +3709,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteActive",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 42,
         "reference": 0,
@@ -3700,6 +3775,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteActive",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 42,
         "reference": 0,
@@ -3759,6 +3835,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "witnessTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 700,
         "owner": 0,
         "reference": 0,
@@ -3788,6 +3865,7 @@ const STORIES=[
         "custody": [],
         "held": [
           {
+            "datum": "none",
             "key": 42,
             "kind": "active",
             "output": 555
@@ -3824,6 +3902,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "witnessTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 700,
         "owner": 0,
         "reference": 0,
@@ -3889,6 +3968,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "witnessTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 700,
         "owner": 0,
         "reference": 0,
@@ -3935,6 +4015,7 @@ const STORIES=[
         "deposit": 200,
         "edge": "insertAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -3989,6 +4070,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "insertActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -4043,6 +4125,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "insertActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -4089,6 +4172,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "witnessTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 700,
         "owner": 0,
         "reference": 0,
@@ -4152,6 +4236,7 @@ const STORIES=[
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "terminal",
               "output": 700
@@ -4174,6 +4259,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "witnessTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 700,
         "owner": 0,
         "reference": 0,
@@ -4228,6 +4314,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -4287,6 +4374,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -4346,6 +4434,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -4415,6 +4504,7 @@ const STORIES=[
           "custody": [],
           "held": [
             {
+              "datum": "none",
               "key": 42,
               "kind": "active",
               "output": 555
@@ -4445,6 +4535,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -4533,6 +4624,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "updateTerminal",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -4592,6 +4684,7 @@ const STORIES=[
         "deposit": 0,
         "edge": "deleteActive",
         "key": 42,
+        "namesDatum": false,
         "output": 555,
         "owner": 42,
         "reference": 0,
@@ -4699,7 +4792,7 @@ const STORIES=[
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "b55b058b687731b51fb620dc0ee42177cec9be86713a6906065a8ef735f3eedd",
+  "corpusSourceSha256": "70491ac5ea1cfacdab355af57717576ecabd560096df1029372c4d352fc70241",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -4828,20 +4921,20 @@ const STORIES=[
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "ed1f2ce494ed2eb5db69adde52fe937c3a9587e11d39fef7a469bf374f4f6177",
-  "payloadSha256": "6e5870a86d1ff0f214bf969cc8ac4614b20b3c78191e745f2c65805dd206a958",
+  "modelSha256": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
+  "payloadSha256": "de8eb81bb2fd5fa50c4cf0d1b66d87f6ea2d3e662f9719e535d78e13caa312c8",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "b55b058b687731b51fb620dc0ee42177cec9be86713a6906065a8ef735f3eedd",
+    "lean/Main.lean": "70491ac5ea1cfacdab355af57717576ecabd560096df1029372c4d352fc70241",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "52ed3c6db8ff0e0c2db2e07f8358ceba87ee74a671cdd6a096bedaacd2aa630a",
-    "lean/Singular/Lemmas.lean": "829d42c109a7d9ec8c7ab30bb42041f7d362fb5306277b84726e6fd0df0de899",
-    "lean/Singular/Model.lean": "ed1f2ce494ed2eb5db69adde52fe937c3a9587e11d39fef7a469bf374f4f6177",
-    "lean/Singular/Statements.lean": "609a512e59051bee36093bd1fc5014ba92991223894b5e60f7b1a33c58b9f838"
+    "lean/Singular/Driver.lean": "97c79d1caca2938e3e99a4d45ce18cb73ff1d35e4b35b91ca16dced19334a70d",
+    "lean/Singular/Lemmas.lean": "c8aa4ea4585fd53a41d75ca817e229019ad59517c79cd6da6f9242f2c27c857c",
+    "lean/Singular/Model.lean": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
+    "lean/Singular/Statements.lean": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9"
   },
-  "statementsSha256": "609a512e59051bee36093bd1fc5014ba92991223894b5e60f7b1a33c58b9f838",
-  "theoremManifestSha256": "033ed0ad432d838c592a4f40ad00688ca235c6b41b54a72a274d643f7dfd0fec",
+  "statementsSha256": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9",
+  "theoremManifestSha256": "91ed0116194b64bb71af402619e120e3190874b66ea5698555c73c4220b44162",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
@@ -4875,7 +4968,7 @@ const STORIES=[
         "accepted": false,
         "reason": "key-exists"
       },
-      "statementSha256": "f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508",
+      "statementSha256": "83dd1fefbe6b00be6adcb57d84b4321b9507649b6566c79eecd9f6015551ecb4",
       "theorem": "Singular.Statements.insert_active_transaction_row",
       "tip": 1,
       "transaction": {
@@ -4950,7 +5043,7 @@ const STORIES=[
             ],
             "commitment": 1604014105,
             "custodyDatum": null,
-            "datum": "inline",
+            "datum": "none",
             "inlineConfig": null,
             "lovelace": 0,
             "reference": null,
@@ -5005,6 +5098,7 @@ const STORIES=[
         "deposit": 200,
         "edge": "insertAbsent",
         "key": 42,
+        "namesDatum": false,
         "output": 0,
         "owner": 91,
         "reference": 0,
@@ -5012,7 +5106,7 @@ const STORIES=[
         "tip": 0
       },
       "rootMatchesTrie": true,
-      "statementSha256": "8c63e568b81b4e4a81cf3832c88d324ef910925e2733b6593c8e337c81357b3f",
+      "statementSha256": "a7e93824be2944e55b6482d0836111450522a7ed04eb57c262656f8903adaec6",
       "theorem": "Singular.Statements.insert_absent_transaction_row",
       "transaction": {
         "inputs": [
@@ -5072,18 +5166,6 @@ const STORIES=[
             "reference": null,
             "role": "state",
             "stateToken": 1
-          },
-          {
-            "address": 0,
-            "assets": [],
-            "commitment": 3021472884,
-            "custodyDatum": null,
-            "datum": "inline",
-            "inlineConfig": null,
-            "lovelace": 0,
-            "reference": null,
-            "role": "destination",
-            "stateToken": 0
           },
           {
             "address": 0,
@@ -5178,7 +5260,7 @@ const STORIES=[
           "quantity": 1
         }
       ],
-      "statementSha256": "6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068",
+      "statementSha256": "8ea765f55d3a5187b8a9abc3430b3125406c5ce6c09407322443cc268dcd1079",
       "theorem": "Singular.Statements.update_terminal_transaction_row",
       "tip": 1,
       "transaction": {
@@ -5210,7 +5292,7 @@ const STORIES=[
                 "quantity": 1
               }
             ],
-            "datum": "inline",
+            "datum": "none",
             "lovelace": 0,
             "role": "witness",
             "stateToken": 0
@@ -5255,18 +5337,6 @@ const STORIES=[
             "reference": null,
             "role": "state",
             "stateToken": 1
-          },
-          {
-            "address": 555,
-            "assets": [],
-            "commitment": 2958227895,
-            "custodyDatum": null,
-            "datum": "inline",
-            "inlineConfig": null,
-            "lovelace": 0,
-            "reference": null,
-            "role": "destination",
-            "stateToken": 0
           },
           {
             "address": 42,
@@ -5387,13 +5457,13 @@ const STORIES=[
     "name": "Singular.Statements.insert_active_inversion",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "8b5794d17bf859cb01ceae53f2c487cbb22a251464c51364778234f978a9f98b"
+    "statementSha256": "6ed0639458ff3086da939df84bcb8578a7ffea396441560382897ba4c245a160"
   },
   {
     "name": "Singular.Statements.update_active_inversion",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "fccc7684da82d92656d5ea79fe3d80749245000052a088a97742ae1df7b20982"
+    "statementSha256": "768068239bbc8835f2a0d2666a0bdcddd6cab388ca07eac13abbfeb3fa496855"
   },
   {
     "name": "Singular.Statements.update_terminal_inversion",
@@ -5417,7 +5487,7 @@ const STORIES=[
     "name": "Singular.Statements.witness_terminal_inversion",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "1c7af35ddacb820a451811ad329012ea5e45797da9878d2d8681b31589b02288"
+    "statementSha256": "11a6149a03e2edd93e254994428f7f1bcd73c05566f57260f201df28dcd2fc61"
   },
   {
     "name": "Singular.Statements.empty_fold_error",
@@ -5441,19 +5511,19 @@ const STORIES=[
     "name": "Singular.Statements.insert_absent_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "8c63e568b81b4e4a81cf3832c88d324ef910925e2733b6593c8e337c81357b3f"
+    "statementSha256": "a7e93824be2944e55b6482d0836111450522a7ed04eb57c262656f8903adaec6"
   },
   {
     "name": "Singular.Statements.insert_active_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508"
+    "statementSha256": "83dd1fefbe6b00be6adcb57d84b4321b9507649b6566c79eecd9f6015551ecb4"
   },
   {
     "name": "Singular.Statements.update_terminal_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068"
+    "statementSha256": "8ea765f55d3a5187b8a9abc3430b3125406c5ce6c09407322443cc268dcd1079"
   },
   {
     "name": "Singular.Statements.fold_batch_claimed_mint_by_kind_key",
@@ -5522,6 +5592,24 @@ const STORIES=[
     "statementSha256": "3182f6fcacacf71f257ba4ddd17ec276302e04ba5342726b4833a8be51d68c38"
   },
   {
+    "name": "Singular.Statements.destination_output_iff_delivers",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "9fd337105c38a57f0413922e5eafc62bac2e388314b290e614d0ea805dd3a38b"
+  },
+  {
+    "name": "Singular.Statements.delivered_datum_follows_request",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "1f1031d1eee7290ff9a377b25f11487de4ae14515e4b35eda90e07c7121806a1"
+  },
+  {
+    "name": "Singular.Statements.witness_input_datum_is_held",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "c0676968ffc94970d7e4d813131e2cec3942ca72067c26ef78df858e7c795090"
+  },
+  {
     "name": "Singular.Statements.admission_refuses_first",
     "status": "PROVED",
     "debt": "none",
@@ -5545,12 +5633,12 @@ const STORIES=[
   ],
   "files": {
     "formal/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "formal/Driver.lean": "52ed3c6db8ff0e0c2db2e07f8358ceba87ee74a671cdd6a096bedaacd2aa630a",
-    "formal/DriverMain.lean": "9dbe166ab1e1b1bd704f623c94e5a397d1516e242f38e6de85884a60ad6553ea",
-    "formal/Lemmas.lean": "829d42c109a7d9ec8c7ab30bb42041f7d362fb5306277b84726e6fd0df0de899",
+    "formal/Driver.lean": "97c79d1caca2938e3e99a4d45ce18cb73ff1d35e4b35b91ca16dced19334a70d",
+    "formal/DriverMain.lean": "ddc1d6f6a796e4d2dcff508b6aed83b90b90fe44c79ad2646eae4ec5cd398862",
+    "formal/Lemmas.lean": "c8aa4ea4585fd53a41d75ca817e229019ad59517c79cd6da6f9242f2c27c857c",
     "formal/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "formal/Main.lean": "b55b058b687731b51fb620dc0ee42177cec9be86713a6906065a8ef735f3eedd",
-    "formal/Model.lean": "ed1f2ce494ed2eb5db69adde52fe937c3a9587e11d39fef7a469bf374f4f6177",
+    "formal/Main.lean": "70491ac5ea1cfacdab355af57717576ecabd560096df1029372c4d352fc70241",
+    "formal/Model.lean": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
     "formal/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "formal/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "formal/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -5563,19 +5651,19 @@ const STORIES=[
     "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "formal/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
     "formal/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
-    "formal/Statements.lean": "609a512e59051bee36093bd1fc5014ba92991223894b5e60f7b1a33c58b9f838",
+    "formal/Statements.lean": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9",
     "formal/lifecycle-theorem-debt.json": "4146c8eba1aedae5f40384816b11d3d892ed9632dd4d1838fab51d62eeca8ea3",
     "formal/naming-theorem-debt.json": "968246a3d0f585c5ecaebaa800564dbaa9f51ffd4fb3bad0a08af9cd4324d658",
-    "formal/theorem-debt.json": "033ed0ad432d838c592a4f40ad00688ca235c6b41b54a72a274d643f7dfd0fec",
+    "formal/theorem-debt.json": "91ed0116194b64bb71af402619e120e3190874b66ea5698555c73c4220b44162",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "deb3d30d081fb069d7113bb222a085974c8d7ce13e394d546c34931a55470533"
+    "corpus.json": "85630340079f6a69cd22be7da9b7134741db8480a61986b3899c01e0dcf91e5d"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 38,
   "corpusFolds": 3,
   "corpusCodec": 7,
   "corpusAda": 2,
-  "theorems": 39,
+  "theorems": 42,
   "namingTheorems": 7
 }
 ;const NAMINGCORPUS={
@@ -5617,9 +5705,9 @@ const STORIES=[
       "id": "NF07-attestation-minted-by-read"
     }
   ],
-  "modelSha256": "ed1f2ce494ed2eb5db69adde52fe937c3a9587e11d39fef7a469bf374f4f6177",
+  "modelSha256": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
   "namingStatementsSha256": "c96207b951c8566499aa564429f33962535ad0862d18dc1b7484a0a73be0504d",
-  "payloadSha256": "87aa4cc632def830876d8c82b7b88eba3522d5128732eedf1fea5ddab3915e21",
+  "payloadSha256": "db39c7ee8b507eb029df1aab816ac71512eda2ae69e4f37fe95ab9a86477d152",
   "queues": [
     {
       "actual": true,
@@ -5709,15 +5797,15 @@ const STORIES=[
   ],
   "schema": "singular-naming-corpus-v2",
   "sourceHashes": {
-    "lean/DriverMain.lean": "9dbe166ab1e1b1bd704f623c94e5a397d1516e242f38e6de85884a60ad6553ea",
+    "lean/DriverMain.lean": "ddc1d6f6a796e4d2dcff508b6aed83b90b90fe44c79ad2646eae4ec5cd398862",
     "lean/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "lean/Main.lean": "b55b058b687731b51fb620dc0ee42177cec9be86713a6906065a8ef735f3eedd",
+    "lean/Main.lean": "70491ac5ea1cfacdab355af57717576ecabd560096df1029372c4d352fc70241",
     "lean/NamingMain.lean": "f026113e6b13604012fe817a7c38b4c2f19a469db443c263593b49e5daac8c24",
     "lean/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "52ed3c6db8ff0e0c2db2e07f8358ceba87ee74a671cdd6a096bedaacd2aa630a",
-    "lean/Singular/Lemmas.lean": "829d42c109a7d9ec8c7ab30bb42041f7d362fb5306277b84726e6fd0df0de899",
-    "lean/Singular/Model.lean": "ed1f2ce494ed2eb5db69adde52fe937c3a9587e11d39fef7a469bf374f4f6177",
+    "lean/Singular/Driver.lean": "97c79d1caca2938e3e99a4d45ce18cb73ff1d35e4b35b91ca16dced19334a70d",
+    "lean/Singular/Lemmas.lean": "c8aa4ea4585fd53a41d75ca817e229019ad59517c79cd6da6f9242f2c27c857c",
+    "lean/Singular/Model.lean": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
     "lean/Singular/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -5728,7 +5816,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
-    "lean/Singular/Statements.lean": "609a512e59051bee36093bd1fc5014ba92991223894b5e60f7b1a33c58b9f838"
+    "lean/Singular/Statements.lean": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9"
   },
   "spellings": [
     {
@@ -5846,7 +5934,7 @@ const STORIES=[
   ],
   "lifecycleStatementsSha256": "4df67ab2a8e6684dbb05524aab68e8cb8dd0391298a62fbb16c247a7987a88cd",
   "modelSha256": "ac2c5ef33d34084c32c37b701e8ec9c4ab5b088cab75190e675b1f1686fb5f56",
-  "payloadSha256": "7f386e0f16fe0771710b5e2813ea5c907fc7c4c06a09a065c319e09b9d8c2b26",
+  "payloadSha256": "f01324b74fc544d0e2d937d969f1eada99499215c7a0e066868cae5eb0d167fe",
   "recovery": [
     {
       "detail": true,
@@ -5917,15 +6005,15 @@ const STORIES=[
   ],
   "schema": "singular-naming-lifecycle-corpus-v2",
   "sourceHashes": {
-    "lean/DriverMain.lean": "9dbe166ab1e1b1bd704f623c94e5a397d1516e242f38e6de85884a60ad6553ea",
+    "lean/DriverMain.lean": "ddc1d6f6a796e4d2dcff508b6aed83b90b90fe44c79ad2646eae4ec5cd398862",
     "lean/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "lean/Main.lean": "b55b058b687731b51fb620dc0ee42177cec9be86713a6906065a8ef735f3eedd",
+    "lean/Main.lean": "70491ac5ea1cfacdab355af57717576ecabd560096df1029372c4d352fc70241",
     "lean/NamingMain.lean": "f026113e6b13604012fe817a7c38b4c2f19a469db443c263593b49e5daac8c24",
     "lean/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "52ed3c6db8ff0e0c2db2e07f8358ceba87ee74a671cdd6a096bedaacd2aa630a",
-    "lean/Singular/Lemmas.lean": "829d42c109a7d9ec8c7ab30bb42041f7d362fb5306277b84726e6fd0df0de899",
-    "lean/Singular/Model.lean": "ed1f2ce494ed2eb5db69adde52fe937c3a9587e11d39fef7a469bf374f4f6177",
+    "lean/Singular/Driver.lean": "97c79d1caca2938e3e99a4d45ce18cb73ff1d35e4b35b91ca16dced19334a70d",
+    "lean/Singular/Lemmas.lean": "c8aa4ea4585fd53a41d75ca817e229019ad59517c79cd6da6f9242f2c27c857c",
+    "lean/Singular/Model.lean": "538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d",
     "lean/Singular/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -5936,7 +6024,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
-    "lean/Singular/Statements.lean": "609a512e59051bee36093bd1fc5014ba92991223894b5e60f7b1a33c58b9f838"
+    "lean/Singular/Statements.lean": "197534a853da66e52caefb78ea4e8182a28a3f0fed070c82a0c4e2df01ffaed9"
   },
   "steps": [
     {
@@ -7026,7 +7114,8 @@ function renderRefusals() {
         config: { ...s.config, root: rootOf(leaf === null ? [] : [{ key, leaf }]) },
       };
       if (leaf === 'absent') s = { ...s, custody: [{ key, refundAddress: 91, value: 200 }] };
-      if (leaf === 'active') s = { ...s, held: [{ key, kind: 'active', output: 555 }] };
+      if (leaf === 'active')
+        s = { ...s, held: [{ key, kind: 'active', output: 555, datum: 'none' }] };
       const r = step(
         s,
         approved(edge, key, { owner: 42, output: 555, refundAddress: 91, deposit: 200 }),

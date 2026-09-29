@@ -232,7 +232,7 @@ manifest detaches the row from its proof and is caught there. -/
 
 def transactionRowTheorem : String := "Singular.Statements.insert_active_transaction_row"
 def transactionRowStatement : String :=
-  "f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508"
+  "83dd1fefbe6b00be6adcb57d84b4321b9507649b6566c79eecd9f6015551ecb4"
 def keyedMintTheorem : String := "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
 def keyedMintStatement : String :=
   "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988"
@@ -303,7 +303,7 @@ def absentResult : Except String Result := step s0 absentRequest
 def absentTx : Except String Tx := txOf s0 absentRequest txLovelace
 
 def absentRowTheorem : String := "Singular.Statements.insert_absent_transaction_row"
-def absentRowStatement : String := "8c63e568b81b4e4a81cf3832c88d324ef910925e2733b6593c8e337c81357b3f"
+def absentRowStatement : String := "a7e93824be2944e55b6482d0836111450522a7ed04eb57c262656f8903adaec6"
 
 /-- Check the constructed value independently of its constructors, so changing
 those constructors cannot silently change the exported expectations. -/
@@ -318,9 +318,6 @@ def absentTxCorrect : Bool :=
       , outputs :=
           [ { role := .state, datum := .inline, address := none, stateTokens := 1
             , config := some t.state.config, commitment := none, assets := [] }
-          , { role := .destination, datum := .inline, address := some 0, stateTokens := 0
-            , config := none, commitment := some (approvalAssetName .insertAbsent 42 91 0)
-            , assets := [] }
           , { role := .cage, datum := .inline, address := some 0, stateTokens := 0
             , config := none, commitment := none, assets := [((.absent, 42), 1)]
             , custodyDatum := some [91], lovelace := 200 } ]
@@ -359,7 +356,7 @@ step. -/
 
 def retirementRowTheorem : String := "Singular.Statements.update_terminal_transaction_row"
 def retirementRowStatement : String :=
-  "6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068"
+  "8ea765f55d3a5187b8a9abc3430b3125406c5ce6c09407322443cc268dcd1079"
 
 /-- The state an accepted `insertActive` at key 42 produced: the leaf reads
 `Active` and its one active token is held at output 555. -/
@@ -934,14 +931,15 @@ def returnsDeposit (e : Edge) : Bool := foldPaysDepositTo e == 42
 
 -- A fold's transaction carries the deposit in the output that pays it: the
 -- destination output of a delivering edge, one owner output of an edge that
--- delivers nothing, with no datum and naming the approval it returns; and it
--- refunds exactly what the exit pays.
+-- delivers nothing, with no datum and naming the approval it returns; an edge
+-- that delivers nothing has no destination output (#304); and it refunds exactly
+-- what the exit pays.
 #guard exitEdges.all fun e => paidKeys.all fun k =>
   match exitStep paidState (.fold e) (exitStepRequest e k),
         txOfExit paidState (.fold e) (exitStepRequest e k) 3 with
   | .ok t, .ok tx =>
     (tx.outputs.filter (·.role == .destination)).map (·.lovelace)
-        == [if deliversToken e then 55 else 0] &&
+        == (if deliversToken e then [55] else []) &&
       tx.outputs.filter (·.role == .owner)
         == (if returnsDeposit e then
               [{ ownerOutput 42 55 with
@@ -1143,6 +1141,14 @@ def judgementFailures : List String :=
 #guard (txInputs (txOfExit exitState .retract (exitStepRequest .insertActive 9) 3)).length == 1
 #guard (txOutputs (txOfExit exitState .reject (exitStepRequest .insertActive 9) 3)).length == 2
 #guard (txOutputs (txOf exitState (exitStepRequest .insertActive 9) 3)).length ≥ 2
+
+-- A saved state replays with the datum form each holding's delivery wrote (#304):
+-- a holding serialised and read back is the same holding, for every form.
+#guard [DatumForm.inline, .hashed, .none].all fun d =>
+  let h : Holding := { key := 42, kind := .active, output := 555, datum := d }
+  match (fromJson? (toJson h) : Except String Holding) with
+  | .ok back => back == h
+  | .error _ => false
 
 def main : IO Unit := do
   let stdout ← IO.getStdout
