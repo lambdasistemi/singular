@@ -37,6 +37,7 @@ import Conformance.Run.Environment (RowCage (..))
 import Conformance.Run.Live
     ( LiveStep (..)
     , StepOutcome (..)
+    , heldObservation
     , newLiveIdentities
     , observedStepTx
     , prepareRegistrationIdentities
@@ -58,6 +59,7 @@ import Data.ByteString.Char8 qualified as BSC
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (forM_)
 import Data.IORef (newIORef)
+import Data.List (sort)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Sequence.Strict qualified as StrictSeq
@@ -932,22 +934,38 @@ spec =
                     ]
             forms `shouldBe` [String "hashed", String "none"]
 
+        it
+            "the held census keeps key, kind and output, and leaves the form to the state"
+            $ do
+                holdings <- holdingsOn [(custodyIn, carrier hashedDatum)]
+                map (fieldsOf . heldObservation) holdings
+                    `shouldBe` [["key", "kind", "output"]]
+                map fieldsOf holdings `shouldBe` [["datum", "key", "kind", "output"]]
+
 {- | The datum form of every holding the census reads off a holder's outputs,
 in the order it reads them.
 -}
 heldForms :: [(TxIn, TxOut ConwayEra)] -> IO [Value]
-heldForms outputs = do
+heldForms outputs = map datumFormOf <$> holdingsOn outputs
+
+-- | The holdings the census reads off a holder's outputs.
+holdingsOn :: [(TxIn, TxOut ConwayEra)] -> IO [Value]
+holdingsOn outputs = do
     ids <- newLiveIdentities
     cage <- fixtureCage
     prepareRegistrationIdentities ids cage keyBytes holderWallet
-    holdings <-
-        walletHoldingsOf
-            ids
-            [keyBytes]
-            [("active", SBS.fromShort (cfgActivePolicy fixtureCfg))]
-            holderWallet
-            outputs
-    pure (map datumFormOf holdings)
+    walletHoldingsOf
+        ids
+        [keyBytes]
+        [("active", SBS.fromShort (cfgActivePolicy fixtureCfg))]
+        holderWallet
+        outputs
+
+-- | The field names of an observed object, in order.
+fieldsOf :: Value -> [Text]
+fieldsOf value = case value of
+    Object fields -> sort (map Key.toText (KM.keys fields))
+    _ -> []
 
 -- | The transaction a fixture step submitted, as its outcome carries it.
 lsTransactionOf :: LiveStep -> ConwayTx

@@ -20,6 +20,7 @@ module Conformance.Run.Live
     , classifyLeaves
     , observeCustody
     , walletHoldingsOf
+    , heldObservation
     , observePaid
     , observeSigner
     , observeStepMint
@@ -1553,7 +1554,7 @@ observeAcceptedStep env state step transaction = do
         object
             [ "config" .= config
             , "custody" .= custody
-            , "held" .= holdings
+            , "held" .= map heldObservation holdings
             , "leaf" .= leaf
             , "mint" .= orderedMint
             , "paid" .= paid
@@ -1604,8 +1605,10 @@ observeAcceptedStep env state step transaction = do
             >>= walletHoldingsOf identities keys kinds wallet
 
 {- | The holdings one wallet's outputs carry, one entry per token unit of each
-registry key under each witness policy: its key, kind and the wallet's
-identity.
+registry key under each witness policy: its key, kind, the wallet's identity,
+and the datum form of the very output carrying it, read off the ledger's own
+datum constructor. The state reports the form; the `held` census drops it
+('heldObservation').
 -}
 walletHoldingsOf
     :: LiveIdentities
@@ -1624,20 +1627,28 @@ walletHoldingsOf identities keys kinds wallet utxos = do
             ( \key -> do
                 keyId <- observeIdentity (liveKeys identities) (KeyIdentity key)
                 pure
-                    [ object ["key" .= keyId, "kind" .= String kind, "output" .= addressId]
-                    | (kind, policyBytes) <- kinds
-                    , _ <-
-                        [ 1
-                        .. sum
-                            [ q
-                            | (_, out) <- utxos
-                            , Just names <- [Map.lookup policyBytes (outAssets out)]
-                            , Just q <- [Map.lookup key names]
-                            ]
+                    [ object
+                        [ "key" .= keyId
+                        , "kind" .= String kind
+                        , "output" .= addressId
+                        , "datum" .= datumForm out
                         ]
+                    | (kind, policyBytes) <- kinds
+                    , (_, out) <- utxos
+                    , Just names <- [Map.lookup policyBytes (outAssets out)]
+                    , Just q <- [Map.lookup key names]
+                    , _ <- [1 .. q]
                     ]
             )
             keys
+
+{- | One holding as the `held` census reports it: key, kind and output. Its datum
+form belongs to the complete state, as the model's own projection has it.
+-}
+heldObservation :: Value -> Value
+heldObservation holding = case holding of
+    Object fields -> Object (KM.delete "datum" fields)
+    _ -> holding
 
 classifyLeaves
     :: [(ByteString, Bool)] -> ByteString -> IO [(ByteString, ByteString)]
