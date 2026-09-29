@@ -3,7 +3,7 @@ import OpenDatumApplication.Driver
 
 /-! # The open-datum application's intended statements and inversions
 
-Seventeen declarations were previously proved. This bounded slice targets two further unchanged declarations; the other13 remain UNPROVED. Only captured #print axioms results establish each target's proof status; the current ledger remains a historical statement-phase artifact.
+Nineteen declarations were previously proved. This bounded slice targets one further unchanged declaration; the other12 remain UNPROVED. Only captured #print axioms results establish each target's proof status; the current ledger remains a historical statement-phase artifact.
 
 Three kinds of statement, kept apart:
 
@@ -762,7 +762,36 @@ theorem fold_preserves_consistent (w w' : World) (sel : List (Edge × Key))
 theorem reject_preserves_consistent (w w' : World) (edge : Edge) (key : Key)
     (outs : List TxOutput) :
     AppConsistent w → appStep w (.reject edge key outs) = .ok w' → AppConsistent w' := by
-  sorry
+  intro hc h
+  change rejectStep w edge key outs = .ok w' at h
+  obtain ⟨p, t, _, ht, _, hw⟩ := (reject_inversion w w' edge key outs).1 h
+  have hstate : t.state = w.registry := by
+    first
+      | (cases ht; rfl)
+      | (injection ht with h'; subst h'; rfl)
+      | (simp only [exitStep, emptyResult] at ht
+         injection ht with h'
+         subst h'
+         rfl)
+  subst hw
+  obtain ⟨h1, h2, h3, h4, h5⟩ := hc
+  refine ⟨?_, h2, ?_, h4, ?_⟩
+  · show Singular.Consistent t.state
+    rw [hstate]
+    exact h1
+  · intro o ho
+    obtain ⟨g1, g2, g3, g4, g5, g6⟩ := h3 o ho
+    refine ⟨g1, g2, g3, g4, ?_, g6⟩
+    show trieGet t.state.trie o.envelope.control.key = .known .active
+    rw [hstate]
+    exact g5
+  · intro q hq
+    have hq' : q ∈ w.pending := by
+      first
+        | exact List.mem_of_mem_erase hq
+        | exact (List.erase_sublist).subset hq
+        | exact (List.erase_sublist _ _).subset hq
+    exact h5 q hq'
 
 /-! ## Required properties -/
 
@@ -1178,3 +1207,5 @@ end OpenDatumApplication.Statements
 
 #print axioms OpenDatumApplication.Statements.bookInsert_preserves_consistent
 #print axioms OpenDatumApplication.Statements.bookTerminate_preserves_consistent
+
+#print axioms OpenDatumApplication.Statements.reject_preserves_consistent
