@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
 
 {- |
 Module      : Singular.Registry.E2E.DriverSpec
