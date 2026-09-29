@@ -174,7 +174,8 @@ deadline ends the wait earlier, as the same wait failure carrying the
 deadline slot; the limit is the backstop for a chain that never gets
 there.
 -}
-confirmWithin :: Int -> NodeSession -> String -> TxId -> SlotNo -> IO ()
+confirmWithin
+    :: Int -> NodeSession -> String -> TxId -> SlotNo -> IO ()
 confirmWithin limit sess label tid deadline =
     boundWaitClosing
         SessionConfirmationWait

@@ -55,36 +55,42 @@ import Cardano.Node.Client.Submitter
     ( Submitter (..)
     )
 
--- | The wait a bound ended, named by the wait itself and never by its
--- caller: exactly one stage per failure.
+{- | The wait a bound ended, named by the wait itself and never by its
+caller: exactly one stage per failure.
+-}
 data WaitStage
     = -- | Waiting for the node's verdict on a submitted transaction.
       SubmissionWait
-    | -- | Waiting for the followed indexer to show a submitted
-      -- transaction's first output.
+    | {- | Waiting for the followed indexer to show a submitted
+      transaction's first output.
+      -}
       IndexedConfirmationWait
-    | -- | Waiting for a session confirmation: the output, or the
-      -- chain's tip passing the confirmation window.
+    | {- | Waiting for a session confirmation: the output, or the
+      chain's tip passing the confirmation window.
+      -}
       SessionConfirmationWait
     deriving stock (Eq, Show)
 
--- | A wait on a submitted transaction that did not end within its
--- bound. It is an exception, never a submit result: a stalled node is
--- infrastructure failure, and the run that sees it has no verdict, no
--- refusal and no acceptance to report.
+{- | A wait on a submitted transaction that did not end within its
+bound. It is an exception, never a submit result: a stalled node is
+infrastructure failure, and the run that sees it has no verdict, no
+refusal and no acceptance to report.
+-}
 data WaitFailure = WaitFailure
     { waitStage :: WaitStage
     -- ^ The wait that gave up
     , waitTxId :: TxId
     -- ^ The transaction the wait was on
     , waitElapsed :: Double
-    -- ^ Seconds measured on the monotonic clock from the start of the
-    -- whole wait
+    {- ^ Seconds measured on the monotonic clock from the start of the
+    whole wait
+    -}
     , waitBound :: Int
     -- ^ The bound the wait was under, in seconds
     , waitClosedAt :: Maybe SlotNo
-    -- ^ The deadline slot the chain's tip passed, when a session
-    -- confirmation ended because its window closed before the bound
+    {- ^ The deadline slot the chain's tip passed, when a session
+    confirmation ended because its window closed before the bound
+    -}
     }
 
 instance Show WaitFailure where
@@ -96,16 +102,16 @@ instance Show WaitFailure where
             , waitBound
             , waitClosedAt
             } =
-        "the "
-            <> stageLabel waitStage
-            <> " wait for transaction "
-            <> txIdHex waitTxId
-            <> " gave up after "
-            <> seconds waitElapsed
-            <> " s against its "
-            <> show waitBound
-            <> " s bound: "
-            <> stageDetail waitStage waitClosedAt
+            "the "
+                <> stageLabel waitStage
+                <> " wait for transaction "
+                <> txIdHex waitTxId
+                <> " gave up after "
+                <> seconds waitElapsed
+                <> " s against its "
+                <> show waitBound
+                <> " s bound: "
+                <> stageDetail waitStage waitClosedAt
 
 instance Exception WaitFailure
 

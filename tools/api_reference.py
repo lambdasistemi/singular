@@ -45,6 +45,7 @@ PRIVATE_OWNER_GUIDE_ANCHORS = {
     "Singular.Registry.Node.Session": "session-owner",
     "Singular.Registry.Node.Confirmation": "confirmation-owner",
     "Singular.Registry.Node.Funding": "funding-owner",
+    "Singular.Registry.Node.Wait": "wait-owner",
 }
 # The guide's owner source links name the default branch, like every other
 # repository source link on the site: the documentation check resolves a

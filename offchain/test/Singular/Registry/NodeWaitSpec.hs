@@ -201,9 +201,11 @@ spec =
                         fail "the wait outlived the caller's exception"
 
         describe "the indexed confirmation window" $ do
-            it "ends as the named wait failure when the indexer never \
-               \shows the output" $
-                withFollowedIndexer $ \_ -> do
+            it
+                "ends as the named wait failure when the indexer never \
+                \shows the output"
+                $ withFollowedIndexer
+                $ \_ -> do
                     w <-
                         theWaitFailure 6_000_000 "the indexed wait" $
                             awaitIndexedWithin 1 basicTx
@@ -215,9 +217,11 @@ spec =
                     show w
                         `shouldSatisfy` isInfixOf (txIdHex basicTxId)
 
-            it "returns when the indexer shows the transaction's \
-               \output zero" $
-                withFollowedIndexer $ \idx -> do
+            it
+                "returns when the indexer shows the transaction's \
+                \output zero"
+                $ withFollowedIndexer
+                $ \idx -> do
                     applyOutputZero idx
                     r <-
                         timeout
@@ -255,9 +259,11 @@ spec =
                     waitElapsed w
                         `shouldSatisfy` (\s -> s >= 2.9 && s < 6)
 
-            it "ends the whole wait when the tip read itself never \
-               \returns" $
-                withFollowedIndexer $ \_ -> do
+            it
+                "ends the whole wait when the tip read itself never \
+                \returns"
+                $ withFollowedIndexer
+                $ \_ -> do
                     released <- newIORef False
                     w <-
                         theWaitFailure 10_000_000 "the session wait" $
@@ -286,9 +292,11 @@ spec =
                             )
                     r `shouldBe` Just ()
 
-            it "ends at the window the tip deadline closes, as the wait \
-               \failure carrying the deadline slot" $
-                withFollowedIndexer $ \_ -> do
+            it
+                "ends at the window the tip deadline closes, as the wait \
+                \failure carrying the deadline slot"
+                $ withFollowedIndexer
+                $ \_ -> do
                     w <-
                         theWaitFailure 12_000_000 "a closed window" $
                             confirmWithin
@@ -304,9 +312,11 @@ spec =
                     waitElapsed w `shouldSatisfy` (< 5)
                     show w `shouldSatisfy` isInfixOf "closed at slot 100"
 
-            it "ends the public awaitTx on a closed window as the wait \
-               \failure naming its deadline slot" $
-                withFollowedIndexer $ \_ ->
+            it
+                "ends the public awaitTx on a closed window as the wait \
+                \failure naming its deadline slot"
+                $ withFollowedIndexer
+                $ \_ ->
                     withOpenSession pastWindowSession $ do
                         w <-
                             theWaitFailure 12_000_000 "awaitTx" $
@@ -369,9 +379,11 @@ spec =
                                 awaitTx txWithBoundOutput
                         theReadFailure w (txIdTx txWithBoundOutput)
 
-            it "ends awaitTxWindow when the time-to-slot read never \
-               \returns" $
-                withFollowedIndexer $ \_ ->
+            it
+                "ends awaitTxWindow when the time-to-slot read never \
+                \returns"
+                $ withFollowedIndexer
+                $ \_ ->
                     withOpenSession blockedSlotSession $ do
                         w <-
                             theWaitFailure 45_000_000 "awaitTxWindow" $
@@ -400,10 +412,12 @@ spec =
                         theReadFailure w basicTxId
 
         describe "the production bounds" $ do
-            it "keeps the submission bound inside the confirmation \
-               \window" $ do
-                submissionBound `shouldSatisfy` (> 0)
-                submissionBound `shouldSatisfy` (<= indexedWindow)
+            it
+                "keeps the submission bound inside the confirmation \
+                \window"
+                $ do
+                    submissionBound `shouldSatisfy` (> 0)
+                    submissionBound `shouldSatisfy` (<= indexedWindow)
 
             it "keeps the indexed window at 300 seconds" $
                 indexedWindow `shouldBe` 300
@@ -494,8 +508,9 @@ renderedElapsed rendering = do
         listToMaybe
             [drop (length mark) t | t <- tails s, mark `isPrefixOf` t]
 
--- | Submit the spec's basic transaction through a bounded submitter
--- the node never answers.
+{- | Submit the spec's basic transaction through a bounded submitter
+the node never answers.
+-}
 stalledSubmission :: Int -> IO SubmitResult
 stalledSubmission bound =
     submitTx (boundedSubmitter bound neverDecides) basicTx
@@ -504,8 +519,9 @@ stalledSubmission bound =
 indexedWindow :: Int
 indexedWindow = confirmationAttempts * confirmationPollSeconds
 
--- | Submit the spec's basic transaction through a bounded submitter
--- that answers at once.
+{- | Submit the spec's basic transaction through a bounded submitter
+that answers at once.
+-}
 promptSubmission :: SubmitResult -> IO SubmitResult
 promptSubmission result =
     submitTx (boundedSubmitter 1 (prompt result)) basicTx
@@ -537,8 +553,9 @@ withFollowedIndexer action =
     withInMemoryIndexer $ \idx ->
         withFollowing (stubFollowing idx) (action idx)
 
--- | Apply the block that creates output zero of the spec's basic
--- transaction, waking any wait already watching for it.
+{- | Apply the block that creates output zero of the spec's basic
+transaction, waking any wait already watching for it.
+-}
 applyOutputZero :: IndexerHandle -> IO ()
 applyOutputZero idx =
     applyAtSlot
