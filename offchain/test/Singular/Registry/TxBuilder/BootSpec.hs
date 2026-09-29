@@ -21,10 +21,17 @@ output the fixture put in the wallet.
 -}
 module Singular.Registry.TxBuilder.BootSpec (spec) where
 
-import Control.Exception (IOException, displayException, try)
+import Control.Exception
+    ( ErrorCall (..)
+    , IOException
+    , displayException
+    , try
+    )
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
-import Data.IORef (newIORef, readIORef, writeIORef)
+import Data.Either (isRight)
+import Data.Foldable (toList)
+import Data.IORef (modifyIORef, newIORef, readIORef, writeIORef)
 import Data.List (isInfixOf)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
@@ -35,7 +42,10 @@ import Test.Hspec
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.PParams (emptyPParams)
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
-import Cardano.Ledger.Api.Tx.Body (referenceInputsTxBodyL)
+import Cardano.Ledger.Api.Tx.Body
+    ( inputsTxBodyL
+    , referenceInputsTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , mkBasicTxOut
@@ -58,6 +68,11 @@ import Singular.Registry.TxBuilder.Boot
     ( BootRefusal (..)
     , bootTokenImpl
     )
+import Singular.Registry.TxBuilder.Edges
+    ( publishRefScript
+    , publishRefScriptReserving
+    , publishStateRefReserving
+    )
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , computeScriptHash
@@ -66,7 +81,12 @@ import Singular.Registry.TxBuilder.Internal
     )
 
 spec :: Spec
-spec = describe "a registry boots only by reference" $ do
+spec = do
+    bootsByReference
+    publicationBeforeBoot
+
+bootsByReference :: Spec
+bootsByReference = describe "a registry boots only by reference" $ do
     it
         "refuses a boot from a wallet holding no publication of the state validator, by name"
         $ boot [seedUtxo, fundUtxo]
@@ -88,6 +108,95 @@ spec = describe "a registry boots only by reference" $ do
             tx <- boot [seedUtxo, fundUtxo, (refIn, publication stateProgram)]
             tx ^. bodyTxL . referenceInputsTxBodyL `shouldBe` Set.singleton refIn
             Map.keys (tx ^. witsTxL . scriptTxWitsL) `shouldBe` []
+
+{- | The reference publication a create makes before its boot (#299). The
+create chooses its seed first — the output the boot will consume, the
+configuration's 'cageSeed', from which the registry's state asset name is
+derived — so the publication must fund itself from any other ada-only
+output. Each row runs the real builder against a chosen wallet and reads
+back exactly what it handed to the submission callback.
+-}
+publicationBeforeBoot :: Spec
+publicationBeforeBoot = describe "the reference publication before a boot" $ do
+    it
+        "never spends the boot's seed, even when it is the largest output"
+        $ do
+            txInToRef seedIn `shouldBe` cageSeed cfg
+            (submitted, result) <-
+                publish
+                    (reservingScript (Set.singleton seedIn))
+                    [bigSeed, alternative]
+            map spent submitted `shouldBe` [[fundIn]]
+            result `shouldSatisfy` isRight
+
+    it
+        "without a reservation funds from the largest ada-only output, as before"
+        $ do
+            (legacy, _) <- publish legacyScript [bigSeed, alternative]
+            (unreserved, _) <-
+                publish (reservingScript Set.empty) [bigSeed, alternative]
+            map spent legacy `shouldBe` [[seedIn]]
+            map spent unreserved `shouldBe` [[seedIn]]
+
+    it
+        "refuses before submitting when every ada-only output is reserved"
+        $ do
+            (submitted, result) <-
+                publish (reservingScript (Set.singleton seedIn)) [bigSeed]
+            map spent submitted `shouldBe` []
+            case result of
+                Left (ErrorCall why) -> why `shouldSatisfy` isInfixOf "no ada-only output"
+                Right _ -> expectationFailure "the publication spent the reserved seed"
+
+    it
+        "reuses a state validator already published, submitting nothing"
+        $ do
+            (submitted, result) <-
+                publish
+                    (reservingState (Set.singleton seedIn))
+                    [bigSeed, alternative, (refIn, publication stateProgram)]
+            map spent submitted `shouldBe` []
+            either (Left . show) (Right . fst) result `shouldBe` Right refIn
+
+    it
+        "publishes the state validator from outside the reservation when none is published"
+        $ do
+            (submitted, _) <-
+                publish (reservingState (Set.singleton seedIn)) [bigSeed, alternative]
+            map spent submitted `shouldBe` [[fundIn]]
+  where
+    bigSeed = (seedIn, adaAt 900_000_000)
+    alternative = (fundIn, adaAt 50_000_000)
+    script = scriptFromBytes "published" stateProgram
+    legacyScript p s a = publishRefScript p s a script
+    reservingScript reserved p s a = publishRefScriptReserving reserved p s a script
+    reservingState reserved = publishStateRefReserving reserved cfg
+    spent tx = toList (tx ^. bodyTxL . inputsTxBodyL)
+
+{- | Run a publication against a wallet. The submission callback keeps every
+transaction it is handed and returns it as signed; a refusal is returned,
+not rethrown, so a row can require that nothing was submitted.
+-}
+publish
+    :: (Provider IO -> (ConwayTx -> IO ConwayTx) -> Addr -> IO a)
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO ([ConwayTx], Either ErrorCall a)
+publish run wallet = do
+    kept <- newIORef []
+    let provider =
+            Provider
+                { queryUTxOs = \_ -> pure wallet
+                , queryProtocolParams = pure emptyPParams
+                , evaluateTx = \_ -> fail "a publication evaluates nothing"
+                , posixMsToSlot = \_ -> fail "a publication reads no slot"
+                , posixMsCeilSlot = \_ -> fail "a publication reads no slot"
+                }
+        submit tx = do
+            modifyIORef kept (<> [tx])
+            pure tx
+    result <- try (run provider submit payer)
+    submitted <- readIORef kept
+    pure (submitted, result)
 
 {- | Run the builder against a wallet and return the transaction it
 hands to evaluation. A refusal propagates; a builder that never asked

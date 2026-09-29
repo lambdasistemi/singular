@@ -35,7 +35,9 @@ module Singular.Registry.TxBuilder.Edges
 
       -- * Reference outputs
     , publishRefScript
+    , publishRefScriptReserving
     , publishStateRef
+    , publishStateRefReserving
     , publishCageRefs
     , adaOnlyOut
 
@@ -232,13 +234,26 @@ publishRefScript
     -> Addr
     -> Script ConwayEra
     -> IO (TxIn, TxOut ConwayEra)
-publishRefScript prov submit payerAddr script = do
+publishRefScript = publishRefScriptReserving Set.empty
+
+{- | 'publishRefScript', never spending a reserved output (#299): a caller
+that has chosen the seed of a later boot keeps it unspent while it
+publishes. The largest ada-only output that is not reserved funds it.
+-}
+publishRefScriptReserving
+    :: Set.Set TxIn
+    -> Cage.Provider IO
+    -> SubmitSigned
+    -> Addr
+    -> Script ConwayEra
+    -> IO (TxIn, TxOut ConwayEra)
+publishRefScriptReserving reserved prov submit payerAddr script = do
     pp <- Cage.queryProtocolParams prov
     utxos <- Cage.queryUTxOs prov payerAddr
     fund <-
         case sortOn
             (Down . (^. coinTxOutL) . snd)
-            (filter (adaOnlyOut . snd) utxos) of
+            (filter (\(i, o) -> adaOnlyOut o && Set.notMember i reserved) utxos) of
             [] -> error "publishRefScript: the payer wallet has no ada-only output"
             (u : _) -> pure u
     let probe =
@@ -291,7 +306,20 @@ publishStateRef
     -> SubmitSigned
     -> Addr
     -> IO (TxIn, TxOut ConwayEra)
-publishStateRef cfg prov submit payerAddr = do
+publishStateRef = publishStateRefReserving Set.empty
+
+{- | 'publishStateRef', never spending a reserved output (#299): an
+existing publication is returned as before, and a new one is funded
+outside the reservation.
+-}
+publishStateRefReserving
+    :: Set.Set TxIn
+    -> CageConfig
+    -> Cage.Provider IO
+    -> SubmitSigned
+    -> Addr
+    -> IO (TxIn, TxOut ConwayEra)
+publishStateRefReserving reserved cfg prov submit payerAddr = do
     let script = mkCageScript cfg
         wanted = hashScript script
     utxos <- Cage.queryUTxOs prov payerAddr
@@ -301,7 +329,7 @@ publishStateRef cfg prov submit payerAddr = do
          , hashScript s == wanted
          ] of
         (u : _) -> pure u
-        [] -> publishRefScript prov submit payerAddr script
+        [] -> publishRefScriptReserving reserved prov submit payerAddr script
 
 {- | Publish this cage's scripts as reference outputs: the cage, the
 request validator and the three token policies.
