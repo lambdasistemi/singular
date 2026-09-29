@@ -4,7 +4,7 @@ import OpenDatumApplication.ProofSupport
 
 /-! # The open-datum application's intended statements and inversions
 
-Twenty-one declarations were previously proved. This slice proves eleven further unchanged declarations over the helper lemmas of `OpenDatumApplication.ProofSupport`; `appConsistentB_iff` remains UNPROVED. Only captured #print axioms results establish each declaration's proof status; the current ledger remains a historical statement-phase artifact.
+Twenty-one declarations were previously proved. This slice proves the remaining twelve unchanged declarations over the helper lemmas of `OpenDatumApplication.ProofSupport`, so all thirty-three are proved. Only captured #print axioms results establish each declaration's proof status; the current ledger remains a historical statement-phase artifact.
 
 Three kinds of statement, kept apart:
 
@@ -772,7 +772,56 @@ the invariant; the registry conjunct goes through the root driver's own
 `Singular.Driver.consistentB`. -/
 theorem appConsistentB_iff (w : World) :
     OpenDatumApplication.Driver.appConsistentB w = true ↔ AppConsistent w := by
-  sorry
+  unfold OpenDatumApplication.Driver.appConsistentB OpenDatumApplication.Driver.appConsistentBWith
+  simp only [Bool.and_eq_true, List.all_eq_true]
+  constructor
+  · rintro ⟨⟨⟨⟨hreg, hrefs⟩, houts⟩, hpairs⟩, hpend⟩
+    refine ⟨(ProofSupport.consistentB_iff _).1 hreg, ?_, ?_, ?_, ?_⟩
+    · simp only [Bool.not_true, Bool.false_or, beq_iff_eq] at hrefs
+      rw [← List.length_map (f := fun x : AppOutput => x.ref)] at hrefs
+      exact (ProofSupport.eraseDups_length_iff _).1 hrefs
+    · intro o ho
+      have := houts o ho
+      simp only [beq_iff_eq, decide_eq_true_eq] at this
+      obtain ⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩ := this
+      exact ⟨h1, h2, h3, h4, h5, h6⟩
+    · intro o₁ h1 o₂ h2 hkr
+      have := hpairs o₁ h1 o₂ h2
+      by_cases he : o₁ = o₂
+      · exact he
+      · exfalso
+        have hne : (o₁ == o₂) = false := by simpa using he
+        rw [hne, Bool.or_false] at this
+        rcases hkr with hk | hr
+        · simp [hk] at this
+        · simp [hr] at this
+    · intro p hp
+      have := hpend p hp
+      revert this
+      cases hE : p.request.edge <;> cases hv : p.envelope <;> simp
+      all_goals (intros; simp_all)
+  · rintro ⟨hreg, hrefs, houts, hpairs, hpend⟩
+    refine ⟨⟨⟨⟨(ProofSupport.consistentB_iff _).2 hreg, ?_⟩, ?_⟩, ?_⟩, ?_⟩
+    · simp only [Bool.not_true, Bool.false_or, beq_iff_eq]
+      have := (ProofSupport.eraseDups_length_iff _).2 hrefs
+      rw [List.length_map] at this
+      exact this
+    · intro o ho
+      obtain ⟨h1, h2, h3, h4, h5, h6⟩ := houts o ho
+      simp [h1, h2, h3, h4, h5, h6]
+    · intro o₁ h1 o₂ h2
+      by_cases hk : o₁.envelope.control.key = o₂.envelope.control.key
+      · rw [hpairs o₁ h1 o₂ h2 (Or.inl hk)]
+        simp
+      · by_cases hr : o₁.ref = o₂.ref
+        · rw [hpairs o₁ h1 o₂ h2 (Or.inr hr)]
+          simp
+        · simp [hk, hr]
+    · intro p hp
+      have := hpend p hp
+      revert this
+      cases hE : p.request.edge <;> cases hv : p.envelope <;> simp
+      all_goals (intros; simp_all)
 
 /-! ### Preservation, constructor by constructor
 

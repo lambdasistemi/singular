@@ -177,12 +177,12 @@ theorem foldActions_cons_ok (s : RegistryState) (b : Request) (bs : List Request
   | error e => rw [hs] at h; exact Except.noConfusion h
   | ok m =>
     rw [hs] at h
-    simp only [bind, Except.bind, pure, Except.pure] at h
+    dsimp only at h
     cases hr : foldActions m.state bs with
     | error e => rw [hr] at h; exact Except.noConfusion h
     | ok r =>
       rw [hr] at h
-      simp only [bind, Except.bind, pure, Except.pure] at h
+      dsimp only at h
       have hEq : combineResults m r = t := by injection h
       exact ⟨m, r, rfl, hr, hEq.symm⟩
 
@@ -916,5 +916,243 @@ theorem booked_insert_refusal (s : RegistryState) (app : App) (r : Request) (sig
     refusal s (booked app r sigs) = some "key-exists" := by
   rcases hleaf with hleaf | hleaf <;>
     simp [refusal, booked, mintApproval, admitsFor, requestDestination, hedge, hpol, hleaf]
+
+
+/-! ## The executable consistency observation -/
+
+theorem byteArray_toList_loop (arr : Array UInt8) : ∀ (i : Nat) (r : List UInt8), i ≤ arr.size →
+    ByteArray.toList.loop ⟨arr⟩ i r = r.reverse ++ arr.toList.drop i := by
+  intro i
+  induction h : arr.size - i generalizing i with
+  | zero =>
+    intro r hi
+    have hi' : i = arr.size := by omega
+    subst hi'
+    unfold ByteArray.toList.loop
+    split
+    · rename_i hc
+      exact absurd hc (Nat.lt_irrefl _)
+    · rw [List.drop_of_length_le (by simp), List.append_nil]
+  | succ n ih =>
+    intro r hi
+    have hlt : i < arr.size := by omega
+    unfold ByteArray.toList.loop
+    split
+    · rw [ih (i + 1) (by omega) _ (by omega)]
+      have hget : ByteArray.get! ⟨arr⟩ i = arr.toList[i]'(by simpa using hlt) := by
+        show arr[i]! = _
+        rw [getElem!_pos arr i hlt]
+        simp
+      rw [hget, List.reverse_cons, List.append_assoc, List.singleton_append,
+        ← List.drop_eq_getElem_cons (by simpa using hlt)]
+    · rename_i hc
+      exact absurd hlt hc
+
+theorem byteArray_toList (bs : ByteArray) : bs.toList = bs.data.toList := by
+  cases bs with
+  | mk arr =>
+    unfold ByteArray.toList
+    rw [byteArray_toList_loop arr 0 [] (Nat.zero_le _)]
+    simp
+
+theorem byteArray_eq_of_toList (a b : ByteArray) (h : a.toList = b.toList) : a = b := by
+  rw [byteArray_toList, byteArray_toList] at h
+  cases a
+  cases b
+  simp only at h
+  rw [Array.toList_inj.1 h]
+
+/-- Membership in a first-occurrence deduplicating fold. -/
+theorem mem_foldl_dedup (k : Key) : ∀ (l acc : List Key),
+    k ∈ l.foldl (fun acc x => if acc.contains x then acc else acc ++ [x]) acc ↔ k ∈ acc ∨ k ∈ l
+  | [], acc => by simp
+  | x :: xs, acc => by
+    rw [List.foldl_cons, mem_foldl_dedup k xs]
+    by_cases hx : acc.contains x = true
+    · rw [if_pos hx]
+      have hxm : x ∈ acc := List.contains_iff_mem.1 hx
+      constructor
+      · rintro (h | h)
+        · exact Or.inl h
+        · exact Or.inr (List.mem_cons_of_mem _ h)
+      · rintro (h | h)
+        · exact Or.inl h
+        · rcases List.mem_cons.1 h with rfl | h
+          · exact Or.inl hxm
+          · exact Or.inr h
+    · rw [if_neg hx]
+      simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
+      constructor
+      · rintro ((h | h) | h)
+        · exact Or.inl h
+        · exact Or.inr (Or.inl h)
+        · exact Or.inr (Or.inr h)
+      · rintro (h | h | h)
+        · exact Or.inl (Or.inl h)
+        · exact Or.inl (Or.inr h)
+        · exact Or.inr h
+
+theorem mem_stateKeys (s : RegistryState) (k : Key) :
+    k ∈ Singular.Driver.stateKeys s ↔
+      k ∈ s.trie.map (·.1) ∨ k ∈ s.custody.map (·.key) ∨ k ∈ s.held.map (·.key) := by
+  unfold Singular.Driver.stateKeys
+  rw [mem_foldl_dedup]
+  simp only [List.not_mem_nil, false_or, List.mem_append, or_assoc]
+
+theorem trieGet_of_not_mem (t : Trie) (k : Key) (h : k ∉ t.map (·.1)) : trieGet t k = .unknown := by
+  have : t.filter (·.1 == k) = [] := by
+    rw [List.filter_eq_nil_iff]
+    intro p hp hpk
+    exact h (List.mem_map.2 ⟨p, hp, by simpa using hpk⟩)
+  simp [trieGet, this]
+
+theorem kindCount_of_not_mem (s : RegistryState) (kk : TokenKind) (k : Key)
+    (h : k ∉ s.held.map (·.key)) : kindCount s kk k = 0 := by
+  unfold kindCount
+  rw [List.length_eq_zero_iff, List.filter_eq_nil_iff]
+  intro x hx hxk
+  simp only [Bool.and_eq_true, beq_iff_eq] at hxk
+  exact h (List.mem_map.2 ⟨x, hx, hxk.1⟩)
+
+theorem custodyCount_of_not_mem (s : RegistryState) (k : Key)
+    (h : k ∉ s.custody.map (·.key)) : custodyCount s k = 0 := by
+  unfold custodyCount
+  rw [List.length_eq_zero_iff, List.filter_eq_nil_iff]
+  intro x hx hxk
+  exact h (List.mem_map.2 ⟨x, hx, by simpa using hxk⟩)
+
+theorem two_le_length_of_ne {α : Type} [DecidableEq α] (l : List α) (a b : α) (ha : a ∈ l)
+    (hb : b ∈ l) (hab : a ≠ b) : 2 ≤ l.length := by
+  have hsub : [a, b].Sublist l ∨ [b, a].Sublist l := by
+    induction l with
+    | nil => simp at ha
+    | cons x xs ih =>
+      rcases List.mem_cons.1 ha with rfl | ha' <;> rcases List.mem_cons.1 hb with rfl | hb'
+      · exact absurd rfl hab
+      · exact Or.inl (List.Sublist.cons₂ _ (List.singleton_sublist.2 hb'))
+      · exact Or.inr (List.Sublist.cons₂ _ (List.singleton_sublist.2 ha'))
+      · rcases ih ha' hb' with h | h
+        · exact Or.inl (List.Sublist.cons _ h)
+        · exact Or.inr (List.Sublist.cons _ h)
+  rcases hsub with h | h <;> simpa using h.length_le
+
+theorem bool_iff_beq (a b : Bool) : (a == b) = true ↔ (a = true ↔ b = true) := by
+  cases a <;> cases b <;> simp
+
+/-- The root driver's executable consistency observation is exactly
+`Singular.Consistent`. -/
+theorem consistentB_iff (s : RegistryState) :
+    Singular.Driver.consistentB s = true ↔ Consistent s := by
+  unfold Singular.Driver.consistentB
+  simp only [Bool.and_eq_true, List.all_eq_true]
+  constructor
+  · rintro ⟨⟨⟨hroot, hkeys⟩, hheld⟩, hcust⟩
+    have hk : ∀ k, (kindCount s .active k = 1 ↔ trieGet s.trie k = .known .active) ∧
+        kindCount s .active k ≤ 1 ∧
+        (custodyCount s k = 1 ↔ trieGet s.trie k = .known .absent) ∧ custodyCount s k ≤ 1 := by
+      intro k
+      by_cases hm : k ∈ Singular.Driver.stateKeys s
+      · have := hkeys k hm
+        simp only [decide_eq_true_eq] at this
+        obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := this
+        rw [bool_iff_beq] at h1 h3
+        simp only [beq_iff_eq] at h1 h3
+        exact ⟨h1, h2, h3, h4⟩
+      · rw [mem_stateKeys] at hm
+        simp only [not_or] at hm
+        obtain ⟨ht, hc, hh⟩ := hm
+        rw [kindCount_of_not_mem s _ k hh, custodyCount_of_not_mem s k hc, trieGet_of_not_mem _ k ht]
+        simp
+    refine ⟨byteArray_eq_of_toList _ _ (by simpa using hroot), fun k => (hk k).1, fun k => (hk k).2.1,
+      fun k => (hk k).2.2.1, fun k => (hk k).2.2.2, ?_, ?_, ?_⟩
+    · intro h hh hkind
+      have := hheld h hh
+      simp only [Bool.or_eq_true, Bool.not_eq_true', beq_iff_eq, beq_eq_false_iff_ne] at this
+      rcases this with h1 | h1
+      · exact absurd hkind h1
+      · exact h1
+    · intro c hc
+      simpa using hcust c hc
+    · intro c₁ h1 c₂ h2 hkey
+      by_cases hne : c₁ = c₂
+      · exact hne
+      exfalso
+      have hle := (hk c₁.key).2.2.2
+      have hm1 : c₁ ∈ s.custody.filter (·.key == c₁.key) := List.mem_filter.2 ⟨h1, by simp⟩
+      have hm2 : c₂ ∈ s.custody.filter (·.key == c₁.key) := List.mem_filter.2 ⟨h2, by simp [hkey]⟩
+      have := two_le_length_of_ne _ _ _ hm1 hm2 hne
+      unfold custodyCount at hle
+      omega
+  · rintro ⟨hroot, hA1, hA2, hC1, hC2, hTerm, hCleaf, _⟩
+    refine ⟨⟨⟨by rw [hroot]; simp, ?_⟩, ?_⟩, ?_⟩
+    · intro k _
+      simp only [decide_eq_true_eq]
+      exact ⟨⟨⟨(bool_iff_beq _ _).2 (by simp only [beq_iff_eq]; exact hA1 k), hA2 k⟩,
+        (bool_iff_beq _ _).2 (by simp only [beq_iff_eq]; exact hC1 k)⟩, hC2 k⟩
+    · intro h hh
+      simp only [Bool.or_eq_true, Bool.not_eq_true', beq_iff_eq, beq_eq_false_iff_ne]
+      by_cases hkind : h.kind = .terminal
+      · exact Or.inr (hTerm h hh hkind)
+      · exact Or.inl hkind
+    · intro c hc
+      simpa using hCleaf c hc
+
+/-- The occurrence observation: no reference repeats. -/
+theorem eraseDups_length_le {α} [BEq α] [LawfulBEq α] : ∀ l : List α,
+    l.eraseDups.length ≤ l.length
+  | [] => by simp
+  | a :: as => by
+    have ih := eraseDups_length_le (as.filter fun b => !b == a)
+    have hf := List.length_filter_le (fun b => !b == a) as
+    rw [List.eraseDups_cons]
+    simp only [List.length_cons]
+    omega
+termination_by l => l.length
+decreasing_by
+  all_goals
+    have := List.length_filter_le (fun b => !b == a) as
+    simp only [List.length_cons]
+    omega
+
+theorem eraseDups_length_iff {α} [BEq α] [LawfulBEq α] : ∀ l : List α,
+    l.eraseDups.length = l.length ↔ l.Nodup
+  | [] => by simp
+  | a :: as => by
+    have ih := eraseDups_length_iff (as.filter fun b => !b == a)
+    have hle := eraseDups_length_le (as.filter fun b => !b == a)
+    have hf := List.length_filter_le (fun b => !b == a) as
+    rw [List.eraseDups_cons, List.length_cons, List.length_cons, List.nodup_cons]
+    constructor
+    · intro h
+      have hfl : (as.filter fun b => !b == a).length = as.length := by omega
+      have hall : as.filter (fun b => !b == a) = as := List.filter_eq_self.2 (by
+        intro x hx
+        by_cases hne : (!x == a) = true
+        · exact hne
+        exfalso
+        have : (as.filter fun b => !b == a).length < as.length :=
+          List.length_filter_lt_length_iff_exists.2 ⟨x, hx, hne⟩
+        omega)
+      have hna : a ∉ as := by
+        intro ha
+        have := List.mem_filter.1 (hall ▸ ha)
+        simp at this
+      refine ⟨hna, ?_⟩
+      rw [← hall]
+      exact ih.1 (by omega)
+    · rintro ⟨hna, hnd⟩
+      have hall : as.filter (fun b => !b == a) = as := List.filter_eq_self.2 (by
+        intro x hx
+        have : x ≠ a := fun h => hna (h ▸ hx)
+        simpa using this)
+      have := ih.2 (by rw [hall]; exact hnd)
+      rw [hall] at this ⊢
+      omega
+termination_by l => l.length
+decreasing_by
+  all_goals
+    have := List.length_filter_le (fun b => !b == a) as
+    simp only [List.length_cons]
+    omega
 
 end OpenDatumApplication.ProofSupport
