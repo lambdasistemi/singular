@@ -24,7 +24,7 @@ Successful update and termination have accepting controls. Unauthorized update, 
 
 ## Sources and current phase
 
-Authority: [epic301](https://github.com/lambdasistemi/singular/issues/301), [ticket310](https://github.com/lambdasistemi/singular/issues/310), and the full operator rulings beside this specification. Latest application-deposit-lock ruling supersedes earlier wallet custody. Accepted registry source is502cb9329fc7a6615b722102516d8d3d9e20d806; Lean subtreef1e6a0edcaf9edce7369fd42add8b3677ddabeb2. New application definitions are prospective until independently reviewed and bound to an exact commit.
+Authority: [epic301](https://github.com/lambdasistemi/singular/issues/301), [ticket310](https://github.com/lambdasistemi/singular/issues/310), and the full operator rulings beside this specification. Latest application-deposit-lock ruling supersedes earlier wallet custody. The application now imports the registry model at main a0770318f5037e79e815e7831cfa539213f2853e, and its guards, delivery and termination behaviour are proved against that root. The earlier pin — registry source 502cb9329fc7a6615b722102516d8d3d9e20d806 and Lean subtree f1e6a0edcaf9edce7369fd42add8b3677ddabeb2 — is historical: the baseline this work started from. Importing a0770318 is not full acceptance of the #304 producer change it contains; that acceptance is separate and still open. New application definitions are prospective until independently reviewed and bound to an exact commit.
 
 ## The token's path
 

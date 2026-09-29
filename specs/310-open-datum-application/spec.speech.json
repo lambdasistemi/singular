@@ -35,7 +35,7 @@
   ],
   "sources-and-current-phase": [
     {
-      "text": "The authority is the epic, the ticket and the operator rulings kept beside this specification; the deposit-lock ruling supersedes the earlier wallet custody. The accepted registry source and Lean subtree are pinned, and new application definitions stay prospective until reviewed at an exact commit.",
+      "text": "The authority is the epic, the ticket and the operator rulings kept beside this specification; the deposit-lock ruling supersedes the earlier wallet custody. The application imports the registry model at main a0770318, and is proved against it. The earlier registry source and Lean subtree pin is historical, the baseline the work started from. Importing that main is not acceptance of the destination-row producer change it contains, which remains open. New application definitions stay prospective until reviewed at an exact commit.",
       "pause": 400
     }
   ],
@@ -53,6 +53,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "52de1d69b8ce63da5f4a188d1f2cab0f309a55e21749446686158f1ac0f8c287"
+    "sha256": "f229feb0c6a6eec0aa81690135ca13473ece4c1a965327e2f4529ff4d8f5916f"
   }
 }
