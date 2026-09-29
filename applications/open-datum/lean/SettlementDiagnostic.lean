@@ -68,7 +68,23 @@ def rowJson (r : FoldRow) : Json :=
 def inventoryJson (w : World) : Json :=
   Json.arr (w.outputs.map fun x =>
     Json.mkObj [("ref", toJson x.ref), ("key", toJson x.envelope.control.key)
-      , ("lovelace", toJson x.lovelace), ("envelopeHash", toJson (envelopeHash x.envelope))]).toArray
+      , ("lovelace", toJson x.lovelace), ("payload", dataToJson x.envelope.payload)
+      , ("envelopeHash", toJson (envelopeHash x.envelope))]).toArray
+
+def keyedPayload (o : AppOutput) : Json :=
+  Json.mkObj [("ref", toJson o.ref), ("payload", dataToJson o.envelope.payload)
+    , ("envelopeHash", toJson (envelopeHash o.envelope))]
+
+/-- A world as published here: every field the law reads, the booked requests with
+their approvals and claims, and the invariant observed on it. -/
+def worldJson (w : World) : Json :=
+  Json.mkObj [("registry", toJson w.registry), ("registryAsset", toJson w.registryAsset)
+    , ("outputs", Json.arr (w.outputs.map outputToJson).toArray)
+    , ("pending", Json.arr (w.pending.map fun p =>
+        Json.mkObj [("request", toJson p.request)
+          , ("envelope", match p.envelope with | some e => envelopeToJson e | none => Json.null)]).toArray)
+    , ("nextRef", toJson w.nextRef), ("lastMint", assetsToJson w.lastMint)
+    , ("invariant", toJson (appConsistentB w))]
 
 /-! ## One observed fold -/
 
@@ -108,12 +124,14 @@ def caseJson (c : FoldCase) : Json :=
     | .error _ => Json.null
   let resultJson := match resultOf c with
     | .ok (w', t) => Json.mkObj [("outcome", "accepted"), ("mint", assetsToJson t.mint)
-        , ("finalInventory", inventoryJson w')
+        , ("finalInventory", inventoryJson w'), ("finalWorld", worldJson w')
         , ("finalInvariant", toJson (appConsistentB w'))
         , ("finalLeafKey5", leafJson (trieGet w'.registry.trie 5))]
     | .error why => Json.mkObj [("outcome", "refused"), ("reason", toJson why)]
   Json.mkObj [("case", toJson c.name), ("selected", selectionToJson c.selected)
+    , ("action", actionToJson (.fold c.selected c.outputs))
     , ("paymentOutputs", paymentsToJson c.outputs)
+    , ("initialWorld", worldJson c.world)
     , ("initialInventory", inventoryJson c.world)
     , ("initialInvariant", toJson (appConsistentB c.world))
     , ("initialLeafKey5", leafJson (trieGet c.world.registry.trie 5))
@@ -165,6 +183,21 @@ def runChain (w : World) : List AppAction → Except String (List World)
 
 def chainResult : Except String (List World) := runChain genesis0 lifecycleActions
 
+/-- The lifecycle as published: each action, the world it met, the law's outcome and
+the world it reached, computed by the same `appStep`. -/
+def traceChain (w : World) : Nat → List AppAction → List Json
+  | _, [] => []
+  | i, a :: rest =>
+    let before := Json.mkObj [("invariant", toJson (appConsistentB w)), ("nextRef", toJson w.nextRef)
+      , ("outputs", Json.arr (w.outputs.map keyedPayload).toArray)]
+    match appStep w a with
+    | .ok w' =>
+      Json.mkObj [("step", toJson i), ("action", actionToJson a), ("before", before)
+        , ("outcome", "accepted"), ("after", worldJson w')] :: traceChain w' (i + 1) rest
+    | .error why =>
+      [Json.mkObj [("step", toJson i), ("action", actionToJson a), ("before", before)
+        , ("outcome", "refused"), ("reason", toJson why)]]
+
 def lastWorld : World :=
   match chainResult with
   | .ok ws => ws.getLastD genesis0
@@ -180,6 +213,29 @@ def lifecycleShort : FoldCase :=
   { lifecyclePaid with
     name := "reached-lifecycle-short-by-one"
     outputs := paid (insertDeposit + terminateDeposit - 1) }
+
+/-- Key 5's output where the chain first holds one, and where it ends. -/
+def keyFiveOutputs : List AppOutput :=
+  match chainResult with
+  | .ok ws => ws.filterMap (outputOfKey · 5)
+  | .error _ => []
+
+def referenceTrace : Json :=
+  let original := keyFiveOutputs.head?
+  let current := outputOfKey lastWorld 5
+  Json.mkObj [("original", match original with | some o => keyedPayload o | none => Json.null)
+    , ("current", match current with | some o => keyedPayload o | none => Json.null)
+    , ("referenceChanged", toJson (original.map (·.ref) != current.map (·.ref)))
+    , ("payloadChanged",
+        toJson (original.map (·.envelope.payload) != current.map (·.envelope.payload)))]
+
+/-- The termination fold as `appStep` computes it from the chain's last world. -/
+def terminationStep : Json :=
+  let a : AppAction := .fold terminateOnly lifecyclePaid.outputs
+  Json.mkObj [("action", actionToJson a), ("before", worldJson lastWorld)
+    , ("result", match appStep lastWorld a with
+        | .ok w' => Json.mkObj [("outcome", "accepted"), ("after", worldJson w')]
+        | .error why => Json.mkObj [("outcome", "refused"), ("reason", toJson why)])]
 
 /-! ## Controls -/
 
@@ -239,6 +295,10 @@ def report : Json :=
     , ("chainOutcome", match chainResult with
         | .ok ws => toJson ws.length
         | .error why => toJson s!"refused: {why}")
+    , ("genesis", worldJson genesis0)
+    , ("lifecycle", Json.arr (traceChain genesis0 1 lifecycleActions).toArray)
+    , ("referenceTrace", referenceTrace)
+    , ("terminationStep", terminationStep)
     , ("cases", Json.arr #[caseJson malformedPaid, caseJson malformedShort,
         caseJson lifecyclePaid, caseJson lifecycleShort])
     , ("shortfallReasons", Json.mkObj [("malformed", toJson (refusalOf malformedShort))
