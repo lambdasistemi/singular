@@ -55,12 +55,19 @@ reports the ledger's form rather than one the model invented.
   request names one, and none otherwise. A mutant that restores an unconditional inline datum
   must fail it.
 
-## The spent witness carries the datum its delivery gave it
+## Extension: the spent witness
 
-The same ruling reaches the other end of a delivered token's life. The witness a retirement
-or a deletion spends is the very output an earlier fold delivered, so it presents the datum
-form that fold gave it. It was modelled as always inline, and the live retirement of a key
-registered without a named datum observed none. The state now records, with each holding, the
-form its delivery wrote. A spent witness presents that form, stated over all seven edges, and a
-mutant that makes every witness inline must fail. The `held` observation is unchanged: a
-holding's datum is observed on the transaction that spends it.
+Operator ruling, 2026-09-29 ("ok"), extending the one above:
+
+> The modeled holding keeps the datum form its delivering fold actually carried; a fold spending
+> that holding as its burn-source witness reports that form. The spending request's own flag does
+> not decide it.
+
+The question it answers: the witness a retirement or a deletion spends is the very output an
+earlier fold delivered. The model had every witness inline, and the live retirement of a key
+registered without a named datum observed none.
+
+What changes: the state records, with each holding, the datum form its delivery wrote, and a
+spent witness presents that form (`witness_input_datum_is_held`, over all seven edges). A mutant
+that makes every witness inline must fail. The `held` observation keeps its three fields: a
+holding's datum form is observed on the transaction that spends it.
