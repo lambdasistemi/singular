@@ -1,0 +1,18 @@
+{
+  "done": [
+    {
+      "text": "Done so far: the operator's application scope is recorded in ticket 310 with its clean lane and baseline, the envelope, booking authorization, permissionless fold and additive settlement are proposed, and the executable law, driver, corpus, statements and ledgers exist. They were independently reviewed, and every accepted statement is proved with clean axiom evidence.",
+      "pause": 400
+    }
+  ],
+  "still-open": [
+    {
+      "text": "Still open: the application scripts, encoding and production builders; connected controls for custody, authorization, refunds, duplicates and permanent retirement; and the hand-off to tickets 299 and 300. Public-chain, release and merge steps stay separate.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "03da4f93f9a28074e097fdbf82def6d6f0ca5a63bbaca2fe992780a802a27225"
+  }
+}

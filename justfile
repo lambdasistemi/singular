@@ -24,6 +24,24 @@ model:
     lake build
     python3 tools/check_model.py
 
+# #310: the open-datum application, an isolated Lake project over the unchanged
+# root model. The selected compiler must be the root pin. `check` regenerates the
+# corpus and ledgers from the model surface against the committed ones, replays
+# every committed scenario from its own JSON, and runs its own controls: a
+# controlled alteration each comparison must notice and definition mutants each
+# of which must move at least one scenario. The ledger's proof status is compiled
+# into the executable from the statements the build elaborated; the saved axiom
+# report is then cross-checked against the ledger and the statement source by an
+# independent bridge.
+
+# Build, check and cross-check the open-datum application model.
+application-model:
+    lean --version | grep -q "version $(sed 's/.*:v//' lean-toolchain),"
+    lake -d applications/open-datum --keep-toolchain build
+    lake -d applications/open-datum --keep-toolchain exe open-datum-application check applications/open-datum
+    lake -d applications/open-datum --keep-toolchain env lean applications/open-datum/lean/AuditReport.lean > applications/open-datum/.lake/axioms-report.txt
+    python3 tools/check_application_model.py --axioms-report applications/open-datum/.lake/axioms-report.txt
+
 simulator:
     node simulator/mirror-check.mjs
     node simulator/build.mjs --check
@@ -35,6 +53,7 @@ browser:
 
 ci:
     just model
+    just application-model
     just simulator
     just browser
     just build-docs

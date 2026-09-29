@@ -1,0 +1,36 @@
+{
+  "the-operators-instruction": [
+    {
+      "text": "The operator's minimal demo: deploy a registry for good, obtain a token, attach random data, show it on public indexers, show that no duplicate is possible, terminate, and show that no resurrection is possible. It widens the earlier two-transition demo and grants no Lean change, live transactions, publication or new agents.",
+      "pause": 400
+    }
+  ],
+  "required-observable-story": [
+    {
+      "text": "Six steps: create or reuse an identified registry; insert a key and attach arbitrary Plutus data to the token's output; find it from its policy and asset name through two named public indexers; attempt a duplicate in the same registry and reach the intended refusal with unchanged state; terminate the same key; and attempt resurrection and reach the intended ledger refusal. Indexer absence or a failed build is never proof of impossibility.",
+      "pause": 400
+    }
+  ],
+  "demo-registry-lifetime": [
+    {
+      "text": "Registries cannot be ended, so rehearsals reuse one named, published preprod demo registry with fresh keys, disclosing reuse; earlier Terminal keys stay permanent. Devnet gates can be ephemeral, and the permanent registry's cost is reported before any live run.",
+      "pause": 400
+    }
+  ],
+  "delivery-and-authority": [
+    {
+      "text": "Epic 301 coordinates tickets 299 and 300 with the existing three seats. Ticket 299 owns the product command's payload carrier and the devnet duplicate and resurrection controls; ticket 300 owns public discovery, the pinned artifact and authorized preprod evidence. Contracts are rebound before affected acceptance, and 304 stays held.",
+      "pause": 400
+    }
+  ],
+  "provenance": [
+    {
+      "text": "Checked sources: the state validator's permanent ownerless registry, the parameterless open policy, the registry's destination check and the witness policy's mint and burn rules. Provider documentation is documentation, not indexing evidence; the story is required work, not delivered.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "ruling-token-data-findability.md",
+    "sha256": "6064771d9adb946e7aae816cf038dbb7c5a3089da4acbccdd052224e54a8071a"
+  }
+}

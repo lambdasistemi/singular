@@ -1,0 +1,50 @@
+{
+  "where-it-lives-and-how-it-builds": [
+    {
+      "text": "The application is its own small Lean project over the unchanged registry model, run on the repository's pinned Lean. Its check mode regenerates the corpus and ledgers, replays every scenario, and proves its own checks can fail: an altered outcome, a dropped ledger row and three mutants of the law must each be noticed.",
+      "pause": 400
+    },
+    {
+      "text": "Proof status is computed, never typed. The build discovers every statement from the compiled environment with the axioms the kernel reports, and the generator writes each row's status and the hash of its header from that. The check refuses tampered reports, a separate report is cross-checked by an independent script, and a custom axiom fails the build.",
+      "pause": 400
+    }
+  ],
+  "the-law": [
+    {
+      "text": "Booking an insertion needs the controller's signature, the full actual registry identity in the envelope, and a request that names its datum, so the token arrives carrying the envelope inline; the payload itself may be any Plutus data. Termination is booked the same way and keeps the token locked. Updates change only the payload. A fold of any selected bookings re-checks each insertion, goes through the registry's own batch fold, releases deposits for terminated keys, and pays every recipient the sum of what it is owed. Rejects release nothing, and every other spend is refused.",
+      "pause": 400
+    }
+  ],
+  "finding-dispositions-review-310-model-001": [
+    {
+      "text": "Properties needing consistency assume a reached world, and the invariant is stated with obligations that it holds at genesis and after each kind of accepted action. The invariant now also requires every output occurrence to be held once, which excludes the duplicated inventory the auditor found. A forged insertion is no longer a counterexample, because the fold re-checks it. Settlement is bound to the rows actually selected, a wrong registry is refused at booking, and the fold's burn is stated.",
+      "pause": 400
+    },
+    {
+      "text": "Two later repairs, approved by the operator: the disappearance of spent outputs is now its own statement over consistent worlds, since a malformed world can recreate a spent reference, while the payment statement keeps no premise; and the payload's opaque equality is replaced by a structural one proved to be exact, over which the update's preservation of consistency is proved.",
+      "pause": 400
+    }
+  ],
+  "correspondence-limits-implementation-boundary": [
+    {
+      "text": "Tips, fees and minimum-output funding are outside the model and never absorb a protected deposit. Retraction admission is not exposed, the hashes are stand-ins, and payload equality is structural and proved exact. A termination names no destination, the current root describes no destination output for it, and the token it burns is spent from the output carrying the inline envelope.",
+      "pause": 400
+    }
+  ],
+  "coverage": [
+    {
+      "text": "Every statement is bound to a scenario or a boundary world, and each scenario publishes the world and the invariant after every step. The corpus uses one controller, two keys and fixed amounts, so it exhibits the statements without covering their domains. All thirty-five statements are proved over the current root model. A proved statement is a property of the model, not product coverage: no validator, transaction or chain claim follows from it.",
+      "pause": 400
+    }
+  ],
+  "invariant-boundary-310-occurrence-001": [
+    {
+      "text": "The executable observation of the invariant is proved to correspond exactly to the invariant itself. It is also run at genesis and after every accepted step of every scenario, and the check requires it everywhere. Two boundary worlds are published: the ordinary world after an insertion is consistent and stays so after an update, while the same world holding its output twice is not consistent, and the same update would leave two outputs of one key. Without the occurrence clause the observation would admit that world, which shows the clause is what excludes it. These runs are bounded observations of the published worlds, not proofs.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "model.md",
+    "sha256": "b7f0c58e24ec7527d8c4fe180fcbb3076c6355b46c405464107c3ef543b0c25f"
+  }
+}

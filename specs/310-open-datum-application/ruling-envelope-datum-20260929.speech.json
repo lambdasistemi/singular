@@ -1,0 +1,24 @@
+{
+  "alices-inserted-token-carries-her-envelope": [
+    {
+      "text": "As Alice, I want my inserted token's output to carry its envelope inline, so my payload and protected fields are there when I update or terminate it. The operator called this obvious from the first story. A booking naming no datum is now refused, the fold's selection refuses such a pending insertion too, and a reached insertion's holding carries its datum inline. Termination is unchanged and names no destination.",
+      "pause": 400
+    }
+  ],
+  "the-initial-key-value": [
+    {
+      "text": "The application policy is where the value first given to an inserted key is validated. This application admits every valid Plutus payload, with no special predicate, while still checking the protected envelope and its binding. The generic registry and what it commits are unchanged.",
+      "pause": 400
+    }
+  ],
+  "protected-envelope-arbitrary-payload": [
+    {
+      "text": "The operator chose to keep the protected envelope with an arbitrary payload. The complete datum has a required control part, controller key, registry, key and deposit, beside a payload that may be any Plutus data. An update changes only the payload, so the controller key cannot be edited that way, and nothing is moved outside the datum.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "ruling-envelope-datum-20260929.md",
+    "sha256": "136e9501f1c58a6444355998a3afbd0fca607b768949e23e0f7537af45d03442"
+  }
+}

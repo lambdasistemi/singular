@@ -1,0 +1,58 @@
+{
+  "the-controllers-story": [
+    {
+      "text": "As the controller, I want my registry token to carry arbitrary Plutus data at an application contract, so I can change that data with my Cardano key while my original deposit stays protected until I terminate the token.",
+      "pause": 400
+    },
+    {
+      "text": "That data is the payload of a protected envelope the delivered output carries inline. The payload may be any Plutus data; the envelope's controller, registry, key and deposit are required, and a payload update cannot change them.",
+      "pause": 400
+    }
+  ],
+  "protected-control-and-a-free-payload": [
+    {
+      "text": "Insertion binds the registry state asset, the active token and key, the controller's payment key and the original deposit in protected control data, beside a free payload of constructors, maps, lists, integers and bytes. A payload edit keeps every control field, the token at the contract, the deposit floor and the registry's lifecycle commitment.",
+      "pause": 400
+    }
+  ],
+  "authority-custody-and-release": [
+    {
+      "text": "The key authorizes updates and the termination approval, while registry folds keep needing no signer. Booking a termination leaves token and deposit locked; release needs the accepted updateTerminal fold of the same registry and key, the token burned and Terminal committed, all in one transaction. Reject, retract, deleteActive, unrelated evidence or a bare burn release nothing.",
+      "pause": 400
+    }
+  ],
+  "additive-payments": [
+    {
+      "text": "Payments add up the original deposits and the registry's own refunds owed to each controller, so a payment that meets each floor alone but not their sum is refused. Several releases to one controller also add up, and tips, fees and output funding never draw on a protected deposit.",
+      "pause": 400
+    }
+  ],
+  "required-controls": [
+    {
+      "text": "Accepting controls are required for a successful update and termination, and reached refusal controls for every forbidden case, from an unsigned update to a resurrection after Terminal. A client or setup failure never counts as a ledger refusal, and issue 304 stays with its own epic.",
+      "pause": 400
+    }
+  ],
+  "sources-and-current-phase": [
+    {
+      "text": "The authority is the epic, the ticket and the operator rulings kept beside this specification; the deposit-lock ruling supersedes the earlier wallet custody. The application imports the registry model at main a0770318, and is proved against it. The earlier registry source and Lean subtree pin is historical, the baseline the work started from. Importing that main is not acceptance of the destination-row producer change it contains, which remains open. New application definitions stay prospective until reviewed at an exact commit.",
+      "pause": 400
+    }
+  ],
+  "the-tokens-path": [
+    {
+      "text": "The diagram follows the token: from the registry key and its Active leaf to the token, to the current application output holding protected controls and a free payload. A signed update moves it to a successor with the same controls; an authorized termination fold burns the token and returns the deposit.",
+      "pause": 400
+    }
+  ],
+  "what-this-phase-delivers": [
+    {
+      "text": "This phase delivers the executable model, the intended statements and exact inversions. No application validator, compiled identity, builder, command or chain demonstration is claimed.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "f229feb0c6a6eec0aa81690135ca13473ece4c1a965327e2f4529ff4d8f5916f"
+  }
+}

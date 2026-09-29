@@ -1,0 +1,34 @@
+{
+  "who-carries-the-work": [
+    {
+      "text": "The existing author and independent auditor carry this child, coordinated by the epic owner beside ticket 299. No new seat, tool, model launch or budget renewal is added.",
+      "pause": 400
+    }
+  ],
+  "the-build-boundary": [
+    {
+      "text": "An isolated Lean project in applications open-datum imports the unchanged root model, and root ci gains only the application-model recipe. Existing Lean sources, corpora, mirrors and registry semantics stay as they are, and the package boundary never excuses skipping compilation or corpus checks.",
+      "pause": 400
+    }
+  ],
+  "order-of-delivery": [
+    {
+      "text": "First come the executable law, the JSON driver, reachable witnesses, intended statements, inversions and finite ledgers, read by the independent auditor at an exact commit before any proof or implementation. Compilation, intended statements, proved statements and ledger enforcement stay separate claims.",
+      "pause": 400
+    },
+    {
+      "text": "Only after the statements are reviewed and frozen come proofs, then validators, encoding, builders and connected controls under a new fence and gate. Tickets 299 and 300 consume the accepted results; issue 304 is not part of this work.",
+      "pause": 400
+    }
+  ],
+  "gate-and-spend": [
+    {
+      "text": "The root gate is git diff check plus the root ci, with a clean baseline recorded before edits. Spend is counted from the invocation receipts, three unbooked probes included, and the model phase went two cheap commands over its first reservation.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "cf6924884ebf33e3eaacc5198424cd0a0db147b82063aa1bf6d4c8493500ca00"
+  }
+}
