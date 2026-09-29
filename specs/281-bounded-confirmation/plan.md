@@ -12,7 +12,7 @@ As the ticket owner, I want one mechanism for bounding a wait, applied to submis
 
 ## Execution budget
 
-There were four local invocations, 15 minutes each and 30 minutes in total. Every Nix, build, test, format and lint command counts; reading an existing build log is not an invocation. All four are spent. The audit reads source and receipts, and the repair from the first audit is verified as the parent rules. CI on the exact head carries every further compile.
+Eight local invocations were granted in three steps, 15 minutes each and 90 minutes in total. Every Nix, build, test, format and lint command counts; reading an existing build log is not an invocation. All eight are spent. The audit reads source and receipts, and CI on the exact head carries format, lint, every component compile, the end-to-end runs and the devnet runs.
 
 | Slot | Owner | Command | Expected |
 | --- | --- | --- | --- |
@@ -20,6 +20,10 @@ There were four local invocations, 15 minutes each and 30 minutes in total. Ever
 | Second | second coder | the same command at the first RED commit | spent: the new specs did not compile, so no RED |
 | RED | second coder | the same command at the RED commit | nonzero exit; only the new negative specs fail, each on its own guard |
 | GREEN | second coder | the same command at the candidate | exit 0 |
+| Audit RED | second coder | the same command at the checks for the first audit's findings | nonzero exit; only the closed-window and window-read checks fail |
+| Audit GREEN | second coder | the same command at their repair | exit 0 |
+| Elapsed RED | second coder | the same command at the whole-call elapsed checks | nonzero exit; only those checks fail, on the elapsed they report |
+| Elapsed GREEN | second coder | the same command at the one-clock repair | exit 0 |
 
 ## Evidence limits
 

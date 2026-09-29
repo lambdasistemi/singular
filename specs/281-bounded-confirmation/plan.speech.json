@@ -1,7 +1,7 @@
 {
   "_source": {
     "file": "plan.md",
-    "sha256": "ef4f35d42c00a2cc6a7713c1f5972705c0c7ba76e71db086f4885191a8db8f3f"
+    "sha256": "a26e46017090ace786ed24a5f9f4dbdacf3e088a9c64268288491ca28637ac18"
   },
   "delivery": [
     {
@@ -11,7 +11,7 @@
   ],
   "execution-budget": [
     {
-      "text": "All four local invocations are spent: two builds that did not compile, then the red run and the green run. The audit reads source and receipts. The repair from the first audit is verified as the parent rules, and continuous integration carries every further compile.",
+      "text": "Eight local invocations were granted and all are spent. Two builds did not compile. After them came a red and a green run for the fix, for its audit repair, and for the whole-call elapsed repair. The audit reads source and receipts, and continuous integration on the exact head carries every compile, lint and devnet run.",
       "pause": 500
     }
   ],
