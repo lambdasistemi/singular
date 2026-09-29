@@ -1,7 +1,7 @@
 {
   "_source": {
     "file": "offchain-api-reference.md",
-    "sha256": "af3cc747fe6d8e21ff47345b3765b4b8b2b0fcf61b0d84332fa5ca0a2050263d"
+    "sha256": "d17330d597536410a05cdc653f894265ed303f33b7d8af8977525c4c92326833"
   },
   "how-the-reference-stays-honest": [
     {
@@ -42,7 +42,7 @@
     },
     {
       "pause": 600,
-      "text": "The complete extent is 44 modules in three kinds. 34 explicitly exposed modules and two re-exported modules are what a caller imports. The three fold owners behind the Update facade and the five wire owners behind the Types facade — Primitive, Request, State, Proof and Redeemer — are package-internal other-modules: they have generated pages here for the contributor reading the facades' implementations, but no caller import path — a caller compiles against the facades' exports, not against these modules. Ledger and Provider are the re-exports: their implementations moved into the private ownership core and the public library re-exports them, so their import paths are unchanged. The six node runtime owners in that core stay outside this reference, documented with source links in the node ownership guide. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike."
+      "text": "The complete extent is 48 modules in three kinds. 35 explicitly exposed modules and two re-exported modules are what a caller imports. The three fold owners behind the Update facade, the five wire owners behind the Types facade and the three deployment owners behind the Deployment facade are package-internal other-modules: they have generated pages here for contributors reading the facades, but no caller import path. Ledger and Provider are the re-exports: their implementations moved into the private ownership core while their public import paths remain. The open-datum envelope codec is an exposed module. The node runtime owners in that private core stay outside this reference and are documented in the node ownership guide. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike."
     }
   ]
 }

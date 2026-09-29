@@ -69,6 +69,7 @@ library
     , time
 
   exposed-modules:
+    Singular.Application.OpenDatum.Envelope
     Singular.Registry.AssetName
     Singular.Registry.Blueprint
     Singular.Registry.Blueprint.Load
@@ -649,6 +650,7 @@ test-suite cage-tests
   hs-source-dirs:   test
   main-is:          Main.hs
   other-modules:
+    Singular.Application.OpenDatum.EnvelopeSpec
     Singular.Registry.BlueprintParametersSpec
     Singular.Registry.DeploymentSpec
     Singular.Registry.TxBuilder.BookEdgeSpec
