@@ -1,20 +1,40 @@
 {
-  "demo-1-application-open-datum-locked-token-and-deposit": [
+  "alices-story-in-the-operators-words": [
     {
-      "text": "The operator's clarification: Alice uses an open policy, so the datum is open; the token does not go to her wallet. She interacts with a smart contract, can change the datum, cannot take the deposit, and the deposit stays until she terminates the token. This replaces the earlier wallet delivery; findability, duplicate refusal, termination and no resurrection stay required.",
+      "text": "The operator's clarification: Alice uses an open policy, so the datum is open; the token does not go to her wallet. She interacts with a smart contract, can change the datum, cannot take the deposit, and the deposit stays until she terminates the token.",
       "pause": 400
-    },
+    }
+  ],
+  "what-it-supersedes-and-keeps": [
+    {
+      "text": "This replaces the earlier wallet delivery and unrestricted holder spend. Public findability, duplicate refusal, confirmed termination and no resurrection stay required, and nothing here claims the current minting policy already enforces it.",
+      "pause": 400
+    }
+  ],
+  "required-application-behavior": [
     {
       "text": "Insertion delivers token, datum and deposit to the application contract. Alice may change the datum while token, contract and deposit are preserved and cannot be pulled out early. Only a successful termination of the same registry and key burns the token, commits Terminal and releases the deposit, and the termination request's own deposit and tip are separate.",
       "pause": 400
     },
     {
-      "text": "Required are one successful datum change and one refused early withdrawal with controls and fresh observations, and a payload that cannot rewrite authority, identity, amount or release. The open minting policy does not enforce custody by itself; the owner must reconcile scope, gate and allocation, and issue 304 stays with its epic. No seats, budget, live writes, publication or merge are granted.",
+      "text": "Required are one successful datum change and one refused early withdrawal with controls and fresh observations, and a payload that cannot rewrite authority, identity, amount or release, kept apart from protected control data by a proposed encoding.",
+      "pause": 400
+    }
+  ],
+  "minting-policy-and-spending-validator": [
+    {
+      "text": "The open minting policy's approval-bound destination does not enforce continued deposit custody by itself. The work is to separate reusable primitives from the new validator, model and specification work, and never to claim custody just because the token sits at a script address.",
+      "pause": 400
+    }
+  ],
+  "reconciliation-and-limits": [
+    {
+      "text": "The owner must reconcile gates, mandates, correspondence, controls, allocation and schedule before affected acceptance, keeping old evidence and spent budget. Issue 304 stays with its epic, and no seats, budget, live writes, publication or merge are granted.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "ruling-application-deposit-lock.md",
-    "sha256": "3971bf541962a6d7c7531d333134e0ec7d978a06618596f22f04ccb064811eac"
+    "sha256": "843432bb69d650c57653c69197f809d7e1f99b79baafd978d7b621f59fcc6902"
   }
 }

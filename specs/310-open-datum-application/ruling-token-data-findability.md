@@ -1,6 +1,8 @@
 # Demo 1 minimum — token data, public findability and permanent retirement
 
-Authority: direct operator instruction in M1 conversation, 28 September 2026: minimal demo is deploy a registry (forever; concern for demos), obtain a token, attach random data, prove findability on public indexers, prove no duplicate is possible, terminate, prove no resurrection is possible. This supersedes the narrower two-positive-transition-only Demo1 acceptance contract. It does not change Lean or grant live transactions, publication, new agents or model choices.
+## The operator's instruction
+
+Authority: direct operator instruction in the first milestone's coordination conversation, 28 September 2026: minimal demo is deploy a registry (forever; concern for demos), obtain a token, attach random data, prove findability on public indexers, prove no duplicate is possible, terminate, prove no resurrection is possible. This supersedes the narrower two-positive-transition-only Demo1 acceptance contract. It does not change Lean or grant live transactions, publication, new agents or model choices.
 
 ## Required observable story
 

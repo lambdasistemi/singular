@@ -29,6 +29,9 @@ Representation choices, stated rather than hidden:
 * `PlutusData` is an abstract executable data type with the five Plutus
   constructors; its serialization and `envelopeHash` stand in for CBOR and
   blake2b-256 and claim no byte agreement with either;
+* `PlutusData` equality is the total structural `PlutusData.beq`, proved to
+  be exactly propositional equality (`PlutusData.beq_iff_eq`); the derived
+  equality of a nested type would be an opaque `partial` function;
 * the contract's address and policy are one identity, `App.policy`, as one
   script is both;
 * the registry model names a request's destination by one number; the
@@ -41,14 +44,152 @@ open Singular
 open Lean
 
 /-- Arbitrary Plutus data: constructors, maps, lists, integers and bytes. No
-business schema is imposed on it. -/
+business schema is imposed on it. Its equality is `PlutusData.beq` below. -/
 inductive PlutusData where
   | constr (tag : Nat) (fields : List PlutusData)
   | map (entries : List (PlutusData × PlutusData))
   | list (items : List PlutusData)
   | int (value : Int)
   | bytes (value : List UInt8)
-  deriving Repr, BEq, Inhabited
+  deriving Repr, Inhabited
+
+/-! `deriving BEq` on this nested type yields an opaque `partial` function, about
+which no proof can say anything, so an update's `List.erase` of the output it
+replaces could not be shown to remove it. The equality is therefore written out
+structurally: same constructor, then equal fields, lists compared element by
+element in order, map entries key and value in order. -/
+
+mutual
+/-- Total structural equality of Plutus data. -/
+def PlutusData.beq : PlutusData → PlutusData → Bool
+  | .constr t fs, .constr t' fs' => t == t' && PlutusData.beqList fs fs'
+  | .map es, .map es' => PlutusData.beqEntries es es'
+  | .list xs, .list ys => PlutusData.beqList xs ys
+  | .int a, .int b => a == b
+  | .bytes a, .bytes b => a == b
+  | _, _ => false
+
+/-- Element-wise equality of two lists of Plutus data. -/
+def PlutusData.beqList : List PlutusData → List PlutusData → Bool
+  | [], [] => true
+  | x :: xs, y :: ys => PlutusData.beq x y && PlutusData.beqList xs ys
+  | _, _ => false
+
+/-- Equality of one map entry: key and value. -/
+def PlutusData.beqEntry : PlutusData × PlutusData → PlutusData × PlutusData → Bool
+  | (k, v), (k', v') => PlutusData.beq k k' && PlutusData.beq v v'
+
+/-- Entry-wise equality of two maps' entry lists, in order. -/
+def PlutusData.beqEntries :
+    List (PlutusData × PlutusData) → List (PlutusData × PlutusData) → Bool
+  | [], [] => true
+  | e :: es, e' :: es' => PlutusData.beqEntry e e' && PlutusData.beqEntries es es'
+  | _, _ => false
+end
+
+instance : BEq PlutusData := ⟨PlutusData.beq⟩
+
+mutual
+theorem PlutusData.eq_of_beq' : ∀ a b : PlutusData, PlutusData.beq a b = true → a = b
+  | .constr t fs, b, h => by
+    cases b with
+    | constr t' fs' =>
+      simp only [PlutusData.beq, Bool.and_eq_true, beq_iff_eq] at h
+      obtain ⟨h1, h2⟩ := h
+      rw [h1, PlutusData.eqList_of_beq fs fs' h2]
+    | _ => simp [PlutusData.beq] at h
+  | .map es, b, h => by
+    cases b with
+    | map es' =>
+      simp only [PlutusData.beq] at h
+      rw [PlutusData.eqEntries_of_beq es es' h]
+    | _ => simp [PlutusData.beq] at h
+  | .list xs, b, h => by
+    cases b with
+    | list ys =>
+      simp only [PlutusData.beq] at h
+      rw [PlutusData.eqList_of_beq xs ys h]
+    | _ => simp [PlutusData.beq] at h
+  | .int x, b, h => by
+    cases b with
+    | int y =>
+      simp only [PlutusData.beq, beq_iff_eq] at h
+      rw [h]
+    | _ => simp [PlutusData.beq] at h
+  | .bytes x, b, h => by
+    cases b with
+    | bytes y =>
+      simp only [PlutusData.beq, beq_iff_eq] at h
+      rw [h]
+    | _ => simp [PlutusData.beq] at h
+
+theorem PlutusData.eqList_of_beq : ∀ xs ys : List PlutusData,
+    PlutusData.beqList xs ys = true → xs = ys
+  | [], [], _ => rfl
+  | [], _ :: _, h => by simp [PlutusData.beqList] at h
+  | _ :: _, [], h => by simp [PlutusData.beqList] at h
+  | x :: xs, y :: ys, h => by
+    simp only [PlutusData.beqList, Bool.and_eq_true] at h
+    rw [PlutusData.eq_of_beq' x y h.1, PlutusData.eqList_of_beq xs ys h.2]
+
+theorem PlutusData.eqEntry_of_beq : ∀ e e' : PlutusData × PlutusData,
+    PlutusData.beqEntry e e' = true → e = e'
+  | (k, v), (k', v'), h => by
+    simp only [PlutusData.beqEntry, Bool.and_eq_true] at h
+    rw [PlutusData.eq_of_beq' k k' h.1, PlutusData.eq_of_beq' v v' h.2]
+
+theorem PlutusData.eqEntries_of_beq : ∀ es es' : List (PlutusData × PlutusData),
+    PlutusData.beqEntries es es' = true → es = es'
+  | [], [], _ => rfl
+  | [], _ :: _, h => by simp [PlutusData.beqEntries] at h
+  | _ :: _, [], h => by simp [PlutusData.beqEntries] at h
+  | e :: es, e' :: es', h => by
+    simp only [PlutusData.beqEntries, Bool.and_eq_true] at h
+    rw [PlutusData.eqEntry_of_beq e e' h.1, PlutusData.eqEntries_of_beq es es' h.2]
+end
+
+mutual
+theorem PlutusData.beq_refl : ∀ a : PlutusData, PlutusData.beq a a = true
+  | .constr t fs => by
+    simp only [PlutusData.beq, Bool.and_eq_true, beq_self_eq_true, true_and]
+    exact PlutusData.beqList_refl fs
+  | .map es => by
+    simp only [PlutusData.beq]
+    exact PlutusData.beqEntries_refl es
+  | .list xs => by
+    simp only [PlutusData.beq]
+    exact PlutusData.beqList_refl xs
+  | .int x => by simp [PlutusData.beq]
+  | .bytes x => by simp [PlutusData.beq]
+
+theorem PlutusData.beqList_refl : ∀ xs : List PlutusData, PlutusData.beqList xs xs = true
+  | [] => by simp [PlutusData.beqList]
+  | x :: xs => by
+    simp only [PlutusData.beqList, Bool.and_eq_true]
+    exact ⟨PlutusData.beq_refl x, PlutusData.beqList_refl xs⟩
+
+theorem PlutusData.beqEntry_refl : ∀ e : PlutusData × PlutusData, PlutusData.beqEntry e e = true
+  | (k, v) => by
+    simp only [PlutusData.beqEntry, Bool.and_eq_true]
+    exact ⟨PlutusData.beq_refl k, PlutusData.beq_refl v⟩
+
+theorem PlutusData.beqEntries_refl :
+    ∀ es : List (PlutusData × PlutusData), PlutusData.beqEntries es es = true
+  | [] => by simp [PlutusData.beqEntries]
+  | e :: es => by
+    simp only [PlutusData.beqEntries, Bool.and_eq_true]
+    exact ⟨PlutusData.beqEntry_refl e, PlutusData.beqEntries_refl es⟩
+end
+
+instance : LawfulBEq PlutusData where
+  eq_of_beq {a b} h := PlutusData.eq_of_beq' a b h
+  rfl {a} := PlutusData.beq_refl a
+
+/-- The payload equality is exactly propositional equality. -/
+theorem PlutusData.beq_iff_eq (a b : PlutusData) : (a == b) = true ↔ a = b :=
+  ⟨eq_of_beq, fun h => h ▸ beq_self_eq_true a⟩
+
+instance : DecidableEq PlutusData := fun a b => decidable_of_iff _ (PlutusData.beq_iff_eq a b)
 
 /-- The registry's state asset: the policy and asset name of the one token its
 state UTxO carries. It is what identifies a registry, and what the application
@@ -57,6 +198,16 @@ structure StateAsset where
   policy : Nat
   assetName : Nat
   deriving Repr, BEq, DecidableEq, ToJson, FromJson
+
+instance : LawfulBEq StateAsset where
+  eq_of_beq {a b} h := by
+    obtain ⟨p, n⟩ := a
+    obtain ⟨p', n'⟩ := b
+    simp only [reduceBEq, Bool.and_eq_true, beq_iff_eq] at h
+    rw [h.1, h.2]
+  rfl {a} := by
+    obtain ⟨p, n⟩ := a
+    simp [reduceBEq]
 
 /-- The protected control of one application output. Every field is preserved
 by an update; only a release consumes it. -/
@@ -69,11 +220,33 @@ structure Control where
   deposit : Nat
   deriving Repr, BEq, DecidableEq, ToJson, FromJson
 
+instance : LawfulBEq Control where
+  eq_of_beq {a b} h := by
+    obtain ⟨v, r, ap, k, c, d⟩ := a
+    obtain ⟨v', r', ap', k', c', d'⟩ := b
+    simp only [reduceBEq, Bool.and_eq_true, beq_iff_eq] at h
+    obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
+    subst h1 h2 h3 h4 h5 h6
+    rfl
+  rfl {a} := by
+    obtain ⟨v, r, ap, k, c, d⟩ := a
+    simp [reduceBEq]
+
 /-- The versioned control envelope: protected control beside a free payload. -/
 structure Envelope where
   control : Control
   payload : PlutusData
   deriving Repr, BEq
+
+instance : LawfulBEq Envelope where
+  eq_of_beq {a b} h := by
+    obtain ⟨c, p⟩ := a
+    obtain ⟨c', p'⟩ := b
+    simp only [reduceBEq, Bool.and_eq_true, beq_iff_eq] at h
+    rw [h.1, h.2]
+  rfl {a} := by
+    obtain ⟨c, p⟩ := a
+    simp [reduceBEq]
 
 /-- The envelope version this model defines. -/
 def envelopeVersion : Nat := 1
@@ -122,6 +295,18 @@ structure AppOutput where
   assets : List (Asset × Int)
   envelope : Envelope
   deriving Repr, BEq
+
+instance : LawfulBEq AppOutput where
+  eq_of_beq {a b} h := by
+    obtain ⟨r, ad, l, as, e⟩ := a
+    obtain ⟨r', ad', l', as', e'⟩ := b
+    simp only [reduceBEq, Bool.and_eq_true, beq_iff_eq] at h
+    obtain ⟨h1, h2, h3, h4, h5⟩ := h
+    subst h1 h2 h3 h4 h5
+    rfl
+  rfl {a} := by
+    obtain ⟨r, ad, l, as, e⟩ := a
+    simp [reduceBEq]
 
 /-- An output an update proposes, before the model allocates its reference. -/
 structure Successor where

@@ -1,9 +1,11 @@
 {
-  "delivery-tasks": [
+  "done": [
     {
       "text": "Done so far: the operator's application scope is recorded in ticket 310, the clean lane and its baseline exist, and the envelope, booking authorization, permissionless fold and additive settlement are proposed with a frozen model-only contract.",
       "pause": 400
-    },
+    }
+  ],
+  "still-open": [
     {
       "text": "Still open: the executable law, driver and corpus; the statements, inversions and ledgers; independent review; proofs; the application scripts and builders; connected controls for custody, authorization, refunds, duplicates and permanent retirement; and the hand-off to tickets 299 and 300. Public-chain, release and merge steps stay separate.",
       "pause": 400
@@ -11,6 +13,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "ca5f2ef0583104615b700fd3bf9e8e8f9a0159d0447ade30ae07ce0924aaa3df"
+    "sha256": "fcb5bb74c01640eadf4691aeeee6c2e6436859e7d39eb93199964ed4e263ae7d"
   }
 }

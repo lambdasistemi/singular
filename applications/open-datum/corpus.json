@@ -196,6 +196,7 @@
      "bookTerminate_keeps_locked",
      "release_burns_atomically",
      "fold_settles_additively",
+     "fold_spent_disappears",
      "fold_signers_unchanged",
      "genesis_consistent",
      "appStep_preserves_consistent",
@@ -861,6 +862,7 @@
    "scenario":
    {"statements":
     ["fold_settles_additively",
+     "fold_spent_disappears",
      "update_preserves_custody",
      "release_burns_atomically"],
     "name": "update-between-booking-and-fold",
@@ -1191,6 +1193,7 @@
    "scenario":
    {"statements":
     ["fold_settles_additively",
+     "fold_spent_disappears",
      "release_burns_atomically",
      "insertion_binds_envelope",
      "fold_preserves_consistent"],
@@ -1983,7 +1986,10 @@
      "outcome": "accepted",
      "consistent": true}],
    "scenario":
-   {"statements": ["fold_settles_additively", "release_burns_atomically"],
+   {"statements":
+    ["fold_settles_additively",
+     "fold_spent_disappears",
+     "release_burns_atomically"],
     "name": "two-releases-one-controller",
     "kind": "witness",
     "config":

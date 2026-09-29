@@ -305,8 +305,8 @@ def corpus : List Scenario :=
       [ "bookInsert_inversion", "fold_inversion", "appStep_fold", "insertion_binds_envelope"
       , "insertion_requires_registry_identity", "update_inversion", "update_keeps_registry"
       , "update_preserves_custody", "bookTerminate_inversion", "bookTerminate_keeps_locked"
-      , "release_burns_atomically", "fold_settles_additively", "fold_signers_unchanged"
-      , "genesis_consistent", "appStep_preserves_consistent", "reachable_consistent"
+      , "release_burns_atomically", "fold_settles_additively", "fold_spent_disappears"
+      , "fold_signers_unchanged", "genesis_consistent", "appStep_preserves_consistent", "reachable_consistent"
       , "consistent_occurrences_distinct", "bookInsert_preserves_consistent"
       , "fold_preserves_consistent", "update_preserves_consistent"
       , "bookTerminate_preserves_consistent" ]
@@ -317,20 +317,22 @@ def corpus : List Scenario :=
   , scenario "update-payload-b" "witness" ["update_payload_free"]
       (insertKey 5 ++ [.update 0 [successorOf 5 payload2 insertDeposit] [controller]])
   , scenario "update-between-booking-and-fold" "witness"
-      ["fold_settles_additively", "update_preserves_custody", "release_burns_atomically"]
+      ["fold_settles_additively", "fold_spent_disappears", "update_preserves_custody"
+      , "release_burns_atomically"]
       (insertKey 5 ++ [.bookTerminate (terminateRequest 5) 0 [controller],
         .update 0 [successorOf 5 payload1 insertDeposit] [controller],
         .fold [(.updateTerminal, 5)] (paid (insertDeposit + terminateDeposit))])
   , scenario "mixed-batch-one-controller" "witness"
-      ["fold_settles_additively", "release_burns_atomically", "insertion_binds_envelope"
-      , "fold_preserves_consistent"]
+      ["fold_settles_additively", "fold_spent_disappears", "release_burns_atomically"
+      , "insertion_binds_envelope", "fold_preserves_consistent"]
       (insertKey 5 ++ [.bookTerminate (terminateRequest 5) 0 [controller], bookInsertKey 6,
         .fold [(.updateTerminal, 5), (.insertActive, 6)] (paid (insertDeposit + terminateDeposit))])
   , scenario "mixed-batch-short-by-one" "adverse-input" ["fold_settles_additively"]
       (insertKey 5 ++ [.bookTerminate (terminateRequest 5) 0 [controller], bookInsertKey 6,
         .fold [(.updateTerminal, 5), (.insertActive, 6)]
           (paid (insertDeposit + terminateDeposit - 1))])
-  , scenario "two-releases-one-controller" "witness" ["fold_settles_additively", "release_burns_atomically"]
+  , scenario "two-releases-one-controller" "witness"
+      ["fold_settles_additively", "fold_spent_disappears", "release_burns_atomically"]
       (insertKey 5 ++ insertKey 6 ++
         [.bookTerminate (terminateRequest 5) 0 [controller],
          .bookTerminate (terminateRequest 6) 1 [controller],
@@ -466,7 +468,8 @@ def statementNames : List (String × String) :=
   , ("insertion_requires_registry_identity", "evidence-binding")
   , ("insertion_binds_envelope", "evidence-binding"), ("bookTerminate_keeps_locked", "custody")
   , ("release_burns_atomically", "terminality"), ("only_fold_releases", "refusal")
-  , ("fold_settles_additively", "value"), ("duplicate_refused_by_registry", "refusal")
+  , ("fold_settles_additively", "value"), ("fold_spent_disappears", "custody")
+  , ("duplicate_refused_by_registry", "refusal")
   , ("resurrection_refused_by_registry", "terminality"), ("fold_signers_unchanged", "authorization") ]
 
 def theoremLedger : Json :=

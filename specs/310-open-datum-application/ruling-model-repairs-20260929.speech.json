@@ -1,0 +1,32 @@
+{
+  "a-terminated-output-disappears-from-a-consistent-world": [
+    {
+      "text": "As a controller terminating an application output from a consistent world, I want that output gone while every recipient receives the full sum of their floors. The operator approved the consistency premise. An executed malformed world, whose next reference did not exceed a live output's, recreated the spent reference, so the old statement promised too much.",
+      "pause": 400
+    },
+    {
+      "text": "The payment statement keeps its name and needs no premise: the selected rows, the live spent outputs, each deposit to its own controller and the summed floors. The disappearance is the new statement fold spent disappears, which assumes a consistent world, never reachability.",
+      "pause": 400
+    }
+  ],
+  "an-updated-payload-replaces-its-output": [
+    {
+      "text": "As a controller updating a payload, I want the old output replaced with every constructor and every update behaving as before. The operator approved the structural equality repair. The derived equality of the nested payload type was an opaque function no proof could unfold, so an update's removal of the old output could not be proved.",
+      "pause": 400
+    },
+    {
+      "text": "The payload now has a total structural equality, proved to be exactly equality, with the same laws for the types around it. Constructors, values, results and transitions are unchanged; no axiom, restriction or removal by reference is introduced. A fixed table of 1681 pairs gives the same answers under the old and new equality; the proved laws are the general claim.",
+      "pause": 400
+    }
+  ],
+  "what-follows-for-the-model-and-its-consumers": [
+    {
+      "text": "There are now thirty-three statements, and proof status comes only from captured kernel reports; recording it in the generated ledger is separate, unfinished work. The corpus replays with every outcome unchanged, and only reached releasing scenarios also cite the new statement. Issue 304, validators, builders, the command line and chain evidence remain open.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "ruling-model-repairs-20260929.md",
+    "sha256": "18d8c38c62d9db5c7fa850a306e181755e24c7d3828a327eb34270bb82f60094"
+  }
+}

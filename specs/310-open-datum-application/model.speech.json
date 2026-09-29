@@ -15,17 +15,21 @@
     {
       "text": "Properties needing consistency assume a reached world, and the invariant is stated with obligations that it holds at genesis and after each kind of accepted action. The invariant now also requires every output occurrence to be held once, which excludes the duplicated inventory the auditor found. A forged insertion is no longer a counterexample, because the fold re-checks it. Settlement is bound to the rows actually selected, a wrong registry is refused at booking, and the fold's burn is stated.",
       "pause": 400
+    },
+    {
+      "text": "Two later repairs, approved by the operator: the disappearance of spent outputs is now its own statement over consistent worlds, since a malformed world can recreate a spent reference, while the payment statement keeps no premise; and the payload's opaque equality is replaced by a structural one proved to be exact, over which the update's preservation of consistency is proved.",
+      "pause": 400
     }
   ],
   "correspondence-limits-implementation-boundary": [
     {
-      "text": "Tips, fees and minimum-output funding are outside the model and never absorb a protected deposit. Retraction admission is not exposed, the hashes are stand-ins, and the destination row of a non-delivering fold remains issue 304's question.",
+      "text": "Tips, fees and minimum-output funding are outside the model and never absorb a protected deposit. Retraction admission is not exposed, the hashes are stand-ins, payload equality is structural and proved exact, and the destination row of a non-delivering fold remains issue 304's question.",
       "pause": 400
     }
   ],
   "coverage": [
     {
-      "text": "Every statement is bound to a scenario or a boundary world, and each scenario publishes the world and the invariant after every step. The corpus uses one controller, two keys and fixed amounts, so it exhibits the statements without covering their domains. All thirty-two statements remain unproved.",
+      "text": "Every statement is bound to a scenario or a boundary world, and each scenario publishes the world and the invariant after every step. The corpus uses one controller, two keys and fixed amounts, so it exhibits the statements without covering their domains. Of thirty-three statements, twenty-one have clean kernel reports at this revision and twelve remain unproved.",
       "pause": 400
     }
   ],
@@ -37,6 +41,6 @@
   ],
   "_source": {
     "file": "model.md",
-    "sha256": "e4245b31d966910e44e0844e50bab70485541952269939347a88970a852e4ce3"
+    "sha256": "4735d364a115d08f1005499eb5455192994256c13e1b45f7bd34044fcce6f161"
   }
 }

@@ -3,7 +3,7 @@ import OpenDatumApplication.Driver
 
 /-! # The open-datum application's intended statements and inversions
 
-Nineteen declarations were previously proved. This bounded slice targets one further unchanged declaration; the other12 remain UNPROVED. Only captured #print axioms results establish each target's proof status; the current ledger remains a historical statement-phase artifact.
+Twenty declarations were previously proved. This slice proves one further unchanged declaration, `update_preserves_consistent`, over the repaired structural payload equality, and splits the disappearance of spent outputs out of `fold_settles_additively` into `fold_spent_disappears`, stated over consistent worlds and not yet proved; twelve declarations remain UNPROVED. Only captured #print axioms results establish each declaration's proof status; the current ledger remains a historical statement-phase artifact.
 
 Three kinds of statement, kept apart:
 
@@ -751,7 +751,85 @@ theorem bookTerminate_preserves_consistent (w w' : World) (r : Request) (ref : N
 theorem update_preserves_consistent (w w' : World) (ref : Nat) (succs : List Successor)
     (sigs : List Nat) :
     AppConsistent w → appStep w (.update ref succs sigs) = .ok w' → AppConsistent w' := by
-  sorry
+  intro hc h
+  change updateStep Law.standard w ref succs sigs = .ok w' at h
+  obtain ⟨o, s, ho, _, _, haddr, hctrl, hassets, hdep, hw⟩ :=
+    (update_inversion w w' ref succs sigs).1 h
+  have hnd : w.outputs.Nodup := (consistent_occurrences_distinct w hc).1
+  subst hw
+  obtain ⟨h1, h2, h3, h4, h5⟩ := hc
+  have hmem : o ∈ w.outputs := by
+    first
+      | exact List.mem_of_find?_eq_some ho
+      | exact List.mem_of_find?_eq_some (by simpa [outputAt] using ho)
+  have hnot : o ∉ w.outputs.erase o := by
+    first
+      | exact hnd.not_mem_erase
+      | exact List.Nodup.not_mem_erase hnd
+      | (intro hm; exact (hnd.mem_erase_iff.1 hm).1 rfl)
+  have hold : ∀ q, q ∈ w.outputs.erase o → q ∈ w.outputs ∧ q ≠ o := by
+    intro q hq
+    refine ⟨List.mem_of_mem_erase hq, ?_⟩
+    rintro rfl
+    exact hnot hq
+  have hkey : s.envelope.control.key = o.envelope.control.key := congrArg Control.key hctrl
+  obtain ⟨_, o2, o3, _, o5, _⟩ := h3 o hmem
+  refine ⟨h1, ?_, ?_, ?_, h5⟩
+  · dsimp only
+    rw [List.map_append]
+    refine List.nodup_append.2 ⟨?_, ?_, ?_⟩
+    · first
+        | exact List.Nodup.sublist (List.erase_sublist.map _) h2
+        | exact List.Nodup.sublist (List.Sublist.map _ (List.erase_sublist _ _)) h2
+    · first
+        | exact List.nodup_singleton _
+        | simp
+    · intro a ha b hb hab
+      obtain ⟨q, hq, hqa⟩ := List.mem_map.1 ha
+      have hb' : b = w.nextRef := by
+        first
+          | exact List.mem_singleton.1 hb
+          | simpa using hb
+      have hlt : q.ref < w.nextRef := (h3 q (hold q hq).1).2.2.2.2.2
+      have hqa' : q.ref = a := hqa
+      omega
+  · intro q hq
+    rcases List.mem_append.1 hq with hq | hq
+    · obtain ⟨g1, g2, g3, g4, g5, g6⟩ := h3 q (hold q hq).1
+      exact ⟨g1, g2, g3, g4, g5, Nat.lt_succ_of_lt g6⟩
+    · have hq' := List.mem_singleton.1 hq
+      subst hq'
+      refine ⟨haddr, ?_, ?_, ?_, ?_, Nat.lt_succ_self _⟩
+      · show s.assets = [((.active, s.envelope.control.key), 1)]
+        rw [hassets, hctrl]
+        exact o2
+      · show s.envelope.control.registry = w.registryAsset
+        rw [hctrl]
+        exact o3
+      · show s.envelope.control.deposit ≤ s.lovelace
+        rw [hctrl]
+        exact hdep
+      · show trieGet w.registry.trie s.envelope.control.key = .known .active
+        rw [hctrl]
+        exact o5
+  · intro q1 hq1 q2 hq2 hkr
+    have old_next : ∀ q, q ∈ w.outputs.erase o →
+        (q.envelope.control.key = s.envelope.control.key ∨ q.ref = w.nextRef) → False := by
+      intro q hq hqr
+      rcases hqr with hk | hr
+      · exact (hold q hq).2 (h4 q (hold q hq).1 o hmem (Or.inl (hk.trans hkey)))
+      · have hlt : q.ref < w.nextRef := (h3 q (hold q hq).1).2.2.2.2.2
+        omega
+    rcases List.mem_append.1 hq1 with hq1 | hq1 <;>
+      rcases List.mem_append.1 hq2 with hq2 | hq2
+    · exact h4 q1 (hold q1 hq1).1 q2 (hold q2 hq2).1 hkr
+    · have hq2' := List.mem_singleton.1 hq2
+      subst hq2'
+      exact (old_next q1 hq1 hkr).elim
+    · have hq1' := List.mem_singleton.1 hq1
+      subst hq1'
+      exact (old_next q2 hq2 (hkr.imp Eq.symm Eq.symm)).elim
+    · rw [List.mem_singleton.1 hq1, List.mem_singleton.1 hq2]
 
 /-- Every fold, mixed insertion and termination selections included. -/
 theorem fold_preserves_consistent (w w' : World) (sel : List (Edge × Key))
@@ -1141,10 +1219,12 @@ theorem only_fold_releases (w w' : World) (a : AppAction) :
   sorry
 
 /-- Additive settlement (any world, bound to the actual rows): an accepted fold's
-selected rows are those `selectRow` chose; its whole duty, the registry's payment
-for every selected request by its edge and each spent output's own protected
-deposit to its own controller, is paid, and every recipient — the same
-controller owed several floors included — receives at least their sum. -/
+selected rows are those `selectRow` chose; every output they spend was a live
+output; its whole duty, the registry's payment for every selected request by its
+edge and each spent output's own protected deposit to its own controller, is
+paid, and every recipient — the same controller owed several floors included —
+receives at least their sum. That the spent outputs are gone afterwards is
+`fold_spent_disappears`, which needs a consistent world. -/
 theorem fold_settles_additively (w w' : World) (sel : List (Edge × Key))
     (outs : List TxOutput) (t : Result) :
     foldEffect Law.standard w sel outs = .ok (w', t) →
@@ -1152,9 +1232,21 @@ theorem fold_settles_additively (w w' : World) (sel : List (Edge × Key))
         releases rows = (rows.filterMap (·.spent)).map (fun o =>
           { recipient := .owner o.envelope.control.controller
           , atLeast := o.envelope.control.deposit : Payment }) ∧
-        (∀ o ∈ rows.filterMap (·.spent), o ∈ w.outputs ∧ o ∉ w'.outputs) ∧
+        (∀ o ∈ rows.filterMap (·.spent), o ∈ w.outputs) ∧
         ∀ rcp, owedTo rcp (foldPayments rows) ≤
           receivedBy rcp (outs ++ (createdOutputs w.app w.nextRef rows).map (deliveryOf w.app)) := by
+  sorry
+
+/-- Spent outputs disappear (consistent worlds): an accepted fold's selected rows
+are those `selectRow` chose, and no output they spend is live afterwards. The
+premise is consistency, not reachability: in a world whose next reference does
+not exceed every live reference, the fold's own fresh outputs can recreate a
+spent output. -/
+theorem fold_spent_disappears (w w' : World) (sel : List (Edge × Key))
+    (outs : List TxOutput) (t : Result) :
+    AppConsistent w → foldEffect Law.standard w sel outs = .ok (w', t) →
+      ∃ rows, sel.mapM (selectRow Law.standard w) = .ok rows ∧
+        ∀ o ∈ rows.filterMap (·.spent), o ∉ w'.outputs := by
   sorry
 
 /-- Duplicate insertion (reached worlds) is refused by the registry's law, not by
@@ -1209,3 +1301,13 @@ end OpenDatumApplication.Statements
 #print axioms OpenDatumApplication.Statements.bookTerminate_preserves_consistent
 
 #print axioms OpenDatumApplication.Statements.reject_preserves_consistent
+
+#print axioms OpenDatumApplication.Statements.update_preserves_consistent
+
+#print axioms OpenDatumApplication.PlutusData.beq_iff_eq
+#print axioms OpenDatumApplication.instLawfulBEqPlutusData
+#print axioms OpenDatumApplication.instDecidableEqPlutusData
+#print axioms OpenDatumApplication.instLawfulBEqStateAsset
+#print axioms OpenDatumApplication.instLawfulBEqControl
+#print axioms OpenDatumApplication.instLawfulBEqEnvelope
+#print axioms OpenDatumApplication.instLawfulBEqAppOutput

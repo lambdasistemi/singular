@@ -1,6 +1,6 @@
 # Open-datum application: executable model and intended statements
 
-Phase: MODEL + STATEMENTS + INVERSIONS; occurrence-safe re-cut `310-occurrence-001` on the preserved first repair. All 32 statements are **stated, unproved** (`sorry`). Nothing here is a validator, a compiled identity, a builder or ledger evidence.
+Phase: MODEL + STATEMENTS + INVERSIONS + PROOFS; occurrence-safe re-cut `310-occurrence-001` on the preserved first repair, then the two model repairs of [the 29 September rulings](ruling-model-repairs-20260929.md). There are 33 statements. A statement is proved only where a captured `#print axioms` report shows standard axioms alone; at this revision 21 are, and 12 are **stated, unproved** (`sorry`). The generated ledger still lists every statement as stated, unproved. Nothing here is a validator, a compiled identity, a builder or ledger evidence.
 
 ## Where it lives and how it builds
 
@@ -32,7 +32,9 @@ Phase: MODEL + STATEMENTS + INVERSIONS; occurrence-safe re-cut `310-occurrence-0
   - Single-step guard properties and the exact inversions still hold over any world, and say so.
   - Over unrestricted worlds, `update_preserves_custody` and `release_burns_atomically` are false for a world holding two outputs of one key; `AppConsistent` excludes it, the law does not. A booked insertion whose envelope never bound its request is no longer such a counterexample: the fold re-checks the binding in `selectRow` and refuses `fold-envelope-binding`.
   - Re-cut `310-occurrence-001` (finding F310-R1-001): the previous uniqueness clause compared output values, so an inventory holding one identical output twice, `[o, o]`, satisfied it; an accepted update erases only the first copy and appends a new reference, leaving two different outputs of one key, which made the preservation obligation false as typed. `AppConsistent` now also requires the references to be pairwise distinct, so every output occurrence is held once. Preservation is stated per accepted constructor (`bookInsert`, `bookTerminate`, `update`, `fold`, `reject`) over every consistent world; `bookOther` and `withdraw` accept nothing. `erase`, the law and the root model are unchanged.
-- **F310-002 (additive rows).** `fold_settles_additively` binds the rows to exactly what `selectRow` chose (`sel.mapM (selectRow …) = .ok rows`). Each release is the spent output's own protected deposit to its own controller. Every recipient receives at least the sum of its floors.
+- **F310-002 (additive rows).** `fold_settles_additively` binds the rows to exactly what `selectRow` chose (`sel.mapM (selectRow …) = .ok rows`). Every spent output was live. Each release is the spent output's own protected deposit to its own controller. Every recipient receives at least the sum of its floors. It holds over any world.
+- **Spent-output disappearance (29 September ruling).** An executed malformed world, whose next reference does not exceed a live output's, recreates the spent reference in the fold's fresh outputs, so the disappearance of spent outputs was false over any world. It is now the separate `fold_spent_disappears`, whose premise is `AppConsistent w`; the payment statement above keeps no premise.
+- **Payload equality (29 September ruling).** The derived equality of the nested `PlutusData` was an opaque `partial` function, so no proof could show that an update's `List.erase` removes the replaced output. `PlutusData.beq` is now a total structural equality proved to be propositional equality, with `LawfulBEq` for the types that contain it; `update_preserves_consistent` is proved over it. Values, results and transitions are unchanged.
 - **F310-003 (registry identity).**
   - Booking requires the application's registry and the envelope's to equal the world's actual state asset. The fold re-checks both for insertions and terminations.
   - Controls:
@@ -47,6 +49,7 @@ Phase: MODEL + STATEMENTS + INVERSIONS; occurrence-safe re-cut `310-occurrence-0
 - **Retraction.** A retraction's admission (`Singular.retractAdmission`) is not exposed by this application; only `reject` is.
 - **Representation.**
   - `PlutusData` and FNV `envelopeHash` stand in for CBOR and blake2b-256; no byte agreement is claimed.
+  - `PlutusData` equality is the structural `PlutusData.beq`; a fixed differential table shows it gives the old compiled equality's results, and the proved laws are the universal claim.
   - `App.policy` is both the policy and the address.
   - A destination is `address · 2^64 + envelopeHash`.
   - A termination names no destination (`output = 0`). The generic model's destination row for a non-delivering fold is #304's held question.

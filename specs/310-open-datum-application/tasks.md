@@ -1,8 +1,13 @@
 # Delivery tasks
 
+## Done
+
 - [x] Record the operator application scope in dedicated310 and reconcile301/299/300 allocation.
 - [x] Create clean310 lane on accepted502; capture clean rootCI baseline038 before edits.
 - [x] Propose protected envelope, booking authorization, permissionless fold and additive settlement; freeze model-only contract and remaining schedule.
+
+## Still open
+
 - [ ] Author executable application law/composition, driver/JSON surface and reproducible witness/mutant corpus.
 - [ ] Author exact statements, public inversions and finite theorem/semantic-atom ledgers; publish proof debt and abstraction limits.
 - [ ] Obtain independent SHA-bound model/statement review and disposition every required finding.

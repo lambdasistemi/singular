@@ -1,5 +1,5 @@
 {
-  "demo-1-minimum-token-data-public-findability-and-permanent-retirement": [
+  "the-operators-instruction": [
     {
       "text": "The operator's minimal demo: deploy a registry for good, obtain a token, attach random data, show it on public indexers, show that no duplicate is possible, terminate, and show that no resurrection is possible. It widens the earlier two-transition demo and grants no Lean change, live transactions, publication or new agents.",
       "pause": 400
@@ -31,6 +31,6 @@
   ],
   "_source": {
     "file": "ruling-token-data-findability.md",
-    "sha256": "4f92e4903f617c5a90ce03d96b5a3fcb38fba7d609b5fd831b3e76e9cd6fd386"
+    "sha256": "6064771d9adb946e7aae816cf038dbb7c5a3089da4acbccdd052224e54a8071a"
   }
 }
