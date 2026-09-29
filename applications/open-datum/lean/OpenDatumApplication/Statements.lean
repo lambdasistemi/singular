@@ -3,7 +3,7 @@ import OpenDatumApplication.Driver
 
 /-! # The open-datum application's intended statements and inversions
 
-This bounded proof slice targets six independent declarations; the other26 declarations remain UNPROVED. Only captured #print axioms results establish each target's proof status; the current ledger remains a historical statement-phase artifact.
+Six declarations were previously proved. This bounded slice targets four further unchanged declarations; the other22 remain UNPROVED. Only captured #print axioms results establish each target's proof status; the current ledger remains a historical statement-phase artifact.
 
 Three kinds of statement, kept apart:
 
@@ -131,7 +131,34 @@ theorem withdraw_inversion (w w' : World) (ref : Nat) (outs : List TxOutput) :
 /-- A genesis world is consistent. -/
 theorem genesis_consistent (app : App) (c : Config) (asset : StateAsset) :
     AppConsistent (genesis app c asset) := by
-  sorry
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · first
+      | (show Singular.Consistent
+            { config := { c with root := rootOf [] }, trie := [], custody := [], held := [] }
+         exact ⟨rfl,
+           fun key => by simp [kindCount, trieGet],
+           fun key => by simp [kindCount, trieGet],
+           fun key => by simp [custodyCount, trieGet],
+           fun key => by simp [custodyCount, trieGet],
+           fun h0 hm _ => absurd hm (by simp),
+           fun c hm => absurd hm (by simp),
+           fun c₁ h1 _ _ => absurd h1 (by simp)⟩)
+      | (simp [genesis, Singular.Consistent, kindCount, custodyCount, trieGet])
+  · first
+      | exact List.nodup_nil
+      | simp [genesis]
+  · first
+      | (intro o ho; nomatch ho)
+      | (intro o ho; simp [genesis] at ho)
+      | simp [genesis]
+  · first
+      | (intro o₁ h1; nomatch h1)
+      | (intro o₁ h1; simp [genesis] at h1)
+      | simp [genesis]
+  · first
+      | (intro p hp; nomatch hp)
+      | (intro p hp; simp [genesis] at hp)
+      | simp [genesis]
 
 /-- Every accepted action of every constructor preserves consistency. -/
 theorem appStep_preserves_consistent (w w' : World) (a : AppAction) :
@@ -148,14 +175,27 @@ theorem reachable_consistent (w : World) : Reachable w → AppConsistent w := by
 their references are both duplicate-free. -/
 theorem consistent_occurrences_distinct (w : World) :
     AppConsistent w → w.outputs.Nodup ∧ (w.outputs.map (·.ref)).Nodup := by
-  sorry
+  intro hc
+  obtain ⟨_, hrefs, _, _, _⟩ := hc
+  first
+    | exact ⟨List.Pairwise.of_map (·.ref) (fun _ _ hne heq => hne (congrArg (·.ref) heq)) hrefs,
+        hrefs⟩
+    | exact ⟨(List.pairwise_map.1 hrefs).imp (fun hne heq => hne (congrArg _ heq)), hrefs⟩
 
 /-- Holding any live output a second time leaves the invariant: an inventory
 with an identical duplicate occurrence is never consistent. This is the
 previous invariant's counterexample, `[o, o]`, excluded at the boundary. -/
 theorem duplicate_occurrence_outside_invariant (w : World) (o : AppOutput) :
     o ∈ w.outputs → ¬ AppConsistent { w with outputs := w.outputs ++ [o] } := by
-  sorry
+  intro ho hc
+  obtain ⟨_, hrefs, _, _, _⟩ := hc
+  have hin : o.ref ∈ w.outputs.map (·.ref) := List.mem_map.2 ⟨o, ho, rfl⟩
+  have hsplit : ((w.outputs.map (·.ref)) ++ [o.ref]).Nodup := by
+    first
+      | (dsimp only at hrefs; rw [List.map_append] at hrefs; exact hrefs)
+      | (rw [List.map_append] at hrefs; exact hrefs)
+      | (simpa [List.map_append] using hrefs)
+  exact (List.nodup_append.1 hsplit).2.2 _ hin _ (List.mem_singleton_self _) rfl
 
 /-- The executable observation the driver publishes at every step is exactly
 the invariant; the registry conjunct goes through the root driver's own
@@ -262,7 +302,59 @@ theorem insertion_requires_registry_identity (w w' : World) (r : Request) (e : E
     (sigs : List Nat) :
     appStep w (.bookInsert r e sigs) = .ok w' →
       w.app.registry = w.registryAsset ∧ e.control.registry = w.registryAsset := by
-  sorry
+  intro h
+  have bind_ok : ∀ {α β : Type} (x : Except String α) (f : α → Except String β) (b : β),
+      x >>= f = Except.ok b → ∃ a, x = Except.ok a ∧ f a = Except.ok b := by
+    intro α β x f b hx
+    cases x with
+    | error e =>
+      first
+        | exact Except.noConfusion hx
+        | cases hx
+        | (simp [bind, Except.bind] at hx)
+    | ok a => exact ⟨a, rfl, hx⟩
+  have ens : ∀ (c : Bool) (why : String) (u : Unit), ensure c why = .ok u → c = true := by
+    intro c why u hc
+    cases c with
+    | false =>
+      first
+        | exact Except.noConfusion hc
+        | (simp [ensure] at hc)
+    | true => rfl
+  have hreg : ∀ b : Bool, (!Law.standard.checkRegistryAsset || b) = true → b = true := by
+    intro b hb
+    first
+      | (cases b with
+          | false => exact absurd hb (by decide)
+          | true => rfl)
+      | simpa [Law.standard] using hb
+  have beq_sound : ∀ a b : StateAsset, (a == b) = true → a = b := by
+    intro a b hab
+    first
+      | exact eq_of_beq hab
+      | (cases a
+         cases b
+         simp only [reduceBEq, Bool.and_eq_true, beq_iff_eq] at hab
+         obtain ⟨h1, h2⟩ := hab
+         subst h1
+         subst h2
+         rfl)
+      | (cases a
+         cases b
+         simp_all [reduceBEq])
+  change bookInsertStep Law.standard w r e sigs = .ok w' at h
+  first
+    | unfold bookInsertStep at h
+    | simp only [bookInsertStep] at h
+    | skip
+  repeat' (first
+    | exact Except.noConfusion h
+    | (obtain ⟨_, hx, h⟩ := bind_ok _ _ _ h
+       have := ens _ _ _ hx
+       clear hx)
+    | (split at h)
+    | (simp only at h))
+  all_goals exact ⟨beq_sound _ _ (hreg _ ‹_›), beq_sound _ _ (hreg _ ‹_›)⟩
 
 /-- Insertion binds (reached worlds): each output a fold creates holds exactly
 its key's token, the envelope its booking's destination committed to — naming
@@ -386,3 +478,8 @@ end OpenDatumApplication.Statements
 #print axioms OpenDatumApplication.Statements.fold_signers_unchanged
 #print axioms OpenDatumApplication.Statements.bookTerminate_keeps_locked
 #print axioms OpenDatumApplication.Statements.update_keeps_registry
+
+#print axioms OpenDatumApplication.Statements.genesis_consistent
+#print axioms OpenDatumApplication.Statements.consistent_occurrences_distinct
+#print axioms OpenDatumApplication.Statements.duplicate_occurrence_outside_invariant
+#print axioms OpenDatumApplication.Statements.insertion_requires_registry_identity
