@@ -1,17 +1,17 @@
 {
   "_source": {
     "file": "plan.md",
-    "sha256": "3e2ddf412605da75e61c496f02a2d19454ed1c48770ef89cbf75dce6cbad6ecc"
+    "sha256": "b257ac0af6fa07e328a5856c166346af4379e9b97ff3568b6560ff57b99a3f62"
   },
   "delivery": [
     {
-      "text": "The coder commits failing specs first, with every negative case failing on its own time guard, then commits the shared bound applied to every wait, deleting the old window path. The ticket owner audits that exact candidate before it is pushed to the draft pull request, and continuous integration on the exact head carries format, lint, compile and devnet compatibility.",
+      "text": "The coder commits failing specs first, with every negative case failing on its own time guard. It then commits the shared bound applied to every wait, with the wait-aware catch at every classifier that reaches a submission, and deletes the old window path. The ticket owner audits that exact candidate before it is pushed to the draft pull request. Continuous integration on the exact head carries format, lint, compile and devnet compatibility.",
       "pause": 500
     }
   ],
   "execution-budget": [
     {
-      "text": "Four local invocations in total: a failing run and a passing run of the off-chain unit suite for the coder, one repair the ticket owner releases, and one audit run for the ticket owner.",
+      "text": "Two of the four local invocations are spent: neither the first nor the second build compiled, so neither showed a failing test. The two that remain are the red run and the green run. The audit reads source and receipts, and continuous integration carries every further compile.",
       "pause": 500
     }
   ],

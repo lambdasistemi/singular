@@ -1,11 +1,11 @@
 {
   "_source": {
     "file": "functions-model.md",
-    "sha256": "efc8bddc3e8b1b629350ff26a218ebed5e09a36f5ba619c98662e340c463be6c"
+    "sha256": "2591f1ded41849ef9cef6653e658effb29f0e2e73bbff84397f19378792ea072"
   },
   "signatures": [
     {
-      "text": "One function bounds any whole wait and throws the named failure. A bounded submitter wraps any node submitter. Indexed and session confirmation gain forms that take an explicit bound for tests, while the public confirmation functions keep their signatures and apply the production values.",
+      "text": "One function bounds any whole wait and throws the named failure. A bounded submitter wraps any node submitter. Indexed and session confirmation gain forms that take an explicit bound for tests, while the public confirmation functions keep their signatures and apply the production values. A wait-aware catch replaces every catch-all that classifies failures, so the wait failure always passes through it.",
       "pause": 500
     }
   ]

@@ -1,11 +1,11 @@
 {
   "_source": {
     "file": "tasks.md",
-    "sha256": "2c0890227d25403fc90c21557d39efc0bb300c6e89feefc1823da8fb26fc6764"
+    "sha256": "ee070967a263277d6c85f9d7d7d07d51dfaaa42af06fd8fe93eeb9a8d6d4b42f"
   },
   "work-items": [
     {
-      "text": "Intake and this mandate are done. Next come the failing specs, the fix with a passing run, the ticket owner's audit of the exact candidate, and the push with continuous integration green on the exact head. No merge is authorized yet.",
+      "text": "Intake and this mandate are done. Next come the failing specs, the fix with the wait-aware catch at every classifier and a passing run, the ticket owner's audit of the exact candidate, and the push with continuous integration green on the exact head. No merge is authorized yet.",
       "pause": 500
     }
   ]

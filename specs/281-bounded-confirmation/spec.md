@@ -11,7 +11,7 @@ As a conformance or end-to-end operator, I need any wait on a submitted transact
 | R281-03 | A node-session confirmation (by transaction, by id, or by validity window) fails within a finite wall-clock limit when the chain tip stops advancing and when the tip read itself never returns. The whole wait obeys the limit, not only each poll. The failure names the transaction and the elapsed time. A tip passing the existing deadline still ends the wait earlier. |
 | R281-04 | Prompt verdicts and observations return exactly as before. The production windows stay: 300 seconds for indexed confirmation, and the validity upper bound plus two minutes for session confirmation. Every existing check stays green. |
 | R281-05 | When a bound fires, the waiting thread and any helper it started are cancelled or released. No thread is left holding the process open, and no asynchronous exception is masked. |
-| R281-06 | No bound writes a refusal receipt, a conformance row outcome or an acceptance. The conformance submit retry does not retry a wait failure. A wait failure ends the run as infrastructure failure. |
+| R281-06 | No bound becomes a refusal receipt, a conformance row outcome, a published refusal or control outcome, or an acceptance. Every site that catches an exception and classifies it as a refusal, a control outcome or a reason to retry lets the wait failure pass unclassified and unretried. A wait failure ends the run as infrastructure failure. |
 
 ## Authority and evidence
 

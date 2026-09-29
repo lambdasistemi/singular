@@ -6,20 +6,20 @@ As the ticket owner, I want one mechanism for bounding a wait, applied to submis
 
 1. Intake is done: the source map, the historical evidence, the frozen base and draft PR #314. The approved GLM coder owns all production code, tests and local commits. The ticket owner is the final auditor and commissions no other seat.
 2. RED commit: the new specs and any behavior-neutral seams they need to compile. Each negative spec executes its subject under its own time guard and fails because the wait does not end. Pre-existing specs pass. A compile or setup failure is not a RED.
-3. Fix commit: the shared wait bound, the bounded submitter at every construction site, indexed and session confirmation under the bound, and the old window failure path deleted.
+3. Fix commit: the shared wait bound, the bounded submitter at every construction site, indexed and session confirmation under the bound, the wait-aware catch at every classifier that reaches a submission or confirmation, and the old window failure path deleted.
 4. The ticket owner audits the exact candidate with the coder parked. The audit covers semantics, negative-control adequacy, cancellation and cleanup, whole-wait coverage and unchanged success.
 5. Push the audited candidate to the draft PR. Format, lint, component compile, end-to-end and devnet compatibility are bound to the exact head's CI jobs. The PR stays draft until those are green; no merge is authorized.
 
 ## Execution budget
 
-There are four local invocations, 15 minutes each and 30 minutes in total. Every Nix, build, test, format and lint command counts.
+There are four local invocations, 15 minutes each and 30 minutes in total. Every Nix, build, test, format and lint command counts; reading an existing build log is not an invocation. No repair or audit invocation remains, so the audit reads source and receipts, and CI on the exact head carries every further compile.
 
 | Slot | Owner | Command | Expected |
 | --- | --- | --- | --- |
-| RED | coder | `nix run --quiet .#cage-tests` in `offchain`, as `.github/workflows/registry.yml` runs it | nonzero exit; only the new specs fail, each on its own guard |
-| GREEN | coder | the same command at the candidate | exit 0 |
-| Repair | coder | one repair, released by the ticket owner | stated when released |
-| Audit | ticket owner | one targeted run, if the audit needs it | stated before use |
+| First | first coder | `nix run --quiet .#cage-tests` in `offchain`, as `.github/workflows/registry.yml` runs it | spent: the library did not compile, so no RED |
+| Second | second coder | the same command at the first RED commit | spent: the new specs did not compile, so no RED |
+| RED | second coder | the same command at the RED commit | nonzero exit; only the new negative specs fail, each on its own guard |
+| GREEN | second coder | the same command at the candidate | exit 0 |
 
 ## Evidence limits
 

@@ -1,11 +1,11 @@
 {
   "_source": {
     "file": "spec.md",
-    "sha256": "e9f6d19c458441ebb52a95926a955f9665785d8f0aeb8ed3424eaaf6dba289f8"
+    "sha256": "bfeb024f0452cbb1a96e1b3d0a2976f954828c0eeac8e7a22e9d4961539e6d87"
   },
   "requirements": [
     {
-      "text": "A submission with no node verdict, an output that never reaches the indexer, and a session confirmation on a stopped chain or a stalled tip read each end within a finite bound. The failure names the transaction and the elapsed time. Prompt answers behave as before, nothing is left running when a bound fires, and no bound is ever recorded as a refusal, a row outcome or an acceptance.",
+      "text": "A submission with no node verdict, an output that never reaches the indexer, and a session confirmation on a stopped chain or a stalled tip read each end within a finite bound. The failure names the transaction and the elapsed time. Prompt answers behave as before, and nothing is left running when a bound fires. No bound is ever published as a refusal, a control outcome, a row outcome or an acceptance, and no catch that classifies or retries failures swallows it.",
       "pause": 500
     }
   ],

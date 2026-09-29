@@ -1,11 +1,11 @@
 {
   "_source": {
     "file": "modules-model.md",
-    "sha256": "c26e6cac141d4675e953d03c7cb7ba96a6a6598a5342042ad42af1d3aa90b6b2"
+    "sha256": "21e67c22b17d81dca166a83f68256c697c421f4fb113e71ab5ac1361340a8995"
   },
   "dependency-direction": [
     {
-      "text": "A new wait module in the node internal library owns the stages, the named failure, the whole-wait bound and the bounded submitter. Indexed and session confirmation, the session submitter, the public facade and every runner that builds a submitter depend on it, and it depends on none of them. No other module adds a timeout of its own.",
+      "text": "A new wait module in the node internal library owns the stages, the named failure, the whole-wait bound, the bounded submitter and a wait-aware catch. Indexed and session confirmation, the session submitter, the public facade, every runner that builds a submitter, and every refusal control or retry that reaches a submission depend on it, and it depends on none of them. No other module adds a timeout of its own.",
       "pause": 500
     }
   ]

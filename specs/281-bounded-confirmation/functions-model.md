@@ -11,5 +11,6 @@ As a maintainer, I want the bounded forms injectable for tests while the public 
 | F281-S | `boundedSubmitter :: Int -> Submitter IO -> Submitter IO` returns a prompt `Submitted` or `Rejected` unchanged and throws the wait failure (stage submission) when there is no verdict within the bound. |
 | F281-I | `awaitIndexedWithin :: Int -> ConwayTx -> IO ()` is indexed confirmation under an explicit window. `awaitIndexed :: ConwayTx -> IO ()` keeps its signature and applies the production window. |
 | F281-C | `confirmWithin :: Int -> NodeSession -> String -> TxId -> SlotNo -> IO ()` is session confirmation under an explicit wall-clock limit, exported from `node-internal` for tests. `awaitTx`, `awaitTxId` and `awaitTxWindow` keep their signatures and apply the derived production limit. |
+| F281-K | `tryOutcome :: IO a -> IO (Either SomeException a)` returns `Left` for any synchronous exception the action throws, except the wait failure, which it rethrows. Asynchronous exceptions propagate. Every classifier in M281-K uses it in place of a catch-all. |
 
 The coder chooses local helper names inside these owners. A placement or signature conflict goes to the ticket owner as a question before the RED commit. The mandate is versioned, not worked around.
