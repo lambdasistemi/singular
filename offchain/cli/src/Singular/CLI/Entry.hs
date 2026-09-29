@@ -47,11 +47,13 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((^.))
 
-import Cardano.Ledger.Api.Tx (txIdTx)
+import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
+import Cardano.Ledger.Api.Tx.Body (inputsTxBodyL)
 import Cardano.Ledger.Api.Tx.Out (TxOut, coinTxOutL)
 import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
+import Data.Set qualified as Set
 
 import Singular.Application.OpenDatum.Book
     ( insertApproval
@@ -65,6 +67,7 @@ import Singular.Application.OpenDatum.Envelope
     , dataFromJson
     , dataToJson
     , envelopeFromJson
+    , envelopeHash
     , envelopeToJson
     , envelopeVersion
     , registryBytes
@@ -94,11 +97,12 @@ import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
     ( AssetName (..)
     , ConwayEra
+    , Root (..)
     , TokenId (..)
     )
 import Singular.Registry.Node (NodeSession (..), Wallet (..))
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Trie (TrieManager (..))
+import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.TxBuilder.Edges
     ( BookingApproval (..)
     , adaOnlyOut
@@ -217,7 +221,11 @@ book at key edge dest deposit approval = do
         bookEdgeWith
             cfg
             (provider at)
-            (journalledSubmit wc "book")
+            ( journalledSubmit
+                wc
+                "book"
+                (Expectation (Just key) "request" Nothing Nothing Nothing)
+            )
             (walletAddr (wcWallet wc))
             (savedToken s)
             key
@@ -241,22 +249,48 @@ book at key edge dest deposit approval = do
         ("request " <> txInText request <> " live")
     pure booking
 
-{- | Fold every pending request of this registry with the application's
-context, commit the edge to the mirror, and read the new root back.
+{- | Fold exactly this command's request with the application's context,
+commit its edge to the mirror, and read the new root back.
+
+The production fold takes every request pending for the registry, so the
+fold is bound to the one request this command booked: any other pending
+request is refused before anything is built, and a built fold spending
+any request input but this one is refused before it is submitted. The
+mirror walk and the journalled after-root are that one edge.
 -}
 foldAndCommit
     :: Attached
+    -> TxIn
+    -- ^ The request this command booked
     -> ByteString
     -> Edge
+    -> Text
+    -- ^ The after-state the readback must find
     -> [Envelope]
     -> [(TxIn, TxOut ConwayEra)]
     -> IO (ConwayTx, ByteString)
-foldAndCommit at key edge envelopes live = do
+foldAndCommit at request key edge after envelopes live = do
     let s = savedOf at
         cfg = savedCfg s
         prov = provider at
         wc = atWrite at
         tm = mirrorTries (atMirror at)
+        pendingNow =
+            map fst
+                <$> Cage.queryUTxOs prov (requestAddrFromCfg cfg (savedToken s) Testnet)
+        others = filter (/= request)
+    before <- pendingNow
+    unless (request `elem` before) $
+        failWith
+            Partial
+            "the booked request is no longer pending; nothing is folded"
+    unless (null (others before)) $
+        failWith
+            ConcurrentWriter
+            ( "another request is pending for this registry ("
+                <> T.unpack (T.intercalate ", " (map txInText (others before)))
+                <> "); folding only this command's request is not possible,                    and nothing is folded"
+            )
     ctx0 <-
         registryContextFor cfg (savedCodes s) prov (liveRefs (atLive at))
     ctx <-
@@ -272,11 +306,35 @@ foldAndCommit at key edge envelopes live = do
             (savedToken s)
             (walletAddr (wcWallet wc))
             ctx
-    fold <- journalledSubmit wc "fold" unsigned
+    pendingAtBuild <- pendingNow
+    let spent = Set.toList (unsigned ^. bodyTxL . inputsTxBodyL)
+        strays = [i | i <- spent, i `elem` pendingAtBuild, i /= request]
+    unless (request `elem` spent && null strays) $
+        failWith
+            ConcurrentWriter
+            ( "the built fold spends request inputs other than this command's ("
+                <> T.unpack (T.intercalate ", " (map txInText strays))
+                <> "); nothing is submitted"
+            )
+    rootBefore <- mirrorRoot s (atMirror at)
+    Root rootAfter <-
+        withSpeculativeTrie tm (savedToken s) $ \t -> walkEdge t key edge >> getRoot t
+    fold <-
+        journalledSubmit
+            wc
+            "fold"
+            ( Expectation
+                (Just key)
+                after
+                (Just edge)
+                (Just rootBefore)
+                (Just rootAfter)
+            )
+            unsigned
     withTrie tm (savedToken s) $ \t -> void (walkEdge t key edge)
     saveOpenMirror s (atMirror at)
-    after <- attachLive prov s
-    onChain <- either (failWith Partial) pure (observedRoot after)
+    afterFold <- attachLive prov s
+    onChain <- either (failWith Partial) pure (observedRoot afterFold)
     local <- mirrorRoot s (atMirror at)
     when (onChain /= local) $
         failWith
@@ -348,10 +406,18 @@ runInsert a = do
                     }
             dest = insertDestination Testnet (applied s) envelope
         booking <- book at key edgeInsertActive dest (ctlDeposit c) approval
-        (fold, root) <- foldAndCommit at key edgeInsertActive [envelope] []
+        (fold, root) <-
+            foldAndCommit
+                at
+                (TxIn (txIdTx booking) (TxIx 0))
+                key
+                edgeInsertActive
+                ("active:" <> hexT (envelopeHash envelope))
+                [envelope]
+                []
         outs <- liveOutputs (provider at) s
         ((liveIn, _), seen) <-
-            either (failWith Partial) pure (liveOutputFor key outs)
+            either (failWith Partial) pure (liveOutputFor s key outs)
         unless (seen == envelope) $
             failWith Partial "the delivered output carries another envelope"
         journalObserved
@@ -397,7 +463,7 @@ runUpdate a = do
             addr = walletAddr (wcWallet wc)
         outs <- liveOutputs prov s
         (holding, envelope) <-
-            either (failWith ClientRefusal) pure (liveOutputFor key outs)
+            either (failWith ClientRefusal) pure (liveOutputFor s key outs)
         requireController at (envControl envelope)
         appRef <- appReference at
         let refOut = [u | u@(i, _) <- liveRefs (atLive at), i == appRef]
@@ -427,10 +493,21 @@ runUpdate a = do
                         [] -> Nothing
                     }
                 >>= either (failWith ClientRefusal) pure
-        signed <- journalledSubmit wc "update" unsigned
+        signed <-
+            journalledSubmit
+                wc
+                "update"
+                ( Expectation
+                    (Just key)
+                    ("payload:" <> hexT (envelopeHash envelope{envPayload = payload}))
+                    Nothing
+                    Nothing
+                    Nothing
+                )
+                unsigned
         after <- liveOutputs prov s
         ((liveIn, _), seen) <-
-            either (failWith Partial) pure (liveOutputFor key after)
+            either (failWith Partial) pure (liveOutputFor s key after)
         unless (seen == envelope{envPayload = payload}) $
             failWith
                 Partial
@@ -475,7 +552,7 @@ runTerminate a = do
                 prov = provider at
             outs <- liveOutputs prov s
             (holding@(liveIn, _), envelope) <-
-                either (failWith ClientRefusal) pure (liveOutputFor key outs)
+                either (failWith ClientRefusal) pure (liveOutputFor s key outs)
             let c = envControl envelope
             requireController at c
             appRef <- appReference at
@@ -492,7 +569,15 @@ runTerminate a = do
                     terminateDestination
                     edgeDeposit
                     approval
-            (fold, root) <- foldAndCommit at key edgeUpdateTerminal [] [holding]
+            (fold, root) <-
+                foldAndCommit
+                    at
+                    (TxIn (txIdTx booking) (TxIx 0))
+                    key
+                    edgeUpdateTerminal
+                    "terminal"
+                    []
+                    [holding]
             after <- liveOutputs prov s
             when (any ((== liveIn) . fst) after) $
                 failWith

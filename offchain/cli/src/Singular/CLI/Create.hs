@@ -79,6 +79,7 @@ import Singular.CLI.Registry
     )
 import Singular.CLI.Session
     ( WriteContext (..)
+    , expecting
     , failWith
     , journalObserved
     , journalObservedId
@@ -115,7 +116,8 @@ import Singular.Registry.TxBuilder.Edges
     , witnessScriptOf
     )
 import Singular.Registry.TxBuilder.Internal
-    ( cageAddrFromCfg
+    ( addrKeyHashBytes
+    , cageAddrFromCfg
     , cagePolicyIdFromCfg
     , emptyRoot
     , findStateUtxo
@@ -160,6 +162,7 @@ runCreate a = do
                 [ ("application", toJSON (applicationTitle OpenDatumApplication))
                 , ("seed", toJSON (txInText seedIn))
                 , ("wallet", toJSON (T.pack (bech32Address addr)))
+                , ("walletKeyHash", toJSON (hexT (addrKeyHashBytes addr)))
                 , ("pins", toJSON (pinsOf cfg))
                 ]
         if createPreview a
@@ -232,7 +235,17 @@ boot wc cfg pinned seedIn = do
             (Set.singleton seedIn)
             cfg
             prov
-            (submit "publish-state")
+            ( submit
+                "publish-state"
+                ( expecting
+                    ( "reference:"
+                        <> hexT
+                            ( scriptHashBytes
+                                (hashScript (scriptFromBytes "state" (cageScriptBytes cfg)))
+                            )
+                    )
+                )
+            )
             addr
     observeReference
         wc
@@ -241,7 +254,8 @@ boot wc cfg pinned seedIn = do
         (scriptFromBytes "state" (cageScriptBytes cfg))
         stateRef
     -- The boot, consuming the seed.
-    signedBoot <- bootTokenImpl cfg prov addr >>= submit "boot"
+    signedBoot <-
+        bootTokenImpl cfg prov addr >>= submit "boot" (expecting "state")
     tid <- case signedBoot ^. bodyTxL . mintTxBodyL of
         MultiAsset m -> case Map.lookup (cagePolicyIdFromCfg cfg) m of
             Just names | [(name, 1)] <- Map.toList names -> pure (TokenId name)
@@ -267,7 +281,15 @@ boot wc cfg pinned seedIn = do
     published <-
         mapM
             ( \(role, script) -> do
-                ref <- publishRefScript prov (submit ("publish-" <> role)) addr script
+                ref <-
+                    publishRefScript
+                        prov
+                        ( submit
+                            ("publish-" <> role)
+                            (expecting ("reference:" <> hexT (scriptHashBytes (hashScript script))))
+                        )
+                        addr
+                        script
                 observeReference wc ("publish-" <> role) addr script ref
                 pure (reference role addr script ref)
             )

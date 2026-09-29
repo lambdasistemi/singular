@@ -33,6 +33,8 @@ module Singular.CLI.Session
     , withWrite
     , withSession
     , journalledSubmit
+    , Expectation (..)
+    , expecting
     , journalObserved
     , journalObservedId
     , txIdHex
@@ -243,15 +245,37 @@ blankEntry wc step txid event =
         , journalBody = Nothing
         , journalBodyHash = Nothing
         , journalChainPoint = Nothing
+        , journalKey = Nothing
+        , journalExpect = Nothing
+        , journalEdge = Nothing
+        , journalRootBefore = Nothing
+        , journalRootAfter = Nothing
         }
+
+{- | What a submission's readback must find, journalled at @prepared@ so a
+later inspect can check exactly that step's after-state and nothing
+more general.
+-}
+data Expectation = Expectation
+    { exKey :: Maybe ByteString
+    , exAfter :: Text
+    , exEdge :: Maybe Integer
+    , exRootBefore :: Maybe ByteString
+    , exRootAfter :: Maybe ByteString
+    }
+
+-- | An expectation with no key or roots.
+expecting :: Text -> Expectation
+expecting after = Expectation Nothing after Nothing Nothing Nothing
 
 {- | Sign; save the signed transaction and journal @prepared@ with its
 inputs, body hash and the node's chain point; send; journal the answer;
 await the confirmation; journal it. Returns the signed transaction once
 confirmed. The command journals @observed@ after its own readback.
 -}
-journalledSubmit :: WriteContext -> Text -> ConwayTx -> IO ConwayTx
-journalledSubmit wc step unsigned = do
+journalledSubmit
+    :: WriteContext -> Text -> Expectation -> ConwayTx -> IO ConwayTx
+journalledSubmit wc step ex unsigned = do
     let signed = addKeyWitness (walletSignKey (wcWallet wc)) unsigned
         txid = txIdHex signed
         dir = wcDir wc
@@ -279,6 +303,11 @@ journalledSubmit wc step unsigned = do
                 Just $ case point of
                     Nothing -> "genesis"
                     Just (slot, h) -> T.pack (show slot) <> "." <> hexT h
+            , journalKey = hexT <$> exKey ex
+            , journalExpect = Just (exAfter ex)
+            , journalEdge = exEdge ex
+            , journalRootBefore = hexT <$> exRootBefore ex
+            , journalRootAfter = hexT <$> exRootAfter ex
             }
     answer <- try (submitTx (nsSubmitter sess) signed)
     case answer of

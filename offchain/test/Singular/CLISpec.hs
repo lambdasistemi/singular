@@ -391,16 +391,22 @@ journal = describe "the journal of a write" $ do
     confirmed s t = phase s t "observed"
     phase s t e =
         JournalEntry
-            "insert"
-            s
-            t
-            e
-            Nothing
-            Nothing
-            Nothing
-            Nothing
-            Nothing
-            Nothing
+            { journalCommand = "insert"
+            , journalStep = s
+            , journalTxId = t
+            , journalEvent = e
+            , journalDetail = Nothing
+            , journalInputs = Nothing
+            , journalTipSlot = Nothing
+            , journalBody = Nothing
+            , journalBodyHash = Nothing
+            , journalChainPoint = Nothing
+            , journalKey = Nothing
+            , journalExpect = Nothing
+            , journalEdge = Nothing
+            , journalRootBefore = Nothing
+            , journalRootAfter = Nothing
+            }
 
 -- ---------------------------------------------------------
 -- The local proof of a leaf

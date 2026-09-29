@@ -88,6 +88,19 @@ data JournalEntry = JournalEntry
     -- ^ At @prepared@: BLAKE2b-256 of those saved bytes
     , journalChainPoint :: Maybe Text
     -- ^ At @prepared@: the node's chain point, @slot.headerhash@
+    , journalKey :: Maybe Text
+    -- ^ At @prepared@: the registry key the step concerns, hex
+    , journalExpect :: Maybe Text
+    {- ^ At @prepared@: the after-state the step's readback must find —
+    @reference:HASH@, @state@, @request@, @active:ENVELOPEHASH@,
+    @payload:ENVELOPEHASH@ or @terminal@
+    -}
+    , journalEdge :: Maybe Integer
+    -- ^ At @prepared@, for a fold: the edge it commits to the mirror
+    , journalRootBefore :: Maybe Text
+    -- ^ At @prepared@, for a fold: the root it folds from
+    , journalRootAfter :: Maybe Text
+    -- ^ At @prepared@, for a fold: the root the mirror commits to after it
     }
     deriving stock (Eq, Show, Generic)
 

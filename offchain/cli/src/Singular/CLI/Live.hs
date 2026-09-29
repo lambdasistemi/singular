@@ -25,6 +25,7 @@ module Singular.CLI.Live
     , applicationAddr
     , liveOutputs
     , liveOutputFor
+    , holdingsFor
     , applicationReference
 
       -- * The mirror
@@ -64,6 +65,8 @@ import MPF.Backend.Pure (MPFInMemoryDB)
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
+    , envelopeVersion
+    , registryBytes
     )
 import Singular.Application.OpenDatum.Release (heldOf, liveEnvelope)
 import Singular.Application.OpenDatum.Script
@@ -110,6 +113,7 @@ import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , extractCageDatum
+    , scriptHashBytes
     , txInToRef
     )
 import Singular.Registry.Types
@@ -220,20 +224,42 @@ liveOutputs
     :: Cage.Provider IO -> Saved -> IO [(TxIn, TxOut ConwayEra)]
 liveOutputs prov s = Cage.queryUTxOs prov (applicationAddr s)
 
-{- | The key's live output: the one output at the application holding its
-key's active token under an envelope naming that key.
+{- | The outputs at the application that are this registry's holding of
+@key@: an envelope of version 1 naming this registry's full state asset,
+its pinned active policy and the key, over exactly one of the key's
+active token under that pinned policy. An output anyone paid to the
+address under an envelope naming another registry, policy or key is not
+a holding of this one.
 -}
+holdingsFor
+    :: Saved
+    -> ByteString
+    -> [(TxIn, TxOut ConwayEra)]
+    -> [((TxIn, TxOut ConwayEra), Envelope)]
+holdingsFor s key outs =
+    [ (u, e)
+    | u@(_, o) <- outs
+    , Right e <- [liveEnvelope o]
+    , let c = envControl e
+    , ctlVersion c == envelopeVersion
+    , registryBytes (ctlRegistry c) == identity
+    , ctlActivePolicy c == SBS.fromShort (cfgActivePolicy (savedCfg s))
+    , ctlKey c == key
+    , heldOf c o == 1
+    ]
+  where
+    identity =
+        scriptHashBytes (cfgScriptHash (savedCfg s))
+            <> let TokenId (AssetName n) = savedToken s in SBS.fromShort n
+
+-- | The key's one live holding in this registry, or why there is none.
 liveOutputFor
-    :: ByteString
+    :: Saved
+    -> ByteString
     -> [(TxIn, TxOut ConwayEra)]
     -> Either String ((TxIn, TxOut ConwayEra), Envelope)
-liveOutputFor key outs =
-    case [ (u, e)
-         | u@(_, o) <- outs
-         , Right e <- [liveEnvelope o]
-         , ctlKey (envControl e) == key
-         , heldOf (envControl e) o == 1
-         ] of
+liveOutputFor s key outs =
+    case holdingsFor s key outs of
         [one] -> Right one
         [] -> Left ("no live output holds key 0x" <> BC.unpack (B16.encode key))
         _ ->
