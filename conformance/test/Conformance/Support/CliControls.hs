@@ -519,6 +519,23 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
             refusal `shouldSatisfy` isNotHeld
             show refusal `shouldSatisfy` isInfixOf "before any script ran"
     it
+        "does not count a script that ran out of its stated budget as the validator's refusal"
+        $ do
+            rs <- honestReceipts controlsStory
+            budget <- readFile "test/fixtures/node-refusals/budget.txt"
+            fst (rejectionEvidence budget) `shouldSatisfy` elem "OverBudget"
+            let exhausted =
+                    alter
+                        "fold-unevaluated"
+                        "duplicate"
+                        (\r -> r{rcPhaseWords = rcPhaseWords r <> ["OverBudget"]})
+                        rs
+                refusal = statuses (judge exhausted controlsStory) !! 3
+            statuses (judge rs controlsStory) !! 3
+                `shouldSatisfy` (not . isNotHeld)
+            refusal `shouldSatisfy` isNotHeld
+            show refusal `shouldSatisfy` isInfixOf "ran out of the budget"
+    it
         "reads the node's own phase-2 and phase-1 rejections as the suite's refusal discipline does"
         $ do
             budget <- readFile "test/fixtures/node-refusals/budget.txt"

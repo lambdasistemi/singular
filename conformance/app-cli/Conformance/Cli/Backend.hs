@@ -74,6 +74,10 @@ import Text.Printf (printf)
 import Cardano.Crypto.Hash.Class (hashToBytes, hashWith)
 import Cardano.Crypto.Hash.SHA256 (SHA256)
 import Cardano.Ledger.Address (Addr (..))
+import Cardano.Ledger.Api.PParams
+    ( ppMaxBlockExUnitsL
+    , ppMaxTxExUnitsL
+    )
 import Cardano.Ledger.Api.Scripts.Data (Datum (..))
 import Cardano.Ledger.Api.Tx (txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Out
@@ -176,7 +180,7 @@ import Singular.Registry.TxBuilder.ConnectedFold
     , ConnectedMint (..)
     , ConnectedSpend (..)
     , connectedFoldTx
-    , generousUnits
+    , skipEvalUnits
     )
 import Singular.Registry.TxBuilder.Edges
     ( BookingApproval (..)
@@ -1272,7 +1276,12 @@ craftHolding env c target key r = do
                 Tx.collateral (fst feeUtxo)
             skipEval tx =
                 let Redeemers rdmrs = tx ^. witsTxL . rdmrsTxWitsL
-                in  pure (Map.map (const (Right generousUnits)) rdmrs)
+                    units =
+                        skipEvalUnits
+                            (pp ^. ppMaxTxExUnitsL)
+                            (pp ^. ppMaxBlockExUnitsL)
+                            (Map.size rdmrs)
+                in  pure (Map.map (const (Right units)) rdmrs)
         built <-
             Tx.build
                 (Tx.mkPParamsBound pp)

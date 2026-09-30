@@ -18,6 +18,7 @@ import Singular.Registry.NodeWaitSpec qualified
 import Singular.Registry.TxBuilder.BookEdgeSpec qualified
 import Singular.Registry.TxBuilder.BootSpec qualified
 import Singular.Registry.TxBuilder.BurnSourceSpec qualified
+import Singular.Registry.TxBuilder.SkipEvalUnitsSpec qualified
 import Singular.Registry.TxBuilder.UpperSlotSpec qualified
 import Singular.Registry.TypesSpec qualified
 import Test.Hspec (hspec)
@@ -28,6 +29,7 @@ main = hspec $ do
     Singular.Registry.TxBuilder.BookEdgeSpec.spec
     Singular.Registry.TxBuilder.BootSpec.spec
     Singular.Registry.TxBuilder.BurnSourceSpec.spec
+    Singular.Registry.TxBuilder.SkipEvalUnitsSpec.spec
     Singular.Registry.TxBuilder.UpperSlotSpec.spec
     Singular.Registry.CandidateSpec.spec
     Singular.Registry.DeploymentSpec.spec

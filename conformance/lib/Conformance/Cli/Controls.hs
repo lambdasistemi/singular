@@ -2264,11 +2264,19 @@ attribution expected r = matchRefusal (T.unpack expected) rebuilt
             <> concat
                 [" ScriptHash \"" <> T.unpack h <> "\"" | h <- rcRefusingScripts r]
 
--- | Fail unless the receipt shows the expected script executed and failed.
+{- | Fail unless the receipt shows the expected script executed and failed —
+and failed on its own terms, not because it ran out of the budget the
+transaction stated for it.
+-}
 attributedTo :: String -> Maybe Text -> Receipt -> [String]
 attributedTo what expected r =
     case expected of
         Nothing -> ["the " <> what <> " is not recorded"]
+        Just _
+            | overBudget `elem` rcPhaseWords r ->
+                [ "a script ran out of the budget the transaction stated for it, so its failure is not a refusal"
+                ]
+                    <> submitted r
         Just h -> case attribution h r of
             Right () -> []
             Left (NotPhase2 _) ->
@@ -2308,8 +2316,13 @@ hashes of the scripts that failed, as they occur in its rejection text.
 rejectionEvidence :: String -> ([Text], [Text])
 rejectionEvidence text =
     ( [T.pack w | w <- ["PlutusFailure", "CekError"], w `isInfixOf` text]
+        <> [overBudget | "overspending the budget" `isInfixOf` text]
     , map T.pack (refusalScriptHashes text)
     )
+
+-- | The word recorded when a script failed by exhausting its stated budget.
+overBudget :: Text
+overBudget = "OverBudget"
 
 -- | A key label as the lowercase hex of its bytes, as the commands print keys.
 hexLabel :: String -> Text
