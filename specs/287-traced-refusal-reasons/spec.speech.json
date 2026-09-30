@@ -1,0 +1,36 @@
+{
+  "stories": [
+    {
+      "text": "Three stories. The reason is observed and compared. The comparison can fail when Lean's reason is deliberately wrong. And a refusal whose reason cannot be observed says why, so the book keeps an honest limit.",
+      "pause": 500
+    }
+  ],
+  "requirements": [
+    {
+      "text": "The run captures each refused transaction with the outputs it spends and the node's parameters. A test-owned build adds traces to the same validator source and toolchain, checked by rebuilding the deployed hashes. The traced script gets the deployed parameters and the very arguments the ledger built. The deployed bytes must reproduce the refusal first. One user trace is the chain-side reason; anything else is recorded as unobserved with its cause. Setup failures, budget exhaustion, timeouts and model-derived reasons earn nothing. A control with a wrong Lean reason must fail, an accepting control must pass, and CI counts every refused step from the receipts. Nothing on chain, in Lean or in the constitution changes.",
+      "pause": 500
+    }
+  ],
+  "success-criteria": [
+    {
+      "text": "Every refused step CI runs shows a traced reason equal to Lean's, both hashes and a capture identity. The wrong-reason control fails and its restoration passes. The toolchain check and accepting control pass, and the deployed hashes are unchanged.",
+      "pause": 500
+    }
+  ],
+  "clarifications": [
+    {
+      "text": "Attribution rows have no Lean reason, so they record the observed reason without a same-reason claim. Where the traced hash sits in the receipt awaits a ruling, and so do texts outside this ticket that still state the limit. Open validity intervals stay a named non-goal.",
+      "pause": 500
+    }
+  ],
+  "authority-and-evidence": [
+    {
+      "text": "Issue 287 under epic 209, on base 3f04e50 with constitution 1.11.0. Lean's reasons are the oracle. The replay is script execution on captured context, distinct from the chain's own execution, and the book says so.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "6e9fc4ee1c1d276a7a01c079eb263fa6a6d2772d94f38704f930f588beb5c894"
+  }
+}

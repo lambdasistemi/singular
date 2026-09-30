@@ -1,0 +1,36 @@
+{
+  "setup": [
+    {
+      "text": "First, locate the ledger seam at the pinned library version.",
+      "pause": 500
+    }
+  ],
+  "r1-traced-build-fr-02-fr-03": [
+    {
+      "text": "Prove the correspondence check can fail, add the traced build and the check, carry it to the runner, and add its CI step.",
+      "pause": 500
+    }
+  ],
+  "r2-capture-and-replay-fr-01-fr-04fr-08": [
+    {
+      "text": "Table tests for every class first, then the pure module, capture, arguments, parameters and evaluation. The first devnet run checks the premise; then the rows run with capture on.",
+      "pause": 500
+    }
+  ],
+  "r3-comparison-receipt-controls-ci-fr-09fr-14-needs-q-001": [
+    {
+      "text": "Compare reasons, fill attribution branches, add the ruled receipt fields, the wrong-reason and accepting controls, and the CI assertions, each seen red then green.",
+      "pause": 500
+    }
+  ],
+  "r4-book-fr-15": [
+    {
+      "text": "Restate the limit through the generator, regenerate the book and update its usage test.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "5d1f3496190eb14e05bc2161b7711b4b554f2750d419b0808a4b60a1b436206d"
+  }
+}

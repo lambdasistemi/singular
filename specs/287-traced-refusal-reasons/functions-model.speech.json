@@ -1,0 +1,24 @@
+{
+  "m2-conformancereplay": [
+    {
+      "text": "Pure functions admit a reason from two runs, compare it with Lean's, compute the capture identity and pick out user traces.",
+      "pause": 500
+    }
+  ],
+  "m3-conformancerunreplay": [
+    {
+      "text": "Effectful functions capture the capsule, obtain the ledger's arguments for each failing purpose, apply the deployed parameters to traced code with a hash check, evaluate bytes with logs, and compose the replay.",
+      "pause": 500
+    }
+  ],
+  "m4m8-changed-signatures": [
+    {
+      "text": "The refused step carries replay results instead of a substring tag, comparison uses the reason, attribution rows fill their branch, the book restates its limit, and the control gains a wrong-reason mode.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "cf17b6f2fee95f45ce5924d91448822a3c26d8af7e16d65b3c181d0288278a72"
+  }
+}

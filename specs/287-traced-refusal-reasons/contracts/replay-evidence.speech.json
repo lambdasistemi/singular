@@ -1,0 +1,30 @@
+{
+  "layout": [
+    {
+      "text": "An index and one directory per rejected transaction.",
+      "pause": 500
+    }
+  ],
+  "outcomejson": [
+    {
+      "text": "Each purpose records both hashes, both runs with their logs, and the class.",
+      "pause": 500
+    }
+  ],
+  "indexjson": [
+    {
+      "text": "One entry per rejection; CI requires every refused step to appear exactly once.",
+      "pause": 500
+    }
+  ],
+  "obligations": [
+    {
+      "text": "The capture identity is recomputed and must match; files are never rewritten; missing files make the rejection incomplete.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "replay-evidence.md",
+    "sha256": "3c04f4dc3152a2bebf294350ccf605548d05f0d85e3748a39b2773c29014c038"
+  }
+}

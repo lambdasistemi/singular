@@ -1,0 +1,30 @@
+{
+  "coverage": [
+    {
+      "text": "Every requirement maps to a model row, a task and a gate row.",
+      "pause": 500
+    }
+  ],
+  "findings": [
+    {
+      "text": "The receipt wording conflict and the texts outside the fence are held as questions. The ledger seam is verified first. The book's condition is enforced by CI until the book is derived. The deployed-trace premise is checked by the first devnet run. Reasons are compared verbatim with Lean's.",
+      "pause": 500
+    }
+  ],
+  "terminology": [
+    {
+      "text": "Chain-side reason means the admitted traced reason only, and unobserved always names its cause.",
+      "pause": 500
+    }
+  ],
+  "size": [
+    {
+      "text": "Artifact sizes are measured at commit; the plan stays under two hundred lines.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "analysis.md",
+    "sha256": "3aa5f69328d6f671a4225072381b1fbd609733745a1a4760922482bfc6868e6a"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "status": [
+    {
+      "text": "Setup and a green root baseline are done; this mandate is in review; no behavior has changed. Two questions to the epic hold only the receipt part and the wording of texts outside the fence.",
+      "pause": 500
+    }
+  ],
+  "binding": [
+    {
+      "text": "Issue, branch, base, constitution and unchanged Lean and corpus, with three epic-held gates carried forward.",
+      "pause": 500
+    }
+  ],
+  "constitution-check": [
+    {
+      "text": "Lean's names are the oracle and are never edited. The traced replay is a distinct evidence class, linked to the chain by a deployed replay. Unobserved reasons stay visible, the extent is counted, and harness evidence goes to the appendix.",
+      "pause": 500
+    }
+  ],
+  "strategy": [
+    {
+      "text": "Build a traced blueprint with a correspondence check. Capture each rejection. Replay deployed then traced bytes on the ledger's own arguments and classify. Compare reasons. Publish through the receipt, CI and the book.",
+      "pause": 500
+    }
+  ],
+  "slices-bisect-safe-each-ships-alone": [
+    {
+      "text": "Four slices, each shippable: the traced build, the capture and replay, the comparison with receipt fields, controls and CI, and finally the book. A premise run stops the work if the deployed bytes already carry the trace.",
+      "pause": 500
+    }
+  ],
+  "owned-paths-frozen-for-implementation": [
+    {
+      "text": "Only the conformance flake, its Haskell sources and tests, its generated book and the conformance workflow may change. Everything else, including the off-chain library, on-chain code, Lean, docs and locks, is forbidden.",
+      "pause": 500
+    }
+  ],
+  "execution-schedule": [
+    {
+      "text": "Every invocation writes a receipt and the tally is the count of receipts, checked before each run. Cheap in-shell builds have a ceiling of one hundred fifty, Nix builds thirty, devnet runs ten, with per-invocation time limits and no invented aggregate clock. Every failure is attributed to implementation, contract, environment or supervision.",
+      "pause": 500
+    }
+  ],
+  "gate-verbatim-ci-commands-synthesized-by-the-ticket-owner-no-gate-author-seat-in-the-approved-team": [
+    {
+      "text": "Ten rows, each a command from the workflows: root CI, the unit suite, format, lint, the deployment identity check, the dedicated and generic row steps with extended assertions, and three new steps for toolchain correspondence, the wrong-reason control and the counted extent.",
+      "pause": 500
+    }
+  ],
+  "risks": [
+    {
+      "text": "The ledger seam is unverified at the pin, the exit row's receipt is close to its size margin, and traced code costs more than the declared budget.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "32664161c5e4211f834d88ebf1e58fa08a87b3a84a405e9374bde931524ab351"
+  }
+}

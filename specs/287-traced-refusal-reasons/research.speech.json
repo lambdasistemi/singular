@@ -1,0 +1,48 @@
+{
+  "where-live-refusals-arise": [
+    {
+      "text": "Driver-compared steps are submitted in the live runner, which records the node's text and the failing script hashes, and compares refusals without comparing reasons. The step's trace field is a substring search of node text, empty with untraced scripts. Attribution rows record a validator-branch field that is always empty today.",
+      "pause": 500
+    }
+  ],
+  "refused-steps-ci-produces-today": [
+    {
+      "text": "CI asserts about seventeen refused steps across the retirement, exit, retraction window and generic rows, plus attribution refusals in the generic and serialization sessions. The ticket counts them from receipts rather than trusting this list.",
+      "pause": 500
+    }
+  ],
+  "reason-vocabulary-on-chain": [
+    {
+      "text": "The validators build Lean's refusal names verbatim and report a named refusal by one user trace and then false. Several arms fail with no reason at all, and such refusals can only be unobserved.",
+      "pause": 500
+    }
+  ],
+  "builds": [
+    {
+      "text": "The deployed blueprint is a bare aiken build with pinned hashes. The harness already builds the naming blueprint with user traces, a precedent for a traced registry build, which also needs the Merkle Patricia Forestry package staged. The three flake locks pin the same nixpkgs; a check turns that into evidence. A byte search could not tell whether the deployed bytes carry traces, because the reason names are data values; a replay with logs will settle it.",
+      "pause": 500
+    }
+  ],
+  "evaluation-seam": [
+    {
+      "text": "The provider's evaluation keeps failures only as text today. The pinned node-client library is expected to expose the ledger's script-with-arguments value on a failure, which is the seam for running other bytes on the same arguments. The first task verifies this at the pin.",
+      "pause": 500
+    }
+  ],
+  "alternatives-rejected": [
+    {
+      "text": "Resubmitting with traced scripts changes hashes and so the context. Placing traced code in the ledger's lookup still runs the deployed bytes. Reasons from the model or the test suite are not chain evidence. Tracing everything would bury the one user trace.",
+      "pause": 500
+    }
+  ],
+  "book-and-published-limit": [
+    {
+      "text": "The book's limit sentence is written by its generator and asserted by a usage test. The same limit appears in the theorems page and two constitution rows, outside this ticket's fence.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "research.md",
+    "sha256": "809e118c33759caa1c323278ceec2f12a1be5dda1e2a205dd8c5fbfbf034db26"
+  }
+}

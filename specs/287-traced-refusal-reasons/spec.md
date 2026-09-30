@@ -1,0 +1,91 @@
+# See why the chain refused, beside the reason Lean gives
+
+As a reader of the conformance book, I want each refusal the live chain returns
+to show the reason the refusing validator actually reached, observed by running
+a traced build of the same validator source on the very transaction and ledger
+state the chain refused, so I can check it against the reason the Lean model
+gives instead of trusting a compiled test suite.
+
+Today the book says only *that* a script refused: the deployed validators are
+built without traces, so a live phase-2 refusal carries no reason and the
+same-reason claim rests on the compiled Aiken suite (book limit "Live refusal
+reason not observed", issue #287).
+
+```mermaid
+flowchart LR
+    A[Live transaction refused by the node] -->|capture at rejection| B[Rejected body, resolved outputs, parameters, failing hash]
+    B -->|deployed bytes, same arguments| C{Deployed replay refuses?}
+    C -->|no| U[Reason unobserved: replay does not reproduce]
+    C -->|yes| D[Traced bytes, same arguments]
+    D -->|one named trace| E[Chain-side reason]
+    D -->|anything else| U
+    E -->|compare| F{Equal to Lean's reason?}
+    F -->|yes| G[Row agrees on reason]
+    F -->|no| H[Row fails]
+```
+
+## Stories
+
+- **S1 — reason observed.** Given a live step the model refuses with a reason
+  and the chain refuses, when the run replays the refused transaction with
+  traced bytes, then the step shows the chain-side reason, both script hashes
+  and the captured transaction, and agrees only if that reason equals Lean's.
+- **S2 — the comparison can fail.** Given the same refused step with Lean's
+  reason deliberately replaced by a different reason, the row fails and names
+  both reasons; without the replacement the same row passes.
+- **S3 — honest limits.** Given a refusal whose replay cannot produce an
+  admitted reason, the step says so with the cause, and the book keeps a limit
+  naming it; the book drops "Live refusal reason not observed" only when no such
+  step remains among the rows it claims.
+
+## Requirements
+
+| ID | Requirement |
+|---|---|
+| FR-01 capture | At each live phase-2 validator rejection, before the next submission, the run records the rejected transaction's bytes, every output it spends or references (inputs, reference inputs, collateral) as the node resolves them, the protocol parameters with cost models, system start and era history, the node identity, and the failing script hashes the node reported; stored content-addressed and bound to the rejected transaction id. |
+| FR-02 traced build | A test-owned flake output builds the registry validators from the same `onchain` source tree, compiler and dependency pins as the deployed build, differing only by `--trace-filter user-defined --trace-level verbose`. No change to `onchain/`, its flake or lock, or any deployed script hash. |
+| FR-03 toolchain correspondence | A check rebuilds the validators with that same test-owned toolchain without traces and requires every hash in `onchain/script-identity.json`; it requires the traced and untraced blueprints to name the same validators with the same parameter schemas. Failing either admits no traced replay. |
+| FR-04 same parameters | The traced script receives the parameter values of the deployed application. It is admitted only when the same values applied to the untraced code reproduce exactly the failing hash the node reported. |
+| FR-05 same context | The traced run evaluates the script arguments (datum, redeemer, script context) the ledger derives from the captured transaction and outputs for the failing purpose, with the deployed hash as that purpose's identity. No resubmission, rebuilt, re-signed or re-balanced transaction and no altered context. |
+| FR-06 deployed reproduction | Before a traced reason is admitted, the deployed bytes on the same arguments and declared budget must fail as a validator failure. A replay that succeeds, or fails on budget, admits nothing. |
+| FR-07 reason | The traced run must fail with exactly one user-defined trace; its text, verbatim, is the chain-side reason. Any other result is recorded as unobserved with its cause (FR-08). |
+| FR-08 evidence classes | Four classes are kept apart: chain refusal (node, phase 2, failing hash); deployed replay reproduction; traced reason; Lean reason. None of these earns a traced reason: setup or compile failure, phase-1 rejection, budget exhaustion (deployed or traced), timeout, client exception, a traced run that succeeds, a failure with no or several user traces, a reason read from the model or typed by hand. |
+| FR-09 comparison | For a step where model and chain both refuse and the model names a reason, the step agrees only when the traced reason equals it; a different reason fails the row; an unobserved reason leaves the step's reason uncompared and visible. |
+| FR-10 attribution-only refusals | Refusal rows with no Lean reason (attribution rows) record the traced reason in their existing validator-branch field and drop their "no named validator branch" limit only when a reason is admitted; they make no same-reason claim. |
+| FR-11 receipt fit | Deployed hash, traced hash, traced reason and capture identity reach the receipt without a silent schema edit, as decided by Q-001. |
+| FR-12 wrong-reason control | A CI step replaces the model reason of one live refused step with a different valid reason and requires the row to fail with a diagnostic naming both; the unaltered run of that row passes. |
+| FR-13 accepting control | For each refusing script role, one accepted live step's transaction replays with both deployed and traced bytes and both succeed. |
+| FR-14 discovered extent | CI counts refused steps across every live receipt it produces, requires the count to be non-zero, and requires every one with a Lean reason to carry an admitted, agreeing traced reason. |
+| FR-15 book | The book's generator drops "Live refusal reason not observed" only when FR-14 holds in CI at the head (the book is derived from receipts only after #225), replaces it with a statement of the method (traced re-evaluation of the refused transaction; the deployed bytes carry no traces; both hashes named) and lists any remaining unobserved refusal. |
+| FR-16 fence | No edit to `onchain/`, `naming-onchain/`, `applications/`, Lean, model, corpus, constitution or deployed script bytes; no receipt wire-format change outside Q-001's ruling. |
+
+## Success criteria
+
+- SC-01: every CI-run refused step with a Lean reason shows an admitted traced
+  reason equal to Lean's, both hashes and a capture identity (FR-09, FR-14).
+- SC-02: the FR-12 control fails for the stated reason and its restoration
+  passes, both in CI at the pushed head.
+- SC-03: the FR-03 check and FR-13 control pass; a deliberately mismatched
+  toolchain or parameter set admits no replay.
+- SC-04: root local CI and the conformance workflow commands pass at the head;
+  `onchain/script-identity.json` hashes unchanged.
+
+## Clarifications
+
+- Row-style attribution refusals (FR-10) have no Lean reason; the issue's
+  same-reason acceptance is read as covering driver-compared steps. Confirmed
+  or corrected by Q-001(c).
+- The issue asks for traced hash in "the receipt"; the commission forbids a
+  receipt wire-format change. Held as Q-001(a/b); every other slice proceeds.
+- Constitution rows `retract`/`settle`, `docs/theorems.md` and a comment in
+  `onchain/validators/registry/refusal.ak` state the limit or its premise and
+  are outside the fence: Q-002.
+- Open validity intervals stay a named non-goal; this ticket adds no model
+  comparison.
+
+## Authority and evidence
+
+Issue #287 under epic #209; base `3f04e50`, constitution 1.11.0; Lean and
+corpus unchanged. Lean's refusal names are the oracle; replay evidence is
+ledger-script execution evidence on captured context, distinct from the chain's
+own execution of the deployed bytes (constitution III), and the book says so.
