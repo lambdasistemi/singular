@@ -59,7 +59,7 @@ import Data.Ord (Down (..))
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
-import Lens.Micro ((^.))
+import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 import System.Directory (createDirectoryIfMissing)
 import System.Exit (ExitCode (..))
@@ -71,12 +71,19 @@ import Text.Printf (printf)
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Address (Addr (..))
-import Cardano.Ledger.Api.Tx (txIdTx)
+import Cardano.Ledger.Api.Scripts.Data (Datum (..))
+import Cardano.Ledger.Api.Tx (txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
+    , addrTxOutL
     , coinTxOutL
+    , datumTxOutL
+    , getMinCoinTxOut
+    , mkBasicTxOut
     , referenceScriptTxOutL
+    , valueTxOutL
     )
+import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (..))
 import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Coin (Coin (..))
@@ -86,13 +93,16 @@ import Cardano.Ledger.Credential
     , StakeReference (..)
     )
 import Cardano.Ledger.Hashes (extractHash)
+import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 import Cardano.Node.Client.E2E.Setup (addKeyWitness)
 import Cardano.Node.Client.Submitter
     ( SubmitResult (..)
     , Submitter (..)
     )
+import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
+import Data.Void (Void)
 
 import Singular.Application.OpenDatum.Book
     ( insertApproval
@@ -114,6 +124,11 @@ import Singular.Application.OpenDatum.Release
 import Singular.Application.OpenDatum.Script
     ( Application (..)
     , loadApplicationCodes
+    )
+import Singular.Application.OpenDatum.Update
+    ( continuationOf
+    , releaseRedeemer
+    , updateRedeemer
     )
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint
@@ -155,6 +170,7 @@ import Singular.Registry.TxBuilder.ConnectedFold
     , ConnectedMint (..)
     , ConnectedSpend (..)
     , connectedFoldTx
+    , generousUnits
     )
 import Singular.Registry.TxBuilder.Edges
     ( BookingApproval (..)
@@ -164,6 +180,7 @@ import Singular.Registry.TxBuilder.Edges
     )
 import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
+    , addrWitnessKeyHash
     , computeScriptHash
     , extractCageDatum
     , requestAddrFromCfg
@@ -186,12 +203,14 @@ import Singular.Registry.Types
 import Conformance.Cli.Controls
     ( CliI (..)
     , Command (..)
+    , Crafted (..)
     , Observation (..)
     , Receipt (..)
     , Story
     , Target (..)
     , commandName
     , controlsStory
+    , craftedName
     , emptyReceipt
     , resolveStatement
     , statementBindings
@@ -218,10 +237,12 @@ data Options = Options
     , optMagic :: Int
     , optWalletKey :: FilePath
     , optWork :: FilePath
+    , optStranger :: FilePath
+    -- ^ A second funded wallet, never a controller in the story
     }
 
 parseOptions :: [String] -> Either String Options
-parseOptions = go (Options "" "" "" "" 0 "" "")
+parseOptions = go (Options "" "" "" "" 0 "" "" "")
   where
     go o [] = do
         forM_
@@ -231,6 +252,7 @@ parseOptions = go (Options "" "" "" "" 0 "" "")
             , ("--node-socket", optSocket o)
             , ("--wallet-skey", optWalletKey o)
             , ("--work", optWork o)
+            , ("--stranger-skey", optStranger o)
             ]
             $ \(name, v) -> when (null v) (Left (name <> " is required"))
         when (optMagic o <= 0) (Left "--network-magic is required")
@@ -245,6 +267,7 @@ parseOptions = go (Options "" "" "" "" 0 "" "")
             _ -> Left ("--network-magic is not a number: " <> v)
         "--wallet-skey" -> go o{optWalletKey = v} rest
         "--work" -> go o{optWork = v} rest
+        "--stranger-skey" -> go o{optStranger = v} rest
         _ -> Left ("unknown option " <> flag)
     go _ [flag] = Left (flag <> " needs a value")
 
@@ -316,6 +339,13 @@ perform env i = case i of
     Book t k -> recorded env "book" t k (book env t k)
     FoldUnevaluated t k -> recorded env "fold-unevaluated" t k (foldUnevaluated env t k)
     Observe t k -> recorded env "observe" t k (observe env t k)
+    Craft c t k ->
+        recorded
+            env
+            ("craft " <> T.pack (craftedName c))
+            t
+            k
+            (craft env c t k)
 
 {- | Number the action, run it, and write its receipt. An exception is the
 action's own outcome, @client-error@, never a stop of the story.
@@ -619,6 +649,17 @@ runCommand env c target key r = do
                 )
         Terminate ->
             pure (["registry", "terminate"] <> common <> keyArg <> node <> wallet)
+        Update n -> do
+            let path = envEvidence env </> printf "step-%03d-payload.json" (rcStep r)
+            BL.writeFile path (encodePretty (payloadOf n))
+            pure
+                ( ["registry", "update"]
+                    <> common
+                    <> keyArg
+                    <> ["--payload", path]
+                    <> node
+                    <> wallet
+                )
         Inspect -> pure (["registry", "inspect"] <> common <> keyArg <> node)
     (status, printed, file) <- singular env r (commandName c) args
     let outcome = case field "outcome" printed of
@@ -638,6 +679,7 @@ runCommand env c target key r = do
                     (Just . T.take 600)
                     (named "reason")
             , rcEvidence = rcEvidence r <> [file]
+            , rcCommand = printed
             }
   where
     field k v = case v of
@@ -867,3 +909,157 @@ observe env target key r = do
                             , obWalletLovelace = sum (map (lovelace . snd) wallets)
                             }
                 }
+
+-- ---------------------------------------------------------
+-- Payloads and hand-built transactions
+-- ---------------------------------------------------------
+
+-- | The story's payloads, as the command reads them: unrelated shapes.
+payloadOf :: Int -> Value
+payloadOf n = case n of
+    1 ->
+        Aeson.object
+            [ "constructor" Aeson..= (3 :: Int)
+            , "fields"
+                Aeson..= [ Aeson.object ["bytes" Aeson..= ("626f62" :: Text)]
+                         , Aeson.object
+                            ["int" Aeson..= (123_456_789_012_345_678_901_234_567_890 :: Integer)]
+                         ]
+            ]
+    _ ->
+        Aeson.object
+            [ "list"
+                Aeson..= [ Aeson.object
+                            [ "map"
+                                Aeson..= [ Aeson.object
+                                            [ "k" Aeson..= Aeson.object ["int" Aeson..= (-1 :: Int)]
+                                            , "v" Aeson..= Aeson.object ["bytes" Aeson..= ("00ff" :: Text)]
+                                            ]
+                                         ]
+                            ]
+                         , Aeson.object ["list" Aeson..= ([] :: [Value])]
+                         ]
+            ]
+
+-- | The key's live holdings at the application, as this registry's.
+holdingsOf
+    :: Registry
+    -> String
+    -> [(TxIn, TxOut ConwayEra)]
+    -> [(TxIn, TxOut ConwayEra)]
+holdingsOf reg key live =
+    [ (i, o)
+    | (i, o) <- live
+    , Right e <- [liveEnvelope o]
+    , let c = envControl e
+    , ctlVersion c == envelopeVersion
+    , registryBytes (ctlRegistry c)
+        == scriptHashBytes (cfgScriptHash (regCfg reg)) <> tokenBytes reg
+    , ctlActivePolicy c == SBS.fromShort (cfgActivePolicy (regCfg reg))
+    , ctlKey c == keyBytes key
+    , heldOf c o == 1
+    ]
+
+-- | The empty query GADT a hand-built program runs under.
+data NoQuery a
+
+{- | Build one hand-made transaction against the key's live holding and
+submit it without local evaluation, so the node's verdict is the
+receipt's. Every shape spends the holding once under the applied script,
+read by reference, with the wallet's largest ada-only output as fee and
+collateral.
+-}
+craft :: Env -> Crafted -> Target -> String -> Receipt -> IO Receipt
+craft env c target key r = do
+    let o = envOptions env
+    reg <- openRegistry env target
+    stranger <- loadWallet (fromIntegral (optMagic o)) (optStranger o)
+    withNode env $ \sess wallet -> do
+        let prov = nsProvider sess
+            appHash = hex (scriptHashBytes (computeScriptHash (applied reg)))
+            r0 = r{rcEvaluation = Just "skipped", rcApplication = Just appHash}
+            mine = addrKeyHashBytes (walletAddr wallet)
+            theirs = addrKeyHashBytes (walletAddr stranger)
+        att <- attach prov (regDeployment reg) (partsOf (regCfg reg))
+        appRef <- applicationReference reg att
+        live <- Cage.queryUTxOs prov (applicationAddr reg)
+        holding@(hIn, hOut) <- case holdingsOf reg key live of
+            [u] -> pure u
+            us ->
+                fail
+                    ( show (length us)
+                        <> " live holdings for the key; the story needs exactly one"
+                    )
+        e <- either fail pure (liveEnvelope hOut)
+        let ctl = envControl e
+        unless (ctlController ctl == mine) $
+            fail "the holding's controller is not this story's wallet"
+        pp <- Cage.queryProtocolParams prov
+        wallets <- Cage.queryUTxOs prov (walletAddr wallet)
+        feeUtxo <-
+            case sortOn
+                (Down . (^. coinTxOutL) . snd)
+                (filter (adaOnlyOut . snd) wallets) of
+                (u : _) -> pure u
+                [] -> fail "the wallet has no ada-only output to fund the transaction"
+        let MaryValue (Coin held) tokens = hOut ^. valueTxOutL
+            payload = PLC.Constr 7 [PLC.I (fromIntegral (rcStep r))]
+            next = continuationOf hOut e payload
+            with c' = continuationOf hOut e{envControl = c'} payload
+            home = walletAddr wallet
+            minFor out =
+                let Coin first = getMinCoinTxOut pp out
+                    Coin settled = getMinCoinTxOut pp (out & coinTxOutL .~ Coin first)
+                in  settled
+            tokenAway =
+                let probe = mkBasicTxOut home (MaryValue (Coin 0) tokens)
+                in  mkBasicTxOut home (MaryValue (Coin (minFor probe)) tokens)
+            (outputs, redeemer, signer) = case c of
+                HonestUpdate -> ([next], updateRedeemer, mine)
+                UpdateByStranger -> ([next], updateRedeemer, theirs)
+                UpdateOtherController ->
+                    ([with ctl{ctlController = theirs}], updateRedeemer, mine)
+                UpdateDepositTampered -> ([with ctl{ctlDeposit = 1}], updateRedeemer, mine)
+                UpdateEscaped -> ([next & addrTxOutL .~ home], updateRedeemer, mine)
+                UpdateTokenLeft ->
+                    ( [next & valueTxOutL .~ MaryValue (Coin held) mempty, tokenAway]
+                    , updateRedeemer
+                    , mine
+                    )
+                UpdateShortDeposit ->
+                    ( [next & coinTxOutL .~ Coin (ctlDeposit ctl - 1)]
+                    , updateRedeemer
+                    , mine
+                    )
+                UpdateWithoutDatum -> ([next & datumTxOutL .~ NoDatum], updateRedeemer, mine)
+                EarlyWithdrawal ->
+                    ([mkBasicTxOut home (hOut ^. valueTxOutL)], releaseRedeemer, mine)
+            prog :: Tx.TxBuild NoQuery Void ()
+            prog = do
+                _ <- Tx.spendScript hIn redeemer
+                mapM_ Tx.output outputs
+                Tx.requireSignature (addrWitnessKeyHash signer)
+                Tx.reference (fst appRef)
+                Tx.collateral (fst feeUtxo)
+            skipEval tx =
+                let Redeemers rdmrs = tx ^. witsTxL . rdmrsTxWitsL
+                in  pure (Map.map (const (Right generousUnits)) rdmrs)
+        built <-
+            Tx.build
+                (Tx.mkPParamsBound pp)
+                (Tx.InterpretIO (const (pure undefined)))
+                skipEval
+                [feeUtxo, holding]
+                [appRef]
+                home
+                prog
+        unsigned <-
+            either
+                (fail . ("the transaction did not build: " <>) . show)
+                pure
+                built
+        let witnessed =
+                if c == UpdateByStranger
+                    then addKeyWitness (walletSignKey stranger) unsigned
+                    else unsigned
+        fst <$> submitAndConfirm env sess wallet r0 witnessed

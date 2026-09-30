@@ -35,9 +35,10 @@ setup_fail() {
 say() { echo "controls: $*"; }
 
 od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/wallet.skey"
+od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/stranger.skey"
 
 export TMPDIR="$work"
-"$devnet" --fund-skey "$work/wallet.skey" --fund-outputs 8 --fund-lovelace 2000000000 \
+"$devnet" --fund-skey "$work/wallet.skey" --fund-skey "$work/stranger.skey" --fund-outputs 8 --fund-lovelace 2000000000 \
   >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
 trap 'kill "$devnet_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT
@@ -57,7 +58,7 @@ say "one development node at $sock"
 status=0
 "$controls" run \
   --singular "$singular" --blueprint "$blueprint" --ledger "$ledger" \
-  --node-socket "$sock" --network-magic 42 --wallet-skey "$work/wallet.skey" \
+  --node-socket "$sock" --network-magic 42 --wallet-skey "$work/wallet.skey" --stranger-skey "$work/stranger.skey" \
   --work "$work" >"$work/controls.md" 2> >(tee "$work/controls.err" >&2) || status=$?
 tail -1 "$work/controls.md"
 say "verdict section at $work/controls.md (exit $status)"

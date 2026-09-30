@@ -195,6 +195,7 @@ executable cli-controls
     , cardano-ledger-api
     , cardano-ledger-binary
     , cardano-ledger-core
+    , cardano-ledger-mary
     , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-tx-tools:tx-build

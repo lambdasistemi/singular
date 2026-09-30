@@ -1,8 +1,13 @@
 {-# LANGUAGE GADTs #-}
 
-{- | The registry's refusals of an insertion the open-datum application
-books: a second insertion of a key that is Active, and an insertion of a
-key that is already Terminal.
+{- | The ordinary CLI's story and the open-datum application's boundary,
+judged from receipts.
+
+Alice's story runs through the ordinary commands and is checked against
+the receipts they print. Hand-built updates and an early release reach
+the application's own script. And the registry refuses an insertion the
+application books: a second insertion of a key that is Active, and an
+insertion of a key that is already Terminal.
 
 The application certifies both bookings. Neither can take effect: the
 registry refuses to fold them because the key exists (the model's
@@ -21,6 +26,9 @@ module Conformance.Cli.Controls
     ( -- * Actions
       Command (..)
     , commandName
+    , Crafted (..)
+    , craftedName
+    , craftedPhrase
     , Target (..)
     , Requirement (..)
     , CliI (..)
@@ -37,6 +45,8 @@ module Conformance.Cli.Controls
       -- * The stories
     , duplicateStory
     , resurrectionStory
+    , lifecycleStory
+    , boundaryStory
     , controlsStory
 
       -- * Receipts
@@ -91,26 +101,70 @@ import Data.Aeson
     , (.=)
     )
 import Data.Aeson qualified as Aeson
+import Data.Aeson.Key qualified as Key
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.List (intercalate, nub)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isNothing)
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Vector qualified as V
 
 -- ---------------------------------------------------------
 -- Actions
 -- ---------------------------------------------------------
 
--- | The ordinary commands, as a person runs them.
-data Command = Create | Insert | Terminate | Inspect
-    deriving stock (Eq, Show, Enum, Bounded)
+{- | The ordinary commands, as a person runs them. An update names which
+of the story's payloads it writes.
+-}
+data Command = Create | Insert | Update Int | Terminate | Inspect
+    deriving stock (Eq, Show)
 
 commandName :: Command -> String
 commandName c = case c of
     Create -> "create"
     Insert -> "insert"
+    Update _ -> "update"
     Terminate -> "terminate"
     Inspect -> "inspect"
+
+{- | A transaction built by hand against a key's live holding at the
+application, and submitted without local evaluation so the node judges
+it. Each shape but the first is one of the Aiken suite's refused updates,
+or a release outside any fold.
+-}
+data Crafted
+    = -- | The controller's update: same control, value and address
+      HonestUpdate
+    | -- | The same update, requiring another signer instead of the controller
+      UpdateByStranger
+    | -- | The continuation names another controller
+      UpdateOtherController
+    | -- | The continuation's protected deposit is changed
+      UpdateDepositTampered
+    | -- | The continuation, token and all, leaves for the controller's own address
+      UpdateEscaped
+    | -- | The continuation stays but the key's token leaves it
+      UpdateTokenLeft
+    | -- | The continuation holds one lovelace less than the protected deposit
+      UpdateShortDeposit
+    | -- | The continuation carries no datum
+      UpdateWithoutDatum
+    | -- | The holding is spent with @ outside any fold
+      EarlyWithdrawal
+    deriving stock (Eq, Show, Enum, Bounded)
+
+craftedName :: Crafted -> String
+craftedName c = case c of
+    HonestUpdate -> "update"
+    UpdateByStranger -> "update-by-stranger"
+    UpdateOtherController -> "update-other-controller"
+    UpdateDepositTampered -> "update-deposit-tampered"
+    UpdateEscaped -> "update-escaped"
+    UpdateTokenLeft -> "update-token-left"
+    UpdateShortDeposit -> "update-short-deposit"
+    UpdateWithoutDatum -> "update-without-datum"
+    EarlyWithdrawal -> "early-withdrawal"
 
 -- | A registry the story works in: its own directory and its own boot.
 newtype Target = Target String
@@ -136,6 +190,35 @@ data Requirement
       pending
       -}
       PartialPending
+    | {- | One hand-built transaction submitted without local evaluation,
+      which the node refused, naming the applied open-datum script as the
+      script that failed
+      -}
+      RefusedByApplication
+    | {- | Two readbacks that agree on the registry's root, the key's holding
+      and the wallet
+      -}
+      HoldingUnchanged
+    | {- | The create and insert receipts: the inserted envelope names the
+      created registry's state asset and active policy
+      -}
+      SameRegistry
+    | {- | The insert and inspect receipts: the key reads Active, its one
+      holding is the output the insert delivered, carrying the inserted
+      envelope inline and at least its protected deposit
+      -}
+      Delivered
+    | {- | Inspect, update, inspect: the root does not move, the holding is
+      the update's output, the payload is the update's and the control and
+      deposit are unchanged
+      -}
+      PayloadReplaced
+    | {- | Inspect, terminate, inspect: the key reads Terminal with no
+      holding, and the terminate released the protected deposit it held
+      -}
+      Released
+    | -- | One readback the node answered
+      Observed
     deriving stock (Eq, Show, Enum, Bounded)
 
 {- | One step of the story. Every action but 'Require' leaves exactly one
@@ -156,6 +239,8 @@ data CliI res where
     and the wallet back from the node
     -}
     Observe :: Target -> String -> CliI Receipt
+    -- | Submit a hand-built transaction against the key's live holding
+    Craft :: Crafted -> Target -> String -> CliI Receipt
     Require :: Requirement -> [Receipt] -> CliI ()
 
 type Story = Specification.Story CliI
@@ -190,10 +275,85 @@ resurrectionRefused =
             "2a84afdffe5b91cfd8f0fe9da7980093e77b75107fdbec76f28ba0d2e5bc6184"
             modelRevision
 
+-- | Statement markers for the lifecycle and the application's boundary.
+data InsertionHoldingInline
+
+data UpdateKeepsRegistry
+
+data UpdatePayloadFree
+
+data ReleaseBurnsAtomically
+
+data UpdateRequiresController
+
+data UpdatePreservesCustody
+
+data OnlyFoldReleases
+
+bound :: String -> String -> Theorem thm
+bound name digest =
+    bindTheorem
+        ( mkBoundObligation
+            ("OpenDatumApplication.Statements." <> name)
+            digest
+            modelRevision
+        )
+
+insertionHoldingInline :: Theorem InsertionHoldingInline
+insertionHoldingInline =
+    bound
+        "insertion_holding_inline"
+        "00fb84e4307c41b9743c052983771844dace5a15d4a671ec9895e98d88d2b4b0"
+
+updateKeepsRegistry :: Theorem UpdateKeepsRegistry
+updateKeepsRegistry =
+    bound
+        "update_keeps_registry"
+        "1d0bd504d8cbe90ccfcdc7c2a32096a4e370c8652a72d485b01715d5963a3e12"
+
+updatePayloadFree :: Theorem UpdatePayloadFree
+updatePayloadFree =
+    bound
+        "update_payload_free"
+        "6577b1757d0291d77a26826fca516543cddbda7276cd515263e81e95ee32886e"
+
+releaseBurnsAtomically :: Theorem ReleaseBurnsAtomically
+releaseBurnsAtomically =
+    bound
+        "release_burns_atomically"
+        "7e963ef2c919db15cc34ed9965b55d21d030f6de4b524690720126e4aacdf737"
+
+updateRequiresController :: Theorem UpdateRequiresController
+updateRequiresController =
+    bound
+        "update_requires_controller"
+        "bdc250edc8194c67ddb79deb53307780d2ce6e9b865edc11fceceba564b912f7"
+
+updatePreservesCustody :: Theorem UpdatePreservesCustody
+updatePreservesCustody =
+    bound
+        "update_preserves_custody"
+        "56a7b787884ab930d2ccb9524d13fb31a391f5c08aab2ac727080d39c4d498cc"
+
+onlyFoldReleases :: Theorem OnlyFoldReleases
+onlyFoldReleases =
+    bound
+        "only_fold_releases"
+        "aefd57a28089717e856d92cc5ae3c03404e5d47420827f0659798909c080f84d"
+
 -- | Every statement the stories bind.
 statementBindings :: [Binding]
 statementBindings =
-    [theoremBinding duplicateRefused, theoremBinding resurrectionRefused]
+    [ theoremBinding duplicateRefused
+    , theoremBinding resurrectionRefused
+    , theoremBinding insertionHoldingInline
+    , theoremBinding updateKeepsRegistry
+    , theoremBinding updatePayloadFree
+    , theoremBinding releaseBurnsAtomically
+    , theoremBinding updateRequiresController
+    , theoremBinding updatePreservesCustody
+    , theoremBinding onlyFoldReleases
+    ]
 
 {- | Whether the application's statement ledger (@ledgers.json@) carries
 the bound statement under the bound digest, proved.
@@ -338,8 +498,147 @@ resurrectionStory = do
             (Target "resurrection")
             "the Terminal key"
 
+{- | Alice's story through the ordinary commands, judged against the
+receipts the commands print: create, insert, inspect, two updates with
+unrelated payloads, terminate, inspect.
+-}
+lifecycleStory :: Story ()
+lifecycleStory = do
+    let target = Target "lifecycle"
+        alice = "alice"
+    inserted <-
+        theorem insertionHoldingInline $
+            clause
+                "the ordinary insert delivers the key's one token to the application, under the inserted envelope inline, in the registry create booted"
+                ( bindCheck insertionHoldingInline $ \(created, ins, seen) -> do
+                    action (Require SameRegistry [created, ins])
+                    action (Require Delivered [ins, seen])
+                )
+                ( do
+                    created <- action (Run Create target "")
+                    ins <- action (Run Insert target alice)
+                    seen <- action (Run Inspect target alice)
+                    pure (created, ins, seen)
+                )
+    let (_, _, afterInsert) = inserted
+    afterFirst <-
+        theorem updateKeepsRegistry $
+            clause
+                "the controller's update replaces the payload; the registry's root does not move"
+                ( bindCheck updateKeepsRegistry $ \(before, upd, after) ->
+                    action (Require PayloadReplaced [before, upd, after])
+                )
+                ( do
+                    upd <- action (Run (Update 1) target alice)
+                    after <- action (Run Inspect target alice)
+                    pure (afterInsert, upd, after)
+                )
+    let (_, _, afterUpdate) = afterFirst
+    afterSecond <-
+        theorem updatePayloadFree $
+            clause
+                "a second update with an unrelated payload is accepted the same way"
+                ( bindCheck updatePayloadFree $ \(before, upd, after) ->
+                    action (Require PayloadReplaced [before, upd, after])
+                )
+                ( do
+                    upd <- action (Run (Update 2) target alice)
+                    after <- action (Run Inspect target alice)
+                    pure (afterUpdate, upd, after)
+                )
+    let (_, _, beforeTerminate) = afterSecond
+    theorem releaseBurnsAtomically $
+        void $
+            clause
+                "the ordinary terminate burns the key's token and releases its protected deposit; the key reads Terminal"
+                ( bindCheck releaseBurnsAtomically $ \(before, term, after) ->
+                    action (Require Released [before, term, after])
+                )
+                ( do
+                    term <- action (Run Terminate target alice)
+                    after <- action (Run Inspect target alice)
+                    pure (beforeTerminate, term, after)
+                )
+
+{- | The application's own boundary, reached by hand-built transactions the
+node judges: the controller's update beside an update required of another
+wallet, the Aiken suite's custody tampers realisable on a ledger, and a
+release outside any fold beside the ordinary terminate.
+-}
+boundaryStory :: Story ()
+boundaryStory = do
+    let target = Target "boundary"
+    _ <- action (Run Create target "")
+    _ <- action (Run Insert target heldKey)
+    theorem updateRequiresController $ do
+        _ <-
+            clause
+                "the controller's own update, built by hand and submitted without local evaluation, is accepted"
+                (requirement updateRequiresController Accepted)
+                (pure <$> action (Craft HonestUpdate target heldKey))
+        before <- readback updateRequiresController target
+        _ <-
+            clause
+                "the same update, requiring another wallet's signature instead of the controller's, is refused by the application"
+                (requirement updateRequiresController RefusedByApplication)
+                (pure <$> action (Craft UpdateByStranger target heldKey))
+        unchangedAfter updateRequiresController target before
+    theorem updatePreservesCustody $ do
+        _ <-
+            clause
+                "another controller's update, built the same way, is accepted"
+                (requirement updatePreservesCustody Accepted)
+                (pure <$> action (Craft HonestUpdate target heldKey))
+        before <- readback updatePreservesCustody target
+        forM_ tampers $ \c ->
+            clause
+                (craftedPhrase c <> " is refused by the application")
+                (requirement updatePreservesCustody RefusedByApplication)
+                (pure <$> action (Craft c target heldKey))
+        unchangedAfter updatePreservesCustody target before
+    theorem onlyFoldReleases $ do
+        before <- readback onlyFoldReleases target
+        _ <-
+            clause
+                "a release of the live holding outside any fold is refused by the application"
+                (requirement onlyFoldReleases RefusedByApplication)
+                (pure <$> action (Craft EarlyWithdrawal target heldKey))
+        unchangedAfter onlyFoldReleases target before
+        void $
+            clause
+                "the same holding, released inside the registry's fold by the ordinary terminate, is accepted"
+                (requirement onlyFoldReleases CommandSucceeded)
+                (pure <$> action (Run Terminate target heldKey))
+  where
+    tampers =
+        [ UpdateOtherController
+        , UpdateDepositTampered
+        , UpdateEscaped
+        , UpdateTokenLeft
+        , UpdateShortDeposit
+        , UpdateWithoutDatum
+        ]
+    readback :: Theorem thm -> Target -> TheoremStory thm CliI Receipt
+    readback thm target =
+        clause
+            "the registry, the key's holding and the wallet are read back"
+            (bindCheck thm (\r -> action (Require Observed [r])))
+            (action (Observe target heldKey))
+    unchangedAfter
+        :: Theorem thm -> Target -> Receipt -> TheoremStory thm CliI ()
+    unchangedAfter thm target before =
+        void $
+            clause
+                "the registry's root, the key's holding and the wallet are unchanged by every refusal"
+                (requirement thm HoldingUnchanged)
+                ( do
+                    after <- action (Observe target heldKey)
+                    pure [before, after]
+                )
+
 controlsStory :: Story ()
-controlsStory = duplicateStory >> resurrectionStory
+controlsStory =
+    duplicateStory >> resurrectionStory >> lifecycleStory >> boundaryStory
 
 -- ---------------------------------------------------------
 -- Receipts
@@ -400,6 +699,8 @@ data Receipt = Receipt
     -- ^ @skipped@ for a fold submitted without local evaluation
     , rcStateValidator :: Maybe Text
     -- ^ The registry's state validator hash, from its pins
+    , rcApplication :: Maybe Text
+    -- ^ The applied open-datum script's hash, from its pins
     , rcRefusingScripts :: [Text]
     -- ^ The script hashes the node's refusal names
     , rcReason :: Maybe Text
@@ -407,6 +708,8 @@ data Receipt = Receipt
     , rcObservation :: Maybe Observation
     , rcEvidence :: [Text]
     -- ^ Files beside the receipt: command output, transaction bodies
+    , rcCommand :: Maybe Aeson.Value
+    -- ^ A command's own printed receipt, as it printed it
     }
     deriving stock (Eq, Show)
 
@@ -422,10 +725,12 @@ emptyReceipt step act target key =
         , rcPendingRequest = Nothing
         , rcEvaluation = Nothing
         , rcStateValidator = Nothing
+        , rcApplication = Nothing
         , rcRefusingScripts = []
         , rcReason = Nothing
         , rcObservation = Nothing
         , rcEvidence = []
+        , rcCommand = Nothing
         }
 
 instance ToJSON Receipt where
@@ -440,10 +745,12 @@ instance ToJSON Receipt where
             , "pendingRequest" .= rcPendingRequest r
             , "evaluation" .= rcEvaluation r
             , "stateValidator" .= rcStateValidator r
+            , "application" .= rcApplication r
             , "refusingScripts" .= rcRefusingScripts r
             , "reason" .= rcReason r
             , "observation" .= rcObservation r
             , "evidence" .= rcEvidence r
+            , "command" .= rcCommand r
             ]
 
 instance FromJSON Receipt where
@@ -458,10 +765,12 @@ instance FromJSON Receipt where
             <*> o .:? "pendingRequest"
             <*> o .:? "evaluation"
             <*> o .:? "stateValidator"
+            <*> o .:? "application"
             <*> o .: "refusingScripts"
             <*> o .:? "reason"
             <*> o .:? "observation"
             <*> o .: "evidence"
+            <*> o .:? "command"
 
 -- | The action name, target and key a receipt for this action must carry.
 identify :: CliI res -> Maybe (Text, Text, Text)
@@ -470,15 +779,171 @@ identify i = case i of
     Book (Target t) k -> Just ("book", T.pack t, T.pack k)
     FoldUnevaluated (Target t) k -> Just ("fold-unevaluated", T.pack t, T.pack k)
     Observe (Target t) k -> Just ("observe", T.pack t, T.pack k)
+    Craft c (Target t) k ->
+        Just ("craft " <> T.pack (craftedName c), T.pack t, T.pack k)
     Require _ _ -> Nothing
 
 -- ---------------------------------------------------------
 -- Checks
 -- ---------------------------------------------------------
 
+-- | A value inside a command's own receipt, by object keys and list indices.
+at :: [Either Text Int] -> Receipt -> Maybe Aeson.Value
+at path r = go path =<< rcCommand r
+  where
+    go [] v = Just v
+    go (Left k : rest) (Aeson.Object o) = go rest =<< KeyMap.lookup (Key.fromText k) o
+    go (Right i : rest) (Aeson.Array a) = go rest =<< (a V.!? i)
+    go _ _ = Nothing
+
+field :: Text -> Either Text Int
+field = Left
+
+-- | Fail unless a command receipt says @success@.
+succeeded :: String -> Receipt -> [String]
+succeeded what r =
+    [ what <> "'s outcome is " <> show (rcOutcome r) <> ", not success"
+    | rcOutcome r /= "success"
+    ]
+
+-- | Fail unless two receipt values are present and equal.
+same :: String -> Maybe Aeson.Value -> Maybe Aeson.Value -> [String]
+same what a b = case (a, b) of
+    (Just x, Just y) | x == y -> []
+    (Nothing, _) -> [what <> ": the first receipt does not carry it"]
+    (_, Nothing) -> [what <> ": the second receipt does not carry it"]
+    _ -> [what <> " differs"]
+
+-- | Fail unless a receipt value is present and equals the one expected.
+is :: String -> Aeson.Value -> Maybe Aeson.Value -> [String]
+is what expected v =
+    [ what <> " is " <> maybe "absent" show v <> ", not " <> show expected
+    | v /= Just expected
+    ]
+
 -- | The requirement's failures on these receipts; none means it holds.
 check :: Requirement -> [Receipt] -> [String]
 check req rs = case (req, rs) of
+    (Observed, [r]) ->
+        [ "the readback's outcome is " <> show (rcOutcome r) <> ", not observed"
+        | rcOutcome r /= "observed"
+        ]
+    (RefusedByApplication, [r]) ->
+        [ "the transaction was evaluated locally, so the node never judged it"
+        | rcEvaluation r /= Just "skipped"
+        ]
+            <> [ "the outcome is "
+                    <> show (rcOutcome r)
+                    <> ", not a refusal by the node"
+               | rcOutcome r /= "ledger-refused"
+               ]
+            <> case rcApplication r of
+                Nothing -> ["the applied open-datum script is not recorded"]
+                Just h ->
+                    [ "the refusal does not name the open-datum script "
+                        <> T.unpack h
+                        <> "; it names "
+                        <> show (rcRefusingScripts r)
+                    | h `notElem` rcRefusingScripts r
+                    ]
+            <> ["no transaction id is recorded" | isNothing (rcTxId r)]
+    (HoldingUnchanged, [a, b]) -> case (rcObservation a, rcObservation b) of
+        (Just x, Just y) ->
+            ["the registry's root moved" | obRoot x /= obRoot y]
+                <> [ "the key's holding changed"
+                   | (obHolding x, obHoldingLovelace x)
+                        /= (obHolding y, obHoldingLovelace y)
+                   ]
+                <> ["the wallet changed" | obWalletLovelace x /= obWalletLovelace y]
+                <> ["the key has no live holding to protect" | isNothing (obHolding y)]
+                <> [ "the readbacks are of different registries or keys"
+                   | (rcTarget a, rcKey a) /= (rcTarget b, rcKey b)
+                   ]
+        _ -> ["a readback carries no observation"]
+    (SameRegistry, [c, i]) ->
+        succeeded "the create" c
+            <> succeeded "the insert" i
+            <> same
+                "the registry's state policy"
+                (at [field "pins", field "pinState"] c)
+                ( at
+                    (controlPath <> [Right 1, field "fields", Right 0, field "bytes"])
+                    i
+                )
+            <> same
+                "the registry's state token"
+                (at [field "token"] c)
+                ( at
+                    (controlPath <> [Right 1, field "fields", Right 1, field "bytes"])
+                    i
+                )
+            <> same
+                "the registry's active policy"
+                (at [field "pins", field "pinActive"] c)
+                (at (controlPath <> [Right 2, field "bytes"]) i)
+    (Delivered, [i, s]) ->
+        succeeded "the insert" i
+            <> succeeded "the inspect" s
+            <> is "the key's leaf" "active" (at [field "leaf"] s)
+            <> same
+                "the holding's output"
+                (at [field "liveOutput"] i)
+                (at [field "applicationOutput", field "output"] s)
+            <> same
+                "the holding's inline envelope"
+                (at [field "envelope"] i)
+                (at [field "applicationOutput", field "envelope"] s)
+            <> case ( at [field "applicationOutput", field "lovelace"] s
+                    , at [field "applicationOutput", field "deposit"] s
+                    ) of
+                (Just (Aeson.Number l), Just (Aeson.Number d))
+                    | l >= d -> []
+                    | otherwise -> ["the holding holds less than its protected deposit"]
+                _ -> ["the holding's lovelace or deposit is not read back"]
+    (PayloadReplaced, [b, u, a]) ->
+        succeeded "the update" u
+            <> succeeded "the inspect before" b
+            <> succeeded "the inspect after" a
+            <> same
+                "the root across the update"
+                (at [field "root"] b)
+                (at [field "root"] a)
+            <> same
+                "the root the update reports"
+                (at [field "root"] b)
+                (at [field "root"] u)
+            <> same
+                "the payload"
+                (at [field "payload"] u)
+                (at [field "applicationOutput", field "payload"] a)
+            <> same
+                "the holding's output"
+                (at [field "liveOutput"] u)
+                (at [field "applicationOutput", field "output"] a)
+            <> same
+                "the controller"
+                (at [field "applicationOutput", field "controller"] b)
+                (at [field "applicationOutput", field "controller"] a)
+            <> same
+                "the protected deposit"
+                (at [field "applicationOutput", field "deposit"] b)
+                (at [field "applicationOutput", field "deposit"] a)
+            <> is "the key's leaf" "active" (at [field "leaf"] a)
+    (Released, [b, t, a]) ->
+        succeeded "the terminate" t
+            <> succeeded "the inspect after" a
+            <> is "the key's leaf" "terminal" (at [field "leaf"] a)
+            <> is
+                "the key's holdings"
+                (Aeson.Array mempty)
+                (at [field "applicationOutput", field "holdings"] a)
+            <> same
+                "the released deposit"
+                (at [field "applicationOutput", field "deposit"] b)
+                (at [field "deposit"] t)
+            <> case at [field "released"] t of
+                Just (Aeson.String _) -> []
+                _ -> ["the terminate names no released output"]
     (CommandSucceeded, [r]) ->
         [ "the command's outcome is " <> show (rcOutcome r) <> ", not success"
         | rcOutcome r /= "success"
@@ -547,7 +1012,11 @@ check req rs = case (req, rs) of
     (_, _) ->
         [ show req
             <> " takes "
-            <> (if req `elem` [Unchanged, PartialPending] then "two" else "one")
+            <> ( if req
+                    `elem` [Unchanged, PartialPending, HoldingUnchanged, SameRegistry, Delivered]
+                    then "two"
+                    else if req `elem` [PayloadReplaced, Released] then "three" else "one"
+               )
             <> " receipts, given "
             <> show (length rs)
         ]
@@ -660,6 +1129,7 @@ replay byStep story =
         Book{} -> answer st i
         FoldUnevaluated{} -> answer st i
         Observe{} -> answer st i
+        Craft{} -> answer st i
 
     answer :: Replay -> CliI Receipt -> (Maybe Receipt, Replay)
     answer st@(Replay n rs _) i = case (identify i, Map.lookup n byStep) of
@@ -745,6 +1215,7 @@ outline story = snd (walk 0 story)
         Book{} -> (n + 1, emptyReceipt n "" "" "")
         FoldUnevaluated{} -> (n + 1, emptyReceipt n "" "" "")
         Observe{} -> (n + 1, emptyReceipt n "" "" "")
+        Craft{} -> (n + 1, emptyReceipt n "" "" "")
 
 {- | Refuse a story before it runs: every statement it binds must be one of
 'statementBindings' and told once, every clause title distinct within its
@@ -765,26 +1236,30 @@ validateControls story = do
         let titles = [t | (s', t) <- rows, s' == s]
         unless (length titles == length (nub titles)) $
             Left (s <> " repeats a clause")
-        unless (any (("is accepted" `T.isSuffixOf`) . T.pack) titles) $
-            Left (s <> " has a refusal without an accepting control")
+        when
+            ( any (("is refused" `T.isInfixOf`) . T.pack) titles
+                && not (any (("is accepted" `T.isSuffixOf`) . T.pack) titles)
+            )
+            $ Left (s <> " has a refusal without an accepting control")
     Right ()
 
 -- ---------------------------------------------------------
 -- Rendering
 -- ---------------------------------------------------------
 
-{- | The section a reader sees: each statement, what was done, and the
-verdict of each clause as the receipts give it. Uncovered clauses are
-listed, with the reason, beside the rest.
+{- | The section a reader sees: each statement, what was done, the verdict
+of each clause as the receipts give it, and the approved matrix of cases
+with each one's coverage computed from those verdicts. Uncovered clauses
+and cases are listed, with the reason, beside the rest.
 -}
 renderControls :: [ClauseResult] -> Story () -> String
 renderControls results story =
     unlines $
-        [ "## The registry refuses an insertion it already holds"
+        [ "## The ordinary CLI and the application's boundary, judged from receipts"
         , ""
-        , "The open-datum application books a second insertion of an Active key, and an insertion of a key that is already Terminal. The registry refuses to fold either, because the key exists. Each refusal below sits beside a control that differs only in the key, and readbacks before and after the refused fold."
+        , "Alice's story runs through the ordinary `singular registry` commands, and each claim about it is checked against the receipts those commands print: the registry create booted, the holding insert delivered, the payloads the updates wrote with the root unmoved, and the deposit terminate released."
         , ""
-        , "The refusal is the node's, reached by submitting the fold without evaluating its scripts locally, and it names the script that failed: the registry's state validator. The model's reason, `key-exists`, is not something the node reports, and it is not claimed as observed."
+        , "The refusals are the node's. Each refused transaction is submitted without evaluating its scripts locally, so the node judges it, and each refusal names the script that failed: the registry's state validator for an insertion of a key the registry already holds, and the applied open-datum script for a tampered update or a release outside any fold. Every refusal sits beside an accepting control built the same way, and readbacks before and after show that nothing moved. The node does not report the model's reason for a refusal, and no reason is claimed as observed."
         , ""
         , "### What was done"
         , ""
@@ -807,6 +1282,19 @@ renderControls results story =
                ]
             <> [ ""
                , summary
+               , ""
+               , "### The approved cases and what covers each"
+               , ""
+               , "A case is covered when the clause that exercises it holds on the receipts above. Cases the live run does not reach are listed as uncovered with the reason; the Aiken suite's own tests of them are separate evidence and are not counted here."
+               , ""
+               , "| case | statement | coverage |"
+               , "|---|---|---|"
+               ]
+            <> [ "| " <> name <> " | " <> stmt <> " | " <> coverage cov <> " |"
+               | (name, stmt, cov) <- approvedCases
+               ]
+            <> [ ""
+               , caseSummary
                ]
   where
     verdictText s = case s of
@@ -825,6 +1313,159 @@ renderControls results story =
             <> " do not; "
             <> show uncovered
             <> " are uncovered."
+    coverage cov = case cov of
+        NotLive why -> "uncovered: " <> why
+        ByClause stmt title ->
+            case [ crStatus r
+                 | r <- results
+                 , crStatement r == qualified stmt
+                 , crTitle r == title
+                 ] of
+                [Held] -> "covered: the clause holds"
+                [Uncovered why] -> "uncovered: " <> why
+                [NotHeld why] -> "not covered: the clause does not hold: " <> intercalate "; " why
+                _ -> "uncovered: its clause did not run"
+    covered =
+        length
+            [ ()
+            | (_, _, cov) <- approvedCases
+            , coverage cov == "covered: the clause holds"
+            ]
+    caseSummary =
+        show covered
+            <> " of "
+            <> show (length approvedCases)
+            <> " approved cases are covered live; "
+            <> show (length approvedCases - covered)
+            <> " are not."
+
+-- | How an approved case is exercised: by a named clause, or not live.
+data Coverage
+    = ByClause String String
+    | NotLive String
+
+qualified :: String -> String
+qualified = ("OpenDatumApplication.Statements." <>)
+
+{- | The approved matrix of controls for the ordinary CLI and the
+open-datum application, each with the statement it bears on (or the
+client safety it checks) and the clause that exercises it live.
+-}
+approvedCases :: [(String, String, Coverage)]
+approvedCases =
+    [
+        ( "a second insertion of an Active key"
+        , "`duplicate_refused_by_registry`"
+        , ByClause "duplicate_refused_by_registry" registryRefusal
+        )
+    ,
+        ( "an insertion of a Terminal key"
+        , "`resurrection_refused_by_registry`"
+        , ByClause "resurrection_refused_by_registry" registryRefusal
+        )
+    ,
+        ( "an update not signed by the controller"
+        , "`update_requires_controller`"
+        , ByClause
+            "update_requires_controller"
+            "the same update, requiring another wallet's signature instead of the controller's, is refused by the application"
+        )
+    ]
+        <> [ ( craftedPhrase c
+             , "`update_preserves_custody`"
+             , ByClause
+                "update_preserves_custody"
+                (craftedPhrase c <> " is refused by the application")
+             )
+           | c <-
+                [ UpdateOtherController
+                , UpdateDepositTampered
+                , UpdateEscaped
+                , UpdateTokenLeft
+                , UpdateShortDeposit
+                , UpdateWithoutDatum
+                ]
+           ]
+        <> [
+               ( "an update whose continuation duplicates the token's carrier"
+               , "`update_preserves_custody`"
+               , NotLive
+                    "a second carrier needs a second active token for the key, which only the registry's witness policy mints"
+               )
+           ,
+               ( "an update whose continuation adds a foreign asset"
+               , "`update_preserves_custody`"
+               , NotLive
+                    "not exercised live: it needs a foreign token in the controller's wallet"
+               )
+           ,
+               ( "a release of the live holding outside any fold"
+               , "`only_fold_releases`"
+               , ByClause
+                    "only_fold_releases"
+                    "a release of the live holding outside any fold is refused by the application"
+               )
+           ]
+        <> [ (name, stmt, NotLive "not exercised live yet")
+           | (name, stmt) <-
+                [
+                    ( "an insertion booking the controller did not sign"
+                    , "`bookInsert_inversion`"
+                    )
+                ,
+                    ( "an insertion booking naming another destination"
+                    , "`bookInsert_inversion`"
+                    )
+                ,
+                    ( "an insertion booking whose request deposit differs from the protected one"
+                    , "`bookInsert_inversion`"
+                    )
+                , ("an insertion booking naming no datum", "`bookInsert_inversion`")
+                ,
+                    ( "an envelope naming the registry's state asset under another name"
+                    , "`insertion_requires_registry_identity`"
+                    )
+                ,
+                    ( "an envelope naming the registry's state asset under another policy"
+                    , "`insertion_requires_registry_identity`"
+                    )
+                ,
+                    ( "an envelope naming another registry"
+                    , "`insertion_requires_registry_identity`"
+                    )
+                , ("a termination booked by a stranger", "`bookTerminate_inversion`")
+                , ("a release without a booked termination", "`fold_inversion`")
+                ,
+                    ( "a mixed fold paying one controller one lovelace short"
+                    , "`fold_settles_additively`"
+                    )
+                ,
+                    ( "two releases to one controller paid one lovelace short"
+                    , "`fold_settles_additively`"
+                    )
+                ,
+                    ( "two releases each paid their floor rather than the sum"
+                    , "`fold_settles_additively`"
+                    )
+                ]
+           ]
+        <> [ ( name
+             , "client safety, no model statement"
+             , NotLive
+                "checked by the packaged journey's receipts, not yet a clause here"
+             )
+           | name <-
+                [ "a second create racing for one target on another wallet's live seed"
+                , "a create interrupted after its first accepted submission"
+                , "a node lost after an accepted submission"
+                , "a fold killed after the node accepted it"
+                , "a concurrent writer holding the target's lock"
+                , "missing proof material, a changed application selector, an unavailable node"
+                ]
+           ]
+  where
+    registryRefusal =
+        "that request's fold, submitted without local evaluation, is refused by the registry's state validator"
 
 -- | The story's actions, in the description language, numbered by step.
 steps :: Story () -> [String]
@@ -924,6 +1565,22 @@ steps story = snd (walk 0 story)
                     )
                 )
             )
+        Craft c (Target t) k ->
+            ( n + 1
+            , emptyReceipt n "" "" ""
+            , Just
+                ( numbered
+                    n
+                    ( "Submit, without evaluating its scripts locally, "
+                        <> craftedPhrase c
+                        <> ", for **"
+                        <> k
+                        <> "** in **"
+                        <> t
+                        <> "**."
+                    )
+                )
+            )
     numbered n s = show (n + 1) <> ". " <> s
     forKey k = if null k then "" else " for **" <> k <> "**"
 
@@ -956,3 +1613,30 @@ tellings = go
         Book{} -> emptyReceipt 0 "" "" ""
         FoldUnevaluated{} -> emptyReceipt 0 "" "" ""
         Observe{} -> emptyReceipt 0 "" "" ""
+        Craft{} -> emptyReceipt 0 "" "" ""
+
+-- | A crafted transaction, in the description language.
+craftedPhrase :: Crafted -> String
+craftedPhrase c = case c of
+    HonestUpdate ->
+        "the controller's own update of the live holding, with a new payload"
+    UpdateByStranger ->
+        "that update requiring another wallet's signature instead of the controller's"
+    UpdateOtherController ->
+        "an update whose continuation names another controller"
+    UpdateDepositTampered ->
+        "an update whose continuation changes the protected deposit"
+    UpdateEscaped ->
+        "an update whose continuation, token and all, goes to the controller's own address"
+    UpdateTokenLeft ->
+        "an update whose continuation stays at the application without the key's token"
+    UpdateShortDeposit ->
+        "an update whose continuation holds one lovelace less than the protected deposit"
+    UpdateWithoutDatum ->
+        "an update whose continuation carries no datum"
+    EarlyWithdrawal ->
+        "a release of the live holding outside any fold"
+
+-- | The path of an insert receipt's envelope control fields.
+controlPath :: [Either Text Int]
+controlPath = [Left "envelope", Left "fields", Right 0, Left "fields"]
