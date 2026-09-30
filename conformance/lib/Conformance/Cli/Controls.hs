@@ -1665,7 +1665,12 @@ replay byStep story =
                                 | otherwise = NotHeld failures
                             premise'
                                 | Just _ <- premise = premise
-                                | isPremise && status /= Held = Just title
+                                | isPremise
+                                , NotHeld why <- status =
+                                    Just (title <> ", because " <> intercalate "; " why)
+                                | isPremise
+                                , Uncovered why <- status =
+                                    Just (title <> ", because " <> why)
                                 | otherwise = Nothing
                             result = ClauseResult name title status
                         in  goClauses

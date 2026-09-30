@@ -433,6 +433,9 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
             `shouldSatisfy` (\ss -> length ss == 4 && all isUncovered ss)
         show (drop 1 resurrection)
             `shouldSatisfy` isInfixOf "its premise does not hold"
+        -- each names the cause, not only the premise
+        drop 1 resurrection
+            `shouldSatisfy` all (isInfixOf "client-refusal" . show)
         held results `shouldBe` False
     it
         "does not accept a prefix whose inspect reads the key Active where Terminal is claimed"
