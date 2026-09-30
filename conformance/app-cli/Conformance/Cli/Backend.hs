@@ -1,5 +1,5 @@
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NumericUnderscores #-}
 
 {- | Execute the ordinary CLI's refusal controls against a node.
@@ -190,8 +190,6 @@ import Singular.Registry.TxBuilder.Internal
     , addrWitnessKeyHash
     , computeScriptHash
     , extractCageDatum
-    , leafActive
-    , leafTerminal
     , requestAddrFromCfg
     , scriptFromBytes
     , scriptHashBytes
@@ -229,6 +227,7 @@ import Conformance.Cli.Controls
     , statementBindings
     , validateControls
     )
+import Conformance.Cli.Proof (leafText, provenLeaf)
 import Conformance.NodeRejection (boundedNodeReason)
 import Conformance.Story.Specification
     ( Clause (..)
@@ -1343,19 +1342,15 @@ craftTermination env byStranger target key r = do
 sha256 :: ByteString -> ByteString
 sha256 = hashToBytes . hashWith @SHA256 id
 
-{- | The key's leaf, authenticated by the chain's root. From a mirror copy —
-the backend's own, else the command's — whose root is the root the chain
-holds, each candidate leaf is set for the key in a speculative copy: the
-one that leaves the root unchanged is the key's leaf; removing the key
-without changing the root means it holds none. Nothing when no copy agrees
-with the chain, or no candidate reproduces its root. No copy is written.
+{- | The key's leaf, proven against the chain's root ('provenLeaf') from the
+tree nodes of a saved mirror: the backend's own copy, else the command's.
+A copy that commits to another root, or whose nodes prove no single leaf,
+answers nothing; neither copy is ever written.
 -}
 authenticatedLeaf
     :: Env -> Target -> Registry -> ByteString -> String -> IO (Maybe Text)
 authenticatedLeaf env target reg chain key = go manifests
   where
-    tok = regToken reg
-    k = keyBytes key
     manifests =
         [ backendDir env target </> "registry.json"
         , targetDir env target </> "registry.json"
@@ -1363,26 +1358,9 @@ authenticatedLeaf env target reg chain key = go manifests
     go [] = pure Nothing
     go (manifest : rest) = do
         saved <- loadMirror manifest
-        if Map.member tok saved
-            then do
-                (tm, _) <- mkPureTrieManagerFrom saved
-                Root local <- withTrie tm tok getRoot
-                if local == chain
-                    then identify tm
-                    else go rest
-            else go rest
-    identify tm = do
-        let rootWith leaf = withSpeculativeTrie tm tok $ \t -> do
-                _ <- delete t k
-                _ <- insert t k leaf
-                getRoot t
-            rootWithout = withSpeculativeTrie tm tok $ \t -> delete t k >> getRoot t
-        Root active <- rootWith leafActive
-        Root terminal <- rootWith leafTerminal
-        Root absent <- rootWithout
-        pure $
-            if
-                | active == chain -> Just "active"
-                | terminal == chain -> Just "terminal"
-                | absent == chain -> Just "absent"
-                | otherwise -> Nothing
+        case Map.lookup (regToken reg) saved of
+            Nothing -> go rest
+            Just db ->
+                provenLeaf db (keyBytes key) chain >>= \case
+                    Right leaf -> pure (Just (leafText leaf))
+                    Left _ -> go rest

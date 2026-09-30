@@ -4,6 +4,7 @@ module Main (main) where
 import Conformance.Story.Usage qualified as Usage
 import Conformance.Support.Binding qualified as Binding
 import Conformance.Support.CliControls qualified as CliControls
+import Conformance.Support.CliProof qualified as CliProof
 import Conformance.Support.Fixture qualified as Fixture
 import Conformance.Support.FixtureChild
     ( childModeVariable
@@ -56,3 +57,4 @@ suite = do
         Usage.spec
         Binding.spec
         CliControls.spec
+        CliProof.spec
