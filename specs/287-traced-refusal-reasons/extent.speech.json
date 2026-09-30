@@ -1,7 +1,7 @@
 {
   "classes": [
     {
-      "text": "Four classes: modeled with a consumer, modeled without one, outside the model, and in conflict. Only the first is compared; the others stay in the denominator as published gaps, and the last two are escalated.",
+      "text": "Four classes: modeled with a consumer, modeled without one, outside the model, and in conflict. The first is not a label: any refusal whose step carries an executed model reason belongs to it and must be compared, and a refusal the committed table does not list fails as unclassified. Only the first is compared; the others stay in the denominator as published gaps, and the last two are escalated.",
       "pause": 500
     }
   ],
@@ -13,6 +13,6 @@
   ],
   "_source": {
     "file": "extent.md",
-    "sha256": "de9bc8ca6b614f1dd2cf26eb36df26194b60386526caab6626e692f43ce9f8f7"
+    "sha256": "f594f9af5449b2cdb1a3410c7db3e8ac73efffe09a0ec649648a20e93069d0e5"
   }
 }

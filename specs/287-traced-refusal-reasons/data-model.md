@@ -76,7 +76,7 @@ Invariant: `admitted` ⇔ deployed `validator-failure` ∧ traced
 
 `agrees` (admitted ∧ reason = Lean's), `differs(chain, lean)`,
 `uncompared(cause)`. Only a step where both sides refuse and the model names a
-reason is compared; attribution rows carry D5 only. Durability: the index entry
+reason is compared; that fact, not a label, makes the refusal class A; attribution rows carry D5 only. Durability: the index entry
 (contract) records `modelReason` and the D6 value before the runner acts on it.
 `differs` then fails the row, so its evidence survives in the replay index
 though no receipt is written for a failed row. `uncompared` does not fail the

@@ -19,6 +19,15 @@ flowchart TD
 
 ## Classes
 
+Class A is not a label anyone assigns. A refusal is class A exactly when its
+step record carries an executed model question with a refused outcome and a
+reason; the runner writes that fact into the index, and every such refusal
+must agree or be uncompared with a named cause. B, C and D apply only to
+refusals without an executed model reason, and come from the committed table
+below, keyed by row and refusal; a refusal with a model reason can never carry
+them, and a refusal without one that the table does not list fails the extent
+check as unclassified.
+
 | Class | Meaning | What #287 claims |
 |---|---|---|
 | A | Lean returns a reason and the driver comparison executes it | traced reason compared with Lean's (FR-09) |

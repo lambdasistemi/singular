@@ -43,7 +43,7 @@
   ],
   "gate-verbatim-ci-commands-synthesized-by-the-ticket-owner-no-gate-author-seat-in-the-approved-team": [
     {
-      "text": "Ten rows, each a command from the workflows: root CI, the unit suite, format, lint, the deployment identity check, the dedicated and generic row steps with extended assertions, and three new steps for toolchain correspondence, the wrong-reason control and the counted, classified extent with its accepting controls.",
+      "text": "Ten rows, each a command from the workflows: root CI, the unit suite, format, lint, the deployment identity check, the dedicated and generic row steps with extended assertions, and three new steps for toolchain correspondence, the wrong-reason control and the counted, classified extent, where no label can exempt a compared refusal, with its accepting controls.",
       "pause": 500
     }
   ],
@@ -55,6 +55,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "810e10c18562b8dbd728f0b3a905576f94c6b726cb2ab62626a1a9fb99967a03"
+    "sha256": "f7a10a476212cb906df3b602f8b6805a8228743719d1dbb360602561c0ba71b3"
   }
 }

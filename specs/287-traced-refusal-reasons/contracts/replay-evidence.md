@@ -41,7 +41,7 @@ logs are kept for T026's premise evidence.
 One entry per node rejection and per accepting control, in the order the run
 met them:
 `{ "kind": "refusal" | "accepting-control", "rejectedTxId" | "acceptedTxId",
-"captureId", "row", "step" | null, "role", "classes": [...], "extentClass",
+"captureId", "row", "step" | null, "role", "classes": [...], "extentClass" (A written by the runner exactly when "modelReason" is present; B, C or D read from `extent.md`'s committed table; otherwise "unclassified"),
 "modelReason" | null, "comparison": "agrees" | "differs" | "uncompared" | null }`.
 The entry is written, with its comparison, before the runner acts on the
 comparison, so a failing row keeps it. The CI extent (G10) counts refusals from

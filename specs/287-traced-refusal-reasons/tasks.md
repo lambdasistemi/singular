@@ -59,9 +59,11 @@ flowchart LR
   G4 green; no receipt or comparison change yet; every class observed is
   admitted or its cause named.
 - [ ] T028 [C] From the T027 receipts and replay index, discover the complete
-  refusal extent and classify each against Lean clauses and executing
-  consumers (`extent.md` classes); replace the leads; return every C or D as a
-  user story to the ticket owner (C/D escalation), with receipt and trace.
+  refusal extent. Refusals with an executed model reason are class A by fact.
+  Classify each remaining refusal against Lean clauses and executing consumers
+  into the committed B/C/D table in `extent.md` (the ticket owner commits it);
+  return every C or D as a user story to the ticket owner, with receipt and
+  trace.
 
 ## R3 — comparison, receipt, controls, CI (FR-09–FR-14) — needs Q-001
 
@@ -87,8 +89,11 @@ flowchart LR
 - [ ] T035 G6: extend the CG22, CG23, CG07 steps' jq (CI change in this ticket).
 - [ ] T036 G7: extend generic and serialization steps' jq.
 - [ ] T037 G9: control step, altered leg non-zero naming both reasons, restored leg zero.
-- [ ] T038 G10: extent over every receipt, non-empty guard, each refused step
-  once in `replay/index.json`. Acceptance: T035–T038 each seen red on the
+- [ ] T038 G10: extent over every receipt, non-empty guard, each refusal once
+  in `replay/index.json`; a refusal with a model reason not class A, or not
+  agreeing or uncompared with a cause, fails; a refusal without one absent from
+  the committed B/C/D table fails as unclassified (unit RED: a driver refusal
+  relabelled B, and an unlisted attribution refusal). Acceptance: T035–T038 each seen red on the
   base or the altered leg, then green locally [D ≤ 4 runs].
 
 ## R4 — book (FR-15)

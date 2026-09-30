@@ -117,7 +117,7 @@ failure is logged and not charged as a semantic RED.
 | G7 | CG21 + attribution rows | generic rows step (:337) and serialization step (:585), extended jq — CI change in this ticket | as asserted there |
 | G8 | toolchain correspondence | new step building the correspondence check — CI change in this ticket | 0 |
 | G9 | wrong-reason control | new step: altered run fails naming both reasons; unaltered passes — CI change in this ticket | ≠0 / 0 |
-| G10 | discovered extent | new jq over all receipts: refusal count > 0, each once in the replay index with reason or cause and class, every class-A step agreed, and for every refusing role an accepting-control entry with both runs succeeded (FR-13) — CI change in this ticket | 0 |
+| G10 | discovered extent | new jq over all receipts: refusal count > 0, each once in the replay index with reason or cause and class, every refusal with a model reason recorded as class A and agreeing or uncompared with a cause, every other refusal listed as B, C or D in `extent.md` (unclassified fails), and for every refusing role an accepting-control entry with both runs succeeded (FR-13) — CI change in this ticket | 0 |
 
 Falsification: G6/G7/G10 by the current red (base has no reasons); G9 by its
 own altered leg; G8 by a mismatched build input in a unit or flake test.

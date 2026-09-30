@@ -13,13 +13,13 @@
   ],
   "r2-capture-and-replay-fr-01-fr-04fr-08": [
     {
-      "text": "Table tests for every class first, then the pure module, capture, arguments, parameters and evaluation. The first devnet run checks the premise; then the rows run with capture on, and the discovered refusals are classified against Lean.",
+      "text": "Table tests for every class first, then the pure module, capture, arguments, parameters and evaluation. The first devnet run checks the premise; then the rows run with capture on, and the discovered refusals are classified against Lean, with a committed table for those the model was not asked about.",
       "pause": 500
     }
   ],
   "r3-comparison-receipt-controls-ci-fr-09fr-14-needs-q-001": [
     {
-      "text": "Compare reasons at the places that decide and throw today, writing evidence first; fill attribution branches, add the ruled receipt fields, the wrong-reason and accepting controls, and the CI assertions, each seen red then green.",
+      "text": "Compare reasons at the places that decide and throw today, writing evidence first; fill attribution branches, add the ruled receipt fields, the wrong-reason and accepting controls, and the CI assertions, each seen red then green, including a relabelled driver refusal and an unlisted one.",
       "pause": 500
     }
   ],
@@ -31,6 +31,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "38d32b262844c6e8258f81bc99bae95f303eb7e133f199ea1bb3c01148533984"
+    "sha256": "0905ec4616953968e23b1cacbd7952ac95b5642f0e8c5162297e6e36209bc053"
   }
 }

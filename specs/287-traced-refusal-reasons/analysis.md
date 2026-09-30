@@ -49,6 +49,7 @@ requirement.
 | A9 | high | CG09 (phase-1 reject): Lean admits every reject, the chain refuses before the retract window closes | Q-003; A-003: D287-REJECT, an epic-owned affected-acceptance hold; CG09 held in class D, comparison unmet |
 | A10 | high | Review 001: a differing or unobserved reason reached no durable record, because the runner throws before writing and rows require agreement first | FR-09, D6, contract index, T030 name the sites; index written before the row acts |
 | A11 | high | Review 001: the accepting control had no failing CI command | FR-13 through the index; G10 requires it; T034 |
+| A12 | high | Review 002: the extent label selected whether a refusal must agree, so a driver-compared refusal labelled B, C or D escaped the check | Class A is the mechanical fact of an executed model reason; B/C/D only from the committed table; unclassified fails (FR-10, FR-14, G10, T038) |
 
 ## Terminology
 
