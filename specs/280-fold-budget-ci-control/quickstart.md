@@ -7,7 +7,7 @@ As a reviewer with this repository and Nix, I want one command that repeats the 
 From a clean checkout of the candidate:
 
 ```sh
-conformance/review/fold-budget-control/record.sh --candidate "$(git rev-parse HEAD)" --out "$(mktemp -d)"
+conformance/review/fold-budget-control/record.sh --candidate "$(git rev-parse HEAD)" --out "$(mktemp -d)/pair"
 ```
 
 The recorder builds the validator blueprint once. It commits the fixed-fallback patch on a detached worktree and runs `nix run --quiet .#conformance-tests` in its `conformance/` directory, which should fail. It then runs the same command in the candidate's own tree, which should pass. It exits 0 only when both runs behave as required and share their blueprint, genesis, node and command.

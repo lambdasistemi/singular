@@ -1,7 +1,7 @@
 {
   "recorder": [
     {
-      "text": "The recorder takes a candidate commit and a fresh output directory. It creates its own detached worktrees and one local mutant commit that is never pushed, runs the builds and two devnet runs, and exits zero only when the pair is admissible.",
+      "text": "The recorder takes a candidate commit and an output directory that must not exist yet. It creates and removes only its own detached worktrees, reports a failed removal in its exit status, and creates one local mutant commit that is never pushed. Every git and nix command it runs is journalled with its arguments, directory, times, exit and output digest. It exits zero only when the pair is admissible.",
       "pause": 500
     }
   ],
@@ -19,6 +19,6 @@
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "5d4be45d3cd64249f81017271eb201d44a96ad208700d793aef208da1d2b9c6d"
+    "sha256": "f24f44fb9cc26ce3d404f5124a0384c872b435c601c9efab6dbf05f893d118b3"
   }
 }

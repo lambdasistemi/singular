@@ -21,7 +21,7 @@ One JSON object per run, `mutant.json` and `restored.json`. Every field is read 
 | `start`, `end`, `exit` | UTC times and the real exit status | the mutant is nonzero, the restored run is 0 |
 | `log` | `retained`, the raw log's file name in the evidence directory; `bytes`, `lines` and `sha256` of that complete raw output | `sha256` equals the digest of the retained file |
 | `witnesses` | the log lines matched for each R280-01 or R280-02 witness, with line numbers | all present, in order |
-| `invocations` | every nix and git invocation the recorder made for this run, with its exit | complete and ordered |
+| `invocations` | every git and nix command the recorder ran for this run: argument vector, directory, start, end, exit, and the byte size and SHA-256 of its captured output | complete and ordered; build stages inside one `nix run` are part of that invocation |
 
 ## Pair invariants
 
