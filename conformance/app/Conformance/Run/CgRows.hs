@@ -407,6 +407,7 @@ controlFreshCage env = do
                 , rcDatums = [(recordDatumHash, recordDatum)]
                 , rcAllowInadmissible = False
                 , rcHolderUtxos = []
+                , rcHolderReleases = Map.empty
                 , rcRefUtxos = refs
                 }
     foldTx <-

@@ -403,6 +403,7 @@ registryContext env = do
             , rcDatums = [(recordDatumHash, recordDatum)]
             , rcAllowInadmissible = False
             , rcHolderUtxos = []
+            , rcHolderReleases = Map.empty
             , rcRefUtxos = refs
             }
 
@@ -605,5 +606,6 @@ rowRegistryContext env cage tid = do
             , rcDatums = [(recordDatumHash, recordDatum)]
             , rcAllowInadmissible = False
             , rcHolderUtxos = []
+            , rcHolderReleases = Map.empty
             , rcRefUtxos = rcRefs cage
             }
