@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 {- | The two checks a replay makes before it evaluates anything: the capture
 resolves every output the transaction names, and the traced code gets the
 deployed application's parameters — shown by the untraced code under them
@@ -31,8 +33,19 @@ import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import PlutusCore qualified as PLC
 import PlutusCore.Data qualified as PLC (Data (..))
+import PlutusCore.Evaluation.Error qualified as PLC
+    ( EvaluationError (..)
+    )
+import PlutusCore.Evaluation.ErrorWithCause (ErrorWithCause (..))
+import PlutusCore.Evaluation.Machine.ExBudget
+    ( ExBudget (..)
+    , ExRestrictingBudget (..)
+    )
+import PlutusCore.Evaluation.Machine.Exception (MachineError (..))
 import PlutusLedgerApi.Common (serialiseUPLC)
+import PlutusLedgerApi.Common qualified as P
 import UntypedPlutusCore qualified as UPLC
+import UntypedPlutusCore.Evaluation.Machine.Cek (CekUserError (..))
 
 import Singular.Registry.Blueprint (applyBytesParam, applyDataParam)
 import Singular.Registry.TxBuilder.Internal
@@ -40,7 +53,7 @@ import Singular.Registry.TxBuilder.Internal
     , computeScriptHash
     )
 
-import Conformance.Replay (UnobservedCause (..))
+import Conformance.Replay (RunOutcome (..), UnobservedCause (..))
 import Conformance.Run.Replay
 
 -- | A distinct output reference, named by the ledger's own transaction id.
@@ -124,8 +137,8 @@ spec = describe "before a replay evaluates" $ do
     describe "the parameters" $ do
         let failing = computeScriptHash (applyBytesParam "cage-b" untraced)
         it
-            "the application reproducing the failing hash gives the traced code" $
-            applyDeployedParameters
+            "the application reproducing the failing hash gives the traced code"
+            $ applyDeployedParameters
                 codes
                 [application "cage-a", application "cage-b"]
                 failing
@@ -154,3 +167,31 @@ spec = describe "before a replay evaluates" $ do
                 atHash
                 (applyDeployedParameters codes [application "cage-b"] failing)
                 `shouldSatisfy` (/= Right failing)
+    describe "how an evaluation that did not finish ended" $ do
+        let cek e = P.CekError (ErrorWithCause e Nothing)
+        it "running out of the budget is budget-exhausted" $
+            classify
+                ( cek
+                    ( PLC.OperationalError
+                        (CekOutOfExError (ExRestrictingBudget (ExBudget (-1) (-1))))
+                    )
+                )
+                `shouldBe` BudgetExhausted
+        it "a script's error call is a validator failure" $
+            classify (cek (PLC.OperationalError CekEvaluationFailure))
+                `shouldBe` ValidatorFailure
+        it "a failed case over a builtin is a validator failure" $
+            classify (cek (PLC.OperationalError (CekCaseBuiltinError "case")))
+                `shouldBe` ValidatorFailure
+        it "a non-unit result is a validator failure" $
+            classify P.InvalidReturnValue `shouldBe` ValidatorFailure
+        it "a malformed program is the evaluator's error, not the validator's" $
+            classify (cek (PLC.StructuralError OpenTermEvaluatedMachineError))
+                `shouldSatisfy` isEvaluationError
+        it "a cost model the evaluator cannot use is the evaluator's error" $
+            classify P.CostModelParameterMismatch
+                `shouldSatisfy` isEvaluationError
+  where
+    isEvaluationError = \case
+        EvaluationError _ -> True
+        _ -> False

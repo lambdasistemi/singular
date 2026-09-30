@@ -90,6 +90,11 @@ import Conformance.Run.CsRows
 import Conformance.Run.Environment
 import Conformance.Run.ForkProbe
 import Conformance.Run.Receipts
+import Conformance.Run.Replay
+    ( ReplayEnv (..)
+    , capturingSubmitter
+    , newReplayEnv
+    )
 import Conformance.Run.Submit
 import Conformance.Run.Wallet
 
@@ -100,8 +105,9 @@ import Control.Exception
     )
 import Control.Monad (unless, when)
 import Data.ByteString.Short qualified as SBS
-import Data.IORef (newIORef, readIORef)
+import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.Map.Strict qualified as Map
+import Data.Text qualified as T
 import System.Directory (createDirectoryIfMissing)
 
 import Cardano.Node.Client.N2C.Connection
@@ -359,9 +365,16 @@ runSession
                     sock
                     lsqCh
                     ltxsCh
-        let nodeProv = adaptProvider (mkN2CProvider lsqCh)
+        let n2c = mkN2CProvider lsqCh
+            nodeProv = adaptProvider n2c
         awaitConnection sessionMagic sock nodeThread nodeProv
-        let submit = boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
+        -- #287: every rejection is captured and replayed before the next
+        -- submission, beside the receipts.
+        replay <-
+            newReplayEnv n2c lsqCh blueprintPath receiptsDir (T.pack nodeVer)
+        let submit =
+                capturingSubmitter replay $
+                    boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
         prov <- followedProvider nodeProv submit
         checkFunding prov funderAddr defaultFundingFloor
         tm <- mkPureTrieManager
@@ -548,7 +561,10 @@ runSession
                                 , "cage booted bootTx=" <> txIdHex signedBoot
                                 )
         emit "boot" bootLine
-        mapM_ (runRow env marker) rows
+        mapM_
+            ( \row -> writeIORef (reRow replay) (T.pack row) >> runRow env marker row
+            )
+            rows
         cancel nodeThread
         if caMode
             then writeCaCL01 env rows

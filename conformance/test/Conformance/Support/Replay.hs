@@ -5,6 +5,7 @@ as its own case, and a control that the cases cover every cause there is.
 module Conformance.Support.Replay (spec) where
 
 import Data.List (nub, sort)
+import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldNotBe)
 
@@ -149,30 +150,61 @@ spec = describe "traced replay of a live refusal" $ do
                 it name $ compareReason lean replay `shouldBe` expected
             )
             comparisonCases
-    it "every cause is reached by a case whose runs are not preempted" $
-        sort
-            ( nub
-                [ cause
-                | (_, _, _, Nothing, Unobserved cause) <- admissionCases
-                ]
-                <> [ cause
-                   | cause <- [minBound .. maxBound]
-                   , cause
-                        `elem` [ CaptureIncomplete
-                               , ContextUnavailable
-                               , ToolchainMismatch
-                               , ParametersMismatch
-                               , Phase1
-                               , SetupFailure
-                               , Timeout
-                               , ClientException
-                               ]
-                   ]
-            )
+    it "the cases reach every cause through admitReason itself" $
+        sort (nub [cause | Unobserved cause <- admitted])
             `shouldBe` [minBound .. maxBound]
-    it "every cause has its own name" $
-        length (nub (map causeName [minBound .. maxBound]))
-            `shouldBe` length [minBound .. maxBound :: UnobservedCause]
+    it "the two runs alone reach exactly the run causes" $
+        sort (nub [cause | Unobserved cause <- runAdmitted])
+            `shouldBe` [ DeployedSucceeds
+                       , DeployedBudget
+                       , TracedSucceeds
+                       , TracedBudget
+                       , NoUserTrace
+                       , SeveralUserTraces
+                       , EvaluatorFailed
+                       ]
+    it "every cause is spelled as the replay evidence contract spells it" $
+        map causeName [minBound .. maxBound]
+            `shouldBe` [ "capture-incomplete"
+                       , "context-unavailable"
+                       , "toolchain-mismatch"
+                       , "parameters-mismatch"
+                       , "deployed-succeeds"
+                       , "deployed-budget"
+                       , "traced-succeeds"
+                       , "traced-budget"
+                       , "no-user-trace"
+                       , "several-user-traces"
+                       , "phase-1"
+                       , "setup-failure"
+                       , "timeout"
+                       , "client-exception"
+                       , "evaluation-error"
+                       ]
+    describe "the toolchain" $ do
+        let provenance =
+                TracedProvenance
+                    { tpSource = "/nix/store/source"
+                    , tpCompiler = "v1.1.21"
+                    , tpFlags = "--trace-filter user-defined --trace-level verbose"
+                    , tpUntracedHashes =
+                        Map.fromList
+                            [("state.state.spend", "aa"), ("request.request.spend", "bb")]
+                    }
+        it
+            "the deployed blueprint the traced build corresponds to admits replays" $
+            toolchainCause provenance (tpUntracedHashes provenance)
+                `shouldBe` Nothing
+        it "a moved deployed hash is toolchain-mismatch" $
+            toolchainCause
+                provenance
+                (Map.insert "request.request.spend" "cc" (tpUntracedHashes provenance))
+                `shouldBe` Just ToolchainMismatch
+        it "a deployed validator the traced build lacks is toolchain-mismatch" $
+            toolchainCause
+                provenance
+                (Map.insert "witness.witness.mint" "dd" (tpUntracedHashes provenance))
+                `shouldBe` Just ToolchainMismatch
     it "a capture's identity ignores file order and follows content" $ do
         let files = [("a.cbor", "one"), ("b.json", "two")]
         captureIdOf files `shouldBe` captureIdOf (reverse files)
@@ -180,3 +212,9 @@ spec = describe "traced replay of a live refusal" $ do
             `shouldNotBe` captureIdOf [("a.cbor", "one"), ("b.json", "tw0")]
         captureIdOf files
             `shouldNotBe` captureIdOf [("a.cbor", "two"), ("b.json", "one")]
+
+-- | What 'admitReason' answers for every case, and for the run-only cases.
+admitted, runAdmitted :: [ReplayClass]
+admitted = [admitReason d t earlier | (_, d, t, earlier, _) <- admissionCases]
+runAdmitted =
+    [admitReason d t Nothing | (_, d, t, Nothing, _) <- admissionCases]

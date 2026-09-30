@@ -39,9 +39,11 @@ module Conformance.Replay
       -- * Evidence
     , PurposeReplay (..)
     , TracedProvenance (..)
+    , toolchainCause
     , captureIdOf
     ) where
 
+import Crypto.Hash qualified as Hash
 import Data.Aeson
     ( FromJSON (..)
     , ToJSON (..)
@@ -51,8 +53,13 @@ import Data.Aeson
     , (.=)
     )
 import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
+import Data.ByteString.Char8 qualified as BS8
+import Data.List (sortOn)
 import Data.Map.Strict (Map)
 import Data.Text (Text)
+import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
 
 -- | How one evaluation of one script on one purpose's arguments ended.
 data RunOutcome
@@ -142,13 +149,26 @@ instance ToJSON ReplayClass where
 -}
 admitReason
     :: ReplayRun -> ReplayRun -> Maybe UnobservedCause -> ReplayClass
-admitReason _ _ _ = error "admitReason: not implemented"
+admitReason deployed traced = \case
+    Just cause -> Unobserved cause
+    Nothing -> case (runOutcome deployed, runOutcome traced) of
+        (Succeeded, _) -> Unobserved DeployedSucceeds
+        (BudgetExhausted, _) -> Unobserved DeployedBudget
+        (EvaluationError _, _) -> Unobserved EvaluatorFailed
+        (ValidatorFailure, Succeeded) -> Unobserved TracedSucceeds
+        (ValidatorFailure, BudgetExhausted) -> Unobserved TracedBudget
+        (ValidatorFailure, EvaluationError _) -> Unobserved EvaluatorFailed
+        (ValidatorFailure, ValidatorFailure) ->
+            case userTraces (runLogs traced) of
+                [] -> Unobserved NoUserTrace
+                [reason] -> Admitted reason
+                _ -> Unobserved SeveralUserTraces
 
 {- | The user-defined lines of an evaluation log. The traced build keeps only
 user-defined traces, so every non-blank line is one.
 -}
 userTraces :: [Text] -> [Text]
-userTraces _ = error "userTraces: not implemented"
+userTraces = filter (not . T.null . T.strip)
 
 -- | A refused step's chain-side reason against the model's.
 data ReasonComparison
@@ -159,7 +179,11 @@ data ReasonComparison
 
 -- | Compare an admitted reason with Lean's; an unobserved one is not compared.
 compareReason :: Text -> ReplayClass -> ReasonComparison
-compareReason _ _ = error "compareReason: not implemented"
+compareReason lean = \case
+    Admitted chain
+        | chain == lean -> Agrees
+        | otherwise -> Differs{chainReason = chain, leanReason = lean}
+    Unobserved cause -> Uncompared cause
 
 -- | One failing purpose of one rejected transaction, and its two runs.
 data PurposeReplay = PurposeReplay
@@ -197,4 +221,52 @@ content hash, in name order, so the order the files were written in does not
 move it.
 -}
 captureIdOf :: [(FilePath, ByteString)] -> Text
-captureIdOf _ = error "captureIdOf: not implemented"
+captureIdOf files =
+    sha256Hex
+        ( BS.concat
+            [ BS8.pack name <> "\0" <> TE.encodeUtf8 (sha256Hex content) <> "\n"
+            | (name, content) <- sortOn fst files
+            ]
+        )
+
+sha256Hex :: ByteString -> Text
+sha256Hex = T.pack . show . Hash.hashWith Hash.SHA256
+
+{- | 'ToolchainMismatch' unless the deployed blueprint's validators are
+exactly the ones the traced build's untraced twin produced, hash for hash.
+-}
+toolchainCause
+    :: TracedProvenance -> Map Text Text -> Maybe UnobservedCause
+toolchainCause provenance deployed
+    | tpUntracedHashes provenance == deployed = Nothing
+    | otherwise = Just ToolchainMismatch
+
+instance ToJSON RunOutcome where
+    toJSON = \case
+        Succeeded -> "succeeded"
+        ValidatorFailure -> "validator-failure"
+        BudgetExhausted -> "budget-exhausted"
+        EvaluationError message -> object ["evaluation-error" .= message]
+
+instance ToJSON ReplayRun where
+    toJSON r =
+        object
+            [ "bytesHash" .= runBytesHash r
+            , "budgetLimit" .= units (runBudgetLimit r)
+            , "budgetUsed" .= fmap units (runBudgetUsed r)
+            , "outcome" .= runOutcome r
+            , "logs" .= runLogs r
+            ]
+      where
+        units (mem, steps) = object ["mem" .= mem, "steps" .= steps]
+
+instance ToJSON PurposeReplay where
+    toJSON p =
+        object
+            [ "purpose" .= prPurpose p
+            , "deployedHash" .= prDeployedHash p
+            , "tracedHash" .= prTracedHash p
+            , "deployed" .= prDeployed p
+            , "traced" .= prTraced p
+            , "class" .= prClass p
+            ]

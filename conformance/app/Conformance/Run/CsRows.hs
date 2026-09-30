@@ -40,6 +40,11 @@ import Conformance.Run.Cage (ensureStateRefWith)
 import Conformance.Run.Control
 import Conformance.Run.Environment
 import Conformance.Run.Observe
+import Conformance.Run.Replay
+    ( ReplayEnv (..)
+    , capturingSubmitter
+    , newReplayEnv
+    )
 import Conformance.Run.Submit
 import Conformance.Run.Units
 import Conformance.Run.Wallet
@@ -56,6 +61,7 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
+import Data.IORef (writeIORef)
 import Data.List (intercalate, isInfixOf, nub)
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as T
@@ -219,9 +225,17 @@ runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty
                 sock
                 lsqCh
                 ltxsCh
-    let nodeProv = adaptProvider (mkN2CProvider lsqCh)
+    let n2c = mkN2CProvider lsqCh
+        nodeProv = adaptProvider n2c
     awaitConnection sessionMagic sock nodeThread nodeProv
-    let submit = boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
+    -- #287: every rejection is captured and replayed before the next
+    -- submission, beside the receipts.
+    blueprintPath <- requireEnv "REGISTRY_BLUEPRINT"
+    replay <-
+        newReplayEnv n2c lsqCh blueprintPath receiptsDir (T.pack nodeVer)
+    let submit =
+            capturingSubmitter replay $
+                boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
     prov <- followedProvider nodeProv submit
     let stateMarker = hex (scriptHashBytes (computeScriptHash stateBytes))
         blueprintIdStr =
@@ -236,18 +250,21 @@ runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty
     -- once, before any row picks its seed.
     ensureStateRefWith prov submit stateBytes
     mapM_
-        ( runCSRow
-            prov
-            submit
-            stateBytes
-            requestBytes
-            namingCodes
-            nodeVer
-            base
-            dirty
-            receiptsDir
-            control
-            blueprintIdStr
+        ( \row -> do
+            writeIORef (reRow replay) (T.pack row)
+            runCSRow
+                prov
+                submit
+                stateBytes
+                requestBytes
+                namingCodes
+                nodeVer
+                base
+                dirty
+                receiptsDir
+                control
+                blueprintIdStr
+                row
         )
         rows
     cancel nodeThread
