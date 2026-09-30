@@ -11,7 +11,7 @@ As the coder, I want the recorder's interface fixed before I write it, so the re
 | `CANDIDATE` | commit id | a clean local commit containing the patch and the recorder |
 | `OUT` | directory | created fresh, and receives the two records and the two raw logs |
 
-`OUT` must not exist yet; the recorder creates it. Effects: it creates and removes only its own detached worktrees outside the issue worktree, reports any failure to remove them in its exit status, and creates one local mutant commit that is never pushed. Every git and nix command it runs is journalled with argument vector, directory, times, exit and an output digest; build stages inside one `nix run` belong to that invocation. It runs nix builds and two devnet runs. It exits 0 only when the pair is admissible under the data model, and nonzero otherwise, with the reason in its own output.
+`OUT` must not exist yet; the recorder creates it before its first command, so every captured output survives an early refusal. Effects: it creates and removes only its own detached worktrees outside the issue worktree, reports any failure to remove them in its exit status, and creates one local mutant commit that is never pushed. Every git and nix command it runs is journalled with argument vector, directory, times, exit and an output digest; build stages inside one `nix run` belong to that invocation. It runs nix builds and two devnet runs. It exits 0 only when the pair is admissible under the data model, and nonzero otherwise, with the reason in its own output.
 
 ## Runner, unchanged
 
