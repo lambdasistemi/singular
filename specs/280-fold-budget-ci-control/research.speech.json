@@ -1,0 +1,24 @@
+{
+  "source-map": [
+    {
+      "text": "The conformance job runs the packaged test app in the conformance directory with no environment. The app builds the blueprint only when it is not given, then runs the unit suite, the fold budget regression and the book, stopping at the first failure. The regression target links the test fixture, runs row CG21 and exits nonzero on an exception. The fixture refuses a one-below submission and hands its fallback to the runner as default units. The runner evaluates and allocates a budget per purpose, checks before submitting that the assembled transaction carries exactly that declaration, and attributes a node refusal to execution budget when it can. A purpose missing from the declaration map takes the default.",
+      "pause": 500
+    }
+  ],
+  "decisions": [
+    {
+      "text": "The mutation replaces the runner's declaration itself with the fixture's fallback for every purpose, so assembly, the consistency check and refusal attribution agree, and the transaction reaches the node. The planning audit rejected a narrower mutant that only emptied the final map, because the check then fails locally before any submission. No check is disabled. The mutant is a local commit on a detached worktree, never pushed. Both runs use the CI command with the blueprint built once and passed explicitly, and the genesis content digest is bound.",
+      "pause": 500
+    }
+  ],
+  "alternatives-rejected": [
+    {
+      "text": "A CI step running the mutant on every pull request would duplicate the devnet job. A control switch inside the product runner would add a production fault path the regression target exists to avoid. An allocator unit test, a source search or the fixture's own refusal cannot fail when the runner stops using the evaluated declaration.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "research.md",
+    "sha256": "6a7bacc7b82aa9d2640721ead26214ce1e4b09ff85aa812d2f05952c7f213f28"
+  }
+}

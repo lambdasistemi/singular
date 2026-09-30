@@ -1,0 +1,30 @@
+{
+  "coverage": [
+    {
+      "text": "Every requirement maps to a plan step, a model element and at least one task.",
+      "pause": 500
+    }
+  ],
+  "consistency-findings": [
+    {
+      "text": "The planning audit found that a mutant emptying only the final map is stopped by the runner's pre-submission check; the mutation now replaces the declaration itself, and no check is disabled. The coder's inventory question led to a recorder named as a shell script and raw logs, both classes the inventory already maps. The spec says runner where the brief says interpreter, for the same fold step. The fixture only sets the first fold's fallback, and the red is tied to that fold. Log size has a stop condition, and inventory and fixture-state checks run in root CI.",
+      "pause": 500
+    }
+  ],
+  "constitution-alignment": [
+    {
+      "text": "No Lean, expected-result or public page change. Execution units stay unobservable, and the evidence is ledger execution through the CI command.",
+      "pause": 500
+    }
+  ],
+  "result": [
+    {
+      "text": "No blocking contradiction, no uncovered requirement and no open question, so planning is ready for the auditor.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "analysis.md",
+    "sha256": "6b4c68e8daa545a09c9b4004c71df551efc2a9deef8fd15c35da80896bda46b2"
+  }
+}

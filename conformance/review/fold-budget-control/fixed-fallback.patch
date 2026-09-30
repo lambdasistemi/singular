@@ -1,0 +1,20 @@
+diff --git a/conformance/app/Conformance/Run/Live.hs b/conformance/app/Conformance/Run/Live.hs
+index ed7a0d5fd98695185143266d0227f868ec711c99..a8dfb2f9c4d0afce32079db4d554e2d1787b05d0 100644
+--- a/conformance/app/Conformance/Run/Live.hs
++++ b/conformance/app/Conformance/Run/Live.hs
+@@ -677,12 +677,13 @@ submitEdge env state cage exit alteration request = do
+             require
+                 "node evaluation did not return every redeemer purpose"
+                 (sort (Map.keys measurements) == sort (redeemerPurposeNames trial))
+-            declaredPairs <-
++            _allocated <-
+                 either
+                     (failWith . T.unpack)
+                     pure
+                     (declaredPurposeUnits maxUnits blockUnits measurements)
+-            let declared =
++            let declaredPairs = transactionPurposeUnits template
++                declared =
+                     Map.map
+                         (\(mem, cpu) -> ExUnits (fromIntegral mem) (fromIntegral cpu))
+                         declaredPairs

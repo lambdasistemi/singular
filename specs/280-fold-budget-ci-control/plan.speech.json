@@ -1,0 +1,54 @@
+{
+  "status": [
+    {
+      "text": "Planning, the control candidate, the retained pair and every checkpoint review are complete. The ticket owner is accepting the result and running the final gate on the stamped head. Nothing blocks, and publication waits for a separate decision.",
+      "pause": 500
+    }
+  ],
+  "constitution-check": [
+    {
+      "text": "No Lean, corpus or expected result changes, and execution units remain unobservable in the model, so the pair is ledger and harness evidence. No model question arises. The red runs the CI command against a rebuilt runner and observes a node refusal. Earlier evidence is preserved, existing wiring is kept, and no public conformance page changes.",
+      "pause": 500
+    }
+  ],
+  "delivery": [
+    {
+      "text": "After planning is audited, the coder commits the patch, recorder and reader page. The recorder runs the mutant and then the candidate. If the mutant passes, the regression target is repaired and the pair runs again. The records and logs are committed alone, root CI goes green, and the auditor approves each checkpoint before the ticket owner accepts.",
+      "pause": 500
+    }
+  ],
+  "team-and-authority": [
+    {
+      "text": "The operator approved three seats: an Opus ticket owner for planning, gates and acceptance, a Sonnet coder for everything committed as code or evidence, and an online Codex auditor that reviews committed checkpoints through the ticket owner only. Nothing may be pushed, published, merged or released.",
+      "pause": 500
+    }
+  ],
+  "gate": [
+    {
+      "text": "The mutant row must exit nonzero with its four witnesses, and the restored row must exit zero with its own. The identity row compares the patch and the shared bindings. Root CI and the Conformance format and lint checks must exit zero. The fixture's refusal alone, a compile failure or a setup failure never satisfies the mutant row.",
+      "pause": 500
+    }
+  ],
+  "execution-accounting": [
+    {
+      "text": "The budget is unlimited, but every invocation is counted from receipts, nested builds included, in an expensive and a cheap tier. A repeated failure is diagnosed before it is retried.",
+      "pause": 500
+    }
+  ],
+  "stop-conditions": [
+    {
+      "text": "The coder stops and asks when the patch would do more than replace the declaration or would weaken a check, when a mutant failure has another cause, when a repair would leave the test target, when a raw log is above five mebibytes, or when a model question appears.",
+      "pause": 500
+    }
+  ],
+  "evidence-limits": [
+    {
+      "text": "The pair covers one candidate and one mutant. Later changes are not re-checked until someone re-runs the recorder. It proves nothing in Lean about execution units, and CI on a published head is a later step.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "b6eeac3fc7d24fc261a14111d3b8387aba2ff76c9991ef4b07bc9274a9fb6605"
+  }
+}
