@@ -43,6 +43,7 @@ module Singular.CLI.Registry
 
       -- * Files
     , configPath
+    , pendingPath
     , statePath
     , readConfig
     , writeConfig
@@ -262,6 +263,12 @@ hexT = T.pack . BC.unpack . B16.encode
 -- Files
 -- ---------------------------------------------------------
 
+{- | The identity a create records before its first submission, so an
+interrupted create stays inspectable and is never booted again.
+-}
+pendingPath :: FilePath -> FilePath
+pendingPath dir = dir </> "registry.pending.json"
+
 configPath, statePath :: FilePath -> FilePath
 configPath dir = dir </> "registry.json"
 statePath dir = dir </> "state.json"
@@ -396,6 +403,7 @@ refuseExisting dir = do
             <$> mapM
                 doesFileExist
                 [ configPath dir
+                , pendingPath dir
                 , statePath dir
                 , mirrorPathFor (configPath dir)
                 , dir </> "journal.jsonl"

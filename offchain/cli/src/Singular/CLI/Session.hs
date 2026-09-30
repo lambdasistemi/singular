@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
@@ -41,6 +42,8 @@ module Singular.CLI.Session
     , refuseUnresolved
     ) where
 
+import Control.Concurrent (forkIO, threadDelay)
+import Control.Concurrent.Async (async, cancel, waitCatch)
 import Control.Exception
     ( Exception
     , IOException
@@ -49,15 +52,18 @@ import Control.Exception
     , throwIO
     , try
     )
+import Control.Monad (void, when)
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.Foldable (toList)
 import Data.IORef (newIORef, readIORef, writeIORef)
+import Data.Maybe (fromMaybe, isNothing)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((^.))
-import System.Directory (createDirectoryIfMissing)
+import System.Directory (createDirectoryIfMissing, doesFileExist)
+import System.Environment (lookupEnv)
 import System.FilePath ((</>))
 import System.IO (SeekMode (..))
 import System.Posix.IO
@@ -142,7 +148,26 @@ withWrite
     -> WriteSettings
     -> (WriteContext -> IO a)
     -> IO a
-withWrite dir command ws body = withTargetLock dir (withSession dir command ws body)
+withWrite dir command ws body = do
+    harnessHold
+    withTargetLock dir (withSession dir command ws body)
+
+{- | __Test harness only__ (#299 journey). When
+@SINGULAR_HARNESS_HOLD_BEFORE_LOCK@ names a path, write @PATH.waiting@ and
+wait until @PATH@ exists before taking the target's lock, so a journey
+can make another process act between a command's pre-lock checks and
+its lock. Unset in ordinary use, where it does nothing.
+-}
+harnessHold :: IO ()
+harnessHold =
+    lookupEnv "SINGULAR_HARNESS_HOLD_BEFORE_LOCK" >>= \case
+        Nothing -> pure ()
+        Just path -> do
+            writeFile (path <> ".waiting") ""
+            let waitFor = do
+                    there <- doesFileExist path
+                    if there then pure () else threadDelay 100_000 >> waitFor
+            waitFor
 
 {- | The node and wallet without the target's lock: for a command that
 writes nothing to its target (a create preview), so the target directory
@@ -206,6 +231,33 @@ withTargetLock dir action = do
                         )
                 Right () -> action
         )
+
+{- | __Test harness only__ (#299 journey). When
+@SINGULAR_HARNESS_HOLD_AFTER_SUBMIT@ names a path and
+@SINGULAR_HARNESS_HOLD_STEP@ names this step, write @PATH.waiting@ right
+after the node's acceptance is journalled and wait until @PATH@ exists,
+so a journey can interrupt exactly at the accepted-send boundary. Unset
+in ordinary use, where it does nothing.
+-}
+harnessHoldAfterSubmit :: Text -> IO ()
+harnessHoldAfterSubmit step = do
+    path <- lookupEnv "SINGULAR_HARNESS_HOLD_AFTER_SUBMIT"
+    wanted <- lookupEnv "SINGULAR_HARNESS_HOLD_STEP"
+    case (path, wanted) of
+        (Just p, Just w) | T.pack w == step -> do
+            writeFile (p <> ".waiting") ""
+            let waitFor = do
+                    there <- doesFileExist p
+                    if there then pure () else threadDelay 100_000 >> waitFor
+            waitFor
+        _ -> pure ()
+
+{- | How long a write waits for a confirmation when the caller names no
+@--confirm-timeout@: ten minutes. Past it the submission is journalled
+@unconfirmed@, unresolved, and never resubmitted.
+-}
+defaultConfirmSeconds :: Int
+defaultConfirmSeconds = 600
 
 -- | A write refuses while any journalled submission is unresolved.
 refuseUnresolved :: FilePath -> IO ()
@@ -325,11 +377,40 @@ journalledSubmit wc step ex unsigned = do
             failWith
                 LedgerRefusal
                 (T.unpack step <> " refused by the node: " <> show reason)
-        Right (Submitted _) -> journal "submitted" Nothing
-    let limit = maybe (-1) (* 1_000_000) (wcTimeout wc)
-    seen <- timeout limit (awaitTxWindow signed (T.unpack txid))
+        Right (Submitted _) -> do
+            journal "submitted" Nothing
+            harnessHoldAfterSubmit step
+    -- The wait runs on its own thread and this thread only waits for its
+    -- result, bounded by the caller's --confirm-timeout or, when none is
+    -- given, by the default bound. The bound therefore holds whatever
+    -- the wait does inside — including when the node is gone and the
+    -- wait never returns. A wait abandoned at the bound is cancelled
+    -- without this thread waiting for that cancellation to finish.
+    let limit = fromMaybe defaultConfirmSeconds (wcTimeout wc) * 1_000_000
+    waiter <- async (awaitTxWindow signed (T.unpack txid))
+    outcome <- timeout limit (waitCatch waiter)
+    when (isNothing outcome) $ void (forkIO (cancel waiter))
+    let seen = case outcome of
+            Nothing -> Right Nothing
+            Just (Left e) -> Left e
+            Just (Right ()) -> Right (Just ())
     case seen of
-        Nothing -> do
+        Left (e :: SomeException) -> do
+            -- The node accepted the transaction; only the wait for its
+            -- confirmation failed. It stays unresolved, named, and is
+            -- never resubmitted.
+            journal
+                "unconfirmed"
+                (Just ("the confirmation wait failed: " <> T.pack (show e)))
+            failWith
+                Partial
+                ( T.unpack txid
+                    <> " was accepted by the node, but waiting for its \
+                       \confirmation failed ("
+                    <> show e
+                    <> "); it is journalled unresolved and never resubmitted"
+                )
+        Right Nothing -> do
             journal "unconfirmed" (Just "the confirmation deadline passed")
             failWith
                 Timeout
@@ -337,7 +418,7 @@ journalledSubmit wc step ex unsigned = do
                     <> " was accepted but not seen on chain in time; it is \
                        \journalled and never resubmitted"
                 )
-        Just () -> do
+        Right (Just ()) -> do
             journal "confirmed" Nothing
             pure signed
 

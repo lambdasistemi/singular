@@ -58,6 +58,7 @@ import Control.Exception
     )
 import Control.Monad (forM, forM_, void, when)
 import Data.Aeson (Value, object, toJSON, (.=))
+import Data.Aeson qualified as Aeson
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
@@ -71,7 +72,9 @@ import Data.Map.Strict qualified as Map
 import Data.Maybe (mapMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Word (Word32)
 import Lens.Micro ((^.))
+import System.Directory (doesFileExist)
 
 import Cardano.Crypto.Hash.Blake2b (Blake2b_256)
 import Cardano.Crypto.Hash.Class (hashToBytes, hashWith)
@@ -111,6 +114,7 @@ import Singular.CLI.Proof
     , leafName
     , renderAuthError
     )
+import Singular.CLI.Proof qualified as Proof
 import Singular.CLI.Receipt
     ( JournalEntry (..)
     , OutcomeClass (..)
@@ -121,7 +125,9 @@ import Singular.CLI.Receipt
 import Singular.CLI.Registry
     ( LocalState (..)
     , checkNetwork
+    , configPath
     , hexT
+    , pendingPath
     , renderIdentityError
     , writeLocalState
     )
@@ -146,6 +152,89 @@ runInspect a = do
     let dir = inspectRegistry a
         Key key = inspectKey a
         NodeSettings sock magic = inspectNode a
+    complete <- doesFileExist (configPath dir)
+    pending <- doesFileExist (pendingPath dir)
+    if not complete && pending
+        then inspectIncompleteCreate dir sock magic
+        else inspectSaved dir key sock magic a
+
+{- | A create that stopped before saving its identity: its pending identity
+and journal are read, its journalled transactions are looked for on the
+ledger (confirmed, and observed where their own after-state reads back),
+and the outcome is @partial@ with no leaf. Create refuses the directory;
+nothing is booted again or resubmitted.
+-}
+inspectIncompleteCreate :: FilePath -> FilePath -> Word32 -> IO Value
+inspectIncompleteCreate dir sock magic = do
+    identity <-
+        Aeson.eitherDecodeFileStrict' (pendingPath dir)
+            >>= either (failWith ClientRefusal) (pure :: Value -> IO Value)
+    reached <-
+        try $ withNodeReads magic sock $ \nr -> do
+            point <- nrChainPoint nr
+            recovered <- recoverInclusion dir (nrProvider nr)
+            observedNow <-
+                observe
+                    dir
+                    ""
+                    ""
+                    (Left (Proof.ProofInconsistent ""))
+                    (Left "")
+                    recovered
+            pending <- unresolved <$> readJournal dir
+            pure $
+                receipt
+                    "inspect"
+                    Partial
+                    [ ("incompleteCreate", identity)
+                    ,
+                        ( "chainPoint"
+                        , toJSON $ case point of
+                            Nothing -> "genesis" :: Text
+                            Just (slot, h) -> T.pack (show slot) <> "." <> hexT h
+                        )
+                    , ("recovery", recoveryJson recovered)
+                    , ("observed", toJSON observedNow)
+                    , ("unresolved", toJSON (journalTxId <$> pending))
+                    ,
+                        ( "reason"
+                        , toJSON
+                            ( "create did not finish: its identity is recorded but \
+                              \its registry was not saved; create refuses this \
+                              \directory and nothing is resubmitted"
+                                :: Text
+                            )
+                        )
+                    ]
+    case reached of
+        Right v -> pure v
+        Left (e :: SomeException) -> case fromException e of
+            Just (failure :: CommandFailure) -> throwIO failure
+            Nothing ->
+                failWith
+                    NodeUnavailable
+                    ("the node at " <> sock <> " could not be read: " <> show e)
+
+recoveryJson :: [Recovery] -> Value
+recoveryJson recovered =
+    toJSON
+        [ object
+            [ "tx" .= recTx r
+            , "step" .= recStep r
+            , "included" .= recIncluded r
+            , "note" .= recNote r
+            ]
+        | r <- recovered
+        ]
+
+inspectSaved
+    :: FilePath
+    -> ByteString
+    -> FilePath
+    -> Word32
+    -> InspectArgs
+    -> IO Value
+inspectSaved dir key sock magic a = do
     saved <- loadSaved dir (inspectBlueprint a)
     either
         (failWith ClientRefusal . renderIdentityError)
@@ -200,18 +289,7 @@ runInspect a = do
                         )
                     , ("root", toJSON (hexT root))
                     , ("applicationOutput", application)
-                    ,
-                        ( "recovery"
-                        , toJSON
-                            [ object
-                                [ "tx" .= recTx r
-                                , "step" .= recStep r
-                                , "included" .= recIncluded r
-                                , "note" .= recNote r
-                                ]
-                            | r <- recovered
-                            ]
-                        )
+                    , ("recovery", recoveryJson recovered)
                     , ("mirrorAdvanced", toJSON advanced)
                     , ("observed", toJSON observedNow)
                     ]

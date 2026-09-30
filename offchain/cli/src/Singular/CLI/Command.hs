@@ -77,9 +77,10 @@ data WriteSettings = WriteSettings
     , writeWalletKey :: FilePath
     -- ^ Path of the caller's payment signing key; read, never printed
     , writeConfirmTimeout :: Maybe Int
-    {- ^ Seconds to wait for each submission to confirm; unset, the
-    transaction's own validity window bounds the wait. On expiry the
-    command stops with the submission journalled, never resubmitting.
+    {- ^ Seconds to wait for each submission to confirm; unset, ten minutes.
+    The bound holds even when the node is lost after accepting the
+    submission. On expiry the command stops with the submission
+    journalled, never resubmitting.
     -}
     }
     deriving stock (Eq, Show)
@@ -335,8 +336,8 @@ usage =
         , "  singular registry inspect --registry DIR --blueprint PLUTUS_JSON --key HEX"
         , "      --node-socket PATH --network-magic N [--receipt FILE]"
         , ""
-        , "Write commands also take --confirm-timeout SECONDS: past it the command"
-        , "stops with its submission journalled and never resubmits."
+        , "Write commands also take --confirm-timeout SECONDS (default 600): past it"
+        , "the command stops with its submission journalled and never resubmits."
         , "Each command prints one JSON receipt on standard output. inspect reads"
         , "only: it takes no signing key and submits nothing."
         ]

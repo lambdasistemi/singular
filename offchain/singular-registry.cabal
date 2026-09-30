@@ -871,6 +871,7 @@ executable singular
 
   build-depends:
     , aeson
+    , async
     , aeson-pretty
     , base               >=4.14 && <5
     , base16-bytestring

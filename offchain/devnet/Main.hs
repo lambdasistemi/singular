@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+
 {- |
 Module      : Main
 Description : A devnet that outlives the process that needed it
@@ -112,7 +113,8 @@ fundingFrom args = fromMaybe [] $ do
     every name = \case
         (a : v : rest) | a == name -> v : every name rest
         (a : rest)
-            | (name <> "=") `isPrefixOf` a -> drop (length name + 1) a : every name rest
+            | (name <> "=") `isPrefixOf` a ->
+                drop (length name + 1) a : every name rest
             | otherwise -> every name rest
         [] -> []
     flag name = go args

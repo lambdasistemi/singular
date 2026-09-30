@@ -25,6 +25,9 @@ module Singular.CLI.Create (runCreate) where
 
 import Data.Aeson (Value, toJSON)
 import Data.Aeson qualified as Aeson
+import Data.Aeson.Encode.Pretty (encodePretty)
+import Data.Aeson.Key qualified as Key
+import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
@@ -62,7 +65,7 @@ import Singular.CLI.Command
     , WriteSettings (..)
     )
 import Singular.CLI.Live (receipt, txInText)
-import Singular.CLI.Receipt (OutcomeClass (..))
+import Singular.CLI.Receipt (OutcomeClass (..), durableWrite)
 import Singular.CLI.Registry
     ( LocalState (..)
     , checkSeed
@@ -70,6 +73,7 @@ import Singular.CLI.Registry
     , hexT
     , loadRelease
     , mkRegistryConfig
+    , pendingPath
     , pinsOf
     , refuseExisting
     , registryConfigFor
@@ -169,7 +173,27 @@ runCreate a = do
             then
                 pure (receipt "create" Success (("preview", toJSON True) : identity))
             else do
+                -- The existence check again, now under the target's lock: a
+                -- create that passed it before another create finished
+                -- must not boot a second registry over the first.
+                refuseExisting dir
+                    >>= either (failWith ClientRefusal . renderIdentityError) pure
                 createDirectoryIfMissing True dir
+                -- The public identity, durable before the first submission:
+                -- an interrupted create stays inspectable and is refused a
+                -- second boot.
+                let NodeSettings _ magicNow = writeNode (createWrite a)
+                durableWrite
+                    (pendingPath dir)
+                    ( BL.toStrict
+                        ( encodePretty
+                            ( Aeson.object
+                                ( ("networkMagic" Aeson..= magicNow)
+                                    : [(Key.fromText k, v) | (k, v) <- identity]
+                                )
+                            )
+                        )
+                    )
                 booted <- boot wc cfg pinned seedIn
                 let NodeSettings _ magic = writeNode (createWrite a)
                     dep = deploymentOf magic cfg seedIn booted
