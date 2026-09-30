@@ -606,7 +606,7 @@ classify :: P.EvaluationError -> RunOutcome
 classify = \case
     P.CekError
         (ErrorWithCause (PLC.OperationalError (CekOutOfExError _)) _) ->
-        BudgetExhausted
+            BudgetExhausted
     P.CekError (ErrorWithCause (PLC.OperationalError _) _) -> ValidatorFailure
     P.InvalidReturnValue -> ValidatorFailure
     other -> EvaluationError (T.pack (show other))

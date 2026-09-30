@@ -192,8 +192,8 @@ spec = describe "traced replay of a live refusal" $ do
                             [("state.state.spend", "aa"), ("request.request.spend", "bb")]
                     }
         it
-            "the deployed blueprint the traced build corresponds to admits replays" $
-            toolchainCause provenance (tpUntracedHashes provenance)
+            "the deployed blueprint the traced build corresponds to admits replays"
+            $ toolchainCause provenance (tpUntracedHashes provenance)
                 `shouldBe` Nothing
         it "a moved deployed hash is toolchain-mismatch" $
             toolchainCause
