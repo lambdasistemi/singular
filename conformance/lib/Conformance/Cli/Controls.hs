@@ -150,8 +150,30 @@ data Crafted
       UpdateShortDeposit
     | -- | The continuation carries no datum
       UpdateWithoutDatum
-    | -- | The holding is spent with @ outside any fold
+    | -- | The holding is spent with @Release@ outside any fold
       EarlyWithdrawal
+    | -- | An insertion booked with the controller's envelope, paid and signed by another wallet
+      BookingByStranger
+    | -- | An insertion booking whose request names another destination
+      BookingOtherDestination
+    | -- | An insertion booking whose request deposit is one lovelace short of the protected one
+      BookingShortDeposit
+    | -- | An insertion booking whose destination names no datum
+      BookingNoDatum
+    | -- | An insertion booking whose envelope names the state policy under another token name
+      EnvelopeOtherStateName
+    | -- | An insertion booking whose envelope names the token name under another policy
+      EnvelopeOtherStatePolicy
+    | -- | An insertion booking whose envelope names another registry's state asset
+      EnvelopeOtherRegistry
+    | -- | The controller's own booking of the key's termination
+      TerminateBooking
+    | -- | A termination booking by another wallet
+      TerminateBookingByStranger
+    | -- | A fold of another key's insertion that also spends the holding with @Release@
+      ReleaseInOtherFold
+    | -- | The terminating fold, paying the controller one lovelace short
+      FoldPaysShort
     deriving stock (Eq, Show, Enum, Bounded)
 
 craftedName :: Crafted -> String
@@ -165,6 +187,17 @@ craftedName c = case c of
     UpdateShortDeposit -> "update-short-deposit"
     UpdateWithoutDatum -> "update-without-datum"
     EarlyWithdrawal -> "early-withdrawal"
+    BookingByStranger -> "booking-by-stranger"
+    BookingOtherDestination -> "booking-other-destination"
+    BookingShortDeposit -> "booking-short-deposit"
+    BookingNoDatum -> "booking-no-datum"
+    EnvelopeOtherStateName -> "envelope-other-state-name"
+    EnvelopeOtherStatePolicy -> "envelope-other-state-policy"
+    EnvelopeOtherRegistry -> "envelope-other-registry"
+    TerminateBooking -> "terminate-booking"
+    TerminateBookingByStranger -> "terminate-booking-by-stranger"
+    ReleaseInOtherFold -> "release-in-other-fold"
+    FoldPaysShort -> "fold-pays-short"
 
 -- | A registry the story works in: its own directory and its own boot.
 newtype Target = Target String
@@ -219,6 +252,10 @@ data Requirement
       Released
     | -- | One readback the node answered
       Observed
+    | {- | Two readbacks that agree on the registry's root, its pending
+      requests and the wallet
+      -}
+      RegistryUnchanged
     deriving stock (Eq, Show, Enum, Bounded)
 
 {- | One step of the story. Every action but 'Require' leaves exactly one
@@ -341,6 +378,48 @@ onlyFoldReleases =
         "only_fold_releases"
         "aefd57a28089717e856d92cc5ae3c03404e5d47420827f0659798909c080f84d"
 
+-- | Statement markers for bookings and the terminating fold's settlement.
+data BookInsertInversion
+
+data InsertionRequiresRegistryIdentity
+
+data BookTerminateInversion
+
+data FoldInversion
+
+data FoldSettlesAdditively
+
+bookInsertInversion :: Theorem BookInsertInversion
+bookInsertInversion =
+    bound
+        "bookInsert_inversion"
+        "8fa1e83820c5041b894beed24171b08ae267128785a16a49ef4108230f691acf"
+
+insertionRequiresRegistryIdentity
+    :: Theorem InsertionRequiresRegistryIdentity
+insertionRequiresRegistryIdentity =
+    bound
+        "insertion_requires_registry_identity"
+        "73e322298b13ab5d17501865501f684e183c71c486d60c882ff61f68a76a46df"
+
+bookTerminateInversion :: Theorem BookTerminateInversion
+bookTerminateInversion =
+    bound
+        "bookTerminate_inversion"
+        "a7d7faecdfd89fd337d2219ab5d9a705e287bcce155b2182e51fa4612c6d196c"
+
+foldInversion :: Theorem FoldInversion
+foldInversion =
+    bound
+        "fold_inversion"
+        "e07a28190a45fdc990042b2f83625ae32b448119a91c2c758a34623dfd7df919"
+
+foldSettlesAdditively :: Theorem FoldSettlesAdditively
+foldSettlesAdditively =
+    bound
+        "fold_settles_additively"
+        "0038394b2e4e770589310e9c7461adb80a5c9a8d90e3a83456e2cfa36ae2ba0d"
+
 -- | Every statement the stories bind.
 statementBindings :: [Binding]
 statementBindings =
@@ -353,6 +432,11 @@ statementBindings =
     , theoremBinding updateRequiresController
     , theoremBinding updatePreservesCustody
     , theoremBinding onlyFoldReleases
+    , theoremBinding bookInsertInversion
+    , theoremBinding insertionRequiresRegistryIdentity
+    , theoremBinding bookTerminateInversion
+    , theoremBinding foldSettlesAdditively
+    , theoremBinding foldInversion
     ]
 
 {- | Whether the application's statement ledger (@ledgers.json@) carries
@@ -636,9 +720,191 @@ boundaryStory = do
                     pure [before, after]
                 )
 
+-- | Read back the registry, a key's holding and the wallet, in a clause.
+readbackOf
+    :: Theorem thm -> Target -> String -> TheoremStory thm CliI Receipt
+readbackOf thm target key =
+    clause
+        "the registry, its pending requests and the wallet are read back"
+        (bindCheck thm (\r -> action (Require Observed [r])))
+        (action (Observe target key))
+
+-- | Read back again and require the given agreement with the first readback.
+unchangedOf
+    :: Theorem thm
+    -> Requirement
+    -> String
+    -> Target
+    -> String
+    -> Receipt
+    -> TheoremStory thm CliI ()
+unchangedOf thm req title target key before =
+    void $
+        clause
+            title
+            (requirement thm req)
+            ( do
+                after <- action (Observe target key)
+                pure [before, after]
+            )
+
+-- | One refusal clause for a crafted transaction, by its phrase.
+refusedCraft
+    :: Theorem thm -> Crafted -> Target -> String -> TheoremStory thm CliI ()
+refusedCraft thm c target key =
+    void $
+        clause
+            (craftedPhrase c <> " is refused by the application")
+            (requirement thm RefusedByApplication)
+            (pure <$> action (Craft c target key))
+
+{- | Bookings the application must refuse, beside a booking it certifies:
+the controller's envelope booked by another wallet, a request naming
+another destination or no datum, a short request deposit, and envelopes
+naming another registry's state asset. Each refused booking leaves the
+registry, its pending requests and the wallet as they were.
+-}
+bookingStory :: Story ()
+bookingStory = do
+    let target = Target "booking"
+    _ <- action (Run Create target "")
+    theorem bookInsertInversion $ do
+        _ <-
+            clause
+                "an insertion booked through the application by the controller is accepted"
+                (requirement bookInsertInversion Accepted)
+                (pure <$> action (Book target "booked"))
+        before <- readbackOf bookInsertInversion target "booked"
+        refusedCraft
+            bookInsertInversion
+            BookingByStranger
+            target
+            "by-stranger"
+        refusedCraft
+            bookInsertInversion
+            BookingOtherDestination
+            target
+            "other-destination"
+        refusedCraft
+            bookInsertInversion
+            BookingShortDeposit
+            target
+            "short-deposit"
+        refusedCraft bookInsertInversion BookingNoDatum target "no-datum"
+        unchangedOf
+            bookInsertInversion
+            RegistryUnchanged
+            "the registry's root, its pending requests and the wallet are unchanged by every refusal"
+            target
+            "booked"
+            before
+    theorem insertionRequiresRegistryIdentity $ do
+        _ <-
+            clause
+                "an envelope naming this registry, booked the same way, is accepted"
+                (requirement insertionRequiresRegistryIdentity Accepted)
+                (pure <$> action (Book target "named"))
+        before <- readbackOf insertionRequiresRegistryIdentity target "named"
+        refusedCraft
+            insertionRequiresRegistryIdentity
+            EnvelopeOtherStateName
+            target
+            "other-name"
+        refusedCraft
+            insertionRequiresRegistryIdentity
+            EnvelopeOtherStatePolicy
+            target
+            "other-policy"
+        refusedCraft
+            insertionRequiresRegistryIdentity
+            EnvelopeOtherRegistry
+            target
+            "other-registry"
+        unchangedOf
+            insertionRequiresRegistryIdentity
+            RegistryUnchanged
+            "the registry's root, its pending requests and the wallet are unchanged by every refusal"
+            target
+            "named"
+            before
+
+{- | A termination and its fold. A stranger's termination booking is
+refused beside the controller's own; the terminating fold paying the
+controller one lovelace short is refused beside the same fold paying in
+full; and a fold of another request that also releases a live holding is
+refused beside the same fold without the release.
+-}
+settlementStory :: Story ()
+settlementStory = do
+    let target = Target "settlement"
+    _ <- action (Run Create target "")
+    _ <- action (Run Insert target heldKey)
+    _ <- action (Run Insert target otherKey)
+    theorem bookTerminateInversion $ do
+        before <- readbackOf bookTerminateInversion target heldKey
+        refusedCraft
+            bookTerminateInversion
+            TerminateBookingByStranger
+            target
+            heldKey
+        unchangedOf
+            bookTerminateInversion
+            RegistryUnchanged
+            "the registry's root, its pending requests and the wallet are unchanged by the refusal"
+            target
+            heldKey
+            before
+        void $
+            clause
+                "the controller's own termination booking is accepted"
+                (requirement bookTerminateInversion Accepted)
+                (pure <$> action (Craft TerminateBooking target heldKey))
+    theorem foldSettlesAdditively $ do
+        before <- readbackOf foldSettlesAdditively target heldKey
+        refusedCraft foldSettlesAdditively FoldPaysShort target heldKey
+        unchangedOf
+            foldSettlesAdditively
+            HoldingUnchanged
+            "the registry's root, the key's holding and the wallet are unchanged by the refusal"
+            target
+            heldKey
+            before
+        void $
+            clause
+                "the same terminating fold, paying the controller in full, is accepted"
+                (requirement foldSettlesAdditively Accepted)
+                (pure <$> action (FoldUnevaluated target heldKey))
+    theorem foldInversion $ do
+        _ <-
+            clause
+                "an insertion of an absent key, booked through the application, is accepted"
+                (requirement foldInversion Accepted)
+                (pure <$> action (Book target freshKey))
+        before <- readbackOf foldInversion target otherKey
+        refusedCraft foldInversion ReleaseInOtherFold target otherKey
+        unchangedOf
+            foldInversion
+            HoldingUnchanged
+            "the registry's root, the other key's holding and the wallet are unchanged by the refusal"
+            target
+            otherKey
+            before
+        void $
+            clause
+                "the same fold, without the release, is accepted"
+                (requirement foldInversion Accepted)
+                (pure <$> action (FoldUnevaluated target freshKey))
+  where
+    otherKey = "other"
+
 controlsStory :: Story ()
 controlsStory =
-    duplicateStory >> resurrectionStory >> lifecycleStory >> boundaryStory
+    duplicateStory
+        >> resurrectionStory
+        >> lifecycleStory
+        >> boundaryStory
+        >> bookingStory
+        >> settlementStory
 
 -- ---------------------------------------------------------
 -- Receipts
@@ -847,6 +1113,18 @@ check req rs = case (req, rs) of
                     | h `notElem` rcRefusingScripts r
                     ]
             <> ["no transaction id is recorded" | isNothing (rcTxId r)]
+    (RegistryUnchanged, [a, b]) -> case (rcObservation a, rcObservation b) of
+        (Just x, Just y) ->
+            ["the registry's root moved" | obRoot x /= obRoot y]
+                <> [ "the pending requests changed"
+                   | (obPending x, obPendingLovelace x)
+                        /= (obPending y, obPendingLovelace y)
+                   ]
+                <> ["the wallet changed" | obWalletLovelace x /= obWalletLovelace y]
+                <> [ "the readbacks are of different registries"
+                   | rcTarget a /= rcTarget b
+                   ]
+        _ -> ["a readback carries no observation"]
     (HoldingUnchanged, [a, b]) -> case (rcObservation a, rcObservation b) of
         (Just x, Just y) ->
             ["the registry's root moved" | obRoot x /= obRoot y]
@@ -1013,7 +1291,13 @@ check req rs = case (req, rs) of
         [ show req
             <> " takes "
             <> ( if req
-                    `elem` [Unchanged, PartialPending, HoldingUnchanged, SameRegistry, Delivered]
+                    `elem` [ Unchanged
+                           , PartialPending
+                           , HoldingUnchanged
+                           , RegistryUnchanged
+                           , SameRegistry
+                           , Delivered
+                           ]
                     then "two"
                     else if req `elem` [PayloadReplaced, Released] then "three" else "one"
                )
@@ -1406,47 +1690,32 @@ approvedCases =
                     "a release of the live holding outside any fold is refused by the application"
                )
            ]
-        <> [ (name, stmt, NotLive "not exercised live yet")
-           | (name, stmt) <-
-                [
-                    ( "an insertion booking the controller did not sign"
-                    , "`bookInsert_inversion`"
-                    )
-                ,
-                    ( "an insertion booking naming another destination"
-                    , "`bookInsert_inversion`"
-                    )
-                ,
-                    ( "an insertion booking whose request deposit differs from the protected one"
-                    , "`bookInsert_inversion`"
-                    )
-                , ("an insertion booking naming no datum", "`bookInsert_inversion`")
-                ,
-                    ( "an envelope naming the registry's state asset under another name"
-                    , "`insertion_requires_registry_identity`"
-                    )
-                ,
-                    ( "an envelope naming the registry's state asset under another policy"
-                    , "`insertion_requires_registry_identity`"
-                    )
-                ,
-                    ( "an envelope naming another registry"
-                    , "`insertion_requires_registry_identity`"
-                    )
-                , ("a termination booked by a stranger", "`bookTerminate_inversion`")
-                , ("a release without a booked termination", "`fold_inversion`")
-                ,
-                    ( "a mixed fold paying one controller one lovelace short"
-                    , "`fold_settles_additively`"
-                    )
-                ,
-                    ( "two releases to one controller paid one lovelace short"
-                    , "`fold_settles_additively`"
-                    )
-                ,
-                    ( "two releases each paid their floor rather than the sum"
-                    , "`fold_settles_additively`"
-                    )
+        <> [ ( craftedPhrase c
+             , "`" <> stmt <> "`"
+             , ByClause stmt (craftedPhrase c <> " is refused by the application")
+             )
+           | (c, stmt) <-
+                [ (BookingByStranger, "bookInsert_inversion")
+                , (BookingOtherDestination, "bookInsert_inversion")
+                , (BookingShortDeposit, "bookInsert_inversion")
+                , (BookingNoDatum, "bookInsert_inversion")
+                , (EnvelopeOtherStateName, "insertion_requires_registry_identity")
+                , (EnvelopeOtherStatePolicy, "insertion_requires_registry_identity")
+                , (EnvelopeOtherRegistry, "insertion_requires_registry_identity")
+                , (TerminateBookingByStranger, "bookTerminate_inversion")
+                , (ReleaseInOtherFold, "fold_inversion")
+                , (FoldPaysShort, "fold_settles_additively")
+                ]
+           ]
+        <> [ ( name
+             , "`fold_settles_additively`"
+             , NotLive
+                "not exercised live yet: it needs one fold terminating two keys of one controller, or mixing edges"
+             )
+           | name <-
+                [ "a mixed fold paying one controller one lovelace short"
+                , "two releases to one controller paid one lovelace short"
+                , "two releases each paid their floor rather than the sum"
                 ]
            ]
         <> [ ( name
@@ -1636,6 +1905,28 @@ craftedPhrase c = case c of
         "an update whose continuation carries no datum"
     EarlyWithdrawal ->
         "a release of the live holding outside any fold"
+    BookingByStranger ->
+        "an insertion booking of the controller's envelope, paid and signed by another wallet"
+    BookingOtherDestination ->
+        "an insertion booking whose request names another destination"
+    BookingShortDeposit ->
+        "an insertion booking whose request deposit is one lovelace short of the protected deposit"
+    BookingNoDatum ->
+        "an insertion booking whose destination names no datum"
+    EnvelopeOtherStateName ->
+        "an insertion booking whose envelope names the registry's state policy under another token name"
+    EnvelopeOtherStatePolicy ->
+        "an insertion booking whose envelope names the registry's token name under another policy"
+    EnvelopeOtherRegistry ->
+        "an insertion booking whose envelope names another registry's state asset"
+    TerminateBooking ->
+        "the controller's own booking of the key's termination"
+    TerminateBookingByStranger ->
+        "a termination booking of the key by another wallet"
+    ReleaseInOtherFold ->
+        "a fold of another key's insertion that also releases this live holding"
+    FoldPaysShort ->
+        "the terminating fold, paying the controller one lovelace short"
 
 -- | The path of an insert receipt's envelope control fields.
 controlPath :: [Either Text Int]

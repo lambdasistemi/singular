@@ -46,7 +46,7 @@ import Data.Aeson (Value (..), eitherDecodeFileStrict', object, (.=))
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Either (isLeft)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
-import Data.List (isInfixOf, isSuffixOf)
+import Data.List (isInfixOf)
 import Data.Text qualified as T
 import Test.Hspec
     ( Spec
@@ -117,7 +117,7 @@ honestReceipts story = do
                             , rcApplication = Just appHash
                             , rcTxId = Just "c1"
                             }
-                in  if cr == HonestUpdate
+                in  if cr `elem` [HonestUpdate, TerminateBooking]
                         then base{rcOutcome = "accepted"}
                         else base{rcOutcome = "ledger-refused", rcRefusingScripts = [appHash]}
         Book (Target t) k ->
@@ -130,7 +130,7 @@ honestReceipts story = do
                             , rcStateValidator = Just stateHash
                             , rcTxId = Just "f1"
                             }
-                in  if "-control" `isSuffixOf` t
+                in  if t `notElem` ["duplicate", "resurrection"]
                         then base{rcOutcome = "accepted"}
                         else
                             base{rcOutcome = "ledger-refused", rcRefusingScripts = [stateHash]}
@@ -181,6 +181,11 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                     , "update_requires_controller"
                     , "update_preserves_custody"
                     , "only_fold_releases"
+                    , "bookInsert_inversion"
+                    , "insertion_requires_registry_identity"
+                    , "bookTerminate_inversion"
+                    , "fold_settles_additively"
+                    , "fold_inversion"
                     ]
             found <-
                 firstExisting
@@ -205,7 +210,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
     it
         "states every clause once and refuses a refusal without an accepting control"
         $ do
-            length (outline controlsStory) `shouldBe` 29
+            length (outline controlsStory) `shouldBe` 55
             validateControls controlsStory `shouldBe` Right ()
             let refusedOnly =
                     theorem duplicateRefused $
@@ -219,7 +224,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
     it "holds every clause on an honest run" $ do
         rs <- honestReceipts controlsStory
         let results = judge rs controlsStory
-        statuses results `shouldBe` replicate 29 Held
+        statuses results `shouldBe` replicate 55 Held
         held results `shouldBe` True
     it
         "leaves every clause from a missing receipt on uncovered, naming the step"
@@ -232,7 +237,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                         )
                         rs
                 results = judge dropped controlsStory
-            length results `shouldBe` 29
+            length results `shouldBe` 55
             take 2 (statuses results) `shouldBe` [Held, Held]
             drop 2 (statuses results) `shouldSatisfy` all isUncovered
             held results `shouldBe` False
@@ -312,7 +317,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         let rendered = renderControls (judge (take 3 rs) controlsStory) controlsStory
         rendered `shouldSatisfy` isInfixOf "uncovered: no receipt for step 3"
         rendered
-            `shouldSatisfy` isInfixOf "0 of 29 clauses hold; 0 do not; 29 are uncovered."
+            `shouldSatisfy` isInfixOf "0 of 55 clauses hold; 0 do not; 55 are uncovered."
         rendered
             `shouldSatisfy` isInfixOf
                 "`OpenDatumApplication.Statements.duplicate_refused_by_registry`"
@@ -371,7 +376,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
             partial =
                 renderControls (judge withoutWithdrawal controlsStory) controlsStory
         full
-            `shouldSatisfy` isInfixOf "10 of 30 approved cases are covered live; 20 are not."
+            `shouldSatisfy` isInfixOf "20 of 31 approved cases are covered live; 11 are not."
         partial
             `shouldSatisfy` isInfixOf
                 "| a release of the live holding outside any fold | `only_fold_releases` | uncovered"

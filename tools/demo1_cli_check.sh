@@ -103,4 +103,4 @@ jq -e '
   )
 ' "$observed" >/dev/null || fail "update-terminal observation moved"
 
-echo "demo1-cli-check: PASS from $extracted — five singular processes on one node, the page, and the retained insert-active and update-terminal controls"
+echo "demo1-cli-check: PASS from $extracted — the singular journey as separate processes on one node, the page, and the retained insert-active and update-terminal controls"

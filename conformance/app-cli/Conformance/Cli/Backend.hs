@@ -46,6 +46,7 @@ import Data.Aeson (Value (..))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Aeson.KeyMap qualified as KeyMap
+import Data.Bits (xor)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
@@ -107,6 +108,8 @@ import Data.Void (Void)
 import Singular.Application.OpenDatum.Book
     ( insertApproval
     , insertDestination
+    , terminateApproval
+    , terminateDestination
     )
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
@@ -146,6 +149,7 @@ import Singular.Registry.Deployment
     , loadMirror
     , parseOutRef
     , renderOutRef
+    , saveMirror
     )
 import Singular.Registry.Ledger
     ( AssetName (..)
@@ -176,6 +180,7 @@ import Singular.Registry.TxBuilder.Edges
     ( BookingApproval (..)
     , adaOnlyOut
     , bookEdgeWith
+    , edgeDeposit
     , registryContextFor
     )
 import Singular.Registry.TxBuilder.Internal
@@ -184,8 +189,10 @@ import Singular.Registry.TxBuilder.Internal
     , computeScriptHash
     , extractCageDatum
     , requestAddrFromCfg
+    , scriptFromBytes
     , scriptHashBytes
     , txInToRef
+    , walkEdge
     )
 import Singular.Registry.TxBuilder.Update
     ( RegistryContext (..)
@@ -198,6 +205,7 @@ import Singular.Registry.Types
     , OnChainRoot (..)
     , OnChainTokenState (..)
     , edgeInsertActive
+    , edgeUpdateTerminal
     )
 
 import Conformance.Cli.Controls
@@ -769,63 +777,134 @@ book env target key r = do
                         }
             (Right _, Nothing) -> fail "the booking returned without submitting"
 
-{- | Fold the one request pending for @key@, with the registry's duties and
-the application's context, building it without local evaluation.
+-- | A change a control makes to the fold the registry's duties describe.
+data FoldTweak
+    = -- | The fold exactly as the duties describe it
+      AsOwed
+    | -- | The one output paying the controller holds one lovelace less
+      PayShort
+    | -- | The fold also spends this key's live holding with @Release@
+      AlsoRelease String
+
+{- | Fold the one request pending for @key@ (or, when none is named, the
+only request pending), with the registry's duties and the application's
+context, building it without local evaluation. Proofs come from a copy of
+a saved mirror whose root is the chain's: the backend's own, once one of
+its folds was accepted, else the command's.
 -}
 foldUnevaluated :: Env -> Target -> String -> Receipt -> IO Receipt
-foldUnevaluated env target key r = do
+foldUnevaluated env target key = foldWith env target (Just key) AsOwed
+
+foldWith
+    :: Env -> Target -> Maybe String -> FoldTweak -> Receipt -> IO Receipt
+foldWith env target requested tweak r = do
     let dir = targetDir env target
+        backendManifest = backendDir env target </> "registry.json"
     reg <- openRegistry env target
     withNode env $ \sess wallet -> do
         let prov = nsProvider sess
             cfg = regCfg reg
             tok = regToken reg
+            home = walletAddr wallet
             stateHash = hex (scriptHashBytes (cfgScriptHash cfg))
-            r0 = r{rcEvaluation = Just "skipped", rcStateValidator = Just stateHash}
+            appHash = hex (scriptHashBytes (computeScriptHash (applied reg)))
+            r0 =
+                r
+                    { rcEvaluation = Just "skipped"
+                    , rcStateValidator = Just stateHash
+                    , rcApplication = Just appHash
+                    }
         att <- attach prov (regDeployment reg) (partsOf cfg)
         let (stateIn, stateOut) = attStateUtxo att
         oldState <- case extractCageDatum stateOut of
             Just (StateDatum st) -> pure st
             _ -> fail "the registry's state output carries no state datum"
         pending <- Cage.queryUTxOs prov (requestAddrFromCfg cfg tok Testnet)
-        request <-
-            case [ u
-                 | u@(_, o) <- pending
-                 , Just (RequestDatum q) <- [extractCageDatum o]
-                 , requestKey q == keyBytes key
-                 ] of
-                [u] -> pure u
-                us ->
-                    fail
-                        ( show (length us)
-                            <> " requests are pending for this key; the fold needs exactly one"
-                        )
-        -- A copy of the saved mirror, never written back: proofs only.
-        saved <- loadMirror (dir </> "registry.json")
-        unless (Map.member tok saved) $
-            fail "the saved mirror holds no trie for this registry"
-        (tm, _) <- mkPureTrieManagerFrom saved
-        Root local <- withTrie tm tok getRoot
+        let requests =
+                [ (u, q)
+                | u@(_, o) <- pending
+                , Just (RequestDatum q) <- [extractCageDatum o]
+                , maybe True ((== requestKey q) . keyBytes) requested
+                ]
+        (request, req) <- case requests of
+            [one] -> pure one
+            us ->
+                fail
+                    ( show (length us)
+                        <> " requests are pending for the fold; it needs exactly one"
+                    )
         let OnChainRoot chain = stateRoot oldState
-        unless (local == chain) $
-            fail
-                ( "the saved mirror commits to 0x"
-                    <> T.unpack (hex local)
-                    <> " but the chain holds 0x"
-                    <> T.unpack (hex chain)
-                )
+            opened manifest = do
+                saved <- loadMirror manifest
+                if Map.member tok saved
+                    then do
+                        (tm, dump) <- mkPureTrieManagerFrom saved
+                        Root local <- withTrie tm tok getRoot
+                        pure [(tm, dump) | local == chain]
+                    else pure []
+        mine <- opened backendManifest
+        theirs <- opened (dir </> "registry.json")
+        (tm, dump) <- case mine <> theirs of
+            (m : _) -> pure m
+            [] ->
+                fail
+                    ( "no saved mirror commits to the chain's root 0x"
+                        <> T.unpack (hex chain)
+                    )
         live <- Cage.queryUTxOs prov (applicationAddr reg)
-        let e = envelopeFor reg (addrKeyHashBytes (walletAddr wallet)) key
+        let e =
+                envelopeFor
+                    reg
+                    (addrKeyHashBytes home)
+                    (BC.unpack (requestKey req))
         ctx0 <- registryContextFor cfg (regCodes reg) prov (attRefUtxos att)
         ctx <-
             either fail pure (withApplication (applied reg) Nothing [e] live ctx0)
         pp <- Cage.queryProtocolParams prov
-        duties <-
+        owedDuties <-
             either fail pure (registryDuties cfg pp oldState ctx [request] [True])
-        unless (null (rdInputs duties)) $
-            fail
-                "the fold's duties need ordinary inputs, which an insertion never owes"
-        wallets <- Cage.queryUTxOs prov (walletAddr wallet)
+        unless (null (rdInputs owedDuties)) $
+            fail "the fold's duties need ordinary inputs; this backend folds none"
+        duties <- case tweak of
+            AsOwed -> pure owedDuties
+            PayShort ->
+                case [o | o <- rdOutputs owedDuties, o ^. addrTxOutL == home] of
+                    [paid] ->
+                        let Coin c = paid ^. coinTxOutL
+                        in  pure
+                                owedDuties
+                                    { rdOutputs =
+                                        [ if o == paid then o & coinTxOutL .~ Coin (c - 1) else o
+                                        | o <- rdOutputs owedDuties
+                                        ]
+                                    }
+                    ps ->
+                        fail
+                            ( show (length ps)
+                                <> " outputs pay the controller; the short payment needs exactly one"
+                            )
+            AlsoRelease key -> case holdingsOf reg key live of
+                [holding@(_, hOut)] ->
+                    pure
+                        owedDuties
+                            { rdSpends =
+                                rdSpends owedDuties
+                                    <> [ ConnectedSpend
+                                            { csUtxo = holding
+                                            , csRedeemer = releaseRedeemer
+                                            , csScript = scriptFromBytes "open-datum" (applied reg)
+                                            }
+                                       ]
+                            , rdOutputs =
+                                rdOutputs owedDuties
+                                    <> [mkBasicTxOut home (hOut ^. valueTxOutL)]
+                            }
+                hs ->
+                    fail
+                        ( show (length hs)
+                            <> " live holdings for the released key; it needs one"
+                        )
+        wallets <- Cage.queryUTxOs prov home
         feeUtxo <-
             case sortOn
                 (Down . (^. coinTxOutL) . snd)
@@ -846,7 +925,7 @@ foldUnevaluated env target key r = do
                     , cfaProvider = prov
                     , cfaTrie = tm
                     , cfaToken = tok
-                    , cfaFeeAddr = walletAddr wallet
+                    , cfaFeeAddr = home
                     , cfaStateUtxo = (stateIn, stateOut)
                     , cfaReqUtxos = [request]
                     , cfaFeeUtxo = feeUtxo
@@ -861,7 +940,17 @@ foldUnevaluated env target key r = do
                     , cfaAdjustRoot = id
                     }
         void (evaluate unsigned)
-        fst <$> submitAndConfirm env sess wallet r0 unsigned
+        result <- fst <$> submitAndConfirm env sess wallet r0 unsigned
+        -- The chain took the edge: the backend's mirror takes it too.
+        when (rcOutcome result == "accepted") $ do
+            withTrie tm tok $ \t -> void (walkEdge t (requestKey req) (requestEdge req))
+            createDirectoryIfMissing True (backendDir env target)
+            dump >>= saveMirror backendManifest
+        pure result
+
+-- | Where the backend keeps its own copy of a target's mirror.
+backendDir :: Env -> Target -> FilePath
+backendDir env (Target t) = optWork (envOptions env) </> "backend" </> t
 
 observe :: Env -> Target -> String -> Receipt -> IO Receipt
 observe env target key r = do
@@ -970,7 +1059,24 @@ read by reference, with the wallet's largest ada-only output as fee and
 collateral.
 -}
 craft :: Env -> Crafted -> Target -> String -> Receipt -> IO Receipt
-craft env c target key r = do
+craft env c target key r = case c of
+    BookingByStranger -> craftBooking env c target key r
+    BookingOtherDestination -> craftBooking env c target key r
+    BookingShortDeposit -> craftBooking env c target key r
+    BookingNoDatum -> craftBooking env c target key r
+    EnvelopeOtherStateName -> craftBooking env c target key r
+    EnvelopeOtherStatePolicy -> craftBooking env c target key r
+    EnvelopeOtherRegistry -> craftBooking env c target key r
+    TerminateBooking -> craftTermination env False target key r
+    TerminateBookingByStranger -> craftTermination env True target key r
+    ReleaseInOtherFold -> foldWith env target Nothing (AlsoRelease key) r
+    FoldPaysShort -> foldWith env target (Just key) PayShort r
+    _ -> craftHolding env c target key r
+
+-- | A hand-built transaction against the key's live holding.
+craftHolding
+    :: Env -> Crafted -> Target -> String -> Receipt -> IO Receipt
+craftHolding env c target key r = do
     let o = envOptions env
     reg <- openRegistry env target
     stranger <- loadWallet (fromIntegral (optMagic o)) (optStranger o)
@@ -1034,6 +1140,7 @@ craft env c target key r = do
                 UpdateWithoutDatum -> ([next & datumTxOutL .~ NoDatum], updateRedeemer, mine)
                 EarlyWithdrawal ->
                     ([mkBasicTxOut home (hOut ^. valueTxOutL)], releaseRedeemer, mine)
+                other -> error ("not a shape against a holding: " <> show other)
             prog :: Tx.TxBuild NoQuery Void ()
             prog = do
                 _ <- Tx.spendScript hIn redeemer
@@ -1063,3 +1170,141 @@ craft env c target key r = do
                     then addKeyWitness (walletSignKey stranger) unsigned
                     else unsigned
         fst <$> submitAndConfirm env sess wallet r0 witnessed
+
+-- | The last byte of a name or hash, changed: the same length, another value.
+flipLast :: ByteString -> ByteString
+flipLast bs
+    | BS.null bs = BS.singleton 1
+    | otherwise = BS.init bs <> BS.singleton (BS.last bs `xor` 1)
+
+{- | Submit a booking through 'bookEdgeWith', signed by @payer@, and
+record the node's verdict. A booking is never evaluated locally: its
+approval carries stated budgets, so the node judges every one.
+-}
+bookedBy
+    :: Env
+    -> NodeSession
+    -> Wallet
+    -> Receipt
+    -> ((ConwayTx -> IO ConwayTx) -> IO ConwayTx)
+    -> IO Receipt
+bookedBy env sess payer r building = do
+    result <- newIORef Nothing
+    let submit unsigned = do
+            (r', signed) <- submitAndConfirm env sess payer r unsigned
+            modifyIORef' result (const (Just r'))
+            unless (rcOutcome r' == "accepted") $
+                fail ("the booking was not accepted: " <> T.unpack (rcOutcome r'))
+            pure signed
+    attempt <- try (building submit)
+    recordedSubmission <- readIORef result
+    case (attempt, recordedSubmission) of
+        (_, Just r') -> pure r'
+        (Left (err :: SomeException), Nothing) ->
+            pure
+                r
+                    { rcOutcome = "client-error"
+                    , rcReason = Just (boundedNodeReason 600 (T.pack (show err)))
+                    }
+        (Right _, Nothing) -> fail "the booking returned without submitting"
+
+{- | An insertion booking of @key@ with one field changed from the booking
+the ordinary insert makes: its payer, its destination, its request deposit,
+or the registry its envelope names.
+-}
+craftBooking
+    :: Env -> Crafted -> Target -> String -> Receipt -> IO Receipt
+craftBooking env c target key r = do
+    let o = envOptions env
+    reg <- openRegistry env target
+    stranger <- loadWallet (fromIntegral (optMagic o)) (optStranger o)
+    withNode env $ \sess wallet -> do
+        let prov = nsProvider sess
+            cfg = regCfg reg
+            appHash = hex (scriptHashBytes (computeScriptHash (applied reg)))
+            r0 = r{rcEvaluation = Just "skipped", rcApplication = Just appHash}
+            honest = envelopeFor reg (addrKeyHashBytes (walletAddr wallet)) key
+            ctl = envControl honest
+            StateAsset statePolicy stateName = ctlRegistry ctl
+            named asset = honest{envControl = ctl{ctlRegistry = asset}}
+            e = case c of
+                EnvelopeOtherStateName -> named (StateAsset statePolicy (flipLast stateName))
+                EnvelopeOtherStatePolicy -> named (StateAsset (flipLast statePolicy) stateName)
+                EnvelopeOtherRegistry ->
+                    named (StateAsset (flipLast statePolicy) (flipLast stateName))
+                _ -> honest
+            payer = if c == BookingByStranger then stranger else wallet
+        att <- attach prov (regDeployment reg) (partsOf cfg)
+        (appRef, _) <- applicationReference reg att
+        let approval =
+                (insertApproval Testnet (applied reg) (fst (attStateUtxo att)) e)
+                    { baScriptReference = Just appRef
+                    }
+            (address, datumHash) = insertDestination Testnet (applied reg) e
+            dest = case c of
+                BookingOtherDestination -> (flipLast address, datumHash)
+                BookingNoDatum -> (address, BS.empty)
+                _ -> (address, datumHash)
+            deposit =
+                ctlDeposit (envControl e)
+                    - (if c == BookingShortDeposit then 1 else 0)
+        bookedBy env sess payer r0 $ \submit ->
+            bookEdgeWith
+                cfg
+                prov
+                submit
+                (walletAddr payer)
+                (regToken reg)
+                (keyBytes key)
+                edgeInsertActive
+                dest
+                deposit
+                (Just approval)
+
+{- | The termination booking the ordinary terminate makes, by the
+controller, or the same booking by another wallet owning its request.
+-}
+craftTermination
+    :: Env -> Bool -> Target -> String -> Receipt -> IO Receipt
+craftTermination env byStranger target key r = do
+    let o = envOptions env
+    reg <- openRegistry env target
+    stranger <- loadWallet (fromIntegral (optMagic o)) (optStranger o)
+    withNode env $ \sess wallet -> do
+        let prov = nsProvider sess
+            cfg = regCfg reg
+            appHash = hex (scriptHashBytes (computeScriptHash (applied reg)))
+            r0 = r{rcEvaluation = Just "skipped", rcApplication = Just appHash}
+            payer = if byStranger then stranger else wallet
+        att <- attach prov (regDeployment reg) (partsOf cfg)
+        (appRef, _) <- applicationReference reg att
+        live <- Cage.queryUTxOs prov (applicationAddr reg)
+        (liveIn, _) <- case holdingsOf reg key live of
+            [u] -> pure u
+            us ->
+                fail
+                    ( show (length us)
+                        <> " live holdings for the key; the booking needs one"
+                    )
+        let approval =
+                ( terminateApproval
+                    (applied reg)
+                    (fst (attStateUtxo att))
+                    liveIn
+                    (keyBytes key)
+                    (addrKeyHashBytes (walletAddr payer))
+                )
+                    { baScriptReference = Just appRef
+                    }
+        bookedBy env sess payer r0 $ \submit ->
+            bookEdgeWith
+                cfg
+                prov
+                submit
+                (walletAddr payer)
+                (regToken reg)
+                (keyBytes key)
+                edgeUpdateTerminal
+                terminateDestination
+                edgeDeposit
+                (Just approval)
