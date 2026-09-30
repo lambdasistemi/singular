@@ -70,6 +70,7 @@ import System.Process (readProcessWithExitCode)
 import System.Timeout (timeout)
 import Text.Printf (printf)
 
+import Cardano.Crypto.Hash.Blake2b (Blake2b_256)
 import Cardano.Crypto.Hash.Class (hashToBytes, hashWith)
 import Cardano.Crypto.Hash.SHA256 (SHA256)
 import Cardano.Ledger.Address (Addr (..))
@@ -1368,9 +1369,11 @@ authenticatedLeaf env target reg chain key = go manifests
                     then pure (Just (leafName value))
                     else go rest
             else go rest
+    -- The trie stores a leaf as the BLAKE2b-256 digest of its bytes.
     leafName value = case value of
         Nothing -> "absent"
         Just v
-            | v == leafActive -> "active"
-            | v == leafTerminal -> "terminal"
+            | v `elem` [leafActive, blake2b leafActive] -> "active"
+            | v `elem` [leafTerminal, blake2b leafTerminal] -> "terminal"
             | otherwise -> "unknown"
+    blake2b = hashToBytes . hashWith @Blake2b_256 id
