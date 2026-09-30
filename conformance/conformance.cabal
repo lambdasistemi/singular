@@ -94,6 +94,7 @@ library
     Conformance.Edge.Sequence
     Conformance.Fold.KeyedMint
     Conformance.Observe.Payments
+    Conformance.Replay
   other-modules:
     Conformance.Evidence.Asset
   build-depends:
@@ -124,6 +125,7 @@ common live-runner
     Conformance.Run.Live
     Conformance.Run.Retraction
     Conformance.Run.Step
+    Conformance.Run.Replay
     Conformance.Run.Receipts
     Conformance.Run.Fold
     Conformance.Run.Book
@@ -242,6 +244,9 @@ test-suite conformance-tests
     Conformance.Run.Live
     Conformance.Run.Retraction
     Conformance.Run.Step
+    Conformance.Run.Replay
+    Conformance.Support.Replay
+    Conformance.Support.RunReplay
     Conformance.Support.Retraction
     Conformance.Support.Step
     Conformance.Support.ObservedTx
@@ -295,6 +300,7 @@ test-suite conformance-tests
     , singular-registry
     , validation-selective
     , ouroboros-consensus:{ouroboros-consensus, cardano}
+    , plutus-ledger-api
     , strict-sop-core
     , containers >=0.6 && <0.8
     , directory >=1.3 && <1.4

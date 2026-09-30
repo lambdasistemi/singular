@@ -20,8 +20,10 @@ import Conformance.Support.Receipt qualified as Receipt
 import Conformance.Support.ReceiptBound qualified as ReceiptBound
 import Conformance.Support.Refusal qualified as Refusal
 import Conformance.Support.RegistrationComparison qualified as RegistrationComparison
+import Conformance.Support.Replay qualified as Replay
 import Conformance.Support.Retraction qualified as Retraction
 import Conformance.Support.Rows qualified as Rows
+import Conformance.Support.RunReplay qualified as RunReplay
 import Conformance.Support.Specification qualified as Specification
 import Conformance.Support.Step qualified as Step
 import System.Environment (lookupEnv)
@@ -60,3 +62,5 @@ suite = do
         CliControls.spec
         CliProof.spec
         CliAdmission.spec
+        Replay.spec
+        RunReplay.spec
