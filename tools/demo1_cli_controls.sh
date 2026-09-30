@@ -93,8 +93,8 @@ copy() {
   # the journals and saved files provoked commands' receipts read back
   jq -r '.process // empty | .journal, (.filesAfter[]?[0])' "$work"/receipts/*.json \
     | sort -u | while read -r kept; do
-      (cd "$work" && cp --parents "$kept" "$copies/$1/")
-    done
+    (cd "$work" && cp --parents "$kept" "$copies/$1/")
+  done
 }
 # expect COPY CAUSE: COPY's render fails the claim for CAUSE (empty: holds).
 expect() {
