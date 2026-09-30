@@ -6,9 +6,11 @@
   `3f04e50` exit 0 (211 s, runtime `receipts/baseline-001`); research; this
   mandate.
 - Current: planning review; no behavior edit; implementation not released.
-- Blockers: Q-001 (receipt fit) holds slice R3's receipt part; Q-002 (texts
-  outside the fence) holds only the claim that no published text still states
-  the limit.
+- Blockers: Q-001 (receipt fit) at the operator holds R3's receipt part
+  (T032, T035-T038). Q-002 answered (A-002): fence holds, D287-DOC residual
+  after evidence (T043). Q-003 (CG09 phase-1 reject, Lean vs chain) holds only
+  CG09's classification. Denominator: every live refusal, classified in
+  `extent.md` (epic NOTE-001); a class-A comparison alone is not completion.
 
 ## Binding
 
@@ -59,7 +61,7 @@ Model rows: `modules-model.md`, `data-model.md`, `functions-model.md`.
 | Slice | Content | Tasks | Needs |
 |---|---|---|---|
 | R1 | traced build + toolchain correspondence check + carrier; no runner change | T010–T014 | — |
-| R2 | capture + replay + classification, recorded in replay capsules beside receipts; no receipt or comparison change | T020–T027 | R1 |
+| R2 | capture + replay + classification, recorded in replay capsules beside receipts; no receipt or comparison change | T020–T028 | R1 |
 | R3 | reason comparison, receipt fields, attribution branch, wrong-reason and accepting controls, CI jq extent | T030–T038 | R2, Q-001 |
 | R4 | book limit restated by its generator, BOOK.md regenerated, usage test | T040–T043 | R3 green in CI |
 
@@ -113,7 +115,7 @@ failure is logged and not charged as a semantic RED.
 | G7 | CG21 + attribution rows | generic rows step (:337) and serialization step (:585), extended jq — CI change in this ticket | as asserted there |
 | G8 | toolchain correspondence | new step building the correspondence check — CI change in this ticket | 0 |
 | G9 | wrong-reason control | new step: altered run fails naming both reasons; unaltered passes — CI change in this ticket | ≠0 / 0 |
-| G10 | discovered extent | new jq over all receipts: refused count > 0, every Lean-reasoned refusal agreed — CI change in this ticket | 0 |
+| G10 | discovered extent | new jq over all receipts: refusal count > 0, each once in the replay index with reason or cause and class, every class-A step agreed — CI change in this ticket | 0 |
 
 Falsification: G6/G7/G10 by the current red (base has no reasons); G9 by its
 own altered leg; G8 by a mismatched build input in a unit or flake test.

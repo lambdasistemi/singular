@@ -1,0 +1,18 @@
+{
+  "classes": [
+    {
+      "text": "Four classes: modeled with a consumer, modeled without one, outside the model, and in conflict. Only the first is compared; the others stay in the denominator as published gaps, and the last two are escalated.",
+      "pause": 500
+    }
+  ],
+  "leads": [
+    {
+      "text": "From source: the retraction window, duplicate insert, retirement and exit tampers are compared by the driver. The present-key insert and the batch mint mismatch are modeled without a consumer. The stale-root fold and the wrong constructor are outside the model. The phase-one reject and the crossed refund allocation are conflicts.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "extent.md",
+    "sha256": "07b0e11085a57efe8cb45b77d9997b5b1294bcdbe73153c1ebc9e8a8a6a609f8"
+  }
+}

@@ -19,5 +19,7 @@ flowchart LR
 - [x] Fence: no edit to onchain, naming-onchain, applications, Lean, corpus,
       constitution, deployed bytes (FR-16).
 - [ ] Receipt fit ruled (Q-001).
-- [ ] Texts outside the fence that state the limit ruled (Q-002).
+- [x] Texts outside the fence that state the limit ruled (A-002: fence holds; D287-DOC residual after evidence).
+- [x] Every live refusal in the denominator, classified against Lean (`extent.md`).
+- [ ] CG09 phase-1 reject conflict ruled (Q-003).
 - [x] No implementation detail in the spec beyond named existing artifacts.

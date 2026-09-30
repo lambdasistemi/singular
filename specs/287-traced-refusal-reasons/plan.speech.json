@@ -1,7 +1,7 @@
 {
   "status": [
     {
-      "text": "Setup and a green root baseline are done; this mandate is in review; no behavior has changed. Two questions to the epic hold only the receipt part and the wording of texts outside the fence.",
+      "text": "Setup and a green root baseline are done; this mandate is in review; no behavior has changed. The receipt question waits for the operator; texts outside the fence stay and a follow-up is prepared after evidence; the phase-one reject conflict is escalated. Every live refusal counts, and comparing only some is not completion.",
       "pause": 500
     }
   ],
@@ -43,7 +43,7 @@
   ],
   "gate-verbatim-ci-commands-synthesized-by-the-ticket-owner-no-gate-author-seat-in-the-approved-team": [
     {
-      "text": "Ten rows, each a command from the workflows: root CI, the unit suite, format, lint, the deployment identity check, the dedicated and generic row steps with extended assertions, and three new steps for toolchain correspondence, the wrong-reason control and the counted extent.",
+      "text": "Ten rows, each a command from the workflows: root CI, the unit suite, format, lint, the deployment identity check, the dedicated and generic row steps with extended assertions, and three new steps for toolchain correspondence, the wrong-reason control and the counted, classified extent.",
       "pause": 500
     }
   ],
@@ -55,6 +55,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "32664161c5e4211f834d88ebf1e58fa08a87b3a84a405e9374bde931524ab351"
+    "sha256": "48f8f4273f96760a967cfb2d8d33b692a0067724973024d1c7ae80eae0790299"
   }
 }

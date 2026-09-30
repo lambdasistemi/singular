@@ -13,7 +13,7 @@
   ],
   "r2-capture-and-replay-fr-01-fr-04fr-08": [
     {
-      "text": "Table tests for every class first, then the pure module, capture, arguments, parameters and evaluation. The first devnet run checks the premise; then the rows run with capture on.",
+      "text": "Table tests for every class first, then the pure module, capture, arguments, parameters and evaluation. The first devnet run checks the premise; then the rows run with capture on, and the discovered refusals are classified against Lean.",
       "pause": 500
     }
   ],
@@ -25,12 +25,12 @@
   ],
   "r4-book-fr-15": [
     {
-      "text": "Restate the limit through the generator, regenerate the book and update its usage test.",
+      "text": "Restate the limit through the generator, regenerate the book, update its usage test, and prepare the documentation follow-up for the epic without editing outside the fence.",
       "pause": 500
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "5d1f3496190eb14e05bc2161b7711b4b554f2750d419b0808a4b60a1b436206d"
+    "sha256": "7a58842bb48d311bdd31b0514f7cfa1725389109d2dd5f769277b37b8388b8ca"
   }
 }

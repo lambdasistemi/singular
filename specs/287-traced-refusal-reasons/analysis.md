@@ -23,7 +23,7 @@ flowchart LR
 | FR-07 reason | M2, D5 | T020, T021 | G2 |
 | FR-08 classes | M2, D5 | T020 | G2 |
 | FR-09 comparison | M2, M4, D6 | T030 | G2, G6, G9 |
-| FR-10 attribution | M5 | T031 | G7 |
+| FR-10 extent classes | M5, `extent.md` | T028, T031 | G7, G10 |
 | FR-11 receipt | M6 | T032 | G6, G7 (after Q-001) |
 | FR-12 wrong-reason control | M8 | T033, T037 | G9 |
 | FR-13 accepting control | M3 | T034 | G6 |
@@ -39,17 +39,19 @@ requirement.
 | # | Severity | Finding | Disposition |
 |---|---|---|---|
 | A1 | high | FR-11 conflicts between the issue's wording and the packet's wire freeze | Q-001; R3 receipt tasks held |
-| A2 | medium | Constitution, `docs/theorems.md` and an onchain comment state the limit outside the fence | Q-002; T043 |
+| A2 | medium | Constitution, `docs/theorems.md` and an onchain comment state the limit outside the fence | A-002: fence holds; D287-DOC residual after evidence (T043) |
 | A3 | medium | The ledger seam (M3 `purposeArguments`) is a lead, not verified at the pin | T001 first; failure is a placement challenge |
 | A4 | medium | FR-15's condition cannot be derived by the book until #225; it is enforced by CI (G10) | stated in FR-15 and M7 |
 | A5 | low | The deployed-trace premise is unverified; a byte search could not settle it (reason names are data values) | T026 stops the campaign if false |
 | A6 | low | Reason vocabulary: Lean returns reasons as strings, with no enumeration to validate against | FR-07 takes the single user trace verbatim; FR-09 compares it with Lean's reason for that step |
 | A7 | low | G6–G10 are CI changes in this ticket; falsified by the base's missing reasons and the control's altered leg, proved by the pushed head's CI | plan gate note |
+| A8 | high | The denominator was first read as driver-compared steps only; epic NOTE-001 rules every live refusal in, classified against Lean itself | FR-10, FR-14, FR-15 amended; `extent.md`; T028 |
+| A9 | high | CG09 (phase-1 reject): Lean admits every reject, the chain refuses before the retract window closes | Q-003; CG09 held in class D |
 
 ## Terminology
 
 "Chain-side reason" is the admitted traced reason only; "unobserved" always
-carries a D5 cause; "attribution row" means a refusal row with no Lean reason.
+carries a D5 cause; "attribution row" means a row whose runner only attributes its refusal, which says nothing about whether Lean gives a reason; the extent classes (`extent.md`) say that.
 Used identically across spec, models and tasks.
 
 ## Size

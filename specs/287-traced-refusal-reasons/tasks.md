@@ -58,6 +58,10 @@ flowchart LR
   report each rejection's class from `replay/index.json`. Acceptance: G2, G3,
   G4 green; no receipt or comparison change yet; every class observed is
   admitted or its cause named.
+- [ ] T028 [C] From the T027 receipts and replay index, discover the complete
+  refusal extent and classify each against Lean clauses and executing
+  consumers (`extent.md` classes); replace the leads; return every C or D as a
+  user story to the ticket owner (C/D escalation), with receipt and trace.
 
 ## R3 — comparison, receipt, controls, CI (FR-09–FR-14) — needs Q-001
 
@@ -65,7 +69,7 @@ flowchart LR
   compares `differs`; with an unobserved reason `uncompared`; then wire D6
   into the step's `comparison`.
 - [ ] T031 [C] Attribution rows fill `branch` from an admitted reason and keep
-  the limit otherwise (FR-10).
+  the limit otherwise; every refusal carries its extent class (FR-10).
 - [ ] T032 [C] Receipt fields per the Q-001 ruling; the loader rejects claimed
   but incomplete replay evidence (unit RED).
 - [ ] T033 [C] Wrong-reason control mode (M8); unit RED that the altered step
@@ -85,5 +89,6 @@ flowchart LR
   deployed bytes carry no traces, remaining unobserved refusals by row.
 - [ ] T041 [N] Regenerate `conformance/BOOK.md` with its generator only.
 - [ ] T042 [C] Update `Conformance.Story.Usage` to the restated text.
-- [ ] T043 Apply the Q-002 disposition to the ticket's own text; no edit
-  outside the fence. Acceptance: G1–G10 green at the head (pre-push checkpoint).
+- [ ] T043 [C] Prepare the D287-DOC residual for the epic from T026/T027
+  evidence (A-002): stale wording, path, revision, reader claim, evidence,
+  proposed repair, authority needed. No edit outside the fence. Acceptance: G1–G10 green at the head (pre-push checkpoint).

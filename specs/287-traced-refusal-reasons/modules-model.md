@@ -21,7 +21,7 @@ flowchart TD
 | M2 | `Conformance.Replay` (lib, pure) | Capsule and provenance types, the admission of a traced reason from two evaluation results (FR-06–FR-08), the reason comparison (FR-09), capture identity | aeson, text, bytestring only | new |
 | M3 | `Conformance.Run.Replay` (app, effects) | Capture a capsule at rejection from the node (FR-01); obtain the ledger's script arguments for each failing purpose from the capsule; evaluate given bytes on them under a given budget, with logs (FR-04–FR-06); apply the deployed parameters to traced code and check the untraced application hash (FR-04); write capsule files beside the receipts | M2, offchain library, cardano-node-clients and ledger already in the lock | new |
 | M4 | `Conformance.Run.Live`, `Conformance.Run.Step` | Call M3 at each validator rejection before the next submission; replace the node-text substring "trace" with M2's result; compare reasons for refused-refused steps | M2, M3 | changed |
-| M5 | `Conformance.Refusal`, attribution callers | Put an admitted reason in `branch`; keep the existing limit when unobserved (FR-10) | M2 | changed |
+| M5 | `Conformance.Refusal`, attribution callers | Put an admitted reason in `branch`; keep the existing limit when unobserved; carry the refusal's extent class (FR-10) | M2 | changed |
 | M6 | `Conformance.Receipt` | Serialize and load the replay fields decided by Q-001; the loader rejects a refused step whose replay evidence is claimed but incomplete | M2 | changed |
 | M7 | `Conformance.Book` | Restate the limit text (FR-15); G10 enforces its condition until #225 derives the book | M6 | changed |
 | M8 | `Conformance.Run.Control` | The wrong-reason control: one row, one step, the model reason replaced before comparison (FR-12) | M4 | changed |

@@ -7,19 +7,19 @@
   ],
   "requirements": [
     {
-      "text": "The run captures each refused transaction with the outputs it spends and the node's parameters. A test-owned build adds traces to the same validator source and toolchain, checked by rebuilding the deployed hashes. The traced script gets the deployed parameters and the very arguments the ledger built. The deployed bytes must reproduce the refusal first. One user trace is the chain-side reason; anything else is recorded as unobserved with its cause. Setup failures, budget exhaustion, timeouts and model-derived reasons earn nothing. A control with a wrong Lean reason must fail, an accepting control must pass, and CI counts every refused step from the receipts. Nothing on chain, in Lean or in the constitution changes.",
+      "text": "The run captures each refused transaction with the outputs it spends and the node's parameters. A test-owned build adds traces to the same validator source and toolchain, checked by rebuilding the deployed hashes. The traced script gets the deployed parameters and the very arguments the ledger built. The deployed bytes must reproduce the refusal first. One user trace is the chain-side reason; anything else is recorded as unobserved with its cause. Setup failures, budget exhaustion, timeouts and model-derived reasons earn nothing. A control with a wrong Lean reason must fail, an accepting control must pass, and CI counts every refused step from the receipts. Every live refusal is classified against Lean itself: compared where a consumer runs the model, and published as a missing comparison otherwise. Nothing on chain, in Lean or in the constitution changes.",
       "pause": 500
     }
   ],
   "success-criteria": [
     {
-      "text": "Every refused step CI runs shows a traced reason equal to Lean's, both hashes and a capture identity. The wrong-reason control fails and its restoration passes. The toolchain check and accepting control pass, and the deployed hashes are unchanged.",
+      "text": "Every refused step CI compares with Lean shows a traced reason equal to Lean's, both hashes and a capture identity, and every other refusal shows its reason or cause and its class. The wrong-reason control fails and its restoration passes. The toolchain check and accepting control pass, and the deployed hashes are unchanged.",
       "pause": 500
     }
   ],
   "clarifications": [
     {
-      "text": "Attribution rows have no Lean reason, so they record the observed reason without a same-reason claim. Where the traced hash sits in the receipt awaits a ruling, and so do texts outside this ticket that still state the limit. Open validity intervals stay a named non-goal.",
+      "text": "A runner that only attributes a refusal does not put it outside Lean: it is classified, and a missing comparison is published. The phase-one reject row is a lead conflict with Lean, sent to the epic. Where the traced hash sits in the receipt awaits a ruling. Texts outside the fence stay unchanged; a documentation follow-up is prepared once evidence exists. Open validity intervals stay a named non-goal.",
       "pause": 500
     }
   ],
@@ -31,6 +31,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "6e9fc4ee1c1d276a7a01c079eb263fa6a6d2772d94f38704f930f588beb5c894"
+    "sha256": "91c13f0acbc545aa87323f3fefab23b2b3045ec69cc02eb6298da5ab948726ed"
   }
 }
