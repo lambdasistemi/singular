@@ -9,7 +9,9 @@
 - Blockers: Q-001 (receipt fit) at the operator holds R3's receipt part
   (T032, T035-T038). Q-002 answered (A-002): fence holds, D287-DOC residual
   after evidence (T043). Q-003 (CG09 phase-1 reject, Lean vs chain) holds only
-  CG09's classification. Denominator: every live refusal, classified in
+  CG09's classification; A-003 records it as D287-REJECT, an epic-owned
+  affected-acceptance hold (not a waiver), so the every-row comparison stays
+  unmet while it stands. Denominator: every live refusal, classified in
   `extent.md` (epic NOTE-001); a class-A comparison alone is not completion.
 
 ## Binding
@@ -115,7 +117,7 @@ failure is logged and not charged as a semantic RED.
 | G7 | CG21 + attribution rows | generic rows step (:337) and serialization step (:585), extended jq — CI change in this ticket | as asserted there |
 | G8 | toolchain correspondence | new step building the correspondence check — CI change in this ticket | 0 |
 | G9 | wrong-reason control | new step: altered run fails naming both reasons; unaltered passes — CI change in this ticket | ≠0 / 0 |
-| G10 | discovered extent | new jq over all receipts: refusal count > 0, each once in the replay index with reason or cause and class, every class-A step agreed — CI change in this ticket | 0 |
+| G10 | discovered extent | new jq over all receipts: refusal count > 0, each once in the replay index with reason or cause and class, every class-A step agreed, and for every refusing role an accepting-control entry with both runs succeeded (FR-13) — CI change in this ticket | 0 |
 
 Falsification: G6/G7/G10 by the current red (base has no reasons); G9 by its
 own altered leg; G8 by a mismatched build input in a unit or flake test.

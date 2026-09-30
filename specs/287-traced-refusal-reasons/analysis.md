@@ -26,7 +26,7 @@ flowchart LR
 | FR-10 extent classes | M5, `extent.md` | T028, T031 | G7, G10 |
 | FR-11 receipt | M6 | T032 | G6, G7 (after Q-001) |
 | FR-12 wrong-reason control | M8 | T033, T037 | G9 |
-| FR-13 accepting control | M3 | T034 | G6 |
+| FR-13 accepting control | M3, contract index | T034 | G10 |
 | FR-14 extent | M9 | T038 | G10 |
 | FR-15 book | M7 | T040–T042 | G1, G2 |
 | FR-16 fence | plan owned paths | every slice | G5 and the path diff |
@@ -46,7 +46,9 @@ requirement.
 | A6 | low | Reason vocabulary: Lean returns reasons as strings, with no enumeration to validate against | FR-07 takes the single user trace verbatim; FR-09 compares it with Lean's reason for that step |
 | A7 | low | G6–G10 are CI changes in this ticket; falsified by the base's missing reasons and the control's altered leg, proved by the pushed head's CI | plan gate note |
 | A8 | high | The denominator was first read as driver-compared steps only; epic NOTE-001 rules every live refusal in, classified against Lean itself | FR-10, FR-14, FR-15 amended; `extent.md`; T028 |
-| A9 | high | CG09 (phase-1 reject): Lean admits every reject, the chain refuses before the retract window closes | Q-003; CG09 held in class D |
+| A9 | high | CG09 (phase-1 reject): Lean admits every reject, the chain refuses before the retract window closes | Q-003; A-003: D287-REJECT, an epic-owned affected-acceptance hold; CG09 held in class D, comparison unmet |
+| A10 | high | Review 001: a differing or unobserved reason reached no durable record, because the runner throws before writing and rows require agreement first | FR-09, D6, contract index, T030 name the sites; index written before the row acts |
+| A11 | high | Review 001: the accepting control had no failing CI command | FR-13 through the index; G10 requires it; T034 |
 
 ## Terminology
 

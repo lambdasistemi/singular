@@ -66,8 +66,14 @@ flowchart LR
 ## R3 — comparison, receipt, controls, CI (FR-09–FR-14) — needs Q-001
 
 - [ ] T030 [C] RED: a refused-refused step with a differing admitted reason
-  compares `differs`; with an unobserved reason `uncompared`; then wire D6
-  into the step's `comparison`.
+  compares `differs`, and one with an unobserved reason `uncompared`. Then wire
+  D6 at the sites that today decide and throw: `compareStep`
+  (`conformance/app/Conformance/Run/Live.hs:2599`, failure at `:2635`) and
+  the rows that require `agrees` before writing their receipt (CG07
+  `CgRows.hs:470-479`, CG21 `:1602-1611`, CG22 `:1677-1689`, CG23 `:1745`):
+  the index entry with `modelReason` and comparison is written first;
+  `differs` fails the row; `uncompared` keeps outcome agreement and the row
+  writes its receipt. Unit RED: a `differs` run leaves the index entry.
 - [ ] T031 [C] Attribution rows fill `branch` from an admitted reason and keep
   the limit otherwise; every refusal carries its extent class (FR-10).
 - [ ] T032 [C] Receipt fields per the Q-001 ruling; the loader rejects claimed
@@ -75,7 +81,9 @@ flowchart LR
 - [ ] T033 [C] Wrong-reason control mode (M8); unit RED that the altered step
   cannot compare `agrees`.
 - [ ] T034 [D] Accepting control: per refusing script role one accepted
-  step's transaction replays green on deployed and traced bytes (FR-13).
+  step's transaction replays on deployed and traced bytes and is written as an
+  `accepting-control` index entry (FR-13); G10 fails when either run does not
+  succeed or a refusing role has no entry (unit RED on a fixture index).
 - [ ] T035 G6: extend the CG22, CG23, CG07 steps' jq (CI change in this ticket).
 - [ ] T036 G7: extend generic and serialization steps' jq.
 - [ ] T037 G9: control step, altered leg non-zero naming both reasons, restored leg zero.

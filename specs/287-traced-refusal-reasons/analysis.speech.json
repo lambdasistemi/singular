@@ -7,7 +7,7 @@
   ],
   "findings": [
     {
-      "text": "The receipt wording conflict and the texts outside the fence are held as questions. The ledger seam is verified first. The book's condition is enforced by CI until the book is derived. The deployed-trace premise is checked by the first devnet run. Reasons are compared verbatim with Lean's. The denominator now holds every live refusal, and the phase-one reject conflict is escalated.",
+      "text": "The receipt wording conflict and the texts outside the fence are held as questions. The ledger seam is verified first. The book's condition is enforced by CI until the book is derived. The deployed-trace premise is checked by the first devnet run. Reasons are compared verbatim with Lean's. The denominator now holds every live refusal, and the phase-one reject conflict is an epic-owned hold. Review one found that differing or unobserved reasons left no record and the accepting control had no failing check; both are repaired.",
       "pause": 500
     }
   ],
@@ -25,6 +25,6 @@
   ],
   "_source": {
     "file": "analysis.md",
-    "sha256": "0e508046f5c66486c862d2cf3e2985ec4d78094c367954dbf45a05b7d88cb429"
+    "sha256": "e013332d69a03c29e2bec33ffcd96af31155d90be408e480591c9931fd5b4fa9"
   }
 }

@@ -25,13 +25,13 @@
   ],
   "d5-replayclass": [
     {
-      "text": "A reason is admitted only when the deployed bytes fail as a validator and the traced bytes fail with exactly one user trace; otherwise the class names the cause.",
+      "text": "A reason is admitted only when the deployed bytes fail as a validator and the traced bytes fail with exactly one user trace; otherwise the class names one distinct cause, including phase one, setup failure, timeout and client exception.",
       "pause": 500
     }
   ],
   "d6-reasoncomparison": [
     {
-      "text": "A step agrees only on equal reasons, differs and fails otherwise, and stays uncompared, and visible, when the reason is unobserved.",
+      "text": "A step agrees only on equal reasons. The index entry is written before the runner acts, so a differing step fails its row and still leaves its evidence, and an unobserved step keeps its row, writes its receipt without a reason and names its cause.",
       "pause": 500
     }
   ],
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "76c1605cd44eaa8d34cabf8e3ddcc16389a948c8c8e281970eac32787e0615b8"
+    "sha256": "dc02483f43d2448fff36962c9c20343afef7d79a7ba2315056c1ade3dd821f21"
   }
 }

@@ -21,5 +21,6 @@ flowchart LR
 - [ ] Receipt fit ruled (Q-001).
 - [x] Texts outside the fence that state the limit ruled (A-002: fence holds; D287-DOC residual after evidence).
 - [x] Every live refusal in the denominator, classified against Lean (`extent.md`).
-- [ ] CG09 phase-1 reject conflict ruled (Q-003).
+- [ ] CG09 phase-1 reject conflict ruled (Q-003; A-003 holds it as D287-REJECT, comparison unmet).
+- [x] A differing or unobserved reason leaves durable evidence; the accepting control has a failing CI check (review 001).
 - [x] No implementation detail in the spec beyond named existing artifacts.

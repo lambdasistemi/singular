@@ -13,7 +13,7 @@
   ],
   "indexjson": [
     {
-      "text": "One entry per rejection; CI requires every refused step to appear exactly once.",
+      "text": "One entry per rejection and per accepting control, written before the runner acts on the comparison. CI requires every refusal exactly once and an accepting control for every role that refused.",
       "pause": 500
     }
   ],
@@ -25,6 +25,6 @@
   ],
   "_source": {
     "file": "replay-evidence.md",
-    "sha256": "3c04f4dc3152a2bebf294350ccf605548d05f0d85e3748a39b2773c29014c038"
+    "sha256": "839f0ebc4c8aef0ccb57b92226d10ca0e12916ab3e1153e1fa2184a6088d429f"
   }
 }

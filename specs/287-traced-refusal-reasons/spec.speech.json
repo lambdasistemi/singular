@@ -7,7 +7,7 @@
   ],
   "requirements": [
     {
-      "text": "The run captures each refused transaction with the outputs it spends and the node's parameters. A test-owned build adds traces to the same validator source and toolchain, checked by rebuilding the deployed hashes. The traced script gets the deployed parameters and the very arguments the ledger built. The deployed bytes must reproduce the refusal first. One user trace is the chain-side reason; anything else is recorded as unobserved with its cause. Setup failures, budget exhaustion, timeouts and model-derived reasons earn nothing. A control with a wrong Lean reason must fail, an accepting control must pass, and CI counts every refused step from the receipts. Every live refusal is classified against Lean itself: compared where a consumer runs the model, and published as a missing comparison otherwise. Nothing on chain, in Lean or in the constitution changes.",
+      "text": "The run captures each refused transaction with the outputs it spends and the node's parameters. A test-owned build adds traces to the same validator source and toolchain, checked by rebuilding the deployed hashes. The traced script gets the deployed parameters and the very arguments the ledger built. The deployed bytes must reproduce the refusal first. One user trace is the chain-side reason; anything else is recorded as unobserved with its cause. Setup failures, budget exhaustion, timeouts and model-derived reasons earn nothing. A different reason fails the row after its evidence is written; an unobserved reason keeps the row and is published with its cause. A control with a wrong Lean reason must fail, an accepting control must pass and is checked in CI, and CI counts every refused step from the receipts. Every live refusal is classified against Lean itself: compared where a consumer runs the model, and published as a missing comparison otherwise. Nothing on chain, in Lean or in the constitution changes.",
       "pause": 500
     }
   ],
@@ -31,6 +31,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "91c13f0acbc545aa87323f3fefab23b2b3045ec69cc02eb6298da5ab948726ed"
+    "sha256": "2646b45cffece800732361f6eefee83253dfedfc4e7fbf510e02ba0983b8562c"
   }
 }

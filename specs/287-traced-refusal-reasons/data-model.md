@@ -63,7 +63,10 @@ the traced run's is the protocol per-transaction maximum.
 `capture-incomplete`, `context-unavailable`, `toolchain-mismatch`,
 `parameters-mismatch` (untraced application hash ≠ failing hash),
 `deployed-succeeds`, `deployed-budget`, `traced-succeeds`, `traced-budget`,
-`no-user-trace`, `several-user-traces`, `evaluation-error`.
+`no-user-trace`, `several-user-traces`, `phase-1` (the node rejected before
+scripts ran), `setup-failure` (the run could not reach the evaluation),
+`timeout`, `client-exception`, `evaluation-error` (the evaluator itself
+failed). Each is a distinct value; none is a coarse bucket for another.
 
 Invariant: `admitted` ⇔ deployed `validator-failure` ∧ traced
 `validator-failure` with exactly one user-defined log line ∧ no earlier cause;
@@ -72,9 +75,14 @@ Invariant: `admitted` ⇔ deployed `validator-failure` ∧ traced
 ## D6 ReasonComparison
 
 `agrees` (admitted ∧ reason = Lean's), `differs(chain, lean)`,
-`uncompared(cause)`. `differs` fails the row; `uncompared` is published, never
-counted as agreement. Only a step where both sides refuse and the model names a
-reason is compared; attribution rows carry D5 only.
+`uncompared(cause)`. Only a step where both sides refuse and the model names a
+reason is compared; attribution rows carry D5 only. Durability: the index entry
+(contract) records `modelReason` and the D6 value before the runner acts on it.
+`differs` then fails the row, so its evidence survives in the replay index
+though no receipt is written for a failed row. `uncompared` does not fail the
+row: the step's existing outcome comparison stays `agrees`, the receipt is
+written with no chain-side reason, and the index names the cause; it is never
+counted as reason agreement.
 
 ## Receipt placement (Q-001)
 

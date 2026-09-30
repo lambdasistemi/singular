@@ -38,10 +38,16 @@ logs are kept for T026's premise evidence.
 
 ## `index.json`
 
-One entry per rejection in the order the run met them:
-`{ "rejectedTxId", "captureId", "row", "step" | null, "classes": [...] }`.
-The CI extent (G10) counts refused steps from receipts and requires each to
-appear here exactly once.
+One entry per node rejection and per accepting control, in the order the run
+met them:
+`{ "kind": "refusal" | "accepting-control", "rejectedTxId" | "acceptedTxId",
+"captureId", "row", "step" | null, "role", "classes": [...], "extentClass",
+"modelReason" | null, "comparison": "agrees" | "differs" | "uncompared" | null }`.
+The entry is written, with its comparison, before the runner acts on the
+comparison, so a failing row keeps it. The CI extent (G10) counts refusals from
+receipts and index together and requires each exactly once, and requires, for
+every role that refused, one accepting-control entry whose deployed and traced
+runs both succeeded.
 
 ## Obligations
 
