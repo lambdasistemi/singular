@@ -17,6 +17,12 @@
       "pause": 500
     }
   ],
+  "r2-repairs-e209-a-006-a-007": [
+    {
+      "text": "Four repairs from live evidence. The first attempt at the unknown-key proof missed the path the story takes and is superseded. The phase-one reject now declares a budget it can finish within. The witness script gets its own replay route, the causes split into no route, a differing hash and an unidentified script, and the captured serialization refusal is replayed offline beside its original. The unknown-key proof is repaired on the executed path and shown live.",
+      "pause": 500
+    }
+  ],
   "r3-comparison-receipt-controls-ci-fr-09fr-14-needs-q-001": [
     {
       "text": "Compare reasons at the places that decide and throw today, writing evidence first; fill attribution branches, add the ruled receipt fields, the wrong-reason and accepting controls, and the CI assertions, each seen red then green, including a relabelled driver refusal and an unlisted one. Each dedicated CI step also publishes its receipts path before the row runs, so a failing row keeps both its failure and its evidence, proved by running the real step with a failing row.",
@@ -31,6 +37,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "b5ce7b1f47d28caa24f0ec38990f244b668259bb252e61914fc43dc4f553c765"
+    "sha256": "98b43dc1508591694e5d1aef832a074b57a78f1880d35523491dc27759c9d7af"
   }
 }

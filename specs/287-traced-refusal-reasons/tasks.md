@@ -65,6 +65,30 @@ flowchart LR
   return every C or D as a user story to the ticket owner, with receipt and
   trace.
 
+## R2 repairs (E209 A-006, A-007)
+
+- [ ] T029a [C] CG22: exclusion proof via the fallback of `storyProofs`.
+  Live evidence (D-006) shows it does not reach the story's path; superseded
+  by T029d and kept only if T029d makes it the route, else removed as dead.
+- [ ] T029b [D] CG09 declares the accepting control's units; new refused
+  transaction captured, budget-refused predecessor kept (D-006).
+- [ ] T029c [C] Witness route: `witness.witness` replayed with the captured
+  registry id and kind; admitted only when the untraced application hashes to
+  the failing witness policy. D5 split into `no-replay-route`,
+  `parameters-mismatch`, `unidentified-script`, each produced by an executed
+  unit case through the classifier, spellings equal to D5. An offline
+  `replay-capsule` run replays the retained CS04 capsule through the same core
+  from its saved transaction, outputs, protocol parameters and era data,
+  recomputes its captureId, and writes its outcome beside, never over, the
+  original. A candidate-hash test alone does not show the captured script was
+  replayed.
+- [ ] T029d [D] CG22 on the executed per-request speculative path: for a
+  non-insertion on a key the speculative trie does not hold, the exclusion
+  proof is computed without walking or mutating that key; a unit case on that
+  executed path; one live `run CG22` shows a non-empty proof in the rebuilt
+  redeemer, deployed replay `validator-failure`, traced admitted exactly
+  `key-unknown`.
+
 ## R3 — comparison, receipt, controls, CI (FR-09–FR-14) — needs Q-001
 
 - [ ] T030 [C] RED: a refused-refused step with a differing admitted reason

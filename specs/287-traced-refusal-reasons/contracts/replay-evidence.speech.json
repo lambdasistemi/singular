@@ -17,6 +17,12 @@
       "pause": 500
     }
   ],
+  "offline-correction": [
+    {
+      "text": "A capsule replayed offline writes its outcome beside the original, with the recomputed capture identity, never over it.",
+      "pause": 500
+    }
+  ],
   "obligations": [
     {
       "text": "The capture identity is recomputed and must match; files are never rewritten; missing files make the rejection incomplete; and in CI a failing row still uploads its replay directory.",
@@ -25,6 +31,6 @@
   ],
   "_source": {
     "file": "replay-evidence.md",
-    "sha256": "9fe92eb0e575d68129752901dfde44c0a0f8daf5c5a21b89d36522c2294f9999"
+    "sha256": "7bdbbee5ae08369ec8370b414647847f0469d1355fddec9221cb97a308ea1714"
   }
 }

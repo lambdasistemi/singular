@@ -25,7 +25,7 @@
   ],
   "d5-replayclass": [
     {
-      "text": "A reason is admitted only when the deployed bytes fail as a validator and the traced bytes fail with exactly one user trace; otherwise the class names one distinct cause, including phase one, setup failure, timeout and client exception.",
+      "text": "A reason is admitted only when the deployed bytes fail as a validator and the traced bytes fail with exactly one user trace; otherwise the class names one distinct cause, including phase one, setup failure, timeout and client exception, and it separates a script with no replay route, a replayed script whose parameters do not reproduce the hash, and a script no family explains.",
       "pause": 500
     }
   ],
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "e374f2ab1ebfbf4437c3d251616ed8f240c56907afccd248ef7996fa0c1c87aa"
+    "sha256": "c6bf15d921f9423d0c34390be8fab4b5ed764d140ae82bc93e9909786ee37ecf"
   }
 }

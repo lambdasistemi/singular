@@ -61,7 +61,14 @@ the traced run's is the protocol per-transaction maximum.
 
 `admitted(reason)` or `unobserved(cause)`, cause one of:
 `capture-incomplete`, `context-unavailable`, `toolchain-mismatch`,
-`parameters-mismatch` (untraced application hash ≠ failing hash),
+`no-replay-route` (the failing script's family is identified — an untraced
+application of a deployed-blueprint validator, built from the capture,
+reproduces the failing hash — but the replay has no traced route for it),
+`parameters-mismatch` (the failing script's family is identified by evidence
+other than that hash — the run's recorded role for the script — an application
+of it was attempted from the capture, and its untraced hash differs from the
+failing hash), `unidentified-script` (no family is identified and no
+application is claimed as attempted),
 `deployed-succeeds`, `deployed-budget`, `traced-succeeds`, `traced-budget`,
 `no-user-trace`, `several-user-traces`, `phase-1` (the node rejected before
 scripts ran), `setup-failure` (the run could not reach the evaluation),

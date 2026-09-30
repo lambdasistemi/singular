@@ -49,6 +49,13 @@ receipts and index together and requires each exactly once, and requires, for
 every role that refused, one accepting-control entry whose deployed and traced
 runs both succeeded.
 
+## Offline correction
+
+A capsule replayed offline (`replay-capsule`, T029c) writes
+`replay-offline/<rejectedTxId>/outcome.json` beside the receipts it came from,
+with the recomputed `captureId`, the blueprints used and the command; the
+original `replay/<rejectedTxId>/outcome.json` stays byte-identical.
+
 ## Obligations
 
 - `captureId` is recomputed by the loader and must match.
