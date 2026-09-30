@@ -1,7 +1,7 @@
 {
   "status": [
     {
-      "text": "Intake, the source map and the planning artifacts are done. The first planning audit found the runner's pre-submission check would stop the proposed mutant, so the mutation now replaces the declaration itself, and the revision is back with the auditor.",
+      "text": "Planning was approved at the second planning review, after the first found the runner's pre-submission check would stop a narrower mutant. The coder is implementing the control, and its inventory question fixed the recorder's name and kept the logs uncompressed.",
       "pause": 500
     }
   ],
@@ -37,7 +37,7 @@
   ],
   "stop-conditions": [
     {
-      "text": "The coder stops and asks when the patch would do more than change the final declaration, when a mutant failure has another cause, when a repair would leave the test target, when a compressed log is above five mebibytes, or when a model question appears.",
+      "text": "The coder stops and asks when the patch would do more than replace the declaration or would weaken a check, when a mutant failure has another cause, when a repair would leave the test target, when a raw log is above five mebibytes, or when a model question appears.",
       "pause": 500
     }
   ],
@@ -49,6 +49,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "a014a64386d33eb2b349a741c69097b8596eedfab02208cd9cc16b8a2bc9a8d3"
+    "sha256": "c67525631ef403d986cc8a1fdb1d154e706989e0b4104f5e1b64cf57b5332857"
   }
 }

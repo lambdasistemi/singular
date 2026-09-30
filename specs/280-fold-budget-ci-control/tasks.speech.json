@@ -1,12 +1,12 @@
 {
   "work-items": [
     {
-      "text": "Ten ordered tasks: planning and its audit, then the patch and reader page, the recorder, the recorded pair, a conditional repair of the regression target, committing the evidence alone, the final CI gate, the auditor's approvals and the ticket owner's acceptance. Stamps never replace the records, the verdicts or CI on a published head, and nothing is pushed.",
+      "text": "Ten ordered tasks: planning and its audit, then the patch and reader page, the recorder, the recorded pair, a conditional repair of the regression target, committing the records and raw logs alone, the final CI gate, the auditor's approvals and the ticket owner's acceptance. Stamps never replace the records, the verdicts or CI on a published head, and nothing is pushed.",
       "pause": 500
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "808defbf8e8431d649c5333506bf673e8227617d52cd54664e98462435ec40f9"
+    "sha256": "4eb444adbe88bd02c8199dc642d0ecfa1de885e8d3b85a690e28afa9cf3bd88b"
   }
 }

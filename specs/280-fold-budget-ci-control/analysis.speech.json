@@ -7,7 +7,7 @@
   ],
   "consistency-findings": [
     {
-      "text": "The planning audit found that a mutant emptying only the final map is stopped by the runner's pre-submission check and never reaches the node; the mutation now replaces the declaration itself, and no check is disabled. The spec says runner where the brief says interpreter, and both name the same fold step. Compressed logs are a storage choice. The fixture only sets the first fold's fallback, and the red is tied to that fold. Unknown log size has a stop condition, and inventory and fixture-state checks run in root CI.",
+      "text": "The planning audit found that a mutant emptying only the final map is stopped by the runner's pre-submission check; the mutation now replaces the declaration itself, and no check is disabled. The coder's inventory question led to a recorder named as a shell script and raw logs, both classes the inventory already maps. The spec says runner where the brief says interpreter, for the same fold step. The fixture only sets the first fold's fallback, and the red is tied to that fold. Log size has a stop condition, and inventory and fixture-state checks run in root CI.",
       "pause": 500
     }
   ],
@@ -25,6 +25,6 @@
   ],
   "_source": {
     "file": "analysis.md",
-    "sha256": "7206678512e597fabc6a1a8f10a07cb40ae9e26dafc58500c2de11c1595ef386"
+    "sha256": "6b4c68e8daa545a09c9b4004c71df551efc2a9deef8fd15c35da80896bda46b2"
   }
 }

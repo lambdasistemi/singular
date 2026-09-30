@@ -13,12 +13,12 @@
   ],
   "check-the-retained-pair": [
     {
-      "text": "The committed records and compressed logs come from one run against the candidate they name. Decompress a log and compare its digest with the record.",
+      "text": "The committed records and raw logs come from one run against the candidate they name. Compare each log's digest with its record.",
       "pause": 500
     }
   ],
   "_source": {
     "file": "quickstart.md",
-    "sha256": "20d7b9beb5a08d60a59372dcde646b10dec87386067d3af1d585d9db3caf1e25"
+    "sha256": "ad7d24a25d64d3c0cc4dfab2f5d2542e6fa94503059a0563565427d14b51dc72"
   }
 }

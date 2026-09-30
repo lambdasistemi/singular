@@ -4,7 +4,7 @@ As the coder, I want the recorder's interface fixed before I write it, so the re
 
 ## Recorder
 
-`conformance/review/fold-budget-control/record --candidate CANDIDATE --out OUT`
+`conformance/review/fold-budget-control/record.sh --candidate CANDIDATE --out OUT`
 
 | Argument | Type | Constraint |
 | --- | --- | --- |

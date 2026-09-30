@@ -1,7 +1,7 @@
 {
   "components": [
     {
-      "text": "Five components: the fixed-fallback patch, the recorder that runs the pair, the run records and compressed logs it writes, a reader page that describes them, and, only if needed, a repair inside the regression test target.",
+      "text": "Five components: the fixed-fallback patch, the recorder script that runs the pair, the run records and raw logs it writes, a reader page that describes them, and, only if needed, a repair inside the regression test target.",
       "pause": 500
     }
   ],
@@ -13,6 +13,6 @@
   ],
   "_source": {
     "file": "modules-model.md",
-    "sha256": "99174d489847f74f831e5a21433d00c2cc9733117f21a4e3ebbc7a8495e9bb74"
+    "sha256": "0e674a696be0a6b61442e7c69d8a8a808d5dcd6eec75d34225ec42badb65e9af"
   }
 }

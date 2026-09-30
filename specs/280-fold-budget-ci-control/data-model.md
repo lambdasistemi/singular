@@ -19,7 +19,7 @@ One JSON object per run, `mutant.json` and `restored.json`. Every field is read 
 | `command`, `cwd`, `env` | the exact argument vector, working directory and every variable the recorder set | equal in both records except the tree root |
 | `builds` | store paths of the regression target and the runner built for this tree | the regression target path differs between records |
 | `start`, `end`, `exit` | UTC times and the real exit status | the mutant is nonzero, the restored run is 0 |
-| `log` | `retained`, the compressed log's file name in the evidence directory; `bytes`, `lines` and `sha256` of the complete raw output | `sha256` equals the digest of the decompressed retained file |
+| `log` | `retained`, the raw log's file name in the evidence directory; `bytes`, `lines` and `sha256` of that complete raw output | `sha256` equals the digest of the retained file |
 | `witnesses` | the log lines matched for each R280-01 or R280-02 witness, with line numbers | all present, in order |
 | `invocations` | every nix and git invocation the recorder made for this run, with its exit | complete and ordered |
 
