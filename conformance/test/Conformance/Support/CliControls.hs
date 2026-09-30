@@ -3,6 +3,7 @@
 -- | The refusal controls are judged from receipts, and only from receipts.
 module Conformance.Support.CliControls (spec) where
 
+import Conformance.Cli.Admission (sha256Hex)
 import Conformance.Cli.Controls
     ( ClauseResult (..)
     , ClauseStatus (..)
@@ -10,8 +11,11 @@ import Conformance.Cli.Controls
     , Command (..)
     , Crafted (..)
     , Observation (..)
+    , ProcessEvidence (..)
+    , Provocation (..)
     , Receipt (..)
     , Story
+    , Submission (..)
     , Target (..)
     , attribution
     , commandName
@@ -22,9 +26,12 @@ import Conformance.Cli.Controls
     , emptyReceipt
     , held
     , judge
+    , obligationBindings
     , outline
+    , provocationName
     , rejectionEvidence
     , renderControls
+    , resolveObligation
     , resolveStatement
     , statementBindings
     , validateControls
@@ -40,19 +47,28 @@ import Conformance.Story.Specification
     , clauses
     , theorem
     )
+import Control.Monad (when)
 import Control.Monad.Operational
     ( Program
     , ProgramViewT (Return, (:>>=))
     , view
     )
-import Data.Aeson (Value (..), eitherDecodeFileStrict', object, (.=))
+import Data.Aeson
+    ( Value (..)
+    , eitherDecodeFileStrict'
+    , object
+    , toJSON
+    , (.=)
+    )
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
+import Data.ByteString qualified as BS
 import Data.Char (ord)
 import Data.Either (isLeft)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf)
 import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
 import Test.Hspec
     ( Spec
     , describe
@@ -101,6 +117,44 @@ honestReceipts story = do
         :: IORef Int -> IORef [String] -> IORef [Receipt] -> CliI a -> IO a
     act step inserted out i = case i of
         Require _ _ -> pure ()
+        Run Inspect (Target "interrupted") k ->
+            emit "run inspect" "interrupted" k $ \r ->
+                r
+                    { rcOutcome = "partial"
+                    , rcCommand =
+                        Just
+                            ( object
+                                [ "outcome" .= ("partial" :: String)
+                                , "incompleteCreate" .= object ["seed" .= ("s#0" :: String)]
+                                , "leaf" .= Null
+                                , "observed" .= ["b9" :: String]
+                                ]
+                            )
+                    }
+        Run Inspect (Target t) k
+            | t == "process" && k == "held" -> do
+                before <- readIORef inserted
+                emit "run inspect" t k $ \r ->
+                    r
+                        { rcOutcome = "success"
+                        , rcCommand =
+                            Just
+                                ( withObserved
+                                    ("process:killed" `elem` before)
+                                    ( commandReceipt
+                                        Inspect
+                                        k
+                                        0
+                                        ("process:killed" `elem` before)
+                                    )
+                                )
+                        }
+        Provoke p (Target t) k -> do
+            modifyIORef' inserted ((t <> ":" <> provocationName p) :)
+            when (p == TerminateKilled) $
+                modifyIORef' inserted ("process:killed" :)
+            emit ("provoke " <> T.pack (provocationName p)) t k $ \r ->
+                provoked p r
         Run c (Target t) k -> do
             before <- readIORef inserted
             let again = c == Insert && (t <> "/" <> k) `elem` before
@@ -243,7 +297,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
     it
         "states every clause once and refuses a refusal without an accepting control"
         $ do
-            length (outline controlsStory) `shouldBe` 79
+            length (outline controlsStory) `shouldBe` 98
             validateControls controlsStory `shouldBe` Right ()
             let refusedOnly =
                     theorem duplicateRefused $
@@ -257,7 +311,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
     it "holds every clause on an honest run" $ do
         rs <- honestReceipts controlsStory
         let results = judge rs controlsStory
-        statuses results `shouldBe` replicate 79 Held
+        statuses results `shouldBe` replicate 98 Held
         held results `shouldBe` True
     it
         "leaves every clause from a missing receipt on uncovered, naming the step"
@@ -270,7 +324,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                         )
                         rs
                 results = judge dropped controlsStory
-            length results `shouldBe` 79
+            length results `shouldBe` 98
             take 3 (statuses results) `shouldBe` [Held, Held, Held]
             drop 3 (statuses results) `shouldSatisfy` all isUncovered
             held results `shouldBe` False
@@ -350,7 +404,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         let rendered = renderControls (judge (take 3 rs) controlsStory) controlsStory
         rendered `shouldSatisfy` isInfixOf "uncovered: no receipt for step 3"
         rendered
-            `shouldSatisfy` isInfixOf "0 of 79 clauses hold; 0 do not; 79 are uncovered."
+            `shouldSatisfy` isInfixOf "0 of 98 clauses hold; 0 do not; 98 are uncovered."
         rendered
             `shouldSatisfy` isInfixOf
                 "`OpenDatumApplication.Statements.duplicate_refused_by_registry`"
@@ -402,6 +456,93 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                 `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
             titled "releases its protected deposit" (judge kept controlsStory)
                 `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+    it
+        "does not hold a client obligation its process evidence contradicts"
+        $ do
+            rs <- honestReceipts controlsStory
+            let titled s results = [crStatus r | r <- results, s `isInfixOf` crTitle r]
+                process f r = r{rcProcess = f <$> rcProcess r}
+                judged act f title =
+                    titled title (judge (alter act "process" f rs) controlsStory)
+                lateJudged f title =
+                    titled
+                        title
+                        (judge (alter "provoke create-late" "raced" f rs) controlsStory)
+            titled "lock is released" (judge rs controlsStory)
+                `shouldSatisfy` all (== Held)
+            judged
+                "provoke insert-while-locked"
+                (process (\p -> p{peJournalAfter = peJournalAfter p + 2}))
+                "while another process holds the registry's lock"
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+            judged
+                "provoke insert-while-locked"
+                (\r -> r{rcOutcome = "success"})
+                "while another process holds the registry's lock"
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+            judged
+                "provoke terminate-killed"
+                (process (\p -> p{peLastEvent = "fold/confirmed"}))
+                "killed once the node accepted its fold"
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+            judged
+                "provoke terminate-killed"
+                (process (\p -> p{peExit = 0}))
+                "killed once the node accepted its fold"
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+            judged
+                "provoke update-node-lost"
+                (process (\p -> p{peWaited = Just 121}))
+                "with the node stopped"
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+            judged
+                "provoke inspect-without-proof"
+                ( \r ->
+                    r
+                        { rcCommand =
+                            Just
+                                ( object
+                                    [ "outcome" .= ("proof-missing" :: String)
+                                    , "leaf" .= ("active" :: String)
+                                    ]
+                                )
+                        }
+                )
+                "proof material moved aside"
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+            lateJudged
+                ( process
+                    (\p -> p{peFilesAfter = [("targets/raced/registry.json", "02")]})
+                )
+                "is refused because the registry exists"
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+            lateJudged
+                (\r -> r{rcReason = Just "the wallet does not hold the seed"})
+                "is refused because the registry exists"
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+    it
+        "binds each client obligation to its row of the CLI's specification"
+        $ do
+            found <-
+                firstExisting
+                    [ "../specs/299-singular-cli/spec.md"
+                    , "specs/299-singular-cli/spec.md"
+                    ]
+            case found of
+                Nothing -> pendingWith "the CLI's specification is not in this checkout"
+                Just path -> do
+                    rows <- TE.decodeUtf8 <$> BS.readFile path
+                    let digest = sha256Hex . TE.encodeUtf8
+                    mapM_
+                        (\b -> resolveObligation digest rows b `shouldBe` Right ())
+                        obligationBindings
+                    case obligationBindings of
+                        (b : _) -> do
+                            resolveObligation digest rows b{boDigest = replicate 64 '0'}
+                                `shouldSatisfy` isLeft
+                            resolveObligation digest (T.replace "R299-05" "R299-5" rows) b
+                                `shouldSatisfy` isLeft
+                        [] -> fail "no client obligation is bound"
     it "computes each approved case's coverage from the clause verdicts" $ do
         rs <- honestReceipts controlsStory
         let full = renderControls (judge rs controlsStory) controlsStory
@@ -409,7 +550,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
             partial =
                 renderControls (judge withoutWithdrawal controlsStory) controlsStory
         full
-            `shouldSatisfy` isInfixOf "24 of 31 approved cases are covered live; 7 are not."
+            `shouldSatisfy` isInfixOf "30 of 31 approved cases are covered live; 1 are not."
         partial
             `shouldSatisfy` isInfixOf
                 "| a release of the live holding outside any fold | `only_fold_releases` | uncovered"
@@ -688,3 +829,83 @@ setField :: T.Text -> T.Text -> Value -> Value
 setField name value v = case v of
     Object o -> Object (KeyMap.insert (Key.fromText name) (String value) o)
     _ -> v
+
+-- | A terminal inspect that observed the killed fold from the chain.
+withObserved :: Bool -> Value -> Value
+withObserved killed v = case v of
+    Object o
+        | killed ->
+            Object (KeyMap.insert "observed" (toJSON ["f9" :: String]) o)
+    _ -> v
+
+-- | What each provoked command leaves when the client keeps its obligations.
+provoked :: Provocation -> Receipt -> Receipt
+provoked p r =
+    let still =
+            ProcessEvidence
+                { peJournal = "targets/process/journal.jsonl"
+                , peJournalBefore = 5
+                , peJournalAfter = 5
+                , peLastEvent = "insert/observed"
+                , peSubmitted = []
+                , peExit = 1
+                , peWaited = Nothing
+                , peFilesBefore = []
+                , peFilesAfter = []
+                , peSeedProbe = Nothing
+                }
+        killed step tx =
+            r
+                { rcOutcome = "no-receipt"
+                , rcSubmissions = [Submission step tx "b" "d"]
+                , rcProcess =
+                    Just
+                        still
+                            { peJournalAfter = 7
+                            , peLastEvent = step <> "/submitted"
+                            , peSubmitted = [tx]
+                            , peExit = -9
+                            }
+                }
+        noLeaf outcome =
+            r
+                { rcOutcome = outcome
+                , rcCommand = Just (object ["outcome" .= outcome, "leaf" .= Null])
+                , rcProcess = Just still
+                }
+    in  case p of
+            WhileLocked -> r{rcOutcome = "concurrent-writer", rcProcess = Just still}
+            SelectorChanged -> r{rcOutcome = "client-refusal", rcProcess = Just still}
+            WithoutProof -> noLeaf "proof-missing"
+            WithoutNode -> noLeaf "node-unavailable"
+            TerminateKilled -> killed "fold" "f9"
+            UpdateWhileUnresolved -> r{rcOutcome = "partial", rcProcess = Just still}
+            CreateKilled -> killed "boot" "b9"
+            CreateAgain -> r{rcOutcome = "client-refusal", rcProcess = Just still}
+            LateCreate ->
+                r
+                    { rcOutcome = "client-refusal"
+                    , rcReason =
+                        Just
+                            "targets/raced already holds a registry or its journal; create never overwrites one"
+                    , rcProcess =
+                        Just
+                            still
+                                { peFilesBefore = [("evidence/before/registry.json", "01")]
+                                , peFilesAfter = [("targets/raced/registry.json", "01")]
+                                , peSeedProbe = Just "evidence/probe.json"
+                                }
+                    }
+            NodeLost ->
+                r
+                    { rcOutcome = "partial"
+                    , rcReason = Just "the update u9 was submitted; its confirmation failed"
+                    , rcProcess =
+                        Just
+                            still
+                                { peJournalAfter = 8
+                                , peLastEvent = "update/unconfirmed"
+                                , peSubmitted = ["u9"]
+                                , peWaited = Just 31
+                                }
+                    }

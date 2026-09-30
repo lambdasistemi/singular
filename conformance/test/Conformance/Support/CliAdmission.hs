@@ -5,7 +5,8 @@ module Conformance.Support.CliAdmission (spec) where
 
 import Conformance.Cli.Admission (admit, sha256Hex, txIdHexOf)
 import Conformance.Cli.Controls
-    ( Receipt (..)
+    ( ProcessEvidence (..)
+    , Receipt (..)
     , Resolved (..)
     , Submission (..)
     , emptyReceipt
@@ -19,6 +20,7 @@ import Data.ByteString.Char8 qualified as BC
 import Data.List (isInfixOf)
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
 import Lens.Micro ((&), (.~))
 import System.Directory (createDirectoryIfMissing, removeFile)
 import System.FilePath ((</>))
@@ -68,7 +70,7 @@ mentions :: String -> Receipt -> Bool
 mentions phrase r = any (phrase `isInfixOf`) (problems r)
 
 spec :: Spec
-spec = commandSpec >> refusalSpec
+spec = commandSpec >> refusalSpec >> processSpec
 
 refusalSpec :: Spec
 refusalSpec = describe
@@ -257,3 +259,97 @@ commandSpec = describe
                 problems clean `shouldBe` []
                 dirty <- admit work inspect
                 dirty `shouldSatisfy` mentions "submits nothing"
+
+-- | A killed terminate as the backend records it: journal, printed receipt, kept body.
+processIn :: FilePath -> IO Receipt
+processIn work = do
+    createDirectoryIfMissing True (work </> "targets/t/submissions")
+    createDirectoryIfMissing True (work </> "evidence")
+    let fold = txOf 21
+        tx = txIdHexOf fold
+        name = "targets/t/submissions/" <> T.unpack tx <> ".cbor.hex"
+        bytes = bodyBytes fold
+        line event =
+            "{\"journalStep\":\"fold\",\"journalEvent\":\""
+                <> event
+                <> "\",\"journalTxId\":\""
+                <> TE.encodeUtf8 tx
+                <> "\"}"
+    BS.writeFile (work </> name) bytes
+    BS.writeFile
+        (work </> "targets/t/journal.jsonl")
+        ( BC.unlines
+            [ "{\"journalStep\":\"boot\",\"journalEvent\":\"observed\",\"journalTxId\":\"00\"}"
+            , line "prepared"
+            , line "submitted"
+            ]
+        )
+    BS.writeFile (work </> "evidence/printed.json") ""
+    BS.writeFile
+        (work </> "evidence/probe.json")
+        "{\"outcome\":\"success\"}"
+    BS.writeFile (work </> "evidence/before.json") "saved"
+    pure
+        (emptyReceipt 3 "provoke terminate-killed" "t" "k")
+            { rcOutcome = "no-receipt"
+            , rcEvidence = ["evidence/printed.json"]
+            , rcSubmissions = [Submission "fold" tx (T.pack name) (sha256Hex bytes)]
+            , rcProcess =
+                Just
+                    ProcessEvidence
+                        { peJournal = "targets/t/journal.jsonl"
+                        , peJournalBefore = 1
+                        , peJournalAfter = 3
+                        , peLastEvent = "fold/submitted"
+                        , peSubmitted = [tx]
+                        , peExit = -9
+                        , peWaited = Nothing
+                        , peFilesBefore = [("evidence/before.json", sha256Hex "saved")]
+                        , peFilesAfter = []
+                        , peSeedProbe = Just "evidence/probe.json"
+                        }
+            }
+
+processSpec :: Spec
+processSpec = describe
+    "A provoked command counts only on what its process left, read back"
+    $ do
+        it "admits the journal, printed receipt, copies and probe as recorded" $
+            withSystemTempDirectory "admission" $ \work -> do
+                r <- processIn work
+                a <- admit work r
+                problems a `shouldBe` []
+        it
+            "reports a recorded journal line, submission or file the run's files contradict"
+            $ withSystemTempDirectory "admission"
+            $ \work -> do
+                r <- processIn work
+                let with f = r{rcProcess = f <$> rcProcess r}
+                lastLine <-
+                    admit work (with (\p -> p{peLastEvent = "fold/confirmed"}))
+                lastLine `shouldSatisfy` mentions "last line when the command stopped"
+                submissions <- admit work (with (\p -> p{peSubmitted = []}))
+                submissions
+                    `shouldSatisfy` mentions "submissions while the command ran"
+                range <- admit work (with (\p -> p{peJournalAfter = 9}))
+                range `shouldSatisfy` mentions "the journal has 3 lines"
+                BS.writeFile (work </> "evidence/before.json") "changed"
+                copy <- admit work r
+                copy `shouldSatisfy` mentions "is not the bytes the receipt digests"
+        it
+            "reports a failed seed probe, a changed printed receipt and a missing record"
+            $ withSystemTempDirectory "admission"
+            $ \work -> do
+                r <- processIn work
+                BS.writeFile
+                    (work </> "evidence/probe.json")
+                    "{\"outcome\":\"client-refusal\"}"
+                probe <- admit work r
+                probe `shouldSatisfy` mentions "the seed is spent"
+                BS.writeFile
+                    (work </> "evidence/printed.json")
+                    "{\"outcome\":\"success\"}"
+                printed <- admit work r
+                printed `shouldSatisfy` mentions "differs from evidence/printed.json"
+                unrecorded <- admit work r{rcProcess = Nothing}
+                unrecorded `shouldSatisfy` mentions "is not recorded"

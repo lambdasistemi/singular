@@ -28,11 +28,14 @@ refusal rather than a silent choice.
 module Conformance.Cli.Backend (runControls) where
 
 import Control.Applicative ((<|>))
+import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (async, cancel, waitCatch)
 import Control.Exception
     ( SomeAsyncException
     , SomeException
+    , bracket
     , evaluate
+    , finally
     , fromException
     , throwIO
     , try
@@ -57,17 +60,53 @@ import Data.ByteString.Short qualified as SBS
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (isNothing)
 import Data.Ord (Down (..))
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
+import Data.Time.Clock (diffUTCTime, getCurrentTime)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
-import System.Directory (createDirectoryIfMissing, doesFileExist)
+import System.Directory
+    ( copyFile
+    , createDirectoryIfMissing
+    , doesFileExist
+    , doesPathExist
+    , renameFile
+    )
+import System.Environment (getEnvironment)
 import System.Exit (ExitCode (..))
-import System.FilePath (makeRelative, (</>))
-import System.IO (hPutStrLn, stderr)
-import System.Process (readProcessWithExitCode)
+import System.FilePath (makeRelative, takeDirectory, (</>))
+import System.IO
+    ( IOMode (..)
+    , SeekMode (..)
+    , hPutStrLn
+    , openFile
+    , stderr
+    )
+import System.Posix.IO
+    ( LockRequest (..)
+    , OpenFileFlags (..)
+    , OpenMode (..)
+    , closeFd
+    , defaultFileFlags
+    , openFd
+    , setLock
+    )
+import System.Posix.Signals (sigKILL, signalProcess)
+import System.Process
+    ( CreateProcess (..)
+    , ProcessHandle
+    , StdStream (..)
+    , createProcess
+    , getPid
+    , getProcessExitCode
+    , proc
+    , readProcessWithExitCode
+    , terminateProcess
+    , waitForProcess
+    )
 import System.Timeout (timeout)
 import Text.Printf (printf)
 
@@ -214,21 +253,33 @@ import Singular.Registry.Types
     , edgeUpdateTerminal
     )
 
+import Conformance.Cli.Admission
+    ( lastEventOf
+    , lastMaybe
+    , sha256Hex
+    , submittedIn
+    )
 import Conformance.Cli.Controls
     ( CliI (..)
     , Command (..)
     , Crafted (..)
     , Observation (..)
+    , ProcessEvidence (..)
+    , Provocation (..)
     , Receipt (..)
     , Resolved (..)
     , Story
     , Submission (..)
     , Target (..)
+    , cliSpecification
     , commandName
     , controlsStory
     , craftedName
     , emptyReceipt
+    , obligationBindings
+    , provocationName
     , rejectionEvidence
+    , resolveObligation
     , resolveStatement
     , statementBindings
     , validateControls
@@ -256,10 +307,14 @@ data Options = Options
     , optWork :: FilePath
     , optStranger :: FilePath
     -- ^ A second funded wallet, never a controller in the story
+    , optSpecification :: FilePath
+    {- ^ The CLI's specification, whose rows the client obligations bind;
+    by default the one in the repository holding the statement ledger
+    -}
     }
 
 parseOptions :: [String] -> Either String Options
-parseOptions = go (Options "" "" "" "" 0 "" "" "")
+parseOptions = go (Options "" "" "" "" 0 "" "" "" "")
   where
     go o [] = do
         forM_
@@ -285,6 +340,7 @@ parseOptions = go (Options "" "" "" "" 0 "" "" "")
         "--wallet-skey" -> go o{optWalletKey = v} rest
         "--work" -> go o{optWork = v} rest
         "--stranger-skey" -> go o{optStranger = v} rest
+        "--specification" -> go o{optSpecification = v} rest
         _ -> Left ("unknown option " <> flag)
     go _ [flag] = Left (flag <> " needs a value")
 
@@ -303,6 +359,17 @@ runControls args = do
             >>= either (fail . ("statement ledger: " <>)) pure
     forM_ statementBindings $ \b ->
         either (fail . ("cli-controls: " <>)) pure (resolveStatement ledger b)
+    let specification
+            | null (optSpecification o) =
+                takeDirectory (takeDirectory (takeDirectory (optLedger o)))
+                    </> cliSpecification
+            | otherwise = optSpecification o
+    rows <- TE.decodeUtf8 <$> BS.readFile specification
+    forM_ obligationBindings $ \b ->
+        either
+            (fail . ("cli-controls: " <>))
+            pure
+            (resolveObligation (sha256Hex . TE.encodeUtf8) rows b)
     either
         (fail . ("cli-controls: story refused: " <>))
         pure
@@ -378,6 +445,13 @@ perform env i = case i of
             t
             k
             (craft env c t k)
+    Provoke p t k ->
+        recorded
+            env
+            ("provoke " <> T.pack (provocationName p))
+            t
+            k
+            (provoke env p t k)
 
 {- | Number the action, run it, and write its receipt. An exception is the
 action's own outcome, @client-error@, never a stop of the story.
@@ -661,6 +735,22 @@ submitAndConfirm env sess wallet r unsigned = do
 runCommand
     :: Env -> Command -> Target -> String -> Receipt -> IO Receipt
 runCommand env c target key r = do
+    args <- commandArgs env c target key r
+    let journal = targetDir env target </> "journal.jsonl"
+    before <- journalLines journal
+    (status, printed, file) <- singular env r (commandName c) args
+    (submissions, resolved) <-
+        journalledSubmissions env (drop before <$> journalLines' journal)
+    pure
+        (fromPrinted r status printed file)
+            { rcSubmissions = submissions
+            , rcResolved = resolved
+            }
+
+-- | The arguments of one ordinary command, writing the files it reads.
+commandArgs
+    :: Env -> Command -> Target -> String -> Receipt -> IO [String]
+commandArgs env c target key r = do
     let o = envOptions env
         dir = targetDir env target
         node =
@@ -668,14 +758,9 @@ runCommand env c target key r = do
         wallet = ["--wallet-skey", optWalletKey o, "--confirm-timeout", "120"]
         common = ["--registry", dir, "--blueprint", optBlueprint o]
         keyArg = ["--key", T.unpack (hex (keyBytes key))]
-    args <- case c of
+    case c of
         Create -> do
-            (_, preview, _) <-
-                singular env r "preview" $
-                    ["registry", "create", "--preview"] <> common <> node <> wallet
-            seed <- case field "seed" preview of
-                Just (String s) -> pure (T.unpack s)
-                _ -> fail "the preview named no seed"
+            seed <- previewSeed env r "preview" (optWalletKey o) dir Nothing
             pure
                 (["registry", "create", "--seed", seed] <> common <> node <> wallet)
         Insert -> do
@@ -706,36 +791,423 @@ runCommand env c target key r = do
                     <> wallet
                 )
         Inspect -> pure (["registry", "inspect"] <> common <> keyArg <> node)
-    let journal = dir </> "journal.jsonl"
-    before <- journalLines journal
-    (status, printed, file) <- singular env r (commandName c) args
-    (submissions, resolved) <-
-        journalledSubmissions env (drop before <$> journalLines' journal)
-    let outcome = case field "outcome" printed of
+
+{- | A preview of a create into @dir@ with a wallet: the seed it names. With
+a seed, the preview succeeds only while that seed is an unspent output of
+the wallet. It writes nothing.
+-}
+previewSeed
+    :: Env
+    -> Receipt
+    -> String
+    -> FilePath
+    -> FilePath
+    -> Maybe String
+    -> IO String
+previewSeed env r label skey dir seed = do
+    let o = envOptions env
+    (_, preview, _) <-
+        singular env r label $
+            [ "registry"
+            , "create"
+            , "--preview"
+            , "--registry"
+            , dir
+            , "--blueprint"
+            , optBlueprint o
+            ]
+                <> ["--node-socket", optSocket o, "--network-magic", show (optMagic o)]
+                <> ["--wallet-skey", skey]
+                <> maybe [] (\s -> ["--seed", s]) seed
+    case printedField "seed" preview of
+        Just (String s) -> pure (T.unpack s)
+        _ -> fail ("the " <> label <> " named no seed")
+
+-- | A command's receipt, filled from what it printed.
+fromPrinted :: Receipt -> ExitCode -> Maybe Value -> Text -> Receipt
+fromPrinted r status printed file =
+    r
+        { rcOutcome = case printedField "outcome" printed of
             Just (String s) -> s
             _ -> "no-receipt"
-        named k = case field k printed of
-            Just (String s) -> Just s
-            _ -> Nothing
-    pure
-        r
-            { rcOutcome = outcome
-            , rcTxId = named "fold" <|> named "booking"
-            , rcPendingRequest = named "pendingRequest"
-            , rcReason =
-                maybe
-                    (Just (T.pack ("exit " <> show status)))
-                    (Just . T.take 600)
-                    (named "reason")
-            , rcEvidence = rcEvidence r <> [file]
-            , rcCommand = printed
-            , rcSubmissions = submissions
-            , rcResolved = resolved
-            }
+        , rcTxId = named "fold" <|> named "booking"
+        , rcPendingRequest = named "pendingRequest"
+        , rcReason =
+            maybe
+                (Just (T.pack ("exit " <> show status)))
+                (Just . T.take 600)
+                (named "reason")
+        , rcEvidence = rcEvidence r <> [file]
+        , rcCommand = printed
+        }
   where
-    field k v = case v of
-        Just (Object m) -> KeyMap.lookup k m
+    named k = case printedField k printed of
+        Just (String s) -> Just s
         _ -> Nothing
+
+printedField :: Aeson.Key -> Maybe Value -> Maybe Value
+printedField k v = case v of
+    Just (Object m) -> KeyMap.lookup k m
+    _ -> Nothing
+
+-- ---------------------------------------------------------
+-- Provoked commands
+-- ---------------------------------------------------------
+
+{- | Run an ordinary command under a condition of its process, and record
+what the process left: the registry's journal before and after, the exit
+status, and, as the condition needs, the saved files of a registry it must
+not touch and a probe of its seed.
+-}
+provoke
+    :: Env -> Provocation -> Target -> String -> Receipt -> IO Receipt
+provoke env p target key r = do
+    let o = envOptions env
+        work = optWork o
+        dir = targetDir env target
+        journal = dir </> "journal.jsonl"
+        hold = envEvidence env </> printf "step-%03d-hold" (rcStep r)
+        seedFile = backendDir env target </> "seed"
+        label = provocationName p
+    createDirectoryIfMissing True (backendDir env target)
+    before <- journalLines journal
+    let finishFrom from status printed file extra = do
+            ls <- journalLines' journal
+            let delta = drop from ls
+            (submissions, resolved) <- journalledSubmissions env (pure delta)
+            let base = fromPrinted r status printed file
+            pure
+                base
+                    { rcSubmissions = submissions
+                    , rcResolved = resolved
+                    , rcProcess =
+                        Just
+                            ( extra
+                                ProcessEvidence
+                                    { peJournal = T.pack (makeRelative work journal)
+                                    , peJournalBefore = from
+                                    , peJournalAfter = length ls
+                                    , peLastEvent = maybe "" lastEventOf (lastMaybe ls)
+                                    , peSubmitted = submittedIn delta
+                                    , peExit = exitNumber status
+                                    , peWaited = Nothing
+                                    , peFilesBefore = []
+                                    , peFilesAfter = []
+                                    , peSeedProbe = Nothing
+                                    }
+                            )
+                    }
+        finish = finishFrom before
+        -- the transaction a killed command left accepted, once on the chain
+        awaitKilled = do
+            ls <- journalLines' journal
+            mapM_ (awaitOnChain env) (lastMaybe (submittedIn (drop before ls)))
+        plain args = do
+            (status, printed, file) <- singular env r label args
+            finish status printed file id
+        socketTo s args = case break (== "--node-socket") args of
+            (pre, flag : _ : post) -> pre <> [flag, s] <> post
+            _ -> args
+        timeoutTo s args = case break (== "--confirm-timeout") args of
+            (pre, flag : _ : post) -> pre <> [flag, s] <> post
+            _ -> args
+    case p of
+        WhileLocked -> do
+            args <- commandArgs env Insert target key r
+            bracket
+                ( openFd
+                    (dir </> ".lock")
+                    ReadWrite
+                    defaultFileFlags{creat = Just 0o644}
+                )
+                closeFd
+                ( \fd -> do
+                    setLock fd (WriteLock, AbsoluteSeek, 0, 0)
+                    plain args
+                )
+        SelectorChanged -> do
+            args <- commandArgs env Insert target key r
+            let config = dir </> "registry.json"
+            saved <- BS.readFile config
+            changed <- case Aeson.decodeStrict saved of
+                Just (Object m) ->
+                    pure (Object (KeyMap.insert "confApplication" (String "open.open") m))
+                _ -> fail "the saved configuration is not a JSON object"
+            (BL.writeFile config (Aeson.encode changed) >> plain args)
+                `finally` BS.writeFile config saved
+        WithoutProof -> do
+            args <- commandArgs env Inspect target key r
+            let mirror = dir </> "registry.mirror.json"
+                aside = backendDir env target </> "registry.mirror.json.aside"
+            renameFile mirror aside
+            plain args `finally` renameFile aside mirror
+        WithoutNode -> do
+            args <- commandArgs env Inspect target key r
+            plain (socketTo (work </> "absent.sock") args)
+        TerminateKilled -> do
+            args <- commandArgs env Terminate target key r
+            (status, printed, file) <- killedAt env r label hold "fold" args
+            awaitKilled
+            finish status printed file id
+        UpdateWhileUnresolved -> commandArgs env (Update 3) target key r >>= plain
+        CreateKilled -> do
+            seed <-
+                previewSeed env r "preview" (optWalletKey o) dir Nothing
+            writeFile seedFile seed
+            let args = createArgs dir (optWalletKey o) seed
+            (status, printed, file) <- killedAt env r label hold "boot" args
+            awaitKilled
+            finish status printed file id
+        CreateAgain -> do
+            seed <- readFile seedFile
+            plain (createArgs dir (optWalletKey o) seed)
+        LateCreate -> do
+            let late = optStranger o
+            first <-
+                previewSeed
+                    env
+                    r
+                    "preview-first"
+                    (optWalletKey o)
+                    (work </> "probe-first")
+                    Nothing
+            seedLate <-
+                previewSeed env r "preview-late" late (work </> "probe-late") Nothing
+            when (first == seedLate) $ fail "the two creates name the same seed"
+            let lateArgs = createArgs dir late seedLate
+                firstArgs = createArgs dir (optWalletKey o) first
+            (late', out) <-
+                spawnSingular
+                    env
+                    r
+                    label
+                    [("SINGULAR_HARNESS_HOLD_BEFORE_LOCK", hold)]
+                    lateArgs
+            awaitFile (hold <> ".waiting") late'
+                >>= flip unless (fail "the late create never reached its hold point")
+            (firstStatus, firstPrinted, _) <-
+                singular env r "create-first" firstArgs
+            unless
+                ( firstStatus == ExitSuccess
+                    && printedField "outcome" firstPrinted == Just (String "success")
+                )
+                $ fail "the first create did not complete"
+            copies <-
+                snapshot (envEvidence env </> printf "step-%03d-before" (rcStep r))
+            _ <-
+                previewSeed
+                    env
+                    r
+                    "seed-late-held"
+                    late
+                    (work </> "probe-held")
+                    (Just seedLate)
+            lockedBefore <- journalLines journal
+            writeFile hold ""
+            status <- waitForProcess late'
+            printed <-
+                Aeson.decodeStrict <$> BS.readFile (envEvidence env </> out)
+            filesAfter <- digests dir
+            (_, _, probe) <-
+                singular
+                    env
+                    r
+                    "seed-late-after"
+                    [ "registry"
+                    , "create"
+                    , "--preview"
+                    , "--registry"
+                    , work </> "probe-after"
+                    , "--blueprint"
+                    , optBlueprint o
+                    , "--node-socket"
+                    , optSocket o
+                    , "--network-magic"
+                    , show (optMagic o)
+                    , "--wallet-skey"
+                    , late
+                    , "--seed"
+                    , seedLate
+                    ]
+            finishFrom lockedBefore status printed (T.pack ("evidence" </> out)) $ \pe ->
+                pe
+                    { peFilesBefore = copies
+                    , peFilesAfter = filesAfter
+                    , peSeedProbe = Just probe
+                    }
+        NodeLost -> do
+            args <- timeoutTo "30" <$> commandArgs env (Update 4) target key r
+            (victim, out) <-
+                spawnSingular
+                    env
+                    r
+                    label
+                    [ ("SINGULAR_HARNESS_HOLD_AFTER_SUBMIT", hold)
+                    , ("SINGULAR_HARNESS_HOLD_STEP", "update")
+                    ]
+                    args
+            awaitFile (hold <> ".waiting") victim
+                >>= flip unless (fail "the update never reached an accepted submission")
+            stopNode env
+            released <- getCurrentTime
+            writeFile hold ""
+            status <- waitForProcess victim
+            ended <- getCurrentTime
+            printed <-
+                Aeson.decodeStrict <$> BS.readFile (envEvidence env </> out)
+            finish status printed (T.pack ("evidence" </> out)) $ \pe ->
+                pe{peWaited = Just (round (diffUTCTime ended released))}
+  where
+    createArgs registry skey seed =
+        let o = envOptions env
+        in  [ "registry"
+            , "create"
+            , "--seed"
+            , seed
+            , "--registry"
+            , registry
+            , "--blueprint"
+            , optBlueprint o
+            , "--node-socket"
+            , optSocket o
+            , "--network-magic"
+            , show (optMagic o)
+            , "--wallet-skey"
+            , skey
+            , "--confirm-timeout"
+            , "120"
+            ]
+    snapshot copyDir = do
+        createDirectoryIfMissing True copyDir
+        forM_ savedFiles $ \f ->
+            copyFile (targetDir env target </> f) (copyDir </> f)
+        digests copyDir
+    digests d =
+        mapM
+            ( \f -> do
+                bytes <- BS.readFile (d </> f)
+                pure
+                    ( T.pack (makeRelative (optWork (envOptions env)) (d </> f))
+                    , hex (sha256 bytes)
+                    )
+            )
+            savedFiles
+    savedFiles =
+        [ "registry.json"
+        , "registry.pending.json"
+        , "state.json"
+        , "registry.mirror.json"
+        , "journal.jsonl"
+        ]
+
+{- | Run a command held by the harness right after the node accepted the
+named step, kill it there, and wait until that transaction is on the chain.
+-}
+killedAt
+    :: Env
+    -> Receipt
+    -> String
+    -> FilePath
+    -> Text
+    -> [String]
+    -> IO (ExitCode, Maybe Value, Text)
+killedAt env r label hold step args = do
+    (victim, out) <-
+        spawnSingular
+            env
+            r
+            label
+            [ ("SINGULAR_HARNESS_HOLD_AFTER_SUBMIT", hold)
+            , ("SINGULAR_HARNESS_HOLD_STEP", T.unpack step)
+            ]
+            args
+    reached <- awaitFile (hold <> ".waiting") victim
+    unless reached $ do
+        terminateProcess victim
+        fail ("the command never reached its accepted " <> T.unpack step)
+    getPid victim >>= mapM_ (signalProcess sigKILL)
+    status <- waitForProcess victim
+    printed <-
+        Aeson.decodeStrict <$> BS.readFile (envEvidence env </> out)
+    pure (status, printed, T.pack ("evidence" </> out))
+
+{- | Start one @singular@ process with extra environment, its standard output
+kept as the printed receipt and its standard error beside it; the printed
+file is named relative to the evidence directory.
+-}
+spawnSingular
+    :: Env
+    -> Receipt
+    -> String
+    -> [(String, String)]
+    -> [String]
+    -> IO (ProcessHandle, FilePath)
+spawnSingular env r label extra args = do
+    inherited <- getEnvironment
+    let base = printf "step-%03d-%s" (rcStep r) label
+        out = base <> ".json"
+    hOut <- openFile (envEvidence env </> out) WriteMode
+    hErr <- openFile (envEvidence env </> base <> ".err") WriteMode
+    (_, _, _, ph) <-
+        createProcess
+            (proc (optSingular (envOptions env)) args)
+                { env =
+                    Just (extra <> filter ((`notElem` map fst extra) . fst) inherited)
+                , std_out = UseHandle hOut
+                , std_err = UseHandle hErr
+                }
+    pure (ph, out)
+
+-- | Wait up to two minutes for a file, while the process lives.
+awaitFile :: FilePath -> ProcessHandle -> IO Bool
+awaitFile path ph = go (1200 :: Int)
+  where
+    go 0 = pure False
+    go n = do
+        there <- doesFileExist path
+        alive <- isNothing <$> getProcessExitCode ph
+        if there
+            then pure True
+            else
+                if alive
+                    then threadDelay 100_000 >> go (n - 1)
+                    else pure False
+
+{- | Stop this run's development node: the one node whose configuration
+lives under the run's own directory, and wait for its socket to go.
+-}
+stopNode :: Env -> IO ()
+stopNode env = do
+    let o = envOptions env
+    void $
+        readProcessWithExitCode
+            "pkill"
+            ["-f", "cardano-node run --config " <> optWork o <> "/"]
+            ""
+    let wait (0 :: Int) = pure ()
+        wait n = do
+            there <- doesPathExist (optSocket o)
+            when there (threadDelay 100_000 >> wait (n - 1))
+    wait 100
+
+-- | The exit status as a number; the negated signal for a killed process.
+exitNumber :: ExitCode -> Int
+exitNumber status = case status of
+    ExitSuccess -> 0
+    ExitFailure n -> n
+
+{- | Wait, up to two minutes, until the wallet holds an output of the
+transaction: a killed command's accepted submission, on the chain.
+-}
+awaitOnChain :: Env -> Text -> IO ()
+awaitOnChain env txid = withNode env $ \sess wallet -> do
+    let go (0 :: Int) = pure ()
+        go n = do
+            utxos <- Cage.queryUTxOs (nsProvider sess) (walletAddr wallet)
+            unless
+                (any ((== txid) . T.takeWhile (/= '#') . renderOutRef . fst) utxos)
+                (threadDelay 200_000 >> go (n - 1))
+    go 600
 
 {- | One @singular@ process. Its printed receipt and its standard error are
 kept; the parsed receipt is returned when it is JSON.

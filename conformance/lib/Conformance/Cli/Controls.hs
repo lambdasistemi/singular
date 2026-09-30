@@ -41,6 +41,9 @@ module Conformance.Cli.Controls
     , resurrectionRefused
     , statementBindings
     , resolveStatement
+    , obligationBindings
+    , resolveObligation
+    , cliSpecification
 
       -- * The stories
     , duplicateStory
@@ -48,12 +51,16 @@ module Conformance.Cli.Controls
     , lifecycleStory
     , boundaryStory
     , controlsStory
+    , processStory
 
       -- * Receipts
     , Receipt (..)
     , Observation (..)
     , Submission (..)
     , Resolved (..)
+    , ProcessEvidence (..)
+    , Provocation (..)
+    , provocationName
     , emptyReceipt
 
       -- * Reading a node's rejection
@@ -109,6 +116,7 @@ import Data.Aeson
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
+import Data.Bifunctor qualified as Bifunctor
 import Data.Char (ord)
 import Data.List (intercalate, isInfixOf, nub)
 import Data.Map.Strict qualified as Map
@@ -237,6 +245,75 @@ craftedName c = case c of
     FoldMixedShort -> "fold-mixed-short"
     FoldMixedInFull -> "fold-mixed-in-full"
 
+{- | An ordinary command run under a condition of its process, not of the
+ledger: another process, a changed or missing file, an absent node, or a
+kill. What the command does then is the client's obligation under the
+CLI's own specification; no model statement covers it.
+-}
+data Provocation
+    = -- | @insert@, while another process holds the registry's lock
+      WhileLocked
+    | -- | @insert@, with the saved configuration's application selector changed
+      SelectorChanged
+    | -- | @inspect@, with the saved proof material moved aside
+      WithoutProof
+    | -- | @inspect@, against a node socket that does not exist
+      WithoutNode
+    | -- | @terminate@, killed once the node accepted its fold
+      TerminateKilled
+    | -- | @update@, while the fold the killed @terminate@ left is unresolved
+      UpdateWhileUnresolved
+    | -- | @create@ on a new registry, killed once the node accepted its boot
+      CreateKilled
+    | -- | @create@ again, on that interrupted registry
+      CreateAgain
+    | {- | @create@ from another wallet with its own live seed, held before
+      the registry's lock while a first @create@ of the same registry
+      completes
+      -}
+      LateCreate
+    | {- | @update@, held once the node accepted it while the node is stopped,
+      then released; the last action of a story, since the node is gone
+      -}
+      NodeLost
+    deriving stock (Eq, Show, Enum, Bounded)
+
+provocationName :: Provocation -> String
+provocationName p = case p of
+    WhileLocked -> "insert-while-locked"
+    SelectorChanged -> "insert-selector-changed"
+    WithoutProof -> "inspect-without-proof"
+    WithoutNode -> "inspect-without-node"
+    TerminateKilled -> "terminate-killed"
+    UpdateWhileUnresolved -> "update-while-unresolved"
+    CreateKilled -> "create-killed"
+    CreateAgain -> "create-again"
+    LateCreate -> "create-late"
+    NodeLost -> "update-node-lost"
+
+-- | A provoked command, in the description language.
+provocationPhrase :: Provocation -> String
+provocationPhrase p = case p of
+    WhileLocked ->
+        "Run `singular registry insert` while another process holds the registry's lock"
+    SelectorChanged ->
+        "Run `singular registry insert` with the saved application selector changed"
+    WithoutProof ->
+        "Run `singular registry inspect` with the saved proof material moved aside"
+    WithoutNode ->
+        "Run `singular registry inspect` against a node socket that does not exist"
+    TerminateKilled ->
+        "Run `singular registry terminate` and kill it once the node accepted its fold"
+    UpdateWhileUnresolved ->
+        "Run `singular registry update` while that fold is unresolved"
+    CreateKilled ->
+        "Run `singular registry create` on a new registry and kill it once the node accepted its boot"
+    CreateAgain -> "Run `singular registry create` again on that registry"
+    LateCreate ->
+        "Run `singular registry create` from another wallet with its own live seed, held before the registry's lock while a first create of the same registry completes"
+    NodeLost ->
+        "Run `singular registry update`, hold it once the node accepted it, stop the node, then release it"
+
 -- | A registry the story works in: its own directory and its own boot.
 newtype Target = Target String
     deriving stock (Eq, Show)
@@ -310,6 +387,37 @@ data Requirement
       control that such a rejection is not counted as the script's refusal
       -}
       RejectedBeforeScripts
+    | {- | A provoked command refused before submitting: its outcome is the
+      class its condition names, and the registry's journal did not move
+      -}
+      RefusedBeforeSubmitting
+    | {- | A provoked @inspect@: its outcome is the class its condition
+      names, and it printed no leaf
+      -}
+      NoLeafPrinted
+    | {- | A killed command: the journal's last line when it stopped is the
+      node's acceptance of the step it was killed at, and that submission's
+      body was kept
+      -}
+      StoppedAfterAcceptance
+    | {- | The killed @terminate@ and a later @inspect@ of its key: the key
+      reads Terminal, and the inspect observed the killed fold from the chain
+      -}
+      ResolvedFromChain
+    | {- | The killed @create@ and a later @inspect@ of its registry: the
+      inspect reads the incomplete create's identity from its journal,
+      observed the killed boot from the chain and printed no leaf
+      -}
+      IncompleteCreateRead
+    | {- | The late @create@: refused because the registry exists, the first
+      registry's saved files unchanged, and the late wallet's seed unspent
+      -}
+      LateCreateRefused
+    | {- | The @update@ that lost its node: it ended within its confirmation
+      bound, partial or timed out, naming the transaction it submitted, which
+      the journal keeps unresolved
+      -}
+      BoundedAfterNodeLoss
     deriving stock (Eq, Show, Enum, Bounded)
 
 {- | One step of the story. Every action but 'Require' leaves exactly one
@@ -332,6 +440,8 @@ data CliI res where
     Observe :: Target -> String -> CliI Receipt
     -- | Submit a hand-built transaction against the key's live holding
     Craft :: Crafted -> Target -> String -> CliI Receipt
+    -- | Run an ordinary command under a condition of its process
+    Provoke :: Provocation -> Target -> String -> CliI Receipt
     Require :: Requirement -> [Receipt] -> CliI ()
 
 type Story = Specification.Story CliI
@@ -492,6 +602,89 @@ statementBindings =
     , theoremBinding foldSettlesAdditively
     , theoremBinding foldInversion
     ]
+
+{- | A client obligation: a row of the CLI's own specification. It is not a
+model statement; what it covers is the command's behaviour under
+conditions of its process, which no Lean statement describes.
+-}
+data ClientObligation
+
+-- | The specification whose rows the client obligations are.
+cliSpecification :: String
+cliSpecification = "specs/299-singular-cli/spec.md"
+
+-- | A row, bound by its identifier and the SHA-256 of its exact line.
+obligationRow :: String -> String -> Theorem ClientObligation
+obligationRow name digest =
+    bindTheorem (mkBoundObligation name digest cliSpecification)
+
+-- | Every submission survives; concurrent writers, lost nodes and repeated creates halt.
+haltsAttributably :: Theorem ClientObligation
+haltsAttributably =
+    obligationRow
+        "R299-05"
+        "48571660f8f961589835502e6e91c13869ca9147bbd61ce61051a1c723f4c489"
+
+-- | Submissions and partial state survive interruption; nothing is resubmitted.
+partialSurvives :: Theorem ClientObligation
+partialSurvives =
+    obligationRow
+        "INV299-PARTIAL"
+        "061a9d1cf5e9a2dd19350bc408eb7d6d021111ec258d32b10b4d20423c013403"
+
+-- | A leaf is reported only against the observed commitment.
+authenticated :: Theorem ClientObligation
+authenticated =
+    obligationRow
+        "INV299-AUTHENTICATED"
+        "52603654cc9882b70cc851e8c5f5723711cb71a6953f2201e4aa275bc9f7ca19"
+
+-- | The saved identity binds every write; a substitution refuses.
+identityBinds :: Theorem ClientObligation
+identityBinds =
+    obligationRow
+        "INV299-IDENTITY"
+        "4d240e11a11aa2bbcc17ba83488bd71a7eb1f0331fe03118c2d43df0880975aa"
+
+-- | An unavailable read never prints confirmed status.
+readOnly :: Theorem ClientObligation
+readOnly =
+    obligationRow
+        "INV299-READONLY"
+        "e55cb1ea53e72fb95ffb8553f92dec19d78faebcb84052d5a37b225e8715aabc"
+
+-- | The client obligations the controls bind.
+obligationBindings :: [Binding]
+obligationBindings =
+    [ theoremBinding haltsAttributably
+    , theoremBinding partialSurvives
+    , theoremBinding authenticated
+    , theoremBinding identityBinds
+    , theoremBinding readOnly
+    ]
+
+{- | Whether the CLI's specification carries the bound row exactly once,
+its line hashing (by the given SHA-256) to the bound digest.
+-}
+resolveObligation
+    :: (Text -> Text) -> Text -> Binding -> Either String ()
+resolveObligation sha256 specification b =
+    case [ l
+         | l <- T.lines specification
+         , ("| " <> T.pack (boName b) <> " |") `T.isPrefixOf` l
+         ] of
+        [l]
+            | sha256 l == T.pack (boDigest b) -> Right ()
+            | otherwise ->
+                Left
+                    ( boName b
+                        <> ": the specification's row hashes to "
+                        <> T.unpack (sha256 l)
+                        <> ", not the bound "
+                        <> boDigest b
+                    )
+        [] -> Left (boName b <> ": not a row of " <> cliSpecification)
+        _ -> Left (boName b <> ": more than one row of " <> cliSpecification)
 
 {- | Whether the application's statement ledger (@ledgers.json@) carries
 the bound statement under the bound digest, proved.
@@ -1119,6 +1312,117 @@ controlsStory =
         >> boundaryStory
         >> bookingStory
         >> settlementStory
+        >> processStory
+
+{- | The client's obligations under conditions of its process, each told
+under the row of the CLI's specification it bears on: a changed selector,
+missing proof material and an absent node; a terminate and a create killed
+once the node accepted them; and, last because it stops the node, a
+concurrent writer, a racing create and an update that loses its node.
+-}
+processStory :: Story ()
+processStory = do
+    let target = Target "process"
+        interrupted = Target "interrupted"
+        raced = Target "raced"
+        second = "second"
+        third = "third"
+        reading key title thm =
+            premiseClause
+                thm
+                title
+                ReachedActive
+                (pure <$> action (Run Inspect target key))
+    theorem identityBinds $ do
+        _ <-
+            premiseClause
+                identityBinds
+                "the key reached Active through the ordinary commands, and inspect reads it Active"
+                ReachedActive
+                (reach False target)
+        _ <-
+            clause
+                "an insert with the saved application selector changed is refused before submitting"
+                (requirement identityBinds RefusedBeforeSubmitting)
+                (pure <$> action (Provoke SelectorChanged target second))
+        void $
+            clause
+                "the same insert, with the selector restored, is accepted"
+                (requirement identityBinds CommandSucceeded)
+                (pure <$> action (Run Insert target second))
+    theorem authenticated $ do
+        _ <- reading heldKey "inspect reads the key Active" authenticated
+        void $
+            clause
+                "inspect with the saved proof material moved aside prints no leaf"
+                (requirement authenticated NoLeafPrinted)
+                (pure <$> action (Provoke WithoutProof target heldKey))
+    theorem readOnly $ do
+        _ <- reading heldKey "inspect reads the key Active" readOnly
+        void $
+            clause
+                "inspect against a node socket that does not exist prints no leaf"
+                (requirement readOnly NoLeafPrinted)
+                (pure <$> action (Provoke WithoutNode target heldKey))
+    theorem partialSurvives $ do
+        _ <- reading heldKey "inspect reads the key Active" partialSurvives
+        killed <-
+            clause
+                "a terminate killed once the node accepted its fold stopped there, its body kept"
+                (requirement partialSurvives StoppedAfterAcceptance)
+                (pure <$> action (Provoke TerminateKilled target heldKey))
+        _ <-
+            clause
+                "an update while that fold is unresolved is refused before submitting"
+                (requirement partialSurvives RefusedBeforeSubmitting)
+                (pure <$> action (Provoke UpdateWhileUnresolved target second))
+        _ <-
+            clause
+                "inspect reads the key Terminal: the killed terminate's fold is accepted"
+                ( bindCheck partialSurvives $ \seen ->
+                    action (Require ResolvedFromChain (take 1 killed <> [seen]))
+                )
+                (action (Run Inspect target heldKey))
+        booted <-
+            clause
+                "a create killed once the node accepted its boot stopped there, its body kept"
+                (requirement partialSurvives StoppedAfterAcceptance)
+                (pure <$> action (Provoke CreateKilled interrupted ""))
+        _ <-
+            clause
+                "a second create of that registry is refused before submitting"
+                (requirement partialSurvives RefusedBeforeSubmitting)
+                (pure <$> action (Provoke CreateAgain interrupted ""))
+        void $
+            clause
+                "inspect reads the incomplete create from its journal and observes its boot, printing no leaf"
+                ( bindCheck partialSurvives $ \seen ->
+                    action (Require IncompleteCreateRead (take 1 booted <> [seen]))
+                )
+                (action (Run Inspect interrupted heldKey))
+    theorem haltsAttributably $ do
+        _ <-
+            reading second "inspect reads a second key Active" haltsAttributably
+        _ <-
+            clause
+                "an insert while another process holds the registry's lock is refused before submitting"
+                (requirement haltsAttributably RefusedBeforeSubmitting)
+                (pure <$> action (Provoke WhileLocked target third))
+        _ <-
+            clause
+                "the same insert, once the lock is released, is accepted"
+                (requirement haltsAttributably CommandSucceeded)
+                (pure <$> action (Run Insert target third))
+        _ <-
+            clause
+                "a create from another wallet on its own live seed, held before the lock while a first create completes, is refused because the registry exists"
+                (requirement haltsAttributably LateCreateRefused)
+                (pure <$> action (Provoke LateCreate raced ""))
+        void $
+            clause
+                "an update held once the node accepted it, with the node stopped, ends within its bound naming its transaction"
+                (requirement haltsAttributably BoundedAfterNodeLoss)
+                (pure <$> action (Provoke NodeLost target second))
 
 -- ---------------------------------------------------------
 -- Receipts
@@ -1209,6 +1513,8 @@ data Receipt = Receipt
     {- ^ For an ordinary command: every live output its journal read back
     without submitting it (a reference an earlier command published)
     -}
+    , rcProcess :: Maybe ProcessEvidence
+    -- ^ For a provoked command: what its process left, as recorded
     , rcAdmission :: Maybe [Text]
     {- ^ What reading the retained body and rejection back found wrong;
     nothing until the receipt is admitted. Never read from a receipt file:
@@ -1245,6 +1551,7 @@ emptyReceipt step act target key =
         , rcBodySha256 = Nothing
         , rcSubmissions = []
         , rcResolved = []
+        , rcProcess = Nothing
         , rcAdmission = Nothing
         , rcReason = Nothing
         , rcObservation = Nothing
@@ -1273,6 +1580,7 @@ instance ToJSON Receipt where
             , "bodySha256" .= rcBodySha256 r
             , "submissions" .= rcSubmissions r
             , "resolved" .= rcResolved r
+            , "process" .= rcProcess r
             , "reason" .= rcReason r
             , "observation" .= rcObservation r
             , "evidence" .= rcEvidence r
@@ -1300,6 +1608,7 @@ instance FromJSON Receipt where
             <*> o .:? "bodySha256"
             <*> (fromMaybe [] <$> o .:? "submissions")
             <*> (fromMaybe [] <$> o .:? "resolved")
+            <*> o .:? "process"
             <*> pure Nothing
             <*> o .:? "reason"
             <*> o .:? "observation"
@@ -1315,6 +1624,8 @@ identify i = case i of
     Observe (Target t) k -> Just ("observe", T.pack t, T.pack k)
     Craft c (Target t) k ->
         Just ("craft " <> T.pack (craftedName c), T.pack t, T.pack k)
+    Provoke p (Target t) k ->
+        Just ("provoke " <> T.pack (provocationName p), T.pack t, T.pack k)
     Require _ _ -> Nothing
 
 -- ---------------------------------------------------------
@@ -1340,6 +1651,77 @@ succeeded what r =
     | rcOutcome r /= "success"
     ]
         <> map ((what <> ": ") <>) (admitted r)
+
+-- | Fail unless the receipt's outcome is the one named.
+outcomeIs :: Receipt -> Text -> [String]
+outcomeIs r expected =
+    [ "the outcome is " <> show (rcOutcome r) <> ", not " <> show expected
+    | rcOutcome r /= expected
+    ]
+
+-- | The outcome class a provoked command's condition calls for.
+expectedOutcome :: Receipt -> Text
+expectedOutcome r = case T.stripPrefix "provoke " (rcAction r) of
+    Just "insert-while-locked" -> "concurrent-writer"
+    Just "insert-selector-changed" -> "client-refusal"
+    Just "inspect-without-proof" -> "proof-missing"
+    Just "inspect-without-node" -> "node-unavailable"
+    Just "update-while-unresolved" -> "partial"
+    Just "create-again" -> "client-refusal"
+    _ -> "a provoked command's outcome"
+
+-- | The step a killed command was killed at, by the node's acceptance of it.
+killedStep :: Receipt -> Text
+killedStep r = case T.stripPrefix "provoke " (rcAction r) of
+    Just "terminate-killed" -> "fold"
+    Just "create-killed" -> "boot"
+    _ -> "step"
+
+-- | The checks on what a provoked command's process left, if it was recorded.
+withProcess :: Receipt -> (ProcessEvidence -> [String]) -> [String]
+withProcess r f =
+    maybe
+        ["what the command's process left is not recorded"]
+        f
+        (rcProcess r)
+
+-- | Fail unless the registry's journal did not move while the command ran.
+journalStill :: ProcessEvidence -> [String]
+journalStill p =
+    [ "the registry's journal moved from "
+        <> show (peJournalBefore p)
+        <> " to "
+        <> show (peJournalAfter p)
+        <> " lines"
+    | peJournalAfter p /= peJournalBefore p
+    ]
+
+-- | Fail unless the command submitted nothing.
+nothingSubmitted :: Receipt -> ProcessEvidence -> [String]
+nothingSubmitted r p =
+    [ "the command submitted "
+        <> show (length (peSubmitted p))
+        <> " transactions"
+    | not (null (peSubmitted p)) || not (null (rcSubmissions r))
+    ]
+
+{- | Fail unless the inspect observed, from the chain, the transaction the
+killed command submitted (its first or last, as chosen).
+-}
+observedKilled :: Receipt -> Receipt -> ([Text] -> [Text]) -> [String]
+observedKilled killed seen pick =
+    withProcess killed $ \p -> case pick (peSubmitted p) of
+        [] -> ["the killed command's journal records no submission"]
+        t : _ ->
+            [ "the inspect did not observe the killed command's transaction "
+                <> T.unpack t
+            | Aeson.String t
+                `notElem` maybe [] toList' (at [field "observed"] seen)
+            ]
+  where
+    toList' v = case v of
+        Aeson.Array a -> V.toList a
+        _ -> []
 
 -- | Fail unless two receipt values are present and equal.
 same :: String -> Maybe Aeson.Value -> Maybe Aeson.Value -> [String]
@@ -1563,6 +1945,108 @@ check req rs = case (req, rs) of
             <> [ "the readback is of another registry"
                | rcTarget c /= rcTarget o
                ]
+    (RefusedBeforeSubmitting, [r]) ->
+        outcomeIs r (expectedOutcome r)
+            <> withProcess r (\p -> journalStill p <> nothingSubmitted r p)
+            <> admitted r
+    (NoLeafPrinted, [r]) ->
+        outcomeIs r (expectedOutcome r)
+            <> [ "a leaf was printed: " <> maybe "" show leaf
+               | let leaf = at [field "leaf"] r
+               , leaf `notElem` [Nothing, Just Aeson.Null]
+               ]
+            <> admitted r
+    (StoppedAfterAcceptance, [r]) ->
+        withProcess
+            r
+            ( \p ->
+                [ "the process was not killed: it exited " <> show (peExit p)
+                | peExit p >= 0
+                ]
+                    <> [ "the journal's last line when it stopped is "
+                            <> show (peLastEvent p)
+                            <> ", not the node's acceptance of its "
+                            <> T.unpack (killedStep r)
+                       | peLastEvent p /= killedStep r <> "/submitted"
+                       ]
+                    <> case reverse (peSubmitted p) of
+                        [] -> ["the journal records no submission of the command"]
+                        t : _ ->
+                            [ "the accepted transaction "
+                                <> T.unpack t
+                                <> " has no kept body"
+                            | t `notElem` map suTxId (rcSubmissions r)
+                            ]
+            )
+            <> admitted r
+    (ResolvedFromChain, [killed, seen]) ->
+        succeeded "the inspect" seen
+            <> is "the key's leaf" "terminal" (at [field "leaf"] seen)
+            <> observedKilled killed seen reverse
+            <> admitted killed
+    (IncompleteCreateRead, [killed, seen]) ->
+        outcomeIs seen "partial"
+            <> [ "the inspect did not read the incomplete create's seed"
+               | at [field "incompleteCreate", field "seed"] seen
+                    `elem` [Nothing, Just Aeson.Null]
+               ]
+            <> [ "the inspect printed a leaf for an incomplete create"
+               | at [field "leaf"] seen `notElem` [Nothing, Just Aeson.Null]
+               ]
+            <> observedKilled killed seen id
+            <> admitted seen
+            <> admitted killed
+    (LateCreateRefused, [r]) ->
+        outcomeIs r "client-refusal"
+            <> [ "the refusal is not that the registry exists: "
+                    <> maybe "no reason" T.unpack (rcReason r)
+               | not
+                    ( maybe
+                        False
+                        ( "already holds a registry or its journal; create never overwrites one"
+                            `T.isSuffixOf`
+                        )
+                        (rcReason r)
+                    )
+               ]
+            <> withProcess
+                r
+                ( \p ->
+                    [ "the first registry's saved files are not recorded"
+                    | null (peFilesBefore p)
+                    ]
+                        <> [ "the first registry's saved files changed"
+                           | byName (peFilesBefore p) /= byName (peFilesAfter p)
+                           ]
+                        <> [ "the late wallet's seed was not probed afterwards"
+                           | isNothing (peSeedProbe p)
+                           ]
+                )
+            <> admitted r
+    (BoundedAfterNodeLoss, [r]) ->
+        [ "the outcome is " <> show (rcOutcome r) <> ", not partial or timeout"
+        | rcOutcome r `notElem` ["partial", "timeout"]
+        ]
+            <> withProcess
+                r
+                ( \p ->
+                    [ "the command ran "
+                        <> maybe "an unknown time" (\s -> show s <> "s") (peWaited p)
+                        <> " past its release, beyond its 30-second bound and teardown"
+                    | maybe True (> 90) (peWaited p)
+                    ]
+                        <> [ "the journal does not keep the submitted update unresolved: its last line is "
+                                <> show (peLastEvent p)
+                           | not ("/unconfirmed" `T.isSuffixOf` peLastEvent p)
+                           ]
+                        <> case peSubmitted p of
+                            [] -> ["the journal records no submission of the update"]
+                            ts ->
+                                [ "the receipt does not name the submitted transaction"
+                                | not (any (\t -> maybe False (t `T.isInfixOf`) (rcReason r)) ts)
+                                ]
+                )
+            <> admitted r
     (_, _) ->
         [ show req
             <> " takes "
@@ -1573,6 +2057,8 @@ check req rs = case (req, rs) of
                            , RegistryUnchanged
                            , SameRegistry
                            , Delivered
+                           , ResolvedFromChain
+                           , IncompleteCreateRead
                            ]
                     then "two"
                     else if req `elem` [PayloadReplaced, Released] then "three" else "one"
@@ -1712,6 +2198,7 @@ replay byStep story =
         FoldUnevaluated{} -> answer st i
         Observe{} -> answer st i
         Craft{} -> answer st i
+        Provoke{} -> answer st i
 
     answer :: Replay -> CliI Receipt -> (Maybe Receipt, Replay)
     answer st@(Replay n rs _) i = case (identify i, Map.lookup n byStep) of
@@ -1798,6 +2285,7 @@ outline story = snd (walk 0 story)
         FoldUnevaluated{} -> (n + 1, emptyReceipt n "" "" "")
         Observe{} -> (n + 1, emptyReceipt n "" "" "")
         Craft{} -> (n + 1, emptyReceipt n "" "" "")
+        Provoke{} -> (n + 1, emptyReceipt n "" "" "")
 
 {- | Refuse a story before it runs: every statement it binds must be one of
 'statementBindings' and told once, every clause title distinct within its
@@ -1813,8 +2301,8 @@ validateControls story = do
         Left
             "a statement is told more than once; each telling needs its own control"
     forM_ statements $ \s -> do
-        unless (s `elem` map boName statementBindings) $
-            Left (s <> " is not a statement this domain binds")
+        unless (s `elem` map boName (statementBindings <> obligationBindings)) $
+            Left (s <> " is not a statement or obligation this domain binds")
         let titles = [t | (s', t) <- rows, s' == s]
         unless (length titles == length (nub titles)) $
             Left (s <> " repeats a clause")
@@ -1854,6 +2342,10 @@ renderControls results story =
         , "Alice's story runs through the ordinary `singular registry` commands, and each claim about it is checked against the receipts those commands print: the registry create booted, the holding insert delivered, the payloads the updates wrote with the root unmoved, and the deposit terminate released."
         , ""
         , "The refusals are the node's. Each refused transaction is submitted without evaluating its scripts locally, so the node judges it, and each refusal names the script that failed: the registry's state validator for an insertion of a key the registry already holds, and the applied open-datum script for a tampered update or a release outside any fold. Every refusal sits beside an accepting control built the same way, and readbacks before and after show that nothing moved. The node does not report the model's reason for a refusal, and no reason is claimed as observed."
+        , ""
+        , "The last tellings are the client's own obligations, not model statements: rows of the CLI's specification (`"
+            <> cliSpecification
+            <> "`), each bound by the SHA-256 of its line. They cover what the commands do when another process holds the registry's lock, a saved file is changed or missing, the node is absent or stops, or a command is killed after the node accepted its transaction. Each claim is computed from the command's printed receipt and the registry's journal, both read back from the run's files."
         , ""
         , "### What was done"
         , ""
@@ -1919,6 +2411,23 @@ renderControls results story =
                 [Uncovered why] -> "uncovered: " <> why
                 [NotHeld why] -> "not covered: the clause does not hold: " <> intercalate "; " why
                 _ -> "uncovered: its clause did not run"
+        ByObligations rows ->
+            let statusOf (row, title) =
+                    [ crStatus r
+                    | r <- results
+                    , crStatement r == row
+                    , crTitle r == title
+                    ]
+                wanted = [(row, title) | (row, titles) <- rows, title <- titles]
+            in  case concatMap statusOf wanted of
+                    ss
+                        | length ss /= length wanted ->
+                            "uncovered: a clause of it did not run"
+                        | all (== Held) ss -> "covered: the clause holds"
+                        | (Uncovered why : _) <- filter (/= Held) ss -> "uncovered: " <> why
+                        | (NotHeld why : _) <- filter (/= Held) ss ->
+                            "not covered: a clause does not hold: " <> intercalate "; " why
+                        | otherwise -> "uncovered: a clause of it did not run"
     covered =
         length
             [ ()
@@ -1936,6 +2445,8 @@ renderControls results story =
 -- | How an approved case is exercised: by a named clause, or not live.
 data Coverage
     = ByClause String String
+    | -- | A row of the CLI's specification, covered when every clause named holds
+      ByObligations [(String, [String])]
     | NotLive String
 
 qualified :: String -> String
@@ -2034,18 +2545,73 @@ approvedCases =
                 ]
            ]
         <> [ ( name
-             , "client safety, no model statement"
-             , NotLive
-                "checked by the packaged journey's receipts, not yet a clause here"
+             , "client obligation `" <> row <> "`, no model statement"
+             , ByObligations [(row, titles)]
              )
-           | name <-
-                [ "a second create racing for one target on another wallet's live seed"
-                , "a create interrupted after its first accepted submission"
-                , "a node lost after an accepted submission"
-                , "a fold killed after the node accepted it"
-                , "a concurrent writer holding the target's lock"
-                , "missing proof material, a changed application selector, an unavailable node"
+           | (name, row, titles) <-
+                [
+                    ( "a second create racing for one target on another wallet's live seed"
+                    , "R299-05"
+                    ,
+                        [ "a create from another wallet on its own live seed, held before the lock while a first create completes, is refused because the registry exists"
+                        ]
+                    )
+                ,
+                    ( "a create interrupted after its first accepted submission"
+                    , "INV299-PARTIAL"
+                    ,
+                        [ "a create killed once the node accepted its boot stopped there, its body kept"
+                        , "a second create of that registry is refused before submitting"
+                        , "inspect reads the incomplete create from its journal and observes its boot, printing no leaf"
+                        ]
+                    )
+                ,
+                    ( "a node lost after an accepted submission"
+                    , "R299-05"
+                    ,
+                        [ "an update held once the node accepted it, with the node stopped, ends within its bound naming its transaction"
+                        ]
+                    )
+                ,
+                    ( "a fold killed after the node accepted it"
+                    , "INV299-PARTIAL"
+                    ,
+                        [ "a terminate killed once the node accepted its fold stopped there, its body kept"
+                        , "an update while that fold is unresolved is refused before submitting"
+                        , "inspect reads the key Terminal: the killed terminate's fold is accepted"
+                        ]
+                    )
+                ,
+                    ( "a concurrent writer holding the target's lock"
+                    , "R299-05"
+                    ,
+                        [ "an insert while another process holds the registry's lock is refused before submitting"
+                        , "the same insert, once the lock is released, is accepted"
+                        ]
+                    )
                 ]
+           ]
+        <> [
+               ( "missing proof material, a changed application selector, an unavailable node"
+               , "client obligations `INV299-AUTHENTICATED`, `INV299-IDENTITY`, `INV299-READONLY`, no model statement"
+               , ByObligations
+                    [
+                        ( "INV299-AUTHENTICATED"
+                        , ["inspect with the saved proof material moved aside prints no leaf"]
+                        )
+                    ,
+                        ( "INV299-IDENTITY"
+                        ,
+                            [ "an insert with the saved application selector changed is refused before submitting"
+                            , "the same insert, with the selector restored, is accepted"
+                            ]
+                        )
+                    ,
+                        ( "INV299-READONLY"
+                        , ["inspect against a node socket that does not exist prints no leaf"]
+                        )
+                    ]
+               )
            ]
   where
     registryRefusal =
@@ -2165,6 +2731,15 @@ steps story = snd (walk 0 story)
                     )
                 )
             )
+        Provoke p (Target t) k ->
+            ( n + 1
+            , emptyReceipt n "" "" ""
+            , Just
+                ( numbered
+                    n
+                    (provocationPhrase p <> ", on **" <> t <> "**" <> forKey k <> ".")
+                )
+            )
     numbered n s = show (n + 1) <> ". " <> s
     forKey k = if null k then "" else " for **" <> k <> "**"
 
@@ -2198,6 +2773,7 @@ tellings = go
         FoldUnevaluated{} -> emptyReceipt 0 "" "" ""
         Observe{} -> emptyReceipt 0 "" "" ""
         Craft{} -> emptyReceipt 0 "" "" ""
+        Provoke{} -> emptyReceipt 0 "" "" ""
 
 -- | A crafted transaction, in the description language.
 craftedPhrase :: Crafted -> String
@@ -2451,6 +3027,7 @@ shape = go
         FoldUnevaluated{} -> emptyReceipt 0 "" "" ""
         Observe{} -> emptyReceipt 0 "" "" ""
         Craft{} -> emptyReceipt 0 "" "" ""
+        Provoke{} -> emptyReceipt 0 "" "" ""
 
 -- | One submission an ordinary command journalled, and the body it kept.
 data Submission = Submission
@@ -2494,3 +3071,67 @@ instance ToJSON Resolved where
 instance FromJSON Resolved where
     parseJSON = withObject "resolved" $ \o ->
         Resolved <$> o .: "step" <*> o .: "txId"
+
+{- | What a provoked command's process left, as the backend recorded it.
+Admission reads each part back from the run's files — the registry's
+journal, the saved files, the printed receipts — and a recorded part that
+differs from them is a problem, never a fact.
+-}
+data ProcessEvidence = ProcessEvidence
+    { peJournal :: Text
+    -- ^ The registry's journal, relative to the run's directory
+    , peJournalBefore :: Int
+    -- ^ Its lines before the command started
+    , peJournalAfter :: Int
+    -- ^ Its lines once the command had stopped
+    , peLastEvent :: Text
+    -- ^ @step/event@ of the journal's last line once the command had stopped
+    , peSubmitted :: [Text]
+    -- ^ The transactions the journal says the command submitted
+    , peExit :: Int
+    -- ^ The exit status; the negated signal for a process killed by one
+    , peWaited :: Maybe Int
+    -- ^ Seconds from the command's release to its exit
+    , peFilesBefore :: [(Text, Text)]
+    -- ^ Saved files of a registry the command must not touch, and digests, before
+    , peFilesAfter :: [(Text, Text)]
+    -- ^ The same, once the command had stopped
+    , peSeedProbe :: Maybe Text
+    {- ^ The printed receipt of a preview naming the command's seed, run
+    once the command had stopped: it succeeds only while the seed is unspent
+    -}
+    }
+    deriving stock (Eq, Show)
+
+instance ToJSON ProcessEvidence where
+    toJSON p =
+        object
+            [ "journal" .= peJournal p
+            , "journalBefore" .= peJournalBefore p
+            , "journalAfter" .= peJournalAfter p
+            , "lastEvent" .= peLastEvent p
+            , "submitted" .= peSubmitted p
+            , "exit" .= peExit p
+            , "waitedSeconds" .= peWaited p
+            , "filesBefore" .= peFilesBefore p
+            , "filesAfter" .= peFilesAfter p
+            , "seedProbe" .= peSeedProbe p
+            ]
+
+instance FromJSON ProcessEvidence where
+    parseJSON = withObject "process" $ \o ->
+        ProcessEvidence
+            <$> o .: "journal"
+            <*> o .: "journalBefore"
+            <*> o .: "journalAfter"
+            <*> o .: "lastEvent"
+            <*> o .: "submitted"
+            <*> o .: "exit"
+            <*> o .:? "waitedSeconds"
+            <*> o .: "filesBefore"
+            <*> o .: "filesAfter"
+            <*> o .:? "seedProbe"
+
+-- | Saved files by name and digest, wherever they were read.
+byName :: [(Text, Text)] -> [(Text, Text)]
+byName = map (Bifunctor.first (T.takeWhileEnd (/= '/')))

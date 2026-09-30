@@ -212,6 +212,8 @@ executable cli-controls
     , process >=1.6 && <1.7
     , singular-registry
     , text >=2.0 && <2.2
+    , time
+    , unix
   ghc-options:      -threaded -with-rtsopts=-N
 
 executable fold-budget-regression

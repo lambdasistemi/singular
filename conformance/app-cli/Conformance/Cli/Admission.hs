@@ -15,7 +15,10 @@ verdict reports; a receipt read without admission is never credited.
 -}
 module Conformance.Cli.Admission
     ( admit
+    , lastEventOf
+    , lastMaybe
     , sha256Hex
+    , submittedIn
     , txIdHexOf
     ) where
 
@@ -45,7 +48,8 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger (ConwayEra)
 
 import Conformance.Cli.Controls
-    ( Receipt (..)
+    ( ProcessEvidence (..)
+    , Receipt (..)
     , Resolved (..)
     , Submission (..)
     , rejectionEvidence
@@ -68,6 +72,7 @@ admit.
 admit :: FilePath -> Receipt -> IO Receipt
 admit work r
     | "run " `T.isPrefixOf` rcAction r = admitCommand work r
+    | "provoke " `T.isPrefixOf` rcAction r = admitProcess work r
     | otherwise = admitTransaction work r
 
 -- | A hand-built transaction, booking or fold: its body and rejection.
@@ -150,7 +155,7 @@ nothing must have none.
 -}
 admitCommand :: FilePath -> Receipt -> IO Receipt
 admitCommand work r = do
-    bodies <- mapM submissionProblems (rcSubmissions r)
+    bodies <- mapM (submissionProblems work) (rcSubmissions r)
     let references = referenceTxIds r
         readBack = [reTxId x | x <- rcResolved r, reTxId x `elem` references]
         known = map suTxId (rcSubmissions r) <> readBack
@@ -174,40 +179,42 @@ admitCommand work r = do
                 ["the command submitted, but no journalled submission is recorded"]
             | otherwise = []
     pure r{rcAdmission = Just (concat bodies <> unbound <> shape)}
-  where
-    submissionProblems s = do
-        read' <- try (BS.readFile (work </> T.unpack (suBodyFile s)))
-        pure $ case read' of
-            Left (_ :: IOException) ->
-                ["the journalled body " <> suBodyFile s <> " is missing"]
-            Right bytes
-                | sha256Hex bytes /= suBodySha256 s ->
-                    [ "the journalled body "
-                        <> suBodyFile s
-                        <> " is not the bytes the receipt digests"
-                    ]
-                | otherwise -> case B16.decode (BC.filter (not . isSpace) bytes) of
-                    Left _ -> ["the journalled body " <> suBodyFile s <> " is not hex"]
-                    Right raw -> case decodeFullAnnotator
-                        (eraProtVerHigh @ConwayEra)
-                        "transaction"
-                        decCBOR
-                        (BL.fromStrict raw) of
-                        Left _ ->
+
+-- | What is wrong with one journalled submission's kept body.
+submissionProblems :: FilePath -> Submission -> IO [Text]
+submissionProblems work s = do
+    read' <- try (BS.readFile (work </> T.unpack (suBodyFile s)))
+    pure $ case read' of
+        Left (_ :: IOException) ->
+            ["the journalled body " <> suBodyFile s <> " is missing"]
+        Right bytes
+            | sha256Hex bytes /= suBodySha256 s ->
+                [ "the journalled body "
+                    <> suBodyFile s
+                    <> " is not the bytes the receipt digests"
+                ]
+            | otherwise -> case B16.decode (BC.filter (not . isSpace) bytes) of
+                Left _ -> ["the journalled body " <> suBodyFile s <> " is not hex"]
+                Right raw -> case decodeFullAnnotator
+                    (eraProtVerHigh @ConwayEra)
+                    "transaction"
+                    decCBOR
+                    (BL.fromStrict raw) of
+                    Left _ ->
+                        [ "the journalled body "
+                            <> suBodyFile s
+                            <> " does not decode as a transaction"
+                        ]
+                    Right (tx :: ConwayTx)
+                        | txIdHexOf tx /= suTxId s ->
                             [ "the journalled body "
                                 <> suBodyFile s
-                                <> " does not decode as a transaction"
+                                <> " is transaction "
+                                <> txIdHexOf tx
+                                <> ", not "
+                                <> suTxId s
                             ]
-                        Right (tx :: ConwayTx)
-                            | txIdHexOf tx /= suTxId s ->
-                                [ "the journalled body "
-                                    <> suBodyFile s
-                                    <> " is transaction "
-                                    <> txIdHexOf tx
-                                    <> ", not "
-                                    <> suTxId s
-                                ]
-                            | otherwise -> []
+                        | otherwise -> []
 
 -- | The transactions a command's own receipt names.
 namedTxIds :: Receipt -> [Text]
@@ -236,3 +243,136 @@ referenceTxIds r = case rcCommand r of
             , Just (Aeson.String t) <- [KeyMap.lookup "output" ref]
             ]
     _ -> []
+
+{- | A provoked command: its kept bodies as an ordinary command's, its
+printed receipt read back as the receipt carries it, and what its process
+left read back from the run's files — the registry's journal, the copies of
+a registry's saved files and the files themselves, and a seed's probe. A
+recorded part that differs from those files is a problem.
+-}
+admitProcess :: FilePath -> Receipt -> IO Receipt
+admitProcess work r = do
+    bodies <- mapM (submissionProblems work) (rcSubmissions r)
+    printedProblems <- printed
+    processProblems <-
+        maybe
+            (pure ["what the command's process left is not recorded"])
+            process
+            (rcProcess r)
+    pure
+        r
+            { rcAdmission =
+                Just (concat bodies <> printedProblems <> processProblems)
+            }
+  where
+    readRetained :: Text -> IO (Either Text ByteString)
+    readRetained file = do
+        read' <- try (BS.readFile (work </> T.unpack file))
+        pure $ case read' of
+            Left (_ :: IOException) -> Left ("the retained " <> file <> " is missing")
+            Right bytes -> Right bytes
+
+    printed = case rcEvidence r of
+        [] -> pure ["no printed receipt of the command is kept"]
+        (file : _) -> do
+            bytes <- readRetained file
+            pure $ case bytes of
+                Left problem -> [problem]
+                Right b ->
+                    let value = Aeson.decodeStrict b :: Maybe Aeson.Value
+                        outcome = case value of
+                            Just (Aeson.Object o)
+                                | Just (Aeson.String s) <- KeyMap.lookup "outcome" o -> s
+                            _ -> "no-receipt"
+                    in  [ "the receipt's copy of what the command printed differs from " <> file
+                        | value /= rcCommand r
+                        ]
+                            <> [ "the receipt's outcome differs from the one " <> file <> " prints"
+                               | outcome /= rcOutcome r
+                               ]
+
+    process p = do
+        journal <- readRetained (peJournal p)
+        files <- mapM digestProblem (peFilesBefore p <> peFilesAfter p)
+        probe <- maybe (pure []) probeProblems (peSeedProbe p)
+        pure
+            ( either pure (journalProblems p . BC.lines) journal
+                <> concat files
+                <> probe
+            )
+
+    journalProblems p ls =
+        let before = peJournalBefore p
+            after = peJournalAfter p
+            delta = take (after - before) (drop before ls)
+            prepared =
+                [ t
+                | l <- delta
+                , Just (Aeson.Object o) <- [Aeson.decodeStrict l]
+                , Just (Aeson.String "prepared") <- [KeyMap.lookup "journalEvent" o]
+                , Just (Aeson.String t) <- [KeyMap.lookup "journalTxId" o]
+                ]
+        in  if before < 0 || after < before || after > length ls
+                then
+                    [ "the journal has "
+                        <> T.pack (show (length ls))
+                        <> " lines, not the "
+                        <> T.pack (show before)
+                        <> " to "
+                        <> T.pack (show after)
+                        <> " the receipt records"
+                    ]
+                else
+                    [ "the journal's last line when the command stopped is not the one recorded"
+                    | maybe "" lastEventOf (lastMaybe (take after ls)) /= peLastEvent p
+                    ]
+                        <> [ "the journal's submissions while the command ran are not the ones recorded"
+                           | submittedIn delta /= peSubmitted p
+                           ]
+                        <> [ "the journal's prepared bodies while the command ran are not the kept ones"
+                           | prepared /= map suTxId (rcSubmissions r)
+                           ]
+
+    digestProblem (file, digest) = do
+        bytes <- readRetained file
+        pure $ case bytes of
+            Left problem -> [problem]
+            Right b ->
+                [ "the retained " <> file <> " is not the bytes the receipt digests"
+                | sha256Hex b /= digest
+                ]
+
+    probeProblems file = do
+        bytes <- readRetained file
+        pure $ case bytes of
+            Left problem -> [problem]
+            Right b -> case Aeson.decodeStrict b of
+                Just (Aeson.Object o)
+                    | Just (Aeson.String "success") <- KeyMap.lookup "outcome" o -> []
+                _ ->
+                    [ "the seed's probe "
+                        <> file
+                        <> " did not succeed: the seed is spent or was not read"
+                    ]
+
+-- | @step/event@ of one journal line.
+lastEventOf :: ByteString -> Text
+lastEventOf l = case Aeson.decodeStrict l of
+    Just (Aeson.Object o)
+        | Just (Aeson.String s) <- KeyMap.lookup "journalStep" o
+        , Just (Aeson.String e) <- KeyMap.lookup "journalEvent" o ->
+            s <> "/" <> e
+    _ -> ""
+
+-- | The transactions a journal slice records as submitted, in order.
+submittedIn :: [ByteString] -> [Text]
+submittedIn ls =
+    [ t
+    | l <- ls
+    , Just (Aeson.Object o) <- [Aeson.decodeStrict l]
+    , Just (Aeson.String "submitted") <- [KeyMap.lookup "journalEvent" o]
+    , Just (Aeson.String t) <- [KeyMap.lookup "journalTxId" o]
+    ]
+
+lastMaybe :: [a] -> Maybe a
+lastMaybe = foldl (\_ x -> Just x) Nothing
