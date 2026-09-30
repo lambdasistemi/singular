@@ -137,6 +137,140 @@
         };
 
         # -------------------------------------------------------
+        # The registry validators, rebuilt by the harness (#287)
+        # -------------------------------------------------------
+        # A live refusal carries no reason: the deployed blueprint is
+        # `aiken build` with no trace flags (../onchain/flake.nix). The
+        # harness rebuilds the same ../onchain source with the same staged
+        # packages and this flake's own compiler — the two flake locks are
+        # byte-identical, so it is the same pinned `aiken` — and every build
+        # it trusts must first reproduce ../onchain/script-identity.json.
+        registrySrc = pkgs.lib.cleanSource ../onchain;
+        registryManifest = ../onchain/script-identity.json;
+
+        aikenMerklePatriciaForestry = pkgs.fetchFromGitHub {
+          owner = "aiken-lang";
+          repo = "merkle-patricia-forestry";
+          rev = "v2.1.0";
+          hash = "sha256-c+ZM1bvR0Zpuz5hCB+F6VWfDThagBHxgoNWHvEUQT/4=";
+        };
+
+        registryPackagesToml = pkgs.writeText "packages.toml" ''
+          [[packages]]
+          name = "aiken-lang/stdlib"
+          version = "v2.2.0"
+          source = "github"
+
+          [[packages]]
+          name = "aiken-lang/fuzz"
+          version = "v2.1.1"
+          source = "github"
+
+          [[packages]]
+          name = "aiken-lang/merkle-patricia-forestry"
+          version = "v2.1.0"
+          source = "github"
+        '';
+
+        # The deployed recipe's staging and build line, with `flags` after
+        # `aiken build` and `prepare` run on the unpacked source first.
+        registryBlueprint =
+          {
+            pname,
+            flags,
+            prepare ? "",
+          }:
+          pkgs.stdenv.mkDerivation {
+            inherit pname;
+            version = "0.0.0";
+            src = registrySrc;
+            nativeBuildInputs = [ pkgs.aiken ];
+            buildPhase = ''
+              ${prepare}
+              mkdir -p build/packages
+              rm -rf build/packages/aiken-lang-stdlib build/packages/aiken-lang-fuzz build/packages/aiken-lang-merkle-patricia-forestry
+              cp ${registryPackagesToml} build/packages/packages.toml
+              cp -r ${aikenStdlib} build/packages/aiken-lang-stdlib
+              cp -r ${aikenFuzz} build/packages/aiken-lang-fuzz
+              cp -r ${aikenMerklePatriciaForestry} build/packages/aiken-lang-merkle-patricia-forestry
+              chmod -R u+w build/packages
+              aiken build ${flags}
+            '';
+            installPhase = ''
+              cp plutus.json $out
+            '';
+          };
+
+        # A build that differs from the deployed recipe by one compiler
+        # input other than the trace flags: the source literal pinning the
+        # state script's hash in witness.ak. The edit checks that it applied,
+        # so a pattern that stopped matching fails here, not silently.
+        registryMismatchedBlueprint = registryBlueprint {
+          pname = "singular-registry-mismatched-blueprint";
+          flags = "";
+          prepare = ''
+            grep -qE '^  #"[0-9a-f]{56}"$' validators/witness.ak
+            sed -i -E 's/^  #"[0-9a-f]{56}"$/  #"00000000000000000000000000000000000000000000000000000000"/' validators/witness.ak
+            grep -qE '^  #"0{56}"$' validators/witness.ak
+          '';
+        };
+
+        # Every validator the manifest pins must be built at its pinned hash
+        # by the same compiler, and nothing else built: a moved hash, a
+        # validator on one side only, a compiler string that differs and an
+        # empty side each fail, naming what differs. Quantified over both
+        # validator sets, read at run time.
+        registryIdentityCheck = pkgs.writeShellApplication {
+          name = "registry-identity-check";
+          runtimeInputs = [ pkgs.jq ];
+          text = ''
+            manifest="$1"
+            blueprint="$2"
+            problems="$(jq -r -n \
+              --slurpfile bp "$blueprint" \
+              --slurpfile man "$manifest" \
+              '
+                ($bp[0].validators | map({key: .title, value: .hash}) | from_entries) as $built
+                | ($man[0].validators | map({key: .title, value: .hash}) | from_entries) as $pinned
+                | (if ($built | length) == 0
+                   then ["FAIL: the build reports zero validators"] else [] end)
+                  + (if ($pinned | length) == 0
+                   then ["FAIL: the manifest records zero validators"] else [] end)
+                  + (if $man[0].compiler != $bp[0].preamble.compiler.version then
+                       ["FAIL: compiler differs: manifest records \($man[0].compiler), build reports \($bp[0].preamble.compiler.version)"]
+                     else [] end)
+                  + [$built | to_entries[] | .key as $k |
+                       if ($pinned | has($k) | not) then
+                         "FAIL: validator \($k) is not in the manifest (built hash \(.value))"
+                       elif $pinned[$k] != .value then
+                         "FAIL: validator \($k) moved: manifest pins \($pinned[$k]), build produced \(.value)"
+                       else empty end]
+                  + [$pinned | to_entries[] | .key as $k |
+                       if ($built | has($k) | not) then
+                         "FAIL: manifest validator \($k) (hash \(.value)) was not built"
+                       else empty end]
+                | .[]
+              ')" || {
+              echo "FAIL: jq could not read the manifest or the blueprint" >&2
+              exit 1
+            }
+            if [ -n "$problems" ]; then
+              printf '%s\n' "$problems"
+              exit 1
+            fi
+            echo "registry-identity: $(jq '.validators | length' "$blueprint") validators at the manifest's hashes (compiler $(jq -r '.compiler' "$manifest"))"
+          '';
+        };
+
+        registryBlueprintCorrespondence =
+          pkgs.runCommand "singular-registry-blueprint-correspondence" { }
+            ''
+              set -euo pipefail
+              ${pkgs.lib.getExe registryIdentityCheck} ${registryManifest} ${registryMismatchedBlueprint}
+              touch "$out"
+            '';
+
+        # -------------------------------------------------------
         # Coverage gate root (issue #80)
         # -------------------------------------------------------
         # Separate from `src` above so the coverage gate's inputs — the
@@ -505,6 +639,8 @@
           # #157 D-BOOT: the naming partition's blueprint, so the four
           # pins are derived rather than typed.
           inherit naming-blueprint;
+          # #287: the harness's registry build, held to the deployed hashes.
+          registry-blueprint-correspondence = registryBlueprintCorrespondence;
           # Mechanical adapter (D-008): exposes the cardano-node already
           # locked as this flake's input, so the devnet run consumes the
           # locked identity instead of re-resolving a remote tag.
