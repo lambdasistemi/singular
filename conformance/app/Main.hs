@@ -45,6 +45,7 @@ import Conformance.Rows
     , rowId
     )
 import Conformance.Run (runForkProbe, runRows)
+import Conformance.Run.Replay (runReplayCapsule)
 import Paths_conformance (getDataFileName)
 
 defaultReceiptsDir :: FilePath
@@ -64,6 +65,15 @@ main = do
         ["list"] -> runList Nothing
         ["list", "--receipts", dir] -> runList (Just dir)
         "run" : rest -> runDispatch rest
+        [ "replay-capsule"
+            , "--capsule"
+            , capsule
+            , "--deployed"
+            , deployed
+            , "--traced"
+            , traced
+            ] ->
+                runReplayCapsule args capsule deployed traced
         ["example", "retirement", "--receipts-dir", dir] -> runGuarded ["CG22"] dir
         ["example", "registration", "--receipts-dir", dir] -> runGuarded ["CG21"] dir
         ["book", "--receipts-dir", dir] -> runBook dir Nothing
@@ -83,6 +93,9 @@ usage = do
     hPutStrLn
         stderr
         "       conformance -- run ROW... [--receipts-dir DIR]"
+    hPutStrLn
+        stderr
+        "       conformance -- replay-capsule --capsule DIR --deployed BLUEPRINT --traced BLUEPRINT"
     hPutStrLn
         stderr
         "env:   CONFORMANCE_RECEIPTS=DIR (list, when --receipts is absent)"

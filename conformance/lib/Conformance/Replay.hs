@@ -296,4 +296,12 @@ it, is 'ParametersMismatch'; otherwise 'UnidentifiedScript'.
 -}
 identifyScript
     :: [ScriptFamily] -> Maybe Text -> Text -> Either UnobservedCause Text
-identifyScript _ _ _ = error "identifyScript: not implemented"
+identifyScript families role hash =
+    case [sfTitle f | f <- families, sfRouted f, hash `elem` sfCandidates f] of
+        title : _ -> Right title
+        []
+            | any (\f -> not (sfRouted f) && hash `elem` sfCandidates f) families ->
+                Left NoReplayRoute
+            | maybe False (`elem` map sfTitle families) role ->
+                Left ParametersMismatch
+            | otherwise -> Left UnidentifiedScript

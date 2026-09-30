@@ -39,15 +39,23 @@ module Conformance.Run.Replay
 
       -- * Evaluation
     , classify
+
+      -- * Offline
+    , runReplayCapsule
     ) where
 
-import Codec.Serialise (serialise)
+import Codec.Serialise
+    ( DeserialiseFailure
+    , Serialise
+    , deserialiseOrFail
+    , serialise
+    )
 import Control.Exception
     ( SomeException
     , evaluate
     , try
     )
-import Control.Monad (forM, guard)
+import Control.Monad (forM, guard, unless, when)
 import Control.Monad.Trans.Except (runExcept)
 import Data.Aeson
     ( Value (..)
@@ -55,11 +63,13 @@ import Data.Aeson
     , (.=)
     )
 import Data.Aeson qualified as Aeson
+import Data.Aeson.KeyMap qualified as KM
 import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Lazy qualified as BSL
+import Data.ByteString.Lazy.Char8 qualified as BSL8
 import Data.ByteString.Short (ShortByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
@@ -72,7 +82,7 @@ import Data.IORef
 import Data.List (nub)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (isNothing, mapMaybe)
+import Data.Maybe (fromMaybe, isNothing, mapMaybe)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -84,10 +94,16 @@ import System.Directory
     , doesFileExist
     )
 import System.Environment (lookupEnv)
-import System.FilePath (takeDirectory, (</>))
+import System.FilePath
+    ( dropTrailingPathSeparator
+    , takeDirectory
+    , (</>)
+    )
 import System.Timeout (timeout)
+import Text.Read (readMaybe)
 
 import Cardano.Crypto.Hash.Class (hashFromTextAsHex, hashToBytes)
+import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Alonzo.Plutus.Evaluate
     ( TransactionScriptFailure (..)
     , evalTxExUnits
@@ -105,11 +121,17 @@ import Cardano.Ledger.Api.Tx.Body
     , outputsTxBodyL
     , referenceInputsTxBodyL
     )
-import Cardano.Ledger.Api.Tx.Out (TxOut, valueTxOutL)
+import Cardano.Ledger.Api.Tx.Out (TxOut, addrTxOutL, valueTxOutL)
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
-import Cardano.Ledger.Binary (serialize)
+import Cardano.Ledger.Binary
+    ( decCBOR
+    , decodeFull
+    , decodeFullAnnotator
+    , serialize
+    )
 import Cardano.Ledger.Conway (ConwayEra)
 import Cardano.Ledger.Core (PParams, eraProtVerHigh)
+import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Hashes (ScriptHash (..))
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
@@ -127,7 +149,8 @@ import Cardano.Ledger.Plutus
     )
 import Cardano.Ledger.State (EraUTxO (..), UTxO (..))
 import Cardano.Ledger.TxIn (TxIn)
-import Cardano.Slotting.EpochInfo (hoistEpochInfo)
+import Cardano.Slotting.EpochInfo (EpochInfo, hoistEpochInfo)
+import Cardano.Slotting.Time (SystemStart (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Ouroboros.Consensus.HardFork.Combinator.Ledger.Query
     ( QueryHardFork (GetInterpreter)
@@ -136,9 +159,11 @@ import Ouroboros.Consensus.HardFork.Combinator.Ledger.Query
 import Ouroboros.Consensus.HardFork.History.EpochInfo
     ( interpreterToEpochInfo
     )
+import Ouroboros.Consensus.HardFork.History.Qry (Interpreter)
 import Ouroboros.Consensus.Ledger.Query
     ( Query (BlockQuery, GetSystemStart)
     )
+import PlutusCore.Data qualified as PLC (Data (I))
 import PlutusCore.Evaluation.Error qualified as PLC
 import PlutusCore.Evaluation.ErrorWithCause (ErrorWithCause (..))
 import PlutusLedgerApi.Common qualified as P
@@ -152,9 +177,12 @@ import Cardano.Node.Client.Submitter
     ( SubmitResult (..)
     , Submitter (..)
     )
+import Cardano.Node.Client.Types (Block)
 import Singular.Registry.Blueprint
     ( Blueprint (..)
     , Validator (..)
+    , applyBytesParam
+    , applyDataParam
     , applyRequestParams
     , extractCompiledCode
     , loadBlueprint
@@ -167,6 +195,7 @@ import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRequest (..)
     , OnChainTokenId (..)
+    , OnChainTokenState (..)
     )
 
 import Conformance.Mirror (txIdHex)
@@ -200,6 +229,11 @@ data ReplaySetup = ReplaySetup
     -- ^ per validator: the deployed code, the traced code
     , rsStatePolicy :: ByteString
     -- ^ the deployed state script's hash, the request's first parameter
+    , rsUnrouted :: [(Text, Text)]
+    {- ^ the deployed blueprint's parameterless validators the replay does
+    not trace, by title and hash: a failing hash equal to one of these is
+    identified, and has no route
+    -}
     }
 
 {- | Load the traced blueprint from @REGISTRY_TRACED_BLUEPRINT@ and its
@@ -218,7 +252,8 @@ newReplayEnv
     -- ^ node identity
     -> IO ReplayEnv
 newReplayEnv node lsq deployedPath dir nodeId = do
-    setup <- loadSetup deployedPath
+    setup <-
+        loadSetup deployedPath =<< lookupEnv "REGISTRY_TRACED_BLUEPRINT"
     row <- newIORef ""
     index <- newIORef []
     pure
@@ -232,9 +267,12 @@ newReplayEnv node lsq deployedPath dir nodeId = do
             , reIndex = index
             }
 
-loadSetup :: FilePath -> IO (Either UnobservedCause ReplaySetup)
-loadSetup deployedPath = do
-    tracedPath <- lookupEnv "REGISTRY_TRACED_BLUEPRINT"
+{- | The deployed blueprint and the traced one, with the provenance beside the
+traced one; any missing, unreadable or mismatched piece is 'ToolchainMismatch'.
+-}
+loadSetup
+    :: FilePath -> Maybe FilePath -> IO (Either UnobservedCause ReplaySetup)
+loadSetup deployedPath tracedPath = do
     result <- try $ case tracedPath of
         Nothing -> pure Nothing
         Just path -> do
@@ -266,7 +304,13 @@ loadSetup deployedPath = do
                                     replayedValidators
                         state <- Map.lookup "state.state.spend" hashes
                         Right policy <- Just (Base16.decode (TE.encodeUtf8 state))
-                        pure (ReplaySetup p codes policy)
+                        let unrouted =
+                                [ (vTitle v, vHash v)
+                                | v <- validators d
+                                , vParameters v == 0
+                                , not (any (`T.isPrefixOf` vTitle v) replayedValidators)
+                                ]
+                        pure (ReplaySetup p codes policy unrouted)
     pure $ case result of
         Right (Just setup) -> Right setup
         Right Nothing -> Left ToolchainMismatch
@@ -274,7 +318,7 @@ loadSetup deployedPath = do
 
 -- | The registry validators a refusal is replayed for, by blueprint title.
 replayedValidators :: [Text]
-replayedValidators = ["state.state", "request.request"]
+replayedValidators = ["state.state", "request.request", "witness.witness"]
 
 {- | The session's submitter, capturing and replaying every rejection before
 it returns — so before the run can submit again.
@@ -412,61 +456,90 @@ replayRefusal env tx failing dir = do
             ]
         captureId = captureIdOf files
     mapM_ (\(name, content) -> BS.writeFile (dir </> name) content) files
-    if null failing
-        then pure (Just captureId, [], [Unobserved Phase1])
-        else case (checkResolved tx resolved, reSetup env) of
-            (Left cause, _) -> unreplayed captureId cause
-            (_, Left cause) -> unreplayed captureId cause
-            (Right utxo, Right setup) -> do
-                let epochInfo =
-                        hoistEpochInfo (first (T.pack . show) . runExcept) $
-                            interpreterToEpochInfo interpreter
-                    evaluated = evalTxExUnits pp tx (UTxO utxo) epochInfo systemStart
-                    purposes =
-                        [ (hashText hash, purpose)
-                        | (purpose, hash) <- neededPurposes utxo tx
-                        ]
-                    applications = deployedApplications setup tx utxo
-                replays <-
-                    fmap concat $
-                        forM failing $ \hash -> do
-                            let own = [p | (h, p) <- purposes, h == hash]
-                            applied <-
-                                try
-                                    ( evaluate
-                                        ( maybe
-                                            (Left ParametersMismatch)
-                                            (applyDeployedParameters (rsCodes setup) applications)
-                                            (scriptHashOfText hash)
-                                        )
+    (purposes, classes) <-
+        replayCore
+            (reSetup env)
+            tx
+            resolved
+            pp
+            (epochInfoOf interpreter)
+            systemStart
+            failing
+    pure (Just captureId, purposes, classes)
+
+-- | The ledger's slot arithmetic from the node's hard-fork interpreter.
+epochInfoOf :: Interpreter xs -> EpochInfo (Either Text)
+epochInfoOf =
+    hoistEpochInfo (first (T.pack . show) . runExcept)
+        . interpreterToEpochInfo
+
+{- | Replay a captured rejection: the one core both the live capture and an
+offline capsule go through. Each failing hash is first identified — a routed
+family whose untraced application reproduces it, or a cause — and only a
+routed one is evaluated.
+-}
+replayCore
+    :: Either UnobservedCause ReplaySetup
+    -> ConwayTx
+    -> Map TxIn (TxOut ConwayEra)
+    -> PParams ConwayEra
+    -> EpochInfo (Either Text)
+    -> SystemStart
+    -> [Text]
+    -> IO ([(Text, PurposeReplay)], [ReplayClass])
+replayCore setupOrCause tx resolved pp epochInfo systemStart failing
+    | null failing = pure ([], [Unobserved Phase1])
+    | otherwise = case (checkResolved tx resolved, setupOrCause) of
+        (Left cause, _) -> unreplayed cause
+        (_, Left cause) -> unreplayed cause
+        (Right utxo, Right setup) -> do
+            let evaluated = evalTxExUnits pp tx (UTxO utxo) epochInfo systemStart
+                purposes =
+                    [ (hashText hash, purpose)
+                    | (purpose, hash) <- neededPurposes utxo tx
+                    ]
+                applications = deployedApplications setup tx utxo
+                roles = capturedRoles tx utxo
+            replays <-
+                fmap concat $
+                    forM failing $ \hash -> do
+                        let own = [p | (h, p) <- purposes, h == hash]
+                        applied <-
+                            try
+                                ( evaluate
+                                    ( tracedFor
+                                        setup
+                                        applications
+                                        (Map.lookup hash roles)
+                                        hash
                                     )
-                            let traced = case applied of
-                                    Right r -> r
-                                    Left (_ :: SomeException) -> Left ParametersMismatch
-                                role = either (const hash) atTitle traced
-                            if null own
-                                then
-                                    pure
-                                        [
-                                            ( role
-                                            , PurposeReplay
-                                                "none"
-                                                hash
-                                                (tracedHashOf traced)
-                                                Nothing
-                                                Nothing
-                                                (Unobserved ContextUnavailable)
-                                            )
-                                        ]
-                                else forM own $ \purpose ->
-                                    (,) role
-                                        <$> replayPurpose pp tx hash traced purpose (Map.lookup purpose evaluated)
-                pure (Just captureId, replays, map (prClass . snd) replays)
+                                )
+                        let traced = case applied of
+                                Right r -> r
+                                Left (_ :: SomeException) -> Left ParametersMismatch
+                            role = either (const hash) atTitle traced
+                        if null own
+                            then
+                                pure
+                                    [
+                                        ( role
+                                        , PurposeReplay
+                                            "none"
+                                            hash
+                                            (tracedHashOf traced)
+                                            Nothing
+                                            Nothing
+                                            (Unobserved ContextUnavailable)
+                                        )
+                                    ]
+                            else forM own $ \purpose ->
+                                (,) role
+                                    <$> replayPurpose pp tx hash traced purpose (Map.lookup purpose evaluated)
+            pure (replays, map (prClass . snd) replays)
   where
-    unreplayed captureId cause =
+    unreplayed cause =
         pure
-            ( Just captureId
-            , [ ( hash
+            ( [ ( hash
                 , PurposeReplay "none" hash Nothing Nothing Nothing (Unobserved cause)
                 )
               | hash <- failing
@@ -474,6 +547,68 @@ replayRefusal env tx failing dir = do
             , [Unobserved cause | _ <- failing]
             )
     tracedHashOf = either (const Nothing) (Just . hashText . atHash)
+
+{- | The traced code for a failing hash, or why there is none: the hash is
+identified among the replay's families first — the routed ones by their
+untraced applications built from the capture, the untraced parameterless
+validators by their own hash, and the role the capture records for the script
+— and only then are the matching family's parameters applied.
+-}
+tracedFor
+    :: ReplaySetup
+    -> [DeployedApplication]
+    -> Maybe Text
+    -> Text
+    -> Either UnobservedCause AppliedTraced
+tracedFor setup applications role hash = do
+    title <- identifyScript families role hash
+    failing <-
+        maybe (Left ParametersMismatch) Right (scriptHashOfText hash)
+    applyDeployedParameters
+        (rsCodes setup)
+        [a | a <- applications, daTitle a == title]
+        failing
+  where
+    families =
+        [ ScriptFamily
+            title
+            True
+            [ hashText (computeScriptHash (daApply a untraced))
+            | a <- applications
+            , daTitle a == title
+            ]
+        | (title, (untraced, _)) <- Map.toList (rsCodes setup)
+        ]
+            <> [ ScriptFamily title False [unroutedHash]
+               | (title, unroutedHash) <- rsUnrouted setup
+               ]
+
+{- | What the capture records each script as, by its hash: the script an
+output carrying a state or request datum sits at, and the policies the state
+datum pins — the witnesses, and the application.
+-}
+capturedRoles
+    :: ConwayTx -> Map TxIn (TxOut ConwayEra) -> Map Text Text
+capturedRoles tx utxo =
+    Map.fromList $
+        concatMap
+            roleOf
+            (Map.elems utxo <> toList (tx ^. bodyTxL . outputsTxBodyL))
+  where
+    roleOf out = case extractCageDatum out of
+        Just (StateDatum st) ->
+            [(h, "state.state") | Just h <- [scriptAt out]]
+                <> [ (pin (stateActivePolicy st), "witness.witness")
+                   , (pin (stateAbsentPolicy st), "witness.witness")
+                   , (pin (stateTerminalPolicy st), "witness.witness")
+                   , (pin (stateAppPolicy st), "application")
+                   ]
+        Just (RequestDatum _) -> [(h, "request.request") | Just h <- [scriptAt out]]
+        _ -> []
+    scriptAt out = case out ^. addrTxOutL of
+        Addr _ (ScriptHashObj h) _ -> Just (hashText h)
+        _ -> Nothing
+    pin (BuiltinByteString bytes) = hexText bytes
 
 -- | Every input, reference input and collateral input the transaction names.
 namedInputs :: ConwayTx -> Set.Set TxIn
@@ -675,13 +810,23 @@ applyDeployedParameters codes applications failing =
 kinds 0, 1 and 2, the registry being the state policy followed by a captured
 registry token.
 -}
-witnessApplications :: ByteString -> [ByteString] -> [DeployedApplication]
-witnessApplications _ _ = []
+witnessApplications
+    :: ByteString -> [ByteString] -> [DeployedApplication]
+witnessApplications statePolicy tokens =
+    [ DeployedApplication
+        "witness.witness"
+        ("kind " <> T.pack (show kind) <> ", registry " <> hexText registry)
+        (applyBytesParam registry . applyDataParam (PLC.I kind))
+    | token <- tokens
+    , let registry = statePolicy <> token
+    , kind <- [0, 1, 2]
+    ]
 
 {- | The applications a rejected transaction can have run: the state script,
-which takes no parameter, and the request script under the state policy and
-each registry token the capture names — a token held by an output it spends,
-references or creates, or named by a request it spends.
+which takes no parameter, and, for each registry token the capture names — a
+token held by an output it spends, references or creates, or named by a
+request it spends — the request script under the state policy and that token,
+and the three witnesses of that registry.
 -}
 deployedApplications
     :: ReplaySetup
@@ -699,6 +844,7 @@ deployedApplications setup tx utxo =
                 )
           | token <- tokens
           ]
+            <> witnessApplications (rsStatePolicy setup) tokens
   where
     outputs = Map.elems utxo <> toList (tx ^. bodyTxL . outputsTxBodyL)
     tokens =
@@ -736,3 +882,145 @@ scriptHashOfText = fmap ScriptHash . hashFromTextAsHex
 
 hexText :: ByteString -> Text
 hexText = TE.decodeUtf8 . Base16.encode
+
+-- ---------------------------------------------------------
+-- Offline
+-- ---------------------------------------------------------
+
+{- | Replay a capsule a run kept, without a node: the saved transaction,
+resolved outputs, protocol parameters and era data go through 'replayCore',
+the same core a live capture does. The capture id is recomputed from the
+saved files and must equal the one the run recorded. The outcome is written
+under @replay-offline/<rejectedTxId>/@ beside the receipts, never over the
+original.
+-}
+runReplayCapsule
+    :: [String] -> FilePath -> FilePath -> FilePath -> IO ()
+runReplayCapsule invocation capsuleDir deployedPath tracedPath = do
+    let capsule = dropTrailingPathSeparator capsuleDir
+    files <-
+        forM capsuleFiles $ \name -> (,) name <$> BS.readFile (capsule </> name)
+    original <-
+        Aeson.eitherDecodeFileStrict (capsule </> "outcome.json")
+            >>= either fail pure
+    let recomputed = captureIdOf files
+        recorded = textField "captureId" original
+        txid = textField "rejectedTxId" original
+        failing = case original of
+            Object o -> case KM.lookup "failingHashes" o of
+                Just (Array hashes) -> [h | String h <- toList hashes]
+                _ -> []
+            _ -> []
+        bytesOf name = fromMaybe BS.empty (lookup name files)
+    unless (Just recomputed == recorded) $
+        fail
+            ( "capture id "
+                <> T.unpack recomputed
+                <> " differs from the recorded "
+                <> show recorded
+            )
+    tx <-
+        either (fail . show) pure $
+            decodeFullAnnotator
+                (eraProtVerHigh @ConwayEra)
+                "transaction"
+                decCBOR
+                (BSL.fromStrict (bytesOf "transaction.cbor"))
+    UTxO resolved <-
+        either (fail . show) pure $
+            decodeFull
+                (eraProtVerHigh @ConwayEra)
+                (BSL.fromStrict (bytesOf "resolved.cbor"))
+    pp <-
+        either
+            fail
+            pure
+            (Aeson.eitherDecodeStrict (bytesOf "protocol-parameters.json"))
+    era <-
+        either fail pure (Aeson.eitherDecodeStrict (bytesOf "era.json"))
+    systemStart <-
+        maybe (fail "era.json: unreadable systemStart") (pure . SystemStart) $
+            textField "systemStart" era
+                >>= T.stripPrefix "SystemStart "
+                >>= readMaybe . T.unpack
+    history <-
+        either (const (fail "era.json: eraHistory is not hex")) pure $
+            maybe (Left ()) (first (const ()) . Base16.decode . TE.encodeUtf8) $
+                textField "eraHistory" era
+    interpreter <-
+        either (fail . show) pure $
+            decodeAnswer
+                (BlockQuery (QueryHardFork GetInterpreter))
+                (BSL.fromStrict history)
+    setup <- loadSetup deployedPath (Just tracedPath)
+    (purposes, classes) <-
+        replayCore
+            setup
+            tx
+            resolved
+            pp
+            (epochInfoOf interpreter)
+            systemStart
+            failing
+    let receipts = takeDirectory (takeDirectory capsule)
+        out = receipts </> "replay-offline" </> maybe "unknown" T.unpack txid
+    taken <- doesDirectoryExist out
+    when taken $ fail ("an offline outcome is already written at " <> out)
+    createDirectoryIfMissing True out
+    BSL.writeFile
+        (out </> "outcome.json")
+        ( Aeson.encode
+            ( object
+                [ "rejectedTxId" .= txid
+                , "captureId" .= recomputed
+                , "recordedCaptureId" .= recorded
+                , "capsule" .= capsule
+                , "command" .= unwords invocation
+                , "deployedBlueprint" .= deployedPath
+                , "tracedBlueprint" .= tracedPath
+                , "failingHashes" .= failing
+                , "purposes" .= map snd purposes
+                , "classes" .= classes
+                ]
+            )
+        )
+    putStrLn
+        ( "replay-capsule: capture "
+            <> T.unpack recomputed
+            <> " matches the recorded id"
+        )
+    mapM_
+        ( \(role, p) ->
+            putStrLn
+                ( "replay-capsule: "
+                    <> T.unpack role
+                    <> " "
+                    <> T.unpack (prPurpose p)
+                    <> " "
+                    <> BSL8.unpack (Aeson.encode (prClass p))
+                )
+        )
+        purposes
+    putStrLn
+        ("replay-capsule: outcome written to " <> out </> "outcome.json")
+  where
+    textField name = \case
+        Object o -> case KM.lookup name o of
+            Just (String t) -> Just t
+            _ -> Nothing
+        _ -> Nothing
+
+-- | The capsule files a capture id is computed over.
+capsuleFiles :: [FilePath]
+capsuleFiles =
+    [ "transaction.cbor"
+    , "resolved.cbor"
+    , "protocol-parameters.json"
+    , "era.json"
+    ]
+
+-- | Decode a saved local-state answer as the type its query returns.
+decodeAnswer
+    :: (Serialise r)
+    => Query Block r -> BSL.ByteString -> Either DeserialiseFailure r
+decodeAnswer _ = deserialiseOrFail

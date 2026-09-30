@@ -114,6 +114,7 @@ import Singular.Registry.Types
     , OnChainRequest (..)
     , ProofStep (..)
     , edgeInsertAbsent
+    , edgeInsertActive
     , edgeWitnessTerminal
     )
 
@@ -205,21 +206,33 @@ speculativeApplyAll env _cage tid reqs =
 {- | One request's step of a speculative fold: its proof, and the trie moved
 as the edge moves it.
 -}
-speculativeStep :: (Monad m) => CageTrie.Trie m -> ByteString -> Edge -> m [ProofStep]
-speculativeStep = walkEdge
+speculativeStep
+    :: (Monad m) => CageTrie.Trie m -> ByteString -> Edge -> m [ProofStep]
+speculativeStep trie key edge
+    | edge == edgeInsertAbsent || edge == edgeInsertActive =
+        walkEdge trie key edge
+    | otherwise =
+        CageTrie.lookup trie key >>= \case
+            Just _ -> walkEdge trie key edge
+            -- A key the trie does not hold: the edge cannot move it, and the
+            -- script can only refuse it against an exclusion proof.
+            Nothing -> keyProof trie key
 
 {- | The proof a fold carries for one key on the trie as it stands: the
 key's inclusion proof when the trie holds it, else the exclusion proof —
 the steps an insertion of that key carries, which is what the state script
-checks a key's absence against (@mpf.miss@). The insertion is a mutation of
-the trie it is given, so a caller passes a speculative one.
+checks a key's absence against (@mpf.miss@). The key is inserted to read
+those steps and deleted again, so the trie is left as it was.
 -}
 keyProof
     :: (Monad m) => CageTrie.Trie m -> ByteString -> m [ProofStep]
 keyProof trie key =
     CageTrie.getProofSteps trie key >>= \case
         Just inclusion -> pure inclusion
-        Nothing -> walkEdge trie key edgeInsertAbsent
+        Nothing -> do
+            exclusion <- walkEdge trie key edgeInsertAbsent
+            _ <- CageTrie.delete trie key
+            pure exclusion
 
 {- | Commit a landed edge to a row cage's trie (#157 C3: a read
 commits nothing, which `walkEdge` already knows).

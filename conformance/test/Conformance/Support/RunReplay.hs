@@ -62,8 +62,8 @@ import Singular.Registry.TxBuilder.Internal
 
 import Conformance.Replay (RunOutcome (..), UnobservedCause (..))
 import Conformance.Run.Book (keyProof, speculativeStep)
-import Singular.Registry.Types (edgeUpdateTerminal)
 import Conformance.Run.Replay
+import Singular.Registry.Types (edgeUpdateTerminal)
 
 -- | A distinct output reference, named by the ledger's own transaction id.
 named :: Integer -> TxIn
@@ -121,13 +121,19 @@ codes :: Map.Map Text (ShortByteString, ShortByteString)
 codes = Map.singleton "request.request" (untraced, traced)
 
 -- | A two-parameter validator: @\\kind registry -> body@, flat-encoded.
-program2 :: UPLC.Term UPLC.DeBruijn PLC.DefaultUni PLC.DefaultFun () -> ShortByteString
+program2
+    :: UPLC.Term UPLC.DeBruijn PLC.DefaultUni PLC.DefaultFun ()
+    -> ShortByteString
 program2 body =
     serialiseUPLC
         ( UPLC.Program
             ()
             PLC.latestVersion
-            (UPLC.LamAbs () (UPLC.DeBruijn 0) (UPLC.LamAbs () (UPLC.DeBruijn 0) body))
+            ( UPLC.LamAbs
+                ()
+                (UPLC.DeBruijn 0)
+                (UPLC.LamAbs () (UPLC.DeBruijn 0) body)
+            )
         )
 
 witnessUntraced, witnessTraced :: ShortByteString
@@ -194,10 +200,12 @@ spec = describe "before a replay evaluates" $ do
                 (applyDeployedParameters codes [application "cage-b"] failing)
                 `shouldSatisfy` (/= Right failing)
     describe "the witness a registry deployed" $ do
-        let active token = applyBytesParam ("state-policy" <> token) . applyDataParam (PLC.I 1)
+        let active token =
+                applyBytesParam ("state-policy" <> token) . applyDataParam (PLC.I 1)
             failing = computeScriptHash (active "cage-b" witnessUntraced)
-        it "its application under the captured registry and kind reproduces the failing policy" $
-            fmap
+        it
+            "its application under the captured registry and kind reproduces the failing policy"
+            $ fmap
                 (\a -> (atTitle a, atBytes a))
                 ( applyDeployedParameters
                     witnessCodes
@@ -216,7 +224,10 @@ spec = describe "before a replay evaluates" $ do
                 witnessCodes
                 (witnessApplications "state-policy" ["cage-b"])
                 ( computeScriptHash
-                    (applyBytesParam "state-policycage-b" (applyDataParam (PLC.I 3) witnessUntraced))
+                    ( applyBytesParam
+                        "state-policycage-b"
+                        (applyDataParam (PLC.I 3) witnessUntraced)
+                    )
                 )
                 `shouldBe` Left ParametersMismatch
     describe "the proof a fold carries for a key" $ do
