@@ -56,6 +56,9 @@ let
       "update-terminal"
       "devnet"
       "deployment"
+      # #299: the packaged `singular registry` commands the release
+      # archive documents and the demo1-cli-check CI step runs.
+      "singular"
     ];
     tests = [
       "record-value-tests"

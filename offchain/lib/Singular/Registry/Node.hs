@@ -92,6 +92,8 @@ module Singular.Registry.Node
     , withNodeForPlannedFunding
     , withNodeMode
     , withNodeSocket
+    , NodeReads (..)
+    , withNodeReads
     , devnetGenesis
 
       -- * Bounded waits
@@ -138,7 +140,8 @@ import Singular.Registry.Node.Options
     , runMode
     )
 import Singular.Registry.Node.Session
-    ( NodeSession (..)
+    ( NodeReads (..)
+    , NodeSession (..)
     , awaitConnection
     , currentTipSlot
     , devnetGenesis
@@ -146,6 +149,7 @@ import Singular.Registry.Node.Session
     , withNode
     , withNodeForPlannedFunding
     , withNodeMode
+    , withNodeReads
     , withNodeSocket
     )
 import Singular.Registry.Node.Wait

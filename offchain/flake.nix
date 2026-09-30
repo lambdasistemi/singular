@@ -462,6 +462,10 @@
           # #173 A173-COMMAND: the packaged verb, exposed so the release
           # archive's documented invocation resolves without a checkout.
           inherit insert-active update-terminal;
+          # #299: the packaged `singular registry` commands. It reaches a
+          # node through the socket its caller names and spawns none, so it
+          # needs no cardano-node on its PATH.
+          inherit (components.exes) singular;
           # #278 S2: the pinned house formatter, for the root format
           # recipes and controls (same locked tool as the lint check).
           fourmolu = fourmoluTool;
@@ -477,6 +481,11 @@
         checks = haskellChecks;
 
         apps = haskellApps // {
+          # #299.
+          singular = {
+            type = "app";
+            program = pkgs.lib.getExe components.exes.singular;
+          };
           # #173 A173-COMMAND.
           update-terminal = {
             type = "app";

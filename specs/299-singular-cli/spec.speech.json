@@ -1,0 +1,62 @@
+{
+  "requirements-and-acceptance-lines": [
+    {
+      "text": "The packaged singular registry commands, create, insert, terminate and inspect, run from an extracted release archive outside the checkout, with no demo-only executable. The saved configuration binds the network, the registry and its seed, the application, the script and policy pins and the deployment references, and the local state is checked against a fresh ledger commitment before any write or any reported leaf.",
+      "pause": 400
+    },
+    {
+      "text": "Malformed keys, partial settings, mainnet, mismatched wallets, networks or scripts, and spent or foreign seeds are refused before anything is submitted, and an identity can be previewed without submitting. Writes use the production builders with the caller's own node, wallet, seed and key, and a process exit can never choose another identity or boot another registry.",
+      "pause": 400
+    },
+    {
+      "text": "Every submission and confirmation, partial ones included, survives in public receipts. A repeated create is refused; stale state, an unavailable node and a timeout stop with an attributable outcome, and nothing is repaired, overwritten or resubmitted on its own. Inspect needs no signing key, validates the key's proof against the observed commitment, and says how and when it looked.",
+      "pause": 400
+    },
+    {
+      "text": "Archive CI runs the commands as five separate processes against one development node, checking identity continuity and the actual observations, and each altered input must reach its intended refusal. The run pages show the supported commands, the limits of the open application, partial outcomes and recovery.",
+      "pause": 400
+    }
+  ],
+  "invariants": [
+    {
+      "text": "Every invariant blocks unless it is marked advisory, and a client's safety refusal is never presented as a model or ledger refusal.",
+      "pause": 400
+    },
+    {
+      "text": "The saved identity binds every read and write. The local commitment must agree with the ledger's. The caller's wallet and exact unspent seed govern the builders. An insertion turns an unknown key Active with exactly its keyed holding, and a duplicate is refused; a termination burns that holding's token and returns the owner's deposit, and minting a terminal witness is never part of it.",
+      "pause": 400
+    },
+    {
+      "text": "Inspect never signs, funds or submits, and a stale or unavailable read never prints a confirmed status. Interrupted work keeps its transaction ids and known partial state, and a create never overwrites. The archive journey keeps the same registry and key across processes, and any omitted command or altered receipt is detected. The documentation duty is advisory: it must describe the candidate accurately and claim nothing about preprod, release or full conformance.",
+      "pause": 400
+    }
+  ],
+  "model-binding-and-evidence-limits": [
+    {
+      "text": "The plan is bound to an exact code revision and to the Lean model files and statement digests it names. The model's step, refusal and transaction-row definitions govern insertion and termination, with every hypothesis and conclusion unchanged, and funding signatures are not treated as fold authorization.",
+      "pause": 400
+    },
+    {
+      "text": "The chain's authenticated roots realise commitment checking; the model's abstract root is not compared to them byte for byte. The client's persistence, freshness and journal are safety obligations, not new model operations. Receipts show development-ledger behaviour only, and product claims use the suite's own description language.",
+      "pause": 400
+    },
+    {
+      "text": "An unresolved ambiguity in the model or its consumers holds acceptance and goes to the operator as a concrete story. Validators, the model, new applications and later identity, naming and escrow work are out of scope, and live writes outside generated development wallets, publication and merge need separate authority.",
+      "pause": 400
+    },
+    {
+      "text": "On the thirtieth of September the operator ruled that the approved case of an update duplicating the token's carrier is not tested live and no longer holds the command-line acceptance, while the model's and the validator's own tests of it are kept. The conditional argument and its limits are on the ruling page.",
+      "pause": 400
+    }
+  ],
+  "existing-decision-affecting-termination": [
+    {
+      "text": "An open question also touches this journey: the termination row describes a destination output on a fold that delivers no token there, and whether that output is physical or logical is the operator's decision. Until it is decided, the termination output correspondence is held; other work continues, and no output, datum or model change is invented to fill the gap.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "ccd08a2981fa03f793fc7d02d51ee81e3a6052ecf82b46949013077ebb720ec7"
+  }
+}

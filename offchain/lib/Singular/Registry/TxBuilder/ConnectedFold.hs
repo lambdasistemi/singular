@@ -29,9 +29,9 @@ module Singular.Registry.TxBuilder.ConnectedFold
     , connectedFoldTx
     , syncFoldedRequests
     , generousUnits
+    , skipEvalUnits
     ) where
 
-import Control.Exception (SomeException, try)
 import Data.Map.Strict qualified as Map
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
@@ -40,6 +40,10 @@ import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 
 import Cardano.Ledger.Address (Addr)
+import Cardano.Ledger.Api.PParams
+    ( ppMaxBlockExUnitsL
+    , ppMaxTxExUnitsL
+    )
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body (feeTxBodyL)
 import Cardano.Ledger.Api.Tx.Out
@@ -157,7 +161,12 @@ connectedFoldTx args = do
     let evalTx
             | cfaSkipEval args = \tx -> do
                 let Redeemers rdmrs = tx ^. witsTxL . rdmrsTxWitsL
-                pure (Map.map (const (Right generousUnits)) rdmrs)
+                    units =
+                        skipEvalUnits
+                            (pp ^. ppMaxTxExUnitsL)
+                            (pp ^. ppMaxBlockExUnitsL)
+                            (Map.size rdmrs)
+                pure (Map.map (const (Right units)) rdmrs)
             | otherwise = \tx -> do
                 r <- evaluateTx prov tx
                 pure $
@@ -214,6 +223,22 @@ Revisit if ledgers tighten limits or scripts grow.
 -}
 generousUnits :: ExUnits
 generousUnits = ExUnits 14_000_000 1_000_000_000
+
+{- | The units stated for each of @n@ purposes when local evaluation is
+skipped: 'generousUnits', lowered where needed so that their sum fits both
+the transaction limit and the block limit. A transaction whose stated
+units exceed the block limit passes the mempool's per-transaction check
+yet can never be included in a block, so it waits for ever.
+-}
+skipEvalUnits :: ExUnits -> ExUnits -> Int -> ExUnits
+skipEvalUnits txLimit blockLimit n =
+    let share limit = limit `div` fromIntegral (max 1 n)
+        ExUnits gMem gSteps = generousUnits
+        ExUnits tMem tSteps = txLimit
+        ExUnits bMem bSteps = blockLimit
+    in  ExUnits
+            (minimum [gMem, share tMem, share bMem])
+            (minimum [gSteps, share tSteps, share bSteps])
 
 -- | Empty query GADT (no context needed).
 data NoCtx a
@@ -280,14 +305,13 @@ computeUpperSlot prov oldState reqUtxos = do
                     (\u -> extractSubmittedAt u + stateProcessTime oldState)
                     reqUtxos
     mUpperSlot <-
-        try (posixMsToSlot prov earliestDeadline)
-            :: IO (Either SomeException SlotNo)
+        trySync (posixMsToSlot prov earliestDeadline)
     case mUpperSlot of
         Right s -> pure s
         Left _ -> do
             nowUtc <- getCurrentTime
             let posixSec = utcTimeToPOSIXSeconds nowUtc
-            trySlots prov $
+            tryUpperSlots prov $
                 map
                     (\d -> round ((posixSec + d) * 1000))
                     [30, 5, 2]

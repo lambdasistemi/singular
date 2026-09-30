@@ -605,6 +605,7 @@ stubSession =
         , nsPParams = emptyPParams
         , nsScriptRegistered = \_ -> pure False
         , nsTipSlot = pure (SlotNo 7)
+        , nsChainPoint = pure Nothing
         , nsMode = Devnet
         }
 

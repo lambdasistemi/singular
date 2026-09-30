@@ -36,6 +36,8 @@ module Singular.Registry.TxBuilder.Internal.Lookup
       -- * Time and slot helpers
     , currentPosixMs
     , trySlots
+    , tryUpperSlots
+    , trySync
 
       -- * Refund computation
     , computeRefund
@@ -94,7 +96,13 @@ import Cardano.Tx.Balance
     , balanceTx
     )
 import Cardano.Tx.Ledger (ConwayTx)
-import Control.Exception (SomeException, try)
+import Control.Exception
+    ( SomeAsyncException
+    , SomeException
+    , fromException
+    , throwIO
+    , try
+    )
 import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
@@ -342,3 +350,37 @@ computeRefund pp net tipAmount reqOut =
     in  mkBasicTxOut
             refundAddr
             (inject (max rawRefund minCoin))
+
+{- | Try converting successive POSIX ms values to slots, rounding down, and
+return the first that succeeds: an upper validity bound.
+
+'trySlots' rounds up, which is right for a lower bound but not for an upper
+one. A time in the horizon's last slot converts, since the time is inside
+the horizon, and rounding up then yields the horizon slot itself, which is
+exclusive: the node cannot translate a bound there, and evaluation fails
+@TimeTranslationPastHorizon@. Rounding down keeps the bound inside the
+horizon whenever the time is.
+-}
+tryUpperSlots
+    :: Provider IO -> [Integer] -> IO SlotNo
+tryUpperSlots _ [] =
+    error
+        "posixMsToSlot: all fallbacks \
+        \past horizon"
+tryUpperSlots p (ms : rest) = do
+    r <- trySync (posixMsToSlot p ms)
+    case r of
+        Right s -> pure s
+        Left _ -> tryUpperSlots p rest
+
+{- | Run an action, returning its synchronous failure; an asynchronous
+exception — a cancellation, a timeout — is rethrown, never taken for a
+conversion that failed and so never answered by a fallback.
+-}
+trySync :: IO a -> IO (Either SomeException a)
+trySync action = do
+    r <- try action
+    case r of
+        Left e
+            | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
+        _ -> pure r

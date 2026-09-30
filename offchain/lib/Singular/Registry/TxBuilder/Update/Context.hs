@@ -27,7 +27,6 @@ module Singular.Registry.TxBuilder.Update.Context
     , computeUpperSlot
     ) where
 
-import Control.Exception (SomeException, try)
 import Control.Monad (when)
 import Data.ByteString (ByteString)
 import Data.List (sortOn)
@@ -318,16 +317,14 @@ computeUpperSlot prov oldState reqUtxos = do
                                 oldState
                     )
                     reqUtxos
-    mUpperSlot <-
-        try @SomeException
-            (posixMsToSlot prov earliestDeadline)
+    mUpperSlot <- trySync (posixMsToSlot prov earliestDeadline)
     case mUpperSlot of
         Right s -> pure s
         Left _ -> do
             nowUtc <- getCurrentTime
             let posixSec =
                     utcTimeToPOSIXSeconds nowUtc
-            trySlots prov $
+            tryUpperSlots prov $
                 map
                     ( \d ->
                         round

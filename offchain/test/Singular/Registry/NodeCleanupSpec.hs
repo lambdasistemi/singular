@@ -162,6 +162,7 @@ stubSession =
         , nsPParams = emptyPParams
         , nsScriptRegistered = pure . const False
         , nsTipSlot = pure (SlotNo 7)
+        , nsChainPoint = pure Nothing
         , nsMode = Devnet
         }
 

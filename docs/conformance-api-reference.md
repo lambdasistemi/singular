@@ -26,8 +26,9 @@ themselves at the revision you are viewing.
 
 The module extent is the public library of the Conformance Cabal file —
 every exposed module and the one package-internal owner. That complete
-extent is 24 modules. The 23 exposed modules are what a caller imports:
-the story programs and their binding and identity, the model transport
+extent is 25 modules. The 24 exposed modules are what a caller imports:
+the story programs and their binding and identity, the ordinary CLI's
+refusal controls and their receipt-computed verdicts, the model transport
 and the Lean oracle, the registration and perturbation comparisons, the
 receipt record and its validation, the refusal attribution, the row
 inventory, the purpose-unit arithmetic, the node-refusal rendering and
@@ -42,6 +43,7 @@ the site check fails until it and this list agree.
 
 - <a href="../conformance/lib/Conformance/Authenticate.hs" data-api="module">Conformance.Authenticate</a> — <a href="../conformance/lib/Conformance/Authenticate.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Book.hs" data-api="module">Conformance.Book</a> — <a href="../conformance/lib/Conformance/Book.hs" data-api="source">source</a>
+- <a href="../conformance/lib/Conformance/Cli/Controls.hs" data-api="module">Conformance.Cli.Controls</a> — <a href="../conformance/lib/Conformance/Cli/Controls.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Compare/Perturbation.hs" data-api="module">Conformance.Compare.Perturbation</a> — <a href="../conformance/lib/Conformance/Compare/Perturbation.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Compare/Registration.hs" data-api="module">Conformance.Compare.Registration</a> — <a href="../conformance/lib/Conformance/Compare/Registration.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Exit.hs" data-api="module">Conformance.Edge.Exit</a> — <a href="../conformance/lib/Conformance/Edge/Exit.hs" data-api="source">source</a>

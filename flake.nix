@@ -102,6 +102,62 @@
             inherit path;
           }) (packages system)
         );
+      # #299: the Demo 1 journey from the extracted release archive, run as
+      # separate `singular` processes on one development node, plus the
+      # retained insert-active and update-terminal archive controls. Run
+      # from the repository root: `nix run --quiet .#demo1-cli-check`.
+      demo1 =
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        {
+          demo1-cli-check = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "demo1-cli-check";
+                runtimeInputs = with pkgs; [
+                  bash
+                  coreutils
+                  gawk
+                  gnugrep
+                  gnused
+                  gnutar
+                  gzip
+                  jq
+                  nix
+                  # the journey's concurrent-writer control holds the
+                  # registry's lock with flock, and it finds and stops
+                  # its own development node with pgrep and pkill
+                  procps
+                  util-linux
+                ];
+                text = ''DEMO1_JOURNEY=${./tools/demo1_cli_journey.sh} DEMO1_CREATE_RACE=${./tools/demo1_cli_create_race.sh} bash ${./tools/demo1_cli_check.sh} "$PWD"'';
+              }
+            );
+          };
+          # #299: the ordinary CLI's refusal controls, judged from their
+          # receipts: `nix run --quiet .#demo1-cli-controls`.
+          demo1-cli-controls = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "demo1-cli-controls";
+                runtimeInputs = with pkgs; [
+                  bash
+                  coreutils
+                  findutils
+                  gnugrep
+                  jq
+                  procps
+                  nix
+                ];
+                text = ''DEMO1_CONTROLS=${./tools/demo1_cli_controls.sh} bash ${./tools/demo1_cli_controls_check.sh} "$PWD"'';
+              }
+            );
+          };
+        };
     in
     {
       packages = each (system: packages system // { build-gate = buildGate system; });
@@ -123,6 +179,7 @@
           // (browser system).apps
           // (coverage system).apps
           // (inventory system).apps
+          // (demo1 system)
         )
       );
       # #278 S2: the root development shell carries the pinned house

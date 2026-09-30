@@ -406,6 +406,11 @@ data BookingApproval = BookingApproval
     -}
     , baScript :: Script ConwayEra
     -- ^ The application script, the mint's witness.
+    , baScriptReference :: Maybe TxIn
+    {- ^ An output carrying the application script as a reference
+    script: the booking reads the script from it instead of carrying it
+    as a witness. Nothing for the naming and open applications.
+    -}
     , baReferenceInputs :: Set.Set TxIn
     {- ^ Outputs the application reads without spending: the registry
     state, and for a termination the live output it releases. Empty for
@@ -451,6 +456,7 @@ bookingApproval codes edge key owner dest
                         , PLC.List [PLC.B destAddr, PLC.B destHash]
                         ]
                 , baScript = appScript
+                , baScriptReference = Nothing
                 , baReferenceInputs = Set.empty
                 }
   where
@@ -489,15 +495,21 @@ certifyBooking pp collateral mApproval unsigned =
             in  unsigned
                     & bodyTxL . mintTxBodyL .~ baAsset approval
                     & bodyTxL . collateralInputsTxBodyL .~ Set.singleton collateral
-                    & bodyTxL . referenceInputsTxBodyL .~ baReferenceInputs approval
+                    & bodyTxL . referenceInputsTxBodyL
+                        .~ ( baReferenceInputs approval
+                                <> maybe Set.empty Set.singleton (baScriptReference approval)
+                           )
                     & bodyTxL
                         . scriptIntegrityHashTxBodyL
                         .~ computeScriptIntegrity pp redeemers
                     & witsTxL . rdmrsTxWitsL .~ redeemers
                     & witsTxL . scriptTxWitsL
-                        .~ Map.singleton
-                            (hashScript (baScript approval))
-                            (baScript approval)
+                        .~ case baScriptReference approval of
+                            Just _ -> Map.empty
+                            Nothing ->
+                                Map.singleton
+                                    (hashScript (baScript approval))
+                                    (baScript approval)
 
 {- | Book an edge, routing its minted token to the destination
 `edgeDestinationOf` chooses for it.
