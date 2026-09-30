@@ -493,7 +493,11 @@ runCG09 env = do
     tid <- cageTid cage
     (reqIn, reqOut) <- rowRequestInsert env cage "cg09-key" "cg09-value"
     let (_, submittedAt) = requestDatumOf reqOut
-    let units = ExUnits 1_400_000 100_000_000
+    -- The refused fold declares the units its phase-3 control declares: the
+    -- state script spends about 256M steps on this purpose, so 100M ran it
+    -- out of budget before it could decide, and the ledger's refusal was for
+    -- budget rather than for the reject (#287).
+    let units = ExUnits 2_000_000 600_000_000
     pot <- collateralPot env
     state <- cageStateUtxo env cage
     oldState <- extractState (snd state)

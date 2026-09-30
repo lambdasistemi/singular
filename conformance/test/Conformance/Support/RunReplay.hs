@@ -181,17 +181,25 @@ spec = describe "before a replay evaluates" $ do
                 createTrie manager tid
                 _ <- withTrie manager tid $ \trie -> CageTrie.insert trie "control" leafTerminal
                 action manager
-        it "a key the trie does not hold gets a non-empty exclusion proof, the trie untouched" $
-            withControl $ \manager -> do
+        it
+            "a key the trie does not hold gets a non-empty exclusion proof, the trie untouched"
+            $ withControl
+            $ \manager -> do
                 before <- withTrie manager tid CageTrie.getRoot
-                proof <- withSpeculativeTrie manager tid (\trie -> keyProof trie "never-registered")
+                proof <-
+                    withSpeculativeTrie
+                        manager
+                        tid
+                        (`keyProof` "never-registered")
                 after <- withTrie manager tid CageTrie.getRoot
                 proof `shouldSatisfy` (not . null)
                 after `shouldBe` before
         it "a key the trie holds gets its inclusion proof" $
             withControl $ \manager -> do
-                inclusion <- withTrie manager tid (\trie -> CageTrie.getProofSteps trie "control")
-                proof <- withSpeculativeTrie manager tid (\trie -> keyProof trie "control")
+                inclusion <-
+                    withTrie manager tid (`CageTrie.getProofSteps` "control")
+                proof <-
+                    withSpeculativeTrie manager tid (`keyProof` "control")
                 Just proof `shouldBe` inclusion
     describe "how an evaluation that did not finish ended" $ do
         let cek e = P.CekError (ErrorWithCause e Nothing)

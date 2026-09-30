@@ -3064,15 +3064,19 @@ storyProofs env cage tid reqs = do
     attempt <- try @SomeException (speculativeApplyAll env cage tid reqs)
     case attempt of
         Right ok -> pure ok
-        Left _ -> withSpeculativeTrie (envTm env) tid $ \trie -> do
+        -- The walk fails when a key is not the leaf the edge moves. Each key
+        -- then carries the proof the script judges it by: its inclusion proof,
+        -- or, for a key the registry does not hold, its exclusion proof, each
+        -- on its own speculative trie so no key's proof sees another's walk.
+        Left _ -> do
             steps <-
                 mapM
                     ( \(_, o) ->
-                        fromMaybe []
-                            <$> CageTrie.getProofSteps trie (fst (fst (requestDatumOf o)))
+                        withSpeculativeTrie (envTm env) tid $ \trie ->
+                            keyProof trie (fst (fst (requestDatumOf o)))
                     )
                     reqs
-            root <- CageTrie.getRoot trie
+            root <- withSpeculativeTrie (envTm env) tid CageTrie.getRoot
             pure (steps, root)
 
 {- | Fold through the harness's own assembly, submit, commit, and record

@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 {- |
 Module      : Conformance.Run.Book
 Description : Split out of Conformance.Run (#263); see that module's header
@@ -200,10 +202,17 @@ speculativeApplyAll env _cage tid reqs =
             _ -> error "speculative: pending UTxO has no request datum"
 
 {- | The proof a fold carries for one key on the trie as it stands: the
-key's inclusion proof when the trie holds it, else the exclusion proof.
+key's inclusion proof when the trie holds it, else the exclusion proof —
+the steps an insertion of that key carries, which is what the state script
+checks a key's absence against (@mpf.miss@). The insertion is a mutation of
+the trie it is given, so a caller passes a speculative one.
 -}
-keyProof :: (Monad m) => CageTrie.Trie m -> ByteString -> m [ProofStep]
-keyProof trie key = fromMaybe [] <$> CageTrie.getProofSteps trie key
+keyProof
+    :: (Monad m) => CageTrie.Trie m -> ByteString -> m [ProofStep]
+keyProof trie key =
+    CageTrie.getProofSteps trie key >>= \case
+        Just inclusion -> pure inclusion
+        Nothing -> walkEdge trie key edgeInsertAbsent
 
 {- | Commit a landed edge to a row cage's trie (#157 C3: a read
 commits nothing, which `walkEdge` already knows).
