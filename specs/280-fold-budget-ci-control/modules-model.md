@@ -6,7 +6,7 @@ As a reviewer, I want each new piece to have one job and depend only downward, s
 
 | Component | Path | Responsibility | Depends on |
 | --- | --- | --- | --- |
-| Fixed-fallback patch | `conformance/review/fold-budget-control/fixed-fallback.patch` | The only mutation: the final fold submission declares the fold's default units instead of the evaluated per-purpose map. It applies to the candidate and is never merged into source. | the runner source it patches |
+| Fixed-fallback patch | `conformance/review/fold-budget-control/fixed-fallback.patch` | The only mutation: the generic fold step's per-purpose declaration becomes the fold's default units for every purpose instead of the evaluated allocation, so assembly, the pre-submission consistency check and refusal attribution all read the fixed fallback. It applies to the candidate and is never merged into source. | the runner source it patches |
 | Recorder | `conformance/review/fold-budget-control/record` | Builds the blueprint once, makes the mutant commit on a detached worktree, runs the CI command on mutant and candidate, and writes the run records and logs. Its signature is in the functions model. | git, nix, the patch |
 | Run records | `conformance/review/fold-budget-control/*.json` and compressed logs | Mechanical output of the recorder. The data model defines their fields. | recorder |
 | Reader page | `conformance/review/fold-budget-control/README.md` | States what the pair shows, how to reproduce it and its limits. It is prose around the records and never restates a digest by hand. | run records |

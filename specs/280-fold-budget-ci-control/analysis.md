@@ -19,9 +19,10 @@ Every requirement has a task, and every task names a requirement or covers all o
 
 | Severity | Finding | Disposition |
 | --- | --- | --- |
+| high, resolved | Planning audit 001: a mutant that only empties the map given to the final assembly is stopped by the runner's pre-submission consistency guard, so it never reaches the node. | The mutation now replaces the declaration itself, which the guard, the assembly and refusal attribution all read. No guard is disabled. |
 | none | The spec says "runner" where the ticket brief says "interpreter"; both mean the generic fold step of `Conformance.Run.Live`. | Recorded here; no edit. |
 | none | The spec retains raw logs; the models retain them compressed and compare digests after decompression. | Consistent: compression is a storage choice. |
-| none | The fixture sets the fallback only for the first fold. The mutation empties the declaration for every fold, so later folds would get the fixture's pass-through units, but the first fold fails before any later one runs. | The RED witnesses are tied to the first fold. |
+| none | The fixture sets the fallback only for the first fold. The mutation gives every fold its default units as its declaration, so later folds would get the fixture's pass-through units, but the first fold fails before any later one runs. | The RED witnesses are tied to the first fold. |
 | low | Log size is unknown before the first run. | Stop condition added to the plan: above 5 MiB compressed, the coder asks first. |
 | low | New files may need a code inventory entry, and a new script meets the fixture-state guard. | Both run inside root CI, the T280-08 gate. |
 

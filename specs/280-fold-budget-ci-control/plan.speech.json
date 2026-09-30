@@ -1,7 +1,7 @@
 {
   "status": [
     {
-      "text": "Intake, the source map and the planning artifacts are done. The online auditor is reviewing the plan, and nothing blocks.",
+      "text": "Intake, the source map and the planning artifacts are done. The first planning audit found the runner's pre-submission check would stop the proposed mutant, so the mutation now replaces the declaration itself, and the revision is back with the auditor.",
       "pause": 500
     }
   ],
@@ -49,6 +49,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "b766b761340ea7eb859ae196efdfb29e3e4a82b9ad67d06412bdd9651984c297"
+    "sha256": "a014a64386d33eb2b349a741c69097b8596eedfab02208cd9cc16b8a2bc9a8d3"
   }
 }

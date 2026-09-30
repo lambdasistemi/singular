@@ -1,7 +1,7 @@
 {
   "requirements": [
     {
-      "text": "A mutant of the candidate changes one thing: the runner's final fold submission declares the fixture's fixed fallback instead of the evaluated budget per script purpose. The conformance job's own unit-suite command must then fail, with the appendix suite passing, the fixture's one-below submission refused, the runner's own submission refused for exceeding its declared units, and the regression reporting failure before the book. On the clean candidate the same command, blueprint, genesis and node must pass. Every run record is written by the recorder and binds source, model, blueprint, genesis, node, command, times, exit and log. The patch, recorder, records and logs are retained in the repository, and nothing else changes. If the mutant passes, only the regression test target is repaired, and the pair runs again.",
+      "text": "A mutant of the candidate changes one thing: the runner's per-purpose declaration, which it assembles, checks and submits, becomes the fold's default units, the fixture's fixed fallback, instead of the evaluated allocation. Evaluation still runs and the runner's own consistency check stays. The conformance job's unit-suite command must then fail, with the appendix suite passing, the fixture's one-below submission refused, the runner's own submission refused by the node and attributed to execution budget, and the regression reporting failure before the book. On the clean candidate the same command, blueprint, genesis and node must pass. Every run record is written by the recorder and binds source, model, blueprint, genesis, node, command, times, exit and log. The patch, recorder, records and logs are retained in the repository, and nothing else changes. If the mutant passes, only the regression test target is repaired, and the pair runs again.",
       "pause": 500
     }
   ],
@@ -25,6 +25,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "bef96d56092d0a8080cf1479b39b2fa7d7f8e9d21c393aff92a2bcf65fcacf44"
+    "sha256": "61620f2402574dba5e642938900febd55a6f0040bb2abc57d473ba0cea38d2d9"
   }
 }

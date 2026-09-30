@@ -5,7 +5,7 @@ As the ticket owner, I want one recorded control pair from the real CI command, 
 ## Status
 
 Completed: intake, source map and planning artifacts.
-Current: planning review by the online auditor.
+Current: planning revision after the first planning audit, which found the pre-submission guard; back to the auditor.
 Blockers: none.
 
 ## Constitution check
@@ -62,7 +62,7 @@ The budget is unlimited, but every invocation is counted from receipts. Expensiv
 
 ## Stop conditions
 
-The coder stops and files a question when the patch would touch more than the final declaration or when a mutant failure has another cause. It also stops when the repair would leave the test target, when a compressed log exceeds 5 MiB, or when a model or constitution question appears. The ticket owner escalates model questions as user stories to the epic owner.
+The coder stops and files a question when the patch would touch more than the per-purpose declaration, would disable or weaken any check, or when a mutant failure has another cause. It also stops when the repair would leave the test target, when a compressed log exceeds 5 MiB, or when a model or constitution question appears. The ticket owner escalates model questions as user stories to the epic owner.
 
 ## Evidence limits
 

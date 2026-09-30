@@ -15,7 +15,7 @@ Effects: it creates and removes its own detached worktrees outside the issue wor
 
 ## Runner, unchanged
 
-The patch changes no signature. It swaps the argument passed to the existing fold assembly in the generic fold step of `Conformance.Run.Live`.
+The patch changes no signature. It replaces the value bound as the per-purpose declaration in the generic fold step of `Conformance.Run.Live`. No check is removed or weakened.
 
 ## Regression target, conditional
 
