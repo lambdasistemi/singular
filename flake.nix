@@ -128,7 +128,7 @@
                   jq
                   nix
                 ];
-                text = ''DEMO1_JOURNEY=${./tools/demo1_cli_journey.sh} bash ${./tools/demo1_cli_check.sh} "$PWD"'';
+                text = ''DEMO1_JOURNEY=${./tools/demo1_cli_journey.sh} DEMO1_CREATE_RACE=${./tools/demo1_cli_create_race.sh} bash ${./tools/demo1_cli_check.sh} "$PWD"'';
               }
             );
           };

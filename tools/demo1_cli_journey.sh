@@ -316,34 +316,18 @@ run inspect-4 success -- registry inspect --key "$bkey" "${common[@]}" "${node[@
 # ------------------------------------------------------------------
 # 7. create races and interruptions, on their own targets
 # ------------------------------------------------------------------
-# A create held after its pre-lock check while another create completes
-# on the same target: once it takes the lock it must re-check and refuse.
-raced="$work/raced"
-run preview-raced success -- registry create --preview --registry "$raced" \
-  --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
-seed_r="$(field preview-raced .seed)"
-SINGULAR_HARNESS_HOLD_BEFORE_LOCK="$work/go" "$singular" registry create --seed "$seed_r" \
-  --registry "$raced" --blueprint "$blueprint" "${node[@]}" "${alice[@]}" \
-  >"$receipts/create-raced-late.json" 2>"$receipts/create-raced-late.err" &
-late=$!
-for _ in $(seq 1 300); do
-  [ -e "$work/go.waiting" ] && break
-  sleep 0.1
-done
-[ -e "$work/go.waiting" ] || setup_fail "the held create never reached its hold point"
-run create-raced-first success -- registry create --seed "$seed_r" --registry "$raced" \
-  --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
-raced_token="$(jq -r '.confDeployment.depCageToken' "$raced/registry.json")"
-raced_lines="$(journal_lines "$raced")"
-touch "$work/go"
+# Two creates race for one target: bob's, on his own live seed, is held
+# after its pre-lock checks while alice's completes; under the lock it must
+# re-check the target and refuse RegistryExists (demo1_cli_create_race.sh).
+race="${DEMO1_CREATE_RACE:-$(dirname "$0")/demo1_cli_create_race.sh}"
 status=0
-wait "$late" || status=$?
-[ "$(jq -r .outcome "$receipts/create-raced-late.json")" = client-refusal ] && [ "$status" -eq 10 ] \
-  || fail "the held create was not refused after the other create finished (exit $status)"
-[ "$(journal_lines "$raced")" = "$raced_lines" ] || fail "the held create submitted something"
-[ "$(jq -r '.confDeployment.depCageToken' "$raced/registry.json")" = "$raced_token" ] \
-  || fail "the held create replaced the first registry"
-say "create-raced-late: client-refusal after the lock; the first registry stands"
+bash "$race" "$singular" "$blueprint" "$sock" "$work/alice.skey" "$work/bob.skey" "$work/race" || status=$?
+case "$status" in
+  0) ;;
+  3) setup_fail "the create race never reached its target check" ;;
+  *) fail "the create race control does not hold (exit $status)" ;;
+esac
+say "create race: the late create was refused RegistryExists; the first registry stands"
 
 # A create killed after its first accepted submission: a new create is
 # refused, and inspect reads the incomplete create from its journal.
