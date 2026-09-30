@@ -154,6 +154,14 @@ jobs:
       - name: Check the traced registry build against the deployed hashes
         working-directory: conformance
         run: nix build --quiet --no-link .#registry-blueprint-correspondence
+      # Issue #287: a dedicated row that fails must keep its exit and leave
+      # its receipts and replay index where the upload below collects them.
+      # The control runs the steps' own wrapper with a stand-in failing row,
+      # and refuses copies of it with the publication removed or the receipts
+      # discarded.
+      - name: Show a failing dedicated row keeps its exit and its replay index
+        working-directory: conformance
+        run: bash test/ci/dedicated-row-control.sh
       - name: Run the unit suite as a packaged app without a dev shell
         working-directory: conformance
         run: nix run --quiet .#conformance-tests
@@ -178,8 +186,11 @@ jobs:
           set -e
           cd conformance
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          receipts="$(mktemp -d "$RUNNER_TEMP/cg22-receipts.XXXXXX")"
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG22 --receipts-dir "$receipts"
+          # The row runs through the wrapper the retention control executes.
+          CONFORMANCE_DEDICATED_RECEIPTS="${CONFORMANCE_DEDICATED_RECEIPTS:-$(mktemp -d "$RUNNER_TEMP/conformance-dedicated.XXXXXX")}"
+          export CONFORMANCE_DEDICATED_RECEIPTS
+          receipts="$CONFORMANCE_DEDICATED_RECEIPTS/CG22"
+          bash test/ci/dedicated-row.sh CG22 -- env REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG22
           head_sha="$(git rev-parse HEAD)"
           f="$receipts/receipt-CG22.json"
           test -f "$f" || { echo 'FAIL: missing CG22 receipt'; exit 1; }
@@ -250,8 +261,11 @@ jobs:
           set -e
           cd conformance
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          receipts="$(mktemp -d "$RUNNER_TEMP/cg23-receipts.XXXXXX")"
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG23 --receipts-dir "$receipts"
+          # The row runs through the wrapper the retention control executes.
+          CONFORMANCE_DEDICATED_RECEIPTS="${CONFORMANCE_DEDICATED_RECEIPTS:-$(mktemp -d "$RUNNER_TEMP/conformance-dedicated.XXXXXX")}"
+          export CONFORMANCE_DEDICATED_RECEIPTS
+          receipts="$CONFORMANCE_DEDICATED_RECEIPTS/CG23"
+          bash test/ci/dedicated-row.sh CG23 -- env REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG23
           head_sha="$(git rev-parse HEAD)"
           f="$receipts/receipt-CG23.json"
           test -f "$f" || { echo 'FAIL: missing CG23 receipt'; exit 1; }
@@ -311,8 +325,11 @@ jobs:
           set -e
           cd conformance
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          receipts="$(mktemp -d "$RUNNER_TEMP/cg07-receipts.XXXXXX")"
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG07 --receipts-dir "$receipts"
+          # The row runs through the wrapper the retention control executes.
+          CONFORMANCE_DEDICATED_RECEIPTS="${CONFORMANCE_DEDICATED_RECEIPTS:-$(mktemp -d "$RUNNER_TEMP/conformance-dedicated.XXXXXX")}"
+          export CONFORMANCE_DEDICATED_RECEIPTS
+          receipts="$CONFORMANCE_DEDICATED_RECEIPTS/CG07"
+          bash test/ci/dedicated-row.sh CG07 -- env REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG07
           head_sha="$(git rev-parse HEAD)"
           f="$receipts/receipt-CG07.json"
           test -f "$f" || { echo 'FAIL: missing retraction window receipt'; exit 1; }

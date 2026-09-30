@@ -54,6 +54,10 @@ check() {
     bash "$candidate" STAND-IN -- "$stub" >"$work/out" 2>&1
   rc=$?
   set -e
+  if [ "$rc" -eq 9 ]; then
+    echo "the receipts root was not published before the row ran"
+    return 1
+  fi
   if [ "$rc" -ne 7 ]; then
     echo "exit $rc, not the row's 7"
     return 1
