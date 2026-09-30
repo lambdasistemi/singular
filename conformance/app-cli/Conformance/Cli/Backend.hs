@@ -307,8 +307,21 @@ runControls args = do
         (createDirectoryIfMissing True)
         [receipts, evidence, optWork o </> "targets"]
     step <- newIORef (0 :: Int)
-    let env = Env o receipts evidence step
-    executeStory env controlsStory
+    wallet <- loadWallet (fromIntegral (optMagic o)) (optWalletKey o)
+    -- One session for every backend action: opening one per action spends
+    -- the requests' processing window before their folds are built.
+    withNodeMode
+        ( External
+            ( ExternalNode
+                (optSocket o)
+                (fromIntegral (optMagic o))
+                (optWalletKey o)
+            )
+        )
+        $ \sess ->
+            executeStory
+                (Env o receipts evidence step (Just (sess, wallet)))
+                controlsStory
     pure receipts
 
 data Env = Env
@@ -316,6 +329,8 @@ data Env = Env
     , envReceipts :: FilePath
     , envEvidence :: FilePath
     , envStep :: IORef Int
+    , envSession :: Maybe (NodeSession, Wallet)
+    -- ^ The one node session every backend action shares
     }
 
 -- | Walk the story in order: every action, inside clauses and checks too.
@@ -537,6 +552,7 @@ envelopeFor r controller key =
 -- ---------------------------------------------------------
 
 withNode :: Env -> (NodeSession -> Wallet -> IO a) -> IO a
+withNode Env{envSession = Just (sess, wallet)} body = body sess wallet
 withNode env body = do
     let o = envOptions env
     wallet <- loadWallet (fromIntegral (optMagic o)) (optWalletKey o)
@@ -927,11 +943,15 @@ foldWith env target selection tweak byStranger r = do
         duties <- case tweak of
             AsOwed -> pure owedDuties
             PayLess less ->
-                case [ o
-                     | o <- rdOutputs owedDuties
-                     , o ^. addrTxOutL == home
-                     , adaOnlyOut o
-                     ] of
+                -- The controller's settlement: its largest output, the one
+                -- carrying the released deposits (an approval returned to it
+                -- rides beside them or in a smaller output of its own).
+                case take
+                    1
+                    ( sortOn
+                        (Down . (^. coinTxOutL))
+                        [o | o <- rdOutputs owedDuties, o ^. addrTxOutL == home]
+                    ) of
                     [paid] ->
                         let Coin c = paid ^. coinTxOutL
                         in  pure
@@ -941,11 +961,7 @@ foldWith env target selection tweak byStranger r = do
                                         | o <- rdOutputs owedDuties
                                         ]
                                     }
-                    ps ->
-                        fail
-                            ( show (length ps)
-                                <> " outputs pay the controller; the short payment needs exactly one"
-                            )
+                    _ -> fail "no output of the fold pays the controller"
             AlsoRelease key -> case holdingsOf reg key live of
                 [holding@(_, hOut)] ->
                     pure
@@ -1185,7 +1201,12 @@ craftHolding env c target key r = do
         -- application minted at a booking, returned by its fold.
         otherAsset <-
             if c == UpdateAddedAsset
-                then case [u | u@(_, out) <- wallets, not (adaOnlyOut out)] of
+                then case [ u
+                          | u@(_, out) <- wallets
+                          , MaryValue _ (MultiAsset m) <- [out ^. valueTxOutL]
+                          , not (Map.null m)
+                          , SNothing <- [out ^. referenceScriptTxOutL]
+                          ] of
                     (u : _) -> pure (Just u)
                     [] -> fail "the wallet holds no asset of another policy"
                 else pure Nothing
