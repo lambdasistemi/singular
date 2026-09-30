@@ -37,6 +37,7 @@ module Singular.Registry.TxBuilder.Internal.Lookup
     , currentPosixMs
     , trySlots
     , tryUpperSlots
+    , trySync
 
       -- * Refund computation
     , computeRefund
@@ -95,7 +96,13 @@ import Cardano.Tx.Balance
     , balanceTx
     )
 import Cardano.Tx.Ledger (ConwayTx)
-import Control.Exception (SomeException, try)
+import Control.Exception
+    ( SomeAsyncException
+    , SomeException
+    , fromException
+    , throwIO
+    , try
+    )
 import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
@@ -361,9 +368,19 @@ tryUpperSlots _ [] =
         "posixMsToSlot: all fallbacks \
         \past horizon"
 tryUpperSlots p (ms : rest) = do
-    r <-
-        try @SomeException
-            (posixMsToSlot p ms)
+    r <- trySync (posixMsToSlot p ms)
     case r of
         Right s -> pure s
         Left _ -> tryUpperSlots p rest
+
+{- | Run an action, returning its synchronous failure; an asynchronous
+exception — a cancellation, a timeout — is rethrown, never taken for a
+conversion that failed and so never answered by a fallback.
+-}
+trySync :: IO a -> IO (Either SomeException a)
+trySync action = do
+    r <- try action
+    case r of
+        Left e
+            | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
+        _ -> pure r

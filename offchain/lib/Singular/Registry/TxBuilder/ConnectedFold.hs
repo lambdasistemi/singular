@@ -31,7 +31,6 @@ module Singular.Registry.TxBuilder.ConnectedFold
     , generousUnits
     ) where
 
-import Control.Exception (SomeException, try)
 import Data.Map.Strict qualified as Map
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
@@ -280,8 +279,7 @@ computeUpperSlot prov oldState reqUtxos = do
                     (\u -> extractSubmittedAt u + stateProcessTime oldState)
                     reqUtxos
     mUpperSlot <-
-        try (posixMsToSlot prov earliestDeadline)
-            :: IO (Either SomeException SlotNo)
+        trySync (posixMsToSlot prov earliestDeadline)
     case mUpperSlot of
         Right s -> pure s
         Left _ -> do

@@ -80,6 +80,7 @@ module Singular.Registry.TxBuilder.Internal
     , currentPosixMs
     , trySlots
     , tryUpperSlots
+    , trySync
 
       -- * Request helpers
     , extractOwnerBytes
@@ -155,5 +156,6 @@ import Singular.Registry.TxBuilder.Internal.Lookup
     , placeholderExUnits
     , spendingIndex
     , trySlots
+    , trySync
     , tryUpperSlots
     )

@@ -9,8 +9,17 @@ unless the time falls exactly on a slot boundary.
 -}
 module Singular.Registry.TxBuilder.UpperSlotSpec (spec) where
 
-import Control.Exception (throwIO)
-import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
+import Control.Exception (AsyncException (ThreadKilled), throwIO, try)
+import Control.Monad (void)
+import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
+import Test.Hspec
+    ( Spec
+    , describe
+    , expectationFailure
+    , it
+    , shouldBe
+    , shouldSatisfy
+    )
 
 import Singular.Registry.Provider (Provider (..), SlotNo (..))
 import Singular.Registry.TxBuilder.Internal (trySlots, tryUpperSlots)
@@ -66,3 +75,26 @@ spec = describe "A fold's validity upper bound and the node's horizon" $ do
                 )
                 [0, 7 .. horizon * slotMs - 1]
         bounds `shouldSatisfy` all inside
+    cancellationSpec
+
+-- | A provider whose every conversion first counts itself, then is cancelled.
+cancelledProvider :: IORef Int -> Provider IO
+cancelledProvider calls =
+    horizonProvider
+        { posixMsToSlot = \_ -> do
+            modifyIORef' calls (+ 1)
+            throwIO ThreadKilled
+        }
+
+-- | A cancellation escapes the fallback, and no later conversion is tried.
+cancellationSpec :: Spec
+cancellationSpec =
+    it "lets a cancellation escape instead of trying the next time" $ do
+        calls <- newIORef 0
+        r <- try (tryUpperSlots (cancelledProvider calls) [0, 1_000, 2_000])
+        case r of
+            Left ThreadKilled -> pure ()
+            other ->
+                expectationFailure
+                    ("the cancellation did not escape: " <> show (void other))
+        readIORef calls >>= (`shouldBe` 1)
