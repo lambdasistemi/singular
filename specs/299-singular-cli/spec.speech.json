@@ -43,6 +43,10 @@
     {
       "text": "An unresolved ambiguity in the model or its consumers holds acceptance and goes to the operator as a concrete story. Validators, the model, new applications and later identity, naming and escrow work are out of scope, and live writes outside generated development wallets, publication and merge need separate authority.",
       "pause": 400
+    },
+    {
+      "text": "On the thirtieth of September the operator ruled that the approved case of an update duplicating the token's carrier is not tested live and no longer holds the command-line acceptance, while the model's and the validator's own tests of it are kept. The conditional argument and its limits are on the ruling page.",
+      "pause": 400
     }
   ],
   "existing-decision-affecting-termination": [
@@ -53,6 +57,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "5281fe30d50e2de41fd6237c99db5aa6521523ec3d2ecf8430d00fd472adf792"
+    "sha256": "ccd08a2981fa03f793fc7d02d51ee81e3a6052ecf82b46949013077ebb720ec7"
   }
 }

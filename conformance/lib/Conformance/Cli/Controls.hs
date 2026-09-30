@@ -2504,7 +2504,7 @@ approvedCases =
                ( "an update whose continuation duplicates the token's carrier"
                , "`update_preserves_custody`"
                , NotLive
-                    "a second carrier needs a second active token for the key, which only the registry's witness policy mints"
+                    "the live suite runs no transaction for it: with one active token per Active key and no active mint in an update, the ledger's conservation of value keeps two carriers from forming, so the application never sees the case. Not tested live; recorded by operator ruling in `specs/299-singular-cli/ruling-duplicate-carrier.md`, which states the argument's limits; the model's and the validator's own tests of it are kept"
                )
            ,
                ( "a release of the live holding outside any fold"

@@ -43,6 +43,8 @@ Concrete MPF authenticated roots realize commitment checking; `rootOf` is abstra
 
 Unresolved affected Lean/consumer ambiguity is an acceptance hold and a concrete user story to the operator. No validator/model changes, new application, KERI/AID, Absent activation, witnesses, naming/escrow, full indexer or M4 scope. Live writes, signing-key reads outside generated development wallets, publication and merge need separate authority.
 
+Operator ruling, 30 September 2026: the approved case of an update duplicating the token's carrier is not tested live and no longer holds the command-line acceptance; the model's and the validator's own tests of it are kept. The conditional argument and its limits are recorded in [ruling-duplicate-carrier.md](ruling-duplicate-carrier.md).
+
 ## Existing decision affecting termination
 
 Open issue #304 also affects this journey: `txOfExit` and `update_terminal_transaction_row` describe a destination output on a fold that delivers no token there. Whether that row is physical or logical remains the operator's decision. The termination transaction-output correspondence and affected acceptance are held pending that ruling; independent CLI/persistence/insert/packaging work may continue. Do not manufacture a ledger output or datum or alter the model. Existing deposit recipients and clear delivering-output inline-datum obligations remain binding.

@@ -551,6 +551,12 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                 renderControls (judge withoutWithdrawal controlsStory) controlsStory
         full
             `shouldSatisfy` isInfixOf "30 of 31 approved cases are covered live; 1 are not."
+        -- the ruled-out case stays visible and uncovered, citing its ruling
+        full
+            `shouldSatisfy` isInfixOf
+                "| an update whose continuation duplicates the token's carrier | `update_preserves_custody` | uncovered: the live suite runs no transaction for it"
+        full
+            `shouldSatisfy` isInfixOf "specs/299-singular-cli/ruling-duplicate-carrier.md"
         partial
             `shouldSatisfy` isInfixOf
                 "| a release of the live holding outside any fold | `only_fold_releases` | uncovered"

@@ -1,0 +1,50 @@
+{
+  "the-operators-ruling": [
+    {
+      "text": "On the thirtieth of September the operator answered: yes, record that limit and retain the model and validator tests. The live command-line acceptance no longer waits on a test of a duplicated token carrier, and it says plainly that the case was not tested live.",
+      "pause": 400
+    },
+    {
+      "text": "Asked how an impossible action can be proved, the answer is kept here with its limits. This page records a scope decision and a conditional argument; it proves nothing new.",
+      "pause": 400
+    }
+  ],
+  "the-story-it-concerns": [
+    {
+      "text": "Alice holds an Active key whose one token rides in its live holding. She tries an update that leaves the token in two outputs, one each. The approved case asks the application to refuse that, under the proved statement that an update preserves custody.",
+      "pause": 400
+    }
+  ],
+  "the-argument-stated-conditionally": [
+    {
+      "text": "Start from one active token per Active key, which the registry model proves for every reachable state. The update mints no active token: only a fold may mint one, one per inserted key, never for a key already held. So the ledger's conservation of value keeps two one-token outputs from forming, and such a transaction never reaches the application.",
+      "pause": 400
+    },
+    {
+      "text": "Lean proves the supply bound in its model. The validator rules were read in source and unit tested; their compiled enforcement on the ledger is not formally proved. A rejection before any script runs would prove neither the argument nor a script refusal, and no universal proof is claimed.",
+      "pause": 400
+    }
+  ],
+  "the-evidence-that-is-kept-and-what-it-shows": [
+    {
+      "text": "The model refuses two carriers, and the Aiken test shows the validator's refusal branch on a fixture that would not balance on a ledger. Neither shows a ledger could present the case. Both tests and the supply statement stay unchanged.",
+      "pause": 400
+    }
+  ],
+  "alternatives-considered": [
+    {
+      "text": "Submitting such a transaction live would be rejected for conservation before any script ran, which tests nothing about the application. Keeping the case as a blocker would wait on a transaction the argument says cannot be made. The operator chose to record the limit and keep the tests.",
+      "pause": 400
+    }
+  ],
+  "what-changes-and-what-does-not": [
+    {
+      "text": "The case stays visible in the approved matrix and the published controls, reported uncovered because the live suite runs nothing for it, and citing this page. It no longer blocks the command-line acceptance. Nothing is claimed live, covered or passing, and Lean, the application model, the validators and the statement ledgers are unchanged.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "ruling-duplicate-carrier.md",
+    "sha256": "b24606d2936f28a51ac1c633e969f6fe4dc498f9013d52e27ab0f3c419d66f90"
+  }
+}
