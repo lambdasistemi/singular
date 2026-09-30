@@ -67,11 +67,15 @@ done
 out=$(realpath -m "$out")
 [ ! -e "$out" ] || die "OUT already exists: $out"
 
+# OUT exists before the first command, so every capture survives an early
+# refusal; the journal and captured outputs are written there in place.
+mkdir -p "$(dirname "$out")"
+mkdir "$out"
 work=$(mktemp -d -t fold-budget-control.XXXXXX)
 candidate_tree=$work/candidate
 mutant_tree=$work/mutant
-journal=$work/invocations.jsonl
-captured=$work/invocations
+journal=$out/invocations.jsonl
+captured=$out/invocations
 mkdir "$captured"
 : >"$journal"
 issue=
@@ -90,15 +94,12 @@ remove_worktrees() {
   created=()
 }
 
-# finish: journal the cleanup, keep the journal and captured outputs in OUT.
+# finish: on any exit, remove what this run still owns. The journal and the
+# captured outputs are already in OUT.
 finish() {
   local status=$?
   trap - EXIT
   remove_worktrees
-  if [ -d "$out" ]; then
-    cp "$journal" "$out/invocations.jsonl"
-    cp -r "$captured" "$out/invocations"
-  fi
   rm -rf "$work"
   if [ "$cleanup_failed" -ne 0 ] && [ "$status" -eq 0 ]; then
     status=1
@@ -164,9 +165,6 @@ inv shared "$issue" git show "$candidate:$record_rel" \
   || die "the candidate does not contain $record_rel"
 cmp -s "$inv_file.out" "$here/record.sh" \
   || die "this recorder differs from the one committed in the candidate"
-
-mkdir -p "$(dirname "$out")"
-mkdir "$out"
 
 inv shared "$issue" git worktree add --quiet --detach "$candidate_tree" "$candidate"
 created+=("$candidate_tree")
@@ -305,7 +303,6 @@ run_tree() {
     --arg retained "$role.log" --argjson bytes "$(wc -c <"$log")" --argjson lines "$(wc -l <"$log")" \
     --arg logSha "$(sha256sum "$log" | cut -d' ' -f1)" \
     --argjson witnesses "$witness_json" \
-    --slurpfile invocations "$journal" \
     '{
       role: $role, commit: $commit, tree: $tree, candidate: $candidate, root: $root,
       dirty: $dirty, patch: $patch,
@@ -317,13 +314,22 @@ run_tree() {
       builds: {program: $program, regression: $regression, runner: $runner},
       start: $start, end: $end, exit: $exit,
       log: {retained: $retained, bytes: $bytes, lines: $lines, sha256: $logSha},
-      witnesses: $witnesses.list, witnessesComplete: $witnesses.complete,
-      invocations: [$invocations[] | select(.scope == "shared" or .scope == $role)]
-    }' >"$out/$role.json"
+      witnesses: $witnesses.list, witnessesComplete: $witnesses.complete
+    }' >"$work/$role.partial.json"
 }
 
 run_tree mutant "$mutant_tree"
 run_tree restored "$candidate_tree"
+
+# The worktrees go before the records are written, so each record carries the
+# removals: its invocations are the shared preflight and cleanup entries plus
+# its own role's, complete and ordered.
+remove_worktrees
+for role in mutant restored; do
+  jq --slurpfile invocations "$journal" \
+    '. as $record | $record + {invocations: [$invocations[] | select(.scope == "shared" or .scope == "cleanup" or .scope == $record.role)]}' \
+    "$work/$role.partial.json" >"$out/$role.json"
+done
 
 # Pair admissibility: every rule of the data model, each reported by name.
 problems=()
@@ -337,6 +343,7 @@ check "the mutant did not exit nonzero with all its witnesses" '.role != "mutant
 check "the restored run did not exit 0 with all its witnesses" '.role != "restored" or (.exit == 0 and .witnessesComplete)'
 check "a record carries no node version line" '.node != ""'
 check "a journalled invocation has no output digest" 'all(.invocations[]; (.stdout.bytes | type) == "number" and (.stdout.sha256 | type) == "string")'
+check "a record lacks the removal of the two worktrees" '[.invocations[] | select(.scope == "cleanup" and .argv[0:3] == ["git", "worktree", "remove"] and .exit == 0)] | length == 2'
 for field in lean blueprint genesis.sha256 node command env cwd; do
   if [ "$(jq -c ".$field" "$out/mutant.json")" != "$(jq -c ".$field" "$out/restored.json")" ]; then
     problems+=("the records disagree on $field")
@@ -366,7 +373,6 @@ fi
 
 echo "mutant  commit=$mutant exit=$(jq -r .exit "$out/mutant.json") witnesses=$(jq -c '[.witnesses[].line]' "$out/mutant.json")"
 echo "restored commit=$candidate exit=$(jq -r .exit "$out/restored.json") witnesses=$(jq -c '[.witnesses[].line]' "$out/restored.json")"
-remove_worktrees
 if [ "$cleanup_failed" -ne 0 ]; then
   problems+=("cleanup failed: a worktree this run created was not removed")
 fi
