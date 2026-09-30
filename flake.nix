@@ -132,6 +132,23 @@
               }
             );
           };
+          # #299: the ordinary CLI's refusal controls, judged from their
+          # receipts: `nix run --quiet .#demo1-cli-controls`.
+          demo1-cli-controls = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "demo1-cli-controls";
+                runtimeInputs = with pkgs; [
+                  bash
+                  coreutils
+                  procps
+                  nix
+                ];
+                text = ''DEMO1_CONTROLS=${./tools/demo1_cli_controls.sh} bash ${./tools/demo1_cli_controls_check.sh} "$PWD"'';
+              }
+            );
+          };
         };
     in
     {

@@ -508,3 +508,11 @@ jobs:
       # this step fails at the page check or at the first invocation.
       - name: Run the Demo 1 singular journey from the extracted release archive
         run: nix run --quiet .#demo1-cli-check
+      # #299: the registry refuses an insertion the application books for a
+      # key that is Active or already Terminal. The ordinary `insert` stops
+      # partial naming its pending request; that request's fold, submitted
+      # without local evaluation, is refused by the state validator; each
+      # refusal sits beside an accepting control; every verdict is computed
+      # from the run's receipts.
+      - name: Run the ordinary CLI's refusal controls
+        run: nix run --quiet .#demo1-cli-controls

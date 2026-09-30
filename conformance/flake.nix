@@ -478,6 +478,8 @@
       {
         packages = {
           inherit conformance driverTransport foldBudgetRegression;
+          # #299: the ordinary CLI's refusal controls runner.
+          inherit (components.exes) cli-controls;
           # Generated Haddock reference for the Conformance library, consumed
           # by the root documentation build. Same source tree, same lock: the
           # docs manifest can bind the reference to this candidate's content.
