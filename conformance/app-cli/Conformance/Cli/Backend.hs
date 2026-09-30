@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE NumericUnderscores #-}
 
 {- | Execute the ordinary CLI's refusal controls against a node.
@@ -70,7 +71,6 @@ import System.Process (readProcessWithExitCode)
 import System.Timeout (timeout)
 import Text.Printf (printf)
 
-import Cardano.Crypto.Hash.Blake2b (Blake2b_256)
 import Cardano.Crypto.Hash.Class (hashToBytes, hashWith)
 import Cardano.Crypto.Hash.SHA256 (SHA256)
 import Cardano.Ledger.Address (Addr (..))
@@ -170,7 +170,6 @@ import Singular.Registry.Node
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
-import Singular.Registry.Trie qualified as Trie
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TxBuilder.ConnectedFold
     ( ConnectedFoldArgs (..)
@@ -1344,15 +1343,19 @@ craftTermination env byStranger target key r = do
 sha256 :: ByteString -> ByteString
 sha256 = hashToBytes . hashWith @SHA256 id
 
-{- | The key's leaf, read from a mirror copy — the backend's own, else the
-command's — whose root is the root the chain holds; nothing when neither
-agrees with the chain. Reading a copy never writes it.
+{- | The key's leaf, authenticated by the chain's root. From a mirror copy —
+the backend's own, else the command's — whose root is the root the chain
+holds, each candidate leaf is set for the key in a speculative copy: the
+one that leaves the root unchanged is the key's leaf; removing the key
+without changing the root means it holds none. Nothing when no copy agrees
+with the chain, or no candidate reproduces its root. No copy is written.
 -}
 authenticatedLeaf
     :: Env -> Target -> Registry -> ByteString -> String -> IO (Maybe Text)
 authenticatedLeaf env target reg chain key = go manifests
   where
     tok = regToken reg
+    k = keyBytes key
     manifests =
         [ backendDir env target </> "registry.json"
         , targetDir env target </> "registry.json"
@@ -1363,17 +1366,23 @@ authenticatedLeaf env target reg chain key = go manifests
         if Map.member tok saved
             then do
                 (tm, _) <- mkPureTrieManagerFrom saved
-                (Root local, value) <-
-                    withTrie tm tok $ \t -> (,) <$> getRoot t <*> Trie.lookup t (keyBytes key)
+                Root local <- withTrie tm tok getRoot
                 if local == chain
-                    then pure (Just (leafName value))
+                    then identify tm
                     else go rest
             else go rest
-    -- The trie stores a leaf as the BLAKE2b-256 digest of its bytes.
-    leafName value = case value of
-        Nothing -> "absent"
-        Just v
-            | v `elem` [leafActive, blake2b leafActive] -> "active"
-            | v `elem` [leafTerminal, blake2b leafTerminal] -> "terminal"
-            | otherwise -> "unknown"
-    blake2b = hashToBytes . hashWith @Blake2b_256 id
+    identify tm = do
+        let rootWith leaf = withSpeculativeTrie tm tok $ \t -> do
+                _ <- delete t k
+                _ <- insert t k leaf
+                getRoot t
+            rootWithout = withSpeculativeTrie tm tok $ \t -> delete t k >> getRoot t
+        Root active <- rootWith leafActive
+        Root terminal <- rootWith leafTerminal
+        Root absent <- rootWithout
+        pure $
+            if
+                | active == chain -> Just "active"
+                | terminal == chain -> Just "terminal"
+                | absent == chain -> Just "absent"
+                | otherwise -> Nothing
