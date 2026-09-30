@@ -1,0 +1,30 @@
+{
+  "requirements": [
+    {
+      "text": "A mutant of the candidate changes one thing: the runner's final fold submission declares the fixture's fixed fallback instead of the evaluated budget per script purpose. The conformance job's own unit-suite command must then fail, with the appendix suite passing, the fixture's one-below submission refused, the runner's own submission refused for exceeding its declared units, and the regression reporting failure before the book. On the clean candidate the same command, blueprint, genesis and node must pass. Every run record is written by the recorder and binds source, model, blueprint, genesis, node, command, times, exit and log. The patch, recorder, records and logs are retained in the repository, and nothing else changes. If the mutant passes, only the regression test target is repaired, and the pair runs again.",
+      "pause": 500
+    }
+  ],
+  "acceptance": [
+    {
+      "text": "The mutant run exits nonzero with all four witnesses in order; a compile, setup, network or differently attributed failure is recorded, and it is not a red. The restored run exits zero with its witnesses, and the two records agree on everything except the patch. Root local continuous integration exits zero, and so do the Conformance format and lint checks when Haskell changes.",
+      "pause": 500
+    }
+  ],
+  "clarifications": [
+    {
+      "text": "The issue asked for a new CI step, but the conformance job already runs the regression through the packaged test app, so no step is added. The fixture's own refusal is expected inside a passing command and is not the red. The blueprint is built once and passed explicitly, which is what the app would compute. The control is a retained pair, not a permanent devnet step. Execution units are unobservable in the model, so no Lean statement changes. No question is open.",
+      "pause": 500
+    }
+  ],
+  "authority-and-evidence": [
+    {
+      "text": "The base carries constitution 1.11.0, and the Lean model tree and driver corpus digest are named. The acceptance record of issue 273 is preserved, not relabelled. The CI run at pull request 316 shows the ordinary regression passing, which is not a control. The diagram shows the job step running the unit suite, the regression and the book, with the evaluated declaration accepted and the fixed fallback refused.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "bef96d56092d0a8080cf1479b39b2fa7d7f8e9d21c393aff92a2bcf65fcacf44"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "recorder": [
+    {
+      "text": "The recorder takes a candidate commit and a fresh output directory. It creates its own detached worktrees and one local mutant commit that is never pushed, runs the builds and two devnet runs, and exits zero only when the pair is admissible.",
+      "pause": 500
+    }
+  ],
+  "runner-unchanged": [
+    {
+      "text": "The patch changes no signature. It only swaps the argument passed to the existing fold assembly.",
+      "pause": 500
+    }
+  ],
+  "regression-target-conditional": [
+    {
+      "text": "Only if the mutant passes, the regression target keeps its command line and exits nonzero when the CG21 session ends without its expected verdict.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "f3ce995887535bb51ec8e4c8c9696ab9305ef2bf3100f0fdb96490885c7306a1"
+  }
+}

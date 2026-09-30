@@ -1,0 +1,24 @@
+{
+  "run-the-pair": [
+    {
+      "text": "From a clean checkout, run the recorder with the current commit and a temporary output directory. It builds the blueprint once, runs the CI command on the fixed-fallback mutant, which should fail, then on the candidate, which should pass.",
+      "pause": 500
+    }
+  ],
+  "read-the-result": [
+    {
+      "text": "The mutant record shows a nonzero exit with its four witnesses, and the restored record shows exit zero with the success line and the book. Each log digest matches its record.",
+      "pause": 500
+    }
+  ],
+  "check-the-retained-pair": [
+    {
+      "text": "The committed records and compressed logs come from one run against the candidate they name. Decompress a log and compare its digest with the record.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "quickstart.md",
+    "sha256": "20d7b9beb5a08d60a59372dcde646b10dec87386067d3af1d585d9db3caf1e25"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "coverage": [
+    {
+      "text": "Every requirement maps to a plan step, a model element and at least one task.",
+      "pause": 500
+    }
+  ],
+  "consistency-findings": [
+    {
+      "text": "The spec says runner where the brief says interpreter, and both name the same fold step. Compressed logs are a storage choice. The fixture only sets the first fold's fallback, and the red is tied to that fold. Unknown log size has a stop condition, and inventory and fixture-state checks run in root CI.",
+      "pause": 500
+    }
+  ],
+  "constitution-alignment": [
+    {
+      "text": "No Lean, expected-result or public page change. Execution units stay unobservable, and the evidence is ledger execution through the CI command.",
+      "pause": 500
+    }
+  ],
+  "result": [
+    {
+      "text": "No blocking contradiction, no uncovered requirement and no open question, so planning is ready for the auditor.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "analysis.md",
+    "sha256": "21eff875d26eb690d1dc59724088b7cea354e65fe33f3ef48b74f78a0679be9b"
+  }
+}

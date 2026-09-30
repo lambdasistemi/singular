@@ -1,0 +1,18 @@
+{
+  "run-record": [
+    {
+      "text": "Each run writes one record: its role, commit and tree, a clean state, the patch for the mutant, the Lean tree and corpus digest, the blueprint, the genesis digest, the node version, the command, directory and environment, the build paths, times, exit, the raw log digest, the matched witness lines and every invocation made.",
+      "pause": 500
+    }
+  ],
+  "pair-invariants": [
+    {
+      "text": "A pair counts only when both records share model, blueprint, genesis, node, command and environment, and each meets its exit and witness rule. Any other failure makes the pair inadmissible, and the record says so.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "e1c030a5daadc8120aa6f650847bcb884283c2b95d5c59150695a70627b184c2"
+  }
+}
