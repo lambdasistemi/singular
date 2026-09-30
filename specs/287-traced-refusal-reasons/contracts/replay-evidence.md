@@ -54,5 +54,8 @@ runs both succeeded.
 - `captureId` is recomputed by the loader and must match.
 - A file is never rewritten after `captureId` is computed.
 - Missing capsule files make every class of that rejection `capture-incomplete`.
+- In CI, every step that runs a row publishes its receipts path to the
+  always-run artifact upload before the row runs, so a failing row's
+  `replay/` directory is uploaded with the original failure preserved (T039).
 - Receipt-side fields are fixed by Q-001; this contract does not change the
   receipt.

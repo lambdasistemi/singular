@@ -19,7 +19,7 @@
   ],
   "r3-comparison-receipt-controls-ci-fr-09fr-14-needs-q-001": [
     {
-      "text": "Compare reasons at the places that decide and throw today, writing evidence first; fill attribution branches, add the ruled receipt fields, the wrong-reason and accepting controls, and the CI assertions, each seen red then green, including a relabelled driver refusal and an unlisted one.",
+      "text": "Compare reasons at the places that decide and throw today, writing evidence first; fill attribution branches, add the ruled receipt fields, the wrong-reason and accepting controls, and the CI assertions, each seen red then green, including a relabelled driver refusal and an unlisted one. Each dedicated CI step also publishes its receipts path before the row runs, so a failing row keeps both its failure and its evidence, proved by running the real step with a failing row.",
       "pause": 500
     }
   ],
@@ -31,6 +31,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "0905ec4616953968e23b1cacbd7952ac95b5642f0e8c5162297e6e36209bc053"
+    "sha256": "b5ce7b1f47d28caa24f0ec38990f244b668259bb252e61914fc43dc4f553c765"
   }
 }

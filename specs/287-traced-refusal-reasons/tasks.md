@@ -87,6 +87,17 @@ flowchart LR
   `accepting-control` index entry (FR-13); G10 fails when either run does not
   succeed or a refusing role has no entry (unit RED on a fixture index).
 - [ ] T035 G6: extend the CG22, CG23, CG07 steps' jq (CI change in this ticket).
+- [ ] T039 Retention at the CI boundary (E209 NOTE-003 recut of review 003):
+  each dedicated CG07, CG22 and CG23 step publishes its receipts path to the
+  workflow's always-run `conformance-receipts` upload before invoking the row;
+  on the row's non-zero exit the step keeps that exit status and leaves a
+  durable replay index with the `differs` or `uncompared` entry for the
+  upload. A control executes the committed step's own script (the same
+  wrapper and path resolution CI runs) with a failing row invocation and
+  asserts both the original non-zero exit and the retained index at the
+  published path; the control is falsified by disabling the path publication
+  or the retention and observing it fail. Reviewed with the R3 implementation
+  checkpoint and its real control receipt, not as a separate prose round.
 - [ ] T036 G7: extend generic and serialization steps' jq.
 - [ ] T037 G9: control step, altered leg non-zero naming both reasons, restored leg zero.
 - [ ] T038 G10: extent over every receipt, non-empty guard, each refusal once

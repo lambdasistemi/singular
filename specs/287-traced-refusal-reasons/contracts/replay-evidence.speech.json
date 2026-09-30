@@ -19,12 +19,12 @@
   ],
   "obligations": [
     {
-      "text": "The capture identity is recomputed and must match; files are never rewritten; missing files make the rejection incomplete.",
+      "text": "The capture identity is recomputed and must match; files are never rewritten; missing files make the rejection incomplete; and in CI a failing row still uploads its replay directory.",
       "pause": 500
     }
   ],
   "_source": {
     "file": "replay-evidence.md",
-    "sha256": "41bb852e259dbd625dccc262e4c0dd27ae6bc6ddfc0185e0f6f43f383817193c"
+    "sha256": "9fe92eb0e575d68129752901dfde44c0a0f8daf5c5a21b89d36522c2294f9999"
   }
 }

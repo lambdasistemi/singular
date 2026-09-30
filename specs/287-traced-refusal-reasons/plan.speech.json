@@ -1,7 +1,7 @@
 {
   "status": [
     {
-      "text": "Setup and a green root baseline are done; this mandate is in review; no behavior has changed. The receipt question waits for the operator; texts outside the fence stay and a follow-up is prepared after evidence; the phase-one reject conflict is held by the epic as an acceptance hold, not a waiver. Every live refusal counts, and comparing only some is not completion.",
+      "text": "Setup and a green root baseline are done. The epic has released the seam check and the traced build, then capture and replay once their gates pass; the receipt tasks wait for the operator. The receipt question waits for the operator; texts outside the fence stay and a follow-up is prepared after evidence; the phase-one reject conflict is held by the epic as an acceptance hold, not a waiver. Every live refusal counts, and comparing only some is not completion.",
       "pause": 500
     }
   ],
@@ -55,6 +55,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "f7a10a476212cb906df3b602f8b6805a8228743719d1dbb360602561c0ba71b3"
+    "sha256": "472a7a671721308b0f24f6eae0a4fae9c4cb78068e0877cb48335ef152065e09"
   }
 }

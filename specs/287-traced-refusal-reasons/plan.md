@@ -5,7 +5,9 @@
 - Completed: team setup; root baseline `nix develop --quiet -c just ci` at
   `3f04e50` exit 0 (211 s, runtime `receipts/baseline-001`); research; this
   mandate.
-- Current: planning review; no behavior edit; implementation not released.
+- Current: E209 NOTE-003 releases T001 and R1, then R2 on their gates; R3
+  receipt tasks stay held by Q-001. Spend carried: N7 (five root CI, two
+  premise builds), C0, D0.
 - Blockers: Q-001 (receipt fit) at the operator holds R3's receipt part
   (T032, T035-T038). Q-002 answered (A-002): fence holds, D287-DOC residual
   after evidence (T043). Q-003 (CG09 phase-1 reject, Lean vs chain) holds only
