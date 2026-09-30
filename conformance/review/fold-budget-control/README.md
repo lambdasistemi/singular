@@ -18,10 +18,10 @@ The pair is two runs of that command against one validator blueprint, one genesi
 From a clean checkout of the candidate:
 
 ```sh
-conformance/review/fold-budget-control/record.sh --candidate "$(git rev-parse HEAD)" --out "$(mktemp -d)"
+conformance/review/fold-budget-control/record.sh --candidate "$(git rev-parse HEAD)" --out "$(mktemp -d)/pair"
 ```
 
-The recorder needs `git`, `nix` and `jq`, builds the blueprint once from the candidate, and creates its mutant as a local commit on a detached worktree that it removes at exit. It exits 0 only when the pair is admissible: both runs behave as required, and the records agree on the Lean model tree and driver corpus, the blueprint, the genesis directory content, the node version, the command and the environment. Its witness patterns are fixed in the recorder itself, so a run cannot pass by matching something looser than what a failing run must show.
+The recorder needs `git`, `nix` and `jq`, builds the blueprint once from the candidate, and creates its mutant as a local commit on a detached worktree. It removes only its own two worktrees at exit and fails if it cannot. `--out` must name a directory that does not exist yet; the recorder creates it and keeps its invocation journal and the captured outputs there beside the records and logs, of which only the two records and two logs are committed; the records keep the digests of the captured outputs. It exits 0 only when the pair is admissible: both runs behave as required, and the records agree on the Lean model tree and driver corpus, the blueprint, the genesis directory content, the node version, the command and the environment. Its witness patterns are fixed in the recorder itself, so a run cannot pass by matching something looser than what a failing run must show.
 
 The retained records name the candidate they were recorded against. To check them, compare each log's SHA-256 with the record's `log` field.
 
@@ -31,4 +31,4 @@ The retained records name the candidate they were recorded against. To check the
 - The run is local. It is not evidence from CI on a published head.
 - Execution units are not observable in the Lean model, so this is ledger and harness evidence. It establishes no Lean statement.
 - The mutant is one way to stop declaring evaluated budgets. It does not show that every other way fails the command.
-- The recorder journals the git and nix commands it runs itself. Builds that `nix run` performs inside are not journalled beyond the store paths the record names.
+- The recorder journals every git and nix command it runs, each with its argument vector, directory, times, exit and the size and digest of its captured output. A `nix run` is one journal entry: the builds and stages it performs inside are part of that invocation and are not listed separately; the store paths the record names identify what was built.
