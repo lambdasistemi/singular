@@ -1,0 +1,24 @@
+{
+  "content-quality": [
+    {
+      "text": "The story names who, what and why, each requirement is observable from an exit, a log or a record field, and none prescribes more implementation than the mutation and the retained location.",
+      "pause": 500
+    }
+  ],
+  "requirement-completeness": [
+    {
+      "text": "The red names its command, its single change and four witnesses, and excludes setup and misattributed failures. The green reuses the same bindings. The identity fields are complete, the passing-mutant case has a bounded repair, and the exclusions are explicit.",
+      "pause": 500
+    }
+  ],
+  "readiness": [
+    {
+      "text": "No clarification is open, the limits are stated, and every requirement maps to a task.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "requirements.md",
+    "sha256": "3d262448deaf88d33f4e126da541ee3bed97d1c6c539739c9e01cccb7683584b"
+  }
+}

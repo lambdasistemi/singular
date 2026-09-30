@@ -1,0 +1,18 @@
+{
+  "components": [
+    {
+      "text": "Five components: the fixed-fallback patch, the recorder script that runs the pair, the run records and raw logs it writes, a reader page that describes them, and, only if needed, a repair inside the regression test target.",
+      "pause": 500
+    }
+  ],
+  "direction-and-placement": [
+    {
+      "text": "Nothing in the product runner, the CI workflow or the Lean model depends on these components. The recorder depends on the patch and the packaged app, and nothing depends on the recorder. The records sit with the other retained runs outside the published site, and no abstraction is promoted.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "0e674a696be0a6b61442e7c69d8a8a808d5dcd6eec75d34225ec42badb65e9af"
+  }
+}

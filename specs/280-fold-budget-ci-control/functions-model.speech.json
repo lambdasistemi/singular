@@ -1,0 +1,24 @@
+{
+  "recorder": [
+    {
+      "text": "The recorder takes a candidate commit and an output directory that must not exist yet. It creates and removes only its own detached worktrees, reports a failed removal in its exit status, and creates one local mutant commit that is never pushed. Every git and nix command it runs is journalled with its arguments, directory, times, exit and output digest. It exits zero only when the pair is admissible.",
+      "pause": 500
+    }
+  ],
+  "runner-unchanged": [
+    {
+      "text": "The patch changes no signature. It only swaps the argument passed to the existing fold assembly.",
+      "pause": 500
+    }
+  ],
+  "regression-target-conditional": [
+    {
+      "text": "Only if the mutant passes, the regression target keeps its command line and exits nonzero when the CG21 session ends without its expected verdict.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "6015f63f33163a1901b6e64cec8265f82960bac5913c6fb98b5970bb0e2320e0"
+  }
+}

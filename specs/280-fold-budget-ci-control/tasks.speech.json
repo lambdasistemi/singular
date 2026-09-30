@@ -1,0 +1,12 @@
+{
+  "work-items": [
+    {
+      "text": "All ten tasks are stamped with the commits that complete them. Planning was revised four times after reviews and questions, the candidate twice after reviews, and the conditional repair was not needed because the mutant failed as required. The final gate runs on the stamped head, and its receipt lives in the handback, not in this file.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "88693fe0d86c5e96c02cc972e57270eaeca7948ea3929072b0d27cff781bbbee"
+  }
+}
