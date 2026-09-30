@@ -85,6 +85,8 @@ def assemble(
         # #177 I177-COMMAND: the retirement verb's own authority page,
         # beside the insert verb's.
         "UPDATE-TERMINAL.md",
+        # #299: the ordinary `singular registry` commands' run page.
+        "DEMO1.md",
     ):
         shutil.copyfile(root / "onchain-release" / relative, farm / relative)
     (farm / "fixtures").mkdir()

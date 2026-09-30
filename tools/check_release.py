@@ -165,6 +165,11 @@ if onchain_present:
             # retirement command without the page that documents it.
             "UPDATE-TERMINAL.md",
             "offchain/update-terminal/Main.hs",
+            # #299: the ordinary commands' run page and their entry point.
+            # Required, so the archive cannot ship `singular registry`
+            # without the page that documents it.
+            "DEMO1.md",
+            "offchain/cli/Main.hs",
             "onchain/plutus.json",
             "onchain/script-identity.json",
             "onchain/aiken.toml",
