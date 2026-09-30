@@ -1,7 +1,7 @@
 {
   "status": [
     {
-      "text": "Planning was approved at the second planning review, after the first found the runner's pre-submission check would stop a narrower mutant. The coder is implementing the control, and its inventory question fixed the recorder's name and kept the logs uncompressed.",
+      "text": "Planning, the control candidate, the retained pair and every checkpoint review are complete. The ticket owner is accepting the result and running the final gate on the stamped head. Nothing blocks, and publication waits for a separate decision.",
       "pause": 500
     }
   ],
@@ -49,6 +49,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "c67525631ef403d986cc8a1fdb1d154e706989e0b4104f5e1b64cf57b5332857"
+    "sha256": "b6eeac3fc7d24fc261a14111d3b8387aba2ff76c9991ef4b07bc9274a9fb6605"
   }
 }

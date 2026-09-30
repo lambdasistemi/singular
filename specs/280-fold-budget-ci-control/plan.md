@@ -4,9 +4,9 @@ As the ticket owner, I want one recorded control pair from the real CI command, 
 
 ## Status
 
-Completed: intake, source map and planning artifacts.
-Current: control implementation by the coder. Planning was approved at the second planning review; the coder's inventory question set the recorder's name and raw log retention.
-Blockers: none.
+Completed: planning, the control candidate (dfd4ac1), the retained pair (a6172e0) and every checkpoint review.
+Current: ticket-owner acceptance and the final gate on the stamped head.
+Blockers: none. Publication is held for a separate decision.
 
 ## Constitution check
 
