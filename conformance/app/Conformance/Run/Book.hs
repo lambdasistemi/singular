@@ -7,6 +7,7 @@ module Conformance.Run.Book
     ( rowRequestInsert
     , speculativeInsert
     , speculativeApplyAll
+    , keyProof
     , rowCommit
     , paddedRequest
     , pendingRequests
@@ -197,6 +198,12 @@ speculativeApplyAll env _cage tid reqs =
             Just (RequestDatum rq) ->
                 (requestKey rq, requestEdge rq)
             _ -> error "speculative: pending UTxO has no request datum"
+
+{- | The proof a fold carries for one key on the trie as it stands: the
+key's inclusion proof when the trie holds it, else the exclusion proof.
+-}
+keyProof :: (Monad m) => CageTrie.Trie m -> ByteString -> m [ProofStep]
+keyProof trie key = fromMaybe [] <$> CageTrie.getProofSteps trie key
 
 {- | Commit a landed edge to a row cage's trie (#157 C3: a read
 commits nothing, which `walkEdge` already knows).

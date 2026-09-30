@@ -9,6 +9,7 @@ module Conformance.Support.RunReplay (spec) where
 
 import Data.ByteString.Char8 qualified as BSC
 import Data.ByteString.Short (ShortByteString)
+import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -48,12 +49,18 @@ import UntypedPlutusCore qualified as UPLC
 import UntypedPlutusCore.Evaluation.Machine.Cek (CekUserError (..))
 
 import Singular.Registry.Blueprint (applyBytesParam, applyDataParam)
+import Singular.Registry.Ledger (AssetName (..), TokenId (..))
+import Singular.Registry.Trie (TrieManager (..))
+import Singular.Registry.Trie qualified as CageTrie
+import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , computeScriptHash
+    , leafTerminal
     )
 
 import Conformance.Replay (RunOutcome (..), UnobservedCause (..))
+import Conformance.Run.Book (keyProof)
 import Conformance.Run.Replay
 
 -- | A distinct output reference, named by the ledger's own transaction id.
@@ -167,6 +174,25 @@ spec = describe "before a replay evaluates" $ do
                 atHash
                 (applyDeployedParameters codes [application "cage-b"] failing)
                 `shouldSatisfy` (/= Right failing)
+    describe "the proof a fold carries for a key" $ do
+        let tid = TokenId (AssetName (SBS.toShort "registry"))
+            withControl action = do
+                manager <- mkPureTrieManager
+                createTrie manager tid
+                _ <- withTrie manager tid $ \trie -> CageTrie.insert trie "control" leafTerminal
+                action manager
+        it "a key the trie does not hold gets a non-empty exclusion proof, the trie untouched" $
+            withControl $ \manager -> do
+                before <- withTrie manager tid CageTrie.getRoot
+                proof <- withSpeculativeTrie manager tid (\trie -> keyProof trie "never-registered")
+                after <- withTrie manager tid CageTrie.getRoot
+                proof `shouldSatisfy` (not . null)
+                after `shouldBe` before
+        it "a key the trie holds gets its inclusion proof" $
+            withControl $ \manager -> do
+                inclusion <- withTrie manager tid (\trie -> CageTrie.getProofSteps trie "control")
+                proof <- withSpeculativeTrie manager tid (\trie -> keyProof trie "control")
+                Just proof `shouldBe` inclusion
     describe "how an evaluation that did not finish ended" $ do
         let cek e = P.CekError (ErrorWithCause e Nothing)
         it "running out of the budget is budget-exhausted" $
