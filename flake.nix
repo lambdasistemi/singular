@@ -142,6 +142,9 @@
                 runtimeInputs = with pkgs; [
                   bash
                   coreutils
+                  findutils
+                  gnugrep
+                  jq
                   procps
                   nix
                 ];
