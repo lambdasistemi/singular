@@ -11,6 +11,7 @@ import Data.ByteString.Char8 qualified as BSC
 import Data.ByteString.Short (ShortByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
+import Data.Maybe (isJust)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -60,7 +61,8 @@ import Singular.Registry.TxBuilder.Internal
     )
 
 import Conformance.Replay (RunOutcome (..), UnobservedCause (..))
-import Conformance.Run.Book (keyProof)
+import Conformance.Run.Book (keyProof, speculativeStep)
+import Singular.Registry.Types (edgeUpdateTerminal)
 import Conformance.Run.Replay
 
 -- | A distinct output reference, named by the ledger's own transaction id.
@@ -118,6 +120,23 @@ traced =
 codes :: Map.Map Text (ShortByteString, ShortByteString)
 codes = Map.singleton "request.request" (untraced, traced)
 
+-- | A two-parameter validator: @\\kind registry -> body@, flat-encoded.
+program2 :: UPLC.Term UPLC.DeBruijn PLC.DefaultUni PLC.DefaultFun () -> ShortByteString
+program2 body =
+    serialiseUPLC
+        ( UPLC.Program
+            ()
+            PLC.latestVersion
+            (UPLC.LamAbs () (UPLC.DeBruijn 0) (UPLC.LamAbs () (UPLC.DeBruijn 0) body))
+        )
+
+witnessUntraced, witnessTraced :: ShortByteString
+witnessUntraced = program2 (UPLC.Var () (UPLC.DeBruijn 1))
+witnessTraced = program2 (UPLC.Var () (UPLC.DeBruijn 2))
+
+witnessCodes :: Map.Map Text (ShortByteString, ShortByteString)
+witnessCodes = Map.singleton "witness.witness" (witnessUntraced, witnessTraced)
+
 application :: String -> DeployedApplication
 application token =
     DeployedApplication
@@ -174,6 +193,32 @@ spec = describe "before a replay evaluates" $ do
                 atHash
                 (applyDeployedParameters codes [application "cage-b"] failing)
                 `shouldSatisfy` (/= Right failing)
+    describe "the witness a registry deployed" $ do
+        let active token = applyBytesParam ("state-policy" <> token) . applyDataParam (PLC.I 1)
+            failing = computeScriptHash (active "cage-b" witnessUntraced)
+        it "its application under the captured registry and kind reproduces the failing policy" $
+            fmap
+                (\a -> (atTitle a, atBytes a))
+                ( applyDeployedParameters
+                    witnessCodes
+                    (witnessApplications "state-policy" ["cage-a", "cage-b"])
+                    failing
+                )
+                `shouldBe` Right ("witness.witness", active "cage-b" witnessTraced)
+        it "a registry the capture does not name reproduces nothing" $
+            applyDeployedParameters
+                witnessCodes
+                (witnessApplications "state-policy" ["cage-a"])
+                failing
+                `shouldBe` Left ParametersMismatch
+        it "a kind outside the three is not a candidate" $
+            applyDeployedParameters
+                witnessCodes
+                (witnessApplications "state-policy" ["cage-b"])
+                ( computeScriptHash
+                    (applyBytesParam "state-policycage-b" (applyDataParam (PLC.I 3) witnessUntraced))
+                )
+                `shouldBe` Left ParametersMismatch
     describe "the proof a fold carries for a key" $ do
         let tid = TokenId (AssetName (SBS.toShort "registry"))
             withControl action = do
@@ -201,6 +246,32 @@ spec = describe "before a replay evaluates" $ do
                 proof <-
                     withSpeculativeTrie manager tid (`keyProof` "control")
                 Just proof `shouldBe` inclusion
+    describe "a speculative fold's step for one request" $ do
+        let tid = TokenId (AssetName (SBS.toShort "registry"))
+            stepOn key = do
+                manager <- mkPureTrieManager
+                createTrie manager tid
+                _ <-
+                    withTrie manager tid $ \trie ->
+                        CageTrie.insert trie "control" leafTerminal
+                withSpeculativeTrie manager tid $ \trie -> do
+                    before <- CageTrie.getRoot trie
+                    inclusion <- CageTrie.getProofSteps trie key
+                    proof <- speculativeStep trie key edgeUpdateTerminal
+                    after <- CageTrie.getRoot trie
+                    held <- CageTrie.lookup trie key
+                    pure (proof, before == after, held, inclusion)
+        it
+            "retiring a key the trie does not hold carries a non-empty exclusion proof and leaves the trie"
+            $ do
+                (proof, unchanged, held, _) <- stepOn "never-registered"
+                proof `shouldSatisfy` (not . null)
+                unchanged `shouldBe` True
+                held `shouldBe` Nothing
+        it "retiring a key the trie holds still carries its inclusion proof" $ do
+            (proof, _, held, inclusion) <- stepOn "control"
+            Just proof `shouldBe` inclusion
+            held `shouldSatisfy` isJust
     describe "how an evaluation that did not finish ended" $ do
         let cek e = P.CekError (ErrorWithCause e Nothing)
         it "running out of the budget is budget-exhausted" $

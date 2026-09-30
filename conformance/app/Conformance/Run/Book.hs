@@ -10,6 +10,7 @@ module Conformance.Run.Book
     , speculativeInsert
     , speculativeApplyAll
     , keyProof
+    , speculativeStep
     , rowCommit
     , paddedRequest
     , pendingRequests
@@ -194,12 +195,18 @@ speculativeApplyAll env _cage tid reqs =
         -- #183: the edge names the move and its leaf bytes, from the
         -- table the cage reads (#157 C3: a read proves its key and
         -- leaves it alone).
-        walkEdge trie key edge
+        speculativeStep trie key edge
       where
         (key, edge) = case extractCageDatum out of
             Just (RequestDatum rq) ->
                 (requestKey rq, requestEdge rq)
             _ -> error "speculative: pending UTxO has no request datum"
+
+{- | One request's step of a speculative fold: its proof, and the trie moved
+as the edge moves it.
+-}
+speculativeStep :: (Monad m) => CageTrie.Trie m -> ByteString -> Edge -> m [ProofStep]
+speculativeStep = walkEdge
 
 {- | The proof a fold carries for one key on the trie as it stands: the
 key's inclusion proof when the trie holds it, else the exclusion proof —

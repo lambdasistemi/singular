@@ -35,6 +35,7 @@ module Conformance.Run.Replay
     , DeployedApplication (..)
     , AppliedTraced (..)
     , applyDeployedParameters
+    , witnessApplications
 
       -- * Evaluation
     , classify
@@ -669,6 +670,13 @@ applyDeployedParameters codes applications failing =
         , computeScriptHash (daApply application untraced) == failing
         , let tracedApplied = daApply application traced
         ]
+
+{- | The witness policies a registry can have run: @witness(kind, registry)@ at
+kinds 0, 1 and 2, the registry being the state policy followed by a captured
+registry token.
+-}
+witnessApplications :: ByteString -> [ByteString] -> [DeployedApplication]
+witnessApplications _ _ = []
 
 {- | The applications a rejected transaction can have run: the state script,
 which takes no parameter, and the request script under the state policy and

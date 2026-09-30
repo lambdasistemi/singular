@@ -168,7 +168,9 @@ spec = describe "traced replay of a live refusal" $ do
             `shouldBe` [ "capture-incomplete"
                        , "context-unavailable"
                        , "toolchain-mismatch"
+                       , "no-replay-route"
                        , "parameters-mismatch"
+                       , "unidentified-script"
                        , "deployed-succeeds"
                        , "deployed-budget"
                        , "traced-succeeds"
@@ -181,6 +183,29 @@ spec = describe "traced replay of a live refusal" $ do
                        , "client-exception"
                        , "evaluation-error"
                        ]
+    describe "which script a failing hash is" $ do
+        let families =
+                [ ScriptFamily "state.state" True ["aa"]
+                , ScriptFamily "witness.witness" True ["bb", "cc"]
+                , ScriptFamily "open.open" False ["dd"]
+                ]
+        it "a routed family whose application reproduces the hash is replayed" $
+            identifyScript families Nothing "cc" `shouldBe` Right "witness.witness"
+        it "a reproduced hash is replayed whatever role the capture records" $
+            identifyScript families (Just "open.open") "aa" `shouldBe` Right "state.state"
+        it "a family the replay does not trace is no-replay-route" $
+            identifyScript families Nothing "dd" `shouldBe` Left NoReplayRoute
+        it "a recorded family none of whose applications reproduce the hash is parameters-mismatch" $
+            identifyScript families (Just "witness.witness") "ee"
+                `shouldBe` Left ParametersMismatch
+        it "a hash no family reproduces and no role names is unidentified-script" $
+            identifyScript families Nothing "ee" `shouldBe` Left UnidentifiedScript
+        it "the classifier alone reaches the three identification causes" $
+            [ cause
+            | (role, hash) <- [(Nothing, "dd"), (Just "witness.witness", "ee"), (Nothing, "ee")]
+            , Left cause <- [identifyScript families role hash]
+            ]
+                `shouldBe` [NoReplayRoute, ParametersMismatch, UnidentifiedScript]
     describe "the toolchain" $ do
         let provenance =
                 TracedProvenance

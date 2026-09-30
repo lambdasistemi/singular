@@ -31,6 +31,8 @@ module Conformance.Replay
     , ReplayClass (..)
     , admitReason
     , userTraces
+    , ScriptFamily (..)
+    , identifyScript
 
       -- * Comparison
     , ReasonComparison (..)
@@ -95,8 +97,12 @@ data UnobservedCause
       ContextUnavailable
     | -- | the deployed blueprint is not the one the traced build corresponds to
       ToolchainMismatch
-    | -- | no deployed parameter set reproduces the failing hash on untraced code
+    | -- | the failing script's family is identified, but the replay traces none of it
+      NoReplayRoute
+    | -- | the family is identified by the capture; its applications do not reproduce the hash
       ParametersMismatch
+    | -- | no family is identified and no application is claimed
+      UnidentifiedScript
     | DeployedSucceeds
     | DeployedBudget
     | TracedSucceeds
@@ -121,7 +127,9 @@ causeName = \case
     CaptureIncomplete -> "capture-incomplete"
     ContextUnavailable -> "context-unavailable"
     ToolchainMismatch -> "toolchain-mismatch"
+    NoReplayRoute -> "no-replay-route"
     ParametersMismatch -> "parameters-mismatch"
+    UnidentifiedScript -> "unidentified-script"
     DeployedSucceeds -> "deployed-succeeds"
     DeployedBudget -> "deployed-budget"
     TracedSucceeds -> "traced-succeeds"
@@ -270,3 +278,22 @@ instance ToJSON PurposeReplay where
             , "traced" .= prTraced p
             , "class" .= prClass p
             ]
+
+-- | A validator family the replay can recognise a failing hash by.
+data ScriptFamily = ScriptFamily
+    { sfTitle :: Text
+    , sfRouted :: Bool
+    -- ^ whether the replay has a traced counterpart for it
+    , sfCandidates :: [Text]
+    -- ^ hashes of its untraced applications built from the capture
+    }
+    deriving stock (Show, Eq)
+
+{- | Which family a failing hash belongs to: a routed family whose candidate
+reproduces it is replayed; an unrouted one is 'NoReplayRoute'; a family the
+capture records for the script (its role), none of whose candidates reproduce
+it, is 'ParametersMismatch'; otherwise 'UnidentifiedScript'.
+-}
+identifyScript
+    :: [ScriptFamily] -> Maybe Text -> Text -> Either UnobservedCause Text
+identifyScript _ _ _ = error "identifyScript: not implemented"
