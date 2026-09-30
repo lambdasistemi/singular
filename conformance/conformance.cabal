@@ -183,6 +183,7 @@ executable cli-controls
   hs-source-dirs:   app-cli
   main-is:          Main.hs
   other-modules:
+    Conformance.Cli.Admission
     Conformance.Cli.Backend
     Conformance.Cli.Proof
   build-depends:
@@ -254,6 +255,8 @@ test-suite conformance-tests
     Conformance.Support.Binding
     Conformance.Support.CliControls
     Conformance.Support.CliProof
+    Conformance.Support.CliAdmission
+    Conformance.Cli.Admission
     Conformance.Cli.Proof
     Conformance.Support.Receipt
     Conformance.Support.ReceiptBound

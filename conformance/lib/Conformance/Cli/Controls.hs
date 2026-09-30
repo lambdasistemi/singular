@@ -1090,6 +1090,14 @@ data Receipt = Receipt
     , rcRejectionFile :: Maybe Text
     -- ^ The node's full rejection text, kept beside the receipt
     , rcRejectionSha256 :: Maybe Text
+    , rcBodyFile :: Maybe Text
+    -- ^ The submitted transaction's body, kept beside the receipt
+    , rcBodySha256 :: Maybe Text
+    , rcAdmission :: Maybe [Text]
+    {- ^ What reading the retained body and rejection back found wrong;
+    nothing until the receipt is admitted. Never read from a receipt file:
+    only admission sets it.
+    -}
     , rcReason :: Maybe Text
     -- ^ The node's or the command's own words, bounded
     , rcObservation :: Maybe Observation
@@ -1117,6 +1125,9 @@ emptyReceipt step act target key =
         , rcPhaseWords = []
         , rcRejectionFile = Nothing
         , rcRejectionSha256 = Nothing
+        , rcBodyFile = Nothing
+        , rcBodySha256 = Nothing
+        , rcAdmission = Nothing
         , rcReason = Nothing
         , rcObservation = Nothing
         , rcEvidence = []
@@ -1140,6 +1151,8 @@ instance ToJSON Receipt where
             , "phaseWords" .= rcPhaseWords r
             , "rejectionFile" .= rcRejectionFile r
             , "rejectionSha256" .= rcRejectionSha256 r
+            , "bodyFile" .= rcBodyFile r
+            , "bodySha256" .= rcBodySha256 r
             , "reason" .= rcReason r
             , "observation" .= rcObservation r
             , "evidence" .= rcEvidence r
@@ -1163,6 +1176,9 @@ instance FromJSON Receipt where
             <*> (fromMaybe [] <$> o .:? "phaseWords")
             <*> o .:? "rejectionFile"
             <*> o .:? "rejectionSha256"
+            <*> o .:? "bodyFile"
+            <*> o .:? "bodySha256"
+            <*> pure Nothing
             <*> o .:? "reason"
             <*> o .:? "observation"
             <*> o .: "evidence"
@@ -1378,7 +1394,7 @@ check req rs = case (req, rs) of
         [ "the outcome is " <> show (rcOutcome r) <> ", not accepted"
         | rcOutcome r /= "accepted"
         ]
-            <> ["no transaction id is recorded" | isNothing (rcTxId r)]
+            <> submitted r
     (RefusedByState, [r]) ->
         [ "the fold was evaluated locally, so the node never judged it"
         | rcEvaluation r /= Just "skipped"
@@ -2138,18 +2154,23 @@ attributedTo what expected r =
                 ]
         <> submitted r
 
--- | Fail unless the submitted transaction and the node's rejection are kept.
+-- | Fail unless the retained body and rejection were read back and bind.
 submitted :: Receipt -> [String]
 submitted r = case rcTxId r of
     Nothing -> ["no transaction id is recorded"]
-    Just txid ->
-        [ "the submitted transaction's body is not kept beside the receipt"
-        | not (any (txid `T.isInfixOf`) (rcEvidence r))
+    Just _ -> admitted r
+
+{- | Fail unless admission read the retained body and rejection back and
+found nothing wrong: the body decodes to the receipt's transaction, the
+rejection is the digested bytes, and its words and failed scripts are the
+ones the verdict uses.
+-}
+admitted :: Receipt -> [String]
+admitted r = case rcAdmission r of
+    Nothing ->
+        [ "the retained body and rejection were not read back, so the receipt is not admitted"
         ]
-            <> [ "the node's full rejection is not kept beside the receipt"
-               | rcOutcome r == "ledger-refused"
-               , isNothing (rcRejectionFile r) || isNothing (rcRejectionSha256 r)
-               ]
+    Just problems -> map T.unpack problems
 
 {- | The node's words for a script that executed and failed, and the
 hashes of the scripts that failed, as they occur in its rejection text.

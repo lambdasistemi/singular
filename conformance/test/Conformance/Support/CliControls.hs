@@ -170,7 +170,10 @@ honestReceipts story = do
         emit name t k fill = do
             n <- readIORef step
             modifyIORef' step (+ 1)
-            let r = fill (emptyReceipt n name (T.pack t) (T.pack k))
+            let r =
+                    (fill (emptyReceipt n name (T.pack t) (T.pack k)))
+                        { rcAdmission = Just []
+                        }
             modifyIORef' out (r :)
             pure r
 
@@ -447,6 +450,23 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                     why
                         `shouldSatisfy` any (isInfixOf "leaf is \"active\", not \"terminal\"")
                 other -> fail ("the premise is " <> show other)
+    it "does not hold a refusal whose retained evidence was not admitted" $ do
+        rs <- honestReceipts controlsStory
+        let unread =
+                alter
+                    "fold-unevaluated"
+                    "duplicate"
+                    (\r -> r{rcAdmission = Nothing})
+                    rs
+            broken =
+                alter
+                    "fold-unevaluated"
+                    "duplicate"
+                    (\r -> r{rcAdmission = Just ["the retained rejection is missing"]})
+                    rs
+        statuses (judge unread controlsStory) !! 3 `shouldSatisfy` isNotHeld
+        show (statuses (judge broken controlsStory) !! 3)
+            `shouldSatisfy` isInfixOf "the retained rejection is missing"
     it
         "does not count a rejection before any script ran as the validator's refusal, even naming its hash"
         $ do

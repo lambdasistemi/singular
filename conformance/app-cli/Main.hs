@@ -13,6 +13,7 @@ doing exactly that, so its verdict is the one a later reader recomputes.
 -}
 module Main (main) where
 
+import Conformance.Cli.Admission (admit)
 import Conformance.Cli.Backend (runControls)
 import Conformance.Cli.Controls
     ( Receipt (..)
@@ -26,7 +27,12 @@ import Data.List (sort)
 import System.Directory (listDirectory)
 import System.Environment (getArgs)
 import System.Exit (ExitCode (..), exitWith)
-import System.FilePath (takeExtension, (</>))
+import System.FilePath
+    ( dropTrailingPathSeparator
+    , takeDirectory
+    , takeExtension
+    , (</>)
+    )
 import System.IO (hPutStrLn, stderr)
 
 main :: IO ()
@@ -53,7 +59,10 @@ render :: FilePath -> IO ExitCode
 render dir = do
     names <-
         sort . filter ((== ".json") . takeExtension) <$> listDirectory dir
-    receipts <- mapM (readReceipt . (dir </>)) names
+    -- Every receipt is admitted from the run's directory, the parent of
+    -- its receipts, before any verdict is computed from it.
+    let work = takeDirectory (dropTrailingPathSeparator dir)
+    receipts <- mapM (\n -> readReceipt (dir </> n) >>= admit work) names
     let results = judge receipts controlsStory
     putStr (renderControls results controlsStory)
     pure (if held results then ExitSuccess else ExitFailure 1)

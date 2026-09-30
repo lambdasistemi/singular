@@ -554,13 +554,12 @@ txIdHex :: ConwayTx -> Text
 txIdHex tx = let TxId h = txIdTx tx in hex (hashToBytes (extractHash h))
 
 -- | Keep a transaction's body beside the receipts.
-keepBody :: Env -> Int -> ConwayTx -> IO Text
+keepBody :: Env -> Int -> ConwayTx -> IO (Text, Text)
 keepBody env n tx = do
     let name = printf "step-%03d-%s.cbor.hex" n (T.unpack (txIdHex tx))
-    BS.writeFile
-        (envEvidence env </> name)
-        (B16.encode (serialize' (eraProtVerHigh @ConwayEra) tx))
-    pure (T.pack ("evidence" </> name))
+        bytes = B16.encode (serialize' (eraProtVerHigh @ConwayEra) tx)
+    BS.writeFile (envEvidence env </> name) bytes
+    pure (T.pack ("evidence" </> name), hex (sha256 bytes))
 
 {- | Sign and submit, then wait, bounded, for the chain to confirm it. The
 receipt records which of those the transaction reached.
@@ -575,8 +574,14 @@ submitAndConfirm
 submitAndConfirm env sess wallet r unsigned = do
     let signed = addKeyWitness (walletSignKey wallet) unsigned
         txid = txIdHex signed
-    body <- keepBody env (rcStep r) signed
-    let r0 = r{rcTxId = Just txid, rcEvidence = rcEvidence r <> [body]}
+    (body, bodyDigest) <- keepBody env (rcStep r) signed
+    let r0 =
+            r
+                { rcTxId = Just txid
+                , rcEvidence = rcEvidence r <> [body]
+                , rcBodyFile = Just body
+                , rcBodySha256 = Just bodyDigest
+                }
     answer <- try (submitTx (nsSubmitter sess) signed)
     case answer of
         Left (e :: SomeException) ->
