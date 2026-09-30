@@ -183,6 +183,43 @@ spec = describe "traced replay of a live refusal" $ do
                        , "client-exception"
                        , "evaluation-error"
                        ]
+    describe "a refused step against Lean's reason" $ do
+        it "every purpose of the judged script admitting Lean's reason agrees" $
+            stepComparison "m" "retract-owner" [("m", Admitted "retract-owner")]
+                `shouldBe` Agrees
+        it "an admitted reason other than Lean's differs, naming both" $
+            stepComparison "m" "not-phase2" [("m", Admitted "retract-owner")]
+                `shouldBe` Differs "retract-owner" "not-phase2"
+        it "an unobserved reason is uncompared, with its cause" $
+            stepComparison "m" "key-unknown" [("m", Unobserved NoUserTrace)]
+                `shouldBe` Uncompared NoUserTrace
+        it "another script's reason does not enter the step's comparison" $
+            stepComparison
+                "m"
+                "retract-state-spent"
+                [("s", Admitted "missing-action"), ("m", Admitted "retract-state-spent")]
+                `shouldBe` Agrees
+        it "one purpose of the judged script differing makes the step differ" $
+            stepComparison
+                "m"
+                "not-booked"
+                [("m", Admitted "not-booked"), ("m", Admitted "root")]
+                `shouldBe` Differs "root" "not-booked"
+        it "a judged script that did not fail leaves the step uncompared" $
+            stepComparison "m" "not-booked" [("s", Admitted "not-booked")]
+                `shouldBe` Uncompared ContextUnavailable
+        it "each comparison is spelled as the replay index spells it" $
+            map
+                comparisonName
+                [Agrees, Differs "a" "b", Uncompared Timeout]
+                `shouldBe` ["agrees", "differs", "uncompared"]
+        it "the attributed script's admitted reason is its receipt branch" $ do
+            admittedFor "m" [("m", Admitted "key-exists"), ("s", Admitted "x")]
+                `shouldBe` Just "key-exists"
+            admittedFor "m" [("m", Admitted "key-exists"), ("m", Unobserved NoUserTrace)]
+                `shouldBe` Nothing
+            admittedFor "m" [("m", Admitted "a"), ("m", Admitted "b")] `shouldBe` Nothing
+            admittedFor "m" [("s", Admitted "key-exists")] `shouldBe` Nothing
     describe "which script a failing hash is" $ do
         let families =
                 [ ScriptFamily "state.state" True ["aa"]

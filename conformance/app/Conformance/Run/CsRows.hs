@@ -42,6 +42,7 @@ import Conformance.Run.Environment
 import Conformance.Run.Observe
 import Conformance.Run.Replay
     ( ReplayEnv (..)
+    , ReplayIndex (..)
     , capturingSubmitter
     , newReplayEnv
     )
@@ -251,7 +252,7 @@ runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty
     ensureStateRefWith prov submit stateBytes
     mapM_
         ( \row -> do
-            writeIORef (reRow replay) (T.pack row)
+            writeIORef (riRow (reIndex replay)) (T.pack row)
             runCSRow
                 prov
                 submit

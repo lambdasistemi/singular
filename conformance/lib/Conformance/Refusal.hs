@@ -269,8 +269,12 @@ attributeRefusalReceipt
     -- ^ node identity
     -> String
     -- ^ blueprint identity
+    -> Maybe T.Text
+    {- ^ the reason a traced replay admitted for the attributed script, when
+    it admitted one: the receipt's validator branch
+    -}
     -> IO (Either RefusalMismatch ())
-attributeRefusalReceipt role dir row verdict script marker text rejectedTxid base dirty node blueprint =
+attributeRefusalReceipt role dir row verdict script marker text rejectedTxid base dirty node blueprint _admitted =
     case matchRefusal marker text of
         Left m -> pure (Left m)
         Right () -> do

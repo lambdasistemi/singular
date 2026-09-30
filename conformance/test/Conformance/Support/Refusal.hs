@@ -13,6 +13,7 @@ module Conformance.Support.Refusal (spec) where
 
 import Data.Either (isLeft)
 import Data.List (isInfixOf, isPrefixOf)
+import Data.Maybe (isJust)
 import Data.Text qualified as T
 import System.Directory
     ( createDirectoryIfMissing
@@ -259,6 +260,7 @@ receiptPolicySpec = describe
                         False
                         "node"
                         "blueprint"
+                        Nothing
                 r `shouldBe` Right ()
                 rs <- loadReceipts dir
                 case rs of
@@ -286,6 +288,7 @@ receiptPolicySpec = describe
                         False
                         "node"
                         "blueprint"
+                        Nothing
                 r `shouldBe` Right ()
                 rs <- loadReceipts dir
                 case rs of
@@ -315,7 +318,60 @@ receiptPolicySpec = describe
                         False
                         "node"
                         "blueprint"
+                        Nothing
                 r `shouldBe` Right ()
+        it
+            "A rejection whose traced replay admitted a reason records it as the validator branch"
+            $ do
+                dir <- freshReceiptsDir
+                r <-
+                    attributeRefusalReceipt
+                        RefusalRow
+                        dir
+                        "CG05"
+                        AgreesWithModel
+                        "state"
+                        policyMarker
+                        policyReason
+                        "rejectedtxid"
+                        "base"
+                        False
+                        "node"
+                        "blueprint"
+                        (Just (T.pack "key-exists"))
+                r `shouldBe` Right ()
+                rs <- loadReceipts dir
+                case rs of
+                    Right [r0] -> do
+                        fmap refusalBranch (receiptRefusal r0)
+                            `shouldBe` Just (Just (T.pack "key-exists"))
+                        fmap refusalLimit (receiptRefusal r0) `shouldBe` Just Nothing
+                    other -> fail ("expected the row's refused receipt, got " <> show other)
+        it
+            "A rejection whose replay admitted no reason keeps the attribution limit"
+            $ do
+                dir <- freshReceiptsDir
+                _ <-
+                    attributeRefusalReceipt
+                        RefusalRow
+                        dir
+                        "CG05"
+                        AgreesWithModel
+                        "state"
+                        policyMarker
+                        policyReason
+                        "rejectedtxid"
+                        "base"
+                        False
+                        "node"
+                        "blueprint"
+                        Nothing
+                rs <- loadReceipts dir
+                case rs of
+                    Right [r0] -> do
+                        fmap refusalBranch (receiptRefusal r0) `shouldBe` Just Nothing
+                        fmap refusalLimit (receiptRefusal r0) `shouldSatisfy` maybe False isJust
+                    other -> fail ("expected the row's refused receipt, got " <> show other)
         it
             "An unexplained rejection saves no evidence and reports the problem"
             $ do
@@ -334,6 +390,7 @@ receiptPolicySpec = describe
                         False
                         "node"
                         "blueprint"
+                        Nothing
                 r `shouldSatisfy` isLeft
                 exists <- doesFileExist (dir </> "receipt-CG05.json")
                 exists `shouldBe` False

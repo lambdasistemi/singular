@@ -37,6 +37,9 @@ module Conformance.Replay
       -- * Comparison
     , ReasonComparison (..)
     , compareReason
+    , stepComparison
+    , comparisonName
+    , admittedFor
 
       -- * Evidence
     , PurposeReplay (..)
@@ -305,3 +308,22 @@ identifyScript families role hash =
             | maybe False (`elem` map sfTitle families) role ->
                 Left ParametersMismatch
             | otherwise -> Left UnidentifiedScript
+
+{- | A refused step's comparison: the purposes of the script the step is
+judged by (its marker hash) against Lean's reason. It agrees only when every
+such purpose agrees; any purpose that differs makes it differ; otherwise it
+is uncompared, with the first cause — or 'ContextUnavailable' when the
+marker's script is not among the failing purposes at all.
+-}
+stepComparison :: Text -> Text -> [(Text, ReplayClass)] -> ReasonComparison
+stepComparison _ _ _ = error "stepComparison: not implemented"
+
+-- | The comparison as the replay index spells it.
+comparisonName :: ReasonComparison -> Text
+comparisonName _ = error "comparisonName: not implemented"
+
+{- | The reason the marker's script admitted, when every purpose of it admits
+the same one.
+-}
+admittedFor :: Text -> [(Text, ReplayClass)] -> Maybe Text
+admittedFor _ _ = error "admittedFor: not implemented"

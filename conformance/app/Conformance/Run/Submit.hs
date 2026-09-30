@@ -75,6 +75,7 @@ attributeSubmitRefusal env row verdict marker text rejectedTxid = do
             (envDirty env)
             (envNode env)
             (envBlueprint env)
+            Nothing
     case r of
         Right () ->
             emit
@@ -143,6 +144,7 @@ attributeControlRefusal env row verdict marker text rejectedTxid = do
             (envDirty env)
             (envNode env)
             (envBlueprint env)
+            Nothing
     case r of
         Right () ->
             emit

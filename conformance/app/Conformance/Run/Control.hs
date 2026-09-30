@@ -17,6 +17,9 @@ module Conformance.Run.Control
     , canonicalRows
     , Control (..)
     , readControl
+    , ReasonControl (..)
+    , parseReasonControl
+    , controlledReason
     , cgKey
     , cgDeleteKey
     , cgV1
@@ -30,6 +33,7 @@ module Conformance.Run.Control
     ) where
 
 import Data.ByteString (ByteString)
+import Data.Text (Text)
 import System.Environment (lookupEnv)
 
 import Singular.Registry.TxBuilder.Internal
@@ -196,3 +200,24 @@ custody an absence creates — it is never the folder's (T6, want-ledger R4).
 -}
 cgDeposit :: Integer
 cgDeposit = 3_000_000
+
+{- | The wrong-reason control (FR-12): in one row, at one compared step, Lean's
+reason is replaced by another before the comparison, so a run whose chain-side
+reason equals Lean's must fail naming both. Set by
+@CONFORMANCE_REASON_CONTROL=ROW:STEP:REASON@; the step is the row's
+zero-based compared step.
+-}
+data ReasonControl = ReasonControl
+    { rcRow :: Text
+    , rcStep :: Int
+    , rcReason :: Text
+    }
+    deriving stock (Show, Eq)
+
+-- | Read @ROW:STEP:REASON@; anything else is refused with what was wrong.
+parseReasonControl :: String -> Either String ReasonControl
+parseReasonControl _ = Left "parseReasonControl: not implemented"
+
+-- | Lean's reason for a step, replaced when the control names this step.
+controlledReason :: Maybe ReasonControl -> Text -> Int -> Text -> Text
+controlledReason _ _ _ lean = lean

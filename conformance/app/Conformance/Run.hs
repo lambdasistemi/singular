@@ -92,6 +92,7 @@ import Conformance.Run.ForkProbe
 import Conformance.Run.Receipts
 import Conformance.Run.Replay
     ( ReplayEnv (..)
+    , ReplayIndex (..)
     , capturingSubmitter
     , newReplayEnv
     )
@@ -457,6 +458,7 @@ runSession
                             , envFailed = failedRef
                             , envLiveRecords = liveRecordsRef
                             , envLiveMeasurements = liveMeasurementsRef
+                            , envReplay = reIndex replay
                             }
                         , hex (scriptHashBytes (cfgScriptHash cfg))
                         , "CA session: canonical seed published at outRef "
@@ -507,6 +509,7 @@ runSession
                                     , envFailed = failedRef
                                     , envLiveRecords = liveRecordsRef
                                     , envLiveMeasurements = liveMeasurementsRef
+                                    , envReplay = reIndex replay
                                     }
                                 , hex (scriptHashBytes (cfgScriptHash placeholderCfg))
                                 , "no session cage: the issue #70 rows boot \
@@ -556,13 +559,14 @@ runSession
                                     , envFailed = failedRef
                                     , envLiveRecords = liveRecordsRef
                                     , envLiveMeasurements = liveMeasurementsRef
+                                    , envReplay = reIndex replay
                                     }
                                 , marker'
                                 , "cage booted bootTx=" <> txIdHex signedBoot
                                 )
         emit "boot" bootLine
         mapM_
-            ( \row -> writeIORef (reRow replay) (T.pack row) >> runRow env marker row
+            ( \row -> writeIORef (riRow (reIndex replay)) (T.pack row) >> runRow env marker row
             )
             rows
         cancel nodeThread

@@ -26,6 +26,11 @@ module Conformance.Run.Replay
     ( -- * Session
       ReplayEnv (..)
     , newReplayEnv
+    , ReplayIndex (..)
+    , newReplayIndex
+    , addRejection
+    , purposesOf
+    , recordComparison
     , capturingSubmitter
 
       -- * Capture
@@ -214,13 +219,56 @@ build at start — or the cause it could not.
 data ReplayEnv = ReplayEnv
     { reNode :: N2C.Provider IO
     , reLsq :: LSQChannel
-    , reDir :: FilePath
-    -- ^ the run's receipts directory; evidence goes under @replay/@
     , reNodeId :: Text
-    , reRow :: IORef Text
     , reSetup :: Either UnobservedCause ReplaySetup
-    , reIndex :: IORef [Value]
+    , reIndex :: ReplayIndex
     }
+
+{- | The replay evidence a session keeps: where it goes, the row running, one
+entry per rejection in the order the run met them, and what each rejection's
+failing purposes admitted, by transaction id, for the comparison that follows.
+-}
+data ReplayIndex = ReplayIndex
+    { riDir :: FilePath
+    -- ^ the run's receipts directory; evidence goes under @replay/@
+    , riRow :: IORef Text
+    , riEntries :: IORef [Value]
+    , riPurposes :: IORef (Map Text [(Text, ReplayClass)])
+    }
+
+-- | An empty index for a receipts directory.
+newReplayIndex :: FilePath -> IO ReplayIndex
+newReplayIndex dir =
+    ReplayIndex dir <$> newIORef "" <*> newIORef [] <*> newIORef Map.empty
+
+{- | Add one rejection's entry, with its failing purposes by deployed hash, and
+write the whole index.
+-}
+addRejection :: ReplayIndex -> Text -> Value -> [(Text, ReplayClass)] -> IO ()
+addRejection index txid entry purposes = do
+    modifyIORef' (riEntries index) (<> [entry])
+    modifyIORef' (riPurposes index) (Map.insert txid purposes)
+    writeIndex index
+
+-- | What a rejection's failing purposes admitted, by deployed hash.
+purposesOf :: ReplayIndex -> Text -> IO [(Text, ReplayClass)]
+purposesOf index txid =
+    Map.findWithDefault [] txid <$> readIORef (riPurposes index)
+
+{- | Record a refused step's comparison on its rejection's entry — the model's
+reason, the comparison, and class A, the fact of an executed model reason —
+and write the index, before the runner acts on it.
+-}
+recordComparison :: ReplayIndex -> Text -> Text -> ReasonComparison -> IO ()
+recordComparison _ _ _ _ = pure ()
+
+writeIndex :: ReplayIndex -> IO ()
+writeIndex index = do
+    entries <- readIORef (riEntries index)
+    createDirectoryIfMissing True (riDir index </> "replay")
+    BSL.writeFile
+        (riDir index </> "replay" </> "index.json")
+        (Aeson.encode entries)
 
 -- | The two builds a replay reads, checked against each other at start.
 data ReplaySetup = ReplaySetup
@@ -254,15 +302,12 @@ newReplayEnv
 newReplayEnv node lsq deployedPath dir nodeId = do
     setup <-
         loadSetup deployedPath =<< lookupEnv "REGISTRY_TRACED_BLUEPRINT"
-    row <- newIORef ""
-    index <- newIORef []
+    index <- newReplayIndex dir
     pure
         ReplayEnv
             { reNode = node
             , reLsq = lsq
-            , reDir = dir
             , reNodeId = nodeId
-            , reRow = row
             , reSetup = setup
             , reIndex = index
             }
@@ -344,10 +389,10 @@ a replay past its time is 'Timeout', an exception 'ClientException'.
 -}
 recordRejection :: ReplayEnv -> ConwayTx -> Text -> IO ()
 recordRejection env tx nodeText = do
-    row <- readIORef (reRow env)
+    row <- readIORef (riRow (reIndex env))
     let txid = txIdText tx
         failing = map T.pack (refusalScriptHashes (T.unpack nodeText))
-    dir <- freshDirectory (reDir env </> "replay") (T.unpack txid)
+    dir <- freshDirectory (riDir (reIndex env) </> "replay") (T.unpack txid)
     attempt <-
         try (timeout replayMicros (replayRefusal env tx failing dir))
     (captureId, purposes, classes) <- case attempt of
@@ -392,11 +437,11 @@ recordRejection env tx nodeText = do
                 , "comparison" .= Null
                 ]
     BSL.writeFile (dir </> "outcome.json") (Aeson.encode outcome)
-    modifyIORef' (reIndex env) (<> [entry])
-    index <- readIORef (reIndex env)
-    BSL.writeFile
-        (reDir env </> "replay" </> "index.json")
-        (Aeson.encode index)
+    addRejection
+        (reIndex env)
+        txid
+        entry
+        [(prDeployedHash p, prClass p) | (_, p) <- purposes]
   where
     dirName = T.pack . reverse . takeWhile (/= '/') . reverse
 

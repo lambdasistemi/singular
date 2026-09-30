@@ -30,6 +30,7 @@ module Conformance.Run.Environment
 
 import Conformance.FoldFixture qualified as FoldFixture
 import Conformance.Run.Control
+import Conformance.Run.Replay (ReplayIndex)
 
 import Control.Exception
     ( SomeException
@@ -182,6 +183,8 @@ data Env = Env
     -}
     , envLiveRecords :: IORef [Value]
     , envLiveMeasurements :: IORef [(Integer, Integer, Integer)]
+    , envReplay :: ReplayIndex
+    -- ^ the session's replay evidence, where a refused step's comparison is recorded
     }
 
 {- | One row group's cage: the config it was booted from, its token,

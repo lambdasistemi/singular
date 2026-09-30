@@ -7,6 +7,8 @@ hashing to the failing hash.
 -}
 module Conformance.Support.RunReplay (spec) where
 
+import Data.Aeson (Value (..), eitherDecodeFileStrict, object, (.=))
+import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString.Char8 qualified as BSC
 import Data.ByteString.Short (ShortByteString)
 import Data.ByteString.Short qualified as SBS
@@ -16,7 +18,9 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~))
-import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
+import System.Directory (getTemporaryDirectory, removePathForcibly)
+import System.FilePath ((</>))
+import Test.Hspec (Spec, describe, it, shouldBe, shouldNotBe, shouldSatisfy)
 
 import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx)
 import Cardano.Ledger.Api.Tx.Body
@@ -60,7 +64,18 @@ import Singular.Registry.TxBuilder.Internal
     , leafTerminal
     )
 
-import Conformance.Replay (RunOutcome (..), UnobservedCause (..))
+import Conformance.Replay
+    ( ReasonComparison (..)
+    , ReplayClass (..)
+    , RunOutcome (..)
+    , UnobservedCause (..)
+    , stepComparison
+    )
+import Conformance.Run.Control
+    ( ReasonControl (..)
+    , controlledReason
+    , parseReasonControl
+    )
 import Conformance.Run.Book (keyProof, speculativeStep)
 import Conformance.Run.Replay
 import Singular.Registry.Types (edgeUpdateTerminal)
@@ -307,7 +322,54 @@ spec = describe "before a replay evaluates" $ do
         it "a cost model the evaluator cannot use is the evaluator's error" $
             classify P.CostModelParameterMismatch
                 `shouldSatisfy` isEvaluationError
+    describe "the replay index a refused step's comparison is written to" $
+        it "a differing step leaves its entry with Lean's reason and the comparison" $ do
+            dir <- (</> "conformance-replay-index-spec") <$> getTemporaryDirectory
+            removePathForcibly dir
+            index <- newReplayIndex dir
+            let entry txid =
+                    object
+                        [ "rejectedTxId" .= (txid :: Text)
+                        , "modelReason" .= Null
+                        , "comparison" .= Null
+                        , "extentClass" .= ("unclassified" :: Text)
+                        ]
+            addRejection index "tx-other" (entry "tx-other") [("m", Admitted "deposit-returned")]
+            addRejection index "tx-step" (entry "tx-step") [("m", Admitted "retract-owner")]
+            recordComparison index "tx-step" "not-phase2" (Differs "retract-owner" "not-phase2")
+            written <- eitherDecodeFileStrict (dir </> "replay" </> "index.json")
+            let fieldOf txid name = case written of
+                    Right entries ->
+                        [ KM.lookup name o
+                        | Object o <- entries
+                        , KM.lookup "rejectedTxId" o == Just (String txid)
+                        ]
+                    Left _ -> []
+            fieldOf "tx-step" "comparison" `shouldBe` [Just (String "differs")]
+            fieldOf "tx-step" "modelReason" `shouldBe` [Just (String "not-phase2")]
+            fieldOf "tx-step" "extentClass" `shouldBe` [Just (String "A")]
+            fieldOf "tx-other" "comparison" `shouldBe` [Just Null]
+    describe "the wrong-reason control" $ do
+        let control = ReasonControl "CG07" 0 "retract-owner"
+        it "reads ROW:STEP:REASON" $
+            parseReasonControl "CG07:0:retract-owner" `shouldBe` Right control
+        it "refuses a control it cannot read" $ do
+            parseReasonControl "CG07:first:retract-owner" `shouldSatisfy` isLeftE
+            parseReasonControl "CG07:0" `shouldSatisfy` isLeftE
+            parseReasonControl "CG07:0:" `shouldSatisfy` isLeftE
+        it "the altered step cannot compare agrees" $
+            stepComparison
+                "m"
+                (controlledReason (Just control) "CG07" 0 "not-phase2")
+                [("m", Admitted "not-phase2")]
+                `shouldNotBe` Agrees
+        it "every other step, and the run without the control, is untouched" $ do
+            controlledReason (Just control) "CG07" 2 "not-phase2" `shouldBe` "not-phase2"
+            controlledReason (Just control) "CG22" 0 "not-booked" `shouldBe` "not-booked"
+            controlledReason Nothing "CG07" 0 "not-phase2" `shouldBe` "not-phase2"
   where
     isEvaluationError = \case
         EvaluationError _ -> True
         _ -> False
+    isLeftE :: Either String a -> Bool
+    isLeftE = either (const True) (const False)
