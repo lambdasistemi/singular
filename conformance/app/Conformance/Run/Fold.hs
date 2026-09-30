@@ -1202,6 +1202,7 @@ foldSpecContext env fs = do
             , rcCageUtxos = utxos
             , rcDatums = [(recordDatumHash, recordDatum)]
             , rcHolderUtxos = fsHolderUtxos fs
+            , rcHolderReleases = Map.empty
             , -- A refusal row exists to watch the chain refuse a fold the
               -- builder cannot discharge duties for; it must still be built.
               rcAllowInadmissible = True

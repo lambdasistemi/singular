@@ -18,6 +18,7 @@ types unchanged (#267).
 -}
 module Singular.Registry.TxBuilder.Update.Context
     ( RegistryContext (..)
+    , HolderRelease (..)
     , emptyRegistryContext
     , completeContext
     , queryContext
@@ -108,6 +109,13 @@ data RegistryContext = RegistryContext
     mint the cage refuses `token-missing`. Left empty, the builder
     queries the fold's own wallet address.
     -}
+    , rcHolderReleases :: Map.Map TxIn HolderRelease
+    {- ^ #299: holders that sit at an application script rather than a
+    key. A burn sourced from one of them spends it with the application's
+    own witness instead of as a plain input, and the application's
+    release is owed to its recipient together with every other
+    obligation of the fold to that key. Empty for key-held witnesses.
+    -}
     , rcRefUtxos :: [(TxIn, TxOut ConwayEra)]
     {- ^ Outputs carrying the fold's scripts as reference scripts. The
     state validator alone is fifteen kilobytes, so a fold that
@@ -116,6 +124,20 @@ data RegistryContext = RegistryContext
     them instead.
     -}
     }
+
+{- | How an application-held burn source is spent, and what its spend
+releases (#299): the redeemer and script that witness the spend, and the
+lovelace owed to the recipient's key because the holder is released.
+-}
+data HolderRelease = HolderRelease
+    { hrRedeemer :: PLC.Data
+    , hrScript :: Script ConwayEra
+    , hrRecipient :: ByteString
+    -- ^ The payment key hash the release is owed to
+    , hrReleased :: Integer
+    -- ^ Lovelace owed to it, over every other obligation to that key
+    }
+    deriving stock (Eq, Show)
 
 {- | The context a fold of tree edges needs beyond the registry's own
 configuration: the three token policies' scripts, the cage script that
@@ -135,6 +157,7 @@ emptyRegistryContext =
         , rcDatums = []
         , rcAllowInadmissible = False
         , rcHolderUtxos = []
+        , rcHolderReleases = Map.empty
         , rcRefUtxos = []
         }
 

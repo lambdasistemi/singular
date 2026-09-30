@@ -69,7 +69,11 @@ library
     , time
 
   exposed-modules:
+    Singular.Application.OpenDatum.Book
     Singular.Application.OpenDatum.Envelope
+    Singular.Application.OpenDatum.Release
+    Singular.Application.OpenDatum.Script
+    Singular.Application.OpenDatum.Update
     Singular.Registry.AssetName
     Singular.Registry.Blueprint
     Singular.Registry.Blueprint.Load
@@ -77,6 +81,7 @@ library
     Singular.Registry.Blueprint.Schema
     Singular.Registry.Candidate
     Singular.Registry.Config
+    Singular.Registry.Config.Application
     Singular.Registry.Deployment
     Singular.Registry.Driver
     Singular.Registry.Lifecycle
@@ -650,6 +655,7 @@ test-suite cage-tests
   hs-source-dirs:   test
   main-is:          Main.hs
   other-modules:
+    Singular.Application.OpenDatum.BuildersSpec
     Singular.Application.OpenDatum.EnvelopeSpec
     Singular.Registry.BlueprintParametersSpec
     Singular.Registry.DeploymentSpec

@@ -62,10 +62,11 @@ data CageConfig = CageConfig
     -- ^ Default oracle tip for newly booted tokens
     , cfgApplicationPolicy :: !ShortByteString
     {- ^ The application policy the registry pins (28 raw bytes, #157 C4,
-    D-BOOT): the naming application script's applied hash, derived from
-    `naming-onchain/script-identity.json` for the registry identity this
-    boot creates. It certifies every request that changes the trie.
-    Never a literal.
+    D-BOOT): the hash of the application script the registry was booted
+    with, for the registry identity this boot creates — `open.open` as
+    compiled, or `open_datum.open_datum` applied to that identity
+    ("Singular.Registry.Config.Application" derives and re-derives it).
+    It certifies every request that changes the trie. Never a literal.
     -}
     , cfgActivePolicy :: !ShortByteString
     {- ^ The active-token policy (28 raw bytes, #157 C5/C7, D-BOOT): the
