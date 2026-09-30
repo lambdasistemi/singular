@@ -20,12 +20,15 @@ module Conformance.Cli.Admission
     ) where
 
 import Control.Exception (IOException, try)
+import Data.Aeson qualified as Aeson
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.Char (isSpace)
+import Data.Foldable (toList)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -41,7 +44,11 @@ import Cardano.Ledger.TxIn (TxId (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger (ConwayEra)
 
-import Conformance.Cli.Controls (Receipt (..), rejectionEvidence)
+import Conformance.Cli.Controls
+    ( Receipt (..)
+    , Submission (..)
+    , rejectionEvidence
+    )
 
 -- | The lowercase hex SHA-256 of bytes.
 sha256Hex :: ByteString -> Text
@@ -58,7 +65,13 @@ what is wrong with it. A receipt that names no transaction has nothing to
 admit.
 -}
 admit :: FilePath -> Receipt -> IO Receipt
-admit work r = case rcTxId r of
+admit work r
+    | "run " `T.isPrefixOf` rcAction r = admitCommand work r
+    | otherwise = admitTransaction work r
+
+-- | A hand-built transaction, booking or fold: its body and rejection.
+admitTransaction :: FilePath -> Receipt -> IO Receipt
+admitTransaction work r = case rcTxId r of
     Nothing -> pure r{rcAdmission = Just []}
     Just txid -> do
         bodyProblems <- body txid
@@ -126,3 +139,84 @@ admit work r = case rcTxId r of
                       ]
                     , Just derived
                     )
+
+{- | An ordinary command: every submission its journal recorded must be the
+digested body of that very transaction; every transaction the command's own
+receipt names must be one of them; a command that submitted must have
+recorded submissions, and one that submits nothing must have none.
+-}
+admitCommand :: FilePath -> Receipt -> IO Receipt
+admitCommand work r = do
+    bodies <- mapM submissionProblems (rcSubmissions r)
+    let known = map suTxId (rcSubmissions r)
+        unbound =
+            [ "the command names transaction "
+                <> t
+                <> ", but no retained body of it was journalled"
+            | t <- namedTxIds r
+            , t `notElem` known
+            ]
+        submits =
+            rcAction r
+                `elem` ["run create", "run insert", "run update", "run terminate"]
+        shape
+            | not submits && not (null (rcSubmissions r)) =
+                [ rcAction r <> " submits nothing, yet submissions are recorded for it"
+                ]
+            | submits
+            , rcOutcome r `elem` ["success", "partial"]
+            , null (rcSubmissions r) =
+                ["the command submitted, but no journalled submission is recorded"]
+            | otherwise = []
+    pure r{rcAdmission = Just (concat bodies <> unbound <> shape)}
+  where
+    submissionProblems s = do
+        read' <- try (BS.readFile (work </> T.unpack (suBodyFile s)))
+        pure $ case read' of
+            Left (_ :: IOException) ->
+                ["the journalled body " <> suBodyFile s <> " is missing"]
+            Right bytes
+                | sha256Hex bytes /= suBodySha256 s ->
+                    [ "the journalled body "
+                        <> suBodyFile s
+                        <> " is not the bytes the receipt digests"
+                    ]
+                | otherwise -> case B16.decode (BC.filter (not . isSpace) bytes) of
+                    Left _ -> ["the journalled body " <> suBodyFile s <> " is not hex"]
+                    Right raw -> case decodeFullAnnotator
+                        (eraProtVerHigh @ConwayEra)
+                        "transaction"
+                        decCBOR
+                        (BL.fromStrict raw) of
+                        Left _ ->
+                            [ "the journalled body "
+                                <> suBodyFile s
+                                <> " does not decode as a transaction"
+                            ]
+                        Right (tx :: ConwayTx)
+                            | txIdHexOf tx /= suTxId s ->
+                                [ "the journalled body "
+                                    <> suBodyFile s
+                                    <> " is transaction "
+                                    <> txIdHexOf tx
+                                    <> ", not "
+                                    <> suTxId s
+                                ]
+                            | otherwise -> []
+
+-- | The transactions a command's own receipt names.
+namedTxIds :: Receipt -> [Text]
+namedTxIds r = case rcCommand r of
+    Just (Aeson.Object o) ->
+        [ t
+        | k <- ["booking", "fold", "update", "boot"]
+        , Just (Aeson.String t) <- [KeyMap.lookup k o]
+        ]
+            <> [ t
+               | Just (Aeson.Array ts) <- [KeyMap.lookup "transactions" o]
+               , Aeson.String t <- toList ts
+               ]
+            <> [ T.takeWhile (/= '#') t
+               | Just (Aeson.String t) <- [KeyMap.lookup "pendingRequest" o]
+               ]
+    _ -> []

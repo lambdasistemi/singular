@@ -52,6 +52,7 @@ module Conformance.Cli.Controls
       -- * Receipts
     , Receipt (..)
     , Observation (..)
+    , Submission (..)
     , emptyReceipt
 
       -- * Reading a node's rejection
@@ -1199,6 +1200,10 @@ data Receipt = Receipt
     , rcBodyFile :: Maybe Text
     -- ^ The submitted transaction's body, kept beside the receipt
     , rcBodySha256 :: Maybe Text
+    , rcSubmissions :: [Submission]
+    {- ^ For an ordinary command: every submission its registry's journal
+    recorded while it ran, with the body the command kept
+    -}
     , rcAdmission :: Maybe [Text]
     {- ^ What reading the retained body and rejection back found wrong;
     nothing until the receipt is admitted. Never read from a receipt file:
@@ -1233,6 +1238,7 @@ emptyReceipt step act target key =
         , rcRejectionSha256 = Nothing
         , rcBodyFile = Nothing
         , rcBodySha256 = Nothing
+        , rcSubmissions = []
         , rcAdmission = Nothing
         , rcReason = Nothing
         , rcObservation = Nothing
@@ -1259,6 +1265,7 @@ instance ToJSON Receipt where
             , "rejectionSha256" .= rcRejectionSha256 r
             , "bodyFile" .= rcBodyFile r
             , "bodySha256" .= rcBodySha256 r
+            , "submissions" .= rcSubmissions r
             , "reason" .= rcReason r
             , "observation" .= rcObservation r
             , "evidence" .= rcEvidence r
@@ -1284,6 +1291,7 @@ instance FromJSON Receipt where
             <*> o .:? "rejectionSha256"
             <*> o .:? "bodyFile"
             <*> o .:? "bodySha256"
+            <*> (fromMaybe [] <$> o .:? "submissions")
             <*> pure Nothing
             <*> o .:? "reason"
             <*> o .:? "observation"
@@ -1317,12 +1325,13 @@ at path r = go path =<< rcCommand r
 field :: Text -> Either Text Int
 field = Left
 
--- | Fail unless a command receipt says @success@.
+-- | Fail unless a command receipt says @success@ and its submissions were admitted.
 succeeded :: String -> Receipt -> [String]
 succeeded what r =
     [ what <> "'s outcome is " <> show (rcOutcome r) <> ", not success"
     | rcOutcome r /= "success"
     ]
+        <> map ((what <> ": ") <>) (admitted r)
 
 -- | Fail unless two receipt values are present and equal.
 same :: String -> Maybe Aeson.Value -> Maybe Aeson.Value -> [String]
@@ -1492,10 +1501,7 @@ check req rs = case (req, rs) of
             <> case at [field "released"] t of
                 Just (Aeson.String _) -> []
                 _ -> ["the terminate names no released output"]
-    (CommandSucceeded, [r]) ->
-        [ "the command's outcome is " <> show (rcOutcome r) <> ", not success"
-        | rcOutcome r /= "success"
-        ]
+    (CommandSucceeded, [r]) -> succeeded "the command" r
     (Accepted, [r]) ->
         [ "the outcome is " <> show (rcOutcome r) <> ", not accepted"
         | rcOutcome r /= "accepted"
@@ -1538,6 +1544,7 @@ check req rs = case (req, rs) of
         [ "the command's outcome is " <> show (rcOutcome c) <> ", not partial"
         | rcOutcome c /= "partial"
         ]
+            <> map ("the command: " <>) (admitted c)
             <> case (rcPendingRequest c, rcObservation o) of
                 (Nothing, _) -> ["the command names no pending request"]
                 (_, Nothing) -> ["the readback carries no observation"]
@@ -2418,3 +2425,30 @@ shape = go
         FoldUnevaluated{} -> emptyReceipt 0 "" "" ""
         Observe{} -> emptyReceipt 0 "" "" ""
         Craft{} -> emptyReceipt 0 "" "" ""
+
+-- | One submission an ordinary command journalled, and the body it kept.
+data Submission = Submission
+    { suStep :: Text
+    , suTxId :: Text
+    , suBodyFile :: Text
+    -- ^ Relative to the run's directory
+    , suBodySha256 :: Text
+    }
+    deriving stock (Eq, Show)
+
+instance ToJSON Submission where
+    toJSON s =
+        object
+            [ "step" .= suStep s
+            , "txId" .= suTxId s
+            , "bodyFile" .= suBodyFile s
+            , "bodySha256" .= suBodySha256 s
+            ]
+
+instance FromJSON Submission where
+    parseJSON = withObject "submission" $ \o ->
+        Submission
+            <$> o .: "step"
+            <*> o .: "txId"
+            <*> o .: "bodyFile"
+            <*> o .: "bodySha256"

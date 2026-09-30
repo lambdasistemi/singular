@@ -456,6 +456,42 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                     why
                         `shouldSatisfy` any (isInfixOf "leaf is \"active\", not \"terminal\"")
                 other -> fail ("the premise is " <> show other)
+    it
+        "does not hold an ordinary command's claim, or its premise, when its journalled bodies were not admitted"
+        $ do
+            rs <- honestReceipts controlsStory
+            let insertBroken =
+                    alter
+                        "run insert"
+                        "lifecycle"
+                        (\r -> r{rcAdmission = Just ["the journalled body b is missing"]})
+                        rs
+                titled s results = [crStatus r | r <- results, s `isInfixOf` crTitle r]
+            titled
+                "delivers the key's one token"
+                (judge insertBroken controlsStory)
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+            show
+                ( titled
+                    "delivers the key's one token"
+                    (judge insertBroken controlsStory)
+                )
+                `shouldSatisfy` isInfixOf "the journalled body b is missing"
+            let createBroken =
+                    alter
+                        "run create"
+                        "resurrection"
+                        (\r -> r{rcAdmission = Nothing})
+                        rs
+                resurrection =
+                    [ crStatus r
+                    | r <- judge createBroken controlsStory
+                    , crStatement r
+                        == "OpenDatumApplication.Statements.resurrection_refused_by_registry"
+                    ]
+            take 1 resurrection `shouldSatisfy` all isNotHeld
+            drop 1 resurrection
+                `shouldSatisfy` (\ss -> not (null ss) && all isUncovered ss)
     it "does not hold a refusal whose retained evidence was not admitted" $ do
         rs <- honestReceipts controlsStory
         let unread =

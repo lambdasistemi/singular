@@ -63,9 +63,9 @@ import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
-import System.Directory (createDirectoryIfMissing)
+import System.Directory (createDirectoryIfMissing, doesFileExist)
 import System.Exit (ExitCode (..))
-import System.FilePath ((</>))
+import System.FilePath (makeRelative, (</>))
 import System.IO (hPutStrLn, stderr)
 import System.Process (readProcessWithExitCode)
 import System.Timeout (timeout)
@@ -217,6 +217,7 @@ import Conformance.Cli.Controls
     , Observation (..)
     , Receipt (..)
     , Story
+    , Submission (..)
     , Target (..)
     , commandName
     , controlsStory
@@ -700,7 +701,11 @@ runCommand env c target key r = do
                     <> wallet
                 )
         Inspect -> pure (["registry", "inspect"] <> common <> keyArg <> node)
+    let journal = dir </> "journal.jsonl"
+    before <- journalLines journal
     (status, printed, file) <- singular env r (commandName c) args
+    submissions <-
+        journalledSubmissions env (drop before <$> journalLines' journal)
     let outcome = case field "outcome" printed of
             Just (String s) -> s
             _ -> "no-receipt"
@@ -719,6 +724,7 @@ runCommand env c target key r = do
                     (named "reason")
             , rcEvidence = rcEvidence r <> [file]
             , rcCommand = printed
+            , rcSubmissions = submissions
             }
   where
     field k v = case v of
@@ -1455,3 +1461,42 @@ authenticatedLeaf env target reg chain key = go manifests
 -- | The protected deposit of every envelope this story inserts.
 storyDeposit :: Integer
 storyDeposit = 2_000_000
+
+-- | How many lines a registry's journal has; none when it does not exist yet.
+journalLines :: FilePath -> IO Int
+journalLines path = length <$> journalLines' path
+
+journalLines' :: FilePath -> IO [BC.ByteString]
+journalLines' path = do
+    there <- doesFileExist path
+    if there then BC.lines <$> BS.readFile path else pure []
+
+{- | The submissions a command journalled: each @prepared@ line's step,
+transaction and kept body, the body named relative to the run's directory
+and digested as it stands now.
+-}
+journalledSubmissions :: Env -> IO [BC.ByteString] -> IO [Submission]
+journalledSubmissions env fresh = do
+    ls <- fresh
+    let work = optWork (envOptions env)
+        prepared =
+            [ (step, txid, body)
+            | l <- ls
+            , Just (Object o) <- [Aeson.decodeStrict l]
+            , Just (String "prepared") <- [KeyMap.lookup "journalEvent" o]
+            , Just (String step) <- [KeyMap.lookup "journalStep" o]
+            , Just (String txid) <- [KeyMap.lookup "journalTxId" o]
+            , Just (String body) <- [KeyMap.lookup "journalBody" o]
+            ]
+    mapM
+        ( \(step, txid, body) -> do
+            bytes <- BS.readFile (T.unpack body)
+            pure
+                Submission
+                    { suStep = step
+                    , suTxId = txid
+                    , suBodyFile = T.pack (makeRelative work (T.unpack body))
+                    , suBodySha256 = hex (sha256 bytes)
+                    }
+        )
+        prepared
