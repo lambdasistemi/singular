@@ -393,7 +393,7 @@ jq -e --arg t "$lost_tx" '.reason | contains($t)' "$receipts/update-node-lost.js
     || fail "the partial receipt does not name the submitted transaction"
 [ "$(tail -n 1 "$reg/journal.jsonl" | jq -r .journalEvent)" = unconfirmed ] \
     || fail "the journal does not keep the submitted update unresolved"
-say "node lost after an accepted submission: partial, naming $lost_tx, journal unresolved"
+say "node lost after an accepted submission: $outcome after ${waited}s, naming $lost_tx, journal unresolved"
 
 jq -r '.journalEvent' "$reg/journal.jsonl" | sort | uniq -c
 say "JOURNEY-OK"
