@@ -63,8 +63,8 @@ finish command target action = do
     let (value, outcome) = case result of
             Right v -> (v, outcomeOf v)
             Left (e :: SomeException) -> case fromException e of
-                Just (CommandFailure c why) ->
-                    (receipt command c [("reason", toJSON (T.pack why))], c)
+                Just (CommandFailure c why fields) ->
+                    (receipt command c (("reason", toJSON (T.pack why)) : fields), c)
                 Nothing ->
                     ( receipt command ClientRefusal [("reason", toJSON (T.pack (show e)))]
                     , ClientRefusal

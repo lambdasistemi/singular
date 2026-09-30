@@ -28,6 +28,7 @@ module Singular.CLI.Session
     ( -- * Failures
       CommandFailure (..)
     , failWith
+    , failWithFields
 
       -- * Writes
     , WriteContext (..)
@@ -53,6 +54,7 @@ import Control.Exception
     , try
     )
 import Control.Monad (void, when)
+import Data.Aeson (Value)
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
@@ -115,14 +117,20 @@ import Singular.Registry.Node
     , withNodeMode
     )
 
--- | Why a command stopped, in its outcome class.
-data CommandFailure = CommandFailure OutcomeClass String
+{- | Why a command stopped, in its outcome class, with any receipt fields
+that name what it left behind.
+-}
+data CommandFailure = CommandFailure OutcomeClass String [(Text, Value)]
     deriving stock (Show)
 
 instance Exception CommandFailure
 
 failWith :: OutcomeClass -> String -> IO a
-failWith c why = throwIO (CommandFailure c why)
+failWith c why = throwIO (CommandFailure c why [])
+
+-- | Stop, naming in the receipt what the command left behind.
+failWithFields :: OutcomeClass -> String -> [(Text, Value)] -> IO a
+failWithFields c why fields = throwIO (CommandFailure c why fields)
 
 -- | Everything a write's submissions need.
 data WriteContext = WriteContext

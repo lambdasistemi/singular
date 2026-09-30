@@ -36,12 +36,19 @@ module Singular.CLI.Entry
     , runTerminate
     ) where
 
+import Control.Exception
+    ( SomeAsyncException
+    , SomeException
+    , fromException
+    , throwIO
+    , try
+    )
 import Control.Monad (unless, void, when)
 import Data.Aeson (Value, toJSON)
 import Data.Aeson qualified as Aeson
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
-import Data.List (sortOn)
+import Data.List (isPrefixOf, sortOn)
 import Data.Ord (Down (..))
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -285,12 +292,13 @@ foldAndCommit at request key edge after envelopes live = do
             Partial
             "the booked request is no longer pending; nothing is folded"
     unless (null (others before)) $
-        failWith
+        failWithFields
             ConcurrentWriter
             ( "another request is pending for this registry ("
                 <> T.unpack (T.intercalate ", " (map txInText (others before)))
-                <> "); folding only this command's request is not possible,                    and nothing is folded"
+                <> "); folding only this command's request is not possible, and nothing is folded"
             )
+            [("pendingRequest", toJSON (txInText request))]
     ctx0 <-
         registryContextFor cfg (savedCodes s) prov (liveRefs (atLive at))
     ctx <-
@@ -298,24 +306,45 @@ foldAndCommit at request key edge after envelopes live = do
             (failWith ClientRefusal)
             pure
             (withApplication (applied s) Nothing envelopes live ctx0)
-    unsigned <-
-        updateTokenWithDuties
-            cfg
-            prov
-            tm
-            (savedToken s)
-            (walletAddr (wcWallet wc))
-            ctx
+    -- The booking is confirmed and its deposit is locked in the request.
+    -- A fold that cannot be built — the registry will not take the edge,
+    -- or a script refuses it at evaluation — leaves exactly that behind,
+    -- so the command stops partial and names the pending request, never
+    -- as a refusal that submitted nothing.
+    built <-
+        try
+            ( updateTokenWithDuties
+                cfg
+                prov
+                tm
+                (savedToken s)
+                (walletAddr (wcWallet wc))
+                ctx
+            )
+    unsigned <- case built of
+        Right tx -> pure tx
+        Left (e :: SomeException)
+            | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
+            | otherwise ->
+                failWithFields
+                    Partial
+                    ( "the booking is confirmed and its request "
+                        <> T.unpack (txInText request)
+                        <> " stays pending; its fold could not be built, so nothing is folded: "
+                        <> briefly (show e)
+                    )
+                    [("pendingRequest", toJSON (txInText request))]
     pendingAtBuild <- pendingNow
     let spent = Set.toList (unsigned ^. bodyTxL . inputsTxBodyL)
         strays = [i | i <- spent, i `elem` pendingAtBuild, i /= request]
     unless (request `elem` spent && null strays) $
-        failWith
+        failWithFields
             ConcurrentWriter
             ( "the built fold spends request inputs other than this command's ("
                 <> T.unpack (T.intercalate ", " (map txInText strays))
-                <> "); nothing is submitted"
+                <> "); the fold is not submitted"
             )
+            [("pendingRequest", toJSON (txInText request))]
     rootBefore <- mirrorRoot s (atMirror at)
     Root rootAfter <-
         withSpeculativeTrie tm (savedToken s) $ \t -> walkEdge t key edge >> getRoot t
@@ -600,3 +629,15 @@ runTerminate a = do
                     , ("deposit", toJSON (ctlDeposit c))
                     , ("root", toJSON (hexT root))
                     ]
+
+{- | A build failure's own words, without the script bytes and context a
+Plutus failure carries after them.
+-}
+briefly :: String -> String
+briefly = go
+  where
+    go s
+        | "(PlutusWithContext" `isPrefixOf` s = "…"
+        | otherwise = case s of
+            [] -> []
+            (c : rest) -> c : go rest
