@@ -91,7 +91,7 @@ copy() {
     (cd "$work" && cp --parents "$kept" "$copies/$1/")
   done
   # the journals and saved files provoked commands' receipts read back
-  jq -r '.process // empty | .journal, (.filesAfter[]?[0])' "$work"/receipts/*.json \
+  jq -r '(.journal // empty | .file), (.process // empty | .journal, (.filesAfter[]?[0]))' "$work"/receipts/*.json \
     | sort -u | while read -r kept; do
     (cd "$work" && cp --parents "$kept" "$copies/$1/")
   done
@@ -185,6 +185,31 @@ copy reached-body-missing
 rm "$copies/reached-body-missing/$reached_body"
 expect_command reached-body-missing "the journalled body $reached_body is missing" premise
 say "command controls: each changed copy fails the ordinary command's claim for its reason"
+
+# A fresh submission cannot pass as a reference read back. The run's first
+# create publishes every reference itself: for each of its submissions, boot
+# included, a copy drops the submission, records it as read back and removes
+# its body; the journal, which prepared it, must refuse that. The honest copy
+# above holds the later creates, which read the state reference back.
+first="$(command_receipt create duplicate-control)"
+[ -n "$first" ] || fail_control "no create receipt of the first registry"
+[ "$(jq '.submissions | length' "$first")" -ge 2 ] \
+  || fail_control "the first create journalled fewer than two submissions"
+jq -e '[.submissions[].step] | index("boot")' "$first" >/dev/null \
+  || fail_control "the first create's submissions do not include its boot"
+jq -e '.resolved == []' "$first" >/dev/null \
+  || fail_control "the first create read a reference back instead of publishing it"
+sha256sum "$first" "$work/$(jq -r .journal.file "$first")" >>"$copies/inputs.sha256"
+jq -r '.submissions[] | [.step, .txId, .bodyFile] | @tsv' "$first" \
+  | while IFS=$'\t' read -r step tx body; do
+    copy "relabel-$step"
+    jq --arg t "$tx" --arg s "$step" \
+      '.submissions |= map(select(.txId != $t)) | .resolved += [{step: $s, txId: $t}]' \
+      "$first" >"$copies/relabel-$step/receipts/$(basename "$first")"
+    rm "$copies/relabel-$step/$body"
+    expect_command "relabel-$step" "the journal prepared"
+  done
+say "relabel controls: no fresh submission of a create passes as a read-back"
 
 # A provoked command's claims rest on what its process left. With the
 # registry's journal cut back to before the killed terminate, the claim that

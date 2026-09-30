@@ -58,6 +58,7 @@ module Conformance.Cli.Controls
     , Observation (..)
     , Submission (..)
     , Resolved (..)
+    , JournalSpan (..)
     , ProcessEvidence (..)
     , Provocation (..)
     , provocationName
@@ -1513,6 +1514,10 @@ data Receipt = Receipt
     {- ^ For an ordinary command: every live output its journal read back
     without submitting it (a reference an earlier command published)
     -}
+    , rcJournal :: Maybe JournalSpan
+    {- ^ For an ordinary command: the lines its registry's journal gained
+    while it ran, bound by digest
+    -}
     , rcProcess :: Maybe ProcessEvidence
     -- ^ For a provoked command: what its process left, as recorded
     , rcAdmission :: Maybe [Text]
@@ -1551,6 +1556,7 @@ emptyReceipt step act target key =
         , rcBodySha256 = Nothing
         , rcSubmissions = []
         , rcResolved = []
+        , rcJournal = Nothing
         , rcProcess = Nothing
         , rcAdmission = Nothing
         , rcReason = Nothing
@@ -1580,6 +1586,7 @@ instance ToJSON Receipt where
             , "bodySha256" .= rcBodySha256 r
             , "submissions" .= rcSubmissions r
             , "resolved" .= rcResolved r
+            , "journal" .= rcJournal r
             , "process" .= rcProcess r
             , "reason" .= rcReason r
             , "observation" .= rcObservation r
@@ -1608,6 +1615,7 @@ instance FromJSON Receipt where
             <*> o .:? "bodySha256"
             <*> (fromMaybe [] <$> o .:? "submissions")
             <*> (fromMaybe [] <$> o .:? "resolved")
+            <*> o .:? "journal"
             <*> o .:? "process"
             <*> pure Nothing
             <*> o .:? "reason"
@@ -3071,6 +3079,36 @@ instance ToJSON Resolved where
 instance FromJSON Resolved where
     parseJSON = withObject "resolved" $ \o ->
         Resolved <$> o .: "step" <*> o .: "txId"
+
+{- | The lines an ordinary command's registry journal gained while it ran:
+the journal, relative to the run's directory, the line counts before and
+after, and the SHA-256 of those lines as they stand in the file. Admission
+re-derives from them what the command submitted and what it only read back.
+-}
+data JournalSpan = JournalSpan
+    { jsFile :: Text
+    , jsBefore :: Int
+    , jsAfter :: Int
+    , jsSha256 :: Text
+    }
+    deriving stock (Eq, Show)
+
+instance ToJSON JournalSpan where
+    toJSON j =
+        object
+            [ "file" .= jsFile j
+            , "before" .= jsBefore j
+            , "after" .= jsAfter j
+            , "sha256" .= jsSha256 j
+            ]
+
+instance FromJSON JournalSpan where
+    parseJSON = withObject "journal" $ \o ->
+        JournalSpan
+            <$> o .: "file"
+            <*> o .: "before"
+            <*> o .: "after"
+            <*> o .: "sha256"
 
 {- | What a provoked command's process left, as the backend recorded it.
 Admission reads each part back from the run's files — the registry's

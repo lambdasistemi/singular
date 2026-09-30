@@ -5,7 +5,8 @@ module Conformance.Support.CliAdmission (spec) where
 
 import Conformance.Cli.Admission (admit, sha256Hex, txIdHexOf)
 import Conformance.Cli.Controls
-    ( ProcessEvidence (..)
+    ( JournalSpan (..)
+    , ProcessEvidence (..)
     , Receipt (..)
     , Resolved (..)
     , Submission (..)
@@ -13,10 +14,12 @@ import Conformance.Cli.Controls
     , rejectionEvidence
     )
 import Data.Aeson (object, (.=))
+import Data.Aeson qualified as Aeson
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
+import Data.ByteString.Lazy qualified as BL
 import Data.List (isInfixOf)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -150,22 +153,56 @@ refusalSpec = describe
 
 -- | An ordinary insert that journalled its booking and fold, as the backend records it.
 commandIn :: FilePath -> IO Receipt
-commandIn work = do
+commandIn work = commandWith work []
+
+{- | The same, its journal first reading back, without submitting, the
+outputs of the transactions given, as a create reading a reused reference.
+-}
+commandWith :: FilePath -> [Text] -> IO Receipt
+commandWith work readBacks = do
     createDirectoryIfMissing True (work </> "targets/t/submissions")
     let booking = txOf 10
         fold = txOf 11
-        keep tx = do
+        keep (step, tx) = do
             let name = "targets/t/submissions/" <> T.unpack (txIdHexOf tx) <> ".cbor.hex"
                 bytes = bodyBytes tx
             BS.writeFile (work </> name) bytes
             pure
                 Submission
-                    { suStep = "step"
+                    { suStep = step
                     , suTxId = txIdHexOf tx
                     , suBodyFile = T.pack name
                     , suBodySha256 = sha256Hex bytes
                     }
-    submissions <- mapM keep [booking, fold]
+    submissions <- mapM keep [("booking", booking), ("fold", fold)]
+    let event step name txid extra =
+            BL.toStrict
+                ( Aeson.encode
+                    ( object
+                        ( [ "journalStep" .= step
+                          , "journalEvent" .= (name :: Text)
+                          , "journalTxId" .= txid
+                          ]
+                            <> extra
+                        )
+                    )
+                )
+        earlier = [event ("create" :: Text) "observed" ("00" :: Text) []]
+        gained =
+            [event ("publish-state" :: Text) "observed" t [] | t <- readBacks]
+                <> concat
+                    [ [ event
+                            (suStep s)
+                            "prepared"
+                            (suTxId s)
+                            ["journalBody" .= (T.pack work <> "/" <> suBodyFile s)]
+                      , event (suStep s) "submitted" (suTxId s) []
+                      ]
+                    | s <- submissions
+                    ]
+    BS.writeFile
+        (work </> "targets/t/journal.jsonl")
+        (BC.unlines (earlier <> gained))
     pure
         (emptyReceipt 1 "run insert" "t" "k")
             { rcOutcome = "success"
@@ -178,6 +215,16 @@ commandIn work = do
                         ]
                     )
             , rcSubmissions = submissions
+            , rcResolved =
+                [Resolved{reStep = "publish-state", reTxId = t} | t <- readBacks]
+            , rcJournal =
+                Just
+                    JournalSpan
+                        { jsFile = "targets/t/journal.jsonl"
+                        , jsBefore = 1
+                        , jsAfter = 1 + length gained
+                        , jsSha256 = sha256Hex (BC.unlines gained)
+                        }
             }
 
 commandSpec :: Spec
@@ -216,7 +263,18 @@ commandSpec = describe
             $ \work -> do
                 r <- commandIn work
                 dropped <- admit work r{rcSubmissions = take 1 (rcSubmissions r)}
-                dropped
+                dropped `shouldSatisfy` mentions "the journal prepared"
+                stranger <-
+                    admit
+                        work
+                        r
+                            { rcCommand =
+                                Just
+                                    ( object
+                                        ["fold" .= txIdHexOf (txOf 13), "outcome" .= ("success" :: String)]
+                                    )
+                            }
+                stranger
                     `shouldSatisfy` mentions "no retained body of it was journalled"
                 none <- admit work r{rcSubmissions = []}
                 none `shouldSatisfy` mentions "no journalled submission is recorded"
@@ -224,9 +282,9 @@ commandSpec = describe
             "binds a reference the command read back without submitting only when it names that reference"
             $ withSystemTempDirectory "admission"
             $ \work -> do
-                r <- commandIn work
                 let reused = txIdHexOf (txOf 12)
-                    create refs =
+                r <- commandWith work [reused]
+                let create refs =
                         r
                             { rcAction = "run create"
                             , rcCommand =
@@ -239,7 +297,6 @@ commandSpec = describe
                                             .= [object ["role" .= ("state" :: String), "output" .= o] | o <- refs]
                                         ]
                                     )
-                            , rcResolved = [Resolved{reStep = "publish-state", reTxId = reused}]
                             }
                 clean <- admit work (create [reused <> "#0"])
                 problems clean `shouldBe` []
@@ -247,15 +304,81 @@ commandSpec = describe
                 unnamed
                     `shouldSatisfy` mentions "no retained body of it was journalled"
                 unread <- admit work (create [reused <> "#0"]){rcResolved = []}
-                unread
-                    `shouldSatisfy` mentions "no retained body of it was journalled"
+                unread `shouldSatisfy` mentions "the journal read back"
+        it
+            "refuses a fresh submission relabelled as a read-back, its body gone, whichever it is"
+            $ withSystemTempDirectory "admission"
+            $ \work -> do
+                let reused = txIdHexOf (txOf 12)
+                r <- commandWith work [reused]
+                let named =
+                        r
+                            { rcAction = "run create"
+                            , rcCommand =
+                                Just
+                                    ( object
+                                        [ "boot" .= txIdHexOf (txOf 10)
+                                        , "transactions"
+                                            .= (reused : map suTxId (rcSubmissions r))
+                                        , "references"
+                                            .= [ object ["output" .= (t <> "#0")]
+                                               | t <- reused : map suTxId (rcSubmissions r)
+                                               ]
+                                        ]
+                                    )
+                            }
+                honest <- admit work named
+                problems honest `shouldBe` []
+                mapM_
+                    ( \s -> do
+                        let relabelled =
+                                named
+                                    { rcSubmissions = filter (/= s) (rcSubmissions named)
+                                    , rcResolved =
+                                        rcResolved named <> [Resolved (suStep s) (suTxId s)]
+                                    }
+                        BS.writeFile (work </> T.unpack (suBodyFile s) <> ".aside") ""
+                        removeFile (work </> T.unpack (suBodyFile s))
+                        a <- admit work relabelled
+                        a `shouldSatisfy` mentions "the journal prepared"
+                        a `shouldSatisfy` mentions "the journal read back"
+                        BS.writeFile
+                            (work </> T.unpack (suBodyFile s))
+                            (bodyBytes (txOf (if suStep s == "booking" then 10 else 11)))
+                    )
+                    (rcSubmissions named)
+        it
+            "refuses a journal span whose lines are not the digested bytes, or none recorded"
+            $ withSystemTempDirectory "admission"
+            $ \work -> do
+                r <- commandIn work
+                journal <- BS.readFile (work </> "targets/t/journal.jsonl")
+                BS.writeFile
+                    (work </> "targets/t/journal.jsonl")
+                    ( BC.unlines
+                        (map (BC.map (\c -> if c == 'b' then 'B' else c)) (BC.lines journal))
+                    )
+                changed <- admit work r
+                changed
+                    `shouldSatisfy` mentions "are not the bytes the receipt digests"
+                unrecorded <- admit work r{rcJournal = Nothing}
+                unrecorded
+                    `shouldSatisfy` mentions "no journal span of the command is recorded"
         it
             "keeps inspect apart: it admits with no submissions and refuses any recorded"
             $ withSystemTempDirectory "admission"
             $ \work -> do
                 r <- commandIn work
                 let inspect = r{rcAction = "run inspect", rcCommand = Nothing}
-                clean <- admit work inspect{rcSubmissions = []}
+                    unchanged =
+                        JournalSpan
+                            { jsFile = "targets/t/journal.jsonl"
+                            , jsBefore = 5
+                            , jsAfter = 5
+                            , jsSha256 = sha256Hex ""
+                            }
+                clean <-
+                    admit work inspect{rcSubmissions = [], rcJournal = Just unchanged}
                 problems clean `shouldBe` []
                 dirty <- admit work inspect
                 dirty `shouldSatisfy` mentions "submits nothing"

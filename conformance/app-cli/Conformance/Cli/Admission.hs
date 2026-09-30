@@ -32,6 +32,7 @@ import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.Char (isSpace)
 import Data.Foldable (toList)
+import Data.List (nub)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -48,7 +49,8 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger (ConwayEra)
 
 import Conformance.Cli.Controls
-    ( ProcessEvidence (..)
+    ( JournalSpan (..)
+    , ProcessEvidence (..)
     , Receipt (..)
     , Resolved (..)
     , Submission (..)
@@ -146,39 +148,134 @@ admitTransaction work r = case rcTxId r of
                     , Just derived
                     )
 
-{- | An ordinary command: every submission its journal recorded must be the
-digested body of that very transaction; every transaction the command's own
-receipt names must be one of them, or a live output its journal read back
-without submitting it, which the receipt names among its references; a
-command that submitted must have recorded submissions, and one that submits
-nothing must have none.
+{- | An ordinary command, admitted from its registry's journal. The lines the
+journal gained while the command ran are read back from the run's files and
+must be the bytes the receipt digests. From them alone come what the command
+submitted (each @prepared@ line: step, transaction, kept body) and what it
+only read back (an @observed@ line for a transaction it never prepared). The
+receipt's submissions must be exactly the prepared ones, each the digested
+body of that very transaction, and its read-backs exactly the observed-only
+ones; every transaction the receipt names must be one it submitted, or one it
+read back that the receipt names among its references. A command that
+submitted must have prepared something, and one that submits nothing must
+have prepared nothing.
 -}
 admitCommand :: FilePath -> Receipt -> IO Receipt
 admitCommand work r = do
     bodies <- mapM (submissionProblems work) (rcSubmissions r)
-    let references = referenceTxIds r
-        readBack = [reTxId x | x <- rcResolved r, reTxId x `elem` references]
-        known = map suTxId (rcSubmissions r) <> readBack
-        unbound =
-            [ "the command names transaction "
-                <> t
-                <> ", but no retained body of it was journalled"
-            | t <- namedTxIds r
-            , t `notElem` known
-            ]
-        submits =
-            rcAction r
-                `elem` ["run create", "run insert", "run update", "run terminate"]
-        shape
-            | not submits && not (null (rcSubmissions r)) =
-                [ rcAction r <> " submits nothing, yet submissions are recorded for it"
+    gained <- journalSpan work r
+    let problems = case gained of
+            Left spanProblems -> spanProblems
+            Right ls -> reconcile ls
+    pure r{rcAdmission = Just (concat bodies <> problems)}
+  where
+    reconcile ls =
+        let events =
+                [ (event, step, txid, body)
+                | l <- ls
+                , Just (Aeson.Object o) <- [Aeson.decodeStrict l]
+                , let body = case KeyMap.lookup "journalBody" o of
+                        Just (Aeson.String b) -> b
+                        _ -> ""
+                , Just (Aeson.String event) <- [KeyMap.lookup "journalEvent" o]
+                , Just (Aeson.String step) <- [KeyMap.lookup "journalStep" o]
+                , Just (Aeson.String txid) <- [KeyMap.lookup "journalTxId" o]
                 ]
-            | submits
-            , rcOutcome r `elem` ["success", "partial"]
-            , null (rcSubmissions r) =
-                ["the command submitted, but no journalled submission is recorded"]
-            | otherwise = []
-    pure r{rcAdmission = Just (concat bodies <> unbound <> shape)}
+            prepared = [(step, txid, body) | ("prepared", step, txid, body) <- events]
+            preparedIds = [txid | (_, txid, _) <- prepared]
+            observedOnly =
+                nub
+                    [ (step, txid)
+                    | ("observed", step, txid, _) <- events
+                    , txid `notElem` preparedIds
+                    ]
+            recorded = [(suStep s, suTxId s) | s <- rcSubmissions r]
+            references = referenceTxIds r
+            known =
+                preparedIds
+                    <> [txid | (_, txid) <- observedOnly, txid `elem` references]
+            submits =
+                rcAction r
+                    `elem` ["run create", "run insert", "run update", "run terminate"]
+        in  [ "the journal prepared "
+                <> listed [(s, t) | (s, t, _) <- prepared]
+                <> " while the command ran, but the receipt records the submissions "
+                <> listed recorded
+            | recorded /= [(s, t) | (s, t, _) <- prepared]
+            ]
+                <> [ "the journal keeps the body of "
+                        <> suTxId s
+                        <> " elsewhere than the receipt's "
+                        <> suBodyFile s
+                   | s <- rcSubmissions r
+                   , (_, t, body) <- prepared
+                   , t == suTxId s
+                   , not (suBodyFile s `T.isSuffixOf` body)
+                   ]
+                <> [ "the journal read back "
+                        <> listed observedOnly
+                        <> " without submitting it, but the receipt records the read-backs "
+                        <> listed [(reStep x, reTxId x) | x <- rcResolved r]
+                   | [(reStep x, reTxId x) | x <- rcResolved r] /= observedOnly
+                   ]
+                <> [ "the command names transaction "
+                        <> t
+                        <> ", but no retained body of it was journalled"
+                   | t <- namedTxIds r
+                   , t `notElem` known
+                   ]
+                <> shape submits preparedIds
+    listed xs = "[" <> T.intercalate ", " [s <> " " <> t | (s, t) <- xs] <> "]"
+    shape submits preparedIds
+        | not submits && not (null preparedIds)
+            || not submits && not (null (rcSubmissions r)) =
+            [ rcAction r <> " submits nothing, yet submissions are recorded for it"
+            ]
+        | submits
+        , rcOutcome r `elem` ["success", "partial"]
+        , null preparedIds || null (rcSubmissions r) =
+            ["the command submitted, but no journalled submission is recorded"]
+        | otherwise = []
+
+{- | The lines a command's journal gained while it ran, read back from the
+run's files and checked against the receipt's digest. A journal that does not
+exist is empty, which an empty span may be.
+-}
+journalSpan :: FilePath -> Receipt -> IO (Either [Text] [ByteString])
+journalSpan work r = case rcJournal r of
+    Nothing -> pure (Left ["no journal span of the command is recorded"])
+    Just j -> do
+        read' <- try (BS.readFile (work </> T.unpack (jsFile j)))
+        pure $ case read' of
+            Left (_ :: IOException)
+                | jsBefore j == 0 && jsAfter j == 0 -> Right []
+                | otherwise ->
+                    Left ["the command's journal " <> jsFile j <> " is missing"]
+            Right bytes ->
+                let ls = BC.lines bytes
+                    gained = take (jsAfter j - jsBefore j) (drop (jsBefore j) ls)
+                in  if jsBefore j < 0 || jsAfter j < jsBefore j || jsAfter j > length ls
+                        then
+                            Left
+                                [ "the journal "
+                                    <> jsFile j
+                                    <> " has "
+                                    <> T.pack (show (length ls))
+                                    <> " lines, not the "
+                                    <> T.pack (show (jsBefore j))
+                                    <> " to "
+                                    <> T.pack (show (jsAfter j))
+                                    <> " the receipt records"
+                                ]
+                        else
+                            if sha256Hex (BC.unlines gained) /= jsSha256 j
+                                then
+                                    Left
+                                        [ "the lines the journal "
+                                            <> jsFile j
+                                            <> " gained while the command ran are not the bytes the receipt digests"
+                                        ]
+                                else Right gained
 
 -- | What is wrong with one journalled submission's kept body.
 submissionProblems :: FilePath -> Submission -> IO [Text]

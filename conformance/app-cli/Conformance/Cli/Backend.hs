@@ -263,6 +263,7 @@ import Conformance.Cli.Controls
     ( CliI (..)
     , Command (..)
     , Crafted (..)
+    , JournalSpan (..)
     , Observation (..)
     , ProcessEvidence (..)
     , Provocation (..)
@@ -739,12 +740,21 @@ runCommand env c target key r = do
     let journal = targetDir env target </> "journal.jsonl"
     before <- journalLines journal
     (status, printed, file) <- singular env r (commandName c) args
-    (submissions, resolved) <-
-        journalledSubmissions env (drop before <$> journalLines' journal)
+    ls <- journalLines' journal
+    let gained = drop before ls
+    (submissions, resolved) <- journalledSubmissions env (pure gained)
     pure
         (fromPrinted r status printed file)
             { rcSubmissions = submissions
             , rcResolved = resolved
+            , rcJournal =
+                Just
+                    JournalSpan
+                        { jsFile = T.pack (makeRelative (optWork (envOptions env)) journal)
+                        , jsBefore = before
+                        , jsAfter = length ls
+                        , jsSha256 = sha256Hex (BC.unlines gained)
+                        }
             }
 
 -- | The arguments of one ordinary command, writing the files it reads.
