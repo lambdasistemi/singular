@@ -70,7 +70,8 @@ import System.Process (readProcessWithExitCode)
 import System.Timeout (timeout)
 import Text.Printf (printf)
 
-import Cardano.Crypto.Hash.Class (hashToBytes)
+import Cardano.Crypto.Hash.Class (hashToBytes, hashWith)
+import Cardano.Crypto.Hash.SHA256 (SHA256)
 import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Api.Scripts.Data (Datum (..))
 import Cardano.Ledger.Api.Tx (txIdTx, witsTxL)
@@ -168,6 +169,7 @@ import Singular.Registry.Node
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
+import Singular.Registry.Trie qualified as Trie
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TxBuilder.ConnectedFold
     ( ConnectedFoldArgs (..)
@@ -188,6 +190,8 @@ import Singular.Registry.TxBuilder.Internal
     , addrWitnessKeyHash
     , computeScriptHash
     , extractCageDatum
+    , leafActive
+    , leafTerminal
     , requestAddrFromCfg
     , scriptFromBytes
     , scriptHashBytes
@@ -220,12 +224,12 @@ import Conformance.Cli.Controls
     , controlsStory
     , craftedName
     , emptyReceipt
+    , rejectionEvidence
     , resolveStatement
     , statementBindings
     , validateControls
     )
 import Conformance.NodeRejection (boundedNodeReason)
-import Conformance.Refusal (refusalScriptHashes)
 import Conformance.Story.Specification
     ( Clause (..)
     , Step (..)
@@ -586,10 +590,17 @@ submitAndConfirm env sess wallet r unsigned = do
                 )
         Right (Rejected reason) -> do
             let text = show reason
+                (phaseWords, failed) = rejectionEvidence text
+                name = printf "step-%03d-rejection.txt" (rcStep r)
+                bytes = BC.pack text
+            BS.writeFile (envEvidence env </> name) bytes
             pure
                 ( r0
                     { rcOutcome = "ledger-refused"
-                    , rcRefusingScripts = map T.pack (refusalScriptHashes text)
+                    , rcRefusingScripts = failed
+                    , rcPhaseWords = phaseWords
+                    , rcRejectionFile = Just (T.pack ("evidence" </> name))
+                    , rcRejectionSha256 = Just (hex (sha256 bytes))
                     , rcReason = Just (boundedNodeReason 600 (T.pack text))
                     }
                 , signed
@@ -997,6 +1008,7 @@ observe env target key r = do
         pending <-
             Cage.queryUTxOs prov (requestAddrFromCfg cfg (regToken reg) Testnet)
         wallets <- Cage.queryUTxOs prov (walletAddr wallet)
+        leaf <- authenticatedLeaf env target reg root key
         let lovelace o = let Coin c = o ^. coinTxOutL in c
         pure
             r
@@ -1011,6 +1023,7 @@ observe env target key r = do
                             , obPending = map (renderOutRef . fst) (sortOn fst pending)
                             , obPendingLovelace = sum (map (lovelace . snd) pending)
                             , obWalletLovelace = sum (map (lovelace . snd) wallets)
+                            , obLeaf = leaf
                             }
                 }
 
@@ -1138,6 +1151,7 @@ craftHolding env c target key r = do
                 in  mkBasicTxOut home (MaryValue (Coin (minFor probe)) tokens)
             (outputs, redeemer, signer) = case c of
                 HonestUpdate -> ([next], updateRedeemer, mine)
+                UpdateWithoutScript -> ([next], updateRedeemer, mine)
                 UpdateByStranger -> ([next], updateRedeemer, theirs)
                 UpdateOtherController ->
                     ([with ctl{ctlController = theirs}], updateRedeemer, mine)
@@ -1162,7 +1176,7 @@ craftHolding env c target key r = do
                 _ <- Tx.spendScript hIn redeemer
                 mapM_ Tx.output outputs
                 Tx.requireSignature (addrWitnessKeyHash signer)
-                Tx.reference (fst appRef)
+                unless (c == UpdateWithoutScript) $ Tx.reference (fst appRef)
                 Tx.collateral (fst feeUtxo)
             skipEval tx =
                 let Redeemers rdmrs = tx ^. witsTxL . rdmrsTxWitsL
@@ -1173,7 +1187,7 @@ craftHolding env c target key r = do
                 (Tx.InterpretIO (const (pure undefined)))
                 skipEval
                 [feeUtxo, holding]
-                [appRef]
+                [appRef | c /= UpdateWithoutScript]
                 home
                 prog
         unsigned <-
@@ -1324,3 +1338,39 @@ craftTermination env byStranger target key r = do
                 terminateDestination
                 edgeDeposit
                 (Just approval)
+
+-- | The SHA-256 digest of bytes kept beside a receipt.
+sha256 :: ByteString -> ByteString
+sha256 = hashToBytes . hashWith @SHA256 id
+
+{- | The key's leaf, read from a mirror copy — the backend's own, else the
+command's — whose root is the root the chain holds; nothing when neither
+agrees with the chain. Reading a copy never writes it.
+-}
+authenticatedLeaf
+    :: Env -> Target -> Registry -> ByteString -> String -> IO (Maybe Text)
+authenticatedLeaf env target reg chain key = go manifests
+  where
+    tok = regToken reg
+    manifests =
+        [ backendDir env target </> "registry.json"
+        , targetDir env target </> "registry.json"
+        ]
+    go [] = pure Nothing
+    go (manifest : rest) = do
+        saved <- loadMirror manifest
+        if Map.member tok saved
+            then do
+                (tm, _) <- mkPureTrieManagerFrom saved
+                (Root local, value) <-
+                    withTrie tm tok $ \t -> (,) <$> getRoot t <*> Trie.lookup t (keyBytes key)
+                if local == chain
+                    then pure (Just (leafName value))
+                    else go rest
+            else go rest
+    leafName value = case value of
+        Nothing -> "absent"
+        Just v
+            | v == leafActive -> "active"
+            | v == leafTerminal -> "terminal"
+            | otherwise -> "unknown"

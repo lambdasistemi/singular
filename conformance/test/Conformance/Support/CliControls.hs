@@ -13,6 +13,7 @@ import Conformance.Cli.Controls
     , Receipt (..)
     , Story
     , Target (..)
+    , attribution
     , commandName
     , controlsStory
     , craftedName
@@ -22,6 +23,7 @@ import Conformance.Cli.Controls
     , held
     , judge
     , outline
+    , rejectionEvidence
     , renderControls
     , resolveStatement
     , statementBindings
@@ -31,6 +33,7 @@ import Conformance.Story.Binding (BoundObligation (..), firstExisting)
 import Conformance.Story.Specification
     ( Clause (..)
     , Step (..)
+    , action
     , bindCheck
     , checkAction
     , clause
@@ -43,7 +46,9 @@ import Control.Monad.Operational
     , view
     )
 import Data.Aeson (Value (..), eitherDecodeFileStrict', object, (.=))
+import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
+import Data.Char (ord)
 import Data.Either (isLeft)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf)
@@ -56,6 +61,7 @@ import Test.Hspec
     , shouldBe
     , shouldSatisfy
     )
+import Text.Printf (printf)
 
 stateHash :: T.Text
 stateHash = "5ca1ab1e"
@@ -97,17 +103,17 @@ honestReceipts story = do
         Require _ _ -> pure ()
         Run c (Target t) k -> do
             before <- readIORef inserted
-            let again = c == Insert && t `elem` before
+            let again = c == Insert && (t <> "/" <> k) `elem` before
                 updates = length [() | u <- before, u == t <> ":update"]
                 terminal = (t <> ":terminate") `elem` before
-            modifyIORef' inserted (commandMark c t :)
+            modifyIORef' inserted (commandMark c t k :)
             emit ("run " <> T.pack (commandName c)) t k $ \r ->
                 if again
                     then r{rcOutcome = "partial", rcPendingRequest = Just "b0#0"}
                     else
                         r
                             { rcOutcome = "success"
-                            , rcCommand = Just (commandReceipt c updates terminal)
+                            , rcCommand = Just (commandReceipt c k updates terminal)
                             }
         Craft cr (Target t) k ->
             emit ("craft " <> T.pack (craftedName cr)) t k $ \r ->
@@ -116,10 +122,17 @@ honestReceipts story = do
                             { rcEvaluation = Just "skipped"
                             , rcApplication = Just appHash
                             , rcTxId = Just "c1"
+                            , rcEvidence = ["evidence/step-c1.cbor.hex"]
                             }
                 in  if cr `elem` [HonestUpdate, TerminateBooking, FoldPaysInFull]
                         then base{rcOutcome = "accepted"}
-                        else base{rcOutcome = "ledger-refused", rcRefusingScripts = [appHash]}
+                        else
+                            ( rejected
+                                ["PlutusFailure" | cr /= UpdateWithoutScript]
+                                base
+                            )
+                                { rcRefusingScripts = [appHash]
+                                }
         Book (Target t) k ->
             emit "book" t k $ \r -> r{rcOutcome = "accepted", rcTxId = Just "b1"}
         FoldUnevaluated (Target t) k ->
@@ -129,18 +142,29 @@ honestReceipts story = do
                             { rcEvaluation = Just "skipped"
                             , rcStateValidator = Just stateHash
                             , rcTxId = Just "f1"
+                            , rcEvidence = ["evidence/step-f1.cbor.hex"]
                             }
                 in  if t `notElem` ["duplicate", "resurrection"]
                         then base{rcOutcome = "accepted"}
                         else
-                            base{rcOutcome = "ledger-refused", rcRefusingScripts = [stateHash]}
+                            (rejected ["PlutusFailure", "CekError"] base)
+                                { rcRefusingScripts = [stateHash]
+                                }
         Observe (Target t) k ->
             emit "observe" t k $ \r ->
                 r
                     { rcOutcome = "observed"
                     , rcObservation =
                         Just
-                            (Observation "00" (Just "h#1") (Just 4000000) ["b0#0"] 3000000 100)
+                            ( Observation
+                                "00"
+                                (Just "h#1")
+                                (Just 4000000)
+                                ["b0#0"]
+                                3000000
+                                100
+                                (Just "active")
+                            )
                     }
       where
         emit name t k fill = do
@@ -210,7 +234,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
     it
         "states every clause once and refuses a refusal without an accepting control"
         $ do
-            length (outline controlsStory) `shouldBe` 55
+            length (outline controlsStory) `shouldBe` 66
             validateControls controlsStory `shouldBe` Right ()
             let refusedOnly =
                     theorem duplicateRefused $
@@ -224,7 +248,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
     it "holds every clause on an honest run" $ do
         rs <- honestReceipts controlsStory
         let results = judge rs controlsStory
-        statuses results `shouldBe` replicate 55 Held
+        statuses results `shouldBe` replicate 66 Held
         held results `shouldBe` True
     it
         "leaves every clause from a missing receipt on uncovered, naming the step"
@@ -237,9 +261,9 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                         )
                         rs
                 results = judge dropped controlsStory
-            length results `shouldBe` 55
-            take 2 (statuses results) `shouldBe` [Held, Held]
-            drop 2 (statuses results) `shouldSatisfy` all isUncovered
+            length results `shouldBe` 66
+            take 3 (statuses results) `shouldBe` [Held, Held, Held]
+            drop 3 (statuses results) `shouldSatisfy` all isUncovered
             held results `shouldBe` False
     it "does not accept a receipt answering another registry's action" $ do
         rs <- honestReceipts controlsStory
@@ -250,8 +274,8 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                     (\r -> r{rcTarget = "duplicate-control"})
                     rs
             results = judge aliased controlsStory
-        statuses results !! 2 `shouldSatisfy` isUncovered
-        show (statuses results !! 2)
+        statuses results !! 3 `shouldSatisfy` isUncovered
+        show (statuses results !! 3)
             `shouldSatisfy` isInfixOf "answers fold-unevaluated in duplicate-control"
     it
         "does not hold a refusal the node accepted, or one naming another script"
@@ -275,10 +299,10 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                         "duplicate"
                         (\r -> r{rcEvaluation = Nothing})
                         rs
-            statuses (judge accepted controlsStory) !! 2 `shouldSatisfy` isNotHeld
-            statuses (judge otherScript controlsStory) !! 6
+            statuses (judge accepted controlsStory) !! 3 `shouldSatisfy` isNotHeld
+            statuses (judge otherScript controlsStory) !! 8
                 `shouldSatisfy` isNotHeld
-            statuses (judge evaluated controlsStory) !! 2
+            statuses (judge evaluated controlsStory) !! 3
                 `shouldSatisfy` isNotHeld
     it
         "does not hold an insert reported as anything but partial with its pending request"
@@ -296,7 +320,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                         )
                         rs
             rcOutcome second `shouldBe` "partial"
-            statuses (judge refusedInstead controlsStory) !! 1
+            statuses (judge refusedInstead controlsStory) !! 2
                 `shouldSatisfy` isNotHeld
     it "does not hold a readback that moved, or one with nothing pending" $ do
         rs <- honestReceipts controlsStory
@@ -311,13 +335,13 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                             else r
                     )
                     rs
-        statuses (judge moved controlsStory) !! 3 `shouldSatisfy` isNotHeld
+        statuses (judge moved controlsStory) !! 4 `shouldSatisfy` isNotHeld
     it "renders uncovered clauses beside held ones, with the count" $ do
         rs <- honestReceipts controlsStory
         let rendered = renderControls (judge (take 3 rs) controlsStory) controlsStory
         rendered `shouldSatisfy` isInfixOf "uncovered: no receipt for step 3"
         rendered
-            `shouldSatisfy` isInfixOf "0 of 55 clauses hold; 0 do not; 55 are uncovered."
+            `shouldSatisfy` isInfixOf "0 of 66 clauses hold; 0 do not; 66 are uncovered."
         rendered
             `shouldSatisfy` isInfixOf
                 "`OpenDatumApplication.Statements.duplicate_refused_by_registry`"
@@ -380,18 +404,106 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         partial
             `shouldSatisfy` isInfixOf
                 "| a release of the live holding outside any fold | `only_fold_releases` | uncovered"
+    it "uncovers every claim of a telling whose termination prefix failed" $ do
+        rs <- honestReceipts controlsStory
+        let failedTermination =
+                alter
+                    "run terminate"
+                    "resurrection"
+                    (\r -> r{rcOutcome = "client-refusal"})
+                    rs
+            results = judge failedTermination controlsStory
+            resurrection =
+                [ crStatus r
+                | r <- results
+                , crStatement r
+                    == "OpenDatumApplication.Statements.resurrection_refused_by_registry"
+                ]
+        take 1 resurrection `shouldSatisfy` all isNotHeld
+        drop 1 resurrection
+            `shouldSatisfy` (\ss -> length ss == 4 && all isUncovered ss)
+        show (drop 1 resurrection)
+            `shouldSatisfy` isInfixOf "its premise does not hold"
+        held results `shouldBe` False
+    it
+        "does not accept a prefix whose inspect reads the key Active where Terminal is claimed"
+        $ do
+            rs <- honestReceipts controlsStory
+            let wrongLeaf =
+                    alter
+                        "run inspect"
+                        "resurrection"
+                        (\r -> r{rcCommand = fmap (setField "leaf" "active") (rcCommand r)})
+                        rs
+                premise =
+                    [ crStatus r
+                    | r <- judge wrongLeaf controlsStory
+                    , crStatement r
+                        == "OpenDatumApplication.Statements.resurrection_refused_by_registry"
+                    ]
+            take 1 premise `shouldSatisfy` all isNotHeld
+            case take 1 premise of
+                [NotHeld why] ->
+                    why
+                        `shouldSatisfy` any (isInfixOf "leaf is \"active\", not \"terminal\"")
+                other -> fail ("the premise is " <> show other)
+    it
+        "does not count a rejection before any script ran as the validator's refusal, even naming its hash"
+        $ do
+            rs <- honestReceipts controlsStory
+            let phaseOne =
+                    alter "fold-unevaluated" "duplicate" (\r -> r{rcPhaseWords = []}) rs
+                refusal = statuses (judge phaseOne controlsStory) !! 3
+            refusal `shouldSatisfy` isNotHeld
+            show refusal `shouldSatisfy` isInfixOf "before any script ran"
+    it
+        "reads the node's own phase-2 and phase-1 rejections as the suite's refusal discipline does"
+        $ do
+            budget <- readFile "test/fixtures/node-refusals/budget.txt"
+            let (words2, hashes2) = rejectionEvidence budget
+                phase1Text =
+                    "ConwayUtxowFailure (MissingScriptWitnessesUTXOW (fromList [ScriptHash \""
+                        <> T.unpack appHash
+                        <> "\"]))"
+                (words1, hashes1) = rejectionEvidence phase1Text
+                as ws hs =
+                    (emptyReceipt 0 "" "" ""){rcPhaseWords = ws, rcRefusingScripts = hs}
+            words2 `shouldSatisfy` elem "PlutusFailure"
+            case hashes2 of
+                (h : _) -> attribution h (as words2 hashes2) `shouldBe` Right ()
+                [] -> fail "the phase-2 fixture names no failed script"
+            (words1, hashes1) `shouldBe` ([], [appHash])
+            attribution appHash (as words1 hashes1) `shouldSatisfy` isLeft
+    it
+        "refuses a story that runs an action outside a clause, or a refusal telling without its premise"
+        $ do
+            validateControls
+                (action (Run Create (Target "loose") "") >> controlsStory)
+                `shouldSatisfy` isLeft
+            let unfounded =
+                    theorem duplicateRefused $ do
+                        _ <-
+                            clause
+                                "an absent key is accepted"
+                                (bindCheck duplicateRefused (\_ -> pure ()))
+                                (pure ())
+                        clause
+                            "the fold is refused"
+                            (bindCheck duplicateRefused (\_ -> pure ()))
+                            (pure ())
+            validateControls unfounded `shouldSatisfy` isLeft
 
 appHash :: T.Text
 appHash = "a99"
 
-commandMark :: Command -> String -> String
-commandMark c t = case c of
-    Insert -> t
+commandMark :: Command -> String -> String -> String
+commandMark c t k = case c of
+    Insert -> t <> "/" <> k
     _ -> t <> ":" <> commandName c
 
 -- | The receipts the ordinary commands print, consistent with one another.
-commandReceipt :: Command -> Int -> Bool -> Value
-commandReceipt c updates terminal = case c of
+commandReceipt :: Command -> String -> Int -> Bool -> Value
+commandReceipt c k updates terminal = case c of
     Create ->
         object
             [ "outcome" .= ("success" :: String)
@@ -424,6 +536,7 @@ commandReceipt c updates terminal = case c of
             object
                 [ "outcome" .= ("success" :: String)
                 , "leaf" .= ("terminal" :: String)
+                , "key" .= hexOf k
                 , "root" .= ("r2" :: String)
                 , "applicationOutput" .= object ["holdings" .= ([] :: [Value])]
                 ]
@@ -432,6 +545,7 @@ commandReceipt c updates terminal = case c of
             in  object
                     [ "outcome" .= ("success" :: String)
                     , "leaf" .= ("active" :: String)
+                    , "key" .= hexOf k
                     , "root" .= ("r1" :: String)
                     , "applicationOutput"
                         .= object
@@ -471,4 +585,24 @@ commandReceipt c updates terminal = case c of
 setRoot :: T.Text -> Value -> Value
 setRoot root v = case v of
     Object o -> Object (KeyMap.insert "root" (String root) o)
+    _ -> v
+
+-- | A node rejection as the backend records it: its words, file and digest.
+rejected :: [T.Text] -> Receipt -> Receipt
+rejected phaseWords r =
+    r
+        { rcOutcome = "ledger-refused"
+        , rcPhaseWords = phaseWords
+        , rcRejectionFile = Just "evidence/rejection.txt"
+        , rcRejectionSha256 = Just "00"
+        }
+
+-- | A key label as the commands print keys: lowercase hex of its bytes.
+hexOf :: String -> String
+hexOf = concatMap (printf "%02x" . ord)
+
+-- | Replace one field of a command receipt.
+setField :: T.Text -> T.Text -> Value -> Value
+setField name value v = case v of
+    Object o -> Object (KeyMap.insert (Key.fromText name) (String value) o)
     _ -> v

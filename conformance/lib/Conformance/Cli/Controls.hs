@@ -54,6 +54,10 @@ module Conformance.Cli.Controls
     , Observation (..)
     , emptyReceipt
 
+      -- * Reading a node's rejection
+    , rejectionEvidence
+    , attribution
+
       -- * Verdicts and rendering, from receipts
     , ClauseStatus (..)
     , ClauseResult (..)
@@ -103,12 +107,20 @@ import Data.Aeson
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
-import Data.List (intercalate, nub)
+import Data.Char (ord)
+import Data.List (intercalate, isInfixOf, nub)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe, isNothing)
+import Data.Maybe (fromMaybe, isNothing, listToMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Vector qualified as V
+import Text.Printf (printf)
+
+import Conformance.Refusal
+    ( RefusalMismatch (..)
+    , matchRefusal
+    , refusalScriptHashes
+    )
 
 -- ---------------------------------------------------------
 -- Actions
@@ -172,6 +184,8 @@ data Crafted
       TerminateBookingByStranger
     | -- | A fold of another key's insertion that also spends the holding with @Release@
       ReleaseInOtherFold
+    | -- | The controller's update, submitted without the application's script
+      UpdateWithoutScript
     | -- | The terminating fold, folded by another wallet, paying the controller one lovelace short
       FoldPaysShort
     | -- | The same terminating fold, folded by another wallet, paying the controller in full
@@ -199,6 +213,7 @@ craftedName c = case c of
     TerminateBooking -> "terminate-booking"
     TerminateBookingByStranger -> "terminate-booking-by-stranger"
     ReleaseInOtherFold -> "release-in-other-fold"
+    UpdateWithoutScript -> "update-without-script"
     FoldPaysShort -> "fold-pays-short"
     FoldPaysInFull -> "fold-pays-in-full"
 
@@ -259,6 +274,22 @@ data Requirement
       requests and the wallet
       -}
       RegistryUnchanged
+    | {- | Command receipts that all succeeded, in one registry: the premise
+      a telling builds on
+      -}
+      Established
+    | {- | Command receipts that all succeeded, then a fresh reading of the
+      exact key: an @ that authenticated it Active against the
+      chain's root, or a readback whose mirror copy agrees with that root
+      -}
+      ReachedActive
+    | -- | The same, reading the key Terminal
+      ReachedTerminal
+    | {- | One hand-built transaction the node rejected before any script ran,
+      although its rejection names the applied open-datum script: the
+      control that such a rejection is not counted as the script's refusal
+      -}
+      RejectedBeforeScripts
     deriving stock (Eq, Show, Enum, Bounded)
 
 {- | One step of the story. Every action but 'Require' leaves exactly one
@@ -498,29 +529,61 @@ heldKey, freshKey :: String
 heldKey = "held"
 freshKey = "fresh"
 
-{- | Boot a registry and bring 'heldKey' to Active with the ordinary
-commands, then, when asked, to Terminal.
+{- | The premise a telling builds on: the ordinary commands that bring a
+key to its state, each of which must succeed, then a fresh reading of that
+exact key in that registry. A premise that does not hold leaves every later
+clause of the telling uncovered.
 -}
-prefix :: Bool -> Target -> Story ()
-prefix terminal target = do
-    _ <- action (Run Create target "")
-    _ <- action (Run Insert target heldKey)
-    when terminal $ void (action (Run Terminate target heldKey))
+premiseClause
+    :: Theorem thm
+    -> String
+    -> Requirement
+    -> Story [Receipt]
+    -> TheoremStory thm CliI [Receipt]
+premiseClause thm title req = clause title (requirement thm req)
 
-{- | The shared shape of both refusals. On a control registry, an absent
-key booked through the application and folded without local evaluation
-is accepted. On the target, the ordinary @insert@ of the held key is
-booked, stops partial and names its pending request; that request's fold,
-submitted without local evaluation, is refused by the registry's state
-validator; and nothing changes.
+{- | Create a registry and bring 'heldKey' to Active with the ordinary
+commands — and, when asked, to Terminal — then inspect it.
+-}
+reach :: Bool -> Target -> Story [Receipt]
+reach terminal target = do
+    created <- action (Run Create target "")
+    inserted <- action (Run Insert target heldKey)
+    terminated <-
+        if terminal
+            then pure <$> action (Run Terminate target heldKey)
+            else pure []
+    seen <- action (Run Inspect target heldKey)
+    pure ([created, inserted] <> terminated <> [seen])
+
+{- | The shared shape of both refusals, after their premise. On the control
+registry, an absent key booked through the application and folded without
+local evaluation is accepted. On the target, the ordinary @insert@ of the
+held key is booked, stops partial and names its pending request; that
+request's fold, submitted without local evaluation, is refused by the
+registry's state validator; and nothing changes.
 -}
 refusal
     :: Theorem thm
+    -> Requirement
+    -> String
     -> Target
     -> Target
     -> String
     -> TheoremStory thm CliI ()
-refusal thm control target keyWhat = do
+refusal thm reachedReq premiseTitle control target keyWhat = do
+    _ <-
+        clause
+            premiseTitle
+            ( bindCheck thm $ \(controlPrefix, targetPrefix) -> do
+                action (Require reachedReq controlPrefix)
+                action (Require reachedReq targetPrefix)
+            )
+            ( do
+                controlPrefix <- reach (reachedReq == ReachedTerminal) control
+                targetPrefix <- reach (reachedReq == ReachedTerminal) target
+                pure (controlPrefix, targetPrefix)
+            )
     _ <-
         clause
             "an absent key, booked through the application and folded without local evaluation, is accepted"
@@ -563,24 +626,24 @@ refusal thm control target keyWhat = do
 
 -- | A second insertion of an Active key.
 duplicateStory :: Story ()
-duplicateStory = do
-    prefix False (Target "duplicate-control")
-    prefix False (Target "duplicate")
+duplicateStory =
     theorem duplicateRefused $
         refusal
             duplicateRefused
+            ReachedActive
+            "the key reached Active through the ordinary commands, in the control registry and in the target, and inspect reads it Active in each"
             (Target "duplicate-control")
             (Target "duplicate")
             "the Active key"
 
 -- | An insertion of a key already Terminal.
 resurrectionStory :: Story ()
-resurrectionStory = do
-    prefix True (Target "resurrection-control")
-    prefix True (Target "resurrection")
+resurrectionStory =
     theorem resurrectionRefused $
         refusal
             resurrectionRefused
+            ReachedTerminal
+            "the key reached Terminal through the ordinary commands, in the control registry and in the target, and inspect reads it Terminal in each"
             (Target "resurrection-control")
             (Target "resurrection")
             "the Terminal key"
@@ -655,9 +718,13 @@ release outside any fold beside the ordinary terminate.
 boundaryStory :: Story ()
 boundaryStory = do
     let target = Target "boundary"
-    _ <- action (Run Create target "")
-    _ <- action (Run Insert target heldKey)
     theorem updateRequiresController $ do
+        _ <-
+            premiseClause
+                updateRequiresController
+                "the key reached Active through the ordinary commands, and inspect reads it Active"
+                ReachedActive
+                (reach False target)
         _ <-
             clause
                 "the controller's own update, built by hand and submitted without local evaluation, is accepted"
@@ -669,8 +736,14 @@ boundaryStory = do
                 "the same update, requiring another wallet's signature instead of the controller's, is refused by the application"
                 (requirement updateRequiresController RefusedByApplication)
                 (pure <$> action (Craft UpdateByStranger target heldKey))
+        _ <-
+            clause
+                "the same update without the application's script is rejected before any script runs, and is not counted as a refusal"
+                (requirement updateRequiresController RejectedBeforeScripts)
+                (pure <$> action (Craft UpdateWithoutScript target heldKey))
         unchangedAfter updateRequiresController target before
     theorem updatePreservesCustody $ do
+        _ <- stillActive updatePreservesCustody target
         _ <-
             clause
                 "another controller's update, built the same way, is accepted"
@@ -684,6 +757,7 @@ boundaryStory = do
                 (pure <$> action (Craft c target heldKey))
         unchangedAfter updatePreservesCustody target before
     theorem onlyFoldReleases $ do
+        _ <- stillActive onlyFoldReleases target
         before <- readback onlyFoldReleases target
         _ <-
             clause
@@ -770,8 +844,13 @@ registry, its pending requests and the wallet as they were.
 bookingStory :: Story ()
 bookingStory = do
     let target = Target "booking"
-    _ <- action (Run Create target "")
-    theorem bookInsertInversion $ do
+    created <- theorem bookInsertInversion $ do
+        created <-
+            premiseClause
+                bookInsertInversion
+                "the registry was created by the ordinary command"
+                Established
+                (pure <$> action (Run Create target ""))
         _ <-
             clause
                 "an insertion booked through the application by the controller is accepted"
@@ -801,7 +880,14 @@ bookingStory = do
             target
             "booked"
             before
+        pure created
     theorem insertionRequiresRegistryIdentity $ do
+        _ <-
+            premiseClause
+                insertionRequiresRegistryIdentity
+                "the same registry, created by the ordinary command"
+                Established
+                (pure created)
         _ <-
             clause
                 "an envelope naming this registry, booked the same way, is accepted"
@@ -840,10 +926,20 @@ refused beside the same fold without the release.
 settlementStory :: Story ()
 settlementStory = do
     let target = Target "settlement"
-    _ <- action (Run Create target "")
-    _ <- action (Run Insert target heldKey)
-    _ <- action (Run Insert target otherKey)
     theorem bookTerminateInversion $ do
+        _ <-
+            clause
+                "two keys reached Active through the ordinary commands, and inspect reads each Active"
+                ( bindCheck bookTerminateInversion $ \(heldPrefix, otherPrefix) -> do
+                    action (Require ReachedActive heldPrefix)
+                    action (Require ReachedActive otherPrefix)
+                )
+                ( do
+                    heldPrefix <- reach False target
+                    inserted <- action (Run Insert target otherKey)
+                    seen <- action (Run Inspect target otherKey)
+                    pure (heldPrefix, [inserted, seen])
+                )
         before <- readbackOf bookTerminateInversion target heldKey
         refusedCraft
             bookTerminateInversion
@@ -863,6 +959,7 @@ settlementStory = do
                 (requirement bookTerminateInversion Accepted)
                 (pure <$> action (Craft TerminateBooking target heldKey))
     theorem foldSettlesAdditively $ do
+        _ <- stillActive foldSettlesAdditively target
         before <- readbackOf foldSettlesAdditively target heldKey
         refusedCraft foldSettlesAdditively FoldPaysShort target heldKey
         unchangedOf
@@ -878,6 +975,12 @@ settlementStory = do
                 (requirement foldSettlesAdditively Accepted)
                 (pure <$> action (Craft FoldPaysInFull target heldKey))
     theorem foldInversion $ do
+        _ <-
+            premiseClause
+                foldInversion
+                "the other key still reads Active, from a readback whose mirror copy agrees with the chain's root"
+                ReachedActive
+                (pure <$> action (Observe target otherKey))
         _ <-
             clause
                 "an insertion of an absent key, booked through the application, is accepted"
@@ -924,6 +1027,11 @@ data Observation = Observation
     -- ^ The requests pending at the registry's request address
     , obPendingLovelace :: Integer
     , obWalletLovelace :: Integer
+    , obLeaf :: Maybe Text
+    {- ^ The key's leaf, read from a mirror copy whose root is the root the
+    chain holds: @active@, @terminal@ or @absent@; nothing when no copy
+    agrees with the chain
+    -}
     }
     deriving stock (Eq, Show)
 
@@ -936,6 +1044,7 @@ instance ToJSON Observation where
             , "pending" .= obPending o
             , "pendingLovelace" .= obPendingLovelace o
             , "walletLovelace" .= obWalletLovelace o
+            , "leaf" .= obLeaf o
             ]
 
 instance FromJSON Observation where
@@ -947,6 +1056,7 @@ instance FromJSON Observation where
             <*> o .: "pending"
             <*> o .: "pendingLovelace"
             <*> o .: "walletLovelace"
+            <*> o .:? "leaf"
 
 {- | What one action left. The step number, action, target and key say
 which action it answers; a receipt answering another is not accepted.
@@ -972,6 +1082,14 @@ data Receipt = Receipt
     -- ^ The applied open-datum script's hash, from its pins
     , rcRefusingScripts :: [Text]
     -- ^ The script hashes the node's refusal names
+    , rcPhaseWords :: [Text]
+    {- ^ The node's words for a script that executed and failed, as they
+    occur in its rejection: @PlutusFailure@, @CekError@; none for a
+    rejection before any script ran
+    -}
+    , rcRejectionFile :: Maybe Text
+    -- ^ The node's full rejection text, kept beside the receipt
+    , rcRejectionSha256 :: Maybe Text
     , rcReason :: Maybe Text
     -- ^ The node's or the command's own words, bounded
     , rcObservation :: Maybe Observation
@@ -996,6 +1114,9 @@ emptyReceipt step act target key =
         , rcStateValidator = Nothing
         , rcApplication = Nothing
         , rcRefusingScripts = []
+        , rcPhaseWords = []
+        , rcRejectionFile = Nothing
+        , rcRejectionSha256 = Nothing
         , rcReason = Nothing
         , rcObservation = Nothing
         , rcEvidence = []
@@ -1016,6 +1137,9 @@ instance ToJSON Receipt where
             , "stateValidator" .= rcStateValidator r
             , "application" .= rcApplication r
             , "refusingScripts" .= rcRefusingScripts r
+            , "phaseWords" .= rcPhaseWords r
+            , "rejectionFile" .= rcRejectionFile r
+            , "rejectionSha256" .= rcRejectionSha256 r
             , "reason" .= rcReason r
             , "observation" .= rcObservation r
             , "evidence" .= rcEvidence r
@@ -1036,6 +1160,9 @@ instance FromJSON Receipt where
             <*> o .:? "stateValidator"
             <*> o .:? "application"
             <*> o .: "refusingScripts"
+            <*> (fromMaybe [] <$> o .:? "phaseWords")
+            <*> o .:? "rejectionFile"
+            <*> o .:? "rejectionSha256"
             <*> o .:? "reason"
             <*> o .:? "observation"
             <*> o .: "evidence"
@@ -1086,13 +1213,40 @@ same what a b = case (a, b) of
 -- | Fail unless a receipt value is present and equals the one expected.
 is :: String -> Aeson.Value -> Maybe Aeson.Value -> [String]
 is what expected v =
-    [ what <> " is " <> maybe "absent" show v <> ", not " <> show expected
+    [ what <> " is " <> maybe "absent" plain v <> ", not " <> plain expected
     | v /= Just expected
     ]
+  where
+    plain value = case value of
+        Aeson.String t -> show t
+        Aeson.Array a | V.null a -> "none"
+        other -> show other
 
 -- | The requirement's failures on these receipts; none means it holds.
 check :: Requirement -> [Receipt] -> [String]
 check req rs = case (req, rs) of
+    (Established, cs@(_ : _)) ->
+        concatMap (\c -> succeeded ("the " <> T.unpack (rcAction c)) c) cs
+            <> oneRegistry cs
+    (ReachedActive, _ : _) -> reachedLeaf "active" rs
+    (ReachedTerminal, _ : _) -> reachedLeaf "terminal" rs
+    (RejectedBeforeScripts, [r]) ->
+        [ "the outcome is "
+            <> show (rcOutcome r)
+            <> ", not a rejection by the node"
+        | rcOutcome r /= "ledger-refused"
+        ]
+            <> case rcApplication r of
+                Nothing -> ["the applied open-datum script is not recorded"]
+                Just h -> case attribution h r of
+                    Left (NotPhase2 _) ->
+                        [ "the rejection does not name the open-datum script, so it does not test the attribution"
+                        | h `notElem` rcRefusingScripts r
+                        ]
+                    _ ->
+                        [ "a script executed and failed; this is not a rejection before any script ran"
+                        ]
+            <> submitted r
     (Observed, [r]) ->
         [ "the readback's outcome is " <> show (rcOutcome r) <> ", not observed"
         | rcOutcome r /= "observed"
@@ -1106,16 +1260,7 @@ check req rs = case (req, rs) of
                     <> ", not a refusal by the node"
                | rcOutcome r /= "ledger-refused"
                ]
-            <> case rcApplication r of
-                Nothing -> ["the applied open-datum script is not recorded"]
-                Just h ->
-                    [ "the refusal does not name the open-datum script "
-                        <> T.unpack h
-                        <> "; it names "
-                        <> show (rcRefusingScripts r)
-                    | h `notElem` rcRefusingScripts r
-                    ]
-            <> ["no transaction id is recorded" | isNothing (rcTxId r)]
+            <> attributedTo "applied open-datum script" (rcApplication r) r
     (RegistryUnchanged, [a, b]) -> case (rcObservation a, rcObservation b) of
         (Just x, Just y) ->
             ["the registry's root moved" | obRoot x /= obRoot y]
@@ -1243,16 +1388,7 @@ check req rs = case (req, rs) of
                     <> ", not a refusal by the node"
                | rcOutcome r /= "ledger-refused"
                ]
-            <> case rcStateValidator r of
-                Nothing -> ["the registry's state validator is not recorded"]
-                Just h ->
-                    [ "the refusal does not name the state validator "
-                        <> T.unpack h
-                        <> "; it names "
-                        <> show (rcRefusingScripts r)
-                    | h `notElem` rcRefusingScripts r
-                    ]
-            <> ["no transaction id is recorded" | isNothing (rcTxId r)]
+            <> attributedTo "registry's state validator" (rcStateValidator r) r
     (Unchanged, [a, b]) -> case (rcObservation a, rcObservation b) of
         (Just x, Just y) ->
             [ "the registry's root moved"
@@ -1362,47 +1498,64 @@ replay byStep story =
             (Just r, st') -> go st' (next r)
             (Nothing, st') -> (Nothing, st')
         Theorem thm body :>>= next ->
-            case goClauses (boName (theoremBinding thm)) st (clauses body) of
+            case goClauses (boName (theoremBinding thm)) Nothing st (clauses body) of
                 (Just r, st') -> go st' (next r)
                 (Nothing, st') -> (Nothing, st')
 
     goClauses
         :: String
+        -> Maybe String
         -> Replay
         -> Program (Clause thm CliI) a
         -> (Maybe a, Replay)
-    goClauses _ st@(Replay _ _ (Just _)) _ = (Nothing, st)
-    goClauses name st program = case view program of
+    goClauses _ _ st@(Replay _ _ (Just _)) _ = (Nothing, st)
+    goClauses name premise st program = case view program of
         Return a -> (Just a, st)
         Clause title leanCheck body :>>= next ->
             let (inner, Replay n rs stop) = collect st body
             in  case (inner, stop) of
-                    (Just (obs, bodyFailures), Nothing) ->
+                    (Just (obs, (bodyFailures, _)), Nothing) ->
                         let (checked, Replay n' _ stop') =
                                 collect (Replay n [] Nothing) (checkAction leanCheck obs)
                             failures =
-                                bodyFailures <> maybe [] snd checked
+                                bodyFailures <> maybe [] (fst . snd) checked
+                            isPremise = maybe False (snd . snd) checked
                             status
                                 | Just why <- stop' = Uncovered why
+                                | Just failed <- premise =
+                                    Uncovered ("its premise does not hold: " <> failed)
                                 | null failures = Held
                                 | otherwise = NotHeld failures
+                            premise'
+                                | Just _ <- premise = premise
+                                | isPremise && status /= Held = Just title
+                                | otherwise = Nothing
                             result = ClauseResult name title status
-                        in  goClauses name (Replay n' (result : rs) stop') (next obs)
+                        in  goClauses
+                                name
+                                premise'
+                                (Replay n' (result : rs) stop')
+                                (next obs)
                     _ ->
                         ( Nothing
                         , Replay n rs (Just (fromMaybe "no receipt" stop))
                         )
 
-    -- Walk a program, collecting the failures of the requirements in it.
-    collect :: Replay -> Story a -> (Maybe (a, [String]), Replay)
-    collect st0 = walk st0 []
+    {- Walk a program, collecting the failures of the requirements in it and
+    whether any of them is a premise the rest of the telling depends on. -}
+    collect :: Replay -> Story a -> (Maybe (a, ([String], Bool)), Replay)
+    collect st0 = walk st0 ([], False)
       where
-        walk :: Replay -> [String] -> Story a -> (Maybe (a, [String]), Replay)
+        walk
+            :: Replay
+            -> ([String], Bool)
+            -> Story a
+            -> (Maybe (a, ([String], Bool)), Replay)
         walk st@(Replay _ _ (Just _)) _ _ = (Nothing, st)
-        walk st acc program = case view program of
+        walk st acc@(fs, p) program = case view program of
             Return a -> (Just (a, acc), st)
             Action (Require req rs) :>>= next ->
-                walk st (acc <> check req rs) (next ())
+                walk st (fs <> check req rs, p || req `elem` premises) (next ())
             Action i :>>= next -> case perform st i of
                 (Just r, st') -> walk st' acc (next r)
                 (Nothing, st') -> (Nothing, st')
@@ -1528,6 +1681,18 @@ validateControls story = do
                 && not (any (("is accepted" `T.isSuffixOf`) . T.pack) titles)
             )
             $ Left (s <> " has a refusal without an accepting control")
+    let (loose, shapes) = shape story
+    unless (loose == 0) $
+        Left
+            ( show loose
+                <> " actions run outside any clause; every receipt must feed a verdict"
+            )
+    forM_ shapes $ \(s, clauseShapes) ->
+        when
+            ( any (("is refused" `T.isInfixOf`) . T.pack . fst) clauseShapes
+                && not (maybe False snd (listToMaybe clauseShapes))
+            )
+            $ Left (s <> " makes a refusal claim without opening on its premise")
     Right ()
 
 -- ---------------------------------------------------------
@@ -1928,6 +2093,8 @@ craftedPhrase c = case c of
         "a termination booking of the key by another wallet"
     ReleaseInOtherFold ->
         "a fold of another key's insertion that also releases this live holding"
+    UpdateWithoutScript ->
+        "the controller's update, submitted without the application's script"
     FoldPaysShort ->
         "the terminating fold, folded by another wallet, paying the controller one lovelace short"
     FoldPaysInFull ->
@@ -1936,3 +2103,174 @@ craftedPhrase c = case c of
 -- | The path of an insert receipt's envelope control fields.
 controlPath :: [Either Text Int]
 controlPath = [Left "envelope", Left "fields", Right 0, Left "fields"]
+
+{- | The node's rejection, rebuilt from exactly what the receipt carries of
+it — its words for a script that executed and failed, and the hashes of
+the scripts that failed — and judged by the suite's own refusal discipline
+('matchRefusal'): a phase-2 failure among whose failed scripts the
+expected one is.
+-}
+attribution :: Text -> Receipt -> Either RefusalMismatch ()
+attribution expected r = matchRefusal (T.unpack expected) rebuilt
+  where
+    rebuilt =
+        unwords (map T.unpack (rcPhaseWords r))
+            <> concat
+                [" ScriptHash \"" <> T.unpack h <> "\"" | h <- rcRefusingScripts r]
+
+-- | Fail unless the receipt shows the expected script executed and failed.
+attributedTo :: String -> Maybe Text -> Receipt -> [String]
+attributedTo what expected r =
+    case expected of
+        Nothing -> ["the " <> what <> " is not recorded"]
+        Just h -> case attribution h r of
+            Right () -> []
+            Left (NotPhase2 _) ->
+                [ "the node rejected it before any script ran, so no script refused it"
+                ]
+            Left (MarkerAbsent _ _) ->
+                [ "the scripts that failed do not include the "
+                    <> what
+                    <> " "
+                    <> T.unpack h
+                    <> "; they are "
+                    <> show (rcRefusingScripts r)
+                ]
+        <> submitted r
+
+-- | Fail unless the submitted transaction and the node's rejection are kept.
+submitted :: Receipt -> [String]
+submitted r = case rcTxId r of
+    Nothing -> ["no transaction id is recorded"]
+    Just txid ->
+        [ "the submitted transaction's body is not kept beside the receipt"
+        | not (any (txid `T.isInfixOf`) (rcEvidence r))
+        ]
+            <> [ "the node's full rejection is not kept beside the receipt"
+               | rcOutcome r == "ledger-refused"
+               , isNothing (rcRejectionFile r) || isNothing (rcRejectionSha256 r)
+               ]
+
+{- | The node's words for a script that executed and failed, and the
+hashes of the scripts that failed, as they occur in its rejection text.
+-}
+rejectionEvidence :: String -> ([Text], [Text])
+rejectionEvidence text =
+    ( [T.pack w | w <- ["PlutusFailure", "CekError"], w `isInfixOf` text]
+    , map T.pack (refusalScriptHashes text)
+    )
+
+-- | A key label as the lowercase hex of its bytes, as the commands print keys.
+hexLabel :: String -> Text
+hexLabel = T.pack . concatMap (printf "%02x" . ord)
+
+-- | The requirements whose failure leaves the rest of a telling unfounded.
+premises :: [Requirement]
+premises = [Established, ReachedActive, ReachedTerminal]
+
+-- | Fail unless every receipt of a premise is of one registry.
+oneRegistry :: [Receipt] -> [String]
+oneRegistry rs =
+    [ "the premise's receipts are of different registries"
+    | length (nub (map rcTarget rs)) > 1
+    ]
+
+-- | Fail unless the receipts reach the key at the given leaf.
+reachedLeaf :: Text -> [Receipt] -> [String]
+reachedLeaf leaf rs = case reverse rs of
+    [] -> ["the premise has no receipts"]
+    (reading : commands) ->
+        concatMap
+            (\c -> succeeded ("the " <> T.unpack (rcAction c)) c)
+            commands
+            <> oneRegistry rs
+            <> readsLeaf reading
+  where
+    readsLeaf r
+        | T.null (rcKey r) = ["the premise's reading names no key"]
+        | rcAction r == "run inspect" =
+            succeeded "the inspect" r
+                <> is "the key's leaf" (Aeson.String leaf) (at [field "leaf"] r)
+                <> is
+                    "the key inspected"
+                    (Aeson.String (hexLabel (T.unpack (rcKey r))))
+                    (at [field "key"] r)
+        | rcAction r == "observe" =
+            [ "the readback's outcome is " <> show (rcOutcome r) <> ", not observed"
+            | rcOutcome r /= "observed"
+            ]
+                <> case obLeaf =<< rcObservation r of
+                    Just l
+                        | l == leaf -> []
+                        | otherwise ->
+                            [ "the key's leaf, authenticated against the chain's root, is "
+                                <> T.unpack l
+                                <> ", not "
+                                <> T.unpack leaf
+                            ]
+                    Nothing ->
+                        [ "no mirror copy agrees with the chain's root, so the key's leaf is not authenticated"
+                        ]
+        | otherwise =
+            [ "the premise ends in "
+                <> T.unpack (rcAction r)
+                <> ", not a reading of the key"
+            ]
+
+-- | The premise that the held key still reads Active, from a fresh inspect.
+stillActive
+    :: Theorem thm -> Target -> TheoremStory thm CliI [Receipt]
+stillActive thm target =
+    premiseClause
+        thm
+        "the key still reads Active, from a fresh inspect"
+        ReachedActive
+        (pure <$> action (Run Inspect target heldKey))
+
+{- | How many actions a story runs outside any clause, and, for each
+telling, its clauses in order with whether each one's check is a premise.
+The story is walked with placeholder receipts; it never branches on one.
+-}
+shape :: Story () -> (Int, [(String, [(String, Bool)])])
+shape = go
+  where
+    go :: Story a -> (Int, [(String, [(String, Bool)])])
+    go program = case view program of
+        Return _ -> (0, [])
+        Action i :>>= next ->
+            let (n, ts) = go (next (placeholderOf i)) in (n + 1, ts)
+        Theorem thm body :>>= next ->
+            let (cs, r) = walkClauses (clauses body)
+                (n, ts) = go (next r)
+            in  (n, (boName (theoremBinding thm), cs) : ts)
+
+    walkClauses :: Program (Clause thm CliI) a -> ([(String, Bool)], a)
+    walkClauses program = case view program of
+        Return a -> ([], a)
+        Clause title leanCheck body :>>= next ->
+            let obs = result body
+                usesPremise = any (`elem` premises) (requirementsOf (checkAction leanCheck obs))
+                (rest, a) = walkClauses (next obs)
+            in  ((title, usesPremise) : rest, a)
+
+    result :: Story a -> a
+    result program = case view program of
+        Return a -> a
+        Action i :>>= next -> result (next (placeholderOf i))
+        Theorem _ _ :>>= _ -> error "shape: a statement nested inside a clause"
+
+    requirementsOf :: Story a -> [Requirement]
+    requirementsOf program = case view program of
+        Return _ -> []
+        Action (Require req _) :>>= next -> req : requirementsOf (next ())
+        Action i :>>= next -> requirementsOf (next (placeholderOf i))
+        Theorem _ _ :>>= _ -> []
+
+    placeholderOf :: CliI a -> a
+    placeholderOf i = case i of
+        Require _ _ -> ()
+        Run{} -> emptyReceipt 0 "" "" ""
+        Book{} -> emptyReceipt 0 "" "" ""
+        FoldUnevaluated{} -> emptyReceipt 0 "" "" ""
+        Observe{} -> emptyReceipt 0 "" "" ""
+        Craft{} -> emptyReceipt 0 "" "" ""
