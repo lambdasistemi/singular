@@ -793,15 +793,30 @@ a saved mirror whose root is the chain's: the backend's own, once one of
 its folds was accepted, else the command's.
 -}
 foldUnevaluated :: Env -> Target -> String -> Receipt -> IO Receipt
-foldUnevaluated env target key = foldWith env target (Just key) AsOwed
+foldUnevaluated env target key = foldWith env target (Just key) AsOwed False
 
+{- | The same, folded (funded, signed for its fee and paid its change) by
+the story's wallet, or by the stranger when asked: a fold is
+permissionless, and a folder other than the controller keeps the change
+off the controller's key, where the application sums what it is paid.
+-}
 foldWith
-    :: Env -> Target -> Maybe String -> FoldTweak -> Receipt -> IO Receipt
-foldWith env target requested tweak r = do
+    :: Env
+    -> Target
+    -> Maybe String
+    -> FoldTweak
+    -> Bool
+    -> Receipt
+    -> IO Receipt
+foldWith env target requested tweak byStranger r = do
     let dir = targetDir env target
         backendManifest = backendDir env target </> "registry.json"
+        opts = envOptions env
     reg <- openRegistry env target
+    stranger <-
+        loadWallet (fromIntegral (optMagic opts)) (optStranger opts)
     withNode env $ \sess wallet -> do
+        let folder = if byStranger then stranger else wallet
         let prov = nsProvider sess
             cfg = regCfg reg
             tok = regToken reg
@@ -904,13 +919,13 @@ foldWith env target requested tweak r = do
                         ( show (length hs)
                             <> " live holdings for the released key; it needs one"
                         )
-        wallets <- Cage.queryUTxOs prov home
+        wallets <- Cage.queryUTxOs prov (walletAddr folder)
         feeUtxo <-
             case sortOn
                 (Down . (^. coinTxOutL) . snd)
                 (filter (adaOnlyOut . snd) wallets) of
                 (u : _) -> pure u
-                [] -> fail "the wallet has no ada-only output to fund the fold"
+                [] -> fail "the folder has no ada-only output to fund the fold"
         let carried =
                 [ hashScript s
                 | (_, o) <- rcRefUtxos ctx
@@ -925,7 +940,7 @@ foldWith env target requested tweak r = do
                     , cfaProvider = prov
                     , cfaTrie = tm
                     , cfaToken = tok
-                    , cfaFeeAddr = home
+                    , cfaFeeAddr = walletAddr folder
                     , cfaStateUtxo = (stateIn, stateOut)
                     , cfaReqUtxos = [request]
                     , cfaFeeUtxo = feeUtxo
@@ -940,7 +955,7 @@ foldWith env target requested tweak r = do
                     , cfaAdjustRoot = id
                     }
         void (evaluate unsigned)
-        result <- fst <$> submitAndConfirm env sess wallet r0 unsigned
+        result <- fst <$> submitAndConfirm env sess folder r0 unsigned
         -- The chain took the edge: the backend's mirror takes it too.
         when (rcOutcome result == "accepted") $ do
             withTrie tm tok $ \t -> void (walkEdge t (requestKey req) (requestEdge req))
@@ -1069,8 +1084,9 @@ craft env c target key r = case c of
     EnvelopeOtherRegistry -> craftBooking env c target key r
     TerminateBooking -> craftTermination env False target key r
     TerminateBookingByStranger -> craftTermination env True target key r
-    ReleaseInOtherFold -> foldWith env target Nothing (AlsoRelease key) r
-    FoldPaysShort -> foldWith env target (Just key) PayShort r
+    ReleaseInOtherFold -> foldWith env target Nothing (AlsoRelease key) False r
+    FoldPaysShort -> foldWith env target (Just key) PayShort True r
+    FoldPaysInFull -> foldWith env target (Just key) AsOwed True r
     _ -> craftHolding env c target key r
 
 -- | A hand-built transaction against the key's live holding.

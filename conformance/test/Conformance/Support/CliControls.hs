@@ -117,7 +117,7 @@ honestReceipts story = do
                             , rcApplication = Just appHash
                             , rcTxId = Just "c1"
                             }
-                in  if cr `elem` [HonestUpdate, TerminateBooking]
+                in  if cr `elem` [HonestUpdate, TerminateBooking, FoldPaysInFull]
                         then base{rcOutcome = "accepted"}
                         else base{rcOutcome = "ledger-refused", rcRefusingScripts = [appHash]}
         Book (Target t) k ->

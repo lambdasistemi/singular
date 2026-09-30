@@ -172,8 +172,10 @@ data Crafted
       TerminateBookingByStranger
     | -- | A fold of another key's insertion that also spends the holding with @Release@
       ReleaseInOtherFold
-    | -- | The terminating fold, paying the controller one lovelace short
+    | -- | The terminating fold, folded by another wallet, paying the controller one lovelace short
       FoldPaysShort
+    | -- | The same terminating fold, folded by another wallet, paying the controller in full
+      FoldPaysInFull
     deriving stock (Eq, Show, Enum, Bounded)
 
 craftedName :: Crafted -> String
@@ -198,6 +200,7 @@ craftedName c = case c of
     TerminateBookingByStranger -> "terminate-booking-by-stranger"
     ReleaseInOtherFold -> "release-in-other-fold"
     FoldPaysShort -> "fold-pays-short"
+    FoldPaysInFull -> "fold-pays-in-full"
 
 -- | A registry the story works in: its own directory and its own boot.
 newtype Target = Target String
@@ -871,9 +874,9 @@ settlementStory = do
             before
         void $
             clause
-                "the same terminating fold, paying the controller in full, is accepted"
+                "the same terminating fold, folded by another wallet, paying the controller in full, is accepted"
                 (requirement foldSettlesAdditively Accepted)
-                (pure <$> action (FoldUnevaluated target heldKey))
+                (pure <$> action (Craft FoldPaysInFull target heldKey))
     theorem foldInversion $ do
         _ <-
             clause
@@ -1926,7 +1929,9 @@ craftedPhrase c = case c of
     ReleaseInOtherFold ->
         "a fold of another key's insertion that also releases this live holding"
     FoldPaysShort ->
-        "the terminating fold, paying the controller one lovelace short"
+        "the terminating fold, folded by another wallet, paying the controller one lovelace short"
+    FoldPaysInFull ->
+        "the same terminating fold, folded by another wallet, paying the controller in full"
 
 -- | The path of an insert receipt's envelope control fields.
 controlPath :: [Either Text Int]
