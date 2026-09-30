@@ -465,7 +465,7 @@
           # #299: the packaged `singular registry` commands. It reaches a
           # node through the socket its caller names and spawns none, so it
           # needs no cardano-node on its PATH.
-          singular = components.exes.singular;
+          inherit (components.exes) singular;
           # #278 S2: the pinned house formatter, for the root format
           # recipes and controls (same locked tool as the lint check).
           fourmolu = fourmoluTool;

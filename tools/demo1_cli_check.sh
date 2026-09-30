@@ -19,30 +19,38 @@
 #    use.
 set -euo pipefail
 
-[ "$#" -eq 1 ] || { echo "usage: $0 REPO-ROOT" >&2; exit 2; }
+[ "$#" -eq 1 ] || {
+  echo "usage: $0 REPO-ROOT" >&2
+  exit 2
+}
 root="$1"
 here="$(cd "$(dirname "$0")" && pwd)"
 journey="${DEMO1_JOURNEY:-$here/demo1_cli_journey.sh}"
-fail() { echo "demo1-cli-check: FAIL: $*" >&2; exit 1; }
+fail() {
+  echo "demo1-cli-check: FAIL: $*" >&2
+  exit 1
+}
 
 scratch="$(mktemp -d "${RUNNER_TEMP:-/tmp}/demo1.XXXXXX")"
-release_dir="$scratch/release"; mkdir -p "$release_dir"
+release_dir="$scratch/release"
+mkdir -p "$release_dir"
 (cd "$root" && nix run --quiet .#release-artifacts -- "$release_dir")
 version="$(cat "$root/version.txt")"
-extracted="$scratch/extracted"; mkdir -p "$extracted"
+extracted="$scratch/extracted"
+mkdir -p "$extracted"
 tar -C "$extracted" -xzf "$release_dir/singular-onchain-$version.tar.gz"
 test ! -e "$extracted/.git" || fail "the archive carries a git checkout"
 
 # The page documents the five commands in the journey's order.
 page_ok() {
-    grep -o 'singular registry [a-z]*' "$1" | awk '{print $3}' | tr '\n' ' ' \
-        | grep -q 'create .*insert .*inspect .*terminate .*inspect'
+  grep -o 'singular registry [a-z]*' "$1" | awk '{print $3}' | tr '\n' ' ' \
+    | grep -q 'create .*insert .*inspect .*terminate .*inspect'
 }
 test -f "$extracted/DEMO1.md" || fail "the archive carries no DEMO1.md run page"
 page_ok "$extracted/DEMO1.md" || fail "DEMO1.md does not document the five commands in order"
-grep -v 'singular registry terminate' "$extracted/DEMO1.md" > "$scratch/DEMO1-without-terminate.md"
+grep -v 'singular registry terminate' "$extracted/DEMO1.md" >"$scratch/DEMO1-without-terminate.md"
 if page_ok "$scratch/DEMO1-without-terminate.md"; then
-    fail "control: a page without terminate passed the page check"
+  fail "control: a page without terminate passed the page check"
 fi
 
 cd "$extracted/offchain"
@@ -53,7 +61,7 @@ bash "$journey" "$singular" "$devnet" "$extracted/onchain/plutus.json" "$scratch
 # The retained archive commands, from the same extraction.
 observed="$scratch/insert-active.json"
 REGISTRY_BLUEPRINT="$extracted/onchain/plutus.json" \
-    nix run --quiet .#insert-active -- --observed "$observed"
+  nix run --quiet .#insert-active -- --observed "$observed"
 jq -e '
   .edge == "insertActive"
   and (.fold.txid | test("^[0-9a-f]{64}$"))
@@ -62,11 +70,11 @@ jq -e '
   and ."key-exists".outcome == "refused"
   and (."key-exists".control.outcome == "accepted")
   and (."key-exists".detail | type == "string" and length > 0)
-' "$observed" > /dev/null || fail "insert-active did not observe one active token at the named wallet"
+' "$observed" >/dev/null || fail "insert-active did not observe one active token at the named wallet"
 
 observed="$scratch/update-terminal.json"
 REGISTRY_BLUEPRINT="$extracted/onchain/plutus.json" \
-    nix run --quiet .#update-terminal -- --observed "$observed"
+  nix run --quiet .#update-terminal -- --observed "$observed"
 # shellcheck disable=SC2016
 jq -e '
   def txid: type == "string" and test("^[0-9a-f]{64}$");
@@ -93,6 +101,6 @@ jq -e '
     and ($r.absent.trace == null or $r.absent.trace == "not-booked")
     and ($r.absent.controlTxid | txid)
   )
-' "$observed" > /dev/null || fail "update-terminal observation moved"
+' "$observed" >/dev/null || fail "update-terminal observation moved"
 
 echo "demo1-cli-check: PASS from $extracted — five singular processes on one node, the page, and the retained insert-active and update-terminal controls"
