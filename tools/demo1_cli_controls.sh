@@ -90,6 +90,11 @@ copy() {
   jq -r '.submissions[]?.bodyFile' "$work"/receipts/*.json | while read -r kept; do
     (cd "$work" && cp --parents "$kept" "$copies/$1/")
   done
+  # the journals and saved files provoked commands' receipts read back
+  jq -r '.process // empty | .journal, (.filesAfter[]?[0])' "$work"/receipts/*.json \
+    | sort -u | while read -r kept; do
+      (cd "$work" && cp --parents "$kept" "$copies/$1/")
+    done
 }
 # expect COPY CAUSE: COPY's render fails the claim for CAUSE (empty: holds).
 expect() {
@@ -180,3 +185,16 @@ copy reached-body-missing
 rm "$copies/reached-body-missing/$reached_body"
 expect_command reached-body-missing "the journalled body $reached_body is missing" premise
 say "command controls: each changed copy fails the ordinary command's claim for its reason"
+
+# A provoked command's claims rest on what its process left. With the
+# registry's journal cut back to before the killed terminate, the claim that
+# it stopped at the node's acceptance must fail naming the journal.
+killed="$(grep -l '"action": "provoke terminate-killed"' "$work"/receipts/*.json | head -n1)"
+[ -n "$killed" ] || fail_control "no receipt of the killed terminate"
+journal="$(jq -r .process.journal "$killed")"
+kept="$(jq -r .process.journalBefore "$killed")"
+sha256sum "$killed" "$work/$journal" >>"$copies/inputs.sha256"
+copy journal-cut
+head -n "$kept" "$work/$journal" >"$copies/journal-cut/$journal"
+expect_command journal-cut "the journal has $kept lines"
+say "process control: the cut journal fails the killed terminate's claim"
