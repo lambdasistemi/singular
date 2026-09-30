@@ -262,13 +262,166 @@
           '';
         };
 
+        # The deployed recipe as the harness runs it, and the same build
+        # with the traces a replay needs. Nothing else differs.
+        registryTraceFlags = "--trace-filter user-defined --trace-level verbose";
+        registryUntracedBlueprint = registryBlueprint {
+          pname = "singular-registry-untraced-blueprint";
+          flags = "";
+        };
+        registryTracedPlutus = registryBlueprint {
+          pname = "singular-registry-traced-plutus";
+          flags = registryTraceFlags;
+        };
+
+        # The traced build must name the same validators as the untraced
+        # one, each with the same parameter, datum and redeemer schemas over
+        # the same definitions, under the same compiler; and the flags must
+        # have changed at least one validator, or the build carries no trace.
+        # Quantified over both validator sets, read at run time.
+        registryTraceCorrespondenceCheck = pkgs.writeShellApplication {
+          name = "registry-trace-correspondence-check";
+          runtimeInputs = [ pkgs.jq ];
+          text = ''
+            untraced="$1"
+            traced="$2"
+            problems="$(jq -r -n \
+              --slurpfile u "$untraced" \
+              --slurpfile t "$traced" \
+              '
+                def shape: .validators
+                  | map({key: .title, value: {parameters, datum, redeemer}})
+                  | from_entries;
+                def hashes: .validators | map({key: .title, value: .hash}) | from_entries;
+                ($u[0] | shape) as $us
+                | ($t[0] | shape) as $ts
+                | ($u[0] | hashes) as $uh
+                | ($t[0] | hashes) as $th
+                | (if ($us | length) == 0
+                   then ["FAIL: the untraced build reports zero validators"] else [] end)
+                  + (if ($ts | length) == 0
+                   then ["FAIL: the traced build reports zero validators"] else [] end)
+                  + (if $u[0].preamble.compiler.version != $t[0].preamble.compiler.version then
+                       ["FAIL: compiler differs: untraced \($u[0].preamble.compiler.version), traced \($t[0].preamble.compiler.version)"]
+                     else [] end)
+                  + [$us | to_entries[] | .key as $k |
+                       if ($ts | has($k) | not) then
+                         "FAIL: validator \($k) is only in the untraced build"
+                       elif $ts[$k].parameters != .value.parameters then
+                         "FAIL: validator \($k) parameters differ between the untraced and traced builds"
+                       elif $ts[$k] != .value then
+                         "FAIL: validator \($k) datum or redeemer schema differs between the untraced and traced builds"
+                       else empty end]
+                  + [$ts | keys[] | select(. as $k | $us | has($k) | not) |
+                       "FAIL: validator \(.) is only in the traced build"]
+                  + (if $u[0].definitions != $t[0].definitions then
+                       ["FAIL: the schema definitions differ between the untraced and traced builds"]
+                     else [] end)
+                  + (if ([$th | to_entries[] | select($uh[.key] != null and $uh[.key] != .value)] | length) == 0
+                     then ["FAIL: no traced validator hash differs from its untraced hash; the trace flags had no effect"]
+                     else [] end)
+                | .[]
+              ')" || {
+              echo "FAIL: jq could not read the untraced or the traced blueprint" >&2
+              exit 1
+            }
+            if [ -n "$problems" ]; then
+              printf '%s\n' "$problems"
+              exit 1
+            fi
+            changed="$(jq -n --slurpfile u "$untraced" --slurpfile t "$traced" \
+              '($u[0].validators | map({key: .title, value: .hash}) | from_entries) as $uh
+               | [$t[0].validators[] | select($uh[.title] != .hash)] | length')"
+            echo "registry-trace-correspondence: $(jq '.validators | length' "$traced") validators with the same schemas; the traces change $changed of them"
+          '';
+        };
+
+        # The check the traced blueprint is built behind (FR-03): the
+        # harness's untraced build reproduces the deployed manifest, and the
+        # traced build corresponds to it. Each comparison is then shown able
+        # to refuse — a build that moves a deployed hash, an untraced build
+        # passed off as traced, a traced build missing a validator and one
+        # whose parameter schema differs — and each refusal must come from
+        # the comparison's own FAIL line, not from a crash. Its output is the
+        # provenance the runner reads beside the traced blueprint.
         registryBlueprintCorrespondence =
-          pkgs.runCommand "singular-registry-blueprint-correspondence" { }
+          pkgs.runCommand "singular-registry-blueprint-correspondence"
+            {
+              nativeBuildInputs = [
+                pkgs.jq
+                pkgs.diffutils
+              ];
+            }
             ''
               set -euo pipefail
-              ${pkgs.lib.getExe registryIdentityCheck} ${registryManifest} ${registryMismatchedBlueprint}
-              touch "$out"
+              identity=${pkgs.lib.getExe registryIdentityCheck}
+              correspondence=${pkgs.lib.getExe registryTraceCorrespondenceCheck}
+              "$identity" ${registryManifest} ${registryUntracedBlueprint}
+              "$correspondence" ${registryUntracedBlueprint} ${registryTracedPlutus}
+
+              refuses() {
+                label="$1"
+                pattern="$2"
+                shift 2
+                if output="$("$@" 2>&1)"; then
+                  echo "FAIL: control $label: the check accepted it" >&2
+                  exit 1
+                fi
+                if ! grep -qE "$pattern" <<<"$output"; then
+                  echo "FAIL: control $label: refused, but not by the comparison:" >&2
+                  printf '%s\n' "$output" >&2
+                  exit 1
+                fi
+                echo "control $label: refused: $(grep -E "$pattern" <<<"$output" | head -n 1)"
+              }
+
+              mutant() {
+                if cmp -s "$1" "$2"; then
+                  echo "FAIL: control mutant $2 is identical to its original" >&2
+                  exit 1
+                fi
+              }
+
+              refuses moved-hash '^FAIL: validator witness\.witness\.mint moved' \
+                "$identity" ${registryManifest} ${registryMismatchedBlueprint}
+              refuses untraced-as-traced '^FAIL: no traced validator hash differs' \
+                "$correspondence" ${registryUntracedBlueprint} ${registryUntracedBlueprint}
+
+              jq 'del(.validators[-1])' ${registryTracedPlutus} > missing.json
+              mutant ${registryTracedPlutus} missing.json
+              refuses missing-validator '^FAIL: validator .* is only in the untraced build' \
+                "$correspondence" ${registryUntracedBlueprint} missing.json
+
+              jq '(.validators | map(.parameters != null) | index(true)) as $i
+                  | .validators[$i].parameters[0].schema = {"$ref": "#/definitions/Int"}' \
+                ${registryTracedPlutus} > reparameterized.json
+              mutant ${registryTracedPlutus} reparameterized.json
+              refuses parameter-schema '^FAIL: validator .* parameters differ' \
+                "$correspondence" ${registryUntracedBlueprint} reparameterized.json
+
+              mkdir -p "$out"
+              jq -n \
+                --arg source ${registrySrc} \
+                --arg flags ${pkgs.lib.escapeShellArg registryTraceFlags} \
+                --slurpfile u ${registryUntracedBlueprint} \
+                --slurpfile t ${registryTracedPlutus} \
+                '{
+                  source: $source,
+                  compiler: $u[0].preamble.compiler.version,
+                  flags: $flags,
+                  untracedHashes: ($u[0].validators | map({key: .title, value: .hash}) | from_entries),
+                  validators: ($t[0].validators | map({title, parameters}))
+                }' > "$out/provenance.json"
             '';
+
+        # The traced blueprint the runner replays with (FR-02), with its
+        # provenance beside it. It depends on the correspondence check, so a
+        # build that failed the check is never handed to a run.
+        registryTracedBlueprint = pkgs.runCommand "singular-registry-traced-blueprint" { } ''
+          mkdir -p "$out"
+          cp ${registryTracedPlutus} "$out/plutus.json"
+          cp ${registryBlueprintCorrespondence}/provenance.json "$out/provenance.json"
+        '';
 
         # -------------------------------------------------------
         # Coverage gate root (issue #80)
@@ -394,9 +547,10 @@
         # The row runner, wrapped so it brings the locked cardano-node
         # on its own PATH like the offchain journey runners, with the
         # devnet genesis defaulting to this suite's own copy
-        # (E2E_GENESIS_DIR still overrides). The blueprint comes from the
-        # caller at run time (REGISTRY_BLUEPRINT); no store path is baked
-        # in.
+        # (E2E_GENESIS_DIR still overrides). The deployed blueprint comes
+        # from the caller at run time (REGISTRY_BLUEPRINT); no store path is
+        # baked in for it. The traced blueprint (#287) defaults to this
+        # flake's own, provenance beside it (REGISTRY_TRACED_BLUEPRINT).
         #
         # The copy differs from offchain/e2e-test/genesis in one field:
         # shelley epochLength, 500 slots raised to 20000. At 0.1s a slot
@@ -420,7 +574,8 @@
                 --set CONFORMANCE_DRIVER_CORPUS ${../lean/driver-corpus.json} \
                 --set CONFORMANCE_MODEL_EVALUATOR ${pkgs.lib.getExe driverTransport} \
                 --set-default E2E_GENESIS_DIR ${src}/conformance/genesis \
-                --set-default NAMING_BLUEPRINT ${naming-blueprint}
+                --set-default NAMING_BLUEPRINT ${naming-blueprint} \
+                --set-default REGISTRY_TRACED_BLUEPRINT ${registryTracedBlueprint}/plutus.json
             '';
 
         # A separate test binary owns the deliberately insufficient budget.
@@ -438,7 +593,8 @@
                 --set CONFORMANCE_DRIVER_CORPUS ${../lean/driver-corpus.json} \
                 --set CONFORMANCE_MODEL_EVALUATOR ${pkgs.lib.getExe driverTransport} \
                 --set-default E2E_GENESIS_DIR ${src}/conformance/genesis \
-                --set-default NAMING_BLUEPRINT ${naming-blueprint}
+                --set-default NAMING_BLUEPRINT ${naming-blueprint} \
+                --set-default REGISTRY_TRACED_BLUEPRINT ${registryTracedBlueprint}/plutus.json
             '';
 
         # The appendix suite compares against the committed driver corpus, so
@@ -639,7 +795,9 @@
           # #157 D-BOOT: the naming partition's blueprint, so the four
           # pins are derived rather than typed.
           inherit naming-blueprint;
-          # #287: the harness's registry build, held to the deployed hashes.
+          # #287: the traced registry blueprint the runner replays refusals
+          # with, and the check it is built behind.
+          registry-traced-blueprint = registryTracedBlueprint;
           registry-blueprint-correspondence = registryBlueprintCorrespondence;
           # Mechanical adapter (D-008): exposes the cardano-node already
           # locked as this flake's input, so the devnet run consumes the
@@ -657,6 +815,7 @@
           inherit (components.tests) conformance-tests;
           coverage-gate-tests = coverageGateTests;
           coverage-gate-snapshot = coverageGateSnapshot;
+          registry-blueprint-correspondence = registryBlueprintCorrespondence;
         };
 
         apps = {

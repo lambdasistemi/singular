@@ -141,6 +141,19 @@ jobs:
       # carried by the recipe, not the ordering edge. The runner
       # sets its own unique TMPDIR and never touches the default
       # path, so concurrent devnet lanes keep their databases.
+      #
+      # Issue #287: the harness rebuilds the registry validators from
+      # ../onchain with traces, to replay a live refusal and read the
+      # reason the deployed bytes cannot print. The check rebuilds them
+      # untraced with the same toolchain and requires every hash in
+      # onchain/script-identity.json, then requires the traced build to
+      # name the same validators and schemas with at least one hash
+      # changed by the trace flags; four controls show each comparison
+      # refusing. The traced blueprint the runner receives is built
+      # behind this check.
+      - name: Check the traced registry build against the deployed hashes
+        working-directory: conformance
+        run: nix build --quiet --no-link .#registry-blueprint-correspondence
       - name: Run the unit suite as a packaged app without a dev shell
         working-directory: conformance
         run: nix run --quiet .#conformance-tests
