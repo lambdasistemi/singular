@@ -124,7 +124,13 @@ honestReceipts story = do
                             , rcTxId = Just "c1"
                             , rcEvidence = ["evidence/step-c1.cbor.hex"]
                             }
-                in  if cr `elem` [HonestUpdate, TerminateBooking, FoldPaysInFull]
+                in  if cr
+                        `elem` [ HonestUpdate
+                               , TerminateBooking
+                               , FoldPaysInFull
+                               , FoldTwoReleasesInFull
+                               , FoldMixedInFull
+                               ]
                         then base{rcOutcome = "accepted"}
                         else
                             ( rejected
@@ -237,7 +243,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
     it
         "states every clause once and refuses a refusal without an accepting control"
         $ do
-            length (outline controlsStory) `shouldBe` 66
+            length (outline controlsStory) `shouldBe` 79
             validateControls controlsStory `shouldBe` Right ()
             let refusedOnly =
                     theorem duplicateRefused $
@@ -251,7 +257,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
     it "holds every clause on an honest run" $ do
         rs <- honestReceipts controlsStory
         let results = judge rs controlsStory
-        statuses results `shouldBe` replicate 66 Held
+        statuses results `shouldBe` replicate 79 Held
         held results `shouldBe` True
     it
         "leaves every clause from a missing receipt on uncovered, naming the step"
@@ -264,7 +270,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                         )
                         rs
                 results = judge dropped controlsStory
-            length results `shouldBe` 66
+            length results `shouldBe` 79
             take 3 (statuses results) `shouldBe` [Held, Held, Held]
             drop 3 (statuses results) `shouldSatisfy` all isUncovered
             held results `shouldBe` False
@@ -344,7 +350,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         let rendered = renderControls (judge (take 3 rs) controlsStory) controlsStory
         rendered `shouldSatisfy` isInfixOf "uncovered: no receipt for step 3"
         rendered
-            `shouldSatisfy` isInfixOf "0 of 66 clauses hold; 0 do not; 66 are uncovered."
+            `shouldSatisfy` isInfixOf "0 of 79 clauses hold; 0 do not; 79 are uncovered."
         rendered
             `shouldSatisfy` isInfixOf
                 "`OpenDatumApplication.Statements.duplicate_refused_by_registry`"
@@ -403,7 +409,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
             partial =
                 renderControls (judge withoutWithdrawal controlsStory) controlsStory
         full
-            `shouldSatisfy` isInfixOf "20 of 31 approved cases are covered live; 11 are not."
+            `shouldSatisfy` isInfixOf "24 of 31 approved cases are covered live; 7 are not."
         partial
             `shouldSatisfy` isInfixOf
                 "| a release of the live holding outside any fold | `only_fold_releases` | uncovered"

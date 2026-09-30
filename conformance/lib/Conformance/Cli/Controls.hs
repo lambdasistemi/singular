@@ -162,6 +162,8 @@ data Crafted
       UpdateShortDeposit
     | -- | The continuation carries no datum
       UpdateWithoutDatum
+    | -- | The continuation also carries an asset of another policy
+      UpdateAddedAsset
     | -- | The holding is spent with @Release@ outside any fold
       EarlyWithdrawal
     | -- | An insertion booked with the controller's envelope, paid and signed by another wallet
@@ -190,6 +192,16 @@ data Crafted
       FoldPaysShort
     | -- | The same terminating fold, folded by another wallet, paying the controller in full
       FoldPaysInFull
+    | -- | One fold of two terminations for one controller, paying it one lovelace short of the sum
+      FoldTwoReleasesShort
+    | -- | The same fold, paying it one released deposit where the sum of two is owed
+      FoldTwoReleasesOneFloor
+    | -- | The same fold, paying it the sum in full
+      FoldTwoReleasesInFull
+    | -- | One fold of an insertion and a termination for one controller, paying it one lovelace short
+      FoldMixedShort
+    | -- | The same fold, paying it in full
+      FoldMixedInFull
     deriving stock (Eq, Show, Enum, Bounded)
 
 craftedName :: Crafted -> String
@@ -202,6 +214,7 @@ craftedName c = case c of
     UpdateTokenLeft -> "update-token-left"
     UpdateShortDeposit -> "update-short-deposit"
     UpdateWithoutDatum -> "update-without-datum"
+    UpdateAddedAsset -> "update-added-asset"
     EarlyWithdrawal -> "early-withdrawal"
     BookingByStranger -> "booking-by-stranger"
     BookingOtherDestination -> "booking-other-destination"
@@ -216,6 +229,11 @@ craftedName c = case c of
     UpdateWithoutScript -> "update-without-script"
     FoldPaysShort -> "fold-pays-short"
     FoldPaysInFull -> "fold-pays-in-full"
+    FoldTwoReleasesShort -> "fold-two-releases-short"
+    FoldTwoReleasesOneFloor -> "fold-two-releases-one-floor"
+    FoldTwoReleasesInFull -> "fold-two-releases-in-full"
+    FoldMixedShort -> "fold-mixed-short"
+    FoldMixedInFull -> "fold-mixed-in-full"
 
 -- | A registry the story works in: its own directory and its own boot.
 newtype Target = Target String
@@ -778,6 +796,7 @@ boundaryStory = do
         , UpdateTokenLeft
         , UpdateShortDeposit
         , UpdateWithoutDatum
+        , UpdateAddedAsset
         ]
     readback :: Theorem thm -> Target -> TheoremStory thm CliI Receipt
     readback thm target =
@@ -969,11 +988,98 @@ settlementStory = do
             target
             heldKey
             before
-        void $
+        _ <-
             clause
                 "the same terminating fold, folded by another wallet, paying the controller in full, is accepted"
                 (requirement foldSettlesAdditively Accepted)
                 (pure <$> action (Craft FoldPaysInFull target heldKey))
+        -- One controller, two releases in one fold; then an insertion and a
+        -- termination in one fold. Each short payment is refused beside the
+        -- same fold paid in full, and neither refusal moves anything.
+        let batch = Target "batch"
+        _ <-
+            clause
+                "a second registry holds three of the controller's keys Active, and inspect reads each Active"
+                ( bindCheck foldSettlesAdditively $ \(first, others) -> do
+                    action (Require ReachedActive first)
+                    mapM_ (action . Require ReachedActive) others
+                )
+                ( do
+                    created <- action (Run Create batch "")
+                    pairs <-
+                        mapM
+                            ( \k -> do
+                                inserted <- action (Run Insert batch k)
+                                seen <- action (Run Inspect batch k)
+                                pure [inserted, seen]
+                            )
+                            ["pair-a", "pair-b", "mixed-old"]
+                    case pairs of
+                        (p : ps) -> pure (created : p, ps)
+                        [] -> pure ([created], [])
+                )
+        _ <-
+            clause
+                "the controller's terminations of two keys are booked"
+                ( bindCheck foldSettlesAdditively $ \bs ->
+                    mapM_ (\b -> action (Require Accepted [b])) bs
+                )
+                ( mapM
+                    (action . Craft TerminateBooking batch)
+                    ["pair-a", "pair-b"]
+                )
+        pairBefore <-
+            clause
+                "the registry, the first key's holding and the wallet are read back before the two-release fold"
+                (bindCheck foldSettlesAdditively (\r -> action (Require Observed [r])))
+                (action (Observe batch "pair-a"))
+        refusedCraft foldSettlesAdditively FoldTwoReleasesShort batch "pair-a"
+        refusedCraft
+            foldSettlesAdditively
+            FoldTwoReleasesOneFloor
+            batch
+            "pair-a"
+        unchangedOf
+            foldSettlesAdditively
+            HoldingUnchanged
+            "the registry's root, the first key's holding and the wallet are unchanged by both refusals"
+            batch
+            "pair-a"
+            pairBefore
+        _ <-
+            clause
+                "the two-release fold paying the controller the sum in full is accepted"
+                (requirement foldSettlesAdditively Accepted)
+                (pure <$> action (Craft FoldTwoReleasesInFull batch "pair-a"))
+        _ <-
+            clause
+                "an insertion of a new key and the termination of another are booked for the controller"
+                ( bindCheck foldSettlesAdditively $ \bs ->
+                    mapM_ (\b -> action (Require Accepted [b])) bs
+                )
+                ( do
+                    inserted <- action (Book batch "mixed-new")
+                    terminated <- action (Craft TerminateBooking batch "mixed-old")
+                    pure [inserted, terminated]
+                )
+        mixedBefore <-
+            clause
+                "the registry, the terminated key's holding and the wallet are read back before the mixed fold"
+                (bindCheck foldSettlesAdditively (\r -> action (Require Observed [r])))
+                (action (Observe batch "mixed-old"))
+        refusedCraft foldSettlesAdditively FoldMixedShort batch "mixed-old"
+        unchangedOf
+            foldSettlesAdditively
+            HoldingUnchanged
+            "the registry's root, the terminated key's holding and the wallet are unchanged by the refusal"
+            batch
+            "mixed-old"
+            mixedBefore
+        void $
+            clause
+                "the mixed fold paying the controller in full is accepted"
+                (requirement foldSettlesAdditively Accepted)
+                (pure <$> action (Craft FoldMixedInFull batch "mixed-old"))
     theorem foldInversion $ do
         _ <-
             premiseClause
@@ -1852,6 +1958,7 @@ approvedCases =
                 , UpdateTokenLeft
                 , UpdateShortDeposit
                 , UpdateWithoutDatum
+                , UpdateAddedAsset
                 ]
            ]
         <> [
@@ -1859,12 +1966,6 @@ approvedCases =
                , "`update_preserves_custody`"
                , NotLive
                     "a second carrier needs a second active token for the key, which only the registry's witness policy mints"
-               )
-           ,
-               ( "an update whose continuation adds a foreign asset"
-               , "`update_preserves_custody`"
-               , NotLive
-                    "not exercised live: it needs a foreign token in the controller's wallet"
                )
            ,
                ( "a release of the live holding outside any fold"
@@ -1893,13 +1994,23 @@ approvedCases =
            ]
         <> [ ( name
              , "`fold_settles_additively`"
-             , NotLive
-                "not exercised live yet: it needs one fold terminating two keys of one controller, or mixing edges"
+             , ByClause
+                "fold_settles_additively"
+                (craftedPhrase c <> " is refused by the application")
              )
-           | name <-
-                [ "a mixed fold paying one controller one lovelace short"
-                , "two releases to one controller paid one lovelace short"
-                , "two releases each paid their floor rather than the sum"
+           | (name, c) <-
+                [
+                    ( "a mixed fold paying one controller one lovelace short"
+                    , FoldMixedShort
+                    )
+                ,
+                    ( "two releases to one controller paid one lovelace short"
+                    , FoldTwoReleasesShort
+                    )
+                ,
+                    ( "two releases paid one floor where the sum is owed"
+                    , FoldTwoReleasesOneFloor
+                    )
                 ]
            ]
         <> [ ( name
@@ -2087,6 +2198,8 @@ craftedPhrase c = case c of
         "an update whose continuation holds one lovelace less than the protected deposit"
     UpdateWithoutDatum ->
         "an update whose continuation carries no datum"
+    UpdateAddedAsset ->
+        "an update whose continuation also carries an asset of another policy"
     EarlyWithdrawal ->
         "a release of the live holding outside any fold"
     BookingByStranger ->
@@ -2115,6 +2228,16 @@ craftedPhrase c = case c of
         "the terminating fold, folded by another wallet, paying the controller one lovelace short"
     FoldPaysInFull ->
         "the same terminating fold, folded by another wallet, paying the controller in full"
+    FoldTwoReleasesShort ->
+        "one fold of two terminations for one controller, folded by another wallet, paying the controller one lovelace short of the sum"
+    FoldTwoReleasesOneFloor ->
+        "that fold paying the controller one released deposit where the sum of two is owed"
+    FoldTwoReleasesInFull ->
+        "that fold paying the controller the sum in full"
+    FoldMixedShort ->
+        "one fold of an insertion and a termination for one controller, folded by another wallet, paying the controller one lovelace short"
+    FoldMixedInFull ->
+        "that mixed fold paying the controller in full"
 
 -- | The path of an insert receipt's envelope control fields.
 controlPath :: [Either Text Int]

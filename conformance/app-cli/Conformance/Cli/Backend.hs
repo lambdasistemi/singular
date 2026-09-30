@@ -96,7 +96,7 @@ import Cardano.Ledger.Credential
     , StakeReference (..)
     )
 import Cardano.Ledger.Hashes (extractHash)
-import Cardano.Ledger.Mary.Value (MaryValue (..))
+import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 import Cardano.Node.Client.E2E.Setup (addKeyWitness)
 import Cardano.Node.Client.Submitter
@@ -526,7 +526,7 @@ envelopeFor r controller key =
                 , ctlActivePolicy = SBS.fromShort (cfgActivePolicy (regCfg r))
                 , ctlKey = keyBytes key
                 , ctlController = controller
-                , ctlDeposit = 2_000_000
+                , ctlDeposit = storyDeposit
                 }
         , envPayload =
             PLC.Map [(PLC.B "control", PLC.B (keyBytes key))]
@@ -792,12 +792,22 @@ book env target key r = do
                         }
             (Right _, Nothing) -> fail "the booking returned without submitting"
 
--- | A change a control makes to the fold the registry's duties describe.
+{- | A change a control makes to the fold the registry's duties describe.
+| Which pending requests a fold folds.
+-}
+data Selection
+    = -- | The one request for this key
+      ForKey String
+    | -- | The only request pending, whatever its key
+      OnlyPending
+    | -- | Every request pending, in input order
+      EveryPending
+
 data FoldTweak
     = -- | The fold exactly as the duties describe it
       AsOwed
-    | -- | The one output paying the controller holds one lovelace less
-      PayShort
+    | -- | The one ada-only output paying the controller holds this much less
+      PayLess Integer
     | -- | The fold also spends this key's live holding with @Release@
       AlsoRelease String
 
@@ -808,7 +818,7 @@ a saved mirror whose root is the chain's: the backend's own, once one of
 its folds was accepted, else the command's.
 -}
 foldUnevaluated :: Env -> Target -> String -> Receipt -> IO Receipt
-foldUnevaluated env target key = foldWith env target (Just key) AsOwed False
+foldUnevaluated env target key = foldWith env target (ForKey key) AsOwed False
 
 {- | The same, folded (funded, signed for its fee and paid its change) by
 the story's wallet, or by the stranger when asked: a fold is
@@ -818,12 +828,12 @@ off the controller's key, where the application sums what it is paid.
 foldWith
     :: Env
     -> Target
-    -> Maybe String
+    -> Selection
     -> FoldTweak
     -> Bool
     -> Receipt
     -> IO Receipt
-foldWith env target requested tweak byStranger r = do
+foldWith env target selection tweak byStranger r = do
     let dir = targetDir env target
         backendManifest = backendDir env target </> "registry.json"
         opts = envOptions env
@@ -850,15 +860,22 @@ foldWith env target requested tweak byStranger r = do
             Just (StateDatum st) -> pure st
             _ -> fail "the registry's state output carries no state datum"
         pending <- Cage.queryUTxOs prov (requestAddrFromCfg cfg tok Testnet)
-        let requests =
-                [ (u, q)
-                | u@(_, o) <- pending
-                , Just (RequestDatum q) <- [extractCageDatum o]
-                , maybe True ((== requestKey q) . keyBytes) requested
-                ]
-        (request, req) <- case requests of
-            [one] -> pure one
-            us ->
+        let selects q = case selection of
+                ForKey k -> requestKey q == keyBytes k
+                _ -> True
+            requests =
+                sortOn
+                    (fst . fst)
+                    [ (u, q)
+                    | u@(_, o) <- pending
+                    , Just (RequestDatum q) <- [extractCageDatum o]
+                    , selects q
+                    ]
+        chosen <- case (selection, requests) of
+            (EveryPending, _ : _) -> pure requests
+            (EveryPending, []) -> fail "no request is pending for the fold"
+            (_, [one]) -> pure [one]
+            (_, us) ->
                 fail
                     ( show (length us)
                         <> " requests are pending for the fold; it needs exactly one"
@@ -882,29 +899,45 @@ foldWith env target requested tweak byStranger r = do
                         <> T.unpack (hex chain)
                     )
         live <- Cage.queryUTxOs prov (applicationAddr reg)
-        let e =
-                envelopeFor
-                    reg
-                    (addrKeyHashBytes home)
-                    (BC.unpack (requestKey req))
+        let envelopes =
+                [ envelopeFor reg (addrKeyHashBytes home) (BC.unpack (requestKey q))
+                | (_, q) <- chosen
+                ]
         ctx0 <- registryContextFor cfg (regCodes reg) prov (attRefUtxos att)
         ctx <-
-            either fail pure (withApplication (applied reg) Nothing [e] live ctx0)
+            either
+                fail
+                pure
+                (withApplication (applied reg) Nothing envelopes live ctx0)
         pp <- Cage.queryProtocolParams prov
         owedDuties <-
-            either fail pure (registryDuties cfg pp oldState ctx [request] [True])
+            either
+                fail
+                pure
+                ( registryDuties
+                    cfg
+                    pp
+                    oldState
+                    ctx
+                    (map fst chosen)
+                    (map (const True) chosen)
+                )
         unless (null (rdInputs owedDuties)) $
             fail "the fold's duties need ordinary inputs; this backend folds none"
         duties <- case tweak of
             AsOwed -> pure owedDuties
-            PayShort ->
-                case [o | o <- rdOutputs owedDuties, o ^. addrTxOutL == home] of
+            PayLess less ->
+                case [ o
+                     | o <- rdOutputs owedDuties
+                     , o ^. addrTxOutL == home
+                     , adaOnlyOut o
+                     ] of
                     [paid] ->
                         let Coin c = paid ^. coinTxOutL
                         in  pure
                                 owedDuties
                                     { rdOutputs =
-                                        [ if o == paid then o & coinTxOutL .~ Coin (c - 1) else o
+                                        [ if o == paid then o & coinTxOutL .~ Coin (c - less) else o
                                         | o <- rdOutputs owedDuties
                                         ]
                                     }
@@ -957,7 +990,7 @@ foldWith env target requested tweak byStranger r = do
                     , cfaToken = tok
                     , cfaFeeAddr = walletAddr folder
                     , cfaStateUtxo = (stateIn, stateOut)
-                    , cfaReqUtxos = [request]
+                    , cfaReqUtxos = map fst chosen
                     , cfaFeeUtxo = feeUtxo
                     , cfaPp = pp
                     , cfaSpends = rdSpends duties
@@ -973,7 +1006,8 @@ foldWith env target requested tweak byStranger r = do
         result <- fst <$> submitAndConfirm env sess folder r0 unsigned
         -- The chain took the edge: the backend's mirror takes it too.
         when (rcOutcome result == "accepted") $ do
-            withTrie tm tok $ \t -> void (walkEdge t (requestKey req) (requestEdge req))
+            withTrie tm tok $ \t ->
+                mapM_ (\(_, q) -> walkEdge t (requestKey q) (requestEdge q)) chosen
             createDirectoryIfMissing True (backendDir env target)
             dump >>= saveMirror backendManifest
         pure result
@@ -1101,9 +1135,15 @@ craft env c target key r = case c of
     EnvelopeOtherRegistry -> craftBooking env c target key r
     TerminateBooking -> craftTermination env False target key r
     TerminateBookingByStranger -> craftTermination env True target key r
-    ReleaseInOtherFold -> foldWith env target Nothing (AlsoRelease key) False r
-    FoldPaysShort -> foldWith env target (Just key) PayShort True r
-    FoldPaysInFull -> foldWith env target (Just key) AsOwed True r
+    ReleaseInOtherFold -> foldWith env target OnlyPending (AlsoRelease key) False r
+    FoldPaysShort -> foldWith env target (ForKey key) (PayLess 1) True r
+    FoldPaysInFull -> foldWith env target (ForKey key) AsOwed True r
+    FoldTwoReleasesShort -> foldWith env target EveryPending (PayLess 1) True r
+    FoldTwoReleasesOneFloor ->
+        foldWith env target EveryPending (PayLess storyDeposit) True r
+    FoldTwoReleasesInFull -> foldWith env target EveryPending AsOwed True r
+    FoldMixedShort -> foldWith env target EveryPending (PayLess 1) True r
+    FoldMixedInFull -> foldWith env target EveryPending AsOwed True r
     _ -> craftHolding env c target key r
 
 -- | A hand-built transaction against the key's live holding.
@@ -1141,6 +1181,21 @@ craftHolding env c target key r = do
                 (filter (adaOnlyOut . snd) wallets) of
                 (u : _) -> pure u
                 [] -> fail "the wallet has no ada-only output to fund the transaction"
+        -- An asset of another policy the wallet holds: the approval the
+        -- application minted at a booking, returned by its fold.
+        otherAsset <-
+            if c == UpdateAddedAsset
+                then case [u | u@(_, out) <- wallets, not (adaOnlyOut out)] of
+                    (u : _) -> pure (Just u)
+                    [] -> fail "the wallet holds no asset of another policy"
+                else pure Nothing
+        let extra = case otherAsset of
+                Just (_, out)
+                    | MaryValue _ (MultiAsset m) <- out ^. valueTxOutL
+                    , ((policy, names) : _) <- Map.toList m
+                    , ((name, _) : _) <- Map.toList names ->
+                        MultiAsset (Map.singleton policy (Map.singleton name 1))
+                _ -> mempty
         let MaryValue (Coin held) tokens = hOut ^. valueTxOutL
             payload = PLC.Constr 7 [PLC.I (fromIntegral (rcStep r))]
             next = continuationOf hOut e payload
@@ -1172,12 +1227,18 @@ craftHolding env c target key r = do
                     , mine
                     )
                 UpdateWithoutDatum -> ([next & datumTxOutL .~ NoDatum], updateRedeemer, mine)
+                UpdateAddedAsset ->
+                    ( [next & valueTxOutL .~ MaryValue (Coin held) (tokens <> extra)]
+                    , updateRedeemer
+                    , mine
+                    )
                 EarlyWithdrawal ->
                     ([mkBasicTxOut home (hOut ^. valueTxOutL)], releaseRedeemer, mine)
                 other -> error ("not a shape against a holding: " <> show other)
             prog :: Tx.TxBuild NoQuery Void ()
             prog = do
                 _ <- Tx.spendScript hIn redeemer
+                mapM_ (Tx.spend . fst) otherAsset
                 mapM_ Tx.output outputs
                 Tx.requireSignature (addrWitnessKeyHash signer)
                 unless (c == UpdateWithoutScript) $ Tx.reference (fst appRef)
@@ -1190,7 +1251,7 @@ craftHolding env c target key r = do
                 (Tx.mkPParamsBound pp)
                 (Tx.InterpretIO (const (pure undefined)))
                 skipEval
-                [feeUtxo, holding]
+                ([feeUtxo, holding] <> maybe [] pure otherAsset)
                 [appRef | c /= UpdateWithoutScript]
                 home
                 prog
@@ -1369,3 +1430,7 @@ authenticatedLeaf env target reg chain key = go manifests
                 provenLeaf db (keyBytes key) chain >>= \case
                     Right leaf -> pure (Just (leafText leaf))
                     Left _ -> go rest
+
+-- | The protected deposit of every envelope this story inserts.
+storyDeposit :: Integer
+storyDeposit = 2_000_000
