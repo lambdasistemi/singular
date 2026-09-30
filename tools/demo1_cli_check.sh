@@ -6,13 +6,15 @@
 #
 # 1. The normal release archive is assembled from REPO-ROOT by the same
 #    `release-artifacts` app CI runs, and extracted OUTSIDE the checkout.
-# 2. Its run page, DEMO1.md, must be there and must document the five
-#    commands in order; a copy of the page with a command removed must
-#    fail that same page check (the check's own control).
+# 2. Its run page, DEMO1.md, must be there and its numbered steps must be
+#    exactly the seven commands, each in its position: create, insert,
+#    inspect, update, inspect, terminate, inspect. Copies of the page
+#    without terminate, without update, and without the inspection that
+#    follows update must each fail that same check (its own controls).
 # 3. The archive's own offchain flake builds `singular` and the
 #    development node, and the journey (demo1_cli_journey.sh, beside this
-#    script) runs create, insert, inspect, terminate and inspect as five
-#    processes against ONE node, with the archive's own blueprint.
+#    script) runs those seven commands as separate processes against ONE
+#    node, with the archive's own blueprint, beside its process controls.
 # 4. The retained insert-active and update-terminal archive commands run
 #    from the same extracted archive with their accepting and refusing
 #    controls, asserted by the same observation programs their CI steps
@@ -41,17 +43,30 @@ mkdir -p "$extracted"
 tar -C "$extracted" -xzf "$release_dir/singular-onchain-$version.tar.gz"
 test ! -e "$extracted/.git" || fail "the archive carries a git checkout"
 
-# The page documents the five commands in the journey's order.
-page_ok() {
-  grep -o 'singular registry [a-z]*' "$1" | awk '{print $3}' | tr '\n' ' ' \
-    | grep -q 'create .*insert .*inspect .*terminate .*inspect'
+# The page's numbered steps, each "N. **`singular registry CMD`**", read as
+# "N:CMD" in page order. Only those steps count: a command named in prose,
+# in a code block or at another position covers no step.
+page_steps() {
+  # shellcheck disable=SC2016 # the backticks are the page's own Markdown
+  sed -n 's/^\([0-9][0-9]*\)\. \*\*`singular registry \([a-z][a-z]*\)`\*\*.*/\1:\2/p' "$1" | tr '\n' ' '
 }
+# The page documents exactly the seven commands of the journey, in position.
+page_ok() {
+  [ "$(page_steps "$1")" = "1:create 2:insert 3:inspect 4:update 5:inspect 6:terminate 7:inspect " ]
+}
+# without STEP: the page with its numbered step STEP removed.
+# shellcheck disable=SC2016 # the backticks are the page's own Markdown
+without() { grep -v "^$2"'\. \*\*`singular registry ' "$1"; }
 test -f "$extracted/DEMO1.md" || fail "the archive carries no DEMO1.md run page"
-page_ok "$extracted/DEMO1.md" || fail "DEMO1.md does not document the five commands in order"
-grep -v 'singular registry terminate' "$extracted/DEMO1.md" >"$scratch/DEMO1-without-terminate.md"
-if page_ok "$scratch/DEMO1-without-terminate.md"; then
-  fail "control: a page without terminate passed the page check"
-fi
+page_ok "$extracted/DEMO1.md" \
+  || fail "DEMO1.md's numbered steps are not the seven commands in position: $(page_steps "$extracted/DEMO1.md")"
+for control in "6 terminate" "4 update" "5 inspect-after-update"; do
+  step="${control%% *}" what="${control#* }"
+  without "$extracted/DEMO1.md" "$step" >"$scratch/DEMO1-without-$what.md"
+  if page_ok "$scratch/DEMO1-without-$what.md"; then
+    fail "control: a page without $what passed the page check"
+  fi
+done
 
 cd "$extracted/offchain"
 singular="$(nix build --quiet --no-link --print-out-paths .#singular)/bin/singular"
