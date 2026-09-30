@@ -127,6 +127,11 @@
                   gzip
                   jq
                   nix
+                  # the journey's concurrent-writer control holds the
+                  # registry's lock with flock, and it finds and stops
+                  # its own development node with pgrep and pkill
+                  procps
+                  util-linux
                 ];
                 text = ''DEMO1_JOURNEY=${./tools/demo1_cli_journey.sh} DEMO1_CREATE_RACE=${./tools/demo1_cli_create_race.sh} bash ${./tools/demo1_cli_check.sh} "$PWD"'';
               }
