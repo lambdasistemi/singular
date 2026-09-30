@@ -53,6 +53,7 @@ module Conformance.Cli.Controls
     , Receipt (..)
     , Observation (..)
     , Submission (..)
+    , Resolved (..)
     , emptyReceipt
 
       -- * Reading a node's rejection
@@ -1204,6 +1205,10 @@ data Receipt = Receipt
     {- ^ For an ordinary command: every submission its registry's journal
     recorded while it ran, with the body the command kept
     -}
+    , rcResolved :: [Resolved]
+    {- ^ For an ordinary command: every live output its journal read back
+    without submitting it (a reference an earlier command published)
+    -}
     , rcAdmission :: Maybe [Text]
     {- ^ What reading the retained body and rejection back found wrong;
     nothing until the receipt is admitted. Never read from a receipt file:
@@ -1239,6 +1244,7 @@ emptyReceipt step act target key =
         , rcBodyFile = Nothing
         , rcBodySha256 = Nothing
         , rcSubmissions = []
+        , rcResolved = []
         , rcAdmission = Nothing
         , rcReason = Nothing
         , rcObservation = Nothing
@@ -1266,6 +1272,7 @@ instance ToJSON Receipt where
             , "bodyFile" .= rcBodyFile r
             , "bodySha256" .= rcBodySha256 r
             , "submissions" .= rcSubmissions r
+            , "resolved" .= rcResolved r
             , "reason" .= rcReason r
             , "observation" .= rcObservation r
             , "evidence" .= rcEvidence r
@@ -1292,6 +1299,7 @@ instance FromJSON Receipt where
             <*> o .:? "bodyFile"
             <*> o .:? "bodySha256"
             <*> (fromMaybe [] <$> o .:? "submissions")
+            <*> (fromMaybe [] <$> o .:? "resolved")
             <*> pure Nothing
             <*> o .:? "reason"
             <*> o .:? "observation"
@@ -2465,3 +2473,19 @@ instance FromJSON Submission where
             <*> o .: "txId"
             <*> o .: "bodyFile"
             <*> o .: "bodySha256"
+
+{- | A live output an ordinary command's journal read back without
+submitting it: the transaction that published it, and the step that read it.
+-}
+data Resolved = Resolved
+    { reStep :: Text
+    , reTxId :: Text
+    }
+    deriving stock (Eq, Show)
+
+instance ToJSON Resolved where
+    toJSON x = object ["step" .= reStep x, "txId" .= reTxId x]
+
+instance FromJSON Resolved where
+    parseJSON = withObject "resolved" $ \o ->
+        Resolved <$> o .: "step" <*> o .: "txId"

@@ -6,6 +6,7 @@ module Conformance.Support.CliAdmission (spec) where
 import Conformance.Cli.Admission (admit, sha256Hex, txIdHexOf)
 import Conformance.Cli.Controls
     ( Receipt (..)
+    , Resolved (..)
     , Submission (..)
     , emptyReceipt
     , rejectionEvidence
@@ -16,6 +17,7 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.List (isInfixOf)
+import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~))
 import System.Directory (createDirectoryIfMissing, removeFile)
@@ -216,6 +218,35 @@ commandSpec = describe
                     `shouldSatisfy` mentions "no retained body of it was journalled"
                 none <- admit work r{rcSubmissions = []}
                 none `shouldSatisfy` mentions "no journalled submission is recorded"
+        it
+            "binds a reference the command read back without submitting only when it names that reference"
+            $ withSystemTempDirectory "admission"
+            $ \work -> do
+                r <- commandIn work
+                let reused = txIdHexOf (txOf 12)
+                    create refs =
+                        r
+                            { rcAction = "run create"
+                            , rcCommand =
+                                Just
+                                    ( object
+                                        [ "boot" .= txIdHexOf (txOf 10)
+                                        , "transactions"
+                                            .= [reused, txIdHexOf (txOf 10), txIdHexOf (txOf 11)]
+                                        , "references"
+                                            .= [object ["role" .= ("state" :: String), "output" .= o] | o <- refs]
+                                        ]
+                                    )
+                            , rcResolved = [Resolved{reStep = "publish-state", reTxId = reused}]
+                            }
+                clean <- admit work (create [reused <> "#0"])
+                problems clean `shouldBe` []
+                unnamed <- admit work (create ([] :: [Text]))
+                unnamed
+                    `shouldSatisfy` mentions "no retained body of it was journalled"
+                unread <- admit work (create [reused <> "#0"]){rcResolved = []}
+                unread
+                    `shouldSatisfy` mentions "no retained body of it was journalled"
         it
             "keeps inspect apart: it admits with no submissions and refuses any recorded"
             $ withSystemTempDirectory "admission"

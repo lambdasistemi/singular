@@ -46,6 +46,7 @@ import Singular.Registry.Ledger (ConwayEra)
 
 import Conformance.Cli.Controls
     ( Receipt (..)
+    , Resolved (..)
     , Submission (..)
     , rejectionEvidence
     )
@@ -142,13 +143,17 @@ admitTransaction work r = case rcTxId r of
 
 {- | An ordinary command: every submission its journal recorded must be the
 digested body of that very transaction; every transaction the command's own
-receipt names must be one of them; a command that submitted must have
-recorded submissions, and one that submits nothing must have none.
+receipt names must be one of them, or a live output its journal read back
+without submitting it, which the receipt names among its references; a
+command that submitted must have recorded submissions, and one that submits
+nothing must have none.
 -}
 admitCommand :: FilePath -> Receipt -> IO Receipt
 admitCommand work r = do
     bodies <- mapM submissionProblems (rcSubmissions r)
-    let known = map suTxId (rcSubmissions r)
+    let references = referenceTxIds r
+        readBack = [reTxId x | x <- rcResolved r, reTxId x `elem` references]
+        known = map suTxId (rcSubmissions r) <> readBack
         unbound =
             [ "the command names transaction "
                 <> t
@@ -219,4 +224,15 @@ namedTxIds r = case rcCommand r of
             <> [ T.takeWhile (/= '#') t
                | Just (Aeson.String t) <- [KeyMap.lookup "pendingRequest" o]
                ]
+    _ -> []
+
+-- | The transactions whose outputs the command's receipt names as references.
+referenceTxIds :: Receipt -> [Text]
+referenceTxIds r = case rcCommand r of
+    Just (Aeson.Object o)
+        | Just (Aeson.Array refs) <- KeyMap.lookup "references" o ->
+            [ T.takeWhile (/= '#') t
+            | Aeson.Object ref <- toList refs
+            , Just (Aeson.String t) <- [KeyMap.lookup "output" ref]
+            ]
     _ -> []

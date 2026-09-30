@@ -220,6 +220,7 @@ import Conformance.Cli.Controls
     , Crafted (..)
     , Observation (..)
     , Receipt (..)
+    , Resolved (..)
     , Story
     , Submission (..)
     , Target (..)
@@ -708,7 +709,7 @@ runCommand env c target key r = do
     let journal = dir </> "journal.jsonl"
     before <- journalLines journal
     (status, printed, file) <- singular env r (commandName c) args
-    submissions <-
+    (submissions, resolved) <-
         journalledSubmissions env (drop before <$> journalLines' journal)
     let outcome = case field "outcome" printed of
             Just (String s) -> s
@@ -729,6 +730,7 @@ runCommand env c target key r = do
             , rcEvidence = rcEvidence r <> [file]
             , rcCommand = printed
             , rcSubmissions = submissions
+            , rcResolved = resolved
             }
   where
     field k v = case v of
@@ -953,25 +955,37 @@ foldWith env target selection tweak byStranger r = do
         duties <- case tweak of
             AsOwed -> pure owedDuties
             PayLess less ->
-                -- The controller's settlement: its largest output, the one
-                -- carrying the released deposits (an approval returned to it
-                -- rides beside them or in a smaller output of its own).
-                case take
-                    1
-                    ( sortOn
-                        (Down . (^. coinTxOutL))
-                        [o | o <- rdOutputs owedDuties, o ^. addrTxOutL == home]
-                    ) of
-                    [paid] ->
-                        let Coin c = paid ^. coinTxOutL
-                        in  pure
-                                owedDuties
-                                    { rdOutputs =
-                                        [ if o == paid then o & coinTxOutL .~ Coin (c - less) else o
-                                        | o <- rdOutputs owedDuties
-                                        ]
-                                    }
-                    _ -> fail "no output of the fold pays the controller"
+                -- What the fold owes the controller, as the statement sums
+                -- it: for each termination, the request's deposit back to its
+                -- owner and the released holding's protected deposit. The
+                -- controller is paid exactly that less @less@, all told: its
+                -- largest output is lowered, any smaller one (an approval
+                -- returned beside it) kept, and the rest is the folder's
+                -- change.
+                let owed =
+                        sum
+                            [ requestDeposit q + storyDeposit
+                            | (_, q) <- chosen
+                            , requestEdge q == edgeUpdateTerminal
+                            ]
+                    coin o = let Coin c = o ^. coinTxOutL in c
+                in  case sortOn
+                        (Down . coin)
+                        [o | o <- rdOutputs owedDuties, o ^. addrTxOutL == home] of
+                        paid : others
+                            | owed > 0
+                            , lowered <- owed - less - sum (map coin others)
+                            , lowered > 0 ->
+                                pure
+                                    owedDuties
+                                        { rdOutputs =
+                                            [ if o == paid then o & coinTxOutL .~ Coin lowered else o
+                                            | o <- rdOutputs owedDuties
+                                            ]
+                                        }
+                        _ ->
+                            fail
+                                "the fold owes the controller nothing it can be paid short of"
             AlsoRelease key -> case holdingsOf reg key live of
                 [holding@(_, hOut)] ->
                     pure
@@ -1259,7 +1273,11 @@ craftHolding env c target key r = do
                     )
                 UpdateWithoutDatum -> ([next & datumTxOutL .~ NoDatum], updateRedeemer, mine)
                 UpdateAddedAsset ->
-                    ( [next & valueTxOutL .~ MaryValue (Coin held) (tokens <> extra)]
+                    -- The extra asset raises the output's minimum; it is met
+                    -- (more than the deposit is allowed), so the asset alone
+                    -- differs from an honest continuation.
+                    ( let carrying = next & valueTxOutL .~ MaryValue (Coin held) (tokens <> extra)
+                      in  [carrying & coinTxOutL .~ Coin (max held (minFor carrying))]
                     , updateRedeemer
                     , mine
                     )
@@ -1482,30 +1500,44 @@ journalLines' path = do
 
 {- | The submissions a command journalled: each @prepared@ line's step,
 transaction and kept body, the body named relative to the run's directory
-and digested as it stands now.
+and digested as it stands now. Beside them, every output the command read
+back without submitting it: an @observed@ line whose transaction it never
+prepared.
 -}
-journalledSubmissions :: Env -> IO [BC.ByteString] -> IO [Submission]
+journalledSubmissions
+    :: Env -> IO [BC.ByteString] -> IO ([Submission], [Resolved])
 journalledSubmissions env fresh = do
     ls <- fresh
     let work = optWork (envOptions env)
-        prepared =
-            [ (step, txid, body)
+        events =
+            [ (event, step, txid, KeyMap.lookup "journalBody" o)
             | l <- ls
             , Just (Object o) <- [Aeson.decodeStrict l]
-            , Just (String "prepared") <- [KeyMap.lookup "journalEvent" o]
+            , Just (String event) <- [KeyMap.lookup "journalEvent" o]
             , Just (String step) <- [KeyMap.lookup "journalStep" o]
             , Just (String txid) <- [KeyMap.lookup "journalTxId" o]
-            , Just (String body) <- [KeyMap.lookup "journalBody" o]
             ]
-    mapM
-        ( \(step, txid, body) -> do
-            bytes <- BS.readFile (T.unpack body)
-            pure
-                Submission
-                    { suStep = step
-                    , suTxId = txid
-                    , suBodyFile = T.pack (makeRelative work (T.unpack body))
-                    , suBodySha256 = hex (sha256 bytes)
-                    }
-        )
-        prepared
+        prepared =
+            [ (step, txid, body)
+            | ("prepared", step, txid, Just (String body)) <- events
+            ]
+        submittedIds = [txid | (_, txid, _) <- prepared]
+        resolved =
+            [ Resolved{reStep = step, reTxId = txid}
+            | ("observed", step, txid, _) <- events
+            , txid `notElem` submittedIds
+            ]
+    submissions <-
+        mapM
+            ( \(step, txid, body) -> do
+                bytes <- BS.readFile (T.unpack body)
+                pure
+                    Submission
+                        { suStep = step
+                        , suTxId = txid
+                        , suBodyFile = T.pack (makeRelative work (T.unpack body))
+                        , suBodySha256 = hex (sha256 bytes)
+                        }
+            )
+            prepared
+    pure (submissions, resolved)
