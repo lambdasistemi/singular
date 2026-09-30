@@ -678,6 +678,7 @@ test-suite cage-tests
     Singular.Registry.TxBuilder.BookEdgeSpec
     Singular.Registry.TxBuilder.BootSpec
     Singular.Registry.TxBuilder.BurnSourceSpec
+    Singular.Registry.TxBuilder.UpperSlotSpec
     Singular.Registry.CandidateSpec
     Singular.Registry.FailureMatchSpec
     Singular.Registry.NodeCleanupSpec

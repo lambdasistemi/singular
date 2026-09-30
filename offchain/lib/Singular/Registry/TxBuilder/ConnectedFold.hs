@@ -287,7 +287,7 @@ computeUpperSlot prov oldState reqUtxos = do
         Left _ -> do
             nowUtc <- getCurrentTime
             let posixSec = utcTimeToPOSIXSeconds nowUtc
-            trySlots prov $
+            tryUpperSlots prov $
                 map
                     (\d -> round ((posixSec + d) * 1000))
                     [30, 5, 2]
