@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 {- | The ordinary CLI's story and the open-datum application's boundary,
 judged from receipts.
@@ -118,13 +119,14 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Bifunctor qualified as Bifunctor
-import Data.Char (ord)
+import Data.Char (isHexDigit, ord)
 import Data.List (intercalate, isInfixOf, nub)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isNothing, listToMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Vector qualified as V
+import Language.Haskell.TH.Syntax (addDependentFile, lift, runIO)
 import Text.Printf (printf)
 
 import Conformance.Refusal
@@ -465,9 +467,21 @@ data DuplicateRefused
 -- | @OpenDatumApplication.Statements.resurrection_refused_by_registry@
 data ResurrectionRefused
 
--- | The model revision the two statements are read at.
+{- | The application model revision the statements are read at: the one
+commit in @model-revision@, read when this module compiles. The release
+archive states the same file as @MODEL-REVISION@.
+-}
 modelRevision :: String
-modelRevision = "de34300540223ccedf1ca85216b131fd09a148b4"
+modelRevision =
+    $( do
+        let path = "model-revision"
+        addDependentFile path
+        revision <- runIO (readFile path)
+        case lines revision of
+            [commit]
+                | length commit == 40 && all isHexDigit commit -> lift commit
+            _ -> fail ("model-revision is not one commit: " <> show revision)
+     )
 
 duplicateRefused :: Theorem DuplicateRefused
 duplicateRefused =

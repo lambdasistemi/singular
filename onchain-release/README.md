@@ -58,6 +58,7 @@ back), not yet this naming lifecycle.
 | `fixtures/` | the contract fixtures — the vendored v0.2.0 wire vectors — with their provenance (`fixtures/README.md`) |
 | `RELEASE.md` | an introduction to Singular and instructions for using the release archive |
 | `RELEASE-COMMIT` | the commit this archive publishes; the row runners read it as their candidate revision when no git checkout is present |
+| `MODEL-REVISION` | the application model commit this release maps to: the revision of the formal model the conformance evidence reads its statements at |
 | `verify-identities.sh` | the identity check of this archive, needing only `bash` and `jq` |
 | `DEMO1.md` | the run page of the ordinary `singular registry` commands: Alice's open-datum story as separate processes on one development node |
 | `SHA256SUMS` | the checksum manifest of every file in this archive |
@@ -77,6 +78,11 @@ itself):
 ```sh
 sha256sum --check SHA256SUMS
 ```
+
+To check a published release end to end without a checkout — the sums,
+the stated model revision, and the ordinary commands run from this archive
+on a development network — run `nix run github:lambdasistemi/singular/vX.Y.Z#verify-release -- vX.Y.Z`;
+the documentation page "Download and verify a release" explains each refusal.
 
 ## 2. Verify the identities from this artifact
 
