@@ -50,6 +50,12 @@ module Conformance.Run.Replay
 
       -- * Offline
     , runReplayCapsule
+
+      -- * Offline compiler diagnostic
+    , diagnosticSetupProblem
+    , diagnosedPurposes
+    , diagnosticCategory
+    , diagnosticOutcome
     ) where
 
 import Codec.Serialise
@@ -1276,3 +1282,48 @@ decodeAnswer
     :: (Serialise r)
     => Query Block r -> BSL.ByteString -> Either DeserialiseFailure r
 decodeAnswer _ = deserialiseOrFail
+
+-- ---------------------------------------------------------
+-- Offline compiler diagnostic
+-- ---------------------------------------------------------
+
+{- | Why a blueprint may not serve as the compiler diagnostic of a capsule's
+replay: it does not correspond to the deployed blueprint (its untraced twin's
+hashes differ), or it was not built with every trace the compiler can emit.
+-}
+diagnosticSetupProblem
+    :: Either UnobservedCause TracedProvenance -> Maybe String
+diagnosticSetupProblem _ = Nothing
+
+{- | The purposes the diagnostic evaluates, each beside the user-defined
+replay it follows: exactly those the user-defined replay left without a user
+trace. Each must reproduce the deployed refusal and have the diagnostic code
+applied with the deployed parameters; otherwise nothing is diagnosed.
+-}
+diagnosedPurposes
+    :: [PurposeReplay]
+    -- ^ the user-defined replay
+    -> [PurposeReplay]
+    -- ^ the same capsule replayed with the diagnostic build
+    -> Either String [(PurposeReplay, PurposeReplay)]
+diagnosedPurposes _ _ = Right []
+
+{- | What a diagnostic run shows, by how it ended: never a reason, whatever
+its log says.
+-}
+diagnosticCategory :: ReplayRun -> Text
+diagnosticCategory _ = ""
+
+{- | The diagnostic outcome of a capsule, as @replay-diagnostic/<txid>/@ keeps
+it: compiler diagnostics, never a reason.
+-}
+diagnosticOutcome
+    :: Text
+    -- ^ the rejected transaction
+    -> Text
+    -- ^ the capture's identity
+    -> TracedProvenance
+    -- ^ the diagnostic build
+    -> [(PurposeReplay, PurposeReplay)]
+    -> Value
+diagnosticOutcome _ _ _ _ = object []

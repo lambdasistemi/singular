@@ -7,11 +7,19 @@ hashing to the failing hash.
 -}
 module Conformance.Support.RunReplay (spec) where
 
-import Data.Aeson (Value (..), eitherDecodeFileStrict, object, (.=))
+import Data.Aeson
+    ( Value (..)
+    , eitherDecodeFileStrict
+    , object
+    , toJSON
+    , (.=)
+    )
+import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString.Char8 qualified as BSC
 import Data.ByteString.Short (ShortByteString)
 import Data.ByteString.Short qualified as SBS
+import Data.Foldable (toList)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
 import Data.Set qualified as Set
@@ -73,10 +81,13 @@ import Singular.Registry.TxBuilder.Internal
     )
 
 import Conformance.Replay
-    ( ReasonComparison (..)
+    ( PurposeReplay (..)
+    , ReasonComparison (..)
     , ReplayClass (..)
     , ReplayEvidence (..)
+    , ReplayRun (..)
     , RunOutcome (..)
+    , TracedProvenance (..)
     , UnobservedCause (..)
     , stepComparison
     )
@@ -422,6 +433,69 @@ spec = describe "before a replay evaluates" $ do
                 (map (\case Object o -> KM.lookup "rejectedTxId" o; _ -> Nothing))
                 (written :: Either String [Value])
                 `shouldBe` Right [Just (String "tx-first"), Just (String "tx-second")]
+    describe "the offline compiler diagnostic of a capsule" $ do
+        it
+            "is refused for a blueprint that does not correspond or traces only user lines"
+            $ do
+                diagnosticSetupProblem (Left ToolchainMismatch) `shouldSatisfy` isJust
+                diagnosticSetupProblem (Right (diagnosticBuild userDefinedFlags))
+                    `shouldSatisfy` isJust
+                diagnosticSetupProblem (Right (diagnosticBuild allFlags))
+                    `shouldBe` Nothing
+        it
+            "evaluates only the purposes the user-defined replay left without a user trace"
+            $ fmap
+                (map (prDeployedHash . fst))
+                (diagnosedPurposes userDefinedCS04 (diagnosticCS04 Nothing))
+                `shouldBe` Right ["state", "request"]
+        it
+            "is refused when the diagnostic code could not be applied with the deployed parameters"
+            $ diagnosedPurposes
+                userDefinedCS04
+                (diagnosticCS04 (Just ("request", Unobserved ParametersMismatch)))
+                `shouldSatisfy` isLeftE
+        it
+            "is refused when the deployed bytes no longer reproduce the refusal"
+            $ diagnosedPurposes
+                userDefinedCS04
+                ( map
+                    (\p -> p{prDeployed = Just (run Succeeded [])})
+                    (diagnosticCS04 Nothing)
+                )
+                `shouldSatisfy` isLeftE
+        it "names each way a diagnostic run ends, and none is a reason" $
+            map
+                diagnosticCategory
+                [ run Succeeded []
+                , run BudgetExhausted []
+                , run (EvaluationError "no machine") []
+                , run ValidatorFailure []
+                , run ValidatorFailure ["", "  "]
+                , run ValidatorFailure ["expect Some(x) = datum"]
+                ]
+                `shouldBe` [ "succeeded"
+                           , "budget-exhausted"
+                           , "evaluation-error"
+                           , "silent"
+                           , "silent"
+                           , "logged"
+                           ]
+        it "writes compiler diagnostics with their logs, never a reason" $ do
+            let outcome = case diagnosedPurposes userDefinedCS04 (diagnosticCS04 Nothing) of
+                    Right pairs ->
+                        diagnosticOutcome "txid" "capture" (diagnosticBuild allFlags) pairs
+                    Left _ -> Null
+            textAt ["kind"] outcome `shouldBe` Just "compiler-diagnostic"
+            map (textAt ["outcome"]) (purposesAt outcome)
+                `shouldBe` [Just "logged", Just "silent"]
+            map (textAt ["diagnosticHash"]) (purposesAt outcome)
+                `shouldBe` [Just "diagnostic-state", Just "diagnostic-request"]
+            map (lookupPath ["logs"]) (purposesAt outcome)
+                `shouldBe` [ Just (toJSON ["expect Some(x) = datum" :: Text])
+                           , Just (toJSON ([] :: [Text]))
+                           ]
+            keysOf outcome
+                `shouldSatisfy` (\ks -> "reason" `notElem` ks && "admitted" `notElem` ks)
     describe "the wrong-reason control" $ do
         let control = ReasonControl "CG07" 0 "retract-owner"
         it "reads ROW:STEP:REASON" $
@@ -448,3 +522,93 @@ spec = describe "before a replay evaluates" $ do
         _ -> False
     isLeftE :: Either String a -> Bool
     isLeftE = either (const True) (const False)
+
+-- | A diagnostic build's provenance, with the given trace flags.
+diagnosticBuild :: Text -> TracedProvenance
+diagnosticBuild flags =
+    TracedProvenance
+        { tpSource = "/nix/store/source"
+        , tpCompiler = "v1.1.21"
+        , tpFlags = flags
+        , tpUntracedHashes = Map.fromList [("state.state.spend", "state")]
+        }
+
+allFlags, userDefinedFlags :: Text
+allFlags = "--trace-filter all --trace-level verbose"
+userDefinedFlags = "--trace-filter user-defined --trace-level verbose"
+
+-- | An evaluation that ended as given, with these log lines.
+run :: RunOutcome -> [Text] -> ReplayRun
+run outcome logs =
+    ReplayRun
+        { runBytesHash = "bytes"
+        , runBudgetLimit = (100, 100)
+        , runBudgetUsed = Nothing
+        , runOutcome = outcome
+        , runLogs = logs
+        }
+
+-- | CS04's user-defined replay: the witness admitted, state and request silent.
+userDefinedCS04 :: [PurposeReplay]
+userDefinedCS04 =
+    [ purpose "mint 0" "witness" (Admitted "no-fold") ["no-fold"]
+    , purpose "spend 2" "state" (Unobserved NoUserTrace) []
+    , purpose "spend 0" "request" (Unobserved NoUserTrace) []
+    ]
+  where
+    purpose name hash cls logs =
+        PurposeReplay
+            { prPurpose = name
+            , prDeployedHash = hash
+            , prTracedHash = Just ("traced-" <> hash)
+            , prDeployed = Just (run ValidatorFailure [])
+            , prTraced = Just (run ValidatorFailure logs)
+            , prClass = cls
+            }
+
+{- | The same capsule replayed with the diagnostic build: the state script
+logs one compiler trace, the request script none; one purpose may instead be
+given the cause its diagnostic application ended with.
+-}
+diagnosticCS04 :: Maybe (Text, ReplayClass) -> [PurposeReplay]
+diagnosticCS04 failed =
+    [ applied "mint 0" "witness" ["no-fold"]
+    , applied "spend 2" "state" ["expect Some(x) = datum"]
+    , applied "spend 0" "request" []
+    ]
+  where
+    applied name hash logs = case failed of
+        Just (failing, cls)
+            | failing == hash ->
+                PurposeReplay name hash Nothing Nothing Nothing cls
+        _ ->
+            PurposeReplay
+                { prPurpose = name
+                , prDeployedHash = hash
+                , prTracedHash = Just ("diagnostic-" <> hash)
+                , prDeployed = Just (run ValidatorFailure [])
+                , prTraced = Just (run ValidatorFailure logs)
+                , prClass = Unobserved NoUserTrace
+                }
+
+lookupPath :: [Text] -> Value -> Maybe Value
+lookupPath [] value = Just value
+lookupPath (name : rest) (Object o) = lookupPath rest =<< KM.lookup (Key.fromText name) o
+lookupPath _ _ = Nothing
+
+textAt :: [Text] -> Value -> Maybe Text
+textAt path value = case lookupPath path value of
+    Just (String t) -> Just t
+    _ -> Nothing
+
+purposesAt :: Value -> [Value]
+purposesAt value = case lookupPath ["purposes"] value of
+    Just (Array items) -> toList items
+    _ -> []
+
+-- | Every key at any depth.
+keysOf :: Value -> [Text]
+keysOf = \case
+    Object o -> concat [Key.toText k : keysOf v | (k, v) <- KM.toList o]
+    Array items -> concatMap keysOf items
+    _ -> []
