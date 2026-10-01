@@ -6,36 +6,49 @@
 
 {- |
 Module      : Singular.CLI.Reconcile
-Description : The next command reconciles an interrupted local commit from chain evidence
+Description : The next command reconciles the journal with the chain
 License     : Apache-2.0
 
 A write whose process stopped between the node's answer and its local
 commit leaves its journal saying how far it got: an answer that never
 arrived, an acceptance never confirmed, a confirmation whose mirror,
-@state.json@ or observation was never written. The next ordinary
-command — any write, or @inspect@ — runs 'reconcile' first, in three
-steps, reading the chain through one acquired view and submitting
-nothing:
+@state.json@ or observation was never written. And a transaction the
+journal saw included can leave the chain again. The next ordinary
+command — any write, or @inspect@ — runs 'reconcile' first, reading the
+chain through one acquired view and submitting nothing:
 
-1. __Inclusion.__ An unresolved transaction whose saved body is the one
-   its @prepared@ line names (same byte hash, same derived id) and whose
-   first output is live was included: journalled @confirmed@ if it was
-   not already. A spent first output, a passed validity window or an
-   absent input shows nothing either way; the transaction stays
-   unresolved.
-2. __Mirror and state.__ An included fold's journalled edge is applied
+1. __Rollback.__ A transaction whose latest journalled case is included
+   ('Singular.CLI.Recovery.rollbackEvidence') is journalled
+   @rolled-back@ when its first output is not live and an input it
+   spends is live again: a transaction on the chain consumes every input
+   it spends. The line names the chain point read, the inputs found live
+   and, for a fold, the root the mirror returns to; the observation it
+   supersedes stays. The transaction is unresolved again.
+2. __Inclusion and exclusion.__ An unresolved transaction whose saved
+   body is the one its @prepared@ line names (same byte hash, same
+   derived id) and whose first output is live was included: journalled
+   @confirmed@ if it was not already. One a live input shows off the
+   chain, whose validity upper bound the view's tip has reached, can
+   never be included: journalled @excluded@, which settles it. Anything
+   else shows nothing either way; it stays unresolved.
+3. __Rewind.__ After a fold rolled back, the mirror returns to the root
+   before the earliest rolled-back fold, rebuilt from the empty trie by
+   replaying the folds still on the chain ('Singular.CLI.Recovery.rewindOf'),
+   and @state.json@ follows.
+4. __Mirror and state.__ An included fold's journalled edge is applied
    to the mirror only from its journalled root before and only when the
    ledger holds its journalled root after ('mirrorDecision'), so at most
    once; the walk must reach the ledger's root. Then, when the mirror
    commits to the ledger's root, @state.json@ follows it.
-3. __Observation.__ An included transaction is journalled @observed@
+5. __Observation.__ An included transaction is journalled @observed@
    when the after-state its @prepared@ line names is read back now: a
    reference output carrying its script, the state output, the request
    output, or — for the key the step concerns, whichever key the current
    command targets — the leaf proven against the ledger's root and the
    holding the step was to leave.
 
-Every line is appended; no prior line or saved body is rewritten.
+Every line is appended; no prior line or saved body is rewritten, and
+the mirror and @state.json@ are replaced whole by their own writers.
 What remains unresolved is returned with the case it met, and a write
 stops on it before building anything ('refuseUnreconciled').
 -}
@@ -65,9 +78,12 @@ import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
 import Data.Char (isSpace)
 import Data.Foldable (toList)
+import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (nub)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (catMaybes, listToMaybe)
+import Data.Maybe (catMaybes, isJust, listToMaybe)
+import Data.Set (Set)
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((^.))
@@ -75,7 +91,12 @@ import Lens.Micro ((^.))
 import Cardano.Crypto.Hash.Blake2b (Blake2b_256)
 import Cardano.Crypto.Hash.Class (hashToBytes, hashWith)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
-import Cardano.Ledger.Api.Tx.Body (outputsTxBodyL)
+import Cardano.Ledger.Api.Tx.Body
+    ( ValidityInterval (..)
+    , inputsTxBodyL
+    , outputsTxBodyL
+    , vldtTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , addrTxOutL
@@ -87,6 +108,7 @@ import Cardano.Ledger.Core (eraProtVerHigh, hashScript)
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
+import MPF.Backend.Pure (emptyMPFInMemoryDB)
 
 import Singular.Application.OpenDatum.Envelope
     ( Envelope (..)
@@ -102,6 +124,7 @@ import Singular.CLI.Live
     , observedRoot
     , openMirror
     , saveOpenMirror
+    , txInText
     )
 import Singular.CLI.Proof (AuthError, Leaf (..), authenticatedLeaf)
 import Singular.CLI.Proof qualified as Proof
@@ -115,21 +138,34 @@ import Singular.CLI.Receipt
     , submissionCase
     , unresolved
     )
-import Singular.CLI.Recovery (MirrorDecision (..), mirrorDecision)
+import Singular.CLI.Recovery
+    ( Inclusion (..)
+    , MirrorDecision (..)
+    , Rewind (..)
+    , excludedAt
+    , inclusionOf
+    , mirrorDecision
+    , replayFolds
+    , rewindOf
+    , rollbackEvidence
+    )
 import Singular.CLI.Registry
     ( LocalState (..)
     , hexT
     , readLocalState
     , writeLocalState
     )
-import Singular.CLI.Session (failWith, failWithFields)
+import Singular.CLI.Session (failWith, failWithFields, harnessHoldAt)
 import Singular.Registry.Ledger
-    ( AssetName (..)
+    ( Addr
+    , AssetName (..)
     , ConwayEra
+    , SlotNo (..)
     , TokenId (..)
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
+import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TxBuilder.Internal
     ( extractCageDatum
     , scriptHashBytes
@@ -139,8 +175,14 @@ import Singular.Registry.Types (CageDatum (..))
 
 -- | What one reconciliation found and did.
 data Reconciliation = Reconciliation
-    { rcRecovered :: [Recovery]
-    -- ^ Every transaction that was unresolved when it started
+    { rcRolledBack :: [Text]
+    -- ^ The transactions it journalled @rolled-back@
+    , rcRecovered :: [Recovery]
+    -- ^ Every transaction that was unresolved once rollbacks were journalled
+    , rcExcluded :: [Text]
+    -- ^ The transactions it journalled @excluded@
+    , rcRewound :: Maybe Text
+    -- ^ The root it returned the mirror to after a rollback, hex
     , rcApplied :: [Text]
     -- ^ The folds whose journalled edge it applied to the mirror
     , rcStateFollowed :: Bool
@@ -151,12 +193,14 @@ data Reconciliation = Reconciliation
     -- ^ The first transaction still unresolved, with its case
     }
 
--- | What inclusion evidence showed for one unresolved transaction.
+-- | What chain evidence showed for one unresolved transaction.
 data Recovery = Recovery
     { recTx :: Text
     , recStep :: Text
     , recIncluded :: Bool
     -- ^ Its first output is live: the transaction was included
+    , recExcluded :: Bool
+    -- ^ It can never be included: journalled @excluded@
     , recNote :: Text
     , recPrepared :: Maybe JournalEntry
     , recFirstOutput :: Maybe (TxOut ConwayEra)
@@ -169,7 +213,10 @@ on behalf of the named command, which the lines it appends carry.
 reconcile
     :: Text -> FilePath -> Saved -> Cage.View IO -> IO Reconciliation
 reconcile command dir saved view = do
-    recovered <- recoverInclusion command dir view
+    liveAt <- liveReader view
+    rolled <- rollBack command dir view liveAt
+    recovered <- recoverInclusion command dir view liveAt
+    rewound <- rewindMirror dir saved
     live <- attachLive view saved
     root <- either (failWith Partial) pure (observedRoot live)
     mirror <- openMirror saved
@@ -191,7 +238,10 @@ reconcile command dir saved view = do
     remaining <- remainingOf <$> readJournal dir
     pure
         Reconciliation
-            { rcRecovered = recovered
+            { rcRolledBack = rolled
+            , rcRecovered = recovered
+            , rcExcluded = excludedOf recovered
+            , rcRewound = rewound
             , rcApplied = applied
             , rcStateFollowed = followed
             , rcObserved = observedNow
@@ -199,23 +249,31 @@ reconcile command dir saved view = do
             }
 
 {- | Reconcile the journal of a create that stopped before saving its
-registry: inclusion and the after-states that need no key; there is no
-mirror or @state.json@ yet.
+registry: rollback, inclusion, exclusion and the after-states that need
+no key; there is no mirror or @state.json@ yet.
 -}
 reconcileIncomplete
     :: Text -> FilePath -> Cage.View IO -> IO Reconciliation
 reconcileIncomplete command dir view = do
-    recovered <- recoverInclusion command dir view
+    liveAt <- liveReader view
+    rolled <- rollBack command dir view liveAt
+    recovered <- recoverInclusion command dir view liveAt
     observedNow <- observe command dir Nothing recovered
     remaining <- remainingOf <$> readJournal dir
     pure
         Reconciliation
-            { rcRecovered = recovered
+            { rcRolledBack = rolled
+            , rcRecovered = recovered
+            , rcExcluded = excludedOf recovered
+            , rcRewound = Nothing
             , rcApplied = []
             , rcStateFollowed = False
             , rcObserved = observedNow
             , rcRemaining = remaining
             }
+
+excludedOf :: [Recovery] -> [Text]
+excludedOf recovered = [recTx r | r <- recovered, recExcluded r]
 
 remainingOf :: [JournalEntry] -> Maybe (JournalEntry, SubmissionCase)
 remainingOf entries = do
@@ -225,9 +283,9 @@ remainingOf entries = do
 
 {- | A write stops before building anything on a transaction that
 reconciliation left unresolved, naming its case and id: @partial@ while
-its outcome is unknown, acknowledged or timed out; @stale-state@ when it
-was included but its journalled edge does not take the mirror to the
-ledger's root. Nothing is resubmitted.
+its outcome is unknown, acknowledged, timed out or rolled back;
+@stale-state@ when it was included but its journalled edge does not take
+the mirror to the ledger's root. Nothing is resubmitted.
 -}
 refuseUnreconciled :: Reconciliation -> IO ()
 refuseUnreconciled r = case rcRemaining r of
@@ -268,13 +326,16 @@ refuseUnreconciled r = case rcRemaining r of
 reconciledJson :: Reconciliation -> Value
 reconciledJson r =
     object
-        [ "recovery" .= recoveryJson (rcRecovered r)
+        [ "rolledBack" .= rcRolledBack r
+        , "recovery" .= recoveryJson (rcRecovered r)
+        , "excluded" .= rcExcluded r
+        , "mirrorRewound" .= rcRewound r
         , "applied" .= rcApplied r
         , "stateFollowed" .= rcStateFollowed r
         , "observed" .= rcObserved r
         ]
 
--- | Each unresolved transaction and what inclusion evidence showed.
+-- | Each unresolved transaction and what chain evidence showed.
 recoveryJson :: [Recovery] -> Value
 recoveryJson recovered =
     toJSON
@@ -282,6 +343,7 @@ recoveryJson recovered =
             [ "tx" .= recTx r
             , "step" .= recStep r
             , "included" .= recIncluded r
+            , "excluded" .= recExcluded r
             , "note" .= recNote r
             ]
         | r <- recovered
@@ -295,93 +357,273 @@ renderPoint p =
         <> hexT (Cage.cpBlockHash p)
 
 -- ---------------------------------------------------------
--- 1. Inclusion
+-- 1 and 2. Rollback, inclusion and exclusion
 -- ---------------------------------------------------------
 
-{- | Positive inclusion evidence for each unresolved transaction, from its
-saved body bound to its @prepared@ line; journals @confirmed@ for an
-included one that lacked it.
+-- | The outputs live at an address, read once per address per view.
+type LiveAt = Addr -> IO (Set TxIn)
+
+liveReader :: Cage.View IO -> IO LiveAt
+liveReader view = do
+    cache <- newIORef Map.empty
+    pure $ \addr -> do
+        known <- Map.lookup addr <$> readIORef cache
+        case known of
+            Just found -> pure found
+            Nothing -> do
+                found <-
+                    Set.fromList . map fst <$> Cage.viewUTxOsAt view addr
+                modifyIORef' cache (Map.insert addr found)
+                pure found
+
+{- | A journalled transaction's saved body, bound to its @prepared@ line
+by byte hash and derived id, or why it is not.
 -}
-recoverInclusion :: Text -> FilePath -> Cage.View IO -> IO [Recovery]
-recoverInclusion command dir view = do
-    entries <- readJournal dir
-    let lastOf t = last [e | e <- entries, journalTxId e == t]
-        settled = ["observed", "rejected", "excluded"]
-        open =
-            [ lastOf t
-            | t <- nub (map journalTxId entries)
-            , journalEvent (lastOf t) `notElem` settled
+boundBody
+    :: [JournalEntry]
+    -> Text
+    -> IO (Maybe JournalEntry, Either Text ConwayTx)
+boundBody entries txid = case prepared of
+    Just p
+        | Just path <- journalBody p
+        , Just wantHash <- journalBodyHash p -> do
+            stored <- try (BS.readFile path)
+            pure . (prepared,) $ case stored of
+                Left (_ :: IOException) -> Left "the saved body is missing"
+                Right hexBytes -> case B16.decode (BC.filter (not . isSpace) hexBytes) of
+                    Left _ -> Left "the saved body is not hex"
+                    Right raw
+                        | hexT (hashToBytes (hashWith @Blake2b_256 id raw)) /= wantHash ->
+                            Left "the saved body's hash differs from its prepared line"
+                        | otherwise ->
+                            case decodeFullAnnotator
+                                (eraProtVerHigh @ConwayEra)
+                                "transaction"
+                                decCBOR
+                                (BL.fromStrict raw) of
+                                Left _ -> Left "the saved body does not decode"
+                                Right (tx :: ConwayTx)
+                                    | txIdHexOf tx /= txid ->
+                                        Left "the saved body is another transaction"
+                                    | otherwise -> Right tx
+    _ -> pure (prepared, Left "no prepared line names a saved body")
+  where
+    prepared =
+        listToMaybe
+            [ p
+            | p <- entries
+            , journalTxId p == txid
+            , journalEvent p == "prepared"
             ]
+
+{- | What the view shows about a body: its inclusion, read over every
+address its own outputs pay — the wallet's change and the registry's
+script, where the inputs it spends sit — and its first output.
+-}
+inclusionAt
+    :: LiveAt -> ConwayTx -> IO (Inclusion, Maybe (TxOut ConwayEra))
+inclusionAt liveAt tx = do
+    let outs = toList (tx ^. bodyTxL . outputsTxBodyL)
+        spent = Set.toList (tx ^. bodyTxL . inputsTxBodyL)
+    live <- Set.unions <$> mapM liveAt (nub (map (^. addrTxOutL) outs))
+    pure
+        ( inclusionOf live (TxIn (txIdTx tx) (TxIx 0)) spent
+        , listToMaybe outs
+        )
+
+{- | Journal @rolled-back@ for every transaction whose latest case is
+included but which a live input now shows off the chain. Returns them.
+-}
+rollBack :: Text -> FilePath -> Cage.View IO -> LiveAt -> IO [Text]
+rollBack command dir view liveAt = do
+    entries <- readJournal dir
+    let included =
+            [ t
+            | t <- nub (map journalTxId entries)
+            , submissionCase entries t == Just CaseIncluded
+            ]
+    fmap catMaybes . forM included $ \t -> do
+        (prepared, body) <- boundBody entries t
+        case body of
+            Left _ -> pure Nothing
+            Right tx -> do
+                (inclusion, _) <- inclusionAt liveAt tx
+                case rollbackEvidence (Just CaseIncluded) inclusion of
+                    Nothing -> pure Nothing
+                    Just found -> do
+                        let returnsTo = prepared >>= journalRootBefore
+                            isFold = isJust (prepared >>= journalEdge)
+                        appendJournal
+                            dir
+                            ( recoveryLine
+                                command
+                                (lastOf entries t)
+                                "rolled-back"
+                                ( "its first output is not live and "
+                                    <> T.pack (show (length found))
+                                    <> " input(s) it spends are live again: it is no longer on the chain"
+                                    <> (if isFold then "; the mirror returns to its root before" else "")
+                                )
+                            )
+                                { journalChainPoint = Just (renderPoint (Cage.viewPoint view))
+                                , journalInputs = Just (map txInText found)
+                                , journalRootBefore = if isFold then returnsTo else Nothing
+                                }
+                        pure (Just t)
+
+{- | Inclusion evidence for each unresolved transaction, from its saved
+body bound to its @prepared@ line: journals @confirmed@ for an included
+one that lacked it, and @excluded@ for one that can never be included.
+-}
+recoverInclusion
+    :: Text -> FilePath -> Cage.View IO -> LiveAt -> IO [Recovery]
+recoverInclusion command dir view liveAt = do
+    entries <- readJournal dir
+    let settled = ["observed", "rejected", "excluded"]
+        open =
+            [ lastOf entries t
+            | t <- nub (map journalTxId entries)
+            , journalEvent (lastOf entries t) `notElem` settled
+            ]
+        tip = Cage.cpSlot (Cage.viewPoint view)
     forM open $ \e -> do
         let txid = journalTxId e
-            prepared =
-                listToMaybe
-                    [ p
-                    | p <- entries
-                    , journalTxId p == txid
-                    , journalEvent p == "prepared"
-                    ]
-            base =
+        (prepared, body) <- boundBody entries txid
+        let base =
                 Recovery
                     { recTx = txid
                     , recStep = journalStep e
                     , recIncluded = False
+                    , recExcluded = False
                     , recNote = ""
                     , recPrepared = prepared
                     , recFirstOutput = Nothing
                     , recLast = e
                     }
-            miss why = pure base{recNote = why}
-        case prepared of
-            Just p
-                | Just path <- journalBody p
-                , Just wantHash <- journalBodyHash p -> do
-                    stored <- try (BS.readFile path)
-                    case stored of
-                        Left (_ :: IOException) -> miss "the saved body is missing"
-                        Right hexBytes -> case B16.decode (BC.filter (not . isSpace) hexBytes) of
-                            Left _ -> miss "the saved body is not hex"
-                            Right raw
-                                | hexT (hashToBytes (hashWith @Blake2b_256 id raw)) /= wantHash ->
-                                    miss "the saved body's hash differs from its prepared line"
-                                | otherwise ->
-                                    case decodeFullAnnotator
-                                        (eraProtVerHigh @ConwayEra)
-                                        "transaction"
-                                        decCBOR
-                                        (BL.fromStrict raw) of
-                                        Left _ -> miss "the saved body does not decode"
-                                        Right (tx :: ConwayTx)
-                                            | txIdHexOf tx /= txid ->
-                                                miss "the saved body is another transaction"
-                                            | otherwise -> case toList (tx ^. bodyTxL . outputsTxBodyL) of
-                                                [] -> miss "the saved body has no outputs"
-                                                (out0 : _) -> do
-                                                    liveAt <- Cage.viewUTxOsAt view (out0 ^. addrTxOutL)
-                                                    case [o | (i, o) <- liveAt, i == TxIn (txIdTx tx) (TxIx 0)] of
-                                                        (o : _) -> do
-                                                            if journalEvent e == "confirmed"
-                                                                then pure ()
-                                                                else
-                                                                    appendJournal
-                                                                        dir
-                                                                        ( recoveryLine
-                                                                            command
-                                                                            e
-                                                                            "confirmed"
-                                                                            "its first output is live on the ledger"
-                                                                        )
-                                                            pure
-                                                                base
-                                                                    { recIncluded = True
-                                                                    , recNote = "included: its first output is live"
-                                                                    , recFirstOutput = Just o
-                                                                    }
-                                                        [] -> miss "its first output is not live; inclusion is unknown"
-            _ -> miss "no prepared line names a saved body"
+        case body of
+            Left why -> pure base{recNote = why}
+            Right tx -> do
+                (inclusion, out0) <- inclusionAt liveAt tx
+                case inclusion of
+                    OnChain -> do
+                        if journalEvent e == "confirmed"
+                            then pure ()
+                            else
+                                appendJournal
+                                    dir
+                                    ( recoveryLine
+                                        command
+                                        e
+                                        "confirmed"
+                                        "its first output is live on the ledger"
+                                    )
+                        pure
+                            base
+                                { recIncluded = True
+                                , recNote = "included: its first output is live"
+                                , recFirstOutput = out0
+                                }
+                    _
+                        | excludedAt tip (upperOf tx) (submissionCase entries txid) inclusion
+                        , OffChain found <- inclusion
+                        , Just (SlotNo upper) <- upperOf tx -> do
+                            appendJournal
+                                dir
+                                ( recoveryLine
+                                    command
+                                    e
+                                    "excluded"
+                                    ( "it is not on the chain ("
+                                        <> T.pack (show (length found))
+                                        <> " input(s) it spends are live) and the tip's slot "
+                                        <> T.pack (show (Cage.unSlotNo tip))
+                                        <> " has reached its validity upper bound "
+                                        <> T.pack (show upper)
+                                        <> ": it can never be included"
+                                    )
+                                )
+                                    { journalChainPoint = Just (renderPoint (Cage.viewPoint view))
+                                    , journalInputs = Just (map txInText found)
+                                    }
+                            pure
+                                base
+                                    { recExcluded = True
+                                    , recNote = "excluded: off the chain and past its upper bound"
+                                    }
+                    OffChain _ ->
+                        pure
+                            base
+                                { recNote =
+                                    "not on the chain: an input it spends is live; \
+                                    \it may still be included"
+                                }
+                    Undetermined ->
+                        pure
+                            base{recNote = "its first output is not live; inclusion is unknown"}
+
+-- | A body's validity upper bound, when it has one.
+upperOf :: ConwayTx -> Maybe SlotNo
+upperOf tx = case tx ^. bodyTxL . vldtTxBodyL of
+    ValidityInterval _ (SJust upper) -> Just upper
+    ValidityInterval _ SNothing -> Nothing
+
+lastOf :: [JournalEntry] -> Text -> JournalEntry
+lastOf entries t = last [e | e <- entries, journalTxId e == t]
 
 -- ---------------------------------------------------------
--- 2. Mirror and state
+-- 3. Rewind
+-- ---------------------------------------------------------
+
+{- | After a fold rolled back, return the mirror to the root before the
+earliest rolled-back fold, rebuilt from the empty trie by replaying the
+folds still on chain, and bring @state.json@ along. Returns the root
+when the mirror was rewritten; a replay that does not reach that root
+is stale local state, refused and never written.
+-}
+rewindMirror :: FilePath -> Saved -> IO (Maybe Text)
+rewindMirror dir saved = do
+    entries <- readJournal dir
+    case rewindOf entries of
+        Nothing -> pure Nothing
+        Just rw -> do
+            target <-
+                either
+                    ( const
+                        (failWith StaleState "a rolled-back fold's root before is not hex")
+                    )
+                    pure
+                    (B16.decode (BC.pack (T.unpack (rewindRoot rw))))
+            current <- openMirror saved >>= mirrorRoot saved
+            rewritten <-
+                if current == target
+                    then pure Nothing
+                    else do
+                        harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_REWIND" Nothing
+                        let token = savedToken saved
+                        (tm, dump) <-
+                            mkPureTrieManagerFrom (Map.singleton token emptyMPFInMemoryDB)
+                        replayed <- withTrie tm token (`replayFolds` rewindFolds rw)
+                        case replayed of
+                            Right reached
+                                | reached == target -> do
+                                    saveOpenMirror saved Mirror{mirrorTries = tm, mirrorDump = dump}
+                                    pure (Just (rewindRoot rw))
+                            Right _ ->
+                                failWith
+                                    StaleState
+                                    "the folds still on chain do not rebuild the root before the rollback"
+                            Left why ->
+                                failWith
+                                    StaleState
+                                    ( "the mirror cannot return to the root before the rollback: "
+                                        <> T.unpack why
+                                    )
+            harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_REWIND_STATE" Nothing
+            _ <- followState dir saved target
+            pure rewritten
+
+-- ---------------------------------------------------------
+-- 4. Mirror and state
 -- ---------------------------------------------------------
 
 {- | Apply each included fold's journalled edge to the mirror when
@@ -449,7 +691,7 @@ followState dir saved local = do
             pure True
 
 -- ---------------------------------------------------------
--- 3. Observation
+-- 5. Observation
 -- ---------------------------------------------------------
 
 -- | A key's proven leaf and its holding at the application, read now.

@@ -123,13 +123,18 @@ reconcileLocked dir act = withTargetLockOr dir (Just <$> act) (pure Nothing)
 reconciledFields :: Maybe Reconciliation -> [(Text, Value)]
 reconciledFields = \case
     Just r ->
-        [ ("recovery", recoveryJson (rcRecovered r))
+        [ ("rolledBack", toJSON (rcRolledBack r))
+        , ("recovery", recoveryJson (rcRecovered r))
+        , ("excluded", toJSON (rcExcluded r))
+        , ("mirrorRewound", toJSON (rcRewound r))
         , ("mirrorAdvanced", toJSON (rcApplied r))
         , ("stateFollowed", toJSON (rcStateFollowed r))
         , ("observed", toJSON (rcObserved r))
         ]
     Nothing ->
-        [ ("recovery", toJSON ([] :: [Value]))
+        [ ("rolledBack", toJSON ([] :: [Text]))
+        , ("recovery", toJSON ([] :: [Value]))
+        , ("excluded", toJSON ([] :: [Text]))
         , ("mirrorAdvanced", toJSON ([] :: [Text]))
         , ("observed", toJSON ([] :: [Text]))
         ,

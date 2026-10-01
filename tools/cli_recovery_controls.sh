@@ -22,9 +22,24 @@
 #   killed before  an insert is killed once state.json is written, before
 #   the            its fold is observed: the next write applies nothing,
 #   observation    leaves state.json, observes the fold and proceeds;
-#   never sent     an insert's fold never reaches the node: the next write
-#                  stops before building anything, naming the case and the
-#                  transaction, and the journal does not move.
+#   never sent,    an insert's fold never reaches the node; once the tip
+#   past its       has passed the fold's validity upper bound, the next
+#   upper bound    write journals it excluded, with the chain point and
+#                  the live inputs it read, and proceeds from the root
+#                  before it;
+#   never sent,    an insert's booking never reaches the node; a booking
+#   without an     has no upper bound, so the next write stops before
+#   upper bound    building anything, naming the case and the transaction,
+#                  and the journal does not move;
+#   rolled back    on a second registry, an insert observed and then
+#                  undone by restarting the node on a copy of its database
+#                  taken before it — a generated-DevNet mechanism, not a
+#                  public-chain fork: the node's own reads show the blocks
+#                  that carried it gone and its inputs unspent; the next
+#                  command journals both transactions rolled back and
+#                  returns the mirror and state.json to the fold's root
+#                  before; nothing is sent again; the next write stops
+#                  naming the case and the transaction.
 #
 # The harness points are SINGULAR_HARNESS_* variables, inert when unset.
 # Every verdict is computed from the receipts the processes printed, the
@@ -104,6 +119,13 @@ fi
 say "one development node at $sock"
 
 node=(--node-socket "$sock" --network-magic 42)
+# probe_ins TXIN...: the node's own answer — its tip and which of TXIN
+# are unspent — read through `devnet probe`, never through the CLI.
+probe_ins() {
+  local a=() t
+  for t in "$@"; do a+=(--tx-in "$t"); done
+  "$devnet" probe --node-socket "$sock" --network-magic 42 "${a[@]}"
+}
 common=(--registry "$reg" --blueprint "$blueprint")
 alice=(--wallet-skey "$work/alice.skey")
 
@@ -415,7 +437,7 @@ clause "the journal was only appended to and no body changed" appended_only s5
 # ------------------------------------------------------------------
 # never sent
 # ------------------------------------------------------------------
-control="never sent"
+control="never sent, past its upper bound"
 snap s4
 export SINGULAR_HARNESS_DROP_SEND=fold
 insert_of 6b0f
@@ -424,17 +446,51 @@ unset SINGULAR_HARNESS_DROP_SEND
 unsent="$(submission_tx insert-f fold)"
 clause "the insert stops partial naming its fold unknown" is_equal "$(field insert-f .outcome)/$(submission_case insert-f fold)" partial/unknown
 clause "the unsent fold names a transaction" is_txid "$unsent"
+mapfile -t unsent_ins < <(prepared_of "$unsent" | jq -r '.journalInputs[]')
+# A fold carries a validity upper bound; on this node it is a few seconds
+# past the slot it was built at. Once the tip has passed it, the fold can
+# never be included.
 sleep 10
-snap s4-refused
+unsent_live="$(probe_ins "${unsent_ins[@]}")"
+clause "the node reports the unsent fold's inputs unspent" \
+  jq -n -e --argjson p "$unsent_live" '($p.live | length) > 0 and ($p.spent == [])'
+snap s4-excluded
 run update-d registry update --key 6b0d --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
-clause "the next write stops partial (exit 15)" exit_is update-d 15
-clause "it names the unsent fold" is_equal "$(field update-d .unresolved.tx)" "$unsent"
-clause "it names the case unknown" is_equal "$(field update-d .unresolved.case)" unknown
-clause "its reason names the transaction" bash -c "jq -e --arg t '$unsent' '.reason | contains(\$t)' '$receipts/update-d.json'"
-clause "it appended nothing to the journal" journal_same s4-refused
-clause "it committed nothing locally" bash -c "[ '$(root_now)' = '$(cat "$snaps/s4-refused.root")' ] && [ '$(mirror_now)' = '$(cat "$snaps/s4-refused.mirror")' ]"
-clause "the unsent fold was prepared once and never acknowledged" \
-  is_equal "$(events_of "$unsent")" '["prepared","submit-unknown"]'
+excluded_line="$(jq -c --arg t "$unsent" 'select(.journalTxId == $t and .journalEvent == "excluded")' "$journal")"
+clause "the next write journals the unsent fold excluded" \
+  is_equal "$(events_of "$unsent")" '["prepared","submit-unknown","excluded"]'
+clause "the excluded line names the chain point it read" \
+  bash -c "[[ '$(jq -r '.journalChainPoint // ""' <<<"$excluded_line")' =~ ^[0-9]+\.[0-9a-f]{64}$ ]]"
+clause "the excluded line names inputs the node reports unspent" \
+  jq -n -e --argjson l "${excluded_line:-null}" --argjson p "$unsent_live" '($l.journalInputs | length) > 0 and ($l.journalInputs - $p.live == [])'
+clause "its receipt names the fold excluded" is_equal "$(field update-d ".reconciled.excluded | tojson")" "[\"$unsent\"]"
+clause "the write then succeeds" outcome_is update-d success
+clause "state.json still commits to the unsent fold's root before: the excluded edge was never applied" \
+  is_equal "$(root_now)" "$(root_before_of "$unsent")"
+clause "the unsent fold was prepared once and never sent again" prepared_once "$unsent"
+clause "the journal was only appended to and no body changed" appended_only s4
+
+control="never sent, without an upper bound"
+snap s6
+export SINGULAR_HARNESS_DROP_SEND=book
+insert_of 6b0f
+run insert-i "${args[@]}"
+unset SINGULAR_HARNESS_DROP_SEND
+unbooked="$(submission_tx insert-i book)"
+clause "the insert stops partial naming its booking unknown" is_equal "$(field insert-i .outcome)/$(submission_case insert-i book)" partial/unknown
+clause "the unsent booking names a transaction" is_txid "$unbooked"
+# A booking carries no validity upper bound: no tip ever settles it.
+sleep 10
+snap s6-refused
+run update-e registry update --key 6b0d --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
+clause "the next write stops partial (exit 15)" exit_is update-e 15
+clause "it names the unsent booking" is_equal "$(field update-e .unresolved.tx)" "$unbooked"
+clause "it names the case unknown" is_equal "$(field update-e .unresolved.case)" unknown
+clause "its reason names the transaction" bash -c "jq -e --arg t '$unbooked' '.reason | contains(\$t)' '$receipts/update-e.json'"
+clause "it appended nothing to the journal" journal_same s6-refused
+clause "it committed nothing locally" bash -c "[ '$(root_now)' = '$(cat "$snaps/s6-refused.root")' ] && [ '$(mirror_now)' = '$(cat "$snaps/s6-refused.mirror")' ]"
+clause "the unsent booking was prepared once and never acknowledged" \
+  is_equal "$(events_of "$unbooked")" '["prepared","submit-unknown"]'
 
 # ------------------------------------------------------------------
 # the whole journal
@@ -443,6 +499,11 @@ control="every control"
 clause "every journalled transaction has exactly one prepared line" \
   jq -s -e '[group_by(.journalTxId)[] | [.[] | select(.journalEvent == "prepared")] | length] | all(. == 1)' "$journal"
 clause "the journal was only appended to and no body changed since the registry was created" appended_only s0
+# Every command read every included transaction of this registry for
+# rollback evidence — folds whose state output the next fold spent,
+# bookings whose request the fold took — and none was ever off the chain.
+clause "no transaction of this registry was ever journalled rolled back" \
+  is_equal "$(jq -s '[.[] | select(.journalEvent == "rolled-back")] | length' "$journal")" 0
 jq -r '.journalEvent' "$journal" | sort | uniq -c
 
 # ------------------------------------------------------------------
@@ -458,37 +519,49 @@ jq -r '.journalEvent' "$journal" | sort | uniq -c
 control="rolled back (generated DevNet: node database restored, not a public-chain fork)"
 node_dir="$work/cardano-e2e"
 nlog="$node_dir/node.log"
-# probe_ins TXIN...: the node's tip and which of TXIN are unspent, as JSON.
-probe_ins() {
-  local a=() t
-  for t in "$@"; do a+=(--tx-in "$t"); done
-  "$devnet" probe --node-socket "$node_dir/node.sock" --network-magic 42 "${a[@]}"
-}
 # The hash and slot of the tip a node opened its database at, from the
 # OpenedDB line numbered after LINE in its log.
 opened_tip_after() {
   tail -n +"$(($1 + 1))" "$nlog" | grep -m1 'ChainDB.OpenEvent.OpenedDB' \
     | sed -nE 's/.* and tip ([0-9a-f]{64}) at slot ([0-9]+)$/{"hash":"\1","slot":\2}/p'
 }
-# Every block the node put on its chain after line LINE of its log.
+# Every block the node put on its chain after line LINE of its log. The
+# only block producer, it adopts every block it forges, and the adoption
+# record is written for each one (the chain-extension notice is rate
+# limited, so it is folded in but never relied on alone).
 chained_after() {
+  tail -n +"$(($1 + 1))" "$nlog" | {
+    { grep -F '"ns":"Forge.Loop.AdoptedBlock"' || true; } | jq -r .data.blockHash
+  }
   tail -n +"$(($1 + 1))" "$nlog" | sed -nE 's/.*(Chain extended|Switched to a fork), new tip: ([0-9a-f]{64}).*/\2/p'
+}
+# Blocks the node forged and adopted after LINE: both counts, "F/A".
+forged_adopted_after() {
+  local forged adopted
+  forged="$(tail -n +"$(($1 + 1))" "$nlog" | grep -c 'Forged block in slot' || true)"
+  adopted="$(tail -n +"$(($1 + 1))" "$nlog" | grep -cF '"ns":"Forge.Loop.AdoptedBlock"' || true)"
+  echo "$forged/$adopted"
 }
 # HASH is the restored tip or a block the node chained since the restore;
 # an empty or null hash never is.
 on_restored_chain() {
   [ -n "$1" ] && [ "$1" != null ] || return 1
-  {
+  local chain
+  # Read whole before matching: an early-exiting grep would SIGPIPE the
+  # producer, and pipefail would report a match as a failure.
+  chain="$(
     jq -r .hash <<<"$restored_tip"
     chained_after "$mark"
-  } | grep -qxF "$1"
+  )"
+  grep -qxF "$1" <<<"$chain"
 }
 # None of the HASHes is a block the node chained since the restore.
 not_chained_since() {
-  local h
+  local h chain
+  chain="$(chained_after "$mark")"
   for h in "$@"; do
     [[ "$h" =~ ^[0-9a-f]{64}$ ]] || return 1
-    ! chained_after "$mark" | grep -qxF "$h" || return 1
+    if grep -qxF "$h" <<<"$chain"; then return 1; fi
   done
 }
 # The blocks the node adopted carrying TX: {"hash","slot"} per line.
@@ -554,6 +627,7 @@ outcome_is insert-rb0 success || setup_fail "the insert before the snapshot did 
 
 # The snapshot: stopped, copied, restarted on the same database.
 mark="$(wc -l <"$nlog")"
+snap_mark="$mark"
 stop_node "$orig_pid" || setup_fail "the development node did not stop"
 cp -a "$node_dir/db" "$work/node-db-snapshot"
 start_node || setup_fail "the development node did not restart after the snapshot"
@@ -561,7 +635,7 @@ snap_tip="$(opened_tip_after "$mark")"
 [ -n "$snap_tip" ] || setup_fail "the restarted node reported no tip it opened"
 forging=1
 for _ in $(seq 1 600); do
-  if tail -n +"$((mark + 1))" "$nlog" | grep -qF '"ns":"Forge.Loop.AdoptedBlock"'; then
+  if [ "$(tail -n +"$((mark + 1))" "$nlog" | grep -cF '"ns":"Forge.Loop.AdoptedBlock"' || true)" -gt 0 ]; then
     forging=0
     break
   fi
@@ -612,6 +686,9 @@ post="$(probe_ins "${book_ins_a[@]}" "${fold_ins_a[@]}" "$rb_book#0" "$rb_fold#0
 say "$control: restored at $restored_tip; node reads $(jq -c .tip <<<"$post")"
 clause "the restored node opened its database at the snapshot's tip" \
   jq -n -e --argjson s "$snap_tip" --argjson r "$restored_tip" '$s == $r'
+forged_pair() { [[ "$1" =~ ^([0-9]+)/([0-9]+)$ ]] && [ "${BASH_REMATCH[1]}" = "${BASH_REMATCH[2]}" ]; }
+clause "the node's adoption record covers every block it forged since the snapshot restart" \
+  forged_pair "$(forged_adopted_after "$snap_mark")"
 clause "neither block that carried the booking or the fold is one the restored node chained since" \
   not_chained_since "$(jq -r .hash <<<"$book_block")" "$(jq -r .hash <<<"$fold_block")"
 clause "the node's tip is the restored tip or a block it chained since" \
@@ -623,11 +700,34 @@ clause "the fold's inputs the booking did not make are unspent again" \
 clause "neither the booking's nor the fold's first output exists" \
   jq -n -e --argjson p "$post" --arg b "$rb_book#0" --arg f "$rb_fold#0" '($p.spent | index($b)) != null and ($p.spent | index($f)) != null'
 
+# Killed after the rollback is journalled, before the mirror is rebuilt:
+# the files still hold the rolled-back fold's root after.
+reached=0
+held inspect-rb-k1 SINGULAR_HARNESS_HOLD_BEFORE_REWIND registry inspect --key 6c01 "${common[@]}" "${node[@]}" || reached=1
+clause "an inspect is killed after journalling the rollback, before rebuilding the mirror" is_equal "$reached" 0
+clause "at that moment both transactions are journalled rolled back" \
+  is_equal "$(event_count "$rb_book" rolled-back)/$(event_count "$rb_fold" rolled-back)" 1/1
+clause "at that moment the mirror and state.json are as the insert left them" \
+  bash -c "[ '$(mirror_now)' = '$(cat "$snaps/rb1.mirror")' ] && [ '$(root_now)' = '$(cat "$snaps/rb1.root")' ]"
+# Killed after the mirror is rebuilt, before state.json follows it.
+reached=0
+held inspect-rb-k2 SINGULAR_HARNESS_HOLD_BEFORE_REWIND_STATE registry inspect --key 6c01 "${common[@]}" "${node[@]}" || reached=1
+clause "a second inspect is killed after rebuilding the mirror, before state.json" is_equal "$reached" 0
+clause "at that moment the mirror holds its bytes from before the insert and state.json the insert's root" \
+  bash -c "[ '$(mirror_now)' = '$(cat "$snaps/rb0.mirror")' ] && [ '$(root_now)' = '$(cat "$snaps/rb1.root")' ]"
 run inspect-rb registry inspect --key 6c01 "${common[@]}" "${node[@]}"
-clause "the next command, inspect, journals the booking rolled back after its observation" \
+clause "the next inspect journals no second rollback and rebuilds nothing more" \
+  jq -e 'has("mirrorRewound") and .mirrorRewound == null and .rolledBack == []' "$receipts/inspect-rb.json"
+clause "the booking's rollback is journalled once, after its observation" \
   is_equal "$(events_of "$rb_book")" '["prepared","submitted","confirmed","observed","rolled-back"]'
 clause "and the fold rolled back after its observation" \
-  is_equal "$(events_of "$rb_fold")" '["prepared","submitted","confirmed","observed","rolled-back"]'
+  is_equal "$(events_of "$rb_fold" | jq -c '.[0:5]')" '["prepared","submitted","confirmed","observed","rolled-back"]'
+# The fold's validity upper bound is seconds after it was built: when the
+# restored node has forged past it, the same command also excludes it.
+# The booking carries none and stays rolled back.
+clause "after the fold's rollback only an exclusion follows" \
+  jq -n -e --argjson e "$(events_of "$rb_fold")" '$e[5:] == [] or $e[5:] == ["excluded"]'
+say "$control: the fold's latest phase is $(last_event "$rb_fold")"
 rolled_line() { jq -c --arg t "$1" 'select(.journalTxId == $t and .journalEvent == "rolled-back")' "$journal"; }
 for t in "$rb_book" "$rb_fold"; do
   clause "the rolled-back line of $t names a chain point on the restored chain" \
@@ -661,6 +761,8 @@ clause "it built and submitted nothing: the journal did not move" journal_same r
 clause "it committed nothing locally" bash -c "[ '$(root_now)' = '$(cat "$snaps/rb2.root")' ] && [ '$(mirror_now)' = '$(cat "$snaps/rb2.mirror")' ]"
 clause "the node's blocks since the restore still carry neither transaction" \
   is_equal "$(carried_since "$mark" "$rb_book")$(carried_since "$mark" "$rb_fold")" 00
+clause "at the end too, the adoption record covers every block the node forged" \
+  forged_pair "$(forged_adopted_after "$snap_mark")"
 say "$control: $(chained_after "$mark" | wc -l) block(s) chained by the restored node"
 jq -r '.journalEvent' "$journal" | sort | uniq -c
 

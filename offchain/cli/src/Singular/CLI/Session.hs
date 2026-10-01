@@ -302,8 +302,12 @@ inspect or kill the process at exactly that boundary. The points are
 journalled), @SINGULAR_HARNESS_HOLD_AFTER_SUBMIT@ (the node's acceptance
 journalled), and, around a fold's local commit,
 @SINGULAR_HARNESS_HOLD_BEFORE_COMMIT@, @SINGULAR_HARNESS_HOLD_AFTER_MIRROR@
-and @SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED@. Unset in ordinary use, where
-it does nothing.
+and @SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED@; around a rollback's return of
+the local files, @SINGULAR_HARNESS_HOLD_BEFORE_REWIND@ (the rollback
+journalled, the mirror not yet rebuilt) and
+@SINGULAR_HARNESS_HOLD_BEFORE_REWIND_STATE@ (the mirror rebuilt,
+@state.json@ not yet following). Unset in ordinary use, where it does
+nothing.
 -}
 harnessHoldAt :: String -> Maybe Text -> IO ()
 harnessHoldAt var step = do
