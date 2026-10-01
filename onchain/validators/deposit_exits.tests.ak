@@ -217,6 +217,52 @@ test e5_deposit_one_lovelace_short_refuses() {
 }
 
 // ----------------------------------------------------------------------------
+// An update is folded in the processing window only (spec KR-01)
+//
+// Current validator behaviour, with no counterpart in Lean: Lean admits a
+// fold in every window, and this rule stays under the fold-correspondence
+// hold. The e5 fold above is valid in every other respect, so outside the
+// processing window the first reason the cage gives is `not-phase1`, the
+// fold's first check on an update; a carriage, action, edge, approval or
+// trie refusal would name itself instead.
+// ----------------------------------------------------------------------------
+
+/// The e5 fold, paying its owner the deposit, valid over `range`.
+fn deleteActiveIn(range: Interval<Int>) -> Scenario {
+  let s = deleteActive([paid(fx.bookerAddress, fx.deposit)])
+  Scenario { ..s, tx: Transaction { ..s.tx, validity_range: range } }
+}
+
+/// The cage refuses it for `not-phase1` as its first reason, and the handler
+/// returns False rather than crashing. The handler runs first, so a different
+/// reason is printed.
+fn refusesNotPhase1(s: Scenario) -> Bool {
+  !spend(s) && refusalOf(s) == Some(@"not-phase1")
+}
+
+/// The control the four refusals below share: the same fold inside the
+/// processing window.
+test update_in_the_processing_window_accepts() {
+  accepts(deleteActiveIn(fx.phase1()))
+}
+
+test update_in_the_retraction_window_refuses_not_phase1() {
+  refusesNotPhase1(deleteActiveIn(fx.phase2()))
+}
+
+test update_after_the_windows_refuses_not_phase1() {
+  refusesNotPhase1(deleteActiveIn(fx.phase3()))
+}
+
+test update_across_the_processing_deadline_refuses_not_phase1() {
+  refusesNotPhase1(deleteActiveIn(interval.between(5_000, 15_000)))
+}
+
+test update_with_no_validity_bounds_refuses_not_phase1() {
+  refusesNotPhase1(deleteActiveIn(interval.everything))
+}
+
+// ----------------------------------------------------------------------------
 // Two deposits of one owner in one fold are owed as their sum
 // ----------------------------------------------------------------------------
 
