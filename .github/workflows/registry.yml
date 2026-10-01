@@ -517,3 +517,16 @@ jobs:
       # from the run's receipts.
       - name: Run the ordinary CLI's refusal controls
         run: nix run --quiet .#demo1-cli-controls
+      # #325: after a lost acknowledgement or an interrupted local commit,
+      # the next ordinary write reconciles from chain evidence — the
+      # journalled edge applied to the mirror once, observed once, nothing
+      # sent again — and proceeds; a transaction that never reached the
+      # node stops the next write before anything is built, naming its case
+      # and id. Each control is separate `singular` processes on one
+      # development node, judged from receipts, journals and saved bodies.
+      #
+      # Falsification: on any ancestor without reconciliation in the
+      # ordinary writes, the harness points are inert or the next write
+      # refuses partial, and the verdict table fails.
+      - name: Run the ordinary CLI's recovery controls
+        run: nix run --quiet .#cli-recovery-controls

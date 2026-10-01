@@ -23,19 +23,31 @@ not these.
 -}
 module Singular.CLISpec (spec) where
 
+import Control.Concurrent (threadDelay)
+import Control.Exception
+    ( ErrorCall (..)
+    , SomeException
+    , displayException
+    , fromException
+    , toException
+    , try
+    )
+import Control.Monad (forM_, unless)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
-import Data.List (isInfixOf)
+import Data.List (isInfixOf, sort)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~))
-import System.Directory (createDirectoryIfMissing)
+import System.Directory (createDirectoryIfMissing, listDirectory)
 import System.Exit (ExitCode (..))
 import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
+import System.Posix.Process (forkProcess, getProcessStatus)
+import System.Posix.Signals (sigKILL, signalProcess)
 import Test.Hspec
 
 import Data.Aeson qualified as Aeson
@@ -52,10 +64,13 @@ import MPF.Backend.Pure (MPFInMemoryDB (..))
 import Singular.CLI.Command
 import Singular.CLI.Proof
 import Singular.CLI.Receipt
+import Singular.CLI.Recovery
 import Singular.CLI.Registry
+import Singular.CLI.Session (CommandFailure (..), admitSubmissions)
 import Singular.Registry.Deployment
     ( Deployment (..)
     , loadMirror
+    , mirrorPathFor
     , parseOutRef
     , saveMirror
     )
@@ -63,9 +78,11 @@ import Singular.Registry.Ledger
     ( AssetName (..)
     , Coin (..)
     , Root (..)
+    , SlotNo (..)
     , TokenId (..)
     )
 import Singular.Registry.Node (Wallet (..), loadWallet)
+import Singular.Registry.Node.IndexerView (IndexerViewFailure (..))
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.Pure (provesAbsent, provesMember)
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
@@ -86,6 +103,8 @@ spec = describe "singular registry commands" $ do
     savedIdentity
     journal
     localProof
+    recovery
+    rollback
 
 -- ---------------------------------------------------------
 -- The command line
@@ -227,7 +246,36 @@ commandLine = describe "the command line" $ do
         parseCommand
             (["registry", "inspect", "--key", "6b6579", "--blueprint", "b"] <> node)
             `shouldBe` Left (MissingFlag "--registry")
+    it
+        "reads every command under the indexer backend as it reads it under \
+        \the default (#324)"
+        $ forM5 commands
+        $ \line -> do
+            parseCommand line `shouldSatisfy` either (const False) (const True)
+            parseCommand (line <> ["--backend", "indexer"])
+                `shouldBe` parseCommand line
+    it
+        "refuses a backend it does not name on every command, before \
+        \anything runs (#324)"
+        $ forM5 commands
+        $ \line ->
+            parseCommand (line <> ["--backend", "nodes"])
+                `shouldBe` Left
+                    (BadValue "--backend" "names node or indexer, not nodes")
   where
+    commands =
+        [ ["registry", "create", "--seed", seedText] <> reg <> node <> wallet
+        , ["registry", "insert", "--key", "6b6579", "--envelope", "/e.json"]
+            <> reg
+            <> node
+            <> wallet
+        , ["registry", "update", "--key", "6b6579", "--payload", "/p.json"]
+            <> reg
+            <> node
+            <> wallet
+        , ["registry", "terminate", "--key", "6b6579"] <> reg <> node <> wallet
+        , ["registry", "inspect", "--key", "6b6579"] <> reg <> node
+        ]
     forM5 xs f = mapM_ f xs
     writeSettings =
         WriteSettings
@@ -386,6 +434,74 @@ journal = describe "the journal of a write" $ do
             `shouldBe` length classes
         exitCodeOf Success `shouldBe` ExitSuccess
         Aeson.encode (map outcomeName classes) `shouldSatisfy` (not . BL.null)
+    it
+        "a command that sent a transaction never ends as a client refusal: \
+        \an unclassified or refusing failure after a send ends partial, \
+        \naming every transaction sent and keeping its fields (#324)"
+        $ do
+            let refusal =
+                    ErrorCall
+                        ( displayException
+                            (IndexerRestoring (Just (SlotNo 5113)) (Just (SlotNo 7019)))
+                        )
+                held = ("pendingRequest", Aeson.toJSON ("ab#0" :: T.Text))
+                failures =
+                    [ (toException refusal, displayException refusal, [])
+                    ,
+                        ( toException (CommandFailure ClientRefusal "refused here" [held])
+                        , "refused here"
+                        , [held]
+                        )
+                    ]
+                sends =
+                    [ ([submitted "book" "t2"], ["t2"])
+                    , ([phase "fold" "t3" "submit-unknown"], ["t3"])
+                    ,
+                        (
+                            [ submitted "boot" "t1"
+                            , confirmed "boot" "t1"
+                            , submitted "book" "t2"
+                            , phase "fold" "t3" "prepared"
+                            , phase "fold" "t3" "submit-unknown"
+                            ]
+                        , ["t1", "t2", "t3"]
+                        )
+                    ]
+            forM_ sends $ \(since, sent) ->
+                forM_ failures $ \(e, why, fields) ->
+                    case fromException (admitSubmissions since e) of
+                        Just (CommandFailure c reason kept) -> do
+                            c `shouldBe` Partial
+                            reason `shouldSatisfy` isInfixOf why
+                            mapM_ (\t -> reason `shouldSatisfy` isInfixOf (T.unpack t)) sent
+                            Prelude.lookup "submitted" kept `shouldBe` Just (Aeson.toJSON sent)
+                            filter ((/= "submitted") . fst) kept `shouldBe` fields
+                        Nothing -> expectationFailure ("kept unclassified: " <> show e)
+    it
+        "a failure after a send that the command classified otherwise keeps \
+        \its class (#324)"
+        $ forM_ (filter (/= ClientRefusal) [minBound .. maxBound])
+        $ \c ->
+            case fromException
+                ( admitSubmissions
+                    [submitted "book" "t2"]
+                    (toException (CommandFailure c "why" []))
+                ) of
+                Just (CommandFailure c' why _) -> (c', why) `shouldBe` (c, "why")
+                Nothing -> expectationFailure "lost its class"
+    it
+        "with nothing sent, no line or only prepared and rejected ones, every \
+        \failure is kept (#324)"
+        $ forM_
+            [[], [phase "fold" "t3" "prepared", phase "fold" "t3" "rejected"]]
+        $ \since -> do
+            forM_ [minBound .. maxBound] $ \c ->
+                case fromException
+                    (admitSubmissions since (toException (CommandFailure c "why" []))) of
+                    Just (CommandFailure c' why _) -> (c', why) `shouldBe` (c, "why")
+                    Nothing -> expectationFailure "lost its class"
+            fromException (admitSubmissions since (toException (ErrorCall "x")))
+                `shouldBe` Just (ErrorCall "x")
   where
     submitted s t = phase s t "submitted"
     confirmed s t = phase s t "observed"
@@ -496,6 +612,428 @@ localProof = describe "a key's leaf proven against the observed root" $ do
     it "names the four leaves in the model's words" $
         map leafName [minBound .. maxBound]
             `shouldBe` ["unknown", "absent", "active", "terminal"]
+
+-- ---------------------------------------------------------
+-- Recovery after an uncertain submission
+-- ---------------------------------------------------------
+
+recovery :: Spec
+recovery = describe "recovery after an uncertain submission" $ do
+    it "reads each transaction's case from its journalled phases" $ do
+        let lines' =
+                [ line "a" "prepared"
+                , line "a" "submitted"
+                , line "u" "prepared"
+                , line "u" "submit-unknown"
+                , line "r" "prepared"
+                , line "r" "rejected"
+                , line "i" "prepared"
+                , line "i" "submitted"
+                , line "i" "confirmed"
+                , line "o" "prepared"
+                , line "o" "submitted"
+                , line "o" "confirmed"
+                , line "o" "observed"
+                , line "t" "prepared"
+                , line "t" "submitted"
+                , line "t" "unconfirmed"
+                , line "k" "prepared"
+                , line "x" "prepared"
+                , line "x" "submit-unknown"
+                , line "x" "confirmed"
+                ]
+        map
+            (submissionCase lines')
+            ["a", "u", "r", "i", "o", "t", "k", "x", "none"]
+            `shouldBe` [ Just CaseAcknowledged
+                       , Just CaseUnknown
+                       , Just CaseRejected
+                       , Just CaseIncluded
+                       , Just CaseIncluded
+                       , Just CaseTimeout
+                       , Just CaseUnknown
+                       , Just CaseIncluded
+                       , Nothing
+                       ]
+    it
+        "applies a journalled fold's edge only from its root before, and only onto the ledger's root"
+        $ do
+            (_, r0) <- walked [("other", edgeInsertActive)]
+            (_, r1) <-
+                walked [("other", edgeInsertActive), (key, edgeInsertActive)]
+            (_, r2) <-
+                walked
+                    [ ("other", edgeInsertActive)
+                    , (key, edgeInsertActive)
+                    , ("third", edgeInsertActive)
+                    ]
+            let fold = foldLine (hexT r0) (hexT r1)
+            mirrorDecision (hexT r0) (hexT r1) fold `shouldBe` ApplyEdge
+            mirrorDecision (hexT r1) (hexT r1) fold `shouldBe` AlreadyApplied
+            mirrorDecision (hexT r0) (hexT r2) fold `shouldBe` EdgeStale
+            mirrorDecision (hexT r2) (hexT r1) fold `shouldBe` EdgeStale
+            mirrorDecision (hexT r0) (hexT r1) (line "b" "prepared")
+                `shouldBe` NoEdge
+    it
+        "never applies an edge twice: once walked, the same line is already applied"
+        $ do
+            (_, r0) <- walked [("other", edgeInsertActive)]
+            (_, r1) <-
+                walked [("other", edgeInsertActive), (key, edgeInsertActive)]
+            let fold = foldLine (hexT r0) (hexT r1)
+                tid = TokenId (AssetName "tok")
+            (db0, _) <- walked [("other", edgeInsertActive)]
+            (tm, _) <- mkPureTrieManagerFrom (Map.singleton tid db0)
+            mirrorDecision (hexT r0) (hexT r1) fold `shouldBe` ApplyEdge
+            Root now <-
+                withTrie tm tid $ \t -> walkEdge t key edgeInsertActive >> getRoot t
+            now `shouldBe` r1
+            mirrorDecision (hexT now) (hexT r1) fold `shouldBe` AlreadyApplied
+    it "leaves state.json whole under a writer killed mid-replacement" $
+        withTempDir $ \dir -> do
+            let commitment r c =
+                    LocalState
+                        { localVersion = 1
+                        , localToken = "746f6b"
+                        , localRoot = r
+                        , localLastTx = Just (T.replicate 2_000_000 c)
+                        , localLastSlot = Nothing
+                        }
+                old = commitment "aa" "a"
+                new = commitment "bb" "b"
+            writeLocalState dir old
+            killedWriter
+                40
+                (\i -> writeLocalState dir (if even i then new else old))
+                $ do
+                    back <- try (readLocalState dir)
+                    case back of
+                        Right s
+                            | s == old || s == new -> pure ()
+                            | otherwise ->
+                                expectationFailure "state.json holds a third commitment"
+                        Left (e :: SomeException) ->
+                            expectationFailure
+                                ("state.json is torn: " <> take 160 (show e))
+    it "leaves the mirror whole under a writer killed mid-replacement" $
+        withTempDir $ \dir -> do
+            let manifest = configPath dir
+                tid = TokenId (AssetName "tok")
+                keys n =
+                    [ (BC.pack ("key-" <> show i), edgeInsertActive) | i <- [1 .. n :: Int]
+                    ]
+            (small, _) <- walked (keys 300)
+            (large, _) <- walked (keys 600)
+            saveMirror manifest (Map.singleton tid small)
+            oldBytes <- BS.readFile (mirrorFile manifest)
+            saveMirror manifest (Map.singleton tid large)
+            newBytes <- BS.readFile (mirrorFile manifest)
+            killedWriter
+                40
+                ( \i ->
+                    saveMirror
+                        manifest
+                        (Map.singleton tid (if even i then small else large))
+                )
+                $ do
+                    now <- BS.readFile (mirrorFile manifest)
+                    unless (now == oldBytes || now == newBytes) $
+                        expectationFailure
+                            ( "the mirror is torn: "
+                                <> show (BS.length now)
+                                <> " bytes, neither the old "
+                                <> show (BS.length oldBytes)
+                                <> " nor the new "
+                                <> show (BS.length newBytes)
+                            )
+    it "leaves no partial file behind a completed replacement" $
+        withTempDir $ \dir -> do
+            (db, _) <- walked [(key, edgeInsertActive)]
+            saveMirror
+                (configPath dir)
+                (Map.singleton (TokenId (AssetName "tok")) db)
+            writeLocalState
+                dir
+                (LocalState 1 "746f6b" "aa" Nothing Nothing)
+            sort <$> listDirectory dir
+                `shouldReturn` ["registry.mirror.json", "state.json"]
+  where
+    line t e =
+        JournalEntry
+            { journalCommand = "insert"
+            , journalStep = "fold"
+            , journalTxId = t
+            , journalEvent = e
+            , journalDetail = Nothing
+            , journalInputs = Nothing
+            , journalNetwork = Nothing
+            , journalEra = Nothing
+            , journalBody = Nothing
+            , journalBodyHash = Nothing
+            , journalChainPoint = Nothing
+            , journalKey = Nothing
+            , journalExpect = Nothing
+            , journalEdge = Nothing
+            , journalRootBefore = Nothing
+            , journalRootAfter = Nothing
+            }
+    foldLine from to =
+        (line "f" "prepared")
+            { journalKey = Just (hexT key)
+            , journalEdge = Just edgeInsertActive
+            , journalRootBefore = Just from
+            , journalRootAfter = Just to
+            }
+    mirrorFile = mirrorPathFor
+
+-- ---------------------------------------------------------
+-- Rollback and exclusion
+-- ---------------------------------------------------------
+
+rollback :: Spec
+rollback = describe "a rolled-back inclusion and an excluded transaction" $ do
+    it "names the seven cases a submission meets, each distinctly" $
+        map caseName [minBound .. maxBound]
+            `shouldBe` [ "acknowledged"
+                       , "unknown"
+                       , "rejected"
+                       , "included"
+                       , "timeout"
+                       , "rolled-back"
+                       , "excluded"
+                       ]
+    it
+        "reads a transaction's case from the latest of its journalled phases"
+        $ do
+            let lines' =
+                    phases
+                        "b"
+                        ["prepared", "submitted", "confirmed", "observed", "rolled-back"]
+                        <> phases "c" ["prepared", "submitted", "confirmed", "rolled-back"]
+                        <> phases
+                            "i"
+                            [ "prepared"
+                            , "submitted"
+                            , "confirmed"
+                            , "observed"
+                            , "rolled-back"
+                            , "confirmed"
+                            ]
+                        <> phases
+                            "o"
+                            [ "prepared"
+                            , "submitted"
+                            , "confirmed"
+                            , "observed"
+                            , "rolled-back"
+                            , "confirmed"
+                            , "observed"
+                            ]
+                        <> phases
+                            "x"
+                            [ "prepared"
+                            , "submitted"
+                            , "confirmed"
+                            , "observed"
+                            , "rolled-back"
+                            , "excluded"
+                            ]
+                        <> phases "u" ["prepared", "submit-unknown", "excluded"]
+                        <> phases "t" ["prepared", "submitted", "unconfirmed", "excluded"]
+                        <> phases "k" ["prepared", "excluded"]
+            map (submissionCase lines') ["b", "c", "i", "o", "x", "u", "t", "k"]
+                `shouldBe` [ Just CaseRolledBack
+                           , Just CaseRolledBack
+                           , Just CaseIncluded
+                           , Just CaseIncluded
+                           , Just CaseExcluded
+                           , Just CaseExcluded
+                           , Just CaseExcluded
+                           , Just CaseExcluded
+                           ]
+    it
+        "leaves a rolled-back transaction unresolved and settles an excluded one"
+        $ do
+            let rolled =
+                    phases
+                        "b"
+                        ["prepared", "submitted", "confirmed", "observed", "rolled-back"]
+                excluded = rolled <> phases "b" ["excluded"]
+            fmap journalEvent (unresolved rolled) `shouldBe` Just "rolled-back"
+            unresolved excluded `shouldBe` Nothing
+    it
+        "reads inclusion from a view's live outputs: output live, an input live, or neither"
+        $ do
+            let out0 = outRef 'f' 0
+                spent = [outRef 'a' 0, outRef 'b' 1, outRef 'c' 2]
+                live = Set.fromList
+            inclusionOf (live [out0]) out0 spent `shouldBe` OnChain
+            inclusionOf
+                (live [outRef 'b' 1, outRef 'c' 2, outRef 'e' 0])
+                out0
+                spent
+                `shouldBe` OffChain [outRef 'b' 1, outRef 'c' 2]
+            inclusionOf (live [outRef 'e' 0]) out0 spent `shouldBe` Undetermined
+            inclusionOf (live []) out0 [] `shouldBe` Undetermined
+    it
+        "rolls back only an included transaction a live input shows off the chain"
+        $ do
+            let gone = OffChain [outRef 'a' 0, outRef 'b' 1]
+            rollbackEvidence (Just CaseIncluded) gone
+                `shouldBe` Just [outRef 'a' 0, outRef 'b' 1]
+            rollbackEvidence (Just CaseIncluded) Undetermined `shouldBe` Nothing
+            rollbackEvidence (Just CaseIncluded) OnChain `shouldBe` Nothing
+            forM_
+                [ CaseAcknowledged
+                , CaseUnknown
+                , CaseRejected
+                , CaseTimeout
+                , CaseRolledBack
+                , CaseExcluded
+                ]
+                $ \c -> rollbackEvidence (Just c) gone `shouldBe` Nothing
+            rollbackEvidence Nothing gone `shouldBe` Nothing
+    it
+        "excludes an unresolved transaction not on the chain once the tip reaches its upper bound"
+        $ do
+            let gone = OffChain [outRef 'a' 0]
+                bound = Just (SlotNo 500)
+            forM_ [CaseAcknowledged, CaseUnknown, CaseTimeout, CaseRolledBack] $ \c -> do
+                excludedAt (SlotNo 500) bound (Just c) gone `shouldBe` True
+                excludedAt (SlotNo 900) bound (Just c) gone `shouldBe` True
+                excludedAt (SlotNo 499) bound (Just c) gone `shouldBe` False
+                excludedAt (SlotNo 900) Nothing (Just c) gone `shouldBe` False
+                excludedAt (SlotNo 900) bound (Just c) OnChain `shouldBe` False
+                excludedAt (SlotNo 900) bound (Just c) Undetermined `shouldBe` False
+            forM_ [CaseIncluded, CaseRejected, CaseExcluded] $ \c ->
+                excludedAt (SlotNo 900) bound (Just c) gone `shouldBe` False
+    it
+        "returns the mirror to the root before the earliest rolled-back fold, rebuilt from the folds still on chain"
+        $ do
+            (_, r0) <- walked []
+            (_, r1) <- walked [("k1", edgeInsertActive)]
+            (_, r2) <- walked [("k1", edgeInsertActive), ("k2", edgeInsertActive)]
+            (_, r3) <-
+                walked
+                    [ ("k1", edgeInsertActive)
+                    , ("k2", edgeInsertActive)
+                    , ("k2", edgeUpdateTerminal)
+                    ]
+            (_, r4) <-
+                walked
+                    [ ("k1", edgeInsertActive)
+                    , ("k2", edgeInsertActive)
+                    , ("k4", edgeInsertActive)
+                    ]
+            let f1 = foldPrepared "f1" "k1" edgeInsertActive r0 r1
+                f2 = foldPrepared "f2" "k2" edgeInsertActive r1 r2
+                f3 = foldPrepared "f3" "k2" edgeUpdateTerminal r2 r3
+                lost = foldPrepared "lost" "k9" edgeInsertActive r1 r1
+                settled t = phases t ["submitted", "confirmed", "observed"]
+                history =
+                    [f1]
+                        <> settled "f1"
+                        <> [lost]
+                        <> phases "lost" ["submit-unknown", "excluded"]
+                        <> [f2]
+                        <> settled "f2"
+                        <> [f3]
+                        <> settled "f3"
+                        <> phases "book" ["prepared", "submitted", "confirmed", "observed"]
+            rewindOf history `shouldBe` Nothing
+            rewindOf (history <> phases "book" ["rolled-back"]) `shouldBe` Nothing
+            rewindOf (history <> phases "f3" ["rolled-back"])
+                `shouldBe` Just (Rewind (hexT r2) [f1, f2])
+            rewindOf
+                (history <> phases "f3" ["rolled-back"] <> phases "f2" ["rolled-back"])
+                `shouldBe` Just (Rewind (hexT r1) [f1])
+            rewindOf
+                (history <> phases "f3" ["rolled-back", "excluded"])
+                `shouldBe` Just (Rewind (hexT r2) [f1, f2])
+            -- A fold built after the rollback was built on the returned root:
+            -- the rewind is done, until that fold is rolled back in turn.
+            let f4 = foldPrepared "f4" "k4" edgeInsertActive r2 r4
+                rebuilt =
+                    history
+                        <> phases "f3" ["rolled-back", "excluded"]
+                        <> [f4]
+                        <> phases "f4" ["submitted", "confirmed", "observed"]
+            rewindOf rebuilt `shouldBe` Nothing
+            rewindOf (rebuilt <> phases "f4" ["rolled-back"])
+                `shouldBe` Just (Rewind (hexT r2) [f1, f2])
+            rewindOf
+                ( history
+                    <> phases "f3" ["rolled-back"]
+                    <> phases "f3" ["confirmed", "observed"]
+                )
+                `shouldBe` Nothing
+    it
+        "replays fold edges from the empty trie, each from its journalled root before to its root after"
+        $ do
+            (_, r0) <- walked []
+            (_, r1) <- walked [("k1", edgeInsertActive)]
+            (_, r2) <- walked [("k1", edgeInsertActive), ("k2", edgeInsertActive)]
+            let f1 = foldPrepared "f1" "k1" edgeInsertActive r0 r1
+                f2 = foldPrepared "f2" "k2" edgeInsertActive r1 r2
+                replayed folds = do
+                    let tid = TokenId (AssetName "tok")
+                    (tm, _) <- mkPureTrieManagerFrom Map.empty
+                    createTrie tm tid
+                    withTrie tm tid (`replayFolds` folds)
+            replayed [f1, f2] `shouldReturn` Right r2
+            replayed [f1] `shouldReturn` Right r1
+            replayed [] `shouldReturn` Right r0
+            -- A fold that does not start from the root reached, or does not
+            -- end at its journalled root after, stops the replay.
+            isLeft <$> replayed [f2] `shouldReturn` True
+            isLeft <$> replayed [f1, f2{journalRootAfter = Just (hexT r1)}]
+                `shouldReturn` True
+  where
+    phases t = map (jline t)
+    outRef c i =
+        either error id $
+            parseOutRef (T.pack (replicate 64 c <> "#" <> show (i :: Int)))
+    foldPrepared t k edge from to =
+        (jline t "prepared")
+            { journalKey = Just (hexT k)
+            , journalEdge = Just edge
+            , journalRootBefore = Just (hexT from)
+            , journalRootAfter = Just (hexT to)
+            }
+    isLeft = either (const True) (const False)
+
+-- | A bare journal line of one phase of one transaction.
+jline :: T.Text -> T.Text -> JournalEntry
+jline t e =
+    JournalEntry
+        { journalCommand = "insert"
+        , journalStep = "fold"
+        , journalTxId = t
+        , journalEvent = e
+        , journalDetail = Nothing
+        , journalInputs = Nothing
+        , journalNetwork = Nothing
+        , journalEra = Nothing
+        , journalBody = Nothing
+        , journalBodyHash = Nothing
+        , journalChainPoint = Nothing
+        , journalKey = Nothing
+        , journalExpect = Nothing
+        , journalEdge = Nothing
+        , journalRootBefore = Nothing
+        , journalRootAfter = Nothing
+        }
+
+{- | Start a process that rewrites a file over and over, kill it at a
+different moment each round, and run the check on what it left.
+-}
+killedWriter :: Int -> (Int -> IO ()) -> IO () -> IO ()
+killedWriter rounds write check = forM_ [1 .. rounds] $ \r -> do
+    pid <- forkProcess (mapM_ write [0 ..])
+    threadDelay (2_000 + (r * 7_919) `mod` 40_000)
+    signalProcess sigKILL pid
+    _ <- getProcessStatus True False pid
+    check
 
 withTempDir :: (FilePath -> IO a) -> IO a
 withTempDir = withSystemTempDirectory "singular-cli-spec"

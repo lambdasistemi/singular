@@ -194,7 +194,6 @@ runCreate a = do
                 booted <- boot wc cfg pinned seedIn
                 let NodeSettings _ magic = writeNode (createWrite a)
                     dep = deploymentOf magic cfg seedIn booted
-                writeConfig dir (mkRegistryConfig magic addr (pinsOf cfg) dep)
                 saveMirror
                     (configPath dir)
                     (Map.singleton (bootedToken booted) emptyMPFInMemoryDB)
@@ -207,6 +206,9 @@ runCreate a = do
                         , localLastTx = Just (bootedBoot booted)
                         , localLastSlot = Nothing
                         }
+                -- The saved identity last: its presence marks a create
+                -- that finished, with its mirror and commitment in place.
+                writeConfig dir (mkRegistryConfig magic addr (pinsOf cfg) dep)
                 pure
                     ( receipt
                         "create"

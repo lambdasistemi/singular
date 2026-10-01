@@ -58,8 +58,7 @@ import Cardano.Node.Client.Submitter
     , Submitter (..)
     )
 import Cardano.Node.Client.UTxOIndexer.Indexer
-    ( IndexerHandle
-    , withInMemoryIndexer
+    ( withInMemoryIndexer
     )
 import Cardano.Tx.Ledger (ConwayTx)
 import Data.ByteString.Short qualified as SBS
@@ -76,13 +75,12 @@ import Singular.Registry.Node
     , nodeAddressReads
     )
 import Singular.Registry.Node.Indexer
-    ( Following (..)
-    , currentFollower
+    ( currentFollower
     , markFundingIndexed
-    , withFollowing
     )
 import Singular.Registry.Node.Session (withOpenSession)
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.StubFollowing (withStubFollowing)
 
 spec :: Spec
 spec = describe "what a runner leaves behind when its body ends" $ do
@@ -103,27 +101,27 @@ spec = describe "what a runner leaves behind when its body ends" $ do
     describe "the follower a session installs" $ do
         it "is installed for the body" $
             withInMemoryIndexer $ \idx ->
-                withFollowing (stubFollowing idx) $
+                withStubFollowing idx $
                     isJust <$> currentFollower
                         `shouldReturn` True
 
         it "is removed when the body fails" $
             withInMemoryIndexer $ \idx -> do
-                leaveBehind . withFollowing (stubFollowing idx) . throwIO $
+                leaveBehind . withStubFollowing idx . throwIO $
                     userError "the runner body failed"
                 isJust <$> currentFollower `shouldReturn` False
                 awaitIndexed basicTx `shouldThrow` outsideFollowChain
 
         it "is removed when the body returns" $
             withInMemoryIndexer $ \idx -> do
-                _ <- withFollowing (stubFollowing idx) (pure ())
+                _ <- withStubFollowing idx (pure ())
                 isJust <$> currentFollower `shouldReturn` False
                 awaitIndexed basicTx `shouldThrow` outsideFollowChain
 
     describe "the funding-read guard" $ do
         it "refuses node address reads once the funding read is done" $
             withInMemoryIndexer $ \idx ->
-                withFollowing (stubFollowing idx) $ do
+                withStubFollowing idx $ do
                     markFundingIndexed
                     Cage.withView
                         (adaptProvider (NetworkMagic 42) unusedNode)
@@ -132,7 +130,7 @@ spec = describe "what a runner leaves behind when its body ends" $ do
 
         it "lets node address reads through again once the body has failed" $
             withInMemoryIndexer $ \idx -> do
-                leaveBehind . withFollowing (stubFollowing idx) $ do
+                leaveBehind . withStubFollowing idx $ do
                     markFundingIndexed
                     throwIO (userError "the runner body failed")
                 before <- nodeAddressReads
@@ -176,10 +174,6 @@ stubSession =
         , nsTipSlot = pure (SlotNo 7)
         , nsMode = Devnet
         }
-
--- | A follower around a real in-memory indexer; no chain is followed.
-stubFollowing :: IndexerHandle -> Following
-stubFollowing idx = Following{followingIndexer = idx, followingFromOrigin = True}
 
 {- | The node side of 'adaptProvider': an acquired view at one block,
 served by its own one-shot fields; only its address reads are ever

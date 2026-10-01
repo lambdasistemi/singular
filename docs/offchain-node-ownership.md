@@ -62,7 +62,7 @@ imported `Singular.Registry.Ledger` before the split still does.
 | --- | --- |
 | `Node.Options` | Parsing mode flags and environment into the process mode, the external-node shape, the external-mode echo diagnostic (a preprod Koios query; a no-op on the devnet), and the shared named-diagnostic helper. No dependency on any runtime module. |
 | `Node.Wallet` | Loading and deriving the process wallet: signing keys, addresses, the funder identity the run pays from, network magic, and bech32 rendering. Key bytes are never logged. |
-| `Node.Indexer` | The chain follower a session reads through: installing it for an action, sweeping the devnet's genesis funding into a block-carried output, answering address reads from the index, refusing node address reads once the funding sweep is done, and counting the node's address queries. Waiting for a submitted transaction's output to be indexed, under the wait bound. |
+| `Node.Indexer` | The chain follower a session reads through: installing it for an action, sweeping the devnet's genesis funding into a block-carried output, handing address reads to the indexer adapter, refusing node address reads once the funding sweep is done, and counting the node's address queries. Waiting for a submitted transaction's output to be indexed, under the wait bound. |
 | `Node.Funding` | The pre-run funding floor: what the funding wallet must hold before the first transaction, the address-naming diagnostic when it does not, and lovelace rendering. |
 | `Node.Session` | The runner's connection lifecycle: connecting to the node socket, the bracketed session a body runs inside, announcing and awaiting the connection, and the session readers (tip, stake registration). |
 | `Node.Confirmation` | Waiting for the chain to carry what a run submitted, under the wait bound: transaction and window waits, the node reads that derive a window, deadlines, upper-bound slots, chain waits, and the confirmation delay the mode selects. |
@@ -104,9 +104,17 @@ names link to its entry here:
   funding identity —
   <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Wallet.hs">source</a>.
 - <span id="indexer-owner"></span>**Indexer** — the chain follower, the
-  funding sweep, indexed reads, the node-read guard and the address-read
+  funding sweep, the indexer adapter on a followed devnet, the node-read guard and the address-read
   counter —
   <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Indexer.hs">source</a>.
+- <span id="index-gate-owner"></span>**IndexGate** — the gate the follower
+  writes the index through, the index's applied point, and holding the
+  index for one view —
+  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/IndexGate.hs">source</a>.
+- <span id="indexer-view-owner"></span>**IndexerView** — the indexer adapter:
+  address reads from the index and node reads at one chain point, and its
+  named refusals —
+  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/IndexerView.hs">source</a>.
 - <span id="funding-owner"></span>**Funding** — the pre-run funding floor
   and its refusal diagnostic —
   <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Funding.hs">source</a>.

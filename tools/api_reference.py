@@ -42,6 +42,8 @@ PRIVATE_OWNER_GUIDE_ANCHORS = {
     "Singular.Registry.Node.Options": "options-owner",
     "Singular.Registry.Node.Wallet": "wallet-owner",
     "Singular.Registry.Node.Indexer": "indexer-owner",
+    "Singular.Registry.Node.IndexGate": "index-gate-owner",
+    "Singular.Registry.Node.IndexerView": "indexer-view-owner",
     "Singular.Registry.Node.Session": "session-owner",
     "Singular.Registry.Node.Confirmation": "confirmation-owner",
     "Singular.Registry.Node.Funding": "funding-owner",

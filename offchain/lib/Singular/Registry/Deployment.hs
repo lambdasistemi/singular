@@ -79,6 +79,7 @@ module Singular.Registry.Deployment
     , mirrorPathFor
     , loadMirror
     , saveMirror
+    , replaceDurably
 
       -- * Output references
     , renderOutRef
@@ -107,5 +108,6 @@ import Singular.Registry.Deployment.Manifest
     )
 import Singular.Registry.Deployment.Mirror
     ( loadMirror
+    , replaceDurably
     , saveMirror
     )

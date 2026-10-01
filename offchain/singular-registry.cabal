@@ -67,6 +67,7 @@ library
     , singular-registry:node-internal
     , text                   >=2.0  && <2.2
     , time
+    , unix
 
   exposed-modules:
     Singular.Application.OpenDatum.Book
@@ -163,6 +164,8 @@ library node-internal
     Singular.Registry.Node.Wallet
     Singular.Registry.Node.Wait
     Singular.Registry.Node.Indexer
+    Singular.Registry.Node.IndexGate
+    Singular.Registry.Node.IndexerView
     Singular.Registry.Node.Session
     Singular.Registry.Node.Confirmation
     Singular.Registry.Node.Funding
@@ -195,6 +198,7 @@ library node-internal
     , ouroboros-consensus
     , ouroboros-network:api
     , process
+    , stm
     , text
     , time
 
@@ -568,6 +572,8 @@ executable devnet
   hs-source-dirs:   devnet
   main-is:          Main.hs
   build-depends:
+    , aeson
+    , async
     , base                        >=4.14 && <5
     , base16-bytestring
     , bytestring
@@ -575,12 +581,16 @@ executable devnet
     , cardano-ledger-mary
     , cardano-node-clients
     , cardano-node-clients:devnet
+    , cardano-slotting
     , cardano-strict-containers
     , containers
     , directory
     , filepath
     , microlens
+    , ouroboros-consensus
+    , ouroboros-network:api
     , singular-registry
+    , text
 
   ghc-options:      -threaded -with-rtsopts=-N
 
@@ -676,6 +686,7 @@ test-suite cage-tests
     Singular.CLI.Node
     Singular.CLI.Proof
     Singular.CLI.Receipt
+    Singular.CLI.Recovery
     Singular.CLI.Registry
     Singular.CLI.Session
     Singular.CLI.WriteSpec
@@ -688,11 +699,13 @@ test-suite cage-tests
     Singular.Registry.TxBuilder.UpperSlotSpec
     Singular.Registry.CandidateSpec
     Singular.Registry.FailureMatchSpec
+    Singular.Registry.IndexerViewSpec
     Singular.Registry.NodeCleanupSpec
     Singular.Registry.NodeSpec
     Singular.Registry.NodeWaitSpec
     Singular.Registry.OneViewSpec
     Singular.Registry.ProviderSpec
+    Singular.Registry.StubFollowing
     Singular.Registry.StubView
     Singular.Registry.LifecycleSpec
     Singular.Registry.TypesSpec
@@ -707,6 +720,7 @@ test-suite cage-tests
     , cardano-slotting
     , base               >=4.14 && <5
     , cardano-ledger-api
+    , cardano-ledger-binary
     , cardano-ledger-alonzo
     , cardano-ledger-allegra
     , cardano-ledger-conway
@@ -734,6 +748,7 @@ test-suite cage-tests
     , plutus-ledger-api
     , plutus-tx
     , QuickCheck
+    , stm
     , temporary
     , text
     , time
@@ -882,6 +897,8 @@ executable singular
     Singular.CLI.Node
     Singular.CLI.Proof
     Singular.CLI.Receipt
+    Singular.CLI.Reconcile
+    Singular.CLI.Recovery
     Singular.CLI.Registry
     Singular.CLI.Session
 

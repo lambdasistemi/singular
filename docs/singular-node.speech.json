@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "The table lists the settings. The node socket and the network magic go to all five commands: magic 1 is preprod, 2 is preview, 42 the factory development network, and mainnet's magic is refused for writes. The wallet signing key goes to the four writes only; it funds and signs, is never printed, and inspect refuses it. The confirm timeout bounds how long each submission may take to appear on chain, ten minutes by default; past it the submission stays journalled as unconfirmed and is never resubmitted.",
+      "text": "The table lists the settings. The node socket and the network magic go to all five commands: magic 1 is preprod, 2 is preview, 42 the factory development network, and mainnet's magic is refused for writes. The wallet signing key goes to the four writes only; it funds and signs, is never printed, and inspect refuses it. The confirm timeout bounds how long each submission may take to appear on chain, ten minutes by default; past it the submission stays journalled as unconfirmed and is never resubmitted. The backend setting, node by default or indexer, decides where every command reads addresses from: the node itself, or an index the command builds by following the node's chain from its first block. Any other value is refused before anything runs.",
       "pause": 500
     },
     {
@@ -61,6 +61,44 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "174be94a44db343a4da64a4cb70a2d0b46ad2f9a782f33a2c4a0950f68e71135"
-  }
+    "sha256": "4b1a4c3a2ca9c34ff843c2d9baeaaf133e40eab0d60425e8f3ab6a89f828e188"
+  },
+  "reading-through-an-index": [
+    {
+      "text": "With the indexer backend a command still connects to the node you name and still submits through it, but every address read, your wallet, the registry state and its holdings, is answered from an index the command keeps in memory while it runs. The index follows the node's chain from its first block, so it holds every output a block ever carried. Protocol parameters, script registration, time and evaluation still come from the node.",
+      "pause": 500
+    },
+    {
+      "text": "Each read is answered at one chain point. The command acquires a view of the node, lets the index advance exactly to that block and holds it there until the view closes, so the index and the node describe the same block. If the index cannot be brought there, the command refuses rather than mix two chain states.",
+      "pause": 500
+    },
+    {
+      "text": "The diagram shows the follower inside the command applying the node's blocks to the in-memory index, the command reading addresses from the index at its view's block, and parameters, time, evaluation and submission going to the node.",
+      "pause": 400
+    }
+  ],
+  "what-the-index-covers": [
+    {
+      "text": "The index holds every output a transaction in a block created. Outputs that exist only in the genesis ledger state were never in a block, so the index does not hold them. When a write starts, the command compares, at one chain point, what the node and the index hold at your wallet's address; if the node holds outputs the index does not, it refuses with the coverage incomplete diagnostic, naming each of them, instead of reading the wallet as empty. Pay them into a block first, for example to yourself through the node backend, or keep the node backend for that wallet.",
+      "pause": 500
+    },
+    {
+      "text": "A development network is followed in seconds. A public test network's index also starts from its first block, which takes far longer than the two minutes a command waits for its index to catch up, so there the command refuses as restoring and the node backend is the one to use.",
+      "pause": 500
+    },
+    {
+      "text": "When it ends, each command under the indexer backend reports on standard error how many address reads the index answered and how many went to the node: at most one, a write's wallet check.",
+      "pause": 400
+    }
+  ],
+  "when-the-index-cannot-answer": [
+    {
+      "text": "Every refusal is one line, indexer backend refused the read, with its class in brackets and the chain points or setting involved, and nothing is submitted after it. A refusal while the command opens its connection is reported as node unavailable. Later in a write it is a client refusal while the write has sent nothing, and partial, naming every transaction it sent, once it has: a write that already submitted never reports that nothing was submitted.",
+      "pause": 500
+    },
+    {
+      "text": "The table lists the classes. Coverage incomplete: your wallet holds outputs only the genesis state carries, named with the address, the chain point and each output. Restoring: the index has not caught up with the node within two minutes, with the processed and tip slots. Disconnected: the index lost its connection to the node. Lag: the index did not reach the view's block within ten seconds. Fork: the index holds another block at the view's slot. Unsupported: another network, or an era whose outputs the index cannot decode.",
+      "pause": 500
+    }
+  ]
 }

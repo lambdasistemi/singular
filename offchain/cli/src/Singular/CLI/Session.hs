@@ -20,7 +20,9 @@ far that transaction got.
 The fourth phase, @observed@, is the command's own: 'journalObserved'
 records it only after the command has read back what the transaction
 made. A confirmation proves inclusion, not that readback, so a
-transaction confirmed but never read back stays unresolved.
+transaction confirmed but never read back stays unresolved until a later
+command reconciles it. The receipt names each transaction the command
+prepared and the case it met.
 
 A failure is a 'CommandFailure' naming its outcome class; the command
 prints it and exits with that class's status.
@@ -30,6 +32,7 @@ module Singular.CLI.Session
       CommandFailure (..)
     , failWith
     , failWithFields
+    , admitSubmissions
 
       -- * Writes
     , WriteContext (..)
@@ -41,26 +44,41 @@ module Singular.CLI.Session
     , journalObserved
     , journalObservedId
     , txIdHex
-    , refuseUnresolved
+
+      -- * The target's lock
+    , withTargetLockOr
+
+      -- * Test harness points
+    , harnessHoldAt
     ) where
 
 import Control.Concurrent (forkIO, threadDelay)
 import Control.Concurrent.Async (async, cancel, waitCatch)
 import Control.Exception
-    ( Exception
+    ( ErrorCall (..)
+    , Exception
     , IOException
+    , SomeAsyncException
     , SomeException
     , bracket
+    , fromException
     , throwIO
+    , toException
     , try
     )
 import Control.Monad (void, when)
-import Data.Aeson (Value)
+import Data.Aeson (Value (..), object, toJSON, (.=))
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.Foldable (toList)
-import Data.IORef (newIORef, readIORef, writeIORef)
+import Data.IORef
+    ( newIORef
+    , readIORef
+    , writeIORef
+    )
+import Data.List (nub)
 import Data.Maybe (fromMaybe, isNothing)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -99,9 +117,10 @@ import Singular.CLI.Receipt
     , OutcomeClass (..)
     , appendJournal
     , bodiesDir
+    , caseName
     , durableWrite
     , readJournal
-    , unresolved
+    , submissionCase
     )
 import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Node (Wallet (..), loadWallet)
@@ -150,8 +169,8 @@ withWrite
     :: FilePath
     -> Text
     -> WriteSettings
-    -> (WriteContext -> IO a)
-    -> IO a
+    -> (WriteContext -> IO Value)
+    -> IO Value
 withWrite dir command ws body = do
     harnessHold
     withTargetLock dir (withSession dir command ws body)
@@ -166,55 +185,140 @@ harnessHold :: IO ()
 harnessHold =
     lookupEnv "SINGULAR_HARNESS_HOLD_BEFORE_LOCK" >>= \case
         Nothing -> pure ()
-        Just path -> do
-            writeFile (path <> ".waiting") ""
-            let waitFor = do
-                    there <- doesFileExist path
-                    if there then pure () else threadDelay 100_000 >> waitFor
-            waitFor
+        Just path -> waitAt path
 
 {- | The node and wallet without the target's lock: for a command that
 writes nothing to its target (a create preview), so the target directory
 is neither created nor touched.
+
+The receipt names every transaction the command prepared and the case
+it met, read from the journal when the command ends ('submissionsOf'),
+whether it succeeded or stopped.
 -}
 withSession
     :: FilePath
     -> Text
     -> WriteSettings
-    -> (WriteContext -> IO a)
-    -> IO a
+    -> (WriteContext -> IO Value)
+    -> IO Value
 withSession dir command ws body = do
     let NodeSettings sock magic = writeNode ws
     wallet <- loadWallet magic (writeWalletKey ws)
     connected <- newIORef False
+    before <- length <$> readJournal dir
     result <-
         try $
             withWrites sock magic (writeWalletKey ws) $ \caps -> do
                 writeIORef connected True
-                body
-                    WriteContext
-                        { wcDir = dir
-                        , wcCommand = command
-                        , wcWallet = wallet
-                        , wcCapabilities = caps
-                        , wcTimeout = writeConfirmTimeout ws
-                        }
+                ran <-
+                    try $
+                        body
+                            WriteContext
+                                { wcDir = dir
+                                , wcCommand = command
+                                , wcWallet = wallet
+                                , wcCapabilities = caps
+                                , wcTimeout = writeConfirmTimeout ws
+                                }
+                named <- submissionsOf dir before
+                case ran of
+                    Left (CommandFailure c why fields) ->
+                        throwIO (CommandFailure c why (fields <> [("submissions", named)]))
+                    Right (Object o) ->
+                        pure (Object (KeyMap.insert "submissions" named o))
+                    Right v -> pure v
     case result of
         Right a -> pure a
         Left (e :: SomeException) -> do
             was <- readIORef connected
             if was
-                then throwIO e
+                then do
+                    since <- drop before <$> readJournal dir
+                    throwIO (admitSubmissions since e)
                 else
                     failWith
                         NodeUnavailable
                         ("the node at " <> sock <> " could not be used: " <> show e)
 
+{- | Each transaction this command prepared — the @prepared@ lines it
+appended after the first @before@ — in order, with the case the journal shows
+it met ('submissionCase') and whether its after-state was observed.
+-}
+submissionsOf :: FilePath -> Int -> IO Value
+submissionsOf dir before = do
+    entries <- readJournal dir
+    pure $
+        toJSON
+            [ object
+                [ "step" .= step
+                , "tx" .= txid
+                , "case" .= (caseName <$> submissionCase entries txid)
+                , "observed"
+                    .= any
+                        (\e -> journalTxId e == txid && journalEvent e == "observed")
+                        entries
+                ]
+            | p <- drop before entries
+            , journalEvent p == "prepared"
+            , let step = journalStep p
+                  txid = journalTxId p
+            ]
+
+{- | A command that has sent a transaction never ends as a client refusal,
+whose receipt says nothing was submitted. Given the journal lines this
+command appended and the failure that stopped it, a failure left
+unclassified or classified as a refusal becomes @partial@ when any of
+those lines records a send (@submitted@ or @submit-unknown@), naming
+the transactions sent; any other failure is returned unchanged.
+-}
+admitSubmissions :: [JournalEntry] -> SomeException -> SomeException
+admitSubmissions since e
+    | null sent = e
+    | Just (_ :: SomeAsyncException) <- fromException e = e
+    | otherwise = case fromException e of
+        Just (CommandFailure c why fields)
+            | c /= ClientRefusal -> e
+            | otherwise -> admitted why fields
+        Nothing -> admitted (show e) []
+  where
+    sent =
+        nub
+            [ journalTxId j
+            | j <- since
+            , journalEvent j `elem` ["submitted", "submit-unknown"]
+            ]
+    admitted why fields =
+        toException $
+            CommandFailure
+                Partial
+                ( "this command sent "
+                    <> T.unpack (T.intercalate ", " sent)
+                    <> " before it stopped, and nothing is resubmitted: "
+                    <> why
+                )
+                (("submitted", toJSON sent) : fields)
+
 {- | Hold an exclusive advisory lock on @dir/.lock@ for the action, or
 refuse at once when another process holds it.
 -}
 withTargetLock :: FilePath -> IO a -> IO a
-withTargetLock dir action = do
+withTargetLock dir action =
+    withTargetLockOr
+        dir
+        action
+        ( failWith
+            ConcurrentWriter
+            ( "another singular process is writing to "
+                <> dir
+                <> "; nothing was read or submitted"
+            )
+        )
+
+{- | Run the action holding the target's lock, or the alternative at
+once when another process holds it.
+-}
+withTargetLockOr :: FilePath -> IO a -> IO a -> IO a
+withTargetLockOr dir action busy = do
     createDirectoryIfMissing True dir
     bracket
         ( openFd
@@ -226,35 +330,49 @@ withTargetLock dir action = do
         ( \fd -> do
             taken <- try (setLock fd (WriteLock, AbsoluteSeek, 0, 0))
             case taken of
-                Left (_ :: IOException) ->
-                    failWith
-                        ConcurrentWriter
-                        ( "another singular process is writing to "
-                            <> dir
-                            <> "; nothing was read or submitted"
-                        )
+                Left (_ :: IOException) -> busy
                 Right () -> action
         )
 
-{- | __Test harness only__ (#299 journey). When
-@SINGULAR_HARNESS_HOLD_AFTER_SUBMIT@ names a path and
-@SINGULAR_HARNESS_HOLD_STEP@ names this step, write @PATH.waiting@ right
-after the node's acceptance is journalled and wait until @PATH@ exists,
-so a journey can interrupt exactly at the accepted-send boundary. Unset
-in ordinary use, where it does nothing.
+{- | __Test harness only__ (#299, #325). When the variable names a path —
+and, for a submission step, @SINGULAR_HARNESS_HOLD_STEP@ names that step —
+write @PATH.waiting@ and wait until @PATH@ exists, so a control can
+inspect or kill the process at exactly that boundary. The points are
+@SINGULAR_HARNESS_HOLD_AFTER_SEND@ (the send made, its answer not yet
+journalled), @SINGULAR_HARNESS_HOLD_AFTER_SUBMIT@ (the node's acceptance
+journalled), and, around a fold's local commit,
+@SINGULAR_HARNESS_HOLD_BEFORE_COMMIT@, @SINGULAR_HARNESS_HOLD_AFTER_MIRROR@
+and @SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED@; around a rollback's return of
+the local files, @SINGULAR_HARNESS_HOLD_BEFORE_REWIND@ (the rollback
+journalled, the mirror not yet rebuilt) and
+@SINGULAR_HARNESS_HOLD_BEFORE_REWIND_STATE@ (the mirror rebuilt,
+@state.json@ not yet following). Unset in ordinary use, where it does
+nothing.
 -}
-harnessHoldAfterSubmit :: Text -> IO ()
-harnessHoldAfterSubmit step = do
-    path <- lookupEnv "SINGULAR_HARNESS_HOLD_AFTER_SUBMIT"
+harnessHoldAt :: String -> Maybe Text -> IO ()
+harnessHoldAt var step = do
+    path <- lookupEnv var
     wanted <- lookupEnv "SINGULAR_HARNESS_HOLD_STEP"
-    case (path, wanted) of
-        (Just p, Just w) | T.pack w == step -> do
-            writeFile (p <> ".waiting") ""
-            let waitFor = do
-                    there <- doesFileExist p
-                    if there then pure () else threadDelay 100_000 >> waitFor
-            waitFor
+    let here = maybe True (\s -> fmap T.pack wanted == Just s) step
+    case path of
+        Just p | here -> waitAt p
         _ -> pure ()
+
+{- | __Test harness only__ (#325). Whether the variable names this step:
+@SINGULAR_HARNESS_DROP_SEND@ makes the send not happen,
+@SINGULAR_HARNESS_DROP_ANSWER@ discards the node's answer to a send that
+happened; either way the command meets no answer. Unset in ordinary use.
+-}
+harnessDrops :: String -> Text -> IO Bool
+harnessDrops var step = (== Just (T.unpack step)) <$> lookupEnv var
+
+waitAt :: FilePath -> IO ()
+waitAt path = do
+    writeFile (path <> ".waiting") ""
+    let waitFor = do
+            there <- doesFileExist path
+            if there then pure () else threadDelay 100_000 >> waitFor
+    waitFor
 
 {- | How long a write waits for a confirmation when the caller names no
 @--confirm-timeout@: ten minutes. Past it the submission is journalled
@@ -262,25 +380,6 @@ harnessHoldAfterSubmit step = do
 -}
 defaultConfirmSeconds :: Int
 defaultConfirmSeconds = 600
-
--- | A write refuses while any journalled submission is unresolved.
-refuseUnresolved :: FilePath -> IO ()
-refuseUnresolved dir = do
-    entries <- readJournal dir
-    case unresolved entries of
-        Nothing -> pure ()
-        Just e ->
-            failWith
-                Partial
-                ( "the journal holds an unresolved submission "
-                    <> T.unpack (journalTxId e)
-                    <> " ("
-                    <> T.unpack (journalStep e)
-                    <> ", last phase "
-                    <> T.unpack (journalEvent e)
-                    <> "); inspect resolves it only from chain evidence, \
-                       \and nothing is resubmitted"
-                )
 
 -- | A transaction's id, as hex.
 txIdHex :: ConwayTx -> Text
@@ -391,8 +490,17 @@ journalledSubmit wc step ex point unsigned = do
             , journalRootBefore = hexT <$> exRootBefore ex
             , journalRootAfter = hexT <$> exRootAfter ex
             }
-    answer <-
-        try (submitSigned (capSubmit caps) sealed)
+    dropSend <- harnessDrops "SINGULAR_HARNESS_DROP_SEND" step
+    sentAnswer <-
+        if dropSend
+            then pure (Left (toException (ErrorCall "the send was not made")))
+            else try (submitSigned (capSubmit caps) sealed)
+    harnessHoldAt "SINGULAR_HARNESS_HOLD_AFTER_SEND" (Just step)
+    dropAnswer <- harnessDrops "SINGULAR_HARNESS_DROP_ANSWER" step
+    let answer
+            | dropAnswer =
+                Left (toException (ErrorCall "the node's answer was lost"))
+            | otherwise = sentAnswer
     case answer of
         Left (e :: SomeException) -> do
             journal "submit-unknown" (Just (T.pack (show e)))
@@ -410,7 +518,7 @@ journalledSubmit wc step ex point unsigned = do
                 (T.unpack step <> " refused by the node: " <> show reason)
         Right (Submitted _) -> do
             journal "submitted" Nothing
-            harnessHoldAfterSubmit step
+            harnessHoldAt "SINGULAR_HARNESS_HOLD_AFTER_SUBMIT" (Just step)
     -- The wait runs on its own thread and this thread only waits for its
     -- result, bounded by the caller's --confirm-timeout or, when none is
     -- given, by the default bound. The bound therefore holds whatever

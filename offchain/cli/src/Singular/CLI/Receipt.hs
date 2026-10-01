@@ -20,10 +20,17 @@ appended before the next step starts:
    deadline.
 4. @observed@: a fresh readback of what it made.
 
+A later command may append two more, each naming the chain point it read
+and the outputs it found live: @rolled-back@, when an included
+transaction is no longer on the chain (its observation stays, superseded
+by the appended line), and @excluded@, when an unresolved one can never
+be included (off the chain, the tip past its validity upper bound).
+
 A transaction whose last phase is not @observed@, @rejected@ or
-@excluded@ is unresolved. Every write refuses while one exists, and
-nothing is resubmitted or rebooted implicitly; @inspect@ resolves one
-only from chain evidence about that exact transaction.
+@excluded@ is unresolved. The next command reconciles it from chain
+evidence about that exact transaction ("Singular.CLI.Reconcile"); a
+write stops on what remains, naming its 'SubmissionCase', and nothing is
+resubmitted or rebooted implicitly.
 
 A receipt is what one command prints: its public identity, what it
 submitted, what it read back from the ledger and how, and its outcome.
@@ -40,6 +47,11 @@ module Singular.CLI.Receipt
     , unresolved
     , bodiesDir
     , durableWrite
+
+      -- * The case each submission met
+    , SubmissionCase (..)
+    , caseName
+    , submissionCase
 
       -- * Outcomes
     , OutcomeClass (..)
@@ -77,11 +89,13 @@ data JournalEntry = JournalEntry
     , journalTxId :: Text
     , journalEvent :: Text
     {- ^ @prepared@, @submitted@, @rejected@, @submit-unknown@,
-    @confirmed@, @unconfirmed@, @observed@ or @excluded@
+    @confirmed@, @unconfirmed@, @observed@, @rolled-back@ or @excluded@
     -}
     , journalDetail :: Maybe Text
     , journalInputs :: Maybe [Text]
-    -- ^ At @prepared@: the exact inputs the body spends
+    {- ^ At @prepared@: the exact inputs the body spends. At
+    @rolled-back@ and @excluded@: those of them found live
+    -}
     , journalBody :: Maybe FilePath
     -- ^ At @prepared@: where the signed transaction's CBOR is saved
     , journalBodyHash :: Maybe Text
@@ -93,7 +107,9 @@ data JournalEntry = JournalEntry
     , journalEra :: Maybe Text
     -- ^ At @prepared@: the era of that view
     , journalChainPoint :: Maybe Text
-    -- ^ At @prepared@: that view's chain point, @slot.headerhash@
+    {- ^ At @prepared@: that view's chain point, @slot.headerhash@. At
+    @rolled-back@ and @excluded@: the chain point the evidence was read at
+    -}
     , journalKey :: Maybe Text
     -- ^ At @prepared@: the registry key the step concerns, hex
     , journalExpect :: Maybe Text
@@ -104,7 +120,9 @@ data JournalEntry = JournalEntry
     , journalEdge :: Maybe Integer
     -- ^ At @prepared@, for a fold: the edge it commits to the mirror
     , journalRootBefore :: Maybe Text
-    -- ^ At @prepared@, for a fold: the root it folds from
+    {- ^ At @prepared@, for a fold: the root it folds from. At a fold's
+    @rolled-back@: the root the mirror returned to
+    -}
     , journalRootAfter :: Maybe Text
     -- ^ At @prepared@, for a fold: the root the mirror commits to after it
     }
@@ -205,6 +223,58 @@ unresolved entries =
 -- | The journal's directory of saved signed bodies.
 bodiesDir :: FilePath -> FilePath
 bodiesDir dir = dir </> "submissions"
+
+{- | The case a submission met, named in the journal by its phases and
+in the receipt of the command that met it: the node acknowledged it
+(@submitted@), no answer arrived (@submit-unknown@, or nothing after
+@prepared@), the node rejected it, it was seen included (@confirmed@,
+or observed), the confirmation deadline passed (@unconfirmed@), its
+inclusion is no longer on the chain (@rolled-back@), or it can never be
+included (@excluded@).
+-}
+data SubmissionCase
+    = CaseAcknowledged
+    | CaseUnknown
+    | CaseRejected
+    | CaseIncluded
+    | CaseTimeout
+    | CaseRolledBack
+    | CaseExcluded
+    deriving stock (Eq, Show, Enum, Bounded)
+
+-- | The case as a receipt names it.
+caseName :: SubmissionCase -> Text
+caseName = \case
+    CaseAcknowledged -> "acknowledged"
+    CaseUnknown -> "unknown"
+    CaseRejected -> "rejected"
+    CaseIncluded -> "included"
+    CaseTimeout -> "timeout"
+    CaseRolledBack -> "rolled-back"
+    CaseExcluded -> "excluded"
+
+{- | The case the transaction met, from its journalled phases: the
+latest one that names a case. Inclusion recorded later — by a
+reconciliation — supersedes an earlier unknown answer or timeout; a
+rollback supersedes an inclusion, and a later inclusion the rollback;
+an exclusion settles whatever came before it. A transaction the journal
+does not name has no case.
+-}
+submissionCase :: [JournalEntry] -> Text -> Maybe SubmissionCase
+submissionCase entries t = case [journalEvent e | e <- entries, journalTxId e == t] of
+    [] -> Nothing
+    events -> Just (foldl' after CaseUnknown events)
+  where
+    after current = \case
+        "submitted" -> CaseAcknowledged
+        "submit-unknown" -> CaseUnknown
+        "rejected" -> CaseRejected
+        "unconfirmed" -> CaseTimeout
+        "confirmed" -> CaseIncluded
+        "observed" -> CaseIncluded
+        "rolled-back" -> CaseRolledBack
+        "excluded" -> CaseExcluded
+        _ -> current
 
 -- | The attributable classes a command ends in.
 data OutcomeClass
