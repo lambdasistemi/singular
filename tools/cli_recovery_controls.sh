@@ -8,16 +8,20 @@
 #   accepting      an insert ends with both submissions included and
 #                  observed, and the local files at the ledger's root;
 #   lost answer    the node accepts an insert's fold but its answer is
-#                  lost: the command stops naming the case `unknown`, and
-#                  the next ordinary write reconciles the fold — applied to
-#                  the mirror once, observed once, never sent again — and
-#                  proceeds;
+#                  lost: at the moment of the send the fold's prepared line
+#                  and its saved body are already on disk; the command
+#                  stops naming the case `unknown`, and the next ordinary
+#                  write reconciles the fold — applied to the mirror once,
+#                  observed once, never sent again — and proceeds;
 #   killed before  an insert is killed once its fold is confirmed, before
 #   the commit     the mirror is saved: the next write applies the edge
-#                  once and proceeds;
+#                  once, brings state.json along and proceeds;
 #   killed after   a terminate is killed once the mirror is saved, before
-#   the mirror     its fold is observed: the next write applies nothing,
-#                  observes the fold and proceeds;
+#   the mirror     state.json: the next write applies nothing, brings
+#                  state.json to the mirror, observes the fold, proceeds;
+#   killed before  an insert is killed once state.json is written, before
+#   the            its fold is observed: the next write applies nothing,
+#   observation    leaves state.json, observes the fold and proceeds;
 #   never sent     an insert's fold never reaches the node: the next write
 #                  stops before building anything, naming the case and the
 #                  transaction, and the journal does not move.
@@ -137,6 +141,33 @@ held() {
   say "$name: never reached its hold point (exit $status)"
   return 1
 }
+# paused NAME VAR CHECK ARGS...: one singular process with the harness hold
+# VAR set to a path; while it waits there CHECK runs, then it is released
+# and runs to its end. Returns 0 only when it reached the hold.
+paused() {
+  local name="$1" var="$2" check="$3"
+  shift 3
+  local go="$work/$name.go"
+  rm -f "$go" "$go.waiting"
+  env "$var=$go" "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" &
+  local victim=$!
+  for _ in $(seq 1 1800); do
+    [ -e "$go.waiting" ] && break
+    kill -0 "$victim" 2>/dev/null || break
+    sleep 0.1
+  done
+  local reached=1
+  if [ -e "$go.waiting" ]; then
+    "$check"
+    reached=0
+    touch "$go"
+  fi
+  local status=0
+  wait "$victim" || status=$?
+  echo "$status" >"$receipts/$name.exit"
+  say "$name: $(jq -r .outcome "$receipts/$name.json" 2>/dev/null || echo none) (exit $status)"
+  return "$reached"
+}
 field() { jq -r "$2" "$receipts/$1.json"; }
 outcome_is() { [ "$(field "$1" .outcome)" = "$2" ]; }
 exit_is() { [ "$(cat "$receipts/$1.exit")" = "$2" ]; }
@@ -212,7 +243,7 @@ state="$(field create .pins.pinState)"
 token="$(field create .token)"
 active="$(field create .pins.pinActive)"
 alicekey="$(field create .walletKeyHash)"
-for k in 6b0a 6b0b 6b0c 6b0d 6b0e 6b0f; do envelope "$work/$k.json" "$alicekey" "$k"; done
+for k in 6b0a 6b0b 6b0c 6b0d 6b0e 6b0f 6b10 6b11; do envelope "$work/$k.json" "$alicekey" "$k"; done
 jq -n '{int: 42}' >"$work/payload.json"
 say "registry $token created"
 
@@ -244,16 +275,28 @@ clause "the journal was only appended to and no body changed" appended_only s0
 # ------------------------------------------------------------------
 control="lost answer"
 snap s1
-export SINGULAR_HARNESS_DROP_ANSWER=fold
+# Held right after the fold is sent, before its answer is journalled: what
+# is on disk at that moment is what the send was preceded by.
+at_send() {
+  sent_tx="$(fold_since s1)"
+  sent_last="$(last_event "$sent_tx")"
+  sent_bound=1
+  body_bound "$sent_tx" && sent_bound=0
+}
+sent_tx="" sent_last="" sent_bound=1 reached=0
+export SINGULAR_HARNESS_DROP_ANSWER=fold SINGULAR_HARNESS_HOLD_STEP=fold
 insert_of 6b0b
-run insert-b "${args[@]}"
-unset SINGULAR_HARNESS_DROP_ANSWER
+paused insert-b SINGULAR_HARNESS_HOLD_AFTER_SEND at_send "${args[@]}" || reached=1
+unset SINGULAR_HARNESS_DROP_ANSWER SINGULAR_HARNESS_HOLD_STEP
 lost="$(submission_tx insert-b fold)"
+clause "the insert was held once its fold was sent, before the answer was journalled" is_equal "$reached" 0
+clause "at that moment the fold's prepared line was its last journalled phase" is_equal "$sent_last" prepared
+clause "at that moment the fold's body was saved, bound to its prepared line by hash" is_equal "$sent_bound" 0
+clause "the held fold is the one the receipt names" is_equal "$sent_tx" "$lost"
 clause "the insert stops partial (exit 15)" exit_is insert-b 15
 clause "its receipt names the booking's case included" is_equal "$(submission_case insert-b book)" included
 clause "its receipt names the fold's case unknown" is_equal "$(submission_case insert-b fold)" unknown
 clause "the fold's last journalled phase is submit-unknown" is_equal "$(last_event "$lost")" submit-unknown
-clause "the fold's body was saved, bound to its prepared line, before the send" body_bound "$lost"
 clause "nothing was committed locally: state.json unchanged" state_kept s1
 clause "nothing was committed locally: the mirror unchanged" mirror_kept s1
 # The next ordinary write. While the fold is not yet on chain it is
@@ -272,7 +315,7 @@ for i in $(seq 1 40); do
 done
 clause "every write refused while the fold was unknown named it and moved nothing" is_equal "$refusals_clean" 0
 clause "the next write reconciles and succeeds" outcome_is insert-c success
-clause "it applied the lost fold's edge to the mirror" is_equal "$(field insert-c -c .reconciled.applied)" "[\"$lost\"]"
+clause "it applied the lost fold's edge to the mirror" is_equal "$(field insert-c ".reconciled.applied | tojson")" "[\"$lost\"]"
 clause "it observed the lost fold" is_equal "$(field insert-c "[.reconciled.observed[]? | select(. == \"$lost\")] | length")" 1
 clause "the lost fold was prepared once, never sent again" prepared_once "$lost"
 clause "the lost fold is observed exactly once in the journal" is_equal "$(event_count "$lost" observed)" 1
@@ -301,7 +344,8 @@ clause "nothing was committed locally: the mirror unchanged" mirror_kept s2
 snap s2-killed
 run update-a registry update --key 6b0a --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
 clause "the next write, an update of another key, reconciles and succeeds" outcome_is update-a success
-clause "it applied the killed fold's edge to the mirror once" is_equal "$(field update-a -c .reconciled.applied)" "[\"$killed_fold\"]"
+clause "it applied the killed fold's edge to the mirror once" is_equal "$(field update-a ".reconciled.applied | tojson")" "[\"$killed_fold\"]"
+clause "it brought state.json along" is_equal "$(field update-a .reconciled.stateFollowed)" true
 clause "the killed fold is observed exactly once, by the update" \
   is_equal "$(since s2-killed | jq -r --arg t "$killed_fold" '[.[] | select(.journalTxId == $t and .journalEvent == "observed") | .journalCommand] | join(",")')" update
 clause "the killed fold was prepared once, never sent again" prepared_once "$killed_fold"
@@ -317,9 +361,9 @@ clause "the journal was only appended to and no body changed" appended_only s2
 control="killed after the mirror"
 snap s3
 reached=0
-held terminate-a SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED registry terminate --key 6b0a \
+held terminate-a SINGULAR_HARNESS_HOLD_AFTER_MIRROR registry terminate --key 6b0a \
   "${common[@]}" "${node[@]}" "${alice[@]}" || reached=1
-clause "the terminate was killed after its mirror was saved, before its observation" is_equal "$reached" 0
+clause "the terminate was killed after its mirror was saved, before state.json" is_equal "$reached" 0
 saved_fold="$(fold_since s3)"
 clause "the fold's last journalled phase is confirmed" is_equal "$(last_event "$saved_fold")" confirmed
 clause "the mirror was saved" bash -c "[ '$(mirror_now)' != '$(cat "$snaps/s3.mirror")' ]"
@@ -328,7 +372,8 @@ snap s3-killed
 insert_of 6b0e
 run insert-e "${args[@]}"
 clause "the next write reconciles and succeeds" outcome_is insert-e success
-clause "it applied nothing to the mirror: the edge was already applied" is_equal "$(field insert-e -c .reconciled.applied)" "[]"
+clause "it applied nothing to the mirror: the edge was already applied" is_equal "$(field insert-e ".reconciled.applied | tojson")" "[]"
+clause "it brought state.json to the mirror's root" is_equal "$(field insert-e .reconciled.stateFollowed)" true
 clause "the killed fold is observed exactly once, by the insert" \
   is_equal "$(since s3-killed | jq -r --arg t "$saved_fold" '[.[] | select(.journalTxId == $t and .journalEvent == "observed") | .journalCommand] | join(",")')" insert
 clause "the killed fold was prepared once, never sent again" prepared_once "$saved_fold"
@@ -338,6 +383,33 @@ clause "the next fold started from the killed fold's root after: one edge betwee
 run inspect-t registry inspect --key 6b0a "${common[@]}" "${node[@]}"
 clause "inspect reads the terminated key terminal" is_equal "$(field inspect-t '.outcome + "/" + .leaf')" success/terminal
 clause "the journal was only appended to and no body changed" appended_only s3
+
+# ------------------------------------------------------------------
+# killed before the observation
+# ------------------------------------------------------------------
+control="killed before the observation"
+snap s5
+reached=0
+insert_of 6b10
+held insert-g SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED "${args[@]}" || reached=1
+clause "the insert was killed after state.json, before its fold was observed" is_equal "$reached" 0
+written_fold="$(fold_since s5)"
+clause "the fold's last journalled phase is confirmed" is_equal "$(last_event "$written_fold")" confirmed
+clause "state.json already commits to the fold's root after" is_equal "$(root_now)" "$(root_after_of "$written_fold")"
+snap s5-killed
+insert_of 6b11
+run insert-h "${args[@]}"
+clause "the next write reconciles and succeeds" outcome_is insert-h success
+clause "it applied nothing to the mirror" is_equal "$(field insert-h ".reconciled.applied | tojson")" "[]"
+clause "it left state.json as it was" is_equal "$(field insert-h .reconciled.stateFollowed)" false
+clause "the killed fold is observed exactly once, by the insert" \
+  is_equal "$(since s5-killed | jq -r --arg t "$written_fold" '[.[] | select(.journalTxId == $t and .journalEvent == "observed") | .journalCommand] | join(",")')" insert
+clause "the killed fold was prepared once, never sent again" prepared_once "$written_fold"
+clause "the next fold started from the killed fold's root after: one edge between" \
+  is_equal "$(root_before_of "$(submission_tx insert-h fold)")" "$(root_after_of "$written_fold")"
+run inspect-g registry inspect --key 6b10 "${common[@]}" "${node[@]}"
+clause "inspect reads the killed insert's key active" is_equal "$(field inspect-g '.outcome + "/" + .leaf')" success/active
+clause "the journal was only appended to and no body changed" appended_only s5
 
 # ------------------------------------------------------------------
 # never sent
