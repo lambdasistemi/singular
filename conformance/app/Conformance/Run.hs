@@ -34,9 +34,11 @@ The issue #70 rows (CG09, CG10, CG11, CG12, CG14, CG15,
 CG19) run as their own CG session in canonical order, each
 against its own freshly booted cage so a row's odd state (a
 parked request) cannot poison its neighbours.
-CG09, CG10 and CG15 are refusal rows: the refusing
+CG10 and CG15 are refusal rows: the refusing
 transaction is hand-built, phase-1 valid, and the node's phase-2
-refusal is attributed to the state script that produced it. CG11, CG12 and CG19 are the expected consumer
+refusal is attributed to the state script that produced it. CG09
+submits the early reject the consumer requires refused; the chain
+accepts it and the row is recorded unmet by ruling (#320). CG11, CG12 and CG19 are the expected consumer
 gaps (the 2026-09-03 cardano-keri audit; upstream
 cardano-mpfs-onchain #100 and #101): the run submits what the
 consumer's theorems require the partition to refuse and records the
@@ -381,6 +383,7 @@ runSession
         stakeRef <- newIORef Nothing
         key2Ref <- newIORef Nothing
         heldRef <- newIORef []
+        unmetRef <- newIORef []
         failedRef <- newIORef []
         liveRecordsRef <- newIORef []
         liveMeasurementsRef <- newIORef []
@@ -445,6 +448,7 @@ runSession
                             , envStake = stakeRef
                             , envKey2 = key2Ref
                             , envHeld = heldRef
+                            , envUnmet = unmetRef
                             , envFailed = failedRef
                             , envLiveRecords = liveRecordsRef
                             , envLiveMeasurements = liveMeasurementsRef
@@ -495,6 +499,7 @@ runSession
                                     , envStake = stakeRef
                                     , envKey2 = key2Ref
                                     , envHeld = heldRef
+                                    , envUnmet = unmetRef
                                     , envFailed = failedRef
                                     , envLiveRecords = liveRecordsRef
                                     , envLiveMeasurements = liveMeasurementsRef
@@ -545,6 +550,7 @@ runSession
                                     , envStake = stakeRef
                                     , envKey2 = key2Ref
                                     , envHeld = heldRef
+                                    , envUnmet = unmetRef
                                     , envFailed = failedRef
                                     , envLiveRecords = liveRecordsRef
                                     , envLiveMeasurements = liveMeasurementsRef
@@ -564,12 +570,13 @@ runSession
         emit
             "complete"
             (show (length rows) <> "/" <> show (length rows) <> " rows ok")
-        -- A held or failing row must never read as a pass: the
-        -- session ends non-zero naming every such row.
+        -- A held, unmet or failing row must never read as a pass:
+        -- the session ends non-zero naming every such row.
         held <- readIORef (envHeld env)
+        unmet <- readIORef (envUnmet env)
         failed <- readIORef (envFailed env)
-        case (held, failed) of
-            ([], []) -> pure ()
+        case (held, unmet, failed) of
+            ([], [], []) -> pure ()
             _ ->
                 throwIO
                     ( ErrorCall
@@ -581,6 +588,15 @@ runSession
                             <> ( if null held
                                     then "none"
                                     else unwords (reverse held)
+                               )
+                            <> "\n- Unmet by ruling (a consumer \
+                               \requirement the registry deliberately \
+                               \does not meet, kept unmet by operator \
+                               \ruling; receipts carry verdict \
+                               \unmet-by-ruling): "
+                            <> ( if null unmet
+                                    then "none"
+                                    else unwords (reverse unmet)
                                )
                             <> "\n- Failing against this candidate \
                                \(verdict diverges-from-lean — the chain \

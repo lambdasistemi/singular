@@ -35,7 +35,7 @@
       "pause": 400
     },
     {
-      "text": "Eleven rows, three dispositions that must never be mistaken for one another. Held: executed, and the consumer requirement is unmet — the early rejection, the empty fold, the surplus action, the crossed refunds. The early rejection is CG zero nine: the consumer requires that a folder must not reject a request during its processing window, while Singular's model lets a folder reject a request with no timing admission. The chain accepts that reject, so the row stays held and the consumer requirement unmet. Resolved by ruling: defect evidence of the outstanding owner gate. Superseded: observations kept, claims withdrawn, no execution credit. The run ends non-zero while anything is held — never a pass.",
+      "text": "Eleven rows, four dispositions that must never be mistaken for one another. Unmet by ruling: the early rejection, CG zero nine. The consumer requires that a folder must not reject a request during its processing window, while Singular's model lets a folder reject a request with no timing admission, and the chain accepts that reject. By operator ruling of the first of October 2026 the consumer requirement is kept unmet, and alignment is tracked in cardano-keri issue four sixty-eight. Held: executed, and the consumer requirement is unmet — the empty fold, the surplus action, the crossed refunds. Resolved by ruling: defect evidence of the outstanding owner gate. Superseded: observations kept, claims withdrawn, no execution credit. The run ends non-zero while anything is held or unmet — never a pass.",
       "pause": 400
     },
     {
@@ -123,7 +123,7 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "d9beaf99314430f3291a890d15089bd6a51bd867a72155f4c610bc937a140482"
+    "sha256": "801dd4f3ebf2cdc19764bd88da7a9560014b5a16f74bc2118575bb08708211a5"
   },
   "historical-execution-reports": [
     {
@@ -169,7 +169,7 @@
       "pause": 400
     },
     {
-      "text": "The generic session must end with exactly the four held rows, the identity session must succeed, and the serialization session must show its two partial rows. A nonzero exit alone proves nothing: inspect exact identities, source binding, verdicts, residuals and controls. An armed control must reach its intended assertion; an ordinary partial exit is not a control failure.",
+      "text": "The generic session must end with exactly the three held rows and the one unmet row, the identity session must succeed, and the serialization session must show its two partial rows. A nonzero exit alone proves nothing: inspect exact identities, source binding, verdicts, residuals and controls. An armed control must reach its intended assertion; an ordinary partial exit is not a control failure.",
       "pause": 400
     }
   ],

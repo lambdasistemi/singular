@@ -296,7 +296,7 @@ refusal to the script that failed and retain their accepting controls.
 | row | outcome | evidence |
 |---|---|---|
 | Retract outside phase 2 | **refuse before and after; accept inside** | The dedicated story submits three owner-signed retractions with finite validity bounds. Both outside-window attempts must be refused by the request script and by the model for `not-phase2`; the same first request retracted inside its window is accepted by both. The second request is booked alongside the first in the same registry, with the same owner and edge, and shares its accepting control. The receipt records each comparison. |
-| CG09 a folder must not reject a request during its processing window | accept — **held-q002** (historically **refuse**) | the consumer requires that a folder must not reject a request during its processing window; Singular's model lets a folder reject a request with no timing admission, and since #320 the chain accepts that reject, recorded held and never counted as passing; the same reject refunding the owner one lovelace short is refused in-run first, attributed to the state script (control). Historically the node refused the reject at script validation, attributed to the state script (`ce7615f6…`), and the same request rejected by the library after its retraction window was accepted in-run |
+| CG09 a folder must not reject a request during its processing window | accept — **unmet-by-ruling** (historically **refuse**) | the consumer requires that a folder must not reject a request during its processing window (cardano-keri `R9_reject_needs_rejectable`, `0e638fad`, `RegistryGoals.lean` blob `d38e81c0`); Singular's model lets a folder reject a request with no timing admission, and since #320 the chain accepts that reject. By operator ruling 2026-10-01 the requirement is kept unmet: the row is recorded `unmet-by-ruling` and never counted as passing, and alignment is [cardano-keri#468](https://github.com/lambdasistemi/cardano-keri/issues/468); the same reject refunding the owner one lovelace short is refused in-run first, attributed to the state script (control). Historically the node refused the reject at script validation, attributed to the state script (`ce7615f6…`), and the same request rejected by the library after its retraction window was accepted in-run |
 | CG10 fold with stale proofs | **refuse** | stale proofs against a superseded root refused, attributed to the state script; the same shape folded against the live root is accepted in-run (control) — the refusal is the staleness, not the shape |
 | CG11 empty fold | accept — **held-q002** | the chain accepts a fold carrying no actions (tx `b670c28e…`); with one live request waiting, empty actions are refused in-run (control) — the acceptance is specific to the empty fold |
 | CG12 surplus action | accept — **held-q002** | two actions over one request, the second garbage, accepted (tx `facebfe6…`); one action FEWER than there are requests is refused in-run (control) — the surplus is unchecked, the deficit is fatal, exactly the audit's asymmetry |
@@ -314,13 +314,19 @@ script hash, without claiming an observable live refusal name. Open validity
 intervals remain a named gap: the model represents finite bounds only, while
 the Aiken tests establish the open-interval `not-phase2` refusal.
 
-**Three dispositions, never to be mistaken for one another.**
+**Four dispositions, never to be mistaken for one another.**
 
-**Held** (`held-q002`; CG09, CG11, CG12, CG19): executed, with the consumer
-requirements still unmet. CG09 records the conflict over early rejection:
-the consumer requires that a folder must not reject a request during its
-processing window, while Singular's model lets a folder reject a request
-with no timing admission, and the chain accepts that reject. CG11 recorded
+**Unmet by ruling** (`unmet-by-ruling`; CG09): executed, with a consumer
+requirement the registry deliberately does not meet, kept unmet by operator
+ruling 2026-10-01. The consumer requires that a folder must not reject a
+request during its processing window (cardano-keri
+`R9_reject_needs_rejectable`, `0e638fad`, blob `d38e81c0`); Singular's
+model lets a folder reject a request with no timing admission, and the chain
+accepts that reject (#320). Alignment is
+[cardano-keri#468](https://github.com/lambdasistemi/cardano-keri/issues/468).
+The session ends non-zero while any row is unmet; it is never a pass.
+**Held** (`held-q002`; CG11, CG12, CG19): executed, with the consumer
+requirements still unmet. CG11 recorded
 a conflict with the pre-revision
 Singular model; rejecting empty batches is now approved. CG12's
 representation mapping remains under review. CG19 requires the
@@ -578,10 +584,11 @@ never trims identities — under the same run-enforced 16KB bound.
   removes entirely — the epic-16 observation is preserved as history
   and earns no conformance credit. Nothing else in the inventory has
   ledger evidence without a receipt.
-- **Executed holds, not passes**: CG09, CG11, CG12 and CG19 remain held by
-  execution. CG09 records the early-rejection conflict: the consumer
-  requires that a folder must not reject a request during its processing
-  window, and the chain no longer refuses it; CG11 records the
+- **Executed, unmet by ruling, not a pass**: CG09 records the early
+  rejection the consumer forbids and the chain accepts, kept unmet by
+  operator ruling 2026-10-01 (`unmet-by-ruling`).
+- **Executed holds, not passes**: CG11, CG12 and CG19 remain held by
+  execution. CG11 records the
   pre-revision empty-fold conflict with
   R8_empty_fold_refused; CG12 still needs a faithful representation
   mapping; CG19 violates the consumer's required operation-specific fold
@@ -620,7 +627,8 @@ never trims identities — under the same run-enforced 16KB bound.
   it.
 - **Green expected-debt CI grants no conformance credit**: the
   workflow's generic-rows step asserts declared debt — exact receipt
-  set, exact verdict per receipt, held set exactly CG09 CG11 CG12 CG19,
+  set, exact verdict per receipt, held set exactly CG11 CG12 CG19,
+  unmet set exactly CG09,
   nothing failing — and nothing more. It pays neither the held rows
   nor a full CL01, and strict completion and release stay RED on that
   debt.
@@ -650,7 +658,7 @@ receipts="$(mktemp -d /tmp/singular-conformance.XXXXXX)"
 # The finite retraction window has its own three-step model-compared receipt.
 REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run CG07 --receipts-dir "$receipts/retraction-window"
 
-# Expected exit 1: exact held set CG09, CG11, CG12, CG19; no failed rows.
+# Expected exit 1: exact held set CG11, CG12, CG19; unmet set CG09; no failed rows.
 REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run CG02 CG03 CG04 CG05 CG09 CG10 CG11 CG12 CG19 CG21 --receipts-dir "$receipts/generic"
 
 # Expected exit 0 after all five identity rows and their controls.

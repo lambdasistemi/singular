@@ -489,9 +489,10 @@ runCG07 env = do
 {- | CG09: @Rejected@ when not rejectable (R9_reject_needs_rejectable).
 The consumer requires a reject inside the request's process window to be
 refused. Singular's Lean gives a reject no admission
-(@exitAdmission .reject = none@) and the chain accepts it (#320), so the
-row is recorded held, never as agreement: the consumer requirement stays
-unmet. Its control comes first, on the same request: the same
+(@exitAdmission .reject = none@) and the chain accepts it (#320). By
+operator ruling 2026-10-01 the consumer requirement is kept unmet: the row
+is recorded @unmet-by-ruling@, never as agreement and never as a pass.
+Its control comes first, on the same request: the same
 processing-window reject refunding the owner one lovelace short, which
 the state script must refuse. Both carry the units of a full fold, so a
 budget failure cannot pass for a refusal by rule.
@@ -585,7 +586,7 @@ runCG09 env = do
                 env
                 "CG09"
                 Accepted
-                HeldQ002
+                UnmetByRuling
                 [txInHex txid]
                 Nothing
                 Nothing
@@ -594,10 +595,11 @@ runCG09 env = do
                 (Just size)
                 "node-submit"
                 Nothing
-            recordHold
+            recordUnmet
                 env
                 "CG09"
-                "the consumer conflict over R9 (#320)"
+                "kept unmet by operator ruling 2026-10-01 (singular#320; \
+                \alignment: cardano-keri#468)"
                 ( "Singular's Lean gives a reject no admission "
                     <> "(Model.lean exitAdmission .reject = none): a folder "
                     <> "may reject a request inside its process window"
@@ -610,8 +612,8 @@ runCG09 env = do
                     <> txInHex txid
                     <> "), refunding its owner "
                     <> show owed
-                    <> " lovelace; held, never read as a pass: the consumer "
-                    <> "requirement stays unmet"
+                    <> " lovelace; unmet by ruling, never read as a pass: the "
+                    <> "consumer requirement stays unmet"
                 )
         Rejected reason ->
             failWith

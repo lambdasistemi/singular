@@ -32,7 +32,7 @@ N counts every `nix` invocation, nested ones included: a `nix run nixpkgs#jq` in
 | G7 | product builder on a devnet | `blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"; REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e` (`offchain`) | registry.yml "e2e" job | 0 | 2 | 1 |
 | G8 | conformance unit suite and the running book | `nix run --quiet .#conformance-tests` (`conformance`); it builds the blueprint itself | conformance.yml | 0 | 2 | 1 |
 | G9 | CG23 exit row, unchanged | body below | conformance.yml | 0 | 4 | 1 |
-| G10 | generic rows with CG09 held | body below (CI change in this ticket) | conformance.yml | 0 | 45 | 1 |
+| G10 | generic rows, CG09 unmet by ruling | body below (CI change in this ticket) | conformance.yml | 0 | 45 | 1 |
 | G11 | CG24 early rejection row | body below (CI change in this ticket) | conformance.yml | 0 | 4 | 1 |
 | G12 | release assembly | `nix run --quiet .#release-artifacts -- "$RUNNER_TEMP/release"` (root); it builds both blueprints | ci.yml "release-artifacts" job | 0 | 3 | 0 |
 | G13 | root CI | `nix develop --quiet -c just ci`, standard input redirected from `/dev/null` (root) | ci.yml "dev-shell" job | 0 | 3 | 0 |
@@ -117,9 +117,9 @@ No bespoke instrument is added.
           ' "$f" > /dev/null || { echo 'FAIL: CG23 exit evidence moved'; exit 1; }
 ```
 
-## G10 body: generic rows with CG09 held
+## G10 body: generic rows, CG09 unmet by ruling
 
-The changes from the base body are the CG09 verdict group, the held set `CG09 CG11 CG12 CG19`, assertion 10 and the two closing lines. Assertion 10 checks CG09's accepted receipt, its recorded hold and its refused short-refund control. The control goes through the existing `submitExpectRefusedControl`, which fails the run unless the node's refusal is attributed to the state script; the line asserted here is the one that helper logs. Order and units follow: run after the accepted reject, the control's input would already be spent and its refusal could not be attributed to the state script; run with refusal-sized units, the accepted reject would not be accepted.
+The changes from the base body are the CG09 verdict group (`unmet-by-ruling`, by operator ruling 2026-10-01), the held set `CG11 CG12 CG19` with the unmet set `CG09`, assertion 10 and the two closing lines. Assertion 10 checks CG09's accepted receipt, its recorded unmet requirement, that it is not recorded held, and its refused short-refund control. The control goes through the existing `submitExpectRefusedControl`, which fails the run unless the node's refusal is attributed to the state script; the line asserted here is the one that helper logs. Order and units follow: run after the accepted reject, the control's input would already be spent and its refusal could not be attributed to the state script; run with refusal-sized units, the accepted reject would not be accepted.
 
 ```yaml
       - name: Run the generic rows as a packaged app without a dev shell
@@ -168,7 +168,8 @@ The changes from the base body are the CG09 verdict group, the held set `CG09 CG
           expect_verdict() {
             case "$1" in
               CG02|CG03|CG04|CG05|CG10|CG21|CL01) printf 'agrees-with-model' ;;
-              CG09|CG11|CG12|CG19) printf 'held-q002' ;;
+              CG09) printf 'unmet-by-ruling' ;;
+              CG11|CG12|CG19) printf 'held-q002' ;;
               *) printf 'UNKNOWN-ROW' ;;
             esac
           }
@@ -185,9 +186,11 @@ The changes from the base body are the CG09 verdict group, the held set `CG09 CG
           #    units and size, folds named — refuse missing or divergent
           nix run --quiet nixpkgs#jq -- -e '.mem > 0 and .cpu > 0 and .txSize > 0 and (.transactions | length > 0)' "${CONFORMANCE_RECEIPTS}"/receipt-CL01.json > /dev/null || { echo 'FAIL: CL01 measurement evidence missing or divergent'; exit 1; }
           # 6. the run's own accounting must name exactly the expected
-          #    held set, with nothing failing against this candidate
+          #    held and unmet sets, with nothing failing against this candidate
           held="$(sed -n 's/^- Held .*held-q002): //p' /tmp/generic-rows.log)"
-          [ "$held" = "CG09 CG11 CG12 CG19" ] || { echo "FAIL: held set moved: got '$held', expected 'CG09 CG11 CG12 CG19'"; exit 1; }
+          [ "$held" = "CG11 CG12 CG19" ] || { echo "FAIL: held set moved: got '$held', expected 'CG11 CG12 CG19'"; exit 1; }
+          unmet="$(sed -n 's/^- Unmet by ruling .*unmet-by-ruling): //p' /tmp/generic-rows.log)"
+          [ "$unmet" = "CG09" ] || { echo "FAIL: unmet set moved: got '$unmet', expected 'CG09'"; exit 1; }
           # nothing may fail against this candidate
           failing="$(sed -n 's/^- Failing .*accepted): //p' /tmp/generic-rows.log)"
           [ "$failing" = "none" ] || { echo "FAIL: rows failing against this candidate: $failing"; exit 1; }
@@ -313,19 +316,22 @@ The changes from the base body are the CG09 verdict group, the held set `CG09 CG
           ' "$e" > /dev/null || { echo 'FAIL: CG21 step evidence missing or incomplete'; exit 1; }
           # 10. CG09 (#320): the consumer's R9_reject_needs_rejectable forbids
           #     a reject inside the processing window; Singular's Lean admits
-          #     it and the chain accepts it. The row is held, never agreement:
-          #     the consumer requirement stays unmet. Its control, the same
+          #     it and the chain accepts it. By operator ruling 2026-10-01 the
+          #     consumer requirement is kept unmet (alignment:
+          #     lambdasistemi/cardano-keri#468): the verdict is unmet-by-ruling,
+          #     never agreement and never held-q002. Its control, the same
           #     reject one lovelace short, is refused by the state script first.
           # shellcheck disable=SC2016
           nix run --quiet nixpkgs#jq -- -e '
-            .row == "CG09" and .outcome == "accepted" and .verdict == "held-q002"
+            .row == "CG09" and .outcome == "accepted" and .verdict == "unmet-by-ruling"
             and .venue == "node-submit"
             and (.transactions | length) == 1
             and (.transactions[0] | test("^[0-9a-f]{64}$"))
-          ' "${CONFORMANCE_RECEIPTS}"/receipt-CG09.json > /dev/null || { echo 'FAIL: CG09 held acceptance evidence moved'; exit 1; }
-          grep -q '^held: CG09 HELD FOR ' /tmp/generic-rows.log || { echo 'FAIL: CG09 hold not recorded by the run'; exit 1; }
+          ' "${CONFORMANCE_RECEIPTS}"/receipt-CG09.json > /dev/null || { echo 'FAIL: CG09 unmet acceptance evidence moved'; exit 1; }
+          grep -q '^unmet: CG09 UNMET BY RULING: ' /tmp/generic-rows.log || { echo 'FAIL: CG09 unmet requirement not recorded by the run'; exit 1; }
+          if grep -q '^held: CG09 ' /tmp/generic-rows.log; then echo 'FAIL: CG09 recorded held'; exit 1; fi
           grep -q '^control: CG09 control: REFUSED at submit, attributed to state (phase-2, marker 0x[0-9a-f][0-9a-f]*)' /tmp/generic-rows.log || { echo 'FAIL: CG09 refused control not attributed to the state script'; exit 1; }
-          echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and the tampered-payment controls are recorded, with held debt exactly CG09 CG11 CG12 CG19.'
+          echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and the tampered-payment controls are recorded, with held debt exactly CG11 CG12 CG19 and CG09 unmet by ruling.'
           echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused, R9_reject_needs_rejectable and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'
 ```
 

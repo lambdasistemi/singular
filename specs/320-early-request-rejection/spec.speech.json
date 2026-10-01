@@ -19,7 +19,7 @@
   ],
   "what-stays-exactly-as-it-is": [
     {
-      "text": "An update can still be folded only in the processing window, both scripts keep refusing it outside that window, and that rule has no counterpart in Lean today. Retraction is unchanged. Every other rule is unchanged. The model, the constitution, the receipt format, the consumer's rows and the locks are not touched.",
+      "text": "An update can still be folded only in the processing window, both scripts keep refusing it outside that window, and that rule has no counterpart in Lean today. Retraction is unchanged. Every other rule is unchanged. The model, the constitution, the consumer's rows and the locks are not touched. The receipt format gains one verdict value, unmet by ruling, for CG09.",
       "pause": 400
     }
   ],
@@ -31,7 +31,7 @@
   ],
   "holds-and-limits": [
     {
-      "text": "The consumer's promise that no reject happens early becomes unmet, and its acceptance stays held until the user decides how to align it. The update timing rule is a separate discrepancy between the code and the model, owned by its own ticket; here it stays unchanged, labeled current validator behaviour outside Lean, and any claim that it conforms stays held. The builder now rejects every pending request, fresh ones too, and one unprocessable request still blocks it. The published book is not hand-edited. Refusal reasons are not observed on chain, so each is established by a compiled test that names it. Ticket 287 is rebound afterwards.",
+      "text": "The consumer's promise that no reject happens early becomes unmet, and by operator ruling of the first of October 2026 it is kept as a visible unmet requirement, with alignment tracked in cardano-keri issue four sixty-eight. The update timing rule is a separate discrepancy between the code and the model, owned by its own ticket; here it stays unchanged, labeled current validator behaviour outside Lean, and any claim that it conforms stays held. The builder now rejects every pending request, fresh ones too, and one unprocessable request still blocks it. The published book is not hand-edited. Refusal reasons are not observed on chain, so each is established by a compiled test that names it. Ticket 287 is rebound afterwards.",
       "pause": 400
     }
   ],
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "841dfe83b8a24cd8b6cc63353280634aeb50c04c9dd25231b2f60a791372b6cb"
+    "sha256": "d75427eb0dc8164a07b067049325f9a54401a29b744f49b96975bf7eb328ab4b"
   }
 }

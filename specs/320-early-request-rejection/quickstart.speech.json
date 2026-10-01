@@ -13,7 +13,7 @@
   ],
   "compared-with-the-model": [
     {
-      "text": "Run CG09 through the conformance app. Its receipt shows the chain accepting with a held verdict, and its consumer requirement still says refuse. CG24 runs the same way, compares every step with the model, and its log states each reject's window.",
+      "text": "Run CG09 through the conformance app. Its receipt shows the chain accepting with the verdict unmet by ruling, and its consumer requirement still says refuse. CG24 runs the same way, compares every step with the model, and its log states each reject's window.",
       "pause": 400
     }
   ],
@@ -25,6 +25,6 @@
   ],
   "_source": {
     "file": "quickstart.md",
-    "sha256": "8fb49bacd7f5c3eb9115963f56d29ee54e3786743729f3be4efcdd5b3de99f3a"
+    "sha256": "ae4196056d7f604c5cb9e4a4b215866c3e53d8ca54b70a34e245aed8b71b249e"
   }
 }

@@ -7,7 +7,7 @@
   ],
   "rows": [
     {
-      "text": "Fourteen rows, each the command of the CI job that checks it: the path fence; the onchain, naming and deployed identity checks; off-chain lint, build, unit and vectors; the devnet run through the product builder; the running book; CG23 unchanged; the generic rows with CG09 held; CG24; the release assembly; and root CI with standard input closed. Nix invocations are counted one by one, nested ones included, and devnet runs per command. One full run forecasts eighty three and six.",
+      "text": "Fourteen rows, each the command of the CI job that checks it: the path fence; the onchain, naming and deployed identity checks; off-chain lint, build, unit and vectors; the devnet run through the product builder; the running book; CG23 unchanged; the generic rows with CG09 unmet by ruling; CG24; the release assembly; and root CI with standard input closed. Nix invocations are counted one by one, nested ones included, and devnet runs per command. One full run forecasts eighty three and six.",
       "pause": 400
     }
   ],
@@ -23,9 +23,9 @@
       "pause": 400
     }
   ],
-  "g10-body-generic-rows-with-cg09-held": [
+  "g10-body-generic-rows-cg09-unmet-by-ruling": [
     {
-      "text": "The generic rows step after the change. CG09 moves to the held verdict group, the held set becomes CG09, CG11, CG12 and CG19, a new assertion checks CG09's accepted receipt, its recorded hold and the line the existing refused control helper logs only when the refusal is attributed to the state script, and the closing lines name the consumer's R9 as unmet.",
+      "text": "The generic rows step after the change. CG09 moves to its own verdict, unmet by ruling: by operator ruling of the first of October 2026, the consumer requirement is kept unmet. The held set becomes CG11, CG12 and CG19, the unmet set is CG09, and a new assertion checks CG09's accepted receipt, its recorded unmet requirement, that it is not recorded held, and the line the existing refused control helper logs only when the refusal is attributed to the state script. The closing lines name the consumer's R9 as unmet.",
       "pause": 400
     }
   ],
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "gate.md",
-    "sha256": "dde548c8395d23b8da6c23456d98c2c8a9d8b8b3110158c8ec3a3081561d10e6"
+    "sha256": "9e785ac2e854bd2a1492266ad1308365a66fd2b57f373f45673ee0e2bfcb149c"
   }
 }

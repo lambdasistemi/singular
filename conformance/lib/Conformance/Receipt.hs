@@ -175,6 +175,16 @@ data Verdict
       CG13 is resolved-by-ruling, not a fourth unresolved hold)
       -}
       ResolvedByRuling
+    | {- | an unmet consumer requirement, kept by operator ruling
+      2026-10-01 ("Keep as unmet requirement"): the consumer's
+      theorem (cardano-keri @R9_reject_needs_rejectable@ at
+      @0e638fad@, @RegistryGoals.lean@ blob @d38e81c0@) requires
+      what the registry deliberately does not do
+      (lambdasistemi/singular#320); alignment is
+      lambdasistemi/cardano-keri#468. Recorded, published, never read
+      as a pass: the run exits non-zero while any row is unmet.
+      -}
+      UnmetByRuling
     | {- | the row executed its available legs but named constructors
       stay unexercised, enumerated in 'receiptPartial' (E18 §3:
       explicit named residual, never green). A partial row is not
@@ -190,6 +200,7 @@ instance FromJSON Verdict where
         "held-q002" -> pure HeldQ002
         "diverges-from-lean" -> pure DivergesFromLean
         "resolved-by-ruling" -> pure ResolvedByRuling
+        "unmet-by-ruling" -> pure UnmetByRuling
         "partial" -> pure Partial
         _ -> fail ("unknown receipt verdict: " <> T.unpack t)
 
@@ -198,6 +209,7 @@ instance ToJSON Verdict where
     toJSON HeldQ002 = toJSON ("held-q002" :: Text)
     toJSON DivergesFromLean = toJSON ("diverges-from-lean" :: Text)
     toJSON ResolvedByRuling = toJSON ("resolved-by-ruling" :: Text)
+    toJSON UnmetByRuling = toJSON ("unmet-by-ruling" :: Text)
     toJSON Partial = toJSON ("partial" :: Text)
 
 {- | Per-constructor standing inside a partial row's receipt (E18
