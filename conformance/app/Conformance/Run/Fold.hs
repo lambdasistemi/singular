@@ -11,10 +11,8 @@ module Conformance.Run.Fold
     , declaredSpec
     , rowRequestAndFold
     , declaredUnits
-    , buildRefusedFold
     , buildValidFold
     , foldUtxos
-    , poisonProofs
     , validProofs
     , assembleFold
     , foldUpperSlot
@@ -733,46 +731,6 @@ declaredUnits :: (Integer, Integer) -> ExUnits
 declaredUnits (mem, cpu) =
     ExUnits (fromIntegral (mem * 2)) (fromIntegral (cpu * 2))
 
-{- | The hand-built poisoned fold for CG05: spends the state and the
-sole pending occupied-insert request exactly as the library fold
-would — same inputs, state output, refunds, redeemers, scripts,
-signers and validity — with the overwrite root the library itself
-would declare, but balanced by hand so the unevaluatable scripts
-never gate emission. The node rules on it at submit.
--}
-buildRefusedFold :: Env -> IO ConwayTx
-buildRefusedFold env = do
-    (stateUtxo, reqUtxos) <- foldUtxos env
-    reqUtxo <- case reqUtxos of
-        [u] -> pure u
-        _ ->
-            failWith
-                ( "CG05 hand-build: expected one pending request, found "
-                    <> show (length reqUtxos)
-                )
-    (proofs, newRoot) <- poisonProofs env
-    (memU, cpuU) <- readIORef (envValidUnits env)
-    require
-        "CG05 hand-build: no valid fold measured yet"
-        (memU > 0 && cpuU > 0)
-    let units = declaredUnits (memU, cpuU)
-    draft <- assembleFold env stateUtxo [reqUtxo] [proofs] newRoot units 0
-    pp <- Cage.queryProtocolParams (envProv env)
-    -- Conway charges for the reference scripts a transaction reads, by
-    -- their size, so the estimate is given that size rather than zero.
-    refs <- sessionRefUtxos env
-    let refBytes = sum (map (refScriptSize . snd) refs)
-        Coin estFee = estimateMinFeeTx pp draft 1 0 refBytes
-        fee1 = estFee + feeMargin
-    assembleFold env stateUtxo [reqUtxo] [proofs] newRoot units fee1
-  where
-    -- \| Small margin over the ledger's own minimum-fee estimate
-    -- (which prices the declared units exactly). Too small fails
-    -- loudly at submit (phase 1, no script named); too large fails
-    -- loudly in assembly (refund under min-ADA). Neither can
-    -- masquerade as the row's verdict.
-    feeMargin = 50_000
-
 {- | The hand-built valid fold for calibration: same assembly as the
 poisoned fold but over the valid pending requests, with maximal
 declared units (it is never submitted, so its fee is irrelevant).
@@ -819,19 +777,6 @@ foldUtxos env = do
     let reqs = sortOn fst (findRequestUtxos tid reqUtxos)
     require "hand-build: no pending requests" (not (null reqs))
     pure (stateUtxo, reqs)
-
-{- | Proofs and root for the poisoned fold: the overwrite the library
-itself would declare (insert over the occupied key, proof steps,
-new root), computed through the same speculative trie the library
-folds use.
--}
-poisonProofs :: Env -> IO ([ProofStep], Root)
-poisonProofs env =
-    withSpeculativeTrie (envTm env) (envTid env) $ \trie -> do
-        _ <- CageTrie.insert trie cgKey cgV4
-        mSteps <- CageTrie.getProofSteps trie cgKey
-        r <- CageTrie.getRoot trie
-        pure (fromMaybe [] mSteps, r)
 
 {- | Proofs and root for valid folds, replicating the library's
 per-request processing through the same speculative trie.

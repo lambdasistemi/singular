@@ -60,13 +60,14 @@ Row shapes (key @cg-row-key@, values @cg-v1@/@cg-v2@/@cg-v3@):
   deleted-value claim must not verify (control).
 * CG04: re-Insert v3 folds; inclusion proof for v3 implies the
   chain root; an exclusion proof must not verify (control).
-* CG05: Insert on the occupied key must be refused, attributed to
-  the state script in phase 2. The executing control is a fresh
-  cage that accepts a valid insert: a cage that refuses everything
-  would pass the refusal vacuously.
+* CG05: in a registry of its own, an insertAbsent and an updateActive
+  make a key active, each accepted and compared with the model; the
+  same insertAbsent on that key must be refused by the ledger and the
+  model (a story through the generic interpreter).
 
-@CONFORMANCE_CONTROL=wrong-reason@ arms the refusal matcher against
-an impossible marker (the run must fail naming what came back);
+@CONFORMANCE_CONTROL=wrong-reason@ arms the CS refusal matcher against
+an impossible marker (the run must fail naming what came back; a CG
+session refuses it, no CG row matching a refusal against a marker);
 @CONFORMANCE_CONTROL=false-claim@ binds forged values to the
 chain-read verifications, and in a CA session binds the fabricated
 wrong-seed derivation to CA01's name match (both must fail).
@@ -119,7 +120,6 @@ import Cardano.Node.Client.N2C.Connection
 import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Singular.Registry.Blueprint (NamingCodes (..))
-import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
     ( AssetName (..)
     , TokenId (..)
@@ -142,8 +142,7 @@ import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Internal
-    ( scriptHashBytes
-    , txInToRef
+    ( txInToRef
     )
 
 import Conformance.CS01 (runCS01)
@@ -151,12 +150,10 @@ import Conformance.CS06 (runCS06)
 import Conformance.Mirror
     ( emit
     , failWith
-    , hex
     , newMirror
     , require
     , txIdHex
     )
-import Conformance.Refusal (wrongReasonMarker)
 
 -- ---------------------------------------------------------
 -- Entry point
@@ -189,6 +186,11 @@ runRows rawRows receiptsDir = do
             \assert no ledger refusal (the rival is accepted by \
             \design); use naive-authenticator, false-claim or \
             \unapplied-address"
+    when (cgRequested && control == WrongReason) $
+        failWith
+            "wrong-reason arms a refusal matcher, but no CG row matches a \
+            \refusal against it; a compared refusal's reason is controlled \
+            \by CONFORMANCE_REASON_CONTROL"
     when
         ( cgRequested
             && control `elem` [NaiveAuthenticator, UnappliedAddress]
@@ -248,7 +250,7 @@ runRows rawRows receiptsDir = do
         emit "node" nodeVer
         require
             "forged control value collides with a row value"
-            (forgedValue `notElem` [cgV1, cgV2, cgV3, cgV4, controlVal])
+            (forgedValue `notElem` [cgV1, cgV2, cgV3])
         unless (null caDevnet) $
             bracketTmpDir $ do
                 withNodeSocket $ \sock ->
@@ -395,7 +397,7 @@ runSession
         liveRecordsRef <- newIORef []
         liveMeasurementsRef <- newIORef []
         foldFixture <- FoldFixture.newFixture
-        (env, marker, bootLine) <-
+        (env, bootLine) <-
             if caMode
                 then do
                     -- CA session: publish the canonical seed by a
@@ -460,7 +462,6 @@ runSession
                             , envLiveMeasurements = liveMeasurementsRef
                             , envReplay = reIndex replay
                             }
-                        , hex (scriptHashBytes (cfgScriptHash cfg))
                         , "CA session: canonical seed published at outRef "
                             <> show seedRef
                             <> " — the consumer derives the canonical \
@@ -511,7 +512,6 @@ runSession
                                     , envLiveMeasurements = liveMeasurementsRef
                                     , envReplay = reIndex replay
                                     }
-                                , hex (scriptHashBytes (cfgScriptHash placeholderCfg))
                                 , "no session cage: the issue #70 rows boot \
                                   \their own"
                                 )
@@ -523,9 +523,6 @@ runSession
                             ensureStateRefWith prov submit stateBytes
                             (seedTxIn, _) <- largestWalletUtxo prov
                             let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seedTxIn)
-                                marker' = case control of
-                                    WrongReason -> wrongReasonMarker
-                                    _ -> hex (scriptHashBytes (cfgScriptHash cfg))
                             unsignedBoot <- bootTokenImpl cfg prov genesisAddr
                             signedBoot <- submitWithGenesis submit unsignedBoot
                             tid <- extractTokenId cfg signedBoot
@@ -561,14 +558,13 @@ runSession
                                     , envLiveMeasurements = liveMeasurementsRef
                                     , envReplay = reIndex replay
                                     }
-                                , marker'
                                 , "cage booted bootTx=" <> txIdHex signedBoot
                                 )
         emit "boot" bootLine
         mapM_
             ( \row ->
                 writeIORef (riRow (reIndex replay)) (T.pack row)
-                    >> runRow env marker row
+                    >> runRow env row
             )
             rows
         cancel nodeThread
@@ -616,8 +612,8 @@ runSession
 -- Rows
 -- ---------------------------------------------------------
 
-runRow :: Env -> String -> String -> IO ()
-runRow env marker row = do
+runRow :: Env -> String -> IO ()
+runRow env row = do
     -- A CA row boots from the seed the session designated, so its wallet
     -- is left exactly as the designation left it. Every other row wants
     -- one ada-only output to fund from.
@@ -626,10 +622,10 @@ runRow env marker row = do
     -- validator instead of carrying it inline. Idempotent, so it is
     -- established before the first row and found by every later one.
     ensureStateRef env
-    runRowIn env marker row
+    runRowIn env row
 
-runRowIn :: Env -> String -> String -> IO ()
-runRowIn env marker row = case row of
+runRowIn :: Env -> String -> IO ()
+runRowIn env row = case row of
     "CA01" -> withCa env row runCA01
     "CA02" -> withCa env row runCA02
     "CA03" -> withCa env row runCA03
@@ -638,7 +634,7 @@ runRowIn env marker row = case row of
     "CG02" -> runCG02 env
     "CG03" -> runCG03 env
     "CG04" -> runCG04 env
-    "CG05" -> runCG05 env marker
+    "CG05" -> runCG05 env
     "CG07" -> runCG07 env
     "CG09" -> runCG09 env
     "CG10" -> runCG10 env

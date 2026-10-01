@@ -899,6 +899,9 @@ loadReceipts dir = do
             | otherwise -> Right r
     checkEdge path r = case (receiptRow r, receiptSteps r) of
         ("CG21", Just steps) -> stepsComplete path r steps
+        -- The occupied-key insertion is a story since #287; an attribution
+        -- receipt written before it still loads as one.
+        ("CG05", Just steps) -> stepsComplete path r steps
         ("CG22", Just steps) -> stepsComplete path r steps
         ("CG07", Just steps) -> do
             checked <- stepsComplete path r steps

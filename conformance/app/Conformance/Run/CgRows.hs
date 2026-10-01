@@ -10,7 +10,6 @@ module Conformance.Run.CgRows
     , runCG03
     , runCG04
     , runCG05
-    , controlFreshCage
     , sleepUntilMs
     , runCG07
     , runCG09
@@ -25,7 +24,6 @@ module Conformance.Run.CgRows
     , runCG22
     , runCG23
     , runSequence
-    , ensurePresentV3
     , setupDelete
     , capturePreProofKey
     , waitPhase3
@@ -47,17 +45,13 @@ import Conformance.Run.Units
 import Conformance.Run.Wallet
 
 import Conformance.Edge.Exit qualified as ExitStory
+import Conformance.Edge.Occupied qualified as OccupiedStory
 import Conformance.Edge.Register qualified as RegistrationStory
 import Conformance.Edge.Retire qualified as RetirementStory
 import Conformance.Edge.RetractionWindow qualified as WindowStory
 import Conformance.Edge.Sequence qualified as SequenceStory
 import Conformance.Story.Live qualified as Live
 import Control.Concurrent (threadDelay)
-import Control.Exception
-    ( SomeException
-    , displayException
-    , try
-    )
 import Control.Monad (when)
 import Data.Aeson
     ( Value (..)
@@ -69,7 +63,7 @@ import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
-import Data.IORef (newIORef, readIORef, writeIORef)
+import Data.IORef (readIORef, writeIORef)
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
@@ -96,13 +90,7 @@ import MPF.Proof.Insertion (MPFProof (..))
 
 import Cardano.Node.Client.E2E.Setup (addKeyWitness)
 import Cardano.Node.Client.Submitter (SubmitResult (..))
-import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
-import Singular.Registry.Blueprint
-    ( NamingCodes (..)
-    , applyBytesParam
-    , applyDataParam
-    )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
     ( AssetName (..)
@@ -112,23 +100,17 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Trie (TrieManager (..))
-import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Internal
     ( currentPosixMs
     , extractCageDatum
     , extractOwnerBytes
     , leafAbsent
-    , mkCageScript
     , scriptFromBytes
     , scriptHashBytes
     , trySlots
-    , txInToRef
     )
 import Singular.Registry.TxBuilder.Update
-    ( RegistryContext (..)
-    , updateTokenImpl
-    , updateTokenWithDuties
+    ( updateTokenWithDuties
     )
 import Singular.Registry.Types
     ( CageDatum (..)
@@ -147,7 +129,6 @@ import Conformance.Mirror
     , failWith
     , hex
     , inclusionProofFrom
-    , newMirror
     , readChainState
     , require
     , txIdHex
@@ -265,167 +246,6 @@ runCG04 env = do
         Nothing
     writeIORef (envDeleteKey env) (True, cgV3)
     emit "row" "CG04: ACCEPTED re-Insert, v3 reads back from chain"
-
-{- | CG05: Insert on the occupied key must be refused, attributed to
-the state script in phase 2 — a node verdict on a submitted
-transaction, the li-refusals bar. The fold is hand-built (the
-library builder cannot emit a transaction whose scripts do not
-evaluate) and calibrated against the library builder on every valid
-fold, so the refused shape differs from a library fold only in the
-operation under test. The executing control is a fresh cage that
-accepts a valid insert: a cage that refuses everything would pass
-the refusal vacuously.
--}
-runCG05 :: Env -> String -> IO ()
-runCG05 env marker = do
-    ensurePresentV3 env
-    let cfg = envCfg env
-        prov = envProv env
-        tid = envTid env
-    -- CG05: padded 5M bond (hook-era fold fees exceed the library
-    -- default bond's refund headroom; bond size is irrelevant to
-    -- the occupied-key property).
-    tidRef05 <- newIORef (Just tid)
-    unitsRef05 <- newIORef (0, 0)
-    sessionRefs <- sessionRefUtxos env
-    let cage05 = RowCage cfg tidRef05 unitsRef05 sessionRefs
-    _ <-
-        paddedRequest
-            env
-            cage05
-            genesisAddr
-            genesisSignKey
-            cgKey
-            cgV4
-            5_000_000
-    emit "row" "CG05: occupied insert requested; folding must refuse"
-    -- The eval-time observation: genuine evidence about the same
-    -- rules, kept as a line, never as the verdict.
-    evalNote <-
-        try @SomeException
-            (updateTokenImpl cfg prov (envTm env) tid genesisAddr)
-    case evalNote of
-        Left err ->
-            -- Genuine evidence about the same rules, whether it comes from
-            -- the ledger evaluating the fold or from the builder refusing
-            -- to derive duties for an edge that is not one of the seven.
-            emit
-                "eval-observation"
-                (trimRefusal (displayException err))
-        Right _ ->
-            emit
-                "eval-observation"
-                "unexpected: the poisoned fold evaluated; submitting anyway"
-    handTx <- buildRefusedFold env
-    let signed = addKeyWitness genesisSignKey handTx
-    result <- submitTxResilient (envSubmit env) signed
-    case result of
-        Rejected reason ->
-            attributeSubmitRefusal
-                env
-                "CG05"
-                AgreesWithModel
-                marker
-                (T.unpack (TE.decodeUtf8Lenient reason))
-                (txIdHex signed)
-        Submitted txid ->
-            failWith
-                ( "CG05 FINDING: the fold accepted an Insert on an \
-                  \occupied key (txid "
-                    <> txInHex txid
-                    <> ") — the contract claims the fold MUST NOT; \
-                       \reported, not relabelled"
-                )
-    controlFreshCage env
-
--- | The live-cage control: a fresh cage accepts a valid insert.
-controlFreshCage :: Env -> IO ()
-controlFreshCage env = do
-    let cfg0 = envCfg env
-        prov = envProv env
-    -- Sweep first: carving splits only the largest output, so any small
-    -- one left over from the row survives, sits first in the set, and is
-    -- what the boot builder picks to fund and collateralise with. After
-    -- a sweep the wallet is exactly the carved seed and the funding.
-    consolidateFunding env
-    seedTxIn <- carveSeed env
-    -- #157 D-BOOT: a fresh cage is a fresh registry identity, so its four
-    -- pins are derived for ITS seed. Patching only the seed onto the
-    -- session.s config would pin the session.s token policies and every
-    -- fold of this cage would refuse on the delta.
-    let (stateBytes, requestBytes, codes) = envCodes env
-        cfg =
-            cageCfgWith
-                stateBytes
-                requestBytes
-                codes
-                (txInToRef seedTxIn)
-                (defaultProcessTime cfg0)
-                (defaultRetractTime cfg0)
-    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
-    signedBoot <- submitWithGenesis (envSubmit env) unsignedBoot
-    tid <- extractTokenId cfg signedBoot
-    createTrie (envTm env) tid
-    -- #157: a valid insert is a booked edge. The control cage is its own
-    -- registry — its own token, its own request script and its own three
-    -- token policies — so it gets its own reference outputs and its own
-    -- approval, and the fold discharges the duties the edge creates.
-    --
-    -- The references go up FIRST. Publishing five scripts is five awaited
-    -- submissions, and a request booked before them would spend its
-    -- phase-1 window waiting for them.
-    refs <- cageRefUtxos env cfg tid
-    dest <- edgeDestination env edgeInsertAbsent
-    _ <-
-        bookEdge
-            env
-            cfg
-            tid
-            genesisAddr
-            genesisSignKey
-            controlKey
-            edgeInsertAbsent
-            dest
-            []
-            (defaultTipCoin cfg + cgDeposit)
-    utxos <- cageUtxosOf env cfg
-    let registryId =
-            scriptHashBytes (cfgScriptHash cfg)
-                <> SBS.fromShort (assetNameBytes (unTokenId tid))
-        witnessAt kind =
-            scriptFromBytes
-                ("witness-" <> show kind)
-                ( applyBytesParam
-                    registryId
-                    (applyDataParam (PLC.I kind) (ncWitness codes))
-                )
-        ctx =
-            RegistryContext
-                { rcWitnessScripts = Map.fromList [(k, witnessAt k) | k <- [0, 1, 2]]
-                , rcCageScript = Just (mkCageScript cfg)
-                , rcCageUtxos = utxos
-                , rcDatums = [(recordDatumHash, recordDatum)]
-                , rcAllowInadmissible = False
-                , rcHolderUtxos = []
-                , rcHolderReleases = Map.empty
-                , rcRefUtxos = refs
-                }
-    foldTx <-
-        updateTokenWithDuties cfg prov (envTm env) tid genesisAddr ctx
-    _ <- submitWithGenesis (envSubmit env) foldTx
-    mirror <- newMirror
-    verifyPresentValue
-        cfg
-        prov
-        mirror
-        tid
-        controlKey
-        controlVal
-        forgedValue
-    emit
-        "control"
-        "CG05 control: fresh cage accepted a valid insert — \
-        \the refusal discriminates"
 
 -- | Sleep until the devnet's POSIX-ms clock reaches @targetMs@.
 sleepUntilMs :: Env -> Integer -> IO ()
@@ -1759,6 +1579,40 @@ runCG23 env = do
         )
     writeStoryReceipt env "CG23" records
 
+{- | CG05: an insertion on a key the registry already holds, in a registry of
+its own. Two accepted requests make the key active — the state the shared
+session key is in when this row follows CG02 — and are compared with the
+model; the same insertion on that key is then submitted, and the ledger and
+the model must both refuse it. The receipt records the three steps.
+-}
+runCG05 :: Env -> IO ()
+runCG05 env = do
+    either
+        failWith
+        pure
+        ( Live.validateLive
+            (OccupiedStory.story (Live.Context "occupied insert" "holder wallet"))
+        )
+    writeIORef (envLiveRecords env) []
+    writeIORef (envLiveMeasurements env) []
+    registry <- ensureRowCage env "occupied-insert" 30_000 30_000
+    _ <-
+        runLive env (OccupiedStory.story (Live.Context registry genesisAddr))
+    records <- readIORef (envLiveRecords env)
+    require
+        "CG05 did not compare its three requests"
+        (length records == 3)
+    require
+        "occupied-key insertion has a disagreement or unsupported step"
+        ( all
+            ( \case
+                Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
+                _ -> False
+            )
+            records
+        )
+    writeStoryReceipt env "CG05" records
+
 {- | An unnamed seven-edge program using exactly the chapter interpreter.
 The receipt is required by the running book before it renders success.
 -}
@@ -1800,32 +1654,6 @@ runSequence env = do
                            ]
             _ -> False
     expectedSequenceOutcome _ = False
-
-{- | CG05 needs its key OCCUPIED, whatever leaf it holds: the row is about
-inserting on a key the trie already has, and the seven edges admit an
-insert only against a key that is absent from the trie entirely. CG02
-leaves the shared key active; a session that runs CG05 alone witnesses an
-absence first.
--}
-ensurePresentV3 :: Env -> IO ()
-ensurePresentV3 env = do
-    (present, _) <- readIORef (envKeys env)
-    if present
-        then pure ()
-        else do
-            emit "setup" "key absent; witnessing its absence as setup"
-            (_, _, _, _) <-
-                requestAndFold env "CG05-setup" edgeInsertAbsent
-            commitTm env edgeInsertAbsent
-            verifyPresentValue
-                (envCfg env)
-                (envProv env)
-                (envMirror env)
-                (envTid env)
-                cgKey
-                (claimValue env cgV1)
-                forgedValue
-            writeIORef (envKeys env) (True, cgV1)
 
 setupDelete :: Env -> IO ()
 setupDelete env = do

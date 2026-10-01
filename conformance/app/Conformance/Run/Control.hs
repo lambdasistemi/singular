@@ -25,9 +25,6 @@ module Conformance.Run.Control
     , cgV1
     , cgV2
     , cgV3
-    , cgV4
-    , controlKey
-    , controlVal
     , forgedValue
     , cgDeposit
     ) where
@@ -171,28 +168,24 @@ readControl = do
 {- | The generic rows' keys, and the leaf states they move between.
 
 #157 admits three leaf values and nothing else, so the rows say what they
-always said — insert, update, delete, re-insert, occupied-key refusal —
-in the only vocabulary the registry has. `cgKey` runs the insert, update
-and occupied-key rows; `cgDeleteKey` runs the delete and the re-insert,
+always said — insert, update, delete, re-insert — in the only vocabulary
+the registry has. `cgKey` runs the insert and update rows; `cgDeleteKey` runs the delete and the re-insert,
 because deleting an ACTIVE leaf is the one edge naming never certifies
 (N5) and a delete that can fold is a delete of a witnessed absence.
 -}
-cgKey, cgDeleteKey, cgV1, cgV2, cgV3, cgV4 :: ByteString
+cgKey, cgDeleteKey, cgV1, cgV2, cgV3 :: ByteString
 cgKey = "cg-row-key"
 cgDeleteKey = "cg-delete-key"
 cgV1 = leafAbsent
 cgV2 = leafActive
 cgV3 = leafAbsent
-cgV4 = leafAbsent
 
 {- | The control values. A forged claim names a leaf the key does not
 hold; there is no byte outside the codec that would reach the comparison
 at all, so the forgery is a wrong LEAF, which is what a false claim about
 a registry actually looks like.
 -}
-controlKey, controlVal, forgedValue :: ByteString
-controlKey = "cg-control-key"
-controlVal = leafAbsent
+forgedValue :: ByteString
 forgedValue = leafTerminal
 
 {- | The deposit a booking rides with, over and above the tip. The fold

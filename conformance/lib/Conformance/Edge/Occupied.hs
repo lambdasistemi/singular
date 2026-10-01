@@ -9,8 +9,22 @@ module Conformance.Edge.Occupied (story) where
 
 import Conformance.Story.Live
     ( Context (Context)
+    , Edge (..)
+    , EdgeRequest (..)
     , Story
+    , compareWithModel
+    , observe
+    , submit
     )
 
 story :: Context reg wal -> Story reg wal step obs cmp ()
-story (Context _ _) = pure ()
+story (Context registry holder) = do
+    checked (EdgeRequest InsertAbsent "occupied" holder)
+    checked (EdgeRequest UpdateActive "occupied" holder)
+    checked (EdgeRequest InsertAbsent "occupied" holder)
+  where
+    checked request = do
+        step <- submit registry request
+        observation <- observe step
+        _ <- compareWithModel step observation
+        pure ()
