@@ -42,6 +42,7 @@ nav:
   - Node module ownership: docs/offchain-node-ownership.md
   - Deployment record ownership: docs/offchain-deployment-owners.md
   - Registry command owners: docs/offchain-command-entrypoints.md
+  - Recovering a registry command: docs/cli-recovery.md
   - State validator owners: docs/onchain-validator-owners.md
   - Validator API reference: docs/onchain-api-reference.md
   - Off-chain API reference: docs/offchain-api-reference.md

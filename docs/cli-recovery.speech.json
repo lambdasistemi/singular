@@ -1,0 +1,50 @@
+{
+  "the-case-each-submission-met": [
+    {
+      "text": "A command meets one of five cases for each transaction it submits, and its receipt names them: acknowledged, when the node accepted it but it was not yet seen on chain; unknown, when no answer arrived; rejected, when the node refused it; included, when it is on chain; and timeout, when the confirmation deadline passed.",
+      "pause": 400
+    },
+    {
+      "text": "The table pairs each case with its phase in the journal and with what you do next. For every case but rejected, the answer is the same: run your next command, which picks the transaction up from the chain. A transaction is prepared once and never sent twice.",
+      "pause": 400
+    }
+  ],
+  "the-next-command-reconciles": [
+    {
+      "text": "After an inclusion a write commits locally in a fixed order: the proof mirror, then state dot json, then the observed line. Each file is replaced whole or not at all, so an interruption leaves the old version or the new one.",
+      "pause": 400
+    },
+    {
+      "text": "The diagram follows the next command. It checks the saved body against its prepared line and looks for the transaction's first output on chain. If it is there, the transaction is journalled confirmed; the fold's edge is applied to the mirror only from its recorded root before, and only when the ledger already holds its recorded root after; state dot json follows the mirror; and the after-state is read back and journalled observed, for whichever key the interrupted step concerned. Then the command proceeds. If the chain shows nothing, a write stops before building anything and names the transaction and its case.",
+      "pause": 600
+    },
+    {
+      "text": "The receipt says what the reconciliation did. Inspect reconciles only when no other process is writing to the registry.",
+      "pause": 300
+    }
+  ],
+  "when-the-next-command-stops": [
+    {
+      "text": "A write that cannot reconcile a transaction stops before building or submitting anything, names the transaction and its case, and leaves the journal as it was. If the chain does not show the transaction yet, wait and run the command again. If it is on chain but its edge does not reach the ledger's root, the outcome is stale state and the local files are not repaired.",
+      "pause": 500
+    },
+    {
+      "text": "A transaction that never reached the node stays unknown, and every write stops on it. Recovering from a transaction that will never land, or from a rolled-back inclusion, is not yet supported.",
+      "pause": 400
+    }
+  ],
+  "what-the-checks-show": [
+    {
+      "text": "The recovery controls run each case as separate processes on one development node, and judge every clause from receipts, the journal, the saved bodies and the files.",
+      "pause": 300
+    },
+    {
+      "text": "The table walks the six controls: an accepting insert; a lost answer, where the body and prepared line are on disk at the moment of the send and the next insert reconciles the fold once; a kill before the mirror is saved, after the mirror, and after state dot json, each followed by a write that finishes the commit and proceeds; and a fold never sent, where the next write stops and the journal does not move. Every transaction has exactly one prepared line, and nothing written is ever rewritten. Durability across a power loss is not shown, only across a killed process.",
+      "pause": 600
+    }
+  ],
+  "_source": {
+    "file": "cli-recovery.md",
+    "sha256": "68e67121a7de66ee98e9d2660d6175a1b05894446b6ea4de986617c79ce01287"
+  }
+}
