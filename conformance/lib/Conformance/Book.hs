@@ -2,11 +2,12 @@
 module Conformance.Book (renderBook, bookStories, bookReceipts) where
 
 import Conformance.Edge.Exit qualified as Exit
+import Conformance.Edge.Occupied qualified as Occupied
 import Conformance.Edge.Register qualified as Register
 import Conformance.Edge.Retire qualified as Retire
 import Conformance.Edge.RetractionWindow qualified as RetractionWindow
 import Conformance.Edge.Sequence qualified as Sequence
-import Conformance.Receipt (Receipt (..))
+import Conformance.Receipt (Receipt (..), Verdict (..))
 import Conformance.Rows (Row (..), RowState (..))
 import Conformance.Story.Live (Context (..), renderLive)
 import Data.Aeson (Value (..))
@@ -17,14 +18,23 @@ import Data.Text qualified as T
 
 -- | The stories a book run executes, renders and requires, in book order.
 bookStories :: [String]
-bookStories = ["CG21", "CG22", "CG23", "CG07", "sequence"]
+bookStories = ["CG21", "CG05", "CG22", "CG23", "CG07", "sequence"]
 
 {- | The receipts a book renders: one per story of the book, each agreeing
 with the model, in book order; a missing or disagreeing story is refused,
 named.
 -}
 bookReceipts :: [Receipt] -> Either String [Receipt]
-bookReceipts = Right
+bookReceipts receipts = traverse story bookStories
+  where
+    story name = case [r | r <- receipts, receiptRow r == T.pack name] of
+        [r]
+            | receiptVerdict r == AgreesWithModel -> Right r
+            | otherwise ->
+                Left
+                    ("the book's " <> name <> " receipt does not agree with the model")
+        [] -> Left ("the book run has no receipt for " <> name)
+        _ -> Left ("the book run has more than one receipt for " <> name)
 
 -- | Called only after both live stories and their observations have succeeded.
 renderBook :: [Row] -> [Receipt] -> String
@@ -32,11 +42,17 @@ renderBook requirements receipts =
     "# The running registry book\n\n"
         <> "These are executable stories. The runner supplies fresh registry and wallet contexts; the stories submit real transactions to a local Cardano devnet and check what happened. The same story programs supply the steps printed below.\n\n"
         <> "## This run\n\n"
-        <> concatMap result receipts
+        <> concatMap
+            result
+            [r | name <- bookStories, r <- receipts, receiptRow r == T.pack name]
         <> "## Register a key and receive its active token\n\n"
         <> "A requester submits two distinct active registrations and then repeats one key. The delivery is then sent to another address, and paid one lovelace short, beside the same untampered request. Every step is compared with the executable registry model.\n\n"
         <> renderLive
             (Register.story (Context "registration" "recipient wallet"))
+        <> "## Insert on a key the registry already holds\n\n"
+        <> "In a registry of its own, a key is booked by an insertion and made active by an update, each accepted and compared with the executable registry model. The same insertion on that key must then be refused by the ledger and by the model.\n\n"
+        <> renderLive
+            (Occupied.story (Context "occupied insert" "holder wallet"))
         <> "## Retire a registration and burn its active token\n\n"
         <> "The holder first registers a key in this run. Retirement must consume and burn that very token and change the key to Terminal. A never-registered key and a key recorded as Absent must be refused, each beside a successful retirement in the same registry. A deletion then owes its owner the deposit back: paid one lovelace short, and paid to another address, it must be refused beside the untampered deletion.\n\n"
         <> renderLive
@@ -87,6 +103,10 @@ renderBook requirements receipts =
             <> maybe
                 ""
                 ( \steps -> case receiptRow receipt of
+                    "CG05" ->
+                        "Occupied-key insertion compared "
+                            <> outcomeCounts steps
+                            <> concatMap refusedStep steps
                     "CG21" ->
                         "Registration compared "
                             <> outcomeCounts steps
@@ -261,7 +281,7 @@ renderBook requirements receipts =
             <> " names the cause its replay admits none, and "
             <> show (recorded null)
             <> " records no traced replay.\n\n"
-            <> "Refusals outside these chapters, by row. CG05, an insertion on a present key: class A, compared in the generic run; not rendered here. CS04, a redeemer at a wrong constructor index: live refusal reason not observed for the state and request scripts, whose failing path carries no user-defined trace; not compared, the behavior lies below the model's vocabulary (class C). CG09, a reject while the request is still in phase 1: the model admits it and the chain refuses it (class D); the validator's repair is pending (#320) and the consumer's requirement R9 is unmet. CG10, a fold against a superseded root: not compared, a stale proof is not an input of the model, and the validator's name for the refusal is imprecise (class C). CG11, CG12 and CG19: not compared while the recorded consumer-model conflict holds them (class D); CG19's two-request reject needs a batch question the driver does not have. The two-key batch whose claimed mint disagrees per key: not run; live refusal reason not observed and not compared.\n\n"
+            <> "Refusals outside these chapters, by row. CS04, a redeemer at a wrong constructor index: live refusal reason not observed for the state and request scripts, whose failing path carries no user-defined trace; not compared, the behavior lies below the model's vocabulary (class C). CG09, a reject while the request is still in phase 1: the model admits it and the chain refuses it (class D); the validator's repair is pending (#320) and the consumer's requirement R9 is unmet. CG10, a fold against a superseded root: not compared, a stale proof is not an input of the model, and the validator's name for the refusal is imprecise (class C). CG11, CG12 and CG19: not compared while the recorded consumer-model conflict holds them (class D); CG19's two-request reject needs a batch question the driver does not have. The two-key batch whose claimed mint disagrees per key: not run; live refusal reason not observed and not compared.\n\n"
     -- The capture each refused request's replay was evaluated from: harness
     -- evidence, kept to the appendix.
     replayCaptures = case [ "Transaction `"
