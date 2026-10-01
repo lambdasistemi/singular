@@ -561,7 +561,8 @@ done
 kill -9 "$victim" 2>/dev/null || true
 wait "$victim" 2>/dev/null || true
 [ ! -e "$inter/registry.json" ] || setup_fail "the create finished before it was killed"
-first_tx="$(jq -r 'select(.journalEvent == "submitted") | .journalTxId' "$inter/journal.jsonl" | head -n1)"
+first_tx="$(jq -r 'select(.journalEvent == "submitted") | .journalTxId' "$inter/journal.jsonl")"
+first_tx="${first_tx%%$'\n'*}"
 inter_lines="$(journal_lines "$inter")"
 run create-after-kill client-refusal -- registry create --seed "$seed_i" --registry "$inter" \
   --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
@@ -595,7 +596,8 @@ for _ in $(seq 1 1200); do
   sleep 0.1
 done
 [ -e "$work/update.go.waiting" ] || setup_fail "the update never reached an accepted submission"
-lost_tx="$(tail -n +"$((before + 1))" "$reg/journal.jsonl" | jq -r 'select(.journalEvent == "submitted") | .journalTxId' | head -n1)"
+lost_tx="$(tail -n +"$((before + 1))" "$reg/journal.jsonl" | jq -r 'select(.journalEvent == "submitted") | .journalTxId')"
+lost_tx="${lost_tx%%$'\n'*}"
 kill "$devnet_pid" 2>/dev/null || true
 pkill -f "cardano-node run --config $work/" 2>/dev/null || true
 for _ in $(seq 1 100); do

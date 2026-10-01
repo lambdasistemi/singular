@@ -130,7 +130,7 @@ take() {
   stop_indexer
   tail -1 "$work/$name.md"
   [ "$status" -eq 0 ] || fail_control "take $name did not hold (exit $status)"
-  grep -q "uncovered" "$work/$name.md" && sed -n '/uncovered/p' "$work/$name.md" | head -3 >&2
+  grep -m3 "uncovered" "$work/$name.md" >&2 || true
   # The key ends Terminal by the ordinary inspect, and no request is left pending.
   "$singular" registry inspect --key "$(printf '%s' "$key" | od -An -tx1 | tr -d ' \n')" \
     "${common[@]}" "${node[@]}" >"$receipts/inspect-$name.json"
@@ -179,13 +179,15 @@ expect() {
 }
 copy honest
 expect honest ""
-reclaim="$(grep -l '"action": "reclaim"' "$work"/one/receipts/*.json | head -n1)"
+reclaim="$(grep -l '"action": "reclaim"' "$work"/one/receipts/*.json || true)"
+reclaim="${reclaim%%$'\n'*}"
 [ -n "$reclaim" ] || fail_control "the first take left no retraction receipt"
 body="$(jq -r .bodyFile "$reclaim")"
 copy retraction-body-missing
 rm "$copies/retraction-body-missing/$body"
 expect retraction-body-missing "the retained body $body is missing"
-refusal="$(grep -l '"action": "fold-unevaluated"' "$work"/one/receipts/*.json | head -n1)"
+refusal="$(grep -l '"action": "fold-unevaluated"' "$work"/one/receipts/*.json || true)"
+refusal="${refusal%%$'\n'*}"
 copy bound-lowered
 jq '.allowance = 1' "$refusal" >"$copies/bound-lowered/receipts/$(basename "$refusal")"
 expect bound-lowered "over the bound of 1"
@@ -195,7 +197,8 @@ say "artifact controls: the honest copy holds; each changed copy fails for its r
 # fact at a time, every stated comparison left true and its digest renewed in the
 # receipt, each fails for that fact.
 tamper="$here/demo1_readback_tamper.sh"
-read_receipt="$(grep -l '"action": "read-indexer koios"' "$work"/one/receipts/*.json | head -n1)"
+read_receipt="$(grep -l '"action": "read-indexer koios"' "$work"/one/receipts/*.json || true)"
+read_receipt="${read_receipt%%$'\n'*}"
 [ -n "$read_receipt" ] || fail_control "the first take left no koios read receipt"
 record="$(jq -r .readbackFile "$read_receipt")"
 for fact in datum lag census quantity index entry; do

@@ -38,6 +38,29 @@ fail_control() {
   exit 1
 }
 
+# The checks below read files whole, never through a pipe whose reader stops
+# early: under pipefail a `| grep -q` or `| head` that has its answer closes
+# the pipe, the writer dies of SIGPIPE, and a control that found its line
+# fails anyway (CI, fda5e10: "grep: write error: Broken pipe").
+# line_with FILE A B: some line of FILE contains both A and B.
+line_with() {
+  local l
+  while IFS= read -r l || [ -n "$l" ]; do
+    [[ $l == *"$2"* && $l == *"$3"* ]] && return 0
+  done <"$1"
+  return 1
+}
+# first_receipt ACTION [TARGET]: the first receipt, in name order, of ACTION
+# (on TARGET when given); nothing when there is none.
+first_receipt() {
+  local f
+  for f in "$work"/receipts/*.json; do
+    grep -qF "\"action\": \"$1\"" "$f" || continue
+    [ -z "${2:-}" ] || grep -qF "\"target\": \"$2\"" "$f" || continue
+    printf '%s\n' "$f"
+    return 0
+  done
+}
 od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/wallet.skey"
 od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/stranger.skey"
 
@@ -74,7 +97,7 @@ say "verdict section at $work/controls.md (exit $status)"
 # refusal for the admission reason named, and exit non-zero.
 copies="$work/artifact-controls"
 mkdir -p "$copies"
-step="$(grep -l '"action": "fold-unevaluated"' "$work"/receipts/*.json | xargs grep -l '"target": "duplicate"' | head -n1)"
+step="$(first_receipt fold-unevaluated duplicate)"
 [ -n "$step" ] || fail_control "no refused fold receipt for the duplicate target"
 name="$(basename "$step")"
 rejection="$(jq -r .rejectionFile "$step")"
@@ -104,7 +127,7 @@ expect() {
     [ "$s" -eq 0 ] || fail_control "$1: the unchanged copy does not hold (exit $s)"
   else
     [ "$s" -ne 0 ] || fail_control "$1: the changed copy still holds"
-    grep -F "$claim" "$copies/$1.md" | grep -qF "does not hold: $2" \
+    line_with "$copies/$1.md" "$claim" "does not hold: $2" \
       || fail_control "$1: the duplicate refusal does not fail for: $2"
   fi
   say "artifact control $1: as expected"
@@ -134,7 +157,7 @@ say "artifact controls: the honest copy holds; each changed copy fails the dupli
 # Removing the terminate that brings a registry to its terminal prefix must
 # also leave that telling's later clauses uncovered for the same cause.
 command_receipt() {
-  grep -l "\"action\": \"run $1\"" "$work"/receipts/*.json | xargs grep -l "\"target\": \"$2\"" | head -n1
+  first_receipt "run $1" "$2"
 }
 journalled() {
   local body
@@ -148,10 +171,10 @@ expect_command() {
   local s=0
   "$controls" render "$copies/$1/receipts" >"$copies/$1.md" 2>"$copies/$1.err" || s=$?
   [ "$s" -ne 0 ] || fail_control "$1: the changed copy still holds"
-  grep -F "does not hold: " "$copies/$1.md" | grep -qF "$2" \
+  line_with "$copies/$1.md" "does not hold: " "$2" \
     || fail_control "$1: no claim fails for: $2"
   if [ -n "${3:-}" ]; then
-    grep -F "uncovered: its premise does not hold: " "$copies/$1.md" | grep -qF "$2" \
+    line_with "$copies/$1.md" "uncovered: its premise does not hold: " "$2" \
       || fail_control "$1: no later clause is uncovered for: $2"
   fi
   say "command control $1: as expected"
@@ -214,7 +237,7 @@ say "relabel controls: no fresh submission of a create passes as a read-back"
 # A provoked command's claims rest on what its process left. With the
 # registry's journal cut back to before the killed terminate, the claim that
 # it stopped at the node's acceptance must fail naming the journal.
-killed="$(grep -l '"action": "provoke terminate-killed"' "$work"/receipts/*.json | head -n1)"
+killed="$(first_receipt "provoke terminate-killed")"
 [ -n "$killed" ] || fail_control "no receipt of the killed terminate"
 journal="$(jq -r .process.journal "$killed")"
 kept="$(jq -r .process.journalBefore "$killed")"
