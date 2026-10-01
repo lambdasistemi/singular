@@ -110,8 +110,8 @@ variant() {
   "$mutator" "$tree"
   if [ "$keep" != keep-inner ]; then
     (cd "$tree" && find . -type f ! -name SHA256SUMS | sed 's|^\./||' | LC_ALL=C sort \
-      | while IFS= read -r path; do sha256sum "$path"; done) >"$tree/SHA256SUMS.new"
-    mv "$tree/SHA256SUMS.new" "$tree/SHA256SUMS"
+      | while IFS= read -r path; do sha256sum "$path"; done) >"$scratch/$label.sums"
+    mv "$scratch/$label.sums" "$tree/SHA256SUMS"
   fi
   tar --sort=name --mtime=@1 --owner=0 --group=0 --numeric-owner -C "$tree" -cf - . \
     | gzip -n >"$scratch/$label/$onchain"
