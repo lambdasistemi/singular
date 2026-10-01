@@ -618,6 +618,12 @@ NONCODE_CLASSES: list[dict] = [
         "each; read by tools/node_confinement_check.sh (issue #323)",
     },
     {
+        "id": "signed-tx-exports-allowlist",
+        "pattern": "tools/signed-tx-exports.allow",
+        "note": "the names Singular.Registry.Node.Submit may export; read by "
+        "tools/signed_tx_control.sh (issue #326)",
+    },
+    {
         "id": "formatter-config",
         "pattern": "fourmolu.yaml",
         "note": "the one house Fourmolu configuration (issue #278 S2), read "

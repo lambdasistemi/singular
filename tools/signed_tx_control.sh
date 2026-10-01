@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # A SignedTx is obtained only by signing (#326 R4).
 #
-# GHC type-checks three fixtures against the real
-# Singular.Registry.Node.Submit source: signing must compile; building a
-# SignedTx by its constructor or by coercion must not, and must be refused
-# because the constructor is hidden. Then the same two forgeries are
-# type-checked against a scratch copy of the module that exports the
-# constructor, and must compile: the refusal is the export list's doing,
-# so this check fails the day the abstraction is broken.
+# Outside Singular.Registry.Node.Submit, no route constructs a SignedTx.
+# GHC type-checks fixtures against the real module's source: signing must
+# compile; building a SignedTx by its constructor, by coercion or by record
+# syntax must not, and must be refused because the constructor is hidden.
+# The same forgeries are then type-checked against a scratch copy of the
+# module that exports the constructor, and must compile: the refusal is the
+# export list's doing, so this check fails the day the abstraction breaks.
 #
-# Then the whole export surface, as GHCi reports it to an importer, is
-# judged by tools/signed_tx_surface.py: signTx must be the only exported
-# binding that hands out a SignedTx, and SignedTx must have no instance.
-# Planted producers and a planted instance must each be refused by name.
+# The module's export list is frozen: the names GHCi reports it exports must
+# all be on tools/signed-tx-exports.allow, and a planted forging export
+# must be refused by name. An export already on the allowlist that is
+# changed to forge is left to review.
 #
 # Usage: tools/signed_tx_control.sh REPO-ROOT -- GHC-FLAGS...
 # GHC-FLAGS name the package databases and units Submit.hs compiles with.
@@ -36,6 +36,7 @@ trap 'rm -rf "$scratch"' EXIT
 declare -A refusal=(
   [ByConstructor]='term-level use of the type constructor .SignedTx.'
   [ByCoercion]='data constructor .Singular\.Registry\.Node\.Submit\.SignedTx.'
+  [ByRecord]='term-level use of the type constructor .SignedTx.'
 )
 
 # compile TREE FIXTURE: type-check FIXTURE with Submit from TREE; the log
@@ -63,7 +64,7 @@ fi
 echo "control signing: compiles against the real module"
 
 status=0
-for forgery in ByConstructor ByCoercion; do
+for forgery in ByConstructor ByCoercion ByRecord; do
   if compile real "$forgery"; then
     echo "FAIL signed-tx-control: $forgery compiles against the real module: a SignedTx exists without signing" >&2
     status=1
@@ -83,92 +84,72 @@ for forgery in ByConstructor ByCoercion; do
   fi
 done
 
-# The export surface, as an importer sees it: signTx must be the only
-# exported way to a SignedTx, and SignedTx must have no instance. Judged on
-# the real module, then on two planted defects the judge must name.
-# GHCi from an importer of the module: :browse gives the exports with their
-# types (the type as the importer sees it); :info gives the instances in
-# scope. :info also shows an interpreted module's constructor whatever its
-# export list says, so only its instance lines are judged; the module is
-# loaded compiled (-fobject-code), so :browse shows its exports alone.
-ghci_on() {
-  local tree="$1" commands=()
-  shift
-  for c in "$@"; do commands+=(-e "$c"); done
-  ghc -package-env - -fobject-code -i"$scratch/$tree" -outputdir "$scratch/out-surface-$tree" \
-    "${commands[@]}" "$fixtures/BySigning.hs" "${ghc_flags[@]}" 2>&1 || {
-    echo "SETUP-FAIL: GHCi could not run $* on tree $tree" >&2
+# The module's export list, frozen. GHCi browses the module from an
+# importer, compiled (-fobject-code), and the names it exports are compared
+# with tools/signed-tx-exports.allow: a new or renamed export fails by name,
+# so a forging export added inside the module is a reviewed allowlist line.
+exports_of() {
+  local tree="$1"
+  ghc -package-env - -fobject-code -i"$scratch/$tree" \
+    -outputdir "$scratch/out-exports-$tree" \
+    -e ":browse Singular.Registry.Node.Submit" \
+    "$fixtures/BySigning.hs" "${ghc_flags[@]}" >"$scratch/browse-$tree.txt" 2>&1 || {
+    cat "$scratch/browse-$tree.txt" >&2
+    echo "SETUP-FAIL: GHCi could not browse Submit from tree $tree" >&2
     exit 2
   }
-}
-surface() {
-  {
-    ghci_on "$1" ":browse Singular.Registry.Node.Submit"
-    ghci_on "$1" ":module + Singular.Registry.Node.Submit" ":info SignedTx" \
-      | grep "^instance" || true
-  } >"$scratch/surface-$1.txt"
-  python3 "$root/tools/signed_tx_surface.py" <"$scratch/surface-$1.txt"
+  # Unindented lines name one export each: a binding (name ::), or a type
+  # (type Name :: kind); newtype and data lines repeat the type's name.
+  grep -vE '^[[:space:]]|^--|^(newtype|data) ' "$scratch/browse-$tree.txt" \
+    | sed -E 's/^type //; s/[[:space:]].*$//; s/^.*\.//' | sort -u
 }
 
-judged=0
-surface real >"$scratch/judge-real.log" 2>&1 || judged=$?
-case $judged in
-  0) echo "surface real: $(cat "$scratch/judge-real.log")" ;;
-  1)
-    cat "$scratch/judge-real.log" >&2
-    echo "FAIL signed-tx-control: the real module exports another way to a SignedTx" >&2
-    status=1
-    ;;
-  *)
-    cat "$scratch/judge-real.log" >&2
-    echo "SETUP-FAIL: the surface judge did not run (exit $judged)" >&2
-    exit 2
-    ;;
-esac
-
-plant() {
-  local tree="$1" exports="$2" defs="$3"
-  mkdir -p "$scratch/$tree/Singular/Registry/Node"
-  awk -v add="$exports" '{ print } /^      SignedTx$/ && add != "" { print add }' "$submit" \
-    >"$scratch/$tree/Singular/Registry/Node/Submit.hs"
-  printf '\n%s\n' "$defs" >>"$scratch/$tree/Singular/Registry/Node/Submit.hs"
-  grep -qF "$defs" "$scratch/$tree/Singular/Registry/Node/Submit.hs" || {
-    echo "SETUP-FAIL: the plant did not apply to $tree" >&2
-    exit 2
-  }
+# frozen TREE: exports of TREE outside the allowlist, one per line.
+frozen() {
+  comm -23 <(exports_of "$1") <(grep -vE '^(#|$)' "$allow" | sort -u)
 }
 
-# expect_refused TREE PATTERN...: the judge exits 1 and names each pattern.
-expect_refused() {
-  local tree="$1" got=0
-  shift
-  surface "$tree" >"$scratch/judge-$tree.log" || got=$?
-  if [ "$got" -ne 1 ]; then
-    cat "$scratch/judge-$tree.log" >&2
-    echo "FAIL signed-tx-control: the judge did not refuse the $tree plant (exit $got)" >&2
-    status=1
-    return
-  fi
-  for p in "$@"; do
-    grep -qF -- "$p" "$scratch/judge-$tree.log" || {
-      cat "$scratch/judge-$tree.log" >&2
-      echo "FAIL signed-tx-control: the $tree plant was refused without naming $p" >&2
-      status=1
-    }
-  done
-  echo "control $tree: refused, naming $*"
+allow="$root/tools/signed-tx-exports.allow"
+[ -f "$allow" ] || {
+  echo "SETUP-FAIL: no allowlist at $allow" >&2
+  exit 2
 }
+real_exports="$(exports_of real)"
+grep -qx signTx <<<"$real_exports" || {
+  echo "SETUP-FAIL: signTx is not among the exports GHCi reported: $real_exports" >&2
+  exit 2
+}
+extra="$(frozen real)"
+if [ -n "$extra" ]; then
+  echo "FAIL signed-tx-control: Submit exports names the allowlist does not hold: $extra" >&2
+  status=1
+else
+  echo "exports: $(tr '\n' ' ' <<<"$real_exports")— all on the allowlist"
+fi
 
-plant producers "    , forgeSigned\n    , withForged" \
-  "forgeSigned :: ConwayTx -> SignedTx
-forgeSigned = SignedTx
+stale="$(comm -13 <(exports_of real) <(grep -vE '^(#|$)' "$allow" | sort -u))"
+if [ -n "$stale" ]; then
+  echo "FAIL signed-tx-control: the allowlist holds names Submit does not export: $stale" >&2
+  status=1
+fi
 
-withForged :: ConwayTx -> (SignedTx -> r) -> r
-withForged tx k = k (SignedTx tx)"
-expect_refused producers forgeSigned withForged
-
-plant instance "" "instance Semigroup SignedTx where a <> _ = a"
-expect_refused instance "instance of SignedTx"
+# The planted export: a forging function added to the export list.
+mkdir -p "$scratch/planted/Singular/Registry/Node"
+awk '{ print } /^      SignedTx$/ { print "    , forge" }' "$submit" \
+  >"$scratch/planted/Singular/Registry/Node/Submit.hs"
+printf '\nforge :: ConwayTx -> SignedTx\nforge = SignedTx\n' \
+  >>"$scratch/planted/Singular/Registry/Node/Submit.hs"
+grep -q '^    , forge$' "$scratch/planted/Singular/Registry/Node/Submit.hs" || {
+  echo "SETUP-FAIL: the planted export did not apply" >&2
+  exit 2
+}
+planted="$(frozen planted)"
+if [ "$planted" = "forge" ]; then
+  echo "control planted-export: refused by name: $planted"
+else
+  echo "FAIL signed-tx-control: the planted export was not refused by name (got: '$planted')" >&2
+  status=1
+fi
 
 if [ $status -ne 0 ]; then
   exit 1
