@@ -20,11 +20,15 @@ module Singular.Registry.Node.Submit
     , SignedSubmitter
     , signedSubmitter
     , submitSigned
+    , SubmitResult (..)
     ) where
 
 import Cardano.Crypto.DSIGN (Ed25519DSIGN, SignKeyDSIGN)
 import Cardano.Node.Client.E2E.Setup (addKeyWitness)
-import Cardano.Node.Client.Submitter (SubmitResult, Submitter (..))
+import Cardano.Node.Client.Submitter
+    ( SubmitResult (..)
+    , Submitter (..)
+    )
 import Cardano.Tx.Ledger (ConwayTx)
 
 -- | A transaction carrying the witness of the key that signed it.

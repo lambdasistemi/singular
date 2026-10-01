@@ -91,6 +91,7 @@ import Singular.CLI.Command
     , WriteSettings (..)
     )
 import Singular.CLI.Live
+import Singular.CLI.Node (Capabilities (..))
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry
     ( LocalState (..)
@@ -107,7 +108,7 @@ import Singular.Registry.Ledger
     , Root (..)
     , TokenId (..)
     )
-import Singular.Registry.Node (NodeSession (..), Wallet (..))
+import Singular.Registry.Node (Wallet (..))
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.TxBuilder.Edges
@@ -162,7 +163,7 @@ attached dir blueprint ws command body = do
             (checkNetwork (savedConfig saved) magic)
         mirror <- openMirror saved
         live <-
-            Cage.withView (nsProvider (wcSession wc)) $ \v -> attachLive v saved
+            Cage.withView (capReads (wcCapabilities wc)) $ \v -> attachLive v saved
         observed <- either (failWith StaleState) pure (observedRoot live)
         local <- mirrorRoot saved mirror
         when (local /= observed) $
@@ -181,7 +182,7 @@ callerKey :: Attached -> ByteString
 callerKey = addrKeyHashBytes . walletAddr . wcWallet . atWrite
 
 provider :: Attached -> Cage.Provider IO
-provider = nsProvider . wcSession . atWrite
+provider = capReads . wcCapabilities . atWrite
 
 -- | One read operation: acquire a view and read through it.
 reading :: Attached -> (Cage.View IO -> IO a) -> IO a

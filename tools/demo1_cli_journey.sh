@@ -112,6 +112,17 @@ refused() {
     || fail "$name: the target's journal moved; a refusal submitted something"
 }
 field() { jq -r "$2" "$receipts/$1.json"; }
+# prepared_points DIR: the view point of each prepared line of DIR's
+# journal, one JSON object each; a line missing any of the four fields
+# fails the journey.
+prepared_points() {
+  jq -c 'select(.journalEvent == "prepared")
+      | if (.journalNetwork == 42) and (.journalEra | type == "string" and length > 0)
+          and (.journalChainPoint // "" | test("^[0-9]+\\.[0-9a-f]{64}$"))
+        then {slot: (.journalChainPoint | split(".")[0] | tonumber)}
+        else error("prepared \(.journalTxId) lacks its view point: network \(.journalNetwork), era \(.journalEra), point \(.journalChainPoint)")
+        end' "$1/journal.jsonl" || fail "$1: a write did not journal its view point"
+}
 
 # envelope FILE CONTROLLER KEY [REGISTRY_NAME] [ACTIVE]: an envelope with
 # a nested payload, naming this registry unless told otherwise.
@@ -313,6 +324,15 @@ run bob-terminate success -- registry terminate --key "$bkey" "${common[@]}" "${
 run inspect-4 success -- registry inspect --key "$bkey" "${common[@]}" "${node[@]}"
 [ "$(field inspect-4 .leaf)" = terminal ] || fail "bob's key is not terminal"
 
+# Every write so far journalled, at prepared, the point of the view its
+# body was built from: this network, an era, a slot and a block hash — a
+# point no later than the one inspect-4 read afterwards.
+read_slot="$(field inspect-4 .chainPoint | cut -d. -f1)"
+prepared_points "$reg" | jq -e -s --argjson s "$read_slot" \
+  'length > 0 and all(.slot <= $s)' >/dev/null \
+  || fail "a write's journalled view point is missing or later than inspect-4's ($read_slot)"
+say "every write journalled its build view's point, no later than slot $read_slot"
+
 # ------------------------------------------------------------------
 # 7. create races and interruptions, on their own targets
 # ------------------------------------------------------------------
@@ -412,4 +432,16 @@ jq -e --arg t "$lost_tx" '.reason | contains($t)' "$receipts/update-node-lost.js
 say "node lost after an accepted submission: $outcome after ${waited}s, naming $lost_tx, journal unresolved"
 
 jq -r '.journalEvent' "$reg/journal.jsonl" | sort | uniq -c
+
+# Every journal the journey's writes left, wherever they wrote: each
+# prepared line names its view point.
+mapfile -t journals < <(find "$work" -name journal.jsonl | sort)
+[ "${#journals[@]}" -ge 2 ] || fail "found ${#journals[@]} journals; the extent is not the journey's"
+written=0
+for j in "${journals[@]}"; do
+  n="$(prepared_points "$(dirname "$j")" | wc -l)"
+  written=$((written + n))
+done
+[ "$written" -gt 0 ] || fail "no prepared line in ${#journals[@]} journals"
+say "$written prepared submissions in ${#journals[@]} journals each name their view point"
 say "JOURNEY-OK"

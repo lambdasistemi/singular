@@ -207,7 +207,11 @@ withNodeModeAndFunding fundingFloor mode k = case mode of
         let nodeProv = adaptProvider magic n2c
             submitter =
                 boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
-        prov <- followedProvider nodeProv submitter
+        -- Only a devnet session reads addresses through its indexer; an
+        -- external node is read through the node adapter alone.
+        prov <- case mode of
+            Devnet -> followedProvider nodeProv submitter
+            External _ -> pure nodeProv
         for_ fundingFloor (checkFunding prov (walletAddr wallet))
         announce mode magic sock (walletAddr wallet)
         let sess =

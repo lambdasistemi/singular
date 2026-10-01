@@ -8,11 +8,12 @@ Module      : Singular.CLI.Session
 Description : The node and wallet a write command runs with, and its journalled submissions
 License     : Apache-2.0
 
-A write command connects to the node its caller named — never one of its
-own — loads the caller's signing key, and hands every transaction it
-builds to 'journalledSubmit', which signs it and walks the first three
-journal phases of "Singular.CLI.Receipt": prepared, the node's answer,
-the confirmation. Each phase is synchronised to disk before the next
+A write command holds the capabilities "Singular.CLI.Node" opens for the
+node its caller named — never one of its own — and the caller's signing
+key. Every transaction it builds goes through 'submitBuilt': built from
+one view, then signed and walked through the first three journal phases
+of "Singular.CLI.Receipt": prepared, the node's answer, the
+confirmation. The signed-only write is the one way to the node. Each phase is synchronised to disk before the next
 step starts, so a process killed anywhere leaves the journal saying how
 far that transaction got.
 
@@ -34,7 +35,6 @@ module Singular.CLI.Session
     , WriteContext (..)
     , withWrite
     , withSession
-    , journalledSubmit
     , submitBuilt
     , Expectation (..)
     , expecting
@@ -88,12 +88,12 @@ import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Core (eraProtVerHigh)
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.TxIn (TxId (..))
-import Cardano.Node.Client.Submitter (SubmitResult (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger (ConwayEra)
 
 import Singular.CLI.Command (NodeSettings (..), WriteSettings (..))
+import Singular.CLI.Node (Capabilities (..), withWrites)
 import Singular.CLI.Receipt
     ( JournalEntry (..)
     , OutcomeClass (..)
@@ -104,18 +104,10 @@ import Singular.CLI.Receipt
     , unresolved
     )
 import Singular.Registry.Deployment (renderOutRef)
-import Singular.Registry.Node
-    ( ExternalNode (..)
-    , NodeMode (..)
-    , NodeSession (..)
-    , Wallet (..)
-    , awaitTxWindow
-    , loadWallet
-    , withNodeMode
-    )
+import Singular.Registry.Node (Wallet (..), loadWallet)
 import Singular.Registry.Node.Submit
-    ( signTx
-    , signedSubmitter
+    ( SubmitResult (..)
+    , signTx
     , signedTx
     , submitSigned
     )
@@ -141,7 +133,7 @@ data WriteContext = WriteContext
     { wcDir :: FilePath
     , wcCommand :: Text
     , wcWallet :: Wallet
-    , wcSession :: NodeSession
+    , wcCapabilities :: Capabilities
     , wcTimeout :: Maybe Int
     }
 
@@ -197,14 +189,14 @@ withSession dir command ws body = do
     connected <- newIORef False
     result <-
         try $
-            withNodeMode (External (ExternalNode sock magic (writeWalletKey ws))) $ \sess -> do
+            withWrites sock magic (writeWalletKey ws) $ \caps -> do
                 writeIORef connected True
                 body
                     WriteContext
                         { wcDir = dir
                         , wcCommand = command
                         , wcWallet = wallet
-                        , wcSession = sess
+                        , wcCapabilities = caps
                         , wcTimeout = writeConfirmTimeout ws
                         }
     case result of
@@ -305,9 +297,10 @@ blankEntry wc step txid event =
         , journalEvent = event
         , journalDetail = Nothing
         , journalInputs = Nothing
-        , journalTipSlot = Nothing
         , journalBody = Nothing
         , journalBodyHash = Nothing
+        , journalNetwork = Nothing
+        , journalEra = Nothing
         , journalChainPoint = Nothing
         , journalKey = Nothing
         , journalExpect = Nothing
@@ -332,10 +325,12 @@ data Expectation = Expectation
 expecting :: Text -> Expectation
 expecting after = Expectation Nothing after Nothing Nothing Nothing
 
-{- | Build one transaction from one view of the node, then hand it to
-'journalledSubmit' with that view's chain point and the expectation the
-build decided. The view is released before the transaction is signed and
-sent. Returns the signed transaction and whatever else the build produced.
+{- | Build one transaction from one view of the node, then sign it and
+submit it journalled under that view's chain point and the expectation
+the build decided. The view is released before the transaction is signed
+and sent. The only way a command writes: the journalled point is the
+building view's by construction. Returns the signed transaction and
+whatever else the build produced.
 -}
 submitBuilt
     :: WriteContext
@@ -345,7 +340,7 @@ submitBuilt
     -> IO (ConwayTx, r)
 submitBuilt wc step expect build = do
     (point, (unsigned, extra)) <-
-        Cage.withView (nsProvider (wcSession wc)) $ \v ->
+        Cage.withView (capReads (wcCapabilities wc)) $ \v ->
             (,) (Cage.viewPoint v) <$> build v
     signed <- journalledSubmit wc step (expect extra) point unsigned
     pure (signed, extra)
@@ -368,7 +363,7 @@ journalledSubmit wc step ex point unsigned = do
         signed = signedTx sealed
         txid = txIdHex signed
         dir = wcDir wc
-        sess = wcSession wc
+        caps = wcCapabilities wc
         journal event detail =
             appendJournal
                 dir
@@ -377,18 +372,19 @@ journalledSubmit wc step ex point unsigned = do
         bodyPath = bodiesDir dir </> T.unpack txid <> ".cbor.hex"
     createDirectoryIfMissing True (bodiesDir dir)
     durableWrite bodyPath (B16.encode bytes)
-    let SlotNo tip = Cage.cpSlot point
+    let SlotNo slot = Cage.cpSlot point
     appendJournal
         dir
         (blankEntry wc step txid "prepared")
             { journalInputs =
                 Just (map renderOutRef (toList (signed ^. bodyTxL . inputsTxBodyL)))
-            , journalTipSlot = Just (fromIntegral tip)
             , journalBody = Just bodyPath
             , journalBodyHash =
                 Just (hexT (hashToBytes (hashWith @Blake2b_256 id bytes)))
+            , journalNetwork = Just (Cage.cpNetwork point)
+            , journalEra = Just (Cage.cpEra point)
             , journalChainPoint =
-                Just (T.pack (show tip) <> "." <> hexT (Cage.cpBlockHash point))
+                Just (T.pack (show slot) <> "." <> hexT (Cage.cpBlockHash point))
             , journalKey = hexT <$> exKey ex
             , journalExpect = Just (exAfter ex)
             , journalEdge = exEdge ex
@@ -396,7 +392,7 @@ journalledSubmit wc step ex point unsigned = do
             , journalRootAfter = hexT <$> exRootAfter ex
             }
     answer <-
-        try (submitSigned (signedSubmitter (nsSubmitter sess)) sealed)
+        try (submitSigned (capSubmit caps) sealed)
     case answer of
         Left (e :: SomeException) -> do
             journal "submit-unknown" (Just (T.pack (show e)))
@@ -422,7 +418,7 @@ journalledSubmit wc step ex point unsigned = do
     -- wait never returns. A wait abandoned at the bound is cancelled
     -- without this thread waiting for that cancellation to finish.
     let limit = fromMaybe defaultConfirmSeconds (wcTimeout wc) * 1_000_000
-    waiter <- async (awaitTxWindow signed (T.unpack txid))
+    waiter <- async (capConfirm caps signed (T.unpack txid))
     outcome <- timeout limit (waitCatch waiter)
     when (isNothing outcome) $ void (forkIO (cancel waiter))
     let seen = case outcome of

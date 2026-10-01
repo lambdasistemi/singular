@@ -1,0 +1,66 @@
+{
+  "the-settings-you-give": [
+    {
+      "text": "You run the singular registry commands against a cardano node you already run, a public test network's node or a development network you started yourself. Each command reads the chain through it, signs with your key, submits, waits for the chain to carry what it submitted, and journals which chain state each transaction was built from. A missing, contradictory or wrong-network setting is refused before anything is read or submitted.",
+      "pause": 500
+    },
+    {
+      "text": "The table lists the settings. The node socket and the network magic go to all five commands: magic 1 is preprod, 2 is preview, 42 the factory development network, and mainnet's magic is refused for writes. The wallet signing key goes to the four writes only; it funds and signs, is never printed, and inspect refuses it. The confirm timeout bounds how long each submission may take to appear on chain, ten minutes by default; past it the submission stays journalled as unconfirmed and is never resubmitted.",
+      "pause": 500
+    },
+    {
+      "text": "The three node settings travel together on a write. One or two of them is refused as partially configured, and none at all is refused too, because singular never starts a node of its own: a registry on a chain that dies with the process could not be attached to again. Settings come from the command line only.",
+      "pause": 400
+    },
+    {
+      "text": "An example follows: an insert against a preprod node, naming its socket, magic one, and the payment key.",
+      "pause": 400
+    }
+  ],
+  "one-path-to-every-node": [
+    {
+      "text": "A development network and a public node are reached the same way. One composition step turns your settings into a connection and hands the command three things: a way to read the chain, a way to submit signed transactions, and a way to wait for a confirmation. Nothing else in the command knows which node it talks to, and a source check in CI refuses any other module that names the node backend.",
+      "pause": 500
+    },
+    {
+      "text": "The diagram reads left to right. Your socket, magic and key are parsed once by the composition step, which opens one node connection. It hands the registry command the read interface, one view per transaction; the write, which takes signed transactions only; and the bounded confirmation wait. The command acquires and reads from your node and submits signed transactions to it. Development network and public test network both reach that node through the same socket and magic path.",
+      "pause": 500
+    },
+    {
+      "text": "Inspect takes only the socket and the magic: it gets the read interface and nothing that can sign or send.",
+      "pause": 400
+    }
+  ],
+  "what-a-write-does-with-the-node": [
+    {
+      "text": "Each transaction a write submits is built from one view of the chain, one acquired ledger state with its network, era, slot and block hash, and the view is closed before the transaction is signed and sent. The journal line written before the send names that view's point, so a later reader knows which chain state the inputs, fees and validity were decided against.",
+      "pause": 500
+    },
+    {
+      "text": "The sequence diagram has three participants: the write, the node, and the journal in the registry directory. The write acquires one view; the node answers with network, era, slot, block hash, parameters and outputs. The write builds the transaction from that view only and releases it. It journals prepared, with the inputs, the body hash and the view's point. It submits the signed transaction; the node accepts or refuses it with its reason, journalled as submitted or rejected. Then the write waits for the transaction's first output within its validity window, and journals confirmed or unconfirmed.",
+      "pause": 500
+    }
+  ],
+  "when-the-node-cannot-be-used": [
+    {
+      "text": "The last table pairs each failure with what you see.",
+      "pause": 300
+    },
+    {
+      "text": "One or two of the three write settings: refused before anything runs, naming the missing one. No node settings on a write: refused, singular never starts a node. Mainnet's magic on a write: refused, the commands are for test networks only.",
+      "pause": 400
+    },
+    {
+      "text": "No node at the socket, or a node on another network: node unavailable, naming the magic it was asked for. A chain that has not made its first block: the command waits up to two minutes, then refuses, since no view of a chain at its origin can be acquired.",
+      "pause": 400
+    },
+    {
+      "text": "A signing key passed to inspect: refused, inspect only reads. A node lost after it accepted a submission: the command ends within the confirm timeout with the submission journalled as unresolved, and nothing is resubmitted.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "singular-node.md",
+    "sha256": "174be94a44db343a4da64a4cb70a2d0b46ad2f9a782f33a2c4a0950f68e71135"
+  }
+}

@@ -66,6 +66,7 @@ import Singular.CLI.Command
     , WriteSettings (..)
     )
 import Singular.CLI.Live (receipt, txInText)
+import Singular.CLI.Node (Capabilities (..))
 import Singular.CLI.Receipt (OutcomeClass (..), durableWrite)
 import Singular.CLI.Registry
     ( LocalState (..)
@@ -107,11 +108,7 @@ import Singular.Registry.Ledger
     , ConwayEra
     , TokenId (..)
     )
-import Singular.Registry.Node
-    ( NodeSession (..)
-    , Wallet (..)
-    , bech32Address
-    )
+import Singular.Registry.Node (Wallet (..), bech32Address)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Edges
@@ -145,7 +142,7 @@ runCreate a = do
     session dir "create" (createWrite a) $ \wc -> do
         let addr = walletAddr (wcWallet wc)
         utxos <-
-            Cage.withView (nsProvider (wcSession wc)) (`Cage.viewUTxOsAt` addr)
+            Cage.withView (capReads (wcCapabilities wc)) (`Cage.viewUTxOsAt` addr)
         seedIn <- case createSeed a of
             Just s -> either (failWith ClientRefusal) pure (parseOutRef (T.pack s))
             Nothing -> case sortOn
@@ -249,7 +246,7 @@ tokenHex (TokenId (AssetName n)) = hexT (SBS.fromShort n)
 
 boot :: WriteContext -> CageConfig -> NamingCodes -> TxIn -> IO Booted
 boot wc cfg pinned seedIn = do
-    let prov = nsProvider (wcSession wc)
+    let prov = capReads (wcCapabilities wc)
         addr = walletAddr (wcWallet wc)
         -- One transaction, built from one view, journalled with its point.
         publish step reserved script = do
@@ -348,7 +345,7 @@ observeReference
     -> IO ()
 observeReference wc step addr script (i, _) = do
     utxos <-
-        Cage.withView (nsProvider (wcSession wc)) (`Cage.viewUTxOsAt` addr)
+        Cage.withView (capReads (wcCapabilities wc)) (`Cage.viewUTxOsAt` addr)
     let wanted = hashScript script
     case [o | (j, o) <- utxos, j == i] of
         [o]

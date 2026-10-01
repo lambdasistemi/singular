@@ -107,6 +107,7 @@ import Singular.CLI.Command
     , NodeSettings (..)
     )
 import Singular.CLI.Live
+import Singular.CLI.Node (withReads)
 import Singular.CLI.Proof
     ( AuthError (RootMismatch)
     , Leaf (..)
@@ -137,7 +138,6 @@ import Singular.Registry.Ledger
     , ConwayEra
     , TokenId (..)
     )
-import Singular.Registry.Node (NodeReads (..), withNodeReads)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.TxBuilder.Internal
@@ -170,7 +170,7 @@ inspectIncompleteCreate dir sock magic = do
         Aeson.eitherDecodeFileStrict' (pendingPath dir)
             >>= either (failWith ClientRefusal) (pure :: Value -> IO Value)
     reached <-
-        try $ withNodeReads magic sock $ \nr -> Cage.withView (nrProvider nr) $ \v -> do
+        try $ withReads magic sock $ \prov -> Cage.withView prov $ \v -> do
             let point = Cage.viewPoint v
             recovered <- recoverInclusion dir v
             observedNow <-
@@ -247,7 +247,7 @@ inspectSaved dir key sock magic a = do
         (checkNetwork (savedConfig saved) magic)
     mirror <- openMirror saved
     reached <-
-        try $ withNodeReads magic sock $ \nr -> Cage.withView (nrProvider nr) $ \v -> do
+        try $ withReads magic sock $ \prov -> Cage.withView prov $ \v -> do
             let point = Cage.viewPoint v
             recovered <- recoverInclusion dir v
             live <- attachLive v saved
@@ -569,9 +569,10 @@ recoveryLine e event detail =
         , journalEvent = event
         , journalDetail = Just detail
         , journalInputs = Nothing
-        , journalTipSlot = Nothing
         , journalBody = Nothing
         , journalBodyHash = Nothing
+        , journalNetwork = Nothing
+        , journalEra = Nothing
         , journalChainPoint = Nothing
         , journalKey = Nothing
         , journalExpect = Nothing

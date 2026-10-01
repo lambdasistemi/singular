@@ -673,9 +673,12 @@ test-suite cage-tests
     Singular.Application.OpenDatum.EnvelopeSpec
     Singular.CLISpec
     Singular.CLI.Command
+    Singular.CLI.Node
     Singular.CLI.Proof
     Singular.CLI.Receipt
     Singular.CLI.Registry
+    Singular.CLI.Session
+    Singular.CLI.WriteSpec
     Singular.Registry.BlueprintParametersSpec
     Singular.Registry.DeploymentSpec
     Singular.Registry.TxBuilder.BookEdgeSpec
@@ -699,6 +702,9 @@ test-suite cage-tests
     Naming.RecordValueSpec
   build-depends:
     , aeson
+    , async
+    , cardano-ledger-binary
+    , cardano-slotting
     , base               >=4.14 && <5
     , cardano-ledger-api
     , cardano-ledger-alonzo
@@ -873,6 +879,7 @@ executable singular
     Singular.CLI.Entry
     Singular.CLI.Inspect
     Singular.CLI.Live
+    Singular.CLI.Node
     Singular.CLI.Proof
     Singular.CLI.Receipt
     Singular.CLI.Registry
@@ -897,7 +904,6 @@ executable singular
     , cardano-crypto-class
     , cardano-ledger-binary
     , cardano-ledger-mary
-    , cardano-node-clients
     , cardano-slotting
     , cardano-tx-tools:tx-build
     , microlens

@@ -246,8 +246,12 @@ data FoldSpec = FoldSpec
     -}
     }
 
+{- | Assemble one fold from one view of the chain: every read the
+assembly makes is served by the same acquired state.
+-}
 assembleFoldSpec :: Env -> FoldSpec -> IO ConwayTx
-assembleFoldSpec env fs = do
+assembleFoldSpec env0 fs = Cage.withView (envProv env0) $ \held -> do
+    let env = pinnedTo held env0
     -- Every purpose resolves through the cage's reference outputs, which
     -- went up at its boot: a fold that attached the state validator
     -- instead would be refused for size before any script could speak.
@@ -578,9 +582,10 @@ small fails loudly at submit (phase 1, no script named); too large
 fails loudly in assembly (a refund under min-ADA).
 -}
 assembleFoldWithFee :: Env -> FoldSpec -> IO ConwayTx
-assembleFoldWithFee env fs = go (0 :: Int) 1_500_000
+assembleFoldWithFee env0 fs =
+    Cage.withView (envProv env0) $ \held -> go (pinnedTo held env0) (0 :: Int) 1_500_000
   where
-    go n fee = do
+    go env n fee = do
         tx <- assembleFoldSpec env fs{fsFee = Just fee}
         pp <- Cage.withView (envProv env) (pure . Cage.viewProtocolParams)
         -- Conway charges for the reference scripts a transaction reads,
@@ -591,7 +596,16 @@ assembleFoldWithFee env fs = go (0 :: Int) 1_500_000
             needed = est + 50_000
         if fee >= needed || n >= (5 :: Int)
             then pure tx
-            else go (n + 1) needed
+            else go env (n + 1) needed
+
+{- | The environment with every read served by one held view. A fold is
+one transaction built from one acquired chain state; holding the view
+also spares the acquisitions that would otherwise spend a near-now
+validity window between assembly and submission. The view stays valid
+only inside the scope that acquired it.
+-}
+pinnedTo :: Cage.View IO -> Env -> Env
+pinnedTo v env = env{envProv = Cage.Provider (\k -> k v)}
 
 {- | A FoldSpec with this cage's defaults: derive refunds and
 signers, no withdrawal, no state override, deadline validity.
