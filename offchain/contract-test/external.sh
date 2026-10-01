@@ -20,7 +20,11 @@ trap cleanup EXIT
 key="$work/funded.skey"
 od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$key"
 
-devnet --fund-skey "$key" --fund-outputs 3 --fund-lovelace 1000000000 \
+# The devnet keeps its node under $TMPDIR/cardano-e2e; a private TMPDIR keeps
+# it apart from any other devnet on the host.
+mkdir -p "$work/tmp"
+
+TMPDIR="$work/tmp" devnet --fund-skey "$key" --fund-outputs 3 --fund-lovelace 1000000000 \
   >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
 
