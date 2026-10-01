@@ -91,7 +91,6 @@ import Singular.Registry.TxBuilder.Internal
     , policyIdFromPin
     , walkEdge
     )
-import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
 import Singular.Registry.Types
     ( CageDatum (..)
     , Edge
@@ -103,8 +102,8 @@ import Singular.Registry.Types
     )
 
 import Singular.Registry.E2E.CageSpec
-    ( publishCageRefs
-    , registryContextFor
+    ( foldUnsigned
+    , publishCageRefs
     , submitWithGenesis
     , withBootedCage
     )
@@ -335,8 +334,7 @@ foldOnce
     -> [(TxIn, TxOut ConwayEra)]
     -> IO ConwayTx
 foldOnce cfg prov submit tm tokenId refs = do
-    ctx <- registryContextFor cfg prov tokenId refs
-    unsigned <- updateTokenWithDuties cfg prov tm tokenId genesisAddr ctx
+    unsigned <- foldUnsigned cfg prov tm tokenId refs
     submitWithGenesis submit unsigned
 
 {- | Fold, submit, and MIRROR the landed fold into the committed trie.
@@ -381,7 +379,7 @@ foldAndMirror cfg prov submit tm tokenId refs key edge = do
 activeHeldAt
     :: Cage.Provider IO -> CageConfig -> ByteString -> IO Integer
 activeHeldAt prov cfg key = do
-    walletUtxos <- Cage.queryUTxOs prov genesisAddr
+    walletUtxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
     let policy = policyIdFromPin (cfgActivePolicy cfg)
     pure $
         sum
@@ -425,7 +423,10 @@ is a statement about the leaf and not about either implementation.
 committedRoot
     :: Cage.Provider IO -> CageConfig -> TokenId -> IO ByteString
 committedRoot prov cfg tokenId = do
-    utxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
+    utxos <-
+        Cage.withView
+            prov
+            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId utxos of
         Just (_, out) -> case extractCageDatum out of
             Just (StateDatum s) -> pure (unOnChainRoot (stateRoot s))

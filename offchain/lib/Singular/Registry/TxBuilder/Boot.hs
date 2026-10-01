@@ -84,7 +84,7 @@ import Singular.Registry.Ledger
     , Coin (..)
     , ConwayEra
     )
-import Singular.Registry.Provider (Provider (..))
+import Singular.Registry.Provider (View (..))
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
 import Singular.Registry.Types
@@ -148,12 +148,12 @@ publication of the state validator.
 -}
 bootTokenImpl
     :: CageConfig
-    -> Provider IO
+    -> View IO
     -> Addr
     -> IO ConwayTx
-bootTokenImpl cfg prov addr = do
-    pp <- queryProtocolParams prov
-    utxos <- queryUTxOs prov addr
+bootTokenImpl cfg view addr = do
+    let pp = viewProtocolParams view
+    utxos <- viewUTxOsAt view addr
     stateRef <-
         maybe
             (throwIO StateValidatorNotPublished)
@@ -268,7 +268,7 @@ bootTokenImpl cfg prov addr = do
                     .~ redeemers
     balanced <-
         evaluateAndBalance
-            prov
+            view
             pp
             allInputUtxos
             addr

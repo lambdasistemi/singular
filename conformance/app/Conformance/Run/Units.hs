@@ -57,7 +57,7 @@ hardcoded.
 -}
 measurePurposeUnits :: Env -> ConwayTx -> IO PurposeMeasurements
 measurePurposeUnits env tx = do
-    evalMap <- Cage.evaluateTx (envProv env) tx
+    evalMap <- Cage.withView (envProv env) (`Cage.viewEvaluateTx` tx)
     pure $
         Map.fromList
             [ ( T.pack (show purpose)
@@ -138,7 +138,7 @@ maxima, with headroom. Maxima are queried, never hardcoded.
 -}
 emitMeasure :: Env -> String -> Integer -> Integer -> Integer -> IO ()
 emitMeasure env label mem cpu size = do
-    pp <- Cage.queryProtocolParams (envProv env)
+    pp <- Cage.withView (envProv env) (pure . Cage.viewProtocolParams)
     let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
         maxSize = fromIntegral (pp ^. ppMaxTxSizeL) :: Integer
         pct :: Integer -> Integer -> Double

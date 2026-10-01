@@ -15,7 +15,7 @@ module Singular.Registry.Lifecycle
     , verifyLifecycleBudget
     , fundingRequirement
     , fundLifecycle
-    , fundingProvider
+    , fundingView
     , checkExecutionLimit
     , prepareLifecycleTx
     ) where
@@ -98,7 +98,7 @@ import Singular.Registry.Node
     , funderAddr
     , funderSignKey
     )
-import Singular.Registry.Provider (Provider (..))
+import Singular.Registry.Provider (Provider (..), View (..))
 import Singular.Registry.TxBuilder.Internal.Identity
     ( mkInlineDatum
     , mkRequestDatum
@@ -248,10 +248,10 @@ fundingRequirement pp outs =
             (sum [c | o <- outs, let { Coin c = o ^. coinTxOutL }] + fees + change)
 
 -- | Keep request funding away from references and inputs reserved for later steps.
-fundingProvider :: [TxIn] -> Provider IO -> Provider IO
-fundingProvider reserved prov =
-    prov
-        { queryUTxOs = fmap (filter available) . queryUTxOs prov
+fundingView :: [TxIn] -> View IO -> View IO
+fundingView reserved v =
+    v
+        { viewUTxOsAt = fmap (filter available) . viewUTxOsAt v
         }
   where
     available (i, out) =
@@ -265,11 +265,26 @@ fundingProvider reserved prov =
 fundLifecycle
     :: Provider IO
     -> Submitter IO
-    -> PParams ConwayEra
     -> [TxOut ConwayEra]
     -> IO [(TxIn, TxOut ConwayEra)]
-fundLifecycle prov submit pp outs = do
-    wallet <- queryUTxOs (fundingProvider [] prov) funderAddr
+fundLifecycle prov submit outs = do
+    unsigned <- withView prov $ \v -> fundingTx v outs
+    let signed = addKeyWitness funderSignKey unsigned
+    submitTx submit signed >>= \case
+        Submitted _ -> pure ()
+        Rejected reason -> fail ("lifecycle funding rejected: " <> show reason)
+    awaitTx signed
+    putStrLn ("lifecycle funding confirmed: " <> show (txIdTx signed))
+    pure
+        [ (TxIn (txIdTx signed) (TxIx (fromIntegral i)), o)
+        | (i, o) <- zip [(0 :: Int) ..] outs
+        ]
+
+-- | The unsigned funding of the requested outputs, built from one view.
+fundingTx :: View IO -> [TxOut ConwayEra] -> IO ConwayTx
+fundingTx v outs = do
+    let pp = viewProtocolParams v
+    wallet <- viewUTxOsAt (fundingView [] v) funderAddr
     let ordinary = sortOn (Down . (^. coinTxOutL) . snd) wallet
         Coin available = foldMap ((^. coinTxOutL) . snd) ordinary
         Coin need = fundingRequirement pp outs
@@ -297,21 +312,10 @@ fundLifecycle prov submit pp outs = do
     let inputs = pick need ordinary
         draft =
             mkBasicTx (mkBasicTxBody & outputsTxBodyL .~ StrictSeq.fromList outs)
-    unsigned <-
-        either
-            (fail . show)
-            (pure . balancedTx)
-            (balanceTx pp inputs [] funderAddr draft)
-    let signed = addKeyWitness funderSignKey unsigned
-    submitTx submit signed >>= \case
-        Submitted _ -> pure ()
-        Rejected reason -> fail ("lifecycle funding rejected: " <> show reason)
-    awaitTx signed
-    putStrLn ("lifecycle funding confirmed: " <> show (txIdTx signed))
-    pure
-        [ (TxIn (txIdTx signed) (TxIx (fromIntegral i)), o)
-        | (i, o) <- zip [(0 :: Int) ..] outs
-        ]
+    either
+        (fail . show)
+        (pure . balancedTx)
+        (balanceTx pp inputs [] funderAddr draft)
 
 checkExecutionLimit :: ExUnits -> [ExUnits] -> Either String ExUnits
 checkExecutionLimit (ExUnits maxMem maxSteps) costs =
@@ -337,18 +341,18 @@ Re-evaluate the final fee/body until both budgets and fee are stable.
 -}
 prepareLifecycleTx
     :: Bool
-    -> Provider IO
-    -> PParams ConwayEra
+    -> View IO
     -> [(TxIn, TxOut ConwayEra)]
     -> Int
     -> ConwayTx
     -> IO ConwayTx
-prepareLifecycleTx False _ _ _ _ tx = pure tx
-prepareLifecycleTx True prov pp refs witnesses initial = go (4 :: Int) initial
+prepareLifecycleTx False _ _ _ tx = pure tx
+prepareLifecycleTx True v refs witnesses initial = go (4 :: Int) initial
   where
+    pp = viewProtocolParams v
     go 0 _ = fail "lifecycle evaluation and fee did not converge"
     go rounds tx = do
-        measured <- evaluateTx prov tx
+        measured <- viewEvaluateTx v tx
         let Redeemers original = tx ^. witsTxL . rdmrsTxWitsL
         unless (Map.keysSet measured == Map.keysSet original) $
             fail "lifecycle evaluation did not cover every redeemer"

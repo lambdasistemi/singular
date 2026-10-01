@@ -305,7 +305,10 @@ runCG05 env marker = do
     -- rules, kept as a line, never as the verdict.
     evalNote <-
         try @SomeException
-            (updateTokenImpl cfg prov (envTm env) tid genesisAddr)
+            ( Cage.withView
+                prov
+                (\v -> updateTokenImpl cfg v (envTm env) tid genesisAddr)
+            )
     case evalNote of
         Left err ->
             -- Genuine evidence about the same rules, whether it comes from
@@ -364,7 +367,8 @@ controlFreshCage env = do
                 (txInToRef seedTxIn)
                 (defaultProcessTime cfg0)
                 (defaultRetractTime cfg0)
-    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+    unsignedBoot <-
+        Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
     signedBoot <- submitWithGenesis (envSubmit env) unsignedBoot
     tid <- extractTokenId cfg signedBoot
     createTrie (envTm env) tid
@@ -413,7 +417,9 @@ controlFreshCage env = do
                 , rcRefUtxos = refs
                 }
     foldTx <-
-        updateTokenWithDuties cfg prov (envTm env) tid genesisAddr ctx
+        Cage.withView
+            prov
+            (\v -> updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx)
     _ <- submitWithGenesis (envSubmit env) foldTx
     mirror <- newMirror
     verifyPresentValue
@@ -529,7 +535,8 @@ runCG09 env = do
                 "CG09: the request's process window closed before its \
                 \reject was built"
                 (now + 2_000 < processDeadline)
-            trySlots prov [now + 2_000, now + 1_500, now + 1_000]
+            Cage.withView prov $ \v ->
+                trySlots v [now + 2_000, now + 1_500, now + 1_000]
     pot <- collateralPot env
     shortUpper <- insideProcessWindow
     short <-
@@ -549,7 +556,7 @@ runCG09 env = do
     upper <- insideProcessWindow
     hand <- assembleFoldWithFee env (rejectWithin upper owed Nothing)
     -- Every purpose's units as the node evaluates them, before submitting.
-    handEval <- Cage.evaluateTx (envProv env) hand
+    handEval <- Cage.withView (envProv env) (`Cage.viewEvaluateTx` hand)
     mapM_
         ( \(p, r) ->
             emit
@@ -673,13 +680,14 @@ runCG10 env = do
     -- hand shape calibrated against the library fold.
     ctxLive <- rowRegistryContext env cage tid
     libFold <-
-        updateTokenWithDuties
-            cfg
-            (envProv env)
-            (envTm env)
-            tid
-            genesisAddr
-            ctxLive
+        Cage.withView (envProv env) $ \v ->
+            updateTokenWithDuties
+                cfg
+                v
+                (envTm env)
+                tid
+                genesisAddr
+                ctxLive
     (freshSteps, freshRoot) <-
         speculativeInsert env cage tid "cg10-key-c" leafAbsent
     let freshSpec =
@@ -984,8 +992,11 @@ runCG14 env = do
     _ <- rowRequestInsert env cage "cg14-key" "cg14-value"
     ctx <- rowRegistryContext env cage tid
     unsigned <-
-        updateTokenWithDuties cfg prov (envTm env) tid genesisAddr ctx
-    evalMap <- Cage.evaluateTx (envProv env) unsigned
+        Cage.withView
+            prov
+            (\v -> updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx)
+    evalMap <-
+        Cage.withView (envProv env) (`Cage.viewEvaluateTx` unsigned)
     mapM_
         ( \(p, r) ->
             emit
@@ -1110,7 +1121,9 @@ runCG15 env = do
     -- this request and CG14's parked control request together.
     ctx <- rowRegistryContext env cage tid
     libFold <-
-        updateTokenWithDuties cfg prov (envTm env) tid genesisAddr ctx
+        Cage.withView
+            prov
+            (\v -> updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx)
     (mem, cpu) <- measureUnits env libFold
     signed <- submitExpectAccepted env libFold
     let size = txSizeBytes signed
@@ -1202,7 +1215,10 @@ runCG19 env = do
             [x, y] -> (x, y)
             _ -> error "CG19: two requests yield two crossed refunds"
     waitPhase3 deadline
-    lowerSlot <- Cage.posixMsCeilSlot (envProv env) (deadline + 1000)
+    lowerSlot <-
+        Cage.withView
+            (envProv env)
+            (`Cage.viewPosixMsCeilSlot` (deadline + 1000))
     pot <- collateralPot env
     units <- declaredSpec env cage
     let crossedSpec =
@@ -1416,7 +1432,8 @@ runCG19RejectedFloor env cage tid = do
                 + stateProcessTime oldState
                 + stateRetractTime oldState
     waitPhase3 deadline
-    lowerSlot <- Cage.posixMsCeilSlot prov (deadline + 1000)
+    lowerSlot <-
+        Cage.withView prov (`Cage.viewPosixMsCeilSlot` (deadline + 1000))
     nowAfter <- currentPosixMs
     require
         "CG19-rejected-floor: wait did not reach the lower bound"
@@ -1437,7 +1454,9 @@ runCG19RejectedFloor env cage tid = do
     -- uppers fail at the horizon).
     nowMsU <- currentPosixMs
     upperU <-
-        trySlots prov [nowMsU + 2_000, nowMsU + 1_500, nowMsU + 1_000]
+        Cage.withView
+            prov
+            (\v -> trySlots v [nowMsU + 2_000, nowMsU + 1_500, nowMsU + 1_000])
     underTx <-
         assembleFoldWithFee
             env
@@ -1487,7 +1506,9 @@ runCG19RejectedFloor env cage tid = do
         (fst state2 == fst state)
     nowMsO <- currentPosixMs
     upperO <-
-        trySlots prov [nowMsO + 2_000, nowMsO + 1_500, nowMsO + 1_000]
+        Cage.withView
+            prov
+            (\v -> trySlots v [nowMsO + 2_000, nowMsO + 1_500, nowMsO + 1_000])
     overTx <-
         assembleFoldWithFee
             env

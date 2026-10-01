@@ -5,7 +5,7 @@
       "pause": 400
     },
     {
-      "text": "The diagram shows callers at the top importing the node facade unchanged. The facade owns nothing and re-exports the export list it had before the split, plus five wait names. Below it, seven owners in one package-private internal library: options for mode and environment, wallet for keys and addresses, indexer for the chain follower and indexed reads, funding for the pre-run floor, session for the connection lifecycle, confirmation for waits and deadlines, and wait for the bound every wait on a submitted transaction obeys. Ledger and provider sit beside them in the private library and feed the indexer and the funding check. Every arrow points downward: options depends on nothing local, session brackets the indexer and funding, confirmation reads session and indexer, indexer, session and confirmation all wait under the wait owner, which depends on nothing local, and nothing imports upward.",
+      "text": "The diagram shows callers at the top importing the node facade unchanged. The facade owns nothing and re-exports the export list it had before the split, plus five wait names. Below it, the seven session owners of the ten in one package-private internal library: options for mode and environment, wallet for keys and addresses, indexer for the chain follower and indexed reads, funding for the pre-run floor, session for the connection lifecycle, confirmation for waits and deadlines, and wait for the bound every wait on a submitted transaction obeys. Ledger and provider sit beside them in the private library and feed the indexer and the funding check. Every arrow points downward: options depends on nothing local, session brackets the indexer and funding, confirmation reads session and indexer, indexer, session and confirmation all wait under the wait owner, which depends on nothing local, and nothing imports upward.",
       "pause": 500
     },
     {
@@ -13,8 +13,12 @@
       "pause": 300
     },
     {
-      "text": "The table then names each owner's responsibility in one line, from mode parsing through key handling, following, funding, connection, confirmation and the wait bound.",
+      "text": "The table then names each owner's responsibility in one line, from mode parsing through key handling, following, funding, connection, confirmation and the wait bound, then the three chain owners: the node adapter, where one view is one acquired state with its network, era, slot and block hash; the in-memory chain behind the same read interface; and the write capability, which takes signed transactions only.",
       "pause": 300
+    },
+    {
+      "text": "A second diagram shows how the singular commands reach those three. The commands are handed reads, the signed write and the confirmation by the command line's own composition module. Composition opens the session and wraps its submitter into the signed-only write; the session builds the node adapter's read interface. The provider's read interface is implemented by the node adapter and by the in-memory chain, and the transaction builders take one view of it. Only composition, the public facade and the journey's lifecycle funding may name the node backend, and a source check in CI enforces that.",
+      "pause": 500
     },
     {
       "pause": 450,
@@ -23,7 +27,7 @@
   ],
   "where-common-changes-land": [
     {
-      "text": "Common changes each land in exactly one module. Mode flags and environment precedence: options. Wallet derivation, key handling and the funding identity: wallet. Connection setup, sockets and the session bracket: session. Following, the genesis funding sweep, indexed reads and the node-read guard: indexer. What a run must hold before starting and the refusal diagnostic: funding. Confirmation waits, deadlines and windows: confirmation. What a bounded wait is, how its failure reads, the submission bound, or which failures a classifier must let through: wait, and no other module adds a timeout of its own. A shared named failure the runner prints goes to the diagnostic helper in options, the one cross-owner utility.",
+      "text": "Common changes each land in exactly one module. Mode flags and environment precedence: options. Wallet derivation, key handling and the funding identity: wallet. Connection setup, sockets and the session bracket: session. Following, the genesis funding sweep, indexed reads and the node-read guard: indexer. What a run must hold before starting and the refusal diagnostic: funding. Confirmation waits, deadlines and windows: confirmation. What a bounded wait is, how its failure reads, the submission bound, or which failures a classifier must let through: wait, and no other module adds a timeout of its own. A shared named failure the runner prints goes to the diagnostic helper in options, the one cross-owner utility. How a view is acquired from a node, its chain point, and the origin and lost-connection refusals: view; the same over the in-memory chain: memory. What may be sent to the node: submit. How the singular commands reach a node and which settings they read: the command line's composition module, the one allowed to name the backend; any other module that must name it is added to the confinement allowlist with its reason, or the check fails.",
       "pause": 500
     }
   ],
@@ -61,7 +65,7 @@
   ],
   "facade-callers-and-the-private-boundary": [
     {
-      "text": "The split left the facade export list unchanged, token for token; the bounded waits then added five names, the wait stages, the wait failure, the submission bound, the bounded submitter and the wait-aware catch, which the facade re-exports from the wait owner. Modules that imported ledger or provider keep their import paths through the public library's re-exports. The seven owners are not importable from the public library: they live in the package's private internal library. By Cabal's own rule, a named library without public visibility can be depended on only by components of this same package. Two of them do: the public library, whose facade re-exports the owners, and the cage test component, whose own dependency binds its observers to the same compiled instance the facade re-exports from — one build, one memory, no second copy. Nothing outside the package can name the private library; a downstream reader keeps the facade and the two re-exported modules, exactly as before the split.",
+      "text": "The split left the facade export list unchanged, token for token; the bounded waits then added five names, the wait stages, the wait failure, the submission bound, the bounded submitter and the wait-aware catch, which the facade re-exports from the wait owner. Modules that imported ledger or provider keep their import paths through the public library's re-exports. The ten owners are not importable from the public library: they live in the package's private internal library. By Cabal's own rule, a named library without public visibility can be depended on only by components of this same package. Two of them do: the public library, whose facade re-exports the owners, and the cage test component, whose own dependency binds its observers to the same compiled instance the facade re-exports from — one build, one memory, no second copy. Nothing outside the package can name the private library; a downstream reader keeps the facade and the two re-exported modules, exactly as before the split.",
       "pause": 500
     }
   ],
@@ -93,6 +97,6 @@
   ],
   "_source": {
     "file": "offchain-node-ownership.md",
-    "sha256": "5d5888e3ec66ec63f3b87677386bdcebeeeabd5a00ca0bbe43c716a8c7331d14"
+    "sha256": "d03c8041500a13a111199f49a60ae0015355e85ecd21a46356bc069388141f5d"
   }
 }

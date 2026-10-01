@@ -62,7 +62,7 @@ import Singular.Registry.Ledger
     , TxIn
     )
 import Singular.Registry.Provider
-    ( Provider (..)
+    ( View (..)
     )
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
@@ -82,12 +82,12 @@ to the transaction itself.
 -}
 rejectRequestsImpl
     :: CageConfig
-    -> Provider IO
+    -> View IO
     -> TokenId
     -> Addr
     -> IO ConwayTx
-rejectRequestsImpl cfg prov tid addr =
-    rejectRequestsWithRefs cfg prov tid addr []
+rejectRequestsImpl cfg view tid addr =
+    rejectRequestsWithRefs cfg view tid addr []
 
 {- | Build a reject transaction resolving its scripts through reference
 outputs when the caller has published them.
@@ -102,21 +102,21 @@ nothing published.
 -}
 rejectRequestsWithRefs
     :: CageConfig
-    -> Provider IO
+    -> View IO
     -> TokenId
     -> Addr
     -> [(TxIn, TxOut ConwayEra)]
     -- ^ Outputs carrying the reject's scripts as reference scripts
     -> IO ConwayTx
-rejectRequestsWithRefs cfg prov tid addr refUtxos = do
+rejectRequestsWithRefs cfg view tid addr refUtxos = do
     (stateUtxo, reqUtxos, feeUtxo, pp) <-
-        queryRejectContext cfg prov tid addr
+        queryRejectContext cfg view tid addr
     let (_stateIn, stateOut) = stateUtxo
     let (oldState, newStateOut, script) =
             prepareRejectState cfg stateOut
         requestScript = mkRequestScript cfg tid
-    (lowerSlot, upperSlot) <- rejectValidity prov
-    let evalTx = mkRejectEvalTx prov
+    (lowerSlot, upperSlot) <- rejectValidity view
+    let evalTx = mkRejectEvalTx view
         prog =
             buildRejectProgram
                 cfg
@@ -155,7 +155,7 @@ window selects among them.
 -}
 queryRejectContext
     :: CageConfig
-    -> Provider IO
+    -> View IO
     -> TokenId
     -> Addr
     -> IO
@@ -164,13 +164,13 @@ queryRejectContext
         , (TxIn, TxOut ConwayEra)
         , PParams ConwayEra
         )
-queryRejectContext cfg prov tid addr = do
+queryRejectContext cfg view tid addr = do
     let stateAddr =
             cageAddrFromCfg cfg (network cfg)
         reqAddr =
             requestAddrFromCfg cfg tid (network cfg)
-    stateUtxos <- queryUTxOs prov stateAddr
-    requestUtxos <- queryUTxOs prov reqAddr
+    stateUtxos <- viewUTxOsAt view stateAddr
+    requestUtxos <- viewUTxOsAt view reqAddr
     let policyId = cagePolicyIdFromCfg cfg
     stateUtxo <- case findStateUtxo
         policyId
@@ -188,8 +188,8 @@ queryRejectContext cfg prov tid addr = do
         error
             "rejectRequests: no pending \
             \requests"
-    pp <- queryProtocolParams prov
-    walletUtxos <- queryUTxOs prov addr
+    let pp = viewProtocolParams view
+    walletUtxos <- viewUTxOsAt view addr
     -- A published reference output lives in this same wallet. Spending
     -- one to pay the fee would destroy the script the transaction is
     -- resolving through, and collateral must be ada-only besides.
@@ -236,28 +236,28 @@ prepareRejectState cfg stateOut =
 as the node can convert, up to two minutes. It is bound to no request's
 deadline; a reject is admitted in every window.
 -}
-rejectValidity :: Provider IO -> IO (SlotNo, SlotNo)
-rejectValidity prov = do
+rejectValidity :: View IO -> IO (SlotNo, SlotNo)
+rejectValidity view = do
     now <- currentPosixMs
-    lowerSlot <- posixMsToSlot prov now
+    lowerSlot <- viewPosixMsToSlot view now
     upperSlot <-
-        tryUpperSlots prov $
+        tryUpperSlots view $
             map
                 (now +)
                 [120_000, 60_000, 30_000, 10_000, 5_000, 2_000, 1_000]
     pure (lowerSlot, upperSlot)
 
--- | Wrap the Provider's evaluateTx for the DSL.
+-- | Wrap the Provider's viewEvaluateTx for the DSL.
 mkRejectEvalTx
-    :: Provider IO
+    :: View IO
     -> ConwayTx
     -> IO
         ( Map.Map
             (ConwayPlutusPurpose AsIx ConwayEra)
             (Either String ExUnits)
         )
-mkRejectEvalTx prov tx = do
-    r <- evaluateTx prov tx
+mkRejectEvalTx view tx = do
+    r <- viewEvaluateTx view tx
     pure $
         Map.map
             ( \case

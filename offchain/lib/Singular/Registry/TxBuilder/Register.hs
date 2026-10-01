@@ -40,16 +40,16 @@ import Cardano.Ledger.Address (Addr)
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger (ConwayEra)
-import Singular.Registry.Provider (Provider (..))
+import Singular.Registry.Provider (View (..))
 
 -- | Empty query GADT (no context needed).
 data NoCtx a
 
-{- | Wrap the Provider's evaluateTx for the DSL (no scripts execute
+{- | Wrap the view's script evaluation for the DSL (no scripts execute
 here, but the DSL still calls back through this interface).
 -}
 mkEvalTx
-    :: Provider IO
+    :: View IO
     -> ConwayTx
     -> IO
         ( Map.Map
@@ -59,8 +59,8 @@ mkEvalTx
             )
             (Either String ExUnits)
         )
-mkEvalTx prov tx = do
-    r <- evaluateTx prov tx
+mkEvalTx view tx = do
+    r <- viewEvaluateTx view tx
     pure $
         Map.map
             ( \case
@@ -75,13 +75,13 @@ same way). Registration only makes a credential withdrawable; it
 authorizes nothing by itself.
 -}
 registerScriptImpl
-    :: Provider IO
+    :: View IO
     -> Addr
     -> ScriptHash
     -> IO ConwayTx
-registerScriptImpl prov fundAddr credHash = do
-    pp <- queryProtocolParams prov
-    utxos <- queryUTxOs prov fundAddr
+registerScriptImpl view fundAddr credHash = do
+    let pp = viewProtocolParams view
+    utxos <- viewUTxOsAt view fundAddr
     let funding =
             sortOn
                 (Down . (^. coinTxOutL) . snd)
@@ -91,7 +91,7 @@ registerScriptImpl prov fundAddr credHash = do
             error
                 "registerScript: funder wallet has no UTxOs"
         (u : _) -> pure u
-    let evalTx = mkEvalTx prov
+    let evalTx = mkEvalTx view
         prog :: Tx.TxBuild NoCtx Void ()
         prog = do
             _ <- Tx.registerStakeScript credHash

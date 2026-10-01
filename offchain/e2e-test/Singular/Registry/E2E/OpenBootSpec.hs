@@ -137,7 +137,7 @@ openBootSpec stateBytes requestBytes openBytes witnessBytes = do
 
                 -- The eight-field datum, read back from chain.
                 let stateAddr = cageAddrFromCfg cfg Testnet
-                stateUtxos <- Cage.queryUTxOs prov stateAddr
+                stateUtxos <- Cage.withView prov (`Cage.viewUTxOsAt` stateAddr)
                 case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId stateUtxos of
                     Nothing ->
                         expectationFailure

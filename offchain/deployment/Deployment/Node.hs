@@ -79,7 +79,6 @@ import Singular.Registry.Deployment
 import Singular.Registry.Ledger
     ( Coin (..)
     , ConwayEra
-    , PParams
     , TokenId (..)
     )
 import Singular.Registry.Node
@@ -107,19 +106,20 @@ credentials a run withdraws from.
 -}
 verifyRegisteredDeployment
     :: NodeSession -> Deployment -> Compiled -> IO [String]
-verifyRegisteredDeployment sess dep compiled = do
-    claims <- verifyDeployment (nsProvider sess) dep (partsOf compiled)
-    credentials <-
-        mapM
-            check
-            [ ("active", cActiveBytes compiled)
-            , ("custody", cCustodyBytes compiled)
-            , ("staking", cStakingBytes compiled)
-            ]
-    pure (claims <> credentials)
+verifyRegisteredDeployment sess dep compiled =
+    Cage.withView (nsProvider sess) $ \v -> do
+        claims <- verifyDeployment v dep (partsOf compiled)
+        credentials <-
+            mapM
+                (check v)
+                [ ("active", cActiveBytes compiled)
+                , ("custody", cCustodyBytes compiled)
+                , ("staking", cStakingBytes compiled)
+                ]
+        pure (claims <> credentials)
   where
-    check (name, bytes) = do
-        registered <- nsScriptRegistered sess (computeScriptHash bytes)
+    check v (name, bytes) = do
+        registered <- Cage.viewScriptRegistered v (computeScriptHash bytes)
         unless registered $
             failWith (name <> " stake credential is not registered on this node")
         pure (name <> " stake credential is registered on this node")
@@ -136,37 +136,40 @@ bootRegistry
     -> IO (CageConfig, TokenId, ConwayTx, TxIn, Compiled)
     -- ^ Retract window (ms), from @--retract-time@.
 bootRegistry prov submit unbound txs processTime retractTime = do
-    utxos <- Cage.queryUTxOs prov funderAddr
-    -- Never seed from a reference publication: the boot references the
-    -- state validator's and may not also spend it.
-    seedIn <- case sortOn
-        (Down . (^. coinTxOutL) . snd)
-        (filter (\(_, o) -> o ^. referenceScriptTxOutL == SNothing) utxos) of
-        [] -> failWith "the funding wallet has no outputs to seed from"
-        ((i, _) : _) -> pure i
-    let compiled = bindSeed unbound seedIn
-        parts = partsOf compiled
-        cfg =
-            CageConfig
-                { cageScriptBytes = cStateBytes compiled
-                , requestScriptBytes = cRequestBytes compiled
-                , cfgScriptHash = computeScriptHash (cStateBytes compiled)
-                , cageSeed = txInToRef seedIn
-                , defaultProcessTime = processTime
-                , defaultRetractTime = retractTime
-                , defaultTip = Coin 1_000_000
-                , -- #157 D-BOOT: the four pins the boot datum carries come
-                  -- from the one derivation `partsOf` performs, so the
-                  -- manifest, the config and the state datum cannot drift
-                  -- apart.
-                  cfgApplicationPolicy = partsApplicationPolicy parts
-                , cfgActivePolicy = partsActivePolicy parts
-                , cfgAbsentPolicy = partsAbsentPolicy parts
-                , cfgTerminalPolicy = partsTerminalPolicy parts
-                , cfgConsumerScript = partsConsumerScript parts
-                , network = Testnet
-                }
-    unsigned <- bootTokenImpl cfg prov funderAddr
+    -- The seed and the boot that spends it are read from one view.
+    (seedIn, cfg, compiled, unsigned) <- Cage.withView prov $ \v -> do
+        utxos <- Cage.viewUTxOsAt v funderAddr
+        -- Never seed from a reference publication: the boot references the
+        -- state validator's and may not also spend it.
+        seedIn <- case sortOn
+            (Down . (^. coinTxOutL) . snd)
+            (filter (\(_, o) -> o ^. referenceScriptTxOutL == SNothing) utxos) of
+            [] -> failWith "the funding wallet has no outputs to seed from"
+            ((i, _) : _) -> pure i
+        let compiled = bindSeed unbound seedIn
+            parts = partsOf compiled
+            cfg =
+                CageConfig
+                    { cageScriptBytes = cStateBytes compiled
+                    , requestScriptBytes = cRequestBytes compiled
+                    , cfgScriptHash = computeScriptHash (cStateBytes compiled)
+                    , cageSeed = txInToRef seedIn
+                    , defaultProcessTime = processTime
+                    , defaultRetractTime = retractTime
+                    , defaultTip = Coin 1_000_000
+                    , -- #157 D-BOOT: the four pins the boot datum carries come
+                      -- from the one derivation `partsOf` performs, so the
+                      -- manifest, the config and the state datum cannot drift
+                      -- apart.
+                      cfgApplicationPolicy = partsApplicationPolicy parts
+                    , cfgActivePolicy = partsActivePolicy parts
+                    , cfgAbsentPolicy = partsAbsentPolicy parts
+                    , cfgTerminalPolicy = partsTerminalPolicy parts
+                    , cfgConsumerScript = partsConsumerScript parts
+                    , network = Testnet
+                    }
+        unsigned <- bootTokenImpl cfg v funderAddr
+        pure (seedIn, cfg, compiled, unsigned)
     signed <- submitted submit txs "boot" unsigned
     let MultiAsset ma = signed ^. bodyTxL . mintTxBodyL
     tok <- case Map.toList (ma Map.! cagePolicyIdFromCfg cfg) of
@@ -194,13 +197,12 @@ these itself (a second registration is refused), so a deployment missing
 one turns that runner's row into a refusal with no evidence behind it.
 -}
 registerCredentials
-    :: NodeSession
-    -> Cage.Provider IO
+    :: Cage.Provider IO
     -> Submitter IO
     -> Compiled
     -> IORef [Text]
     -> IO ()
-registerCredentials sess prov submit compiled txs = do
+registerCredentials prov submit compiled txs = do
     let named name bytes = (name, scriptFromBytes name bytes)
     mapM_
         registerOne
@@ -210,15 +212,19 @@ registerCredentials sess prov submit compiled txs = do
         ]
   where
     registerOne (name, script) = do
-        registered <- nsScriptRegistered sess (hashScript script)
-        if registered
-            then
+        -- Registration and its transaction are read from one view.
+        tx <- Cage.withView prov $ \v -> do
+            registered <- Cage.viewScriptRegistered v (hashScript script)
+            if registered
+                then pure Nothing
+                else Just <$> registerScriptImpl v funderAddr (hashScript script)
+        case tx of
+            Nothing ->
                 emit
                     "credential"
                     (name <> " stake credential already registered; reused")
-            else do
-                tx <- registerScriptImpl prov funderAddr (hashScript script)
-                _ <- submitted submit txs (name <> "-registration") tx
+            Just unsigned -> do
+                _ <- submitted submit txs (name <> "-registration") unsigned
                 emit "credential" (name <> " stake credential registered")
 
 {- | The five reference scripts every runner reads: the registry's state
@@ -235,7 +241,6 @@ one needs its output.
 publishAll
     :: Cage.Provider IO
     -> Submitter IO
-    -> PParams ConwayEra
     -> CageConfig
     -> TokenId
     -> Compiled
@@ -243,12 +248,11 @@ publishAll
     -- ^ The state validator's publication, made before the boot.
     -> IORef [Text]
     -> IO [ReferenceScript]
-publishAll prov submit pp cfg tok compiled stateIn txs = do
+publishAll prov submit cfg tok compiled stateIn txs = do
     state <- record ("state", mkCageScript cfg) stateIn
     rest <-
         mapM
-            ( \p@(_, script) -> publishOne prov submit pp txs script >>= record p . fst
-            )
+            (\p@(_, script) -> publishOne prov submit txs script >>= record p . fst)
             [ ("request", mkRequestScript cfg tok)
             ,
                 ( "application"
@@ -278,46 +282,49 @@ publishAll prov submit pp cfg tok compiled stateIn txs = do
 publishOne
     :: Cage.Provider IO
     -> Submitter IO
-    -> PParams ConwayEra
     -> IORef [Text]
     -> Script ConwayEra
     -> IO (TxIn, TxOut ConwayEra)
-publishOne prov submit pp txs script = do
-    utxos <- Cage.queryUTxOs prov funderAddr
-    fund <- case sortOn (Down . (^. coinTxOutL) . snd) (adaOnly utxos) of
-        [] -> failWith "publish: the funding wallet has no ada-only output"
-        (u : _) -> pure u
-    let probe =
-            mkBasicTxOut funderAddr (MaryValue (Coin 0) mempty)
-                & referenceScriptTxOutL .~ SJust script
-        Coin minCoin = getMinCoinTxOut pp probe
-        refOut =
-            mkBasicTxOut
-                funderAddr
-                (MaryValue (Coin (minCoin + 1_000_000)) mempty)
-                & referenceScriptTxOutL .~ SJust script
-        Coin inCoin = snd fund ^. coinTxOutL
-        changeCoin = inCoin - 1_000_000 - (minCoin + 1_000_000)
-    unless (changeCoin > 1_000_000) $
-        failWith
-            ( "publish: the funding output holds "
-                <> show inCoin
-                <> " lovelace, which does not cover a reference output of "
-                <> show (minCoin + 1_000_000)
-                <> " plus fees and change"
-            )
-    let body =
-            mkBasicTxBody
-                & inputsTxBodyL .~ Set.singleton (fst fund)
-                & outputsTxBodyL
-                    .~ StrictSeq.fromList
-                        [ refOut
-                        , mkBasicTxOut funderAddr (MaryValue (Coin changeCoin) mempty)
-                        ]
-                & feeTxBodyL .~ Coin 1_000_000
-    signed <- submitted submit txs "publish" (mkBasicTx body)
+publishOne prov submit txs script = do
+    -- The funding output, the parameters and the body: one view.
+    unsigned <- Cage.withView prov $ \v -> do
+        let pp = Cage.viewProtocolParams v
+        utxos <- Cage.viewUTxOsAt v funderAddr
+        fund <- case sortOn (Down . (^. coinTxOutL) . snd) (adaOnly utxos) of
+            [] -> failWith "publish: the funding wallet has no ada-only output"
+            (u : _) -> pure u
+        let probe =
+                mkBasicTxOut funderAddr (MaryValue (Coin 0) mempty)
+                    & referenceScriptTxOutL .~ SJust script
+            Coin minCoin = getMinCoinTxOut pp probe
+            refOut =
+                mkBasicTxOut
+                    funderAddr
+                    (MaryValue (Coin (minCoin + 1_000_000)) mempty)
+                    & referenceScriptTxOutL .~ SJust script
+            Coin inCoin = snd fund ^. coinTxOutL
+            changeCoin = inCoin - 1_000_000 - (minCoin + 1_000_000)
+        unless (changeCoin > 1_000_000) $
+            failWith
+                ( "publish: the funding output holds "
+                    <> show inCoin
+                    <> " lovelace, which does not cover a reference output of "
+                    <> show (minCoin + 1_000_000)
+                    <> " plus fees and change"
+                )
+        let body =
+                mkBasicTxBody
+                    & inputsTxBodyL .~ Set.singleton (fst fund)
+                    & outputsTxBodyL
+                        .~ StrictSeq.fromList
+                            [ refOut
+                            , mkBasicTxOut funderAddr (MaryValue (Coin changeCoin) mempty)
+                            ]
+                    & feeTxBodyL .~ Coin 1_000_000
+        pure (mkBasicTx body)
+    signed <- submitted submit txs "publish" unsigned
     let published = txIdTx signed
-    after <- Cage.queryUTxOs prov funderAddr
+    after <- Cage.withView prov (`Cage.viewUTxOsAt` funderAddr)
     -- The output this transaction created, identified by the
     -- transaction rather than by the script: two publishes of the same
     -- script would otherwise be indistinguishable.

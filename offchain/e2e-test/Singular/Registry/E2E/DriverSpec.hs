@@ -57,6 +57,7 @@ import Singular.Registry.Driver
     )
 import Singular.Registry.Ledger (Root (..))
 import Singular.Registry.Node (tryOutcome)
+import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Edges qualified as Edges
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
 import Singular.Registry.Types (OnChainRoot (..), edgeInsertAbsent)
@@ -123,11 +124,11 @@ driverSpec stateBytes requestBytes = do
                     (registryTokenId reg)
                     seededKey
                     edgeInsertAbsent
-            ctx <- Edges.registryContextFor cfg codes prov (registryRefs reg)
-            unsigned <-
+            unsigned <- Cage.withView prov $ \v -> do
+                ctx <- Edges.registryContextFor cfg codes v (registryRefs reg)
                 updateTokenWithDuties
                     cfg
-                    prov
+                    v
                     tm
                     (registryTokenId reg)
                     genesisAddr

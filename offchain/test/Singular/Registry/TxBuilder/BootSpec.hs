@@ -40,7 +40,6 @@ import Lens.Micro ((&), (.~), (^.))
 import Test.Hspec
 
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.PParams (emptyPParams)
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( inputsTxBodyL
@@ -63,7 +62,8 @@ import UntypedPlutusCore qualified as UPLC
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
-import Singular.Registry.Provider (Provider (..))
+import Singular.Registry.Provider (Provider, View (..))
+import Singular.Registry.StubView (servingView, stubView)
 import Singular.Registry.TxBuilder.Boot
     ( BootRefusal (..)
     , bootTokenImpl
@@ -184,13 +184,10 @@ publish
 publish run wallet = do
     kept <- newIORef []
     let provider =
-            Provider
-                { queryUTxOs = \_ -> pure wallet
-                , queryProtocolParams = pure emptyPParams
-                , evaluateTx = \_ -> fail "a publication evaluates nothing"
-                , posixMsToSlot = \_ -> fail "a publication reads no slot"
-                , posixMsCeilSlot = \_ -> fail "a publication reads no slot"
-                }
+            servingView
+                stubView
+                    { viewUTxOsAt = \_ -> pure wallet
+                    }
         submit tx = do
             modifyIORef kept (<> [tx])
             pure tx
@@ -206,14 +203,13 @@ boot :: [(TxIn, TxOut ConwayEra)] -> IO ConwayTx
 boot wallet = do
     kept <- newIORef Nothing
     let provider =
-            Provider
-                { queryUTxOs = \_ -> pure wallet
-                , queryProtocolParams = pure emptyPParams
-                , evaluateTx = \tx -> do
+            stubView
+                { viewUTxOsAt = \_ -> pure wallet
+                , viewEvaluateTx = \tx -> do
                     writeIORef kept (Just tx)
                     fail "evaluated"
-                , posixMsToSlot = \_ -> fail "boot queries no slot"
-                , posixMsCeilSlot = \_ -> fail "boot queries no slot"
+                , viewPosixMsToSlot = \_ -> fail "boot queries no slot"
+                , viewPosixMsCeilSlot = \_ -> fail "boot queries no slot"
                 }
     -- Only the stub's IO error is absorbed: a 'BootRefusal' propagates
     -- to the row, and any earlier failure leaves nothing kept.

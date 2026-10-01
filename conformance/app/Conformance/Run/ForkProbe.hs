@@ -43,6 +43,7 @@ import Singular.Registry.Node
     , submissionBound
     , withNodeSocket
     )
+import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
@@ -102,7 +103,7 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
                 sock
                 lsqCh
                 ltxsCh
-    let nodeProv = adaptProvider (mkN2CProvider lsqCh)
+    let nodeProv = adaptProvider sessionMagic (mkN2CProvider lsqCh)
     awaitConnection sessionMagic sock nodeThread nodeProv
     let submit = boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
     prov <- followedProvider nodeProv submit
@@ -113,7 +114,8 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
     ensureStateRefWith prov submit stateBytes
     (seed, _) <- largestWalletUtxo prov
     let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seed)
-    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+    unsignedBoot <-
+        Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
     signedBoot <- submitWithGenesis submit unsignedBoot
     tid <- extractTokenId cfg signedBoot
     createTrie tm tid
@@ -156,10 +158,11 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
             tid
             keyK
             edgeUpdateActive
-    ctx <- RegistryEdges.registryContextFor cfg namingCodes prov refs
     probeResult <-
-        try @SomeException
-            (updateTokenWithDuties cfg prov tm tid genesisAddr ctx)
+        try @SomeException $
+            Cage.withView prov $ \v -> do
+                ctx <- RegistryEdges.registryContextFor cfg namingCodes v refs
+                updateTokenWithDuties cfg v tm tid genesisAddr ctx
     case probeResult of
         Left err -> do
             emit "verdict" "REFUSED as predicted"
@@ -191,16 +194,9 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
                 tidInner
                 key
                 edgeInsertAbsent
-        ctx <-
-            RegistryEdges.registryContextFor cfgInner namingCodes provInner refs
-        unsignedFold <-
-            updateTokenWithDuties
-                cfgInner
-                provInner
-                tmInner
-                tidInner
-                genesisAddr
-                ctx
+        unsignedFold <- Cage.withView provInner $ \v -> do
+            ctx <- RegistryEdges.registryContextFor cfgInner namingCodes v refs
+            updateTokenWithDuties cfgInner v tmInner tidInner genesisAddr ctx
         signedFold <- submitWithGenesis submitInner unsignedFold
         _ <- withTrie tmInner tidInner $ \t ->
             void (walkEdge t key edgeInsertAbsent)

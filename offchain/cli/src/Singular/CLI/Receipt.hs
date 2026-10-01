@@ -10,8 +10,9 @@ two of them. Each submission is journalled in four phases, each line
 appended before the next step starts:
 
 1. @prepared@: the signed body is saved beside the journal with its
-   transaction id, inputs and the tip slot the node reported just
-   before the send. This proves only that the transaction was built.
+   transaction id, inputs and the chain point — network, era, slot and
+   block hash — of the one view its body was built from. This proves
+   only that the transaction was built.
 2. @submitted@, @rejected@ or @submit-unknown@: the node's answer to the
    send, or that none arrived (a timeout, a dropped connection, a
    process killed between the send and the answer).
@@ -54,6 +55,7 @@ import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.List (nub)
 import Data.Text (Text)
+import Data.Word (Word32)
 import GHC.Generics (Generic)
 import System.Directory (doesFileExist)
 import System.Exit (ExitCode (..))
@@ -80,14 +82,18 @@ data JournalEntry = JournalEntry
     , journalDetail :: Maybe Text
     , journalInputs :: Maybe [Text]
     -- ^ At @prepared@: the exact inputs the body spends
-    , journalTipSlot :: Maybe Integer
-    -- ^ At @prepared@: the node's tip slot just before the send
     , journalBody :: Maybe FilePath
     -- ^ At @prepared@: where the signed transaction's CBOR is saved
     , journalBodyHash :: Maybe Text
     -- ^ At @prepared@: BLAKE2b-256 of those saved bytes
+    , journalNetwork :: Maybe Word32
+    {- ^ At @prepared@: the network magic of the view the body was
+    built from
+    -}
+    , journalEra :: Maybe Text
+    -- ^ At @prepared@: the era of that view
     , journalChainPoint :: Maybe Text
-    -- ^ At @prepared@: the node's chain point, @slot.headerhash@
+    -- ^ At @prepared@: that view's chain point, @slot.headerhash@
     , journalKey :: Maybe Text
     -- ^ At @prepared@: the registry key the step concerns, hex
     , journalExpect :: Maybe Text

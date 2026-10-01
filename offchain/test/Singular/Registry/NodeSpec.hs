@@ -34,6 +34,7 @@ import Singular.Registry.Node
     , txUpperBoundSlot
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.StubView (servingView, stubView)
 
 external :: FilePath -> Word -> FilePath -> NodeMode
 external sock magic skey =
@@ -150,14 +151,12 @@ spec = describe "the chain a runner selects" $ do
 -- time-to-slot conversion is ever called.
 slotProv :: Cage.Provider IO
 slotProv =
-    Cage.Provider
-        { Cage.queryUTxOs = \_ -> pure []
-        , Cage.queryProtocolParams = pure (error "unused")
-        , Cage.evaluateTx = \_ -> pure (error "unused")
-        , Cage.posixMsToSlot = pure . SlotNo . fromIntegral . (`div` 1000)
-        , Cage.posixMsCeilSlot =
-            pure . SlotNo . fromIntegral . (\ms -> (ms + 999) `div` 1000)
-        }
+    servingView
+        stubView
+            { Cage.viewPosixMsToSlot = pure . SlotNo . fromIntegral . (`div` 1000)
+            , Cage.viewPosixMsCeilSlot =
+                pure . SlotNo . fromIntegral . (\ms -> (ms + 999) `div` 1000)
+            }
 
 txPinningBound :: Tx TopTx ConwayEra
 txPinningBound =

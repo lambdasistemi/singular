@@ -1,0 +1,5 @@
+# Modules allowed to name the node backend (tools/node_confinement_check.sh).
+# One per line: <path from the repository root>: <why it must>.
+offchain/cli/src/Singular/CLI/Node.hs: composition — resolves the node settings once and opens the read interface, the signed-only write and the confirmation the commands are handed
+offchain/lib/Singular/Registry/Node.hs: the runners' node facade — re-exports session opening and adapter construction for runner startup
+offchain/lib/Singular/Registry/Lifecycle.hs: journey fixture startup — public-node lifecycle funding reads the session's mode and submits on the raw submitter (runner-only, #326)

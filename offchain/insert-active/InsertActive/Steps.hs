@@ -141,7 +141,7 @@ bootStory sess inputs = do
         submit = nsSubmitter sess
         stateBytes = inputStateBytes inputs
     tm <- mkPureTrieManager
-    _ <- Cage.queryProtocolParams prov
+    _ <- Cage.withView prov (pure . Cage.viewProtocolParams)
     -- #177 A-003: publish the state validator as a reference output
     -- BEFORE the seed is chosen. The publication spends the wallet's
     -- largest ada-only output, which a seed picked first could be, and
@@ -152,7 +152,7 @@ bootStory sess inputs = do
             (submitWithGenesis submit)
             genesisAddr
             (scriptFromBytes "state" stateBytes)
-    utxos <- Cage.queryUTxOs prov genesisAddr
+    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
     -- #177 A-003: never seed from the reference publication. Boot
     -- REFERENCES that output, and a transaction may not both spend and
     -- reference the same one.
@@ -176,11 +176,13 @@ bootStory sess inputs = do
             <> T.unpack (hex (SBS.fromShort (cfgActivePolicy cfg)))
         )
 
-    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+    unsignedBoot <-
+        Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
     signedBoot <- submitWithGenesis submit unsignedBoot
     (tid, tidBytes) <- extractTokenId cfg signedBoot
     createTrie tm tid
-    stateUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
+    stateUtxos <-
+        Cage.withView prov (`Cage.viewUTxOsAt` cageAddrFromCfg cfg Testnet)
     bootState <- case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
         Just (_, out) -> case extractCageDatum out of
             Just (StateDatum s) -> pure s
@@ -236,16 +238,16 @@ foldOnce :: Story -> ByteString -> IO ConwayTx
 foldOnce story key = do
     let tm = storyTries story
         tid = storyToken story
-    ctx <-
-        Edges.registryContextFor
-            (storyConfig story)
-            (storyCodes story)
-            (storyProvider story)
-            (storyRefs story)
-    tx <-
+    tx <- Cage.withView (storyProvider story) $ \v -> do
+        ctx <-
+            Edges.registryContextFor
+                (storyConfig story)
+                (storyCodes story)
+                v
+                (storyRefs story)
         updateTokenWithDuties
             (storyConfig story)
-            (storyProvider story)
+            v
             tm
             tid
             genesisAddr
@@ -259,7 +261,8 @@ foldOnce story key = do
 -- | Exactly the quantity held under the ACTIVE policy at this key.
 activeHeldAt :: Story -> ByteString -> IO Integer
 activeHeldAt story key = do
-    walletUtxos <- Cage.queryUTxOs (storyProvider story) genesisAddr
+    walletUtxos <-
+        Cage.withView (storyProvider story) (`Cage.viewUTxOsAt` genesisAddr)
     let policy = policyIdFromPin (cfgActivePolicy (storyConfig story))
     pure $
         sum

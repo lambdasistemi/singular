@@ -612,6 +612,12 @@ NONCODE_CLASSES: list[dict] = [
         "note": "release-please configuration",
     },
     {
+        "id": "node-confinement-allowlist",
+        "pattern": "tools/node-confinement.allow",
+        "note": "the modules allowed to name the node backend, one reason "
+        "each; read by tools/node_confinement_check.sh (issue #323)",
+    },
+    {
         "id": "formatter-config",
         "pattern": "fourmolu.yaml",
         "note": "the one house Fourmolu configuration (issue #278 S2), read "

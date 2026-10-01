@@ -25,10 +25,17 @@ Four claims, each with the control that shows the check can fail:
 * a submission is confirmed without the node being asked for an
   address's UTxO set (control: the confirmed output is then read back
   from the node).
+
+And one view is one acquired ledger state of the node (#323): a view
+names the network, era, slot and block hash it was acquired at; a
+transaction confirmed while a view is held stays out of that view
+(control: a fresh acquisition sees it); a view read after its scope is
+refused by name rather than answered.
 -}
 module Singular.Registry.E2E.NodeSpec (spec, walletSpec) where
 
 import Control.Exception (ErrorCall (..), try)
+import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.IORef (newIORef, readIORef, writeIORef)
@@ -48,6 +55,7 @@ import Test.Hspec
     , shouldSatisfy
     )
 
+import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Era (ConwayEra)
 import Cardano.Ledger.Api.PParams (ppMaxTxSizeL)
 import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx)
@@ -58,7 +66,11 @@ import Cardano.Ledger.Api.Tx.Body
     , outputsTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out (TxOut, mkBasicTxOut, valueTxOutL)
-import Cardano.Ledger.BaseTypes (TxIx (..))
+import Cardano.Ledger.BaseTypes
+    ( Network (Testnet)
+    , SlotNo (..)
+    , TxIx (..)
+    )
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Ledger.Val (inject, (<->))
@@ -80,6 +92,7 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Node
     ( ExternalNode (..)
     , NodeMode (..)
+    , NodeReads (..)
     , NodeSession (..)
     , Wallet (..)
     , awaitTx
@@ -88,11 +101,13 @@ import Singular.Registry.Node
     , nodeAddressReads
     , walletForMode
     , withNodeMode
+    , withNodeReads
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.TxBuilder.Internal (addrFromKeyHashBytes)
 
 spec :: Spec
-spec = aroundAll withDevnetSocket $
+spec = aroundAll withDevnetSocket $ do
     describe "Connecting through a supplied node socket" $ do
         it
             "opens a session over a supplied socket, magic and key file, \
@@ -102,15 +117,11 @@ spec = aroundAll withDevnetSocket $
                 seen <- newIORef Nothing
                 withNodeMode mode $ \sess -> do
                     wallet <- walletForMode mode
-                    utxos <-
-                        Cage.queryUTxOs (nsProvider sess) (walletAddr wallet)
-                    writeIORef
-                        seen
-                        ( Just
-                            ( nsPParams sess ^. ppMaxTxSizeL
-                            , length utxos
-                            )
-                        )
+                    (maxTxSize, utxos) <-
+                        Cage.withView (nsProvider sess) $ \v ->
+                            (,) (Cage.viewProtocolParams v ^. ppMaxTxSizeL)
+                                <$> Cage.viewUTxOsAt v (walletAddr wallet)
+                    writeIORef seen (Just (maxTxSize, length utxos))
                 observed <- readIORef seen
                 -- The body ran, the parameters came from the node (a
                 -- positive maximum transaction size is a value only a
@@ -129,7 +140,7 @@ spec = aroundAll withDevnetSocket $
                 withNodeMode mode $ \sess -> do
                     wallet <- walletForMode mode
                     held <-
-                        Cage.queryUTxOs (nsProvider sess) (walletAddr wallet)
+                        Cage.withView (nsProvider sess) (`Cage.viewUTxOsAt` walletAddr wallet)
                     let tx = selfPayment wallet held
                     submitTx (nsSubmitter sess) tx >>= \case
                         Submitted _ -> pure ()
@@ -140,7 +151,7 @@ spec = aroundAll withDevnetSocket $
                     after <- nodeAddressReads
                     after `shouldBe` before
                     landed <-
-                        Cage.queryUTxOs (nsProvider sess) (walletAddr wallet)
+                        Cage.withView (nsProvider sess) (`Cage.viewUTxOsAt` walletAddr wallet)
                     map fst landed
                         `shouldSatisfy` elem (TxIn (txIdTx tx) (TxIx 0))
 
@@ -176,6 +187,76 @@ spec = aroundAll withDevnetSocket $
                                 (bech32Address (walletAddr wallet))
                         msg `shouldSatisfy` isInfixOf "faucet"
                         msg `shouldSatisfy` isInfixOf "100000000 lovelace"
+
+    -- #323: one view is one acquired ledger state of the real node.
+    describe "Reading the node through one acquired view" $ do
+        it
+            "names the network, era, slot and block hash it was \
+            \acquired at"
+            $ \sock -> withSkeyFile genesisSignKey $ \skey -> do
+                let mode = External (ExternalNode sock 42 skey)
+                withNodeMode mode $ \sess -> do
+                    point <-
+                        Cage.withView (nsProvider sess) (pure . Cage.viewPoint)
+                    tip <- nsTipSlot sess
+                    Cage.cpNetwork point `shouldBe` 42
+                    Cage.cpEra point `shouldBe` "Conway"
+                    BS.length (Cage.cpBlockHash point) `shouldBe` 32
+                    Cage.cpSlot point `shouldSatisfy` (> SlotNo 0)
+                    Cage.cpSlot point `shouldSatisfy` (<= tip)
+
+        it
+            "keeps a transaction confirmed after acquisition out of that \
+            \view, while a fresh acquisition sees it"
+            $ \sock -> withSkeyFile genesisSignKey $ \skey -> do
+                let mode = External (ExternalNode sock 42 skey)
+                withNodeMode mode $ \sess -> withNodeReads 42 sock $ \nr -> do
+                    wallet <- walletForMode mode
+                    let addr = walletAddr wallet
+                        reads' = nrProvider nr
+                    (before, during, fresh, tx) <-
+                        Cage.withView reads' $ \held -> do
+                            before <- Cage.viewUTxOsAt held addr
+                            let tx = selfPayment wallet before
+                            submitTx (nsSubmitter sess) tx >>= \case
+                                Submitted _ -> pure ()
+                                Rejected why ->
+                                    fail
+                                        ( "the self-payment was refused: "
+                                            <> BC.unpack why
+                                        )
+                            -- Confirmed through the session's own
+                            -- connection while the view stays held.
+                            awaitTx tx
+                            fresh <-
+                                Cage.withView
+                                    (nsProvider sess)
+                                    (`Cage.viewUTxOsAt` addr)
+                            during <- Cage.viewUTxOsAt held addr
+                            pure (before, during, fresh, tx)
+                    let created = TxIn (txIdTx tx) (TxIx 0)
+                    -- Reached control: the change is on the chain.
+                    map fst fresh `shouldSatisfy` elem created
+                    -- The held view is the state it acquired.
+                    map fst during `shouldBe` map fst before
+                    map fst during `shouldSatisfy` notElem created
+                    after <- Cage.withView reads' (`Cage.viewUTxOsAt` addr)
+                    map fst after `shouldSatisfy` elem created
+
+        it
+            "refuses a view read after its scope as ViewOutOfScope"
+            $ \sock -> withNodeReads 42 sock $ \nr -> do
+                escaped <- Cage.withView (nrProvider nr) pure
+                r <- try (Cage.viewUTxOsAt escaped zeroAddr)
+                case r of
+                    Left Cage.ViewOutOfScope -> pure ()
+                    Left other -> fail ("another failure: " <> show other)
+                    Right utxos ->
+                        fail
+                            ( "a view read after its scope answered "
+                                <> show (length utxos)
+                                <> " outputs"
+                            )
 
 -- | Wallet decoding checks use local files and never connect to a node.
 walletSpec :: Spec
@@ -241,3 +322,7 @@ selfPayment wallet held =
 -- | A key with no history on any chain, and therefore no funds.
 unfundedKey :: SignKeyDSIGN Ed25519DSIGN
 unfundedKey = mkSignKey "e2e-unfunded-joiner-key-00000001"
+
+-- | An address no key on the devnet controls.
+zeroAddr :: Addr
+zeroAddr = addrFromKeyHashBytes Testnet (BS.replicate 28 0)

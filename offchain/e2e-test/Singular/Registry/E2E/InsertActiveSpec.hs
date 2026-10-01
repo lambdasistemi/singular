@@ -203,7 +203,7 @@ sayFold act = do
 activeHeldAt
     :: Cage.Provider IO -> CageConfig -> ByteString -> IO Integer
 activeHeldAt prov cfg key = do
-    walletUtxos <- Cage.queryUTxOs prov genesisAddr
+    walletUtxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
     let policy = policyIdFromPin (cfgActivePolicy cfg)
     pure $
         sum
