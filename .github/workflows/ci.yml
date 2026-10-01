@@ -306,6 +306,15 @@ jobs:
       # included — runs inside the publish job before anything is
       # uploaded; the docs-only release-check job does not carry it.
       - run: nix run --quiet .#release-artifacts -- "$RUNNER_TEMP/release"
+      # #326: every refusal of the release verifier, by name, from the
+      # verifier itself: the real published v0.7.0, downloaded without
+      # credentials, predates the stated model revision and is refused as
+      # model-revision-missing; mutated copies of the assets just assembled
+      # are refused as sum-mismatch, model-revision-missing,
+      # model-revision-mismatch, member-missing and command-failed. The
+      # accepting run of the same verifier over the unmutated assets is the
+      # Registry workflow's Demo 1 job.
+      - run: nix run --quiet .#verify-release-controls -- "$RUNNER_TEMP/release"
   preview:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     name: Live documentation preview

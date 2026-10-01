@@ -110,8 +110,65 @@
         system:
         let
           pkgs = import nixpkgs { inherit system; };
+          # #326: verify a published release from its downloaded bytes —
+          # sums, the stated model revision against the one the
+          # conformance evidence is compiled against, archive members, and
+          # the Demo 1 journey built from the archive's own flake:
+          # `nix run .#verify-release -- vX.Y.Z`.
+          verifyRelease = pkgs.writeShellApplication {
+            name = "verify-release";
+            runtimeInputs = with pkgs; [
+              bash
+              coreutils
+              curl
+              findutils
+              gawk
+              git
+              gnugrep
+              gnused
+              gnutar
+              gzip
+              jq
+              nix
+              # the journey's concurrent-writer control holds the
+              # registry's lock with flock, and it finds and stops
+              # its own development node with pgrep and pkill
+              procps
+              util-linux
+            ];
+            text = ''
+              export VERIFY_RELEASE_JOURNEY=${./tools/demo1_cli_journey.sh}
+              export DEMO1_CREATE_RACE=${./tools/demo1_cli_create_race.sh}
+              export VERIFY_RELEASE_MODEL_REVISION=${./conformance/model-revision}
+              bash ${./tools/verify_release.sh} "$@"
+            '';
+          };
         in
         {
+          verify-release = {
+            type = "app";
+            program = pkgs.lib.getExe verifyRelease;
+          };
+          # #326: every refusal of verify-release by name — the published
+          # v0.7.0 and mutated copies of an assembled release:
+          # `nix run .#verify-release-controls -- RELEASE-DIR`.
+          verify-release-controls = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "verify-release-controls";
+                runtimeInputs = with pkgs; [
+                  coreutils
+                  findutils
+                  gnugrep
+                  gnused
+                  gnutar
+                  gzip
+                ];
+                text = ''VERIFY_RELEASE=${pkgs.lib.getExe verifyRelease} bash ${./tools/verify_release_controls.sh} "$@"'';
+              }
+            );
+          };
           demo1-cli-check = {
             type = "app";
             program = pkgs.lib.getExe (
@@ -120,20 +177,12 @@
                 runtimeInputs = with pkgs; [
                   bash
                   coreutils
-                  gawk
                   gnugrep
                   gnused
-                  gnutar
-                  gzip
                   jq
                   nix
-                  # the journey's concurrent-writer control holds the
-                  # registry's lock with flock, and it finds and stops
-                  # its own development node with pgrep and pkill
-                  procps
-                  util-linux
                 ];
-                text = ''DEMO1_JOURNEY=${./tools/demo1_cli_journey.sh} DEMO1_CREATE_RACE=${./tools/demo1_cli_create_race.sh} bash ${./tools/demo1_cli_check.sh} "$PWD"'';
+                text = ''DEMO1_VERIFY_RELEASE=${pkgs.lib.getExe verifyRelease} bash ${./tools/demo1_cli_check.sh} "$PWD"'';
               }
             );
           };

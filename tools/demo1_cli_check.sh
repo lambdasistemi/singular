@@ -5,16 +5,19 @@
 # usage: demo1_cli_check.sh REPO-ROOT
 #
 # 1. The normal release archive is assembled from REPO-ROOT by the same
-#    `release-artifacts` app CI runs, and extracted OUTSIDE the checkout.
-# 2. Its run page, DEMO1.md, must be there and its numbered steps must be
-#    exactly the seven commands, each in its position: create, insert,
-#    inspect, update, inspect, terminate, inspect. Copies of the page
-#    without terminate, without update, and without the inspection that
-#    follows update must each fail that same check (its own controls).
-# 3. The archive's own offchain flake builds `singular` and the
-#    development node, and the journey (demo1_cli_journey.sh, beside this
-#    script) runs those seven commands as separate processes against ONE
-#    node, with the archive's own blueprint, beside its process controls.
+#    `release-artifacts` app CI runs.
+# 2. Those assets are verified by `verify-release` (#326) exactly as a
+#    published release is, presented as its download input: the sums, the
+#    stated model revision, the archive members, and the journey
+#    (demo1_cli_journey.sh) — `singular` and the development node built
+#    from the archive's own offchain flake, extracted OUTSIDE the checkout,
+#    and the seven commands run as separate processes against ONE node,
+#    with the archive's own blueprint, beside its process controls.
+# 3. The run page, DEMO1.md, in that extraction must number exactly the
+#    seven commands, each in its position: create, insert, inspect, update,
+#    inspect, terminate, inspect. Copies of the page without terminate,
+#    without update, and without the inspection that follows update must
+#    each fail that same check (its own controls).
 # 4. The retained insert-active and update-terminal archive commands run
 #    from the same extracted archive with their accepting and refusing
 #    controls, asserted by the same observation programs their CI steps
@@ -26,8 +29,7 @@ set -euo pipefail
   exit 2
 }
 root="$1"
-here="$(cd "$(dirname "$0")" && pwd)"
-journey="${DEMO1_JOURNEY:-$here/demo1_cli_journey.sh}"
+verify="${DEMO1_VERIFY_RELEASE:?demo1-cli-check needs DEMO1_VERIFY_RELEASE}"
 fail() {
   echo "demo1-cli-check: FAIL: $*" >&2
   exit 1
@@ -38,9 +40,8 @@ release_dir="$scratch/release"
 mkdir -p "$release_dir"
 (cd "$root" && nix run --quiet .#release-artifacts -- "$release_dir")
 version="$(cat "$root/version.txt")"
-extracted="$scratch/extracted"
-mkdir -p "$extracted"
-tar -C "$extracted" -xzf "$release_dir/singular-onchain-$version.tar.gz"
+"$verify" --assets "$release_dir" --work "$scratch/verify" "v$version"
+extracted="$scratch/verify/extracted"
 test ! -e "$extracted/.git" || fail "the archive carries a git checkout"
 
 # The page's numbered steps, each "N. **`singular registry CMD`**", read as
@@ -69,9 +70,6 @@ for control in "6 terminate" "4 update" "5 inspect-after-update"; do
 done
 
 cd "$extracted/offchain"
-singular="$(nix build --quiet --no-link --print-out-paths .#singular)/bin/singular"
-devnet="$(nix build --quiet --no-link --print-out-paths .#devnet)/bin/devnet"
-bash "$journey" "$singular" "$devnet" "$extracted/onchain/plutus.json" "$scratch/journey"
 
 # The retained archive commands, from the same extraction.
 observed="$scratch/insert-active.json"
@@ -118,4 +116,4 @@ jq -e '
   )
 ' "$observed" >/dev/null || fail "update-terminal observation moved"
 
-echo "demo1-cli-check: PASS from $extracted — the singular journey as separate processes on one node, the page, and the retained insert-active and update-terminal controls"
+echo "demo1-cli-check: PASS from $extracted — the release verified as published (sums, model revision, members, the singular journey as separate processes on one node), the page, and the retained insert-active and update-terminal controls"
