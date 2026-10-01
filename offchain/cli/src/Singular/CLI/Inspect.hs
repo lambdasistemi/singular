@@ -1,6 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 
 {- |
 Module      : Singular.CLI.Inspect
@@ -49,8 +50,17 @@ import Data.Word (Word32)
 import Lens.Micro ((^.))
 import System.Directory (doesFileExist)
 
-import Cardano.Ledger.Api.Tx.Out (coinTxOutL)
+import Cardano.Crypto.Hash.Class (hashToBytes)
+import Cardano.Ledger.Api.Scripts.Data
+    ( Datum (..)
+    , binaryDataToData
+    , hashBinaryData
+    )
+import Cardano.Ledger.Api.Tx.Out (TxOut, coinTxOutL, datumTxOutL)
+import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Core (eraProtVerHigh)
+import Cardano.Ledger.Hashes (extractHash)
 
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
@@ -99,6 +109,7 @@ import Singular.CLI.Session
     , failWith
     , withTargetLockOr
     )
+import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.Provider qualified as Cage
 
 runInspect :: InspectArgs -> IO Value
@@ -193,6 +204,20 @@ inspectIncompleteCreate dir sock magic = do
                     NodeUnavailable
                     ("the node at " <> sock <> " could not be read: " <> show e)
 
+{- | The inline datum an output carries, as the ledger holds it: its bytes,
+and their BLAKE2b-256 hash, both hex. A public indexer's copy of the same
+output is compared against these.
+-}
+inlineDatum :: TxOut ConwayEra -> Maybe (Text, Text)
+inlineDatum o = case o ^. datumTxOutL of
+    Datum binary ->
+        Just
+            ( hexT
+                (serialize' (eraProtVerHigh @ConwayEra) (binaryDataToData binary))
+            , hexT (hashToBytes (extractHash (hashBinaryData binary)))
+            )
+    _ -> Nothing
+
 inspectSaved
     :: FilePath
     -> ByteString
@@ -237,6 +262,8 @@ inspectSaved dir key sock magic a = do
                             , "deposit" .= ctlDeposit (envControl e)
                             , "controller" .= hexT (ctlController (envControl e))
                             , "lovelace" .= let Coin c = o ^. coinTxOutL in c
+                            , "datumCbor" .= fmap fst (inlineDatum o)
+                            , "datumHash" .= fmap snd (inlineDatum o)
                             ]
                     Left why ->
                         object

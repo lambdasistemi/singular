@@ -1,0 +1,60 @@
+# Demo 1 on preprod: what a reviewer checks
+
+## The story
+
+As a reviewer, I download the pinned archive and check one registry and one fresh key on the public preprod network. The key is inserted and its payload is changed by its controller. It is found again from its policy id and asset name alone, through two independent public indexers. Four attacks are refused at their script boundaries, each beside an accepting control. The key is terminated and its protected deposit comes back. Every claim rests on a confirmed transaction or a fresh read, never on local state.
+
+This page is the reviewer's map. It says what the archive lets you replay, what has been shown so far and on which chain, and what still waits for an explicit decision. It is not a record of a public run: none has happened.
+
+## What you run
+
+The ordinary `singular registry` commands are the product path. Two more tools ship in the same archive: a controls runner that attaches to a registry that already exists, and a readback that asks a public indexer.
+
+```mermaid
+sequenceDiagram
+    participant R as Reviewer
+    participant S as singular commands
+    participant C as controls runner
+    participant N as Preprod node
+    participant I as Koios and Blockfrost
+    R->>S: create --preview with a public address
+    S->>N: read only
+    R->>S: insert, update, terminate with --preview
+    S-->>R: measured fee, units, collateral, outlay
+    R->>C: attach to the registry with a fresh key
+    C->>N: ordinary commands, four refusals, retractions
+    C->>I: the Active key, read from both indexers before its termination
+    C-->>R: verdicts computed from retained receipts
+    R->>S: inspect the key
+    R->>I: readback from policy id and asset name
+    I-->>R: output, datum, block, lag
+```
+
+- **Measure before writing.** A preview names the caller by a public address, builds what each command would submit and prints its fee, the execution units the node's own evaluator measured, the collateral it states and returns, and the outlay. The fold of an insertion or a termination exists only once its booking confirms, so the preview bounds it from the network's parameters.
+- **Fund for the whole take.** An approval a booking mints returns to the wallet in the change output of the fold or retraction that releases it, so that output is no longer ada-only. A take refuses, before it writes, a wallet without one ada-only output for every insert, terminate and retraction of its story and one more, each large enough for the allowance or outlay bound and the ledger's minimum output.
+- **Four refusals on one registry.** An update that needs another wallet's signature, a release outside any fold, a second insertion of the Active key and an insertion of the Terminal key are each refused by the node at the script that owns the rule, beside the ordinary command that does the same thing legitimately.
+- **Reclaim what a refusal leaves.** A refused insertion leaves its request pending, and a registry's fold takes every pending request. The owner retracts the one its own insertion left, inside its retract window, only while the registry still reads as the readback that saw it pending did; the verdict requires the retained body to spend that request and the wallet to hold exactly the bond released less the fee. A take stops, with its receipts kept, at any outcome its step does not name and at any requirement that does not hold, and it is refused before it writes anything unless the operator states a collateral allowance.
+- **Read the key back.** The take asks Koios and Blockfrost itself, between the key's final update and its termination, while the token is held, and stops before its next write if either is missing, unreachable, behind or in disagreement. The readback records each request and response, the output the indexer says holds the asset, its inline datum with its hash recomputed, the indexer's tip and the node's chain point and the lag between them. It succeeds only when the output reference and datum bytes are the node's, and the take judges the record from the provider's answers it keeps, never from the summary it states. A record's digest shows the bytes judged are the bytes kept, not that the provider answered honestly.
+
+## What is established today
+
+| Claim | Evidence | Chain |
+| --- | --- | --- |
+| A booking's fee and units are measured, and its collateral is stated | accounting checks against the public preprod parameters; the ordinary journey on a development node | development node |
+| A preview signs, submits and writes nothing | the registry directory is byte for byte the same afterwards | development node |
+| **Pending, not established:** the four refusals, each beside its accepting control, on one existing registry, twice with fresh keys, and the same key read from two indexers before its termination | no completed gate supports it yet. The attach gate failed at an earlier commit (its receipt is kept) and an earlier run of it held three of thirty-one cases; a take's verdict is computed from retained receipts, so the claim holds only when a completed gate's receipts at the submitted commit say so | development node, pending |
+| An indexer readback compares output, datum bytes and hash, and lag | a local indexer answering in the public services' shapes; each alteration fails for its own reason; the credential appears nowhere but the indexer's log | local indexer |
+
+Nothing in that table is a preprod confirmation, and its pending row is not a claim. A development node's evaluation is not preprod execution, and the live preprod cost models are read as public inputs only.
+
+## What waits for a decision
+
+- Signing and submitting anything on the public network, and the release that publishes the archive.
+- The recording of the actual commands.
+- The Blockfrost credential, which stays with its owner; the readback takes a reference to a file, never a value.
+
+A funded wallet needs two ada-only outputs before `create`, because the state validator is published from one while the seed stays unspent in the other. A wallet with a single output is refused before anything is submitted.
+
+## What this does not show
+
+One bounded run shows that the four refusals happen at their script boundaries for that key on that registry. It is not a universal statement about every compiled validator and ledger transaction, and an indexer that misses an output proves nothing either way. The duplicated token carrier case stays a model and validator test with its conditional argument, and is not run on a live chain.

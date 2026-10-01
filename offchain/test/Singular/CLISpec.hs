@@ -52,11 +52,17 @@ import Test.Hspec
 
 import Data.Aeson qualified as Aeson
 
+import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Api.Tx.Out
     ( mkBasicTxOut
     , referenceScriptTxOutL
     )
-import Cardano.Ledger.BaseTypes (StrictMaybe (..))
+import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (..))
+import Cardano.Ledger.Credential
+    ( Credential (..)
+    , StakeReference (..)
+    )
+import Cardano.Ledger.Keys (coerceKeyRole)
 import Cardano.Ledger.Mary.Value (MaryValue (..))
 
 import MPF.Backend.Pure (MPFInMemoryDB (..))
@@ -72,6 +78,7 @@ import Singular.Registry.Deployment
     , loadMirror
     , mirrorPathFor
     , parseOutRef
+    , renderOutRef
     , saveMirror
     )
 import Singular.Registry.Ledger
@@ -81,13 +88,14 @@ import Singular.Registry.Ledger
     , SlotNo (..)
     , TokenId (..)
     )
-import Singular.Registry.Node (Wallet (..), loadWallet)
+import Singular.Registry.Node (Wallet (..), bech32Address, loadWallet)
 import Singular.Registry.Node.IndexerView (IndexerViewFailure (..))
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.Pure (provesAbsent, provesMember)
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TxBuilder.Internal
-    ( leafActive
+    ( addrFromKeyHashBytes
+    , leafActive
     , leafTerminal
     , scriptFromBytes
     , walkEdge
@@ -144,7 +152,7 @@ commandLine = describe "the command line" $ do
                     CreateArgs
                         { createRegistry = "/srv/reg"
                         , createBlueprint = "/srv/plutus.json"
-                        , createWrite = writeSettings
+                        , createMode = Submit writeSettings
                         , createSeed = Just seedText
                         , createPreview = False
                         , createReceipt = Nothing
@@ -162,9 +170,11 @@ commandLine = describe "the command line" $ do
                     EntryArgs
                         { entryRegistry = "/srv/reg"
                         , entryBlueprint = "/srv/plutus.json"
-                        , entryWrite = writeSettings
+                        , entryMode = Submit writeSettings
                         , entryKey = Key "key"
                         , entryDocument = Just "/e.json"
+                        , entryFund = Nothing
+                        , entryMaxOutlay = Nothing
                         , entryReceipt = Nothing
                         }
                 )
@@ -226,19 +236,23 @@ commandLine = describe "the command line" $ do
                             <> extra
                         )
             fmap
-                (\case Insert a -> writeConfirmTimeout (entryWrite a); _ -> Nothing)
+                ( \case
+                    Insert EntryArgs{entryMode = Submit w} -> writeConfirmTimeout w
+                    _ -> Nothing
+                )
                 (insert ["--confirm-timeout", "0"])
                 `shouldBe` Right (Just 0)
             insert ["--confirm-timeout", "soon"]
                 `shouldBe` Left (BadValue "--confirm-timeout" "is not a whole number of seconds")
+    preview
     it "refuses a write against mainnet" $
         parseCommand
             ( ["registry", "insert", "--key", "6b6579"]
                 <> reg
-                <> ["--node-socket", "/s", "--network-magic", "764824073"]
+                <> ["--node-socket", "/s", "--network-magic", "764_824_073"]
                 <> wallet
             )
-            `shouldSatisfy` isLeftWith (unsafeMentions "764824073")
+            `shouldSatisfy` isLeftWith (unsafeMentions "764_824_073")
     it "refuses a write with no node at all rather than spawning one" $
         parseCommand (["registry", "insert", "--key", "6b6579"] <> reg)
             `shouldSatisfy` isLeftWith isUnsafe
@@ -277,6 +291,7 @@ commandLine = describe "the command line" $ do
         , ["registry", "inspect", "--key", "6b6579"] <> reg <> node
         ]
     forM5 xs f = mapM_ f xs
+    preview = previewRows
     writeSettings =
         WriteSettings
             { writeNode = NodeSettings "/run/node.socket" 42
@@ -365,7 +380,7 @@ savedIdentity = describe "the saved identity" $ do
             checkPins conf pins{pinApplication = "b0"}
                 `shouldBe` Left (PinMismatch "application" "bb" "b0")
     it
-        "refuses a seed the wallet does not hold, or one that is not ada-only"
+        "refuses a seed the wallet does not hold, one that is not ada-only, or one with no funding beside it"
         $ do
             seed <- either fail pure (parseOutRef (T.pack seedText))
             other <-
@@ -381,6 +396,13 @@ savedIdentity = describe "the saved identity" $ do
                     `shouldSatisfy` isLeftWith isNotInWallet
                 checkSeed seed [(seed, withScript)]
                     `shouldSatisfy` isLeftWith isNotAdaOnly
+                -- the seed stays unspent while the first publication is paid from
+                -- another ada-only output: a wallet with only the seed, or whose
+                -- other outputs hold a script, cannot create
+                checkSeed seed [(seed, plain)]
+                    `shouldSatisfy` isLeftWith isNoFunding
+                checkSeed seed [(seed, plain), (other, withScript)]
+                    `shouldSatisfy` isLeftWith isNoFunding
     it
         "refuses to create over a directory that already holds a registry or a journal"
         $ withTempDir
@@ -404,6 +426,7 @@ savedIdentity = describe "the saved identity" $ do
     isWallet = \case WalletMismatch _ _ -> True; _ -> False
     isNotInWallet = \case SeedNotInWallet _ -> True; _ -> False
     isNotAdaOnly = \case SeedNotAdaOnly _ -> True; _ -> False
+    isNoFunding = \case NoFundingBesideSeed _ -> True; _ -> False
 
 -- ---------------------------------------------------------
 -- The journal
@@ -1037,3 +1060,196 @@ killedWriter rounds write check = forM_ [1 .. rounds] $ \r -> do
 
 withTempDir :: (FilePath -> IO a) -> IO a
 withTempDir = withSystemTempDirectory "singular-cli-spec"
+
+-- ---------------------------------------------------------
+-- The read-only preparation route
+-- ---------------------------------------------------------
+
+{- | @--preview@ names the caller by a public address and holds no key: the
+parse refuses a key before anything is read, and the address is checked
+against the network and for being an enterprise address. The addresses
+are produced here from key hashes, never typed.
+-}
+previewRows :: Spec
+previewRows = describe "--preview" $ do
+    let payerHash = BS.replicate 28 0x5a
+        strangerHash = BS.replicate 28 0x7b
+        addrOf = addrFromKeyHashBytes
+        textOf net h = bech32Address (addrOf net h)
+        baseAddr = case addrOf Testnet payerHash of
+            Addr net (KeyHashObj k) _ ->
+                Addr net (KeyHashObj k) (StakeRefBase (KeyHashObj (coerceKeyRole k)))
+            other -> other
+        previewNode magic = ["--node-socket", "/run/node.socket", "--network-magic", magic]
+        insertPreview extra =
+            parseCommand
+                ( [ "registry"
+                  , "insert"
+                  , "--preview"
+                  , "--key"
+                  , "6b6579"
+                  , "--envelope"
+                  , "/e.json"
+                  ]
+                    <> reg
+                    <> extra
+                )
+    it "reads a preview as a node and a public address, with no key" $
+        insertPreview
+            (previewNode "1" <> ["--wallet-address", textOf Testnet payerHash])
+            `shouldBe` Right
+                ( Insert
+                    EntryArgs
+                        { entryRegistry = "/srv/reg"
+                        , entryBlueprint = "/srv/plutus.json"
+                        , entryMode =
+                            Preview
+                                (NodeSettings "/run/node.socket" 1)
+                                (textOf Testnet payerHash)
+                        , entryKey = Key "key"
+                        , entryDocument = Just "/e.json"
+                        , entryFund = Nothing
+                        , entryMaxOutlay = Nothing
+                        , entryReceipt = Nothing
+                        }
+                )
+    it "refuses a signing key beside --preview before anything is read" $
+        insertPreview
+            ( previewNode "1"
+                <> ["--wallet-address", textOf Testnet payerHash]
+                <> wallet
+            )
+            `shouldBe` Left PreviewTakesNoKey
+    it "names a missing address, and a missing node" $ do
+        insertPreview (previewNode "1")
+            `shouldBe` Left (MissingFlag "--wallet-address")
+        insertPreview ["--wallet-address", textOf Testnet payerHash]
+            `shouldBe` Left (MissingFlag "--node-socket")
+    it
+        "reads the funding output and the allowance a write or a preview may use"
+        $ do
+            let funded = replicate 64 '3' <> "#1"
+                parsed =
+                    insertPreview
+                        ( previewNode "1"
+                            <> ["--wallet-address", textOf Testnet payerHash]
+                            <> ["--fund-input", funded, "--max-outlay", "12000000"]
+                        )
+            fmap
+                ( \case
+                    Insert a -> (fmap renderOutRef (entryFund a), entryMaxOutlay a)
+                    _ -> (Nothing, Nothing)
+                )
+                parsed
+                `shouldBe` Right (Just (T.pack funded), Just 12_000_000)
+            insertPreview
+                (previewNode "1" <> ["--wallet-address", "x", "--fund-input", "nope"])
+                `shouldSatisfy` isLeftWith (\case BadValue "--fund-input" _ -> True; _ -> False)
+            insertPreview
+                (previewNode "1" <> ["--wallet-address", "x", "--max-outlay", "0"])
+                `shouldSatisfy` isLeftWith (\case BadValue "--max-outlay" _ -> True; _ -> False)
+    it "reads a create preview for a public address with an optional seed" $ do
+        let create extra =
+                parseCommand
+                    ( ["registry", "create", "--preview"]
+                        <> reg
+                        <> previewNode "1"
+                        <> extra
+                    )
+        fmap
+            ( \case
+                Create a -> Just (createMode a, createPreview a, createSeed a)
+                _ -> Nothing
+            )
+            (create ["--wallet-address", textOf Testnet payerHash])
+            `shouldBe` Right
+                ( Just
+                    ( Preview (NodeSettings "/run/node.socket" 1) (textOf Testnet payerHash)
+                    , True
+                    , Nothing
+                    )
+                )
+        create
+            ["--wallet-address", textOf Testnet payerHash, "--wallet-skey", "/k"]
+            `shouldBe` Left PreviewTakesNoKey
+    it "refuses an address on a command that signs" $ do
+        parseCommand
+            ( ["registry", "insert", "--key", "6b6579", "--envelope", "/e.json"]
+                <> reg
+                <> node
+                <> wallet
+                <> ["--wallet-address", textOf Testnet payerHash]
+            )
+            `shouldSatisfy` isLeftWith (\case BadValue "--wallet-address" _ -> True; _ -> False)
+    describe
+        "a spending constraint a command does not enforce is refused, never ignored"
+        $ do
+            let funded = replicate 64 '3' <> "#1"
+                create extra =
+                    parseCommand
+                        ( ["registry", "create", "--seed", funded]
+                            <> reg
+                            <> node
+                            <> wallet
+                            <> extra
+                        )
+                inspect extra =
+                    parseCommand
+                        (["registry", "inspect", "--key", "6b6579"] <> reg <> node <> extra)
+                terminate extra =
+                    parseCommand
+                        ( ["registry", "terminate", "--key", "6b6579"]
+                            <> reg
+                            <> node
+                            <> wallet
+                            <> extra
+                        )
+            it "refuses a create that states a maximum outlay or a funding input" $ do
+                create ["--max-outlay", "1"]
+                    `shouldBe` Left (UnsupportedFlag "--max-outlay" "create")
+                create ["--fund-input", funded]
+                    `shouldBe` Left (UnsupportedFlag "--fund-input" "create")
+                create ["--fund-input", funded, "--max-outlay", "1"]
+                    `shouldSatisfy` isLeftWith (\case UnsupportedFlag _ "create" -> True; _ -> False)
+            it "refuses them on an inspect too" $ do
+                inspect ["--max-outlay", "1"]
+                    `shouldBe` Left (UnsupportedFlag "--max-outlay" "inspect")
+                inspect ["--fund-input", funded]
+                    `shouldBe` Left (UnsupportedFlag "--fund-input" "inspect")
+            it
+                "still reads them on the commands that enforce them, and a create without them"
+                $ do
+                    fmap
+                        (\case Terminate a -> entryMaxOutlay a; _ -> Nothing)
+                        (terminate ["--max-outlay", "1"])
+                        `shouldBe` Right (Just 1)
+                    create [] `shouldSatisfy` either (const False) (const True)
+                    inspect [] `shouldSatisfy` either (const False) (const True)
+    describe "the public address" $ do
+        it "round-trips a payment key hash for each network" $ do
+            parseEnterpriseAddress 1 (textOf Testnet payerHash)
+                `shouldBe` Right (addrOf Testnet payerHash)
+            parseEnterpriseAddress 764_824_073 (textOf Mainnet payerHash)
+                `shouldBe` Right (addrOf Mainnet payerHash)
+        it "tells two callers apart" $
+            parseEnterpriseAddress 1 (textOf Testnet payerHash)
+                `shouldNotBe` parseEnterpriseAddress 1 (textOf Testnet strangerHash)
+        it "refuses another network's address" $ do
+            parseEnterpriseAddress 1 (textOf Mainnet payerHash)
+                `shouldSatisfy` isLeftContaining "another network"
+            parseEnterpriseAddress 764_824_073 (textOf Testnet payerHash)
+                `shouldSatisfy` isLeftContaining "another network"
+        it "refuses an address that carries a stake part" $
+            parseEnterpriseAddress 1 (bech32Address baseAddr)
+                `shouldSatisfy` isLeftContaining "enterprise"
+        it "refuses text that is not an address, and a corrupted checksum" $ do
+            parseEnterpriseAddress 1 "not an address"
+                `shouldSatisfy` isLeftContaining "not bech32"
+            let text = textOf Testnet payerHash
+                corrupted = init text <> (if last text == 'q' then "p" else "q")
+            parseEnterpriseAddress 1 corrupted
+                `shouldSatisfy` isLeftContaining "not bech32"
+  where
+    isLeftContaining needle = \case
+        Left why -> needle `isInfixOf` why
+        Right _ -> False

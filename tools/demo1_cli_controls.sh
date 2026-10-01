@@ -42,7 +42,7 @@ od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/wallet.skey"
 od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/stranger.skey"
 
 export TMPDIR="$work"
-"$devnet" --fund-skey "$work/wallet.skey" --fund-skey "$work/stranger.skey" --fund-outputs 8 --fund-lovelace 2000000000 \
+"$devnet" --fund-skey "$work/wallet.skey" --fund-skey "$work/stranger.skey" --fund-outputs 40 --fund-lovelace 2000000000 \
   >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
 trap 'kill "$devnet_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT

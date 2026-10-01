@@ -247,6 +247,20 @@ run bob-preview success -- registry create --preview --registry "$work/bob-previ
   --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
 [ ! -e "$work/bob-preview" ] || fail "bob's preview created its target"
 bobkey="$(field bob-preview .walletKeyHash)"
+alice_addr="$(field preview .wallet)"
+bob_addr="$(field bob-preview .wallet)"
+
+# The same preview for a public address alone: no key, no write, and the
+# identity it names is the one the key-holding preview named.
+run preview-public success -- registry create --preview --registry "$work/public-preview" \
+  --blueprint "$blueprint" "${node[@]}" --wallet-address "$alice_addr"
+[ ! -e "$work/public-preview" ] || fail "a public preview created its target"
+jq -e --slurpfile k "$receipts/preview.json" '.seed == $k[0].seed and .pins == $k[0].pins and .walletKeyHash == $k[0].walletKeyHash' \
+  "$receipts/preview-public.json" >/dev/null || fail "the public preview names another identity than the key preview"
+status=0
+"$singular" registry create --preview --registry "$work/public-preview" --blueprint "$blueprint" \
+  "${node[@]}" --wallet-address "$alice_addr" "${alice[@]}" >/dev/null 2>&1 || status=$?
+[ "$status" -eq 2 ] || fail "a preview accepted a signing key beside a public address (exit $status)"
 
 run create-seed-not-owned client-refusal -- registry create --seed "$seed" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
@@ -277,6 +291,43 @@ refused insert-other-registry client-refusal -- registry insert --key "$key" \
   --envelope "$work/alice-other-registry.json" "${common[@]}" "${node[@]}" "${alice[@]}"
 refused insert-not-controller client-refusal -- registry insert --key 6b657942 \
   --envelope "$work/alice-by-bob.json" "${common[@]}" "${node[@]}" "${bob[@]}"
+
+# A preview builds and measures what the insert would submit, for the public
+# address alone, and leaves the registry directory byte-for-byte as it was.
+tree_hash() { (cd "$reg" && find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1); }
+preview_ok() {
+  jq -e --arg s "$2" '
+    .preview == true
+    and .[$s].fee > 0
+    and .[$s].fee != 2000000
+    and (.[$s].purposes | length) == 1
+    and .[$s].purposes[0].memory != 14000000
+    and .[$s].collateral.total == ((.[$s].fee * 150 + 99) / 100 | floor)
+    and .[$s].collateral.return != null
+    and .[$s].collateral.exposure == .[$s].collateral.total
+    and .outlay.total == (.outlay.fee + .outlay.lockedBond + .outlay.foldFeeBound)
+    and .outlay.withinAllowance == true
+  ' "$receipts/$1.json" >/dev/null || fail "$1: the preview does not state measured bodies"
+}
+tree_before="$(tree_hash)"
+run insert-preview success -- registry insert --preview --key "$key" --envelope "$work/alice.json" \
+  "${common[@]}" "${node[@]}" --wallet-address "$alice_addr"
+preview_ok insert-preview booking
+[ "$(tree_hash)" = "$tree_before" ] || fail "a preview changed the registry directory"
+jq -e '.fold.feeBound > .booking.fee' "$receipts/insert-preview.json" >/dev/null \
+  || fail "the fold bound does not exceed a booking fee"
+status=0
+"$singular" registry insert --preview --key "$key" --envelope "$work/alice.json" "${common[@]}" \
+  "${node[@]}" --wallet-address "$alice_addr" "${alice[@]}" >/dev/null 2>&1 || status=$?
+[ "$status" -eq 2 ] || fail "an insert preview accepted a signing key (exit $status)"
+refused insert-preview-not-controller client-refusal -- registry insert --preview --key 6b657942 \
+  --envelope "$work/alice-by-bob.json" "${common[@]}" "${node[@]}" --wallet-address "$bob_addr"
+# An allowance below the measured outlay stops the insert before it signs or
+# sends anything.
+refused insert-over-allowance client-refusal -- registry insert --key "$key" \
+  --envelope "$work/alice.json" --max-outlay 1000000 "${common[@]}" "${node[@]}" "${alice[@]}"
+jq -e '.outlay.withinAllowance == false and .outlay.allowance == 1000000' \
+  "$receipts/insert-over-allowance.json" >/dev/null || fail "the refusal does not state the outlay and the allowance"
 
 run insert success -- registry insert --key "$key" --envelope "$work/alice.json" \
   "${common[@]}" "${node[@]}" "${alice[@]}"
@@ -313,6 +364,13 @@ run inspect-bob success -- registry inspect --key "$bkey" "${common[@]}" "${node
 jq -n '{constructor:3, fields:[{bytes:"626f62"},{int:123456789012345678901234567890}]}' >"$work/payload.json"
 refused update-not-controller client-refusal -- registry update --key "$key" \
   --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${bob[@]}"
+tree_before="$(tree_hash)"
+run update-preview success -- registry update --preview --key "$key" --payload "$work/payload.json" \
+  "${common[@]}" "${node[@]}" --wallet-address "$alice_addr"
+preview_ok update-preview update
+[ "$(tree_hash)" = "$tree_before" ] || fail "an update preview changed the registry directory"
+refused update-preview-not-controller client-refusal -- registry update --preview --key "$key" \
+  --payload "$work/payload.json" "${common[@]}" "${node[@]}" --wallet-address "$bob_addr"
 run update success -- registry update --key "$key" --payload "$work/payload.json" \
   "${common[@]}" "${node[@]}" "${alice[@]}"
 run inspect-2 success -- registry inspect --key "$key" "${common[@]}" "${node[@]}"
@@ -371,6 +429,11 @@ run insert-after-release success -- registry insert --key 6b657943 \
 # ------------------------------------------------------------------
 refused terminate-not-controller client-refusal -- registry terminate --key "$key" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
+tree_before="$(tree_hash)"
+run terminate-preview success -- registry terminate --preview --key "$key" \
+  "${common[@]}" "${node[@]}" --wallet-address "$alice_addr"
+preview_ok terminate-preview booking
+[ "$(tree_hash)" = "$tree_before" ] || fail "a terminate preview changed the registry directory"
 # The process is held by the marked harness point right after the node's
 # acceptance of its fold is journalled, and killed there.
 before="$(journal_lines "$reg")"

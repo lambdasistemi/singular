@@ -25,7 +25,7 @@ saved deployment record, and its pins compared with the ones the command
 saved, so a disagreement between this reader and the command is a
 refusal rather than a silent choice.
 -}
-module Conformance.Cli.Backend (runControls) where
+module Conformance.Cli.Backend (runControls, runAttach) where
 
 import Control.Applicative ((<|>))
 import Control.Concurrent (threadDelay)
@@ -49,6 +49,7 @@ import Control.Monad.Operational
 import Data.Aeson (Value (..))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
+import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Bits (xor)
 import Data.ByteString (ByteString)
@@ -57,10 +58,11 @@ import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
+import Data.Foldable (toList)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (isNothing)
+import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
 import Data.Ord (Down (..))
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -73,6 +75,8 @@ import System.Directory
     , createDirectoryIfMissing
     , doesFileExist
     , doesPathExist
+    , getPermissions
+    , readable
     , renameFile
     )
 import System.Environment (getEnvironment)
@@ -160,6 +164,7 @@ import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
     , StateAsset (..)
+    , dataToJson
     , envelopeToJson
     , envelopeVersion
     , registryBytes
@@ -232,13 +237,16 @@ import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
     , addrWitnessKeyHash
     , computeScriptHash
+    , currentPosixMs
     , extractCageDatum
+    , extractOwnerBytes
     , requestAddrFromCfg
     , scriptFromBytes
     , scriptHashBytes
     , txInToRef
     , walkEdge
     )
+import Singular.Registry.TxBuilder.Retract (retractRequestAtTipImpl)
 import Singular.Registry.TxBuilder.Update
     ( RegistryContext (..)
     , RegistryDuties (..)
@@ -254,30 +262,46 @@ import Singular.Registry.Types
     )
 
 import Conformance.Cli.Admission
-    ( lastEventOf
+    ( admit
+    , lastEventOf
     , lastMaybe
     , sha256Hex
     , submittedIn
+    )
+import Conformance.Cli.Attach
+    ( LiveRequest (..)
+    , TakeStopped (..)
+    , continues
+    , fundingProblem
+    , reclaimTarget
+    , submissionProblem
     )
 import Conformance.Cli.Controls
     ( CliI (..)
     , Command (..)
     , Crafted (..)
+    , Indexer (..)
     , JournalSpan (..)
     , Observation (..)
     , ProcessEvidence (..)
     , Provocation (..)
     , Receipt (..)
+    , Requirement
     , Resolved (..)
     , Story
     , Submission (..)
     , Target (..)
+    , actionsOf
+    , check
     , cliSpecification
     , commandName
     , controlsStory
     , craftedName
     , emptyReceipt
+    , forbiddenInPermanent
+    , indexerName
     , obligationBindings
+    , permanentStory
     , provocationName
     , rejectionEvidence
     , resolveObligation
@@ -312,10 +336,55 @@ data Options = Options
     {- ^ The CLI's specification, whose rows the client obligations bind;
     by default the one in the repository holding the statement ledger
     -}
+    , optRegistry :: Maybe FilePath
+    {- ^ A take on this existing registry directory, not on registries the run
+    creates
+    -}
+    , optKey :: String
+    -- ^ The key a take on an existing registry uses, as the text the story names it by
+    , optAllowance :: Maybe Integer
+    {- ^ The most collateral a node-judged transaction of the run may state;
+    none when the run sets no bound
+    -}
+    , optMaxOutlay :: Maybe Integer
+    -- ^ The outlay each ordinary write may put out, passed to the command
+    , optReadback :: FilePath
+    {- ^ The readback script a take asks the public indexers through; none for
+    a run that asks none
+    -}
+    , optKoiosUrl :: Maybe String
+    , optBlockfrostUrl :: Maybe String
+    , optBlockfrostCredential :: FilePath
+    {- ^ A reference to the file holding Blockfrost's project key; the take
+    never opens it, the readback script does
+    -}
+    , optMaxLag :: Maybe Integer
+    -- ^ The slots an indexer may lag the node by
     }
 
 parseOptions :: [String] -> Either String Options
-parseOptions = go (Options "" "" "" "" 0 "" "" "" "")
+parseOptions =
+    go
+        ( Options
+            ""
+            ""
+            ""
+            ""
+            0
+            ""
+            ""
+            ""
+            ""
+            Nothing
+            ""
+            Nothing
+            Nothing
+            ""
+            Nothing
+            Nothing
+            ""
+            Nothing
+        )
   where
     go o [] = do
         forM_
@@ -342,6 +411,23 @@ parseOptions = go (Options "" "" "" "" 0 "" "" "" "")
         "--work" -> go o{optWork = v} rest
         "--stranger-skey" -> go o{optStranger = v} rest
         "--specification" -> go o{optSpecification = v} rest
+        "--registry" -> go o{optRegistry = Just v} rest
+        "--key" -> go o{optKey = v} rest
+        "--collateral-allowance" -> case reads v of
+            [(n, "")] | n > 0 -> go o{optAllowance = Just n} rest
+            _ ->
+                Left
+                    ("--collateral-allowance is not a positive number of lovelace: " <> v)
+        "--max-outlay" -> case reads v of
+            [(n, "")] | n > 0 -> go o{optMaxOutlay = Just n} rest
+            _ -> Left ("--max-outlay is not a positive number of lovelace: " <> v)
+        "--readback" -> go o{optReadback = v} rest
+        "--koios-base-url" -> go o{optKoiosUrl = Just v} rest
+        "--blockfrost-base-url" -> go o{optBlockfrostUrl = Just v} rest
+        "--blockfrost-credential-file" -> go o{optBlockfrostCredential = v} rest
+        "--max-lag" -> case reads v of
+            [(n, "")] | n >= 0 -> go o{optMaxLag = Just n} rest
+            _ -> Left ("--max-lag is not a number of slots: " <> v)
         _ -> Left ("unknown option " <> flag)
     go _ [flag] = Left (flag <> " needs a value")
 
@@ -353,8 +439,84 @@ parseOptions = go (Options "" "" "" "" 0 "" "" "" "")
 leaving one receipt per action. Returns the receipts' directory.
 -}
 runControls :: [String] -> IO FilePath
-runControls args = do
+runControls args = fst <$> runWith (const (Right controlsStory)) args
+
+{- | One take on a registry that already exists, through a node someone else
+runs: the story is refused unless it contains no action that creates a
+registry or provokes a command, the operator has stated an explicit
+collateral allowance, and the registry's own files are there, all before
+anything runs. The take stops at its first uncertain outcome or unmet
+requirement and says so. Returns the receipts' directory and, when the take
+stopped, why.
+-}
+runAttach :: [String] -> IO (FilePath, Maybe Text)
+runAttach = runWith attachStory
+
+attachStory :: Options -> Either String (Story ())
+attachStory o = do
+    when (isNothing (optRegistry o)) (Left "--registry is required")
+    when (null (optKey o)) (Left "--key is required")
+    case optAllowance o of
+        Just n | n > 0 -> Right ()
+        _ ->
+            Left
+                "--collateral-allowance is required: each deliberate refusal of a take puts collateral at risk, and nothing is written before its bound is stated"
+    when (null (optReadback o)) $
+        Left
+            "--readback is required: the take reads its Active key from two public indexers before it terminates it, and nothing is written before the means to do so are named"
+    when (null (optBlockfrostCredential o)) $
+        Left
+            "--blockfrost-credential-file is required: a reference to the file holding Blockfrost's project key, which the take never opens"
+    let story = permanentStory (optKey o)
+        forbidden = filter (`elem` forbiddenInPermanent) (actionsOf story)
+    unless (null forbidden) $
+        Left
+            ( "the take contains actions a take on an existing registry never runs: "
+                <> show forbidden
+            )
+    Right story
+
+runWith
+    :: (Options -> Either String (Story ()))
+    -> [String]
+    -> IO (FilePath, Maybe Text)
+runWith chooseStory args = do
     o <- either (fail . ("cli-controls: " <>)) pure (parseOptions args)
+    story <-
+        either
+            (fail . ("cli-controls: story refused: " <>))
+            pure
+            (chooseStory o)
+    -- What the take reads its indexers through is checked before anything is
+    -- written: the script is there and the credential file is readable. Its
+    -- bytes are not read here.
+    when (isJust (optRegistry o)) $ do
+        script <- doesFileExist (optReadback o)
+        unless script $
+            fail
+                ( "cli-controls: the readback script "
+                    <> optReadback o
+                    <> " does not exist"
+                )
+        credential <- doesFileExist (optBlockfrostCredential o)
+        readable <-
+            if credential
+                then readable <$> getPermissions (optBlockfrostCredential o)
+                else pure False
+        unless readable $
+            fail
+                ( "cli-controls: the Blockfrost credential file "
+                    <> optBlockfrostCredential o
+                    <> " is not a readable file"
+                )
+    forM_ (optRegistry o) $ \dir -> do
+        there <- doesFileExist (dir </> "registry.json")
+        unless there $
+            fail
+                ( "cli-controls: "
+                    <> dir
+                    <> " holds no registry; a take runs on an existing one and never creates it"
+                )
     ledger <-
         Aeson.eitherDecodeFileStrict' (optLedger o)
             >>= either (fail . ("statement ledger: " <>)) pure
@@ -374,7 +536,7 @@ runControls args = do
     either
         (fail . ("cli-controls: story refused: " <>))
         pure
-        (validateControls controlsStory)
+        (validateControls story)
     let receipts = optWork o </> "receipts"
         evidence = optWork o </> "evidence"
     mapM_
@@ -384,19 +546,73 @@ runControls args = do
     wallet <- loadWallet (fromIntegral (optMagic o)) (optWalletKey o)
     -- One session for every backend action: opening one per action spends
     -- the requests' processing window before their folds are built.
-    withNodeMode
-        ( External
-            ( ExternalNode
-                (optSocket o)
-                (fromIntegral (optMagic o))
-                (optWalletKey o)
+    let strict = isJust (optRegistry o)
+    stopped <-
+        try
+            ( withNodeMode
+                ( External
+                    ( ExternalNode
+                        (optSocket o)
+                        (fromIntegral (optMagic o))
+                        (optWalletKey o)
+                    )
+                )
+                $ \sess -> do
+                    -- Before anything is written the wallet must be able to
+                    -- fund every action the take will ask of it.
+                    when strict $ do
+                        -- The wallet and the parameters, from one view.
+                        (utxos, pp) <-
+                            Cage.withView (nsProvider sess) $ \v ->
+                                (,)
+                                    <$> Cage.viewUTxOsAt v (walletAddr wallet)
+                                    <*> pure (Cage.viewProtocolParams v)
+                        let returning =
+                                length
+                                    [ a
+                                    | a <- actionsOf story
+                                    , a `elem` ["run insert", "run terminate", "reclaim"]
+                                    ]
+                            -- The most an output may be asked for, and the least the
+                            -- ledger lets a change or a collateral return be.
+                            minOutput =
+                                let probe c =
+                                        getMinCoinTxOut
+                                            pp
+                                            (mkBasicTxOut (walletAddr wallet) (MaryValue (Coin c) mempty))
+                                    Coin first' = probe 0
+                                    Coin settled = probe first'
+                                in  settled
+                            floorSize =
+                                max (fromMaybe 0 (optAllowance o)) (fromMaybe 0 (optMaxOutlay o))
+                                    + minOutput
+                            coinOf out = let Coin c = out ^. coinTxOutL in c
+                        forM_
+                            ( fundingProblem
+                                returning
+                                floorSize
+                                [(adaOnlyOut out, coinOf out) | (_, out) <- utxos]
+                            )
+                            $ \why -> fail ("cli-controls: " <> T.unpack why)
+                    executeStory
+                        ( Env
+                            o
+                            receipts
+                            evidence
+                            step
+                            (Just (sess, wallet))
+                            strict
+                        )
+                        story
             )
-        )
-        $ \sess ->
-            executeStory
-                (Env o receipts evidence step (Just (sess, wallet)))
-                controlsStory
-    pure receipts
+    case stopped of
+        Right () -> pure (receipts, Nothing)
+        Left (TakeStopped why) -> do
+            BS.writeFile
+                (optWork o </> "stopped.txt")
+                (TE.encodeUtf8 (why <> "\n"))
+            hPutStrLn stderr ("cli-controls: the take stopped: " <> T.unpack why)
+            pure (receipts, Just why)
 
 data Env = Env
     { envOptions :: Options
@@ -405,6 +621,11 @@ data Env = Env
     , envStep :: IORef Int
     , envSession :: Maybe (NodeSession, Wallet)
     -- ^ The one node session every backend action shares
+    , envStrict :: Bool
+    {- ^ A take on an existing registry: it stops on an uncertain outcome
+    and on any requirement of the story that does not hold, before the
+    next action
+    -}
     }
 
 -- | Walk the story in order: every action, inside clauses and checks too.
@@ -428,7 +649,7 @@ type ClauseProgram thm = Program (Clause thm CliI)
 
 perform :: Env -> CliI a -> IO a
 perform env i = case i of
-    Require _ _ -> pure ()
+    Require req rs -> when (envStrict env) (holds env req rs)
     Run c t k ->
         recorded
             env
@@ -436,9 +657,12 @@ perform env i = case i of
             t
             k
             (runCommand env c t k)
-    Book t k -> recorded env "book" t k (book env t k)
-    FoldUnevaluated t k -> recorded env "fold-unevaluated" t k (foldUnevaluated env t k)
-    Observe t k -> recorded env "observe" t k (observe env t k)
+            >>= answered env
+    Book t k -> recorded env "book" t k (book env t k) >>= answered env
+    FoldUnevaluated t k ->
+        recorded env "fold-unevaluated" t k (foldUnevaluated env t k)
+            >>= answered env
+    Observe t k -> recorded env "observe" t k (observe env t k) >>= answered env
     Craft c t k ->
         recorded
             env
@@ -446,6 +670,7 @@ perform env i = case i of
             t
             k
             (craft env c t k)
+            >>= answered env
     Provoke p t k ->
         recorded
             env
@@ -453,6 +678,58 @@ perform env i = case i of
             t
             k
             (provoke env p t k)
+            >>= answered env
+    Reclaim t k partial seen ->
+        recorded env "reclaim" t k (reclaim env t k partial seen)
+            >>= answered env
+    ReadIndexer ix t k inspected ->
+        recorded
+            env
+            ("read-indexer " <> T.pack (indexerName ix))
+            t
+            k
+            (readIndexer env ix inspected)
+            >>= answered env
+
+{- | A take on an existing registry goes on only from an outcome the story can
+judge. A client error, an unknown or unconfirmed submission, a timeout, a lost
+node or a concurrent writer is uncertainty, and the take stops there with its
+receipts kept and nothing further written.
+-}
+answered :: Env -> Receipt -> IO Receipt
+answered env r
+    | envStrict env && not (continues (rcOutcome r)) =
+        throwIO
+            ( TakeStopped
+                ( "step "
+                    <> T.pack (show (rcStep r))
+                    <> " "
+                    <> rcAction r
+                    <> " ended "
+                    <> rcOutcome r
+                    <> maybe "" (": " <>) (rcReason r)
+                )
+            )
+    | otherwise = pure r
+
+{- | A requirement of the story, judged as the verdict will judge it, from the
+receipts admitted the way the verdict admits them. One that does not hold
+stops a take on an existing registry before the next action, so no later
+write rests on a premise or an expected refusal that did not happen.
+-}
+holds :: Env -> Requirement -> [Receipt] -> IO ()
+holds env req rs = do
+    admitted <- mapM (admit (optWork (envOptions env))) rs
+    case check req admitted of
+        [] -> pure ()
+        problems ->
+            throwIO
+                ( TakeStopped
+                    ( T.pack (show req)
+                        <> " does not hold: "
+                        <> T.intercalate "; " (map T.pack problems)
+                    )
+                )
 
 {- | Number the action, run it, and write its receipt. An exception is the
 action's own outcome, @client-error@, never a stop of the story.
@@ -467,7 +744,10 @@ recorded
 recorded env name (Target t) k body = do
     n <- readIORef (envStep env)
     modifyIORef' (envStep env) (+ 1)
-    let blank = emptyReceipt n name (T.pack t) (T.pack k)
+    let blank =
+            (emptyReceipt n name (T.pack t) (T.pack k))
+                { rcAllowance = optAllowance (envOptions env)
+                }
     outcome <- try (body blank)
     r <- case outcome of
         Right r -> pure r
@@ -501,7 +781,17 @@ recorded env name (Target t) k body = do
 -- ---------------------------------------------------------
 
 targetDir :: Env -> Target -> FilePath
-targetDir env (Target t) = optWork (envOptions env) </> "targets" </> t
+targetDir env (Target t) = case optRegistry (envOptions env) of
+    Just existing -> existing
+    Nothing -> optWork (envOptions env) </> "targets" </> t
+
+-- | Whether the run takes one existing registry rather than creating its own.
+attached :: Env -> Bool
+attached = isJust . optRegistry . envOptions
+
+-- | The explicit payload a take writes for its key: a constructor over the key and a number.
+attachedPayload :: String -> Int -> PLC.Data
+attachedPayload key n = PLC.Constr 0 [PLC.B (keyBytes key), PLC.I (toInteger n)]
 
 -- | A key label as the bytes the registry names it by.
 keyBytes :: String -> ByteString
@@ -607,6 +897,16 @@ applicationAddr r =
         (ScriptHashObj (computeScriptHash (applied r)))
         StakeRefNull
 
+{- | The envelope the ordinary insert of @key@ carries in this run: the story's,
+or, in a take on an existing registry, the one whose payload is the explicit
+constructor over the key and the number one.
+-}
+envelopeOfRun :: Env -> Registry -> ByteString -> String -> Envelope
+envelopeOfRun env r controller key
+    | attached env =
+        (envelopeFor r controller key){envPayload = attachedPayload key 1}
+    | otherwise = envelopeFor r controller key
+
 {- | The envelope every insertion of @key@ in this story carries: this
 registry, its active policy, the key, the wallet as controller, and a
 fixed payload. The command and the booking are handed the same one.
@@ -650,6 +950,208 @@ withNode env body = do
 txIdHex :: ConwayTx -> Text
 txIdHex tx = let TxId h = txIdTx tx in hex (hashToBytes (extractHash h))
 
+{- | Retract, as its owner and inside the request's own retract window, the one
+request this take's own insertion left pending, through the production
+builder. The request is the one that insertion's receipt names, and it is
+spent only while the registry is as the readback that saw it pending read it:
+the same root, the same pending requests, that request still pending for this
+key and owned by this wallet. A request that is missing, replaced or another's
+is refused, and no other is substituted. The wait for the window to open is the
+builder's own rule: a retraction outside it is refused by the request script.
+-}
+reclaim
+    :: Env -> Target -> String -> Receipt -> Receipt -> Receipt -> IO Receipt
+reclaim env target key partial seen r = do
+    reg <- openRegistry env target
+    withNode env $ \sess wallet -> do
+        let prov = nsProvider sess
+            cfg = regCfg reg
+            mine = addrKeyHashBytes (walletAddr wallet)
+            -- The registry as one view holds it, and the one request this take
+            -- may spend in it, or the reason it may spend none.
+            verifiedIn v = do
+                att <- attach v (regDeployment reg) (partsOf cfg)
+                (state, root) <- case extractCageDatum (snd (attStateUtxo att)) of
+                    Just (StateDatum st) ->
+                        let OnChainRoot b = stateRoot st in pure (st, b)
+                    _ -> fail "the registry's state output carries no state datum"
+                pending <-
+                    Cage.viewUTxOsAt
+                        v
+                        (requestAddrFromCfg cfg (regToken reg) Testnet)
+                let live =
+                        [ LiveRequest
+                            (renderOutRef i)
+                            (requestKey q)
+                            (extractOwnerBytes o)
+                        | (i, o) <- pending
+                        , Just (RequestDatum q) <- [extractCageDatum o]
+                        ]
+                named <-
+                    either
+                        (fail . ("the retraction is refused: " <>) . T.unpack)
+                        pure
+                        ( reclaimTarget
+                            (keyBytes key)
+                            mine
+                            partial
+                            seen
+                            (hex root)
+                            (map (renderOutRef . fst) pending)
+                            live
+                        )
+                case [ (i, q)
+                     | (i, o) <- pending
+                     , renderOutRef i == named
+                     , Just (RequestDatum q) <- [extractCageDatum o]
+                     ] of
+                    [(i, q)] -> pure (state, i, q)
+                    _ -> fail (T.unpack named <> " does not read as one request")
+        (state, firstIn, q) <- Cage.withView prov verifiedIn
+        let opens = requestSubmittedAt q + stateProcessTime state
+            closes = opens + stateRetractTime state
+        now <- currentPosixMs
+        when (now + 3_000 > closes) $
+            fail
+                "the request's retract window has passed: the request stays pending"
+        -- The window is waited for, and the registry read again afterwards:
+        -- what is spent is what was verified last, not what was verified
+        -- before the wait.
+        when (now < opens + 2_000) $
+            threadDelay (fromIntegral (opens + 2_000 - now) * 1_000)
+        -- Verified again and built in one view, at that view's tip: the
+        -- request spent is the one this view verified.
+        (reqIn, unsigned) <- Cage.withView prov $ \v -> do
+            (_, i, _) <- verifiedIn v
+            when (i /= firstIn) $
+                fail "the request changed while the retract window opened"
+            tx <-
+                retractRequestAtTipImpl
+                    (Cage.cpSlot (Cage.viewPoint v))
+                    cfg
+                    v
+                    (regToken reg)
+                    i
+                    (walletAddr wallet)
+            pure (i, tx)
+        fst
+            <$> submitAndConfirm
+                env
+                sess
+                wallet
+                r{rcPendingRequest = Just (renderOutRef reqIn)}
+                unsigned
+
+{- | One public indexer's read of the Active key's token, made by the readback
+script the operator named, from the policy and asset name the fresh inspect
+receipt names and compared with that receipt's own output, datum and chain
+point. The inspect receipt's printed record is handed to the script as a file
+beside the evidence; the script's record is kept whole with its digest. The
+outcome is the script's own verdict, never a guess: @success@ only when every
+comparison held; @provider-mismatch@ when the indexer answered and something
+differs; @provider-unavailable@ when it could not be asked; anything else is a
+client error. Nothing is written to a chain and the credential file is the
+script's to read, never this process's.
+-}
+readIndexer :: Env -> Indexer -> Receipt -> Receipt -> IO Receipt
+readIndexer env ix inspected r = do
+    let o = envOptions env
+        n = rcStep r
+        evidence :: String -> FilePath
+        evidence name = envEvidence env </> printf "step-%03d-%s" n name
+        relative :: String -> FilePath
+        relative name = "evidence" </> printf "step-%03d-%s" n name
+        -- The maximum lag is always named, so the receipt can bind the record to it;
+        -- the readback script's own default is 600 slots.
+        maxLag = fromMaybe 600 (optMaxLag o)
+    inspectJson <-
+        maybe
+            (fail "the fresh inspect carries no printed record")
+            pure
+            (rcCommand inspected)
+    policy <-
+        maybe
+            (fail "the inspect names no active policy")
+            pure
+            (textAt activePolicyPath inspectJson)
+    name <-
+        maybe
+            (fail "the inspect names no key")
+            pure
+            (textAt ["key"] inspectJson)
+    BL.writeFile
+        (evidence "inspect.json")
+        (encodePretty inspectJson <> "\n")
+    let url = case ix of
+            Koios -> optKoiosUrl o
+            Blockfrost -> optBlockfrostUrl o
+        args =
+            [ optReadback o
+            , "--provider"
+            , indexerName ix
+            , "--policy"
+            , T.unpack policy
+            , "--name"
+            , T.unpack name
+            , "--inspect"
+            , evidence "inspect.json"
+            , "--out"
+            , evidence "readback.json"
+            ]
+                <> maybe [] (\u -> ["--base-url", u]) url
+                <> ["--max-lag", show maxLag]
+                <> [ a
+                   | ix == Blockfrost
+                   , a <- ["--credential-file", optBlockfrostCredential o]
+                   ]
+    (code, out, err) <- readProcessWithExitCode "bash" args ""
+    BS.writeFile (evidence "stdout.txt") (BC.pack out)
+    BS.writeFile (evidence "stderr.txt") (BC.pack err)
+    recordKept <- doesFileExist (evidence "readback.json")
+    kept <-
+        if recordKept
+            then do
+                bytes <- BS.readFile (evidence "readback.json")
+                pure (Just (T.pack (relative "readback.json"), sha256Hex bytes))
+            else pure Nothing
+    let files =
+            map (T.pack . relative) ["inspect.json", "stdout.txt", "stderr.txt"]
+        outcome = case code of
+            ExitSuccess -> "success"
+            ExitFailure 1 -> "provider-mismatch"
+            ExitFailure 3 -> "provider-unavailable"
+            ExitFailure _ -> "client-error"
+    pure
+        r
+            { rcOutcome = outcome
+            , rcMaxLag = Just maxLag
+            , rcReadbackFile = fst <$> kept
+            , rcReadbackSha256 = snd <$> kept
+            , rcEvidence = rcEvidence r <> files <> maybe [] (pure . fst) kept
+            , rcReason =
+                if code == ExitSuccess
+                    then Nothing
+                    else Just (boundedNodeReason 600 (T.pack err))
+            }
+  where
+    activePolicyPath =
+        [ "applicationOutput"
+        , "envelope"
+        , "fields"
+        , "0"
+        , "fields"
+        , "2"
+        , "bytes"
+        ]
+    textAt path v = case foldl step (Just v) path of
+        Just (Aeson.String s) -> Just s
+        _ -> Nothing
+      where
+        step (Just (Aeson.Object m)) k = KeyMap.lookup (Key.fromString k) m
+        step (Just (Aeson.Array a)) k
+            | [(i, "")] <- reads k = listToMaybe (drop i (toList a))
+        step _ _ = Nothing
+
 -- | Keep a transaction's body beside the receipts.
 keepBody :: Env -> Int -> ConwayTx -> IO (Text, Text)
 keepBody env n tx = do
@@ -668,7 +1170,24 @@ submitAndConfirm
     -> Receipt
     -> ConwayTx
     -> IO (Receipt, ConwayTx)
-submitAndConfirm env sess wallet r unsigned = do
+submitAndConfirm env sess wallet r unsigned
+    | Just why <-
+        submissionProblem
+            (envStrict env)
+            (optAllowance (envOptions env))
+            unsigned =
+        -- Nothing is signed or sent: a setup refusal, never the node's verdict.
+        pure (r{rcOutcome = "client-error", rcReason = Just why}, unsigned)
+    | otherwise = submitBounded env sess wallet r unsigned
+
+submitBounded
+    :: Env
+    -> NodeSession
+    -> Wallet
+    -> Receipt
+    -> ConwayTx
+    -> IO (Receipt, ConwayTx)
+submitBounded env sess wallet r unsigned = do
     let signed = addKeyWitness (walletSignKey wallet) unsigned
         txid = txIdHex signed
     (body, bodyDigest) <- keepBody env (rcStep r) signed
@@ -766,6 +1285,7 @@ commandArgs env c target key r = do
         node =
             ["--node-socket", optSocket o, "--network-magic", show (optMagic o)]
         wallet = ["--wallet-skey", optWalletKey o, "--confirm-timeout", "120"]
+        outlay = maybe [] (\n -> ["--max-outlay", show n]) (optMaxOutlay o)
         common = ["--registry", dir, "--blueprint", optBlueprint o]
         keyArg = ["--key", T.unpack (hex (keyBytes key))]
     case c of
@@ -776,7 +1296,7 @@ commandArgs env c target key r = do
         Insert -> do
             reg <- openRegistry env target
             w <- loadWallet (fromIntegral (optMagic o)) (optWalletKey o)
-            let e = envelopeFor reg (addrKeyHashBytes (walletAddr w)) key
+            let e = envelopeOfRun env reg (addrKeyHashBytes (walletAddr w)) key
                 path = envEvidence env </> printf "step-%03d-envelope.json" (rcStep r)
             BL.writeFile path (encodePretty (envelopeToJson e))
             pure
@@ -786,12 +1306,27 @@ commandArgs env c target key r = do
                     <> ["--envelope", path]
                     <> node
                     <> wallet
+                    <> outlay
                 )
         Terminate ->
-            pure (["registry", "terminate"] <> common <> keyArg <> node <> wallet)
+            pure
+                ( ["registry", "terminate"]
+                    <> common
+                    <> keyArg
+                    <> node
+                    <> wallet
+                    <> outlay
+                )
         Update n -> do
             let path = envEvidence env </> printf "step-%03d-payload.json" (rcStep r)
-            BL.writeFile path (encodePretty (payloadOf n))
+            BL.writeFile
+                path
+                ( encodePretty
+                    ( if attached env
+                        then dataToJson (attachedPayload key n)
+                        else payloadOf n
+                    )
+                )
             pure
                 ( ["registry", "update"]
                     <> common
@@ -799,6 +1334,7 @@ commandArgs env c target key r = do
                     <> ["--payload", path]
                     <> node
                     <> wallet
+                    <> outlay
                 )
         Inspect -> pure (["registry", "inspect"] <> common <> keyArg <> node)
 
@@ -1418,7 +1954,11 @@ foldWith env target selection tweak byStranger r = do
                     )
         live <- Cage.withView prov (`Cage.viewUTxOsAt` applicationAddr reg)
         let envelopes =
-                [ envelopeFor reg (addrKeyHashBytes home) (BC.unpack (requestKey q))
+                [ envelopeOfRun
+                    env
+                    reg
+                    (addrKeyHashBytes home)
+                    (BC.unpack (requestKey q))
                 | (_, q) <- chosen
                 ]
         ctx0 <-

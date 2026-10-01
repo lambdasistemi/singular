@@ -50,26 +50,19 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
-import Data.List (isPrefixOf, sortOn)
-import Data.Ord (Down (..))
+import Data.List (isPrefixOf)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((^.))
 
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (inputsTxBodyL)
-import Cardano.Ledger.Api.Tx.Out (TxOut, coinTxOutL)
+import Cardano.Ledger.Api.Tx.Out (TxOut)
 import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Data.Set qualified as Set
 
-import Singular.Application.OpenDatum.Book
-    ( insertApproval
-    , insertDestination
-    , terminateApproval
-    , terminateDestination
-    )
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
@@ -78,22 +71,20 @@ import Singular.Application.OpenDatum.Envelope
     , envelopeFromJson
     , envelopeHash
     , envelopeToJson
-    , envelopeVersion
-    , registryBytes
     )
 import Singular.Application.OpenDatum.Release (withApplication)
-import Singular.Application.OpenDatum.Update
-    ( UpdateArgs (..)
-    , updatePayloadTx
-    )
 import Singular.CLI.Command
     ( EntryArgs (..)
+    , EntryMode (..)
     , Key (..)
     , NodeSettings (..)
     , WriteSettings (..)
     )
 import Singular.CLI.Live
 import Singular.CLI.Node (Capabilities (..))
+import Singular.CLI.Outlay (bookingOutlay, updateOutlay)
+import Singular.CLI.Plan
+import Singular.CLI.Preview (Kind (..), runPreview)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Reconcile
     ( reconcile
@@ -108,7 +99,6 @@ import Singular.CLI.Registry
     , writeLocalState
     )
 import Singular.CLI.Session
-import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
     ( AssetName (..)
     , ConwayEra
@@ -119,16 +109,12 @@ import Singular.Registry.Node (Wallet (..))
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.TxBuilder.Edges
-    ( BookingApproval (..)
-    , adaOnlyOut
-    , bookEdgeTx
-    , edgeDeposit
+    ( bookEdgeMeasured
     , registryContextFor
     )
 import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
     , requestAddrFromCfg
-    , scriptHashBytes
     , walkEdge
     )
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
@@ -211,46 +197,22 @@ savedOf = liveSaved . atLive
 tokenName :: Saved -> ByteString
 tokenName s = let TokenId (AssetName n) = savedToken s in SBS.fromShort n
 
--- | The caller must be the envelope's controller.
-requireController :: Attached -> Control -> IO ()
-requireController at c =
-    unless (ctlController c == callerKey at) $
-        failWith
-            ClientRefusal
-            ( "the envelope's controller is 0x"
-                <> T.unpack (hexT (ctlController c))
-                <> " but this command signs as 0x"
-                <> T.unpack (hexT (callerKey at))
-            )
-
--- | The application's published reference output, required by every write.
-appReference :: Attached -> IO TxIn
-appReference at =
-    maybe
-        ( failWith
-            Partial
-            "the deployment records no published application reference"
-        )
-        (pure . fst)
-        (applicationReference (atLive at))
-
 {- | Book one edge through the application, then read the request back
 live at the request address before journalling it observed.
 
-The booking is built from one view: the approval is decided there, from
-the registry's state and outputs as that view holds them, and the
-payer's wallet and the parameters are that view's.
+The booking is built from one view: what it books is decided there, from
+the registry's state and outputs as that view holds them; its units are
+measured, its fee and collateral balanced and its outlay judged against the
+approved allowance under that view's parameters, before anything is signed.
 -}
 book
     :: Attached
+    -> EntryArgs
     -> ByteString
-    -> Edge
-    -> (ByteString, ByteString)
-    -> Integer
-    -> (Cage.View IO -> Live -> IO (BookingApproval, r))
-    -- ^ The approval, decided from the booking's own view
+    -> (Cage.View IO -> Live -> IO (Booked, r))
+    -- ^ What is booked, decided from the booking's own view
     -> IO (ConwayTx, r)
-book at key edge dest deposit approve = do
+book at a key plan = do
     let s = savedOf at
         cfg = savedCfg s
         wc = atWrite at
@@ -261,18 +223,23 @@ book at key edge dest deposit approve = do
             (const (Expectation (Just key) "request" Nothing Nothing Nothing))
             ( \v -> do
                 live <- attachLive v s
-                (approval, decided) <- approve v live
+                (b, decided) <- plan v live
                 tx <-
-                    bookEdgeTx
+                    bookEdgeMeasured
                         cfg
                         v
                         (walletAddr (wcWallet wc))
                         (savedToken s)
                         key
-                        edge
-                        dest
-                        deposit
-                        (Just approval)
+                        (bookedEdge b)
+                        (bookedDestination b)
+                        (bookedDeposit b)
+                        (bookedApproval b)
+                        (liveRefs live)
+                        (entryFund a)
+                refuseOver
+                    (entryMaxOutlay a)
+                    (bookingOutlay (Cage.viewProtocolParams v) (liveRefs live) tx)
                 pure (tx, decided)
             )
     let request = TxIn (txIdTx booking) (TxIx 0)
@@ -426,232 +393,162 @@ commitLocal at tx root =
             , localLastSlot = Nothing
             }
 
-readJson :: FilePath -> IO Aeson.Value
-readJson path =
-    Aeson.eitherDecodeFileStrict' path
-        >>= either (failWith ClientRefusal . ((path <> ": ") <>)) pure
-
 -- ---------------------------------------------------------
 -- insert
 -- ---------------------------------------------------------
 
 runInsert :: EntryArgs -> IO Value
-runInsert a = do
-    let Key key = entryKey a
-    path <-
-        maybe
-            (failWith ClientRefusal "insert needs --envelope")
-            pure
-            (entryDocument a)
-    envelope <-
-        readJson path
-            >>= either (failWith ClientRefusal) pure . envelopeFromJson
-    attached (entryRegistry a) (entryBlueprint a) (entryWrite a) "insert" $ \at -> do
-        let s = savedOf at
-            cfg = savedCfg s
-            c = envControl envelope
-            identity = scriptHashBytes (cfgScriptHash cfg) <> tokenName s
-            refuseIf bad why = when bad (failWith ClientRefusal why)
-        refuseIf
-            (ctlVersion c /= envelopeVersion)
-            "the envelope's version is not 1"
-        refuseIf
-            (registryBytes (ctlRegistry c) /= identity)
-            "the envelope names another registry's state asset"
-        refuseIf
-            (ctlActivePolicy c /= SBS.fromShort (cfgActivePolicy cfg))
-            "the envelope names another active policy"
-        refuseIf (ctlKey c /= key) "the envelope names another key than --key"
-        refuseIf
-            (ctlDeposit c <= 0)
-            "the envelope's protected deposit is not positive"
-        requireController at c
-        appRef <- appReference at
-        let dest = insertDestination Testnet (applied s) envelope
-            approve _ live =
+runInsert a = case entryMode a of
+    Preview node addr -> runPreview KInsert a node addr
+    Submit ws -> do
+        let Key key = entryKey a
+        path <-
+            maybe
+                (failWith ClientRefusal "insert needs --envelope")
                 pure
-                    ( (insertApproval Testnet (applied s) (fst (liveState live)) envelope)
-                        { baScriptReference = Just appRef
-                        }
-                    , ()
-                    )
-        (booking, ()) <-
-            book at key edgeInsertActive dest (ctlDeposit c) approve
-        (fold, root) <-
-            foldAndCommit
-                at
-                (TxIn (txIdTx booking) (TxIx 0))
-                key
-                edgeInsertActive
-                ("active:" <> hexT (envelopeHash envelope))
-                [envelope]
-                []
-        outs <- reading at (`liveOutputs` s)
-        ((liveIn, _), seen) <-
-            either (failWith Partial) pure (liveOutputFor s key outs)
-        unless (seen == envelope) $
-            failWith Partial "the delivered output carries another envelope"
-        commitLocal at fold root
-        harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED" Nothing
-        journalObserved
-            (atWrite at)
-            "fold"
-            fold
-            ( "key live at "
-                <> txInText liveIn
-                <> " under its envelope; root 0x"
-                <> hexT root
-            )
-        pure $
-            receipt
-                "insert"
-                Success
-                [ ("key", toJSON (hexT key))
-                , ("booking", toJSON (txIdHex booking))
-                , ("fold", toJSON (txIdHex fold))
-                , ("liveOutput", toJSON (txInText liveIn))
-                , ("envelope", envelopeToJson seen)
-                , ("root", toJSON (hexT root))
-                ]
+                (entryDocument a)
+        envelope <-
+            readJson path
+                >>= either (failWith ClientRefusal) pure . envelopeFromJson
+        attached (entryRegistry a) (entryBlueprint a) ws "insert" $ \at -> do
+            let s = savedOf at
+            -- The envelope's checks, the controller and the approval are
+            -- decided in the booking's own view, from the state it holds.
+            (booking, ()) <-
+                book at a key $ \_ live -> do
+                    b <- planInsert live (callerKey at) key envelope
+                    pure (b, ())
+            (fold, root) <-
+                foldAndCommit
+                    at
+                    (TxIn (txIdTx booking) (TxIx 0))
+                    key
+                    edgeInsertActive
+                    ("active:" <> hexT (envelopeHash envelope))
+                    [envelope]
+                    []
+            outs <- reading at (`liveOutputs` s)
+            ((liveIn, _), seen) <-
+                either (failWith Partial) pure (liveOutputFor s key outs)
+            unless (seen == envelope) $
+                failWith Partial "the delivered output carries another envelope"
+            commitLocal at fold root
+            harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED" Nothing
+            journalObserved
+                (atWrite at)
+                "fold"
+                fold
+                ( "key live at "
+                    <> txInText liveIn
+                    <> " under its envelope; root 0x"
+                    <> hexT root
+                )
+            pure $
+                receipt
+                    "insert"
+                    Success
+                    [ ("key", toJSON (hexT key))
+                    , ("booking", toJSON (txIdHex booking))
+                    , ("fold", toJSON (txIdHex fold))
+                    , ("liveOutput", toJSON (txInText liveIn))
+                    , ("envelope", envelopeToJson seen)
+                    , ("root", toJSON (hexT root))
+                    ]
 
 -- ---------------------------------------------------------
 -- update
 -- ---------------------------------------------------------
 
 runUpdate :: EntryArgs -> IO Value
-runUpdate a = do
-    let Key key = entryKey a
-    path <-
-        maybe
-            (failWith ClientRefusal "update needs --payload")
-            pure
-            (entryDocument a)
-    payload <-
-        readJson path >>= either (failWith ClientRefusal) pure . dataFromJson
-    attached (entryRegistry a) (entryBlueprint a) (entryWrite a) "update" $ \at -> do
-        let s = savedOf at
-            wc = atWrite at
-            addr = walletAddr (wcWallet wc)
-        appRef <- appReference at
-        let refOut = [u | u@(i, _) <- liveRefs (atLive at), i == appRef]
-        rootBefore <- mirrorRoot s (atMirror at)
-        -- The live output, its controller, the fee input, the parameters
-        -- and the script evaluation all come from the update's one view.
-        (signed, envelope) <-
-            submitBuilt
+runUpdate a = case entryMode a of
+    Preview node addr -> runPreview KUpdate a node addr
+    Submit ws -> do
+        let Key key = entryKey a
+        path <-
+            maybe
+                (failWith ClientRefusal "update needs --payload")
+                pure
+                (entryDocument a)
+        payload <-
+            readJson path >>= either (failWith ClientRefusal) pure . dataFromJson
+        attached (entryRegistry a) (entryBlueprint a) ws "update" $ \at -> do
+            let s = savedOf at
+                wc = atWrite at
+                addr = walletAddr (wcWallet wc)
+            rootBefore <- mirrorRoot s (atMirror at)
+            -- The live output, its controller, the funding output, the
+            -- parameters, the script evaluation and the outlay judged against
+            -- the allowance all come from the update's one view.
+            (signed, envelope) <-
+                submitBuilt
+                    wc
+                    "update"
+                    ( \envelope ->
+                        Expectation
+                            (Just key)
+                            ("payload:" <> hexT (envelopeHash envelope{envPayload = payload}))
+                            Nothing
+                            Nothing
+                            Nothing
+                    )
+                    ( \v -> do
+                        live <- attachLive v s
+                        outs <- liveOutputs v s
+                        (holding, envelope) <- planUpdate live (callerKey at) key outs
+                        unsigned <-
+                            buildUpdate v live addr (entryFund a) holding payload
+                        refuseOver (entryMaxOutlay a) (updateOutlay unsigned)
+                        pure (unsigned, envelope)
+                    )
+            after <- reading at (`liveOutputs` s)
+            ((liveIn, _), seen) <-
+                either (failWith Partial) pure (liveOutputFor s key after)
+            unless (seen == envelope{envPayload = payload}) $
+                failWith
+                    Partial
+                    "the updated output carries another envelope than the one sent"
+            state <- reading at (`attachLive` s)
+            rootAfter <- either (failWith Partial) pure (observedRoot state)
+            when (rootAfter /= rootBefore) $
+                failWith StaleState "the registry root moved during an update"
+            journalObserved
                 wc
                 "update"
-                ( \envelope ->
-                    Expectation
-                        (Just key)
-                        ("payload:" <> hexT (envelopeHash envelope{envPayload = payload}))
-                        Nothing
-                        Nothing
-                        Nothing
+                signed
+                ( "key live at "
+                    <> txInText liveIn
+                    <> " with the new payload; root unchanged"
                 )
-                ( \v -> do
-                    outs <- liveOutputs v s
-                    (holding, envelope) <-
-                        either (failWith ClientRefusal) pure (liveOutputFor s key outs)
-                    requireController at (envControl envelope)
-                    wallet <- Cage.viewUTxOsAt v addr
-                    fee <- case sortOn
-                        (Down . (^. coinTxOutL) . snd)
-                        (filter (adaOnlyOut . snd) wallet) of
-                        (u : _) -> pure u
-                        [] ->
-                            failWith
-                                ClientRefusal
-                                "the wallet holds no ada-only output to pay the fee"
-                    unsigned <-
-                        updatePayloadTx
-                            UpdateArgs
-                                { uaView = v
-                                , uaApplied = applied s
-                                , uaHolding = holding
-                                , uaPayload = payload
-                                , uaFee = fee
-                                , uaChange = addr
-                                , uaReference = case refOut of
-                                    (u : _) -> Just u
-                                    [] -> Nothing
-                                }
-                            >>= either (failWith ClientRefusal) pure
-                    pure (unsigned, envelope)
-                )
-        after <- reading at (`liveOutputs` s)
-        ((liveIn, _), seen) <-
-            either (failWith Partial) pure (liveOutputFor s key after)
-        unless (seen == envelope{envPayload = payload}) $
-            failWith
-                Partial
-                "the updated output carries another envelope than the one sent"
-        state <- reading at (`attachLive` s)
-        rootAfter <- either (failWith Partial) pure (observedRoot state)
-        when (rootAfter /= rootBefore) $
-            failWith StaleState "the registry root moved during an update"
-        journalObserved
-            wc
-            "update"
-            signed
-            ( "key live at "
-                <> txInText liveIn
-                <> " with the new payload; root unchanged"
-            )
-        pure $
-            receipt
-                "update"
-                Success
-                [ ("key", toJSON (hexT key))
-                , ("update", toJSON (txIdHex signed))
-                , ("liveOutput", toJSON (txInText liveIn))
-                , ("payload", dataToJson (envPayload seen))
-                , ("root", toJSON (hexT rootAfter))
-                ]
+            pure $
+                receipt
+                    "update"
+                    Success
+                    [ ("key", toJSON (hexT key))
+                    , ("update", toJSON (txIdHex signed))
+                    , ("liveOutput", toJSON (txInText liveIn))
+                    , ("payload", dataToJson (envPayload seen))
+                    , ("root", toJSON (hexT rootAfter))
+                    ]
 
 -- ---------------------------------------------------------
 -- terminate
 -- ---------------------------------------------------------
 
 runTerminate :: EntryArgs -> IO Value
-runTerminate a = do
-    let Key key = entryKey a
-    attached
-        (entryRegistry a)
-        (entryBlueprint a)
-        (entryWrite a)
-        "terminate"
-        $ \at -> do
+runTerminate a = case entryMode a of
+    Preview node addr -> runPreview KTerminate a node addr
+    Submit ws -> do
+        let Key key = entryKey a
+        attached (entryRegistry a) (entryBlueprint a) ws "terminate" $ \at -> do
             let s = savedOf at
-            appRef <- appReference at
             -- The live output the booking releases is resolved in the
             -- booking's own view, with the state the approval binds.
-            let approve v live = do
+            (booking, (holding@(liveIn, _), envelope)) <-
+                book at a key $ \v live -> do
                     outs <- liveOutputs v s
-                    (holding@(liveIn, _), envelope) <-
-                        either (failWith ClientRefusal) pure (liveOutputFor s key outs)
-                    let c = envControl envelope
-                    requireController at c
-                    pure
-                        ( ( terminateApproval
-                                (applied s)
-                                (fst (liveState live))
-                                liveIn
-                                key
-                                (ctlController c)
-                          )
-                            { baScriptReference = Just appRef
-                            }
-                        , (holding, c)
-                        )
-            (booking, (holding@(liveIn, _), c)) <-
-                book
-                    at
-                    key
-                    edgeUpdateTerminal
-                    terminateDestination
-                    edgeDeposit
-                    approve
+                    (b, holding, envelope) <- planTerminate live (callerKey at) key outs
+                    pure (b, (holding, envelope))
+            let c = envControl envelope
             (fold, root) <-
                 foldAndCommit
                     at

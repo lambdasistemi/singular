@@ -31,6 +31,11 @@ module Conformance.Cli.Controls
     , craftedPhrase
     , Target (..)
     , Requirement (..)
+    , Indexer (..)
+    , indexerName
+    , IndexerRead (..)
+    , Stated (..)
+    , Account (..)
     , CliI (..)
     , Story
 
@@ -52,6 +57,9 @@ module Conformance.Cli.Controls
     , boundaryStory
     , controlsStory
     , processStory
+    , permanentStory
+    , forbiddenInPermanent
+    , actionsOf
 
       -- * Receipts
     , Receipt (..)
@@ -66,11 +74,13 @@ module Conformance.Cli.Controls
 
       -- * Reading a node's rejection
     , rejectionEvidence
+    , decodeIndexerRead
     , attribution
 
       -- * Verdicts and rendering, from receipts
     , ClauseStatus (..)
     , ClauseResult (..)
+    , check
     , judge
     , held
     , outline
@@ -99,7 +109,7 @@ import Conformance.Story.Specification
     , theoremBinding
     )
 import Conformance.Story.Specification qualified as Specification
-import Control.Monad (forM_, unless, void, when)
+import Control.Monad (forM_, guard, unless, void, when)
 import Control.Monad.Operational
     ( Program
     , ProgramViewT (Return, (:>>=))
@@ -118,14 +128,21 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Bifunctor qualified as Bifunctor
-import Data.Char (ord)
+import Data.ByteString.Lazy qualified as BL
+import Data.Char (isDigit, ord)
+import Data.Either (fromRight, lefts, rights)
+import Data.Int (Int64)
 import Data.List (intercalate, isInfixOf, nub)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isNothing, listToMaybe)
+import Data.Scientific qualified as Sci
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
 import Data.Vector qualified as V
+import Data.Word (Word64)
 import Text.Printf (printf)
+import Text.Read (readMaybe)
 
 import Conformance.Refusal
     ( RefusalMismatch (..)
@@ -427,6 +444,26 @@ data Requirement
       the journal keeps unresolved
       -}
       BoundedAfterNodeLoss
+    | {- | The retraction of a pending request: the insertion's receipt names
+      it, the readbacks before and after agree that exactly that request
+      left, the retained body spends exactly that request, the registry's
+      root did not move, and the wallet gained the bond it released less the
+      fee the retraction paid
+      -}
+      Reclaimed
+    | {- | A node-judged transaction of a take on an existing registry: the
+      operator set an explicit collateral allowance, and the body states a
+      total collateral within it and a return of the rest of its funding
+      output
+      -}
+      ExposureBounded
+    | {- | The fresh inspect of an Active key and one public indexer's read
+      of that key's token: the indexer found exactly one output holding
+      exactly one of the token, under the policy and asset name the inspect
+      names, and its output reference, datum bytes, datum hash and chain
+      position are the node's, within the lag
+      -}
+      IndexerAgrees
     deriving stock (Eq, Show, Enum, Bounded)
 
 {- | One step of the story. Every action but 'Require' leaves exactly one
@@ -451,6 +488,20 @@ data CliI res where
     Craft :: Crafted -> Target -> String -> CliI Receipt
     -- | Run an ordinary command under a condition of its process
     Provoke :: Provocation -> Target -> String -> CliI Receipt
+    {- | Retract the request a refused insertion left pending, as its owner, in
+    the request's own retract window, and read the registry back: the bond
+    returns, the fee is paid. It carries the command receipt that names the
+    request and the readback that saw it pending: the request is that one, in
+    the state that readback saw, or nothing is retracted
+    -}
+    Reclaim :: Target -> String -> Receipt -> Receipt -> CliI Receipt
+    {- | Ask one public indexer, read-only, for the Active key's token, from
+    the policy and asset name the fresh inspect names, and compare what it
+    finds with that inspect. It writes nothing; an indexer that is missing,
+    unreachable, stale or in disagreement ends the take before its next
+    write
+    -}
+    ReadIndexer :: Indexer -> Target -> String -> Receipt -> CliI Receipt
     Require :: Requirement -> [Receipt] -> CliI ()
 
 type Story = Specification.Story CliI
@@ -662,6 +713,19 @@ readOnly =
         "INV299-READONLY"
         "e55cb1ea53e72fb95ffb8553f92dec19d78faebcb84052d5a37b225e8715aabc"
 
+-- | The clause an indexer's read is told under.
+indexerTitle :: Indexer -> String
+indexerTitle ix =
+    indexerName ix
+        <> " finds exactly one output holding exactly one of the key's token, and its output, datum bytes, datum hash and chain position are the node's"
+
+-- | An indexer's read of the Active key counts only when it agrees with the node.
+indexerReads :: Theorem ClientObligation
+indexerReads =
+    obligationRow
+        "INV300-INDEXER"
+        "cc8d5274fb2e08a2f860e439ab4ec48e1bfca1ef84774ddfada40e4d1fdd9c12"
+
 -- | The client obligations the controls bind.
 obligationBindings :: [Binding]
 obligationBindings =
@@ -670,6 +734,7 @@ obligationBindings =
     , theoremBinding authenticated
     , theoremBinding identityBinds
     , theoremBinding readOnly
+    , theoremBinding indexerReads
     ]
 
 {- | Whether the CLI's specification carries the bound row exactly once,
@@ -1048,6 +1113,19 @@ unchangedOf thm req title target key before =
                 pure [before, after]
             )
 
+{- | The clause that bounds what a refused transaction put at risk, told after
+the refusal it follows: the operator's explicit allowance is on the receipt,
+the body states its total collateral within it and returns the rest.
+-}
+exposureBounded
+    :: Theorem thm -> [Receipt] -> TheoremStory thm CliI ()
+exposureBounded thm refused =
+    void $
+        clause
+            "the refused transaction states its collateral within the operator's explicit allowance and returns the rest of its funding output"
+            (requirement thm ExposureBounded)
+            (pure refused)
+
 -- | One refusal clause for a crafted transaction, by its phrase.
 refusedCraft
     :: Theorem thm -> Crafted -> Target -> String -> TheoremStory thm CliI ()
@@ -1323,6 +1401,247 @@ controlsStory =
         >> settlementStory
         >> processStory
 
+{- | One take on a registry that already exists, through a node someone else
+runs: the four refusals the demonstration shows, each beside its accepting
+control, on one fresh key.
+
+The key is inserted by the ordinary command, which is also the accepting
+control of the two insertion refusals; a second insertion of the Active key is
+booked and its fold refused by the registry, then the request it left pending
+is retracted by its owner; the update another wallet's signature stands for is
+refused, beside the controller's own ordinary update; a release outside any
+fold is refused, beside the ordinary terminate that releases the same holding
+inside one; an insertion of the now Terminal key is booked, refused and its
+request retracted likewise.
+
+No registry is created and no node is started, stopped or reset: the story
+contains none of those actions, which 'forbiddenInPermanent' names.
+-}
+permanentStory :: String -> Story ()
+permanentStory key = do
+    let target = Target "permanent"
+        again =
+            "the ordinary insert of the Active key is booked, stops partial and names its pending request"
+        folded =
+            "that request's fold, submitted without local evaluation, is refused by the registry's state validator"
+        unchanged =
+            "the registry's root, the key's holding, the pending request and the wallet are unchanged"
+        absent = "the ordinary insert of the absent key is accepted"
+    inserted <- theorem duplicateRefused $ do
+        opened <-
+            clause
+                "the key reached Active through the ordinary insert, and inspect reads it Active"
+                ( bindCheck duplicateRefused $ \(ins, seen) ->
+                    action (Require ReachedActive [ins, seen])
+                )
+                ( do
+                    ins <- action (Run Insert target key)
+                    seen <- action (Run Inspect target key)
+                    pure (ins, seen)
+                )
+        let (ins, _) = opened
+        _ <-
+            clause
+                absent
+                (requirement duplicateRefused CommandSucceeded)
+                (pure [ins])
+        refusedInsertion duplicateRefused target key again folded unchanged
+        pure ins
+    finalInspect <- theorem updateRequiresController $ do
+        _ <-
+            premiseClause
+                updateRequiresController
+                "the key still reads Active, from a fresh inspect"
+                ReachedActive
+                (pure <$> action (Run Inspect target key))
+        before <- readbackOf updateRequiresController target key
+        refusedUpdate <-
+            clause
+                "the same update, requiring another wallet's signature instead of the controller's, is refused by the application"
+                (requirement updateRequiresController RefusedByApplication)
+                (pure <$> action (Craft UpdateByStranger target key))
+        exposureBounded updateRequiresController refusedUpdate
+        unchangedOf
+            updateRequiresController
+            HoldingUnchanged
+            "the registry's root, the key's holding and the wallet are unchanged by the refusal"
+            target
+            key
+            before
+        (_, _, final) <-
+            clause
+                "the controller's own update, by the ordinary command, is accepted"
+                ( bindCheck updateRequiresController $ \(b, u, a) ->
+                    action (Require PayloadReplaced [b, u, a])
+                )
+                ( do
+                    b <- action (Run Inspect target key)
+                    u <- action (Run (Update 2) target key)
+                    a <- action (Run Inspect target key)
+                    pure (b, u, a)
+                )
+        pure final
+    theorem indexerReads $ do
+        _ <-
+            premiseClause
+                indexerReads
+                "the key still reads Active, from the fresh inspect that follows its final update"
+                ReachedActive
+                (pure [finalInspect])
+        forM_ [minBound .. maxBound :: Indexer] $ \ix ->
+            clause
+                (indexerTitle ix)
+                (requirement indexerReads IndexerAgrees)
+                ( do
+                    r <- action (ReadIndexer ix target key finalInspect)
+                    pure [finalInspect, r]
+                )
+    terminated <- theorem onlyFoldReleases $ do
+        _ <-
+            premiseClause
+                onlyFoldReleases
+                "the key still reads Active, from a fresh inspect"
+                ReachedActive
+                (pure <$> action (Run Inspect target key))
+        before <- readbackOf onlyFoldReleases target key
+        refusedRelease <-
+            clause
+                "a release of the live holding outside any fold is refused by the application"
+                (requirement onlyFoldReleases RefusedByApplication)
+                (pure <$> action (Craft EarlyWithdrawal target key))
+        exposureBounded onlyFoldReleases refusedRelease
+        unchangedOf
+            onlyFoldReleases
+            HoldingUnchanged
+            "the registry's root, the key's holding and the wallet are unchanged by the refusal"
+            target
+            key
+            before
+        clause
+            "the same holding, released inside the registry's fold by the ordinary terminate, is accepted"
+            (requirement onlyFoldReleases CommandSucceeded)
+            (pure <$> action (Run Terminate target key))
+    theorem resurrectionRefused $ do
+        _ <-
+            premiseClause
+                resurrectionRefused
+                "the key reached Terminal through the ordinary commands, and inspect reads it Terminal"
+                ReachedTerminal
+                ( do
+                    seen <- action (Run Inspect target key)
+                    pure (terminated <> [seen])
+                )
+        _ <-
+            clause
+                absent
+                (requirement resurrectionRefused CommandSucceeded)
+                (pure [inserted])
+        refusedInsertion
+            resurrectionRefused
+            target
+            key
+            "the ordinary insert of the Terminal key is booked, stops partial and names its pending request"
+            folded
+            unchanged
+
+{- | A second insertion of a key the registry holds, refused at its fold, and
+the request it left pending retracted by its owner.
+-}
+refusedInsertion
+    :: Theorem thm
+    -> Target
+    -> String
+    -> String
+    -> String
+    -> String
+    -> TheoremStory thm CliI ()
+refusedInsertion thm target key again folded unchanged = do
+    (cli0, before) <-
+        clause
+            again
+            ( bindCheck thm $ \(cli, seen) ->
+                action (Require PartialPending [cli, seen])
+            )
+            ( do
+                cli <- action (Run Insert target key)
+                seen <- action (Observe target key)
+                pure (cli, seen)
+            )
+    refusedFold <-
+        clause
+            folded
+            (requirement thm RefusedByState)
+            (pure <$> action (FoldUnevaluated target key))
+    exposureBounded thm refusedFold
+    both <-
+        clause
+            unchanged
+            (requirement thm Unchanged)
+            ( do
+                after <- action (Observe target key)
+                pure [before, after]
+            )
+    let pending = case both of
+            [_, after] -> after
+            _ -> error "refusedInsertion: two readbacks"
+        partial = cli0
+    void $
+        clause
+            "the owner's retraction of that request, inside its retract window, is accepted and returns its bond"
+            ( bindCheck thm $ \(p, b, r, a) ->
+                action (Require Reclaimed [p, b, r, a])
+            )
+            ( do
+                r <- action (Reclaim target key partial pending)
+                a <- action (Observe target key)
+                pure (partial, pending, r, a)
+            )
+
+-- | The actions a story runs, by the name their receipts carry, in order.
+actionsOf :: Story () -> [Text]
+actionsOf = go
+  where
+    go :: Story a -> [Text]
+    go program = case view program of
+        Return _ -> []
+        Action i :>>= next -> names i <> go (next (blank i))
+        Theorem _ body :>>= next -> inClauses (clauses body) next
+    inClauses
+        :: Program (Clause thm CliI) b -> (b -> Story a) -> [Text]
+    inClauses p k = case view p of
+        Return b -> go (k b)
+        Clause _ leanCheck body :>>= next ->
+            let obs = resultOf body
+            in  go body <> go (checkAction leanCheck obs) <> inClauses (next obs) k
+    names i = maybe [] (\(a, _, _) -> [a]) (identify i)
+    resultOf :: Story a -> a
+    resultOf program = case view program of
+        Return a -> a
+        Action i :>>= next -> resultOf (next (blank i))
+        Theorem _ _ :>>= _ -> error "actionsOf: a statement nested inside a clause"
+    blank :: CliI a -> a
+    blank i = case i of
+        Require _ _ -> ()
+        Run{} -> emptyReceipt 0 "" "" ""
+        Book{} -> emptyReceipt 0 "" "" ""
+        FoldUnevaluated{} -> emptyReceipt 0 "" "" ""
+        Observe{} -> emptyReceipt 0 "" "" ""
+        Craft{} -> emptyReceipt 0 "" "" ""
+        Provoke{} -> emptyReceipt 0 "" "" ""
+        Reclaim{} -> emptyReceipt 0 "" "" ""
+        ReadIndexer{} -> emptyReceipt 0 "" "" ""
+
+{- | What a take on an existing registry never does: create one, or provoke a
+command by stopping a process or a node. Quantified over every command and
+every provocation this module defines, so a provocation added later is
+forbidden until a ruling admits it.
+-}
+forbiddenInPermanent :: [Text]
+forbiddenInPermanent =
+    ["run create"]
+        <> [ "provoke " <> T.pack (provocationName p) | p <- [minBound .. maxBound]
+           ]
+
 {- | The client's obligations under conditions of its process, each told
 under the row of the CLI's specification it bears on: a changed selector,
 missing proof material and an absent node; a terminate and a create killed
@@ -1441,6 +1760,322 @@ processStory = do
 -- ---------------------------------------------------------
 
 -- | A readback of one registry, for one key.
+
+{- | What a submitted transaction states about its fee and collateral, read
+from the body the receipt retained and never from the receipt's own words:
+only admission sets it.
+-}
+data Account = Account
+    { acFee :: Integer
+    , acCollateralInputs :: [Text]
+    , acCollateralTotal :: Maybe Integer
+    -- ^ The total collateral the body declares, if it declares one
+    , acCollateralReturn :: Maybe Integer
+    -- ^ The lovelace of the collateral return the body declares, if any
+    , acSpends :: [Text]
+    -- ^ The outputs the body spends, as output references
+    }
+    deriving stock (Eq, Show)
+
+-- | A public indexer the take asks about its Active key.
+data Indexer = Koios | Blockfrost
+    deriving stock (Eq, Show, Enum, Bounded)
+
+indexerName :: Indexer -> String
+indexerName ix = case ix of
+    Koios -> "koios"
+    Blockfrost -> "blockfrost"
+
+{- | What an indexer's readback record keeps, as read from the record's retained
+bytes by admission and never from the receipt's own words: the policy and asset
+name it was asked about, the provider's own answers counted into the outputs
+that hold the token, the output, datum bytes and tip it reports, what the node
+read, the maximum lag it was run under, and the summary it states. The verdict
+recomputes every comparison from these facts; the stated summary is only checked
+against them.
+-}
+data IndexerRead = IndexerRead
+    { irProvider :: Text
+    , irPolicy :: Text
+    , irAssetName :: Text
+    , irHolders :: Maybe [(Text, Integer)]
+    {- ^ Every output the provider's answer says holds the token, with how many
+    of it; nothing when the record keeps no such answer
+    -}
+    , irHolderAddresses :: Maybe Int
+    -- ^ How many addresses the provider's answer says hold the token (Blockfrost)
+    , irAnswerDatum :: Maybe Text
+    -- ^ The inline datum bytes the provider's answer carries for its holder
+    , irAnswerTip :: Maybe Integer
+    -- ^ The tip slot the provider's own answer reports
+    , irIndexerOutput :: Text
+    , irIndexerDatumCbor :: Text
+    , irIndexerDatumHashRecorded :: Text
+    -- ^ The hash the record says it recomputed from the indexer's datum
+    , irIndexerDatumHashComputed :: Maybe Text
+    {- ^ The blake2b-256 of the indexer's datum bytes, computed by admission from
+    the record's bytes; nothing until admitted, or when the bytes are not hex
+    -}
+    , irIndexerTipSlot :: Maybe Integer
+    , irMaxLagSlots :: Maybe Integer
+    , irNodeOutput :: Text
+    , irNodeDatumCbor :: Text
+    , irNodeDatumHash :: Text
+    , irNodeChainPoint :: Text
+    , irStated :: Stated
+    , irMalformed :: [Text]
+    {- ^ Every whole-number fact the record keeps that is not an exact whole number
+    of its domain, named with its raw value. A malformed quantity or index of an
+    output holding the token withholds the provider's whole answer.
+    -}
+    }
+    deriving stock (Eq, Show)
+
+{- | The domain a whole-number fact of a readback record lies in: a quantity or
+a slot (0 to 2^64-1), an output index (0 to 65535), or a lag, negative when the
+indexer is ahead of the node (within 64 signed bits).
+-}
+data Whole = Count | OutputIndex | Lag
+    deriving stock (Eq, Show)
+
+wholeBounds :: Whole -> (Integer, Integer)
+wholeBounds d = case d of
+    Count -> (0, toInteger (maxBound :: Word64))
+    OutputIndex -> (0, 65535)
+    Lag -> (toInteger (minBound :: Int64), toInteger (maxBound :: Int64))
+
+{- | A whole number of its domain, exactly, from a JSON number or the decimal
+digits of one: a fraction is never rounded into one, and a number outside the
+domain is not one.
+-}
+wholeIn :: Whole -> Aeson.Value -> Maybe Integer
+wholeIn d raw = do
+    n <- case raw of
+        Aeson.Number s -> case d of
+            Lag -> toInteger <$> (Sci.toBoundedInteger s :: Maybe Int64)
+            _ -> toInteger <$> (Sci.toBoundedInteger s :: Maybe Word64)
+        Aeson.String t -> case T.uncons t of
+            Just ('-', ds) | d == Lag -> negate <$> digits ds
+            _ -> digits t
+        _ -> Nothing
+    n <$ guard (lo <= n && n <= hi)
+  where
+    (lo, hi) = wholeBounds d
+    digits ds = do
+        guard (not (T.null ds) && T.length ds <= 20 && T.all isDigit ds)
+        readMaybe (T.unpack ds)
+
+-- | A fact outside its domain, named with its raw value and the domain it misses.
+notWhole :: Text -> Whole -> Aeson.Value -> Text
+notWhole what d raw =
+    what
+        <> " is "
+        <> TE.decodeUtf8 (BL.toStrict (Aeson.encode raw))
+        <> ", not "
+        <> case d of
+            OutputIndex -> "an exact output index from 0 to 65535"
+            _ ->
+                "an exact whole number from "
+                    <> T.pack (show lo)
+                    <> " to "
+                    <> T.pack (show hi)
+  where
+    (lo, hi) = wholeBounds d
+
+-- | The summary a readback record states about itself.
+data Stated = Stated
+    { stHolds :: Bool
+    , stSameOutput :: Bool
+    , stSameDatumBytes :: Bool
+    , stSameDatumHash :: Bool
+    , stWithinLag :: Bool
+    , stLagSlots :: Maybe Integer
+    }
+    deriving stock (Eq, Show)
+
+-- | The record the readback script writes, in the fields the verdict reads.
+decodeIndexerRead :: Aeson.Value -> Maybe IndexerRead
+decodeIndexerRead v = do
+    provider <- str v ["provider"]
+    policy <- str v ["policy"]
+    name <- str v ["assetName"]
+    holds <- bool ["holds"]
+    sameOut <- bool ["comparisons", "sameOutput"]
+    bytes <- bool ["comparisons", "sameDatumBytes"]
+    hash <- bool ["comparisons", "sameDatumHash"]
+    lagOk <- bool ["comparisons", "withinLag"]
+    found <- str v ["indexer", "output"]
+    cbor <- str v ["indexer", "datumCbor"]
+    recomputed <- str v ["indexer", "datumHashRecomputed"]
+    nodeOut <- str v ["node", "output"]
+    nodeCbor <- str v ["node", "datumCbor"]
+    nodeHash <- str v ["node", "datumHash"]
+    point <- str v ["node", "chainPoint"]
+    let unit = policy <> name
+        answers =
+            [ (url, response)
+            | Just (Aeson.Array rs) <- [path v ["requests"]]
+            , r <- V.toList rs
+            , Just (Aeson.String url) <- [path r ["url"]]
+            , Just (Aeson.Number 200) <- [path r ["status"]]
+            , Just response <- [path r ["response"]]
+            ]
+        lastAnswer p = case [a | (url, a) <- answers, p url] of
+            [] -> Nothing
+            as -> Just (last as)
+        -- Every output of an answer, as its reference and how many of the token
+        -- it holds, or the fact that makes it unreadable: an entry for the token
+        -- whose quantity is not exact withholds the whole answer, and never drops
+        -- out of the sum.
+        census what entries matches answer = case answer of
+            Just (Aeson.Array os) -> case lefts outputs of
+                [] -> (Just (rights outputs), [])
+                bad -> (Nothing, bad)
+              where
+                outputs = map (holding what entries matches) (V.toList os)
+            _ -> (Nothing, [])
+        holding what entries matches o = do
+            let tx = fromMaybe "" (str o ["tx_hash"])
+                index = case path o ["tx_index"] of
+                    Just i -> Just i
+                    Nothing -> path o ["output_index"]
+            ix <- whole (what <> "'s output index of " <> tx) OutputIndex index
+            r <- case (str o ["tx_hash"], ix) of
+                (Just t, Just i) -> Right (t <> "#" <> T.pack (show i))
+                _ ->
+                    Left (what <> " names an output without its transaction and index")
+            qs <-
+                traverse
+                    (quantityAt r)
+                    [ a
+                    | Just (Aeson.Array as) <- [path o [entries]]
+                    , a <- V.toList as
+                    , matches a
+                    ]
+            pure (r, sum qs)
+          where
+            quantityAt r a =
+                whole
+                    (what <> "'s quantity of the token at " <> r)
+                    Count
+                    (path a ["quantity"])
+                    >>= maybe
+                        (Left (what <> " states no quantity of the token at " <> r))
+                        Right
+        (holders, holderFaults) = case provider of
+            "koios" ->
+                census
+                    "the koios answer"
+                    "asset_list"
+                    ( \a ->
+                        str a ["policy_id"] == Just policy
+                            && str a ["asset_name"] == Just name
+                    )
+                    (lastAnswer ("/asset_utxos" `T.isSuffixOf`))
+            _ ->
+                census
+                    "the blockfrost answer"
+                    "amount"
+                    (\a -> str a ["unit"] == Just unit)
+                    (lastAnswer (("/utxos/" <> unit) `T.isSuffixOf`))
+        answerDatum = case provider of
+            "koios" -> do
+                Aeson.Array os <- lastAnswer ("/asset_utxos" `T.isSuffixOf`)
+                case V.toList os of
+                    [o] -> str o ["inline_datum", "bytes"]
+                    _ -> Nothing
+            _ -> do
+                Aeson.Array os <- lastAnswer (("/utxos/" <> unit) `T.isSuffixOf`)
+                case V.toList os of
+                    [o] -> str o ["inline_datum"]
+                    _ -> Nothing
+        answerTip = case provider of
+            "koios" -> case lastAnswer ("/tip" `T.isSuffixOf`) of
+                Just (Aeson.Array ts)
+                    | Just t <- ts V.!? 0 ->
+                        whole "the koios answer's tip slot" Count (path t ["abs_slot"])
+                _ -> Right Nothing
+            _ -> case lastAnswer ("/blocks/latest" `T.isSuffixOf`) of
+                Just b -> whole "the blockfrost answer's tip slot" Count (path b ["slot"])
+                Nothing -> Right Nothing
+        tipSlot =
+            whole
+                "the record's indexer tip slot"
+                Count
+                (path v ["indexer", "tipSlot"])
+        maxLag = whole "the record's maximum lag" Count (path v ["maxLagSlots"])
+        lagSlots = whole "the record's stated lag" Lag (path v ["lagSlots"])
+        exact = fromRight Nothing
+        addresses = case provider of
+            "koios" -> Nothing
+            _ -> case lastAnswer (("/assets/" <> unit <> "/addresses") `T.isSuffixOf`) of
+                Just (Aeson.Array as) -> Just (V.length as)
+                _ -> Nothing
+    pure
+        IndexerRead
+            { irProvider = provider
+            , irPolicy = policy
+            , irAssetName = name
+            , irHolders = holders
+            , irHolderAddresses = addresses
+            , irAnswerDatum = answerDatum
+            , irAnswerTip = exact answerTip
+            , irIndexerOutput = found
+            , irIndexerDatumCbor = cbor
+            , irIndexerDatumHashRecorded = recomputed
+            , irIndexerDatumHashComputed = Nothing
+            , irIndexerTipSlot = exact tipSlot
+            , irMaxLagSlots = exact maxLag
+            , irNodeOutput = nodeOut
+            , irNodeDatumCbor = nodeCbor
+            , irNodeDatumHash = nodeHash
+            , irNodeChainPoint = point
+            , irStated =
+                Stated
+                    { stHolds = holds
+                    , stSameOutput = sameOut
+                    , stSameDatumBytes = bytes
+                    , stSameDatumHash = hash
+                    , stWithinLag = lagOk
+                    , stLagSlots = exact lagSlots
+                    }
+            , irMalformed =
+                holderFaults <> lefts [answerTip, tipSlot, maxLag, lagSlots]
+            }
+  where
+    path :: Aeson.Value -> [Text] -> Maybe Aeson.Value
+    path = go . Just
+      where
+        go cur [] = cur
+        go (Just (Aeson.Object o)) (k : ks) = go (KeyMap.lookup (Key.fromText k) o) ks
+        go _ _ = Nothing
+    str o p = case path o p of
+        Just (Aeson.String s) -> Just s
+        _ -> Nothing
+    bool p = case path v p of
+        Just (Aeson.Bool b) -> Just b
+        _ -> Nothing
+    {- A whole-number fact the record may keep, as text ("135000000") or as a
+    number: absent (no value, null, or the empty text the script writes for a
+    tip it did not read), exact, or malformed and named with its raw value. -}
+    whole
+        :: Text -> Whole -> Maybe Aeson.Value -> Either Text (Maybe Integer)
+    whole what d raw = case raw of
+        Nothing -> Right Nothing
+        Just Aeson.Null -> Right Nothing
+        Just (Aeson.String "") -> Right Nothing
+        Just x -> maybe (Left (notWhole what d x)) (Right . Just) (wholeIn d x)
+
+instance ToJSON Account where
+    toJSON a =
+        object
+            [ "fee" .= acFee a
+            , "collateralInputs" .= acCollateralInputs a
+            , "collateralTotal" .= acCollateralTotal a
+            , "collateralReturn" .= acCollateralReturn a
+            , "spends" .= acSpends a
+            ]
+
 data Observation = Observation
     { obRoot :: Text
     -- ^ The root the registry's state output commits to
@@ -1539,7 +2174,24 @@ data Receipt = Receipt
     , rcReason :: Maybe Text
     -- ^ The node's or the command's own words, bounded
     , rcObservation :: Maybe Observation
-    , rcEvidence :: [Text]
+    , rcAllowance :: Maybe Integer
+    {- ^ The most collateral a node-judged transaction of this run may state;
+    none when the run set no bound
+    -}
+    , rcAccount :: Maybe Account
+    {- ^ Its fee and collateral, read back from the retained body by
+    admission; nothing until the receipt is admitted
+    -}
+    , rcReadbackFile :: Maybe Text
+    -- ^ For an indexer read: the readback record kept beside the receipt
+    , rcReadbackSha256 :: Maybe Text
+    , rcIndexer :: Maybe IndexerRead
+    , rcMaxLag :: Maybe Integer
+    -- ^ For an indexer read: the maximum lag in slots the take was configured with
+    , -- \^ What the retained readback record says, read back from its bytes by
+      --    admission; nothing until the receipt is admitted
+      --
+      rcEvidence :: [Text]
     -- ^ Files beside the receipt: command output, transaction bodies
     , rcCommand :: Maybe Aeson.Value
     -- ^ A command's own printed receipt, as it printed it
@@ -1572,6 +2224,12 @@ emptyReceipt step act target key =
         , rcAdmission = Nothing
         , rcReason = Nothing
         , rcObservation = Nothing
+        , rcAllowance = Nothing
+        , rcAccount = Nothing
+        , rcReadbackFile = Nothing
+        , rcReadbackSha256 = Nothing
+        , rcIndexer = Nothing
+        , rcMaxLag = Nothing
         , rcEvidence = []
         , rcCommand = Nothing
         }
@@ -1601,6 +2259,10 @@ instance ToJSON Receipt where
             , "process" .= rcProcess r
             , "reason" .= rcReason r
             , "observation" .= rcObservation r
+            , "allowance" .= rcAllowance r
+            , "readbackFile" .= rcReadbackFile r
+            , "readbackSha256" .= rcReadbackSha256 r
+            , "maxLag" .= rcMaxLag r
             , "evidence" .= rcEvidence r
             , "command" .= rcCommand r
             ]
@@ -1631,6 +2293,12 @@ instance FromJSON Receipt where
             <*> pure Nothing
             <*> o .:? "reason"
             <*> o .:? "observation"
+            <*> o .:? "allowance"
+            <*> pure Nothing
+            <*> o .:? "readbackFile"
+            <*> o .:? "readbackSha256"
+            <*> pure Nothing
+            <*> o .:? "maxLag"
             <*> o .: "evidence"
             <*> o .:? "command"
 
@@ -1645,6 +2313,9 @@ identify i = case i of
         Just ("craft " <> T.pack (craftedName c), T.pack t, T.pack k)
     Provoke p (Target t) k ->
         Just ("provoke " <> T.pack (provocationName p), T.pack t, T.pack k)
+    Reclaim (Target t) k _ _ -> Just ("reclaim", T.pack t, T.pack k)
+    ReadIndexer ix (Target t) k _ ->
+        Just ("read-indexer " <> T.pack (indexerName ix), T.pack t, T.pack k)
     Require _ _ -> Nothing
 
 -- ---------------------------------------------------------
@@ -1767,6 +2438,307 @@ is what expected v =
         Aeson.Array a | V.null a -> "none"
         other -> show other
 
+{- | A node-judged transaction of a run that set a collateral bound states its
+collateral, within the bound, and returns the rest of its funding output. The
+statement is read from the body admission retained: a refusal that would have
+put the whole funding output at risk does not pass.
+-}
+collateralBounded :: Receipt -> [String]
+collateralBounded r = case rcAllowance r of
+    Nothing -> []
+    Just allowance -> case rcAccount r of
+        Nothing -> ["the collateral the transaction states is not recorded"]
+        Just a ->
+            case acCollateralTotal a of
+                Nothing ->
+                    [ "the transaction states no total collateral, so the collateral it puts at risk is not bounded"
+                    ]
+                Just total ->
+                    [ "the transaction states a total collateral of "
+                        <> show total
+                        <> ", over the bound of "
+                        <> show allowance
+                    | total > allowance
+                    ]
+                        <> [ "the transaction returns no part of its collateral input"
+                           | isNothing (acCollateralReturn a)
+                           ]
+
+{- | One indexer's read of the Active key, against the fresh inspect that named
+the key's token, recomputed from the facts the retained record keeps and never
+from the summary it states: every whole number the record keeps (a quantity, an
+output index, a slot, a lag) is exact in its domain, never a rounded fraction or
+a malformed entry left out of a sum; the provider's own answer counts exactly one output
+holding exactly one of the token under the policy and asset name the inspect
+names, and that output is the one the record reports and the inspect's; the
+indexer's datum bytes are the inspect's and their blake2b-256, computed at
+admission, is the inspect's datum hash; the indexer's tip is no further behind
+the inspect's chain point than the maximum lag the take was configured with.
+The node side of the record must be the inspect's own, and a stated summary its
+facts contradict is itself a failure. What this cannot establish is that the
+provider answered honestly: the record's digest proves the bytes judged are the
+bytes kept, not where they came from.
+-}
+indexerAgrees :: Receipt -> Receipt -> [String]
+indexerAgrees inspect r =
+    check ReachedActive [inspect]
+        <> [ "the read's outcome is " <> show (rcOutcome r) <> ", not success"
+           | rcOutcome r /= "success"
+           ]
+        <> admitted r
+        <> maybe
+            ["the receipt's retained readback record was not read back"]
+            facts
+            (rcIndexer r)
+  where
+    inspected p = case at p inspect of
+        Just (Aeson.String s) -> Just s
+        _ -> Nothing
+    inspectOutput = inspected [field "applicationOutput", field "output"]
+    inspectCbor = inspected [field "applicationOutput", field "datumCbor"]
+    inspectHash = inspected [field "applicationOutput", field "datumHash"]
+    inspectPoint = inspected [field "chainPoint"]
+    nodeSlot :: Maybe Integer
+    nodeSlot = inspectPoint >>= readMaybe . T.unpack . T.takeWhile (/= '.')
+    facts ir =
+        [ "the record is of "
+            <> T.unpack (irProvider ir)
+            <> ", not of the indexer asked"
+        | ("read-indexer " <> irProvider ir) /= rcAction r
+        ]
+            <> map
+                (("the record keeps a malformed fact: " <>) . T.unpack)
+                (irMalformed ir)
+            <> map ("the token census: " <>) censusProblems
+            <> [ "the indexer's output "
+                    <> T.unpack (irIndexerOutput ir)
+                    <> " is not the node's"
+               | not outputOk
+               ]
+            <> [ "the indexer's datum bytes are not the node's"
+               | not bytesOk
+               ]
+            <> [ "the record reports datum bytes the provider's answer does not carry"
+               | irAnswerDatum ir /= Just (irIndexerDatumCbor ir)
+               ]
+            <> [ "the record reports a tip of "
+                    <> maybe "none" show (irIndexerTipSlot ir)
+                    <> ", but the provider's answer says "
+                    <> maybe "none" show (irAnswerTip ir)
+               | irAnswerTip ir /= irIndexerTipSlot ir
+               ]
+            <> hashProblems
+            <> lagProblems
+            <> same
+                "the policy the indexer was asked about"
+                (Just (Aeson.String (irPolicy ir)))
+                ( at
+                    [ field "applicationOutput"
+                    , field "envelope"
+                    , Left "fields"
+                    , Right 0
+                    , Left "fields"
+                    , Right 2
+                    , Left "bytes"
+                    ]
+                    inspect
+                )
+            <> same
+                "the asset name the indexer was asked about"
+                (Just (Aeson.String (irAssetName ir)))
+                (at [field "key"] inspect)
+            <> [ "the record's node " <> what <> " is not the inspect's"
+               | (what, recorded, fresh) <-
+                    [ ("output", irNodeOutput ir, inspectOutput)
+                    , ("datum bytes", irNodeDatumCbor ir, inspectCbor)
+                    , ("datum hash", irNodeDatumHash ir, inspectHash)
+                    , ("chain point", irNodeChainPoint ir, inspectPoint)
+                    ]
+               , Just recorded /= fresh
+               ]
+            <> [ "the record states "
+                    <> claim
+                    <> " "
+                    <> show stated
+                    <> ", but its facts say "
+                    <> show actual
+               | (claim, stated, actual) <-
+                    [
+                        ( "holds"
+                        , stHolds st
+                        , censusOk && outputOk && bytesOk && hashOk && lagOk && rawOk
+                        )
+                    , ("sameOutput", stSameOutput st, outputOk)
+                    , ("sameDatumBytes", stSameDatumBytes st, bytesOk)
+                    , ("sameDatumHash", stSameDatumHash st, hashOk)
+                    , ("withinLag", stWithinLag st, lagOk)
+                    ]
+               , stated /= actual
+               ]
+            <> [ "the record states a lag of "
+                    <> maybe "none" show (stLagSlots st)
+                    <> " slots, but its tip and the inspect's chain point give "
+                    <> maybe "none" show lag
+               | stLagSlots st /= lag
+               ]
+      where
+        st = irStated ir
+        censusProblems = case irHolders ir of
+            Nothing -> ["the record keeps no provider answer to count the holders from"]
+            Just [(ref, 1)]
+                | ref /= irIndexerOutput ir ->
+                    [ "the provider's answer names "
+                        <> T.unpack ref
+                        <> ", not the output the record reports"
+                    ]
+                | otherwise -> addressProblems
+            Just [(_, q)] ->
+                [ "the provider's answer holds "
+                    <> show q
+                    <> " of the token in its one output; exactly one must"
+                ]
+            Just hs ->
+                [ "the provider's answer counts "
+                    <> show (length hs)
+                    <> " outputs holding the token; exactly one must"
+                ]
+        addressProblems = case irHolderAddresses ir of
+            Just n
+                | n /= 1 ->
+                    [ "the provider's answer counts "
+                        <> show n
+                        <> " addresses holding the token; exactly one must"
+                    ]
+            _ -> []
+        censusOk = null censusProblems
+        outputOk = Just (irIndexerOutput ir) == inspectOutput
+        bytesOk =
+            not (T.null (irIndexerDatumCbor ir))
+                && Just (irIndexerDatumCbor ir) == inspectCbor
+        hashProblems = case irIndexerDatumHashComputed ir of
+            Nothing -> ["admission computed no hash of the indexer's datum bytes"]
+            Just h ->
+                [ "the hash of the indexer's datum bytes is not the node's datum hash"
+                | Just h /= inspectHash
+                ]
+                    <> [ "the record's recomputed datum hash is not the hash of its own datum bytes"
+                       | h /= irIndexerDatumHashRecorded ir
+                       ]
+        hashOk = case irIndexerDatumHashComputed ir of
+            Just h -> Just h == inspectHash && h == irIndexerDatumHashRecorded ir
+            Nothing -> False
+        lag = (-) <$> nodeSlot <*> irIndexerTipSlot ir
+        lagProblems = case (rcMaxLag r, lag) of
+            (Nothing, _) -> ["the read carries no maximum lag the take was configured with"]
+            (_, Nothing) -> ["the record keeps no indexer tip to measure the lag from"]
+            (Just allowed, Just l) ->
+                [ "the record was run under a maximum lag of "
+                    <> maybe "none" show (irMaxLagSlots ir)
+                    <> ", not the "
+                    <> show allowed
+                    <> " the take configured"
+                | irMaxLagSlots ir /= Just allowed
+                ]
+                    <> [ "the indexer is "
+                            <> show l
+                            <> " slots behind the node, beyond the "
+                            <> show allowed
+                            <> " allowed"
+                       | l > allowed
+                       ]
+        rawOk =
+            null (irMalformed ir)
+                && irAnswerDatum ir == Just (irIndexerDatumCbor ir)
+                && irAnswerTip ir == irIndexerTipSlot ir
+        lagOk = case (rcMaxLag r, lag) of
+            (Just allowed, Just l) -> l <= allowed && irMaxLagSlots ir == Just allowed
+            _ -> False
+
+{- | The bound a take on an existing registry owes every node-judged
+transaction: the operator's explicit allowance is on the receipt (a missing
+one is a failure, never a pass), and the body states its total collateral
+within it and returns the rest.
+-}
+collateralBoundedRequired :: Receipt -> [String]
+collateralBoundedRequired r = case rcAllowance r of
+    Nothing ->
+        [ "no collateral allowance was set for the transaction, so the collateral it puts at risk is not bounded"
+        ]
+    Just _ -> collateralBounded r
+
+{- | A retraction, against the insertion's receipt that names the request and
+the readbacks on either side of it: the request that receipt names is the one
+the retained body spends and the one that left, no other left, the root did
+not move, and the wallet holds exactly the bond released less the fee paid.
+-}
+reclaimed :: Receipt -> Receipt -> Receipt -> Receipt -> [String]
+reclaimed partial before r after =
+    [ "the retraction's outcome is "
+        <> show (rcOutcome r)
+        <> ", not accepted"
+    | rcOutcome r /= "accepted"
+    ]
+        <> submitted r
+        <> admitted r
+        <> collateralBoundedRequired r
+        <> [ "the retraction names the request "
+                <> maybe "none" T.unpack (rcPendingRequest r)
+                <> ", not the "
+                <> maybe "none" T.unpack (rcPendingRequest partial)
+                <> " the insertion's receipt names"
+           | rcPendingRequest r /= rcPendingRequest partial
+           ]
+        <> case (rcPendingRequest partial, rcAccount r) of
+            (Just p, Just a) ->
+                [ "the retained body does not spend the request "
+                    <> T.unpack p
+                    <> " the insertion's receipt names"
+                | filter (== p) (acSpends a) /= [p]
+                ]
+            _ ->
+                [ "the insertion's receipt names no request, or the retraction records no body to read its spends from"
+                ]
+        <> case ( rcObservation before
+                , rcObservation after
+                , rcPendingRequest r
+                , rcAccount r
+                ) of
+            (Just x, Just y, Just p, Just a) ->
+                [ "the request "
+                    <> T.unpack p
+                    <> " was not pending before the retraction"
+                | p `notElem` obPending x
+                ]
+                    <> [ "the request "
+                            <> T.unpack p
+                            <> " is still pending after the retraction"
+                       | p `elem` obPending y
+                       ]
+                    <> [ "a request other than the retracted one left: "
+                            <> show (filter (`notElem` obPending y) (obPending x))
+                       | filter (`notElem` obPending y) (obPending x) /= [p]
+                       ]
+                    <> ["the registry's root moved" | obRoot x /= obRoot y]
+                    <> [ "the wallet holds "
+                            <> show (obWalletLovelace y)
+                            <> ", not the "
+                            <> show (obWalletLovelace x)
+                            <> " it held plus the "
+                            <> show released
+                            <> " the request released less the "
+                            <> show (acFee a)
+                            <> " the retraction paid"
+                       | obWalletLovelace y /= obWalletLovelace x + released - acFee a
+                       ]
+              where
+                released = obPendingLovelace x - obPendingLovelace y
+            _ ->
+                [ "the retraction names no pending request, records no fee, or a readback carries no observation"
+                ]
+        <> [ "the readbacks are of other registries or keys"
+           | (rcTarget before, rcKey before) /= (rcTarget after, rcKey after)
+           ]
+
 -- | The requirement's failures on these receipts; none means it holds.
 check :: Requirement -> [Receipt] -> [String]
 check req rs = case (req, rs) of
@@ -1806,6 +2778,7 @@ check req rs = case (req, rs) of
                | rcOutcome r /= "ledger-refused"
                ]
             <> attributedTo "applied open-datum script" (rcApplication r) r
+            <> collateralBounded r
     (RegistryUnchanged, [a, b]) -> case (rcObservation a, rcObservation b) of
         (Just x, Just y) ->
             ["the registry's root moved" | obRoot x /= obRoot y]
@@ -1916,6 +2889,9 @@ check req rs = case (req, rs) of
                 Just (Aeson.String _) -> []
                 _ -> ["the terminate names no released output"]
     (CommandSucceeded, [r]) -> succeeded "the command" r
+    (Reclaimed, [p, b, r, a]) -> reclaimed p b r a
+    (ExposureBounded, [r]) -> collateralBoundedRequired r
+    (IndexerAgrees, [i, r]) -> indexerAgrees i r
     (Accepted, [r]) ->
         [ "the outcome is " <> show (rcOutcome r) <> ", not accepted"
         | rcOutcome r /= "accepted"
@@ -1931,6 +2907,7 @@ check req rs = case (req, rs) of
                | rcOutcome r /= "ledger-refused"
                ]
             <> attributedTo "registry's state validator" (rcStateValidator r) r
+            <> collateralBounded r
     (Unchanged, [a, b]) -> case (rcObservation a, rcObservation b) of
         (Just x, Just y) ->
             [ "the registry's root moved"
@@ -2139,12 +3116,16 @@ check req rs = case (req, rs) of
                            , Delivered
                            , ReconciledOrRefused
                            , IncompleteCreateRead
+                           , IndexerAgrees
                            ]
                     then "two"
                     else
                         if req `elem` [PayloadReplaced, Released, ResolvedFromChain]
                             then "three"
-                            else "one"
+                            else
+                                if req == Reclaimed
+                                    then "four"
+                                    else "one"
                )
             <> " receipts, given "
             <> show (length rs)
@@ -2282,6 +3263,8 @@ replay byStep story =
         Observe{} -> answer st i
         Craft{} -> answer st i
         Provoke{} -> answer st i
+        Reclaim{} -> answer st i
+        ReadIndexer{} -> answer st i
 
     answer :: Replay -> CliI Receipt -> (Maybe Receipt, Replay)
     answer st@(Replay n rs _) i = case (identify i, Map.lookup n byStep) of
@@ -2369,6 +3352,8 @@ outline story = snd (walk 0 story)
         Observe{} -> (n + 1, emptyReceipt n "" "" "")
         Craft{} -> (n + 1, emptyReceipt n "" "" "")
         Provoke{} -> (n + 1, emptyReceipt n "" "" "")
+        Reclaim{} -> (n + 1, emptyReceipt n "" "" "")
+        ReadIndexer{} -> (n + 1, emptyReceipt n "" "" "")
 
 {- | Refuse a story before it runs: every statement it binds must be one of
 'statementBindings' and told once, every clause title distinct within its
@@ -2665,6 +3650,11 @@ approvedCases =
                         ]
                     )
                 ,
+                    ( "the Active key read from two public indexers before its termination"
+                    , "INV300-INDEXER"
+                    , map indexerTitle [minBound .. maxBound]
+                    )
+                ,
                     ( "a concurrent writer holding the target's lock"
                     , "R299-05"
                     ,
@@ -2823,6 +3813,36 @@ steps story = snd (walk 0 story)
                     (provocationPhrase p <> ", on **" <> t <> "**" <> forKey k <> ".")
                 )
             )
+        Reclaim (Target t) k _ _ ->
+            ( n + 1
+            , emptyReceipt n "" "" ""
+            , Just
+                ( numbered
+                    n
+                    ( "Retract, as its owner and inside its retract window, the request the refused insertion left pending, for **"
+                        <> k
+                        <> "** in **"
+                        <> t
+                        <> "**."
+                    )
+                )
+            )
+        ReadIndexer ix (Target t) k _ ->
+            ( n + 1
+            , emptyReceipt n "" "" ""
+            , Just
+                ( numbered
+                    n
+                    ( "Ask "
+                        <> indexerName ix
+                        <> ", read only, for the Active key's token, and compare its output, datum and chain position with the fresh inspect, for **"
+                        <> k
+                        <> "** in **"
+                        <> t
+                        <> "**."
+                    )
+                )
+            )
     numbered n s = show (n + 1) <> ". " <> s
     forKey k = if null k then "" else " for **" <> k <> "**"
 
@@ -2857,6 +3877,8 @@ tellings = go
         Observe{} -> emptyReceipt 0 "" "" ""
         Craft{} -> emptyReceipt 0 "" "" ""
         Provoke{} -> emptyReceipt 0 "" "" ""
+        Reclaim{} -> emptyReceipt 0 "" "" ""
+        ReadIndexer{} -> emptyReceipt 0 "" "" ""
 
 -- | A crafted transaction, in the description language.
 craftedPhrase :: Crafted -> String
@@ -3111,6 +4133,8 @@ shape = go
         Observe{} -> emptyReceipt 0 "" "" ""
         Craft{} -> emptyReceipt 0 "" "" ""
         Provoke{} -> emptyReceipt 0 "" "" ""
+        Reclaim{} -> emptyReceipt 0 "" "" ""
+        ReadIndexer{} -> emptyReceipt 0 "" "" ""
 
 -- | One submission an ordinary command journalled, and the body it kept.
 data Submission = Submission

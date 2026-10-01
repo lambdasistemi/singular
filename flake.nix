@@ -157,6 +157,55 @@
               }
             );
           };
+          # #300: the demonstration's four refusals on one existing registry and
+          # two fresh keys: `nix run --quiet .#demo1-cli-attach`.
+          demo1-cli-attach = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "demo1-cli-attach";
+                runtimeInputs = with pkgs; [
+                  bash
+                  python3
+                  curl
+                  xxd
+                  coreutils
+                  diffutils
+                  findutils
+                  git
+                  gnugrep
+                  gnused
+                  gnutar
+                  gzip
+                  jq
+                  procps
+                  nix
+                ];
+                text = ''bash ${./tools/demo1_cli_attach_check.sh} "$PWD"'';
+              }
+            );
+          };
+          # #300: the public-indexer readback against a local indexer that answers
+          # with the shapes the public services return:
+          # `nix run --quiet .#demo1-readback-check`.
+          demo1-readback-check = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "demo1-readback-check";
+                runtimeInputs = with pkgs; [
+                  bash
+                  coreutils
+                  curl
+                  gnugrep
+                  jq
+                  python3
+                  xxd
+                ];
+                text = ''bash ${./tools/demo1_readback_check.sh} ${./tools/demo1_readback.sh}'';
+              }
+            );
+          };
           # #325: the ordinary CLI's recovery controls — a lost
           # acknowledgement, a local commit interrupted before and after the
           # mirror is saved, a transaction never sent, and an accepting

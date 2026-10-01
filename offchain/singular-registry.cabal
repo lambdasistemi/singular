@@ -683,6 +683,8 @@ test-suite cage-tests
     Singular.Application.OpenDatum.EnvelopeSpec
     Singular.CLISpec
     Singular.CLI.Command
+    Singular.CLI.OutlaySpec
+    Singular.CLI.Outlay
     Singular.CLI.Node
     Singular.CLI.Proof
     Singular.CLI.Receipt
@@ -693,6 +695,10 @@ test-suite cage-tests
     Singular.Registry.BlueprintParametersSpec
     Singular.Registry.DeploymentSpec
     Singular.Registry.TxBuilder.BookEdgeSpec
+    Singular.Registry.TxBuilder.BookingFixture
+    Singular.Registry.TxBuilder.CollateralJudgement
+    Singular.Registry.TxBuilder.RetractFundingSpec
+    Singular.Registry.TxBuilder.MeasuredBookingSpec
     Singular.Registry.TxBuilder.BootSpec
     Singular.Registry.TxBuilder.BurnSourceSpec
     Singular.Registry.TxBuilder.SkipEvalUnitsSpec
@@ -728,11 +734,13 @@ test-suite cage-tests
     , cardano-ledger-mary
     , cardano-crypto-class
     , cardano-node-clients
+    , cardano-node-clients:devnet
     , cardano-node-clients:utxo-indexer-lib
     , cardano-strict-containers
     , cardano-tx-tools:tx-build
     , containers
     , base16-bytestring
+    , bech32
     , bytestring
     , singular-registry
     , singular-registry:node-internal
@@ -894,6 +902,9 @@ executable singular
     Singular.CLI.Entry
     Singular.CLI.Inspect
     Singular.CLI.Live
+    Singular.CLI.Outlay
+    Singular.CLI.Plan
+    Singular.CLI.Preview
     Singular.CLI.Node
     Singular.CLI.Proof
     Singular.CLI.Receipt
@@ -906,6 +917,7 @@ executable singular
     , aeson
     , async
     , aeson-pretty
+    , bech32
     , base               >=4.14 && <5
     , base16-bytestring
     , bytestring
@@ -924,6 +936,7 @@ executable singular
     , cardano-slotting
     , cardano-tx-tools:tx-build
     , microlens
+    , plutus-core
     , singular-registry:node-internal
 
   ghc-options:      -threaded -with-rtsopts=-N

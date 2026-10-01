@@ -1,3 +1,5 @@
+{-# LANGUAGE NumericUnderscores #-}
+
 {- |
 Module      : Singular.Registry.TxBuilder.Retract
 Description : Retract request transaction
@@ -13,9 +15,8 @@ module Singular.Registry.TxBuilder.Retract
     , retractRequestAtTipImpl
     ) where
 
-import Data.List (sortOn)
+import Data.List (nub)
 import Data.Map.Strict qualified as Map
-import Data.Ord (Down (..))
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Lens.Micro ((&), (.~), (^.))
@@ -73,6 +74,7 @@ import Singular.Registry.Ledger
     , TokenId
     )
 import Singular.Registry.Provider (View (..))
+import Singular.Registry.TxBuilder.Edges (selectFunding)
 import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Types
     ( CageDatum (..)
@@ -141,11 +143,11 @@ retractRequestAtTipImpl tip cfg view tid reqTxIn addr = do
     let (stateIn, stateOut) = stateUtxo
     let pp = viewProtocolParams view
     walletUtxos <- viewUTxOsAt view addr
-    feeUtxo <- case sortOn
-        (Down . (^. coinTxOutL) . snd)
-        walletUtxos of
-        [] -> error "retractRequest: no UTxOs"
-        (u : _) -> pure u
+    -- The funding output is also the collateral, so it must hold ada and
+    -- nothing else, and must not be a published reference script.
+    feeUtxo <- case selectFunding Nothing walletUtxos of
+        Left why -> error ("retractRequest: " <> why)
+        Right u -> pure u
     let reqDatum = case extractCageDatum reqOut of
             Just (RequestDatum r) -> r
             _ ->
@@ -173,8 +175,21 @@ retractRequestAtTipImpl tip cfg view tid reqTxIn addr = do
         phase2End = submAt + procTime + retrTime
     phase2Slot <-
         viewPosixMsCeilSlot view phase2Start
+    -- The window's end may lie past what the node can translate to a slot
+    -- (its horizon). A validity upper bound anywhere inside the window is as
+    -- correct as its end, so a nearer bound stands in: the window's end first,
+    -- then thirty, ten and three seconds from now, never past the end.
+    nowMs <- currentPosixMs
     SlotNo s <-
-        viewPosixMsToSlot view phase2End
+        tryUpperSlots
+            view
+            ( nub
+                [ phase2End
+                , min phase2End (nowMs + 30_000)
+                , min phase2End (nowMs + 10_000)
+                , min phase2End (nowMs + 3_000)
+                ]
+            )
     let lowerSlot = max tip phase2Slot
         upperSlot = SlotNo (max 0 (s - 1))
         script = mkRequestScript cfg tid

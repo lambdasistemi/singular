@@ -17,7 +17,7 @@
   ],
   "the-argument-stated-conditionally": [
     {
-      "text": "Start from one active token per Active key, which the registry model proves for every reachable state. The update mints no active token: only a fold may mint one, one per inserted key, never for a key already held. So the ledger's conservation of value keeps two one-token outputs from forming, and such a transaction never reaches the application.",
+      "text": "Start from one active token per Active key, which the registry model proves for every reachable state. A payload update changes the key's active token supply by zero, and the terminate's release by minus one. The application's spend handler makes no mint of its own and does not by itself say that the whole transaction mints nothing, so the argument does not rely on it: the active policy lets only a fold mint one, one per inserted key, never for a key already held. So the ledger's conservation of value keeps two one-token outputs from forming, and such a transaction never reaches the application.",
       "pause": 400
     },
     {
@@ -45,6 +45,6 @@
   ],
   "_source": {
     "file": "ruling-duplicate-carrier.md",
-    "sha256": "b24606d2936f28a51ac1c633e969f6fe4dc498f9013d52e27ab0f3c419d66f90"
+    "sha256": "1210760e2d9f57eefe55e7276d46a29e59589fd4bc5c189ee8b37bb6cba722e3"
   }
 }

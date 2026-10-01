@@ -30,7 +30,6 @@ module Singular.Registry.TxBuilder.BookEdgeSpec (spec) where
 
 import Control.Monad (forM_)
 import Data.ByteString (ByteString)
-import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.IORef (newIORef, readIORef, writeIORef)
@@ -41,7 +40,6 @@ import Data.Text qualified as T
 import Lens.Micro ((^.))
 import Test.Hspec
 
-import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
@@ -65,7 +63,7 @@ import Cardano.Ledger.BaseTypes
     , StrictMaybe (..)
     )
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
-import Cardano.Ledger.Core (Script, ScriptHash, hashScript)
+import Cardano.Ledger.Core (ScriptHash, hashScript)
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
@@ -73,167 +71,26 @@ import Cardano.Ledger.Mary.Value
     , PolicyID
     )
 import Cardano.Ledger.Plutus.Data (getPlutusData)
-import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Ledger (ConwayTx)
 import PlutusCore.Data qualified as PLCData
-import PlutusCore.Version (plcVersion110)
-import PlutusLedgerApi.V3 (serialiseUPLC)
-import UntypedPlutusCore qualified as UPLC
-import UntypedPlutusCore.DeBruijn ()
 
-import Singular.Registry.Blueprint (NamingCodes (..), applyBytesParam)
-import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Deployment (parseOutRef)
-import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId (..))
+import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.Provider (Provider, View (..))
 import Singular.Registry.StubView (servingView, stubView)
+import Singular.Registry.TxBuilder.BookingFixture
 import Singular.Registry.TxBuilder.Edges
     ( bookEdge
     , edgeDestinationOf
-    , namingPins
-    , registryIdOf
     )
 import Singular.Registry.TxBuilder.Internal
-    ( addrFromKeyHashBytes
-    , addrKeyHashBytes
+    ( addrKeyHashBytes
     , approvalName
-    , computeScriptHash
-    , policyIdFromPin
     , requestAddrFromCfg
-    , scriptFromBytes
-    , txInToRef
     )
 import Singular.Registry.Types
     ( Edge
-    , OnChainTxOutRef
     , edgeWitnessTerminal
     )
-
--- ---------------------------------------------------------
--- Fixtures: one registry, one payer, two keys
--- ---------------------------------------------------------
-
-{- | A well-formed PlutusV3 program: the registry scripts are
-parameterized by applying one argument after another, so the fixture
-takes two (`applyRequestParams` applies the state policy and then the
-token name; `witnessPin` applies one). @\\x y -> x@ in DeBruijn
-indices.
--}
-program :: SBS.ShortByteString
-program =
-    serialiseUPLC
-        ( UPLC.Program
-            ()
-            plcVersion110
-            ( UPLC.LamAbs
-                ()
-                (UPLC.DeBruijn 0)
-                ( UPLC.LamAbs
-                    ()
-                    (UPLC.DeBruijn 0)
-                    (UPLC.Var () (UPLC.DeBruijn 2))
-                )
-            )
-        )
-
-codes :: NamingCodes
-codes =
-    NamingCodes
-        { ncApplication = applyBytesParam "t240-application" program
-        , ncWitness = applyBytesParam "t240-witness" program
-        }
-
-{- | The registry before its pins: the pins derive from its identity,
-the state script hash and the boot seed. The pins are filled in
-separately — with strict record fields the config and its own pins
-would otherwise force each other.
--}
-unpinned :: CageConfig
-unpinned =
-    CageConfig
-        { cageScriptBytes = program
-        , requestScriptBytes = program
-        , cfgScriptHash = computeScriptHash program
-        , cageSeed = seedRef
-        , defaultProcessTime = 30_000
-        , defaultRetractTime = 30_000
-        , defaultTip = Coin 1_000_000
-        , cfgApplicationPolicy = SBS.empty
-        , cfgActivePolicy = SBS.empty
-        , cfgAbsentPolicy = SBS.empty
-        , cfgTerminalPolicy = SBS.empty
-        , cfgConsumerScript = SBS.empty
-        , network = Testnet
-        }
-
-seedRef :: OnChainTxOutRef
-seedRef =
-    txInToRef $
-        either
-            (error . ("BookEdgeSpec fixture: " <>))
-            id
-            (parseOutRef (T.pack (replicate 64 '1' <> "#0")))
-
-fundIn :: TxIn
-fundIn =
-    either
-        (error . ("BookEdgeSpec fixture: " <>))
-        id
-        (parseOutRef (T.pack (replicate 64 '3' <> "#0")))
-
-{- | The registry with the four pins its naming partition derives. The
-design pins the application hash, and the rows below assert against the
-same hash — evaluated from the pins, never from builder output.
--}
-cfg :: CageConfig
-cfg =
-    unpinned
-        { cfgApplicationPolicy = applicationPin
-        , cfgAbsentPolicy = absentPin
-        , cfgActivePolicy = activePin
-        , cfgTerminalPolicy = terminalPin
-        }
-
-applicationPin
-    , absentPin
-    , activePin
-    , terminalPin
-        :: SBS.ShortByteString
-(applicationPin, absentPin, activePin, terminalPin) =
-    namingPins codes (registryIdOf unpinned)
-
-{- | The policy the naming application certifies approvals under: the
-hash of the applied application script (DM-1 @baAsset@'s policy).
--}
-applicationPolicy :: PolicyID
-applicationPolicy = policyIdFromPin applicationPin
-
--- | The naming application script, the design's @baScript@.
-applicationScript :: Script ConwayEra
-applicationScript = scriptFromBytes "naming-application" (ncApplication codes)
-
-payer :: Addr
-payer = addrFromKeyHashBytes Testnet (BS.replicate 28 0x5a)
-
-tokenId :: TokenId
-tokenId = TokenId (AssetName "t240-registry")
-
-keys :: [ByteString]
-keys = ["t240-key-a", "t240-key-b"]
-
--- | The seven admissible edges, by the name the model gives each.
-edges :: [(Edge, String)]
-edges =
-    zip
-        [0 ..]
-        [ "insertAbsent"
-        , "insertActive"
-        , "updateActive"
-        , "updateTerminal"
-        , "deleteAbsent"
-        , "deleteActive"
-        , "witnessTerminal"
-        ]
 
 {- | A wallet holding one ada-only output, and nothing else to say. The
 stubs fail loudly: if the builder ever evaluates or asks for a slot,

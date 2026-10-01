@@ -23,6 +23,7 @@ nav:
   - Run against your own preprod node: docs/consumer-onboarding.md
   - Connecting singular to a node: docs/singular-node.md
   - The preprod record: docs/preprod.md
+  - Demo 1 on preprod, what a reviewer checks: docs/demo1-preprod.md
   - Executable candidate:
       - Review guide: docs/design.md
       - Play the simulation: docs/simulation.md
