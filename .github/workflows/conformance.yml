@@ -379,8 +379,8 @@ jobs:
           #    bound to this candidate on a clean tree (dirty:false)
           expect_verdict() {
             case "$1" in
-              CG02|CG03|CG04|CG05|CG09|CG10|CG21|CL01) printf 'agrees-with-model' ;;
-              CG11|CG12|CG19) printf 'held-q002' ;;
+              CG02|CG03|CG04|CG05|CG10|CG21|CL01) printf 'agrees-with-model' ;;
+              CG09|CG11|CG12|CG19) printf 'held-q002' ;;
               *) printf 'UNKNOWN-ROW' ;;
             esac
           }
@@ -399,7 +399,7 @@ jobs:
           # 6. the run's own accounting must name exactly the expected
           #    held set, with nothing failing against this candidate
           held="$(sed -n 's/^- Held .*held-q002): //p' /tmp/generic-rows.log)"
-          [ "$held" = "CG11 CG12 CG19" ] || { echo "FAIL: held set moved: got '$held', expected 'CG11 CG12 CG19'"; exit 1; }
+          [ "$held" = "CG09 CG11 CG12 CG19" ] || { echo "FAIL: held set moved: got '$held', expected 'CG09 CG11 CG12 CG19'"; exit 1; }
           # nothing may fail against this candidate
           failing="$(sed -n 's/^- Failing .*accepted): //p' /tmp/generic-rows.log)"
           [ "$failing" = "none" ] || { echo "FAIL: rows failing against this candidate: $failing"; exit 1; }
@@ -523,8 +523,22 @@ jobs:
             and any(.steps[]; .tamper == null and .model.outcome == "accepted"
                     and .chain.outcome == "accepted" and .request == $tampered)
           ' "$e" > /dev/null || { echo 'FAIL: CG21 step evidence missing or incomplete'; exit 1; }
-          echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and the tampered-payment controls are recorded, with held debt exactly CG11 CG12 CG19.'
-          echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'
+          # 10. CG09 (#320): the consumer's R9_reject_needs_rejectable forbids
+          #     a reject inside the processing window; Singular's Lean admits
+          #     it and the chain accepts it. The row is held, never agreement:
+          #     the consumer requirement stays unmet. Its control, the same
+          #     reject one lovelace short, is refused by the state script first.
+          # shellcheck disable=SC2016
+          nix run --quiet nixpkgs#jq -- -e '
+            .row == "CG09" and .outcome == "accepted" and .verdict == "held-q002"
+            and .venue == "node-submit"
+            and (.transactions | length) == 1
+            and (.transactions[0] | test("^[0-9a-f]{64}$"))
+          ' "${CONFORMANCE_RECEIPTS}"/receipt-CG09.json > /dev/null || { echo 'FAIL: CG09 held acceptance evidence moved'; exit 1; }
+          grep -q '^held: CG09 HELD FOR ' /tmp/generic-rows.log || { echo 'FAIL: CG09 hold not recorded by the run'; exit 1; }
+          grep -q '^control: CG09 control: REFUSED at submit, attributed to state (phase-2, marker 0x[0-9a-f][0-9a-f]*)' /tmp/generic-rows.log || { echo 'FAIL: CG09 refused control not attributed to the state script'; exit 1; }
+          echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and the tampered-payment controls are recorded, with held debt exactly CG09 CG11 CG12 CG19.'
+          echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused, R9_reject_needs_rejectable and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'
       # Issue #69: canonical identity authentication. CA02 asserts
       # the ledger's acceptance of a rival registry from a second
       # seed — the settled finding, never relabelled as a refusal —
