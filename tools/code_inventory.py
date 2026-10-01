@@ -624,6 +624,13 @@ NONCODE_CLASSES: list[dict] = [
         "tools/signed_tx_control.sh (issue #326)",
     },
     {
+        "id": "model-revision",
+        "pattern": "conformance/model-revision",
+        "note": "the application model commit the conformance bindings are "
+        "compiled against and the release archive states as MODEL-REVISION "
+        "(issue #326)",
+    },
+    {
         "id": "formatter-config",
         "pattern": "fourmolu.yaml",
         "note": "the one house Fourmolu configuration (issue #278 S2), read "
