@@ -1,6 +1,6 @@
 # Tasks
 
-Stable IDs. A task is checked when its own evidence exists at an exact commit, with that evidence and its limits stated beside it. A checked task is not whole-ticket acceptance: the full root CI, S2, S3 and the held questions remain open.
+Stable IDs. A task is checked when its own evidence exists at an exact commit, with that evidence and its limits stated beside it. A checked task is not whole-ticket acceptance: the exact-head gate (the whole generic-rows session included), the full root CI and the held questions remain open.
 
 ## Planning
 
