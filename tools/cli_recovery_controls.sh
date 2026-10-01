@@ -187,7 +187,8 @@ root_before_of() { prepared_of "$1" | jq -r .journalRootBefore; }
 root_after_of() { prepared_of "$1" | jq -r .journalRootAfter; }
 submission_case() { field "$1" "[.submissions[]? | select(.step == \"$2\") | .case] | last"; }
 submission_tx() { field "$1" "[.submissions[]? | select(.step == \"$2\") | .tx] | last"; }
-is_equal() { [ "$1" = "$2" ]; }
+# Equal, and about something: an empty or null value never matches.
+is_equal() { [ -n "$1" ] && [ "$1" != null ] && [ "$1" = "$2" ]; }
 is_txid() { [[ "$1" =~ ^[0-9a-f]{64}$ ]]; }
 
 # envelope FILE CONTROLLER KEY
