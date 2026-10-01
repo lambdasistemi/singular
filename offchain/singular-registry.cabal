@@ -700,6 +700,7 @@ test-suite cage-tests
     Singular.Registry.CandidateSpec
     Singular.Registry.FailureMatchSpec
     Singular.Registry.IndexerViewSpec
+    Singular.Registry.IndexerRig
     Singular.Registry.NodeCleanupSpec
     Singular.Registry.NodeSpec
     Singular.Registry.NodeWaitSpec
@@ -753,6 +754,53 @@ test-suite cage-tests
     , text
     , time
     , unix
+
+-- #326: the backend contract suite, one case list over every adapter —
+-- in-memory, indexer over the in-memory node, node and indexer on generated
+-- devnet nodes — and the external leg over a node started outside it.
+test-suite contract-tests
+  import:           warnings
+  type:             exitcode-stdio-1.0
+  default-language: GHC2021
+  hs-source-dirs:   contract-test test
+  main-is:          Main.hs
+  other-modules:
+    Singular.Registry.ContractMemory
+    Singular.Registry.ContractNode
+    Singular.Registry.ContractSuite
+    Singular.Registry.IndexerRig
+  build-depends:
+    , async
+    , base
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-binary
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-crypto-class
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-node-clients:utxo-indexer-lib
+    , cardano-strict-containers
+    , cardano-tx-tools:tx-build
+    , containers
+    , directory
+    , filepath
+    , hspec
+    , microlens
+    , ouroboros-network:api
+    , process
+    , random
+    , singular-registry
+    , singular-registry:node-internal
+    , stm
+    , temporary
+    , text
+    , time
+    , unix
+
+  ghc-options:      -threaded -with-rtsopts=-N
 
 test-suite e2e-tests
   import:           warnings

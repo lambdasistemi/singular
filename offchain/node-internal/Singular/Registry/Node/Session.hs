@@ -42,6 +42,10 @@ module Singular.Registry.Node.Session
     , withOpenSession
     , sessionFor
     , currentTipSlot
+
+      -- * No node call inside a view (#326)
+    , NodeCallInView (..)
+    , guardConnection
     ) where
 
 import Control.Concurrent (threadDelay)
@@ -52,9 +56,20 @@ import Control.Concurrent.Async
     , race
     , waitCatch
     )
-import Control.Exception (bracket, bracket_, throwIO, try)
+import Control.Exception
+    ( Exception
+    , bracket
+    , bracket_
+    , throwIO
+    , try
+    )
 import Data.Foldable (for_)
-import Data.IORef (IORef, newIORef, readIORef, writeIORef)
+import Data.IORef
+    ( IORef
+    , newIORef
+    , readIORef
+    , writeIORef
+    )
 import System.IO (hPutStrLn, stderr)
 import System.IO.Unsafe (unsafePerformIO)
 
@@ -72,7 +87,7 @@ import Cardano.Node.Client.N2C.Connection
 import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Cardano.Node.Client.Provider qualified as N2C
-import Cardano.Node.Client.Submitter (Submitter)
+import Cardano.Node.Client.Submitter (Submitter (..))
 import Data.Word (Word32, Word64)
 import Singular.Registry.Node.Funding
     ( FundingFloor
@@ -149,7 +164,12 @@ withNodeReadsOn backend magicWord sock k = do
     lsqCh <- newLSQChannel 16
     ltxsCh <- newLTxSChannel 16
     bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $ \nodeThread -> do
-        let prov = adaptProvider magic (mkN2CProvider lsqCh)
+        (n2c, _) <-
+            guardConnection
+                nodeThread
+                (mkN2CProvider lsqCh)
+                (mkN2CSubmitter ltxsCh)
+        let prov = adaptProvider magic n2c
         awaitConnection magic sock nodeThread prov
         case backend of
             NodeBackend -> k NodeReads{nrProvider = prov}
@@ -225,10 +245,15 @@ withNodeModeAndFunding fundingFloor backend mode k = case mode of
         ltxsCh <- newLTxSChannel 16
         bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $
             \nodeThread -> do
-                let n2c = mkN2CProvider lsqCh
+                connection <-
+                    guardConnection
+                        nodeThread
+                        (mkN2CProvider lsqCh)
+                        (boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh))
+                let n2c = fst connection
                 awaitConnection magic sock nodeThread (adaptProvider magic n2c)
                 case mode of
-                    Devnet -> session magic sock n2c ltxsCh
+                    Devnet -> session magic sock connection
                     External _ -> do
                         start <- case backend of
                             NodeBackend ->
@@ -236,12 +261,10 @@ withNodeModeAndFunding fundingFloor backend mode k = case mode of
                                     <$> N2C.queryLedgerSnapshot n2c
                             IndexerBackend -> pure Nothing
                         followChain magic publicByronEpochSlots start sock $
-                            session magic sock n2c ltxsCh
-    session magic sock n2c ltxsCh = do
+                            session magic sock connection
+    session magic sock (n2c, submitter) = do
         wallet <- walletForMode mode
         let nodeProv = adaptProvider magic n2c
-            submitter =
-                boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
         -- A devnet session reads addresses through its indexer; an external
         -- node through the node adapter, or through the indexer backend
         -- when that is the backend asked for.
@@ -389,3 +412,38 @@ firstViewWithin polls sock prov =
                         <> " is still at its origin: no block has been made, so \
                            \no view of it can be acquired (AcquiredAtOrigin)"
         Left other -> throwIO other
+
+-- ---------------------------------------------------------
+-- No node call inside a view (#326)
+-- ---------------------------------------------------------
+
+{- | A node call issued by a thread that holds an acquired view on the same
+connection, by a route other than that view: a one-shot query, a second
+acquisition or a submission. The connection serves only the acquired
+state until the view is released, so the call would otherwise wait for
+a release that waits for it. Names the call.
+-}
+newtype NodeCallInView = NodeCallInView String
+    deriving stock (Eq, Show)
+
+instance Exception NodeCallInView
+
+{- | A node connection — its LocalStateQuery provider and its submitter —
+that refuses, as 'NodeCallInView', every call a thread issues while it
+holds an acquired view of that connection, other than the view's own
+reads; calls from threads holding no view pass through.
+
+Every call, the view's own reads included, also ends with the client
+thread: once the connection to the node has ended, a call waiting on it
+fails as @ConnectionLost@ (which the node adapter names
+'Cage.ViewConnectionLost') instead of waiting for an answer that cannot
+come. The upstream client raises it only when the runtime finds the
+waiting thread deadlocked, which it never does while another thread
+holds that thread's id.
+-}
+guardConnection
+    :: Async b
+    -> N2C.Provider IO
+    -> Submitter IO
+    -> IO (N2C.Provider IO, Submitter IO)
+guardConnection _ p s = pure (p, s)

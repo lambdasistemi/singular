@@ -64,6 +64,9 @@ let
       "record-value-tests"
       "cage-tests"
       "e2e-tests"
+      # #326: the backend contract suite; registry.yml job `contract` runs
+      # nix run .#contract-tests and nix run .#contract-external.
+      "contract-tests"
     ];
     # #266 (epic answer A-005): the package-private ownership core —
     # ledger, provider and the six Node children in one internal

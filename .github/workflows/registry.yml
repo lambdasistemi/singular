@@ -308,6 +308,43 @@ jobs:
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e
+  contract:
+    name: Backend contract suite on every adapter
+    runs-on: nixos
+    timeout-minutes: 60
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #326 R1/R2/R3: one case list over every adapter — in-memory, the
+      # indexer over the in-memory node, and the node and indexer adapters on
+      # devnet nodes the suite generates — each run named with its evidence
+      # class, each case an adapter cannot exercise reported for it by name.
+      # The generated-node rows also hold the session's connection guard: a
+      # node call from inside a view fails by name instead of hanging.
+      - name: Run the contract suite (in-memory, generated DevNet)
+        working-directory: offchain
+        run: nix run --quiet .#contract-tests
+      # #326 R4: a SignedTx is constructible only through signTx; the check
+      # also compiles both forgeries against a copy of the module exporting
+      # the constructor, so it can fail.
+      - name: SignedTx is constructible only by signing
+        working-directory: offchain
+        run: nix build --quiet --no-link .#signed-tx-control
+      # #326 R5: a devnet started as a separate process; the suite reaches it
+      # only by socket path, network magic and a funded key file.
+      - name: Run the contract suite against an externally started DevNet
+        working-directory: offchain
+        run: nix run --quiet .#contract-external
   journey:
     name: The bounded registry journey, narrated end to end
     needs: blueprint

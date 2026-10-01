@@ -940,7 +940,13 @@ def parse_manifests(root: Path) -> Manifests:
             raise InventoryError(
                 f"manifest failure: no hs-source-dirs parsed from {rel}"
             )
-    m.haskell_dirs |= {"offchain/naming/test", "offchain/naming/drift"}
+    m.haskell_dirs |= {
+        "offchain/naming/test",
+        "offchain/naming/drift",
+        # #326: the SignedTx forgery fixtures, type-checked by
+        # tools/signed_tx_control.sh outside any Cabal stanza.
+        "offchain/signed-tx-control",
+    }
     for d in sorted(m.haskell_dirs):
         if not (root / d).is_dir():
             raise InventoryError(
