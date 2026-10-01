@@ -566,7 +566,9 @@ runSession
                                 )
         emit "boot" bootLine
         mapM_
-            ( \row -> writeIORef (riRow (reIndex replay)) (T.pack row) >> runRow env marker row
+            ( \row ->
+                writeIORef (riRow (reIndex replay)) (T.pack row)
+                    >> runRow env marker row
             )
             rows
         cancel nodeThread

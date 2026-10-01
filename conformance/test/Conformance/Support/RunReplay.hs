@@ -20,7 +20,14 @@ import Data.Text qualified as T
 import Lens.Micro ((&), (.~))
 import System.Directory (getTemporaryDirectory, removePathForcibly)
 import System.FilePath ((</>))
-import Test.Hspec (Spec, describe, it, shouldBe, shouldNotBe, shouldSatisfy)
+import Test.Hspec
+    ( Spec
+    , describe
+    , it
+    , shouldBe
+    , shouldNotBe
+    , shouldSatisfy
+    )
 
 import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx)
 import Cardano.Ledger.Api.Tx.Body
@@ -71,12 +78,12 @@ import Conformance.Replay
     , UnobservedCause (..)
     , stepComparison
     )
+import Conformance.Run.Book (keyProof, speculativeStep)
 import Conformance.Run.Control
     ( ReasonControl (..)
     , controlledReason
     , parseReasonControl
     )
-import Conformance.Run.Book (keyProof, speculativeStep)
 import Conformance.Run.Replay
 import Singular.Registry.Types (edgeUpdateTerminal)
 
@@ -322,8 +329,10 @@ spec = describe "before a replay evaluates" $ do
         it "a cost model the evaluator cannot use is the evaluator's error" $
             classify P.CostModelParameterMismatch
                 `shouldSatisfy` isEvaluationError
-    describe "the replay index a refused step's comparison is written to" $
-        it "a differing step leaves its entry with Lean's reason and the comparison" $ do
+    describe "the replay index a refused step's comparison is written to"
+        $ it
+            "a differing step leaves its entry with Lean's reason and the comparison"
+        $ do
             dir <- (</> "conformance-replay-index-spec") <$> getTemporaryDirectory
             removePathForcibly dir
             index <- newReplayIndex dir
@@ -334,9 +343,21 @@ spec = describe "before a replay evaluates" $ do
                         , "comparison" .= Null
                         , "extentClass" .= ("unclassified" :: Text)
                         ]
-            addRejection index "tx-other" (entry "tx-other") [("m", Admitted "deposit-returned")]
-            addRejection index "tx-step" (entry "tx-step") [("m", Admitted "retract-owner")]
-            recordComparison index "tx-step" "not-phase2" (Differs "retract-owner" "not-phase2")
+            addRejection
+                index
+                "tx-other"
+                (entry "tx-other")
+                [("m", Admitted "deposit-returned")]
+            addRejection
+                index
+                "tx-step"
+                (entry "tx-step")
+                [("m", Admitted "retract-owner")]
+            recordComparison
+                index
+                "tx-step"
+                "not-phase2"
+                (Differs "retract-owner" "not-phase2")
             written <- eitherDecodeFileStrict (dir </> "replay" </> "index.json")
             let fieldOf txid name = case written of
                     Right entries ->
@@ -346,7 +367,8 @@ spec = describe "before a replay evaluates" $ do
                         ]
                     Left _ -> []
             fieldOf "tx-step" "comparison" `shouldBe` [Just (String "differs")]
-            fieldOf "tx-step" "modelReason" `shouldBe` [Just (String "not-phase2")]
+            fieldOf "tx-step" "modelReason"
+                `shouldBe` [Just (String "not-phase2")]
             fieldOf "tx-step" "extentClass" `shouldBe` [Just (String "A")]
             fieldOf "tx-other" "comparison" `shouldBe` [Just Null]
     describe "the wrong-reason control" $ do
@@ -364,8 +386,10 @@ spec = describe "before a replay evaluates" $ do
                 [("m", Admitted "not-phase2")]
                 `shouldNotBe` Agrees
         it "every other step, and the run without the control, is untouched" $ do
-            controlledReason (Just control) "CG07" 2 "not-phase2" `shouldBe` "not-phase2"
-            controlledReason (Just control) "CG22" 0 "not-booked" `shouldBe` "not-booked"
+            controlledReason (Just control) "CG07" 2 "not-phase2"
+                `shouldBe` "not-phase2"
+            controlledReason (Just control) "CG22" 0 "not-booked"
+                `shouldBe` "not-booked"
             controlledReason Nothing "CG07" 0 "not-phase2" `shouldBe` "not-phase2"
   where
     isEvaluationError = \case

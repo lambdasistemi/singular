@@ -370,7 +370,8 @@ receiptPolicySpec = describe
                 case rs of
                     Right [r0] -> do
                         fmap refusalBranch (receiptRefusal r0) `shouldBe` Just Nothing
-                        fmap refusalLimit (receiptRefusal r0) `shouldSatisfy` maybe False isJust
+                        fmap refusalLimit (receiptRefusal r0)
+                            `shouldSatisfy` maybe False isJust
                     other -> fail ("expected the row's refused receipt, got " <> show other)
         it
             "An unexplained rejection saves no evidence and reports the problem"
