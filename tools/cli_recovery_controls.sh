@@ -32,6 +32,7 @@
 # verdict table is WORKDIR/verdicts.md. A setup failure (no node, no
 # socket, a create that does not complete) exits 3 and is never a
 # verdict; any clause that does not hold exits 1.
+# shellcheck disable=SC2016 # single-quoted jq programs name jq variables, never shell ones
 set -euo pipefail
 
 [ "$#" -eq 4 ] || {
@@ -442,8 +443,227 @@ control="every control"
 clause "every journalled transaction has exactly one prepared line" \
   jq -s -e '[group_by(.journalTxId)[] | [.[] | select(.journalEvent == "prepared")] | length] | all(. == 1)' "$journal"
 clause "the journal was only appended to and no body changed since the registry was created" appended_only s0
-
 jq -r '.journalEvent' "$journal" | sort | uniq -c
+
+# ------------------------------------------------------------------
+# rolled back — a generated-DevNet mechanism, not a public-chain fork
+# ------------------------------------------------------------------
+# The development node's database is copied while the node is stopped,
+# an insert is made and observed, then the node is stopped again and
+# restarted on the copy: the blocks that carried the insert are no longer
+# on its chain. The node's own reads come first — its adoption trace and
+# `devnet probe` — and only then the CLI's receipts, journal and files.
+# A second registry carries this control, so the fold the "never sent"
+# control leaves unresolved does not stand in its way.
+control="rolled back (generated DevNet: node database restored, not a public-chain fork)"
+node_dir="$work/cardano-e2e"
+nlog="$node_dir/node.log"
+# probe_ins TXIN...: the node's tip and which of TXIN are unspent, as JSON.
+probe_ins() {
+  local a=() t
+  for t in "$@"; do a+=(--tx-in "$t"); done
+  "$devnet" probe --node-socket "$node_dir/node.sock" --network-magic 42 "${a[@]}"
+}
+# The hash and slot of the tip a node opened its database at, from the
+# OpenedDB line numbered after LINE in its log.
+opened_tip_after() {
+  tail -n +"$(($1 + 1))" "$nlog" | grep -m1 'ChainDB.OpenEvent.OpenedDB' \
+    | sed -nE 's/.* and tip ([0-9a-f]{64}) at slot ([0-9]+)$/{"hash":"\1","slot":\2}/p'
+}
+# Every block the node put on its chain after line LINE of its log.
+chained_after() {
+  tail -n +"$(($1 + 1))" "$nlog" | sed -nE 's/.*(Chain extended|Switched to a fork), new tip: ([0-9a-f]{64}).*/\2/p'
+}
+# HASH is the restored tip or a block the node chained since the restore;
+# an empty or null hash never is.
+on_restored_chain() {
+  [ -n "$1" ] && [ "$1" != null ] || return 1
+  {
+    jq -r .hash <<<"$restored_tip"
+    chained_after "$mark"
+  } | grep -qxF "$1"
+}
+# None of the HASHes is a block the node chained since the restore.
+not_chained_since() {
+  local h
+  for h in "$@"; do
+    [[ "$h" =~ ^[0-9a-f]{64}$ ]] || return 1
+    ! chained_after "$mark" | grep -qxF "$h" || return 1
+  done
+}
+# The blocks the node adopted carrying TX: {"hash","slot"} per line.
+carrying() {
+  grep -F '"ns":"Forge.Loop.AdoptedBlock"' "$nlog" \
+    | jq -c --arg t "$1" 'select(any(.data.txIds[]; contains($t))) | {hash: .data.blockHash, slot: .data.slot}'
+}
+# carried_since LINE TX: blocks adopted after LINE that carry TX.
+carried_since() {
+  tail -n +"$(($1 + 1))" "$nlog" | grep -F '"ns":"Forge.Loop.AdoptedBlock"' \
+    | jq -c --arg t "$2" 'select(any(.data.txIds[]; contains($t)))' | wc -l
+}
+# Stop the node with PID and wait until it is gone or a zombie.
+stop_node() {
+  kill -INT "$1" 2>/dev/null || return 1
+  for _ in $(seq 1 600); do
+    case "$(awk '{print $3}' "/proc/$1/stat" 2>/dev/null || echo gone)" in
+      Z | gone) return 0 ;;
+    esac
+    sleep 0.05
+  done
+  return 1
+}
+start_node() {
+  rm -f "$node_dir/node.sock"
+  "$node_exe" "${node_args[@]}" >>"$nlog" 2>&1 </dev/null &
+  node_pid=$!
+  for _ in $(seq 1 600); do
+    [ -S "$node_dir/node.sock" ] && return 0
+    kill -0 "$node_pid" 2>/dev/null || return 1
+    sleep 0.1
+  done
+  return 1
+}
+
+orig_pid="$(pgrep -f "cardano-node run --config $node_dir/node-config.json" | head -1)" \
+  || setup_fail "the development node's process was not found"
+node_exe="$(readlink "/proc/$orig_pid/exe")"
+mapfile -d '' -t node_argv <"/proc/$orig_pid/cmdline"
+# The same command line, with a configuration that also writes each
+# adopted block's hash, slot and transaction ids as JSON.
+jq '.TraceOptions["Forge.Loop.AdoptedBlock"] = {detail: "DDetailed", backends: ["Stdout MachineFormat"]}' \
+  "$node_dir/node-config.json" >"$node_dir/node-config.traced.json"
+node_args=()
+for a in "${node_argv[@]:1}"; do
+  if [ "$a" = "$node_dir/node-config.json" ]; then node_args+=("$node_dir/node-config.traced.json"); else node_args+=("$a"); fi
+done
+
+reg="$work/registry-rolled-back"
+journal="$reg/journal.jsonl"
+common=(--registry "$reg" --blueprint "$blueprint")
+run preview-rb registry create --preview "${common[@]}" "${node[@]}" "${alice[@]}"
+outcome_is preview-rb success || setup_fail "the second create --preview did not succeed"
+run create-rb registry create --seed "$(field preview-rb .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
+outcome_is create-rb success || setup_fail "the second create did not succeed"
+state="$(field create-rb .pins.pinState)"
+token="$(field create-rb .token)"
+active="$(field create-rb .pins.pinActive)"
+for k in 6c00 6c01 6c02; do envelope "$work/$k.json" "$alicekey" "$k"; done
+insert_of 6c00
+run insert-rb0 "${args[@]}"
+outcome_is insert-rb0 success || setup_fail "the insert before the snapshot did not succeed"
+
+# The snapshot: stopped, copied, restarted on the same database.
+mark="$(wc -l <"$nlog")"
+stop_node "$orig_pid" || setup_fail "the development node did not stop"
+cp -a "$node_dir/db" "$work/node-db-snapshot"
+start_node || setup_fail "the development node did not restart after the snapshot"
+snap_tip="$(opened_tip_after "$mark")"
+[ -n "$snap_tip" ] || setup_fail "the restarted node reported no tip it opened"
+forging=1
+for _ in $(seq 1 600); do
+  if tail -n +"$((mark + 1))" "$nlog" | grep -qF '"ns":"Forge.Loop.AdoptedBlock"'; then
+    forging=0
+    break
+  fi
+  sleep 0.1
+done
+[ "$forging" -eq 0 ] || setup_fail "the node did not forge again after the snapshot restart"
+say "$control: snapshot at $snap_tip"
+snap rb0
+
+insert_of 6c01
+run insert-rb "${args[@]}"
+rb_book="$(submission_tx insert-rb book)"
+rb_fold="$(submission_tx insert-rb fold)"
+clause "the insert after the snapshot succeeds" outcome_is insert-rb success
+clause "its booking was prepared, acknowledged, included and observed" \
+  is_equal "$(events_of "$rb_book")" '["prepared","submitted","confirmed","observed"]'
+clause "its fold was prepared, acknowledged, included and observed" \
+  is_equal "$(events_of "$rb_fold")" '["prepared","submitted","confirmed","observed"]'
+book_ins="$(prepared_of "$rb_book" | jq -r '.journalInputs[]')"
+fold_ins_before="$(prepared_of "$rb_fold" | jq -r --arg b "$rb_book" '.journalInputs[] | select(startswith($b + "#") | not)')"
+book_block="$(carrying "$rb_book")"
+fold_block="$(carrying "$rb_fold")"
+clause "the node adopted exactly one block carrying the booking" is_equal "$(grep -c . <<<"$book_block")" 1
+clause "the node adopted exactly one block carrying the fold" is_equal "$(grep -c . <<<"$fold_block")" 1
+clause "both blocks come after the snapshot's tip" \
+  jq -n -e --argjson s "$snap_tip" --argjson b "$book_block" --argjson f "$fold_block" '$b.slot > $s.slot and $f.slot > $s.slot'
+# The probe can say both things: before the restore it reports the
+# booking's inputs spent and the fold's first output live.
+mapfile -t book_ins_a <<<"$book_ins"
+mapfile -t fold_ins_a <<<"$fold_ins_before"
+pre="$(probe_ins "${book_ins_a[@]}" "$rb_fold#0")"
+clause "before the restore the node reports the booking's inputs spent" \
+  jq -n -e --argjson p "$pre" --arg f "$rb_fold#0" '($p.spent | length) > 0 and ($p.live == [$f])'
+snap rb1
+cp "$reg/registry.mirror.json" "$snaps/rb1.mirror.json"
+
+# The restore: stopped, the copy put back, restarted.
+mark="$(wc -l <"$nlog")"
+stop_node "$node_pid" || setup_fail "the development node did not stop for the restore"
+wait "$node_pid" 2>/dev/null || true
+mv "$node_dir/db" "$work/node-db-forked"
+cp -a "$work/node-db-snapshot" "$node_dir/db"
+start_node || setup_fail "the development node did not restart on the restored database"
+restored_tip="$(opened_tip_after "$mark")"
+[ -n "$restored_tip" ] || setup_fail "the restored node reported no tip it opened"
+post="$(probe_ins "${book_ins_a[@]}" "${fold_ins_a[@]}" "$rb_book#0" "$rb_fold#0")" \
+  || setup_fail "the restored node answers no local state query"
+say "$control: restored at $restored_tip; node reads $(jq -c .tip <<<"$post")"
+clause "the restored node opened its database at the snapshot's tip" \
+  jq -n -e --argjson s "$snap_tip" --argjson r "$restored_tip" '$s == $r'
+clause "neither block that carried the booking or the fold is one the restored node chained since" \
+  not_chained_since "$(jq -r .hash <<<"$book_block")" "$(jq -r .hash <<<"$fold_block")"
+clause "the node's tip is the restored tip or a block it chained since" \
+  on_restored_chain "$(jq -r .tip.hash <<<"$post")"
+clause "the booking's inputs are unspent again" \
+  jq -n -e --argjson p "$post" --arg i "$book_ins" '($i | split("\n") | map(select(. != ""))) as $w | ($w | length) > 0 and ($w - $p.live == [])'
+clause "the fold's inputs the booking did not make are unspent again" \
+  jq -n -e --argjson p "$post" --arg i "$fold_ins_before" '($i | split("\n") | map(select(. != ""))) as $w | ($w | length) > 0 and ($w - $p.live == [])'
+clause "neither the booking's nor the fold's first output exists" \
+  jq -n -e --argjson p "$post" --arg b "$rb_book#0" --arg f "$rb_fold#0" '($p.spent | index($b)) != null and ($p.spent | index($f)) != null'
+
+run inspect-rb registry inspect --key 6c01 "${common[@]}" "${node[@]}"
+clause "the next command, inspect, journals the booking rolled back after its observation" \
+  is_equal "$(events_of "$rb_book")" '["prepared","submitted","confirmed","observed","rolled-back"]'
+clause "and the fold rolled back after its observation" \
+  is_equal "$(events_of "$rb_fold")" '["prepared","submitted","confirmed","observed","rolled-back"]'
+rolled_line() { jq -c --arg t "$1" 'select(.journalTxId == $t and .journalEvent == "rolled-back")' "$journal"; }
+for t in "$rb_book" "$rb_fold"; do
+  clause "the rolled-back line of $t names a chain point on the restored chain" \
+    on_restored_chain "$(rolled_line "$t" | jq -r '.journalChainPoint // "" | split(".") | last')"
+  clause "the rolled-back line of $t names spent inputs the node reports unspent" \
+    jq -n -e --argjson l "$(rolled_line "$t")" --argjson p "$post" '($l.journalInputs | length) > 0 and ($l.journalInputs - $p.live == [])'
+done
+clause "the fold's rolled-back line names the root the mirror returned to: the fold's root before" \
+  is_equal "$(rolled_line "$rb_fold" | jq -r .journalRootBefore)" "$(root_before_of "$rb_fold")"
+clause "inspect stops partial naming the booking's case rolled-back" \
+  is_equal "$(field inspect-rb '.outcome + "/" + .unresolved.case + "/" + .unresolved.tx')" "partial/rolled-back/$rb_book"
+clause "inspect reads the ledger's root at the fold's root before" is_equal "$(field inspect-rb .root)" "$(root_before_of "$rb_fold")"
+clause "state.json returned to the fold's root before" is_equal "$(root_now)" "$(root_before_of "$rb_fold")"
+clause "the mirror returned to the bytes it had before the rolled-back insert" \
+  is_equal "$(mirror_now)" "$(cat "$snaps/rb0.mirror")"
+clause "the observations stay in the journal: it was only appended to and no body changed" appended_only rb1
+clause "the booking and the fold were each prepared once" bash -c "[ '$(event_count "$rb_book" prepared)$(event_count "$rb_fold" prepared)' = 11 ]"
+clause "the fold's edge is applied zero times: observed once, rolled back once after" \
+  is_equal "$(event_count "$rb_fold" observed)/$(event_count "$rb_fold" rolled-back)" 1/1
+clause "no block the node adopted since the restore carries the booking or the fold" \
+  is_equal "$(carried_since "$mark" "$rb_book")$(carried_since "$mark" "$rb_fold")" 00
+
+snap rb2
+insert_of 6c02
+run insert-rb2 "${args[@]}"
+clause "the following write stops partial (exit 15)" exit_is insert-rb2 15
+clause "it names the case rolled-back" is_equal "$(field insert-rb2 .unresolved.case)" rolled-back
+clause "it names the rolled-back booking" is_equal "$(field insert-rb2 .unresolved.tx)" "$rb_book"
+clause "its reason names the transaction" bash -c "jq -e --arg t '$rb_book' '.reason | contains(\$t)' '$receipts/insert-rb2.json'"
+clause "it built and submitted nothing: the journal did not move" journal_same rb2
+clause "it committed nothing locally" bash -c "[ '$(root_now)' = '$(cat "$snaps/rb2.root")' ] && [ '$(mirror_now)' = '$(cat "$snaps/rb2.mirror")' ]"
+clause "the node's blocks since the restore still carry neither transaction" \
+  is_equal "$(carried_since "$mark" "$rb_book")$(carried_since "$mark" "$rb_fold")" 00
+say "$control: $(chained_after "$mark" | wc -l) block(s) chained by the restored node"
+jq -r '.journalEvent' "$journal" | sort | uniq -c
+
 cat "$verdicts"
 if [ "$failed" -ne 0 ]; then
   say "RECOVERY-CONTROLS-FAILED"

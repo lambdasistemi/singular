@@ -70,6 +70,7 @@ import Singular.Registry.Ledger
     ( AssetName (..)
     , Coin (..)
     , Root (..)
+    , SlotNo (..)
     , TokenId (..)
     )
 import Singular.Registry.Node (Wallet (..), loadWallet)
@@ -94,6 +95,7 @@ spec = describe "singular registry commands" $ do
     journal
     localProof
     recovery
+    rollback
 
 -- ---------------------------------------------------------
 -- The command line
@@ -511,9 +513,6 @@ localProof = describe "a key's leaf proven against the observed root" $ do
 
 recovery :: Spec
 recovery = describe "recovery after an uncertain submission" $ do
-    it "names the five cases a submission meets, each distinctly" $
-        map caseName [minBound .. maxBound]
-            `shouldBe` ["acknowledged", "unknown", "rejected", "included", "timeout"]
     it "reads each transaction's case from its journalled phases" $ do
         let lines' =
                 [ line "a" "prepared"
@@ -680,6 +679,219 @@ recovery = describe "recovery after an uncertain submission" $ do
             , journalRootAfter = Just to
             }
     mirrorFile = mirrorPathFor
+
+-- ---------------------------------------------------------
+-- Rollback and exclusion
+-- ---------------------------------------------------------
+
+rollback :: Spec
+rollback = describe "a rolled-back inclusion and an excluded transaction" $ do
+    it "names the seven cases a submission meets, each distinctly" $
+        map caseName [minBound .. maxBound]
+            `shouldBe` [ "acknowledged"
+                       , "unknown"
+                       , "rejected"
+                       , "included"
+                       , "timeout"
+                       , "rolled-back"
+                       , "excluded"
+                       ]
+    it
+        "reads a transaction's case from the latest of its journalled phases" $ do
+        let lines' =
+                phases
+                    "b"
+                    ["prepared", "submitted", "confirmed", "observed", "rolled-back"]
+                    <> phases "c" ["prepared", "submitted", "confirmed", "rolled-back"]
+                    <> phases
+                        "i"
+                        [ "prepared"
+                        , "submitted"
+                        , "confirmed"
+                        , "observed"
+                        , "rolled-back"
+                        , "confirmed"
+                        ]
+                    <> phases
+                        "o"
+                        [ "prepared"
+                        , "submitted"
+                        , "confirmed"
+                        , "observed"
+                        , "rolled-back"
+                        , "confirmed"
+                        , "observed"
+                        ]
+                    <> phases
+                        "x"
+                        [ "prepared"
+                        , "submitted"
+                        , "confirmed"
+                        , "observed"
+                        , "rolled-back"
+                        , "excluded"
+                        ]
+                    <> phases "u" ["prepared", "submit-unknown", "excluded"]
+                    <> phases "t" ["prepared", "submitted", "unconfirmed", "excluded"]
+                    <> phases "k" ["prepared", "excluded"]
+        map (submissionCase lines') ["b", "c", "i", "o", "x", "u", "t", "k"]
+            `shouldBe` [ Just CaseRolledBack
+                       , Just CaseRolledBack
+                       , Just CaseIncluded
+                       , Just CaseIncluded
+                       , Just CaseExcluded
+                       , Just CaseExcluded
+                       , Just CaseExcluded
+                       , Just CaseExcluded
+                       ]
+    it
+        "leaves a rolled-back transaction unresolved and settles an excluded one" $ do
+        let rolled =
+                phases
+                    "b"
+                    ["prepared", "submitted", "confirmed", "observed", "rolled-back"]
+            excluded = rolled <> phases "b" ["excluded"]
+        fmap journalEvent (unresolved rolled) `shouldBe` Just "rolled-back"
+        unresolved excluded `shouldBe` Nothing
+    it
+        "reads inclusion from a view's live outputs: output live, an input live, or neither" $ do
+        let out0 = outRef 'f' 0
+            spent = [outRef 'a' 0, outRef 'b' 1, outRef 'c' 2]
+            live = Set.fromList
+        inclusionOf (live [out0]) out0 spent `shouldBe` OnChain
+        inclusionOf
+            (live [outRef 'b' 1, outRef 'c' 2, outRef 'e' 0])
+            out0
+            spent
+            `shouldBe` OffChain [outRef 'b' 1, outRef 'c' 2]
+        inclusionOf (live [outRef 'e' 0]) out0 spent `shouldBe` Undetermined
+        inclusionOf (live []) out0 [] `shouldBe` Undetermined
+    it
+        "rolls back only an included transaction a live input shows off the chain" $ do
+        let gone = OffChain [outRef 'a' 0, outRef 'b' 1]
+        rollbackEvidence (Just CaseIncluded) gone
+            `shouldBe` Just [outRef 'a' 0, outRef 'b' 1]
+        rollbackEvidence (Just CaseIncluded) Undetermined `shouldBe` Nothing
+        rollbackEvidence (Just CaseIncluded) OnChain `shouldBe` Nothing
+        forM_
+            [ CaseAcknowledged
+            , CaseUnknown
+            , CaseRejected
+            , CaseTimeout
+            , CaseRolledBack
+            , CaseExcluded
+            ] $
+            \c -> rollbackEvidence (Just c) gone `shouldBe` Nothing
+        rollbackEvidence Nothing gone `shouldBe` Nothing
+    it
+        "excludes an unresolved transaction not on the chain once the tip reaches its upper bound"
+        $ do
+            let gone = OffChain [outRef 'a' 0]
+                bound = Just (SlotNo 500)
+            forM_ [CaseAcknowledged, CaseUnknown, CaseTimeout, CaseRolledBack] $ \c -> do
+                excludedAt (SlotNo 500) bound (Just c) gone `shouldBe` True
+                excludedAt (SlotNo 900) bound (Just c) gone `shouldBe` True
+                excludedAt (SlotNo 499) bound (Just c) gone `shouldBe` False
+                excludedAt (SlotNo 900) Nothing (Just c) gone `shouldBe` False
+                excludedAt (SlotNo 900) bound (Just c) OnChain `shouldBe` False
+                excludedAt (SlotNo 900) bound (Just c) Undetermined `shouldBe` False
+            forM_ [CaseIncluded, CaseRejected, CaseExcluded] $ \c ->
+                excludedAt (SlotNo 900) bound (Just c) gone `shouldBe` False
+    it
+        "returns the mirror to the root before the earliest rolled-back fold, rebuilt from the folds still on chain"
+        $ do
+            (_, r0) <- walked []
+            (_, r1) <- walked [("k1", edgeInsertActive)]
+            (_, r2) <- walked [("k1", edgeInsertActive), ("k2", edgeInsertActive)]
+            (_, r3) <-
+                walked
+                    [ ("k1", edgeInsertActive)
+                    , ("k2", edgeInsertActive)
+                    , ("k2", edgeUpdateTerminal)
+                    ]
+            let f1 = foldPrepared "f1" "k1" edgeInsertActive r0 r1
+                f2 = foldPrepared "f2" "k2" edgeInsertActive r1 r2
+                f3 = foldPrepared "f3" "k2" edgeUpdateTerminal r2 r3
+                lost = foldPrepared "lost" "k9" edgeInsertActive r1 r1
+                settled t = phases t ["submitted", "confirmed", "observed"]
+                history =
+                    [f1]
+                        <> settled "f1"
+                        <> [lost]
+                        <> phases "lost" ["submit-unknown", "excluded"]
+                        <> [f2]
+                        <> settled "f2"
+                        <> [f3]
+                        <> settled "f3"
+                        <> phases "book" ["prepared", "submitted", "confirmed", "observed"]
+            rewindOf history `shouldBe` Nothing
+            rewindOf (history <> phases "book" ["rolled-back"]) `shouldBe` Nothing
+            rewindOf (history <> phases "f3" ["rolled-back"])
+                `shouldBe` Just (Rewind (hexT r2) [f1, f2])
+            rewindOf
+                (history <> phases "f3" ["rolled-back"] <> phases "f2" ["rolled-back"])
+                `shouldBe` Just (Rewind (hexT r1) [f1])
+            rewindOf
+                ( history
+                    <> phases "f3" ["rolled-back"]
+                    <> phases "f3" ["confirmed", "observed"]
+                )
+                `shouldBe` Nothing
+    it
+        "replays fold edges from the empty trie, each from its journalled root before to its root after" $ do
+        (_, r0) <- walked []
+        (_, r1) <- walked [("k1", edgeInsertActive)]
+        (_, r2) <- walked [("k1", edgeInsertActive), ("k2", edgeInsertActive)]
+        let f1 = foldPrepared "f1" "k1" edgeInsertActive r0 r1
+            f2 = foldPrepared "f2" "k2" edgeInsertActive r1 r2
+            replayed folds = do
+                let tid = TokenId (AssetName "tok")
+                (tm, _) <- mkPureTrieManagerFrom Map.empty
+                createTrie tm tid
+                withTrie tm tid (`replayFolds` folds)
+        replayed [f1, f2] `shouldReturn` Right r2
+        replayed [f1] `shouldReturn` Right r1
+        replayed [] `shouldReturn` Right r0
+        -- A fold that does not start from the root reached, or does not
+        -- end at its journalled root after, stops the replay.
+        isLeft <$> replayed [f2] `shouldReturn` True
+        isLeft <$> replayed [f1, f2{journalRootAfter = Just (hexT r1)}]
+            `shouldReturn` True
+  where
+    phases t = map (jline t)
+    outRef c i =
+        either error id $
+            parseOutRef (T.pack (replicate 64 c <> "#" <> show (i :: Int)))
+    foldPrepared t k edge from to =
+        (jline t "prepared")
+            { journalKey = Just (hexT k)
+            , journalEdge = Just edge
+            , journalRootBefore = Just (hexT from)
+            , journalRootAfter = Just (hexT to)
+            }
+    isLeft = either (const True) (const False)
+
+-- | A bare journal line of one phase of one transaction.
+jline :: T.Text -> T.Text -> JournalEntry
+jline t e =
+    JournalEntry
+        { journalCommand = "insert"
+        , journalStep = "fold"
+        , journalTxId = t
+        , journalEvent = e
+        , journalDetail = Nothing
+        , journalInputs = Nothing
+        , journalNetwork = Nothing
+        , journalEra = Nothing
+        , journalBody = Nothing
+        , journalBodyHash = Nothing
+        , journalChainPoint = Nothing
+        , journalKey = Nothing
+        , journalExpect = Nothing
+        , journalEdge = Nothing
+        , journalRootBefore = Nothing
+        , journalRootAfter = Nothing
+        }
 
 {- | Start a process that rewrites a file over and over, kill it at a
 different moment each round, and run the check on what it left.

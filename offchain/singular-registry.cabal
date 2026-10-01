@@ -569,6 +569,8 @@ executable devnet
   hs-source-dirs:   devnet
   main-is:          Main.hs
   build-depends:
+    , aeson
+    , async
     , base                        >=4.14 && <5
     , base16-bytestring
     , bytestring
@@ -576,12 +578,16 @@ executable devnet
     , cardano-ledger-mary
     , cardano-node-clients
     , cardano-node-clients:devnet
+    , cardano-slotting
     , cardano-strict-containers
     , containers
     , directory
     , filepath
     , microlens
+    , ouroboros-consensus
+    , ouroboros-network:api
     , singular-registry
+    , text
 
   ghc-options:      -threaded -with-rtsopts=-N
 

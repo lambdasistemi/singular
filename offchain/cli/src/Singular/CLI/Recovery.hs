@@ -15,11 +15,26 @@ Any other pair of roots is stale local state, never repaired.
 module Singular.CLI.Recovery
     ( MirrorDecision (..)
     , mirrorDecision
+
+      -- * Inclusion, rollback and exclusion
+    , Inclusion (..)
+    , inclusionOf
+    , rollbackEvidence
+    , excludedAt
+
+      -- * Returning the mirror to a root before
+    , Rewind (..)
+    , rewindOf
+    , replayFolds
     ) where
 
+import Data.ByteString (ByteString)
+import Data.Set (Set)
 import Data.Text (Text)
 
-import Singular.CLI.Receipt (JournalEntry (..))
+import Singular.CLI.Receipt (JournalEntry (..), SubmissionCase (..))
+import Singular.Registry.Ledger (SlotNo, TxIn)
+import Singular.Registry.Trie (Trie)
 
 -- | What reconciliation does to the mirror for one included transaction.
 data MirrorDecision
@@ -45,3 +60,39 @@ mirrorDecision local ledger p =
             | local == before -> ApplyEdge
             | otherwise -> EdgeStale
         _ -> NoEdge
+
+-- | What one view shows about whether a transaction is on its chain.
+data Inclusion
+    = OnChain
+    | OffChain [TxIn]
+    | Undetermined
+    deriving stock (Eq, Show)
+
+-- | Inclusion from the outputs live at a view.
+inclusionOf :: Set TxIn -> TxIn -> [TxIn] -> Inclusion
+inclusionOf _ _ _ = Undetermined
+
+-- | The live inputs that show an included transaction rolled back.
+rollbackEvidence :: Maybe SubmissionCase -> Inclusion -> Maybe [TxIn]
+rollbackEvidence _ _ = Nothing
+
+-- | Whether an unresolved transaction can never be included.
+excludedAt
+    :: SlotNo -> Maybe SlotNo -> Maybe SubmissionCase -> Inclusion -> Bool
+excludedAt _ _ _ _ = False
+
+-- | Where the mirror returns after a rollback, and the folds that rebuild it.
+data Rewind = Rewind
+    { rewindRoot :: Text
+    , rewindFolds :: [JournalEntry]
+    }
+    deriving stock (Eq, Show)
+
+-- | The rewind a journal asks for, if any fold of it is rolled back.
+rewindOf :: [JournalEntry] -> Maybe Rewind
+rewindOf _ = Nothing
+
+-- | Replay journalled fold edges onto a trie.
+replayFolds
+    :: (Monad m) => Trie m -> [JournalEntry] -> m (Either Text ByteString)
+replayFolds _ _ = pure (Left "not replayed")

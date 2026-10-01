@@ -224,6 +224,8 @@ data SubmissionCase
     | CaseRejected
     | CaseIncluded
     | CaseTimeout
+    | CaseRolledBack
+    | CaseExcluded
     deriving stock (Eq, Show, Enum, Bounded)
 
 -- | The case as a receipt names it.
@@ -234,6 +236,8 @@ caseName = \case
     CaseRejected -> "rejected"
     CaseIncluded -> "included"
     CaseTimeout -> "timeout"
+    CaseRolledBack -> ""
+    CaseExcluded -> ""
 
 {- | The case the transaction met, from its journalled phases: the
 furthest one reached. Inclusion recorded later — by a reconciliation —
