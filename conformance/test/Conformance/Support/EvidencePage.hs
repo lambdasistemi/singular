@@ -9,13 +9,13 @@ read back by its rendered text.
 -}
 module Conformance.Support.EvidencePage (spec) where
 
+import Control.Monad (forM_)
 import Data.Aeson (Value (..), decode)
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString.Lazy qualified as BSL
 import Data.Char (isAlphaNum)
 import Data.List (isInfixOf, sort)
-import Data.Maybe (listToMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Test.Hspec
@@ -90,44 +90,61 @@ spec = describe "Appendix: computing the published evidence page" $ do
         renderedPage page `shouldSatisfy` T.isInfixOf model
         renderedPage page `shouldSatisfy` T.isInfixOf "fixture-base"
 
-    it "Refuses a receipt for another code revision" $ do
+    it "Refuses a receipt for another code revision, wherever it stands" $ do
         (rows, receipts) <- fixtures
-        refusal rows (snapshotOf "other-base" receipts) "not the stated base"
+        everyPosition receipts (\r -> r{receiptBase = "other-base"}) $ \tampered ->
+            refusal
+                rows
+                (snapshotOf "fixture-base" tampered)
+                "not the stated base"
 
-    it "Refuses a receipt recorded on a dirty tree" $ do
+    it "Refuses a receipt recorded on a dirty tree, wherever it stands" $ do
         (rows, receipts) <- fixtures
-        let dirty = [r{receiptDirty = True} | r <- take 1 receipts] <> drop 1 receipts
-        refusal rows (snapshotOf "fixture-base" dirty) "dirty tree"
+        everyPosition receipts (\r -> r{receiptDirty = True}) $ \tampered ->
+            refusal rows (snapshotOf "fixture-base" tampered) "dirty tree"
 
-    it "Refuses a receipt for a requirement the inventory does not have" $ do
-        (rows, receipts) <- fixtures
-        let unknown = [r{receiptRow = "CX99"} | r <- take 1 receipts] <> drop 1 receipts
-        refusal rows (snapshotOf "fixture-base" unknown) "unknown requirement"
+    it
+        "Refuses a receipt for a requirement the inventory does not have, wherever it stands"
+        $ do
+            (rows, receipts) <- fixtures
+            everyPosition receipts (\r -> r{receiptRow = "CX99"}) $ \tampered ->
+                refusal
+                    rows
+                    (snapshotOf "fixture-base" tampered)
+                    "unknown requirement"
 
     it "Refuses a snapshot with no receipt" $ do
         (rows, _) <- fixtures
         refusal rows (snapshotOf "fixture-base" []) "no conformance receipt"
 
-    it "Never shows a held run as demonstrated" $ do
-        (rows, receipts) <- fixtures
-        let held =
-                [r{receiptVerdict = HeldQ002} | r <- take 1 receipts]
-                    <> drop 1 receipts
-        page <- rendered rows (snapshotOf "fixture-base" held)
-        let heldId = maybe "" receiptRow (listToMaybe held)
-        tableIds
-            (section "Requirements a run demonstrated" (renderedPage page))
-            `shouldSatisfy` notElem heldId
-        tableIds
-            (section "Requirements a run did not pass" (renderedPage page))
-            `shouldBe` [heldId]
-        case filter ((== heldId) . rowId) rows of
-            [row] ->
-                effectiveState "fixture-base" held row
-                    `shouldSatisfy` (/= ShownExecuted)
-            _ ->
-                expectationFailure
-                    "the fixture's requirement is not in the inventory once"
+    it
+        "Never shows a run that did not pass as demonstrated, whatever its verdict and wherever it stands"
+        $ do
+            (rows, receipts) <- fixtures
+            let notPassing =
+                    [ v
+                    | v <- [minBound .. maxBound]
+                    , v `notElem` [AgreesWithModel, Partial]
+                    ]
+            length notPassing `shouldSatisfy` (> 1)
+            forM_ notPassing $ \verdict ->
+                everyPositionAt receipts (\r -> r{receiptVerdict = verdict}) $ \i held -> do
+                    page <- rendered rows (snapshotOf "fixture-base" held)
+                    let heldId = maybe "" receiptRow (lookup i (zip [0 ..] held))
+                        others = [receiptRow r | (j, r) <- zip [0 ..] held, j /= i]
+                    tableIds
+                        (section "Requirements a run demonstrated" (renderedPage page))
+                        `shouldBe` sort others
+                    tableIds
+                        (section "Requirements a run did not pass" (renderedPage page))
+                        `shouldBe` [heldId]
+                    case filter ((== heldId) . rowId) rows of
+                        [row] ->
+                            effectiveState "fixture-base" held row
+                                `shouldSatisfy` (/= ShownExecuted)
+                        _ ->
+                            expectationFailure
+                                "the fixture's requirement is not in the inventory once"
 
     it "Shows a partial run as partly demonstrated" $ do
         rows <- committedRows
@@ -152,20 +169,14 @@ spec = describe "Appendix: computing the published evidence page" $ do
                 `shouldSatisfy` T.isInfixOf "failed: the connection was not refused"
 
     it
-        "Refuses contract results for another code revision or a dirty tree"
+        "Refuses a contract result for another code revision or a dirty tree, wherever it stands"
         $ do
             (rows, receipts) <- fixtures
-            let otherBase =
-                    [c{crBase = "other-base"} | c <- take 1 contract] <> drop 1 contract
-                dirty = [c{crDirty = True} | c <- take 1 contract] <> drop 1 contract
-            refusal
-                rows
-                ((snapshotOf "fixture-base" receipts){snapContract = otherBase})
-                "not the stated base"
-            refusal
-                rows
-                ((snapshotOf "fixture-base" receipts){snapContract = dirty})
-                "dirty tree"
+            let with cs = (snapshotOf "fixture-base" receipts){snapContract = cs}
+            everyPosition contract (\c -> c{crBase = "other-base"}) $ \tampered ->
+                refusal rows (with tampered) "not the stated base"
+            everyPosition contract (\c -> c{crDirty = True}) $ \tampered ->
+                refusal rows (with tampered) "dirty tree"
 
     it "Refuses adapters that do not report the same case list" $ do
         (rows, receipts) <- fixtures
@@ -345,3 +356,24 @@ headingIds page =
             . T.words
             . T.filter (\c -> isAlphaNum c || c `elem` ("-_ " :: String))
             . T.toLower
+
+{- | Run a property once per position, with exactly that one item tampered:
+a check that looks at only some items cannot pass it. Refuses a list too
+short to tell positions apart.
+-}
+everyPosition :: [a] -> (a -> a) -> ([a] -> IO ()) -> IO ()
+everyPosition items tamper property =
+    everyPositionAt items tamper (const property)
+
+everyPositionAt :: [a] -> (a -> a) -> (Int -> [a] -> IO ()) -> IO ()
+everyPositionAt items tamper property
+    | length items < 2 =
+        expectationFailure "a position property needs at least two items"
+    | otherwise =
+        mapM_
+            ( \i ->
+                property
+                    i
+                    [if j == i then tamper x else x | (j, x) <- zip [0 ..] items]
+            )
+            [0 .. length items - 1]
