@@ -64,8 +64,9 @@ CG22, CG23; all admit Lean's reason). Every other discovered refusal:
 | CG11 | empty fold | `empty-fold` | `foldBatch` refuses `empty-fold` (Model.lean:665); row held by the recorded consumer-model conflict (Q-002) | D (existing) |
 | CG12 | surplus actions; missing-action control | `surplus-actions`, `missing-action` | actions are not a model input; row held (Q-002) | D (existing) |
 | CG19 | crossed refund allocation; rejected-floor control | `deposit-returned` | consumer-model conflict recorded unresolved (Q-002) | D (existing) |
+| CG19 rejected-floor (two requests rejected in one transaction) | | `deposit-returned` | no model law for several rejects in one transaction; missing generic `rejectBatch` consumer (batch foundation) | D (existing) |
 | CG10 | fold with claims against a superseded root | `key-exists` | a stale proof is not an input of `step` | C |
-| CS04 | redeemer at a wrong constructor index | witness `no-fold` (offline replay); state and request `no-user-trace` | serialization below the model's vocabulary | C |
+| CS04 | redeemer at a wrong constructor index | witness `no-fold` (offline replay); state and request `no-user-trace`; an offline compiler diagnostic (T036b) may add evidence, never a reason | serialization below the model's vocabulary | C |
 | CG09 | reject in phase 1 | `not-rejectable` (D-006) | `exitStep .reject` has no admission (Model.lean:1060-1072) | D — ruled 2026-10-01: Lean kept, validator to be repaired in a predecessor; unmet until it lands |
 
 The lead "CG21 two-key batch `net-mint-mismatch`" was not found in any

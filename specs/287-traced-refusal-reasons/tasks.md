@@ -145,6 +145,18 @@ flowchart LR
   CG05 checkpoint review; the generic step's CI assertions read the story
   receipt (refused step model `key-exists`, trace `key-exists`, comparison
   agrees, connected accepted control).
+- [ ] T036b [C] CS04 offline compiler diagnostic (E209 A-012): a second test-owned
+  build of the same registry source, compiler and pins with
+  `--trace-filter all --trace-level verbose`, checked against the same untraced
+  twin; offline only, from the retained CS04 capsule, with the captured
+  arguments, the deployed parameters (reproducing the captured deployed hashes)
+  and the declared budget; deployed reproduction still required; evaluated only
+  for purposes the user-defined replay left `no-user-trace`; written to
+  `replay-diagnostic/<txid>/outcome.json` with `kind: compiler-diagnostic`
+  beside the untouched `replay-offline` outcome; never admitted, never a reason,
+  never compared, never in a receipt or the index. Controls: a mismatched
+  blueprint or parameter set is refused before any diagnostic; a successful,
+  budget-failing, silent or generic diagnostic keeps its category.
 - [ ] T037 G9: control step, altered leg non-zero naming both reasons, restored leg zero.
 - [ ] T038 G10: extent over every receipt, non-empty guard, each refusal once
   in `replay/index.json`; a refusal with a model reason not class A, or not

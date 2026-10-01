@@ -13,12 +13,12 @@
   ],
   "discovered-table-t028": [
     {
-      "text": "From the executed runs: the present-key insert is modeled, and its consumer is now commissioned. The empty fold, the surplus actions and the crossed refund are held by the recorded consumer conflict. The stale-root fold and the wrong constructor are outside the model. The phase-one reject refuses with not-rejectable while Lean admits it, and is with the operator. The batch mint mismatch is not run by any row today, so it stays a published gap.",
+      "text": "From the executed runs: the present-key insert is modeled, and its consumer is now commissioned. The empty fold, the surplus actions and the crossed refund are held by the recorded consumer conflict. The stale-root fold and the wrong constructor are outside the model. The phase-one reject refuses with not-rejectable while Lean admits it, and is with the operator. The batch mint mismatch is not run by any row today, so it stays a published gap. The rejected-floor control rejects two requests in one transaction, which no model law covers yet, so it waits for a batch reject question.",
       "pause": 500
     }
   ],
   "_source": {
     "file": "extent.md",
-    "sha256": "74d1243f95e45e8925c2fba61ad35fa1b5876bba13475bea5882e3bafe4192af"
+    "sha256": "8186a1ca844d152810ca47a5c4c9d6db587f40b3df72926bd593b36ac381b86c"
   }
 }

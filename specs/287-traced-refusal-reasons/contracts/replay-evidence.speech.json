@@ -23,6 +23,12 @@
       "pause": 500
     }
   ],
+  "offline-compiler-diagnostic-t036b": [
+    {
+      "text": "For a purpose that printed no user trace, an offline replay with all compiler traces may record a compiler diagnostic beside the original outcome. It is never a reason, never compared with Lean, and never enters a receipt or the index.",
+      "pause": 500
+    }
+  ],
   "obligations": [
     {
       "text": "The capture identity is recomputed and must match; files are never rewritten; missing files make the rejection incomplete; and in CI a failing row still uploads its replay directory.",
@@ -31,6 +37,6 @@
   ],
   "_source": {
     "file": "replay-evidence.md",
-    "sha256": "0bc118616ffda36414eaebf4a718c5845428a6ac4bec14bcc9f964b0058fff47"
+    "sha256": "34f9d382f2b01b9e09fcb328f9eb1cbd4643bb6092f86733d4a28ccfea9d8c03"
   }
 }

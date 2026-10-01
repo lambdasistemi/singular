@@ -56,6 +56,15 @@ A capsule replayed offline (`replay-capsule`, T029c) writes
 with the recomputed `captureId`, the blueprints used and the command; the
 original `replay/<rejectedTxId>/outcome.json` stays byte-identical.
 
+## Offline compiler diagnostic (T036b)
+
+`replay-diagnostic/<rejectedTxId>/outcome.json`, written only by
+`replay-capsule --diagnostic`: per purpose left `no-user-trace`,
+`{ purpose, deployedHash, diagnosticHash, outcome, logs }` and
+`kind: "compiler-diagnostic"`, with the diagnostic build's provenance. It has no
+`reason` or `admitted` key, is never read by admission, comparison, the
+receipt or the index, and never overwrites `replay-offline`.
+
 ## Obligations
 
 - `captureId` is recomputed by the loader and must match.
