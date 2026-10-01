@@ -27,15 +27,15 @@ Stable IDs. A task is checked when its own evidence exists at an exact commit, w
 
 ## S2 product builder
 
-- [ ] T020 The reject builder drops its timing selection and deadline-bound validity (INV-09).
-- [ ] T021 Devnet e2e: processing- and retraction-window rejects through the builder, each interval asserted inside its window, refund and unchanged state read back from the ledger. "rejects a phase-3 request" keeps its name (INV-05, INV-09).
-- [ ] T022 Restate `requestPhase`'s documentation as a resuming client's choice of exit.
+- [x] T020 The reject builder drops its timing selection and deadline-bound validity (INV-09). Commit 6b22215: every pending request of the registry is selected; validity is finite from the current slot and bound to no deadline. Off-chain lint, component build and unit suite pass at 6640f4a. The vectors check was not run in this slice, so G6 is not claimed as a whole. One unprocessable request now blocks every builder reject, in any window.
+- [x] T021 Devnet e2e: processing- and retraction-window rejects through the builder, each interval asserted inside its window, refund and unchanged state read back from the ledger. "rejects a phase-3 request" keeps its name (INV-05, INV-09). Commit 6640f4a; G7 at 6640f4a: 25 examples, 0 failures, both built intervals inside their windows, the phase-3 case unchanged. No live run against the old builder was made. The processing-window case reaches the request script's processing-window arm; the matching-action path runs live in the retraction-window and phase-3 cases.
+- [x] T022 Restate `requestPhase`'s documentation as a resuming client's choice of exit. Commit 6b22215, documentation only; the classifier is unchanged.
 
 ## S3 evidence in the story language
 
-- [ ] T030 Every reject in the story language carries a placement. The interpreter realizes it and refuses a mismatch as setup failure. The book renders every placement, with a totality control over all of them (D-04).
-- [ ] T031 CG23 places its rejects after the windows. Its CI assertion is byte-identical (INV-12).
-- [ ] T032 CG24: untampered rejects in the processing and retraction windows accepted by both; tampered short and other-address refunds refused by both; the exact rows change; the dispatcher, book chapters, row count and published counts; the G11 step body (INV-10, INV-14).
+- [x] T030 Every reject in the story language carries a placement. The interpreter realizes it and refuses a mismatch as setup failure. The book renders every placement, with a totality control over all of them (D-04). Commit fb63107: story validation refuses an unplaced reject, the interpreter checks the built interval before submitting and logs each placement, and the book renders all three placements. G8 at ada8d8f: unit suite and running book, six chapters, 0 failures.
+- [x] T031 CG23 places its rejects after the windows. Its CI assertion is byte-identical (INV-12). Commit fb63107; G9 at ada8d8f runs the reviewed CG23 step and passes; the workflow's CG23 step is unchanged from the base.
+- [x] T032 CG24: untampered rejects in the processing and retraction windows accepted by both; tampered short and other-address refunds refused by both; the exact rows change; the dispatcher, book chapters, row count and published counts; the G11 step body (INV-10, INV-14). Commit fb63107 (format-only follow-up ada8d8f); G11 at ada8d8f: six steps in order, every comparison agrees, three placements inside each window, refusals attributed to the state script by hash. The workflow's CG24 step equals the gate page's body. Live refusal reasons are not observed on chain; the compiled tests name them. The whole generic-rows session (G10) and root CI have not run.
 
 ## Acceptance
 

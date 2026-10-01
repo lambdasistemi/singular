@@ -13,13 +13,13 @@
   ],
   "s2-product-builder": [
     {
-      "text": "Second slice: drop the builder's timing, prove it on a devnet in both early windows with ledger readbacks, and restate the request phase helper's documentation.",
+      "text": "The second slice is done with its evidence: the builder selects every pending request and carries a finite validity from the current slot, the off-chain lint, build and unit suite pass, and a devnet run rejects through the builder inside the processing window and inside the retraction window, reading the refund and the unchanged state back from the ledger, with the phase three case unchanged. Its limits: the vectors check did not run, no live run used the old builder, and one unprocessable request now blocks every builder reject.",
       "pause": 400
     }
   ],
   "s3-evidence-in-the-story-language": [
     {
-      "text": "Third slice: placed rejects in the story language with a totality control, CG23 placed after the windows with its assertion unchanged, and CG24 with the exact rows change, the dispatcher, book and counts, and its CI step.",
+      "text": "The third slice is done with its evidence: every reject in the story language names its window, the interpreter checks it before submitting, the book renders all three and runs six chapters, CG23 keeps its check byte for byte, and CG24 runs its six steps with every comparison agreeing and three placements inside each window. Its limits: refusal reasons are attributed by script hash rather than observed, and the whole generic session and root CI have not run.",
       "pause": 400
     }
   ],
@@ -31,6 +31,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "b7f83691022f6396df7f2526d2d8a537a21ec2c9e63a3b76dc54e2ddf28168bb"
+    "sha256": "60cf50b5ec354b5dadd35c2db027b415f308a105de6aa4ba7407be44c0422af7"
   }
 }
