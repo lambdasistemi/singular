@@ -1,0 +1,48 @@
+{
+  "how-to-run-a-row-locally": [
+    {
+      "text": "Run each row from a clean checkout of the candidate. Rows copied from the workflow get a fresh runner temporary directory and environment file, and run with bash in the step's directory. A short extraction function reads a step from the workflow so a reviewer can compare it with this page.",
+      "pause": 400
+    }
+  ],
+  "rows": [
+    {
+      "text": "Fourteen rows, each the command of the CI job that checks it: the path fence; the onchain, naming and deployed identity checks; off-chain lint, build, unit and vectors; the devnet run through the product builder; the running book; CG23 unchanged; the generic rows with CG09 held; CG24; the release assembly; and root CI with standard input closed. Nix invocations are counted one by one, nested ones included, and devnet runs per command. One full run forecasts eighty three and six.",
+      "pause": 400
+    }
+  ],
+  "falsification": [
+    {
+      "text": "Each row's ability to fail is known from the base: the compiled suite fails on the new early reject tests, the identity checks fail on any stale pin, the builder refuses an early reject, the generic rows fail on CG09's verdict until its expectation moves, and the retained refused transaction is the live defect. No bespoke instrument is added.",
+      "pause": 400
+    }
+  ],
+  "g9-body-cg23-unchanged": [
+    {
+      "text": "The CG23 step as it stands at the base, which the candidate must leave byte for byte.",
+      "pause": 400
+    }
+  ],
+  "g10-body-generic-rows-with-cg09-held": [
+    {
+      "text": "The generic rows step after the change. CG09 moves to the held verdict group, the held set becomes CG09, CG11, CG12 and CG19, a new assertion checks CG09's accepted receipt, its hold and its later rejection control, and the closing lines name the consumer's R9 as unmet.",
+      "pause": 400
+    }
+  ],
+  "g11-body-cg24-early-rejection": [
+    {
+      "text": "The new CG24 step. It runs the row, checks the receipt is bound to the candidate on a clean tree, that the six steps are two tampered rejects then an untampered one in each early window, that every comparison agrees, that refusals are attributed to the state script for deposit returned, and that the log states three placements in each window.",
+      "pause": 400
+    }
+  ],
+  "the-rows-change-exact": [
+    {
+      "text": "Only two rows change. CG23 loses its two timing sentences and keeps everything else. CG24 is appended, sourced from Singular's model, requiring that a folder may reject before the retraction deadline in both early windows with the owner refunded and the state unchanged, and that short or misdirected refunds are refused. Its published state is computed from its receipt.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "gate.md",
+    "sha256": "eb3939ce31a65bd7ae0deaa99787913b4f9a70c7bfea88683205708c53178485"
+  }
+}

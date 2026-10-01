@@ -9,7 +9,8 @@ Stable IDs. A task is checked only after its slice is accepted at an exact commi
 - [x] T003 Inventory every caller of the old rule and every identity pin it moves (research).
 - [x] T004 Write the specification, plan, module, data and function models, quickstart and checklist.
 - [ ] T005 Independent review of this planning commit by the persistent auditor.
-- [ ] T006 Freeze the gate (plan, Gate) as the runtime gate with its hash, after the row-fence answer.
+- [x] T006 Row scope answered: one new Singular-sourced row and CG23's timing words (gate page, The rows change).
+- [ ] T007 Freeze the gate page as the runtime gate with its hash, after the planning review.
 
 ## S1 validators, identities and CG09
 
@@ -20,7 +21,7 @@ Stable IDs. A task is checked only after its slice is accepted at an exact commi
 - [ ] T014 Regenerate the registry manifest. Update the witness and envelope pins to the regenerated state hash (INV-08).
 - [ ] T015 Update the naming state pin, regenerate, update the retirement-custody pins, regenerate again (INV-08).
 - [ ] T016 Record compiled sizes and the execution units of both purposes on a processing-window reject, before and after (INV-13).
-- [ ] T017 CG09 records the chain's acceptance as held. The generic-rows CI expectation and `docs/consumer-conformance.md` state it. The consumer requirement text is unchanged (INV-11).
+- [ ] T017 CG09 records the chain's acceptance as held, with its control on a second request. The G10 step body and `docs/consumer-conformance.md` state it. The consumer requirement text is unchanged (INV-11, INV-14).
 - [ ] T018 Drop `not-rejectable` from `docs/onchain-validator-owners.md` and the validator doc comments.
 
 ## S2 product builder
@@ -33,7 +34,7 @@ Stable IDs. A task is checked only after its slice is accepted at an exact commi
 
 - [ ] T030 Every reject in the story language carries a placement. The interpreter realizes it and refuses a mismatch as setup failure. The book renders every placement, with a totality control over all of them (D-04).
 - [ ] T031 CG23 places its rejects after the windows. Its CI assertion is byte-identical (INV-12).
-- [ ] T032 Early-reject story and row: untampered rejects in the processing and retraction windows accepted by both, tampered short and other-address refunds refused by both, CI step asserting INV-10 (only if the row fence opens; otherwise record the named gap).
+- [ ] T032 CG24: untampered rejects in the processing and retraction windows accepted by both; tampered short and other-address refunds refused by both; the exact rows change; the dispatcher, book chapters, row count and published counts; the G11 step body (INV-10, INV-14).
 
 ## Acceptance
 

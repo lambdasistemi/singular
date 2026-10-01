@@ -7,7 +7,7 @@
   ],
   "every-caller-of-the-old-rule": [
     {
-      "text": "Every place that encodes the old timing has a disposition: the predicate and its wrapper are deleted, the state and request scripts are repaired, properties and tests are restated, doc comments reworded, the builder's timing filter removed, the conformance interpreter's wait replaced by an explicit placement, CG09 moved to held, and the published pages restated. The builder's existing callers only ever reject expired requests, so they keep their behaviour.",
+      "text": "Every place that encodes the old timing has a disposition: the predicate and its wrapper are deleted, the state and request scripts are repaired, properties and tests are restated, doc comments reworded, the builder's timing filter removed, the conformance interpreter's wait replaced by an explicit placement, CG09 moved to held, CG23's two timing sentences restated, and the row count, book chapters, dispatcher and published counts extended for CG24. The builder's existing callers only ever reject expired requests, so they keep their behaviour.",
       "pause": 400
     }
   ],
@@ -25,12 +25,12 @@
   ],
   "baseline-at-the-base": [
     {
-      "text": "Root CI at the clean base ran for twenty six minutes and exited one. Every recipe up to the format controls passed. The lint step's workflow linter deadlocked with no CPU use and was stopped after its state was captured. The same linter run directly passed in under a second, and two identical hung linters from other lanes have been on the host for ten days. The failure is the tool, not the repository.",
+      "text": "Root CI at the clean base ran for twenty six minutes and exited one. Every recipe up to the format controls passed. In the lint step the workflow linter hung, with no CPU use and every thread parked, and it was stopped after its state was captured, so the run is an interrupted environment failure. The snapshot shows a hang but not its cause. The same linter run directly passed in under a second, which shows it can finish this input but does not complete the omitted lint families. The planning head's root CI runs with standard input closed and is the complete check.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "research.md",
-    "sha256": "4dd30b93894b22fa7008e40a0bcb68260d12f52233c2ebbfddcd4d424530cd06"
+    "sha256": "5d89ff5a97dca0d32c2caad7afce0d38e5b76e72bf011b31b16b976ff6d69ba8"
   }
 }

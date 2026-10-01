@@ -25,13 +25,13 @@
   ],
   "d-04-reject-placement-in-the-story-language": [
     {
-      "text": "In the story language every reject names its window: the processing window, the owner's retraction window, or after the windows. The interpreter checks the built transaction against that window before submitting, and a mismatch is a setup failure. The control that rendering is total covers every placement. Placements add no receipt field.",
+      "text": "In the story language every reject names its window: the processing window, the owner's retraction window, or after the windows. The interpreter checks the built transaction against that window before submitting, and a mismatch is a setup failure. The control that rendering is total covers every placement. Placements add no receipt field; the run log states each placement with the transaction's validity interval and the window.",
       "pause": 400
     }
   ],
   "d-05-cg09s-result": [
     {
-      "text": "CG09 keeps its row and its requirement. The chain now accepts, and the verdict is the existing held one: Singular's model and the consumer's theorem disagree and the chain sided with Singular. Its in-run control stays.",
+      "text": "CG09 keeps its row and its requirement. The chain now accepts, and the verdict is the existing held one: Singular's model and the consumer's theorem disagree and the chain sided with Singular. Because the early reject consumes the request, its control books a second request and rejects it after the retraction window, also accepted, and logs that.",
       "pause": 400
     }
   ],
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "53f75c5c4afdbd4a40d3d4a7ec3f984b3086497741bf6fcda921035f7d233270"
+    "sha256": "3b1b028ce091e6ec6a380f57ce8f1b6698fdb4b3bae8ce95a4e2693e4b675162"
   }
 }

@@ -26,7 +26,7 @@ blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blu
 REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG09 --receipts-dir "$(mktemp -d)"
 ```
 
-CG09's receipt shows the chain accepting a processing-window rejection, with a held verdict. Its consumer requirement still says refuse and remains unmet. The early-reject row, once added, is run the same way and compares every step with the model.
+CG09's receipt shows the chain accepting a processing-window rejection, with a held verdict. Its consumer requirement still says refuse and remains unmet. CG24 is run the same way. Each of its steps is compared with the model, and the log states the window each reject was placed in.
 
 ## Identities
 

@@ -31,11 +31,11 @@ A reject in the story language carries one of three placements:
 | in the owner's retraction window | "while its owner can still retract it" | a validity interval inside the retraction window |
 | after the windows | "after its owner's retraction window has closed" | a validity interval starting at or after the retraction deadline |
 
-Every reject the language can express carries a placement, tampered or not. No reject reaches the interpreter without one. A placement is a fact about the submitted transaction, not a tamper. The model's answer does not depend on it. The interpreter checks the built interval against the named window before submitting. A mismatch is a setup failure. The control that interpretation and rendering are total quantifies over every placement constructor. Placements add no receipt field. The transaction id in the receipt locates the validity interval on chain.
+Every reject the language can express carries a placement, tampered or not. No reject reaches the interpreter without one. A placement is a fact about the submitted transaction, not a tamper. The model's answer does not depend on it. The interpreter checks the built interval against the named window before submitting. A mismatch is a setup failure. The control that interpretation and rendering are total quantifies over every placement constructor. Placements add no receipt field. The run log states each placed reject as `placement: <row> reject <placement> validity=[<lo>,<hi>) window=[<from>,<to>) tx=<id>`, where `<placement>` is the first column above, and the transaction id in the receipt locates the same interval on chain.
 
 ## D-05 CG09's result
 
-The CG09 receipt keeps its row id and requirement. The chain outcome is now `accepted`. The verdict is the existing `held-q002`: Singular's Lean and the consumer's theorem disagree, and the chain sided with Singular's Lean. The session records CG09 among its held rows. The row's in-run control, the same request rejected after the windows, stays.
+The CG09 receipt keeps its row id and requirement. The chain outcome is now `accepted`. The verdict is the existing `held-q002`: Singular's Lean and the consumer's theorem disagree, and the chain sided with Singular's Lean. The session records CG09 among its held rows. The early reject consumes the request, so the row's in-run control books a second request and rejects it after the retraction window. That reject is also accepted, and the run logs it as `control: CG09 control: a second request rejected after the retraction window is accepted (tx=<id>)`.
 
 ## D-06 Builder selection
 
