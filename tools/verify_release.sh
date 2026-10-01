@@ -22,6 +22,11 @@
 #   journey         create, insert, update, terminate and inspect run as
 #                   separate processes on one generated development network
 #                   (demo1_cli_journey.sh)
+#   harness hooks   computed from that run: every process of the five
+#                   commands ran at least once with no SINGULAR_HARNESS_*
+#                   variable set, and the hold points that fired (each
+#                   leaves PATH.waiting) are exactly the ones a process was
+#                   started with a variable for
 #
 # The archive is extracted under --work DIR (a fresh temporary directory,
 # removed at exit, when not given), which must not lie inside a git checkout.
@@ -29,7 +34,8 @@
 # Exit 0 and a `verify-release: PASS` line when every check passes; exit 1
 # and one `verify-release: REFUSED <name>: <detail>` line when one refuses.
 # The names: download-failed, sum-mismatch, model-revision-missing,
-# model-revision-mismatch, member-missing, command-failed. Exit 2 on usage.
+# model-revision-mismatch, member-missing, command-failed,
+# harness-hook-fired. Exit 2 on usage.
 set -euo pipefail
 
 usage() {
@@ -144,10 +150,41 @@ devnet="$(nix build --quiet --no-link --print-out-paths .#devnet 2>"$work/build-
 pass build "singular and the development node from the archive's own flake"
 
 # journey
+# Every `singular` process the journey starts goes through a wrapper that
+# records which SINGULAR_HARNESS_* variables it was started with, and the
+# path each hold variable names, before it replaces itself with the
+# released executable (so a process the journey kills is that executable).
+invocations="$work/invocations.tsv"
+: >"$invocations"
+mkdir -p "$work/bin"
+cat >"$work/bin/singular" <<WRAPPER
+#!/usr/bin/env bash
+harness="\$(env | grep -o '^SINGULAR_HARNESS_[A-Z_]*' | LC_ALL=C sort | paste -sd, - || true)"
+holds="\$(env | grep '^SINGULAR_HARNESS_HOLD_' | grep -v '^SINGULAR_HARNESS_HOLD_STEP=' | cut -d= -f2- | paste -sd'|' - || true)"
+printf '%s\t%s\t%s\n' "\${1:-} \${2:-}" "\$harness" "\$holds" >>$(printf '%q' "$invocations")
+exec $(printf '%q' "$singular/bin/singular") "\$@"
+WRAPPER
+chmod +x "$work/bin/singular"
 status=0
-bash "$journey" "$singular/bin/singular" "$devnet/bin/devnet" "$extracted/onchain/plutus.json" "$work/journey" \
+bash "$journey" "$work/bin/singular" "$devnet/bin/devnet" "$extracted/onchain/plutus.json" "$work/journey" \
   || status=$?
 [ "$status" -eq 0 ] || refuse command-failed "the journey exited $status$kept"
 pass journey "create, insert, update, terminate and inspect as separate processes"
 
-echo "verify-release: PASS $tag — sums, model revision $stated, members and the journey, from $extracted"
+# harness hooks: computed from the run. A hold point that fires writes
+# PATH.waiting; the holds that fired must be exactly the ones a process was
+# started with a variable for, and every process of the five commands
+# started with no harness variable at all must exist.
+for command in create insert update terminate inspect; do
+  awk -F'\t' -v c="registry $command" '$1 == c && $2 == ""' "$invocations" | grep -q . \
+    || refuse harness-hook-fired "no $command process ran without a harness variable"
+done
+plain="$(awk -F'\t' '$2 == ""' "$invocations" | wc -l)"
+requested="$(awk -F'\t' '$3 != "" { n = split($3, p, "|"); for (i = 1; i <= n; i++) print p[i] ".waiting" }' "$invocations" | LC_ALL=C sort -u)"
+[ -n "$requested" ] || refuse harness-hook-fired "the journey asked for no hold, so firing cannot be observed"
+fired="$(find "$work" -path "$work/journey*" -name '*.waiting' | LC_ALL=C sort -u)"
+[ "$fired" = "$requested" ] \
+  || refuse harness-hook-fired "holds fired: [$(echo "$fired" | paste -sd' ' -)], requested: [$(echo "$requested" | paste -sd' ' -)]"
+pass "harness hooks" "$plain processes started with none set; holds fired only where requested ($(echo "$requested" | wc -l))"
+
+echo "verify-release: PASS $tag — sums, model revision $stated, members, the journey and its harness hooks, from $extracted"
