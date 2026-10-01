@@ -99,11 +99,9 @@ import Singular.Registry.Node.Confirmation
     , windowReadBound
     )
 import Singular.Registry.Node.Indexer
-    ( Following (..)
-    , awaitIndexedWithin
+    ( awaitIndexedWithin
     , confirmationAttempts
     , confirmationPollSeconds
-    , withFollowing
     )
 import Singular.Registry.Node.Options (NodeMode (..))
 import Singular.Registry.Node.Session
@@ -119,6 +117,7 @@ import Singular.Registry.Node.Wait
     , tryOutcome
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.StubFollowing (withStubFollowing)
 import Singular.Registry.StubView (servingView, stubView)
 
 spec :: Spec
@@ -572,7 +571,7 @@ only what the spec applies to it.
 withFollowedIndexer :: (IndexerHandle -> IO a) -> IO a
 withFollowedIndexer action =
     withInMemoryIndexer $ \idx ->
-        withFollowing (stubFollowing idx) (action idx)
+        withStubFollowing idx (action idx)
 
 {- | Apply the block that creates output zero of the spec's basic
 transaction, waking any wait already watching for it.
@@ -588,11 +587,6 @@ applyOutputZero idx =
             (Indexer.Address (BC.pack "watched"))
             (Indexer.TxOut (BC.pack "an output"))
         ]
-
--- | A follower around a real in-memory indexer; no chain is followed.
-stubFollowing :: IndexerHandle -> Following
-stubFollowing idx =
-    Following{followingIndexer = idx, followingFromOrigin = True}
 
 -- | A session whose tip never moves and whose provider is never read.
 stubSession :: NodeSession

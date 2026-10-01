@@ -164,6 +164,8 @@ library node-internal
     Singular.Registry.Node.Wallet
     Singular.Registry.Node.Wait
     Singular.Registry.Node.Indexer
+    Singular.Registry.Node.IndexGate
+    Singular.Registry.Node.IndexerView
     Singular.Registry.Node.Session
     Singular.Registry.Node.Confirmation
     Singular.Registry.Node.Funding
@@ -196,6 +198,7 @@ library node-internal
     , ouroboros-consensus
     , ouroboros-network:api
     , process
+    , stm
     , text
     , time
 
@@ -696,11 +699,13 @@ test-suite cage-tests
     Singular.Registry.TxBuilder.UpperSlotSpec
     Singular.Registry.CandidateSpec
     Singular.Registry.FailureMatchSpec
+    Singular.Registry.IndexerViewSpec
     Singular.Registry.NodeCleanupSpec
     Singular.Registry.NodeSpec
     Singular.Registry.NodeWaitSpec
     Singular.Registry.OneViewSpec
     Singular.Registry.ProviderSpec
+    Singular.Registry.StubFollowing
     Singular.Registry.StubView
     Singular.Registry.LifecycleSpec
     Singular.Registry.TypesSpec
@@ -715,6 +720,7 @@ test-suite cage-tests
     , cardano-slotting
     , base               >=4.14 && <5
     , cardano-ledger-api
+    , cardano-ledger-binary
     , cardano-ledger-alonzo
     , cardano-ledger-allegra
     , cardano-ledger-conway
@@ -742,6 +748,7 @@ test-suite cage-tests
     , plutus-ledger-api
     , plutus-tx
     , QuickCheck
+    , stm
     , temporary
     , text
     , time
