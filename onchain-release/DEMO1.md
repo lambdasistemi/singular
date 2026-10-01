@@ -173,12 +173,17 @@ submits it. A preview is not a confirmation: its bodies are built for one
 moment.
 
 `insert`, `update` and `terminate` take `--fund-input TXID#IX`, the wallet output
-that funds and collateralises the write, and `--max-outlay LOVELACE`, past which
-nothing is signed or sent. `create` and `inspect` enforce neither, so they
-refuse both flags by name, before any key is read, rather than ignore them.
-Every build, report and bound decision of one command rests on one snapshot of
-the network's protocol parameters, read once: the preview's digest names it, and
-a body is never built under another. A fee is never declared: the booking's units are measured on the
+that funds and collateralises the write, and `--max-outlay LOVELACE`. A booking
+or an update past it is not signed. An insert or terminate also folds after its
+booking confirms, and its fold, built then, is signed only if it costs no more
+than the booking left of the allowance; past that, the command stops partial,
+naming its pending request, and nothing more is signed or sent. `create` and
+`inspect` enforce neither flag, so they refuse both by name, before any key is
+read, rather than ignore them. Each transaction a command builds rests on one
+snapshot of the network's protocol parameters, read once for it: the booking's
+build, measurement and allowance decision share one, and the preview's digest
+names it; the fold, which cannot exist until the booking confirms, is built and
+judged under a snapshot of its own. A fee is never declared: the booking's units are measured on the
 body that will be submitted, and its total collateral is stated and the
 rest of its funding output returned. A funding output that cannot leave a return
 of at least its minimum ada is refused before anything is submitted, never

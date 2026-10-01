@@ -44,7 +44,7 @@ import Control.Exception
     , throwIO
     , try
     )
-import Control.Monad (unless, void, when)
+import Control.Monad (forM_, unless, void, when)
 import Data.Aeson (Value, toJSON)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.KeyMap qualified as KeyMap
@@ -82,7 +82,12 @@ import Singular.CLI.Command
     )
 import Singular.CLI.Live
 import Singular.CLI.Node (Capabilities (..))
-import Singular.CLI.Outlay (bookingOutlay, updateOutlay)
+import Singular.CLI.Outlay
+    ( bookingOutlay
+    , foldPastAllowance
+    , outlayTotal
+    , updateOutlay
+    )
 import Singular.CLI.Plan
 import Singular.CLI.Preview (Kind (..), runPreview)
 import Singular.CLI.Receipt (OutcomeClass (..))
@@ -266,9 +271,17 @@ request is refused before anything is built, and a built fold spending
 any request input but this one is refused before it is submitted. The
 mirror walk and the journalled after-root are that one edge. The pending
 set, the context and the fold are read from one view.
+
+That view is the fold's own, not the booking's: the fold is judged again
+against what the booking left of the approved outlay, before it is signed,
+and one past it stops the command partial with its request pending.
 -}
 foldAndCommit
     :: Attached
+    -> Maybe Integer
+    -- ^ The approved outlay (@--max-outlay@)
+    -> ConwayTx
+    -- ^ The confirmed booking
     -> TxIn
     -- ^ The request this command booked
     -> ByteString
@@ -278,7 +291,7 @@ foldAndCommit
     -> [Envelope]
     -> [(TxIn, TxOut ConwayEra)]
     -> IO (ConwayTx, ByteString)
-foldAndCommit at request key edge after envelopes live = do
+foldAndCommit at allowance booking request key edge after envelopes live = do
     let s = savedOf at
         cfg = savedCfg s
         wc = atWrite at
@@ -362,6 +375,20 @@ foldAndCommit at request key edge after envelopes live = do
                             <> "); the fold is not submitted"
                         )
                         [("pendingRequest", toJSON (txInText request))]
+                forM_ (foldPastAllowance allowance booking unsigned) $ \(left, outlay) ->
+                    failWithFields
+                        Partial
+                        ( "the booking is confirmed and its request "
+                            <> T.unpack (txInText request)
+                            <> " stays pending; its fold costs "
+                            <> show (outlayTotal outlay)
+                            <> " lovelace under the fold's own parameters, past the "
+                            <> show left
+                            <> " the approved outlay leaves after the booking, so nothing is folded or signed"
+                        )
+                        [ ("pendingRequest", toJSON (txInText request))
+                        , ("outlay", outlayReport (Just left) outlay)
+                        ]
                 pure (unsigned, ())
             )
     harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_COMMIT" Nothing
@@ -421,6 +448,8 @@ runInsert a = case entryMode a of
             (fold, root) <-
                 foldAndCommit
                     at
+                    (entryMaxOutlay a)
+                    booking
                     (TxIn (txIdTx booking) (TxIx 0))
                     key
                     edgeInsertActive
@@ -552,6 +581,8 @@ runTerminate a = case entryMode a of
             (fold, root) <-
                 foldAndCommit
                     at
+                    (entryMaxOutlay a)
+                    booking
                     (TxIn (txIdTx booking) (TxIx 0))
                     key
                     edgeUpdateTerminal

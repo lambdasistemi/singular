@@ -30,7 +30,10 @@ import Test.QuickCheck
     , (===)
     )
 
-import Cardano.Ledger.Api.PParams (ppCollateralPercentageL)
+import Cardano.Ledger.Api.PParams
+    ( ppCollateralPercentageL
+    , ppTxFeePerByteL
+    )
 import Cardano.Ledger.Api.Tx (mkBasicTx)
 import Cardano.Ledger.Api.Tx.Body
     ( feeTxBodyL
@@ -43,7 +46,11 @@ import Cardano.Ledger.Api.Tx.Out
     , referenceScriptTxOutL
     )
 import Cardano.Ledger.BaseTypes (StrictMaybe (..))
-import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Coin
+    ( Coin (..)
+    , CoinPerByte (..)
+    , CompactForm (CompactCoin)
+    )
 import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Balance (refScriptsSize)
@@ -58,6 +65,7 @@ import Singular.Registry.TxBuilder.BookingFixture
     , preprodParams
     , program
     )
+import Singular.Registry.TxBuilder.BurnSourceSpec (builtFoldUnder)
 import Singular.Registry.TxBuilder.Internal (scriptFromBytes)
 
 -- | A booking as the outlay reads it: request output first, then change.
@@ -137,6 +145,31 @@ spec = describe "a command's outlay against an approved allowance (#300)" $ do
                 , withinAllowance (Just (total - 1)) o
                 )
                     === (True, True, False)
+    it
+        "stops the fold its own view makes dearer than what its booking left of the allowance, and passes the one it does not"
+        $ do
+            -- The allowance a booking under P1 was approved against: its fee, its
+            -- bond and the fold's bound under P1's parameters, exactly.
+            let booking = bookingWith 400_000 3_000_000
+                p1 = preprodParams
+                p2 = preprodParams & ppTxFeePerByteL .~ CoinPerByte (CompactCoin 10_000)
+                approved = Just (outlayTotal (bookingOutlay p1 [] booking))
+                left = leftForFold approved booking
+            left `shouldBe` Just (outlayFoldBound (bookingOutlay p1 [] booking))
+            -- The same registry's fold, built by the production builder under
+            -- each view's parameters after the booking confirmed.
+            underP1 <- builtFoldUnder p1
+            underP2 <- builtFoldUnder p2
+            -- What makes the two cases mean something: P1's fold is within what
+            -- is left, P2's is past it.
+            Just (outlayTotal (foldOutlay underP1)) `shouldSatisfy` (<= left)
+            Just (outlayTotal (foldOutlay underP2)) `shouldSatisfy` (> left)
+            foldPastAllowance approved booking underP1 `shouldBe` Nothing
+            fmap fst (foldPastAllowance approved booking underP2) `shouldBe` left
+            fmap snd (foldPastAllowance approved booking underP2)
+                `shouldBe` Just (foldOutlay underP2)
+            -- With no allowance named the fold is not bounded.
+            foldPastAllowance Nothing booking underP2 `shouldBe` Nothing
     it "rounds the collateral up to the protocol's percentage" $
         property $
             forAll ((,) <$> fees <*> percentages) $ \(fee, pct) ->

@@ -420,7 +420,7 @@ savedIdentity = describe "the saved identity" $ do
             withTempDir $ \dir -> do
                 w <- keyFile dir 'k'
                 let plain = mkBasicTxOut (walletAddr w) (MaryValue (Coin 5_000_000) mempty)
-                    refusal fields = Prelude.lookup "createRefusal" fields
+                    refusal = Prelude.lookup "createRefusal"
                 -- the preview's accepting control: the seed alone is enough
                 case seedChecks False seed [(seed, plain)] of
                     Right fields -> case refusal fields of
