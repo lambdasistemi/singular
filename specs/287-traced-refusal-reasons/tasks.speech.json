@@ -31,12 +31,12 @@
   ],
   "r4-book-fr-15": [
     {
-      "text": "Restate the limit through the generator, regenerate the book, update its usage test, and prepare the documentation follow-up for the epic without editing outside the fence.",
+      "text": "The book run now also executes and renders the occupied-key story, so its refusal appears with its reason. Restate the limit through the generator, regenerate the book, update its usage test, and prepare the documentation follow-up for the epic without editing outside the fence.",
       "pause": 500
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "46e7d77de5247cb47f2dbf52f77881a6a2096a38e673cf57fc65710b9d3f6467"
+    "sha256": "6d8510bf286f9261a7d04c8e1fb7127e4066aa463f83a619dcd4e815c5ce93a1"
   }
 }

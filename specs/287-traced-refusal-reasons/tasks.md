@@ -169,6 +169,14 @@ flowchart LR
 
 - [ ] T040 [C] Restate the limit in `Conformance.Book`: method, both hashes,
   deployed bytes carry no traces, remaining unobserved refusals by row.
+- [ ] T040a [C] CG05 in the book (E209 A-013): the book run executes and renders the
+  occupied-key story beside the five existing chapters and the sequence, from one
+  declared book-story extent used for execution, rendering and completeness;
+  `conformance/app/Main.hs` changes only in `runBook`'s row selection, receipt
+  filter, required-row completeness and count, and the directly needed Book
+  import(s). Negative witnesses: a missing story receipt is rejected; a renderer
+  that omits the occupied-key refusal fails. CS04 stays a limits row with its
+  appendix diagnostic; no constructor story.
 - [ ] T041 [N] Regenerate `conformance/BOOK.md` with its generator only.
 - [ ] T042 [C] Update `Conformance.Story.Usage` to the restated text.
 - [ ] T043 [C] Prepare the D287-DOC residual for the epic from T026/T027
