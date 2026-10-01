@@ -93,6 +93,7 @@ library
     Conformance.Edge.Retire
     Conformance.Edge.RetractionWindow
     Conformance.Edge.Sequence
+    Conformance.Extent
     Conformance.Fold.KeyedMint
     Conformance.Observe.Payments
     Conformance.Replay
@@ -230,6 +231,20 @@ executable fold-budget-regression
   hs-source-dirs: test/fold-budget
   main-is: BudgetMain.hs
 
+-- #287: the extent check CI runs over the receipts of every live run.
+executable conformance-extent
+  import:           warnings
+  hs-source-dirs:   test/extent
+  main-is:          ExtentMain.hs
+  build-depends:
+    , aeson >=2.1 && <2.3
+    , base >=4.14 && <5
+    , conformance
+    , containers
+    , directory
+    , filepath
+    , text
+
 test-suite conformance-tests
   import:           warnings
   type:             exitcode-stdio-1.0
@@ -254,6 +269,7 @@ test-suite conformance-tests
     Conformance.Run.Replay
     Conformance.Support.Replay
     Conformance.Support.RunReplay
+    Conformance.Support.Extent
     Conformance.Support.Retraction
     Conformance.Support.Step
     Conformance.Support.ObservedTx

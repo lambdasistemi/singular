@@ -8,6 +8,7 @@ import Data.Aeson (object, (.=))
 import Data.List (nub, sort)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
+import Data.Text qualified as T
 import Test.Hspec (Spec, describe, it, shouldBe, shouldNotBe)
 
 import Conformance.Replay
@@ -324,6 +325,85 @@ spec = describe "traced replay of a live refusal" $ do
                 provenance
                 (Map.insert "witness.witness.mint" "dd" (tpUntracedHashes provenance))
                 `shouldBe` Just ToolchainMismatch
+    describe "the evidence a receipt carries" $ do
+        let purpose hash traced = PurposeReplay "spend" hash traced Nothing Nothing
+        it
+            "an admitted purpose carries its reason, both hashes and the capture"
+            $ rejectionEvidence
+                (Just "capture")
+                ["dh"]
+                [purpose "dh" (Just "th") (Admitted "key-exists")]
+                [Admitted "key-exists"]
+                `shouldBe` [ ReplayEvidence
+                                "dh"
+                                (Just "th")
+                                (Just "key-exists")
+                                Nothing
+                                (Just "capture")
+                           ]
+        it "an unobserved purpose carries its cause by name and no reason" $
+            rejectionEvidence
+                (Just "capture")
+                ["dh"]
+                [purpose "dh" Nothing (Unobserved NoReplayRoute)]
+                [Unobserved NoReplayRoute]
+                `shouldBe` [ ReplayEvidence
+                                "dh"
+                                Nothing
+                                Nothing
+                                (Just "no-replay-route")
+                                (Just "capture")
+                           ]
+        it
+            "every failing purpose is carried, in the order the replay met them"
+            $ map
+                replayDeployedHash
+                ( rejectionEvidence
+                    (Just "capture")
+                    ["state", "request"]
+                    [ purpose "state" (Just "ts") (Admitted "missing-action")
+                    , purpose "request" (Just "tr") (Admitted "retract-state-spent")
+                    ]
+                    [Admitted "missing-action", Admitted "retract-state-spent"]
+                )
+                `shouldBe` ["state", "request"]
+        it
+            "a replay that ended before any purpose gives each failing hash its cause"
+            $ rejectionEvidence Nothing ["h1", "h2"] [] [Unobserved Timeout]
+                `shouldBe` [ ReplayEvidence hash Nothing Nothing (Just "timeout") Nothing
+                           | hash <- ["h1", "h2"]
+                           ]
+        it
+            "the correspondence states the traced build and digests its untraced hashes"
+            $ do
+                let provenance hashes =
+                        TracedProvenance
+                            { tpSource = "/nix/store/source"
+                            , tpCompiler = "v1.1.21"
+                            , tpFlags = "--trace-filter user-defined --trace-level verbose"
+                            , tpUntracedHashes = Map.fromList hashes
+                            }
+                    deployed = [("state.state.spend", "aa"), ("request.request.spend", "bb")]
+                    stated = correspondenceOf (provenance deployed)
+                ( correspondenceSource stated
+                    , correspondenceCompiler stated
+                    , correspondenceFlags stated
+                    )
+                    `shouldBe` ( "/nix/store/source"
+                               , "v1.1.21"
+                               , "--trace-filter user-defined --trace-level verbose"
+                               )
+                T.length (correspondenceDigest stated) `shouldBe` 64
+                correspondenceDigest
+                    (correspondenceOf (provenance (reverse deployed)))
+                    `shouldBe` correspondenceDigest stated
+                correspondenceDigest
+                    ( correspondenceOf
+                        ( provenance
+                            [("state.state.spend", "aa"), ("request.request.spend", "bc")]
+                        )
+                    )
+                    `shouldNotBe` correspondenceDigest stated
     it "a capture's identity ignores file order and follows content" $ do
         let files = [("a.cbor", "one"), ("b.json", "two")]
         captureIdOf files `shouldBe` captureIdOf (reverse files)

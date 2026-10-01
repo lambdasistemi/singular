@@ -15,6 +15,7 @@ module Conformance.Run.Receipts
 import Conformance.Run.Control
 import Conformance.Run.Environment
 import Conformance.Run.Observe
+import Conformance.Run.Replay (sessionCorrespondence)
 import Data.Maybe (fromMaybe)
 
 import Data.Aeson
@@ -38,6 +39,7 @@ import Conformance.Receipt
     , Receipt (..)
     , RefusalInfo (..)
     , Verdict (..)
+    , storyCorrespondence
     , writeReceiptFile
     )
 
@@ -141,6 +143,7 @@ writeCaCL01 env rows
 writeStoryReceipt :: Env -> T.Text -> [Value] -> IO ()
 writeStoryReceipt env row records = do
     txids <- concat <$> mapM acceptedTx records
+    correspondence <- sessionCorrespondence (envReplay env)
     measures <- readIORef (envLiveMeasurements env)
     require "story receipt has no accepted transaction" (not (null txids))
     require
@@ -167,6 +170,8 @@ writeStoryReceipt env row records = do
             , receiptPartial = Nothing
             , receiptDerivation = Nothing
             , receiptSteps = Just records
+            , receiptReplayCorrespondence =
+                storyCorrespondence correspondence records
             , receiptNode = T.pack (envNode env)
             , receiptBlueprint = T.pack (envBlueprint env)
             , receiptVenue = "node-submit"
@@ -218,6 +223,7 @@ writeRowReceipt env row outcome verdict txs refusal rejected mem cpu size venue 
             , receiptPartial = Nothing
             , receiptDerivation = derivation
             , receiptSteps = Nothing
+            , receiptReplayCorrespondence = Nothing
             , receiptNode = T.pack (envNode env)
             , receiptBlueprint = T.pack (envBlueprint env)
             , receiptVenue = venue

@@ -636,6 +636,7 @@ writeCSReceipt dir row outcome verdict txs refusal rejected mem cpu size venue b
             , receiptPartial = partial
             , receiptDerivation = Nothing
             , receiptSteps = Nothing
+            , receiptReplayCorrespondence = Nothing
             , receiptNode = T.pack nodeVer
             , receiptBlueprint = T.pack blueprintIdStr
             , receiptVenue = venue
@@ -1342,6 +1343,7 @@ attributeCS04Refusal index receiptsDir base dirty nodeVer blueprintIdStr marker 
                         , refusalPhase = "phase-2"
                         , refusalHashes = map T.pack hashes
                         , refusalBranch = admitted
+                        , refusalReplay = Nothing
                         , refusalLimit = case admitted of
                             Just _ -> Nothing
                             Nothing ->

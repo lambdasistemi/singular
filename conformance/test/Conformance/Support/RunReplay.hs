@@ -26,6 +26,7 @@ import Test.Hspec
     , it
     , shouldBe
     , shouldNotBe
+    , shouldReturn
     , shouldSatisfy
     )
 
@@ -74,6 +75,7 @@ import Singular.Registry.TxBuilder.Internal
 import Conformance.Replay
     ( ReasonComparison (..)
     , ReplayClass (..)
+    , ReplayEvidence (..)
     , RunOutcome (..)
     , UnobservedCause (..)
     , stepComparison
@@ -348,11 +350,13 @@ spec = describe "before a replay evaluates" $ do
                 "tx-other"
                 (entry "tx-other")
                 [("m", Admitted "deposit-returned")]
+                []
             addRejection
                 index
                 "tx-step"
                 (entry "tx-step")
                 [("m", Admitted "retract-owner")]
+                []
             recordComparison
                 index
                 "tx-step"
@@ -371,6 +375,53 @@ spec = describe "before a replay evaluates" $ do
                 `shouldBe` [Just (String "not-phase2")]
             fieldOf "tx-step" "extentClass" `shouldBe` [Just (String "A")]
             fieldOf "tx-other" "comparison" `shouldBe` [Just Null]
+    describe "the replay evidence a refused step's receipt carries" $
+        it "is kept by rejection, for the receipt of the step that refused" $
+            do
+                dir <-
+                    (</> "conformance-replay-evidence-spec") <$> getTemporaryDirectory
+                removePathForcibly dir
+                index <- newReplayIndex dir
+                let evidence reason =
+                        [ ReplayEvidence
+                            { replayDeployedHash = "m"
+                            , replayTracedHash = Just "t"
+                            , replayReason = Just reason
+                            , replayCause = Nothing
+                            , replayCaptureId = Just "c"
+                            }
+                        ]
+                addRejection
+                    index
+                    "tx-one"
+                    (object ["rejectedTxId" .= ("tx-one" :: Text)])
+                    [("m", Admitted "key-exists")]
+                    (evidence "key-exists")
+                addRejection
+                    index
+                    "tx-two"
+                    (object ["rejectedTxId" .= ("tx-two" :: Text)])
+                    [("m", Admitted "not-booked")]
+                    (evidence "not-booked")
+                replayEvidenceOf index "tx-one" `shouldReturn` evidence "key-exists"
+                replayEvidenceOf index "tx-two" `shouldReturn` evidence "not-booked"
+                replayEvidenceOf index "tx-none" `shouldReturn` []
+    describe "a receipts directory two sessions share"
+        $ it
+            "keeps the first session's replay entries when the second writes its own"
+        $ do
+            dir <-
+                (</> "conformance-replay-shared-spec") <$> getTemporaryDirectory
+            removePathForcibly dir
+            first <- newReplayIndex dir
+            addEntry first (object ["rejectedTxId" .= ("tx-first" :: Text)])
+            second <- newReplayIndex dir
+            addEntry second (object ["rejectedTxId" .= ("tx-second" :: Text)])
+            written <- eitherDecodeFileStrict (dir </> "replay" </> "index.json")
+            fmap
+                (map (\case Object o -> KM.lookup "rejectedTxId" o; _ -> Nothing))
+                (written :: Either String [Value])
+                `shouldBe` Right [Just (String "tx-first"), Just (String "tx-second")]
     describe "the wrong-reason control" $ do
         let control = ReasonControl "CG07" 0 "retract-owner"
         it "reads ROW:STEP:REASON" $

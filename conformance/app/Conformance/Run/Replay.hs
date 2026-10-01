@@ -29,7 +29,10 @@ module Conformance.Run.Replay
     , ReplayIndex (..)
     , newReplayIndex
     , addRejection
+    , addEntry
     , purposesOf
+    , replayEvidenceOf
+    , sessionCorrespondence
     , recordComparison
     , capturingSubmitter
 
@@ -83,6 +86,7 @@ import Data.IORef
     , modifyIORef'
     , newIORef
     , readIORef
+    , writeIORef
     )
 import Data.List (nub, nubBy)
 import Data.Map.Strict (Map)
@@ -239,6 +243,10 @@ data ReplayIndex = ReplayIndex
     , riPurposes :: IORef (Map Text [(Text, ReplayClass)])
     , riControlled :: IORef (Set.Set Text)
     -- ^ the replayed script roles an accepting control already covers
+    , riEvidence :: IORef (Map Text [ReplayEvidence])
+    -- ^ each rejection's replay evidence, as its receipt carries it
+    , riCorrespondence :: IORef (Maybe ReplayCorrespondence)
+    -- ^ the traced build the session loaded; none when it could not
     }
 
 -- | An empty index for a receipts directory.
@@ -249,13 +257,20 @@ newReplayIndex dir =
         <*> newIORef []
         <*> newIORef Map.empty
         <*> newIORef Set.empty
+        <*> newIORef Map.empty
+        <*> newIORef Nothing
 
-{- | Add one rejection's entry, with its failing purposes by deployed hash, and
-write the whole index.
+{- | Add one rejection's entry, with its failing purposes by deployed hash and
+its replay evidence, and write the whole index.
 -}
 addRejection
-    :: ReplayIndex -> Text -> Value -> [(Text, ReplayClass)] -> IO ()
-addRejection index txid entry purposes = do
+    :: ReplayIndex
+    -> Text
+    -> Value
+    -> [(Text, ReplayClass)]
+    -> [ReplayEvidence]
+    -> IO ()
+addRejection index txid entry purposes _ = do
     modifyIORef' (riPurposes index) (Map.insert txid purposes)
     addEntry index entry
 
@@ -269,6 +284,16 @@ addEntry index entry = do
 purposesOf :: ReplayIndex -> Text -> IO [(Text, ReplayClass)]
 purposesOf index txid =
     Map.findWithDefault [] txid <$> readIORef (riPurposes index)
+
+-- | A rejection's replay evidence, as its receipt carries it.
+replayEvidenceOf :: ReplayIndex -> Text -> IO [ReplayEvidence]
+replayEvidenceOf index txid =
+    Map.findWithDefault [] txid <$> readIORef (riEvidence index)
+
+-- | The traced build the session loaded, as a receipt states it.
+sessionCorrespondence
+    :: ReplayIndex -> IO (Maybe ReplayCorrespondence)
+sessionCorrespondence = readIORef . riCorrespondence
 
 {- | Record a refused step's comparison on its rejection's entry — the model's
 reason, the comparison, and class A, the fact of an executed model reason —
@@ -332,6 +357,9 @@ newReplayEnv node lsq deployedPath dir nodeId = do
     setup <-
         loadSetup deployedPath =<< lookupEnv "REGISTRY_TRACED_BLUEPRINT"
     index <- newReplayIndex dir
+    writeIORef
+        (riCorrespondence index)
+        (either (const Nothing) (Just . correspondenceOf . rsProvenance) setup)
     pure
         ReplayEnv
             { reNode = node
@@ -474,6 +502,7 @@ recordRejection env tx nodeText = do
         txid
         entry
         [(prDeployedHash p, prClass p) | (_, p) <- purposes]
+        (rejectionEvidence captureId failing (map snd purposes) classes)
   where
     dirName = T.pack . reverse . takeWhile (/= '/') . reverse
 

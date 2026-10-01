@@ -770,6 +770,8 @@
           inherit conformance driverTransport foldBudgetRegression;
           # #299: the ordinary CLI's refusal controls runner.
           inherit (components.exes) cli-controls;
+          # #287: the extent check CI runs over every live run's receipts.
+          inherit (components.exes) conformance-extent;
           # Generated Haddock reference for the Conformance library, consumed
           # by the root documentation build. Same source tree, same lock: the
           # docs manifest can bind the reference to this candidate's content.
@@ -830,6 +832,11 @@
           fold-budget-regression = {
             type = "app";
             program = pkgs.lib.getExe foldBudgetRegression;
+          };
+          # #287: the extent check over the receipts of every live run.
+          conformance-extent = {
+            type = "app";
+            program = "${components.exes.conformance-extent}/bin/conformance-extent";
           };
           conformance = {
             type = "app";

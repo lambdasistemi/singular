@@ -140,8 +140,7 @@ fundWallet env addr amount = do
 
 {- | A small dedicated collateral pot for one refusing transaction:
 on phase-2 failure the whole collateral is taken, so the collateral
-is a split-off 5 ADA output — never the 30 ADA funder the CG05
-shape once used. The pot is a pure collateral input (never a
+is a split-off 5 ADA output — never the 30 ADA funder. The pot is a pure collateral input (never a
 regular input), ada-only and key-witnessed.
 -}
 collateralPot :: Env -> IO TxIn

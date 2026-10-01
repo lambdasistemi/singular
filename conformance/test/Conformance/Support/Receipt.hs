@@ -24,6 +24,7 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.Either (isLeft, isRight)
 import Data.Foldable (forM_)
 import Data.List (isInfixOf)
+import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import System.Environment (lookupEnv)
 import System.FilePath ((</>))
@@ -44,11 +45,15 @@ import Conformance.Receipt
     ( Outcome (..)
     , Receipt (..)
     , RefusalInfo (..)
+    , ReplayCorrespondence (..)
+    , ReplayEvidence (..)
     , Verdict (..)
     , checkReceiptSize
     , derivationMatches
     , loadReceipts
     , maxReceiptBytes
+    , stepReplay
+    , storyCorrespondence
     , writeReceiptFile
     )
 import Conformance.Rows
@@ -67,6 +72,7 @@ spec :: Spec
 spec = describe "Appendix: deciding whether a run report counts as evidence" $ do
     stepRoundTrip
     liveStepChecks
+    replayChecks
     it "Preserves every result category when saving and reading it back" $
         forM_ [minBound :: Verdict .. maxBound] $ \v ->
             case eitherDecode (encode v) :: Either String Verdict of
@@ -481,6 +487,7 @@ smallReceipt =
         , receiptPartial = Nothing
         , receiptDerivation = Nothing
         , receiptSteps = Nothing
+        , receiptReplayCorrespondence = Nothing
         }
 
 oversizedReceipt :: Receipt
@@ -498,6 +505,7 @@ oversizedReceipt =
                     , refusalPhase = "phase-2"
                     , refusalHashes = ["abc123"]
                     , refusalBranch = Nothing
+                    , refusalReplay = Nothing
                     , refusalLimit = Just "test limit"
                     }
                 )
@@ -922,6 +930,7 @@ assertRecordedCause raw causes = withSystemTempDirectory "node-cause-receipt" $ 
     let receipt =
             smallReceipt
                 { receiptRow = "CG21"
+                , receiptReplayCorrespondence = Nothing
                 , receiptSteps =
                     Just
                         [ object
@@ -949,6 +958,7 @@ overlongLiveRefusal :: Receipt
 overlongLiveRefusal =
     smallReceipt
         { receiptRow = "CG21"
+        , receiptReplayCorrespondence = Nothing
         , receiptSteps =
             Just
                 [ object
@@ -1006,6 +1016,7 @@ refusedLiveWithoutDetails =
                     , refusalPhase = "phase-2"
                     , refusalHashes = ["abcdef"]
                     , refusalBranch = Nothing
+                    , refusalReplay = Nothing
                     , refusalLimit = Just "live request was refused"
                     }
         , receiptRejected = Just "abc123"
@@ -1092,6 +1103,7 @@ acceptedLive :: Receipt
 acceptedLive =
     smallReceipt
         { receiptRow = "CG21"
+        , receiptReplayCorrespondence = Nothing
         , receiptSteps =
             Just
                 [ object
@@ -1235,6 +1247,7 @@ admissionBookFixture :: Receipt
 admissionBookFixture =
     acceptedLive
         { receiptRow = "CG23"
+        , receiptReplayCorrespondence = Nothing
         , receiptSteps =
             Just $
                 concatMap
@@ -1279,6 +1292,7 @@ exitControlsLive =
     acceptedLive
         { receiptRow = "CG23"
         , receiptTransactions = ["abc123", "def456"]
+        , receiptReplayCorrespondence = Nothing
         , receiptSteps =
             Just $
                 concatMap
@@ -1312,3 +1326,156 @@ setRefusalField name value chain = case chain of
 -- | A receipt the loader refused, naming this reason.
 refusedFor :: String -> Either String Int -> Bool
 refusedFor reason = either (reason `isInfixOf`) (const False)
+
+-- A refused step's replay is a claim about the chain-side reason: the loader
+-- refuses one that is incomplete or that contradicts the step's trace, and the
+-- book reads what it carries.
+replayChecks :: Spec
+replayChecks = describe "Checking the traced replay a refused request carries" $ do
+    it
+        "accepts a refused step whose replay admitted the reason its trace names"
+        $ loadLive (tracedPaymentLive [admittedEntry] (Just "destination"))
+            `shouldReturn` Right 1
+    it
+        "accepts a refused step whose replay names the cause it admits no reason"
+        $ loadLive (tracedPaymentLive [causeEntry] Nothing)
+            `shouldReturn` Right 1
+    it "accepts a refused step written before the replay object" $
+        loadLive (paymentTamperLive "other-address" "destination")
+            `shouldReturn` Right 1
+    it "rejects a replay reason without its traced hash" $
+        loadLive
+            ( tracedPaymentLive
+                [admittedEntry{replayTracedHash = Nothing}]
+                (Just "destination")
+            )
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a replay naming both a reason and a cause" $
+        loadLive
+            ( tracedPaymentLive
+                [admittedEntry{replayCause = Just "no-user-trace"}]
+                (Just "destination")
+            )
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a replay naming neither a reason nor a cause" $
+        loadLive
+            (tracedPaymentLive [causeEntry{replayCause = Nothing}] Nothing)
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a replay cause that names no unobserved cause" $
+        loadLive
+            (tracedPaymentLive [causeEntry{replayCause = Just "guessed"}] Nothing)
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a replay reason without the capture it was replayed from" $
+        loadLive
+            ( tracedPaymentLive
+                [admittedEntry{replayCaptureId = Nothing}]
+                (Just "destination")
+            )
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a trace that disagrees with the replay's reason" $
+        loadLive (tracedPaymentLive [admittedEntry] (Just "deposit-returned"))
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a trace with no replay that admitted it" $
+        loadLive
+            ( changeStep
+                ( \step ->
+                    setField
+                        "chain"
+                        (setRefusalField "trace" ("destination" :: String) (chainOf step))
+                        step
+                )
+                (paymentTamperLive "other-address" "destination")
+            )
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects replay reasons without the traced build they rely on" $
+        loadLive
+            (tracedPaymentLive [admittedEntry] (Just "destination"))
+                { receiptReplayCorrespondence = Nothing
+                }
+            >>= (`shouldSatisfy` isLeft)
+    it
+        "puts the replay on a refused step's chain refusal, and nothing when there is none"
+        $ do
+            let refusal = object ["trace" .= Null]
+            field "replay" (stepReplay [admittedEntry] refusal)
+                `shouldBe` Just (toJSON [admittedEntry])
+            stepReplay [] refusal `shouldBe` refusal
+    it
+        "states the traced build on a story receipt exactly when a step carries a replay"
+        $ do
+            let traced = tracedPaymentLive [admittedEntry] (Just "destination")
+                steps = concat (receiptSteps traced)
+            storyCorrespondence (Just fixtureCorrespondence) steps
+                `shouldBe` Just fixtureCorrespondence
+            storyCorrespondence
+                (Just fixtureCorrespondence)
+                ( concat
+                    (receiptSteps (paymentTamperLive "other-address" "destination"))
+                )
+                `shouldBe` Nothing
+            storyCorrespondence Nothing steps `shouldBe` Nothing
+    it
+        "publishes the reason the traced replay admitted beside the model's, with both hashes"
+        $ do
+            let book =
+                    renderBook
+                        []
+                        [ (tracedPaymentLive [admittedEntry] (Just "destination"))
+                            { receiptRow = "CG21"
+                            }
+                        ]
+            book
+                `shouldSatisfy` isInfixOf
+                    "The traced replay of the deployed script `abcdef` (traced `traced-abcdef`, capture `capture-1`) failed with `destination`."
+  where
+    chainOf step = fromMaybe Null (field "chain" step)
+
+-- | The replay of the payment tamper's one failing purpose, admitting its reason.
+admittedEntry :: ReplayEvidence
+admittedEntry =
+    ReplayEvidence
+        { replayDeployedHash = "abcdef"
+        , replayTracedHash = Just "traced-abcdef"
+        , replayReason = Just "destination"
+        , replayCause = Nothing
+        , replayCaptureId = Just "capture-1"
+        }
+
+-- | The same purpose, with a replay that admitted no reason.
+causeEntry :: ReplayEvidence
+causeEntry =
+    admittedEntry
+        { replayReason = Nothing
+        , replayCause = Just "no-user-trace"
+        }
+
+fixtureCorrespondence :: ReplayCorrespondence
+fixtureCorrespondence =
+    ReplayCorrespondence
+        { correspondenceSource = "/nix/store/source"
+        , correspondenceCompiler = "v1.1.21"
+        , correspondenceFlags =
+            "--trace-filter user-defined --trace-level verbose"
+        , correspondenceDigest = "digest"
+        }
+
+{- | The payment tamper refused on chain for @destination@, its refusal carrying
+the given replay and trace, in a receipt stating the traced build.
+-}
+tracedPaymentLive :: [ReplayEvidence] -> Maybe String -> Receipt
+tracedPaymentLive replay trace =
+    ( changeStep
+        ( \step -> case field "chain" step of
+            Just chain ->
+                setField
+                    "chain"
+                    ( setRefusalField "trace" trace $
+                        setRefusalField "replay" replay chain
+                    )
+                    step
+            Nothing -> step
+        )
+        (paymentTamperLive "other-address" "destination")
+    )
+        { receiptReplayCorrespondence = Just fixtureCorrespondence
+        }

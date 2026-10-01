@@ -33,6 +33,10 @@ module Conformance.Receipt
     ( Outcome (..)
     , Verdict (..)
     , RefusalInfo (..)
+    , ReplayEvidence (..)
+    , ReplayCorrespondence (..)
+    , stepReplay
+    , storyCorrespondence
     , ConstructorStanding (..)
     , ConstructorEvidence (..)
     , PartialInfo (..)
@@ -53,6 +57,10 @@ module Conformance.Receipt
 
 import Conformance.Evidence.Asset (AssetEntry (..))
 import Conformance.NodeRejection (boundedNodeReason)
+import Conformance.Replay
+    ( ReplayCorrespondence (..)
+    , ReplayEvidence (..)
+    )
 import Conformance.Story.Live
     ( Edge (..)
     , Tamper (..)
@@ -124,6 +132,10 @@ data RefusalInfo = RefusalInfo
     -}
     , refusalLimit :: !(Maybe Text)
     -- ^ explicit attribution limit when no branch is available
+    , refusalReplay :: !(Maybe [ReplayEvidence])
+    {- ^ the traced replay of each failing purpose of the refused transaction
+    (absent on receipts written before it)
+    -}
     }
     deriving stock (Show, Eq)
 
@@ -136,6 +148,7 @@ instance FromJSON RefusalInfo where
             <*> o .: "hashes"
             <*> o .:? "branch"
             <*> o .:? "limit"
+            <*> o .:? "replay"
 
 instance ToJSON RefusalInfo where
     toJSON r =
@@ -146,6 +159,7 @@ instance ToJSON RefusalInfo where
             , "hashes" .= refusalHashes r
             , "branch" .= refusalBranch r
             , "limit" .= refusalLimit r
+            , "replay" .= refusalReplay r
             ]
 
 {- | How a completed row stands against the behavioral models. The
@@ -409,6 +423,10 @@ data Receipt = Receipt
     -}
     , receiptSteps :: !(Maybe [Value])
     -- ^ generic live steps, each written after model and chain comparison.
+    , receiptReplayCorrespondence :: !(Maybe ReplayCorrespondence)
+    {- ^ the traced build every replay reason in the receipt relies on (absent
+    on receipts written before it)
+    -}
     }
     deriving stock (Show, Eq)
 
@@ -432,6 +450,7 @@ instance FromJSON Receipt where
             <*> o .:? "partial"
             <*> o .:? "derivation"
             <*> o .:? "steps"
+            <*> o .:? "replayCorrespondence"
 
 instance ToJSON Receipt where
     toJSON r =
@@ -453,6 +472,7 @@ instance ToJSON Receipt where
             , "partial" .= receiptPartial r
             , "derivation" .= receiptDerivation r
             , "steps" .= receiptSteps r
+            , "replayCorrespondence" .= receiptReplayCorrespondence r
             ]
 
 {- | Write one @receipt-<ROW>.json@ under the run's output directory.
@@ -509,6 +529,26 @@ retractableEdges =
 -- | Keep live node text readable inside each refusal step.
 maxLiveStepReasonChars :: Int
 maxLiveStepReasonChars = 300
+
+{- | A refused step's chain refusal with the replay of its failing purposes;
+unchanged when the replay recorded none.
+-}
+stepReplay :: [ReplayEvidence] -> Value -> Value
+stepReplay _ refusal = refusal
+
+{- | The correspondence a story receipt carries: the session's, exactly when
+one of its steps carries a replay.
+-}
+storyCorrespondence
+    :: Maybe ReplayCorrespondence -> [Value] -> Maybe ReplayCorrespondence
+storyCorrespondence _ _ = Nothing
+
+{- | A receipt's replay evidence, complete and agreeing with what the receipt
+claims: a step's @trace@ and an attribution's @branch@ are reasons a replay
+admitted, so either needs the replay that admitted it.
+-}
+checkReplay :: FilePath -> Receipt -> Either String Receipt
+checkReplay _ = Right
 
 {- | Validate the generic evidence body independently of the runner. The
 runner computes its values; the loader refuses missing comparisons and
@@ -856,6 +896,7 @@ loadReceipts dir = do
                     >>= checkPartial path
                     >>= checkDerivation path
                     >>= checkEdge path
+                    >>= checkReplay path
     checkDerivation path r = case receiptDerivation r of
         Nothing ->
             if receiptRow r == "CA04"

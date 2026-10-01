@@ -17,6 +17,8 @@ what came back (@CONFORMANCE_CONTROL=wrong-reason@).
 module Conformance.Refusal
     ( RefusalMismatch (..)
     , RefusalRole (..)
+    , TracedRefusal (..)
+    , untraced
     , attributeRefusalReceipt
     , matchRefusal
     , refusalScriptHashes
@@ -29,6 +31,8 @@ import Conformance.Receipt
     ( Outcome (..)
     , Receipt (..)
     , RefusalInfo (..)
+    , ReplayCorrespondence (..)
+    , ReplayEvidence (..)
     , Verdict (..)
     , writeReceiptFile
     )
@@ -236,6 +240,22 @@ refusalWritesReceipt role = case role of
     -- control. Spec: RefusalSpec, "receipt policy (A-002)".
     RefusalControl -> False
 
+{- | What the traced replay of a refused transaction established: the reason
+it admitted for the attributed script, when every purpose of that script
+admitted the same one; the replay of each failing purpose; and the traced
+build those reasons rely on.
+-}
+data TracedRefusal = TracedRefusal
+    { tracedAdmitted :: Maybe T.Text
+    , tracedReplay :: [ReplayEvidence]
+    , tracedCorrespondence :: Maybe ReplayCorrespondence
+    }
+    deriving stock (Show, Eq)
+
+-- | A refusal no traced replay recorded.
+untraced :: TracedRefusal
+untraced = TracedRefusal Nothing [] Nothing
+
 {- | Attribute a node-submit refusal and, when the role's policy
 writes, record the refused receipt under the row's id. Returns the
 attribution mismatch for the caller to fail on loudly — this function
@@ -269,16 +289,15 @@ attributeRefusalReceipt
     -- ^ node identity
     -> String
     -- ^ blueprint identity
-    -> Maybe T.Text
-    {- ^ the reason a traced replay admitted for the attributed script, when
-    it admitted one: the receipt's validator branch
-    -}
+    -> TracedRefusal
+    -- ^ what the traced replay of the refused transaction established
     -> IO (Either RefusalMismatch ())
-attributeRefusalReceipt role dir row verdict script marker text rejectedTxid base dirty node blueprint admitted =
+attributeRefusalReceipt role dir row verdict script marker text rejectedTxid base dirty node blueprint traced =
     case matchRefusal marker text of
         Left m -> pure (Left m)
         Right () -> do
             let recorded = recordedReason text marker
+                admitted = tracedAdmitted traced
             when (refusalWritesReceipt role) $
                 writeReceiptFile
                     dir
@@ -296,6 +315,7 @@ attributeRefusalReceipt role dir row verdict script marker text rejectedTxid bas
                                     , refusalHashes =
                                         map T.pack (refusalScriptHashes text)
                                     , refusalBranch = admitted
+                                    , refusalReplay = Nothing
                                     , refusalLimit = case admitted of
                                         Just _ -> Nothing
                                         Nothing ->
@@ -315,6 +335,7 @@ attributeRefusalReceipt role dir row verdict script marker text rejectedTxid bas
                         , receiptPartial = Nothing
                         , receiptDerivation = Nothing
                         , receiptSteps = Nothing
+                        , receiptReplayCorrespondence = Nothing
                         }
             pure (Right ())
 

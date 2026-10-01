@@ -47,6 +47,12 @@ module Conformance.Replay
     , TracedProvenance (..)
     , toolchainCause
     , captureIdOf
+
+      -- * Receipt evidence
+    , ReplayEvidence (..)
+    , rejectionEvidence
+    , ReplayCorrespondence (..)
+    , correspondenceOf
     ) where
 
 import Crypto.Hash qualified as Hash
@@ -57,6 +63,7 @@ import Data.Aeson
     , object
     , withObject
     , (.:)
+    , (.:?)
     , (.=)
     )
 import Data.Aeson.KeyMap qualified as KM
@@ -389,3 +396,87 @@ acceptingControlGaps entries = mapMaybe gap refusingRoles
                 Nothing
             | otherwise ->
                 Just (role <> ": no accepting control with both runs succeeded")
+
+{- | One failing purpose's replay as a receipt carries it: the hash the node
+reported, the traced hash of the same parameters once the replay applied
+one, the reason it admitted or the cause it admits none — never both — and
+the capture it was replayed from.
+-}
+data ReplayEvidence = ReplayEvidence
+    { replayDeployedHash :: Text
+    , replayTracedHash :: Maybe Text
+    , replayReason :: Maybe Text
+    , replayCause :: Maybe Text
+    , replayCaptureId :: Maybe Text
+    }
+    deriving stock (Show, Eq)
+
+instance ToJSON ReplayEvidence where
+    toJSON e =
+        object $
+            ("deployedHash" .= replayDeployedHash e)
+                : [ name .= value
+                  | (name, Just value) <-
+                        [ ("tracedHash", replayTracedHash e)
+                        , ("reason", replayReason e)
+                        , ("cause", replayCause e)
+                        , ("captureId", replayCaptureId e)
+                        ]
+                  ]
+
+instance FromJSON ReplayEvidence where
+    parseJSON = withObject "ReplayEvidence" $ \o ->
+        ReplayEvidence
+            <$> o .: "deployedHash"
+            <*> o .:? "tracedHash"
+            <*> o .:? "reason"
+            <*> o .:? "cause"
+            <*> o .:? "captureId"
+
+{- | A rejection's evidence, one entry per failing purpose the replay met; a
+replay that ended before reaching any purpose gives each failing hash the
+cause it ended with.
+-}
+rejectionEvidence
+    :: Maybe Text
+    -- ^ the capture's identity
+    -> [Text]
+    -- ^ the failing hashes the node reported
+    -> [PurposeReplay]
+    -> [ReplayClass]
+    -- ^ what the replay established, in the index's order
+    -> [ReplayEvidence]
+rejectionEvidence _ _ _ _ = []
+
+{- | The traced build a receipt's replay reasons rely on: its source, compiler
+and trace flags, and a digest of the untraced hashes it was held to.
+-}
+data ReplayCorrespondence = ReplayCorrespondence
+    { correspondenceSource :: Text
+    , correspondenceCompiler :: Text
+    , correspondenceFlags :: Text
+    , correspondenceDigest :: Text
+    -- ^ SHA-256 over @title hash@ lines of the untraced hashes, in title order
+    }
+    deriving stock (Show, Eq)
+
+instance ToJSON ReplayCorrespondence where
+    toJSON c =
+        object
+            [ "source" .= correspondenceSource c
+            , "compiler" .= correspondenceCompiler c
+            , "flags" .= correspondenceFlags c
+            , "untracedHashesDigest" .= correspondenceDigest c
+            ]
+
+instance FromJSON ReplayCorrespondence where
+    parseJSON = withObject "ReplayCorrespondence" $ \o ->
+        ReplayCorrespondence
+            <$> o .: "source"
+            <*> o .: "compiler"
+            <*> o .: "flags"
+            <*> o .: "untracedHashesDigest"
+
+-- | The correspondence a traced build's provenance states.
+correspondenceOf :: TracedProvenance -> ReplayCorrespondence
+correspondenceOf _ = ReplayCorrespondence "" "" "" ""

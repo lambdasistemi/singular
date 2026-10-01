@@ -76,7 +76,11 @@ import Conformance.PurposeUnits
     , budgetRefusalPurposes
     , missingPurposeBudgets
     )
-import Conformance.Receipt (AssetEntry (..), maxLiveStepReasonChars)
+import Conformance.Receipt
+    ( AssetEntry (..)
+    , maxLiveStepReasonChars
+    , stepReplay
+    )
 import Conformance.Story.Binding qualified as Binding
 import Conformance.Story.Identity qualified as Identity
 import Conformance.Story.Live qualified as Live
@@ -254,6 +258,7 @@ import Conformance.Run.Replay
     ( ReplayIndex (..)
     , purposesOf
     , recordComparison
+    , replayEvidenceOf
     )
 import Conformance.Run.Retraction (declareRetraction)
 import Conformance.Run.Step
@@ -2508,6 +2513,12 @@ compareStep env state step observation = do
             recordComparison (envReplay env) txid asked comparison
             pure (Just (asked, comparison))
         _ -> pure Nothing
+    -- The replay of each failing purpose of a refused step's transaction, as
+    -- the receipt carries it.
+    evidence <- case lsOutcome step of
+        StepRefused transaction _ _ ->
+            replayEvidenceOf (envReplay env) (T.pack (txIdHex transaction))
+        _ -> pure []
     let model = object ["outcome" .= modelOutcome, "reason" .= modelReason]
         -- The chain-side reason a receipt carries: only one that agrees.
         chainReason = case reasonCheck of
@@ -2524,9 +2535,12 @@ compareStep env state step observation = do
                     [ "outcome" .= String "refused"
                     , "txid" .= txIdHex transaction
                     , "refusal"
-                        .= withScripts
-                            (attributed hashes)
-                            (rejectionJson chainReason hashes rejection)
+                        .= stepReplay
+                            evidence
+                            ( withScripts
+                                (attributed hashes)
+                                (rejectionJson chainReason hashes rejection)
+                            )
                     ]
                 )
             StepUnsupported _ reason diagnostic ->

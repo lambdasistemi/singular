@@ -6,6 +6,7 @@ import Conformance.Support.Binding qualified as Binding
 import Conformance.Support.CliAdmission qualified as CliAdmission
 import Conformance.Support.CliControls qualified as CliControls
 import Conformance.Support.CliProof qualified as CliProof
+import Conformance.Support.Extent qualified as Extent
 import Conformance.Support.Fixture qualified as Fixture
 import Conformance.Support.FixtureChild
     ( childModeVariable
@@ -64,3 +65,4 @@ suite = do
         CliAdmission.spec
         Replay.spec
         RunReplay.spec
+        Extent.spec

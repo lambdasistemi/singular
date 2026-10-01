@@ -233,6 +233,7 @@ jobs:
             and .steps[0].registry != .steps[4].registry
             and (.transactions | length) == 7
           ' "$f" > /dev/null || { echo 'FAIL: CG22 retirement evidence moved'; exit 1; }
+          bash test/ci/replay-evidence.sh steps "$f" || { echo 'FAIL: CG22 refused steps lack the traced replay of their reason'; exit 1; }
       # Read the eight step records the exit controls write as a row of
       # their own, apart from the retirement so that each receipt is
       # written under the size bound. Requests leave the queue unfolded,
@@ -318,6 +319,7 @@ jobs:
             and (.steps[9] | .request.owner as $owner | .witness.signatories | index($owner) != null)
             and (.transactions | length) == 2
           ' "$f" > /dev/null || { echo 'FAIL: CG23 exit evidence moved'; exit 1; }
+          bash test/ci/replay-evidence.sh steps "$f" || { echo 'FAIL: CG23 refused steps lack the traced replay of their reason'; exit 1; }
       # The timing refusals are compared in their own finite-window story.
       # The exit chapter above compares the other retraction admission refusals.
       - name: Run the retraction window as a packaged app
@@ -364,6 +366,28 @@ jobs:
             and .steps[1].perturbation.refused > 0
             and .transactions == [.steps[1].chain.txid]
           ' "$f" > /dev/null || { echo 'FAIL: retraction window evidence moved'; exit 1; }
+          bash test/ci/replay-evidence.sh steps "$f" || { echo 'FAIL: retraction window refused steps lack the traced replay of their reason'; exit 1; }
+      # #287: the wrong-reason control. The retraction window runs again with
+      # the model's reason for its first compared step replaced by another
+      # valid reason (CONFORMANCE_REASON_CONTROL=ROW:STEP:REASON). The row must
+      # fail naming the reason the traced replay admitted and the replaced
+      # one, write no receipt, and keep the differing comparison in its replay
+      # index. The restored leg is the retraction window step above: the same
+      # row at this head, without the control, passing.
+      - name: Show a wrong model reason fails the row naming both reasons
+        working-directory: conformance
+        run: |
+          set -e
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          receipts="$(mktemp -d "$RUNNER_TEMP/conformance-reason-control.XXXXXX")"
+          set +e
+          CONFORMANCE_REASON_CONTROL=CG07:0:retract-owner REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG07 --receipts-dir "$receipts" 2>&1 | tee /tmp/reason-control.log
+          run_rc=${PIPESTATUS[0]}
+          set -e
+          [ "$run_rc" -eq 1 ] || { echo "FAIL: the altered row exited $run_rc, not the handled failure 1"; exit 1; }
+          grep -q 'model and chain refuse for different reasons for retract at window-first: chain=not-phase2 lean=retract-owner' /tmp/reason-control.log || { echo 'FAIL: the altered row did not fail naming both reasons'; exit 1; }
+          test ! -e "$receipts/receipt-CG07.json" || { echo 'FAIL: the altered row wrote a receipt'; exit 1; }
+          nix run --quiet nixpkgs#jq -- -e 'any(.[]; .kind == "refusal" and .comparison == "differs" and .modelReason == "retract-owner")' "$receipts/replay/index.json" > /dev/null || { echo 'FAIL: the replay index lost the differing comparison'; exit 1; }
       - name: Run the generic rows as a packaged app without a dev shell
         working-directory: conformance
         run: |
@@ -450,7 +474,8 @@ jobs:
               and (.rejected | test("^[0-9a-f]{64}$"))
               and .refusal.phase == "phase-2"
               and (.refusal.hashes | index($state) != null)
-              and (.refusal.limit | type == "string" and length > 0)
+              and ((.refusal.branch | type == "string" and length > 0)
+                or (.refusal.limit | type == "string" and length > 0))
             ' "$f" > /dev/null || { echo "FAIL: $row structural refusal evidence moved"; exit 1; }
           done
           # CG19 under the registry-mode cage is REFUSED at the state script
@@ -466,7 +491,8 @@ jobs:
             and (.rejected | test("^[0-9a-f]{64}$"))
             and .refusal.phase == "phase-2"
             and (.refusal.hashes | index($state) != null)
-            and (.refusal.limit | type == "string" and length > 0)
+            and ((.refusal.branch | type == "string" and length > 0)
+              or (.refusal.limit | type == "string" and length > 0))
           ' "${CONFORMANCE_RECEIPTS}"/receipt-CG19.json > /dev/null || { echo 'FAIL: CG19 structural refusal evidence moved'; exit 1; }
           grep -q '^control: CG11 control: nonempty fold accepted (tx=[0-9a-f]\{64\})' /tmp/generic-rows.log || { echo 'FAIL: CG11 accepting control txid missing'; exit 1; }
           grep -q '^control: CG12 control: exact 1:1 fold accepted (tx=[0-9a-f]\{64\})' /tmp/generic-rows.log || { echo 'FAIL: CG12 accepting control txid missing'; exit 1; }
@@ -581,6 +607,17 @@ jobs:
             and any(.steps[]; .tamper == null and .model.outcome == "accepted"
                     and .chain.outcome == "accepted" and .request == $tampered)
           ' "$e" > /dev/null || { echo 'FAIL: CG21 step evidence missing or incomplete'; exit 1; }
+          # 10. #287: every refusal of the session carries the traced replay
+          #     of its transaction (test/ci/replay-evidence.sh): the story
+          #     rows' refused steps meet the model's reason, and each
+          #     attribution row names, per failing purpose, the reason the
+          #     replay admitted or the cause it admits none.
+          for row in CG05 CG21; do
+            bash test/ci/replay-evidence.sh steps "${CONFORMANCE_RECEIPTS}/receipt-$row.json" || { echo "FAIL: $row refused steps lack the traced replay of their reason"; exit 1; }
+          done
+          for row in CG09 CG10 CG11 CG12 CG19; do
+            bash test/ci/replay-evidence.sh attribution "${CONFORMANCE_RECEIPTS}/receipt-$row.json" || { echo "FAIL: $row refusal lacks the traced replay"; exit 1; }
+          done
           echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and the tampered-payment controls are recorded, with held debt exactly CG11 CG12 CG19.'
           echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'
       # Issue #69: canonical identity authentication. CA02 asserts
@@ -694,6 +731,8 @@ jobs:
             [ "$(nix run --quiet nixpkgs#jq -- -r '.dirty' "$f")" = "false" ] || { echo "FAIL: $row receipt records a dirty tree"; exit 1; }
             [ "$(nix run --quiet nixpkgs#jq -- -r '.base' "$f")" = "$head_sha" ] || { echo "FAIL: $row not bound to $head_sha"; exit 1; }
           done
+          # 5. #287: CS04's refusal carries the traced replay of its transaction.
+          bash test/ci/replay-evidence.sh attribution "${CONFORMANCE_RECEIPTS}/receipt-CS04.json" || { echo 'FAIL: CS04 refusal lacks the traced replay'; exit 1; }
           echo 'GREEN = agrees-with-model assertion held: CS01 CS02 CS04 CS06 CS07 CS08 executed on a clean candidate-bound tree, every verdict agrees-with-model (CS04 by refusing), no partial and no held row in the session.'
       # Loader and inventory enforcement over the session receipts:
       # the loader validates every receipt (constructor accounting
@@ -741,6 +780,23 @@ jobs:
           [[ "$c8" == 1 ]] || { echo "FAIL: CS08 rows: $c8"; exit 1; }
           [[ -z "$extra" ]] || { echo "FAIL: serialization rows outside this ticket's set render as run:$extra"; exit 1; }
           echo 'INVENTORY = CS01/CS02/CS04/CS06/CS07/CS08 executed (column 4, each exactly once), no other CS row run, loader accepted the accounting.'
+      # #287: the extent of every live run above. Each run's replay index
+      # must name each refusal its receipts record exactly once; a refusal
+      # whose step carried the model's reason is class A, agreeing or
+      # uncompared with a named cause; every other refusal is listed by its
+      # row in the committed table of
+      # specs/287-traced-refusal-reasons/extent.md as B, C or D; each
+      # refusing script role has an accepting control; and a run with no
+      # refusal fails. The wrong-reason control's run is a deliberate
+      # disagreement and is not part of the extent.
+      - name: Account for every live refusal against the model
+        working-directory: conformance
+        run: |
+          nix run --quiet .#conformance-extent -- ../specs/287-traced-refusal-reasons/extent.md \
+            "$CONFORMANCE_RECEIPTS" \
+            "$CONFORMANCE_DEDICATED_RECEIPTS/CG22" \
+            "$CONFORMANCE_DEDICATED_RECEIPTS/CG23" \
+            "$CONFORMANCE_DEDICATED_RECEIPTS/CG07"
       # CS04, CS07 and CS08 are back in the run list above, re-cut on
       # the final request wire (#183). CS03 and CS05 still travel with
       # #177/#179 and are still not stubbed.

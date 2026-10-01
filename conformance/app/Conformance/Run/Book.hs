@@ -244,11 +244,10 @@ rowCommit env cage key edge = do
 
 {- | Book one absence on a row cage at an explicit bond (#157 A-009).
 
-The bond is the caller's, because CG19 needs two different ones to cross
-and CG05 needs one large enough to carry its own refusal. What was a bare
-payment carrying a request datum is now a booking: the edge is certified,
-the destination names where the deposit comes back, and the approval rides
-the request to the fold.
+The bond is the caller's, because CG19 needs two different ones to
+cross. What was a bare payment carrying a request datum is now a booking:
+the edge is certified, the destination names where the deposit comes back,
+and the approval rides the request to the fold.
 -}
 paddedRequest
     :: Env

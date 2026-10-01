@@ -126,6 +126,7 @@ chapter row steps =
         , receiptPartial = Nothing
         , receiptDerivation = Nothing
         , receiptSteps = Just steps
+        , receiptReplayCorrespondence = Nothing
         }
 
 acceptedTxid :: Value -> Maybe Text

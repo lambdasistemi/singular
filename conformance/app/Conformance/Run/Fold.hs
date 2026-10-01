@@ -185,8 +185,8 @@ import Conformance.Mirror
 -- ---------------------------------------------------------
 
 {- | One hand-built fold transaction, fully specified. The library
-fold cannot emit transactions whose scripts do not evaluate (CG05's
-finding), so every refusal fold — and every fold whose payload
+fold cannot emit transactions whose scripts do not evaluate, so
+every refusal fold — and every fold whose payload
 exercises an unchecked validator path (surplus actions, a changed
 owner, crossed refunds) — is assembled here. Every accepting
 hand-built fold is calibrated against the library fold it parallels
@@ -225,8 +225,8 @@ data FoldSpec = FoldSpec
     @Just []@: deliberately none.
     -}
     , fsCollateral :: Maybe TxIn
-    {- ^ collateral input; @Nothing@: the fee funder (the CG05
-    shape). Refusing folds pass a dedicated 5 ADA pot instead — the
+    {- ^ collateral input; @Nothing@: the fee funder. Refusing
+    folds pass a dedicated 5 ADA pot instead — the
     whole collateral is taken on phase-2 failure, and the funder is
     the wallet's largest output.
     -}
@@ -568,9 +568,9 @@ assembleFoldSpec env fs = do
 
 {- | Assemble with an iterated fee: assemble, let the ledger price
 the transaction, and repeat until the declared fee exceeds the
-estimate by a fixed margin. The margin discipline is CG05's: too
-small fails loudly at submit (phase 1, no script named); too large
-fails loudly in assembly (a refund under min-ADA).
+estimate by a fixed margin. Too small a margin fails loudly at
+submit (phase 1, no script named); too large fails loudly in
+assembly (a refund under min-ADA).
 -}
 assembleFoldWithFee :: Env -> FoldSpec -> IO ConwayTx
 assembleFoldWithFee env fs = go (0 :: Int) 1_500_000
