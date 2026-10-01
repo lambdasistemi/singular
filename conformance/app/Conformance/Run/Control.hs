@@ -13,6 +13,7 @@ module Conformance.Run.Control
     , issue177Rows
     , issue258Rows
     , issue205Rows
+    , issue320Rows
     , sequenceRows
     , canonicalRows
     , Control (..)
@@ -58,6 +59,7 @@ caRows
     , issue177Rows
     , issue258Rows
     , issue205Rows
+    , issue320Rows
     , sequenceRows
         :: [String]
 caRows = ["CA01", "CA02", "CA03", "CA04", "CA05"]
@@ -94,6 +96,10 @@ issue177Rows = ["CG22"]
 issue258Rows = ["CG23"]
 -- The finite retraction window, compared through its own story.
 issue205Rows = ["CG07"]
+-- The issue #320 row: CG24 is the early rejection, a reject while the request
+-- can still be folded and one while its owner can still retract it, each beside
+-- its refused tampered refunds.
+issue320Rows = ["CG24"]
 sequenceRows = ["sequence"]
 
 canonicalRows :: [String]
@@ -106,6 +112,7 @@ canonicalRows =
         <> issue177Rows
         <> issue258Rows
         <> issue205Rows
+        <> issue320Rows
         <> sequenceRows
 
 data Control

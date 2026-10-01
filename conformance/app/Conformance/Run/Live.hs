@@ -11,6 +11,7 @@ module Conformance.Run.Live
     , LiveState (..)
     , runLive
     , runLiveWithRequests
+    , runLiveNamed
     , submitEdge
     , storyReferences
     , storyWitness
@@ -90,7 +91,7 @@ import Control.Exception
     , throwIO
     , try
     )
-import Control.Monad (forM_, replicateM, void, when)
+import Control.Monad (forM_, replicateM, unless, void, when)
 import Control.Monad.Operational qualified as Operational
 import Data.Aeson
     ( Value (..)
@@ -297,6 +298,8 @@ data LiveState = LiveState
     , livePendingRequests
         :: IORef
             (Map.Map (String, String, Int, ByteString) (TxIn, TxOut ConwayEra))
+    , liveRow :: String
+    -- ^ the row the story runs for, naming its placement lines
     }
 
 -- | Interpret shared story instructions against the running node and builders.
@@ -313,7 +316,18 @@ runLiveWithRequests
     -> [(RowCage, Live.EdgeRequest Addr)]
     -> Live.Story RowCage Addr LiveStep Value Value res
     -> IO res
-runLiveWithRequests env prepared program = do
+runLiveWithRequests env = runLiveNamed env ""
+
+{- | 'runLiveWithRequests' for a named row: each placed reject is logged under
+the row, with its validity interval and the window it lies in.
+-}
+runLiveNamed
+    :: Env
+    -> String
+    -> [(RowCage, Live.EdgeRequest Addr)]
+    -> Live.Story RowCage Addr LiveStep Value Value res
+    -> IO res
+runLiveNamed env row prepared program = do
     identities <- newLiveIdentities
     pending <- newIORef 0
     starts <- newIORef Map.empty
@@ -343,6 +357,7 @@ runLiveWithRequests env prepared program = do
                 wallets
                 registryIds
                 pendingRequestsRef
+                row
             )
             program
     remaining <- readIORef pending
@@ -396,11 +411,26 @@ runLiveWithRequests env prepared program = do
         -> IO obs
     interpret state instruction = case instruction of
         Live.Submit exit registry request -> do
-            step <- submitEdge env state registry exit Nothing request
+            requirePlaced exit
+            step <- submitEdge env state registry exit Nothing Nothing request
             modifyIORef' (livePendingComparisons state) (+ 1)
             pure step
         Live.Tamper alteration exit registry request -> do
-            step <- submitEdge env state registry exit (Just alteration) request
+            requirePlaced exit
+            step <-
+                submitEdge env state registry exit (Just alteration) Nothing request
+            modifyIORef' (livePendingComparisons state) (+ 1)
+            pure step
+        Live.RejectWithin placement alteration registry request -> do
+            step <-
+                submitEdge
+                    env
+                    state
+                    registry
+                    Live.Reject
+                    alteration
+                    (Just placement)
+                    request
             modifyIORef' (livePendingComparisons state) (+ 1)
             pure step
         Live.Observe step -> observeStep env state step
@@ -412,6 +442,11 @@ runLiveWithRequests env prepared program = do
                 "live story compared more requests than it submitted"
                 (remaining >= 0)
             pure result
+    -- Story validation refuses an unplaced reject; reaching here is a setup
+    -- failure, never a step outcome.
+    requirePlaced exit =
+        when (exit == Live.Reject) $
+            failWith "setup: a reject reached the interpreter without a placement"
 
 -- | The same booking path for a prepared cohort and a single story action.
 bookStoryRequest
@@ -441,12 +476,12 @@ storyDestination request = case Live.requestEdge request of
     Live.DeleteActive -> (BS.empty, BS.empty)
     _ -> (serialiseAddr (Live.requestWallet request), BS.empty)
 
-{- | One story instruction books a request, or retries the request left by a
-refused retraction so its owner-signed control spends the same request.
-All later work keeps its outref, so a refused request left at the script
-cannot leak into a fold. The
-request then leaves by the instruction's exit: folded by its own edge,
-rejected once it may no longer be folded, or retracted by its owner.
+{- | One story instruction books a request, or takes the request retained for
+it: one booked with its cohort, or one left pending by a refused exit, so the
+control spends the same request. All later work keeps its outref, so a refused
+request left at the script cannot leak into a fold. The request then leaves by
+the instruction's exit: folded by its own edge, rejected in the window its
+placement names, or retracted by its owner.
 -}
 submitEdge
     :: Env
@@ -454,9 +489,10 @@ submitEdge
     -> RowCage
     -> Live.Exit
     -> Maybe Live.Tamper
+    -> Maybe Live.Placement
     -> Live.EdgeRequest Addr
     -> IO LiveStep
-submitEdge env state cage exit alteration request = do
+submitEdge env state cage exit alteration placement request = do
     let key = TE.encodeUtf8 (T.pack (Live.requestKey request))
         cfg = rcCfg cage
         edge = fromIntegral (fromEnum (Live.requestEdge request))
@@ -518,7 +554,7 @@ submitEdge env state cage exit alteration request = do
     retained <-
         Map.lookup pendingKey <$> readIORef (livePendingRequests state)
     booking <- case (exit, retained) of
-        (Live.Retract, Just named) -> pure (Right named)
+        (_, Just named) -> pure (Right named)
         _ -> try @ErrorCall (bookStoryRequest env cage request)
     case booking of
         Left failure -> case stripPrefix
@@ -652,6 +688,7 @@ submitEdge env state cage exit alteration request = do
                         tid
                         exit
                         alteration
+                        placement
                         request
                         named
                         before
@@ -697,6 +734,10 @@ submitEdge env state cage exit alteration request = do
             -- node. Assemble the same one-request shape again immediately before
             -- submission; its fresh upper bound cannot age during measurement.
             unsigned <- build declared
+            -- A placed reject must lie inside the window its step names before
+            -- it is submitted; the placement is logged with the interval.
+            forM_ placement $ \placed ->
+                checkPlacement env (liveRow state) placed reqOut before unsigned
             let allInputs = Set.toList (unsigned ^. bodyTxL . inputsTxBodyL)
             pending <- pendingRequests env cage
             require
@@ -863,9 +904,9 @@ submitEdge env state cage exit alteration request = do
 
 {- | A fold or a reject of the booked request, through the harness's own fold
 assembly: a fold carries the request's proof, a reject the @Rejected@ action
-once the request may no longer be folded, the root unchanged. The model
-requires no signer; the extra-signer tamper adds the key this process already
-signs every fold with, so the ledger has its witness and judges the signer alone.
+in the window its placement names, the root unchanged. The model requires no
+signer; the extra-signer tamper adds the key this process already signs every
+fold with, so the ledger has its witness and judges the signer alone.
 -}
 foldingBuilder
     :: Env
@@ -873,6 +914,7 @@ foldingBuilder
     -> TokenId
     -> Live.Exit
     -> Maybe Live.Tamper
+    -> Maybe Live.Placement
     -> Live.EdgeRequest Addr
     -> (TxIn, TxOut ConwayEra)
     -> OnChainTokenState
@@ -883,31 +925,53 @@ foldingBuilder
         , TxIn
         , Maybe (TxIn, TxOut ConwayEra)
         )
-foldingBuilder env cage tid exit alteration request named before elsewhere editsOf = do
+foldingBuilder env cage tid exit alteration placement request named before elsewhere editsOf = do
     let cfg = rcCfg cage
         key = TE.encodeUtf8 (T.pack (Live.requestKey request))
     witness <-
         if exit == Live.Fold
             then storyWitness env cfg key (Live.requestWallet request)
             else pure Nothing
-    (actions, root, lower) <- case exit of
+    (actions, root, lower, reach) <- case exit of
         Live.Reject -> do
+            placed <-
+                maybe
+                    (failWith "setup: a reject reached the builder without a placement")
+                    pure
+                    placement
             let (_, submittedAt) = requestDatumOf (snd named)
-                deadline = submittedAt + stateProcessTime before + stateRetractTime before
-            sleepUntil (deadline + 500)
-            -- The lower bound falls after the retract window closes, or the
-            -- request script reads the fold as neither phase 1 nor rejectable.
+                (opens, closes) =
+                    Live.placementWindow
+                        placed
+                        submittedAt
+                        (stateProcessTime before)
+                        (stateRetractTime before)
+            -- A window that has not opened is waited for; the lower bound falls
+            -- inside it. The upper bound is set when the transaction is built,
+            -- far enough ahead to outlast building and submitting it, and never
+            -- past a window that closes; the whole interval is checked against
+            -- the window before it is submitted.
+            sleepUntil (opens + 500)
             lower <-
                 Cage.withView (envProv env) $ \v ->
-                    trySlots v [deadline + 400, deadline + 200, deadline + 100]
+                    trySlots v [opens + 400, opens + 200, opens + 100]
             pure
                 ( [Types.Rejected]
                 , Root (unOnChainRoot (stateRoot before))
                 , Just lower
+                , \now ->
+                    map
+                        (maybe id (\c -> min (c - 1_000)) closes . (now +))
+                        [30_000, 20_000, 15_000, 8_000]
                 )
         _ -> do
             (proofs, root) <- storyProofs env cage tid [named]
-            pure (map Update proofs, root, Nothing)
+            pure
+                ( map Update proofs
+                , root
+                , Nothing
+                , \now -> [now + 8_000, now + 7_500, now + 7_000]
+                )
     stateUtxo <- cageStateUtxo env cage
     (pot, funder) <- collateralPotWithChange env
     let initialUnits = ExUnits 0 0
@@ -940,7 +1004,7 @@ foldingBuilder env cage tid exit alteration request named before elsewhere edits
             upper <-
                 Cage.withView
                     (envProv env)
-                    (\v -> trySlots v [now + 8_000, now + 7_500, now + 7_000])
+                    (`trySlots` reach now)
             transaction <-
                 assembleFoldWithFee
                     env
@@ -1243,6 +1307,59 @@ slotStartMs prov slot = do
             let middle = (lower + upper) `div` 2
             reached <- inOrAfter middle
             if reached then search lower middle else search middle upper
+
+{- | Refuse to submit a placed reject whose validity interval does not lie in the
+window its placement names: a setup failure of the run, never a step outcome.
+Otherwise log the placement under its row with the interval, in POSIX
+milliseconds, the window, and the transaction.
+-}
+checkPlacement
+    :: Env
+    -> String
+    -> Live.Placement
+    -> TxOut ConwayEra
+    -> OnChainTokenState
+    -> ConwayTx
+    -> IO ()
+checkPlacement env row placed requestOut before transaction = do
+    (validFrom, validTo) <- case transaction ^. bodyTxL . vldtTxBodyL of
+        ValidityInterval (SJust lower) (SJust upper) ->
+            (,)
+                <$> slotStartMs (envProv env) lower
+                <*> slotStartMs (envProv env) upper
+        _ ->
+            failWith
+                "setup: a placed reject is built without both validity bounds"
+    let (_, submittedAt) = requestDatumOf requestOut
+        (opens, closes) =
+            Live.placementWindow
+                placed
+                submittedAt
+                (stateProcessTime before)
+                (stateRetractTime before)
+        interval = "validity=[" <> show validFrom <> "," <> show validTo <> ")"
+        window = "window=[" <> show opens <> "," <> maybe "" show closes <> ")"
+    unless (opens <= validFrom && maybe True (validTo <=) closes) $
+        failWith
+            ( "setup: a reject "
+                <> Live.placementName placed
+                <> " is built outside its window: "
+                <> interval
+                <> " "
+                <> window
+            )
+    emit
+        "placement"
+        ( row
+            <> " reject "
+            <> Live.placementName placed
+            <> " "
+            <> interval
+            <> " "
+            <> window
+            <> " tx="
+            <> txIdHex transaction
+        )
 
 -- | Wait for a phase boundary.
 sleepUntil :: Integer -> IO ()

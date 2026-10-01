@@ -24,6 +24,7 @@ module Conformance.Run.CgRows
     , runCG21
     , runCG22
     , runCG23
+    , runCG24
     , runSequence
     , ensurePresentV3
     , setupDelete
@@ -46,6 +47,7 @@ import Conformance.Run.Submit
 import Conformance.Run.Units
 import Conformance.Run.Wallet
 
+import Conformance.Edge.EarlyReject qualified as EarlyRejectStory
 import Conformance.Edge.Exit qualified as ExitStory
 import Conformance.Edge.Register qualified as RegistrationStory
 import Conformance.Edge.Retire qualified as RetirementStory
@@ -485,11 +487,15 @@ runCG07 env = do
     writeStoryReceipt env "CG07" records
 
 {- | CG09: @Rejected@ when not rejectable (R9_reject_needs_rejectable).
-Inside the process window the request still contributes (phase 1),
-but the fold's Rejected action fails @is_rejectable@ in the state
-script: a request is only rejectable once its retract window has
-passed. The control folds the same request in phase 3, where the
-library's reject is accepted.
+The consumer requires a reject inside the request's process window to be
+refused. Singular's Lean gives a reject no admission
+(@exitAdmission .reject = none@) and the chain accepts it (#320). By
+operator ruling 2026-10-01 the consumer requirement is kept unmet: the row
+is recorded @unmet-by-ruling@, never as agreement and never as a pass.
+Its control comes first, on the same request: the same
+processing-window reject refunding the owner one lovelace short, which
+the state script must refuse. Both carry the units of a full fold, so a
+budget failure cannot pass for a refusal by rule.
 -}
 runCG09 :: Env -> IO ()
 runCG09 env = do
@@ -499,16 +505,18 @@ runCG09 env = do
     tid <- cageTid cage
     (reqIn, reqOut) <- rowRequestInsert env cage "cg09-key" "cg09-value"
     let (_, submittedAt) = requestDatumOf reqOut
-    let units = ExUnits 1_400_000 100_000_000
-    pot <- collateralPot env
+        processDeadline = submittedAt + 30_000
     state <- cageStateUtxo env cage
     oldState <- extractState (snd state)
-    nowMs <- currentPosixMs
-    upper <-
-        Cage.withView
-            prov
-            (\v -> trySlots v [nowMs + 2_000, nowMs + 1_500, nowMs + 1_000])
-    let spec =
+    let Coin reqVal = reqOut ^. coinTxOutL
+        -- A rejection owes the owner input minus the tip, with no share
+        -- of the fee: the folder funds that separately.
+        owed = reqVal - stateMaxFee oldState
+        -- The full fold of one rejected request, measured at
+        -- (572573, 193235963): a refusal-sized budget would exhaust, and
+        -- the ledger would report a script failure for the budget.
+        units = ExUnits 2_000_000 600_000_000
+        rejectWithin upper refund collateral =
             ( rowSpec
                 cage
                 tid
@@ -519,79 +527,100 @@ runCG09 env = do
                 units
             )
                 { fsUpper = Just upper
-                , fsCollateral = Just pot
+                , fsRefunds = [refund]
+                , fsCollateral = collateral
                 }
-    hand <- assembleFoldWithFee env spec
+        insideProcessWindow = do
+            now <- currentPosixMs
+            require
+                "CG09: the request's process window closed before its \
+                \reject was built"
+                (now + 2_000 < processDeadline)
+            Cage.withView prov $ \v ->
+                trySlots v [now + 2_000, now + 1_500, now + 1_000]
+    pot <- collateralPot env
+    shortUpper <- insideProcessWindow
+    short <-
+        assembleFoldWithFee
+            env
+            (rejectWithin shortUpper (owed - 1) (Just pot))
     emit
         "row"
-        ( "CG09: Rejected action while the request is still inside its \
-          \process window; the state script must refuse "
-            <> "(R9_reject_needs_rejectable)"
-        )
-    submitExpectRefused
+        "CG09 control: the request's processing-window reject refunding \
+        \its owner one lovelace short; the state script must refuse it"
+    submitExpectRefusedControl
         env
         "CG09"
         AgreesWithModel
         (stateMarkerOf cfg)
-        hand
-    -- Control: the SAME request and the SAME Rejected action, rebuilt
-    -- with phase-3 bounds once the retract window has passed. The hand
-    -- model is used rather than the library reject for the reason CG07
-    -- already uses it: the library attaches the state validator, and
-    -- fifteen kilobytes of it does not fit in a transaction.
-    sleepUntilMs env (submittedAt + 30_000 + 5_000 + 500)
-    nowCtrl <- currentPosixMs
-    -- The lower bound must fall AFTER the retract window closes, or the
-    -- request script reads the fold as neither phase 1 nor rejectable.
-    lower <-
-        Cage.withView prov $ \v ->
-            trySlots
-                v
-                [ submittedAt + 30_000 + 5_000 + 400
-                , submittedAt + 30_000 + 5_000 + 200
-                , submittedAt + 30_000 + 5_000 + 100
-                ]
-    upperCtrl <-
-        Cage.withView
-            prov
-            (\v -> trySlots v [nowCtrl + 2_000, nowCtrl + 1_500, nowCtrl + 1_000])
-    let Coin reqVal = reqOut ^. coinTxOutL
-        ctrlSpec =
-            spec
-                { fsLower = Just lower
-                , fsUpper = Just upperCtrl
-                , fsCollateral = Nothing
-                , -- A rejection owes the owner input minus the tip, with no
-                  -- share of the fee: the folder funds that separately.
-                  fsRefunds = [reqVal - stateMaxFee oldState]
-                , -- The refusal row only has to reach its refusal; the
-                  -- control runs the fold to the end. Measured at
-                  -- (572573, 193235963), so the row's 100M cpu budget
-                  -- exhausts and the ledger reports a script failure the
-                  -- local evaluation never sees.
-                  fsUnits = ExUnits 2_000_000 600_000_000
-                }
-    ctrl <- assembleFoldWithFee env ctrlSpec
-    -- Measure the control before submitting it: every purpose, with its
-    -- units or the error the ledger evaluates it to, so a refusal is read
-    -- rather than guessed at.
-    ctrlEval <- Cage.withView (envProv env) (`Cage.viewEvaluateTx` ctrl)
+        short
+    upper <- insideProcessWindow
+    hand <- assembleFoldWithFee env (rejectWithin upper owed Nothing)
+    -- Every purpose's units as the node evaluates them, before submitting.
+    handEval <- Cage.withView (envProv env) (`Cage.viewEvaluateTx` hand)
     mapM_
         ( \(p, r) ->
             emit
                 "diag"
-                ( "CG09 control "
+                ( "CG09 "
                     <> show p
                     <> " => "
                     <> either show (\(ExUnits m c) -> show (m, c)) r
                 )
         )
-        (Map.toList ctrlEval)
-    _ <- submitExpectAccepted env (addKeyWitness genesisSignKey ctrl)
+        (Map.toList handEval)
     emit
-        "control"
-        "CG09 control: the same request rejected in phase 3 is \
-        \accepted — the refusal discriminates"
+        "row"
+        ( "CG09: Rejected action while the request is still inside its \
+          \process window; the consumer requires a refusal "
+            <> "(R9_reject_needs_rejectable), Singular's Lean admits it"
+        )
+    let signed = addKeyWitness genesisSignKey hand
+    result <- submitTxResilient (envSubmit env) signed
+    case result of
+        Submitted txid -> do
+            (mem, cpu) <- measureUnits env hand
+            let size = txSizeBytes signed
+            emitMeasure env "CG09" mem cpu size
+            writeRowReceipt
+                env
+                "CG09"
+                Accepted
+                UnmetByRuling
+                [txInHex txid]
+                Nothing
+                Nothing
+                (Just mem)
+                (Just cpu)
+                (Just size)
+                "node-submit"
+                Nothing
+            recordUnmet
+                env
+                "CG09"
+                "kept unmet by operator ruling 2026-10-01 (singular#320; \
+                \alignment: cardano-keri#468)"
+                ( "Singular's Lean gives a reject no admission "
+                    <> "(Model.lean exitAdmission .reject = none): a folder "
+                    <> "may reject a request inside its process window"
+                )
+                "R9_reject_needs_rejectable — a reject is refused until the request's retract window has passed"
+            emit
+                "row"
+                ( "CG09: the chain ACCEPTED the processing-window reject "
+                    <> "(tx="
+                    <> txInHex txid
+                    <> "), refunding its owner "
+                    <> show owed
+                    <> " lovelace; unmet by ruling, never read as a pass: the "
+                    <> "consumer requirement stays unmet"
+                )
+        Rejected reason ->
+            failWith
+                ( "CG09 FINDING: the node REFUSED the processing-window "
+                    <> "reject Singular's Lean admits: "
+                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                )
 
 {- | CG10: Stale fold against a superseded root
 (R7_stale_fold_refused). The stale claims are captured against the
@@ -1166,9 +1195,9 @@ runCG19 env = do
     state <- cageStateUtxo env cage
     liveState <- extractState (snd state)
     let newRoot = Root (unOnChainRoot (stateRoot liveState))
-    -- A rejection is only rejectable once every request's retract window
-    -- has closed, so the fold waits for the last of them and declares a
-    -- lower bound past it.
+    -- The fold is placed after every request's retract window has closed,
+    -- where this row has always rejected: it waits for the last of them and
+    -- declares a lower bound past it.
     let submittedAts =
             [ submitted
             | (_, o) <- sorted
@@ -1719,7 +1748,8 @@ runCG22 env = do
 -- ---------------------------------------------------------
 
 {- | CG23: a request that is never folded, in two registries of its own: one
-whose requests become rejectable a second after their retract window opens,
+whose rejects are placed after their owner's retraction window, which closes a
+second after it opens,
 where a reject refunding the owner one lovelace short and to another address is
 refused before the untampered reject; and one whose requests stay retractable
 for thirty seconds, where the owner's return one lovelace short, to another
@@ -1759,8 +1789,10 @@ runCG23 env = do
     retraction <- ensureRowCage env "story-retraction" 1_000 30_000
     _ <- largestWalletUtxo (envProv env)
     _ <-
-        runLive
+        runLiveNamed
             env
+            "CG23"
+            []
             ( ExitStory.story
                 (Live.Context rejection genesisAddr)
                 (Live.Context retraction genesisAddr)
@@ -1777,6 +1809,47 @@ runCG23 env = do
             records
         )
     writeStoryReceipt env "CG23" records
+
+{- | CG24 (#320): a folder rejects a pending request before its owner's
+retraction deadline. Two insertion requests are booked together in a registry
+of their own. The first is rejected while it can still be folded, the second
+while its owner can still retract it; in each window a reject refunding the
+owner one lovelace short and one refunding another key are refused before the
+untampered reject of the same request. A processing and a retraction window of
+two minutes each leave time for three rejects inside each.
+-}
+runCG24 :: Env -> IO ()
+runCG24 env = do
+    either
+        failWith
+        pure
+        ( Live.validateLive
+            ( EarlyRejectStory.story
+                (Live.Context "early rejection" "holder wallet")
+            )
+        )
+    writeIORef (envLiveRecords env) []
+    writeIORef (envLiveMeasurements env) []
+    cage <- ensureRowCage env "story-early-rejection" 120_000 120_000
+    let (first, second) = EarlyRejectStory.requests genesisAddr
+    _ <-
+        runLiveNamed
+            env
+            "CG24"
+            [(cage, first), (cage, second)]
+            (EarlyRejectStory.story (Live.Context cage genesisAddr))
+    records <- readIORef (envLiveRecords env)
+    require "CG24 did not compare its six requests" (length records == 6)
+    require
+        "early rejection chapter has a disagreement or unsupported step"
+        ( all
+            ( \case
+                Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
+                _ -> False
+            )
+            records
+        )
+    writeStoryReceipt env "CG24" records
 
 {- | An unnamed seven-edge program using exactly the chapter interpreter.
 The receipt is required by the running book before it renders success.
@@ -1886,10 +1959,10 @@ capturePreProofKey env cgKey' = do
             failWith
                 "setup: key has no inclusion proof before delete"
 
-{- | Wait until two seconds past the given deadline ms (phase-3 entry
-for Rejected folds), sleeping exactly the remaining time. A deadline
-more than a hundred seconds away fails closed rather than submitting
-a wrong-phase transaction.
+{- | Wait until two seconds past the given deadline ms (after the windows,
+where these rows place their Rejected folds), sleeping exactly the
+remaining time. A deadline more than a hundred seconds away fails closed
+rather than submitting a transaction outside that placement.
 -}
 waitPhase3 :: Integer -> IO ()
 waitPhase3 deadline = do

@@ -57,7 +57,8 @@ fi
 #    bound to this candidate on a clean tree (dirty:false)
 expect_verdict() {
   case "$1" in
-    CG02 | CG03 | CG04 | CG05 | CG09 | CG10 | CG21 | CL01) printf 'agrees-with-model' ;;
+    CG02 | CG03 | CG04 | CG05 | CG10 | CG21 | CL01) printf 'agrees-with-model' ;;
+    CG09) printf 'unmet-by-ruling' ;;
     CG11 | CG12 | CG19) printf 'held-q002' ;;
     *) printf 'UNKNOWN-ROW' ;;
   esac
@@ -90,10 +91,15 @@ nix run --quiet nixpkgs#jq -- -e '.mem > 0 and .cpu > 0 and .txSize > 0 and (.tr
   exit 1
 }
 # 6. the run's own accounting must name exactly the expected
-#    held set, with nothing failing against this candidate
+#    held and unmet sets, with nothing failing against this candidate
 held="$(sed -n 's/^- Held .*held-q002): //p' /tmp/generic-rows.log)"
 [ "$held" = "CG11 CG12 CG19" ] || {
   echo "FAIL: held set moved: got '$held', expected 'CG11 CG12 CG19'"
+  exit 1
+}
+unmet="$(sed -n 's/^- Unmet by ruling .*unmet-by-ruling): //p' /tmp/generic-rows.log)"
+[ "$unmet" = "CG09" ] || {
+  echo "FAIL: unmet set moved: got '$unmet', expected 'CG09'"
   exit 1
 }
 # nothing may fail against this candidate
@@ -246,5 +252,34 @@ nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
   echo 'FAIL: CG21 step evidence missing or incomplete'
   exit 1
 }
-echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and the tampered-payment controls are recorded, with held debt exactly CG11 CG12 CG19.'
-echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'
+# 10. CG09 (#320): the consumer's R9_reject_needs_rejectable forbids
+#     a reject inside the processing window; Singular's Lean admits
+#     it and the chain accepts it. By operator ruling 2026-10-01 the
+#     consumer requirement is kept unmet (alignment:
+#     lambdasistemi/cardano-keri#468): the verdict is unmet-by-ruling,
+#     never agreement and never held-q002. Its control, the same
+#     reject one lovelace short, is refused by the state script first.
+# shellcheck disable=SC2016
+nix run --quiet nixpkgs#jq -- -e '
+  .row == "CG09" and .outcome == "accepted" and .verdict == "unmet-by-ruling"
+  and .venue == "node-submit"
+  and (.transactions | length) == 1
+  and (.transactions[0] | test("^[0-9a-f]{64}$"))
+' "${CONFORMANCE_RECEIPTS}"/receipt-CG09.json >/dev/null || {
+  echo 'FAIL: CG09 unmet acceptance evidence moved'
+  exit 1
+}
+grep -q '^unmet: CG09 UNMET BY RULING: ' /tmp/generic-rows.log || {
+  echo 'FAIL: CG09 unmet requirement not recorded by the run'
+  exit 1
+}
+if grep -q '^held: CG09 ' /tmp/generic-rows.log; then
+  echo 'FAIL: CG09 recorded held'
+  exit 1
+fi
+grep -q '^control: CG09 control: REFUSED at submit, attributed to state (phase-2, marker 0x[0-9a-f][0-9a-f]*)' /tmp/generic-rows.log || {
+  echo 'FAIL: CG09 refused control not attributed to the state script'
+  exit 1
+}
+echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and the tampered-payment controls are recorded, with held debt exactly CG11 CG12 CG19 and CG09 unmet by ruling.'
+echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused, R9_reject_needs_rejectable and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'
