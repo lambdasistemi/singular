@@ -4,7 +4,9 @@
 # usage: dedicated-row.sh ROW -- COMMAND...
 #
 # COMMAND is the row invocation; it receives --receipts-dir
-# "$CONFORMANCE_DEDICATED_RECEIPTS/ROW". The row's exit status is the
+# "$CONFORMANCE_DEDICATED_RECEIPTS/ROW". The receipts root is published to the
+# workflow environment before the row runs, so the always-run upload collects
+# a failing row's receipts and replay index too. The row's exit status is the
 # script's.
 set -uo pipefail
 
@@ -19,6 +21,7 @@ shift
 root="${CONFORMANCE_DEDICATED_RECEIPTS:?CONFORMANCE_DEDICATED_RECEIPTS must name the receipts root}"
 receipts="$root/$row"
 mkdir -p "$receipts"
+[ -z "${GITHUB_ENV:-}" ] || printf 'CONFORMANCE_DEDICATED_RECEIPTS=%s\n' "$root" >>"$GITHUB_ENV"
 echo "$row receipts: $receipts"
 
 "$@" --receipts-dir "$receipts"

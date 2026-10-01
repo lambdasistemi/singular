@@ -34,6 +34,7 @@ module Conformance.Run.Control
 
 import Data.ByteString (ByteString)
 import Data.Text (Text)
+import Data.Text qualified as T
 import System.Environment (lookupEnv)
 
 import Singular.Registry.TxBuilder.Internal
@@ -216,8 +217,20 @@ data ReasonControl = ReasonControl
 
 -- | Read @ROW:STEP:REASON@; anything else is refused with what was wrong.
 parseReasonControl :: String -> Either String ReasonControl
-parseReasonControl _ = Left "parseReasonControl: not implemented"
+parseReasonControl text = case T.splitOn ":" (T.pack text) of
+    [row, step, reason]
+        | not (T.null row)
+        , not (T.null reason)
+        , [(index, "")] <- reads (T.unpack step)
+        , index >= 0 ->
+            Right (ReasonControl row index reason)
+    _ ->
+        Left
+            ("CONFORMANCE_REASON_CONTROL is ROW:STEP:REASON, got " <> show text)
 
 -- | Lean's reason for a step, replaced when the control names this step.
 controlledReason :: Maybe ReasonControl -> Text -> Int -> Text -> Text
-controlledReason _ _ _ lean = lean
+controlledReason control row step lean = case control of
+    Just named
+        | rcRow named == row, rcStep named == step -> rcReason named
+    _ -> lean

@@ -1424,6 +1424,8 @@ runCG19RejectedFloor env cage tid = do
                     <> txInHex txid
                     <> ") — reported, not relabelled"
                 )
+    admitted <-
+        admittedReason env (stateMarkerOf cfg) (txIdHex signedUnder)
     underAttr <-
         attributeRefusalReceipt
             RefusalControl
@@ -1438,7 +1440,7 @@ runCG19RejectedFloor env cage tid = do
             (envDirty env)
             (envNode env)
             (envBlueprint env)
-            Nothing
+            admitted
     case underAttr of
         Right () -> pure ()
         Left mismatch ->

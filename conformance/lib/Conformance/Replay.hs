@@ -315,15 +315,34 @@ such purpose agrees; any purpose that differs makes it differ; otherwise it
 is uncompared, with the first cause — or 'ContextUnavailable' when the
 marker's script is not among the failing purposes at all.
 -}
-stepComparison :: Text -> Text -> [(Text, ReplayClass)] -> ReasonComparison
-stepComparison _ _ _ = error "stepComparison: not implemented"
+stepComparison
+    :: Text -> Text -> [(Text, ReplayClass)] -> ReasonComparison
+stepComparison marker lean purposes =
+    case [compareReason lean cls | (hash, cls) <- purposes, hash == marker] of
+        [] -> Uncompared ContextUnavailable
+        comparisons -> case [d | d@Differs{} <- comparisons] of
+            differing : _ -> differing
+            [] -> case [cause | Uncompared cause <- comparisons] of
+                cause : _ -> Uncompared cause
+                [] -> Agrees
 
 -- | The comparison as the replay index spells it.
 comparisonName :: ReasonComparison -> Text
-comparisonName _ = error "comparisonName: not implemented"
+comparisonName = \case
+    Agrees -> "agrees"
+    Differs{} -> "differs"
+    Uncompared _ -> "uncompared"
 
 {- | The reason the marker's script admitted, when every purpose of it admits
 the same one.
 -}
 admittedFor :: Text -> [(Text, ReplayClass)] -> Maybe Text
-admittedFor _ _ = error "admittedFor: not implemented"
+admittedFor marker purposes =
+    case [cls | (hash, cls) <- purposes, hash == marker] of
+        [] -> Nothing
+        classes -> case [reason | Admitted reason <- classes] of
+            reasons@(reason : _)
+                | length reasons == length classes
+                , all (== reason) reasons ->
+                    Just reason
+            _ -> Nothing

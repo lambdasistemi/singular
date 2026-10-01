@@ -274,7 +274,7 @@ attributeRefusalReceipt
     it admitted one: the receipt's validator branch
     -}
     -> IO (Either RefusalMismatch ())
-attributeRefusalReceipt role dir row verdict script marker text rejectedTxid base dirty node blueprint _admitted =
+attributeRefusalReceipt role dir row verdict script marker text rejectedTxid base dirty node blueprint admitted =
     case matchRefusal marker text of
         Left m -> pure (Left m)
         Right () -> do
@@ -295,10 +295,12 @@ attributeRefusalReceipt role dir row verdict script marker text rejectedTxid bas
                                     , refusalPhase = "phase-2"
                                     , refusalHashes =
                                         map T.pack (refusalScriptHashes text)
-                                    , refusalBranch = Nothing
-                                    , refusalLimit =
-                                        Just
-                                            "no named validator branch in this compiled trace; attribution is script hash plus phase-2 only"
+                                    , refusalBranch = admitted
+                                    , refusalLimit = case admitted of
+                                        Just _ -> Nothing
+                                        Nothing ->
+                                            Just
+                                                "no named validator branch in this compiled trace; attribution is script hash plus phase-2 only"
                                     }
                                 )
                         , receiptMem = Nothing

@@ -49,7 +49,6 @@ module Conformance.Run.Live
     , cg21PolicyBytes
     , readRegistryState
     , storyProofs
-    , storyRefusalTag
     , storyDelivery
     , storyApprovalOn
     , cg21RequestFacts
@@ -247,13 +246,21 @@ import Conformance.Mirror
     , require
     , txIdHex
     )
+import Conformance.Replay
+    ( ReasonComparison (..)
+    , stepComparison
+    )
+import Conformance.Run.Replay
+    ( ReplayIndex (..)
+    , purposesOf
+    , recordComparison
+    )
 import Conformance.Run.Retraction (declareRetraction)
 import Conformance.Run.Step
     ( StepOutcome (..)
     , StepRejection (..)
     , judgedTransaction
     , refusedOutcome
-    , storyRefusalTag
     )
 
 {- | Keep step diagnostics on one bounded line while retaining the full reason
@@ -2479,19 +2486,47 @@ compareStep env state step observation = do
         traverse judge (judgedTransaction lawOutcome (lsOutcome step))
     (modelOutcome, modelReason) <-
         either failWith pure (LeanOracle.modelVerdict row judged)
+    -- A refused step the model refuses for a reason: the chain-side reason the
+    -- replay admitted for the script the step is judged by meets Lean's. The
+    -- comparison is written to the rejection's index entry before anything
+    -- acts on it, so a failing row keeps it.
+    reasonCheck <- case (lsOutcome step, modelOutcome, modelReason) of
+        (StepRefused transaction _ _, String "refused", String lean) -> do
+            control <-
+                lookupEnv "CONFORMANCE_REASON_CONTROL"
+                    >>= traverse (either failWith pure . parseReasonControl)
+            rowName <- readIORef (riRow (envReplay env))
+            compared <- length <$> readIORef (envLiveRecords env)
+            let asked = controlledReason control rowName compared lean
+                txid = T.pack (txIdHex transaction)
+                judgedBy =
+                    if lsExit step == Live.Retract
+                        then requestMarkerOf stepCfg stepTid
+                        else stateMarkerOf stepCfg
+            purposes <- purposesOf (envReplay env) txid
+            let comparison = stepComparison (T.pack judgedBy) asked purposes
+            recordComparison (envReplay env) txid asked comparison
+            pure (Just (asked, comparison))
+        _ -> pure Nothing
     let model = object ["outcome" .= modelOutcome, "reason" .= modelReason]
+        -- The chain-side reason a receipt carries: only one that agrees.
+        chainReason = case reasonCheck of
+            Just (lean, Agrees) -> Just lean
+            _ -> Nothing
         (chainOutcome, chain) = case lsOutcome step of
             StepAccepted transaction _ ->
                 ( String "accepted"
                 , object ["outcome" .= String "accepted", "txid" .= txIdHex transaction]
                 )
-            StepRefused transaction trace hashes rejection ->
+            StepRefused transaction hashes rejection ->
                 ( String "refused"
                 , object
                     [ "outcome" .= String "refused"
                     , "txid" .= txIdHex transaction
                     , "refusal"
-                        .= withScripts (attributed hashes) (rejectionJson trace hashes rejection)
+                        .= withScripts
+                            (attributed hashes)
+                            (rejectionJson chainReason hashes rejection)
                     ]
                 )
             StepUnsupported _ reason diagnostic ->
@@ -2512,17 +2547,19 @@ compareStep env state step observation = do
             _ -> observation
     (comparison, compared, unobserved, perturbation, differing) <- case (lsTamper step, modelOutcome, chainOutcome) of
         _
-            | StepRefused _ _ _ rejection <- lsOutcome step
+            | StepRefused _ _ rejection <- lsOutcome step
             , not (null (srBudgetExceeded rejection)) ->
                 pure ("disagrees", [], [], Null, [])
         (_, String "unsupported", _) -> pure ("unsupported" :: T.Text, [], [], Null, [])
         (_, _, String "unsupported") -> pure ("unsupported", [], [], Null, [])
-        -- Both refuse. A tampered payment is refused this way, by the ledger
-        -- and by the model's judgement of the submitted outputs; the ledger's
-        -- reason is not observed (validators compiled without traces), and
-        -- the model's is recorded with the step.
-        (_, String "refused", String "refused") ->
-            pure ("agrees", [], [], Null, [])
+        -- Both refuse. The outcome agrees; the reasons then meet: a chain-side
+        -- reason the traced replay admitted that differs from Lean's fails the
+        -- step, while an unobserved one leaves it agreeing on the outcome and
+        -- uncompared on the reason (the index names the cause).
+        (_, String "refused", String "refused")
+            | Just (_, Differs{}) <- reasonCheck ->
+                pure ("disagrees", [], [], Null, [])
+            | otherwise -> pure ("agrees", [], [], Null, [])
         -- The ledger accepts the extra signer. The same comparison every
         -- untampered step gets must then report exactly the difference the
         -- tamper made: that detection is the tamper's agreement. Reporting
@@ -2599,11 +2636,11 @@ compareStep env state step observation = do
     modifyIORef' (envLiveRecords env) (<> [record])
     let chainDetail = case lsOutcome step of
             StepAccepted transaction _ -> " txid=" <> txIdHex transaction
-            StepRefused transaction trace hashes rejection ->
+            StepRefused transaction hashes rejection ->
                 " txid="
                     <> txIdHex transaction
                     <> " trace="
-                    <> show trace
+                    <> show chainReason
                     <> " scriptHashes="
                     <> show hashes
                     <> rejectionDetail rejection
@@ -2652,17 +2689,29 @@ compareStep env state step observation = do
                         <> T.unpack (oneLine maxStepLineReasonChars reason)
                     )
             _ -> failWith "unsupported comparison lacks an observed reason"
-        _ ->
-            failWith
-                ( "model and chain disagree for "
-                    <> exitNamed
-                    <> " at "
-                    <> Live.requestKey (lsRequest step)
-                    <> ": model="
-                    <> show modelOutcome
-                    <> " chain="
-                    <> show chainOutcome
-                )
+        _ -> case reasonCheck of
+            Just (_, Differs{chainReason = chainSide, leanReason = leanSide}) ->
+                failWith
+                    ( "model and chain refuse for different reasons for "
+                        <> exitNamed
+                        <> " at "
+                        <> Live.requestKey (lsRequest step)
+                        <> ": chain="
+                        <> T.unpack chainSide
+                        <> " lean="
+                        <> T.unpack leanSide
+                    )
+            _ ->
+                failWith
+                    ( "model and chain disagree for "
+                        <> exitNamed
+                        <> " at "
+                        <> Live.requestKey (lsRequest step)
+                        <> ": model="
+                        <> show modelOutcome
+                        <> " chain="
+                        <> show chainOutcome
+                    )
     pure record
   where
     exitNamed = Live.exitName (lsExit step) (Live.requestEdge (lsRequest step))

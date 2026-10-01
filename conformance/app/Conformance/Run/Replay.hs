@@ -244,7 +244,8 @@ newReplayIndex dir =
 {- | Add one rejection's entry, with its failing purposes by deployed hash, and
 write the whole index.
 -}
-addRejection :: ReplayIndex -> Text -> Value -> [(Text, ReplayClass)] -> IO ()
+addRejection
+    :: ReplayIndex -> Text -> Value -> [(Text, ReplayClass)] -> IO ()
 addRejection index txid entry purposes = do
     modifyIORef' (riEntries index) (<> [entry])
     modifyIORef' (riPurposes index) (Map.insert txid purposes)
@@ -259,8 +260,22 @@ purposesOf index txid =
 reason, the comparison, and class A, the fact of an executed model reason —
 and write the index, before the runner acts on it.
 -}
-recordComparison :: ReplayIndex -> Text -> Text -> ReasonComparison -> IO ()
-recordComparison _ _ _ _ = pure ()
+recordComparison
+    :: ReplayIndex -> Text -> Text -> ReasonComparison -> IO ()
+recordComparison index txid lean comparison = do
+    modifyIORef' (riEntries index) (map compared)
+    writeIndex index
+  where
+    compared = \case
+        Object o
+            | KM.lookup "rejectedTxId" o == Just (String txid) ->
+                Object
+                    ( KM.insert "modelReason" (String lean)
+                        . KM.insert "comparison" (String (comparisonName comparison))
+                        . KM.insert "extentClass" (String "A")
+                        $ o
+                    )
+        entry -> entry
 
 writeIndex :: ReplayIndex -> IO ()
 writeIndex index = do
@@ -392,7 +407,8 @@ recordRejection env tx nodeText = do
     row <- readIORef (riRow (reIndex env))
     let txid = txIdText tx
         failing = map T.pack (refusalScriptHashes (T.unpack nodeText))
-    dir <- freshDirectory (riDir (reIndex env) </> "replay") (T.unpack txid)
+    dir <-
+        freshDirectory (riDir (reIndex env) </> "replay") (T.unpack txid)
     attempt <-
         try (timeout replayMicros (replayRefusal env tx failing dir))
     (captureId, purposes, classes) <- case attempt of

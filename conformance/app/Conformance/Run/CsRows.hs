@@ -36,6 +36,7 @@ module Conformance.Run.CsRows
     , writeGapMigrating
     ) where
 
+import Conformance.Replay (admittedFor)
 import Conformance.Run.Cage (ensureStateRefWith)
 import Conformance.Run.Control
 import Conformance.Run.Environment
@@ -45,6 +46,7 @@ import Conformance.Run.Replay
     , ReplayIndex (..)
     , capturingSubmitter
     , newReplayEnv
+    , purposesOf
     )
 import Conformance.Run.Submit
 import Conformance.Run.Units
@@ -254,6 +256,7 @@ runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty
         ( \row -> do
             writeIORef (riRow (reIndex replay)) (T.pack row)
             runCSRow
+                (reIndex replay)
                 prov
                 submit
                 stateBytes
@@ -309,7 +312,8 @@ reportCSPartials receiptsDir rows = do
                 )
 
 runCSRow
-    :: Cage.Provider IO
+    :: ReplayIndex
+    -> Cage.Provider IO
     -> Submitter IO
     -> SBS.ShortByteString
     -> SBS.ShortByteString
@@ -322,7 +326,7 @@ runCSRow
     -> String
     -> String
     -> IO ()
-runCSRow prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr row = case row of
+runCSRow index prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr row = case row of
     "CS02" ->
         runCS02
             prov
@@ -351,6 +355,7 @@ runCSRow prov submit stateBytes requestBytes namingCodes nodeVer base dirty rece
             blueprintIdStr
     "CS04" ->
         runCS04
+            index
             prov
             submit
             stateBytes
@@ -1147,7 +1152,8 @@ findRequestTxIn prov cfg tid key = do
 
 -- | CS04: wrong constructor index refused, attributed to the script.
 runCS04
-    :: Cage.Provider IO
+    :: ReplayIndex
+    -> Cage.Provider IO
     -> Submitter IO
     -> SBS.ShortByteString
     -> SBS.ShortByteString
@@ -1159,7 +1165,7 @@ runCS04
     -> Control
     -> String
     -> IO ()
-runCS04 prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
+runCS04 index prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
     tm <- mkPureTrieManager
     (seed, _) <- largestWalletUtxo prov
     let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seed)
@@ -1215,6 +1221,7 @@ runCS04 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     case result of
         Rejected reason ->
             attributeCS04Refusal
+                index
                 receiptsDir
                 base
                 dirty
@@ -1295,7 +1302,8 @@ redeemer was tampered — refused; the recorded script set is derived from
 the observed hashes in ledger order, never tuned to a run.
 -}
 attributeCS04Refusal
-    :: FilePath
+    :: ReplayIndex
+    -> FilePath
     -> String
     -> Bool
     -> String
@@ -1307,9 +1315,11 @@ attributeCS04Refusal
     -> String
     -> String
     -> IO ()
-attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker stateMarker requestMarker activeWitnessMarker text rejectedTxid =
+attributeCS04Refusal index receiptsDir base dirty nodeVer blueprintIdStr marker stateMarker requestMarker activeWitnessMarker text rejectedTxid =
     case matchRefusal marker text of
         Right () -> do
+            admitted <-
+                admittedFor (T.pack marker) <$> purposesOf index (T.pack rejectedTxid)
             let hashes = refusalScriptHashes text
             require
                 ("CS04: state script did not refuse; scripts named: " <> show hashes)
@@ -1331,10 +1341,12 @@ attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker stateM
                         , refusalReason = T.pack trimmed
                         , refusalPhase = "phase-2"
                         , refusalHashes = map T.pack hashes
-                        , refusalBranch = Nothing
-                        , refusalLimit =
-                            Just
-                                "no named validator branch in this compiled trace; attribution is script hash plus phase-2 only"
+                        , refusalBranch = admitted
+                        , refusalLimit = case admitted of
+                            Just _ -> Nothing
+                            Nothing ->
+                                Just
+                                    "no named validator branch in this compiled trace; attribution is script hash plus phase-2 only"
                         }
                     )
                 )
