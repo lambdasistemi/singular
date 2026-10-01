@@ -314,9 +314,9 @@ test carrier_holding_both_deposits_refuses() {
 // A deposit and a reject refund of one owner are two payments
 // ----------------------------------------------------------------------------
 
-/// A request dated in the future is rejectable inside a phase-1 range
-/// (`shared.is_rejectable`), so one fold can delete `keyA` for the booker
-/// and reject another request of the booker's.
+/// A request dated in the future, rejected inside a phase-1 range: one
+/// fold deletes `keyA` for the booker
+/// and rejects another request of the booker's.
 fn futureRequest(index: Int) -> Input {
   Input {
     output_reference: fx.requestRef(index),

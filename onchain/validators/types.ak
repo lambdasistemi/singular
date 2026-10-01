@@ -128,8 +128,8 @@ pub type MintRedeemer {
 ///
 /// Each action corresponds to one request input in the transaction:
 /// - `Update(proof)`: verify the Merkle proof and apply the MPF operation
-/// - `Rejected`: verify the request is rejectable (Phase 3 or dishonest)
-///   and skip proof verification
+/// - `Rejected`: refund the owner `held − tip`, in any window (a reject
+///   carries no admission, #320) and skip proof verification
 ///
 /// ## On-chain encoding
 /// - `Update(proof)` → Constr 0 [proof]
@@ -137,7 +137,7 @@ pub type MintRedeemer {
 pub type RequestAction {
   /// Apply the request's operation to the MPF using this proof.
   UpdateAction(Proof)
-  /// Reject the request (expiry or dishonest timestamp).
+  /// Reject the request, in any window, refunding its owner.
   Rejected
 }
 
@@ -176,7 +176,7 @@ pub type UpdateRedeemer {
   /// The `List<RequestAction>` must contain exactly one action per request
   /// being processed, in the same order as the request inputs appear in
   /// the transaction's input list. `Update(proof)` applies the MPF operation;
-  /// `Rejected` skips the proof and verifies rejectability instead.
+  /// `Rejected` skips the proof and books the owner's refund instead.
   Modify(List<RequestAction>)
   /// Allow the request owner to reclaim their Request UTxO.
   Retract(OutputReference)
@@ -353,8 +353,8 @@ pub type Request {
   /// outside these obligations (fees, the folder's tip) is unconstrained.
   deposit: Int,
   /// The POSIXTime (in milliseconds) when the request was submitted.
-  /// Used for time-gated phase enforcement: Phase 1 (oracle-only),
-  /// Phase 2 (requester retract), Phase 3 (oracle reject/cleanup).
+  /// Used for time-gated phase enforcement: Phase 1 (an update is folded),
+  /// Phase 2 (requester retract). A reject reads no time.
   submitted_at: Int,
   /// Where this request's minted token goes, and the inline datum the
   /// receiving output must carry (#157 D-DEST; appended last, so the
