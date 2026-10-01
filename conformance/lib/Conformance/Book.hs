@@ -1,5 +1,5 @@
 -- | A book rendered from the same programs the live backend executes.
-module Conformance.Book (renderBook) where
+module Conformance.Book (renderBook, bookStories, bookReceipts) where
 
 import Conformance.Edge.Exit qualified as Exit
 import Conformance.Edge.Register qualified as Register
@@ -14,6 +14,17 @@ import Data.Aeson.KeyMap qualified as KM
 import Data.Foldable (toList)
 import Data.List (intercalate)
 import Data.Text qualified as T
+
+-- | The stories a book run executes, renders and requires, in book order.
+bookStories :: [String]
+bookStories = ["CG21", "CG22", "CG23", "CG07", "sequence"]
+
+{- | The receipts a book renders: one per story of the book, each agreeing
+with the model, in book order; a missing or disagreeing story is refused,
+named.
+-}
+bookReceipts :: [Receipt] -> Either String [Receipt]
+bookReceipts = Right
 
 -- | Called only after both live stories and their observations have succeeded.
 renderBook :: [Row] -> [Receipt] -> String

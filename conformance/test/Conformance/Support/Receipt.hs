@@ -38,7 +38,7 @@ import Test.Hspec
     , shouldSatisfy
     )
 
-import Conformance.Book (renderBook)
+import Conformance.Book (bookReceipts, bookStories, renderBook)
 import Conformance.Fixture.NodeRejection (scriptRejection)
 import Conformance.NodeRejection (boundedNodeReason)
 import Conformance.Receipt
@@ -1481,6 +1481,35 @@ replayChecks = describe "Checking the traced replay a refused request carries" $
             "failed with `not-phase2`."
             (renderBook [] [replayOnRefused "not-phase2" windowReceipt])
             `shouldBe` 2
+    it
+        "requires a receipt for every story the book runs, the occupied-key story among them"
+        $ do
+            let receiptsFor rows = [acceptedLive{receiptRow = T.pack row} | row <- rows]
+                others = ["CG21", "CG22", "CG23", "CG07", "sequence"]
+            bookReceipts (receiptsFor others)
+                `shouldSatisfy` either ("CG05" `isInfixOf`) (const False)
+            fmap (map receiptRow) (bookReceipts (receiptsFor ("CG05" : others)))
+                `shouldBe` Right (map T.pack bookStories)
+            bookReceipts
+                ( receiptsFor others
+                    <> [acceptedLive{receiptRow = "CG05", receiptVerdict = HeldQ002}]
+                )
+                `shouldSatisfy` either ("CG05" `isInfixOf`) (const False)
+    it
+        "renders the occupied-key story and the refusal its receipt records"
+        $ do
+            let book = renderBook [] [untamperedOccupied]
+            book
+                `shouldSatisfy` isInfixOf "## Insert on a key the registry already holds"
+            occurrences
+                "Submit **insertAbsent** for **occupied** in **occupied insert**"
+                book
+                `shouldBe` 2
+            book
+                `shouldSatisfy` isInfixOf "Occupied-key insertion compared 1 requests"
+            book
+                `shouldSatisfy` isInfixOf
+                    "the model refused it for `key-exists`. The traced replay of the deployed script `abcdef` (traced build `traced-abcdef`) failed with `key-exists`."
     it "counts the refused requests by what their traced replay recorded" $
         renderBook
             []
@@ -1598,3 +1627,24 @@ breakOn marker = go ""
 
 occurrences :: String -> String -> Int
 occurrences needle = length . filter (needle `isPrefixOf`) . tails
+
+-- | The occupied-key story's refused insertion, whose traced replay admitted @key-exists@.
+untamperedOccupied :: Receipt
+untamperedOccupied =
+    ( changeStep
+        ( setField "tamper" Null
+            . setField
+                "model"
+                ( object
+                    [ "outcome" .= ("refused" :: String)
+                    , "reason" .= ("key-exists" :: String)
+                    ]
+                )
+        )
+        ( tracedPaymentLive
+            [admittedEntry{replayReason = Just "key-exists"}]
+            (Just "key-exists")
+        )
+    )
+        { receiptRow = "CG05"
+        }

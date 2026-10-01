@@ -96,7 +96,6 @@ spec = do
                 , "The deployed validators are compiled without traces"
                 , "evaluated again on the arguments the ledger built for it: once with the deployed bytes, and once with a build of the same source, compiler and parameters that keeps only the validators' own traces"
                 , "The receipt names both script hashes"
-                , "CG05, an insertion on a present key: class A, compared in the generic run; not rendered here."
                 , "CS04, a redeemer at a wrong constructor index: live refusal reason not observed for the state and request scripts"
                 , "CG09, a reject while the request is still in phase 1"
                 , "CG10, a fold against a superseded root"
@@ -112,6 +111,7 @@ spec = do
                                 )
             book
                 `shouldSatisfy` (not . isInfixOf "every refusal reason is observed")
+            book `shouldSatisfy` (not . isInfixOf "not rendered here")
     it
         "The retirement chapter describes registration and retirement as model edge requests"
         $ do
