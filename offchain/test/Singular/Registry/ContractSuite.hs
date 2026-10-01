@@ -42,7 +42,7 @@ module Singular.Registry.ContractSuite
     , unsupportedControl
     ) where
 
-import Control.Exception (try)
+import Control.Exception (ErrorCall (..), throwIO, try)
 import Data.ByteString qualified as BS
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
@@ -175,12 +175,14 @@ data AdapterHarness = AdapterHarness
     }
 
 {- | The control of a case a harness lists as not supported: the suite
-never calls it, and a harness that forgot to list the case fails loudly.
+never runs it, and a harness that forgot to list the case fails loudly
+when the case runs it. An action, not a bottom value: chains are built
+with strict fields.
 -}
-unsupportedControl :: String -> a
+unsupportedControl :: String -> IO a
 unsupportedControl what =
-    error
-        ("contract suite: " <> what <> " is not supported by this harness")
+    throwIO . ErrorCall $
+        "contract suite: " <> what <> " is not supported by this harness"
 
 -- | The whole contract over one adapter.
 contractSuite :: AdapterHarness -> Spec
