@@ -23,7 +23,7 @@ import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString.Lazy qualified as BSL
 import Data.Either (isLeft, isRight)
 import Data.Foldable (forM_)
-import Data.List (isInfixOf)
+import Data.List (isInfixOf, isPrefixOf, tails)
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import System.Environment (lookupEnv)
@@ -1441,7 +1441,59 @@ replayChecks = describe "Checking the traced replay a refused request carries" $
                         ]
             book
                 `shouldSatisfy` isInfixOf
-                    "The traced replay of the deployed script `abcdef` (traced `traced-abcdef`, capture `capture-1`) failed with `destination`."
+                    "The traced replay of the deployed script `abcdef` (traced build `traced-abcdef`) failed with `destination`."
+    it
+        "renders an untampered refused request with the reason its traced replay admitted"
+        $ renderBook [] [untamperedRefusal "CG22"]
+            `shouldSatisfy` isInfixOf
+                "was refused on chain (transaction `abc123`); the model refused it for `not-booked`. The traced replay of the deployed script `abcdef` (traced build `traced-abcdef`) failed with `not-booked`."
+    it "names the cause when the traced replay admitted no reason" $
+        renderBook
+            []
+            [(tracedPaymentLive [causeEntry] Nothing){receiptRow = "CG21"}]
+            `shouldSatisfy` isInfixOf
+                "The traced replay of the deployed script `abcdef` admits no reason: `no-user-trace`."
+    it "says so when a refused request carries no traced replay" $
+        renderBook
+            []
+            [ (paymentTamperLive "other-address" "destination"){receiptRow = "CG21"}
+            ]
+            `shouldSatisfy` isInfixOf
+                "the model refused it for `destination`. No traced replay of this refusal is recorded."
+    it
+        "keeps the replay's capture out of the chapters and in the appendix"
+        $ do
+            let book =
+                    renderBook
+                        []
+                        [ (tracedPaymentLive [admittedEntry] (Just "destination"))
+                            { receiptRow = "CG21"
+                            }
+                        ]
+                (chapters, appendix) = breakOn "## Appendix" book
+            chapters `shouldSatisfy` (not . isInfixOf "capture-1")
+            appendix
+                `shouldSatisfy` isInfixOf
+                    "Transaction `abc123`: capture `capture-1` of the deployed script `abcdef`."
+    it
+        "renders each refused request of the window chapter with its traced reason"
+        $ occurrences
+            "failed with `not-phase2`."
+            (renderBook [] [replayOnRefused "not-phase2" windowReceipt])
+            `shouldBe` 2
+    it "counts the refused requests by what their traced replay recorded" $
+        renderBook
+            []
+            [ (tracedPaymentLive [admittedEntry] (Just "destination"))
+                { receiptRow = "CG21"
+                }
+            , (tracedPaymentLive [causeEntry] Nothing){receiptRow = "CG22"}
+            , (paymentTamperLive "short-by-one" "deposit-returned")
+                { receiptRow = "CG23"
+                }
+            ]
+            `shouldSatisfy` isInfixOf
+                "Of the 3 refused requests in this run's chapters, 1 carries a reason its traced replay admitted, 1 names the cause its replay admits none, and 1 records no traced replay."
   where
     chainOf step = fromMaybe Null (field "chain" step)
 
@@ -1494,3 +1546,55 @@ tracedPaymentLive replay trace =
     )
         { receiptReplayCorrespondence = Just fixtureCorrespondence
         }
+
+-- | An untampered refused request whose traced replay admitted @not-booked@.
+untamperedRefusal :: T.Text -> Receipt
+untamperedRefusal row =
+    ( changeStep
+        ( setField "tamper" Null
+            . setField
+                "model"
+                ( object
+                    [ "outcome" .= ("refused" :: String)
+                    , "reason" .= ("not-booked" :: String)
+                    ]
+                )
+        )
+        ( tracedPaymentLive
+            [admittedEntry{replayReason = Just "not-booked"}]
+            (Just "not-booked")
+        )
+    )
+        { receiptRow = row
+        }
+
+-- | Every refused step of a receipt carrying a traced replay admitting the reason.
+replayOnRefused :: T.Text -> Receipt -> Receipt
+replayOnRefused reason =
+    changeStep
+        ( \step -> case field "chain" step of
+            Just chain
+                | field "outcome" chain == Just (String "refused") ->
+                    setField
+                        "chain"
+                        ( setRefusalField "trace" reason $
+                            setRefusalField
+                                "replay"
+                                [admittedEntry{replayReason = Just reason}]
+                                chain
+                        )
+                        step
+            _ -> step
+        )
+
+-- | The text before the first occurrence of a marker, and the rest.
+breakOn :: String -> String -> (String, String)
+breakOn marker = go ""
+  where
+    go seen rest = case rest of
+        c : more
+            | not (marker `isPrefixOf` rest) -> go (c : seen) more
+        _ -> (reverse seen, rest)
+
+occurrences :: String -> String -> Int
+occurrences needle = length . filter (needle `isPrefixOf`) . tails

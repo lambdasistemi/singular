@@ -81,13 +81,37 @@ spec = do
                 `shouldSatisfy` isInfixOf "Open validity intervals remain a named gap"
             book
                 `shouldSatisfy` isInfixOf "The model represents only finite validity bounds"
-            book `shouldSatisfy` isInfixOf "Live refusal reason not observed"
             book
-                `shouldSatisfy` isInfixOf "checked against the compiled Aiken suite"
+                `shouldSatisfy` (not . isInfixOf "checked against the compiled Aiken suite")
             book
                 `shouldSatisfy` (not . isInfixOf "Retraction admission is not modelled")
             book
                 `shouldSatisfy` (not . isInfixOf "no run establishes those two refusals")
+    it
+        "The book states how refusal reasons are observed and keeps, by row, every refusal not observed or not compared"
+        $ do
+            let book = renderBook [] []
+            forM_
+                [ "Refusal reasons come from traced re-evaluation."
+                , "The deployed validators are compiled without traces"
+                , "evaluated again on the arguments the ledger built for it: once with the deployed bytes, and once with a build of the same source, compiler and parameters that keeps only the validators' own traces"
+                , "The receipt names both script hashes"
+                , "CG05, an insertion on a present key: class A, compared in the generic run; not rendered here."
+                , "CS04, a redeemer at a wrong constructor index: live refusal reason not observed for the state and request scripts"
+                , "CG09, a reject while the request is still in phase 1"
+                , "CG10, a fold against a superseded root"
+                , "CG11, CG12 and CG19"
+                , "CG19's two-request reject needs a batch question the driver does not have"
+                , "not run; live refusal reason not observed and not compared"
+                ]
+                $ \phrase -> book `shouldSatisfy` isInfixOf phrase
+            book
+                `shouldSatisfy` ( not
+                                    . isInfixOf
+                                        "Live refusal reason not observed: the deployed validators are compiled without traces"
+                                )
+            book
+                `shouldSatisfy` (not . isInfixOf "every refusal reason is observed")
     it
         "The retirement chapter describes registration and retirement as model edge requests"
         $ do
