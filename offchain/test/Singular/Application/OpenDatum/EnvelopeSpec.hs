@@ -72,7 +72,7 @@ goldenCbor =
 
 goldenHash :: ByteString
 goldenHash =
-    "98e07c4c9ae428381b4eb4e8f0b76376fe3a83291b71c6714e66cf0c9dd63af0"
+    "6d22573e020d4fc75938bb98f9bca53b51906f07627447a09cbe2405a45cc1c1"
 
 -- ---------------------------------------------------------
 -- Plutus data codec
