@@ -35,6 +35,7 @@ module Singular.CLI.Session
     , withWrite
     , withSession
     , journalledSubmit
+    , submitBuilt
     , Expectation (..)
     , expecting
     , journalObserved
@@ -87,11 +88,7 @@ import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Core (eraProtVerHigh)
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.TxIn (TxId (..))
-import Cardano.Node.Client.E2E.Setup (addKeyWitness)
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
-    )
+import Cardano.Node.Client.Submitter (SubmitResult (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger (ConwayEra)
@@ -116,6 +113,13 @@ import Singular.Registry.Node
     , loadWallet
     , withNodeMode
     )
+import Singular.Registry.Node.Submit
+    ( signTx
+    , signedSubmitter
+    , signedTx
+    , submitSigned
+    )
+import Singular.Registry.Provider qualified as Cage
 
 {- | Why a command stopped, in its outcome class, with any receipt fields
 that name what it left behind.
@@ -328,15 +332,40 @@ data Expectation = Expectation
 expecting :: Text -> Expectation
 expecting after = Expectation Nothing after Nothing Nothing Nothing
 
+{- | Build one transaction from one view of the node, then hand it to
+'journalledSubmit' with that view's chain point and the expectation the
+build decided. The view is released before the transaction is signed and
+sent. Returns the signed transaction and whatever else the build produced.
+-}
+submitBuilt
+    :: WriteContext
+    -> Text
+    -> (r -> Expectation)
+    -> (Cage.View IO -> IO (ConwayTx, r))
+    -> IO (ConwayTx, r)
+submitBuilt wc step expect build = do
+    (point, (unsigned, extra)) <-
+        Cage.withView (nsProvider (wcSession wc)) $ \v ->
+            (,) (Cage.viewPoint v) <$> build v
+    signed <- journalledSubmit wc step (expect extra) point unsigned
+    pure (signed, extra)
+
 {- | Sign; save the signed transaction and journal @prepared@ with its
-inputs, body hash and the node's chain point; send; journal the answer;
+inputs, body hash and the chain point of the view its body was built
+from; send; journal the answer;
 await the confirmation; journal it. Returns the signed transaction once
 confirmed. The command journals @observed@ after its own readback.
 -}
 journalledSubmit
-    :: WriteContext -> Text -> Expectation -> ConwayTx -> IO ConwayTx
-journalledSubmit wc step ex unsigned = do
-    let signed = addKeyWitness (walletSignKey (wcWallet wc)) unsigned
+    :: WriteContext
+    -> Text
+    -> Expectation
+    -> Cage.ChainPoint
+    -> ConwayTx
+    -> IO ConwayTx
+journalledSubmit wc step ex point unsigned = do
+    let sealed = signTx (walletSignKey (wcWallet wc)) unsigned
+        signed = signedTx sealed
         txid = txIdHex signed
         dir = wcDir wc
         sess = wcSession wc
@@ -348,8 +377,7 @@ journalledSubmit wc step ex unsigned = do
         bodyPath = bodiesDir dir </> T.unpack txid <> ".cbor.hex"
     createDirectoryIfMissing True (bodiesDir dir)
     durableWrite bodyPath (B16.encode bytes)
-    SlotNo tip <- nsTipSlot sess
-    point <- nsChainPoint sess
+    let SlotNo tip = Cage.cpSlot point
     appendJournal
         dir
         (blankEntry wc step txid "prepared")
@@ -360,16 +388,15 @@ journalledSubmit wc step ex unsigned = do
             , journalBodyHash =
                 Just (hexT (hashToBytes (hashWith @Blake2b_256 id bytes)))
             , journalChainPoint =
-                Just $ case point of
-                    Nothing -> "genesis"
-                    Just (slot, h) -> T.pack (show slot) <> "." <> hexT h
+                Just (T.pack (show tip) <> "." <> hexT (Cage.cpBlockHash point))
             , journalKey = hexT <$> exKey ex
             , journalExpect = Just (exAfter ex)
             , journalEdge = exEdge ex
             , journalRootBefore = hexT <$> exRootBefore ex
             , journalRootAfter = hexT <$> exRootAfter ex
             }
-    answer <- try (submitTx (nsSubmitter sess) signed)
+    answer <-
+        try (submitSigned (signedSubmitter (nsSubmitter sess)) sealed)
     case answer of
         Left (e :: SomeException) -> do
             journal "submit-unknown" (Just (T.pack (show e)))

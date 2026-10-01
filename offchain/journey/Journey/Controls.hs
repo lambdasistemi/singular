@@ -137,7 +137,7 @@ stepReject cfg codes prov submit tm tid refs stateBeforeRejects = do
     -- mutated updates below pretend to process. It stays at
     -- the request address throughout.
     let reqAddr = requestAddrFromCfg cfg tid Testnet
-    before <- Cage.queryUTxOs prov reqAddr
+    before <- Cage.withView prov (`Cage.viewUTxOsAt` reqAddr)
     require "reject: request address empty before the second request" $
         null before
     _ <-
@@ -150,7 +150,7 @@ stepReject cfg codes prov submit tm tid refs stateBeforeRejects = do
             tid
             negativeKey
             edgeInsertAbsent
-    reqUtxos <- Cage.queryUTxOs prov reqAddr
+    reqUtxos <- Cage.withView prov (`Cage.viewUTxOsAt` reqAddr)
     require "reject: exactly one request UTxO after the second request" $
         length reqUtxos == 1
     forgedRef <- case reqUtxos of
@@ -185,10 +185,11 @@ stepReject cfg codes prov submit tm tid refs stateBeforeRejects = do
     -- well-formed for ledger phase 1 (the case descriptions
     -- say how), so only the on-chain validator stands between
     -- each transaction and the ledger.
-    rejectCtx <- Edges.registryContextFor cfg codes prov refs
-    baseTx <- updateTokenWithDuties cfg prov tm tid genesisAddr rejectCtx
+    (baseTx, pp) <- Cage.withView prov $ \v -> do
+        rejectCtx <- Edges.registryContextFor cfg codes v refs
+        tx <- updateTokenWithDuties cfg v tm tid genesisAddr rejectCtx
+        pure (tx, Cage.viewProtocolParams v)
     newRoot <- baseTxStateRoot baseTx
-    pp <- Cage.queryProtocolParams prov
     -- The validators the three cases require to refuse, by
     -- their script hashes as the node names them in a phase-2
     -- failure.
@@ -248,7 +249,7 @@ stepReject cfg codes prov submit tm tid refs stateBeforeRejects = do
     require
         "reject-control: authenticated state datum unchanged"
         (stateAfter == stateBeforeRejects)
-    reqAfter <- Cage.queryUTxOs prov reqAddr
+    reqAfter <- Cage.withView prov (`Cage.viewUTxOsAt` reqAddr)
     require
         "reject-control: the pending request is still unapplied"
         (length reqAfter == 1)

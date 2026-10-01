@@ -165,7 +165,9 @@ readChainState
     -> IO OnChainTokenState
 readChainState cfg prov tid = do
     stateUtxos <-
-        Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
+        Cage.withView
+            prov
+            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
         Nothing ->
             failWith "verify: no state UTxO carrying the policy token"

@@ -72,7 +72,7 @@ import Singular.Registry.Ledger
     ( ConwayTxBody
     , TokenId
     )
-import Singular.Registry.Provider (Provider (..))
+import Singular.Registry.Provider (View (..))
 import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Types
     ( CageDatum (..)
@@ -90,7 +90,7 @@ Wallet funding pays fees separately. Requires Phase 2 validity.
 -}
 retractRequestImpl
     :: CageConfig
-    -> Provider IO
+    -> View IO
     -> TokenId
     -- ^ Token the request belongs to
     -> TxIn
@@ -106,18 +106,18 @@ staying inside the request's unchanged phase-2 window.
 retractRequestAtTipImpl
     :: SlotNo
     -> CageConfig
-    -> Provider IO
+    -> View IO
     -> TokenId
     -> TxIn
     -> Addr
     -> IO ConwayTx
-retractRequestAtTipImpl tip cfg prov tid reqTxIn addr = do
+retractRequestAtTipImpl tip cfg view tid reqTxIn addr = do
     let reqAddr =
             requestAddrFromCfg cfg tid (network cfg)
         stateAddr =
             cageAddrFromCfg cfg (network cfg)
-    requestUtxos <- queryUTxOs prov reqAddr
-    stateUtxos <- queryUTxOs prov stateAddr
+    requestUtxos <- viewUTxOsAt view reqAddr
+    stateUtxos <- viewUTxOsAt view stateAddr
     let reqUtxo =
             findUtxoByTxIn reqTxIn requestUtxos
     reqUtxoPair <- case reqUtxo of
@@ -139,8 +139,8 @@ retractRequestAtTipImpl tip cfg prov tid reqTxIn addr = do
                     \not found"
             Just x -> pure x
     let (stateIn, stateOut) = stateUtxo
-    pp <- queryProtocolParams prov
-    walletUtxos <- queryUTxOs prov addr
+    let pp = viewProtocolParams view
+    walletUtxos <- viewUTxOsAt view addr
     feeUtxo <- case sortOn
         (Down . (^. coinTxOutL) . snd)
         walletUtxos of
@@ -172,9 +172,9 @@ retractRequestAtTipImpl tip cfg prov tid reqTxIn addr = do
     let phase2Start = submAt + procTime
         phase2End = submAt + procTime + retrTime
     phase2Slot <-
-        posixMsCeilSlot prov phase2Start
+        viewPosixMsCeilSlot view phase2Start
     SlotNo s <-
-        posixMsToSlot prov phase2End
+        viewPosixMsToSlot view phase2End
     let lowerSlot = max tip phase2Slot
         upperSlot = SlotNo (max 0 (s - 1))
         script = mkRequestScript cfg tid
@@ -233,7 +233,7 @@ retractRequestAtTipImpl tip cfg prov tid reqTxIn addr = do
                 & witsTxL . rdmrsTxWitsL
                     .~ redeemers
     evaluateAndBalance
-        prov
+        view
         pp
         [feeUtxo, reqUtxoPair]
         addr

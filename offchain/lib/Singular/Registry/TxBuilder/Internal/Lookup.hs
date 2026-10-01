@@ -117,7 +117,7 @@ import Singular.Registry.Ledger
     , PParams
     , TokenId (..)
     )
-import Singular.Registry.Provider (Provider (..))
+import Singular.Registry.Provider (View (..))
 import Singular.Registry.TxBuilder.Internal.Identity
     ( addrFromKeyHashBytes
     , extractCageDatum
@@ -139,7 +139,7 @@ placeholderExUnits = ExUnits 0 0
 a transaction.
 -}
 evaluateAndBalance
-    :: Provider IO
+    :: View IO
     -> PParams ConwayEra
     -> [(TxIn, TxOut ConwayEra)]
     -- ^ All input UTxOs (fee + script)
@@ -148,7 +148,7 @@ evaluateAndBalance
     -> ConwayTx
     -- ^ Unbalanced tx with placeholder ExUnits
     -> IO ConwayTx
-evaluateAndBalance prov pp inputUtxos changeAddr tx =
+evaluateAndBalance view pp inputUtxos changeAddr tx =
     do
         let existingIns =
                 tx ^. bodyTxL . inputsTxBodyL
@@ -163,7 +163,7 @@ evaluateAndBalance prov pp inputUtxos changeAddr tx =
                 tx
                     & bodyTxL . inputsTxBodyL
                         .~ allIns
-        evalResult <- evaluateTx prov txForEval
+        evalResult <- viewEvaluateTx view txForEval
         let failures =
                 [ (p, e)
                 | (p, Left e) <-
@@ -307,7 +307,7 @@ currentPosixMs = do
 slots, returning the first that succeeds.
 -}
 trySlots
-    :: Provider IO -> [Integer] -> IO SlotNo
+    :: View IO -> [Integer] -> IO SlotNo
 trySlots _ [] =
     error
         "posixMsToSlot: all fallbacks \
@@ -315,7 +315,7 @@ trySlots _ [] =
 trySlots p (ms : rest) = do
     r <-
         try @SomeException
-            (posixMsCeilSlot p ms)
+            (viewPosixMsCeilSlot p ms)
     case r of
         Right s -> pure s
         Left _ -> trySlots p rest
@@ -362,13 +362,13 @@ exclusive: the node cannot translate a bound there, and evaluation fails
 horizon whenever the time is.
 -}
 tryUpperSlots
-    :: Provider IO -> [Integer] -> IO SlotNo
+    :: View IO -> [Integer] -> IO SlotNo
 tryUpperSlots _ [] =
     error
         "posixMsToSlot: all fallbacks \
         \past horizon"
 tryUpperSlots p (ms : rest) = do
-    r <- trySync (posixMsToSlot p ms)
+    r <- trySync (viewPosixMsToSlot p ms)
     case r of
         Right s -> pure s
         Left _ -> tryUpperSlots p rest

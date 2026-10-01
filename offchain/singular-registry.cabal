@@ -156,6 +156,9 @@ library node-internal
   exposed-modules:
     Singular.Registry.Ledger
     Singular.Registry.Provider
+    Singular.Registry.Node.Memory
+    Singular.Registry.Node.View
+    Singular.Registry.Node.Submit
     Singular.Registry.Node.Options
     Singular.Registry.Node.Wallet
     Singular.Registry.Node.Wait
@@ -685,6 +688,9 @@ test-suite cage-tests
     Singular.Registry.NodeCleanupSpec
     Singular.Registry.NodeSpec
     Singular.Registry.NodeWaitSpec
+    Singular.Registry.OneViewSpec
+    Singular.Registry.ProviderSpec
+    Singular.Registry.StubView
     Singular.Registry.LifecycleSpec
     Singular.Registry.TypesSpec
     Naming.CompleteVerifySpec
@@ -716,7 +722,8 @@ test-suite cage-tests
     , hspec
     , microlens
     , mts:mpf-write
-    , ouroboros-network
+    , ouroboros-network:api
+    , ouroboros-consensus
     , plutus-core
     , plutus-ledger-api
     , plutus-tx
@@ -890,7 +897,6 @@ executable singular
     , cardano-crypto-class
     , cardano-ledger-binary
     , cardano-ledger-mary
-    , cardano-node-clients:devnet
     , cardano-node-clients
     , cardano-slotting
     , cardano-tx-tools:tx-build

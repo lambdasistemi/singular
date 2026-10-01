@@ -359,14 +359,14 @@ runSession
                     sock
                     lsqCh
                     ltxsCh
-        let nodeProv = adaptProvider (mkN2CProvider lsqCh)
+        let nodeProv = adaptProvider sessionMagic (mkN2CProvider lsqCh)
         awaitConnection sessionMagic sock nodeThread nodeProv
         let submit = boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
         prov <- followedProvider nodeProv submit
         checkFunding prov funderAddr defaultFundingFloor
         tm <- mkPureTrieManager
         mirror <- newMirror
-        _ <- Cage.queryProtocolParams prov
+        _ <- Cage.withView prov (pure . Cage.viewProtocolParams)
         let caMode = any (`elem` caRows) rows
             legacyCg = any (`elem` cgRows) rows
         keys <- newIORef (False, "")
@@ -510,7 +510,8 @@ runSession
                                 marker' = case control of
                                     WrongReason -> wrongReasonMarker
                                     _ -> hex (scriptHashBytes (cfgScriptHash cfg))
-                            unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+                            unsignedBoot <-
+                                Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
                             signedBoot <- submitWithGenesis submit unsignedBoot
                             tid <- extractTokenId cfg signedBoot
                             createTrie tm tid

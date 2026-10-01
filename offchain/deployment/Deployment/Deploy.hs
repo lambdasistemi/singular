@@ -61,6 +61,7 @@ import Singular.Registry.Node
     , funderAddr
     , withNode
     )
+import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , mkRequestScript
@@ -84,7 +85,6 @@ deploy args = do
         refuseIfAlreadyDeployed sess out unbound
         let prov = nsProvider sess
             submit = nsSubmitter sess
-            pp = nsPParams sess
         txs <- newIORef []
         -- A registry boots only by reference: the state validator is
         -- published before the boot, which resolves it from there.
@@ -92,13 +92,12 @@ deploy args = do
             publishOne
                 prov
                 submit
-                pp
                 txs
                 (scriptFromBytes "state" (cStateBytes unbound))
         (cfg, tok, bootTx, seedIn, compiled) <-
             bootRegistry prov submit unbound txs processTime retractTime
-        registerCredentials sess prov submit compiled txs
-        refs <- publishAll prov submit pp cfg tok compiled stateIn txs
+        registerCredentials prov submit compiled txs
+        refs <- publishAll prov submit cfg tok compiled stateIn txs
         bootstrap <- reverse <$> readIORef txs
         let dep =
                 Deployment
@@ -149,7 +148,11 @@ refuseIfAlreadyDeployed sess out unbound = do
         dep <- readDeployment out
         compiled <- bindDeployment unbound dep
         live <-
-            (True <$ verifyDeployment (nsProvider sess) dep (partsOf compiled))
+            ( True
+                <$ Cage.withView
+                    (nsProvider sess)
+                    (\v -> verifyDeployment v dep (partsOf compiled))
+            )
                 `catch` \(_ :: SomeException) -> pure False
         if live
             then

@@ -40,11 +40,11 @@ prepare (Fixture used) provider assemble submit declared = do
             let Redeemers redeemers = template ^. witsTxL . rdmrsTxWitsL
                 purposes = Map.keys redeemers
             when (null purposes) $ fail "A1 fold has no redeemer purposes"
-            pp <- Cage.queryProtocolParams provider
+            pp <- Cage.withView provider (pure . Cage.viewProtocolParams)
             let ExUnits maxMem maxCpu = pp ^. ppMaxTxExUnitsL
                 count = fromIntegral (length purposes)
             trial <- assemble (ExUnits (maxMem `div` count) (maxCpu `div` count))
-            measurements <- Cage.evaluateTx provider trial
+            measurements <- Cage.withView provider (`Cage.viewEvaluateTx` trial)
             unless (sort (Map.keys measurements) == sort purposes) $
                 fail "A1 node evaluation map omits a redeemer purpose"
             measured <- traverse (either (fail . show) pure) measurements

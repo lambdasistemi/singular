@@ -161,7 +161,7 @@ openSession sess inputs = do
     let prov = nsProvider sess
         submit = nsSubmitter sess
     tm <- mkPureTrieManager
-    _ <- Cage.queryProtocolParams prov
+    _ <- Cage.withView prov (pure . Cage.viewProtocolParams)
     -- #177 A-003: publish the state validator as a reference output
     -- BEFORE any seed is chosen. The publication spends the wallet's
     -- largest ada-only output, which a seed picked first could be, and
@@ -188,7 +188,7 @@ bootRegistry s label = do
     let prov = sessProvider s
         submit = sessSubmitter s
         inputs = sessInputs s
-    utxos <- Cage.queryUTxOs prov genesisAddr
+    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
     -- Never seed from the reference publication: boot REFERENCES
     -- that output and may not also spend it.
     seedRef <- case filter (\(_, o) -> o ^. referenceScriptTxOutL == SNothing) utxos of
@@ -201,7 +201,8 @@ bootRegistry s label = do
                 (inputRequestBytes inputs)
                 (sessCodes s)
                 seedRef
-    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+    unsignedBoot <-
+        Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
     signedBoot <- submitWithGenesis submit unsignedBoot
     (tid, tidBytes) <- extractTokenId cfg signedBoot
     createTrie (sessTries s) tid
@@ -262,17 +263,17 @@ foldInadmissible reg = foldWith reg True
 foldWith :: Registry -> Bool -> IO ConwayTx
 foldWith reg inadmissible = do
     let s = regSession reg
-    ctx0 <-
-        Edges.registryContextFor
-            (regCfg reg)
-            (sessCodes s)
-            (sessProvider s)
-            (regRefs reg)
-    let ctx = ctx0{rcAllowInadmissible = inadmissible}
-    tx <-
+    tx <- Cage.withView (sessProvider s) $ \v -> do
+        ctx0 <-
+            Edges.registryContextFor
+                (regCfg reg)
+                (sessCodes s)
+                v
+                (regRefs reg)
+        let ctx = ctx0{rcAllowInadmissible = inadmissible}
         updateTokenWithDuties
             (regCfg reg)
-            (sessProvider s)
+            v
             (sessTries s)
             (regTid reg)
             genesisAddr
@@ -308,9 +309,9 @@ readState :: Registry -> String -> String -> IO OnChainTokenState
 readState reg notState missing = do
     let cfg = regCfg reg
     utxos <-
-        Cage.queryUTxOs
+        Cage.withView
             (sessProvider (regSession reg))
-            (cageAddrFromCfg cfg Testnet)
+            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg Testnet)
     case findStateUtxo (cagePolicyIdFromCfg cfg) (regTid reg) utxos of
         Just (_, out) -> case extractCageDatum out of
             Just (StateDatum st) -> pure st

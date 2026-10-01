@@ -97,6 +97,15 @@ names link to its entry here:
   failure, the whole-wait bound, the bounded submitter and the
   wait-aware catch —
   <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Wait.hs">source</a>.
+- <span id="view-owner"></span>**View** — the node adapter: one read view per
+  acquired LocalStateQuery state —
+  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/View.hs">source</a>.
+- <span id="memory-owner"></span>**Memory** — the deterministic in-memory chain
+  behind the same read interface —
+  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Memory.hs">source</a>.
+- <span id="submit-owner"></span>**Submit** — the write capability, which takes
+  signed transactions only —
+  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Submit.hs">source</a>.
 
 ## Where common changes land
 

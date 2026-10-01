@@ -66,7 +66,7 @@ import Singular.Registry.Ledger
     , TxIn
     )
 import Singular.Registry.Provider
-    ( Provider (..)
+    ( View (..)
     )
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
@@ -87,12 +87,12 @@ to the transaction itself.
 -}
 rejectRequestsImpl
     :: CageConfig
-    -> Provider IO
+    -> View IO
     -> TokenId
     -> Addr
     -> IO ConwayTx
-rejectRequestsImpl cfg prov tid addr =
-    rejectRequestsWithRefs cfg prov tid addr []
+rejectRequestsImpl cfg view tid addr =
+    rejectRequestsWithRefs cfg view tid addr []
 
 {- | Build a reject transaction resolving its scripts through reference
 outputs when the caller has published them.
@@ -107,22 +107,22 @@ nothing published.
 -}
 rejectRequestsWithRefs
     :: CageConfig
-    -> Provider IO
+    -> View IO
     -> TokenId
     -> Addr
     -> [(TxIn, TxOut ConwayEra)]
     -- ^ Outputs carrying the reject's scripts as reference scripts
     -> IO ConwayTx
-rejectRequestsWithRefs cfg prov tid addr refUtxos = do
+rejectRequestsWithRefs cfg view tid addr refUtxos = do
     (stateUtxo, reqUtxos, feeUtxo, pp) <-
-        queryRejectContext cfg prov tid addr
+        queryRejectContext cfg view tid addr
     let (_stateIn, stateOut) = stateUtxo
     let (oldState, newStateOut, script) =
             prepareRejectState cfg stateOut
         requestScript = mkRequestScript cfg tid
     lowerSlot <-
-        computeLowerSlot prov oldState reqUtxos
-    let evalTx = mkRejectEvalTx prov
+        computeLowerSlot view oldState reqUtxos
+    let evalTx = mkRejectEvalTx view
         prog =
             buildRejectProgram
                 cfg
@@ -157,7 +157,7 @@ rejectable requests, pick fee UTxO.
 -}
 queryRejectContext
     :: CageConfig
-    -> Provider IO
+    -> View IO
     -> TokenId
     -> Addr
     -> IO
@@ -166,13 +166,13 @@ queryRejectContext
         , (TxIn, TxOut ConwayEra)
         , PParams ConwayEra
         )
-queryRejectContext cfg prov tid addr = do
+queryRejectContext cfg view tid addr = do
     let stateAddr =
             cageAddrFromCfg cfg (network cfg)
         reqAddr =
             requestAddrFromCfg cfg tid (network cfg)
-    stateUtxos <- queryUTxOs prov stateAddr
-    requestUtxos <- queryUTxOs prov reqAddr
+    stateUtxos <- viewUTxOsAt view stateAddr
+    requestUtxos <- viewUTxOsAt view reqAddr
     let policyId = cagePolicyIdFromCfg cfg
     stateUtxo <- case findStateUtxo
         policyId
@@ -209,8 +209,8 @@ queryRejectContext cfg prov tid addr = do
         error
             "rejectRequests: no rejectable \
             \requests"
-    pp <- queryProtocolParams prov
-    walletUtxos <- queryUTxOs prov addr
+    let pp = viewProtocolParams view
+    walletUtxos <- viewUTxOsAt view addr
     -- A published reference output lives in this same wallet. Spending
     -- one to pay the fee would destroy the script the transaction is
     -- resolving through, and collateral must be ada-only besides.
@@ -255,11 +255,11 @@ prepareRejectState cfg stateOut =
 
 -- | Compute the validity lower slot.
 computeLowerSlot
-    :: Provider IO
+    :: View IO
     -> OnChainTokenState
     -> [(TxIn, TxOut ConwayEra)]
     -> IO SlotNo
-computeLowerSlot prov oldState reqUtxos = do
+computeLowerSlot view oldState reqUtxos = do
     let pt = stateProcessTime oldState
         rt = stateRetractTime oldState
         latestDeadline =
@@ -277,14 +277,14 @@ computeLowerSlot prov oldState reqUtxos = do
                     reqUtxos
     mLowerSlot <-
         try @SomeException
-            (posixMsCeilSlot prov latestDeadline)
+            (viewPosixMsCeilSlot view latestDeadline)
     case mLowerSlot of
         Right s -> pure s
         Left _ -> do
             nowUtc <- getCurrentTime
             let posixSec =
                     utcTimeToPOSIXSeconds nowUtc
-            trySlots prov $
+            trySlots view $
                 map
                     ( \d ->
                         round
@@ -292,17 +292,17 @@ computeLowerSlot prov oldState reqUtxos = do
                     )
                     [0, 5, 30]
 
--- | Wrap the Provider's evaluateTx for the DSL.
+-- | Wrap the Provider's viewEvaluateTx for the DSL.
 mkRejectEvalTx
-    :: Provider IO
+    :: View IO
     -> ConwayTx
     -> IO
         ( Map.Map
             (ConwayPlutusPurpose AsIx ConwayEra)
             (Either String ExUnits)
         )
-mkRejectEvalTx prov tx = do
-    r <- evaluateTx prov tx
+mkRejectEvalTx view tx = do
+    r <- viewEvaluateTx view tx
     pure $
         Map.map
             ( \case

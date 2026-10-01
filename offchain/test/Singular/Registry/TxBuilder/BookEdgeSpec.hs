@@ -43,7 +43,6 @@ import Test.Hspec
 
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
-import Cardano.Ledger.Api.PParams (emptyPParams)
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( collateralInputsTxBodyL
@@ -86,7 +85,8 @@ import Singular.Registry.Blueprint (NamingCodes (..), applyBytesParam)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId (..))
-import Singular.Registry.Provider (Provider (..))
+import Singular.Registry.Provider (Provider, View (..))
+import Singular.Registry.StubView (servingView, stubView)
 import Singular.Registry.TxBuilder.Edges
     ( bookEdge
     , edgeDestinationOf
@@ -241,15 +241,15 @@ every row fails with that message instead of a silent pass.
 -}
 provider :: Provider IO
 provider =
-    Provider
-        { queryUTxOs = \_ ->
-            pure
-                [(fundIn, mkBasicTxOut payer (MaryValue (Coin 100_000_000) mempty))]
-        , queryProtocolParams = pure emptyPParams
-        , evaluateTx = \_ -> fail "bookEdge evaluates nothing"
-        , posixMsToSlot = \_ -> fail "bookEdge queries no slot"
-        , posixMsCeilSlot = \_ -> fail "bookEdge queries no slot"
-        }
+    servingView $
+        stubView
+            { viewUTxOsAt = \_ ->
+                pure
+                    [(fundIn, mkBasicTxOut payer (MaryValue (Coin 100_000_000) mempty))]
+            , viewEvaluateTx = \_ -> fail "bookEdge evaluates nothing"
+            , viewPosixMsToSlot = \_ -> fail "bookEdge queries no slot"
+            , viewPosixMsCeilSlot = \_ -> fail "bookEdge queries no slot"
+            }
 
 -- | Run the builder and keep the transaction it submits.
 booked :: Edge -> ByteString -> IO ConwayTx

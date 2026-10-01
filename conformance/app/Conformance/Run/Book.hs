@@ -245,9 +245,9 @@ pendingRequests env cage = do
     tid <- cageTid cage
     let cfg = rcCfg cage
     reqUtxos <-
-        Cage.queryUTxOs
+        Cage.withView
             (envProv env)
-            (requestAddrFromCfg cfg tid (network cfg))
+            (`Cage.viewUTxOsAt` requestAddrFromCfg cfg tid (network cfg))
     pure (sortOn fst (findRequestUtxos tid reqUtxos))
 
 {- | Commit a landed op to the builder trie. Speculative folds never
@@ -309,8 +309,8 @@ bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
                 <> show key
                 <> " is not one of the seven admissible edges"
             )
-    pp <- Cage.queryProtocolParams prov
-    utxos <- Cage.queryUTxOs prov payerAddr
+    pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
+    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` payerAddr)
     (feeIn, feeOut) <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
         [] -> failWith "bookEdge: payer wallet has no UTxOs"
         (u : _) -> pure u

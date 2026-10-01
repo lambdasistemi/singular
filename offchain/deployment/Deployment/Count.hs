@@ -53,7 +53,8 @@ count args = do
         let prov = nsProvider sess
         case countWhat opts of
             "state" -> do
-                utxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
+                utxos <-
+                    Cage.withView prov (`Cage.viewUTxOsAt` cageAddrFromCfg cfg Testnet)
                 print (length [() | (_, o) <- utxos, carriesPolicy cfg o])
             "reference" -> do
                 addresses <- case countReferenceAddress opts of
@@ -62,7 +63,10 @@ count args = do
                         raw <- either failWith pure (B16.decode (BC.pack encoded))
                         addr <- either (failWith . show) pure (decodeAddrEither raw)
                         pure (Set.toList (Set.fromList [funderAddr, addr]))
-                utxos <- concat <$> mapM (Cage.queryUTxOs prov) addresses
+                utxos <-
+                    Cage.withView
+                        prov
+                        (\v -> concat <$> mapM (Cage.viewUTxOsAt v) addresses)
                 print (length [() | (_, o) <- utxos, hasReferenceScript o])
             what ->
                 failWith ("count: --what must be state or reference, not " <> what)

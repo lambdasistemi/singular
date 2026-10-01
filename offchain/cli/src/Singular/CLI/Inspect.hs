@@ -170,9 +170,9 @@ inspectIncompleteCreate dir sock magic = do
         Aeson.eitherDecodeFileStrict' (pendingPath dir)
             >>= either (failWith ClientRefusal) (pure :: Value -> IO Value)
     reached <-
-        try $ withNodeReads magic sock $ \nr -> do
-            point <- nrChainPoint nr
-            recovered <- recoverInclusion dir (nrProvider nr)
+        try $ withNodeReads magic sock $ \nr -> Cage.withView (nrProvider nr) $ \v -> do
+            let point = Cage.viewPoint v
+            recovered <- recoverInclusion dir v
             observedNow <-
                 observe
                     dir
@@ -189,9 +189,7 @@ inspectIncompleteCreate dir sock magic = do
                     [ ("incompleteCreate", identity)
                     ,
                         ( "chainPoint"
-                        , toJSON $ case point of
-                            Nothing -> "genesis" :: Text
-                            Just (slot, h) -> T.pack (show slot) <> "." <> hexT h
+                        , toJSON (renderPoint point)
                         )
                     , ("recovery", recoveryJson recovered)
                     , ("observed", toJSON observedNow)
@@ -214,6 +212,13 @@ inspectIncompleteCreate dir sock magic = do
                 failWith
                     NodeUnavailable
                     ("the node at " <> sock <> " could not be read: " <> show e)
+
+-- | A chain point as the journal writes it: slot, a dot, the block hash.
+renderPoint :: Cage.ChainPoint -> Text
+renderPoint p =
+    T.pack (show (Cage.unSlotNo (Cage.cpSlot p)))
+        <> "."
+        <> hexT (Cage.cpBlockHash p)
 
 recoveryJson :: [Recovery] -> Value
 recoveryJson recovered =
@@ -242,11 +247,10 @@ inspectSaved dir key sock magic a = do
         (checkNetwork (savedConfig saved) magic)
     mirror <- openMirror saved
     reached <-
-        try $ withNodeReads magic sock $ \nr -> do
-            let prov = nrProvider nr
-            point <- nrChainPoint nr
-            recovered <- recoverInclusion dir prov
-            live <- attachLive prov saved
+        try $ withNodeReads magic sock $ \nr -> Cage.withView (nrProvider nr) $ \v -> do
+            let point = Cage.viewPoint v
+            recovered <- recoverInclusion dir v
+            live <- attachLive v saved
             root <- either (failWith Partial) pure (observedRoot live)
             advanced <- advanceMirror saved mirror root recovered
             tries <- mirrorDump mirror
@@ -256,14 +260,12 @@ inspectSaved dir key sock magic a = do
                     pure
                     (Map.lookup (savedToken saved) tries)
             leaf <- authenticatedLeaf db key root
-            outs <- liveOutputs prov saved
+            outs <- liveOutputs v saved
             let holdings = holdingsFor saved key outs
                 keyOutput = liveOutputFor saved key outs
             observedNow <- observe dir key root leaf keyOutput recovered
             pending <- unresolved <$> readJournal dir
-            let chainPoint = case point of
-                    Nothing -> "genesis" :: Text
-                    Just (slot, h) -> T.pack (show slot) <> "." <> hexT h
+            let chainPoint = renderPoint point
                 application = case keyOutput of
                     Right ((i, o), e) ->
                         object
@@ -372,8 +374,8 @@ data Recovery = Recovery
 saved body bound to its @prepared@ line; journals @confirmed@ for an
 included one that lacked it.
 -}
-recoverInclusion :: FilePath -> Cage.Provider IO -> IO [Recovery]
-recoverInclusion dir prov = do
+recoverInclusion :: FilePath -> Cage.View IO -> IO [Recovery]
+recoverInclusion dir view = do
     entries <- readJournal dir
     let lastOf t = last [e | e <- entries, journalTxId e == t]
         settled = ["observed", "rejected", "excluded"]
@@ -425,7 +427,7 @@ recoverInclusion dir prov = do
                                             | otherwise -> case toList (tx ^. bodyTxL . outputsTxBodyL) of
                                                 [] -> miss "the saved body has no outputs"
                                                 (out0 : _) -> do
-                                                    liveAt <- Cage.queryUTxOs prov (out0 ^. addrTxOutL)
+                                                    liveAt <- Cage.viewUTxOsAt view (out0 ^. addrTxOutL)
                                                     case [o | (i, o) <- liveAt, i == TxIn (txIdTx tx) (TxIx 0)] of
                                                         (o : _) -> do
                                                             when (journalEvent e /= "confirmed") $

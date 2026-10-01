@@ -198,7 +198,8 @@ ensureRowCage env name processMs retractMs = do
                     (txInToRef seedTxIn)
                     processMs
                     retractMs
-        unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+        unsignedBoot <-
+            Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
         signedBoot <- submitWithGenesis (envSubmit env) unsignedBoot
         tid <- extractTokenId cfg signedBoot
         createTrie (envTm env) tid
@@ -286,7 +287,7 @@ registerStakeCredential
 registerStakeCredential env _bytes h = do
     let prov = envProv env
         cred = ScriptHashObj h
-    pp <- Cage.queryProtocolParams prov
+    pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
     (funderIn, funderOut) <- largestWalletUtxo prov
     let Coin avail = funderOut ^. coinTxOutL
         depositCoin = pp ^. ppKeyDepositL
@@ -349,7 +350,9 @@ cageStateUtxo env cage = do
     tid <- cageTid cage
     let cfg = rcCfg cage
     utxos <-
-        Cage.queryUTxOs (envProv env) (cageAddrFromCfg cfg (network cfg))
+        Cage.withView
+            (envProv env)
+            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) tid utxos of
         Just u -> pure u
         Nothing -> failWith "row cage: no state UTxO"
@@ -370,9 +373,9 @@ recordDatumHash =
 -- | The UTxOs sitting at the cage's own address; custody lives among them.
 cageUtxos :: Env -> IO [(TxIn, TxOut ConwayEra)]
 cageUtxos env =
-    Cage.queryUTxOs
+    Cage.withView
         (envProv env)
-        (cageAddrFromCfg (envCfg env) (network (envCfg env)))
+        (`Cage.viewUTxOsAt` cageAddrFromCfg (envCfg env) (network (envCfg env)))
 
 {- | Everything a fold of tree edges needs in hand: the three token
 policies this registry pins, the cage script custody spends run, the cage's
@@ -492,7 +495,7 @@ ensureStateRefWith
 ensureStateRefWith prov submit stateBytes = do
     let script = scriptFromBytes "state" stateBytes
         wanted = hashScript script
-    utxos <- Cage.queryUTxOs prov genesisAddr
+    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
     let published =
             [ ()
             | (_, out) <- utxos
@@ -511,7 +514,9 @@ ensureStateRefWith prov submit stateBytes = do
 -- | The UTxOs at a given cage's own address; custody lives among them.
 cageUtxosOf :: Env -> CageConfig -> IO [(TxIn, TxOut ConwayEra)]
 cageUtxosOf env cfg =
-    Cage.queryUTxOs (envProv env) (cageAddrFromCfg cfg (network cfg))
+    Cage.withView
+        (envProv env)
+        (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
 
 -- | The tip a cage charges, as a plain integer.
 defaultTipCoin :: CageConfig -> Integer
@@ -535,8 +540,8 @@ publishRefScriptWith
     -> Script ConwayEra
     -> IO (TxIn, TxOut ConwayEra)
 publishRefScriptWith prov submit script = do
-    pp <- Cage.queryProtocolParams prov
-    utxos <- Cage.queryUTxOs prov genesisAddr
+    pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
+    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
     fund <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
         [] -> failWith "publishRefScript: the funding wallet has no output"
         (u : _) -> pure u

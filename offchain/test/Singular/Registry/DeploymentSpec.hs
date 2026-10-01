@@ -78,6 +78,7 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.StubView (stubView)
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , cageAddrFromCfg
@@ -548,25 +549,20 @@ expectedManifestValue =
 -- The provider fixture
 -- ---------------------------------------------------------
 
-{- | A provider that records every address asked for and serves the
-given UTxOs there.
+{- | A view that records every address asked for and serves the given
+UTxOs there.
 -}
 providerServing
     :: Map Addr [(TxIn, TxOut ConwayEra)]
-    -> IO (IORef [Addr], Cage.Provider IO)
+    -> IO (IORef [Addr], Cage.View IO)
 providerServing serves = do
     logRef <- newIORef []
     pure
         ( logRef
-        , Cage.Provider
-            { Cage.queryUTxOs = \a -> do
+        , stubView
+            { Cage.viewUTxOsAt = \a -> do
                 modifyIORef' logRef (a :)
                 pure (Map.findWithDefault [] a serves)
-            , Cage.queryProtocolParams =
-                fail "the deployment rows query no protocol parameters"
-            , Cage.evaluateTx = \_ -> fail "the deployment rows evaluate no transaction"
-            , Cage.posixMsToSlot = \_ -> fail "the deployment rows query no slot"
-            , Cage.posixMsCeilSlot = \_ -> fail "the deployment rows query no slot"
             }
         )
 

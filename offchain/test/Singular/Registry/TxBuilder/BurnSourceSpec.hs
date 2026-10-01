@@ -110,7 +110,8 @@ import UntypedPlutusCore.DeBruijn ()
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId (..))
-import Singular.Registry.Provider (Provider (..))
+import Singular.Registry.Provider (View (..))
+import Singular.Registry.StubView (stubView)
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.ConnectedFold
@@ -1031,14 +1032,13 @@ anywhere else. Evaluation is stubbed to succeed with no budgets and
 slot conversion to a constant — the row reads the BODY the builder
 assembled, which never depends on either stub's value.
 -}
-foldProvider :: Provider IO
+foldProvider :: View IO
 foldProvider =
-    Provider
-        { queryUTxOs = pure . utxosAt
-        , queryProtocolParams = pure emptyPParams
-        , evaluateTx = \_ -> pure Map.empty
-        , posixMsToSlot = \_ -> pure (SlotNo 100)
-        , posixMsCeilSlot = \_ -> pure (SlotNo 100)
+    stubView
+        { viewUTxOsAt = pure . utxosAt
+        , viewEvaluateTx = \_ -> pure Map.empty
+        , viewPosixMsToSlot = \_ -> pure (SlotNo 100)
+        , viewPosixMsCeilSlot = \_ -> pure (SlotNo 100)
         }
 
 -- | What the fold's own queries see at each address.
@@ -1224,11 +1224,11 @@ liveOutput =
         & datumTxOutL .~ mkInlineDatum (envelopeToData openEnvelope)
     )
 
--- | A stub provider whose one pending request is `request`.
-providerWith :: (TxIn, TxOut ConwayEra) -> Provider IO
+-- | A stub view whose one pending request is `request`.
+providerWith :: (TxIn, TxOut ConwayEra) -> View IO
 providerWith request =
     foldProvider
-        { queryUTxOs = \a ->
+        { viewUTxOsAt = \a ->
             pure $
                 if a == requestAddrFromCfg builtCfg foldTokenId Testnet
                     then [request]

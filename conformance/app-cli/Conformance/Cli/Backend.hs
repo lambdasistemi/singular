@@ -1213,7 +1213,10 @@ awaitOnChain :: Env -> Text -> IO ()
 awaitOnChain env txid = withNode env $ \sess wallet -> do
     let go (0 :: Int) = pure ()
         go n = do
-            utxos <- Cage.queryUTxOs (nsProvider sess) (walletAddr wallet)
+            utxos <-
+                Cage.withView
+                    (nsProvider sess)
+                    (`Cage.viewUTxOsAt` walletAddr wallet)
             unless
                 (any ((== txid) . T.takeWhile (/= '#') . renderOutRef . fst) utxos)
                 (threadDelay 200_000 >> go (n - 1))
@@ -1262,7 +1265,8 @@ book env target key r = do
     withNode env $ \sess wallet -> do
         let prov = nsProvider sess
             cfg = regCfg reg
-        att <- attach prov (regDeployment reg) (partsOf cfg)
+        att <-
+            Cage.withView prov (\v -> attach v (regDeployment reg) (partsOf cfg))
         (appRef, _) <- applicationReference reg att
         let e = envelopeFor reg (addrKeyHashBytes (walletAddr wallet)) key
             approval =
@@ -1364,12 +1368,16 @@ foldWith env target selection tweak byStranger r = do
                     , rcStateValidator = Just stateHash
                     , rcApplication = Just appHash
                     }
-        att <- attach prov (regDeployment reg) (partsOf cfg)
+        att <-
+            Cage.withView prov (\v -> attach v (regDeployment reg) (partsOf cfg))
         let (stateIn, stateOut) = attStateUtxo att
         oldState <- case extractCageDatum stateOut of
             Just (StateDatum st) -> pure st
             _ -> fail "the registry's state output carries no state datum"
-        pending <- Cage.queryUTxOs prov (requestAddrFromCfg cfg tok Testnet)
+        pending <-
+            Cage.withView
+                prov
+                (`Cage.viewUTxOsAt` requestAddrFromCfg cfg tok Testnet)
         let selects q = case selection of
                 ForKey k -> requestKey q == keyBytes k
                 _ -> True
@@ -1408,18 +1416,21 @@ foldWith env target selection tweak byStranger r = do
                     ( "no saved mirror commits to the chain's root 0x"
                         <> T.unpack (hex chain)
                     )
-        live <- Cage.queryUTxOs prov (applicationAddr reg)
+        live <- Cage.withView prov (`Cage.viewUTxOsAt` applicationAddr reg)
         let envelopes =
                 [ envelopeFor reg (addrKeyHashBytes home) (BC.unpack (requestKey q))
                 | (_, q) <- chosen
                 ]
-        ctx0 <- registryContextFor cfg (regCodes reg) prov (attRefUtxos att)
+        ctx0 <-
+            Cage.withView
+                prov
+                (\v -> registryContextFor cfg (regCodes reg) v (attRefUtxos att))
         ctx <-
             either
                 fail
                 pure
                 (withApplication (applied reg) Nothing envelopes live ctx0)
-        pp <- Cage.queryProtocolParams prov
+        pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
         owedDuties <-
             either
                 fail
@@ -1489,7 +1500,7 @@ foldWith env target selection tweak byStranger r = do
                         ( show (length hs)
                             <> " live holdings for the released key; it needs one"
                         )
-        wallets <- Cage.queryUTxOs prov (walletAddr folder)
+        wallets <- Cage.withView prov (`Cage.viewUTxOsAt` walletAddr folder)
         feeUtxo <-
             case sortOn
                 (Down . (^. coinTxOutL) . snd)
@@ -1504,26 +1515,26 @@ foldWith env target selection tweak byStranger r = do
             owed :: [Script ConwayEra]
             owed = map csScript (rdSpends duties) <> map cmScript (rdMints duties)
         (unsigned, _) <-
-            connectedFoldTx
-                ConnectedFoldArgs
-                    { cfaCfg = cfg
-                    , cfaProvider = prov
-                    , cfaTrie = tm
-                    , cfaToken = tok
-                    , cfaFeeAddr = walletAddr folder
-                    , cfaStateUtxo = (stateIn, stateOut)
-                    , cfaReqUtxos = map fst chosen
-                    , cfaFeeUtxo = feeUtxo
-                    , cfaPp = pp
-                    , cfaSpends = rdSpends duties
-                    , cfaMints = rdMints duties
-                    , cfaOutputs = rdOutputs duties
-                    , cfaSigners = rdSigners duties
-                    , cfaRefUtxos = rcRefUtxos ctx
-                    , cfaAttachScripts = filter ((`notElem` carried) . hashScript) owed
-                    , cfaSkipEval = True
-                    , cfaAdjustRoot = id
-                    }
+            Cage.withView prov $ \v ->
+                connectedFoldTx
+                    ConnectedFoldArgs
+                        { cfaCfg = cfg
+                        , cfaView = v
+                        , cfaTrie = tm
+                        , cfaToken = tok
+                        , cfaFeeAddr = walletAddr folder
+                        , cfaStateUtxo = (stateIn, stateOut)
+                        , cfaReqUtxos = map fst chosen
+                        , cfaFeeUtxo = feeUtxo
+                        , cfaSpends = rdSpends duties
+                        , cfaMints = rdMints duties
+                        , cfaOutputs = rdOutputs duties
+                        , cfaSigners = rdSigners duties
+                        , cfaRefUtxos = rcRefUtxos ctx
+                        , cfaAttachScripts = filter ((`notElem` carried) . hashScript) owed
+                        , cfaSkipEval = True
+                        , cfaAdjustRoot = id
+                        }
         void (evaluate unsigned)
         result <- fst <$> submitAndConfirm env sess folder r0 unsigned
         -- The chain took the edge: the backend's mirror takes it too.
@@ -1545,11 +1556,12 @@ observe env target key r = do
         let prov = nsProvider sess
             cfg = regCfg reg
             identity = scriptHashBytes (cfgScriptHash cfg) <> tokenBytes reg
-        att <- attach prov (regDeployment reg) (partsOf cfg)
+        att <-
+            Cage.withView prov (\v -> attach v (regDeployment reg) (partsOf cfg))
         root <- case extractCageDatum (snd (attStateUtxo att)) of
             Just (StateDatum st) -> let OnChainRoot b = stateRoot st in pure b
             _ -> fail "the registry's state output carries no state datum"
-        live <- Cage.queryUTxOs prov (applicationAddr reg)
+        live <- Cage.withView prov (`Cage.viewUTxOsAt` applicationAddr reg)
         let holdings =
                 [ (i, o)
                 | (i, o) <- live
@@ -1566,8 +1578,10 @@ observe env target key r = do
             [u] -> pure (Just u)
             _ -> fail "more than one live output claims the key"
         pending <-
-            Cage.queryUTxOs prov (requestAddrFromCfg cfg (regToken reg) Testnet)
-        wallets <- Cage.queryUTxOs prov (walletAddr wallet)
+            Cage.withView
+                prov
+                (`Cage.viewUTxOsAt` requestAddrFromCfg cfg (regToken reg) Testnet)
+        wallets <- Cage.withView prov (`Cage.viewUTxOsAt` walletAddr wallet)
         leaf <- authenticatedLeaf env target reg root key
         let lovelace o = let Coin c = o ^. coinTxOutL in c
         pure
@@ -1681,9 +1695,12 @@ craftHolding env c target key r = do
             r0 = r{rcEvaluation = Just "skipped", rcApplication = Just appHash}
             mine = addrKeyHashBytes (walletAddr wallet)
             theirs = addrKeyHashBytes (walletAddr stranger)
-        att <- attach prov (regDeployment reg) (partsOf (regCfg reg))
+        att <-
+            Cage.withView
+                prov
+                (\v -> attach v (regDeployment reg) (partsOf (regCfg reg)))
         appRef <- applicationReference reg att
-        live <- Cage.queryUTxOs prov (applicationAddr reg)
+        live <- Cage.withView prov (`Cage.viewUTxOsAt` applicationAddr reg)
         holding@(hIn, hOut) <- case holdingsOf reg key live of
             [u] -> pure u
             us ->
@@ -1695,8 +1712,8 @@ craftHolding env c target key r = do
         let ctl = envControl e
         unless (ctlController ctl == mine) $
             fail "the holding's controller is not this story's wallet"
-        pp <- Cage.queryProtocolParams prov
-        wallets <- Cage.queryUTxOs prov (walletAddr wallet)
+        pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
+        wallets <- Cage.withView prov (`Cage.viewUTxOsAt` walletAddr wallet)
         feeUtxo <-
             case sortOn
                 (Down . (^. coinTxOutL) . snd)
@@ -1865,7 +1882,8 @@ craftBooking env c target key r = do
                     named (StateAsset (flipLast statePolicy) (flipLast stateName))
                 _ -> honest
             payer = if c == BookingByStranger then stranger else wallet
-        att <- attach prov (regDeployment reg) (partsOf cfg)
+        att <-
+            Cage.withView prov (\v -> attach v (regDeployment reg) (partsOf cfg))
         (appRef, _) <- applicationReference reg att
         let approval =
                 (insertApproval Testnet (applied reg) (fst (attStateUtxo att)) e)
@@ -1907,9 +1925,10 @@ craftTermination env byStranger target key r = do
             appHash = hex (scriptHashBytes (computeScriptHash (applied reg)))
             r0 = r{rcEvaluation = Just "skipped", rcApplication = Just appHash}
             payer = if byStranger then stranger else wallet
-        att <- attach prov (regDeployment reg) (partsOf cfg)
+        att <-
+            Cage.withView prov (\v -> attach v (regDeployment reg) (partsOf cfg))
         (appRef, _) <- applicationReference reg att
-        live <- Cage.queryUTxOs prov (applicationAddr reg)
+        live <- Cage.withView prov (`Cage.viewUTxOsAt` applicationAddr reg)
         (liveIn, _) <- case holdingsOf reg key live of
             [u] -> pure u
             us ->

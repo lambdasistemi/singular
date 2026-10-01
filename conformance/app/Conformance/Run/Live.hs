@@ -657,7 +657,7 @@ submitEdge env state cage exit alteration request = do
                         before
                         elsewhere
                         editsOf
-            pp <- Cage.queryProtocolParams (envProv env)
+            pp <- Cage.withView (envProv env) (pure . Cage.viewProtocolParams)
             let maxUnits = pp ^. ppMaxTxExUnitsL
                 blockUnits = pp ^. ppMaxBlockExUnitsL
             template <- build Map.empty
@@ -707,7 +707,7 @@ submitEdge env state cage exit alteration request = do
                 fmap
                     (Map.fromList . concat)
                     ( mapM
-                        (Cage.queryUTxOs (envProv env))
+                        (\a -> Cage.withView (envProv env) (`Cage.viewUTxOsAt` a))
                         [ genesisAddr
                         , wallet
                         , requestAddrFromCfg cfg tid (network cfg)
@@ -898,9 +898,8 @@ foldingBuilder env cage tid exit alteration request named before elsewhere edits
             -- The lower bound falls after the retract window closes, or the
             -- request script reads the fold as neither phase 1 nor rejectable.
             lower <-
-                trySlots
-                    (envProv env)
-                    [deadline + 400, deadline + 200, deadline + 100]
+                Cage.withView (envProv env) $ \v ->
+                    trySlots v [deadline + 400, deadline + 200, deadline + 100]
             pure
                 ( [Types.Rejected]
                 , Root (unOnChainRoot (stateRoot before))
@@ -939,7 +938,9 @@ foldingBuilder env cage tid exit alteration request named before elsewhere edits
         build units = do
             now <- currentPosixMs
             upper <-
-                trySlots (envProv env) [now + 8_000, now + 7_500, now + 7_000]
+                Cage.withView
+                    (envProv env)
+                    (\v -> trySlots v [now + 8_000, now + 7_500, now + 7_000])
             transaction <-
                 assembleFoldWithFee
                     env
@@ -1004,7 +1005,7 @@ retractionBuilder env ids cage tid (reqIn, reqOut) elsewhere alteration editsOf 
                         (ReferenceIdentity (txInReference pot))
             else pure Nothing
     stateUtxo <- cageStateUtxo env cage
-    pp <- Cage.queryProtocolParams prov
+    pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
     let stateScripts =
             [ u
             | u@(_, out) <- rcRefs cage
@@ -1020,16 +1021,16 @@ retractionBuilder env ids cage tid (reqIn, reqOut) elsewhere alteration editsOf 
                     require
                         "before-phase-2 request missed its processing window"
                         (now < phase2Start)
-                    lower <- Cage.posixMsToSlot prov submittedAt
-                    upper <- Cage.posixMsToSlot prov phase2Start
+                    lower <- Cage.withView prov (`Cage.viewPosixMsToSlot` submittedAt)
+                    upper <- Cage.withView prov (`Cage.viewPosixMsToSlot` phase2Start)
                     pure
                         ( honest
                             & bodyTxL . vldtTxBodyL .~ ValidityInterval (SJust lower) (SJust upper)
                         )
                 Just Live.AfterPhase2 -> do
-                    lower <- Cage.posixMsCeilSlot prov phase2End
+                    lower <- Cage.withView prov (`Cage.viewPosixMsCeilSlot` phase2End)
                     now <- currentPosixMs
-                    upper <- Cage.posixMsToSlot prov (now + 10_000)
+                    upper <- Cage.withView prov (`Cage.viewPosixMsToSlot` (now + 10_000))
                     pure
                         ( honest
                             & bodyTxL . vldtTxBodyL .~ ValidityInterval (SJust lower) (SJust upper)
@@ -1089,18 +1090,22 @@ buildRetraction env cage tid named@(reqIn, reqOut) before = do
         prov = envProv env
         (_, submittedAt) = requestDatumOf reqOut
     state <- cageStateUtxo env cage
-    wallet <- Cage.queryUTxOs prov genesisAddr
+    wallet <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
     funder <- case sortOn (negate . outCoin . snd) wallet of
         first : _ -> pure first
         [] -> failWith "retraction fee payer has no indexed outputs"
     owner <- requestOwnerKey reqOut
-    pp <- Cage.queryProtocolParams prov
+    pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
     lower <-
-        Cage.posixMsCeilSlot prov (submittedAt + stateProcessTime before)
-    SlotNo upper <-
-        Cage.posixMsToSlot
+        Cage.withView
             prov
-            (submittedAt + stateProcessTime before + stateRetractTime before)
+            (`Cage.viewPosixMsCeilSlot` (submittedAt + stateProcessTime before))
+    SlotNo upper <-
+        Cage.withView
+            prov
+            ( `Cage.viewPosixMsToSlot`
+                (submittedAt + stateProcessTime before + stateRetractTime before)
+            )
     let inputs = Set.fromList [reqIn, fst funder]
         script = mkRequestScript cfg tid
         boundRefund =
@@ -1224,7 +1229,7 @@ slotStartMs prov slot = do
     upper <- from now 1000
     search lower upper
   where
-    inOrAfter ms = (>= slot) <$> Cage.posixMsToSlot prov ms
+    inOrAfter ms = (>= slot) <$> Cage.withView prov (`Cage.viewPosixMsToSlot` ms)
     before ms step = do
         reached <- inOrAfter ms
         if reached then before (ms - step) (step * 2) else pure ms
@@ -1257,7 +1262,9 @@ storyReferences env cage key edge
         let cfg = rcCfg cage
             absentPolicy = scriptHashBytes (policyID (policyIdFromPin (cfgAbsentPolicy cfg)))
         utxos <-
-            Cage.queryUTxOs (envProv env) (cageAddrFromCfg cfg (network cfg))
+            Cage.withView
+                (envProv env)
+                (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
         case [ u
              | u@(_, out) <- utxos
              , outAssets out == Map.singleton absentPolicy (Map.singleton key 1)
@@ -1273,7 +1280,7 @@ storyWitness
     -> Addr
     -> IO (Maybe (TxIn, TxOut ConwayEra))
 storyWitness env cfg key wallet = do
-    utxos <- Cage.queryUTxOs (envProv env) wallet
+    utxos <- Cage.withView (envProv env) (`Cage.viewUTxOsAt` wallet)
     let policy = SBS.fromShort (cfgActivePolicy cfg)
         candidates =
             [ u
@@ -1474,7 +1481,9 @@ observeAcceptedStep env state step transaction = do
                 )
                 wallets
     cageOutputs <-
-        Cage.queryUTxOs (envProv env) (cageAddrFromCfg cfg (network cfg))
+        Cage.withView
+            (envProv env)
+            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
     custody <-
         mapM
             (observeCustody ids cfg)
@@ -1601,7 +1610,7 @@ observeAcceptedStep env state step transaction = do
     -- A wallet holds the active and terminal witnesses the folds routed to
     -- it; the absent witness stays in the cage's custody.
     walletHoldings identities keys kinds wallet =
-        Cage.queryUTxOs (envProv env) wallet
+        Cage.withView (envProv env) (`Cage.viewUTxOsAt` wallet)
             >>= walletHoldingsOf identities keys kinds wallet
 
 {- | The holdings one wallet's outputs carry, one entry per token unit of each
