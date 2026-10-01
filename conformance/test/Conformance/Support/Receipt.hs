@@ -556,6 +556,9 @@ liveStepChecks = describe "Checking compared requests in live receipts" $ do
         "Rejects registration evidence submitted under a different requirement"
         $ loadLive acceptedLive{receiptRow = "CG02"}
             >>= (`shouldSatisfy` isLeft)
+    it
+        "accepts the occupied-key insertion's compared requests under its own requirement"
+        $ loadLive acceptedLive{receiptRow = "CG05"} `shouldReturn` Right 1
     it "rejects a live chapter with no step records" $
         loadLive acceptedLive{receiptSteps = Nothing}
             >>= (`shouldSatisfy` isLeft)

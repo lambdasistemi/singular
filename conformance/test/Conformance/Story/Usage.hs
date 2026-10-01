@@ -5,6 +5,7 @@ module Conformance.Story.Usage (spec) where
 
 import Conformance.Book (renderBook)
 import Conformance.Edge.Exit qualified as Exit
+import Conformance.Edge.Occupied qualified as Occupied
 import Conformance.Edge.Register qualified as Register
 import Conformance.Edge.Retire qualified as Retire
 import Conformance.Edge.RetractionWindow qualified as RetractionWindow
@@ -117,6 +118,21 @@ spec = do
             rendered
                 `shouldSatisfy` isInfixOf
                     "Submit **deleteActive** for **deleted** in **retirement**, using the holder."
+    it
+        "The occupied-key story books its key active through accepted requests, then inserts it again, comparing each"
+        $ do
+            let program =
+                    Occupied.story (Live.Context "occupied insert" "holder wallet")
+                rendered = Live.renderLive program
+                submitted edge =
+                    "Submit **" <> edge <> "** for **occupied** in **occupied insert**"
+            Live.validateLive program `shouldBe` Right ()
+            occurrences "Compare **" rendered `shouldBe` 3
+            filter ("- Submit **" `isPrefixOf`) (lines rendered)
+                `shouldBe` [ "- " <> submitted edge <> ", using the holder wallet."
+                           | edge <- ["insertAbsent", "updateActive", "insertAbsent"]
+                           ]
+            Live.validateLive (dropFirstCompare program) `shouldSatisfy` isLeft
     it "accepts the complete unnamed sequence before submitting" $ do
         let original :: Live.Story String String String String String ()
             original = Sequence.story (Live.Context "sequence" "holder")

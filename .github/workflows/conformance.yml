@@ -501,6 +501,34 @@ jobs:
             and .funded.paid == [.obligations[].owed]
             and (.funded | .mem > 0 and .cpu > 0 and .size > 0)
           ' "$c" > /dev/null || { echo 'FAIL: CG19-rejected-floor pair evidence moved'; exit 1; }
+          # CG05 (#287): the insertion on an occupied key is a compared story.
+          # An insertAbsent books the key in the row's registry and an
+          # updateActive makes it active, the state the shared session key has
+          # when this row runs after CG02; both are accepted by both sides and
+          # compared on all nine observations, the refusal's connected control.
+          # The same insertAbsent on that key is then refused by the state
+          # script and by the model for key-exists, and the traced replay of
+          # the refused transaction admitted key-exists.
+          # jq expands its own --arg variables inside this program.
+          # shellcheck disable=SC2016
+          nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
+            (.steps | length) == 3
+            and ([.steps[] | [.edge, .exit, .tamper]]
+              == [["insertAbsent", "insertAbsent", null],
+                  ["updateActive", "updateActive", null],
+                  ["insertAbsent", "insertAbsent", null]])
+            and ([.steps[].registry] | unique | length) == 1
+            and ([.steps[].request.key] | unique | length) == 1
+            and (.steps[0:2] | all(.[];
+              .model.outcome == "accepted" and .chain.outcome == "accepted"
+              and .comparison == "agrees" and (.compared | length) == 9))
+            and .steps[2].model == {"outcome": "refused", "reason": "key-exists"}
+            and .steps[2].chain.outcome == "refused"
+            and (.steps[2].chain.refusal.hashes | index($state) != null)
+            and .steps[2].chain.refusal.trace == "key-exists"
+            and .steps[2].comparison == "agrees"
+            and .transactions == [.steps[0].chain.txid, .steps[1].chain.txid]
+          ' "${CONFORMANCE_RECEIPTS}"/receipt-CG05.json > /dev/null || { echo 'FAIL: CG05 occupied-key story evidence moved'; exit 1; }
           # 9. CG21 (#184): the insertActive edge observation, complete or
           #    the step fails. The loader already refuses an incomplete
           #    CG21 receipt; this asserts the same promises at the CI

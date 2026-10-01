@@ -88,6 +88,7 @@ library
     Conformance.Lean.Retirement
     Conformance.Lean.Oracle
     Conformance.Edge.Exit
+    Conformance.Edge.Occupied
     Conformance.Edge.Register
     Conformance.Edge.Retire
     Conformance.Edge.RetractionWindow
