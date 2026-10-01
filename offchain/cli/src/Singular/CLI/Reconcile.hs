@@ -1,6 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 
 {- |
@@ -52,6 +53,7 @@ module Singular.CLI.Reconcile
     , renderPoint
     ) where
 
+import Control.Applicative ((<|>))
 import Control.Exception (IOException, SomeException, try)
 import Control.Monad (forM, forM_, void)
 import Data.Aeson (Value, object, toJSON, (.=))
@@ -441,7 +443,7 @@ followState dir saved local = do
                         let TokenId (AssetName n) = savedToken saved
                         in  hexT (SBS.fromShort n)
                     , localRoot = hexT local
-                    , localLastTx = maybe kept Just lastFold
+                    , localLastTx = lastFold <|> kept
                     , localLastSlot = Nothing
                     }
             pure True
@@ -468,7 +470,7 @@ observe command dir readKey recovered = do
     found <-
         fmap catMaybes . forM recovered $ \r ->
             case (recIncluded r, recPrepared r, recFirstOutput r) of
-                (True, Just p, Just out0) -> fmap ((,) r) <$> holds p out0
+                (True, Just p, Just out0) -> fmap (r,) <$> holds p out0
                 _ -> pure Nothing
     forM_ found $ \(r, what) ->
         appendJournal dir (recoveryLine command (recLast r) "observed" what)
@@ -478,7 +480,7 @@ observe command dir readKey recovered = do
         journalKey p
             >>= either (const Nothing) Just . B16.decode . BC.pack . T.unpack
     withKey p k = case (readKey, keyOf p) of
-        (Just reader, Just key) -> reader key >>= pure . k key
+        (Just reader, Just key) -> k key <$> reader key
         _ -> pure Nothing
     holds p out0 = case T.breakOn ":" <$> journalExpect p of
         Just ("reference", h)
