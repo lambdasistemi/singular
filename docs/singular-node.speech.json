@@ -9,7 +9,7 @@
       "pause": 500
     },
     {
-      "text": "The three node settings travel together on a write. One or two of them is refused as partially configured, and none at all is refused too, because singular never starts a node of its own: a registry on a chain that dies with the process could not be attached to again. Settings come from the command line only.",
+      "text": "The three node settings travel together on a write. One or two of them is refused as partially configured, and none at all is refused too, because singular never starts a node of its own: a registry on a chain that dies with the process could not be attached to again. Settings come from the command line only. The one exception is the test-harness hooks, described last on this page, which operators never set.",
       "pause": 400
     },
     {
@@ -61,7 +61,7 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "63b3a3e50d1f67518934124a3c68982ab1021af65ea7e3dc9937d6d0b7849aea"
+    "sha256": "395ed96faef4a53670d305a1b6a8b3405aae83bc0ca0e0bc786a061192e9d94a"
   },
   "reading-through-an-index": [
     {
@@ -98,6 +98,20 @@
     },
     {
       "text": "The table lists the classes. Coverage incomplete: your wallet holds outputs only the genesis state carries, named with the address, the chain point and each output. Restoring: the index has not caught up with the node within two minutes, with the processed and tip slots. Disconnected: the index lost its connection to the node. Lag: the index did not reach the view's block within ten seconds. Fork: the index holds another block at the view's slot. Unsupported: another network, or an era whose outputs the index cannot decode.",
+      "pause": 500
+    }
+  ],
+  "test-harness-hooks": [
+    {
+      "text": "You never set these. The released singular reads eleven environment variables whose only purpose is to let the project's own tests stop a command at an exact point, to inspect it, kill it, or make it meet no answer from the node. When none is set, as every operator runs it, they do nothing. The release verification checks this on every run.",
+      "pause": 500
+    },
+    {
+      "text": "A diagram shows a command reaching a hook point. With the variable unset it continues and nothing happens. With a hold variable naming a path, it writes that path with a waiting suffix and waits until the path exists. With a drop variable naming the step, it meets no answer from the node.",
+      "pause": 400
+    },
+    {
+      "text": "A table lists the variables. The hold points are: before a write takes the registry lock; after a submission is sent; after the node's acceptance is journalled; before a fold's local commit; after its mirror is saved; before its observation is journalled; and, in a rollback, before the mirror is rebuilt and before the saved state follows. The hold step variable names the one submission step the two submission holds stop at, and with it unset they stop nowhere. The two drop variables name a step whose send does not happen, or whose answer is discarded.",
       "pause": 500
     }
   ]

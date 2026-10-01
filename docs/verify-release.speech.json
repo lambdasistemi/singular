@@ -23,7 +23,7 @@
       "pause": 400
     },
     {
-      "text": "A diagram shows the order. Download the three assets. Check the sums of both archives and of every file inside the on-chain archive. Check that the archive names the model commit the conformance evidence reads. Check that the run page, the off-chain flake, the command source and the compiled blueprint are present. Build singular and a development node from the archive's own flake. Then run create, insert, update, terminate and inspect as separate processes on one development network. A failure at each step leads to its own refusal: download failed, sum mismatch, model revision missing or mismatch, member missing, and command failed for the build or the journey.",
+      "text": "A diagram shows the order. Download the three assets. Check the sums of both archives and of every file inside the on-chain archive. Check that the archive names the model commit the conformance evidence reads. Check that the run page, the off-chain flake, the command source and the compiled blueprint are present. Build singular and a development node from the archive's own flake. Then run create, insert, update, terminate and inspect as separate processes on one development network. A failure at each step leads to its own refusal: download failed, sum mismatch, model revision missing or mismatch, member missing, and command failed for the build or the journey. After the journey, a last check on its harness hooks; a hold that fired unasked is refused as harness hook fired.",
       "pause": 500
     },
     {
@@ -33,6 +33,10 @@
     {
       "text": "The journey is the one on the archive's run page: a registry created, a key inserted, its payload updated and the key terminated, each a separate singular process on a development network the verifier starts and stops itself, with an inspect after every write.",
       "pause": 500
+    },
+    {
+      "text": "That last check is computed from the same run. The released singular has test-harness hooks, environment variables that stop a command at an exact point for the project's own tests. The verifier records which variables every process was started with, and checks that each of the five commands ran with none set, and that the hold points that fired are exactly the ones a process asked for.",
+      "pause": 500
     }
   ],
   "what-a-refusal-means": [
@@ -41,7 +45,7 @@
       "pause": 300
     },
     {
-      "text": "A table explains each refusal. Download failed: an asset could not be downloaded; check the tag and that you can reach GitHub. Sum mismatch: an archive, the checksum list, or a file inside the on-chain archive disagrees; do not use these files. Model revision missing: the archive states no model revision, as every release before v0.8.0. Model revision mismatch: the archive names a different model commit from the conformance evidence; do not rely on it. Member missing: a file the verification needs is absent. Command failed: building singular, or a command of the journey, failed; the detail names the step and the work directory keeps every receipt.",
+      "text": "A table explains each refusal. Download failed: an asset could not be downloaded; check the tag and that you can reach GitHub. Sum mismatch: an archive, the checksum list, or a file inside the on-chain archive disagrees; do not use these files. Model revision missing: the archive states no model revision, as every release before v0.8.0. Model revision mismatch: the archive names a different model commit from the conformance evidence; do not rely on it. Member missing: a file the verification needs is absent. Command failed: building singular, or a command of the journey, failed; the detail names the step and the work directory keeps every receipt. Harness hook fired: a test-harness hold point fired where no process asked for it, or no command ran free of harness variables; the released command would stop on its own, so do not use it.",
       "pause": 500
     },
     {
@@ -61,6 +65,6 @@
   ],
   "_source": {
     "file": "verify-release.md",
-    "sha256": "d5f20776c8bd5581a3d4a317b4fd2f3e1d12e5a715d77a8dcc0d26f266514ae8"
+    "sha256": "71e437a9dcd1e7684dcab1244a684647e70b6724ff0a82b536d4dd6efe73ef85"
   }
 }

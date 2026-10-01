@@ -44,7 +44,8 @@ flowchart TD
     M -->|same commit| E[Members: run page, off-chain flake, command source, compiled blueprint]
     E -->|present| B[Build singular and a development node from the archive's own flake]
     B -->|built| J[create, insert, update, terminate, inspect as separate processes on one development network]
-    J -->|every receipt agrees| P[PASS]
+    J -->|every receipt agrees| H[Harness hooks: none fired that no process asked for]
+    H -->|as asked| P[PASS]
     D -.->|missing| R1[download-failed]
     S -.->|differ| R2[sum-mismatch]
     M -.->|absent| R3[model-revision-missing]
@@ -52,6 +53,7 @@ flowchart TD
     E -.->|absent| R5[member-missing]
     B -.->|fails| R6[command-failed]
     J -.->|fails| R6
+    H -.->|a hold fired unasked| R7[harness-hook-fired]
 ```
 
 The model revision is the commit of the application model, the formal
@@ -62,6 +64,14 @@ against. The journey is the one on the archive's run page: a registry is
 created, a key inserted, its payload updated and the key terminated, each a
 separate `singular` process on one development network the verifier starts
 and stops itself, with an `inspect` after every write.
+
+The last check is computed from that same run. The released `singular` has
+test-harness hooks, environment variables that stop a command at an exact
+point for the project's own tests (see
+[Connecting singular to a node](singular-node.md#test-harness-hooks)). The
+verifier records which variables every process was started with, and checks
+that each of the five commands ran with none set and that the hold points
+that fired are exactly the ones a process asked for.
 
 ## What a refusal means
 
@@ -76,6 +86,7 @@ exit status is 1.
 | `model-revision-mismatch` | the archive states a different model commit from the one the conformance evidence names | the release's evidence does not describe the model it claims; do not rely on it |
 | `member-missing` | a file the verification needs is absent from the archive | the archive is incomplete; do not use it |
 | `command-failed` | building `singular` from the archive, or one of the commands of the journey, failed | the detail names the step; with `--work DIR` the receipts of every command are kept there |
+| `harness-hook-fired` | a test-harness hold point fired where no process asked for it, or a command ran with no process free of harness variables | the released command would stop or misbehave on its own; do not use it |
 
 A release that passes prints its tag, both archive checksums, the model
 revision and the directory it was verified in.
