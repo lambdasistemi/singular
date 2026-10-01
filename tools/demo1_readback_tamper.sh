@@ -10,7 +10,9 @@
 #          (the second form changes an existing record in place, nothing else)
 #
 #   datum     another well-formed inline datum, its hash recomputed to match it
-#   lag       the indexer's tip 100000 slots further behind than it was
+#   lag       the indexer's tip 100000 slots further behind than it was, never
+#             below slot 0; a node too young for that to exceed the record's
+#             maximum lag is a setup failure (exit 3), never a control
 #   census    the provider's answer naming a second output holding the token
 #   quantity  the answer's quantity of the token the JSON number 1.4, not "1"
 #   index     the answer's output index of its holder 0.4 past its own
@@ -43,7 +45,14 @@ case "${TAMPER:?TAMPER names the fact to change}" in
       '.indexer.datumCbor = $d | .indexer.datumHashRecomputed = $h' "$out" >"$out.tampered"
     ;;
   lag)
-    jq '.indexer.tipSlot = ((.indexer.tipSlot | tonumber) - 100000 | tostring)' "$out" >"$out.tampered"
+    jq '.indexer.tipSlot = ((.indexer.tipSlot | tonumber) - 100000 | if . < 0 then 0 else . end | tostring)' \
+      "$out" >"$out.tampered"
+    jq -e '((.node.chainPoint | split(".")[0] | tonumber) - (.indexer.tipSlot | tonumber)) > (.maxLagSlots | tonumber)' \
+      "$out.tampered" >/dev/null || {
+      rm -f "$out.tampered"
+      echo "readback-tamper: setup: the node is too young for a tip beyond the maximum lag" >&2
+      exit 3
+    }
     ;;
   census)
     jq '.requests |= map(if (.url | endswith("/asset_utxos"))
