@@ -48,13 +48,15 @@ renderBook requirements receipts =
         <> "This program uses the same live interpreter for each listed request. Each step records its own model and chain outcome; any unsupported result carries the reason observed at the booking or fold boundary.\n\n"
         <> renderLive (Sequence.story (Context "sequence" "holder wallet"))
         <> "## What these runs do not establish\n\n"
-        <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none for a fold and the owner for a retraction, and the comparison reads them from the submitted transaction. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. The model admits a retraction only when the pending request inserts a key or reads a terminal one, its owner is among the transaction's required signers, and its validity interval lies inside phase 2. The interval starts no earlier than submission plus the processing time; its excluded upper bound may reach, but not pass, the end of the retraction time that follows. The model represents only finite validity bounds. Open validity intervals remain a named gap: the Aiken tests establish their not-phase2 refusal, but no live model comparison can represent them. Live refusal reason not observed: the deployed validators are compiled without traces; the same-reason claim is checked against the compiled Aiken suite. Tracked by #287. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
+        <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none for a fold and the owner for a retraction, and the comparison reads them from the submitted transaction. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. The model admits a retraction only when the pending request inserts a key or reads a terminal one, its owner is among the transaction's required signers, and its validity interval lies inside phase 2. The interval starts no earlier than submission plus the processing time; its excluded upper bound may reach, but not pass, the end of the retraction time that follows. The model represents only finite validity bounds. Open validity intervals remain a named gap: the Aiken tests establish their not-phase2 refusal, but no live model comparison can represent them. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
+        <> refusalLimits
         <> "## Requirements inventory\n\n"
         <> "The descriptions and planned statuses below are preserved from the committed inventory. The transaction evidence above belongs to this particular run; it does not rewrite planned statuses or discharge unrelated requirements.\n\n"
         <> concatMap requirement requirements
         <> "## Appendix: checking the evidence machinery\n\n"
         <> "The report-validation tests remain under `test/Conformance/Support`. They check missing and contradictory evidence, report parsing and preservation, and refusal attribution. They run alongside the live stories but do not replace them. Authentication tests are still compiled but unwired, tracked in #210.\n\n"
         <> concatMap gapEvidence receipts
+        <> replayCaptures
         <> "The generated book is committed to the repository and is not yet reachable from the documentation site, tracked as #218. The general census of Haskell specification bindings remains tracked in #213.\n"
   where
     result receipt =
@@ -78,21 +80,25 @@ renderBook requirements receipts =
                         "Registration compared "
                             <> outcomeCounts steps
                             <> concatMap detection steps
-                            <> concatMap refusedPayment steps
+                            <> concatMap refusedStep steps
                     "CG22" ->
                         "Retirement compared "
                             <> outcomeCounts steps
-                            <> concatMap refusedPayment steps
+                            <> concatMap refusedStep steps
                     "CG23" ->
                         "Rejection and retraction compared "
                             <> outcomeCounts steps
-                            <> concatMap refusedPayment steps
+                            <> concatMap refusedStep steps
                             <> admissionEvidence steps
                     "CG07" ->
                         "Retraction window compared "
                             <> outcomeCounts steps
+                            <> concatMap refusedStep steps
                             <> windowEvidence steps
-                    "sequence" -> "Unnamed sequence compared " <> outcomeCounts steps
+                    "sequence" ->
+                        "Unnamed sequence compared "
+                            <> outcomeCounts steps
+                            <> concatMap refusedStep steps
                     _ -> ""
                 )
                 (receiptSteps receipt)
@@ -159,70 +165,111 @@ renderBook requirements receipts =
                             <> ".\n\n"
             _ -> ""
         _ -> ""
-    -- A tampered payment both sides refused, and the reason the model gave:
-    -- read from the step, never typed here.
-    refusedPayment value = case value of
-        Object fields -> case ( KM.lookup "tamper" fields
-                              , KM.lookup "comparison" fields
-                              , KM.lookup "edge" fields
-                              , KM.lookup "model" fields
+    -- A request the chain refused, the model's reason, and what the traced
+    -- replay of its transaction recorded: all read from the step, never typed
+    -- here.
+    refusedStep value = case value of
+        Object fields -> case ( KM.lookup "edge" fields
                               , KM.lookup "chain" fields
                               ) of
-            ( Just (String name)
-                , Just (String "agrees")
-                , Just (String edge)
-                , Just (Object model)
-                , Just (Object chain)
-                )
-                    | Just (String "refused") <- KM.lookup "outcome" chain
-                    , Just (String reason) <- KM.lookup "reason" model
-                    , Just (String txid) <- KM.lookup "txid" chain ->
-                        "The "
-                            <> T.unpack name
-                            <> " "
-                            <> exitOf fields edge
-                            <> " was refused on chain (transaction `"
-                            <> T.unpack txid
-                            <> "`); the model refused it for `"
-                            <> T.unpack reason
-                            <> "`.\n\n"
-                            <> tracedReplay chain
+            (Just (String edge), Just (Object chain))
+                | Just (String "refused") <- KM.lookup "outcome" chain
+                , Just (String txid) <- KM.lookup "txid" chain ->
+                    "The "
+                        <> ( case KM.lookup "tamper" fields of
+                                Just (String name) -> T.unpack name <> " "
+                                _ -> ""
+                           )
+                        <> exitOf fields edge
+                        <> " was refused on chain (transaction `"
+                        <> T.unpack txid
+                        <> "`)"
+                        <> ( case at ["model", "reason"] value of
+                                Just (String reason) ->
+                                    "; the model refused it for `" <> T.unpack reason <> "`."
+                                _ -> "."
+                           )
+                        <> " "
+                        <> tracedReplay chain
+                        <> "\n\n"
             _ -> ""
         _ -> ""
-    -- What the traced replay of a refused transaction observed, purpose by
-    -- purpose: read from the step's chain refusal, never typed here.
-    tracedReplay chain = case KM.lookup "refusal" chain of
+    -- What the traced replay of a refused transaction recorded, purpose by
+    -- purpose, or that it recorded nothing.
+    tracedReplay chain = case replayOf chain of
+        [] -> "No traced replay of this refusal is recorded."
+        entries ->
+            unwords
+                [ "The traced replay of the deployed script `"
+                    <> T.unpack deployed
+                    <> "` "
+                    <> observed
+                | entry <- entries
+                , Just (String deployed) <- [KM.lookup "deployedHash" entry]
+                , Just observed <- [replayObserved entry]
+                ]
+    replayOf chain = case KM.lookup "refusal" chain of
         Just (Object refusal)
             | Just (Array entries) <- KM.lookup "replay" refusal ->
-                concat
-                    [ "The traced replay of the deployed script `"
-                        <> T.unpack deployed
-                        <> "` "
-                        <> observed
-                        <> "\n\n"
-                    | Object entry <- toList entries
-                    , Just (String deployed) <- [KM.lookup "deployedHash" entry]
-                    , Just observed <- [replayObserved entry]
-                    ]
-        _ -> ""
+                [entry | Object entry <- toList entries]
+        _ -> []
     replayObserved entry = case ( KM.lookup "reason" entry
                                 , KM.lookup "cause" entry
                                 , KM.lookup "tracedHash" entry
-                                , KM.lookup "captureId" entry
                                 ) of
-        (Just (String reason), _, Just (String traced), Just (String capture)) ->
+        (Just (String reason), _, Just (String traced)) ->
             Just
-                ( "(traced `"
+                ( "(traced build `"
                     <> T.unpack traced
-                    <> "`, capture `"
-                    <> T.unpack capture
                     <> "`) failed with `"
                     <> T.unpack reason
                     <> "`."
                 )
-        (_, Just (String cause), _, _) ->
+        (_, Just (String cause), _) ->
             Just ("admits no reason: `" <> T.unpack cause <> "`.")
         _ -> Nothing
+    -- Every refused request of the run's chapters, with its replay.
+    refusedChains =
+        [ chain
+        | receipt <- receipts
+        , step <- concat (receiptSteps receipt)
+        , Just (Object chain) <- [at ["chain"] step]
+        , KM.lookup "outcome" chain == Just (String "refused")
+        ]
+    recorded predicate =
+        length [() | chain <- refusedChains, predicate (replayOf chain)]
+    admitted = any (KM.member "reason")
+    named entries = not (admitted entries) && any (KM.member "cause") entries
+    refusalLimits =
+        "Refusal reasons come from traced re-evaluation. The deployed validators are compiled without traces, so the ledger names the script that refused but not why. Each refused transaction is evaluated again on the arguments the ledger built for it: once with the deployed bytes, and once with a build of the same source, compiler and parameters that keeps only the validators' own traces. A reason is admitted only when both evaluations fail and the traced one leaves exactly one trace; otherwise the receipt names the cause no reason was admitted. The receipt names both script hashes, and each refused request above prints what its replay recorded. Of the "
+            <> show (length refusedChains)
+            <> " refused requests in this run's chapters, "
+            <> show (recorded admitted)
+            <> " carries a reason its traced replay admitted, "
+            <> show (recorded named)
+            <> " names the cause its replay admits none, and "
+            <> show (recorded null)
+            <> " records no traced replay.\n\n"
+            <> "Refusals outside these chapters, by row. CG05, an insertion on a present key: class A, compared in the generic run; not rendered here. CS04, a redeemer at a wrong constructor index: live refusal reason not observed for the state and request scripts, whose failing path carries no user-defined trace; not compared, the behavior lies below the model's vocabulary (class C). CG09, a reject while the request is still in phase 1: the model admits it and the chain refuses it (class D); the validator's repair is pending (#320) and the consumer's requirement R9 is unmet. CG10, a fold against a superseded root: not compared, a stale proof is not an input of the model, and the validator's name for the refusal is imprecise (class C). CG11, CG12 and CG19: not compared while the recorded consumer-model conflict holds them (class D); CG19's two-request reject needs a batch question the driver does not have. The two-key batch whose claimed mint disagrees per key: not run; live refusal reason not observed and not compared.\n\n"
+    -- The capture each refused request's replay was evaluated from: harness
+    -- evidence, kept to the appendix.
+    replayCaptures = case [ "Transaction `"
+                                <> T.unpack txid
+                                <> "`: capture `"
+                                <> T.unpack capture
+                                <> "` of the deployed script `"
+                                <> T.unpack deployed
+                                <> "`.\n\n"
+                          | chain <- refusedChains
+                          , Just (String txid) <- [KM.lookup "txid" chain]
+                          , entry <- replayOf chain
+                          , Just (String capture) <- [KM.lookup "captureId" entry]
+                          , Just (String deployed) <- [KM.lookup "deployedHash" entry]
+                          ] of
+        [] -> ""
+        captures ->
+            "Each refused request's traced replay was evaluated from a capture of the refused transaction, the outputs it spends, the protocol parameters and the era history:\n\n"
+                <> concat captures
     -- A fold is named by its edge; a reject or a retraction by its exit and the
     -- edge its request named.
     exitOf fields edge = case KM.lookup "exit" fields of
