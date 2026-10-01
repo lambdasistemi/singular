@@ -65,19 +65,6 @@ pub fn in_phase2(
   )
 }
 
-/// Check if a request is rejectable: Phase 3 or dishonest future timestamp.
-pub fn is_rejectable(
-  validity_range,
-  submitted_at,
-  process_time,
-  retract_time,
-) -> Bool {
-  interval.is_entirely_after(
-    validity_range,
-    submitted_at + process_time + retract_time - 1,
-  ) || interval.is_entirely_before(validity_range, submitted_at)
-}
-
 /// A request is protected from owner sweep only when it can be processed by
 /// state Modify. Matching token alone is not enough: mismatched-deposit or
 /// underfunded spam would otherwise be locked at the request address forever.

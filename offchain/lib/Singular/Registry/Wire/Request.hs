@@ -136,16 +136,18 @@ data OnChainRequest = OnChainRequest
     deriving stock (Show, Eq)
 
 -- ---------------------------------------------------------
--- Request phase (A-002): what a request's age allows
+-- Request phase (A-002): a resuming client's choice of exit
 -- ---------------------------------------------------------
 
-{- | The action a registry request's age allows at a chain tip.
+{- | The exit a resuming client chooses for one of its pending requests at
+a chain tip.
 
-Mirrors @onchain/validators/shared.ak@: a request is foldable as
-accepted while the tip is before @submitted_at + process_time@
-(phase 1), retractable by its owner before @submitted_at +
-process_time + retract_time@ (phase 2), and rejectable by any
-permissionless fold afterwards (phase 3).
+It follows the windows of @onchain/validators/shared.ak@: an update is
+folded only while the tip is before @submitted_at + process_time@ (phase
+1), and the owner may retract only before @submitted_at + process_time +
+retract_time@ (phase 2). After both the client rejects (phase 3). This is
+the client's choice, not the validator's rule for a reject: a reject
+carries no admission and is accepted in every window (#320).
 -}
 data RequestPhase = PhaseAccept | PhaseRetract | PhaseReject
     deriving stock (Show, Eq)

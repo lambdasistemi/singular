@@ -111,8 +111,8 @@ jobs:
       # occupied key — executed against a real devnet, each with its
       # executing negative control and its measurements against the
       # devnet's Conway protocol maxima. Issue #70 then extends the
-      # same session with its active rows: two attributed refusals
-      # (CG09/CG10) and the held rows CG11/CG12/CG19. CG13, CG17
+      # same session with its active rows: the attributed refusal CG10,
+      # CG09 unmet by ruling (#320) and the held rows CG11/CG12/CG19. CG13, CG17
       # and CG20 are NOT run: retired superseded history per E18
       # (NOTE-046, CG16 template) — the owner-pinning transfer, the
       # custody sweep and the removed-signer regression tested an
@@ -121,14 +121,14 @@ jobs:
       # superseded inherited-hook expectations with could-not-execute
       # history — no work waits behind them.
       #
-      # A session containing held rows ends NON-ZERO by design (a held
-      # row must never read as a pass). Per the A-001 ruling this step
+      # A session containing held or unmet rows ends NON-ZERO by design
+      # (neither may ever read as a pass). Per the A-001 ruling this step
       # never treats that exit — or any error label — as success: the
       # expected-debt assertion below reads the session's ACTUAL
       # results and demands exactly the ten rows, exactly the
       # expected verdict per row (receipts), no divergence, and a
       # non-zero exit accounted for by exactly the held rows CG11
-      # CG12 CG19 and nothing else. A GREEN STEP IS NOT A FULFILLED
+      # CG12 CG19 and the unmet row CG09, and nothing else. A GREEN STEP IS NOT A FULFILLED
       # CONSUMER PROMISE: R5/R8/R11 stay unmet (upstream #100/#101);
       # strict completion and release stay RED on that debt. Issue #69 then runs the CA
       # rows as their own session: the consumer's authentication of
@@ -291,6 +291,74 @@ jobs:
             and (.steps[9] | .request.owner as $owner | .witness.signatories | index($owner) != null)
             and (.transactions | length) == 2
           ' "$f" > /dev/null || { echo 'FAIL: CG23 exit evidence moved'; exit 1; }
+      # CG24 (#320): a folder rejects a pending request before its owner's
+      # retraction deadline. Two insertion requests are booked together in a
+      # registry of their own; the first is rejected inside its processing
+      # window, the second inside its owner's retraction window. In each window
+      # a reject refunding the owner one lovelace short and one refunding
+      # another key are refused by the chain and by the model, and the
+      # untampered reject is accepted by both, refunding the owner the deposit
+      # and leaving the registry state as it was. Each refusal is attributed by
+      # the state script's hash; the ledger surfaces no trace, so the model
+      # reason `deposit-returned` is the name the compiled Aiken suite asserts
+      # for the same refunds in the same windows
+      # (onchain/validators/deposit_exits.tests.ak
+      # early_reject_refund_one_lovelace_short_in_the_processing_window_refuses_by_name,
+      # early_reject_refund_to_another_key_in_the_processing_window_refuses_by_name
+      # and their retraction-window twins). Those tests do not establish a
+      # deployed Plutus trace.
+      - name: Run the dedicated CG24 early rejection row as a packaged app
+        run: |
+          set -eo pipefail
+          cd conformance
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          receipts="$(mktemp -d "$RUNNER_TEMP/cg24-receipts.XXXXXX")"
+          log="$RUNNER_TEMP/cg24.log"
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG24 --receipts-dir "$receipts" 2>&1 | tee "$log"
+          head_sha="$(git rev-parse HEAD)"
+          f="$receipts/receipt-CG24.json"
+          test -f "$f" || { echo 'FAIL: missing CG24 receipt'; exit 1; }
+          test "$(wc -c < "$f")" -le 14745 || { echo "FAIL: CG24 receipt exceeds its margin"; exit 1; }
+          state_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "state.state.spend" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
+          # jq expands its own --arg variables inside this program.
+          # shellcheck disable=SC2016
+          nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" --arg state "$state_hash" '
+            def txid: type == "string" and test("^[0-9a-f]{64}$");
+            def text: type == "string" and length > 0;
+            def complete: .comparison == "agrees" and .tamper == null
+              and (.compared | length) == 9 and .perturbation.refused > 0;
+            .row == "CG24"
+            and .verdict == "agrees-with-model"
+            and .base == $base and .dirty == false
+            and (.blueprint | text) and (.node | text)
+            and (.steps | length) == 6
+            and all(.steps[]; .edge == "insertActive" and .exit == "reject")
+            and ([.steps[].tamper] == ["short-by-one","other-address",null,"short-by-one","other-address",null])
+            and ([.steps[].model.outcome] == ["refused","refused","accepted","refused","refused","accepted"])
+            and ([.steps[].chain.outcome] == ["refused","refused","accepted","refused","refused","accepted"])
+            and all(.steps[]; .comparison == "agrees")
+            and all(.steps[] | select(.model.outcome == "accepted"); complete and (.chain.txid | txid))
+            and all(.steps[] | select(.model.outcome == "refused");
+              .model.reason == "deposit-returned"
+              and (.chain.txid | txid)
+              and (.chain.refusal.hashes | index($state) != null)
+              and (.chain.refusal.scripts | index("state") != null))
+            and ([.steps[].registry] | unique | length) == 1
+            and ([.steps[0,1,2].request] | unique | length) == 1
+            and ([.steps[3,4,5].request] | unique | length) == 1
+            and .steps[0].request != .steps[3].request
+            and (.transactions | length) == 2
+          ' "$f" > /dev/null || { echo 'FAIL: CG24 early rejection evidence moved'; exit 1; }
+          # Each reject is placed in a named window; the interpreter refuses to
+          # submit outside it. The run log states each placement with the
+          # transaction's validity interval and the window it lies in.
+          p1="$(grep -c "^placement: CG24 reject in the processing window validity=\[[0-9]*,[0-9]*) window=\[[0-9]*,[0-9]*) tx=[0-9a-f]\{64\}$" "$log" || true)"
+          p2="$(grep -c "^placement: CG24 reject in the owner's retraction window validity=\[[0-9]*,[0-9]*) window=\[[0-9]*,[0-9]*) tx=[0-9a-f]\{64\}$" "$log" || true)"
+          if [ "$p1" -ne 3 ] || [ "$p2" -ne 3 ]; then
+            echo "FAIL: CG24 placements moved: processing=$p1 retraction=$p2, expected 3 and 3"
+            exit 1
+          fi
+          echo 'GREEN = early rejection held: inside the processing window and inside the retraction window, the untampered reject is accepted by the chain and the model, refunding the owner and leaving the state as it was; the short and misdirected refunds are refused by both for deposit-returned. The consumer R9_reject_needs_rejectable stays unmet (CG09, unmet-by-ruling).'
       # The timing refusals are compared in their own finite-window story.
       # The exit chapter above compares the other retraction admission refusals.
       - name: Run the retraction window as a packaged app
@@ -379,7 +447,8 @@ jobs:
           #    bound to this candidate on a clean tree (dirty:false)
           expect_verdict() {
             case "$1" in
-              CG02|CG03|CG04|CG05|CG09|CG10|CG21|CL01) printf 'agrees-with-model' ;;
+              CG02|CG03|CG04|CG05|CG10|CG21|CL01) printf 'agrees-with-model' ;;
+              CG09) printf 'unmet-by-ruling' ;;
               CG11|CG12|CG19) printf 'held-q002' ;;
               *) printf 'UNKNOWN-ROW' ;;
             esac
@@ -397,9 +466,11 @@ jobs:
           #    units and size, folds named — refuse missing or divergent
           nix run --quiet nixpkgs#jq -- -e '.mem > 0 and .cpu > 0 and .txSize > 0 and (.transactions | length > 0)' "${CONFORMANCE_RECEIPTS}"/receipt-CL01.json > /dev/null || { echo 'FAIL: CL01 measurement evidence missing or divergent'; exit 1; }
           # 6. the run's own accounting must name exactly the expected
-          #    held set, with nothing failing against this candidate
+          #    held and unmet sets, with nothing failing against this candidate
           held="$(sed -n 's/^- Held .*held-q002): //p' /tmp/generic-rows.log)"
           [ "$held" = "CG11 CG12 CG19" ] || { echo "FAIL: held set moved: got '$held', expected 'CG11 CG12 CG19'"; exit 1; }
+          unmet="$(sed -n 's/^- Unmet by ruling .*unmet-by-ruling): //p' /tmp/generic-rows.log)"
+          [ "$unmet" = "CG09" ] || { echo "FAIL: unmet set moved: got '$unmet', expected 'CG09'"; exit 1; }
           # nothing may fail against this candidate
           failing="$(sed -n 's/^- Failing .*accepted): //p' /tmp/generic-rows.log)"
           [ "$failing" = "none" ] || { echo "FAIL: rows failing against this candidate: $failing"; exit 1; }
@@ -523,8 +594,25 @@ jobs:
             and any(.steps[]; .tamper == null and .model.outcome == "accepted"
                     and .chain.outcome == "accepted" and .request == $tampered)
           ' "$e" > /dev/null || { echo 'FAIL: CG21 step evidence missing or incomplete'; exit 1; }
-          echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and the tampered-payment controls are recorded, with held debt exactly CG11 CG12 CG19.'
-          echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'
+          # 10. CG09 (#320): the consumer's R9_reject_needs_rejectable forbids
+          #     a reject inside the processing window; Singular's Lean admits
+          #     it and the chain accepts it. By operator ruling 2026-10-01 the
+          #     consumer requirement is kept unmet (alignment:
+          #     lambdasistemi/cardano-keri#468): the verdict is unmet-by-ruling,
+          #     never agreement and never held-q002. Its control, the same
+          #     reject one lovelace short, is refused by the state script first.
+          # shellcheck disable=SC2016
+          nix run --quiet nixpkgs#jq -- -e '
+            .row == "CG09" and .outcome == "accepted" and .verdict == "unmet-by-ruling"
+            and .venue == "node-submit"
+            and (.transactions | length) == 1
+            and (.transactions[0] | test("^[0-9a-f]{64}$"))
+          ' "${CONFORMANCE_RECEIPTS}"/receipt-CG09.json > /dev/null || { echo 'FAIL: CG09 unmet acceptance evidence moved'; exit 1; }
+          grep -q '^unmet: CG09 UNMET BY RULING: ' /tmp/generic-rows.log || { echo 'FAIL: CG09 unmet requirement not recorded by the run'; exit 1; }
+          if grep -q '^held: CG09 ' /tmp/generic-rows.log; then echo 'FAIL: CG09 recorded held'; exit 1; fi
+          grep -q '^control: CG09 control: REFUSED at submit, attributed to state (phase-2, marker 0x[0-9a-f][0-9a-f]*)' /tmp/generic-rows.log || { echo 'FAIL: CG09 refused control not attributed to the state script'; exit 1; }
+          echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and the tampered-payment controls are recorded, with held debt exactly CG11 CG12 CG19 and CG09 unmet by ruling.'
+          echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused, R9_reject_needs_rejectable and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'
       # Issue #69: canonical identity authentication. CA02 asserts
       # the ledger's acceptance of a rival registry from a second
       # seed — the settled finding, never relabelled as a refusal —

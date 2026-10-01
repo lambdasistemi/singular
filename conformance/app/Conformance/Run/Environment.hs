@@ -175,6 +175,12 @@ data Env = Env
     Singular's Lean. The session ends non-zero while this is
     non-empty — a hold must never read as a pass.
     -}
+    , envUnmet :: IORef [String]
+    {- ^ rows recorded as @unmet-by-ruling@ this session: a consumer
+    requirement the registry deliberately does not meet, kept unmet by
+    operator ruling. The session ends non-zero while this is
+    non-empty — an unmet requirement must never read as a pass.
+    -}
     , envFailed :: IORef [String]
     {- ^ rows recorded as @diverges-from-lean@ this session: the
     chain refused what Singular's Lean requires accepted. The

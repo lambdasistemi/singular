@@ -291,8 +291,9 @@ jobs:
       # locked cardano-node (offchain#cardano-node) on its own PATH.
       # The step builds the blueprint from the onchain flake first and
       # points REGISTRY_BLUEPRINT at that store path, then runs the suite —
-      # six registry scenarios: boots state and applies a request
-      # update; retracts a phase-2 request; rejects a phase-3 request;
+      # eight registry scenarios: boots state and applies a request
+      # update; retracts a phase-2 request; rejects a request in its
+      # processing window, in its retraction window and in phase 3;
       # ends a cage by burning the state token; sweeps malformed
       # request-address UTxOs; Modify and End succeed with
       # staking-script withdrawal. `needs:` stays ordering and

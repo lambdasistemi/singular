@@ -19,7 +19,7 @@ nix run ./conformance#conformance -- list
 nix run ./conformance#conformance -- run CG02 CG03 CG04 CG05
 ```
 
-`list` prints the complete 44-row inventory from `rows.json` with each
+`list` prints the complete 46-row inventory from `rows.json` with each
 row's state (`executed` / `bound-elsewhere` / `uncovered` /
 `out-of-scope`). `run` executes rows against a real devnet; the
 blueprint comes from the caller at run time:

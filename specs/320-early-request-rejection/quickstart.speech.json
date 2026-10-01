@@ -1,0 +1,30 @@
+{
+  "on-the-compiled-validators": [
+    {
+      "text": "Run the onchain flake check. The Aiken suite includes accepted early rejections for both purposes, and refused bad refunds and late updates.",
+      "pause": 400
+    }
+  ],
+  "on-a-devnet-through-the-products-builder": [
+    {
+      "text": "Build the registry blueprint and run the devnet end to end suite. The rejection cases named by their window submit the builder's transaction and read back the refund and the unchanged state from the ledger.",
+      "pause": 400
+    }
+  ],
+  "compared-with-the-model": [
+    {
+      "text": "Run CG09 through the conformance app. Its receipt shows the chain accepting with the verdict unmet by ruling, and its consumer requirement still says refuse. CG24 runs the same way, compares every step with the model, and its log states each reject's window.",
+      "pause": 400
+    }
+  ],
+  "identities": [
+    {
+      "text": "Run the deployment identity check. It compares manifests and deployed scripts with freshly built blueprints in both directions.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "quickstart.md",
+    "sha256": "ae4196056d7f604c5cb9e4a4b215866c3e53d8ca54b70a34e245aed8b71b249e"
+  }
+}

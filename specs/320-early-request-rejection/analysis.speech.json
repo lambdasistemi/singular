@@ -1,0 +1,36 @@
+{
+  "coverage": [
+    {
+      "text": "Every requirement maps to at least one invariant, task and gate row, and every invariant appears in a task.",
+      "pause": 400
+    }
+  ],
+  "terminology": [
+    {
+      "text": "The model's words are used throughout. Windows are named the way the constitution's retraction row names them, and phase numbers appear only where existing code uses them.",
+      "pause": 400
+    }
+  ],
+  "contradictions-found-and-how-they-are-carried": [
+    {
+      "text": "Four findings: the update timing rule outside the model, a separate ticket's repair, kept unchanged here with its claim held; the consumer's R9 conflict, kept unmet by operator ruling; CG23's stale timing words, restated; and the builder's phase three documentation, restated with the change.",
+      "pause": 400
+    }
+  ],
+  "ambiguities-left-open": [
+    {
+      "text": "One remains: whether the consumer conflict holds this repair's merge or only the consumer integration claim. The parent decides it.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "analysis.md",
+    "sha256": "4978ac4dfee9e847c9133b4be854353fb98224278e9e787a45096e0294a64d03"
+  },
+  "residuals-and-their-dispositions": [
+    {
+      "text": "Four residuals, each with its evidence and limit. The builder now rejects every pending request, and one unprocessable request still blocks it: a named limit. Old wording in an off-chain test name and a journey message stays, outside the fence. A request whose datum is a hash can be spent in its processing window without being folded, an exit the model does not have; it is unchanged here, shown only from source, and raised to the parent as its own story. The update timing rule outside the model has its own ticket.",
+      "pause": 400
+    }
+  ]
+}

@@ -96,13 +96,16 @@ an old receipt directory supplied in place of an actual run.
 -}
 runBook :: FilePath -> Maybe FilePath -> IO ()
 runBook dir output = do
-    runGuarded ["CG21", "CG22", "CG23", "CG07", "sequence"] dir
+    runGuarded ["CG21", "CG22", "CG23", "CG24", "CG07", "sequence"] dir
     receipts <- loadReceipts dir >>= either fail pure
     let chapters =
             filter
-                (\r -> receiptRow r `elem` ["CG21", "CG22", "CG23", "CG07", "sequence"])
+                ( \r ->
+                    receiptRow r
+                        `elem` ["CG21", "CG22", "CG23", "CG24", "CG07", "sequence"]
+                )
                 receipts
-    if length chapters /= 5
+    if length chapters /= 6
         || any ((/= AgreesWithModel) . receiptVerdict) chapters
         then
             fail

@@ -29,7 +29,7 @@ use types.{Request, RequestDatum, State, StateDatum, TokenId}
 /// - **Time phases**: process_time = 10s, retract_time = 10s, submitted_at = 0
 ///   - Phase 1 (oracle processing):  [0, 10_000)    — validity range [0, 5_000]
 ///   - Phase 2 (requester retract):  [10_000, 20_000) — validity range [10_000, 15_000]
-///   - Phase 3 (rejectable/expired): [20_000, ...)    — validity range [20_000, 25_000]
+///   - After the windows:            [20_000, ...)    — validity range [20_000, 25_000]
 ///
 /// - **State UTxO** (`update`): holds `testToken` at `testScriptAddress` with
 ///   an empty MPF root (no owner field exists).

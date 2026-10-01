@@ -26,7 +26,7 @@ themselves at the revision you are viewing.
 
 The module extent is the public library of the Conformance Cabal file —
 every exposed module and the one package-internal owner. That complete
-extent is 25 modules. The 24 exposed modules are what a caller imports:
+extent is 26 modules. The 25 exposed modules are what a caller imports:
 the story programs and their binding and identity, the ordinary CLI's
 refusal controls and their receipt-computed verdicts, the model transport
 and the Lean oracle, the registration and perturbation comparisons, the
@@ -46,6 +46,7 @@ the site check fails until it and this list agree.
 - <a href="../conformance/lib/Conformance/Cli/Controls.hs" data-api="module">Conformance.Cli.Controls</a> — <a href="../conformance/lib/Conformance/Cli/Controls.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Compare/Perturbation.hs" data-api="module">Conformance.Compare.Perturbation</a> — <a href="../conformance/lib/Conformance/Compare/Perturbation.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Compare/Registration.hs" data-api="module">Conformance.Compare.Registration</a> — <a href="../conformance/lib/Conformance/Compare/Registration.hs" data-api="source">source</a>
+- <a href="../conformance/lib/Conformance/Edge/EarlyReject.hs" data-api="module">Conformance.Edge.EarlyReject</a> — <a href="../conformance/lib/Conformance/Edge/EarlyReject.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Exit.hs" data-api="module">Conformance.Edge.Exit</a> — <a href="../conformance/lib/Conformance/Edge/Exit.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Register.hs" data-api="module">Conformance.Edge.Register</a> — <a href="../conformance/lib/Conformance/Edge/Register.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Retire.hs" data-api="module">Conformance.Edge.Retire</a> — <a href="../conformance/lib/Conformance/Edge/Retire.hs" data-api="source">source</a>

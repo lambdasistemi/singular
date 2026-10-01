@@ -1,12 +1,12 @@
 {- |
 Module      : Conformance.Rows
-Description : The 45-row consumer inventory and its validation
+Description : The 46-row consumer inventory and its validation
 License     : Apache-2.0
 
 The complete consumer-row inventory from @rows.json@: id, group,
 requirement, source, expected outcome and declared plan. @list@
-prints it; @validateInventory@ enforces the denominator — 45 rows,
-44 owned — so a truncated inventory fails loudly instead of printing
+prints it; @validateInventory@ enforces the denominator — 46 rows,
+45 owned — so a truncated inventory fails loudly instead of printing
 a smaller-but-plausible table.
 
 @executed@ is not a value @rows.json@ can carry: the declared field
@@ -43,22 +43,23 @@ import Data.Text qualified as T
 
 import Conformance.Receipt (Receipt (..), Verdict (..))
 
-{- | Total rows in @rows.json@: the 44 owned consumer rows (including
+{- | Total rows in @rows.json@: the 45 owned consumer rows (including
 CG20, the F-002 permissionless-folder regression, CG21, #173's
 insertActive fold and its two refusal fixtures, CG22, #177's
-updateTerminal retirement and its two refusal fixtures, and CG23,
-issue #258's reject and retract with their tampered refunds) plus CK06,
+updateTerminal retirement and its two refusal fixtures, CG23,
+issue #258's reject and retract with their tampered refunds, and CG24,
+issue #320's early rejection in two windows) plus CK06,
 cardano-keri's checkpoint policy, recorded as out-of-scope so the
 boundary is visible instead of forgotten.
 -}
 expectedRowCount :: Int
-expectedRowCount = 45
+expectedRowCount = 46
 
 {- | Rows Singular owns and must eventually evidence. Out-of-scope
 rows (CK06) are carried for the boundary, never counted.
 -}
 ownedDenominator :: Int
-ownedDenominator = 44
+ownedDenominator = 45
 
 {- | A row's declared coverage plan. @executed@ is unrepresentable
 here by construction: only a run receipt can establish it.

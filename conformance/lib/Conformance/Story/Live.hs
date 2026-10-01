@@ -11,12 +11,17 @@ module Conformance.Story.Live
     , EdgeRequest (..)
     , Tamper (..)
     , tamperName
+    , Placement (..)
+    , placementName
+    , placementReading
+    , placementWindow
     , LiveI (..)
     , Story
     , Context (..)
     , submit
     , tamper
-    , reject
+    , rejectWithin
+    , tamperRejectWithin
     , retract
     , tamperExit
     , observe
@@ -63,7 +68,7 @@ edgeName edge = case edge of
     WitnessTerminal -> "witnessTerminal"
 
 {- | How a request leaves the queue: folded by its own edge, rejected by a folder
-once it may no longer be folded, or retracted by its owner.
+in a window its story names, or retracted by its owner.
 -}
 data Exit = Fold | Reject | Retract
     deriving stock (Eq, Show, Enum, Bounded)
@@ -111,6 +116,40 @@ tamperName Unsigned = "unsigned"
 tamperName BeforePhase2 = "before-phase-2"
 tamperName AfterPhase2 = "after-phase-2"
 
+{- | Where a reject is placed: a fact about the submitted transaction, not a
+tamper. The model gives a reject no admission, so its answer does not depend
+on it; the chain is asked in the window the story names.
+-}
+data Placement = InProcessingWindow | InRetractionWindow | AfterTheWindows
+    deriving stock (Eq, Show, Enum, Bounded)
+
+-- | The placement as the run log names it.
+placementName :: Placement -> String
+placementName InProcessingWindow = "in the processing window"
+placementName InRetractionWindow = "in the owner's retraction window"
+placementName AfterTheWindows = "after the windows"
+
+-- | The placement as the book reads it.
+placementReading :: Placement -> String
+placementReading InProcessingWindow = "while the request can still be folded"
+placementReading InRetractionWindow = "while its owner can still retract it"
+placementReading AfterTheWindows = "after its owner's retraction window has closed"
+
+{- | The window a placement names, in POSIX milliseconds, for a request
+submitted at @submittedAt@ under a registry's processing and retraction
+times: from its start to its excluded end, open-ended after the windows.
+-}
+placementWindow
+    :: Placement -> Integer -> Integer -> Integer -> (Integer, Maybe Integer)
+placementWindow placement submittedAt processTime retractTime =
+    case placement of
+        InProcessingWindow -> (submittedAt, Just processDeadline)
+        InRetractionWindow -> (processDeadline, Just retractDeadline)
+        AfterTheWindows -> (retractDeadline, Nothing)
+  where
+    processDeadline = submittedAt + processTime
+    retractDeadline = processDeadline + retractTime
+
 type Story reg wal step obs cmp =
     Specification.Story (LiveI reg wal step obs cmp)
 
@@ -125,6 +164,12 @@ data LiveI reg wal step obs cmp result where
         -> reg
         -> EdgeRequest wal
         -> LiveI reg wal step obs cmp step
+    RejectWithin
+        :: Placement
+        -> Maybe Tamper
+        -> reg
+        -> EdgeRequest wal
+        -> LiveI reg wal step obs cmp step
     Observe :: step -> LiveI reg wal step obs cmp obs
     Compare :: step -> obs -> LiveI reg wal step obs cmp cmp
 
@@ -135,9 +180,21 @@ tamper
     :: Tamper -> reg -> EdgeRequest wal -> Story reg wal step obs cmp step
 tamper alteration = tamperExit alteration Fold
 
--- | A folder rejects the request once it may no longer be folded.
-reject :: reg -> EdgeRequest wal -> Story reg wal step obs cmp step
-reject registry request = action (Submit Reject registry request)
+-- | A folder rejects the request in the window the placement names.
+rejectWithin
+    :: Placement -> reg -> EdgeRequest wal -> Story reg wal step obs cmp step
+rejectWithin placement registry request =
+    action (RejectWithin placement Nothing registry request)
+
+-- | A folder rejects the request in that window, through a tampered transaction.
+tamperRejectWithin
+    :: Tamper
+    -> Placement
+    -> reg
+    -> EdgeRequest wal
+    -> Story reg wal step obs cmp step
+tamperRejectWithin alteration placement registry request =
+    action (RejectWithin placement (Just alteration) registry request)
 
 -- | The request's owner retracts it.
 retract :: reg -> EdgeRequest wal -> Story reg wal step obs cmp step
@@ -176,8 +233,11 @@ validateLive program = do
     walk phase body = case view body of
         Return result -> Right (phase, result)
         Action instruction :>>= rest -> case instruction of
+            Submit Reject _ _ -> Left unplaced
             Submit{} -> advance Ready NeedObserve "preflight step"
+            Tamper _ Reject _ _ -> Left unplaced
             Tamper{} -> advance Ready NeedObserve "preflight step"
+            RejectWithin{} -> advance Ready NeedObserve "preflight step"
             Observe _ -> advance NeedObserve NeedCompare "preflight observation"
             Compare _ _ -> advance NeedCompare Ready "preflight comparison"
           where
@@ -185,6 +245,8 @@ validateLive program = do
                 | phase == expected = walk nextPhase (rest value)
                 | otherwise =
                     Left "live story must Submit or Tamper, Observe, then Compare"
+            unplaced =
+                "a live story's reject must name the window it is placed in"
         Theorem _ body' :>>= rest -> do
             (afterClauses, result) <-
                 walkClauses phase (Specification.clauses body')
@@ -252,6 +314,18 @@ renderAction instruction rest = case instruction of
         step
             (subject exit registry request <> altered alteration)
             (rest (requestKey request))
+    RejectWithin placement alteration registry request ->
+        step
+            ( "Reject the "
+                <> named request registry
+                <> " "
+                <> placementReading placement
+                <> maybe
+                    (", using the " <> requestWallet request <> ".")
+                    altered
+                    alteration
+            )
+            (rest (requestKey request))
     Observe handle ->
         step
             ( "Observe the complete registry, token, leaf and transaction boundary after **"
@@ -280,7 +354,7 @@ renderAction instruction rest = case instruction of
     subject Reject registry request =
         "Reject the "
             <> named request registry
-            <> " once it may no longer be folded"
+            <> " with no placement, which story validation refuses"
     subject Retract registry request = "Retract the " <> named request registry <> " as its owner"
     refused =
         " The ledger and the model must both refuse it; the same request untampered is its control."

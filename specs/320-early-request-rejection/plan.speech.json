@@ -1,0 +1,48 @@
+{
+  "strategy": [
+    {
+      "text": "Three slices on one branch. First the validators, their tests and identities, with CG09's expectation moving in the same commit because the chain's answer to it changes there. Then the product builder with its devnet test. Then the story language placement, CG23 made explicit, and the new early reject row CG24. Each commit keeps CI green.",
+      "pause": 400
+    }
+  ],
+  "constitution-check": [
+    {
+      "text": "Lean stays the authority and the code moves to it. The consumer conflict stays held and the fold timing gap is recorded, not resolved here. Each evidence class is named and never substituted. RED, GREEN, sizes, costs and limits are kept. Nothing historical is rewritten. The early reject claim is said in the suite's own language, and CG09 stays published as unmet.",
+      "pause": 400
+    }
+  ],
+  "slices": [
+    {
+      "text": "The first slice delivers the validator repair and must show RED on the base through the new compiled tests, then green suites, identities and CG09 held. The second slice delivers the builder and a devnet run in both early windows. The third slice delivers CG24, compared with the model, keeps CG23's assertion unchanged, and grows the book to six chapters. The required behavioural RED is the compiled one; the live defect is the retained refused transaction.",
+      "pause": 400
+    }
+  ],
+  "path-fence": [
+    {
+      "text": "Each slice has an exact list of writable paths, including every file that enumerates rows for CG24. The first slice's fence includes the naming hash comparison in the deployed identity check and the speech companions of its two doc pages, and the third slice's includes the consumer page's companion. Manifests change only through their generators and pins only to regenerated values. The model, the constitution, the locks, any receipt encoding, every other row, the book and historical evidence are forbidden.",
+      "pause": 400
+    }
+  ],
+  "gate": [
+    {
+      "text": "The gate page holds the full command or step body of every row, how each is known to fail, and the nested accounting. Fourteen rows. One full run at the exact head forecasts eighty three nix invocations and six devnet runs; the generic rows step alone is forty five, because it runs the JSON tool through nix three times per row. The register journey is left to the pushed head's CI.",
+      "pause": 400
+    }
+  ],
+  "execution-schedule": [
+    {
+      "text": "The implementation phase is not released by this plan. The forecast counts every invocation, including two mandatory mutation runs on the new pairing rule: about forty three cheap runs, one hundred forty three nix invocations and fourteen devnet runs including one bounded repair, or sixty three nix and eight devnet runs if the pushed head's CI is the gate. Nothing is repeated without a new change or failure.",
+      "pause": 400
+    }
+  ],
+  "team": [
+    {
+      "text": "The operator approved team runs in sequence: the ticket owner holds the mandate, the gate and acceptance and writes no product code. One commit owner writes the tests, code and commits. One persistent independent auditor answers every checkpoint. No other seat.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "dc47d89c3ffb194e37d268e36e86a54773b2b618d7c44489d8050585a7b40ebe"
+  }
+}
