@@ -32,11 +32,15 @@ let
   signedTxControl =
     pkgs.runCommand "signed-tx-control"
       {
-        nativeBuildInputs = [ ghc ];
+        nativeBuildInputs = [
+          ghc
+          pkgs.python3
+        ];
         src = pkgs.lib.fileset.toSource {
           root = ../..;
           fileset = pkgs.lib.fileset.unions [
             ../../tools/signed_tx_control.sh
+            ../../tools/signed_tx_surface.py
             ../signed-tx-control
             ../node-internal/Singular/Registry/Node/Submit.hs
           ];
