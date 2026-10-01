@@ -28,11 +28,11 @@ journal holds for the transaction:
 |---|---|---|---|
 | `acknowledged` | `submitted` | the node accepted the transaction; it was not yet seen on chain | run your next command; it reconciles the transaction once it is on chain |
 | `unknown` | `submit-unknown`, or nothing after `prepared` | no answer arrived: the node may or may not have the transaction | run your next command; if the transaction landed it is reconciled, otherwise the command stops and names it |
-| `rejected` | `rejected` | the node refused it; nothing changed on chain | correct the cause the receipt names and run the command again |
+| `rejected` | `rejected` | the node refused it; it changed nothing on chain | correct the cause the receipt names and run the command again — unless it was the fold of an `insert` or `terminate`, whose booking is on chain: that leaves the [same pending request as an excluded fold](#when-a-transaction-can-never-land) |
 | `included` | `confirmed` or `observed` | the transaction is on chain | nothing; a later command finishes the local commit if this one could not |
 | `timeout` | `unconfirmed` | accepted, but not seen on chain before the confirmation deadline | run your next command; it reconciles the transaction once it is on chain |
 | `rolled-back` | `rolled-back` | the chain had included the transaction and no longer does | run your next command; if the transaction is included again it is reconciled, otherwise the command stops and names it |
-| `excluded` | `excluded` | the transaction is not on chain and its validity window has closed: it can never be included | nothing to recover; run the command again to build a new transaction |
+| `excluded` | `excluded` | the transaction is not on chain and its validity window has closed: it can never be included | for an `update`, run it again; for the fold of an `insert` or `terminate`, see [what an excluded fold leaves on chain](#when-a-transaction-can-never-land) |
 
 A command that stops after a submission exits `partial` (status 15), or
 `timeout` (13) when the confirmation deadline passed, and its receipt
@@ -122,10 +122,22 @@ A transaction carries a validity window. Once the chain's tip has
 reached the end of that window and an input the transaction spends is
 still live — so it is not on the chain — it can never be included. The
 next command appends an `excluded` line naming the chain point it read
-and the live inputs, and the transaction is settled: nothing about it
-blocks later writes, and its edge was never applied. A write that
+and the live inputs. The transaction is settled in the journal: no
+later command stops on it, and its edge was never applied. A write that
 excluded a transaction then proceeds, building from the root the mirror
 already holds.
+
+What the excluded transaction leaves on chain depends on the command.
+An excluded `update` leaves nothing: run it again. The fold of an
+`insert` or a `terminate` is the second of two transactions, and the
+first, its booking, is on chain: its request stays pending, holding its
+deposit. The ordinary commands have no way to fold or retract that
+request, and while it is pending every later `insert` or `terminate` on
+the registry is refused `concurrent-writer` before its fold is built — a
+rerun of the same command books a second request, with a second deposit,
+and is refused the same way. `update` and `inspect` still run. That is a
+limit of these commands: releasing the pending request needs a tool
+outside them.
 
 A fold carries an upper bound on its validity window. A booking, and the
 publications `create` makes, carry none: a booking that never landed,
@@ -143,12 +155,14 @@ last journalled phase and its case; the journal does not move.
 - `acknowledged`, `unknown` or `timeout`: the chain does not yet show
   the transaction. Wait for the network and run the command again; when
   the transaction lands, the next command reconciles it, and when its
-  validity window closes without it, the next command excludes it.
+  validity window closes without it, the next command excludes it —
+  for the fold of an insert or a terminate, with the
+  [pending request it leaves](#when-a-transaction-can-never-land).
 - `rolled-back`: the chain no longer shows a transaction it had
   included. Wait and run the command again; it reconciles the
   transaction if the chain includes it again, and excludes it once its
-  validity window closes without it. A booking has no window and stays
-  rolled back.
+  validity window closes without it, with the same pending request when
+  it is a fold. A booking has no window and stays rolled back.
 - `included`: the transaction is on chain, but its journalled edge does
   not take the mirror to the ledger's root. The outcome is
   `stale-state` (status 14): the local files no longer follow the chain
@@ -177,7 +191,7 @@ nix run --quiet .#cli-recovery-controls
 | killed before the commit | an insert is killed once its fold is confirmed, before the mirror is saved | the next write, an update of another key, applies the edge once, brings `state.json` along and proceeds |
 | killed after the mirror | a terminate is killed once the mirror is saved, before `state.json` | the next insert applies nothing, brings `state.json` to the mirror, observes the fold and proceeds |
 | killed before the observation | an insert is killed once `state.json` is written, before its fold is observed | the next insert applies nothing, observes the fold and proceeds |
-| never sent, past its upper bound | an insert's fold never reaches the node, and the tip passes the fold's upper bound | the node reports the fold's inputs unspent; the next write journals the fold `excluded` with the chain point and those inputs, and proceeds from the root before it |
+| never sent, past its upper bound | an insert's fold never reaches the node, and the tip passes the fold's upper bound | the node reports the fold's inputs unspent; the next write, an update, journals the fold `excluded` with the chain point and those inputs, and proceeds from the root before it |
 | never sent, without an upper bound | an insert's booking never reaches the node | the next write stops before building anything, naming the booking and the case `unknown`; the journal does not move |
 | rolled back | on a second registry, an insert is observed, then the node is restarted on a copy of its database taken before the insert | the node's reads show the blocks that carried the booking and the fold gone and their inputs unspent; `inspect` journals both `rolled-back`, returns the mirror to its bytes before the insert and `state.json` to the fold's root before, and stops naming the booking; the next write stops the same way; no block the node makes carries either transaction again |
 
