@@ -73,7 +73,18 @@ main = do
             , "--traced"
             , traced
             ] ->
-                runReplayCapsule args capsule deployed traced
+                runReplayCapsule args capsule deployed traced Nothing
+        [ "replay-capsule"
+            , "--capsule"
+            , capsule
+            , "--deployed"
+            , deployed
+            , "--traced"
+            , traced
+            , "--diagnostic"
+            , diagnostic
+            ] ->
+                runReplayCapsule args capsule deployed traced (Just diagnostic)
         ["example", "retirement", "--receipts-dir", dir] -> runGuarded ["CG22"] dir
         ["example", "registration", "--receipts-dir", dir] -> runGuarded ["CG21"] dir
         ["book", "--receipts-dir", dir] -> runBook dir Nothing
@@ -95,7 +106,7 @@ usage = do
         "       conformance -- run ROW... [--receipts-dir DIR]"
     hPutStrLn
         stderr
-        "       conformance -- replay-capsule --capsule DIR --deployed BLUEPRINT --traced BLUEPRINT"
+        "       conformance -- replay-capsule --capsule DIR --deployed BLUEPRINT --traced BLUEPRINT [--diagnostic BLUEPRINT]"
     hPutStrLn
         stderr
         "env:   CONFORMANCE_RECEIPTS=DIR (list, when --receipts is absent)"

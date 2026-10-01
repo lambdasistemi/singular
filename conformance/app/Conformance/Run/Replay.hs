@@ -1152,11 +1152,19 @@ resolved outputs, protocol parameters and era data go through 'replayCore',
 the same core a live capture does. The capture id is recomputed from the
 saved files and must equal the one the run recorded. The outcome is written
 under @replay-offline/<rejectedTxId>/@ beside the receipts, never over the
-original.
+original. With a diagnostic blueprint, nothing is written there: the purposes
+the user-defined replay left without a user trace are replayed with the
+diagnostic build and written under @replay-diagnostic/<rejectedTxId>/@.
 -}
 runReplayCapsule
-    :: [String] -> FilePath -> FilePath -> FilePath -> IO ()
-runReplayCapsule invocation capsuleDir deployedPath tracedPath = do
+    :: [String]
+    -> FilePath
+    -> FilePath
+    -> FilePath
+    -> Maybe FilePath
+    -- ^ a diagnostic blueprint, built with every compiler trace
+    -> IO ()
+runReplayCapsule invocation capsuleDir deployedPath tracedPath diagnosticPath = do
     let capsule = dropTrailingPathSeparator capsuleDir
     files <-
         forM capsuleFiles $ \name -> (,) name <$> BS.readFile (capsule </> name)
@@ -1223,46 +1231,71 @@ runReplayCapsule invocation capsuleDir deployedPath tracedPath = do
             systemStart
             failing
     let receipts = takeDirectory (takeDirectory capsule)
-        out = receipts </> "replay-offline" </> maybe "unknown" T.unpack txid
-    taken <- doesDirectoryExist out
-    when taken $ fail ("an offline outcome is already written at " <> out)
-    createDirectoryIfMissing True out
-    BSL.writeFile
-        (out </> "outcome.json")
-        ( Aeson.encode
-            ( object
-                [ "rejectedTxId" .= txid
-                , "captureId" .= recomputed
-                , "recordedCaptureId" .= recorded
-                , "capsule" .= capsule
-                , "command" .= unwords invocation
-                , "deployedBlueprint" .= deployedPath
-                , "tracedBlueprint" .= tracedPath
-                , "failingHashes" .= failing
-                , "purposes" .= map snd purposes
-                , "classes" .= classes
-                ]
-            )
-        )
-    putStrLn
-        ( "replay-capsule: capture "
-            <> T.unpack recomputed
-            <> " matches the recorded id"
-        )
-    mapM_
-        ( \(role, p) ->
-            putStrLn
-                ( "replay-capsule: "
-                    <> T.unpack role
-                    <> " "
-                    <> T.unpack (prPurpose p)
-                    <> " "
-                    <> BSL8.unpack (Aeson.encode (prClass p))
+    case diagnosticPath of
+        Just path -> do
+            diagnosticSetup <- loadSetup deployedPath (Just path)
+            writeDiagnostic
+                invocation
+                receipts
+                capsule
+                recomputed
+                (fromMaybe "unknown" txid)
+                deployedPath
+                path
+                (map snd purposes)
+                diagnosticSetup
+                ( \setupD ->
+                    map snd . fst
+                        <$> replayCore
+                            setupD
+                            tx
+                            resolved
+                            pp
+                            (epochInfoOf interpreter)
+                            systemStart
+                            failing
                 )
-        )
-        purposes
-    putStrLn
-        ("replay-capsule: outcome written to " <> out </> "outcome.json")
+        Nothing -> do
+            let out = receipts </> "replay-offline" </> maybe "unknown" T.unpack txid
+            taken <- doesDirectoryExist out
+            when taken $ fail ("an offline outcome is already written at " <> out)
+            createDirectoryIfMissing True out
+            BSL.writeFile
+                (out </> "outcome.json")
+                ( Aeson.encode
+                    ( object
+                        [ "rejectedTxId" .= txid
+                        , "captureId" .= recomputed
+                        , "recordedCaptureId" .= recorded
+                        , "capsule" .= capsule
+                        , "command" .= unwords invocation
+                        , "deployedBlueprint" .= deployedPath
+                        , "tracedBlueprint" .= tracedPath
+                        , "failingHashes" .= failing
+                        , "purposes" .= map snd purposes
+                        , "classes" .= classes
+                        ]
+                    )
+                )
+            putStrLn
+                ( "replay-capsule: capture "
+                    <> T.unpack recomputed
+                    <> " matches the recorded id"
+                )
+            mapM_
+                ( \(role, p) ->
+                    putStrLn
+                        ( "replay-capsule: "
+                            <> T.unpack role
+                            <> " "
+                            <> T.unpack (prPurpose p)
+                            <> " "
+                            <> BSL8.unpack (Aeson.encode (prClass p))
+                        )
+                )
+                purposes
+            putStrLn
+                ("replay-capsule: outcome written to " <> out </> "outcome.json")
   where
     textField name = \case
         Object o -> case KM.lookup name o of
@@ -1295,7 +1328,19 @@ hashes differ), or it was not built with every trace the compiler can emit.
 -}
 diagnosticSetupProblem
     :: Either UnobservedCause TracedProvenance -> Maybe String
-diagnosticSetupProblem _ = Nothing
+diagnosticSetupProblem = \case
+    Left cause ->
+        Just
+            ( "the diagnostic blueprint does not correspond to the deployed one: "
+                <> T.unpack (causeName cause)
+            )
+    Right provenance
+        | "--trace-filter all" `T.isInfixOf` tpFlags provenance -> Nothing
+        | otherwise ->
+            Just
+                ( "the diagnostic blueprint was not built with every compiler trace: "
+                    <> T.unpack (tpFlags provenance)
+                )
 
 {- | The purposes the diagnostic evaluates, each beside the user-defined
 replay it follows: exactly those the user-defined replay left without a user
@@ -1308,13 +1353,47 @@ diagnosedPurposes
     -> [PurposeReplay]
     -- ^ the same capsule replayed with the diagnostic build
     -> Either String [(PurposeReplay, PurposeReplay)]
-diagnosedPurposes _ _ = Right []
+diagnosedPurposes user diagnostic =
+    traverse pair [u | u <- user, prClass u == Unobserved NoUserTrace]
+  where
+    pair u =
+        case [ d
+             | d <- diagnostic
+             , prPurpose d == prPurpose u
+             , prDeployedHash d == prDeployedHash u
+             ] of
+            [d] -> case (prTracedHash d, prDeployed d, prTraced d) of
+                (Just _, Just deployed, Just _)
+                    | runOutcome deployed == ValidatorFailure -> Right (u, d)
+                    | otherwise ->
+                        Left
+                            ( "the deployed bytes of "
+                                <> named u
+                                <> " no longer refuse in the diagnostic replay"
+                            )
+                _ ->
+                    Left
+                        ( "the diagnostic code of "
+                            <> named u
+                            <> " was not applied with the deployed parameters: "
+                            <> BSL8.unpack (Aeson.encode (prClass d))
+                        )
+            [] -> Left ("the diagnostic replay did not reach " <> named u)
+            _ ->
+                Left ("the diagnostic replay met " <> named u <> " more than once")
+    named u = T.unpack (prPurpose u) <> " of " <> T.unpack (prDeployedHash u)
 
 {- | What a diagnostic run shows, by how it ended: never a reason, whatever
 its log says.
 -}
 diagnosticCategory :: ReplayRun -> Text
-diagnosticCategory _ = ""
+diagnosticCategory r = case runOutcome r of
+    Succeeded -> "succeeded"
+    BudgetExhausted -> "budget-exhausted"
+    EvaluationError _ -> "evaluation-error"
+    ValidatorFailure
+        | null (userTraces (runLogs r)) -> "silent"
+        | otherwise -> "logged"
 
 {- | The diagnostic outcome of a capsule, as @replay-diagnostic/<txid>/@ keeps
 it: compiler diagnostics, never a reason.
@@ -1328,7 +1407,28 @@ diagnosticOutcome
     -- ^ the diagnostic build
     -> [(PurposeReplay, PurposeReplay)]
     -> Value
-diagnosticOutcome _ _ _ _ = object []
+diagnosticOutcome txid capture provenance pairs =
+    object
+        [ "kind" .= ("compiler-diagnostic" :: Text)
+        , "rejectedTxId" .= txid
+        , "captureId" .= capture
+        , "diagnosticBuild"
+            .= object
+                [ "source" .= tpSource provenance
+                , "compiler" .= tpCompiler provenance
+                , "flags" .= tpFlags provenance
+                ]
+        , "purposes"
+            .= [ object
+                    [ "purpose" .= prPurpose d
+                    , "deployedHash" .= prDeployedHash d
+                    , "diagnosticHash" .= prTracedHash d
+                    , "outcome" .= maybe "" diagnosticCategory (prTraced d)
+                    , "logs" .= maybe [] runLogs (prTraced d)
+                    ]
+               | (_, d) <- pairs
+               ]
+        ]
 
 {- | Write a capsule's compiler diagnostic: refuse the diagnostic build unless
 it corresponds and carries every compiler trace; replay the capsule with it;
@@ -1341,11 +1441,9 @@ writeDiagnostic
     -> FilePath
     -- ^ the receipts directory the capsule belongs to
     -> FilePath
-    -- ^ the capsule
     -> Text
     -- ^ the recomputed capture id
     -> Text
-    -- ^ the rejected transaction
     -> FilePath
     -- ^ the deployed blueprint
     -> FilePath
@@ -1357,17 +1455,43 @@ writeDiagnostic
     -> (Either UnobservedCause ReplaySetup -> IO [PurposeReplay])
     -- ^ the capsule replayed with a setup
     -> IO ()
-writeDiagnostic _ receipts _ _ txid _ _ _ _ _ = do
-    let outcome =
-            object
-                ["kind" .= ("compiler-diagnostic" :: Text), "rejectedTxId" .= txid]
-        offline = receipts </> "replay-offline" </> T.unpack txid
-        indexPath = receipts </> "replay" </> "index.json"
-    createDirectoryIfMissing True offline
-    BSL.writeFile (offline </> "outcome.json") (Aeson.encode outcome)
-    present <- doesFileExist indexPath
-    entries <-
-        if present
-            then either fail pure =<< Aeson.eitherDecodeFileStrict indexPath
-            else pure []
-    BSL.writeFile indexPath (Aeson.encode (entries <> [outcome :: Value]))
+writeDiagnostic invocation receipts capsule capture txid deployedPath path user setup replayWith = do
+    mapM_ fail (diagnosticSetupProblem (rsProvenance <$> setup))
+    provenance <-
+        either (fail . T.unpack . causeName) (pure . rsProvenance) setup
+    diagnosed <- replayWith setup
+    pairs <- either fail pure (diagnosedPurposes user diagnosed)
+    when (null pairs) $
+        fail "no purpose was left without a user trace: nothing to diagnose"
+    let out = receipts </> "replay-diagnostic" </> T.unpack txid
+    taken <- doesDirectoryExist out
+    when taken $
+        fail ("a diagnostic outcome is already written at " <> out)
+    createDirectoryIfMissing True out
+    let outcome = case diagnosticOutcome txid capture provenance pairs of
+            Object o ->
+                Object
+                    ( KM.insert "command" (String (T.pack (unwords invocation)))
+                        . KM.insert "capsule" (String (T.pack capsule))
+                        . KM.insert "deployedBlueprint" (String (T.pack deployedPath))
+                        . KM.insert "diagnosticBlueprint" (String (T.pack path))
+                        $ o
+                    )
+            other -> other
+    BSL.writeFile (out </> "outcome.json") (Aeson.encode outcome)
+    mapM_
+        ( \(_, d) ->
+            putStrLn
+                ( "replay-capsule: diagnostic "
+                    <> T.unpack (prPurpose d)
+                    <> " "
+                    <> T.unpack (prDeployedHash d)
+                    <> " "
+                    <> T.unpack (maybe "" diagnosticCategory (prTraced d))
+                    <> " "
+                    <> show (maybe [] runLogs (prTraced d))
+                )
+        )
+        pairs
+    putStrLn
+        ("replay-capsule: diagnostic written to " <> out </> "outcome.json")

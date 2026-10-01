@@ -273,6 +273,14 @@
           pname = "singular-registry-traced-plutus";
           flags = registryTraceFlags;
         };
+        # #287 T036b: the same build with every compiler trace, for the offline
+        # diagnostic of purposes the user-defined traces leave silent. Never
+        # handed to a live run.
+        registryDiagnosticFlags = "--trace-filter all --trace-level verbose";
+        registryDiagnosticPlutus = registryBlueprint {
+          pname = "singular-registry-diagnostic-plutus";
+          flags = registryDiagnosticFlags;
+        };
 
         # The traced build must name the same validators as the untraced
         # one, each with the same parameter, datum and redeemer schemas over
@@ -422,6 +430,35 @@
           cp ${registryTracedPlutus} "$out/plutus.json"
           cp ${registryBlueprintCorrespondence}/provenance.json "$out/provenance.json"
         '';
+
+        # The diagnostic blueprint (T036b), behind the same checks against the
+        # same untraced twin: the untraced build at the manifest's hashes, and the
+        # diagnostic build naming the same validators and parameter schemas with
+        # at least one hash changed. Its provenance carries its own flags.
+        registryDiagnosticBlueprint =
+          pkgs.runCommand "singular-registry-diagnostic-blueprint"
+            {
+              nativeBuildInputs = [ pkgs.jq ];
+            }
+            ''
+              set -euo pipefail
+              ${pkgs.lib.getExe registryIdentityCheck} ${registryManifest} ${registryUntracedBlueprint}
+              ${pkgs.lib.getExe registryTraceCorrespondenceCheck} ${registryUntracedBlueprint} ${registryDiagnosticPlutus}
+              mkdir -p "$out"
+              cp ${registryDiagnosticPlutus} "$out/plutus.json"
+              jq -n \
+                --arg source ${registrySrc} \
+                --arg flags ${pkgs.lib.escapeShellArg registryDiagnosticFlags} \
+                --slurpfile u ${registryUntracedBlueprint} \
+                --slurpfile t ${registryDiagnosticPlutus} \
+                '{
+                  source: $source,
+                  compiler: $u[0].preamble.compiler.version,
+                  flags: $flags,
+                  untracedHashes: ($u[0].validators | map({key: .title, value: .hash}) | from_entries),
+                  validators: ($t[0].validators | map({title, parameters}))
+                }' > "$out/provenance.json"
+            '';
 
         # -------------------------------------------------------
         # Coverage gate root (issue #80)
@@ -800,6 +837,8 @@
           # #287: the traced registry blueprint the runner replays refusals
           # with, and the check it is built behind.
           registry-traced-blueprint = registryTracedBlueprint;
+          # #287 T036b: the offline diagnostic build, behind its correspondence.
+          registry-diagnostic-blueprint = registryDiagnosticBlueprint;
           registry-blueprint-correspondence = registryBlueprintCorrespondence;
           # Mechanical adapter (D-008): exposes the cardano-node already
           # locked as this flake's input, so the devnet run consumes the
