@@ -59,11 +59,14 @@ import Data.Aeson
     , (.:)
     , (.=)
     )
+import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as BS8
-import Data.List (sortOn)
+import Data.Foldable (toList)
+import Data.List (nub, sortOn)
 import Data.Map.Strict (Map)
+import Data.Maybe (mapMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -355,4 +358,34 @@ an @accepting-control@ entry in which that role's deployed and traced runs
 both succeeded. One line per missing or failing role; none when complete.
 -}
 acceptingControlGaps :: [Value] -> [Text]
-acceptingControlGaps _ = []
+acceptingControlGaps entries = mapMaybe gap refusingRoles
+  where
+    field name = \case
+        Object o -> KM.lookup name o
+        _ -> Nothing
+    kindIs kind entry = field "kind" entry == Just (String kind)
+    refusingRoles =
+        nub
+            [ role
+            | entry <- entries
+            , kindIs "refusal" entry
+            , Just (String roles) <- [field "role" entry]
+            , role <- T.splitOn "+" roles
+            , "." `T.isInfixOf` role
+            ]
+    controls =
+        [ control
+        | entry <- entries
+        , kindIs "accepting-control" entry
+        , Just (Array listed) <- [field "controls" entry]
+        , control <- toList listed
+        ]
+    succeeded run control =
+        (field run control >>= field "outcome") == Just (String "succeeded")
+    gap role = case [c | c <- controls, field "role" c == Just (String role)] of
+        [] -> Just (role <> ": no accepting control")
+        ofRole
+            | any (\c -> succeeded "deployed" c && succeeded "traced" c) ofRole ->
+                Nothing
+            | otherwise ->
+                Just (role <> ": no accepting control with both runs succeeded")

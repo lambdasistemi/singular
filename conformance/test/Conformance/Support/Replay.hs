@@ -198,7 +198,9 @@ spec = describe "traced replay of a live refusal" $ do
             stepComparison
                 "m"
                 "retract-state-spent"
-                [("s", Admitted "missing-action"), ("m", Admitted "retract-state-spent")]
+                [ ("s", Admitted "missing-action")
+                , ("m", Admitted "retract-state-spent")
+                ]
                 `shouldBe` Agrees
         it "one purpose of the judged script differing makes the step differ" $
             stepComparison
@@ -217,9 +219,12 @@ spec = describe "traced replay of a live refusal" $ do
         it "the attributed script's admitted reason is its receipt branch" $ do
             admittedFor "m" [("m", Admitted "key-exists"), ("s", Admitted "x")]
                 `shouldBe` Just "key-exists"
-            admittedFor "m" [("m", Admitted "key-exists"), ("m", Unobserved NoUserTrace)]
+            admittedFor
+                "m"
+                [("m", Admitted "key-exists"), ("m", Unobserved NoUserTrace)]
                 `shouldBe` Nothing
-            admittedFor "m" [("m", Admitted "a"), ("m", Admitted "b")] `shouldBe` Nothing
+            admittedFor "m" [("m", Admitted "a"), ("m", Admitted "b")]
+                `shouldBe` Nothing
             admittedFor "m" [("s", Admitted "key-exists")] `shouldBe` Nothing
     describe "the accepting controls the index must carry" $ do
         let refusal role =
@@ -262,8 +267,10 @@ spec = describe "traced replay of a live refusal" $ do
                 , control "state.state" "budget-exhausted" "succeeded"
                 ]
                 `shouldBe` ["state.state: no accepting control with both runs succeeded"]
-        it "a role that is only a bare hash needs no control, and none is invented" $
-            acceptingControlGaps [refusal "80d434cb", refusal "unattributed"] `shouldBe` []
+        it
+            "a role that is only a bare hash needs no control, and none is invented"
+            $ acceptingControlGaps [refusal "80d434cb", refusal "unattributed"]
+                `shouldBe` []
     describe "which script a failing hash is" $ do
         let families =
                 [ ScriptFamily "state.state" True ["aa"]

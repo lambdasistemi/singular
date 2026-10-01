@@ -84,7 +84,7 @@ import Data.IORef
     , newIORef
     , readIORef
     )
-import Data.List (nub)
+import Data.List (nub, nubBy)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isNothing, mapMaybe)
@@ -102,6 +102,7 @@ import System.Environment (lookupEnv)
 import System.FilePath
     ( dropTrailingPathSeparator
     , takeDirectory
+    , takeFileName
     , (</>)
     )
 import System.Timeout (timeout)
@@ -111,6 +112,7 @@ import Cardano.Crypto.Hash.Class (hashFromTextAsHex, hashToBytes)
 import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Alonzo.Plutus.Evaluate
     ( TransactionScriptFailure (..)
+    , collectPlutusScriptsWithContext
     , evalTxExUnits
     )
 import Cardano.Ledger.Alonzo.Scripts
@@ -119,6 +121,7 @@ import Cardano.Ledger.Alonzo.Scripts
     , toAsIx
     )
 import Cardano.Ledger.Alonzo.UTxO (AlonzoScriptsNeeded (..))
+import Cardano.Ledger.Api.PParams (ppMaxTxExUnitsL)
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( collateralInputsTxBodyL
@@ -234,12 +237,18 @@ data ReplayIndex = ReplayIndex
     , riRow :: IORef Text
     , riEntries :: IORef [Value]
     , riPurposes :: IORef (Map Text [(Text, ReplayClass)])
+    , riControlled :: IORef (Set.Set Text)
+    -- ^ the replayed script roles an accepting control already covers
     }
 
 -- | An empty index for a receipts directory.
 newReplayIndex :: FilePath -> IO ReplayIndex
 newReplayIndex dir =
-    ReplayIndex dir <$> newIORef "" <*> newIORef [] <*> newIORef Map.empty
+    ReplayIndex dir
+        <$> newIORef ""
+        <*> newIORef []
+        <*> newIORef Map.empty
+        <*> newIORef Set.empty
 
 {- | Add one rejection's entry, with its failing purposes by deployed hash, and
 write the whole index.
@@ -247,8 +256,13 @@ write the whole index.
 addRejection
     :: ReplayIndex -> Text -> Value -> [(Text, ReplayClass)] -> IO ()
 addRejection index txid entry purposes = do
-    modifyIORef' (riEntries index) (<> [entry])
     modifyIORef' (riPurposes index) (Map.insert txid purposes)
+    addEntry index entry
+
+-- | Add one entry and write the whole index.
+addEntry :: ReplayIndex -> Value -> IO ()
+addEntry index entry = do
+    modifyIORef' (riEntries index) (<> [entry])
     writeIndex index
 
 -- | What a rejection's failing purposes admitted, by deployed hash.
@@ -381,17 +395,19 @@ replayedValidators :: [Text]
 replayedValidators = ["state.state", "request.request", "witness.witness"]
 
 {- | The session's submitter, capturing and replaying every rejection before
-it returns — so before the run can submit again.
+it returns — so before the run can submit again — and, until every replayed
+script role has one, an accepted transaction as its accepting control.
 -}
 capturingSubmitter :: ReplayEnv -> Submitter IO -> Submitter IO
 capturingSubmitter env inner =
     Submitter
         { submitTx = \tx -> do
+            pending <- prepareControl env tx
             result <- submitTx inner tx
             case result of
                 Rejected reason ->
                     recordRejection env tx (TE.decodeUtf8Lenient reason)
-                Submitted _ -> pure ()
+                Submitted _ -> mapM_ (recordAcceptingControl env tx) pending
             pure result
         }
 
@@ -487,46 +503,173 @@ replayRefusal
     -> FilePath
     -> IO (Maybe Text, [(Text, PurposeReplay)], [ReplayClass])
 replayRefusal env tx failing dir = do
-    let named = namedInputs tx
-    resolved <- N2C.queryUTxOByTxIn (reNode env) named
-    pp <- N2C.queryProtocolParams (reNode env)
-    systemStart <- queryLSQ (reLsq env) GetSystemStart
-    interpreter <-
-        queryLSQ (reLsq env) (BlockQuery (QueryHardFork GetInterpreter))
-    let files =
-            [
-                ( "transaction.cbor"
-                , BSL.toStrict (serialize (eraProtVerHigh @ConwayEra) tx)
-                )
-            ,
-                ( "resolved.cbor"
-                , BSL.toStrict (serialize (eraProtVerHigh @ConwayEra) (UTxO resolved))
-                )
-            , ("protocol-parameters.json", BSL.toStrict (Aeson.encode pp))
-            ,
-                ( "era.json"
-                , BSL.toStrict
-                    ( Aeson.encode
-                        ( object
-                            [ "systemStart" .= show systemStart
-                            , "eraHistory" .= hexText (BSL.toStrict (serialise interpreter))
-                            ]
-                        )
-                    )
-                )
-            ]
-        captureId = captureIdOf files
-    mapM_ (\(name, content) -> BS.writeFile (dir </> name) content) files
+    captured <- captureFor env tx
+    captureId <- writeCapture dir captured
     (purposes, classes) <-
         replayCore
             (reSetup env)
             tx
-            resolved
-            pp
-            (epochInfoOf interpreter)
-            systemStart
+            (cResolved captured)
+            (cPParams captured)
+            (cEpochInfo captured)
+            (cSystemStart captured)
             failing
     pure (Just captureId, purposes, classes)
+
+-- | What the node held for a transaction, and the capsule files it is kept as.
+data Captured = Captured
+    { cResolved :: Map TxIn (TxOut ConwayEra)
+    , cPParams :: PParams ConwayEra
+    , cSystemStart :: SystemStart
+    , cEpochInfo :: EpochInfo (Either Text)
+    , cFiles :: [(FilePath, ByteString)]
+    }
+
+{- | Ask the node for everything a transaction's scripts are judged against:
+every output it spends or references, the protocol parameters, system start
+and era history.
+-}
+captureFor :: ReplayEnv -> ConwayTx -> IO Captured
+captureFor env tx = do
+    resolved <- N2C.queryUTxOByTxIn (reNode env) (namedInputs tx)
+    pp <- N2C.queryProtocolParams (reNode env)
+    systemStart <- queryLSQ (reLsq env) GetSystemStart
+    interpreter <-
+        queryLSQ (reLsq env) (BlockQuery (QueryHardFork GetInterpreter))
+    pure
+        Captured
+            { cResolved = resolved
+            , cPParams = pp
+            , cSystemStart = systemStart
+            , cEpochInfo = epochInfoOf interpreter
+            , cFiles =
+                [
+                    ( "transaction.cbor"
+                    , BSL.toStrict (serialize (eraProtVerHigh @ConwayEra) tx)
+                    )
+                ,
+                    ( "resolved.cbor"
+                    , BSL.toStrict
+                        (serialize (eraProtVerHigh @ConwayEra) (UTxO resolved))
+                    )
+                , ("protocol-parameters.json", BSL.toStrict (Aeson.encode pp))
+                ,
+                    ( "era.json"
+                    , BSL.toStrict
+                        ( Aeson.encode
+                            ( object
+                                [ "systemStart" .= show systemStart
+                                , "eraHistory"
+                                    .= hexText (BSL.toStrict (serialise interpreter))
+                                ]
+                            )
+                        )
+                    )
+                ]
+            }
+
+-- | Write a capture's files and return its capture id.
+writeCapture :: FilePath -> Captured -> IO Text
+writeCapture dir captured = do
+    mapM_
+        (\(name, content) -> BS.writeFile (dir </> name) content)
+        (cFiles captured)
+    pure (captureIdOf (cFiles captured))
+
+-- ---------------------------------------------------------
+-- Accepting controls
+-- ---------------------------------------------------------
+
+{- | Before a submission, a capture of what the transaction will be judged
+against — taken only while some replayed script role still lacks an accepting
+control, since an accepted transaction's inputs are gone once it lands.
+Nothing here can stop the submission: a capture that fails is no control.
+-}
+prepareControl :: ReplayEnv -> ConwayTx -> IO (Maybe Captured)
+prepareControl env tx = case reSetup env of
+    Left _ -> pure Nothing
+    Right setup -> do
+        controlled <- readIORef (riControlled (reIndex env))
+        if all (`Set.member` controlled) (Map.keys (rsCodes setup))
+            then pure Nothing
+            else do
+                attempt <- try (timeout replayMicros (captureFor env tx))
+                pure $ case attempt of
+                    Right captured -> captured
+                    Left (_ :: SomeException) -> Nothing
+
+{- | An accepted transaction's scripts, replayed (FR-13): for each replayed role
+it runs that still has no control, the ledger's own script-with-arguments with
+the deployed bytes under the declared units, then with the traced bytes of the
+same parameters under the protocol maximum. Both runs are recorded as they
+end; the index entry is an @accepting-control@. Nothing here can fail the run.
+-}
+recordAcceptingControl :: ReplayEnv -> ConwayTx -> Captured -> IO ()
+recordAcceptingControl env tx captured = case reSetup env of
+    Left _ -> pure ()
+    Right setup -> do
+        attempt <- try (timeout replayMicros (controlOf setup))
+        case attempt of
+            Right _ -> pure ()
+            Left (_ :: SomeException) -> pure ()
+  where
+    index = reIndex env
+    controlOf setup = case checkResolved tx (cResolved captured) of
+        Left _ -> pure ()
+        Right utxo -> case collectPlutusScriptsWithContext
+            (cEpochInfo captured)
+            (cSystemStart captured)
+            (cPParams captured)
+            tx
+            (UTxO utxo) of
+            Left _ -> pure ()
+            Right scripts -> do
+                controlled <- readIORef (riControlled index)
+                let applications = deployedApplications setup tx utxo
+                    roles = capturedRoles tx utxo
+                    maxUnits = cPParams captured ^. ppMaxTxExUnitsL
+                    candidates =
+                        [ (atTitle applied, hash, applied, pwc)
+                        | pwc <- scripts
+                        , let hash = hashText (pwcScriptHash pwc)
+                        , Right applied <-
+                            [tracedFor setup applications (Map.lookup hash roles) hash]
+                        , atTitle applied `Set.notMember` controlled
+                        ]
+                    fresh = nubBy (\(a, _, _, _) (b, _, _, _) -> a == b) candidates
+                unless (null fresh) $ do
+                    row <- readIORef (riRow index)
+                    let txid = txIdText tx
+                    dir <- freshDirectory (riDir index </> "replay") (T.unpack txid)
+                    captureId <- writeCapture dir captured
+                    let controls =
+                            [ object
+                                [ "role" .= title
+                                , "deployedHash" .= hash
+                                , "tracedHash" .= hashText (atHash applied)
+                                , "deployed" .= runWith hash pwc
+                                , "traced"
+                                    .= runWith
+                                        (hashText (atHash applied))
+                                        (withUnits maxUnits (withScript (atBytes applied) pwc))
+                                ]
+                            | (title, hash, applied, pwc) <- fresh
+                            ]
+                        titles = [title | (title, _, _, _) <- fresh]
+                        entry =
+                            object
+                                [ "kind" .= ("accepting-control" :: Text)
+                                , "acceptedTxId" .= txid
+                                , "evidence" .= T.pack (takeFileName dir)
+                                , "captureId" .= captureId
+                                , "row" .= row
+                                , "step" .= Null
+                                , "role" .= T.intercalate "+" titles
+                                , "controls" .= controls
+                                ]
+                    BSL.writeFile (dir </> "outcome.json") (Aeson.encode entry)
+                    modifyIORef' (riControlled index) (Set.union (Set.fromList titles))
+                    addEntry index entry
 
 -- | The ledger's slot arithmetic from the node's hard-fork interpreter.
 epochInfoOf :: Interpreter xs -> EpochInfo (Either Text)
