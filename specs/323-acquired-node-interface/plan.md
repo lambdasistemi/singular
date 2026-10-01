@@ -12,6 +12,9 @@
 - I6 confinement: the CI source check passes on the head and fails on a planted `NodeMode` import in a non-allowlisted `offchain/cli` or `offchain/lib` module.
 - I7 model-preserved: conformance rows, CLI journey and controls, journey runners and e2e stay green with unchanged verdicts.
 - I8 scope-closed: a view used after its scope or across a lost connection fails explicitly with a named class, never as empty/absent.
+- I9 no-node-call-in-view: no one-shot node query, submission or confirmation wait runs inside a view scope. Fails as a hang on the shared LocalStateQuery channel; judged by code reading, no CI row (residual).
+
+**Clarification C-1 (A-002).** "Operation" means building one transaction and its preview: one transaction, one view, closed before signing and submitting. Functions that sign and submit one or several transactions take the read interface and acquire one fresh view per transaction; read-backs after confirmation acquire their own view.
 
 **Live boundaries.** Node LocalStateQuery acquire/release; DevNet via `nix run .#devnet` inside `demo1-cli-check`; external node by socket and magic.
 
