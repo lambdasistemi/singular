@@ -8,7 +8,7 @@
 - [x] Each invariant names the layer where it can fail and what failing looks like.
 - [x] Unchanged behaviour is listed explicitly, not implied.
 - [x] The consumer conflict is preserved as unmet, with its exact source revision.
-- [x] No requirement depends on a decision that is still open, except the early-reject row, which has a named fallback.
+- [x] No requirement depends on a decision that is still open. The early-reject row scope is settled: the new row CG24 and CG23's two timing sentences.
 
 ## Evidence quality
 
