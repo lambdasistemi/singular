@@ -1,0 +1,27 @@
+# #326 Installed CLI artifact and backend contract evidence
+
+Parent epic #322 (closes it). Base `6bcc1d10` (main with #323 and #325); #324 (indexer adapter, PR #328) lands before S1 completes and is bound by one rebase. Application model pin `de34300540223ccedf1ca85216b131fd09a148b4`. Lean is unchanged by this ticket; every behaviour below is a client or evidence obligation of #322's architectural invariants.
+
+**Story.** As a user who cloned nothing, I download the released `singular-cli`, run it against a supported backend, and the published evidence tells me which backend contract cases pass, which are uncovered, and which model revision the binary maps to.
+
+**Starting point.** `Provider`/`View` (#323) has three adapters (node, in-memory, indexer from #324), each tested by its own spec in `cage-tests`; no suite is shared across them. The source confinement check covers `offchain/cli` and `offchain/lib` only, with `Lifecycle.hs` allowlisted for this ticket. Journeys, deployment, insert-active, update-terminal, the runners and the conformance harness still take `NodeSession`, `NodeMode` or a raw `Submitter`. No CI job runs an external node, compares documented flags with `--help`, or checks that no node call happens inside a view. The release archive does not state a model revision and nothing verifies a downloaded copy. Conformance shows executed and partial from receipts, but its uncovered state is the typed plan in `rows.json`, and the published conformance page is hand-written.
+
+**Requirements.**
+
+- R1 One shared contract suite of success, refusal and consistency cases runs against every supported adapter: in-memory (the deterministic test adapter), node (on a generated DevNet, through the ordinary node adapter) and indexer. A case an adapter cannot support is reported for that adapter by name, never skipped silently. Each run's evidence is labelled with its class (test adapter, DevNet); none is labelled public-chain.
+- R2 The suite's consistency cases cover: every read inside one view at one chain point (slot and block hash); a chain change between reads is not observed inside the view; a view used outside its scope fails as `ViewOutOfScope`; a node connection lost inside a view and a view acquired at origin fail by name, on the node adapter against a real node as well as in memory.
+- R3 No node call happens inside a view except through that view's capabilities (#323 I9). A CI job fails when a call path reaches the node from inside a view by another route.
+- R4 A `SignedTx` can be obtained only by signing: a CI job proves that constructing one any other way does not compile.
+- R5 The node adapter's external leg (an already-running node reached by socket and network magic, the path a public-chain user takes) runs the contract suite in CI against a DevNet node started outside the adapter.
+- R6 Journeys, deployment, insert-active, update-terminal, the runners (`Lifecycle`) and the conformance harness consume the read and write capabilities; none takes `NodeSession`, `NodeMode` or a raw `Submitter`. The source confinement check covers them, its runner allowlist entry is gone, and each remaining allowlist entry is backend construction or fixture startup. The conformance harness reads a command's context and its fold from one view.
+- R7 The flags documented for `singular` equal the flags its `--help` prints; a CI job fails on any difference.
+- R8 The `v*` release publishes the `singular-cli` archive with its integrity sums and the model revision it maps to. A verification anyone can run downloads the published assets for a tag, checks the sums, extracts outside any checkout, builds `singular` from the archive, runs `create`, `insert`, `update`, `terminate` and `inspect` as separate processes on a generated DevNet, and checks the stated model revision against the one the conformance evidence names. The release workflow runs it after publishing.
+- R9 Conformance states on the published evidence page are computed from receipts: a requirement is executed or partial only from a receipt for the current base, and every other requirement is listed by name and requirement text as uncovered, bound elsewhere or out of scope. The contract suite's per-adapter results appear on the same page with their evidence class. A docs check fails when the page disagrees with the receipts it was computed from.
+- R10 No epic-only flag, executable or output remains: the epic artifact is the production `singular` of the `v0.8.0` release.
+- R11 Lean-governed behaviour is unchanged; every existing CI job stays green.
+
+**Rejection behaviour.** An adapter that cannot answer at one chain point refuses by name (`origin`, `out-of-scope`, `connection-lost`, and the indexer's `lag`, `fork`, `restoring`, `disconnected`) and never reports absence. The verification refuses a release whose sums, model revision or archive members disagree.
+
+**Non-goals.** Public-chain submissions; Demo 1 acceptance; new release infrastructure beyond the post-publish verification job; the #334, #335 and #336 follow-ups; node-clients pin changes; validator or Lean changes.
+
+**Observable success.** Every CI job green on the PR head, including `nix develop --quiet -c just ci`; the v0.8.0 release URL with the verification job green on its tag; the published evidence page.
