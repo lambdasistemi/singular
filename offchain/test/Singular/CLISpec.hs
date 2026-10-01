@@ -24,7 +24,14 @@ not these.
 module Singular.CLISpec (spec) where
 
 import Control.Concurrent (threadDelay)
-import Control.Exception (SomeException, try)
+import Control.Exception
+    ( ErrorCall (..)
+    , SomeException
+    , displayException
+    , fromException
+    , toException
+    , try
+    )
 import Control.Monad (forM_, unless)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
@@ -59,6 +66,7 @@ import Singular.CLI.Proof
 import Singular.CLI.Receipt
 import Singular.CLI.Recovery
 import Singular.CLI.Registry
+import Singular.CLI.Session (CommandFailure (..), admitSubmissions)
 import Singular.Registry.Deployment
     ( Deployment (..)
     , loadMirror
@@ -74,6 +82,7 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.Node (Wallet (..), loadWallet)
+import Singular.Registry.Node.IndexerView (IndexerViewFailure (..))
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.Pure (provesAbsent, provesMember)
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
@@ -237,7 +246,36 @@ commandLine = describe "the command line" $ do
         parseCommand
             (["registry", "inspect", "--key", "6b6579", "--blueprint", "b"] <> node)
             `shouldBe` Left (MissingFlag "--registry")
+    it
+        "reads every command under the indexer backend as it reads it under \
+        \the default (#324)"
+        $ forM5 commands
+        $ \line -> do
+            parseCommand line `shouldSatisfy` either (const False) (const True)
+            parseCommand (line <> ["--backend", "indexer"])
+                `shouldBe` parseCommand line
+    it
+        "refuses a backend it does not name on every command, before \
+        \anything runs (#324)"
+        $ forM5 commands
+        $ \line ->
+            parseCommand (line <> ["--backend", "nodes"])
+                `shouldBe` Left
+                    (BadValue "--backend" "names node or indexer, not nodes")
   where
+    commands =
+        [ ["registry", "create", "--seed", seedText] <> reg <> node <> wallet
+        , ["registry", "insert", "--key", "6b6579", "--envelope", "/e.json"]
+            <> reg
+            <> node
+            <> wallet
+        , ["registry", "update", "--key", "6b6579", "--payload", "/p.json"]
+            <> reg
+            <> node
+            <> wallet
+        , ["registry", "terminate", "--key", "6b6579"] <> reg <> node <> wallet
+        , ["registry", "inspect", "--key", "6b6579"] <> reg <> node
+        ]
     forM5 xs f = mapM_ f xs
     writeSettings =
         WriteSettings
@@ -396,6 +434,74 @@ journal = describe "the journal of a write" $ do
             `shouldBe` length classes
         exitCodeOf Success `shouldBe` ExitSuccess
         Aeson.encode (map outcomeName classes) `shouldSatisfy` (not . BL.null)
+    it
+        "a command that sent a transaction never ends as a client refusal: \
+        \an unclassified or refusing failure after a send ends partial, \
+        \naming every transaction sent and keeping its fields (#324)"
+        $ do
+            let refusal =
+                    ErrorCall
+                        ( displayException
+                            (IndexerRestoring (Just (SlotNo 5113)) (Just (SlotNo 7019)))
+                        )
+                held = ("pendingRequest", Aeson.toJSON ("ab#0" :: T.Text))
+                failures =
+                    [ (toException refusal, displayException refusal, [])
+                    ,
+                        ( toException (CommandFailure ClientRefusal "refused here" [held])
+                        , "refused here"
+                        , [held]
+                        )
+                    ]
+                sends =
+                    [ ([submitted "book" "t2"], ["t2"])
+                    , ([phase "fold" "t3" "submit-unknown"], ["t3"])
+                    ,
+                        (
+                            [ submitted "boot" "t1"
+                            , confirmed "boot" "t1"
+                            , submitted "book" "t2"
+                            , phase "fold" "t3" "prepared"
+                            , phase "fold" "t3" "submit-unknown"
+                            ]
+                        , ["t1", "t2", "t3"]
+                        )
+                    ]
+            forM_ sends $ \(since, sent) ->
+                forM_ failures $ \(e, why, fields) ->
+                    case fromException (admitSubmissions since e) of
+                        Just (CommandFailure c reason kept) -> do
+                            c `shouldBe` Partial
+                            reason `shouldSatisfy` isInfixOf why
+                            mapM_ (\t -> reason `shouldSatisfy` isInfixOf (T.unpack t)) sent
+                            Prelude.lookup "submitted" kept `shouldBe` Just (Aeson.toJSON sent)
+                            filter ((/= "submitted") . fst) kept `shouldBe` fields
+                        Nothing -> expectationFailure ("kept unclassified: " <> show e)
+    it
+        "a failure after a send that the command classified otherwise keeps \
+        \its class (#324)"
+        $ forM_ (filter (/= ClientRefusal) [minBound .. maxBound])
+        $ \c ->
+            case fromException
+                ( admitSubmissions
+                    [submitted "book" "t2"]
+                    (toException (CommandFailure c "why" []))
+                ) of
+                Just (CommandFailure c' why _) -> (c', why) `shouldBe` (c, "why")
+                Nothing -> expectationFailure "lost its class"
+    it
+        "with nothing sent, no line or only prepared and rejected ones, every \
+        \failure is kept (#324)"
+        $ forM_
+            [[], [phase "fold" "t3" "prepared", phase "fold" "t3" "rejected"]]
+        $ \since -> do
+            forM_ [minBound .. maxBound] $ \c ->
+                case fromException
+                    (admitSubmissions since (toException (CommandFailure c "why" []))) of
+                    Just (CommandFailure c' why _) -> (c', why) `shouldBe` (c, "why")
+                    Nothing -> expectationFailure "lost its class"
+            fromException (admitSubmissions since (toException (ErrorCall "x")))
+                `shouldBe` Just (ErrorCall "x")
   where
     submitted s t = phase s t "submitted"
     confirmed s t = phase s t "observed"

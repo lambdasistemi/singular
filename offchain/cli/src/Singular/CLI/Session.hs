@@ -32,6 +32,7 @@ module Singular.CLI.Session
       CommandFailure (..)
     , failWith
     , failWithFields
+    , admitSubmissions
 
       -- * Writes
     , WriteContext (..)
@@ -57,8 +58,10 @@ import Control.Exception
     ( ErrorCall (..)
     , Exception
     , IOException
+    , SomeAsyncException
     , SomeException
     , bracket
+    , fromException
     , throwIO
     , toException
     , try
@@ -75,6 +78,7 @@ import Data.IORef
     , readIORef
     , writeIORef
     )
+import Data.List (nub)
 import Data.Maybe (fromMaybe, isNothing)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -228,7 +232,9 @@ withSession dir command ws body = do
         Left (e :: SomeException) -> do
             was <- readIORef connected
             if was
-                then throwIO e
+                then do
+                    since <- drop before <$> readJournal dir
+                    throwIO (admitSubmissions since e)
                 else
                     failWith
                         NodeUnavailable
@@ -257,6 +263,40 @@ submissionsOf dir before = do
             , let step = journalStep p
                   txid = journalTxId p
             ]
+
+{- | A command that has sent a transaction never ends as a client refusal,
+whose receipt says nothing was submitted. Given the journal lines this
+command appended and the failure that stopped it, a failure left
+unclassified or classified as a refusal becomes @partial@ when any of
+those lines records a send (@submitted@ or @submit-unknown@), naming
+the transactions sent; any other failure is returned unchanged.
+-}
+admitSubmissions :: [JournalEntry] -> SomeException -> SomeException
+admitSubmissions since e
+    | null sent = e
+    | Just (_ :: SomeAsyncException) <- fromException e = e
+    | otherwise = case fromException e of
+        Just (CommandFailure c why fields)
+            | c /= ClientRefusal -> e
+            | otherwise -> admitted why fields
+        Nothing -> admitted (show e) []
+  where
+    sent =
+        nub
+            [ journalTxId j
+            | j <- since
+            , journalEvent j `elem` ["submitted", "submit-unknown"]
+            ]
+    admitted why fields =
+        toException $
+            CommandFailure
+                Partial
+                ( "this command sent "
+                    <> T.unpack (T.intercalate ", " sent)
+                    <> " before it stopped, and nothing is resubmitted: "
+                    <> why
+                )
+                (("submitted", toJSON sent) : fields)
 
 {- | Hold an exclusive advisory lock on @dir/.lock@ for the action, or
 refuse at once when another process holds it.

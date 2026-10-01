@@ -18,6 +18,7 @@ command refuses before it reads or submits anything.
 | `--network-magic N` | all five | The magic of the network the node runs: 1 for preprod, 2 for preview, 42 for the factory development network. Mainnet's magic is refused for writes. |
 | `--wallet-skey FILE` | `create`, `insert`, `update`, `terminate` | Your payment signing key: a `cardano-cli` text envelope, its `cborHex` value or the 32 key bytes as bare hex, or the 32 raw key bytes. The key funds and signs every write; it is read and never printed — only the address derived from it appears. `inspect` refuses it. |
 | `--confirm-timeout SECONDS` | the four writes | How long each submission may take to appear on chain; ten minutes when not given. Past it the command stops with the submission journalled as unconfirmed and never resubmits it. |
+| `--backend node` or `--backend indexer` | all five | Where the command reads addresses from: the node itself (`node`, the default) or an index the command builds by following the node's chain from its first block (`indexer`). Any other value is refused before anything runs. See [Reading through an index](#reading-through-an-index). |
 
 The three node settings travel together on a write: naming one or two of
 them is refused as partially configured, and so is a write that names none,
@@ -93,3 +94,74 @@ sequenceDiagram
 | The chain has not made its first block yet | the command waits up to two minutes for one, then refuses: no view of a chain at its origin can be acquired |
 | A signing key passed to `inspect` | refused: `inspect` reads, and never funds or submits |
 | The node is lost after it accepted a submission | the command ends within `--confirm-timeout` with the submission journalled as unresolved; nothing is resubmitted |
+
+## Reading through an index
+
+With `--backend indexer` a command still connects to the node you name and
+still submits through it, but it answers every address read — your wallet's
+outputs, the registry's state, its holdings — from an index it keeps in
+memory for as long as it runs. The index is built by following the node's
+chain from its first block, so it holds every output a block ever carried.
+Protocol parameters, script registration, time and evaluation still come
+from the node.
+
+Each read is answered at one chain point. The command acquires a view of the
+node, lets the index advance exactly to that view's block and holds it there
+until the view closes, so the index's outputs and the node's answers always
+describe the same block. If the index cannot be brought to that point, the
+command refuses rather than mixing two chain states.
+
+```mermaid
+flowchart LR
+    N[(Your node)] -->|chain from its first block| F[Follower in the command]
+    F -->|applies blocks| I[In-memory index]
+    CMD[Registry command] -->|acquire one view| N
+    CMD -->|address reads at that view's block| I
+    CMD -->|parameters, time, evaluation| N
+    CMD -->|submit signed| N
+```
+
+### What the index covers
+
+The index holds every output created by a transaction in a block. Outputs
+that exist only in the network's genesis ledger state were never carried by
+a block, so the index does not hold them. When a write starts, the command
+compares, at one chain point, the outputs the node holds at your wallet's
+address with the ones the index holds; if the node holds any the index does
+not, the command refuses with the `coverage-incomplete` diagnostic naming each
+such output, instead of reading the wallet as empty. Pay those outputs into
+a block first — for example a payment to yourself through the node backend —
+or keep using the node backend for that wallet.
+
+A development network's chain is followed in seconds. On a public test
+network the index starts from the network's first block too, which takes far
+longer than the two minutes a command waits for its index to catch up with
+the node: there the command refuses as `restoring`, and the node backend is
+the one to use.
+
+Each command under the indexer backend reports on standard error, when it
+ends, how many address reads the index answered and how many went to the
+node — at most one, a write's wallet check:
+
+```text
+node: indexer backend: 14 address reads answered by the index, 1 by the node
+```
+
+### When the index cannot answer
+
+Every refusal is one line, `indexer backend refused the read (CLASS): …`,
+naming the chain points or setting involved. Nothing is submitted after it.
+A refusal while a command opens its connection is reported as
+`node-unavailable`. Later in a write it is `client-refusal` while the write
+has sent nothing, and `partial`, naming every transaction it sent, once it
+has: a write that already submitted never reports that nothing was
+submitted.
+
+| Class | What happened | What the line names |
+| --- | --- | --- |
+| `coverage-incomplete` | your wallet holds outputs only the genesis state carries | how many, the wallet's address, the chain point, each output as `txid#index` |
+| `restoring` | the index has not caught up with the node within two minutes | the slot the index has processed and the node's tip slot |
+| `disconnected` | the index's connection to the node is down | the connection status the follower reports |
+| `lag` | the index did not reach the node view's block within ten seconds | the view's slot and block hash, the block the index holds |
+| `fork` | the index holds another block at the view's slot | the slot and both block hashes |
+| `unsupported` | the view is on another network or in an era whose outputs the index cannot decode | the network or era |

@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 {- |
 Module      : Singular.Registry.Node.Options
 Description : How a process decides which chain it runs against
@@ -30,6 +32,10 @@ module Singular.Registry.Node.Options
     , nodeIsExternal
     , echoKoios
 
+      -- * Read backend
+    , Backend (..)
+    , backendFromArgs
+
       -- * Diagnostics
     , die
     , mainnetMagic
@@ -45,8 +51,8 @@ import Control.Exception
     )
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
-import Data.List (isPrefixOf)
-import Data.Maybe (catMaybes)
+import Data.List (isPrefixOf, stripPrefix)
+import Data.Maybe (catMaybes, listToMaybe)
 import Data.Word (Word32)
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getArgs, getEnvironment)
@@ -73,6 +79,36 @@ data NodeMode
     | -- | Connect to the joiner's node and use the joiner's key
       External ExternalNode
     deriving (Eq, Show)
+
+{- | Where a session connected to a node reads addresses from: the node
+itself, or an in-process UTxO index following that node's chain from
+its origin.
+-}
+data Backend
+    = -- | The node's own @GetUTxOByAddress@ (the default)
+      NodeBackend
+    | -- | The in-process index, at the node view's point
+      IndexerBackend
+    deriving (Eq, Show)
+
+{- | The backend a command line names with @--backend@ (@node@ or
+@indexer@), 'NodeBackend' when it names none. Other arguments are
+ignored.
+-}
+backendFromArgs :: [String] -> Either String Backend
+backendFromArgs args = case named args of
+    Nothing -> Right NodeBackend
+    Just (Just "node") -> Right NodeBackend
+    Just (Just "indexer") -> Right IndexerBackend
+    Just (Just other) -> Left ("names node or indexer, not " <> other)
+    Just Nothing -> Left "names node or indexer, and needs one of them"
+  where
+    named = \case
+        (a : rest)
+            | a == "--backend" -> Just (listToMaybe rest)
+            | Just v <- stripPrefix "--backend=" a -> Just (Just v)
+            | otherwise -> named rest
+        [] -> Nothing
 
 -- | Mainnet's network magic — the one value external mode refuses.
 mainnetMagic :: Word32

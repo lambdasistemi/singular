@@ -52,7 +52,7 @@ import Data.Text qualified as T
 import Data.Word (Word32)
 import Text.Read (readMaybe)
 
-import Singular.CLI.Node (writeTarget)
+import Singular.CLI.Node (backendSetting, writeTarget)
 import Singular.Registry.Deployment (parseOutRef)
 
 -- | A registry key: the bytes the leaf and the active token are named by.
@@ -145,6 +145,7 @@ maxKeyBytes = 32
 parseCommand :: [String] -> Either CLIError Command
 parseCommand args = do
     (words', flags) <- tokens args
+    _ <- either (Left . BadValue "--backend") Right (backendSetting args)
     if "--help" `elem` map fst flags || "-h" `elem` map fst flags
         then Right Help
         else case words' of
@@ -292,6 +293,7 @@ tokens = go [] []
         , "--confirm-timeout"
         , "--envelope"
         , "--payload"
+        , "--backend"
         ]
 
 -- | One line naming the refusal.
@@ -332,6 +334,9 @@ usage =
         , ""
         , "Write commands also take --confirm-timeout SECONDS (default 600): past it"
         , "the command stops with its submission journalled and never resubmits."
+        , "Every command also takes --backend node|indexer (default node): where its"
+        , "address reads come from, the node itself or an in-process index that"
+        , "follows the node's chain from its origin."
         , "Each command prints one JSON receipt on standard output. inspect reads"
         , "only: it takes no signing key and submits nothing."
         ]
