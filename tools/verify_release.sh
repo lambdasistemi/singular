@@ -23,8 +23,8 @@
 #                   separate processes on one generated development network
 #                   (demo1_cli_journey.sh)
 #
-# The archive is extracted under --work DIR (a fresh temporary directory
-# when not given), which must not lie inside a git checkout.
+# The archive is extracted under --work DIR (a fresh temporary directory,
+# removed at exit, when not given), which must not lie inside a git checkout.
 #
 # Exit 0 and a `verify-release: PASS` line when every check passes; exit 1
 # and one `verify-release: REFUSED <name>: <detail>` line when one refuses.
@@ -71,11 +71,16 @@ refuse() {
 }
 pass() { echo "verify-release: $1: PASS${2:+ — $2}"; }
 
+temporary=false
 if [ -z "$work" ]; then
   work="$(mktemp -d "${RUNNER_TEMP:-/tmp}/verify-release.XXXXXX")"
+  temporary=true
+  trap 'chmod -R u+w "$work" 2>/dev/null; rm -rf "$work"' EXIT
 fi
 mkdir -p "$work"
 work="$(cd "$work" && pwd)"
+kept=""
+$temporary || kept="; receipts in $work/journey/receipts"
 if git -C "$work" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "verify-release: --work $work lies inside a git checkout" >&2
   exit 2
@@ -142,7 +147,7 @@ pass build "singular and the development node from the archive's own flake"
 status=0
 bash "$journey" "$singular/bin/singular" "$devnet/bin/devnet" "$extracted/onchain/plutus.json" "$work/journey" \
   || status=$?
-[ "$status" -eq 0 ] || refuse command-failed "the journey exited $status; receipts in $work/journey/receipts"
+[ "$status" -eq 0 ] || refuse command-failed "the journey exited $status$kept"
 pass journey "create, insert, update, terminate and inspect as separate processes"
 
 echo "verify-release: PASS $tag — sums, model revision $stated, members and the journey, from $extracted"
