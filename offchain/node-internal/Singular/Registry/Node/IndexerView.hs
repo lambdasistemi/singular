@@ -27,11 +27,20 @@ node view on another network, or in an era whose outputs the index does
 not decode, is refused as unsupported. An address read the index cannot
 answer completely — the follower started at a tip, or filters out that
 address — is refused as incomplete coverage, never answered empty.
+
+A session opened on the adapter waits for its follower to catch up
+('awaitIndexerReady') and checks, at one agreed point, that the index
+holds every output the node holds at its funding wallet
+('requireCovered'): an output only the genesis state carries is in no
+block, and is refused by name rather than missing from the answer. Every
+refusal renders as one line naming its class and the points involved.
 -}
 module Singular.Registry.Node.IndexerView
     ( -- * Adapter
       indexerProvider
     , IndexerReadiness (..)
+    , awaitIndexerReady
+    , requireCovered
 
       -- * Refusals
     , IndexerViewFailure (..)
@@ -40,25 +49,27 @@ module Singular.Registry.Node.IndexerView
     , indexedUTxOs
     ) where
 
-import Control.Concurrent.STM (STM, atomically)
-import Control.Exception (Exception, throwIO)
+import Control.Concurrent.STM (STM, atomically, check)
+import Control.Exception (Exception (..), throwIO)
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
+import Data.List (intercalate)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isNothing)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Word (Word64)
+import System.Timeout (timeout)
 
-import Cardano.Crypto.Hash (hashFromBytes)
+import Cardano.Crypto.Hash (hashFromBytes, hashToBytes)
 import Cardano.Ledger.Address (Addr, serialiseAddr)
 import Cardano.Ledger.Api.Tx.Out (TxOut)
 import Cardano.Ledger.BaseTypes (TxIx (..))
 import Cardano.Ledger.Binary (decodeFull')
 import Cardano.Ledger.Core (eraProtVerLow)
-import Cardano.Ledger.Hashes (unsafeMakeSafeHash)
+import Cardano.Ledger.Hashes (extractHash, unsafeMakeSafeHash)
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 import Cardano.Node.Client.N2C.Reconnect (UpstreamStatus (..))
 import Cardano.Node.Client.UTxOIndexer.Follower
@@ -72,12 +83,14 @@ import Singular.Registry.Node.IndexGate
     ( Coverage (..)
     , IndexGate
     , IndexedPoint (..)
+    , countServed
     , gateCoverage
     , gateIndexer
     , gateNetwork
     , withHeldIndex
     )
 import Singular.Registry.Node.Options (die)
+import Singular.Registry.Node.Wallet (bech32Address)
 import Singular.Registry.Provider
     ( ChainPoint (..)
     , Provider (..)
@@ -115,9 +128,19 @@ data IndexerViewFailure
       IndexerDisconnected UpstreamStatus
     | -- | A capability the adapter cannot serve.
       IndexerUnsupported Text
+    | {- | Outputs the node holds at an address and the index does not: no
+      block carried them, so the index cannot answer that address.
+      -}
+      IndexerUncovered
+        { uncoveredAddress :: Addr
+        , uncoveredPoint :: ChainPoint
+        , uncoveredOutputs :: [TxIn]
+        }
     deriving stock (Eq, Show)
 
-instance Exception IndexerViewFailure
+-- | A refusal reads as its one-line diagnostic.
+instance Exception IndexerViewFailure where
+    displayException = renderFailure
 
 {- | The node provider with its address reads answered by the index at
 each view's point, within a bound (microseconds) for the index to reach
@@ -126,7 +149,25 @@ it.
 indexerProvider
     :: IndexGate -> IndexerReadiness -> Int -> Provider IO -> Provider IO
 indexerProvider gate readiness bound node =
-    scopedProvider $ \action -> withHeldIndex gate $ \admit ->
+    scopedProvider $ \action -> agreedView gate readiness bound node $ \v ->
+        action
+            v
+                { viewUTxOsAt = \addr -> covered gate addr <* countServed gate
+                }
+
+{- | One view of the node with the index held at its point: the node view,
+whose own address reads are still the node's, or the refusal naming why
+the index cannot be brought there within the bound.
+-}
+agreedView
+    :: IndexGate
+    -> IndexerReadiness
+    -> Int
+    -> Provider IO
+    -> (View IO -> IO a)
+    -> IO a
+agreedView gate readiness bound node action =
+    withHeldIndex gate $ \admit ->
         withView node $ \v -> do
             let point = viewPoint v
             either throwIO pure (supported gate point)
@@ -136,7 +177,7 @@ indexerProvider gate readiness bound node =
                     (isNothing . unready readiness <$> irReadiness readiness)
                     bound
             case verdict of
-                Right () -> action v{viewUTxOsAt = covered gate}
+                Right () -> action v
                 Left indexed -> do
                     r <- atomically (irReadiness readiness)
                     throwIO $ case unready readiness r of
@@ -225,3 +266,110 @@ indexedUTxOs idx addr = do
                 <> " does not decode: "
                 <> why
             )
+
+{- | Wait, within a bound (microseconds), until the follower is connected
+and within its readiness threshold of its tip; refuse with why it is not
+when the bound expires.
+-}
+awaitIndexerReady :: IndexerReadiness -> Int -> IO ()
+awaitIndexerReady readiness bound = do
+    ready <-
+        timeout bound . atomically $
+            irReadiness readiness >>= check . isNothing . unready readiness
+    case ready of
+        Just () -> pure ()
+        Nothing ->
+            atomically (irReadiness readiness)
+                >>= maybe (pure ()) throwIO . unready readiness
+
+{- | Refuse an address the index cannot answer completely: at one agreed
+view point, the node holds an output there that the index does not.
+-}
+requireCovered
+    :: IndexGate -> IndexerReadiness -> Int -> Provider IO -> Addr -> IO ()
+requireCovered gate readiness bound node addr =
+    agreedView gate readiness bound node $ \v -> do
+        held <- viewUTxOsAt v addr
+        known <- map fst <$> covered gate addr
+        case [i | (i, _) <- held, i `notElem` known] of
+            [] -> pure ()
+            missing ->
+                throwIO
+                    IndexerUncovered
+                        { uncoveredAddress = addr
+                        , uncoveredPoint = viewPoint v
+                        , uncoveredOutputs = missing
+                        }
+
+-- | One line naming the refusal's class and the points or setting involved.
+renderFailure :: IndexerViewFailure -> String
+renderFailure failure =
+    "indexer backend refused the read (" <> name <> "): " <> detail
+  where
+    (name, detail) = case failure of
+        IndexerLag{lagNodePoint, lagIndexedPoint, lagBoundMicros} ->
+            ( "lag"
+            , "the index did not reach the node's view at "
+                <> chainPoint lagNodePoint
+                <> " within "
+                <> show (lagBoundMicros `div` 1_000)
+                <> " ms; it holds "
+                <> maybe "no block" indexedText lagIndexedPoint
+            )
+        IndexerFork{forkSlot, forkNodeHash, forkIndexedHash} ->
+            ( "fork"
+            , "at slot "
+                <> show (unSlotNo forkSlot)
+                <> " the node's view is block "
+                <> hex forkNodeHash
+                <> " and the index holds block "
+                <> hex forkIndexedHash
+            )
+        IndexerCoverageIncomplete Coverage{coverageStart, coverageInterest} ->
+            ( "coverage-incomplete"
+            , case (coverageStart, coverageInterest) of
+                (Just start, _) ->
+                    "the index follows the chain from block "
+                        <> indexedText start
+                        <> ", not from its origin, so it does not hold the \
+                           \outputs created before it"
+                (Nothing, IndexAddressSet kept) ->
+                    "the index keeps the outputs of "
+                        <> show (Set.size kept)
+                        <> " chosen addresses only, and this address is not \
+                           \one of them"
+                (Nothing, IndexAll) -> "the index does not cover this read"
+            )
+        IndexerRestoring processed tip ->
+            ( "restoring"
+            , "the follower has processed slot "
+                <> maybe "none" (show . unSlotNo) processed
+                <> " of the node's tip slot "
+                <> maybe "unknown" (show . unSlotNo) tip
+                <> "; the index answers once it is within its readiness \
+                   \threshold of the tip"
+            )
+        IndexerDisconnected status ->
+            ( "disconnected"
+            , "the follower's connection to the node is down: " <> show status
+            )
+        IndexerUnsupported what -> ("unsupported", T.unpack what)
+        IndexerUncovered{uncoveredAddress, uncoveredPoint, uncoveredOutputs} ->
+            ( "coverage-incomplete"
+            , show (length uncoveredOutputs)
+                <> " output(s) at "
+                <> bech32Address uncoveredAddress
+                <> " are in the ledger's genesis state and no block carried \
+                   \them, so the index, which follows blocks from the chain's \
+                   \origin, does not hold them at "
+                <> chainPoint uncoveredPoint
+                <> ": "
+                <> intercalate ", " (map outRef uncoveredOutputs)
+                <> ". Read this wallet through the node backend, or pay these \
+                   \outputs into a block first"
+            )
+    chainPoint p = show (unSlotNo (cpSlot p)) <> "." <> hex (cpBlockHash p)
+    indexedText p = show (unSlotNo (ipSlot p)) <> "." <> hex (ipBlockHash p)
+    hex = BC.unpack . B16.encode
+    outRef (TxIn (TxId h) (TxIx ix)) =
+        hex (hashToBytes (extractHash h)) <> "#" <> show ix

@@ -40,9 +40,16 @@ import Control.Concurrent.STM
     , readTVar
     , writeTVar
     )
-import Control.Exception (ErrorCall (..), throwIO, try)
+import Control.Exception
+    ( ErrorCall (..)
+    , displayException
+    , throwIO
+    , try
+    )
 import Data.ByteString qualified as BS
-import Data.List (isInfixOf)
+import Data.ByteString.Base16 qualified as B16
+import Data.ByteString.Char8 qualified as BC
+import Data.List (isInfixOf, isPrefixOf)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
@@ -81,10 +88,12 @@ import Lens.Micro ((^.))
 
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra, PParams)
+import Singular.Registry.Node (bech32Address)
 import Singular.Registry.Node.IndexGate
     ( Coverage (..)
     , IndexGate
     , IndexedPoint (..)
+    , gateServed
     , gatedHandle
     , indexedPoint
     , newIndexGate
@@ -98,7 +107,9 @@ import Singular.Registry.Node.Indexer
 import Singular.Registry.Node.IndexerView
     ( IndexerReadiness (..)
     , IndexerViewFailure (..)
+    , awaitIndexerReady
     , indexerProvider
+    , requireCovered
     )
 import Singular.Registry.Node.Memory
     ( ChainState (..)
@@ -124,6 +135,7 @@ spec = describe
         agreementSpec
         heldSpec
         refusalSpec
+        backendSpec
 
 -- ---------------------------------------------------------
 -- The gate the follower writes through
@@ -583,6 +595,196 @@ refusalSpec = describe "named refusals, never an empty or partial answer" $ do
             refusedAs rig $ \case
                 IndexerUnsupported what -> "7" `T.isInfixOf` what
                 _ -> False
+
+-- ---------------------------------------------------------
+-- The indexer backend a singular session opens
+-- ---------------------------------------------------------
+
+backendSpec :: Spec
+backendSpec = describe "the indexer backend a session opens" $ do
+    it
+        "a wallet holding outputs no block carried is refused as uncovered, \
+        \naming the address, the view point and exactly those outputs"
+        $ withRigOn genesis{csUTxO = genesisOutputs} fullCoverage
+        $ \rig -> do
+            p1 <- produce rig firstBlock >>= indexed rig
+            mem <- observeAt (memoryProvider (rigChain rig))
+            fromIndex <-
+                withView (adapter rig longBound) (`viewUTxOsAt` payer)
+            let unseen =
+                    [ i
+                    | (i, _) <- readsAt mem payer
+                    , i `notElem` map fst fromIndex
+                    ]
+            unseen `shouldBe` Map.keys genesisOutputs
+            r <- try (cover rig payer)
+            r
+                `shouldBe` Left
+                    IndexerUncovered
+                        { uncoveredAddress = payer
+                        , uncoveredPoint = p1
+                        , uncoveredOutputs = unseen
+                        }
+    it
+        "a wallet whose outputs blocks carried is admitted, beside one that \
+        \is refused"
+        $ withRigOn genesis{csUTxO = genesisOutputs} fullCoverage
+        $ \rig -> do
+            _ <- produce rig firstBlock >>= indexed rig
+            cover rig bystander `shouldReturn` ()
+            r <- try (cover rig payer)
+            r `shouldSatisfy` \case
+                Left IndexerUncovered{} -> True
+                _ -> False
+    it
+        "a wallet is checked at an agreed point: an index one block behind \
+        \is refused as lag, never as uncovered"
+        $ withRig fullCoverage
+        $ \rig -> do
+            _ <- produce rig firstBlock >>= indexed rig
+            _ <- produce rig secondBlock
+            r <-
+                try
+                    ( requireCovered
+                        (rigGate rig)
+                        (readinessOf rig)
+                        shortBound
+                        (memoryProvider (rigChain rig))
+                        payer
+                    )
+            r `shouldSatisfy` \case
+                Left IndexerLag{} -> True
+                _ -> False
+    it
+        "a follower that becomes ready within the bound is waited for; one \
+        \still restoring at the bound is refused with its slots"
+        $ withRig fullCoverage
+        $ \rig -> do
+            let restoring =
+                    setReadiness rig $ \r ->
+                        r
+                            { rProcessedSlot = Just (Indexer.SlotNo 1)
+                            , rTipSlot = Just (Indexer.SlotNo 500)
+                            }
+            restoring
+            _ <- forkIO $ do
+                threadDelay 200_000
+                setReadiness rig $ \r -> r{rProcessedSlot = Just (Indexer.SlotNo 500)}
+            awaitIndexerReady (readinessOf rig) longBound `shouldReturn` ()
+            restoring
+            r <- try (awaitIndexerReady (readinessOf rig) shortBound)
+            r
+                `shouldBe` Left
+                    (IndexerRestoring (Just (SlotNo 1)) (Just (SlotNo 500)))
+    it
+        "every address read the index answers is counted as served by it; \
+        \a refused view and the node's own reads count none"
+        $ withRig fullCoverage
+        $ \rig -> do
+            _ <- produce rig firstBlock >>= indexed rig
+            gateServed (rigGate rig) `shouldReturn` 0
+            withView (adapter rig longBound) $ \v ->
+                mapM_ (viewUTxOsAt v) [payer, bystander, payer]
+            _ <- observeAt (memoryProvider (rigChain rig))
+            gateServed (rigGate rig) `shouldReturn` 3
+            _ <- produce rig secondBlock
+            _ <-
+                try (withView (adapter rig shortBound) (`viewUTxOsAt` payer))
+                    :: IO (Either IndexerViewFailure [(TxIn, TxOut ConwayEra)])
+            gateServed (rigGate rig) `shouldReturn` 3
+    it
+        "each refusal renders as one line naming its class and the points \
+        \or setting involved"
+        $ do
+            let point =
+                    ChainPoint
+                        { cpNetwork = 42
+                        , cpEra = "Conway"
+                        , cpSlot = SlotNo 6007
+                        , cpBlockHash = BS.replicate 32 0xab
+                        }
+            let hex = BC.unpack . B16.encode
+                slotText = show (unSlotNo (cpSlot point))
+                nodePoint = slotText <> "." <> hex (cpBlockHash point)
+                down = UpstreamDisconnected (DisconnectInfo "socket closed" 2 1_500)
+                other = BS.map (+ 1) (cpBlockHash point)
+                cases =
+                    [
+                        ( IndexerLag
+                            { lagNodePoint = point
+                            , lagIndexedPoint = Just (IndexedPoint (SlotNo 4711) other)
+                            , lagBoundMicros = 250_000
+                            }
+                        , ["(lag)", nodePoint, "4711." <> hex other]
+                        )
+                    ,
+                        ( IndexerFork
+                            { forkSlot = cpSlot point
+                            , forkNodeHash = cpBlockHash point
+                            , forkIndexedHash = other
+                            }
+                        , ["(fork)", "slot " <> slotText, hex (cpBlockHash point), hex other]
+                        )
+                    ,
+                        ( IndexerCoverageIncomplete
+                            Coverage
+                                { coverageStart = Just (IndexedPoint (SlotNo 9173) other)
+                                , coverageInterest = IndexAll
+                                }
+                        , ["(coverage-incomplete)", "9173." <> hex other]
+                        )
+                    ,
+                        ( IndexerRestoring (Just (SlotNo 5113)) (Just (SlotNo 7019))
+                        , ["(restoring)", "5113", "7019"]
+                        )
+                    ,
+                        ( IndexerDisconnected down
+                        , ["(disconnected)", "socket closed"]
+                        )
+                    ,
+                        ( IndexerUnsupported "address reads in era Babbage"
+                        , ["(unsupported)", "Babbage"]
+                        )
+                    ,
+                        ( IndexerUncovered
+                            { uncoveredAddress = payer
+                            , uncoveredPoint = point
+                            , uncoveredOutputs = Map.keys genesisOutputs
+                            }
+                        ,
+                            [ "(coverage-incomplete)"
+                            , nodePoint
+                            , bech32Address payer
+                            , "2 output"
+                            , replicate 64 '8' <> "#0"
+                            , replicate 64 '9' <> "#0"
+                            , "genesis"
+                            ]
+                        )
+                    ]
+            mapM_
+                ( \(failure, parts) -> do
+                    let line = displayException failure
+                    line `shouldNotSatisfy` elem '\n'
+                    line `shouldSatisfy` isPrefixOf "indexer backend refused the read "
+                    mapM_ (\p -> line `shouldSatisfy` isInfixOf p) parts
+                )
+                cases
+  where
+    cover rig =
+        requireCovered
+            (rigGate rig)
+            (readinessOf rig)
+            longBound
+            (memoryProvider (rigChain rig))
+
+-- | Two outputs at the payer that the ledger's initial state holds.
+genesisOutputs :: Map.Map TxIn (TxOut ConwayEra)
+genesisOutputs =
+    Map.fromList
+        [ (outRef '8', ada payer 80_000_000)
+        , (outRef '9', ada payer 90_000_000)
+        ]
 
 -- ---------------------------------------------------------
 -- Rig

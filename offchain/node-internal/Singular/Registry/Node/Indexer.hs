@@ -30,6 +30,7 @@ module Singular.Registry.Node.Indexer
 
       -- * Provider adaptation
     , followedProvider
+    , originProvider
     , adaptProvider
 
       -- * Funding-read guard
@@ -49,6 +50,7 @@ import Control.Monad (unless, void, when)
 import Control.Tracer (nullTracer)
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Short qualified as SBS
+import Data.Foldable (for_)
 import Data.IORef
     ( IORef
     , atomicModifyIORef'
@@ -71,6 +73,7 @@ import Ouroboros.Network.Block qualified as Chain
 import Ouroboros.Network.Magic (NetworkMagic (..))
 
 import Cardano.Crypto.Hash (hashToBytes)
+import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx)
 import Cardano.Ledger.Api.Tx.Body
     ( feeTxBodyL
@@ -120,8 +123,10 @@ import Singular.Registry.Node.IndexGate
     )
 import Singular.Registry.Node.IndexerView
     ( IndexerReadiness (..)
+    , awaitIndexerReady
     , indexedUTxOs
     , indexerProvider
+    , requireCovered
     )
 import Singular.Registry.Node.Options (NodeMode (..), die)
 import Singular.Registry.Node.View (nodeProvider)
@@ -319,6 +324,40 @@ followedProvider node submit =
                     markFundingIndexed
                     pure (indexerProvider gate readiness agreementBound node)
         _ -> pure node
+
+{- | The indexer backend's provider over a node followed from its origin
+by the follower this process installed: each view's address reads are
+the index's at the node view's point. The follower is first waited for
+until it has caught up with the node, within 'readinessBound', and a
+funding wallet, when named, must be covered: an output the node holds
+there and the index does not — one only the genesis state carries — is
+refused by name rather than read as absent.
+-}
+originProvider
+    :: Cage.Provider IO -> Maybe Addr -> IO (Cage.Provider IO)
+originProvider node wallet =
+    currentFollower >>= \case
+        Just
+            Following
+                { followingGate = gate
+                , followingReadiness = readiness
+                }
+                | isNothing (coverageStart (gateCoverage gate)) -> do
+                    awaitIndexerReady readiness readinessBound
+                    for_ wallet (requireCovered gate readiness agreementBound node)
+                    pure (indexerProvider gate readiness agreementBound node)
+        _ ->
+            die
+                "the indexer backend reads through an index following the \
+                \node's chain from its origin, and none is installed"
+
+{- | How long a session waits for its follower to catch up with the node,
+in microseconds: two minutes. A development network's whole chain is
+followed in seconds; a public network followed from its origin takes far
+longer, and its session is refused as restoring.
+-}
+readinessBound :: Int
+readinessBound = 120_000_000
 
 {- | How long a view waits for the index to reach the node view's point,
 in microseconds: ten seconds. On the devnet the index trails the node by

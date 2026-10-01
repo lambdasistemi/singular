@@ -36,6 +36,8 @@ module Singular.Registry.Node.IndexGate
     , gateNetwork
     , gateCoverage
     , gateIndexer
+    , gateServed
+    , countServed
     , gatedHandle
     , indexedPoint
 
@@ -110,6 +112,8 @@ data IndexGate = IndexGate
     , igWriting :: TVar Bool
     , igAcquiring :: TMVar ()
     -- ^ Taken by the one acquisition naming its point
+    , igServed :: TVar Int
+    -- ^ Address reads the index has answered
     }
 
 {- | Gate an index following a network with a coverage. Its applied
@@ -124,6 +128,7 @@ newIndexGate network coverage idx = do
         <*> newTVarIO []
         <*> newTVarIO False
         <*> newTMVarIO ()
+        <*> newTVarIO 0
 
 -- | The network magic of the chain the index follows.
 gateNetwork :: IndexGate -> Word32
@@ -136,6 +141,16 @@ gateCoverage = igCoverage
 -- | The index, for reads.
 gateIndexer :: IndexGate -> IndexerHandle
 gateIndexer = igIndexer
+
+{- | How many address reads the index has answered under admitted views:
+evidence that a session read through the index rather than the node.
+-}
+gateServed :: IndexGate -> IO Int
+gateServed = readTVarIO . igServed
+
+-- | Count one address read the index answered.
+countServed :: IndexGate -> IO ()
+countServed g = atomically (modifyTVar' (igServed g) (+ 1))
 
 {- | The handle a follower writes the index through: applies and
 rollbacks wait for the gate, everything else is the index's own.

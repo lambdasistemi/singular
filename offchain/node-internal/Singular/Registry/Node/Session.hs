@@ -15,9 +15,11 @@ Opening a session means connecting and negotiating the magic, waiting
 for the chain to leave its origin, refusing to start when the funding wallet
 cannot pay, and running the body. The devnet is spawned and torn down
 around the session, and followed by an indexer that answers the
-session's address reads and confirmations; an external node is left
-alone. Readers outside this module reach the open session only through
-'sessionFor' and 'currentTipSlot'.
+session's address reads and confirmations. An external node is left
+running as it is; its address reads are its own, or, under the indexer
+backend, an index's that follows it from its origin. Readers outside
+this module reach the open session only through 'sessionFor' and
+'currentTipSlot'.
 -}
 module Singular.Registry.Node.Session
     ( -- * Session
@@ -26,6 +28,7 @@ module Singular.Registry.Node.Session
     , withNode
     , withNodeForPlannedFunding
     , withNodeMode
+    , withNodeModeOn
     , withNodeSocket
     , awaitConnection
     , firstViewWithin
@@ -33,6 +36,7 @@ module Singular.Registry.Node.Session
       -- * Key-free reads (#299)
     , NodeReads (..)
     , withNodeReads
+    , withNodeReadsOn
 
       -- * Open-session state
     , withOpenSession
@@ -69,7 +73,7 @@ import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (Submitter)
-import Data.Word (Word32)
+import Data.Word (Word32, Word64)
 import Singular.Registry.Node.Funding
     ( FundingFloor
     , checkFunding
@@ -79,11 +83,13 @@ import Singular.Registry.Node.Indexer
     ( adaptProvider
     , followChain
     , followedProvider
+    , originProvider
     , startingAt
     , withDevnetIndexer
     )
 import Singular.Registry.Node.Options
-    ( ExternalNode (..)
+    ( Backend (..)
+    , ExternalNode (..)
     , NodeMode (..)
     , die
     , runMode
@@ -130,14 +136,27 @@ newtype NodeReads = NodeReads
 answer or carries another magic.
 -}
 withNodeReads :: Word32 -> FilePath -> (NodeReads -> IO a) -> IO a
-withNodeReads magicWord sock k = do
+withNodeReads = withNodeReadsOn NodeBackend
+
+{- | 'withNodeReads' with its address reads from a backend: the node's own,
+or, for 'IndexerBackend', an in-process index following the node's chain
+from its origin for as long as the reader runs ('originProvider').
+-}
+withNodeReadsOn
+    :: Backend -> Word32 -> FilePath -> (NodeReads -> IO a) -> IO a
+withNodeReadsOn backend magicWord sock k = do
     let magic = NetworkMagic magicWord
     lsqCh <- newLSQChannel 16
     ltxsCh <- newLTxSChannel 16
     bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $ \nodeThread -> do
         let prov = adaptProvider magic (mkN2CProvider lsqCh)
         awaitConnection magic sock nodeThread prov
-        k NodeReads{nrProvider = prov}
+        case backend of
+            NodeBackend -> k NodeReads{nrProvider = prov}
+            IndexerBackend ->
+                followChain magic publicByronEpochSlots Nothing sock $ do
+                    indexed <- originProvider prov Nothing
+                    k NodeReads{nrProvider = indexed}
 
 -- | The devnet genesis directory, or 'Nothing' in external mode.
 devnetGenesis :: IO (Maybe FilePath)
@@ -171,18 +190,30 @@ around it, and followed by an indexer that answers the session's
 address reads and confirmations; an external node is left alone.
 -}
 withNodeMode :: NodeMode -> (NodeSession -> IO a) -> IO a
-withNodeMode = withNodeModeAndFunding (Just defaultFundingFloor)
+withNodeMode = withNodeModeOn NodeBackend
+
+{- | 'withNodeMode' with an external node's address reads from a backend:
+the node's own, or, for 'IndexerBackend', an in-process index following
+the node's chain from its origin ('originProvider'), which must cover the
+funding wallet. A devnet session reads through its indexer either way.
+-}
+withNodeModeOn :: Backend -> NodeMode -> (NodeSession -> IO a) -> IO a
+withNodeModeOn = withNodeModeAndFunding (Just defaultFundingFloor)
 
 {- | The lifecycle runners calculate their complete funding plans from the
 live parameters before submitting. A fixed 100 ADA floor here would reject
 wallets that can afford those plans, and would block read-only estimates.
 -}
 withNodeForPlannedFunding :: (NodeSession -> IO a) -> IO a
-withNodeForPlannedFunding = withNodeModeAndFunding Nothing runMode
+withNodeForPlannedFunding = withNodeModeAndFunding Nothing NodeBackend runMode
 
 withNodeModeAndFunding
-    :: Maybe FundingFloor -> NodeMode -> (NodeSession -> IO a) -> IO a
-withNodeModeAndFunding fundingFloor mode k = case mode of
+    :: Maybe FundingFloor
+    -> Backend
+    -> NodeMode
+    -> (NodeSession -> IO a)
+    -> IO a
+withNodeModeAndFunding fundingFloor backend mode k = case mode of
     Devnet -> do
         gDir <- genesisDir
         withCardanoNode gDir $ \sock _startMs ->
@@ -199,19 +230,26 @@ withNodeModeAndFunding fundingFloor mode k = case mode of
                 case mode of
                     Devnet -> session magic sock n2c ltxsCh
                     External _ -> do
-                        tip <- N2C.ledgerChainPoint <$> N2C.queryLedgerSnapshot n2c
-                        followChain magic publicByronEpochSlots (startingAt tip) sock $
+                        start <- case backend of
+                            NodeBackend ->
+                                startingAt . N2C.ledgerChainPoint
+                                    <$> N2C.queryLedgerSnapshot n2c
+                            IndexerBackend -> pure Nothing
+                        followChain magic publicByronEpochSlots start sock $
                             session magic sock n2c ltxsCh
     session magic sock n2c ltxsCh = do
         wallet <- walletForMode mode
         let nodeProv = adaptProvider magic n2c
             submitter =
                 boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
-        -- Only a devnet session reads addresses through its indexer; an
-        -- external node is read through the node adapter alone.
-        prov <- case mode of
-            Devnet -> followedProvider nodeProv submitter
-            External _ -> pure nodeProv
+        -- A devnet session reads addresses through its indexer; an external
+        -- node through the node adapter, or through the indexer backend
+        -- when that is the backend asked for.
+        prov <- case (mode, backend) of
+            (Devnet, _) -> followedProvider nodeProv submitter
+            (External _, NodeBackend) -> pure nodeProv
+            (External _, IndexerBackend) ->
+                originProvider nodeProv (Just (walletAddr wallet))
         for_ fundingFloor (checkFunding prov (walletAddr wallet))
         announce mode magic sock (walletAddr wallet)
         let sess =
@@ -224,9 +262,13 @@ withNodeModeAndFunding fundingFloor mode k = case mode of
                     , nsMode = mode
                     }
         withOpenSession sess (k sess)
-    -- Byron epoch length of the public networks; a follower started at
-    -- the tip never decodes a Byron block, but the codec needs one.
-    publicByronEpochSlots = 21_600
+
+{- | Byron epoch length of the public networks. A follower started at the
+tip never decodes a Byron block, and the development network has none,
+but the codec needs one.
+-}
+publicByronEpochSlots :: Word64
+publicByronEpochSlots = 21_600
 
 {- | The session this process currently has open, installed by
 'withNodeMode'. 'awaitTx' is the only reader: it needs the chain the
