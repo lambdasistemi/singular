@@ -836,12 +836,17 @@ setField name value v = case v of
     Object o -> Object (KeyMap.insert (Key.fromText name) (String value) o)
     _ -> v
 
--- | A terminal inspect that observed the killed fold from the chain.
+-- | A terminal inspect that applied and observed the killed fold from the chain.
 withObserved :: Bool -> Value -> Value
 withObserved killed v = case v of
     Object o
         | killed ->
-            Object (KeyMap.insert "observed" (toJSON ["f9" :: String]) o)
+            Object
+                ( KeyMap.insert
+                    "mirrorAdvanced"
+                    (toJSON ["f9" :: String])
+                    (KeyMap.insert "observed" (toJSON ["f9" :: String]) o)
+                )
     _ -> v
 
 -- | What each provoked command leaves when the client keeps its obligations.
@@ -885,7 +890,22 @@ provoked p r =
             WithoutProof -> noLeaf "proof-missing"
             WithoutNode -> noLeaf "node-unavailable"
             TerminateKilled -> killed "fold" "f9"
-            UpdateWhileUnresolved -> r{rcOutcome = "partial", rcProcess = Just still}
+            UpdateAfterKill ->
+                r
+                    { rcOutcome = "partial"
+                    , rcCommand =
+                        Just
+                            ( object
+                                [ "outcome" .= ("partial" :: String)
+                                , "unresolved"
+                                    .= object
+                                        [ "tx" .= ("f9" :: String)
+                                        , "case" .= ("acknowledged" :: String)
+                                        ]
+                                ]
+                            )
+                    , rcProcess = Just still
+                    }
             CreateKilled -> killed "boot" "b9"
             CreateAgain -> r{rcOutcome = "client-refusal", rcProcess = Just still}
             LateCreate ->

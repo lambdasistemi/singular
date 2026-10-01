@@ -959,7 +959,7 @@ provoke env p target key r = do
             (status, printed, file) <- killedAt env r label hold "fold" args
             awaitKilled
             finish status printed file id
-        UpdateWhileUnresolved -> commandArgs env (Update 3) target key r >>= plain
+        UpdateAfterKill -> commandArgs env (Update 3) target key r >>= plain
         CreateKilled -> do
             seed <-
                 previewSeed env r "preview" (optWalletKey o) dir Nothing
