@@ -144,7 +144,7 @@ fn holding() -> Input {
 /// `Singular.Application.OpenDatum.EnvelopeSpec` asserts for the same
 /// envelope.
 test envelope_a_serialises_to_the_shared_cbor() {
-  cbor.serialise(envelopeA()) == #"d8799fd8799f01d8799f581c1f06886c357b5b31b43baf142cb19d0c8e5259110de19056694264284a636167652d746f6b656eff581caaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa446b657941581cd1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d11a001e8480ff45616c696365ff"
+  cbor.serialise(envelopeA()) == #"d8799fd8799f01d8799f581c7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c4a636167652d746f6b656eff581caaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa446b657941581cd1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d11a001e8480ff45616c696365ff"
 }
 
 test envelope_a_hashes_to_the_shared_digest() {
