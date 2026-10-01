@@ -21,7 +21,8 @@ import Test.Hspec
     , shouldSatisfy
     )
 
-import Singular.Registry.Provider (Provider (..), SlotNo (..))
+import Singular.Registry.Provider (SlotNo (..), View (..))
+import Singular.Registry.StubView (stubView)
 import Singular.Registry.TxBuilder.Internal (trySlots, tryUpperSlots)
 
 -- | The exclusive horizon, and the slot length in milliseconds.
@@ -29,15 +30,12 @@ horizon, slotMs :: Integer
 horizon = 500
 slotMs = 100
 
--- | A provider that converts times as the node client does, up to the horizon.
-horizonProvider :: Provider IO
-horizonProvider =
-    Provider
-        { queryUTxOs = \_ -> fail "unused"
-        , queryProtocolParams = fail "unused"
-        , evaluateTx = \_ -> fail "unused"
-        , posixMsToSlot = floorSlot
-        , posixMsCeilSlot = \ms -> do
+-- | A view that converts times as the node client does, up to the horizon.
+horizonView :: View IO
+horizonView =
+    stubView
+        { viewPosixMsToSlot = floorSlot
+        , viewPosixMsCeilSlot = \ms -> do
             SlotNo s <- floorSlot ms
             pure (SlotNo (if ms `mod` slotMs == 0 then s else s + 1))
         }
@@ -58,11 +56,11 @@ spec = describe "A fold's validity upper bound and the node's horizon" $ do
     it
         "rounding up a time in the horizon's last slot gives the horizon slot itself"
         $ do
-            s <- trySlots horizonProvider [lastSlotTime + 30_000, lastSlotTime]
+            s <- trySlots horizonView [lastSlotTime + 30_000, lastSlotTime]
             s `shouldBe` SlotNo 500
     it "the upper bound for that time stays inside the horizon" $ do
         s <-
-            tryUpperSlots horizonProvider [lastSlotTime + 30_000, lastSlotTime]
+            tryUpperSlots horizonView [lastSlotTime + 30_000, lastSlotTime]
         s `shouldBe` SlotNo 499
         s `shouldSatisfy` inside
     it "stays inside the horizon for every time the node converts" $ do
@@ -70,18 +68,18 @@ spec = describe "A fold's validity upper bound and the node's horizon" $ do
             mapM
                 ( \ms ->
                     tryUpperSlots
-                        horizonProvider
+                        horizonView
                         [ms + 30_000, ms + 5_000, ms + 2_000, ms]
                 )
                 [0, 7 .. horizon * slotMs - 1]
         bounds `shouldSatisfy` all inside
     cancellationSpec
 
--- | A provider whose every conversion first counts itself, then is cancelled.
-cancelledProvider :: IORef Int -> Provider IO
-cancelledProvider calls =
-    horizonProvider
-        { posixMsToSlot = \_ -> do
+-- | A view whose every conversion first counts itself, then is cancelled.
+cancelledView :: IORef Int -> View IO
+cancelledView calls =
+    horizonView
+        { viewPosixMsToSlot = \_ -> do
             modifyIORef' calls (+ 1)
             throwIO ThreadKilled
         }
@@ -91,7 +89,7 @@ cancellationSpec :: Spec
 cancellationSpec =
     it "lets a cancellation escape instead of trying the next time" $ do
         calls <- newIORef 0
-        r <- try (tryUpperSlots (cancelledProvider calls) [0, 1_000, 2_000])
+        r <- try (tryUpperSlots (cancelledView calls) [0, 1_000, 2_000])
         case r of
             Left ThreadKilled -> pure ()
             other ->

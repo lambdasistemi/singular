@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 {- |
 Module      : Singular.Registry.Node.Session
 Description : Opening, holding and closing a runner's node session
@@ -9,13 +11,13 @@ session for the runner body and removes it at bracket exit, normal or
 exceptional, so a confirmation that escapes the session's lifetime
 names its error instead of guessing a chain.
 
-Opening a session means connecting and negotiating the magic, querying
-live protocol parameters, refusing to start when the funding wallet
+Opening a session means connecting and negotiating the magic, waiting
+for the chain to leave its origin, refusing to start when the funding wallet
 cannot pay, and running the body. The devnet is spawned and torn down
 around the session, and followed by an indexer that answers the
 session's address reads and confirmations; an external node is left
 alone. Readers outside this module reach the open session only through
-'sessionFor', 'scriptStakeRegistered' and 'currentTipSlot'.
+'sessionFor' and 'currentTipSlot'.
 -}
 module Singular.Registry.Node.Session
     ( -- * Session
@@ -26,6 +28,7 @@ module Singular.Registry.Node.Session
     , withNodeMode
     , withNodeSocket
     , awaitConnection
+    , firstViewWithin
 
       -- * Key-free reads (#299)
     , NodeReads (..)
@@ -34,10 +37,10 @@ module Singular.Registry.Node.Session
       -- * Open-session state
     , withOpenSession
     , sessionFor
-    , scriptStakeRegistered
     , currentTipSlot
     ) where
 
+import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async
     ( Async
     , async
@@ -45,11 +48,9 @@ import Control.Concurrent.Async
     , race
     , waitCatch
     )
-import Control.Exception (bracket, bracket_)
+import Control.Exception (bracket, bracket_, throwIO, try)
 import Data.Foldable (for_)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import Data.Map.Strict qualified as Map
-import Data.Set qualified as Set
 import System.IO (hPutStrLn, stderr)
 import System.IO.Unsafe (unsafePerformIO)
 
@@ -57,8 +58,6 @@ import Ouroboros.Network.Magic (NetworkMagic (..))
 
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.BaseTypes (Network, SlotNo)
-import Cardano.Ledger.Credential (Credential (..))
-import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup (devnetMagic, genesisDir)
 import Cardano.Node.Client.N2C.Connection
@@ -70,10 +69,7 @@ import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (Submitter)
-import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
-import Data.ByteString (ByteString)
-import Data.Word (Word32, Word64)
-import Singular.Registry.Ledger (ConwayEra, PParams)
+import Data.Word (Word32)
 import Singular.Registry.Node.Funding
     ( FundingFloor
     , checkFunding
@@ -113,30 +109,20 @@ data NodeSession = NodeSession
     -- ^ Magic the handshake negotiated
     , nsNetwork :: Network
     -- ^ Network the funding address is built for
-    , nsPParams :: PParams ConwayEra
-    -- ^ Protocol parameters queried from the running node
-    , nsScriptRegistered :: ScriptHash -> IO Bool
-    -- ^ Whether this script has a registered reward account, including zero balance
     , nsTipSlot :: IO SlotNo
-    -- ^ Current chain tip queried from this session
-    , nsChainPoint :: IO (Maybe (Word64, ByteString))
-    {- ^ The node's current chain point as slot and header hash; none at
-    genesis. What a write journals just before a send, so a later reader
-    can follow the chain from there.
+    {- ^ Current chain tip, for confirmation deadlines; never a read an
+    operation builds from (those go through a view of 'nsProvider')
     -}
     , nsMode :: NodeMode
     -- ^ Mode this session was opened in
     }
 
-{- | What a key-free reader holds: ledger queries over one connection,
-and the node's chain point and tip. No wallet, no funding check, no
-submitter, no follower: nothing here can sign or send.
+{- | What a key-free reader holds: the read interface over one
+connection. No wallet, no funding check, no submitter, no follower:
+nothing here can sign or send.
 -}
-data NodeReads = NodeReads
+newtype NodeReads = NodeReads
     { nrProvider :: Cage.Provider IO
-    , nrChainPoint :: IO (Maybe (Word64, ByteString))
-    -- ^ Slot and header hash of the node's current chain point
-    , nrTipSlot :: IO SlotNo
     }
 
 {- | Connect to an existing node by its socket and magic alone, for reads
@@ -149,19 +135,9 @@ withNodeReads magicWord sock k = do
     lsqCh <- newLSQChannel 16
     ltxsCh <- newLTxSChannel 16
     bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $ \nodeThread -> do
-        let n2c = mkN2CProvider lsqCh
-            prov = adaptProvider n2c
+        let prov = adaptProvider magic (mkN2CProvider lsqCh)
         awaitConnection magic sock nodeThread prov
-        k
-            NodeReads
-                { nrProvider = prov
-                , nrChainPoint =
-                    fmap (\(Indexer.SlotNo slot, Indexer.BlockHash h) -> (slot, h))
-                        . startingAt
-                        . N2C.ledgerChainPoint
-                        <$> N2C.queryLedgerSnapshot n2c
-                , nrTipSlot = N2C.ledgerTipSlot <$> N2C.queryLedgerSnapshot n2c
-                }
+        k NodeReads{nrProvider = prov}
 
 -- | The devnet genesis directory, or 'Nothing' in external mode.
 devnetGenesis :: IO (Maybe FilePath)
@@ -219,7 +195,7 @@ withNodeModeAndFunding fundingFloor mode k = case mode of
         bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $
             \nodeThread -> do
                 let n2c = mkN2CProvider lsqCh
-                awaitConnection magic sock nodeThread (adaptProvider n2c)
+                awaitConnection magic sock nodeThread (adaptProvider magic n2c)
                 case mode of
                     Devnet -> session magic sock n2c ltxsCh
                     External _ -> do
@@ -228,11 +204,14 @@ withNodeModeAndFunding fundingFloor mode k = case mode of
                             session magic sock n2c ltxsCh
     session magic sock n2c ltxsCh = do
         wallet <- walletForMode mode
-        let nodeProv = adaptProvider n2c
+        let nodeProv = adaptProvider magic n2c
             submitter =
                 boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
-        pp <- Cage.queryProtocolParams nodeProv
-        prov <- followedProvider nodeProv submitter
+        -- Only a devnet session reads addresses through its indexer; an
+        -- external node is read through the node adapter alone.
+        prov <- case mode of
+            Devnet -> followedProvider nodeProv submitter
+            External _ -> pure nodeProv
         for_ fundingFloor (checkFunding prov (walletAddr wallet))
         announce mode magic sock (walletAddr wallet)
         let sess =
@@ -241,17 +220,7 @@ withNodeModeAndFunding fundingFloor mode k = case mode of
                     , nsSubmitter = submitter
                     , nsMagic = magic
                     , nsNetwork = walletNetwork wallet
-                    , nsPParams = pp
-                    , nsScriptRegistered = \h -> do
-                        let credential = ScriptHashObj h
-                        Map.member credential
-                            <$> N2C.queryStakeRewards n2c (Set.singleton credential)
                     , nsTipSlot = N2C.ledgerTipSlot <$> N2C.queryLedgerSnapshot n2c
-                    , nsChainPoint =
-                        fmap (\(Indexer.SlotNo slot, Indexer.BlockHash h) -> (slot, h))
-                            . startingAt
-                            . N2C.ledgerChainPoint
-                            <$> N2C.queryLedgerSnapshot n2c
                     , nsMode = mode
                     }
         withOpenSession sess (k sess)
@@ -278,14 +247,6 @@ withOpenSession sess =
     bracket_
         (writeIORef openSession (Just sess))
         (writeIORef openSession Nothing)
-
--- | Registration is global to a script credential, shared by registries.
-scriptStakeRegistered :: ScriptHash -> IO Bool
-scriptStakeRegistered h =
-    readIORef openSession
-        >>= maybe
-            (die "scriptStakeRegistered called outside a node session")
-            (`nsScriptRegistered` h)
 
 -- | Read the live tip for a transaction built in the active session.
 currentTipSlot :: IO SlotNo
@@ -327,9 +288,10 @@ announce mode (NetworkMagic magic) sock addr =
 or name the two ways a fresh connection fails: the node is not there,
 and the node runs a different network than the magic asserted.
 
-Either failure ends the client thread, so racing the first query
+Either failure ends the client thread, so racing the first view
 against that ending waits exactly as long as the connection takes
-rather than a fixed settling sleep.
+rather than a fixed settling sleep. A chain at its origin is waited out
+until its first block, since the origin cannot be acquired.
 -}
 awaitConnection
     :: (Show a)
@@ -340,7 +302,9 @@ awaitConnection
     -> IO ()
 awaitConnection (NetworkMagic magic) sock nodeThread prov = do
     answered <-
-        race (waitCatch nodeThread) (Cage.queryProtocolParams prov)
+        race
+            (waitCatch nodeThread)
+            (firstViewWithin originWaitPolls sock prov)
     case answered of
         Right _ -> pure ()
         Left outcome ->
@@ -355,3 +319,31 @@ awaitConnection (NetworkMagic magic) sock nodeThread prov = do
                        \another network refuses the handshake. Underlying \
                        \failure: "
                     <> show outcome
+
+{- | How many tenth-of-a-second polls a fresh connection waits for a
+chain at its origin to make its first block: two minutes. A devnet makes
+one within seconds; a public network is never at its origin.
+-}
+originWaitPolls :: Int
+originWaitPolls = 1_200
+
+{- | The first view a fresh connection yields. A chain still at its
+origin has no block to acquire, so the acquisition is retried every
+tenth of a second, at most this many times, and then refused by name;
+any other failure ends the wait with it.
+-}
+firstViewWithin
+    :: Int -> FilePath -> Cage.Provider IO -> IO Cage.ChainPoint
+firstViewWithin polls sock prov =
+    try (Cage.withView prov (pure . Cage.viewPoint)) >>= \case
+        Right point -> pure point
+        Left Cage.AcquiredAtOrigin
+            | polls > 0 ->
+                threadDelay 100_000 >> firstViewWithin (polls - 1) sock prov
+            | otherwise ->
+                die $
+                    "the chain at "
+                        <> sock
+                        <> " is still at its origin: no block has been made, so \
+                           \no view of it can be acquired (AcquiredAtOrigin)"
+        Left other -> throwIO other

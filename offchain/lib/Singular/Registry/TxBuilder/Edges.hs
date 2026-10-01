@@ -36,8 +36,10 @@ module Singular.Registry.TxBuilder.Edges
       -- * Reference outputs
     , publishRefScript
     , publishRefScriptReserving
+    , publishRefScriptTx
     , publishStateRef
     , publishStateRefReserving
+    , stateRefIn
     , publishCageRefs
     , adaOnlyOut
 
@@ -48,6 +50,7 @@ module Singular.Registry.TxBuilder.Edges
     , bookEdge
     , bookEdgeTo
     , bookEdgeWith
+    , bookEdgeTx
     , edgeDeposit
     , edgeDestinationOf
     , edgeRecordDatum
@@ -250,8 +253,24 @@ publishRefScriptReserving
     -> Script ConwayEra
     -> IO (TxIn, TxOut ConwayEra)
 publishRefScriptReserving reserved prov submit payerAddr script = do
-    pp <- Cage.queryProtocolParams prov
-    utxos <- Cage.queryUTxOs prov payerAddr
+    (unsigned, refOut) <-
+        Cage.withView prov $ \v -> publishRefScriptTx reserved v payerAddr script
+    signed <- submit unsigned
+    pure (TxIn (txIdTx signed) (TxIx 0), refOut)
+
+{- | The unsigned publication of one reference script, funded by the
+largest ada-only output outside the reservation, and the reference
+output it creates.
+-}
+publishRefScriptTx
+    :: Set.Set TxIn
+    -> Cage.View IO
+    -> Addr
+    -> Script ConwayEra
+    -> IO (ConwayTx, TxOut ConwayEra)
+publishRefScriptTx reserved v payerAddr script = do
+    let pp = Cage.viewProtocolParams v
+    utxos <- Cage.viewUTxOsAt v payerAddr
     fund <-
         case sortOn
             (Down . (^. coinTxOutL) . snd)
@@ -286,8 +305,7 @@ publishRefScriptReserving reserved prov submit payerAddr script = do
                         , mkBasicTxOut payerAddr (MaryValue (Coin changeCoin) mempty)
                         ]
                 & feeTxBodyL .~ Coin fee
-    signed <- submit (mkBasicTx body)
-    pure (TxIn (txIdTx signed) (TxIx 0), refOut)
+    pure (mkBasicTx body, refOut)
 
 {- | Publish the state validator as a reference output, once, before any
 boot (#177).
@@ -323,15 +341,24 @@ publishStateRefReserving
     -> IO (TxIn, TxOut ConwayEra)
 publishStateRefReserving reserved cfg prov submit payerAddr = do
     let script = mkCageScript cfg
-        wanted = hashScript script
-    utxos <- Cage.queryUTxOs prov payerAddr
+    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` payerAddr)
+    case stateRefIn cfg utxos of
+        Just u -> pure u
+        Nothing -> publishRefScriptReserving reserved prov submit payerAddr script
+
+-- | An output among these that publishes this cage's state validator.
+stateRefIn
+    :: CageConfig
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Maybe (TxIn, TxOut ConwayEra)
+stateRefIn cfg utxos =
     case [ u
          | u@(_, out) <- utxos
          , SJust s <- [out ^. referenceScriptTxOutL]
-         , hashScript s == wanted
+         , hashScript s == hashScript (mkCageScript cfg)
          ] of
-        (u : _) -> pure u
-        [] -> publishRefScriptReserving reserved prov submit payerAddr script
+        (u : _) -> Just u
+        [] -> Nothing
 
 {- | Publish this cage's scripts as reference outputs: the cage, the
 request validator and the three token policies.
@@ -599,7 +626,29 @@ bookEdgeWith
     -- ^ The deposit, over and above the tip
     -> Maybe BookingApproval
     -> IO ConwayTx
-bookEdgeWith cfg prov submit payerAddr tokenId key edge dest deposit approval = do
+bookEdgeWith cfg prov submit payerAddr tokenId key edge dest deposit approval =
+    Cage.withView
+        prov
+        ( \v -> bookEdgeTx cfg v payerAddr tokenId key edge dest deposit approval
+        )
+        >>= submit
+
+{- | The unsigned booking of one edge, built from one view: the payer's
+largest ada-only output pays the bond, the fee and the change.
+-}
+bookEdgeTx
+    :: CageConfig
+    -> Cage.View IO
+    -> Addr
+    -> TokenId
+    -> ByteString
+    -> Edge
+    -> (ByteString, ByteString)
+    -> Integer
+    -- ^ The deposit, over and above the tip
+    -> Maybe BookingApproval
+    -> IO ConwayTx
+bookEdgeTx cfg v payerAddr tokenId key edge dest deposit approval = do
     -- #183: the tag IS the edge. A booking states its own C2 row, and a
     -- row outside the table is one only an adversarial caller wants, so
     -- it is refused here rather than carried to a fold that would refuse
@@ -612,8 +661,8 @@ bookEdgeWith cfg prov submit payerAddr tokenId key edge dest deposit approval = 
                 <> show key
                 <> " is not one of the seven admissible edges"
             )
-    pp <- Cage.queryProtocolParams prov
-    utxos <- Cage.queryUTxOs prov payerAddr
+    let pp = Cage.viewProtocolParams v
+    utxos <- Cage.viewUTxOsAt v payerAddr
     (feeIn, feeOut) <-
         case sortOn
             (Down . (^. coinTxOutL) . snd)
@@ -657,8 +706,7 @@ bookEdgeWith cfg prov submit payerAddr tokenId key edge dest deposit approval = 
                 & feeTxBodyL .~ Coin fee
                 & reqSignerHashesTxBodyL
                     .~ Set.singleton (addrWitnessKeyHash owner)
-        unsigned = certifyBooking pp feeIn approval (mkBasicTx body)
-    submit unsigned
+    pure (certifyBooking pp feeIn approval (mkBasicTx body))
 
 {- | What a fold of tree edges needs in hand: the three token policies
 this registry pins, the cage script custody spends run, the cage's own
@@ -668,11 +716,11 @@ outputs the fold's scripts resolve through.
 registryContextFor
     :: CageConfig
     -> NamingCodes
-    -> Cage.Provider IO
+    -> Cage.View IO
     -> [(TxIn, TxOut ConwayEra)]
     -> IO RegistryContext
-registryContextFor cfg codes prov refs = do
-    utxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
+registryContextFor cfg codes v refs = do
+    utxos <- Cage.viewUTxOsAt v (cageAddrFromCfg cfg (network cfg))
     pure
         emptyRegistryContext
             { rcWitnessScripts =

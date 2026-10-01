@@ -67,12 +67,11 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
     ( ConwayEra
-    , PParams
     , Root (..)
     , TokenId
     , TxIn
     )
-import Singular.Registry.Provider (Provider (..))
+import Singular.Registry.Provider (View (..))
 import Singular.Registry.Trie
     ( Trie (..)
     , TrieManager (..)
@@ -115,14 +114,14 @@ data ConnectedMint = ConnectedMint
 -- | Everything one connected fold binds.
 data ConnectedFoldArgs = ConnectedFoldArgs
     { cfaCfg :: CageConfig
-    , cfaProvider :: Provider IO
+    , cfaView :: View IO
+    -- ^ The view the fold is built from: parameters, evaluation, slots
     , cfaTrie :: TrieManager IO
     , cfaToken :: TokenId
     , cfaFeeAddr :: Addr
     , cfaStateUtxo :: (TxIn, TxOut ConwayEra)
     , cfaReqUtxos :: [(TxIn, TxOut ConwayEra)]
     , cfaFeeUtxo :: (TxIn, TxOut ConwayEra)
-    , cfaPp :: PParams ConwayEra
     , cfaSpends :: [ConnectedSpend]
     , cfaMints :: [ConnectedMint]
     , cfaOutputs :: [TxOut ConwayEra]
@@ -144,20 +143,20 @@ computed new root the state continuation carries.
 connectedFoldTx :: ConnectedFoldArgs -> IO (ConwayTx, Root)
 connectedFoldTx args = do
     let cfg = cfaCfg args
-        prov = cfaProvider args
+        view = cfaView args
         tm = cfaTrie args
         tid = cfaToken args
         feeAddr = cfaFeeAddr args
         (stateIn, stateOut) = cfaStateUtxo args
         reqUtxos = cfaReqUtxos args
         feeUtxo = cfaFeeUtxo args
-        pp = cfaPp args
+        pp = viewProtocolParams view
     (proofs, newRoot) <- computeProofs tm tid reqUtxos
     let adjustedRoot = cfaAdjustRoot args newRoot
         (oldState, newStateOut, script) =
             prepareState cfg stateOut adjustedRoot
         requestScript = mkRequestScript cfg tid
-    upperSlot <- computeUpperSlot prov oldState reqUtxos
+    upperSlot <- computeUpperSlot view oldState reqUtxos
     let evalTx
             | cfaSkipEval args = \tx -> do
                 let Redeemers rdmrs = tx ^. witsTxL . rdmrsTxWitsL
@@ -168,7 +167,7 @@ connectedFoldTx args = do
                             (Map.size rdmrs)
                 pure (Map.map (const (Right units)) rdmrs)
             | otherwise = \tx -> do
-                r <- evaluateTx prov tx
+                r <- viewEvaluateTx view tx
                 pure $
                     Map.map
                         ( \case
@@ -291,11 +290,11 @@ prepareState cfg stateOut newRoot =
 
 -- | Compute the validity upper slot from the earliest request deadline.
 computeUpperSlot
-    :: Provider IO
+    :: View IO
     -> OnChainTokenState
     -> [(TxIn, TxOut ConwayEra)]
     -> IO SlotNo
-computeUpperSlot prov oldState reqUtxos = do
+computeUpperSlot view oldState reqUtxos = do
     let extractSubmittedAt (_, rOut) = case extractCageDatum rOut of
             Just (RequestDatum r) -> requestSubmittedAt r
             _ -> 0
@@ -305,13 +304,13 @@ computeUpperSlot prov oldState reqUtxos = do
                     (\u -> extractSubmittedAt u + stateProcessTime oldState)
                     reqUtxos
     mUpperSlot <-
-        trySync (posixMsToSlot prov earliestDeadline)
+        trySync (viewPosixMsToSlot view earliestDeadline)
     case mUpperSlot of
         Right s -> pure s
         Left _ -> do
             nowUtc <- getCurrentTime
             let posixSec = utcTimeToPOSIXSeconds nowUtc
-            tryUpperSlots prov $
+            tryUpperSlots view $
                 map
                     (\d -> round ((posixSec + d) * 1000))
                     [30, 5, 2]

@@ -91,6 +91,7 @@ import Singular.CLI.Command
     , WriteSettings (..)
     )
 import Singular.CLI.Live
+import Singular.CLI.Node (Capabilities (..))
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry
     ( LocalState (..)
@@ -107,13 +108,13 @@ import Singular.Registry.Ledger
     , Root (..)
     , TokenId (..)
     )
-import Singular.Registry.Node (NodeSession (..), Wallet (..))
+import Singular.Registry.Node (Wallet (..))
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.TxBuilder.Edges
     ( BookingApproval (..)
     , adaOnlyOut
-    , bookEdgeWith
+    , bookEdgeTx
     , edgeDeposit
     , registryContextFor
     )
@@ -139,8 +140,10 @@ data Attached = Attached
 
 {- | Attach a write to its registry: saved identity and pins, network,
 unresolved journal, live references and state, and the mirror's root
-against the ledger's. The caller's wallet is NOT compared with the
-wallet that created the registry; authority is the envelope's.
+against the ledger's, all read from one view. The caller's wallet is
+NOT compared with the wallet that created the registry; authority is the
+envelope's. Every transaction the write then builds reads the chain
+again, from a view of its own.
 -}
 attached
     :: FilePath
@@ -159,7 +162,8 @@ attached dir blueprint ws command body = do
             pure
             (checkNetwork (savedConfig saved) magic)
         mirror <- openMirror saved
-        live <- attachLive (nsProvider (wcSession wc)) saved
+        live <-
+            Cage.withView (capReads (wcCapabilities wc)) $ \v -> attachLive v saved
         observed <- either (failWith StaleState) pure (observedRoot live)
         local <- mirrorRoot saved mirror
         when (local /= observed) $
@@ -178,7 +182,11 @@ callerKey :: Attached -> ByteString
 callerKey = addrKeyHashBytes . walletAddr . wcWallet . atWrite
 
 provider :: Attached -> Cage.Provider IO
-provider = nsProvider . wcSession . atWrite
+provider = capReads . wcCapabilities . atWrite
+
+-- | One read operation: acquire a view and read through it.
+reading :: Attached -> (Cage.View IO -> IO a) -> IO a
+reading at = Cage.withView (provider at)
 
 savedOf :: Attached -> Saved
 savedOf = liveSaved . atLive
@@ -211,6 +219,10 @@ appReference at =
 
 {- | Book one edge through the application, then read the request back
 live at the request address before journalling it observed.
+
+The booking is built from one view: the approval is decided there, from
+the registry's state and outputs as that view holds them, and the
+payer's wallet and the parameters are that view's.
 -}
 book
     :: Attached
@@ -218,33 +230,38 @@ book
     -> Edge
     -> (ByteString, ByteString)
     -> Integer
-    -> BookingApproval
-    -> IO ConwayTx
-book at key edge dest deposit approval = do
+    -> (Cage.View IO -> Live -> IO (BookingApproval, r))
+    -- ^ The approval, decided from the booking's own view
+    -> IO (ConwayTx, r)
+book at key edge dest deposit approve = do
     let s = savedOf at
         cfg = savedCfg s
         wc = atWrite at
-    booking <-
-        bookEdgeWith
-            cfg
-            (provider at)
-            ( journalledSubmit
-                wc
-                "book"
-                (Expectation (Just key) "request" Nothing Nothing Nothing)
+    (booking, decided) <-
+        submitBuilt
+            wc
+            "book"
+            (const (Expectation (Just key) "request" Nothing Nothing Nothing))
+            ( \v -> do
+                live <- attachLive v s
+                (approval, decided) <- approve v live
+                tx <-
+                    bookEdgeTx
+                        cfg
+                        v
+                        (walletAddr (wcWallet wc))
+                        (savedToken s)
+                        key
+                        edge
+                        dest
+                        deposit
+                        (Just approval)
+                pure (tx, decided)
             )
-            (walletAddr (wcWallet wc))
-            (savedToken s)
-            key
-            edge
-            dest
-            deposit
-            (Just approval)
     let request = TxIn (txIdTx booking) (TxIx 0)
     reqs <-
-        Cage.queryUTxOs
-            (provider at)
-            (requestAddrFromCfg cfg (savedToken s) Testnet)
+        reading at $ \v ->
+            Cage.viewUTxOsAt v (requestAddrFromCfg cfg (savedToken s) Testnet)
     unless (any ((== request) . fst) reqs) $
         failWith
             Partial
@@ -254,7 +271,7 @@ book at key edge dest deposit approval = do
         "book"
         booking
         ("request " <> txInText request <> " live")
-    pure booking
+    pure (booking, decided)
 
 {- | Fold exactly this command's request with the application's context,
 commit its edge to the mirror, and read the new root back.
@@ -263,7 +280,8 @@ The production fold takes every request pending for the registry, so the
 fold is bound to the one request this command booked: any other pending
 request is refused before anything is built, and a built fold spending
 any request input but this one is refused before it is submitted. The
-mirror walk and the journalled after-root are that one edge.
+mirror walk and the journalled after-root are that one edge. The pending
+set, the context and the fold are read from one view.
 -}
 foldAndCommit
     :: Attached
@@ -279,90 +297,92 @@ foldAndCommit
 foldAndCommit at request key edge after envelopes live = do
     let s = savedOf at
         cfg = savedCfg s
-        prov = provider at
         wc = atWrite at
         tm = mirrorTries (atMirror at)
-        pendingNow =
-            map fst
-                <$> Cage.queryUTxOs prov (requestAddrFromCfg cfg (savedToken s) Testnet)
         others = filter (/= request)
-    before <- pendingNow
-    unless (request `elem` before) $
-        failWith
-            Partial
-            "the booked request is no longer pending; nothing is folded"
-    unless (null (others before)) $
-        failWithFields
-            ConcurrentWriter
-            ( "another request is pending for this registry ("
-                <> T.unpack (T.intercalate ", " (map txInText (others before)))
-                <> "); folding only this command's request is not possible, and nothing is folded"
-            )
-            [("pendingRequest", toJSON (txInText request))]
-    ctx0 <-
-        registryContextFor cfg (savedCodes s) prov (liveRefs (atLive at))
-    ctx <-
-        either
-            (failWith ClientRefusal)
-            pure
-            (withApplication (applied s) Nothing envelopes live ctx0)
-    -- The booking is confirmed and its deposit is locked in the request.
-    -- A fold that cannot be built — the registry will not take the edge,
-    -- or a script refuses it at evaluation — leaves exactly that behind,
-    -- so the command stops partial and names the pending request, never
-    -- as a refusal that submitted nothing.
-    built <-
-        try
-            ( updateTokenWithDuties
-                cfg
-                prov
-                tm
-                (savedToken s)
-                (walletAddr (wcWallet wc))
-                ctx
-            )
-    unsigned <- case built of
-        Right tx -> pure tx
-        Left (e :: SomeException)
-            | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
-            | otherwise ->
-                failWithFields
-                    Partial
-                    ( "the booking is confirmed and its request "
-                        <> T.unpack (txInText request)
-                        <> " stays pending; its fold could not be built, so nothing is folded: "
-                        <> briefly (show e)
-                    )
-                    [("pendingRequest", toJSON (txInText request))]
-    pendingAtBuild <- pendingNow
-    let spent = Set.toList (unsigned ^. bodyTxL . inputsTxBodyL)
-        strays = [i | i <- spent, i `elem` pendingAtBuild, i /= request]
-    unless (request `elem` spent && null strays) $
-        failWithFields
-            ConcurrentWriter
-            ( "the built fold spends request inputs other than this command's ("
-                <> T.unpack (T.intercalate ", " (map txInText strays))
-                <> "); the fold is not submitted"
-            )
-            [("pendingRequest", toJSON (txInText request))]
     rootBefore <- mirrorRoot s (atMirror at)
     Root rootAfter <-
         withSpeculativeTrie tm (savedToken s) $ \t -> walkEdge t key edge >> getRoot t
-    fold <-
-        journalledSubmit
+    (fold, ()) <-
+        submitBuilt
             wc
             "fold"
-            ( Expectation
-                (Just key)
-                after
-                (Just edge)
-                (Just rootBefore)
-                (Just rootAfter)
+            ( const
+                ( Expectation
+                    (Just key)
+                    after
+                    (Just edge)
+                    (Just rootBefore)
+                    (Just rootAfter)
+                )
             )
-            unsigned
+            ( \v -> do
+                pending <-
+                    map fst
+                        <$> Cage.viewUTxOsAt v (requestAddrFromCfg cfg (savedToken s) Testnet)
+                unless (request `elem` pending) $
+                    failWith
+                        Partial
+                        "the booked request is no longer pending; nothing is folded"
+                unless (null (others pending)) $
+                    failWithFields
+                        ConcurrentWriter
+                        ( "another request is pending for this registry ("
+                            <> T.unpack (T.intercalate ", " (map txInText (others pending)))
+                            <> "); folding only this command's request is not possible, and nothing is folded"
+                        )
+                        [("pendingRequest", toJSON (txInText request))]
+                ctx0 <-
+                    registryContextFor cfg (savedCodes s) v (liveRefs (atLive at))
+                ctx <-
+                    either
+                        (failWith ClientRefusal)
+                        pure
+                        (withApplication (applied s) Nothing envelopes live ctx0)
+                -- The booking is confirmed and its deposit is locked in the
+                -- request. A fold that cannot be built — the registry will
+                -- not take the edge, or a script refuses it at evaluation —
+                -- leaves exactly that behind, so the command stops partial
+                -- and names the pending request, never as a refusal that
+                -- submitted nothing.
+                built <-
+                    try
+                        ( updateTokenWithDuties
+                            cfg
+                            v
+                            tm
+                            (savedToken s)
+                            (walletAddr (wcWallet wc))
+                            ctx
+                        )
+                unsigned <- case built of
+                    Right tx -> pure tx
+                    Left (e :: SomeException)
+                        | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
+                        | otherwise ->
+                            failWithFields
+                                Partial
+                                ( "the booking is confirmed and its request "
+                                    <> T.unpack (txInText request)
+                                    <> " stays pending; its fold could not be built, so nothing is folded: "
+                                    <> briefly (show e)
+                                )
+                                [("pendingRequest", toJSON (txInText request))]
+                let spent = Set.toList (unsigned ^. bodyTxL . inputsTxBodyL)
+                    strays = [i | i <- spent, i `elem` pending, i /= request]
+                unless (request `elem` spent && null strays) $
+                    failWithFields
+                        ConcurrentWriter
+                        ( "the built fold spends request inputs other than this command's ("
+                            <> T.unpack (T.intercalate ", " (map txInText strays))
+                            <> "); the fold is not submitted"
+                        )
+                        [("pendingRequest", toJSON (txInText request))]
+                pure (unsigned, ())
+            )
     withTrie tm (savedToken s) $ \t -> void (walkEdge t key edge)
     saveOpenMirror s (atMirror at)
-    afterFold <- attachLive prov s
+    afterFold <- reading at (`attachLive` s)
     onChain <- either (failWith Partial) pure (observedRoot afterFold)
     local <- mirrorRoot s (atMirror at)
     when (onChain /= local) $
@@ -428,13 +448,16 @@ runInsert a = do
             "the envelope's protected deposit is not positive"
         requireController at c
         appRef <- appReference at
-        let stateIn = fst (liveState (atLive at))
-            approval =
-                (insertApproval Testnet (applied s) stateIn envelope)
-                    { baScriptReference = Just appRef
-                    }
-            dest = insertDestination Testnet (applied s) envelope
-        booking <- book at key edgeInsertActive dest (ctlDeposit c) approval
+        let dest = insertDestination Testnet (applied s) envelope
+            approve _ live =
+                pure
+                    ( (insertApproval Testnet (applied s) (fst (liveState live)) envelope)
+                        { baScriptReference = Just appRef
+                        }
+                    , ()
+                    )
+        (booking, ()) <-
+            book at key edgeInsertActive dest (ctlDeposit c) approve
         (fold, root) <-
             foldAndCommit
                 at
@@ -444,7 +467,7 @@ runInsert a = do
                 ("active:" <> hexT (envelopeHash envelope))
                 [envelope]
                 []
-        outs <- liveOutputs (provider at) s
+        outs <- reading at (`liveOutputs` s)
         ((liveIn, _), seen) <-
             either (failWith Partial) pure (liveOutputFor s key outs)
         unless (seen == envelope) $
@@ -487,61 +510,63 @@ runUpdate a = do
         readJson path >>= either (failWith ClientRefusal) pure . dataFromJson
     attached (entryRegistry a) (entryBlueprint a) (entryWrite a) "update" $ \at -> do
         let s = savedOf at
-            prov = provider at
             wc = atWrite at
             addr = walletAddr (wcWallet wc)
-        outs <- liveOutputs prov s
-        (holding, envelope) <-
-            either (failWith ClientRefusal) pure (liveOutputFor s key outs)
-        requireController at (envControl envelope)
         appRef <- appReference at
         let refOut = [u | u@(i, _) <- liveRefs (atLive at), i == appRef]
-        pp <- Cage.queryProtocolParams prov
-        wallet <- Cage.queryUTxOs prov addr
-        fee <- case sortOn
-            (Down . (^. coinTxOutL) . snd)
-            (filter (adaOnlyOut . snd) wallet) of
-            (u : _) -> pure u
-            [] ->
-                failWith
-                    ClientRefusal
-                    "the wallet holds no ada-only output to pay the fee"
         rootBefore <- mirrorRoot s (atMirror at)
-        unsigned <-
-            updatePayloadTx
-                UpdateArgs
-                    { uaProvider = prov
-                    , uaPParams = pp
-                    , uaApplied = applied s
-                    , uaHolding = holding
-                    , uaPayload = payload
-                    , uaFee = fee
-                    , uaChange = addr
-                    , uaReference = case refOut of
-                        (u : _) -> Just u
-                        [] -> Nothing
-                    }
-                >>= either (failWith ClientRefusal) pure
-        signed <-
-            journalledSubmit
+        -- The live output, its controller, the fee input, the parameters
+        -- and the script evaluation all come from the update's one view.
+        (signed, envelope) <-
+            submitBuilt
                 wc
                 "update"
-                ( Expectation
-                    (Just key)
-                    ("payload:" <> hexT (envelopeHash envelope{envPayload = payload}))
-                    Nothing
-                    Nothing
-                    Nothing
+                ( \envelope ->
+                    Expectation
+                        (Just key)
+                        ("payload:" <> hexT (envelopeHash envelope{envPayload = payload}))
+                        Nothing
+                        Nothing
+                        Nothing
                 )
-                unsigned
-        after <- liveOutputs prov s
+                ( \v -> do
+                    outs <- liveOutputs v s
+                    (holding, envelope) <-
+                        either (failWith ClientRefusal) pure (liveOutputFor s key outs)
+                    requireController at (envControl envelope)
+                    wallet <- Cage.viewUTxOsAt v addr
+                    fee <- case sortOn
+                        (Down . (^. coinTxOutL) . snd)
+                        (filter (adaOnlyOut . snd) wallet) of
+                        (u : _) -> pure u
+                        [] ->
+                            failWith
+                                ClientRefusal
+                                "the wallet holds no ada-only output to pay the fee"
+                    unsigned <-
+                        updatePayloadTx
+                            UpdateArgs
+                                { uaView = v
+                                , uaApplied = applied s
+                                , uaHolding = holding
+                                , uaPayload = payload
+                                , uaFee = fee
+                                , uaChange = addr
+                                , uaReference = case refOut of
+                                    (u : _) -> Just u
+                                    [] -> Nothing
+                                }
+                            >>= either (failWith ClientRefusal) pure
+                    pure (unsigned, envelope)
+                )
+        after <- reading at (`liveOutputs` s)
         ((liveIn, _), seen) <-
             either (failWith Partial) pure (liveOutputFor s key after)
         unless (seen == envelope{envPayload = payload}) $
             failWith
                 Partial
                 "the updated output carries another envelope than the one sent"
-        state <- attachLive prov s
+        state <- reading at (`attachLive` s)
         rootAfter <- either (failWith Partial) pure (observedRoot state)
         when (rootAfter /= rootBefore) $
             failWith StaleState "the registry root moved during an update"
@@ -578,26 +603,35 @@ runTerminate a = do
         "terminate"
         $ \at -> do
             let s = savedOf at
-                prov = provider at
-            outs <- liveOutputs prov s
-            (holding@(liveIn, _), envelope) <-
-                either (failWith ClientRefusal) pure (liveOutputFor s key outs)
-            let c = envControl envelope
-            requireController at c
             appRef <- appReference at
-            let stateIn = fst (liveState (atLive at))
-                approval =
-                    (terminateApproval (applied s) stateIn liveIn key (ctlController c))
-                        { baScriptReference = Just appRef
-                        }
-            booking <-
+            -- The live output the booking releases is resolved in the
+            -- booking's own view, with the state the approval binds.
+            let approve v live = do
+                    outs <- liveOutputs v s
+                    (holding@(liveIn, _), envelope) <-
+                        either (failWith ClientRefusal) pure (liveOutputFor s key outs)
+                    let c = envControl envelope
+                    requireController at c
+                    pure
+                        ( ( terminateApproval
+                                (applied s)
+                                (fst (liveState live))
+                                liveIn
+                                key
+                                (ctlController c)
+                          )
+                            { baScriptReference = Just appRef
+                            }
+                        , (holding, c)
+                        )
+            (booking, (holding@(liveIn, _), c)) <-
                 book
                     at
                     key
                     edgeUpdateTerminal
                     terminateDestination
                     edgeDeposit
-                    approval
+                    approve
             (fold, root) <-
                 foldAndCommit
                     at
@@ -607,7 +641,7 @@ runTerminate a = do
                     "terminal"
                     []
                     [holding]
-            after <- liveOutputs prov s
+            after <- reading at (`liveOutputs` s)
             when (any ((== liveIn) . fst) after) $
                 failWith
                     Partial

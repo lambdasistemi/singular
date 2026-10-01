@@ -281,8 +281,10 @@ slotClock :: Cage.Provider IO -> IO (SlotNo, SlotNo)
 slotClock prov = do
     now <- getCurrentTime
     let nowMs = round (utcTimeToPOSIXSeconds now * 1000) :: Integer
-    s0 <- Cage.posixMsToSlot prov nowMs
-    s1 <- Cage.posixMsToSlot prov (nowMs + 120_000)
+    (s0, s1) <- Cage.withView prov $ \v ->
+        (,)
+            <$> Cage.viewPosixMsToSlot v nowMs
+            <*> Cage.viewPosixMsToSlot v (nowMs + 120_000)
     pure (s0, s1 - s0)
 
 {- | The slot after which a submitted transaction can no longer land,
@@ -317,11 +319,12 @@ fixedWindowDeadline :: Cage.Provider IO -> IO SlotNo
 fixedWindowDeadline prov = do
     now <- getCurrentTime
     let nowMs = round (utcTimeToPOSIXSeconds now * 1000) :: Integer
-    Cage.posixMsToSlot
-        prov
-        ( nowMs
-            + fromIntegral fixedWindow * 1000
-        )
+    Cage.withView prov $ \v ->
+        Cage.viewPosixMsToSlot
+            v
+            ( nowMs
+                + fromIntegral fixedWindow * 1000
+            )
 
 {- | The validity upper bound a transaction carries, if any. The fold,
 update and retract builders pin one (request deadline, phase-2 end);

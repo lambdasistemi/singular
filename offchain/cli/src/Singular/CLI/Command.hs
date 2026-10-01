@@ -16,11 +16,10 @@ below happens before anything is read or submitted.
 * @registry inspect@ reads the registry and one key back, and accepts
   no signing key at all.
 
-Write commands take their node and wallet from the three settings
-"Singular.Registry.Node" already reads (@--node-socket@,
-@--network-magic@, @--wallet-skey@), through the same
-'nodeModeFromArgs', so a partial set and mainnet are refused with its
-own diagnostics and the process-wide node mode agrees with this parse.
+Write commands take their node and wallet from three settings
+(@--node-socket@, @--network-magic@, @--wallet-skey@), read by
+'writeTarget' in "Singular.CLI.Node", so a partial set and mainnet are
+refused with the node module's own diagnostics.
 The CLI never spawns a node of its own: a registry that died with the
 process could not be attached to by the next one.
 -}
@@ -53,12 +52,8 @@ import Data.Text qualified as T
 import Data.Word (Word32)
 import Text.Read (readMaybe)
 
+import Singular.CLI.Node (writeTarget)
 import Singular.Registry.Deployment (parseOutRef)
-import Singular.Registry.Node
-    ( ExternalNode (..)
-    , NodeMode (..)
-    , nodeModeFromArgs
-    )
 
 -- | A registry key: the bytes the leaf and the active token are named by.
 newtype Key = Key {unKey :: ByteString}
@@ -220,11 +215,10 @@ parseCommand args = do
                 , inspectReceipt = optional "--receipt" flags
                 }
     -- The three write settings go through the node module's own reader,
-    -- so its partial-setting and mainnet refusals are this command's,
-    -- and the process-wide node mode reads the same flags the same way.
-    writeSettings flags = case nodeModeFromArgs args [] of
+    -- so its partial-setting and mainnet refusals are this command's.
+    writeSettings flags = case writeTarget args of
         Left err -> Left (UnsafeSettings err)
-        Right Devnet ->
+        Right Nothing ->
             Left
                 ( UnsafeSettings
                     "a write needs --node-socket, --network-magic and \
@@ -232,7 +226,7 @@ parseCommand args = do
                     \because a registry booted on a chain that dies with the \
                     \process could not be attached to again"
                 )
-        Right (External e) -> do
+        Right (Just (sock, magic, skey)) -> do
             timeout <- case optional "--confirm-timeout" flags of
                 Nothing -> Right Nothing
                 Just s -> case readMaybe s of
@@ -241,8 +235,8 @@ parseCommand args = do
                         Left (BadValue "--confirm-timeout" "is not a whole number of seconds")
             Right
                 WriteSettings
-                    { writeNode = NodeSettings (extSocket e) (extMagic e)
-                    , writeWalletKey = extSkeyFile e
+                    { writeNode = NodeSettings sock magic
+                    , writeWalletKey = skey
                     , writeConfirmTimeout = timeout
                     }
     keyFrom flags = do

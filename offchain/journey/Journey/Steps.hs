@@ -82,11 +82,12 @@ stepBoot
     -> TrieManager IO
     -> IO (TokenId, OnChainRoot, ConwayTx)
 stepBoot cfg prov submit tm = do
-    unsigned <- bootTokenImpl cfg prov genesisAddr
+    unsigned <- Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
     signed <- submitWithGenesis submit unsigned
     (tid, tidBytes) <- extractTokenId cfg signed
     createTrie tm tid
-    stateUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
+    stateUtxos <-
+        Cage.withView prov (`Cage.viewUTxOsAt` cageAddrFromCfg cfg Testnet)
     require "boot: state UTxO present at the cage address" $
         not (null stateUtxos)
     bootRoot <- case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
@@ -121,7 +122,7 @@ stepRequest
     -> IO Int
 stepRequest cfg codes prov submit tid = do
     let reqAddr = requestAddrFromCfg cfg tid Testnet
-    before <- Cage.queryUTxOs prov reqAddr
+    before <- Cage.withView prov (`Cage.viewUTxOsAt` reqAddr)
     require "request: request address empty before the request" $
         null before
     -- #157 C4, D-APPROVAL: a tree edge is BOOKED, not merely requested.
@@ -138,7 +139,7 @@ stepRequest cfg codes prov submit tid = do
             tid
             journeyKey
             edgeInsertAbsent
-    after <- Cage.queryUTxOs prov reqAddr
+    after <- Cage.withView prov (`Cage.viewUTxOsAt` reqAddr)
     require
         "request: request UTxO observed at the request address"
         (length after == 1)
@@ -169,10 +170,14 @@ stepApply
     -> Int
     -> IO ConwayTx
 stepApply cfg codes prov submit tm tid refs reqCount = do
-    ctx <- Edges.registryContextFor cfg codes prov refs
-    unsigned <- updateTokenWithDuties cfg prov tm tid genesisAddr ctx
+    unsigned <- Cage.withView prov $ \v -> do
+        ctx <- Edges.registryContextFor cfg codes v refs
+        updateTokenWithDuties cfg v tm tid genesisAddr ctx
     signed <- submitWithGenesis submit unsigned
-    after <- Cage.queryUTxOs prov (requestAddrFromCfg cfg tid Testnet)
+    after <-
+        Cage.withView
+            prov
+            (`Cage.viewUTxOsAt` requestAddrFromCfg cfg tid Testnet)
     require "apply: the request UTxO was consumed" $
         length after < reqCount
     emit
@@ -198,7 +203,8 @@ stepReadBack
     -> OnChainRoot
     -> IO OnChainTokenState
 stepReadBack cfg prov tid bootRoot = do
-    stateUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
+    stateUtxos <-
+        Cage.withView prov (`Cage.viewUTxOsAt` cageAddrFromCfg cfg Testnet)
     st <- case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
         Nothing ->
             failWith "read-back: no state UTxO carrying the policy token"

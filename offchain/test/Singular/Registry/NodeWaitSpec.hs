@@ -59,7 +59,6 @@ import Ouroboros.Network.Magic (NetworkMagic (..))
 import Cardano.Crypto.Hash (hashFromBytes, hashToBytes)
 import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
-import Cardano.Ledger.Api.PParams (emptyPParams)
 import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx)
 import Cardano.Ledger.Api.Tx.Body
     ( mkBasicTxBody
@@ -120,6 +119,7 @@ import Singular.Registry.Node.Wait
     , tryOutcome
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.StubView (servingView, stubView)
 
 spec :: Spec
 spec =
@@ -602,10 +602,7 @@ stubSession =
         , nsSubmitter = prompt (Rejected "unused submitter")
         , nsMagic = NetworkMagic 42
         , nsNetwork = Testnet
-        , nsPParams = emptyPParams
-        , nsScriptRegistered = \_ -> pure False
         , nsTipSlot = pure (SlotNo 7)
-        , nsChainPoint = pure Nothing
         , nsMode = Devnet
         }
 
@@ -632,10 +629,11 @@ blockedSlotSession :: NodeSession
 blockedSlotSession =
     slotSession
         { nsProvider =
-            slotProv
-                { Cage.posixMsToSlot =
-                    \_ -> threadDelay 600_000_000 >> pure (SlotNo 0)
-                }
+            servingView
+                slotView
+                    { Cage.viewPosixMsToSlot =
+                        \_ -> threadDelay 600_000_000 >> pure (SlotNo 0)
+                    }
         }
 
 {- | A session whose time-to-slot conversion fails at once, so the wait
@@ -646,10 +644,11 @@ unconvertibleBlockedTipSession :: IORef Bool -> NodeSession
 unconvertibleBlockedTipSession released =
     (blockedTipSession released)
         { nsProvider =
-            slotProv
-                { Cage.posixMsToSlot =
-                    \_ -> throwIO (userError "the time cannot be converted")
-                }
+            servingView
+                slotView
+                    { Cage.viewPosixMsToSlot =
+                        \_ -> throwIO (userError "the time cannot be converted")
+                    }
         }
 
 {- | The one-slot-per-second session whose time-to-slot conversion
@@ -659,10 +658,11 @@ slowSlotSession :: NodeSession
 slowSlotSession =
     slotSession
         { nsProvider =
-            slotProv
-                { Cage.posixMsToSlot =
-                    \ms -> threadDelay 2_000_000 >> pure (slotOfMs ms)
-                }
+            servingView
+                slotView
+                    { Cage.viewPosixMsToSlot =
+                        \ms -> threadDelay 2_000_000 >> pure (slotOfMs ms)
+                    }
         }
 
 -- | The slow session with its tip long past any confirmation window.
@@ -683,35 +683,22 @@ pastWindowSession = slotSession{nsTipSlot = pure (SlotNo 5000)}
 public confirmation path derives its window through it.
 -}
 slotSession :: NodeSession
-slotSession = stubSession{nsProvider = slotProv}
+slotSession = stubSession{nsProvider = servingView slotView}
 
-{- | A provider whose chain numbers one slot per second. Only the
+{- | A view whose chain numbers one slot per second. Only the
 time-to-slot conversion is ever read.
 -}
-slotProv :: Cage.Provider IO
-slotProv =
-    Cage.Provider
-        { Cage.queryUTxOs = \_ -> pure []
-        , Cage.queryProtocolParams = pure (error "unused")
-        , Cage.evaluateTx = \_ -> pure (error "unused")
-        , Cage.posixMsToSlot = pure . SlotNo . fromIntegral . (`div` 1000)
-        , Cage.posixMsCeilSlot =
+slotView :: Cage.View IO
+slotView =
+    stubView
+        { Cage.viewPosixMsToSlot = pure . SlotNo . fromIntegral . (`div` 1000)
+        , Cage.viewPosixMsCeilSlot =
             pure . SlotNo . fromIntegral . (\ms -> (ms + 999) `div` 1000)
         }
 
 -- | The provider of the stub sessions, never queried.
 neverQueried :: Cage.Provider IO
-neverQueried =
-    Cage.Provider
-        { Cage.queryUTxOs = \_ -> error "the stub session is never queried"
-        , Cage.queryProtocolParams =
-            pure (error "the stub session is never queried")
-        , Cage.evaluateTx = \_ -> error "the stub session is never queried"
-        , Cage.posixMsToSlot =
-            pure (error "the stub session is never queried")
-        , Cage.posixMsCeilSlot =
-            pure (error "the stub session is never queried")
-        }
+neverQueried = Cage.Provider (\_ -> error "the stub session is never queried")
 
 -- | A transaction that creates nothing; only its identity is read.
 basicTx :: ConwayTx
@@ -741,7 +728,7 @@ txWithBoundOutput :: ConwayTx
 txWithBoundOutput = txWithOutput (SJust 1000)
 
 {- | A transaction whose validity ends an hour from now on the
-one-slot-per-second chain of 'slotProv': its confirmation window is
+one-slot-per-second chain of 'slotView': its confirmation window is
 open for an hour of wall clock.
 -}
 txValidForAnHour :: IO ConwayTx

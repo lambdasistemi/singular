@@ -139,7 +139,8 @@ fund sock f = do
         (B16.encode (rawSerialiseSignKeyDSIGN genesisSignKey))
     target <- walletAddr <$> loadWallet 42 (fundKey f)
     withNodeMode (External (ExternalNode sock 42 genesisKey)) $ \sess -> do
-        utxos <- Cage.queryUTxOs (nsProvider sess) genesisAddr
+        utxos <-
+            Cage.withView (nsProvider sess) (`Cage.viewUTxOsAt` genesisAddr)
         (txIn, out) <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
             (u : _) -> pure u
             [] -> fail "devnet: the genesis address holds nothing to fund from"

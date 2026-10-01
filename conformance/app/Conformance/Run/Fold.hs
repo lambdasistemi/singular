@@ -246,8 +246,12 @@ data FoldSpec = FoldSpec
     -}
     }
 
+{- | Assemble one fold from one view of the chain: every read the
+assembly makes is served by the same acquired state.
+-}
 assembleFoldSpec :: Env -> FoldSpec -> IO ConwayTx
-assembleFoldSpec env fs = do
+assembleFoldSpec env0 fs = Cage.withView (envProv env0) $ \held -> do
+    let env = pinnedTo held env0
     -- Every purpose resolves through the cage's reference outputs, which
     -- went up at its boot: a fold that attached the state validator
     -- instead would be refused for size before any script could speak.
@@ -255,7 +259,7 @@ assembleFoldSpec env fs = do
     ctx <- foldSpecContext env fs
     let prov = envProv env
 
-    pp <- Cage.queryProtocolParams prov
+    pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
     funder <- maybe (largestWalletUtxo prov) pure (fsFunder fs)
     require "hand-build: funder carries tokens" (adaOnly (snd funder))
     -- #157: a booked request carries the approval that certifies its
@@ -294,7 +298,10 @@ assembleFoldSpec env fs = do
     nowMs <- currentPosixMs
     upperSlot <- case fsUpper fs of
         Just s -> pure s
-        Nothing -> trySlots prov [nowMs + 2_000, nowMs + 1_500, nowMs + 1_000]
+        Nothing ->
+            Cage.withView
+                prov
+                (\v -> trySlots v [nowMs + 2_000, nowMs + 1_500, nowMs + 1_000])
     let tipAmount = stateMaxFee oldState
         feeAmt = fromMaybe 0 (fsFee fs)
         nReqs = toInteger (length (fsReqs fs))
@@ -575,11 +582,12 @@ small fails loudly at submit (phase 1, no script named); too large
 fails loudly in assembly (a refund under min-ADA).
 -}
 assembleFoldWithFee :: Env -> FoldSpec -> IO ConwayTx
-assembleFoldWithFee env fs = go (0 :: Int) 1_500_000
+assembleFoldWithFee env0 fs =
+    Cage.withView (envProv env0) $ \held -> go (pinnedTo held env0) (0 :: Int) 1_500_000
   where
-    go n fee = do
+    go env n fee = do
         tx <- assembleFoldSpec env fs{fsFee = Just fee}
-        pp <- Cage.queryProtocolParams (envProv env)
+        pp <- Cage.withView (envProv env) (pure . Cage.viewProtocolParams)
         -- Conway charges for the reference scripts a transaction reads,
         -- by their size. Estimating against zero of them stops this loop
         -- one fee short and the node refuses the result.
@@ -588,7 +596,16 @@ assembleFoldWithFee env fs = go (0 :: Int) 1_500_000
             needed = est + 50_000
         if fee >= needed || n >= (5 :: Int)
             then pure tx
-            else go (n + 1) needed
+            else go env (n + 1) needed
+
+{- | The environment with every read served by one held view. A fold is
+one transaction built from one acquired chain state; holding the view
+also spares the acquisitions that would otherwise spend a near-now
+validity window between assembly and submission. The view stays valid
+only inside the scope that acquired it.
+-}
+pinnedTo :: Cage.View IO -> Env -> Env
+pinnedTo v env = env{envProv = Cage.Provider (\k -> k v)}
 
 {- | A FoldSpec with this cage's defaults: derive refunds and
 signers, no withdrawal, no state override, deadline validity.
@@ -638,7 +655,7 @@ declaredSpec env cage = do
     case (mem, cpu) of
         (m, c) | m > 0 -> pure (declaredUnits (m, c))
         _ -> do
-            pp <- Cage.queryProtocolParams (envProv env)
+            pp <- Cage.withView (envProv env) (pure . Cage.viewProtocolParams)
             let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
                 fallback =
                     ExUnits
@@ -685,11 +702,13 @@ rowRequestAndFold env cage label key _val _op = do
             (defaultTipCoin cfg + cgDeposit)
     ctx <- rowRegistryContext env cage tid
     unsignedFold <-
-        updateTokenWithDuties cfg prov (envTm env) tid genesisAddr ctx
+        Cage.withView
+            prov
+            (\v -> updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx)
     state@(stateIn, _) <- cageStateUtxo env cage
     reqUtxos <- pendingRequests env cage
     (handProofs, handRoot) <- speculativeApplyAll env cage tid reqUtxos
-    pp <- Cage.queryProtocolParams prov
+    pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
     let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
         calibSpec =
             ( rowSpec
@@ -757,7 +776,7 @@ buildRefusedFold env = do
         (memU > 0 && cpuU > 0)
     let units = declaredUnits (memU, cpuU)
     draft <- assembleFold env stateUtxo [reqUtxo] [proofs] newRoot units 0
-    pp <- Cage.queryProtocolParams (envProv env)
+    pp <- Cage.withView (envProv env) (pure . Cage.viewProtocolParams)
     -- Conway charges for the reference scripts a transaction reads, by
     -- their size, so the estimate is given that size rather than zero.
     refs <- sessionRefUtxos env
@@ -780,7 +799,7 @@ Compared field-by-field against the library fold it parallels.
 -}
 buildValidFold :: Env -> IO (TxIn, ConwayTx)
 buildValidFold env = do
-    pp <- Cage.queryProtocolParams (envProv env)
+    pp <- Cage.withView (envProv env) (pure . Cage.viewProtocolParams)
     let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
     (stateUtxo@(stateIn, _), reqUtxos) <- foldUtxos env
     (proofLists, newRoot) <- validProofs env reqUtxos
@@ -808,14 +827,16 @@ foldUtxos env = do
         prov = envProv env
         tid = envTid env
     stateUtxos <-
-        Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
+        Cage.withView
+            prov
+            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
     stateUtxo <- case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
         Nothing -> failWith "hand-build: no state UTxO"
         Just u -> pure u
     reqUtxos <-
-        Cage.queryUTxOs
+        Cage.withView
             prov
-            (requestAddrFromCfg cfg tid (network cfg))
+            (`Cage.viewUTxOsAt` requestAddrFromCfg cfg tid (network cfg))
     let reqs = sortOn fst (findRequestUtxos tid reqUtxos)
     require "hand-build: no pending requests" (not (null reqs))
     pure (stateUtxo, reqs)
@@ -875,7 +896,7 @@ assembleFold
     -> IO ConwayTx
 assembleFold env (stateIn, stateOut) reqUtxos proofLists newRoot units fee = do
     let prov = envProv env
-    pp <- Cage.queryProtocolParams prov
+    pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
     funder <- largestWalletUtxo prov
     require "hand-build: funder carries tokens" (adaOnly (snd funder))
     -- #157: a booked request carries its approval, so it is no longer
@@ -1046,17 +1067,20 @@ foldUpperSlot
 foldUpperSlot prov oldState reqOuts = do
     deadlines <- mapM submittedAt reqOuts
     let earliest = minimum deadlines + stateProcessTime oldState
-    r <- try @SomeException (Cage.posixMsToSlot prov earliest)
+    r <-
+        try @SomeException
+            (Cage.withView prov (`Cage.viewPosixMsToSlot` earliest))
     case r of
         Right s -> pure s
         Left _ -> do
             nowUtc <- getCurrentTime
             let posixSec = utcTimeToPOSIXSeconds nowUtc
-            trySlots
-                prov
-                [ round ((posixSec + d) * 1000)
-                | d <- [30, 5, 2]
-                ]
+            Cage.withView prov $ \v ->
+                trySlots
+                    v
+                    [ round ((posixSec + d) * 1000)
+                    | d <- [30, 5, 2]
+                    ]
   where
     submittedAt out = case extractCageDatum out of
         Just (RequestDatum rq) -> pure (requestSubmittedAt rq)
@@ -1166,7 +1190,9 @@ requestAndFoldKey env label key op = do
             (tipVal + cgDeposit)
     ctx <- registryContext env
     unsignedFold <-
-        updateTokenWithDuties cfg prov (envTm env) tid genesisAddr ctx
+        Cage.withView
+            prov
+            (\v -> updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx)
     (stateIn, handFold) <- buildValidFold env
     calibrateFold stateIn handFold unsignedFold
     emit "calibration" (label <> ": hand model matches the library fold")

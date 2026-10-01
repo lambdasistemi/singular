@@ -165,7 +165,7 @@ designateSplit prov submit label = do
                     <> T.unpack (TE.decodeUtf8Lenient reason)
                 )
     awaitTx tx
-    after <- Cage.queryUTxOs prov genesisAddr
+    after <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
     let txid = txIdHex tx
         mine =
             sortOn
@@ -193,7 +193,8 @@ runCA01 :: Env -> CaWorld -> IO ()
 runCA01 env w = do
     let cfg = caCfg w
         prov = envProv env
-    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+    unsignedBoot <-
+        Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
     (mem, cpu) <- measureUnits env unsignedBoot
     let signedBoot = addKeyWitness genesisSignKey unsignedBoot
     result <- submitTxResilient (envSubmit env) signedBoot
@@ -305,7 +306,8 @@ runCA02 env w = do
     let rivalRef = txInToRef rivalIn
         cfgR = (caCfg w){cageSeed = rivalRef}
         prov = envProv env
-    unsignedRival <- bootTokenImpl cfgR prov genesisAddr
+    unsignedRival <-
+        Cage.withView prov (\v -> bootTokenImpl cfgR v genesisAddr)
     (mem, cpu) <- measureUnits env unsignedRival
     let signedRival = addKeyWitness genesisSignKey unsignedRival
     result <- submitTxResilient (envSubmit env) signedRival
@@ -734,7 +736,7 @@ runCA05 env w = do
     require
         "CA05: the forged tx unexpectedly carries script witnesses"
         (null (txScriptWitnesses unsigned))
-    evalMap <- Cage.evaluateTx prov unsigned
+    evalMap <- Cage.withView prov (`Cage.viewEvaluateTx` unsigned)
     require
         ( "CA05: the node evaluated "
             <> show (Map.size evalMap)
@@ -756,7 +758,7 @@ runCA05 env w = do
     let size = txSizeBytes signed
     emitMeasure env "CA05-forged" 0 0 size
     -- read the forgery back from the chain
-    utxos <- Cage.queryUTxOs prov scriptAddr
+    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` scriptAddr)
     forgedLive <- case [o | (i, o) <- utxos, txInTxIdHex i == txIdHex signed] of
         [o] -> pure o
         other ->
@@ -837,9 +839,9 @@ stateUtxoByToken
 stateUtxoByToken env w tid = do
     let cfg = caCfg w
     utxos <-
-        Cage.queryUTxOs
+        Cage.withView
             (envProv env)
-            (cageAddrFromCfg cfg (network cfg))
+            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) tid utxos of
         Just u -> pure u
         Nothing ->

@@ -115,6 +115,7 @@ import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
 import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.Node.Options (NodeMode (..), die)
+import Singular.Registry.Node.View (nodeProvider)
 import Singular.Registry.Node.Wait
     ( WaitStage (..)
     , boundWaitSince
@@ -264,6 +265,13 @@ node address read — and spends every output the indexer does not know
 into one output a block carries. From then on the node and the indexer
 agree on that address, and 'adaptProvider' refuses any further node
 address read for as long as the indexer runs.
+
+On the devnet a view of this provider is therefore NOT one acquired
+state: its address reads are the indexer's, read at the indexer's own
+point, while its parameters, registration, time and evaluation are the
+node view's. Nothing here establishes that the two points agree; that
+agreement is #324's. The ordinary CLI connects to an external node,
+which this returns unchanged.
 -}
 followedProvider
     :: Cage.Provider IO -> Submitter IO -> IO (Cage.Provider IO)
@@ -272,7 +280,7 @@ followedProvider node submit =
         Just Following{followingIndexer = idx, followingFromOrigin = True} -> do
             indexFunding idx node submit
             markFundingIndexed
-            pure node{Cage.queryUTxOs = indexedUTxOs idx}
+            pure (indexedReads idx node)
         _ -> pure node
 
 -- | Every output at an address as the indexer holds it, in the node's order.
@@ -313,7 +321,7 @@ indexFunding idx node submit = do
     wallet <- walletForMode Devnet
     let addr = walletAddr wallet
         key = walletSignKey wallet
-    held <- Cage.queryUTxOs node addr
+    held <- Cage.withView node (`Cage.viewUTxOsAt` addr)
     known <- map fst <$> indexedUTxOs idx addr
     let unseen = filter ((`notElem` known) . fst) held
         value = foldMap ((^. valueTxOutL) . snd) unseen
@@ -363,29 +371,37 @@ addressReads :: IORef Int
 addressReads = unsafePerformIO (newIORef 0)
 {-# NOINLINE addressReads #-}
 
-{- | The cage provider over an N2C provider. Its address reads are the
-node's @GetUTxOByAddress@, refused once 'followedProvider' has handed
-the reads of a followed devnet to its indexer.
+{- | The node adapter over an N2C provider ("Singular.Registry.Node.View"),
+its address reads being the node's @GetUTxOByAddress@ in the acquired
+state, refused once 'followedProvider' has handed the reads of a
+followed devnet to its indexer.
 -}
-adaptProvider :: N2C.Provider IO -> Cage.Provider IO
-adaptProvider p =
-    Cage.Provider
-        { Cage.queryUTxOs = \addr -> do
-            followed <- readIORef fundingIndexed
-            when followed $
-                die
-                    ( "GetUTxOByAddress for "
-                        <> bech32Address addr
-                        <> " sent to the node of a followed devnet after its \
-                           \funding read: read through followedProvider"
-                    )
-            atomicModifyIORef' addressReads (\n -> (n + 1, ()))
-            N2C.queryUTxOs p addr
-        , Cage.queryProtocolParams = N2C.queryProtocolParams p
-        , Cage.evaluateTx = N2C.evaluateTx p
-        , Cage.posixMsToSlot = N2C.posixMsToSlot p
-        , Cage.posixMsCeilSlot = N2C.posixMsCeilSlot p
-        }
+adaptProvider :: NetworkMagic -> N2C.Provider IO -> Cage.Provider IO
+adaptProvider magic p =
+    Cage.Provider $ \action -> Cage.withView (nodeProvider magic p) $ \v ->
+        action
+            v
+                { Cage.viewUTxOsAt = \addr -> do
+                    followed <- readIORef fundingIndexed
+                    when followed $
+                        die
+                            ( "GetUTxOByAddress for "
+                                <> bech32Address addr
+                                <> " sent to the node of a followed devnet after its \
+                                   \funding read: read through followedProvider"
+                            )
+                    atomicModifyIORef' addressReads (\n -> (n + 1, ()))
+                    Cage.viewUTxOsAt v addr
+                }
+
+{- | A followed devnet's provider: each view's address reads are the
+indexer's, every other read the node view's. The indexer is not read at
+the view's chain point; agreement between the two is #324's.
+-}
+indexedReads :: IndexerHandle -> Cage.Provider IO -> Cage.Provider IO
+indexedReads idx node =
+    Cage.scopedProvider $ \action -> Cage.withView node $ \v ->
+        action v{Cage.viewUTxOsAt = indexedUTxOs idx}
 
 -- | Seconds between confirmation polls.
 confirmationPollSeconds :: Int

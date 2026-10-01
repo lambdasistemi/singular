@@ -87,7 +87,7 @@ dust after a session of folds.
 -}
 largestWalletUtxo :: Cage.Provider IO -> IO (TxIn, TxOut ConwayEra)
 largestWalletUtxo prov = do
-    utxos <- Cage.queryUTxOs prov genesisAddr
+    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
     -- #157: a spent approval is not burned at the fold, so it returns to
     -- the funder and rides in the wallet. Fee and collateral inputs are
     -- taken from an ada-only output, which is what the ledger requires of
@@ -177,7 +177,7 @@ collateralPotWithChange env = do
         changeIn = TxIn (txIdTx tx) (TxIx 1)
     let awaitVisible 0 = failWith "collateral split is not yet visible in wallet UTxOs"
         awaitVisible n = do
-            utxos <- Cage.queryUTxOs prov genesisAddr
+            utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
             if all (`elem` map fst utxos) [potIn, changeIn]
                 then pure ()
                 else threadDelay 1_000_000 >> awaitVisible (n - 1)
@@ -201,14 +201,14 @@ spend the very output CA01 boots from.
 -}
 consolidateWallet :: Cage.Provider IO -> Submitter IO -> IO ()
 consolidateWallet prov submit = do
-    utxos <- Cage.queryUTxOs prov genesisAddr
+    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
     let spendable = filter (not . carriesRefScript . snd) utxos
         dirty = filter (not . adaOnlyOut . snd) spendable
         clean = filter (adaOnlyOut . snd) spendable
     if length spendable < 2 && null dirty
         then pure ()
         else do
-            pp <- Cage.queryProtocolParams prov
+            pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
             let total = sum [outCoin o | (_, o) <- spendable]
                 assets =
                     foldr

@@ -168,8 +168,8 @@ bootRegistry
     -> TrieManager IO
     -> IO Registry
 bootRegistry cfg codes prov submit payer tm = do
-    bootWallet <- Cage.queryUTxOs prov payer
-    unsignedBoot <- bootTokenImpl cfg prov payer
+    (bootWallet, unsignedBoot) <- Cage.withView prov $ \v ->
+        (,) <$> Cage.viewUTxOsAt v payer <*> bootTokenImpl cfg v payer
     let bootScripts = unsignedBoot ^. witsTxL . scriptTxWitsL
         bootRefs = unsignedBoot ^. bodyTxL . referenceInputsTxBodyL
         bootBytes =
@@ -202,7 +202,10 @@ bootRegistry cfg codes prov submit payer tm = do
     createTrie tm tid
     refs <- Edges.publishCageRefs cfg codes prov submit payer tid
     -- The boot is not booted until the chain holds its state UTxO.
-    stateUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
+    stateUtxos <-
+        Cage.withView
+            prov
+            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
     when (null stateUtxos) $
         error "bootRegistry: the cage address holds no UTxO after the boot"
     pure
@@ -308,16 +311,16 @@ foldEdgeWith reg key edge mDest = do
                 key
                 edge
                 dest
-    ctx <-
-        Edges.registryContextFor
-            (regCfg reg)
-            (regCodes reg)
-            (regProv reg)
-            (regRefs reg)
-    unsigned <-
+    unsigned <- Cage.withView (regProv reg) $ \v -> do
+        ctx <-
+            Edges.registryContextFor
+                (regCfg reg)
+                (regCodes reg)
+                v
+                (regRefs reg)
         updateTokenWithDuties
             (regCfg reg)
-            (regProv reg)
+            v
             (regTm reg)
             (regTid reg)
             (regPayer reg)
@@ -366,7 +369,9 @@ chainRoot :: Registry -> IO OnChainRoot
 chainRoot reg = do
     let cfg = regCfg reg
     utxos <-
-        Cage.queryUTxOs (regProv reg) (cageAddrFromCfg cfg (network cfg))
+        Cage.withView
+            (regProv reg)
+            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) (regTid reg) utxos of
         Nothing ->
             error "chainRoot: no state UTxO carrying the policy token"

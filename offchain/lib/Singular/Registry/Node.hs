@@ -73,7 +73,6 @@ module Singular.Registry.Node
     , NodeSession (..)
     , awaitChain
     , currentTipSlot
-    , scriptStakeRegistered
     , awaitTx
     , awaitTxId
     , awaitTxWindow
@@ -145,7 +144,6 @@ import Singular.Registry.Node.Session
     , awaitConnection
     , currentTipSlot
     , devnetGenesis
-    , scriptStakeRegistered
     , withNode
     , withNodeForPlannedFunding
     , withNodeMode

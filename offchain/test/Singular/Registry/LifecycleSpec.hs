@@ -9,10 +9,11 @@ import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.Lifecycle
     ( checkExecutionLimit
-    , fundingProvider
+    , fundingView
     )
 import Singular.Registry.Node (funderAddr)
-import Singular.Registry.Provider (Provider (..))
+import Singular.Registry.Provider (View (..))
+import Singular.Registry.StubView (stubView)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 spec :: Spec
@@ -47,12 +48,11 @@ spec = describe "live aggregate transaction execution limit" $ do
             let output :: Integer -> TxOut ConwayEra
                 output amount = mkBasicTxOut funderAddr (inject (Coin amount))
                 prov =
-                    Provider
-                        { queryUTxOs = \_ -> pure [(reserved, output 100000000), (free, output 5000000)]
-                        , queryProtocolParams = fail "unused protocol query"
-                        , evaluateTx = \_ -> fail "unused evaluation"
-                        , posixMsToSlot = \_ -> fail "unused slot query"
-                        , posixMsCeilSlot = \_ -> fail "unused slot query"
+                    stubView
+                        { viewUTxOsAt = \_ -> pure [(reserved, output 100000000), (free, output 5000000)]
+                        , viewEvaluateTx = \_ -> fail "unused evaluation"
+                        , viewPosixMsToSlot = \_ -> fail "unused slot query"
+                        , viewPosixMsCeilSlot = \_ -> fail "unused slot query"
                         }
-            selected <- queryUTxOs (fundingProvider [reserved] prov) funderAddr
+            selected <- viewUTxOsAt (fundingView [reserved] prov) funderAddr
             map fst selected `shouldBe` [free]

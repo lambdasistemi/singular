@@ -6,6 +6,7 @@ import Naming.RegisterSpec qualified
 import Naming.RetireVerifySpec qualified
 import Singular.Application.OpenDatum.BuildersSpec qualified
 import Singular.Application.OpenDatum.EnvelopeSpec qualified
+import Singular.CLI.WriteSpec qualified
 import Singular.CLISpec qualified
 import Singular.Registry.BlueprintParametersSpec qualified
 import Singular.Registry.CandidateSpec qualified
@@ -15,6 +16,8 @@ import Singular.Registry.LifecycleSpec qualified
 import Singular.Registry.NodeCleanupSpec qualified
 import Singular.Registry.NodeSpec qualified
 import Singular.Registry.NodeWaitSpec qualified
+import Singular.Registry.OneViewSpec qualified
+import Singular.Registry.ProviderSpec qualified
 import Singular.Registry.TxBuilder.BookEdgeSpec qualified
 import Singular.Registry.TxBuilder.BootSpec qualified
 import Singular.Registry.TxBuilder.BurnSourceSpec qualified
@@ -37,6 +40,8 @@ main = hspec $ do
     Singular.Registry.NodeCleanupSpec.spec
     Singular.Registry.NodeSpec.spec
     Singular.Registry.NodeWaitSpec.spec
+    Singular.Registry.OneViewSpec.spec
+    Singular.Registry.ProviderSpec.spec
     Singular.Registry.LifecycleSpec.spec
     Singular.Registry.TypesSpec.spec
     Naming.CompleteVerifySpec.spec
@@ -46,3 +51,4 @@ main = hspec $ do
     Singular.Application.OpenDatum.EnvelopeSpec.spec
     Singular.Application.OpenDatum.BuildersSpec.spec
     Singular.CLISpec.spec
+    Singular.CLI.WriteSpec.spec

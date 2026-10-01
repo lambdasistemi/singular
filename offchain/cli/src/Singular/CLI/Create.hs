@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 
 {- |
 Module      : Singular.CLI.Create
@@ -39,18 +40,18 @@ import Lens.Micro ((^.))
 import System.Directory (createDirectoryIfMissing)
 
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.Tx (bodyTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , coinTxOutL
     , referenceScriptTxOutL
     )
-import Cardano.Ledger.BaseTypes (StrictMaybe (..))
+import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (Script, hashScript)
 import Cardano.Ledger.Mary.Value (MultiAsset (..))
-import Cardano.Ledger.TxIn (TxIn)
+import Cardano.Ledger.TxIn (TxIn (..))
 import Data.Word (Word32)
 
 import MPF.Backend.Pure (emptyMPFInMemoryDB)
@@ -65,6 +66,7 @@ import Singular.CLI.Command
     , WriteSettings (..)
     )
 import Singular.CLI.Live (receipt, txInText)
+import Singular.CLI.Node (Capabilities (..))
 import Singular.CLI.Receipt (OutcomeClass (..), durableWrite)
 import Singular.CLI.Registry
     ( LocalState (..)
@@ -87,7 +89,7 @@ import Singular.CLI.Session
     , failWith
     , journalObserved
     , journalObservedId
-    , journalledSubmit
+    , submitBuilt
     , txIdHex
     , withSession
     , withWrite
@@ -106,17 +108,13 @@ import Singular.Registry.Ledger
     , ConwayEra
     , TokenId (..)
     )
-import Singular.Registry.Node
-    ( NodeSession (..)
-    , Wallet (..)
-    , bech32Address
-    )
+import Singular.Registry.Node (Wallet (..), bech32Address)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Edges
     ( adaOnlyOut
-    , publishRefScript
-    , publishStateRefReserving
+    , publishRefScriptTx
+    , stateRefIn
     , witnessScriptOf
     )
 import Singular.Registry.TxBuilder.Internal
@@ -142,10 +140,9 @@ runCreate a = do
     -- A preview writes nothing: no lock, no directory, no journal.
     let session = if createPreview a then withSession else withWrite
     session dir "create" (createWrite a) $ \wc -> do
-        let sess = wcSession wc
-            prov = nsProvider sess
-            addr = walletAddr (wcWallet wc)
-        utxos <- Cage.queryUTxOs prov addr
+        let addr = walletAddr (wcWallet wc)
+        utxos <-
+            Cage.withView (capReads (wcCapabilities wc)) (`Cage.viewUTxOsAt` addr)
         seedIn <- case createSeed a of
             Just s -> either (failWith ClientRefusal) pure (parseOutRef (T.pack s))
             Nothing -> case sortOn
@@ -249,28 +246,32 @@ tokenHex (TokenId (AssetName n)) = hexT (SBS.fromShort n)
 
 boot :: WriteContext -> CageConfig -> NamingCodes -> TxIn -> IO Booted
 boot wc cfg pinned seedIn = do
-    let sess = wcSession wc
-        prov = nsProvider sess
+    let prov = capReads (wcCapabilities wc)
         addr = walletAddr (wcWallet wc)
-        submit = journalledSubmit wc
-    -- The state validator, published from outside the seed.
-    stateRef@(stateIn, _) <-
-        publishStateRefReserving
-            (Set.singleton seedIn)
-            cfg
-            prov
-            ( submit
-                "publish-state"
-                ( expecting
-                    ( "reference:"
-                        <> hexT
-                            ( scriptHashBytes
-                                (hashScript (scriptFromBytes "state" (cageScriptBytes cfg)))
-                            )
+        -- One transaction, built from one view, journalled with its point.
+        publish step reserved script = do
+            (signed, refOut) <-
+                submitBuilt
+                    wc
+                    step
+                    ( const
+                        (expecting ("reference:" <> hexT (scriptHashBytes (hashScript script))))
                     )
-                )
+                    (\v -> publishRefScriptTx reserved v addr script)
+            pure (TxIn (txIdTx signed) (TxIx 0), refOut)
+    -- The state validator, published from outside the seed, unless the
+    -- wallet already publishes it.
+    existing <-
+        Cage.withView prov (\v -> stateRefIn cfg <$> Cage.viewUTxOsAt v addr)
+    stateRef@(stateIn, _) <-
+        maybe
+            ( publish
+                "publish-state"
+                (Set.singleton seedIn)
+                (scriptFromBytes "state" (cageScriptBytes cfg))
             )
-            addr
+            pure
+            existing
     observeReference
         wc
         "publish-state"
@@ -278,13 +279,20 @@ boot wc cfg pinned seedIn = do
         (scriptFromBytes "state" (cageScriptBytes cfg))
         stateRef
     -- The boot, consuming the seed.
-    signedBoot <-
-        bootTokenImpl cfg prov addr >>= submit "boot" (expecting "state")
+    (signedBoot, ()) <-
+        submitBuilt
+            wc
+            "boot"
+            (const (expecting "state"))
+            (\v -> (,()) <$> bootTokenImpl cfg v addr)
     tid <- case signedBoot ^. bodyTxL . mintTxBodyL of
         MultiAsset m -> case Map.lookup (cagePolicyIdFromCfg cfg) m of
             Just names | [(name, 1)] <- Map.toList names -> pure (TokenId name)
             _ -> failWith LedgerRefusal "the boot minted no single registry token"
-    stateUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
+    stateUtxos <-
+        Cage.withView
+            prov
+            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
         Nothing ->
             failWith Partial "the boot confirmed but its state output is not live"
@@ -305,15 +313,7 @@ boot wc cfg pinned seedIn = do
     published <-
         mapM
             ( \(role, script) -> do
-                ref <-
-                    publishRefScript
-                        prov
-                        ( submit
-                            ("publish-" <> role)
-                            (expecting ("reference:" <> hexT (scriptHashBytes (hashScript script))))
-                        )
-                        addr
-                        script
+                ref <- publish ("publish-" <> role) Set.empty script
                 observeReference wc ("publish-" <> role) addr script ref
                 pure (reference role addr script ref)
             )
@@ -344,7 +344,8 @@ observeReference
     -> (TxIn, TxOut ConwayEra)
     -> IO ()
 observeReference wc step addr script (i, _) = do
-    utxos <- Cage.queryUTxOs (nsProvider (wcSession wc)) addr
+    utxos <-
+        Cage.withView (capReads (wcCapabilities wc)) (`Cage.viewUTxOsAt` addr)
     let wanted = hashScript script
     case [o | (j, o) <- utxos, j == i] of
         [o]

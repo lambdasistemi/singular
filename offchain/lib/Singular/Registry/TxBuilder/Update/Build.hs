@@ -65,7 +65,7 @@ import Singular.Registry.Ledger
     , TxIn
     )
 import Singular.Registry.Provider
-    ( Provider (..)
+    ( View (..)
     )
 import Singular.Registry.TxBuilder.ConnectedFold
     ( ConnectedMint (..)
@@ -85,9 +85,9 @@ import Singular.Registry.Types
 -- | Empty query GADT (no context needed).
 data NoCtx a
 
--- | Wrap the Provider's evaluateTx for the DSL.
+-- | Wrap the view's script evaluation for the DSL.
 mkEvalTx
-    :: Provider IO
+    :: View IO
     -> ConwayTx
     -> IO
         ( Map.Map
@@ -97,8 +97,8 @@ mkEvalTx
             )
             (Either String ExUnits)
         )
-mkEvalTx prov tx = do
-    r <- evaluateTx prov tx
+mkEvalTx view tx = do
+    r <- viewEvaluateTx view tx
     pure $
         Map.map
             ( \case

@@ -156,6 +156,9 @@ library node-internal
   exposed-modules:
     Singular.Registry.Ledger
     Singular.Registry.Provider
+    Singular.Registry.Node.Memory
+    Singular.Registry.Node.View
+    Singular.Registry.Node.Submit
     Singular.Registry.Node.Options
     Singular.Registry.Node.Wallet
     Singular.Registry.Node.Wait
@@ -670,9 +673,12 @@ test-suite cage-tests
     Singular.Application.OpenDatum.EnvelopeSpec
     Singular.CLISpec
     Singular.CLI.Command
+    Singular.CLI.Node
     Singular.CLI.Proof
     Singular.CLI.Receipt
     Singular.CLI.Registry
+    Singular.CLI.Session
+    Singular.CLI.WriteSpec
     Singular.Registry.BlueprintParametersSpec
     Singular.Registry.DeploymentSpec
     Singular.Registry.TxBuilder.BookEdgeSpec
@@ -685,6 +691,9 @@ test-suite cage-tests
     Singular.Registry.NodeCleanupSpec
     Singular.Registry.NodeSpec
     Singular.Registry.NodeWaitSpec
+    Singular.Registry.OneViewSpec
+    Singular.Registry.ProviderSpec
+    Singular.Registry.StubView
     Singular.Registry.LifecycleSpec
     Singular.Registry.TypesSpec
     Naming.CompleteVerifySpec
@@ -693,6 +702,9 @@ test-suite cage-tests
     Naming.RecordValueSpec
   build-depends:
     , aeson
+    , async
+    , cardano-ledger-binary
+    , cardano-slotting
     , base               >=4.14 && <5
     , cardano-ledger-api
     , cardano-ledger-alonzo
@@ -716,7 +728,8 @@ test-suite cage-tests
     , hspec
     , microlens
     , mts:mpf-write
-    , ouroboros-network
+    , ouroboros-network:api
+    , ouroboros-consensus
     , plutus-core
     , plutus-ledger-api
     , plutus-tx
@@ -866,6 +879,7 @@ executable singular
     Singular.CLI.Entry
     Singular.CLI.Inspect
     Singular.CLI.Live
+    Singular.CLI.Node
     Singular.CLI.Proof
     Singular.CLI.Receipt
     Singular.CLI.Registry
@@ -890,8 +904,6 @@ executable singular
     , cardano-crypto-class
     , cardano-ledger-binary
     , cardano-ledger-mary
-    , cardano-node-clients:devnet
-    , cardano-node-clients
     , cardano-slotting
     , cardano-tx-tools:tx-build
     , microlens

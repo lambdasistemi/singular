@@ -39,8 +39,8 @@ import Singular.Application.OpenDatum.Envelope
     , envelopeToData
     )
 import Singular.Application.OpenDatum.Release (heldOf, liveEnvelope)
-import Singular.Registry.Ledger (ConwayEra, PParams, TxIn)
-import Singular.Registry.Provider (Provider)
+import Singular.Registry.Ledger (ConwayEra, TxIn)
+import Singular.Registry.Provider (View (..))
 import Singular.Registry.TxBuilder.ConnectedFold (RawRedeemer (..))
 import Singular.Registry.TxBuilder.Internal
     ( addrWitnessKeyHash
@@ -59,8 +59,10 @@ releaseRedeemer = RawRedeemer (PLC.Constr 1 [])
 
 -- | What one payload update needs in hand.
 data UpdateArgs = UpdateArgs
-    { uaProvider :: Provider IO
-    , uaPParams :: PParams ConwayEra
+    { uaView :: View IO
+    {- ^ The view the update is built from: its parameters, its script
+    evaluation
+    -}
     , uaApplied :: SBS.ShortByteString
     -- ^ The applied open-datum script
     , uaHolding :: (TxIn, TxOut ConwayEra)
@@ -118,9 +120,9 @@ updatePayloadTx args = case liveEnvelope (snd (uaHolding args)) of
                         Tx.collateral (fst (uaFee args))
                 result <-
                     Tx.build
-                        (Tx.mkPParamsBound (uaPParams args))
+                        (Tx.mkPParamsBound (viewProtocolParams (uaView args)))
                         (Tx.InterpretIO (const (pure undefined)))
-                        (mkEvalTx (uaProvider args))
+                        (mkEvalTx (uaView args))
                         [uaFee args, uaHolding args]
                         (maybe [] pure (uaReference args))
                         (uaChange args)
