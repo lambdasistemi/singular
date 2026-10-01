@@ -21,9 +21,10 @@ appended before the next step starts:
 4. @observed@: a fresh readback of what it made.
 
 A transaction whose last phase is not @observed@, @rejected@ or
-@excluded@ is unresolved. Every write refuses while one exists, and
-nothing is resubmitted or rebooted implicitly; @inspect@ resolves one
-only from chain evidence about that exact transaction.
+@excluded@ is unresolved. The next command reconciles it from chain
+evidence about that exact transaction ("Singular.CLI.Reconcile"); a
+write stops on what remains, naming its 'SubmissionCase', and nothing is
+resubmitted or rebooted implicitly.
 
 A receipt is what one command prints: its public identity, what it
 submitted, what it read back from the ledger and how, and its outcome.
@@ -212,7 +213,10 @@ bodiesDir :: FilePath -> FilePath
 bodiesDir dir = dir </> "submissions"
 
 {- | The case a submission met, named in the journal by its phases and
-in the receipt of the command that met it.
+in the receipt of the command that met it: the node acknowledged it
+(@submitted@), no answer arrived (@submit-unknown@, or nothing after
+@prepared@), the node rejected it, it was seen included (@confirmed@,
+or observed), or the confirmation deadline passed (@unconfirmed@).
 -}
 data SubmissionCase
     = CaseAcknowledged
@@ -224,11 +228,27 @@ data SubmissionCase
 
 -- | The case as a receipt names it.
 caseName :: SubmissionCase -> Text
-caseName _ = ""
+caseName = \case
+    CaseAcknowledged -> "acknowledged"
+    CaseUnknown -> "unknown"
+    CaseRejected -> "rejected"
+    CaseIncluded -> "included"
+    CaseTimeout -> "timeout"
 
--- | The case the transaction met, from its journalled phases.
+{- | The case the transaction met, from its journalled phases: the
+furthest one reached. Inclusion recorded later — by a reconciliation —
+supersedes an earlier unknown answer or timeout. A transaction the
+journal does not name has no case.
+-}
 submissionCase :: [JournalEntry] -> Text -> Maybe SubmissionCase
-submissionCase _ _ = Nothing
+submissionCase entries t = case [journalEvent e | e <- entries, journalTxId e == t] of
+    [] -> Nothing
+    events
+        | any (`elem` ["confirmed", "observed"]) events -> Just CaseIncluded
+        | "rejected" `elem` events -> Just CaseRejected
+        | "unconfirmed" `elem` events -> Just CaseTimeout
+        | "submitted" `elem` events -> Just CaseAcknowledged
+        | otherwise -> Just CaseUnknown
 
 -- | The attributable classes a command ends in.
 data OutcomeClass

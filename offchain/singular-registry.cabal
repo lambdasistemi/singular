@@ -884,6 +884,7 @@ executable singular
     Singular.CLI.Node
     Singular.CLI.Proof
     Singular.CLI.Receipt
+    Singular.CLI.Reconcile
     Singular.CLI.Recovery
     Singular.CLI.Registry
     Singular.CLI.Session
