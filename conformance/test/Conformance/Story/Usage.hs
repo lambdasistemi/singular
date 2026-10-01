@@ -99,10 +99,11 @@ spec = do
                 , "CS04, a redeemer at a wrong constructor index: live refusal reason not observed for the state and request scripts"
                 , "CG09, a reject while the request is still in phase 1"
                 , "CG10, a fold against a superseded root"
-                , "CG11, an empty fold: the model refuses it for `empty-fold` as the consumer requires, but the driver has no batch question, so it is not compared (class D)."
-                , "CG12, surplus actions and a missing action: not compared, actions are not an input of the model, so it has no counterpart (class D)."
-                , "CG19, a crossed refund allocation and a two-request reject: not compared, the driver has no batch question (class D)."
-                , "The consumer correspondence of CG11, CG12 and CG19 (Q-002) remains unresolved; the three rows stay held."
+                , "CG11, an empty fold: the model refuses it for `empty-fold` as the consumer requires, but the driver has no batch question, so it is not compared."
+                , "CG12, surplus actions and a missing action: not compared, actions are not an input of the model, so it has no counterpart."
+                , "CG19, a crossed refund allocation and a two-request reject: not compared, the driver has no batch question."
+                , "Whether CG11, CG12 and CG19 meet the consuming project's requirements remains unresolved; the three rows stay held."
+                , "the validator is to be repaired so it admits the reject, a repair not yet landed, and the consuming project's requirement that a reject before the retraction window be refused is unmet"
                 , "not run; live refusal reason not observed and not compared"
                 ]
                 $ \phrase -> book `shouldSatisfy` isInfixOf phrase
@@ -119,6 +120,19 @@ spec = do
                                     . isInfixOf
                                         "not compared while the recorded consumer-model conflict holds them"
                                 )
+    it
+        "The book's public limits use no internal class letter, question or issue number"
+        $ do
+            let limits =
+                    [ line
+                    | line <- lines (renderBook [] [])
+                    , any
+                        (`isPrefixOf` line)
+                        ["Refusal reasons come from", "Refusals outside these chapters"]
+                    ]
+            length limits `shouldBe` 2
+            forM_ ["(class", "Q-002", "#320", "R9"] $ \token ->
+                filter (token `isInfixOf`) limits `shouldBe` []
     it
         "The retirement chapter describes registration and retirement as model edge requests"
         $ do
