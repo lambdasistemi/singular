@@ -20,7 +20,7 @@ module Singular.Registry.E2E.CageSpec
 
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (async, cancel)
-import Control.Monad (forM_, unless)
+import Control.Monad (forM_, unless, when)
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
@@ -41,9 +41,11 @@ import Cardano.Ledger.Api.Tx
     , txIdTx
     )
 import Cardano.Ledger.Api.Tx.Body
-    ( inputsTxBodyL
+    ( ValidityInterval (..)
+    , inputsTxBodyL
     , mintTxBodyL
     , outputsTxBodyL
+    , vldtTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
@@ -55,7 +57,8 @@ import Cardano.Ledger.Api.Tx.Out
     )
 import Cardano.Ledger.BaseTypes
     ( Network (..)
-    , StrictMaybe (SNothing)
+    , SlotNo (..)
+    , StrictMaybe (SJust, SNothing)
     , TxIx (..)
     )
 import Cardano.Ledger.Mary.Value
@@ -129,6 +132,7 @@ import Singular.Registry.TxBuilder.Internal
     , cageAddrFromCfg
     , cagePolicyIdFromCfg
     , computeScriptHash
+    , currentPosixMs
     , extractCageDatum
     , findUtxoByTxIn
     , mkInlineDatum
@@ -487,6 +491,22 @@ cageFlowSpec stateBytes requestBytes = do
             assertEqual "rejection observed state" newStateOut (snd stateAfter)
             assertLandedOutput prov signedReject newStateOut
 
+    -- #320: a reject carries no admission (Lean exitAdmission .reject =
+    -- none), so the product builder rejects a request inside its windows.
+    it "rejects a request in its processing window"
+        $ withBootedCageTimed
+            processingRejectCfg
+            stateBytes
+            requestBytes
+        $ rejectsWithin ProcessingWindow
+
+    it "rejects a request in its retraction window"
+        $ withBootedCageTimed
+            retractionRejectCfg
+            stateBytes
+            requestBytes
+        $ rejectsWithin RetractionWindow
+
 -- No End / Sweep / staking cases: termination, migration and seizure
 -- refuse for every party under the ownerless ruling (NOTE-028/A-003).
 -- That refusal evidence, with success controls, lives in repair-rows
@@ -512,8 +532,27 @@ withBootedCage
        )
     -> IO a
 withBootedCage adjustCfg stateBytes requestBytes action =
-    withE2E stateBytes requestBytes $
-        \cfg0 prov submit tm -> do
+    withBootedCageTimed adjustCfg stateBytes requestBytes (const action)
+
+{- | 'withBootedCage', also handing the caller the devnet's system start
+(POSIX ms), from which a slot's time is read.
+-}
+withBootedCageTimed
+    :: (CageConfig -> CageConfig)
+    -> SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> ( Integer
+         -> CageConfig
+         -> Cage.Provider IO
+         -> Submitter IO
+         -> TrieManager IO
+         -> Driver.Registry
+         -> IO a
+       )
+    -> IO a
+withBootedCageTimed adjustCfg stateBytes requestBytes action =
+    withE2ETimed stateBytes requestBytes $
+        \startMs cfg0 prov submit tm -> do
             let cfg = adjustCfg cfg0
             codes <- loadRegistryCodesFromEnv
             reg <-
@@ -524,7 +563,7 @@ withBootedCage adjustCfg stateBytes requestBytes action =
                     (submitWithGenesis submit)
                     genesisAddr
                     tm
-            action cfg prov submit tm reg
+            action startMs cfg prov submit tm reg
 
 submitInsertRequest
     :: CageConfig
@@ -579,6 +618,170 @@ fastRejectCfg cfg =
         , defaultRetractTime = 1_000
         }
 
+-- | A processing window long enough to build and land a reject inside it.
+processingRejectCfg :: CageConfig -> CageConfig
+processingRejectCfg cfg =
+    cfg
+        { defaultProcessTime = 300_000
+        , defaultRetractTime = 1_000
+        }
+
+{- | A short processing window, then a retraction window long enough to
+build and land a reject inside it.
+-}
+retractionRejectCfg :: CageConfig -> CageConfig
+retractionRejectCfg cfg =
+    cfg
+        { defaultProcessTime = 2_000
+        , defaultRetractTime = 300_000
+        }
+
+-- | The window a reject is placed in.
+data RejectWindow = ProcessingWindow | RetractionWindow
+    deriving stock (Show)
+
+{- | Book one request, wait until the named window has opened, and reject
+it through the product builder. The built validity interval must lie
+wholly inside that window, computed from the request's datum and the
+state. After inclusion the request is gone, its owner's refund (at least
+the deposit) is read back from the ledger, and so are the state's datum,
+root and value, unchanged.
+-}
+rejectsWithin
+    :: RejectWindow
+    -> Integer
+    -> CageConfig
+    -> Cage.Provider IO
+    -> Submitter IO
+    -> TrieManager IO
+    -> Driver.Registry
+    -> IO ()
+rejectsWithin window startMs cfg prov submit _tm reg = do
+    let tokenId = Driver.registryTokenId reg
+        requestAddr = requestAddrFromCfg cfg tokenId Testnet
+    reqTxIn <-
+        submitInsertRequest
+            cfg
+            prov
+            submit
+            tokenId
+            "early"
+            edgeInsertActive
+    reqUtxosBefore <- Cage.queryUTxOs prov requestAddr
+    request <- observedRequest reqTxIn reqUtxosBefore
+    stateBefore <- currentState cfg prov tokenId
+    oldState <- observedState (snd stateBefore)
+    let submittedAt = requestSubmittedAt request
+        processDeadline = submittedAt + stateProcessTime oldState
+        retractDeadline = processDeadline + stateRetractTime oldState
+        (windowStart, windowEnd) = case window of
+            ProcessingWindow -> (submittedAt, processDeadline)
+            RetractionWindow -> (processDeadline, retractDeadline)
+    waitUntilMs (windowStart + 1_000)
+    refs <- publishCageRefs cfg prov submit tokenId
+    unsignedReject <-
+        rejectRequestsWithRefs
+            cfg
+            prov
+            tokenId
+            genesisAddr
+            refs
+    assertConsumedRequest reqTxIn reqUtxosBefore unsignedReject
+    (lowerMs, upperMs) <- builtIntervalMs prov startMs unsignedReject
+    assertEffect
+        ( "reject validity ["
+            <> show lowerMs
+            <> ", "
+            <> show upperMs
+            <> ") lies wholly inside the "
+            <> show window
+            <> " ["
+            <> show windowStart
+            <> ", "
+            <> show windowEnd
+            <> ")"
+        )
+        (windowStart <= lowerMs && upperMs <= windowEnd)
+    let rejectBody = unsignedReject ^. bodyTxL
+        rejectOutputs = toList (rejectBody ^. outputsTxBodyL)
+        ownerOutputs = filter (paysOwner request) rejectOutputs
+    assertEqual
+        "rejection spent state"
+        True
+        (Set.member (fst stateBefore) (rejectBody ^. inputsTxBodyL))
+    assertEqual "rejection mint" mempty (rejectBody ^. mintTxBodyL)
+    assertEffect
+        "rejection refund recipient missing"
+        (not (null ownerOutputs))
+    assertAtLeast
+        "rejection owner refund"
+        (Coin (requestDeposit request))
+        ( Coin
+            ( sum
+                [amount | out <- ownerOutputs, let Coin amount = out ^. coinTxOutL]
+            )
+        )
+    signedReject <- submitWithGenesis submit unsignedReject
+    putStrLn
+        ( "    "
+            <> show window
+            <> ": validity ["
+            <> show lowerMs
+            <> ", "
+            <> show upperMs
+            <> ") inside ["
+            <> show windowStart
+            <> ", "
+            <> show windowEnd
+            <> "), tx "
+            <> show (txIdTx signedReject)
+        )
+    -- Read back from the ledger after inclusion.
+    reqUtxosAfter <- Cage.queryUTxOs prov requestAddr
+    assertEqual
+        "rejection request remains after submission"
+        Nothing
+        (findUtxoByTxIn reqTxIn reqUtxosAfter)
+    forM_ ownerOutputs (assertLandedOutput prov signedReject)
+    stateAfter <- currentState cfg prov tokenId
+    stateAfterDatum <- observedState (snd stateAfter)
+    assertEqual
+        "rejection observed state datum and root"
+        oldState
+        stateAfterDatum
+    assertEqual
+        "rejection observed state value"
+        (snd stateBefore ^. valueTxOutL)
+        (snd stateAfter ^. valueTxOutL)
+
+{- | The built transaction's validity interval in POSIX ms. The devnet
+runs every era from slot 0 with 100 ms slots, so a slot starts at the
+system start plus 100 ms a slot; the node's own conversion of the lower
+bound checks that reading.
+-}
+builtIntervalMs
+    :: Cage.Provider IO -> Integer -> ConwayTx -> IO (Integer, Integer)
+builtIntervalMs prov startMs tx =
+    case tx ^. bodyTxL . vldtTxBodyL of
+        ValidityInterval (SJust lower) (SJust upper) -> do
+            let posixOf (SlotNo slot) = startMs + 100 * toInteger slot
+            nodeLower <- Cage.posixMsToSlot prov (posixOf lower)
+            assertEqual "validity lower bound read by the node" lower nodeLower
+            pure (posixOf lower, posixOf upper)
+        other -> do
+            expectationFailure
+                ( "wrong effect: reject validity is not a finite interval: "
+                    <> show other
+                )
+            fail "reject validity"
+
+-- | Sleep until a POSIX time (ms) has passed.
+waitUntilMs :: Integer -> IO ()
+waitUntilMs target = do
+    now <- currentPosixMs
+    when (target > now) $
+        threadDelay (fromInteger ((target - now) * 1_000))
+
 -- ---------------------------------------------------------
 -- Bracket
 -- ---------------------------------------------------------
@@ -598,9 +801,28 @@ withE2E
          -> IO a
        )
     -> IO a
-withE2E stateBytes requestBytes action = do
+withE2E stateBytes requestBytes action =
+    withE2ETimed stateBytes requestBytes (const action)
+
+{- | 'withE2E', also handing the caller the system start (POSIX ms) the
+devnet's genesis was written with.
+-}
+withE2ETimed
+    :: SBS.ShortByteString
+    -- ^ Unparameterized state compiled-code bytes
+    -> SBS.ShortByteString
+    -- ^ Unparameterized request compiled-code bytes
+    -> ( Integer
+         -> CageConfig
+         -> Cage.Provider IO
+         -> Submitter IO
+         -> TrieManager IO
+         -> IO a
+       )
+    -> IO a
+withE2ETimed stateBytes requestBytes action = do
     gDir <- genesisDir
-    withCardanoNode gDir $ \sock _startMs -> withDevnetIndexer sock $ do
+    withCardanoNode gDir $ \sock startMs -> withDevnetIndexer sock $ do
         lsqCh <- newLSQChannel 16
         ltxsCh <- newLTxSChannel 16
         nodeThread <-
@@ -651,7 +873,7 @@ withE2E stateBytes requestBytes action = do
                     requestBytes
                     codes
                     seedRef
-        result <- action cfg prov submit tm
+        result <- action startMs cfg prov submit tm
         cancel nodeThread
         pure result
 
