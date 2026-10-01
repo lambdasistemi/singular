@@ -35,14 +35,14 @@
       "pause": 500
     }
   ],
-  "receipt-placement-q-001": [
+  "receipt-replay-object-fr-11-operator-ruling-2026-10-01": [
     {
-      "text": "Either the receipt keeps its wire and the traced hash lives in replay files joined by transaction id, or one optional replay object is added. The ruling decides.",
+      "text": "Each refusal now carries one optional replay object with both hashes, the observed reason or the named cause, and the capture identity, plus once per receipt the build correspondence it relied on. Older receipts without it still load; an incomplete one is rejected, and the size limit is set from measured receipts.",
       "pause": 500
     }
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "c6bf15d921f9423d0c34390be8fab4b5ed764d140ae82bc93e9909786ee37ecf"
+    "sha256": "f0b2a3f2820a29548085861d4e4a088e501f8d2d637235e963a83c5df917d1eb"
   }
 }

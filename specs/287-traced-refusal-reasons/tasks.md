@@ -89,7 +89,7 @@ flowchart LR
   redeemer, deployed replay `validator-failure`, traced admitted exactly
   `key-unknown`.
 
-## R3 — comparison, receipt, controls, CI (FR-09–FR-14) — needs Q-001
+## R3 — comparison, receipt, controls, CI (FR-09–FR-14) — R3a done; R3b (T032, T035–T038) released by the Q-001 ruling
 
 - [ ] T030 [C] RED: a refused-refused step with a differing admitted reason
   compares `differs`, and one with an unobserved reason `uncompared`. Then wire
@@ -102,15 +102,25 @@ flowchart LR
   writes its receipt. Unit RED: a `differs` run leaves the index entry.
 - [ ] T031 [C] Attribution rows fill `branch` from an admitted reason and keep
   the limit otherwise; every refusal carries its extent class (FR-10).
-- [ ] T032 [C] Receipt fields per the Q-001 ruling; the loader rejects claimed
-  but incomplete replay evidence (unit RED).
+- [ ] T032 [C] Receipt replay object (FR-11, data-model): written by every
+  refusal path, step and attribution; loader accepts legacy receipts without
+  it, rejects an incomplete or contradicting one (unit REDs: a missing
+  `tracedHash` with `reason`; `reason` and `cause` both; a `trace` disagreeing
+  with `replay.reason`); size: measure the largest live receipt with the
+  object, set `maxReceiptBytes` and the CI margins from that measurement with
+  stated headroom, and keep a negative control over the cap. A permissive
+  decoder is not evidence a consumer receives the data: the book/report path
+  reads it in a test.
 - [ ] T033 [C] Wrong-reason control mode (M8); unit RED that the altered step
   cannot compare `agrees`.
 - [ ] T034 [D] Accepting control: per refusing script role one accepted
   step's transaction replays on deployed and traced bytes and is written as an
   `accepting-control` index entry (FR-13); G10 fails when either run does not
   succeed or a refusing role has no entry (unit RED on a fixture index).
-- [ ] T035 G6: extend the CG22, CG23, CG07 steps' jq (CI change in this ticket).
+- [ ] T035 G6: extend the CG22, CG23, CG07 steps' jq (CI change in this ticket). The jq
+  requires, per refused step with a model reason, `replay.reason` equal to
+  `model.reason`, the two hashes, the `captureId`, and the receipt's
+  `replayCorrespondence`.
 - [ ] T039 Retention at the CI boundary (E209 NOTE-003 recut of review 003):
   each dedicated CG07, CG22 and CG23 step publishes its receipts path to the
   workflow's always-run `conformance-receipts` upload before invoking the row;

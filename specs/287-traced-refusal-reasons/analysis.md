@@ -38,7 +38,7 @@ requirement.
 
 | # | Severity | Finding | Disposition |
 |---|---|---|---|
-| A1 | high | FR-11 conflicts between the issue's wording and the packet's wire freeze | Q-001; R3 receipt tasks held |
+| A1 | high | FR-11 conflicts between the issue's wording and the packet's wire freeze | operator ruling 2026-10-01: one self-contained receipt; additive optional replay object (FR-11); R3b released |
 | A2 | medium | Constitution, `docs/theorems.md` and an onchain comment state the limit outside the fence | A-002: fence holds; D287-DOC residual after evidence (T043) |
 | A3 | medium | The ledger seam (M3 `purposeArguments`) is a lead, not verified at the pin | T001 first; failure is a placement challenge |
 | A4 | medium | FR-15's condition cannot be derived by the book until #225; it is enforced by CI (G10) | stated in FR-15 and M7 |
@@ -46,7 +46,7 @@ requirement.
 | A6 | low | Reason vocabulary: Lean returns reasons as strings, with no enumeration to validate against | FR-07 takes the single user trace verbatim; FR-09 compares it with Lean's reason for that step |
 | A7 | low | G6–G10 are CI changes in this ticket; falsified by the base's missing reasons and the control's altered leg, proved by the pushed head's CI | plan gate note |
 | A8 | high | The denominator was first read as driver-compared steps only; epic NOTE-001 rules every live refusal in, classified against Lean itself | FR-10, FR-14, FR-15 amended; `extent.md`; T028 |
-| A9 | high | CG09 (phase-1 reject): Lean admits every reject, the chain refuses before the retract window closes | Q-003; A-003: D287-REJECT, an epic-owned affected-acceptance hold; CG09 held in class D, comparison unmet |
+| A9 | high | CG09 (phase-1 reject): Lean admits every reject, the chain refuses before the retract window closes | Q-003; A-003 hold; operator ruling 2026-10-01 (A-010): Lean kept, validator repaired in a predecessor; CG09 unmet until it lands and the build correspondence is rebound | operator ruling 2026-10-01: Lean kept, validator repaired in a predecessor; CG09 unmet until it lands |
 | A10 | high | Review 001: a differing or unobserved reason reached no durable record, because the runner throws before writing and rows require agreement first | FR-09, D6, contract index, T030 name the sites; index written before the row acts |
 | A11 | high | Review 001: the accepting control had no failing CI command | FR-13 through the index; G10 requires it; T034 |
 | A12 | high | Review 002: the extent label selected whether a refusal must agree, so a driver-compared refusal labelled B, C or D escaped the check | Class A is the mechanical fact of an executed model reason; B/C/D only from the committed table; unclassified fails (FR-10, FR-14, G10, T038) |

@@ -23,7 +23,7 @@
       "pause": 500
     }
   ],
-  "r3-comparison-receipt-controls-ci-fr-09fr-14-needs-q-001": [
+  "r3-comparison-receipt-controls-ci-fr-09fr-14-r3a-done-r3b-t032-t035t038-released-by-the-q-001-ruling": [
     {
       "text": "Compare reasons at the places that decide and throw today, writing evidence first; fill attribution branches, add the ruled receipt fields, the wrong-reason and accepting controls, and the CI assertions, each seen red then green, including a relabelled driver refusal and an unlisted one. Each dedicated CI step also publishes its receipts path before the row runs, so a failing row keeps both its failure and its evidence, proved by running the real step with a failing row.",
       "pause": 500
@@ -37,6 +37,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "98b43dc1508591694e5d1aef832a074b57a78f1880d35523491dc27759c9d7af"
+    "sha256": "e0d7fe1a01742c6a5b81f776c8b6db1ab5b925f1e576fee4530d3b9f2dcbd259"
   }
 }

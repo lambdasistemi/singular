@@ -52,12 +52,12 @@ flowchart LR
 | FR-08 evidence classes | Four classes are kept apart: chain refusal (node, phase 2, failing hash); deployed replay reproduction; traced reason; Lean reason. None of these earns a traced reason: setup or compile failure, phase-1 rejection, budget exhaustion (deployed or traced), timeout, client exception, a traced run that succeeds, a failure with no or several user traces, a reason read from the model or typed by hand. |
 | FR-09 comparison | For a step where model and chain both refuse and the model names a reason: an admitted traced reason equal to Lean's agrees; a different admitted reason fails the row, and the step's model reason, chain reason and comparison are written to the replay index before the row fails; an unobserved reason does not fail the row: the step keeps today's outcome agreement, its receipt is written with no chain-side reason, and the replay index names the cause. |
 | FR-10 extent classes | Every discovered live refusal is classified against Lean and against its executing consumer (`extent.md`). Class A is mechanical, never assigned: a refusal whose step carries an executed model reason is A and must be compared. Otherwise, from the committed table: A modeled with a consumer, B modeled without one, C outside the model's vocabulary, D in conflict. Every refusal records its traced reason or its unobserved cause; attribution rows use their existing validator-branch field and keep their "no named validator branch" limit until a reason is admitted. Only A is compared with Lean; B, C and D stay in the denominator as published, unmet model comparisons, and C and D are escalated as user stories. |
-| FR-11 receipt fit | Deployed hash, traced hash, traced reason and capture identity reach the receipt without a silent schema edit, as decided by Q-001. |
+| FR-11 receipt | Every refused step's `chain.refusal` and every attribution row's refusal carry one optional, additive `replay` object: `deployedHash`, `tracedHash`, the observed `reason` or the named unobserved `cause` (never both, never invented), and `captureId`; each receipt carrying a `replay` object also carries, once, the traced/deployed correspondence it relied on (source, compiler, trace flags, digest of the untraced hashes). Receipts without it still load; a receipt claiming a traced reason without a complete `replay` object is rejected by the loader. Operator ruling 2026-10-01, verbatim: "One self-contained receipt: includes both validator hashes and the observed reason; requires allowing the receipt format to grow." |
 | FR-12 wrong-reason control | A CI step replaces the model reason of one live refused step with a different valid reason and requires the row to fail with a diagnostic naming both; the unaltered run of that row passes. |
 | FR-13 accepting control | For each refusing script role, one accepted live step's transaction replays with both deployed and traced bytes; both must succeed, recorded in the replay index as an accepting-control entry that the CI extent check (G10) requires. |
 | FR-14 discovered extent | CI counts every refusal across every live receipt it produces, requires the count to be non-zero, requires each to appear once in the replay index with an admitted reason or a named cause, requires every refusal whose step carries a model reason to be recorded as class A and to agree or be uncompared with a named cause, requires every other refusal to be listed in `extent.md` as B, C or D, and fails on any refusal that is neither. |
 | FR-15 book | The book's generator drops "Live refusal reason not observed" only when every discovered refusal has an admitted traced reason in CI at the head (the book is derived from receipts only after #225); it states the method (traced re-evaluation of the refused transaction; the deployed bytes carry no traces; both hashes named) and keeps separate limits naming every refusal whose reason is unobserved and every B, C and D refusal whose model comparison is missing. It never claims that refusal reasons are observed or compared universally while any refusal remains uncovered. |
-| FR-16 fence | No edit to `onchain/`, `naming-onchain/`, `applications/`, Lean, model, corpus, constitution or deployed script bytes; no receipt wire-format change outside Q-001's ruling. |
+| FR-16 fence | No edit to `onchain/`, `naming-onchain/`, `applications/`, Lean, model, corpus, constitution or deployed script bytes; no receipt change beyond FR-11's additive object. |
 
 ## Success criteria
 
@@ -75,9 +75,15 @@ flowchart LR
 
 - A refusal row whose runner only attributes is not thereby outside Lean: it is
   classified (FR-10, `extent.md`), and its missing comparison is a published gap
-  (NOTE-001 from the epic). CG09 is a lead conflict: Q-003.
-- The issue asks for traced hash in "the receipt"; the commission forbids a
-  receipt wire-format change. Held as Q-001(a/b); every other slice proceeds.
+  (NOTE-001 from the epic).
+- CG09, ruled by the operator 2026-10-01, verbatim: "Allow rejection before the
+  retraction deadline: keep Lean's current rule and repair the validator."
+  Lean stays; the validator repair is a separately scoped predecessor (#287
+  edits no on-chain code); CG09's comparison stays unmet until that repair lands
+  and #287's traced/untraced correspondence is rebound to the landed source.
+- The receipt grows by one optional object (FR-11), a narrow exception to the
+  epic's receipt wire-format exclusion granted by the operator's ruling; the
+  replay index and capsules remain supporting proof, not a substitute.
 - Constitution rows `retract`/`settle`, `docs/theorems.md` and a comment in
   `onchain/validators/registry/refusal.ak` state the limit or its premise. Ruled
   (A-002): the fence holds; after T026/T027 evidence the ticket owner prepares

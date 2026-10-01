@@ -19,7 +19,7 @@
   ],
   "clarifications": [
     {
-      "text": "A runner that only attributes a refusal does not put it outside Lean: it is classified, and a missing comparison is published. The phase-one reject row is a lead conflict with Lean, sent to the epic. Where the traced hash sits in the receipt awaits a ruling. Texts outside the fence stay unchanged; a documentation follow-up is prepared once evidence exists. Open validity intervals stay a named non-goal.",
+      "text": "A runner that only attributes a refusal does not put it outside Lean: it is classified, and a missing comparison is published. The phase-one reject row is a lead conflict with Lean, sent to the epic. The operator chose one self-contained receipt, so the receipt grows by one optional object. For the phase-one reject the operator kept Lean and asked for the validator to be repaired in a separate ticket. Texts outside the fence stay unchanged; a documentation follow-up is prepared once evidence exists. Open validity intervals stay a named non-goal.",
       "pause": 500
     }
   ],
@@ -31,6 +31,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "aac53e201c97193a6b40e07d55d3308f28c52bcada096dc6a4f5bd8730bc08b7"
+    "sha256": "861e5417ea2e5a762cc409d4bd7d12c060ea37ce16f7cbe196e85b15333c4ad5"
   }
 }

@@ -5,9 +5,11 @@
 - Completed: team setup; root baseline `nix develop --quiet -c just ci` at
   `3f04e50` exit 0 (211 s, runtime `receipts/baseline-001`); research; this
   mandate.
-- Current: E209 NOTE-003 releases T001 and R1, then R2 on their gates; R3
-  receipt tasks stay held by Q-001. Spend carried: N7 (five root CI, two
-  premise builds), C0, D0.
+- Current (2026-10-01): R1 and R2 closed as slices; R3a gate GREEN at 0287727
+  (review pending). Operator rulings: one self-contained receipt (FR-11, R3b
+  released on its sealed packet); CG09 keeps Lean and the validator is repaired
+  in a separate predecessor, after which #287 rebinds its build correspondence.
+  Spend by receipts: C47, N43, D14 of C150/N55/D18.
 - Blockers: Q-001 (receipt fit) at the operator holds R3's receipt part
   (T032, T035-T038). Q-002 answered (A-002): fence holds, D287-DOC residual
   after evidence (T043). Q-003 (CG09 phase-1 reject, Lean vs chain) holds only

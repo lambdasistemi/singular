@@ -64,5 +64,7 @@ original `replay/<rejectedTxId>/outcome.json` stays byte-identical.
 - In CI, every step that runs a row publishes its receipts path to the
   always-run artifact upload before the row runs, so a failing row's
   `replay/` directory is uploaded with the original failure preserved (T039).
-- Receipt-side fields are fixed by Q-001; this contract does not change the
-  receipt.
+- The receipt itself names both hashes, the reason or cause and the capture
+  identity (data-model "Receipt replay object"); these files are its
+  supporting proof and are joined to it by `captureId` and the rejected
+  transaction id.

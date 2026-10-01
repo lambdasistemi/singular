@@ -66,7 +66,7 @@ CG22, CG23; all admit Lean's reason). Every other discovered refusal:
 | CG19 | crossed refund allocation; rejected-floor control | `deposit-returned` | consumer-model conflict recorded unresolved (Q-002) | D (existing) |
 | CG10 | fold with claims against a superseded root | `key-exists` | a stale proof is not an input of `step` | C |
 | CS04 | redeemer at a wrong constructor index | witness `no-fold` (offline replay); state and request `no-user-trace` | serialization below the model's vocabulary | C |
-| CG09 | reject in phase 1 | `not-rejectable` (D-006) | `exitStep .reject` has no admission (Model.lean:1060-1072) | D (D287-REJECT, with the operator) |
+| CG09 | reject in phase 1 | `not-rejectable` (D-006) | `exitStep .reject` has no admission (Model.lean:1060-1072) | D — ruled 2026-10-01: Lean kept, validator to be repaired in a predecessor; unmet until it lands |
 
 The lead "CG21 two-key batch `net-mint-mismatch`" was not found in any
 executed receipt: no CI-run row submits it today, so it is neither compared

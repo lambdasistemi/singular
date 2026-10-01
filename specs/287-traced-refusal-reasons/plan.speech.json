@@ -1,7 +1,7 @@
 {
   "status": [
     {
-      "text": "Setup and a green root baseline are done. The epic has released the seam check and the traced build, then capture and replay once their gates pass; the receipt tasks wait for the operator. The receipt question waits for the operator; texts outside the fence stay and a follow-up is prepared after evidence; the phase-one reject conflict is held by the epic as an acceptance hold, not a waiver. Every live refusal counts, and comparing only some is not completion.",
+      "text": "The traced build and the capture and replay slices are closed, and the comparison slice passed its gate. The operator has chosen one self-contained receipt, which releases the receipt work, and has kept Lean for the phase-one reject, with the validator repaired in a separate ticket. The receipt question waits for the operator; texts outside the fence stay and a follow-up is prepared after evidence; the phase-one reject conflict is held by the epic as an acceptance hold, not a waiver. Every live refusal counts, and comparing only some is not completion.",
       "pause": 500
     }
   ],
@@ -55,6 +55,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "472a7a671721308b0f24f6eae0a4fae9c4cb78068e0877cb48335ef152065e09"
+    "sha256": "f54cedb25912ad04d39eb48a454a77931d89927a3e75697b863fe440101e1c65"
   }
 }

@@ -91,11 +91,16 @@ row: the step's existing outcome comparison stays `agrees`, the receipt is
 written with no chain-side reason, and the index names the cause; it is never
 counted as reason agreement.
 
-## Receipt placement (Q-001)
+## Receipt replay object (FR-11, operator ruling 2026-10-01)
 
-Existing wire: step `chain.refusal.trace` and `hashes`; row `RefusalInfo.branch`,
-`limit`, `hashes`. Option A keeps the wire and puts `tracedHash` and
-`captureId` in the capsule index file joined by `rejectedTxId`; option B adds
-one optional `replay` object `{deployedHash, tracedHash, reason|cause, captureId}`
-to `chain.refusal` and to `RefusalInfo`. The ruling selects one; neither is
-implemented before it.
+Additive and optional, on step `chain.refusal` and on `RefusalInfo`:
+`replay = { deployedHash, tracedHash, reason | cause, captureId }`, one per
+failing purpose (a list where several purposes fail). `reason` only for D5
+`admitted`; `cause` the D5 name otherwise; `tracedHash` absent only when no
+traced application exists (`no-replay-route`, `unidentified-script`). Once per
+receipt with any `replay`: `replayCorrespondence = { source, compiler, flags,
+untracedHashesDigest }` from D2. Existing fields (`trace`, `branch`, `limit`,
+`hashes`) keep their meaning. Loader: absent object accepted (legacy); present
+object must be complete and agree with `trace`/`branch`; size cap raised only
+to the measured largest receipt with the object plus headroom (the current
+largest, CG22 at 0287727, is 12 910 bytes before it).
