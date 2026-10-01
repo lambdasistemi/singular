@@ -50,6 +50,28 @@ check as unclassified.
 | CG09 | reject while the request is still in phase 1 | `exitStep .reject` has no admission and succeeds (Model.lean:1060-1072, 1198-1204) | attribution only | D (Q-003; D287-REJECT hold) |
 | CG19 | crossed refund allocation | consumer-model conflict already recorded as unresolved in the row | attribution only | D (existing) |
 
+## Discovered table (T028)
+
+From executed receipts and replay indexes (coder-1 EXTENT-R2.md sha256
+3029f2b6…, runs D-001..D-009 and the in-gate book runs, Lean blob
+`9c75b37380d5`). Class A is not listed: it is every refusal whose step carries
+an executed model reason, recorded by the runner (17 steps in CG07, CG21,
+CG22, CG23; all admit Lean's reason). Every other discovered refusal:
+
+| Row | Refusal | Traced reason | Lean | Class |
+|---|---|---|---|---|
+| CG05 | insert on a present key | `key-exists` | `key-exists` (Model.lean:553); no consumer runs the model | B |
+| CG11 | empty fold | `empty-fold` | `foldBatch` refuses `empty-fold` (Model.lean:665); row held by the recorded consumer-model conflict (Q-002) | D (existing) |
+| CG12 | surplus actions; missing-action control | `surplus-actions`, `missing-action` | actions are not a model input; row held (Q-002) | D (existing) |
+| CG19 | crossed refund allocation; rejected-floor control | `deposit-returned` | consumer-model conflict recorded unresolved (Q-002) | D (existing) |
+| CG10 | fold with claims against a superseded root | `key-exists` | a stale proof is not an input of `step` | C |
+| CS04 | redeemer at a wrong constructor index | witness `no-fold` (offline replay); state and request `no-user-trace` | serialization below the model's vocabulary | C |
+| CG09 | reject in phase 1 | `not-rejectable` (D-006) | `exitStep .reject` has no admission (Model.lean:1060-1072) | D (D287-REJECT, with the operator) |
+
+The lead "CG21 two-key batch `net-mint-mismatch`" was not found in any
+executed receipt: no CI-run row submits it today, so it is neither compared
+nor observed — a published gap, not a class.
+
 Gaps B, C and D stay in the denominator and in the book's limits. A partial
 reason comparison over class A is never called completion of the issue's
 every-row claim.

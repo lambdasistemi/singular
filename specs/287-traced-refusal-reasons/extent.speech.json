@@ -11,8 +11,14 @@
       "pause": 500
     }
   ],
+  "discovered-table-t028": [
+    {
+      "text": "From the executed runs: the present-key insert is modeled without a consumer. The empty fold, the surplus actions and the crossed refund are held by the recorded consumer conflict. The stale-root fold and the wrong constructor are outside the model. The phase-one reject refuses with not-rejectable while Lean admits it, and is with the operator. The batch mint mismatch is not run by any row today, so it stays a published gap.",
+      "pause": 500
+    }
+  ],
   "_source": {
     "file": "extent.md",
-    "sha256": "f594f9af5449b2cdb1a3410c7db3e8ac73efffe09a0ec649648a20e93069d0e5"
+    "sha256": "bc89862a397de4f734b067bfff1244c4278b84dbfffdcbe339156a98038e953b"
   }
 }
