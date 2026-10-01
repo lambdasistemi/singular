@@ -1,11 +1,11 @@
 {
   "the-case-each-submission-met": [
     {
-      "text": "A command meets one of five cases for each transaction it submits, and its receipt names them: acknowledged, when the node accepted it but it was not yet seen on chain; unknown, when no answer arrived; rejected, when the node refused it; included, when it is on chain; and timeout, when the confirmation deadline passed.",
-      "pause": 400
+      "text": "A command meets one of seven cases for each transaction it submits, read from the latest phase the journal holds for it: acknowledged, when the node accepted it but it was not yet seen on chain; unknown, when no answer arrived; rejected, when the node refused it; included, when it is on chain; timeout, when the confirmation deadline passed; rolled back, when the chain had included it and no longer does; and excluded, when it is off the chain and its validity window has closed, so it can never land.",
+      "pause": 500
     },
     {
-      "text": "The table pairs each case with its phase in the journal and with what you do next. For every case but rejected, the answer is the same: run your next command, which picks the transaction up from the chain. A transaction is prepared once and never sent twice.",
+      "text": "The table pairs each case with its phase in the journal and with what you do next. For most cases the answer is the same: run your next command, which picks the transaction up from the chain. A rejected or excluded transaction is settled; you run the command again to build a new one. A transaction is prepared once and never sent twice.",
       "pause": 400
     }
   ],
@@ -19,32 +19,52 @@
       "pause": 600
     },
     {
-      "text": "The receipt says what the reconciliation did. Inspect reconciles only when no other process is writing to the registry.",
+      "text": "The receipt says what the reconciliation did, rollbacks and exclusions included. Inspect reconciles only when no other process is writing to the registry.",
       "pause": 300
+    }
+  ],
+  "when-the-chain-rolls-back": [
+    {
+      "text": "A transaction the journal saw included can leave the chain again. The next command checks each one: if its first output is gone and an input it spends is live again, it is no longer on the chain, because a transaction on the chain has consumed every input it spends. The command appends a rolled back line naming the chain point it read and the live inputs. The observed line stays where it was.",
+      "pause": 500
+    },
+    {
+      "text": "The diagram follows that check. For a fold, the mirror is rebuilt to the root the fold started from, by replaying from the empty trie the edges of the folds still on the chain, and state dot json follows. The transaction is unresolved again and is never sent again. If the chain includes it again it is reconciled as before; otherwise every write stops on it and names the case rolled back.",
+      "pause": 500
+    }
+  ],
+  "when-a-transaction-can-never-land": [
+    {
+      "text": "Once the chain's tip has reached the end of a transaction's validity window, and an input it spends is still live, it can never be included. The next command journals it excluded, with the chain point and the live inputs, and the transaction no longer blocks anything; the write that excluded it proceeds from the root the mirror already holds.",
+      "pause": 500
+    },
+    {
+      "text": "Folds carry an upper bound on their window. Bookings and the publications create makes carry none, so a booking that never landed, or one rolled back and not included again, stays unresolved and every write stops on it. That is a known limit of these commands.",
+      "pause": 400
     }
   ],
   "when-the-next-command-stops": [
     {
-      "text": "A write that cannot reconcile a transaction stops before building or submitting anything, names the transaction and its case, and leaves the journal as it was. If the chain does not show the transaction yet, wait and run the command again. If it is on chain but its edge does not reach the ledger's root, the outcome is stale state and the local files are not repaired.",
+      "text": "A write that cannot reconcile a transaction stops before building or submitting anything, names the transaction and its case, and leaves the journal as it was. If the chain does not show the transaction yet, or no longer shows it, wait and run the command again: it is reconciled if it lands, and excluded once its window closes without it. If it is on chain but its edge does not reach the ledger's root, the outcome is stale state and the local files are not repaired. Inspect names the same transaction and case.",
       "pause": 500
-    },
-    {
-      "text": "A transaction that never reached the node stays unknown, and every write stops on it. Recovering from a transaction that will never land, or from a rolled-back inclusion, is not yet supported.",
-      "pause": 400
     }
   ],
   "what-the-checks-show": [
     {
-      "text": "The recovery controls run each case as separate processes on one development node, and judge every clause from receipts, the journal, the saved bodies and the files.",
-      "pause": 300
+      "text": "The recovery controls run each case as separate processes on one development node, and judge every clause from receipts, the journal, the saved bodies and the files, and, for exclusion and rollback, from the node's own answers rather than the command under test.",
+      "pause": 400
     },
     {
-      "text": "The table walks the six controls: an accepting insert; a lost answer, where the body and prepared line are on disk at the moment of the send and the next insert reconciles the fold once; a kill before the mirror is saved, after the mirror, and after state dot json, each followed by a write that finishes the commit and proceeds; and a fold never sent, where the next write stops and the journal does not move. Every transaction has exactly one prepared line, and nothing written is ever rewritten. Durability across a power loss is not shown, only across a killed process.",
+      "text": "The table walks the eight controls: an accepting insert; a lost answer, reconciled once by the next insert; a kill before the mirror is saved, after the mirror, and after state dot json, each finished by the next write; a fold never sent, excluded once the tip passed its upper bound so the next write proceeds; a booking never sent, on which the next write stops; and a rollback, made by restarting the node on an earlier copy of its database, after which the command journals both transactions rolled back, returns the local files to the root before, and the next write stops naming the booking.",
       "pause": 600
+    },
+    {
+      "text": "The rollback is a mechanism of the generated development node, not a fork of a public chain. Every transaction has exactly one prepared line, and nothing written is ever rewritten. Durability across a power loss is not shown, only across a killed process.",
+      "pause": 500
     }
   ],
   "_source": {
     "file": "cli-recovery.md",
-    "sha256": "68e67121a7de66ee98e9d2660d6175a1b05894446b6ea4de986617c79ce01287"
+    "sha256": "6aa50bb8f298014908a89e8cb700fd6fda2ec2a8866eb31995ac30127e58b74b"
   }
 }
