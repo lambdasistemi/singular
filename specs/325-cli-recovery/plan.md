@@ -22,3 +22,8 @@
 Each slice is bisect-safe and leaves `singular-cli` runnable.
 
 **Constraints.** Owned: `offchain/cli` command flow (`Receipt`, `Session` submission path, `Entry`, `Create`, `Inspect` resolver), the local-file writers they use, recovery controls under `tools/` and their flake app and CI step, `docs/`. Not owned: `Node/Indexer*.hs` and the indexer adapter (#324), `Node/View.hs` semantics (#323). A needed change there is a question to the epic owner.
+
+**Amendments.**
+
+- A1 (S1, CLI controls): the earlier process-boundary clauses asserting that a write while a killed fold is unresolved is refused, and that inspecting another key observes nothing, are restated to R4 in `conformance/lib/Conformance/Cli/Controls.hs` and `tools/demo1_cli_journey.sh`: the next write either reconciles the fold from chain evidence and proceeds (applied and observed once, never resubmitted) or, while the fold is not on chain, is refused before submitting, naming its case and transaction. R299-05's "no implicit repair" continues to govern stale, concurrent or altered local state.
+- A2 (S2, rulings on rollback): exclusion is decided only from chain evidence — not included at a view whose tip slot is past the transaction's validity upper bound. A transaction without an upper bound stays unresolved after a rollback (named residual; giving every built transaction an upper bound is a follow-up). The generated-DevNet rollback control restores a node database snapshot and proves the block is gone and the inputs live again before asserting the CLI's behaviour; it is labelled a DevNet mechanism, not a public-chain fork.
