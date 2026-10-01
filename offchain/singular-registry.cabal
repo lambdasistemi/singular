@@ -770,6 +770,7 @@ test-suite contract-tests
     Singular.Registry.ContractSuite
     Singular.Registry.IndexerRig
   build-depends:
+    , aeson
     , async
     , base
     , base16-bytestring

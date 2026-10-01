@@ -42,13 +42,26 @@ module Singular.Registry.ContractSuite
     , unsupportedControl
     ) where
 
-import Control.Exception (ErrorCall (..), throwIO, try)
+import Control.Exception
+    ( ErrorCall (..)
+    , SomeException
+    , displayException
+    , throwIO
+    , try
+    )
+import Control.Monad (unless)
+import Data.Aeson (encode, object, (.=))
 import Data.ByteString qualified as BS
+import Data.ByteString.Lazy qualified as BSL
+import Data.Char (isHexDigit, toLower)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as T
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Word (Word32)
+import System.Environment (lookupEnv)
+import System.Exit (ExitCode (..))
+import System.Process (readProcessWithExitCode)
 import System.Timeout (timeout)
 import Test.Hspec
 
@@ -198,14 +211,69 @@ contractSuite h =
     one c =
         it (show (caseKind c) <> ": " <> caseText c) $
             case Map.lookup c (ahNotSupported h) of
-                Just reason ->
+                Just reason -> do
+                    record h c "not-supported" (Just reason)
                     pendingWith
                         ("not supported by the " <> ahAdapter h <> " adapter: " <> reason)
-                Nothing ->
-                    timeout caseBound (ahChain h (run c))
-                        >>= maybe
-                            (expectationFailure "the case did not end within five minutes")
-                            pure
+                Nothing -> do
+                    outcome <-
+                        try $
+                            timeout caseBound (ahChain h (run c))
+                                >>= maybe
+                                    (expectationFailure "the case did not end within five minutes")
+                                    pure
+                    case outcome of
+                        Right () -> record h c "passed" Nothing
+                        Left (e :: SomeException) -> do
+                            record h c "failed" (Just (displayException e))
+                            throwIO e
+
+{- | Append one case's result on one adapter to the results file named by
+@CONTRACT_RESULTS@, one JSON object per line, when the variable is set:
+the adapter, its evidence class, the case, its kind and requirement, the
+outcome and its reason, and the code revision the run checked out with
+whether its tree was clean. The published evidence page is computed from
+these lines. A revision or tree state that cannot be read fails the case
+and writes nothing: it is never recorded as a value.
+-}
+record :: AdapterHarness -> Case -> String -> Maybe String -> IO ()
+record h c outcome reason =
+    lookupEnv "CONTRACT_RESULTS" >>= \case
+        Nothing -> pure ()
+        Just path -> do
+            base <- git ["rev-parse", "HEAD"]
+            unless (length base == 40 && all isHexDigit base) $
+                unreadable ("git rev-parse HEAD printed " <> show base)
+            status <- git ["status", "--porcelain"]
+            BSL.appendFile path . (<> "\n") . encode . object $
+                [ "base" .= base
+                , "dirty" .= not (null status)
+                , "adapter" .= ahAdapter h
+                , "evidence" .= renderEvidence (ahEvidence h)
+                , "case" .= show c
+                , "kind" .= map toLower (show (caseKind c))
+                , "requirement" .= caseText c
+                , "outcome" .= outcome
+                ]
+                    <> maybe [] (\r -> ["reason" .= r]) reason
+  where
+    git args = do
+        (code, out, err) <- readProcessWithExitCode "git" args ""
+        case code of
+            ExitSuccess -> pure (filter (/= '\n') out)
+            ExitFailure n ->
+                unreadable
+                    ( unwords ("git" : args)
+                        <> " failed with exit "
+                        <> show n
+                        <> ": "
+                        <> err
+                    )
+    unreadable why =
+        throwIO . ErrorCall $
+            "contract results: the run's revision or tree state cannot be read, \
+            \so no result is written: "
+                <> why
 
 run :: Case -> Chain -> Expectation
 run c ch = case c of
