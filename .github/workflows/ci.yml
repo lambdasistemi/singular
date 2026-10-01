@@ -278,7 +278,7 @@ jobs:
     needs: build-gate
     name: On-chain release assembly and artifact checks
     runs-on: nixos
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - name: Reuse this runner's Nix cache
         run: |

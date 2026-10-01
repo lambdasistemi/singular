@@ -17,10 +17,11 @@
 #                   commit the conformance evidence is compiled against
 #   members         the run page, the offchain flake, the command's source
 #                   and the compiled registry blueprint are present
-#   journey         `singular` and the development node are built from the
-#                   archive's own offchain flake, and create, insert, update,
-#                   terminate and inspect run as separate processes on one
-#                   generated development network (demo1_cli_journey.sh)
+#   build           `singular` and the development node are built from the
+#                   archive's own offchain flake
+#   journey         create, insert, update, terminate and inspect run as
+#                   separate processes on one generated development network
+#                   (demo1_cli_journey.sh)
 #
 # The archive is extracted under --work DIR (a fresh temporary directory
 # when not given), which must not lie inside a git checkout.
@@ -107,7 +108,7 @@ listed="$(cut -d' ' -f3- "$download/SHA256SUMS" | LC_ALL=C sort | tr '\n' ' ')"
 tar -xzf "$download/$onchain" -C "$extracted" \
   || refuse sum-mismatch "$onchain does not extract"
 [ -f "$extracted/SHA256SUMS" ] || refuse sum-mismatch "$onchain carries no SHA256SUMS"
-carried="$(cd "$extracted" && find . -type f ! -path ./SHA256SUMS | sed 's|^\./||' | LC_ALL=C sort)"
+carried="$(cd "$extracted" && find . -type f ! -name SHA256SUMS | sed 's|^\./||' | LC_ALL=C sort)"
 covered="$(cut -d' ' -f3- "$extracted/SHA256SUMS" | LC_ALL=C sort)"
 [ "$carried" = "$covered" ] \
   || refuse sum-mismatch "$onchain's SHA256SUMS does not cover exactly the files it carries"
@@ -135,6 +136,7 @@ singular="$(nix build --quiet --no-link --print-out-paths .#singular 2>"$work/bu
   || refuse command-failed "nix build .#singular from the archive: $(tail -n 3 "$work/build-singular.log" | tr '\n' ' ')"
 devnet="$(nix build --quiet --no-link --print-out-paths .#devnet 2>"$work/build-devnet.log")" \
   || refuse command-failed "nix build .#devnet from the archive: $(tail -n 3 "$work/build-devnet.log" | tr '\n' ' ')"
+pass build "singular and the development node from the archive's own flake"
 status=0
 bash "$journey" "$singular/bin/singular" "$devnet/bin/devnet" "$extracted/onchain/plutus.json" "$work/journey" \
   || status=$?
