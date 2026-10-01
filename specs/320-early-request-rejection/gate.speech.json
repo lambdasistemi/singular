@@ -25,7 +25,7 @@
   ],
   "g10-body-generic-rows-with-cg09-held": [
     {
-      "text": "The generic rows step after the change. CG09 moves to the held verdict group, the held set becomes CG09, CG11, CG12 and CG19, a new assertion checks CG09's accepted receipt, its hold and its later rejection control, and the closing lines name the consumer's R9 as unmet.",
+      "text": "The generic rows step after the change. CG09 moves to the held verdict group, the held set becomes CG09, CG11, CG12 and CG19, a new assertion checks CG09's accepted receipt, its recorded hold and its refused short refund control, and the closing lines name the consumer's R9 as unmet.",
       "pause": 400
     }
   ],
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "gate.md",
-    "sha256": "eb3939ce31a65bd7ae0deaa99787913b4f9a70c7bfea88683205708c53178485"
+    "sha256": "5f308a2d2de79c09580124a435ccf0d60b11fa69b4675a93e415607ae7b9a981"
   }
 }

@@ -7,7 +7,7 @@
   ],
   "s1-validators-identities-and-cg09": [
     {
-      "text": "First slice: RED on the base, the state and request repairs, removing the old predicate, regenerating both manifests and their pins, measuring sizes and costs, moving CG09 to held, and rewording the documentation.",
+      "text": "First slice: RED on the base, the state and request repairs, removing the old predicate, regenerating both manifests and their pins, a new comparison of the naming pins seen failing first, measuring sizes and costs, moving CG09 to held behind its refused control, and rewording the documentation.",
       "pause": 400
     }
   ],
@@ -31,6 +31,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "b6fb71e70da94f0be86736e7210fdc3d3a1a847777486de370948d42b5fc93d6"
+    "sha256": "2c71b452704bc2fb473f5f13b0e6d2d027b1e80c4ba365af223c787d91e0d998"
   }
 }

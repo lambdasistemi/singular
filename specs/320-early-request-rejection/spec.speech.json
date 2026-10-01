@@ -31,7 +31,7 @@
   ],
   "holds-and-limits": [
     {
-      "text": "The consumer's promise that no reject happens early becomes unmet, and its acceptance stays held until the user decides how to align it. The update timing rule is a separate discrepancy between the code and the model, owned by its own ticket; here it stays unchanged, labeled current validator behaviour outside Lean, and any claim that it conforms stays held. The published book is not hand-edited. Refusal reasons are not observed on chain, so each is established by a compiled test that names it. Ticket 287 is rebound afterwards.",
+      "text": "The consumer's promise that no reject happens early becomes unmet, and its acceptance stays held until the user decides how to align it. The update timing rule is a separate discrepancy between the code and the model, owned by its own ticket; here it stays unchanged, labeled current validator behaviour outside Lean, and any claim that it conforms stays held. The builder now rejects every pending request, fresh ones too, and one unprocessable request still blocks it. The published book is not hand-edited. Refusal reasons are not observed on chain, so each is established by a compiled test that names it. Ticket 287 is rebound afterwards.",
       "pause": 400
     }
   ],
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "5a50dac3fe8a934345f56f3a4258e179ca619f784df229baea84cf99cb91fd08"
+    "sha256": "edb32180450c11e8f4278c465f300db84796e49495d96f6e3cc7c9c76400e4ad"
   }
 }

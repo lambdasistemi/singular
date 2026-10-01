@@ -27,7 +27,7 @@ N counts every `nix` invocation, nested ones included: a `nix run nixpkgs#jq` in
 | G2 | naming suite and identity | `nix flake check` (`naming-onchain`) | registry.yml "naming-validators" job | 0 | 1 | 0 |
 | G3 | naming value refusals | `blueprint="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"; NAMING_BLUEPRINT="$blueprint" nix run --quiet .#record-value-tests` (`offchain`) | registry.yml "naming-validators" job | 0 | 2 | 0 |
 | G4 | build gate | `nix build --quiet .#build-gate` (root) | ci.yml "build-gate" job | 0 | 1 | 0 |
-| G5 | deployed identity both ways | `nix shell --quiet nixpkgs#jq nixpkgs#diffutils -c bash offchain/deployment-identity-check.sh` (root): outer shell 1, three blueprint/app builds, one devnet, four deployment runs | ci.yml "build-gate" job | 0 | 9 | 1 |
+| G5 | deployed identity both ways, and the naming scripts' embedded registry hashes | `nix shell --quiet nixpkgs#jq nixpkgs#diffutils -c bash offchain/deployment-identity-check.sh` (root): outer shell 1, three blueprint/app builds, one devnet, four deployment runs. The naming comparison this ticket adds reads the two blueprints it already builds and adds no invocation. | ci.yml "build-gate" job | 0 | 9 | 1 |
 | G6 | off-chain lint, build, unit, vectors | `(cd offchain && nix run --quiet .#lint)`; `nix build --quiet .#component-build`; `nix run --quiet .#cage-tests`; `nix develop --quiet --command just vectors-check` (the last three in `offchain`; vectors-check nests one build and one Aiken shell) | ci.yml, registry.yml | 0 each | 6 | 0 |
 | G7 | product builder on a devnet | `blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"; REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e` (`offchain`) | registry.yml "e2e" job | 0 | 2 | 1 |
 | G8 | conformance unit suite and the running book | `nix run --quiet .#conformance-tests` (`conformance`); it builds the blueprint itself | conformance.yml | 0 | 2 | 1 |
@@ -44,7 +44,7 @@ One complete run at the exact head forecasts N83 and D6.
 | Row | How it is known to fail |
 |---|---|
 | G1 | red at the base with the S1 tests that expect an early reject to be accepted (`not-rejectable` on the state purpose, the request expectation on the request purpose) |
-| G1, G2, G5 | red on any manifest or pin not regenerated: the existing checks compare them with the built blueprint |
+| G1, G2, G5 | red on any manifest not regenerated, and on the witness pin, by the existing checks. Red on a stale naming pin only through the comparison this ticket adds to G5, which is seen failing on the stale pin before the naming pins move. |
 | G7 | the new window cases fail at the base builder, which refuses to build ("no rejectable requests") |
 | G10 | at the base it already exits non-zero for any CG09 verdict but its expected one. After S1 alone, without the CG09 change, it fails on CG09's verdict. |
 | G11 | the retained refused processing-window rejection `2d39d638…` (ticket 287) is the live defect at the base. On the base validators every untampered step of CG24 would disagree with the model. |
@@ -119,7 +119,7 @@ No bespoke instrument is added.
 
 ## G10 body: generic rows with CG09 held
 
-The changes from the base body are the CG09 verdict group, the held set `CG09 CG11 CG12 CG19`, assertion 10 and the two closing lines.
+The changes from the base body are the CG09 verdict group, the held set `CG09 CG11 CG12 CG19`, assertion 10 and the two closing lines. Assertion 10 checks CG09's accepted receipt, its recorded hold and its refused short-refund control.
 
 ```yaml
       - name: Run the generic rows as a packaged app without a dev shell
@@ -314,8 +314,8 @@ The changes from the base body are the CG09 verdict group, the held set `CG09 CG
           # 10. CG09 (#320): the consumer's R9_reject_needs_rejectable forbids
           #     a reject inside the processing window; Singular's Lean admits
           #     it and the chain accepts it. The row is held, never agreement:
-          #     the consumer requirement stays unmet. Its control rejects a
-          #     second request after the retraction window, also accepted.
+          #     the consumer requirement stays unmet. Its control, the same
+          #     reject one lovelace short, is refused by the state script first.
           # shellcheck disable=SC2016
           nix run --quiet nixpkgs#jq -- -e '
             .row == "CG09" and .outcome == "accepted" and .verdict == "held-q002"
@@ -324,7 +324,7 @@ The changes from the base body are the CG09 verdict group, the held set `CG09 CG
             and (.transactions[0] | test("^[0-9a-f]{64}$"))
           ' "${CONFORMANCE_RECEIPTS}"/receipt-CG09.json > /dev/null || { echo 'FAIL: CG09 held acceptance evidence moved'; exit 1; }
           grep -q '^held: CG09 HELD FOR ' /tmp/generic-rows.log || { echo 'FAIL: CG09 hold not recorded by the run'; exit 1; }
-          grep -q '^control: CG09 control: a second request rejected after the retraction window is accepted (tx=[0-9a-f]\{64\})' /tmp/generic-rows.log || { echo 'FAIL: CG09 later-rejection control txid missing'; exit 1; }
+          grep -q '^control: CG09 control: the same reject one lovelace short is refused (tx=[0-9a-f]\{64\})' /tmp/generic-rows.log || { echo 'FAIL: CG09 refused-control txid missing'; exit 1; }
           echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and the tampered-payment controls are recorded, with held debt exactly CG09 CG11 CG12 CG19.'
           echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused, R9_reject_needs_rejectable and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'
 ```

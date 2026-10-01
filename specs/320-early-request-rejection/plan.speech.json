@@ -19,7 +19,7 @@
   ],
   "path-fence": [
     {
-      "text": "Each slice has an exact list of writable paths, including every file that enumerates rows for CG24. Manifests change only through their generators and pins only to regenerated values. The model, the constitution, the locks, any receipt encoding, every other row, the book and historical evidence are forbidden. Any other path is a placement challenge before editing.",
+      "text": "Each slice has an exact list of writable paths, including every file that enumerates rows for CG24, and one addition the parent must release: the naming hash comparison in the deployed identity check. Manifests change only through their generators and pins only to regenerated values. The model, the constitution, the locks, any receipt encoding, every other row, the book and historical evidence are forbidden. Any other path is a placement challenge before editing.",
       "pause": 400
     }
   ],
@@ -31,7 +31,7 @@
   ],
   "execution-schedule": [
     {
-      "text": "The implementation phase is not released by this plan. The forecast counts every invocation: about forty cheap runs, one hundred thirty five nix invocations and thirteen devnet runs including one bounded repair, or fifty five nix and seven devnet runs if the pushed head's CI is the gate. Nothing is repeated without a new change or failure.",
+      "text": "The implementation phase is not released by this plan. The forecast counts every invocation: about forty one cheap runs, one hundred forty one nix invocations and fifteen devnet runs including one bounded repair, or sixty one nix and nine devnet runs if the pushed head's CI is the gate. Nothing is repeated without a new change or failure.",
       "pause": 400
     }
   ],
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "2c62cca17f0f97b5664369ea321a5339e49e1c16ae669a06aa9c15601412524e"
+    "sha256": "47ce6aab95a8a26f004d0f1ea645c62f9ee287b8b901c2e9df9b26beb79722b9"
   }
 }

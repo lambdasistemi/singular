@@ -21,13 +21,14 @@ Stable IDs. A task is checked only after its slice is accepted at an exact commi
 - [ ] T014 Regenerate the registry manifest. Update the witness and envelope pins to the regenerated state hash (INV-08).
 - [ ] T015 Update the naming state pin, regenerate, update the retirement-custody pins, regenerate again (INV-08).
 - [ ] T016 Record compiled sizes and the execution units of both purposes on a processing-window reject, before and after (INV-13).
-- [ ] T017 CG09 records the chain's acceptance as held, with its control on a second request. The G10 step body and `docs/consumer-conformance.md` state it. The consumer requirement text is unchanged (INV-11, INV-14).
-- [ ] T018 Drop `not-rejectable` from `docs/onchain-validator-owners.md` and the validator doc comments.
+- [ ] T017 CG09 records the chain's acceptance as held, after its refused one-lovelace-short control on the same request, with full-fold units. The G10 step body and `docs/consumer-conformance.md` state it. The consumer requirement text is unchanged (INV-11, INV-14).
+- [ ] T018 Drop `not-rejectable` from `docs/onchain-validator-owners.md`, the validator doc comments and the conformance comments that state the old rule as fact.
+- [ ] T019 The deployed identity check compares the naming scripts' compiled code with the registry's current state hash and the current retirement-custody hash. It is seen failing on the stale naming pin before T015 (INV-08).
 
 ## S2 product builder
 
 - [ ] T020 The reject builder drops its timing selection and deadline-bound validity (INV-09).
-- [ ] T021 Devnet e2e: processing- and retraction-window rejects through the builder, with refund and unchanged state read back from the ledger (INV-05, INV-09).
+- [ ] T021 Devnet e2e: processing- and retraction-window rejects through the builder, each interval asserted inside its window, refund and unchanged state read back from the ledger. "rejects a phase-3 request" keeps its name (INV-05, INV-09).
 - [ ] T022 Restate `requestPhase`'s documentation as a resuming client's choice of exit.
 
 ## S3 evidence in the story language

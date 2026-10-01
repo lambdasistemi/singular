@@ -31,18 +31,18 @@
   ],
   "d-05-cg09s-result": [
     {
-      "text": "CG09 keeps its row and its requirement. The chain now accepts, and the verdict is the existing held one: Singular's model and the consumer's theorem disagree and the chain sided with Singular. Because the early reject consumes the request, its control books a second request and rejects it after the retraction window, also accepted, and logs that.",
+      "text": "CG09 keeps its row and its requirement. Its control comes first: the same reject one lovelace short, refused by the state script. Then the untampered reject, with full fold execution units, is accepted, and the verdict is the existing held one: Singular's model and the consumer's theorem disagree and the chain sided with Singular.",
       "pause": 400
     }
   ],
   "d-06-builder-selection": [
     {
-      "text": "The builder selects every pending request of this registry and refuses to build when there is none. Refunds and the state continuation are as today.",
+      "text": "The builder selects every pending request of this registry and refuses to build when there is none. Its transaction has a finite validity interval starting at the current tip and bound to no deadline. Refunds and the state continuation are as today.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "3b1b028ce091e6ec6a380f57ce8f1b6698fdb4b3bae8ce95a4e2693e4b675162"
+    "sha256": "40214d1d5b2255add25bd00abd6c6282cbe28bbc2cd03ac2f5aae26fcb99ce4c"
   }
 }
