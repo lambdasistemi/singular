@@ -60,7 +60,7 @@ CG22, CG23; all admit Lean's reason). Every other discovered refusal:
 
 | Row | Refusal | Traced reason | Lean | Class |
 |---|---|---|---|---|
-| CG05 | insert on a present key | `key-exists` | `key-exists` (Model.lean:553); no consumer runs the model | B |
+| CG05 | insert on a present key | `key-exists` | `key-exists` (Model.lean:553); executing consumer commissioned (A-011, T036a) — class A once its story runs live | B until then |
 | CG11 | empty fold | `empty-fold` | `foldBatch` refuses `empty-fold` (Model.lean:665); row held by the recorded consumer-model conflict (Q-002) | D (existing) |
 | CG12 | surplus actions; missing-action control | `surplus-actions`, `missing-action` | actions are not a model input; row held (Q-002) | D (existing) |
 | CG19 | crossed refund allocation; rejected-floor control | `deposit-returned` | consumer-model conflict recorded unresolved (Q-002) | D (existing) |

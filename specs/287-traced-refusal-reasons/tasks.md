@@ -133,6 +133,18 @@ flowchart LR
   or the retention and observing it fail. Reviewed with the R3 implementation
   checkpoint and its real control receipt, not as a separate prose round.
 - [ ] T036 G7: extend generic and serialization steps' jq.
+- [ ] T036a [C] CG05 executing consumer (E209 A-011): CG05 runs as a story through the
+  generic interpreter (new `conformance/lib/Conformance/Edge/Occupied.hs`,
+  `runCG05` → the shared live runner): its occupied starting state is created
+  by real accepted connected actions and readbacks, the original occupied-insert
+  case is kept (insertAbsent on the occupied key), and the actual setup,
+  config and request reach the generic Lean question. Accepted control and the
+  refused insert reach deployed replay, traced replay, Lean comparison and the
+  receipt replay object. No new oracle, adapter, typed expected reason, Lean,
+  driver or rows.json change. Evidence: the R3b generic-session run, after the
+  CG05 checkpoint review; the generic step's CI assertions read the story
+  receipt (refused step model `key-exists`, trace `key-exists`, comparison
+  agrees, connected accepted control).
 - [ ] T037 G9: control step, altered leg non-zero naming both reasons, restored leg zero.
 - [ ] T038 G10: extent over every receipt, non-empty guard, each refusal once
   in `replay/index.json`; a refusal with a model reason not class A, or not
