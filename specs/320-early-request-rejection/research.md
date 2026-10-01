@@ -26,7 +26,7 @@ Historical live evidence that the defect is reachable: during ticket 287 an adeq
 | `onchain/validators/cage_reject.tests.ak` | `reject_in_phase1`/`reject_in_phase2` expect failure | become accepting tests; future-dated test reworded |
 | `onchain/validators/cage_contribute.tests.ak` | `contribute_in_phase2` expects failure, `contribute_in_phase3` accepts | split by the matching action |
 | `onchain/validators/deposit_exits.tests.ak` | comment citing the predicate | reword |
-| `onchain/validators/types.ak`, `registry/refusal.ak`, `cage_fixtures.ak` | doc comments | reword |
+| `onchain/validators/types.ak`, `cage_fixtures.ak` | doc comments | reword |
 | `docs/onchain-validator-owners.md` | lists `not-rejectable` among the fold's reasons | drop it |
 | `offchain/lib/Singular/Registry/TxBuilder/Reject.hs` | selects only expired or future-dated requests; validity starts after the latest retraction deadline | remove both timing rules |
 | `offchain/lib/Singular/Registry/Wire/Request.hs` `requestPhase` | docs say it mirrors the validator's rejectability | restate as a resuming client's choice of exit; behaviour unchanged |

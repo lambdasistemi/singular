@@ -43,7 +43,7 @@ One complete run at the exact head forecasts N83 and D6.
 
 | Row | How it is known to fail |
 |---|---|
-| G1 | red at the base with the S1 tests that expect an early reject to be accepted (`not-rejectable` on the state purpose, the request expectation on the request purpose) |
+| G1 | red at the base with the S1 tests that expect a reject in the processing or retraction window to be accepted (`not-rejectable` on the state purpose, the request expectation on the request purpose). Rejects after the windows and future-dated ones already pass at the base; their tests are preservation, not RED. |
 | G1, G2, G5 | red on any manifest not regenerated, and on the witness pin, by the existing checks. Red on a stale naming pin only through the comparison this ticket adds to G5, which is seen failing on the stale pin before the naming pins move. |
 | G7 | the new window cases fail at the base builder, which refuses to build ("no rejectable requests") |
 | G10 | at the base it already exits non-zero for any CG09 verdict but its expected one. After S1 alone, without the CG09 change, it fails on CG09's verdict. |
@@ -119,7 +119,7 @@ No bespoke instrument is added.
 
 ## G10 body: generic rows with CG09 held
 
-The changes from the base body are the CG09 verdict group, the held set `CG09 CG11 CG12 CG19`, assertion 10 and the two closing lines. Assertion 10 checks CG09's accepted receipt, its recorded hold and its refused short-refund control.
+The changes from the base body are the CG09 verdict group, the held set `CG09 CG11 CG12 CG19`, assertion 10 and the two closing lines. Assertion 10 checks CG09's accepted receipt, its recorded hold and its refused short-refund control. The control goes through the existing `submitExpectRefusedControl`, which fails the run unless the node's refusal is attributed to the state script; the line asserted here is the one that helper logs. Order and units follow: run after the accepted reject, the control's input would already be spent and its refusal could not be attributed to the state script; run with refusal-sized units, the accepted reject would not be accepted.
 
 ```yaml
       - name: Run the generic rows as a packaged app without a dev shell
@@ -324,7 +324,7 @@ The changes from the base body are the CG09 verdict group, the held set `CG09 CG
             and (.transactions[0] | test("^[0-9a-f]{64}$"))
           ' "${CONFORMANCE_RECEIPTS}"/receipt-CG09.json > /dev/null || { echo 'FAIL: CG09 held acceptance evidence moved'; exit 1; }
           grep -q '^held: CG09 HELD FOR ' /tmp/generic-rows.log || { echo 'FAIL: CG09 hold not recorded by the run'; exit 1; }
-          grep -q '^control: CG09 control: the same reject one lovelace short is refused (tx=[0-9a-f]\{64\})' /tmp/generic-rows.log || { echo 'FAIL: CG09 refused-control txid missing'; exit 1; }
+          grep -q '^control: CG09 control: REFUSED at submit, attributed to state (phase-2, marker 0x[0-9a-f][0-9a-f]*)' /tmp/generic-rows.log || { echo 'FAIL: CG09 refused control not attributed to the state script'; exit 1; }
           echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and the tampered-payment controls are recorded, with held debt exactly CG09 CG11 CG12 CG19.'
           echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused, R9_reject_needs_rejectable and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'
 ```

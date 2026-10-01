@@ -35,7 +35,7 @@ Every reject a story runs carries a placement, tampered or not. The story's vali
 
 ## D-05 CG09's result
 
-The CG09 receipt keeps its row id and requirement. The chain outcome is now `accepted`. The verdict is the existing `held-q002`: Singular's Lean and the consumer's theorem disagree, and the chain sided with Singular's Lean. The session records CG09 among its held rows. The row's control comes first: the same request's processing-window reject refunding the owner one lovelace short, refused and attributed to the state script, logged as `control: CG09 control: the same reject one lovelace short is refused (tx=<id>)`. Then the untampered reject, built with full-fold execution units (the refusal-sized units would let a budget failure pass for a rule refusal). The after-window acceptance is CG23's and the e2e's.
+The CG09 receipt keeps its row id and requirement. The chain outcome is now `accepted`. The verdict is the existing `held-q002`: Singular's Lean and the consumer's theorem disagree, and the chain sided with Singular's Lean. The session records CG09 among its held rows. The row's control comes first: the same request's processing-window reject refunding the owner one lovelace short, refused and attributed to the state script, submitted through the existing `submitExpectRefusedControl`, which fails the run unless the refusal is attributed to the state script and logs `control: CG09 control: REFUSED at submit, attributed to state (phase-2, marker 0x<hex>) — …`. Then the untampered reject, built with full-fold execution units (the refusal-sized units would let a budget failure pass for a rule refusal). The after-window acceptance is CG23's and the e2e's.
 
 ## D-06 Builder selection
 

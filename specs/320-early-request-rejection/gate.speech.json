@@ -13,7 +13,7 @@
   ],
   "falsification": [
     {
-      "text": "Each row's ability to fail is known from the base: the compiled suite fails on the new early reject tests, the identity checks fail on any stale pin, the builder refuses an early reject, the generic rows fail on CG09's verdict until its expectation moves, and the retained refused transaction is the live defect. No bespoke instrument is added.",
+      "text": "Each row's ability to fail is known from the base: the compiled suite fails on the new tests for rejects inside the windows, while rejects after them already pass and are preservation; the identity checks fail on any stale manifest and, through the new comparison, on a stale naming pin; the builder refuses an early reject; the generic rows fail on CG09's verdict until its expectation moves; and the retained refused transaction is the live defect. No bespoke instrument is added.",
       "pause": 400
     }
   ],
@@ -25,7 +25,7 @@
   ],
   "g10-body-generic-rows-with-cg09-held": [
     {
-      "text": "The generic rows step after the change. CG09 moves to the held verdict group, the held set becomes CG09, CG11, CG12 and CG19, a new assertion checks CG09's accepted receipt, its recorded hold and its refused short refund control, and the closing lines name the consumer's R9 as unmet.",
+      "text": "The generic rows step after the change. CG09 moves to the held verdict group, the held set becomes CG09, CG11, CG12 and CG19, a new assertion checks CG09's accepted receipt, its recorded hold and the line the existing refused control helper logs only when the refusal is attributed to the state script, and the closing lines name the consumer's R9 as unmet.",
       "pause": 400
     }
   ],
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "gate.md",
-    "sha256": "5f308a2d2de79c09580124a435ccf0d60b11fa69b4675a93e415607ae7b9a981"
+    "sha256": "981871a11300ac0f60b2fc0441bd42cb99dc39005faf1cd08fb27e43841fc504"
   }
 }

@@ -48,12 +48,12 @@ flowchart LR
 
 ## Invariants
 
-Each invariant has one executable check at the layer where it could fail. RED means the check was seen failing on the unrepaired code for the stated reason. A setup or decoding failure is never RED.
+Each invariant has one executable check at the layer where it could fail. Where the base violates an invariant (INV-01 and INV-02 in the processing and retraction windows, INV-04 in those windows, INV-09, INV-10), RED means the check was seen failing on the unrepaired code for the stated reason. The others are preservation or identity checks: green at the base, and able to fail in the way their row names. A setup or decoding failure is never RED.
 
 | ID | Invariant | Layer | Fails when |
 |---|---|---|---|
-| INV-01 | State purpose admits `Rejected` in the processing window, the retraction window, after both, and for a future-dated request. | compiled Aiken | the state script halts `not-rejectable` or any timing reason on a reject |
-| INV-02 | Request purpose admits a `Contribute` whose matching state action is `Rejected` in the processing and retraction windows. | compiled Aiken | the request script refuses that spend |
+| INV-01 | State purpose admits `Rejected` in the processing window, the retraction window, after both, and for a future-dated request. | compiled Aiken | the state script halts `not-rejectable` or any timing reason on a reject. At the base this happens in the processing and retraction windows only; the other two ranges are preservation. |
+| INV-02 | Request purpose admits a `Contribute` whose matching state action is `Rejected` in the processing and retraction windows. Its matching action is the one the state's fold pairs with it: with two requests and their actions in either order, only the rejected one is admitted outside the processing window. Two mutations, admitting on any reject and admitting on the first action, are each seen failing that test. | compiled Aiken, two mutation runs | the request script refuses that spend, or either mutation survives |
 | INV-03 | Update timing preserved: the state refuses an update outside the processing window `not-phase1`. The request refuses a `Contribute` outside it whose matching action is an update. | compiled Aiken | either purpose admits it |
 | INV-04 | Refund floor held in early windows: short, other key, script and missing refunds are refused `deposit-returned` in the processing and retraction windows. | compiled Aiken | an early reject with a bad refund is admitted |
 | INV-05 | A reject continues the state unchanged and mints nothing. | compiled Aiken, devnet readback | state datum, root or value differ, or a mint appears |
@@ -64,7 +64,7 @@ Each invariant has one executable check at the layer where it could fail. RED me
 | INV-10 | Model-bound early rejections agree with Lean. Untampered: accepted by both, owner paid at least the deposit, state unchanged. Tampered: refused by both, model reason `deposit-returned`, refusal attributed to the state script. | devnet conformance story | any comparison disagrees |
 | INV-11 | CG09 consumer requirement unchanged. Its run first submits the request's processing-window reject refunding the owner one lovelace short, refused and attributed to the state script. It then submits the untampered reject with full-fold execution units, accepted and reported with a held verdict, never `agrees-with-model`. The session's held set is exactly CG09, CG11, CG12, CG19. | devnet conformance CI step (gate G10) | CG09 reports agreement, its refused control is missing, or the held set moves otherwise |
 | INV-12 | CG23 keeps its evidence: its rejects are placed after the windows explicitly, and its CI assertion is unchanged. | devnet conformance CI step | CG23's receipt shape or verdict moves |
-| INV-13 | Compiled sizes of the state and request scripts, and the execution units of both purposes on a reject, are recorded before and after. | measurement receipt | missing measurement |
+| INV-13 | Compiled sizes of the state and request scripts, and the execution units of both purposes on a reject, are recorded before and after. | measurement receipt, checked by the owner at acceptance (no gate row) | the receipt is missing a figure; not a RED invariant |
 | INV-14 | The workflow carries the gate's G10 and G11 step bodies byte for byte, and G9's unchanged. `rows.json` changes only CG23's two timing sentences and appends CG24. | gate G0 and extraction compare | a step body or another row differs |
 
 ## Holds and limits

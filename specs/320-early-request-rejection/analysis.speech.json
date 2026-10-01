@@ -25,6 +25,12 @@
   ],
   "_source": {
     "file": "analysis.md",
-    "sha256": "e37973da50093a20bff0bb4f4bc7d251c00af25d45ca47780832d8d0e1eaf996"
-  }
+    "sha256": "e8868d92ce406b21a04e3f854a548dba97ac6f0ba02f09c1e8d5ff3dce38115b"
+  },
+  "residuals-and-their-dispositions": [
+    {
+      "text": "Four residuals, each with its evidence and limit. The builder now rejects every pending request, and one unprocessable request still blocks it: a named limit. Old wording in an off-chain test name and a journey message stays, outside the fence. A request whose datum is a hash can be spent in its processing window without being folded, an exit the model does not have; it is unchanged here, shown only from source, and raised to the parent as its own story. The update timing rule outside the model has its own ticket.",
+      "pause": 400
+    }
+  ]
 }

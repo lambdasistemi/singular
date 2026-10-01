@@ -25,7 +25,7 @@
   ],
   "invariants": [
     {
-      "text": "Fourteen invariants, each with one check at the layer where it could fail. RED means seen failing on the unrepaired code for the stated reason. A setup or decoding failure never counts as RED. They cover both script purposes, refund floors in early windows, unchanged state, unchanged retraction, removal of the old predicate, identities, the builder on a devnet, model-compared live rejects, the consumer row held with its control, the exit row unchanged, measured sizes and costs, and the workflow and rows carrying exactly the planned changes.",
+      "text": "Fourteen invariants, each with one check at the layer where it could fail. Where the base violates one, in the processing and retraction windows, for the builder and for the model compared rows, RED means seen failing on the unrepaired code for the stated reason. The rest are preservation or identity checks, green at the base and able to fail as their row says, and the size and cost measurement is checked at acceptance. A setup or decoding failure never counts as RED. The request's matching action is pinned by two requests in either order and two mutations seen failing.",
       "pause": 400
     }
   ],
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "edb32180450c11e8f4278c465f300db84796e49495d96f6e3cc7c9c76400e4ad"
+    "sha256": "841dfe83b8a24cd8b6cc63353280634aeb50c04c9dd25231b2f60a791372b6cb"
   }
 }

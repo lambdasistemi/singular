@@ -18,7 +18,7 @@ Stable IDs. A task is checked only after its slice is accepted at an exact commi
 - [ ] T011 Remove the timing rule from the state's reject (INV-01, INV-05).
 - [ ] T012 Request purpose admits its matching reject in any window; update timing kept (INV-02, INV-03).
 - [ ] T013 Remove the rejectability predicate and wrapper. Restate the properties and tests that encoded the old rule (INV-07).
-- [ ] T014 Regenerate the registry manifest. Update the witness and envelope pins to the regenerated state hash (INV-08).
+- [ ] T014 Read the new state hash from the built registry blueprint, set the witness and envelope pins to it, then regenerate the registry manifest. The witness pin moves the witness and open-datum hashes, so the regeneration comes after it (INV-08).
 - [ ] T015 Update the naming state pin, regenerate, update the retirement-custody pins, regenerate again (INV-08).
 - [ ] T016 Record compiled sizes and the execution units of both purposes on a processing-window reject, before and after (INV-13).
 - [ ] T017 CG09 records the chain's acceptance as held, after its refused one-lovelace-short control on the same request, with full-fold units. The G10 step body and `docs/consumer-conformance.md` state it. The consumer requirement text is unchanged (INV-11, INV-14).
