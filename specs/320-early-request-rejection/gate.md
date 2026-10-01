@@ -35,7 +35,7 @@ N counts every `nix` invocation, nested ones included: a `nix run nixpkgs#jq` in
 | G10 | generic rows with CG09 held | body below (CI change in this ticket) | conformance.yml | 0 | 45 | 1 |
 | G11 | CG24 early rejection row | body below (CI change in this ticket) | conformance.yml | 0 | 4 | 1 |
 | G12 | release assembly | `nix run --quiet .#release-artifacts -- "$RUNNER_TEMP/release"` (root); it builds both blueprints | ci.yml "release-artifacts" job | 0 | 3 | 0 |
-| G13 | root CI | `nix develop --quiet -c just ci </dev/null` (root; closed stdin) | ci.yml "dev-shell" job | 0 | 3 | 0 |
+| G13 | root CI | `nix develop --quiet -c just ci`, standard input redirected from `/dev/null` (root) | ci.yml "dev-shell" job | 0 | 3 | 0 |
 
 One complete run at the exact head forecasts N83 and D6.
 
