@@ -7,7 +7,7 @@
   ],
   "changed-same-signature": [
     {
-      "text": "The request script's contribute check and the fold's per request step change their rule but not their signatures, except that the contribute check may take the request's own output reference. The builder's exported functions keep their signatures. CG09's runner records acceptance as held.",
+      "text": "The request script's contribute check and the fold's per request step change their rule but not their signatures, except that the contribute check may take the request's own output reference. The builder's exported functions keep their signatures. CG09's runner records acceptance as unmet by ruling.",
       "pause": 400
     }
   ],
@@ -19,6 +19,6 @@
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "06fed3415af24df2055f7658935f633f0513e0330665ff210d3a809705482d9a"
+    "sha256": "f60d0bb24d19c9bcbe72eaec95f49de0c60d0589291a8b43e6de044efd57ddbe"
   }
 }

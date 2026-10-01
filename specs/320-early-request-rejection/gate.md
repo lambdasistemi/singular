@@ -391,7 +391,7 @@ It sits directly after G9 in `conformance.yml`, under a comment stating what the
             echo "FAIL: CG24 placements moved: processing=$p1 retraction=$p2, expected 3 and 3"
             exit 1
           fi
-          echo 'GREEN = early rejection held: inside the processing window and inside the retraction window, the untampered reject is accepted by the chain and the model, refunding the owner and leaving the state as it was; the short and misdirected refunds are refused by both for deposit-returned. The consumer R9_reject_needs_rejectable stays unmet (CG09, held).'
+          echo 'GREEN = early rejection held: inside the processing window and inside the retraction window, the untampered reject is accepted by the chain and the model, refunding the owner and leaving the state as it was; the short and misdirected refunds are refused by both for deposit-returned. The consumer R9_reject_needs_rejectable stays unmet (CG09, unmet-by-ruling).'
 ```
 
 ## The rows change, exact

@@ -29,7 +29,7 @@ The model's words are used throughout: reject, retract, fold, deposit, tip, obli
 | Finding | Where | Disposition |
 |---|---|---|
 | The validator refuses an update outside the processing window; Lean admits a fold in every window. | `registry/fold.ak`, `request.ak` against `Model.lean` | A separate code-against-model discrepancy, repaired by its own ticket. Kept unchanged in this bounded diff (KR-01), labeled current validator behaviour outside Lean, its correspondence claim held. |
-| The consumer's R9 forbids early rejection; Singular's Lean allows it. | CG09 | Held; requirement preserved unmet (FR-07). |
+| The consumer's R9 forbids early rejection; Singular's Lean allows it. | CG09 | Unmet by ruling (`unmet-by-ruling`, operator ruling 2026-10-01); requirement preserved (FR-07). |
 | CG23's published requirement states the old timing as product text. | `conformance/rows.json` | Its two timing sentences are restated; its rejects stay placed after the windows. |
 | The builder's documentation says it builds rejects "for Phase 3 requests". | `Reject.hs` | Restated with the selection change (T020). |
 

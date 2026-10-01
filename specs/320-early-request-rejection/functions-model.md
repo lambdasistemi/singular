@@ -17,7 +17,7 @@ Only signatures and their constraints. Bodies, helpers and tests belong to the i
 | F-04 | `validateContribute(statePolicyId: PolicyId, cageToken: TokenId, request: Request, stateRef: OutputReference, tx: Transaction)` | `onchain/validators/request.ak` | admission per data model D-02. It may take the request's own `OutputReference` if locating its matching action needs it. That is the only signature change permitted here. |
 | F-05 | `stepRequest(acc: Fold, pins: State, request: Request, input: Input, validity_range) -> Fold` | `onchain/validators/registry/fold.ak` | `Rejected` arm per D-01 |
 | F-09 | `rejectRequestsImpl :: CageConfig -> Provider IO -> TokenId -> Addr -> IO ConwayTx`, `rejectRequestsWithRefs :: CageConfig -> Provider IO -> TokenId -> Addr -> [(TxIn, TxOut ConwayEra)] -> IO ConwayTx` | `offchain/lib/Singular/Registry/TxBuilder/Reject.hs` | selection per D-06; validity not bound to any deadline. The exported signatures are unchanged, so no caller changes. |
-| F-10 | `runCG09 :: Env -> IO ()` | `conformance/app/Conformance/Run/CgRows.hs` | records the chain's acceptance with verdict held, after its refused short-refund control on the same request (D-05) |
+| F-10 | `runCG09 :: Env -> IO ()` | `conformance/app/Conformance/Run/CgRows.hs` | records the chain's acceptance with verdict `unmet-by-ruling` (operator ruling 2026-10-01), after its refused short-refund control on the same request (D-05) |
 
 ## Added
 

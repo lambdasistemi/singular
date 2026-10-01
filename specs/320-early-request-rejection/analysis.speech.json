@@ -13,7 +13,7 @@
   ],
   "contradictions-found-and-how-they-are-carried": [
     {
-      "text": "Four findings: the update timing rule outside the model, a separate ticket's repair, kept unchanged here with its claim held; the consumer's R9 conflict, held; CG23's stale timing words, restated; and the builder's phase three documentation, restated with the change.",
+      "text": "Four findings: the update timing rule outside the model, a separate ticket's repair, kept unchanged here with its claim held; the consumer's R9 conflict, kept unmet by operator ruling; CG23's stale timing words, restated; and the builder's phase three documentation, restated with the change.",
       "pause": 400
     }
   ],
@@ -25,7 +25,7 @@
   ],
   "_source": {
     "file": "analysis.md",
-    "sha256": "e8868d92ce406b21a04e3f854a548dba97ac6f0ba02f09c1e8d5ff3dce38115b"
+    "sha256": "4978ac4dfee9e847c9133b4be854353fb98224278e9e787a45096e0294a64d03"
   },
   "residuals-and-their-dispositions": [
     {
