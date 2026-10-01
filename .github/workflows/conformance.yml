@@ -270,7 +270,9 @@ jobs:
           head_sha="$(git rev-parse HEAD)"
           f="$receipts/receipt-CG23.json"
           test -f "$f" || { echo 'FAIL: missing CG23 receipt'; exit 1; }
-          test "$(wc -c < "$f")" -le 14745 || { echo "FAIL: CG23 receipt exceeds its margin"; exit 1; }
+          # The margin is nine tenths of the receipt bound (18 432 bytes): with the
+          # traced replay of its refusals CG23 measured 15 214 bytes (#287).
+          test "$(wc -c < "$f")" -le 16588 || { echo "FAIL: CG23 receipt exceeds its margin"; exit 1; }
           state_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "state.state.spend" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
           # jq expands its own --arg variables inside this program.
           # shellcheck disable=SC2016
@@ -335,7 +337,8 @@ jobs:
           head_sha="$(git rev-parse HEAD)"
           f="$receipts/receipt-CG07.json"
           test -f "$f" || { echo 'FAIL: missing retraction window receipt'; exit 1; }
-          test "$(wc -c < "$f")" -le 14745 || { echo 'FAIL: retraction window receipt exceeds its margin'; exit 1; }
+          # Nine tenths of the receipt bound (18 432 bytes), as for CG23.
+          test "$(wc -c < "$f")" -le 16588 || { echo 'FAIL: retraction window receipt exceeds its margin'; exit 1; }
           # shellcheck disable=SC2016
           nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" '
             def txid: type == "string" and test("^[0-9a-f]{64}$");

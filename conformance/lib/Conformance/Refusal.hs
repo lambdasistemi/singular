@@ -298,6 +298,9 @@ attributeRefusalReceipt role dir row verdict script marker text rejectedTxid bas
         Right () -> do
             let recorded = recordedReason text marker
                 admitted = tracedAdmitted traced
+                replay = case tracedReplay traced of
+                    [] -> Nothing
+                    entries -> Just entries
             when (refusalWritesReceipt role) $
                 writeReceiptFile
                     dir
@@ -315,7 +318,7 @@ attributeRefusalReceipt role dir row verdict script marker text rejectedTxid bas
                                     , refusalHashes =
                                         map T.pack (refusalScriptHashes text)
                                     , refusalBranch = admitted
-                                    , refusalReplay = Nothing
+                                    , refusalReplay = replay
                                     , refusalLimit = case admitted of
                                         Just _ -> Nothing
                                         Nothing ->
@@ -335,7 +338,8 @@ attributeRefusalReceipt role dir row verdict script marker text rejectedTxid bas
                         , receiptPartial = Nothing
                         , receiptDerivation = Nothing
                         , receiptSteps = Nothing
-                        , receiptReplayCorrespondence = Nothing
+                        , receiptReplayCorrespondence =
+                            tracedCorrespondence traced <* replay
                         }
             pure (Right ())
 

@@ -47,6 +47,8 @@ import Conformance.Run.Replay
     , capturingSubmitter
     , newReplayEnv
     , purposesOf
+    , replayEvidenceOf
+    , sessionCorrespondence
     )
 import Conformance.Run.Submit
 import Conformance.Run.Units
@@ -66,6 +68,7 @@ import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.IORef (writeIORef)
 import Data.List (intercalate, isInfixOf, nub)
+import Data.List.NonEmpty (nonEmpty)
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -188,6 +191,7 @@ import Conformance.Receipt
     , PartialInfo (..)
     , Receipt (..)
     , RefusalInfo (..)
+    , ReplayCorrespondence
     , Verdict (..)
     , loadReceipts
     , writeReceiptFile
@@ -619,7 +623,29 @@ writeCSReceipt
     -> String
     -> Maybe PartialInfo
     -> IO ()
-writeCSReceipt dir row outcome verdict txs refusal rejected mem cpu size venue base dirty nodeVer blueprintIdStr partial =
+writeCSReceipt = writeCSReceiptWith Nothing
+
+-- | A CS receipt stating the traced build its refusal's replay relies on.
+writeCSReceiptWith
+    :: Maybe ReplayCorrespondence
+    -> FilePath
+    -> String
+    -> Outcome
+    -> Verdict
+    -> [String]
+    -> Maybe RefusalInfo
+    -> Maybe String
+    -> Maybe Integer
+    -> Maybe Integer
+    -> Maybe Integer
+    -> T.Text
+    -> String
+    -> Bool
+    -> String
+    -> String
+    -> Maybe PartialInfo
+    -> IO ()
+writeCSReceiptWith correspondence dir row outcome verdict txs refusal rejected mem cpu size venue base dirty nodeVer blueprintIdStr partial =
     writeReceiptFile dir $
         Receipt
             { receiptRow = T.pack row
@@ -636,7 +662,7 @@ writeCSReceipt dir row outcome verdict txs refusal rejected mem cpu size venue b
             , receiptPartial = partial
             , receiptDerivation = Nothing
             , receiptSteps = Nothing
-            , receiptReplayCorrespondence = Nothing
+            , receiptReplayCorrespondence = correspondence
             , receiptNode = T.pack nodeVer
             , receiptBlueprint = T.pack blueprintIdStr
             , receiptVenue = venue
@@ -1321,6 +1347,8 @@ attributeCS04Refusal index receiptsDir base dirty nodeVer blueprintIdStr marker 
         Right () -> do
             admitted <-
                 admittedFor (T.pack marker) <$> purposesOf index (T.pack rejectedTxid)
+            replay <- replayEvidenceOf index (T.pack rejectedTxid)
+            correspondence <- sessionCorrespondence index
             let hashes = refusalScriptHashes text
             require
                 ("CS04: state script did not refuse; scripts named: " <> show hashes)
@@ -1330,7 +1358,8 @@ attributeCS04Refusal index receiptsDir base dirty nodeVer blueprintIdStr marker 
             unless (stateMarker `isInfixOf` trimmed) $
                 failWith
                     ("trimmer dropped the attribution; full reason: " <> take 20000 text)
-            writeCSReceipt
+            writeCSReceiptWith
+                (correspondence <* nonEmpty replay)
                 receiptsDir
                 "CS04"
                 Refused
@@ -1343,7 +1372,7 @@ attributeCS04Refusal index receiptsDir base dirty nodeVer blueprintIdStr marker 
                         , refusalPhase = "phase-2"
                         , refusalHashes = map T.pack hashes
                         , refusalBranch = admitted
-                        , refusalReplay = Nothing
+                        , refusalReplay = toList <$> nonEmpty replay
                         , refusalLimit = case admitted of
                             Just _ -> Nothing
                             Nothing ->

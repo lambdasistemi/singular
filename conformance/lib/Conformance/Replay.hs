@@ -73,6 +73,7 @@ import Data.ByteString.Char8 qualified as BS8
 import Data.Foldable (toList)
 import Data.List (nub, sortOn)
 import Data.Map.Strict (Map)
+import Data.Map.Strict qualified as Map
 import Data.Maybe (mapMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -446,7 +447,29 @@ rejectionEvidence
     -> [ReplayClass]
     -- ^ what the replay established, in the index's order
     -> [ReplayEvidence]
-rejectionEvidence _ _ _ _ = []
+rejectionEvidence captureId failing purposes classes = case purposes of
+    [] ->
+        [ ReplayEvidence hash Nothing Nothing (Just (causeName cause)) captureId
+        | Unobserved cause <- take 1 classes
+        , hash <- failing
+        ]
+    _ -> map evidence purposes
+  where
+    evidence p = case prClass p of
+        Admitted reason ->
+            ReplayEvidence
+                (prDeployedHash p)
+                (prTracedHash p)
+                (Just reason)
+                Nothing
+                captureId
+        Unobserved cause ->
+            ReplayEvidence
+                (prDeployedHash p)
+                (prTracedHash p)
+                Nothing
+                (Just (causeName cause))
+                captureId
 
 {- | The traced build a receipt's replay reasons rely on: its source, compiler
 and trace flags, and a digest of the untraced hashes it was held to.
@@ -479,4 +502,18 @@ instance FromJSON ReplayCorrespondence where
 
 -- | The correspondence a traced build's provenance states.
 correspondenceOf :: TracedProvenance -> ReplayCorrespondence
-correspondenceOf _ = ReplayCorrespondence "" "" "" ""
+correspondenceOf p =
+    ReplayCorrespondence
+        { correspondenceSource = tpSource p
+        , correspondenceCompiler = tpCompiler p
+        , correspondenceFlags = tpFlags p
+        , correspondenceDigest =
+            sha256Hex
+                ( TE.encodeUtf8
+                    ( T.concat
+                        [ title <> " " <> hash <> "\n"
+                        | (title, hash) <- Map.toAscList (tpUntracedHashes p)
+                        ]
+                    )
+                )
+        }

@@ -59,8 +59,10 @@ import Codec.Serialise
     , serialise
     )
 import Control.Exception
-    ( SomeException
+    ( ErrorCall (..)
+    , SomeException
     , evaluate
+    , throwIO
     , try
     )
 import Control.Monad (forM, guard, unless, when)
@@ -249,12 +251,28 @@ data ReplayIndex = ReplayIndex
     -- ^ the traced build the session loaded; none when it could not
     }
 
--- | An empty index for a receipts directory.
+{- | The index of a receipts directory: empty, or the entries an earlier session
+in the same directory wrote, which this session's entries follow. An index
+that cannot be read stops the session rather than being overwritten.
+-}
 newReplayIndex :: FilePath -> IO ReplayIndex
-newReplayIndex dir =
+newReplayIndex dir = do
+    let path = dir </> "replay" </> "index.json"
+    present <- doesFileExist path
+    earlier <-
+        if present
+            then
+                Aeson.eitherDecodeFileStrict path
+                    >>= either
+                        ( throwIO
+                            . ErrorCall
+                            . (("unreadable replay index " <> path <> ": ") <>)
+                        )
+                        pure
+            else pure []
     ReplayIndex dir
         <$> newIORef ""
-        <*> newIORef []
+        <*> newIORef earlier
         <*> newIORef Map.empty
         <*> newIORef Set.empty
         <*> newIORef Map.empty
@@ -270,8 +288,9 @@ addRejection
     -> [(Text, ReplayClass)]
     -> [ReplayEvidence]
     -> IO ()
-addRejection index txid entry purposes _ = do
+addRejection index txid entry purposes evidence = do
     modifyIORef' (riPurposes index) (Map.insert txid purposes)
+    modifyIORef' (riEvidence index) (Map.insert txid evidence)
     addEntry index entry
 
 -- | Add one entry and write the whole index.

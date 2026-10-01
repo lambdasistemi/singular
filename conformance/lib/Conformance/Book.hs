@@ -186,8 +186,43 @@ renderBook requirements receipts =
                             <> "`); the model refused it for `"
                             <> T.unpack reason
                             <> "`.\n\n"
+                            <> tracedReplay chain
             _ -> ""
         _ -> ""
+    -- What the traced replay of a refused transaction observed, purpose by
+    -- purpose: read from the step's chain refusal, never typed here.
+    tracedReplay chain = case KM.lookup "refusal" chain of
+        Just (Object refusal)
+            | Just (Array entries) <- KM.lookup "replay" refusal ->
+                concat
+                    [ "The traced replay of the deployed script `"
+                        <> T.unpack deployed
+                        <> "` "
+                        <> observed
+                        <> "\n\n"
+                    | Object entry <- toList entries
+                    , Just (String deployed) <- [KM.lookup "deployedHash" entry]
+                    , Just observed <- [replayObserved entry]
+                    ]
+        _ -> ""
+    replayObserved entry = case ( KM.lookup "reason" entry
+                                , KM.lookup "cause" entry
+                                , KM.lookup "tracedHash" entry
+                                , KM.lookup "captureId" entry
+                                ) of
+        (Just (String reason), _, Just (String traced), Just (String capture)) ->
+            Just
+                ( "(traced `"
+                    <> T.unpack traced
+                    <> "`, capture `"
+                    <> T.unpack capture
+                    <> "`) failed with `"
+                    <> T.unpack reason
+                    <> "`."
+                )
+        (_, Just (String cause), _, _) ->
+            Just ("admits no reason: `" <> T.unpack cause <> "`.")
+        _ -> Nothing
     -- A fold is named by its edge; a reject or a retraction by its exit and the
     -- edge its request named.
     exitOf fields edge = case KM.lookup "exit" fields of

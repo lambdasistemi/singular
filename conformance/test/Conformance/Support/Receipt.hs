@@ -225,6 +225,21 @@ spec = describe "Appendix: deciding whether a run report counts as evidence" $ d
                 err `shouldSatisfy` ("CG05" `isInfixOf`)
             Right () -> fail "a 20KB receipt passed the bound"
 
+    it "Accepts a report of exactly the bound and rejects one byte more" $ do
+        let padded n =
+                oversizedReceipt
+                    { receiptRefusal =
+                        fmap
+                            (\info -> info{refusalReason = T.pack (replicate n 'x')})
+                            (receiptRefusal oversizedReceipt)
+                    }
+            base = fromIntegral (BSL.length (encode (padded 0)))
+            exact = padded (maxReceiptBytes - base)
+        BSL.length (encode exact) `shouldBe` fromIntegral maxReceiptBytes
+        checkReceiptSize exact `shouldBe` Right ()
+        checkReceiptSize (padded (maxReceiptBytes - base + 1))
+            `shouldSatisfy` isLeft
+
     it "bounds an over-long live node rejection before saving the receipt" $
         withSystemTempDirectory "long-live-refusal" $ \dir -> do
             writeReceiptFile dir overlongLiveRefusal

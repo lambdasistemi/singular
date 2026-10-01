@@ -60,6 +60,7 @@ import Conformance.NodeRejection (boundedNodeReason)
 import Conformance.Replay
     ( ReplayCorrespondence (..)
     , ReplayEvidence (..)
+    , causeName
     )
 import Conformance.Story.Live
     ( Edge (..)
@@ -71,10 +72,12 @@ import Control.Exception (ErrorCall (..), throwIO)
 
 import Data.Aeson
     ( FromJSON (..)
+    , Result (..)
     , ToJSON (..)
     , Value (..)
     , eitherDecode
     , encode
+    , fromJSON
     , object
     , withObject
     , withText
@@ -501,9 +504,14 @@ writeReceiptFile dir r = case checkReceiptSize bounded of
 {- | Receipts stay readable: the CG05 refusal once embedded the whole
 compiled validator (~30KB of base64) because @show@ on the
 evaluation context prints every script and cost model.
+
+The bound is measured (#287): the largest live receipt, CG23's, is 12 563
+bytes, and 15 214 with the traced replay of each of its nine failing
+purposes and the correspondence its reasons rely on; 18 432 leaves it a
+fifth of headroom.
 -}
 maxReceiptBytes :: Int
-maxReceiptBytes = 16384
+maxReceiptBytes = 18432
 
 -- | The tampers that alter the payment an exit owes, as a step record names them.
 paymentTampers :: [Text]
@@ -534,6 +542,9 @@ maxLiveStepReasonChars = 300
 unchanged when the replay recorded none.
 -}
 stepReplay :: [ReplayEvidence] -> Value -> Value
+stepReplay [] refusal = refusal
+stepReplay replay (Object fields) =
+    Object (KM.insert "replay" (toJSON replay) fields)
 stepReplay _ refusal = refusal
 
 {- | The correspondence a story receipt carries: the session's, exactly when
@@ -541,14 +552,123 @@ one of its steps carries a replay.
 -}
 storyCorrespondence
     :: Maybe ReplayCorrespondence -> [Value] -> Maybe ReplayCorrespondence
-storyCorrespondence _ _ = Nothing
+storyCorrespondence correspondence steps
+    | any carriesReplay steps = correspondence
+    | otherwise = Nothing
+  where
+    carriesReplay step = case jsonField "refusal" =<< jsonField "chain" step of
+        Just (Object refusal) -> case KM.lookup "replay" refusal of
+            Just (Array entries) -> not (Vector.null entries)
+            _ -> False
+        _ -> False
 
 {- | A receipt's replay evidence, complete and agreeing with what the receipt
 claims: a step's @trace@ and an attribution's @branch@ are reasons a replay
 admitted, so either needs the replay that admitted it.
 -}
 checkReplay :: FilePath -> Receipt -> Either String Receipt
-checkReplay _ = Right
+checkReplay path receipt = do
+    steps <-
+        traverse
+            stepClaim
+            (zip [0 :: Int ..] (fromMaybe [] (receiptSteps receipt)))
+    let attribution =
+            [ ("refusal", refusalBranch info, refusalReplay info)
+            | Just info <- [receiptRefusal receipt]
+            ]
+        claims = concat steps <> attribution
+    mapM_
+        ( \(place, claim, replay) ->
+            either
+                (\problem -> Left (path <> ": " <> place <> ": " <> problem))
+                Right
+                (replayProblem claim replay)
+        )
+        claims
+    let reasons =
+            [ reason
+            | (_, _, Just entries) <- claims
+            , entry <- entries
+            , Just reason <- [replayReason entry]
+            ]
+    case (reasons, receiptReplayCorrespondence receipt) of
+        ([], _) -> Right receipt
+        (_, Just c)
+            | not
+                ( any
+                    T.null
+                    [ correspondenceSource c
+                    , correspondenceCompiler c
+                    , correspondenceFlags c
+                    , correspondenceDigest c
+                    ]
+                ) ->
+                Right receipt
+        _ ->
+            Left
+                (path <> ": replay reasons without the traced build they rely on")
+  where
+    stepClaim (i, step) = case jsonField "refusal" =<< jsonField "chain" step of
+        Just (Object refusal) -> do
+            replay <- case KM.lookup "replay" refusal of
+                Nothing -> Right Nothing
+                Just Null -> Right Nothing
+                Just value -> case fromJSON value of
+                    Success entries -> Right (Just entries)
+                    Error err ->
+                        Left
+                            (path <> ": step " <> show i <> ": unreadable replay: " <> err)
+            let claim = case KM.lookup "trace" refusal of
+                    Just (String reason) -> Just reason
+                    _ -> Nothing
+            Right [("step " <> show i, claim, replay)]
+        _ -> Right []
+
+{- | What is wrong with one refusal's replay against the reason the receipt
+claims for it, if anything.
+-}
+replayProblem
+    :: Maybe Text -> Maybe [ReplayEvidence] -> Either String ()
+replayProblem claim = \case
+    Nothing -> case claim of
+        Just reason ->
+            Left
+                ( "claims the traced reason "
+                    <> show reason
+                    <> " without the replay that admitted it"
+                )
+        Nothing -> Right ()
+    Just [] -> Left "replay names no failing purpose"
+    Just entries -> do
+        mapM_ entryProblem entries
+        case claim of
+            Just reason
+                | reason `notElem` [r | e <- entries, Just r <- [replayReason e]] ->
+                    Left
+                        ("claims " <> show reason <> ", a reason the replay did not admit")
+            _ -> Right ()
+  where
+    entryProblem e
+        | T.null (replayDeployedHash e) =
+            Left "replay names a purpose without its deployed hash"
+        | otherwise = case (replayReason e, replayCause e) of
+            (Just _, Just _) -> Left "replay names both a reason and a cause"
+            (Nothing, Nothing) -> Left "replay names neither a reason nor a cause"
+            (Just reason, Nothing)
+                | T.null reason -> Left "replay names an empty reason"
+                | maybe True T.null (replayTracedHash e) ->
+                    Left "replay names a reason without its traced hash"
+                | maybe True T.null (replayCaptureId e) ->
+                    Left "replay names a reason without the capture it was replayed from"
+                | otherwise -> Right ()
+            (Nothing, Just cause)
+                | cause `elem` map causeName [minBound .. maxBound] -> Right ()
+                | otherwise -> Left ("replay names an unknown cause " <> show cause)
+
+jsonField :: Key.Key -> Value -> Maybe Value
+jsonField name = \case
+    Object fields -> KM.lookup name fields
+    _ -> Nothing
 
 {- | Validate the generic evidence body independently of the runner. The
 runner computes its values; the loader refuses missing comparisons and
