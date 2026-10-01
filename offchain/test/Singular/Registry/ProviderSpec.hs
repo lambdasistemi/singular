@@ -7,20 +7,23 @@ Description : #323 — the read interface acquires one chain view per operation
 License     : Apache-2.0
 
 The read interface has one entry: acquire a view, read through it, and
-let it go. These rows hold both adapters to that contract.
+let it go. The contract every adapter meets is the shared suite in
+"Singular.Registry.ContractSuite" (#326); these rows keep what is
+specific to one adapter.
 
-The in-memory adapter is the deterministic chain the interleaving rows
-need: a change made after a view is acquired never reaches that view,
-and a fresh acquisition does see it. Each row compares against the
-chain value the row itself built, never against a literal the adapter
-produced.
+The in-memory adapter advances its point by one slot per mutation.
 
 The node adapter is held at its own boundary: the upstream node client
 is replaced by one whose acquired session serves a chain value and
 counts its acquisitions, and whose one-shot queries fail the row the
 moment anything calls them. A view must be one acquisition, every read
-through it must be served by that acquisition, the chain origin must be
-refused, and a lost connection must surface as its own failure.
+through it must be served by that acquisition, and a connection lost
+while acquiring must surface as its own failure.
+
+The session's connection guard (#326) is held on the same fake: a
+one-shot query, a second acquisition or a submission issued from inside
+a view fails by name, the same call outside the view answers, and a read
+waiting on a connection that has ended fails rather than waits.
 -}
 module Singular.Registry.ProviderSpec (spec) where
 
