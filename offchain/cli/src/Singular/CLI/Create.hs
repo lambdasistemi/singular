@@ -72,7 +72,6 @@ import Singular.CLI.Receipt (OutcomeClass (..), durableWrite)
 import Singular.CLI.Registry
     ( LocalState (..)
     , Release
-    , checkSeed
     , configPath
     , hexT
     , loadRelease
@@ -83,6 +82,7 @@ import Singular.CLI.Registry
     , refuseExisting
     , registryConfigFor
     , renderIdentityError
+    , seedChecks
     , writeConfig
     , writeLocalState
     )
@@ -150,7 +150,7 @@ runCreate a = do
                     (parseEnterpriseAddress magic addrText)
             withReads magic sock $ \prov -> do
                 utxos <- Cage.withView prov (`Cage.viewUTxOsAt` addr)
-                (_, identity) <- previewIdentity a rel addr utxos
+                (_, identity) <- previewIdentity False a rel addr utxos
                 pure (receipt "create" Success (("preview", toJSON True) : identity))
         Submit ws -> createWith a rel ws
 
@@ -163,7 +163,8 @@ createWith a rel ws = do
         let addr = walletAddr (wcWallet wc)
         utxos <-
             Cage.withView (capReads (wcCapabilities wc)) (`Cage.viewUTxOsAt` addr)
-        ((seedIn, cfg, pinned), identity) <- previewIdentity a rel addr utxos
+        ((seedIn, cfg, pinned), identity) <-
+            previewIdentity (not (createPreview a)) a rel addr utxos
         if createPreview a
             then
                 pure (receipt "create" Success (("preview", toJSON True) : identity))
@@ -416,17 +417,24 @@ deploymentOf magic cfg seedIn b =
         }
 
 {- | The registry identity a seed would give: the chosen or the largest
-ada-only output of the caller, checked to be spendable, the configuration and
-pins every later command derives again, and the receipt fields that name
-them. Nothing is written or submitted.
+ada-only output of the caller, checked to be held and ada only, the
+configuration and pins every later command derives again, and the receipt
+fields that name them. Nothing is written or submitted.
+
+A create must also find another ada-only output beside the seed
+('checkSeed'): it refuses without one. A preview computes the identity
+regardless and reports, as @createRefusal@, the refusal a create from this
+wallet would meet now, or null.
 -}
 previewIdentity
-    :: CreateArgs
+    :: Bool
+    -- ^ whether the identity is for a create about to submit
+    -> CreateArgs
     -> Release
     -> Addr
     -> [(TxIn, TxOut ConwayEra)]
     -> IO ((TxIn, CageConfig, NamingCodes), [(Text, Value)])
-previewIdentity a rel addr utxos = do
+previewIdentity submitting a rel addr utxos = do
     seedIn <- case createSeed a of
         Just s -> either (failWith ClientRefusal) pure (parseOutRef (T.pack s))
         Nothing -> case sortOn
@@ -437,11 +445,11 @@ previewIdentity a rel addr utxos = do
                 failWith
                     ClientRefusal
                     "the wallet holds no ada-only output to preview a seed with"
-    _ <-
+    funding <-
         either
             (failWith ClientRefusal . renderIdentityError)
             pure
-            (checkSeed seedIn utxos)
+            (seedChecks submitting seedIn utxos)
     let (cfg, pinned) = registryConfigFor rel (txInToRef seedIn)
         identity =
             [ ("application", toJSON (applicationTitle OpenDatumApplication))
@@ -450,4 +458,5 @@ previewIdentity a rel addr utxos = do
             , ("walletKeyHash", toJSON (hexT (addrKeyHashBytes addr)))
             , ("pins", toJSON (pinsOf cfg))
             ]
+                <> funding
     pure ((seedIn, cfg, pinned), identity)

@@ -58,6 +58,8 @@ module Singular.CLI.Registry
     , checkWallet
     , checkPins
     , checkSeed
+    , seedHeld
+    , seedChecks
     , refuseExisting
     ) where
 
@@ -401,7 +403,20 @@ checkPins conf given = mapM_ one fields
         , ("terminal", pinTerminal)
         ]
 
-{- | The seed, as this wallet holds it: unspent, ada only, with another ada-only
+{- | The seed, as this wallet holds it: unspent and ada only. This is all a
+registry's identity needs; creating it needs 'checkSeed'.
+-}
+seedHeld
+    :: TxIn
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Either IdentityError (TxIn, TxOut ConwayEra)
+seedHeld seed utxos = case [u | u@(i, _) <- utxos, i == seed] of
+    [] -> Left (SeedNotInWallet (renderOutRef seed))
+    (u@(_, out) : _)
+        | adaOnlyOut out -> Right u
+        | otherwise -> Left (SeedNotAdaOnly (renderOutRef seed))
+
+{- | The seed, as a create needs it: held ('seedHeld'), with another ada-only
 output beside it to pay the first publication from while the seed stays
 unspent.
 -}
@@ -409,13 +424,37 @@ checkSeed
     :: TxIn
     -> [(TxIn, TxOut ConwayEra)]
     -> Either IdentityError (TxIn, TxOut ConwayEra)
-checkSeed seed utxos = case [u | u@(i, _) <- utxos, i == seed] of
-    [] -> Left (SeedNotInWallet (renderOutRef seed))
-    (u@(_, out) : _)
-        | not (adaOnlyOut out) -> Left (SeedNotAdaOnly (renderOutRef seed))
-        | null [() | (i, o) <- utxos, i /= seed, adaOnlyOut o] ->
-            Left (NoFundingBesideSeed (renderOutRef seed))
-        | otherwise -> Right u
+checkSeed seed utxos = do
+    u <- seedHeld seed utxos
+    if null [() | (i, o) <- utxos, i /= seed, adaOnlyOut o]
+        then Left (NoFundingBesideSeed (renderOutRef seed))
+        else Right u
+
+{- | The seed checks a create applies, and the receipt fields they add. A
+create about to submit needs the seed held with another ada-only output
+beside it ('checkSeed') and adds nothing. A preview needs only the seed held
+('seedHeld') and adds @createRefusal@: the refusal a create from this wallet
+would meet now, or null.
+-}
+seedChecks
+    :: Bool
+    -- ^ whether the create is about to submit
+    -> TxIn
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Either IdentityError [(Text, Aeson.Value)]
+seedChecks submitting seedIn utxos
+    | submitting = [] <$ checkSeed seedIn utxos
+    | otherwise = do
+        _ <- seedHeld seedIn utxos
+        pure
+            [
+                ( "createRefusal"
+                , toJSON
+                    ( either (Just . T.pack . renderIdentityError) (const Nothing) $
+                        checkSeed seedIn utxos
+                    )
+                )
+            ]
 
 -- | Refuse a directory that already holds any file of a registry.
 refuseExisting :: FilePath -> IO (Either IdentityError ())

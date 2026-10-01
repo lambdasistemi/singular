@@ -86,9 +86,11 @@ export TMPDIR="$work"
 # ------------------------------------------------------------------
 # On a development node nobody has paid from yet, the genesis key holds
 # its one output in the ledger's initial state, carried by no block. The
-# node backend reads it (a preview seeds from it); the indexer backend,
-# following blocks from the origin, refuses the wallet by name and
-# submits nothing, rather than reading it as empty.
+# node backend reads it (a preview seeds from it, naming the refusal a
+# create from that one-output wallet meets, and such a create is refused
+# before it writes anything); the indexer backend, following blocks from
+# the origin, refuses the wallet by name and submits nothing, rather than
+# reading it as empty.
 if [ "$backend" = indexer ]; then
   "$devnet" >"$work/bare.out" 2>"$work/bare.err" &
   bare_pid=$!
@@ -110,8 +112,22 @@ if [ "$backend" = indexer ]; then
   "$node_singular" registry create --preview --registry "$work/genesis-node" --blueprint "$blueprint" \
     "${bare_node[@]}" "${genesis[@]}" >"$receipts/genesis-node.json" 2>"$receipts/genesis-node.err" || status=$?
   [ "$status" -eq 0 ] && [ "$(jq -r .outcome "$receipts/genesis-node.json")" = success ] \
-    || setup_fail "the node backend could not read the genesis key's output (exit $status)"
+    || fail "the node backend did not preview the genesis key's output (exit $status): $(jq -r .reason "$receipts/genesis-node.json" 2>/dev/null)"
   ! served "$receipts/genesis-node.err" || fail "a node-backend process reported reads the index answered"
+  # That output is the wallet's only one, so the preview names the refusal a
+  # create would meet, and a create is refused before it writes anything.
+  jq -e '.seed as $s | .createRefusal | type == "string" and contains($s) and contains("only ada-only output")' \
+    "$receipts/genesis-node.json" >/dev/null \
+    || fail "the preview of a one-output wallet does not report the refusal its create meets: $(jq -c .createRefusal "$receipts/genesis-node.json")"
+  status=0
+  "$node_singular" registry create --seed "$(jq -r .seed "$receipts/genesis-node.json")" --registry "$work/genesis-create" \
+    --blueprint "$blueprint" "${bare_node[@]}" "${genesis[@]}" >"$receipts/genesis-create.json" 2>"$receipts/genesis-create.err" || status=$?
+  [ "$(jq -r .outcome "$receipts/genesis-create.json")" = client-refusal ] && [ "$status" -ne 0 ] \
+    || fail "a create from the one-output wallet: outcome $(jq -r .outcome "$receipts/genesis-create.json") (exit $status), expected client-refusal"
+  jq -e --arg s "$(jq -r .seed "$receipts/genesis-node.json")" '.reason | contains($s) and contains("only ada-only output")' \
+    "$receipts/genesis-create.json" >/dev/null || fail "the create's refusal does not name the missing funding: $(jq -r .reason "$receipts/genesis-create.json")"
+  [ -z "$(find "$work/genesis-create" -mindepth 1 ! -name .lock 2>/dev/null)" ] \
+    || fail "the refused create wrote more than its lock: $(find "$work/genesis-create" -mindepth 1 ! -name .lock)"
   status=0
   "$singular" registry create --preview --registry "$work/genesis-indexer" --blueprint "$blueprint" \
     "${bare_node[@]}" "${genesis[@]}" >"$receipts/genesis-indexer.json" 2>"$receipts/genesis-indexer.err" || status=$?
@@ -129,7 +145,7 @@ if [ "$backend" = indexer ]; then
     sleep 0.1
   done
   wait "$bare_pid" 2>/dev/null || true
-  say "a genesis-only wallet: read by the node backend, refused by the indexer backend as coverage-incomplete"
+  say "a genesis-only wallet: previewed by the node backend (its create refused for want of a second output), refused by the indexer backend as coverage-incomplete"
 fi
 
 # ------------------------------------------------------------------

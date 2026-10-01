@@ -68,6 +68,7 @@ import Cardano.Ledger.Mary.Value (MaryValue (..))
 import MPF.Backend.Pure (MPFInMemoryDB (..))
 
 import Singular.CLI.Command
+
 import Singular.CLI.Proof
 import Singular.CLI.Receipt
 import Singular.CLI.Recovery
@@ -403,6 +404,46 @@ savedIdentity = describe "the saved identity" $ do
                     `shouldSatisfy` isLeftWith isNoFunding
                 checkSeed seed [(seed, plain), (other, withScript)]
                     `shouldSatisfy` isLeftWith isNoFunding
+                -- an identity needs only the seed held: a preview of such a
+                -- wallet computes it and reports the refusal above
+                fmap fst (seedHeld seed [(seed, plain)]) `shouldBe` Right seed
+                seedHeld seed [(other, plain)]
+                    `shouldSatisfy` isLeftWith isNotInWallet
+                seedHeld seed [(seed, withScript), (other, plain)]
+                    `shouldSatisfy` isLeftWith isNotAdaOnly
+    it
+        "previews a one-output wallet's identity, naming the refusal its create meets, and refuses that create"
+        $ do
+            seed <- either fail pure (parseOutRef (T.pack seedText))
+            other <-
+                either fail pure (parseOutRef (T.pack (replicate 64 'c' <> "#0")))
+            withTempDir $ \dir -> do
+                w <- keyFile dir 'k'
+                let plain = mkBasicTxOut (walletAddr w) (MaryValue (Coin 5_000_000) mempty)
+                    refusal fields = Prelude.lookup "createRefusal" fields
+                -- the preview's accepting control: the seed alone is enough
+                case seedChecks False seed [(seed, plain)] of
+                    Right fields -> case refusal fields of
+                        Just (Aeson.String why) ->
+                            T.unpack why
+                                `shouldSatisfy` ( \s ->
+                                                    seedText `isInfixOf` s
+                                                        && "only ada-only output" `isInfixOf` s
+                                                )
+                        other' -> expectationFailure ("createRefusal is " <> show other')
+                    Left e -> expectationFailure ("the preview refused: " <> show e)
+                -- with funding beside the seed it reports no refusal
+                fmap refusal (seedChecks False seed [(seed, plain), (other, plain)])
+                    `shouldBe` Right (Just Aeson.Null)
+                -- the create itself refuses the one-output wallet, and adds nothing
+                -- when it can proceed
+                seedChecks True seed [(seed, plain)]
+                    `shouldSatisfy` isLeftWith isNoFunding
+                seedChecks True seed [(seed, plain), (other, plain)]
+                    `shouldBe` Right []
+                -- a preview still refuses a seed the wallet does not hold
+                seedChecks False seed [(other, plain)]
+                    `shouldSatisfy` isLeftWith isNotInWallet
     it
         "refuses to create over a directory that already holds a registry or a journal"
         $ withTempDir
