@@ -534,13 +534,16 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #299: the release archive is built, extracted OUTSIDE the
-      # checkout, and its DEMO1.md journey runs as five separate
-      # `singular` processes — create, insert, inspect, terminate,
-      # inspect — against ONE development node, asserting the receipts'
-      # identity continuity and ledger reads and every refusal control at
-      # its boundary; the retained insert-active and update-terminal
-      # archive controls run from the same extraction.
+      # #299: the release archive is built and, #326, verified by
+      # verify-release exactly as a published release is, the assembled
+      # assets presented as its download input: sums, the stated model
+      # revision, members, then the archive extracted OUTSIDE the checkout
+      # and its DEMO1.md journey run as separate `singular` processes —
+      # create, insert, inspect, update, inspect, terminate, inspect —
+      # against ONE development node, asserting the receipts' identity
+      # continuity and ledger reads and every refusal control at its
+      # boundary; the retained insert-active and update-terminal archive
+      # controls run from the same extraction.
       #
       # Falsification: on any ancestor without the command or its page
       # this step fails at the page check or at the first invocation.
