@@ -81,6 +81,7 @@ library
     Conformance.NodeRejection
     Conformance.PurposeUnits
     Conformance.Refusal
+    Conformance.EvidencePage
     Conformance.Rows
     Conformance.Story.Binding
     Conformance.Story.Live
@@ -267,6 +268,7 @@ test-suite conformance-tests
     Conformance.Support.Receipt
     Conformance.Support.ReceiptBound
     Conformance.Support.Refusal
+    Conformance.Support.EvidencePage
     Conformance.Support.Rows
     Conformance.Support.Identity
     Conformance.Support.Specification
