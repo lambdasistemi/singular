@@ -130,13 +130,15 @@ for member in DEMO1.md offchain/flake.nix offchain/flake.lock offchain/cli/Main.
 done
 pass members
 
-# journey
+# build
 cd "$extracted/offchain"
 singular="$(nix build --quiet --no-link --print-out-paths .#singular 2>"$work/build-singular.log")" \
   || refuse command-failed "nix build .#singular from the archive: $(tail -n 3 "$work/build-singular.log" | tr '\n' ' ')"
 devnet="$(nix build --quiet --no-link --print-out-paths .#devnet 2>"$work/build-devnet.log")" \
   || refuse command-failed "nix build .#devnet from the archive: $(tail -n 3 "$work/build-devnet.log" | tr '\n' ' ')"
 pass build "singular and the development node from the archive's own flake"
+
+# journey
 status=0
 bash "$journey" "$singular/bin/singular" "$devnet/bin/devnet" "$extracted/onchain/plutus.json" "$work/journey" \
   || status=$?
