@@ -1,3 +1,4 @@
+use aiken/interval.{Interval}
 use cardano/assets.{Value, from_lovelace, merge, zero}
 use cardano/transaction.{InlineDatum, Input, NoDatum, Output, Transaction}
 use registry_fixtures as fx
@@ -64,15 +65,17 @@ fn refusalOf(s: Scenario) -> Option<String> {
   state.modifyRefusal(s.pins, s.actions, s.input, s.tx)
 }
 
-/// The cage folds it: no reason, and the handler accepts.
+/// The cage folds it: the handler accepts, and no reason. The handler runs
+/// first, so a refusal prints the reason it traces.
 fn accepts(s: Scenario) -> Bool {
-  refusalOf(s) == None && spend(s)
+  spend(s) && refusalOf(s) == None
 }
 
 /// The cage refuses it for `deposit-returned` and for nothing else, and
-/// the handler returns False rather than crashing.
+/// the handler returns False rather than crashing. The handler runs first,
+/// so the reason it traces is printed when the name differs.
 fn refusesDepositReturned(s: Scenario) -> Bool {
-  refusalOf(s) == Some(@"deposit-returned") && !spend(s)
+  !spend(s) && refusalOf(s) == Some(@"deposit-returned")
 }
 
 /// A request of `owner` for `key` on a non-delivering edge, with its
@@ -372,9 +375,10 @@ test refund_output_offered_for_the_deposit_too_refuses() {
 // Reject — the refund is refused by name
 // ----------------------------------------------------------------------------
 
-/// A phase-3 reject of the booker's request: the root stays, and the
-/// refund is owed positionally from the first output after the state.
-fn reject(outputs: List<Output>) -> Scenario {
+/// A reject of the booker's request, valid over `range`: the root stays,
+/// and the refund is owed positionally from the first output after the
+/// state.
+fn rejectIn(range: Interval<Int>, outputs: List<Output>) -> Scenario {
   let root = fx.emptyRoot()
   let s =
     scenario(
@@ -386,7 +390,12 @@ fn reject(outputs: List<Output>) -> Scenario {
       zero,
       [Rejected],
     )
-  Scenario { ..s, tx: Transaction { ..s.tx, validity_range: fx.phase3() } }
+  Scenario { ..s, tx: Transaction { ..s.tx, validity_range: range } }
+}
+
+/// The same reject after the windows.
+fn reject(outputs: List<Output>) -> Scenario {
+  rejectIn(fx.phase3(), outputs)
 }
 
 test reject_refund_paid_to_the_owner_accepts() {
@@ -407,6 +416,63 @@ test reject_refund_to_a_script_refuses_by_name() {
 
 test reject_refund_missing_refuses_by_name() {
   refusesDepositReturned(reject([]))
+}
+
+// ----------------------------------------------------------------------------
+// An early reject owes the same refund (#320): the refund floor holds in the
+// processing window and in the retraction window, refused by the same name
+// ----------------------------------------------------------------------------
+
+test early_reject_refund_paid_to_the_owner_in_the_processing_window_accepts() {
+  accepts(rejectIn(fx.phase1(), [paid(fx.bookerAddress, fx.deposit)]))
+}
+
+test early_reject_refund_one_lovelace_short_in_the_processing_window_refuses_by_name() {
+  refusesDepositReturned(
+    rejectIn(fx.phase1(), [paid(fx.bookerAddress, fx.deposit - 1)]),
+  )
+}
+
+test early_reject_refund_to_another_key_in_the_processing_window_refuses_by_name() {
+  refusesDepositReturned(
+    rejectIn(fx.phase1(), [paid(fx.strangerAddress, fx.deposit)]),
+  )
+}
+
+test early_reject_refund_to_a_script_in_the_processing_window_refuses_by_name() {
+  refusesDepositReturned(
+    rejectIn(fx.phase1(), [paid(fx.recordAddress, fx.deposit)]),
+  )
+}
+
+test early_reject_refund_missing_in_the_processing_window_refuses_by_name() {
+  refusesDepositReturned(rejectIn(fx.phase1(), []))
+}
+
+test early_reject_refund_paid_to_the_owner_in_the_retraction_window_accepts() {
+  accepts(rejectIn(fx.phase2(), [paid(fx.bookerAddress, fx.deposit)]))
+}
+
+test early_reject_refund_one_lovelace_short_in_the_retraction_window_refuses_by_name() {
+  refusesDepositReturned(
+    rejectIn(fx.phase2(), [paid(fx.bookerAddress, fx.deposit - 1)]),
+  )
+}
+
+test early_reject_refund_to_another_key_in_the_retraction_window_refuses_by_name() {
+  refusesDepositReturned(
+    rejectIn(fx.phase2(), [paid(fx.strangerAddress, fx.deposit)]),
+  )
+}
+
+test early_reject_refund_to_a_script_in_the_retraction_window_refuses_by_name() {
+  refusesDepositReturned(
+    rejectIn(fx.phase2(), [paid(fx.recordAddress, fx.deposit)]),
+  )
+}
+
+test early_reject_refund_missing_in_the_retraction_window_refuses_by_name() {
+  refusesDepositReturned(rejectIn(fx.phase2(), []))
 }
 
 // ----------------------------------------------------------------------------

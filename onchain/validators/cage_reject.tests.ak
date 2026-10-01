@@ -1,12 +1,12 @@
 use aiken/builtin
 use aiken/fuzz
-use aiken/interval
+use aiken/interval.{Interval}
 use aiken/merkle_patricia_forestry.{empty, root}
 use aiken/merkle_patricia_forestry as mpf
 use cage_fixtures.{
   aRequest, burn_value, capturedMinUtxoRefundOutput, capturedRefundRequestInput,
   capturedRefundStateDatum, capturedRefundStateInput, capturedRefundStateOutput,
-  capturedRefundTxFee, endRedeemerData, feeDelivery, feeRequestInput,
+  capturedRefundTxFee, endRedeemerData, feeDelivery, feeRequestInput, feeState,
   feeStateDatum, feeStateInput, legacyApproval, legacyDelivery,
   legacyDestination, legacyKey, legacyMint, legacyRoot, legacyWallet,
   modifyRedeemerData, noDestination, output, owner_fuzzer, phase1Range,
@@ -97,41 +97,64 @@ test reject_happy() {
   )
 }
 
-/// Reject is forbidden in Phase 1 — requests are still being processed.
-test reject_in_phase1() fail {
-  spend(
-    feeStateDatum,
-    Modify([Rejected]),
-    testStateRef,
-    Transaction {
-      ..transaction.placeholder,
-      validity_range: phase1Range,
-      outputs: [rejectStateOutput, refundOutput],
-      extra_signatories: ["owner"],
-      inputs: [feeStateInput, feeRequestInput],
-    },
-  )
+// ----------------------------------------------------------------------------
+// A reject carries no admission (Lean `exitAdmission .reject = none`, #320)
+// ----------------------------------------------------------------------------
+
+/// The one-request reject of `feeRequestInput`, valid over `range`: the
+/// state continues unchanged and the owner is refunded `held − tip`.
+fn rejectWithin(range: Interval<Int>) -> Transaction {
+  Transaction {
+    ..transaction.placeholder,
+    validity_range: range,
+    outputs: [rejectStateOutput, refundOutput],
+    inputs: [feeStateInput, feeRequestInput],
+  }
 }
 
-/// Reject is forbidden in Phase 2 — the retract window belongs exclusively
-/// to the requester. The cage owner must wait for Phase 3.
-test reject_in_phase2() fail {
-  spend(
-    feeStateDatum,
-    Modify([Rejected]),
-    testStateRef,
-    Transaction {
-      ..transaction.placeholder,
-      validity_range: phase2Range,
-      outputs: [rejectStateOutput, refundOutput],
-      extra_signatories: ["owner"],
-      inputs: [feeStateInput, feeRequestInput],
-    },
-  )
+/// The state purpose admits the reject: the spend handler accepts it and the
+/// `Modify` decision names no refusal. The handler runs first, so a refusal
+/// prints the reason it traces.
+fn rejectAdmitted(range: Interval<Int>) -> Bool {
+  let tx = rejectWithin(range)
+  and {
+    spend(feeStateDatum, Modify([Rejected]), testStateRef, tx),
+    state_validator.modifyRefusal(feeState, [Rejected], feeStateInput, tx) == None,
+  }
 }
 
-/// A request with submitted_at far in the future is dishonest — rejectable
-/// in ANY phase because `is_rejectable` returns true when `validity_range < submitted_at`.
+/// A folder rejects a request while it can still be folded.
+test reject_in_the_processing_window_accepts() {
+  rejectAdmitted(phase1Range)
+}
+
+/// A folder rejects a request while its owner can still retract it.
+test reject_in_the_retraction_window_accepts() {
+  rejectAdmitted(phase2Range)
+}
+
+/// A validity range from the processing window into the retraction window.
+test reject_across_the_processing_deadline_accepts() {
+  rejectAdmitted(interval.between(5_000, 15_000))
+}
+
+/// A validity range from the retraction window past its deadline.
+test reject_across_the_retraction_deadline_accepts() {
+  rejectAdmitted(interval.between(15_000, 25_000))
+}
+
+/// A transaction with no validity bounds at all.
+test reject_with_no_validity_bounds_accepts() {
+  rejectAdmitted(interval.everything)
+}
+
+/// After the windows, as before the repair.
+test reject_after_the_windows_accepts() {
+  rejectAdmitted(phase3Range)
+}
+
+/// A request dated in the future is rejected like any other: a reject reads
+/// no time.
 test reject_future_submitted_at() {
   let future_request =
     RequestDatum(

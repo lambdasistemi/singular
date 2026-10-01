@@ -1,8 +1,22 @@
 ////// These fuzz tests verify, for randomly generated parameters, that:
 
+use aiken/collection/list
 use aiken/fuzz
-use aiken/interval
+use aiken/interval.{Interval}
 use cage.{in_phase1, in_phase2, is_rejectable}
+use cage_fixtures.{
+  feeRequestInput, feeStateDatum, feeStateInput, modifyRedeemerData,
+  noDestination, refundOutput, rejectedActionData, rejectedStateOutput, request,
+  stateSpendRedeemerData, testStateRef, testToken, update, updateActionData,
+}
+use cardano/address
+use cardano/assets.{from_lovelace}
+use cardano/transaction.{
+  InlineDatum, Input, NoDatum, Output, OutputReference, Transaction,
+}
+use request as request_validator
+use state
+use types.{Contribute, Modify, Rejected, Request, RequestDatum, TokenId}
 
 /// Phase property tests (fuzz) for the time-gated phase system in `cage.ak`.
 ///
@@ -241,4 +255,186 @@ test prop_phase_coverage_point(
   let p2 = in_phase2(range, submitted_at, process_time, retract_time)
   let rej = is_rejectable(range, submitted_at, process_time, retract_time)
   p1 || p2 || rej
+}
+
+// ============================================================================
+// A reject carries no admission (Lean `exitAdmission .reject = none`, #320)
+//
+// These properties run the validators themselves, not a phase helper.
+// ============================================================================
+
+/// A validity range of any shape: finite, from a point on, up to a point, or
+/// unbounded, with its points across all three windows of `feeRequestInput`
+/// (processing `[0, 10_000)`, retraction `[10_000, 20_000)`, then after).
+fn anyValidityRange() -> Fuzzer<Interval<Int>> {
+  fuzz.either4(
+    fuzz.map2(
+      fuzz.int_between(0, 40_000),
+      fuzz.int_between(0, 30_000),
+      fn(lo, span) { interval.between(lo, lo + span) },
+    ),
+    fuzz.map(fuzz.int_between(0, 40_000), interval.after),
+    fuzz.map(fuzz.int_between(0, 40_000), interval.before),
+    fuzz.constant(interval.everything),
+  )
+}
+
+/// The state purpose admits a one-request reject refunding its owner, whatever
+/// the transaction's validity range.
+test prop_reject_admitted_for_every_validity_range(range via anyValidityRange()) {
+  state.state.spend(
+    feeStateDatum,
+    Modify([Rejected]),
+    testStateRef,
+    Transaction {
+      ..transaction.placeholder,
+      validity_range: range,
+      outputs: [rejectedStateOutput, refundOutput],
+      inputs: [feeStateInput, feeRequestInput],
+    },
+  )
+}
+
+/// A validity range that does not lie entirely in the processing window of
+/// the `update` state and the requests below (`submitted_at` 0, processing
+/// time 10_000).
+fn outsideProcessing() -> Fuzzer<Interval<Int>> {
+  fuzz.either3(
+    fuzz.map2(
+      fuzz.int_between(10_000, 30_000),
+      fuzz.int_between(0, 20_000),
+      fn(lo, span) { interval.between(lo, lo + span) },
+    ),
+    fuzz.map(fuzz.int_between(10_000, 40_000), interval.after),
+    fuzz.constant(interval.everything),
+  )
+}
+
+/// The `index`-th pending request of this registry.
+fn pendingRequest(index: Int) -> Input {
+  Input {
+    output_reference: OutputReference {
+      transaction_id: #"52455155455354",
+      output_index: index,
+    },
+    output: request.output,
+  }
+}
+
+/// An input the fold does not pair with an action: a wallet's.
+const walletInput =
+  Input {
+    output_reference: OutputReference {
+      transaction_id: #"57414c4c4554",
+      output_index: 0,
+    },
+    output: Output {
+      address: address.from_verification_key(#"77616c6c6574"),
+      value: from_lovelace(5_000_000),
+      datum: NoDatum,
+      reference_script: None,
+    },
+  }
+
+/// Another input the fold does not pair: another registry's request.
+const foreignRequest =
+  Input {
+    output_reference: OutputReference {
+      transaction_id: #"464f524549474e",
+      output_index: 0,
+    },
+    output: Output {
+      ..request.output,
+      datum: InlineDatum(
+        RequestDatum(
+          Request {
+            requestToken: TokenId { assetName: "another_registry" },
+            requestKey: "42",
+            edge: 1,
+            requestOwner: "owner",
+            deposit: 0,
+            submitted_at: 0,
+            destination: noDestination,
+          },
+        ),
+      ),
+    },
+  }
+
+/// One to four requests of this registry, each paired with a reject or an
+/// update in input order, with a wallet input and another registry's request
+/// after the first; the position of one request the fold rejects; and a
+/// validity range outside the processing window.
+fn pairingCase() -> Fuzzer<(List<Data>, Int, List<Input>, Interval<Int>)> {
+  let flags <- fuzz.and_then(fuzz.list_between(fuzz.bool(), 1, 4))
+  let pick <- fuzz.and_then(fuzz.int_between(0, 3))
+  let range <- fuzz.map(outsideProcessing())
+  let rejected = pick % list.length(flags)
+  let actions =
+    list.indexed_map(
+      flags,
+      fn(i, flag) {
+        if i == rejected || flag {
+          rejectedActionData()
+        } else {
+          updateActionData()
+        }
+      },
+    )
+  let inputs =
+    list.concat(
+      [update],
+      list.flat_map(
+        list.indexed_map(flags, fn(i, _) { i }),
+        fn(i) {
+          if i == 0 {
+            [pendingRequest(i), walletInput, foreignRequest]
+          } else {
+            [pendingRequest(i)]
+          }
+        },
+      ),
+    )
+  (actions, rejected, inputs, range)
+}
+
+/// Outside the processing window the request purpose admits the request its
+/// state's fold pairs with `Rejected`, wherever it sits among the requests,
+/// whatever the other requests' actions (data model D-02). The refusing side,
+/// a request paired with an update, is the `fail` tests of
+/// `cage_contribute.tests.ak`.
+test prop_request_admits_the_request_its_fold_rejects(case via pairingCase()) {
+  let (actions, rejected, inputs, range) = case
+  fuzz.label(
+    if list.length(actions) == 1 {
+      @"one request"
+    } else {
+      @"several requests"
+    },
+  )
+  request_validator.request.spend(
+    "policy_id",
+    testToken.assetName,
+    Some(
+      RequestDatum(
+        Request {
+          requestToken: testToken,
+          requestKey: "42",
+          edge: 1,
+          requestOwner: "owner",
+          deposit: 0,
+          submitted_at: 0,
+          destination: noDestination,
+        },
+      ),
+    ),
+    Contribute(testStateRef),
+    pendingRequest(rejected).output_reference,
+    Transaction {
+      ..transaction.placeholder,
+      validity_range: range,
+      inputs,
+      redeemers: [stateSpendRedeemerData(modifyRedeemerData(actions))],
+    },
+  )
 }
