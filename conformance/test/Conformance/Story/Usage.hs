@@ -32,21 +32,23 @@ spec = do
             opens `shouldSatisfy` (>= 1_000)
             closes `shouldSatisfy` maybe True (> opens)
     it
-        "Every reject placement is told apart in the book and in the run log" $ do
-        let placements = [minBound .. maxBound :: Live.Placement]
-        length (nub (map Live.placementReading placements))
-            `shouldBe` length placements
-        length (nub (map Live.placementName placements))
-            `shouldBe` length placements
-        length
-            ( nub
-                (map (\p -> Live.placementWindow p 1_000 10_000 20_000) placements)
-            )
-            `shouldBe` length placements
+        "Every reject placement is told apart in the book and in the run log"
+        $ do
+            let placements = [minBound .. maxBound :: Live.Placement]
+            length (nub (map Live.placementReading placements))
+                `shouldBe` length placements
+            length (nub (map Live.placementName placements))
+                `shouldBe` length placements
+            length
+                ( nub
+                    (map (\p -> Live.placementWindow p 1_000 10_000 20_000) placements)
+                )
+                `shouldBe` length placements
     it
-        "Story validation refuses a reject that names no window before anything runs" $ do
-        Live.validateLive unplacedSubmit `shouldSatisfy` isLeft
-        Live.validateLive unplacedTamper `shouldSatisfy` isLeft
+        "Story validation refuses a reject that names no window before anything runs"
+        $ do
+            Live.validateLive unplacedSubmit `shouldSatisfy` isLeft
+            Live.validateLive unplacedTamper `shouldSatisfy` isLeft
     it
         "The early rejection chapter rejects three times in each window and compares all six"
         $ do
