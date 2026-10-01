@@ -274,14 +274,23 @@ renderBook requirements receipts =
     refusalLimits =
         "Refusal reasons come from traced re-evaluation. The deployed validators are compiled without traces, so the ledger names the script that refused but not why. Each refused transaction is evaluated again on the arguments the ledger built for it: once with the deployed bytes, and once with a build of the same source, compiler and parameters that keeps only the validators' own traces. A reason is admitted only when both evaluations fail and the traced one leaves exactly one trace; otherwise the receipt names the cause no reason was admitted. The receipt names both script hashes, and each refused request above prints what its replay recorded. Of the "
             <> show (length refusedChains)
-            <> " refused requests in this run's chapters, "
-            <> show (recorded admitted)
-            <> " carries a reason its traced replay admitted, "
-            <> show (recorded named)
-            <> " names the cause its replay admits none, and "
-            <> show (recorded null)
-            <> " records no traced replay.\n\n"
-            <> "Refusals outside these chapters, by row. CS04, a redeemer at a wrong constructor index: live refusal reason not observed for the state and request scripts, whose failing path carries no user-defined trace; not compared, the behavior lies below the model's vocabulary (class C). CG09, a reject while the request is still in phase 1: the model admits it and the chain refuses it (class D); the validator's repair is pending (#320) and the consumer's requirement R9 is unmet. CG10, a fold against a superseded root: not compared, a stale proof is not an input of the model, and the validator's name for the refusal is imprecise (class C). CG11, CG12 and CG19: not compared while the recorded consumer-model conflict holds them (class D); CG19's two-request reject needs a batch question the driver does not have. The two-key batch whose claimed mint disagrees per key: not run; live refusal reason not observed and not compared.\n\n"
+            <> ( if length refusedChains == 1
+                    then " refused request"
+                    else " refused requests"
+               )
+            <> " in this run's chapters, "
+            <> counted
+                (recorded admitted)
+                "carries a reason its"
+                "carry a reason their"
+            <> " traced replay admitted, "
+            <> counted (recorded named) "names the cause its" "name the cause their"
+            <> " replay admits none, and "
+            <> counted (recorded null) "records" "record"
+            <> " no traced replay.\n\n"
+            <> "Refusals outside these chapters, by row. CS04, a redeemer at a wrong constructor index: live refusal reason not observed for the state and request scripts, whose failing path carries no user-defined trace; not compared, the behavior lies below the model's vocabulary (class C). CG09, a reject while the request is still in phase 1: the model admits it and the chain refuses it (class D); the validator's repair is pending (#320) and the consumer's requirement R9 is unmet. CG10, a fold against a superseded root: not compared, a stale proof is not an input of the model, and the validator's name for the refusal is imprecise (class C). CG11, an empty fold: the model refuses it for `empty-fold` as the consumer requires, but the driver has no batch question, so it is not compared (class D). CG12, surplus actions and a missing action: not compared, actions are not an input of the model, so it has no counterpart (class D). CG19, a crossed refund allocation and a two-request reject: not compared, the driver has no batch question (class D). The consumer correspondence of CG11, CG12 and CG19 (Q-002) remains unresolved; the three rows stay held. The two-key batch whose claimed mint disagrees per key: not run; live refusal reason not observed and not compared.\n\n"
+    -- A count with the words that agree with it.
+    counted n one many = show n <> " " <> (if n == 1 then one else many)
     -- The capture each refused request's replay was evaluated from: harness
     -- evidence, kept to the appendix.
     replayCaptures = case [ "Transaction `"
