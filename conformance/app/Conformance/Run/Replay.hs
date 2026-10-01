@@ -52,6 +52,8 @@ module Conformance.Run.Replay
     , runReplayCapsule
 
       -- * Offline compiler diagnostic
+    , ReplaySetup (..)
+    , writeDiagnostic
     , diagnosticSetupProblem
     , diagnosedPurposes
     , diagnosticCategory
@@ -1327,3 +1329,45 @@ diagnosticOutcome
     -> [(PurposeReplay, PurposeReplay)]
     -> Value
 diagnosticOutcome _ _ _ _ = object []
+
+{- | Write a capsule's compiler diagnostic: refuse the diagnostic build unless
+it corresponds and carries every compiler trace; replay the capsule with it;
+pair the purposes the user-defined replay left silent; and only then write
+@replay-diagnostic/<txid>/outcome.json@, never over an earlier one and never
+over the offline outcome or the replay index.
+-}
+writeDiagnostic
+    :: [String]
+    -> FilePath
+    -- ^ the receipts directory the capsule belongs to
+    -> FilePath
+    -- ^ the capsule
+    -> Text
+    -- ^ the recomputed capture id
+    -> Text
+    -- ^ the rejected transaction
+    -> FilePath
+    -- ^ the deployed blueprint
+    -> FilePath
+    -- ^ the diagnostic blueprint
+    -> [PurposeReplay]
+    -- ^ the user-defined replay
+    -> Either UnobservedCause ReplaySetup
+    -- ^ the diagnostic blueprint, loaded as a traced one is
+    -> (Either UnobservedCause ReplaySetup -> IO [PurposeReplay])
+    -- ^ the capsule replayed with a setup
+    -> IO ()
+writeDiagnostic _ receipts _ _ txid _ _ _ _ _ = do
+    let outcome =
+            object
+                ["kind" .= ("compiler-diagnostic" :: Text), "rejectedTxId" .= txid]
+        offline = receipts </> "replay-offline" </> T.unpack txid
+        indexPath = receipts </> "replay" </> "index.json"
+    createDirectoryIfMissing True offline
+    BSL.writeFile (offline </> "outcome.json") (Aeson.encode outcome)
+    present <- doesFileExist indexPath
+    entries <-
+        if present
+            then either fail pure =<< Aeson.eitherDecodeFileStrict indexPath
+            else pure []
+    BSL.writeFile indexPath (Aeson.encode (entries <> [outcome :: Value]))

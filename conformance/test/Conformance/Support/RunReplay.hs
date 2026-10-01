@@ -20,14 +20,19 @@ import Data.ByteString.Char8 qualified as BSC
 import Data.ByteString.Short (ShortByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
+import Data.IORef (readIORef)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~))
-import System.Directory (getTemporaryDirectory, removePathForcibly)
-import System.FilePath ((</>))
+import System.Directory
+    ( createDirectoryIfMissing
+    , getTemporaryDirectory
+    , removePathForcibly
+    )
+import System.FilePath (takeDirectory, (</>))
 import Test.Hspec
     ( Spec
     , describe
@@ -80,6 +85,7 @@ import Singular.Registry.TxBuilder.Internal
     , leafTerminal
     )
 
+import Conformance.Receipt (Receipt (..), loadReceipts)
 import Conformance.Replay
     ( PurposeReplay (..)
     , ReasonComparison (..)
@@ -89,6 +95,7 @@ import Conformance.Replay
     , RunOutcome (..)
     , TracedProvenance (..)
     , UnobservedCause (..)
+    , admittedFor
     , stepComparison
     )
 import Conformance.Run.Book (keyProof, speculativeStep)
@@ -98,6 +105,7 @@ import Conformance.Run.Control
     , parseReasonControl
     )
 import Conformance.Run.Replay
+import Paths_conformance (getDataFileName)
 import Singular.Registry.Types (edgeUpdateTerminal)
 
 -- | A distinct output reference, named by the ledger's own transaction id.
@@ -496,6 +504,51 @@ spec = describe "before a replay evaluates" $ do
                            ]
             keysOf outcome
                 `shouldSatisfy` (\ks -> "reason" `notElem` ks && "admitted" `notElem` ks)
+    describe
+        "the offline compiler diagnostic beside the evidence it follows"
+        $ do
+            it "is written beside the offline outcome, which stays byte-identical" $ do
+                dir <- freshDiagnosticDir "conformance-diagnostic-offline-spec"
+                let offline = dir </> "replay-offline" </> "tx-cs04" </> "outcome.json"
+                    original = "{\"purposes\":[],\"classes\":[]}"
+                createDirectoryIfMissing True (takeDirectory offline)
+                BSC.writeFile offline original
+                diagnose dir
+                BSC.readFile offline `shouldReturn` original
+                written <-
+                    eitherDecodeFileStrict
+                        (dir </> "replay-diagnostic" </> "tx-cs04" </> "outcome.json")
+                fmap (textAt ["kind"]) written
+                    `shouldBe` Right (Just "compiler-diagnostic")
+            it
+                "is read by none of the index, admission, comparison or receipt loading"
+                $ do
+                    dir <- freshDiagnosticDir "conformance-diagnostic-readers-spec"
+                    let refusal =
+                            object
+                                [ "kind" .= ("refusal" :: Text)
+                                , "rejectedTxId" .= ("tx-cs04" :: Text)
+                                , "row" .= ("CS04" :: Text)
+                                ]
+                    session <- newReplayIndex dir
+                    addRejection
+                        session
+                        "tx-cs04"
+                        refusal
+                        [("state", Unobserved NoUserTrace)]
+                        []
+                    receipt <- getDataFileName "test/fixtures/receipts/receipt-CG05.json"
+                    BSC.readFile receipt >>= BSC.writeFile (dir </> "receipt-CG05.json")
+                    diagnose dir
+                    reread <- newReplayIndex dir
+                    readIORef (riEntries reread) `shouldReturn` [refusal]
+                    purposes <- purposesOf reread "tx-cs04"
+                    purposes `shouldBe` []
+                    admittedFor "state" purposes `shouldBe` Nothing
+                    stepComparison "state" "key-exists" purposes
+                        `shouldBe` Uncompared ContextUnavailable
+                    fmap (map receiptRow) <$> loadReceipts dir
+                        `shouldReturn` Right ["CG05"]
     describe "the wrong-reason control" $ do
         let control = ReasonControl "CG07" 0 "retract-owner"
         it "reads ROW:STEP:REASON" $
@@ -612,3 +665,33 @@ keysOf = \case
     Object o -> concat [Key.toText k : keysOf v | (k, v) <- KM.toList o]
     Array items -> concatMap keysOf items
     _ -> []
+
+-- | An empty receipts directory under the temporary directory.
+freshDiagnosticDir :: FilePath -> IO FilePath
+freshDiagnosticDir name = do
+    dir <- (</> name) <$> getTemporaryDirectory
+    removePathForcibly dir
+    createDirectoryIfMissing True (dir </> "replay" </> "tx-cs04")
+    pure dir
+
+-- | The diagnostic write path, run on CS04's replays in a receipts directory.
+diagnose :: FilePath -> IO ()
+diagnose dir =
+    writeDiagnostic
+        ["replay-capsule"]
+        dir
+        (dir </> "replay" </> "tx-cs04")
+        "capture"
+        "tx-cs04"
+        "deployed.json"
+        "diagnostic.json"
+        userDefinedCS04
+        ( Right
+            ReplaySetup
+                { rsProvenance = diagnosticBuild allFlags
+                , rsCodes = Map.empty
+                , rsStatePolicy = ""
+                , rsUnrouted = []
+                }
+        )
+        (const (pure (diagnosticCS04 Nothing)))
