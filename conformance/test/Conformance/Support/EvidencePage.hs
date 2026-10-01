@@ -54,27 +54,28 @@ import Paths_conformance (getDataFileName)
 spec :: Spec
 spec = describe "Appendix: computing the published evidence page" $ do
     it
-        "Shows a requirement as demonstrated only from a receipt for the stated revision" $ do
-        (rows, receipts) <- fixtures
-        page <-
-            renderedPage <$> rendered rows (snapshotOf "fixture-base" receipts)
-        let demonstrated = section "Requirements a run demonstrated" page
-            missing = sectionTree "Requirements not demonstrated" page
-        mapM_
-            (\r -> tableIds demonstrated `shouldSatisfy` elem (receiptRow r))
-            receipts
-        tableIds demonstrated `shouldBe` sort (map receiptRow receipts)
-        -- every other requirement is listed by name, requirement text and plan
-        let others = [r | r <- rows, rowId r `notElem` map receiptRow receipts]
-        length others `shouldSatisfy` (> 1)
-        mapM_
-            ( \r -> do
-                tableIds missing `shouldSatisfy` elem (rowId r)
-                rowLine r missing
-                    `shouldSatisfy` T.isInfixOf (cellText (rowRequirement r))
-                rowLine r missing `shouldSatisfy` T.isInfixOf (planName (rowState r))
-            )
-            others
+        "Shows a requirement as demonstrated only from a receipt for the stated revision"
+        $ do
+            (rows, receipts) <- fixtures
+            page <-
+                renderedPage <$> rendered rows (snapshotOf "fixture-base" receipts)
+            let demonstrated = section "Requirements a run demonstrated" page
+                missing = sectionTree "Requirements not demonstrated" page
+            mapM_
+                (\r -> tableIds demonstrated `shouldSatisfy` elem (receiptRow r))
+                receipts
+            tableIds demonstrated `shouldBe` sort (map receiptRow receipts)
+            -- every other requirement is listed by name, requirement text and plan
+            let others = [r | r <- rows, rowId r `notElem` map receiptRow receipts]
+            length others `shouldSatisfy` (> 1)
+            mapM_
+                ( \r -> do
+                    tableIds missing `shouldSatisfy` elem (rowId r)
+                    rowLine r missing
+                        `shouldSatisfy` T.isInfixOf (cellText (rowRequirement r))
+                    rowLine r missing `shouldSatisfy` T.isInfixOf (planName (rowState r))
+                )
+                others
 
     it "Lists every requirement exactly once" $ do
         (rows, receipts) <- fixtures
@@ -137,32 +138,34 @@ spec = describe "Appendix: computing the published evidence page" $ do
         demonstrated `shouldSatisfy` T.isInfixOf "partly demonstrated"
 
     it
-        "Counts contract results per adapter and never counts a not-supported case as passed" $ do
-        (rows, receipts) <- fixtures
-        page <- rendered rows (snapshotOf "fixture-base" receipts)
-        let summary = section "Backend contract across adapters" (renderedPage page)
-        summary
-            `shouldSatisfy` T.isInfixOf "| memory | test-adapter | 1 | 0 | 1 |"
-        summary
-            `shouldSatisfy` T.isInfixOf "| node (generated devnet) | devnet | 1 | 1 | 0 |"
-        let node = section "node (generated devnet) adapter" (renderedPage page)
-        node
-            `shouldSatisfy` T.isInfixOf "failed: the connection was not refused"
+        "Counts contract results per adapter and never counts a not-supported case as passed"
+        $ do
+            (rows, receipts) <- fixtures
+            page <- rendered rows (snapshotOf "fixture-base" receipts)
+            let summary = section "Backend contract across adapters" (renderedPage page)
+            summary
+                `shouldSatisfy` T.isInfixOf "| memory | test-adapter | 1 | 0 | 1 |"
+            summary
+                `shouldSatisfy` T.isInfixOf "| node (generated devnet) | devnet | 1 | 1 | 0 |"
+            let node = section "node (generated devnet) adapter" (renderedPage page)
+            node
+                `shouldSatisfy` T.isInfixOf "failed: the connection was not refused"
 
     it
-        "Refuses contract results for another code revision or a dirty tree" $ do
-        (rows, receipts) <- fixtures
-        let otherBase =
-                [c{crBase = "other-base"} | c <- take 1 contract] <> drop 1 contract
-            dirty = [c{crDirty = True} | c <- take 1 contract] <> drop 1 contract
-        refusal
-            rows
-            ((snapshotOf "fixture-base" receipts){snapContract = otherBase})
-            "not the stated base"
-        refusal
-            rows
-            ((snapshotOf "fixture-base" receipts){snapContract = dirty})
-            "dirty tree"
+        "Refuses contract results for another code revision or a dirty tree"
+        $ do
+            (rows, receipts) <- fixtures
+            let otherBase =
+                    [c{crBase = "other-base"} | c <- take 1 contract] <> drop 1 contract
+                dirty = [c{crDirty = True} | c <- take 1 contract] <> drop 1 contract
+            refusal
+                rows
+                ((snapshotOf "fixture-base" receipts){snapContract = otherBase})
+                "not the stated base"
+            refusal
+                rows
+                ((snapshotOf "fixture-base" receipts){snapContract = dirty})
+                "dirty tree"
 
     it "Refuses adapters that do not report the same case list" $ do
         (rows, receipts) <- fixtures
