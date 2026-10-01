@@ -53,6 +53,7 @@ import Control.Monad (foldM)
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
+import Data.List (find)
 import Data.Maybe (isJust, listToMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
@@ -183,7 +184,7 @@ rewindOf entries = do
                 caseOf p /= Just CaseIncluded
                     && not (any ((> at) . fst) folds)
             Nothing -> False
-    (_, earliest) <- listToMaybe (filter pending folds)
+    (_, earliest) <- find pending folds
     root <- journalRootBefore earliest
     pure
         Rewind
