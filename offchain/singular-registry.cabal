@@ -676,6 +676,7 @@ test-suite cage-tests
     Singular.CLI.Node
     Singular.CLI.Proof
     Singular.CLI.Receipt
+    Singular.CLI.Recovery
     Singular.CLI.Registry
     Singular.CLI.Session
     Singular.CLI.WriteSpec
@@ -882,6 +883,7 @@ executable singular
     Singular.CLI.Node
     Singular.CLI.Proof
     Singular.CLI.Receipt
+    Singular.CLI.Recovery
     Singular.CLI.Registry
     Singular.CLI.Session
 

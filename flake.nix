@@ -157,6 +157,30 @@
               }
             );
           };
+          # #325: the ordinary CLI's recovery controls — a lost
+          # acknowledgement, a local commit interrupted before and after the
+          # mirror is saved, a transaction never sent, and an accepting
+          # control — judged from receipts and journals:
+          # `nix run --quiet .#cli-recovery-controls`.
+          cli-recovery-controls = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "cli-recovery-controls";
+                runtimeInputs = with pkgs; [
+                  bash
+                  coreutils
+                  diffutils
+                  findutils
+                  jq
+                  nix
+                  # the controls find and stop their own development node
+                  procps
+                ];
+                text = ''CLI_RECOVERY_CONTROLS=${./tools/cli_recovery_controls.sh} bash ${./tools/cli_recovery_controls_check.sh} "$PWD"'';
+              }
+            );
+          };
         };
     in
     {

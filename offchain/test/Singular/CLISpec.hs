@@ -23,19 +23,24 @@ not these.
 -}
 module Singular.CLISpec (spec) where
 
+import Control.Concurrent (threadDelay)
+import Control.Exception (SomeException, try)
+import Control.Monad (forM_, unless)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
-import Data.List (isInfixOf)
+import Data.List (isInfixOf, sort)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~))
-import System.Directory (createDirectoryIfMissing)
+import System.Directory (createDirectoryIfMissing, listDirectory)
 import System.Exit (ExitCode (..))
 import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
+import System.Posix.Process (forkProcess, getProcessStatus)
+import System.Posix.Signals (sigKILL, signalProcess)
 import Test.Hspec
 
 import Data.Aeson qualified as Aeson
@@ -52,10 +57,12 @@ import MPF.Backend.Pure (MPFInMemoryDB (..))
 import Singular.CLI.Command
 import Singular.CLI.Proof
 import Singular.CLI.Receipt
+import Singular.CLI.Recovery
 import Singular.CLI.Registry
 import Singular.Registry.Deployment
     ( Deployment (..)
     , loadMirror
+    , mirrorPathFor
     , parseOutRef
     , saveMirror
     )
@@ -86,6 +93,7 @@ spec = describe "singular registry commands" $ do
     savedIdentity
     journal
     localProof
+    recovery
 
 -- ---------------------------------------------------------
 -- The command line
@@ -496,6 +504,193 @@ localProof = describe "a key's leaf proven against the observed root" $ do
     it "names the four leaves in the model's words" $
         map leafName [minBound .. maxBound]
             `shouldBe` ["unknown", "absent", "active", "terminal"]
+
+-- ---------------------------------------------------------
+-- Recovery after an uncertain submission
+-- ---------------------------------------------------------
+
+recovery :: Spec
+recovery = describe "recovery after an uncertain submission" $ do
+    it "names the five cases a submission meets, each distinctly" $
+        map caseName [minBound .. maxBound]
+            `shouldBe` ["acknowledged", "unknown", "rejected", "included", "timeout"]
+    it "reads each transaction's case from its journalled phases" $ do
+        let lines' =
+                [ line "a" "prepared"
+                , line "a" "submitted"
+                , line "u" "prepared"
+                , line "u" "submit-unknown"
+                , line "r" "prepared"
+                , line "r" "rejected"
+                , line "i" "prepared"
+                , line "i" "submitted"
+                , line "i" "confirmed"
+                , line "o" "prepared"
+                , line "o" "submitted"
+                , line "o" "confirmed"
+                , line "o" "observed"
+                , line "t" "prepared"
+                , line "t" "submitted"
+                , line "t" "unconfirmed"
+                , line "k" "prepared"
+                , line "x" "prepared"
+                , line "x" "submit-unknown"
+                , line "x" "confirmed"
+                ]
+        map
+            (submissionCase lines')
+            ["a", "u", "r", "i", "o", "t", "k", "x", "none"]
+            `shouldBe` [ Just CaseAcknowledged
+                       , Just CaseUnknown
+                       , Just CaseRejected
+                       , Just CaseIncluded
+                       , Just CaseIncluded
+                       , Just CaseTimeout
+                       , Just CaseUnknown
+                       , Just CaseIncluded
+                       , Nothing
+                       ]
+    it
+        "applies a journalled fold's edge only from its root before, and only onto the ledger's root"
+        $ do
+            (_, r0) <- walked [("other", edgeInsertActive)]
+            (_, r1) <-
+                walked [("other", edgeInsertActive), (key, edgeInsertActive)]
+            (_, r2) <-
+                walked
+                    [ ("other", edgeInsertActive)
+                    , (key, edgeInsertActive)
+                    , ("third", edgeInsertActive)
+                    ]
+            let fold = foldLine (hexT r0) (hexT r1)
+            mirrorDecision (hexT r0) (hexT r1) fold `shouldBe` ApplyEdge
+            mirrorDecision (hexT r1) (hexT r1) fold `shouldBe` AlreadyApplied
+            mirrorDecision (hexT r0) (hexT r2) fold `shouldBe` EdgeStale
+            mirrorDecision (hexT r2) (hexT r1) fold `shouldBe` EdgeStale
+            mirrorDecision (hexT r0) (hexT r1) (line "b" "prepared")
+                `shouldBe` NoEdge
+    it
+        "never applies an edge twice: once walked, the same line is already applied"
+        $ do
+            (_, r0) <- walked [("other", edgeInsertActive)]
+            (_, r1) <-
+                walked [("other", edgeInsertActive), (key, edgeInsertActive)]
+            let fold = foldLine (hexT r0) (hexT r1)
+                tid = TokenId (AssetName "tok")
+            (db0, _) <- walked [("other", edgeInsertActive)]
+            (tm, _) <- mkPureTrieManagerFrom (Map.singleton tid db0)
+            mirrorDecision (hexT r0) (hexT r1) fold `shouldBe` ApplyEdge
+            Root now <-
+                withTrie tm tid $ \t -> walkEdge t key edgeInsertActive >> getRoot t
+            now `shouldBe` r1
+            mirrorDecision (hexT now) (hexT r1) fold `shouldBe` AlreadyApplied
+    it "leaves state.json whole under a writer killed mid-replacement" $
+        withTempDir $ \dir -> do
+            let commitment r c =
+                    LocalState
+                        { localVersion = 1
+                        , localToken = "746f6b"
+                        , localRoot = r
+                        , localLastTx = Just (T.replicate 2_000_000 c)
+                        , localLastSlot = Nothing
+                        }
+                old = commitment "aa" "a"
+                new = commitment "bb" "b"
+            writeLocalState dir old
+            killedWriter
+                40
+                (\i -> writeLocalState dir (if even i then new else old))
+                $ do
+                    back <- try (readLocalState dir)
+                    case back of
+                        Right s
+                            | s == old || s == new -> pure ()
+                            | otherwise ->
+                                expectationFailure "state.json holds a third commitment"
+                        Left (e :: SomeException) ->
+                            expectationFailure
+                                ("state.json is torn: " <> take 160 (show e))
+    it "leaves the mirror whole under a writer killed mid-replacement" $
+        withTempDir $ \dir -> do
+            let manifest = configPath dir
+                tid = TokenId (AssetName "tok")
+                keys n =
+                    [ (BC.pack ("key-" <> show i), edgeInsertActive) | i <- [1 .. n :: Int]
+                    ]
+            (small, _) <- walked (keys 300)
+            (large, _) <- walked (keys 600)
+            saveMirror manifest (Map.singleton tid small)
+            oldBytes <- BS.readFile (mirrorFile manifest)
+            saveMirror manifest (Map.singleton tid large)
+            newBytes <- BS.readFile (mirrorFile manifest)
+            killedWriter
+                40
+                ( \i ->
+                    saveMirror
+                        manifest
+                        (Map.singleton tid (if even i then small else large))
+                )
+                $ do
+                    now <- BS.readFile (mirrorFile manifest)
+                    unless (now == oldBytes || now == newBytes) $
+                        expectationFailure
+                            ( "the mirror is torn: "
+                                <> show (BS.length now)
+                                <> " bytes, neither the old "
+                                <> show (BS.length oldBytes)
+                                <> " nor the new "
+                                <> show (BS.length newBytes)
+                            )
+    it "leaves no partial file behind a completed replacement" $
+        withTempDir $ \dir -> do
+            (db, _) <- walked [(key, edgeInsertActive)]
+            saveMirror
+                (configPath dir)
+                (Map.singleton (TokenId (AssetName "tok")) db)
+            writeLocalState
+                dir
+                (LocalState 1 "746f6b" "aa" Nothing Nothing)
+            sort <$> listDirectory dir
+                `shouldReturn` ["registry.mirror.json", "state.json"]
+  where
+    line t e =
+        JournalEntry
+            { journalCommand = "insert"
+            , journalStep = "fold"
+            , journalTxId = t
+            , journalEvent = e
+            , journalDetail = Nothing
+            , journalInputs = Nothing
+            , journalNetwork = Nothing
+            , journalEra = Nothing
+            , journalBody = Nothing
+            , journalBodyHash = Nothing
+            , journalChainPoint = Nothing
+            , journalKey = Nothing
+            , journalExpect = Nothing
+            , journalEdge = Nothing
+            , journalRootBefore = Nothing
+            , journalRootAfter = Nothing
+            }
+    foldLine from to =
+        (line "f" "prepared")
+            { journalKey = Just (hexT key)
+            , journalEdge = Just edgeInsertActive
+            , journalRootBefore = Just from
+            , journalRootAfter = Just to
+            }
+    mirrorFile = mirrorPathFor
+
+{- | Start a process that rewrites a file over and over, kill it at a
+different moment each round, and run the check on what it left.
+-}
+killedWriter :: Int -> (Int -> IO ()) -> IO () -> IO ()
+killedWriter rounds write check = forM_ [1 .. rounds] $ \r -> do
+    pid <- forkProcess (mapM_ write [0 ..])
+    threadDelay (2_000 + (r * 7_919) `mod` 40_000)
+    signalProcess sigKILL pid
+    _ <- getProcessStatus True False pid
+    check
 
 withTempDir :: (FilePath -> IO a) -> IO a
 withTempDir = withSystemTempDirectory "singular-cli-spec"

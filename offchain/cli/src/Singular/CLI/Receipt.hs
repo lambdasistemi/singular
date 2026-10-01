@@ -41,6 +41,11 @@ module Singular.CLI.Receipt
     , bodiesDir
     , durableWrite
 
+      -- * The case each submission met
+    , SubmissionCase (..)
+    , caseName
+    , submissionCase
+
       -- * Outcomes
     , OutcomeClass (..)
     , outcomeName
@@ -205,6 +210,25 @@ unresolved entries =
 -- | The journal's directory of saved signed bodies.
 bodiesDir :: FilePath -> FilePath
 bodiesDir dir = dir </> "submissions"
+
+{- | The case a submission met, named in the journal by its phases and
+in the receipt of the command that met it.
+-}
+data SubmissionCase
+    = CaseAcknowledged
+    | CaseUnknown
+    | CaseRejected
+    | CaseIncluded
+    | CaseTimeout
+    deriving stock (Eq, Show, Enum, Bounded)
+
+-- | The case as a receipt names it.
+caseName :: SubmissionCase -> Text
+caseName _ = ""
+
+-- | The case the transaction met, from its journalled phases.
+submissionCase :: [JournalEntry] -> Text -> Maybe SubmissionCase
+submissionCase _ _ = Nothing
 
 -- | The attributable classes a command ends in.
 data OutcomeClass
