@@ -35,7 +35,7 @@
       "pause": 400
     },
     {
-      "text": "Eleven rows, three dispositions that must never be mistaken for one another. Held: executed, and the consumer requirement is unmet — the early rejection, the empty fold, the surplus action, the crossed refunds. The early rejection is CG zero nine: the consumer forbids a reject inside the process window, Singular's model gives a reject no admission and the chain accepts it, so the row stays held and the consumer requirement unmet. Resolved by ruling: defect evidence of the outstanding owner gate. Superseded: observations kept, claims withdrawn, no execution credit. The run ends non-zero while anything is held — never a pass.",
+      "text": "Eleven rows, three dispositions that must never be mistaken for one another. Held: executed, and the consumer requirement is unmet — the early rejection, the empty fold, the surplus action, the crossed refunds. The early rejection is CG zero nine: the consumer requires that a folder must not reject a request during its processing window, while Singular's model lets a folder reject a request with no timing admission. The chain accepts that reject, so the row stays held and the consumer requirement unmet. Resolved by ruling: defect evidence of the outstanding owner gate. Superseded: observations kept, claims withdrawn, no execution credit. The run ends non-zero while anything is held — never a pass.",
       "pause": 400
     },
     {
@@ -123,7 +123,7 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "271e1a977c6c25822143f3a6cd935cbc5b1430f590724869699b4fcb37ca91ac"
+    "sha256": "b2beddf602114b74dd2a5d80fc9bb45ad2f8ee69e8902309d588879fd45f8f8e"
   },
   "historical-execution-reports": [
     {

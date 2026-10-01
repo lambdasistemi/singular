@@ -296,7 +296,7 @@ refusal to the script that failed and retain their accepting controls.
 | row | outcome | evidence |
 |---|---|---|
 | Retract outside phase 2 | **refuse before and after; accept inside** | The dedicated story submits three owner-signed retractions with finite validity bounds. Both outside-window attempts must be refused by the request script and by the model for `not-phase2`; the same first request retracted inside its window is accepted by both. The second request is booked alongside the first in the same registry, with the same owner and edge, and shares its accepting control. The receipt records each comparison. |
-| CG09 stale request | accept — **held-q002** (historically **refuse**) | the consumer requires a reject inside the process window to be refused; Singular's Lean gives a reject no admission, and since #320 the chain accepts it, recorded held and never counted as passing; the same reject refunding the owner one lovelace short is refused in-run first, attributed to the state script (control). Historically the node refused it in phase 2, attributed to the state script (`ce7615f6…`), and the same request rejected by the library in phase 3 was accepted in-run |
+| CG09 a folder must not reject a request during its processing window | accept — **held-q002** (historically **refuse**) | the consumer requires that a folder must not reject a request during its processing window; Singular's model lets a folder reject a request with no timing admission, and since #320 the chain accepts that reject, recorded held and never counted as passing; the same reject refunding the owner one lovelace short is refused in-run first, attributed to the state script (control). Historically the node refused the reject at script validation, attributed to the state script (`ce7615f6…`), and the same request rejected by the library after its retraction window was accepted in-run |
 | CG10 fold with stale proofs | **refuse** | stale proofs against a superseded root refused, attributed to the state script; the same shape folded against the live root is accepted in-run (control) — the refusal is the staleness, not the shape |
 | CG11 empty fold | accept — **held-q002** | the chain accepts a fold carrying no actions (tx `b670c28e…`); with one live request waiting, empty actions are refused in-run (control) — the acceptance is specific to the empty fold |
 | CG12 surplus action | accept — **held-q002** | two actions over one request, the second garbage, accepted (tx `facebfe6…`); one action FEWER than there are requests is refused in-run (control) — the surplus is unchecked, the deficit is fatal, exactly the audit's asymmetry |
@@ -317,10 +317,11 @@ the Aiken tests establish the open-interval `not-phase2` refusal.
 **Three dispositions, never to be mistaken for one another.**
 
 **Held** (`held-q002`; CG09, CG11, CG12, CG19): executed, with the consumer
-requirements still unmet. CG09 records the conflict with
-R9_reject_needs_rejectable: Singular's Lean gives a reject no admission and
-the chain accepts a reject inside the process window. CG11 recorded a
-conflict with the pre-revision
+requirements still unmet. CG09 records the conflict over early rejection:
+the consumer requires that a folder must not reject a request during its
+processing window, while Singular's model lets a folder reject a request
+with no timing admission, and the chain accepts that reject. CG11 recorded
+a conflict with the pre-revision
 Singular model; rejecting empty batches is now approved. CG12's
 representation mapping remains under review. CG19 requires the
 operation-specific value-routing repair. The rows move only after the
@@ -578,9 +579,10 @@ never trims identities — under the same run-enforced 16KB bound.
   and earns no conformance credit. Nothing else in the inventory has
   ledger evidence without a receipt.
 - **Executed holds, not passes**: CG09, CG11, CG12 and CG19 remain held by
-  execution. CG09 records the early-rejection conflict with
-  R9_reject_needs_rejectable; CG11 records the pre-revision empty-fold
-  conflict with
+  execution. CG09 records the early-rejection conflict: the consumer
+  requires that a folder must not reject a request during its processing
+  window, and the chain no longer refuses it; CG11 records the
+  pre-revision empty-fold conflict with
   R8_empty_fold_refused; CG12 still needs a faithful representation
   mapping; CG19 violates the consumer's required operation-specific fold
   value routing (`Registry.processBody`, `Registry.stepFn`,
