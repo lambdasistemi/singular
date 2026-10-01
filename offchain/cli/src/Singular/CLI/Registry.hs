@@ -102,6 +102,7 @@ import Singular.Registry.Deployment
     , mirrorPathFor
     , renderAddrBytes
     , renderOutRef
+    , replaceDurably
     )
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.Node (bech32Address)
@@ -302,7 +303,11 @@ readLocalState :: FilePath -> IO LocalState
 readLocalState dir = readJsonFile "registry state" (statePath dir)
 
 writeLocalState :: FilePath -> LocalState -> IO ()
-writeLocalState dir = writeJsonFile (statePath dir)
+writeLocalState dir =
+    replaceDurably (statePath dir)
+        . BL.toStrict
+        . (<> "\n")
+        . encodePretty
 
 -- ---------------------------------------------------------
 -- Identity checks

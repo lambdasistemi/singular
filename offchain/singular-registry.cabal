@@ -67,6 +67,7 @@ library
     , singular-registry:node-internal
     , text                   >=2.0  && <2.2
     , time
+    , unix
 
   exposed-modules:
     Singular.Application.OpenDatum.Book
