@@ -62,10 +62,10 @@ validator request(statePolicyId: PolicyId, cageTokenName: AssetName) {
 }
 
 /// A request spent by `Contribute` is admitted inside its processing window,
-/// or in any window when the state's fold pairs it with `Rejected`: a reject
-/// carries no admission (Lean `exitAdmission .reject = none`, #320). An
-/// update outside the processing window, and a request the fold pairs with
-/// no action, are refused.
+/// whatever its action, as before; or in any window when the state's fold
+/// pairs it with `Rejected`: a reject carries no admission (Lean
+/// `exitAdmission .reject = none`, #320). Outside the processing window, a
+/// request the fold pairs with an update, or with no action, is refused.
 fn validateContribute(
   statePolicyId: PolicyId,
   cageToken: TokenId,

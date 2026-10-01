@@ -35,7 +35,7 @@
       "pause": 400
     },
     {
-      "text": "Eleven rows, three dispositions that must never be mistaken for one another. Held: executed, and the consumer requirement is unmet — the empty fold, the surplus action, the crossed refunds. Resolved by ruling: defect evidence of the outstanding owner gate. Superseded: observations kept, claims withdrawn, no execution credit. The run ends non-zero while anything is held — never a pass.",
+      "text": "Eleven rows, three dispositions that must never be mistaken for one another. Held: executed, and the consumer requirement is unmet — the early rejection, the empty fold, the surplus action, the crossed refunds. The early rejection is CG zero nine: the consumer forbids a reject inside the process window, Singular's model gives a reject no admission and the chain accepts it, so the row stays held and the consumer requirement unmet. Resolved by ruling: defect evidence of the outstanding owner gate. Superseded: observations kept, claims withdrawn, no execution credit. The run ends non-zero while anything is held — never a pass.",
       "pause": 400
     },
     {
@@ -123,7 +123,7 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "6d386c5577c06444514a3c07259cf4d396a1221155f5efd33ae0fff771e0a8b2"
+    "sha256": "271e1a977c6c25822143f3a6cd935cbc5b1430f590724869699b4fcb37ca91ac"
   },
   "historical-execution-reports": [
     {
@@ -169,7 +169,7 @@
       "pause": 400
     },
     {
-      "text": "The generic session must end with exactly the three held rows, the identity session must succeed, and the serialization session must show its two partial rows. A nonzero exit alone proves nothing: inspect exact identities, source binding, verdicts, residuals and controls. An armed control must reach its intended assertion; an ordinary partial exit is not a control failure.",
+      "text": "The generic session must end with exactly the four held rows, the identity session must succeed, and the serialization session must show its two partial rows. A nonzero exit alone proves nothing: inspect exact identities, source binding, verdicts, residuals and controls. An armed control must reach its intended assertion; an ordinary partial exit is not a control failure.",
       "pause": 400
     }
   ],
