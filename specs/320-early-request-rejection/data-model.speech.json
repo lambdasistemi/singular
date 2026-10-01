@@ -1,0 +1,48 @@
+{
+  "unchanged-data": [
+    {
+      "text": "No datum, redeemer, receipt or row changes shape. The repair changes which values are admitted, not how anything is encoded.",
+      "pause": 400
+    }
+  ],
+  "d-01-a-rejects-admission": [
+    {
+      "text": "A reject is admitted by the state for any validity range. The checks before and after it stay: tip coverage, deposit match, a missing action, the owner's refund floor of what the request holds minus the tip, and the modify judgement.",
+      "pause": 400
+    }
+  ],
+  "d-02-the-requests-matching-action": [
+    {
+      "text": "A request spent by contribute is paired with one action of the state's fold, in input order. The request script admits the spend in the processing window, or when that matching action is a reject, in any window. Anything else is refused, so nothing the state does not fold is admitted outside the processing window.",
+      "pause": 400
+    }
+  ],
+  "d-03-windows": [
+    {
+      "text": "The window boundaries do not change. The processing window predicate stays for updates and the retraction window predicate stays for retractions. Only the after the windows or future dated predicate goes.",
+      "pause": 400
+    }
+  ],
+  "d-04-reject-placement-in-the-story-language": [
+    {
+      "text": "In the story language every reject names its window: the processing window, the owner's retraction window, or after the windows. The interpreter checks the built transaction against that window before submitting, and a mismatch is a setup failure. The control that rendering is total covers every placement. Placements add no receipt field.",
+      "pause": 400
+    }
+  ],
+  "d-05-cg09s-result": [
+    {
+      "text": "CG09 keeps its row and its requirement. The chain now accepts, and the verdict is the existing held one: Singular's model and the consumer's theorem disagree and the chain sided with Singular. Its in-run control stays.",
+      "pause": 400
+    }
+  ],
+  "d-06-builder-selection": [
+    {
+      "text": "The builder selects every pending request of this registry and refuses to build when there is none. Refunds and the state continuation are as today.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "53f75c5c4afdbd4a40d3d4a7ec3f984b3086497741bf6fcda921035f7d233270"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "strategy": [
+    {
+      "text": "Three slices on one branch. First the validators, their tests and identities, with CG09's expectation moving in the same commit because the chain's answer to it changes there. Then the product builder with its devnet test. Then the story language placement, CG23 made explicit, and the early reject row. Each commit keeps CI green.",
+      "pause": 400
+    }
+  ],
+  "constitution-check": [
+    {
+      "text": "Lean stays the authority and the code moves to it. The consumer conflict stays held and the fold timing gap is recorded, not resolved here. Each evidence class is named and never substituted. RED, GREEN, sizes, costs and limits are kept. Nothing historical is rewritten. The early reject claim is said in the suite's own language, and CG09 stays published as unmet.",
+      "pause": 400
+    }
+  ],
+  "slices": [
+    {
+      "text": "The first slice delivers the validator repair and must show RED on the base through the new compiled tests, then green suites, identities and CG09 held. The second slice delivers the builder and a devnet run in both early windows. The third slice delivers model compared evidence and keeps CG23's assertion unchanged. The required behavioural RED is the compiled one; the live defect is the retained refused transaction.",
+      "pause": 400
+    }
+  ],
+  "path-fence": [
+    {
+      "text": "Each slice has an exact list of writable paths. Manifests change only through their generators and pins only to regenerated values. The model, the constitution, the locks, the receipt format, the consumer's rows, the book and historical evidence are forbidden. Any other path is a placement challenge before editing.",
+      "pause": 400
+    }
+  ],
+  "gate": [
+    {
+      "text": "Fourteen gate rows, each the verbatim command of the CI job that checks it, with its workflow line, the exit code, the number of nix invocations and the number of devnet runs. One full run at the exact head is forty seven nix invocations and six devnet runs. The register journey is left to the pushed head's CI. Falsification comes from the base, from unregenerated pins and from existing expectations, with no bespoke instrument.",
+      "pause": 400
+    }
+  ],
+  "execution-schedule": [
+    {
+      "text": "The implementation phase is not released by this plan. The proposal counts every invocation: about forty cheap runs, eighty nine nix invocations and thirteen devnet runs including one bounded repair, or forty two nix and seven devnet runs if the pushed head's CI is the gate. Nothing is repeated without a new change or failure.",
+      "pause": 400
+    }
+  ],
+  "team": [
+    {
+      "text": "The operator approved team runs in sequence: the ticket owner holds the mandate, the gate and acceptance and writes no product code. One commit owner writes the tests, code and commits. One persistent independent auditor answers every checkpoint. No other seat.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "27d1c16144738cff3ff93b8c526329e5778780a60e51d790cce295cbe08da6f3"
+  }
+}

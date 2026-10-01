@@ -1,0 +1,36 @@
+{
+  "planning": [
+    {
+      "text": "Planning tasks: binding the authority, recording the baseline, inventorying callers and pins, and writing this specification are done. The independent review of this planning commit and freezing the gate remain.",
+      "pause": 400
+    }
+  ],
+  "s1-validators-identities-and-cg09": [
+    {
+      "text": "First slice: RED on the base, the state and request repairs, removing the old predicate, regenerating both manifests and their pins, measuring sizes and costs, moving CG09 to held, and rewording the documentation.",
+      "pause": 400
+    }
+  ],
+  "s2-product-builder": [
+    {
+      "text": "Second slice: drop the builder's timing, prove it on a devnet in both early windows with ledger readbacks, and restate the request phase helper's documentation.",
+      "pause": 400
+    }
+  ],
+  "s3-evidence-in-the-story-language": [
+    {
+      "text": "Third slice: placed rejects in the story language with a totality control, CG23 placed after the windows with its assertion unchanged, and the early reject row if the row fence opens.",
+      "pause": 400
+    }
+  ],
+  "acceptance": [
+    {
+      "text": "Acceptance: the exact head gate green, every checkpoint approved, and the limits written into the pull request.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "02567cf6e21dc7e828c9c02aad09ba3ed1626d1a9ba0689f03c773744f2cf229"
+  }
+}

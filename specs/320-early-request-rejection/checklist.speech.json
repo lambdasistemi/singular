@@ -1,0 +1,24 @@
+{
+  "specification-quality": [
+    {
+      "text": "The specification names the actor and outcome, cites the model for each requirement or marks it as outside the model, covers success and refusal, names each invariant's layer, lists what stays unchanged, preserves the consumer conflict, and leaves only the row fence open with a fallback.",
+      "pause": 400
+    }
+  ],
+  "evidence-quality": [
+    {
+      "text": "RED is behavioural and on the base. Live claims rest on ledger transactions and refusal reasons on compiled tests. Model comparison uses the existing story language. Gate rows are CI commands, with every nix and devnet run counted.",
+      "pause": 400
+    }
+  ],
+  "scope": [
+    {
+      "text": "Every old rule caller and every moved pin has an owner, forbidden paths are listed, and history is not rewritten.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "checklist.md",
+    "sha256": "28746fb671469485418c596995e3d82cfa962ef0eec28b6315030ff45821e478"
+  }
+}

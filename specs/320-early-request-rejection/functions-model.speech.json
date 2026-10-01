@@ -1,0 +1,24 @@
+{
+  "removed": [
+    {
+      "text": "The two rejectability predicates go, and the story language's untimed reject goes, with every caller moved in the same change.",
+      "pause": 400
+    }
+  ],
+  "changed-same-signature": [
+    {
+      "text": "The request script's contribute check and the fold's per request step change their rule but not their signatures, except that the contribute check may take the request's own output reference. The builder's exported functions keep their signatures. CG09's runner records acceptance as held.",
+      "pause": 400
+    }
+  ],
+  "added": [
+    {
+      "text": "The story language gains a placement type with three values, a placed reject and a placed tampered reject. If the row fence opens, a new early reject story and its row runner are added.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "dd961ad25203dda959804d276dcbdc609f8ba9542ce5a114c347eb4976124dce"
+  }
+}

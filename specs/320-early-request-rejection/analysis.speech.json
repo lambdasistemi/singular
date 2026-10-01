@@ -1,0 +1,30 @@
+{
+  "coverage": [
+    {
+      "text": "Every requirement maps to at least one invariant, task and gate row, and every invariant appears in a task.",
+      "pause": 400
+    }
+  ],
+  "terminology": [
+    {
+      "text": "The model's words are used throughout. Windows are named the way the constitution's retraction row names them, and phase numbers appear only where existing code uses them.",
+      "pause": 400
+    }
+  ],
+  "contradictions-found-and-how-they-are-carried": [
+    {
+      "text": "Four findings: the update timing rule outside the model, kept and escalated by the parent; the consumer's R9 conflict, held; CG23's stale requirement text, restated only if the row fence opens; and the builder's phase three documentation, restated with the change.",
+      "pause": 400
+    }
+  ],
+  "ambiguities-left-open": [
+    {
+      "text": "Two remain: whether the row fence opens for one new row and CG23's text, and whether the consumer conflict holds this repair's merge or only the consumer integration claim. The parent decides both.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "analysis.md",
+    "sha256": "2b2f24aea68764fef9da4799cf00e6b6ba454312c3ff9af17006d74fbcbad2ac"
+  }
+}
