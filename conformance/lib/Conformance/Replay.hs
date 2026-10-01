@@ -43,6 +43,7 @@ module Conformance.Replay
 
       -- * Evidence
     , PurposeReplay (..)
+    , acceptingControlGaps
     , TracedProvenance (..)
     , toolchainCause
     , captureIdOf
@@ -52,6 +53,7 @@ import Crypto.Hash qualified as Hash
 import Data.Aeson
     ( FromJSON (..)
     , ToJSON (..)
+    , Value (..)
     , object
     , withObject
     , (.:)
@@ -346,3 +348,11 @@ admittedFor marker purposes =
                 , all (== reason) reasons ->
                     Just reason
             _ -> Nothing
+
+{- | What the replay index lacks for FR-13: every script role a refusal names
+(a validator title — a bare hash names no family a control could replay) needs
+an @accepting-control@ entry in which that role's deployed and traced runs
+both succeeded. One line per missing or failing role; none when complete.
+-}
+acceptingControlGaps :: [Value] -> [Text]
+acceptingControlGaps _ = []

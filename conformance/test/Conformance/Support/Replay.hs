@@ -4,6 +4,7 @@ as its own case, and a control that the cases cover every cause there is.
 -}
 module Conformance.Support.Replay (spec) where
 
+import Data.Aeson (object, (.=))
 import Data.List (nub, sort)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
@@ -220,6 +221,49 @@ spec = describe "traced replay of a live refusal" $ do
                 `shouldBe` Nothing
             admittedFor "m" [("m", Admitted "a"), ("m", Admitted "b")] `shouldBe` Nothing
             admittedFor "m" [("s", Admitted "key-exists")] `shouldBe` Nothing
+    describe "the accepting controls the index must carry" $ do
+        let refusal role =
+                object ["kind" .= ("refusal" :: Text), "role" .= (role :: Text)]
+            control role deployed traced =
+                object
+                    [ "kind" .= ("accepting-control" :: Text)
+                    , "controls"
+                        .= [ object
+                                [ "role" .= (role :: Text)
+                                , "deployed" .= object ["outcome" .= (deployed :: Text)]
+                                , "traced" .= object ["outcome" .= (traced :: Text)]
+                                ]
+                           ]
+                    ]
+            succeeded role = control role "succeeded" "succeeded"
+        it "every refusing role with a succeeding control is complete" $
+            acceptingControlGaps
+                [ refusal "state.state"
+                , refusal "request.request+state.state"
+                , succeeded "state.state"
+                , succeeded "request.request"
+                ]
+                `shouldBe` []
+        it "a refusing role with no control is a gap" $
+            acceptingControlGaps
+                [ refusal "request.request+state.state"
+                , succeeded "state.state"
+                ]
+                `shouldBe` ["request.request: no accepting control"]
+        it "a control whose traced run failed is a gap" $
+            acceptingControlGaps
+                [ refusal "state.state"
+                , control "state.state" "succeeded" "validator-failure"
+                ]
+                `shouldBe` ["state.state: no accepting control with both runs succeeded"]
+        it "a control whose deployed run failed is a gap" $
+            acceptingControlGaps
+                [ refusal "state.state"
+                , control "state.state" "budget-exhausted" "succeeded"
+                ]
+                `shouldBe` ["state.state: no accepting control with both runs succeeded"]
+        it "a role that is only a bare hash needs no control, and none is invented" $
+            acceptingControlGaps [refusal "80d434cb", refusal "unattributed"] `shouldBe` []
     describe "which script a failing hash is" $ do
         let families =
                 [ ScriptFamily "state.state" True ["aa"]
