@@ -7,7 +7,8 @@ License     : Apache-2.0
 
 Each write attaches first ("Singular.CLI.Live"): the saved identity is
 re-derived and checked, the network must be the saved one, the journal
-must hold no unresolved submission, the reference outputs and the state
+is reconciled ("Singular.CLI.Reconcile") and must then hold no
+unresolved submission, the reference outputs and the state
 output are resolved, and the local mirror must commit to exactly the
 root the ledger holds. The command then calls the production builders —
 it decides no validator or fold rule itself — journals every submission,
@@ -46,6 +47,7 @@ import Control.Exception
 import Control.Monad (unless, void, when)
 import Data.Aeson (Value, toJSON)
 import Data.Aeson qualified as Aeson
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.List (isPrefixOf, sortOn)
@@ -93,6 +95,11 @@ import Singular.CLI.Command
 import Singular.CLI.Live
 import Singular.CLI.Node (Capabilities (..))
 import Singular.CLI.Receipt (OutcomeClass (..))
+import Singular.CLI.Reconcile
+    ( reconcile
+    , reconciledJson
+    , refuseUnreconciled
+    )
 import Singular.CLI.Registry
     ( LocalState (..)
     , checkNetwork
@@ -139,31 +146,35 @@ data Attached = Attached
     }
 
 {- | Attach a write to its registry: saved identity and pins, network,
-unresolved journal, live references and state, and the mirror's root
-against the ledger's, all read from one view. The caller's wallet is
-NOT compared with the wallet that created the registry; authority is the
-envelope's. Every transaction the write then builds reads the chain
-again, from a view of its own.
+then — from one view — reconciliation of the journal
+("Singular.CLI.Reconcile"), the refusal of whatever it leaves
+unresolved, the live references and state, and the mirror's root
+against the ledger's. The caller's wallet is NOT compared with the
+wallet that created the registry; authority is the envelope's. Every
+transaction the write then builds reads the chain again, from a view of
+its own. The receipt says what the reconciliation did.
 -}
 attached
     :: FilePath
     -> FilePath
     -> WriteSettings
     -> Text
-    -> (Attached -> IO a)
-    -> IO a
+    -> (Attached -> IO Value)
+    -> IO Value
 attached dir blueprint ws command body = do
     saved <- loadSaved dir blueprint
     withWrite dir command ws $ \wc -> do
-        refuseUnresolved dir
         let NodeSettings _ magic = writeNode ws
         either
             (failWith ClientRefusal . renderIdentityError)
             pure
             (checkNetwork (savedConfig saved) magic)
+        (reconciled, live) <-
+            Cage.withView (capReads (wcCapabilities wc)) $ \v -> do
+                r <- reconcile command dir saved v
+                refuseUnreconciled r
+                (,) r <$> attachLive v saved
         mirror <- openMirror saved
-        live <-
-            Cage.withView (capReads (wcCapabilities wc)) $ \v -> attachLive v saved
         observed <- either (failWith StaleState) pure (observedRoot live)
         local <- mirrorRoot saved mirror
         when (local /= observed) $
@@ -176,7 +187,13 @@ attached dir blueprint ws command body = do
                     <> ": stale, concurrent or altered local state is refused, \
                        \never repaired"
                 )
-        body Attached{atWrite = wc, atLive = live, atMirror = mirror}
+        printed <-
+            body Attached{atWrite = wc, atLive = live, atMirror = mirror}
+        pure $ case printed of
+            Aeson.Object o ->
+                Aeson.Object
+                    (KeyMap.insert "reconciled" (reconciledJson reconciled) o)
+            other -> other
 
 callerKey :: Attached -> ByteString
 callerKey = addrKeyHashBytes . walletAddr . wcWallet . atWrite
@@ -380,8 +397,10 @@ foldAndCommit at request key edge after envelopes live = do
                         [("pendingRequest", toJSON (txInText request))]
                 pure (unsigned, ())
             )
+    harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_COMMIT" Nothing
     withTrie tm (savedToken s) $ \t -> void (walkEdge t key edge)
     saveOpenMirror s (atMirror at)
+    harnessHoldAt "SINGULAR_HARNESS_HOLD_AFTER_MIRROR" Nothing
     afterFold <- reading at (`attachLive` s)
     onChain <- either (failWith Partial) pure (observedRoot afterFold)
     local <- mirrorRoot s (atMirror at)
@@ -472,6 +491,8 @@ runInsert a = do
             either (failWith Partial) pure (liveOutputFor s key outs)
         unless (seen == envelope) $
             failWith Partial "the delivered output carries another envelope"
+        commitLocal at fold root
+        harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED" Nothing
         journalObserved
             (atWrite at)
             "fold"
@@ -481,7 +502,6 @@ runInsert a = do
                 <> " under its envelope; root 0x"
                 <> hexT root
             )
-        commitLocal at fold root
         pure $
             receipt
                 "insert"
@@ -646,12 +666,13 @@ runTerminate a = do
                 failWith
                     Partial
                     "the fold confirmed but the live output is still unspent"
+            commitLocal at fold root
+            harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED" Nothing
             journalObserved
                 (atWrite at)
                 "fold"
                 fold
                 ("live output " <> txInText liveIn <> " released; root 0x" <> hexT root)
-            commitLocal at fold root
             pure $
                 receipt
                     "terminate"

@@ -287,35 +287,45 @@ wait "$victim" 2>/dev/null || true
 [ "$(tail -n 1 "$reg/journal.jsonl" | jq -r '.journalStep + "/" + .journalEvent')" = fold/submitted ] \
   || fail "the killed process did not stop at its accepted fold"
 say "terminate killed after the node accepted its fold"
-# A write now refuses: the fold is unresolved.
-refused write-while-unresolved partial -- registry update --key "$bkey" \
-  --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${bob[@]}"
-# Inspecting an unrelated key never observes alice's fold.
-sleep 5
-run inspect-unrelated partial -- registry inspect --key "$bkey" "${common[@]}" "${node[@]}"
-[ "$(field inspect-unrelated .leaf)" = null ] || fail "a leaf was printed while unresolved"
-jq -e '.observed == []' "$receipts/inspect-unrelated.json" >/dev/null \
-  || fail "inspecting another key observed the killed fold"
-# The relevant readback: alice's key, once the fold is on chain.
+fold_tx="$(tail -n 1 "$reg/journal.jsonl" | jq -r .journalTxId)"
+# The next ordinary write — bob's update of his own key — reconciles the
+# killed fold from chain evidence and proceeds. While the fold is not yet
+# on chain it is refused before submitting anything, naming the fold and
+# its case; it is then run again.
 for _ in $(seq 1 60); do
+  before="$(journal_lines "$reg")"
   status=0
-  "$singular" registry inspect --key "$key" "${common[@]}" "${node[@]}" \
-    >"$receipts/inspect-3.json" 2>"$receipts/inspect-3.err" || status=$?
-  [ "$(jq -r .outcome "$receipts/inspect-3.json")" = success ] && break
+  "$singular" registry update --key "$bkey" --payload "$work/payload.json" \
+    "${common[@]}" "${node[@]}" "${bob[@]}" \
+    >"$receipts/write-after-kill.json" 2>"$receipts/write-after-kill.err" || status=$?
+  got="$(jq -r .outcome "$receipts/write-after-kill.json")"
+  [ "$got/$status" = success/0 ] && break
+  [ "$got/$status" = partial/15 ] || fail "write-after-kill: outcome $got (exit $status)"
+  [ "$(journal_lines "$reg")" = "$before" ] || fail "write-after-kill: a refused write moved the journal"
+  [ "$(field write-after-kill .unresolved.tx)" = "$fold_tx" ] \
+    || fail "write-after-kill: the refusal does not name the killed fold"
+  [ "$(field write-after-kill .unresolved.case)" = acknowledged ] \
+    || fail "write-after-kill: the refusal does not name the fold's case acknowledged"
   sleep 2
 done
-[ "$(field inspect-3 .outcome)" = success ] || fail "inspect never resolved the killed fold"
+[ "$(field write-after-kill .outcome)" = success ] || fail "the write after the kill never reconciled the fold"
+jq -e --arg t "$fold_tx" '.reconciled.observed | index($t)' "$receipts/write-after-kill.json" >/dev/null \
+  || fail "the write after the kill did not observe the killed fold"
+say "write-after-kill: success, reconciling the killed fold"
+# Alice's key reads Terminal: the killed terminate's fold is on chain.
+run inspect-3 success -- registry inspect --key "$key" "${common[@]}" "${node[@]}"
 [ "$(field inspect-3 .leaf)" = terminal ] || fail "the killed fold did not leave the key terminal"
 jq -e '.applicationOutput.absent' "$receipts/inspect-3.json" >/dev/null || fail "the holding is still live"
-# The fold was advanced into the mirror exactly once, by whichever inspect
-# first saw it included (root-authenticated), and observed only by the
-# inspect of its own key.
-fold_tx="$(jq -r '.observed[0]' "$receipts/inspect-3.json")"
-[ -n "$fold_tx" ] && [ "$fold_tx" != null ] || fail "the relevant inspect observed nothing"
-jq -s -e --arg t "$fold_tx" '[.[].mirrorAdvanced[]] == [$t]' \
-  "$receipts/inspect-unrelated.json" "$receipts/inspect-3.json" >/dev/null \
+# The fold was applied to the mirror exactly once and observed exactly
+# once, across every receipt, and never sent again.
+jq -s -e --arg t "$fold_tx" '[.[0].reconciled.applied[], .[1].mirrorAdvanced[]] == [$t]' \
+  "$receipts/write-after-kill.json" "$receipts/inspect-3.json" >/dev/null \
   || fail "the mirror was not advanced exactly once by the journalled fold"
-say "inspect resolved the killed fold from the chain: terminal, holding released"
+[ "$(jq -s --arg t "$fold_tx" '[.[] | select(.journalTxId == $t and .journalEvent == "observed")] | length' "$reg/journal.jsonl")" = 1 ] \
+  || fail "the killed fold was not observed exactly once"
+[ "$(jq -s --arg t "$fold_tx" '[.[] | select(.journalTxId == $t and .journalEvent == "prepared")] | length' "$reg/journal.jsonl")" = 1 ] \
+  || fail "the killed fold was prepared more than once"
+say "the next write reconciled the killed fold from the chain once; inspect reads it terminal"
 
 # ------------------------------------------------------------------
 # 6. terminate bob normally; a write works again

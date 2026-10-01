@@ -11,7 +11,9 @@ derive every pin again from this release and the recorded seed
 pins differ, and — with a node in hand — resolve the recorded reference
 outputs and the registry's current state output, and compare the local
 mirror's root with the root the ledger holds. A command never repairs a
-stale or altered mirror; it refuses and says so.
+stale or altered mirror; it refuses and says so. Applying a journalled
+edge the chain evidences is reconciliation ("Singular.CLI.Reconcile"),
+not repair.
 -}
 module Singular.CLI.Live
     ( -- * The saved registry

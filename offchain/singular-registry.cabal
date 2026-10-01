@@ -67,6 +67,7 @@ library
     , singular-registry:node-internal
     , text                   >=2.0  && <2.2
     , time
+    , unix
 
   exposed-modules:
     Singular.Application.OpenDatum.Book
@@ -568,6 +569,8 @@ executable devnet
   hs-source-dirs:   devnet
   main-is:          Main.hs
   build-depends:
+    , aeson
+    , async
     , base                        >=4.14 && <5
     , base16-bytestring
     , bytestring
@@ -575,12 +578,16 @@ executable devnet
     , cardano-ledger-mary
     , cardano-node-clients
     , cardano-node-clients:devnet
+    , cardano-slotting
     , cardano-strict-containers
     , containers
     , directory
     , filepath
     , microlens
+    , ouroboros-consensus
+    , ouroboros-network:api
     , singular-registry
+    , text
 
   ghc-options:      -threaded -with-rtsopts=-N
 
@@ -676,6 +683,7 @@ test-suite cage-tests
     Singular.CLI.Node
     Singular.CLI.Proof
     Singular.CLI.Receipt
+    Singular.CLI.Recovery
     Singular.CLI.Registry
     Singular.CLI.Session
     Singular.CLI.WriteSpec
@@ -882,6 +890,8 @@ executable singular
     Singular.CLI.Node
     Singular.CLI.Proof
     Singular.CLI.Receipt
+    Singular.CLI.Reconcile
+    Singular.CLI.Recovery
     Singular.CLI.Registry
     Singular.CLI.Session
 

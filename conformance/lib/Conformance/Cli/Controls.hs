@@ -262,8 +262,8 @@ data Provocation
       WithoutNode
     | -- | @terminate@, killed once the node accepted its fold
       TerminateKilled
-    | -- | @update@, while the fold the killed @terminate@ left is unresolved
-      UpdateWhileUnresolved
+    | -- | @update@ of another key, once the @terminate@ was killed
+      UpdateAfterKill
     | -- | @create@ on a new registry, killed once the node accepted its boot
       CreateKilled
     | -- | @create@ again, on that interrupted registry
@@ -286,7 +286,7 @@ provocationName p = case p of
     WithoutProof -> "inspect-without-proof"
     WithoutNode -> "inspect-without-node"
     TerminateKilled -> "terminate-killed"
-    UpdateWhileUnresolved -> "update-while-unresolved"
+    UpdateAfterKill -> "update-after-kill"
     CreateKilled -> "create-killed"
     CreateAgain -> "create-again"
     LateCreate -> "create-late"
@@ -305,8 +305,8 @@ provocationPhrase p = case p of
         "Run `singular registry inspect` against a node socket that does not exist"
     TerminateKilled ->
         "Run `singular registry terminate` and kill it once the node accepted its fold"
-    UpdateWhileUnresolved ->
-        "Run `singular registry update` while that fold is unresolved"
+    UpdateAfterKill ->
+        "Run `singular registry update` of another key once that terminate was killed"
     CreateKilled ->
         "Run `singular registry create` on a new registry and kill it once the node accepted its boot"
     CreateAgain -> "Run `singular registry create` again on that registry"
@@ -401,8 +401,16 @@ data Requirement
       body was kept
       -}
       StoppedAfterAcceptance
-    | {- | The killed @terminate@ and a later @inspect@ of its key: the key
-      reads Terminal, and the inspect observed the killed fold from the chain
+    | {- | The killed @terminate@ and the @update@ after it: either the
+      update succeeded, having applied the killed fold to the mirror and
+      observed it, or it was refused before submitting anything, naming the
+      killed fold and its case
+      -}
+      ReconciledOrRefused
+    | {- | The killed @terminate@, the @update@ after it and a later
+      @inspect@ of its key: the key reads Terminal, and the killed fold was
+      applied to the mirror exactly once and observed exactly once across
+      the update's and the inspect's receipts
       -}
       ResolvedFromChain
     | {- | The killed @create@ and a later @inspect@ of its registry: the
@@ -1372,16 +1380,19 @@ processStory = do
                 "a terminate killed once the node accepted its fold stopped there, its body kept"
                 (requirement partialSurvives StoppedAfterAcceptance)
                 (pure <$> action (Provoke TerminateKilled target heldKey))
-        _ <-
+        updated <-
             clause
-                "an update while that fold is unresolved is refused before submitting"
-                (requirement partialSurvives RefusedBeforeSubmitting)
-                (pure <$> action (Provoke UpdateWhileUnresolved target second))
-        _ <-
-            clause
-                "inspect reads the key Terminal: the killed terminate's fold is accepted"
+                "an update of another key then reconciles the fold from the chain and proceeds, or, while the fold is not yet on chain, is refused before submitting, naming the fold and its case"
                 ( bindCheck partialSurvives $ \seen ->
-                    action (Require ResolvedFromChain (take 1 killed <> [seen]))
+                    action (Require ReconciledOrRefused (take 1 killed <> seen))
+                )
+                (pure <$> action (Provoke UpdateAfterKill target second))
+        _ <-
+            clause
+                "inspect reads the key Terminal, the fold applied to the mirror once and observed once across every receipt: the killed terminate's fold is accepted"
+                ( bindCheck partialSurvives $ \seen ->
+                    action
+                        (Require ResolvedFromChain (take 1 killed <> take 1 updated <> [seen]))
                 )
                 (action (Run Inspect target heldKey))
         booted <-
@@ -1674,7 +1685,6 @@ expectedOutcome r = case T.stripPrefix "provoke " (rcAction r) of
     Just "insert-selector-changed" -> "client-refusal"
     Just "inspect-without-proof" -> "proof-missing"
     Just "inspect-without-node" -> "node-unavailable"
-    Just "update-while-unresolved" -> "partial"
     Just "create-again" -> "client-refusal"
     _ -> "a provoked command's outcome"
 
@@ -1730,6 +1740,12 @@ observedKilled killed seen pick =
     toList' v = case v of
         Aeson.Array a -> V.toList a
         _ -> []
+
+-- | The strings of a receipt list value; anything else holds none.
+strings :: Maybe Aeson.Value -> [Text]
+strings v = case v of
+    Just (Aeson.Array a) -> [t | Aeson.String t <- V.toList a]
+    _ -> []
 
 -- | Fail unless two receipt values are present and equal.
 same :: String -> Maybe Aeson.Value -> Maybe Aeson.Value -> [String]
@@ -1987,10 +2003,66 @@ check req rs = case (req, rs) of
                             ]
             )
             <> admitted r
-    (ResolvedFromChain, [killed, seen]) ->
+    (ReconciledOrRefused, [killed, r]) ->
+        withProcess killed $ \pk -> case reverse (peSubmitted pk) of
+            [] -> ["the killed command's journal records no submission"]
+            t : _ -> case rcOutcome r of
+                "success" ->
+                    succeeded "the update" r
+                        <> [ "the update did not apply the killed fold "
+                                <> T.unpack t
+                                <> " to the mirror"
+                           | strings (at [field "reconciled", field "applied"] r) /= [t]
+                           ]
+                        <> [ "the update did not observe the killed fold " <> T.unpack t
+                           | t `notElem` strings (at [field "reconciled", field "observed"] r)
+                           ]
+                "partial" ->
+                    withProcess r (\p -> journalStill p <> nothingSubmitted r p)
+                        <> is
+                            "the refused transaction"
+                            (Aeson.String t)
+                            (at [field "unresolved", field "tx"] r)
+                        <> is
+                            "the refused transaction's case"
+                            "acknowledged"
+                            (at [field "unresolved", field "case"] r)
+                        <> admitted r
+                other ->
+                    [ "the outcome is "
+                        <> show other
+                        <> ", neither success nor partial"
+                    ]
+    (ResolvedFromChain, [killed, updated, seen]) ->
         succeeded "the inspect" seen
             <> is "the key's leaf" "terminal" (at [field "leaf"] seen)
-            <> observedKilled killed seen reverse
+            <> withProcess
+                killed
+                ( \pk -> case reverse (peSubmitted pk) of
+                    [] -> ["the killed command's journal records no submission"]
+                    t : _ ->
+                        let times what xs =
+                                [ "the killed fold "
+                                    <> T.unpack t
+                                    <> " was "
+                                    <> what
+                                    <> " "
+                                    <> show n
+                                    <> " times, not once"
+                                | let n = length (filter (== t) xs)
+                                , n /= 1
+                                ]
+                        in  times
+                                "applied to the mirror"
+                                ( strings (at [field "reconciled", field "applied"] updated)
+                                    <> strings (at [field "mirrorAdvanced"] seen)
+                                )
+                                <> times
+                                    "observed"
+                                    ( strings (at [field "reconciled", field "observed"] updated)
+                                        <> strings (at [field "observed"] seen)
+                                    )
+                )
             <> admitted killed
     (IncompleteCreateRead, [killed, seen]) ->
         outcomeIs seen "partial"
@@ -2065,11 +2137,14 @@ check req rs = case (req, rs) of
                            , RegistryUnchanged
                            , SameRegistry
                            , Delivered
-                           , ResolvedFromChain
+                           , ReconciledOrRefused
                            , IncompleteCreateRead
                            ]
                     then "two"
-                    else if req `elem` [PayloadReplaced, Released] then "three" else "one"
+                    else
+                        if req `elem` [PayloadReplaced, Released, ResolvedFromChain]
+                            then "three"
+                            else "one"
                )
             <> " receipts, given "
             <> show (length rs)
@@ -2585,8 +2660,8 @@ approvedCases =
                     , "INV299-PARTIAL"
                     ,
                         [ "a terminate killed once the node accepted its fold stopped there, its body kept"
-                        , "an update while that fold is unresolved is refused before submitting"
-                        , "inspect reads the key Terminal: the killed terminate's fold is accepted"
+                        , "an update of another key then reconciles the fold from the chain and proceeds, or, while the fold is not yet on chain, is refused before submitting, naming the fold and its case"
+                        , "inspect reads the key Terminal, the fold applied to the mirror once and observed once across every receipt: the killed terminate's fold is accepted"
                         ]
                     )
                 ,
