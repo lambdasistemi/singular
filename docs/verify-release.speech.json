@@ -1,0 +1,66 @@
+{
+  "what-you-run": [
+    {
+      "text": "You have cloned nothing, and you want to know a Singular release is what it says it is before you run it: that the files are the ones published, that the release names the formal model its evidence was checked against, and that the singular command built from it runs a registry from creation to termination. One command answers all three from the downloaded bytes alone, and either passes or refuses by name.",
+      "pause": 500
+    },
+    {
+      "text": "You need Nix with flakes enabled, and nothing else: no checkout, no credentials, no running node. You run the verify release app of the release you are checking, and name that release again as the one to download.",
+      "pause": 400
+    },
+    {
+      "text": "A table lists the three assets it downloads from the release page without logging in: the on-chain archive, with the compiled validators, the off-chain source and its own flake, and the run page of the registry commands; the documentation archive; and the checksum file covering both.",
+      "pause": 400
+    },
+    {
+      "text": "The archive is unpacked into a fresh temporary directory, never inside a checkout. The work option chooses that directory and keeps what the run leaves there: the assets, the extracted archive, and the receipt of every command.",
+      "pause": 500
+    }
+  ],
+  "what-it-checks-in-order": [
+    {
+      "text": "Each check runs only when the ones before it passed, and the first failure ends the run with one line naming why.",
+      "pause": 400
+    },
+    {
+      "text": "A diagram shows the order. Download the three assets. Check the sums of both archives and of every file inside the on-chain archive. Check that the archive names the model commit the conformance evidence reads. Check that the run page, the off-chain flake, the command source and the compiled blueprint are present. Build singular and a development node from the archive's own flake. Then run create, insert, update, terminate and inspect as separate processes on one development network. A failure at each step leads to its own refusal: download failed, sum mismatch, model revision missing or mismatch, member missing, and command failed for the build or the journey.",
+      "pause": 500
+    },
+    {
+      "text": "The model revision is the commit of the application model, the formal specification the conformance evidence reads its statements at. The archive states it as its MODEL-REVISION file, and the verifier compares it with the revision the same release's conformance evidence is compiled against.",
+      "pause": 400
+    },
+    {
+      "text": "The journey is the one on the archive's run page: a registry created, a key inserted, its payload updated and the key terminated, each a separate singular process on a development network the verifier starts and stops itself, with an inspect after every write.",
+      "pause": 500
+    }
+  ],
+  "what-a-refusal-means": [
+    {
+      "text": "A refusal is one line naming it, and the exit status is one.",
+      "pause": 300
+    },
+    {
+      "text": "A table explains each refusal. Download failed: an asset could not be downloaded; check the tag and that you can reach GitHub. Sum mismatch: an archive, the checksum list, or a file inside the on-chain archive disagrees; do not use these files. Model revision missing: the archive states no model revision, as every release before v0.8.0. Model revision mismatch: the archive names a different model commit from the conformance evidence; do not rely on it. Member missing: a file the verification needs is absent. Command failed: building singular, or a command of the journey, failed; the detail names the step and the work directory keeps every receipt.",
+      "pause": 500
+    },
+    {
+      "text": "A release that passes prints its tag, both archive checksums, the model revision, and the directory it was verified in.",
+      "pause": 500
+    }
+  ],
+  "checking-files-you-already-have": [
+    {
+      "text": "If you downloaded the three assets yourself, the assets option points the verifier at their directory, and every check after the download is the same.",
+      "pause": 400
+    },
+    {
+      "text": "From v0.8.0 on, the release workflow verifies every release this way, right after publishing it.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "verify-release.md",
+    "sha256": "d5f20776c8bd5581a3d4a317b4fd2f3e1d12e5a715d77a8dcc0d26f266514ae8"
+  }
+}

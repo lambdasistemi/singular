@@ -19,6 +19,13 @@ command refuses before it reads or submits anything.
 | `--wallet-skey FILE` | `create`, `insert`, `update`, `terminate` | Your payment signing key: a `cardano-cli` text envelope, its `cborHex` value or the 32 key bytes as bare hex, or the 32 raw key bytes. The key funds and signs every write; it is read and never printed — only the address derived from it appears. `inspect` refuses it. |
 | `--confirm-timeout SECONDS` | the four writes | How long each submission may take to appear on chain; ten minutes when not given. Past it the command stops with the submission journalled as unconfirmed and never resubmits it. |
 | `--backend node` or `--backend indexer` | all five | Where the command reads addresses from: the node itself (`node`, the default) or an index the command builds by following the node's chain from its first block (`indexer`). Any other value is refused before anything runs. See [Reading through an index](#reading-through-an-index). |
+| `--registry DIR` | all five | The directory that holds one registry: its identity, its mirror of the chain and its journal. `create` makes it; every later command reads it. |
+| `--blueprint PLUTUS_JSON` | all five | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. |
+| `--seed TXID#IX` or `--preview` | `create` | The output of your wallet the new registry is booted from, which fixes its identity; or, with `--preview`, the identity a seed from your wallet would give, without submitting anything. |
+| `--key HEX` | `insert`, `update`, `terminate`, `inspect` | The registry key the command acts on, as hex bytes. |
+| `--envelope ENVELOPE_JSON` | `insert` | The key's first value: the open-datum envelope, its protected control and its payload. |
+| `--payload DATUM_JSON` | `update` | The key's new payload; the protected control stays as it was. |
+| `--receipt FILE` | all five | Also write the JSON receipt the command prints on standard output to this file. |
 
 The three node settings travel together on a write: naming one or two of
 them is refused as partially configured, and so is a write that names none,
