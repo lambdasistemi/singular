@@ -99,8 +99,10 @@ spec = do
                 , "CS04, a redeemer at a wrong constructor index: live refusal reason not observed for the state and request scripts"
                 , "CG09, a reject while the request is still in phase 1"
                 , "CG10, a fold against a superseded root"
-                , "CG11, CG12 and CG19"
-                , "CG19's two-request reject needs a batch question the driver does not have"
+                , "CG11, an empty fold: the model refuses it for `empty-fold` as the consumer requires, but the driver has no batch question, so it is not compared (class D)."
+                , "CG12, surplus actions and a missing action: not compared, actions are not an input of the model, so it has no counterpart (class D)."
+                , "CG19, a crossed refund allocation and a two-request reject: not compared, the driver has no batch question (class D)."
+                , "The consumer correspondence of CG11, CG12 and CG19 (Q-002) remains unresolved; the three rows stay held."
                 , "not run; live refusal reason not observed and not compared"
                 ]
                 $ \phrase -> book `shouldSatisfy` isInfixOf phrase
@@ -112,6 +114,11 @@ spec = do
             book
                 `shouldSatisfy` (not . isInfixOf "every refusal reason is observed")
             book `shouldSatisfy` (not . isInfixOf "not rendered here")
+            book
+                `shouldSatisfy` ( not
+                                    . isInfixOf
+                                        "not compared while the recorded consumer-model conflict holds them"
+                                )
     it
         "The retirement chapter describes registration and retirement as model edge requests"
         $ do

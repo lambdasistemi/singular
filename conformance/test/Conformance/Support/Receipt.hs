@@ -1523,6 +1523,17 @@ replayChecks = describe "Checking the traced replay a refused request carries" $
             ]
             `shouldSatisfy` isInfixOf
                 "Of the 3 refused requests in this run's chapters, 1 carries a reason its traced replay admitted, 1 names the cause its replay admits none, and 1 records no traced replay."
+    it "counts in the number its counts name" $ do
+        let admitted =
+                (tracedPaymentLive [admittedEntry] (Just "destination"))
+                    { receiptRow = "CG21"
+                    }
+        renderBook [] [admitted, admitted{receiptRow = "CG22"}]
+            `shouldSatisfy` isInfixOf
+                "Of the 2 refused requests in this run's chapters, 2 carry a reason their traced replay admitted, 0 name the cause their replay admits none, and 0 record no traced replay."
+        renderBook [] [admitted]
+            `shouldSatisfy` isInfixOf
+                "Of the 1 refused request in this run's chapters, 1 carries a reason its traced replay admitted, 0 name the cause their replay admits none, and 0 record no traced replay."
   where
     chainOf step = fromMaybe Null (field "chain" step)
 
