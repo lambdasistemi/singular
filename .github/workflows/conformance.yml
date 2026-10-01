@@ -291,6 +291,74 @@ jobs:
             and (.steps[9] | .request.owner as $owner | .witness.signatories | index($owner) != null)
             and (.transactions | length) == 2
           ' "$f" > /dev/null || { echo 'FAIL: CG23 exit evidence moved'; exit 1; }
+      # CG24 (#320): a folder rejects a pending request before its owner's
+      # retraction deadline. Two insertion requests are booked together in a
+      # registry of their own; the first is rejected inside its processing
+      # window, the second inside its owner's retraction window. In each window
+      # a reject refunding the owner one lovelace short and one refunding
+      # another key are refused by the chain and by the model, and the
+      # untampered reject is accepted by both, refunding the owner the deposit
+      # and leaving the registry state as it was. Each refusal is attributed by
+      # the state script's hash; the ledger surfaces no trace, so the model
+      # reason `deposit-returned` is the name the compiled Aiken suite asserts
+      # for the same refunds in the same windows
+      # (onchain/validators/deposit_exits.tests.ak
+      # early_reject_refund_one_lovelace_short_in_the_processing_window_refuses_by_name,
+      # early_reject_refund_to_another_key_in_the_processing_window_refuses_by_name
+      # and their retraction-window twins). Those tests do not establish a
+      # deployed Plutus trace.
+      - name: Run the dedicated CG24 early rejection row as a packaged app
+        run: |
+          set -eo pipefail
+          cd conformance
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          receipts="$(mktemp -d "$RUNNER_TEMP/cg24-receipts.XXXXXX")"
+          log="$RUNNER_TEMP/cg24.log"
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG24 --receipts-dir "$receipts" 2>&1 | tee "$log"
+          head_sha="$(git rev-parse HEAD)"
+          f="$receipts/receipt-CG24.json"
+          test -f "$f" || { echo 'FAIL: missing CG24 receipt'; exit 1; }
+          test "$(wc -c < "$f")" -le 14745 || { echo "FAIL: CG24 receipt exceeds its margin"; exit 1; }
+          state_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "state.state.spend" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
+          # jq expands its own --arg variables inside this program.
+          # shellcheck disable=SC2016
+          nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" --arg state "$state_hash" '
+            def txid: type == "string" and test("^[0-9a-f]{64}$");
+            def text: type == "string" and length > 0;
+            def complete: .comparison == "agrees" and .tamper == null
+              and (.compared | length) == 9 and .perturbation.refused > 0;
+            .row == "CG24"
+            and .verdict == "agrees-with-model"
+            and .base == $base and .dirty == false
+            and (.blueprint | text) and (.node | text)
+            and (.steps | length) == 6
+            and all(.steps[]; .edge == "insertActive" and .exit == "reject")
+            and ([.steps[].tamper] == ["short-by-one","other-address",null,"short-by-one","other-address",null])
+            and ([.steps[].model.outcome] == ["refused","refused","accepted","refused","refused","accepted"])
+            and ([.steps[].chain.outcome] == ["refused","refused","accepted","refused","refused","accepted"])
+            and all(.steps[]; .comparison == "agrees")
+            and all(.steps[] | select(.model.outcome == "accepted"); complete and (.chain.txid | txid))
+            and all(.steps[] | select(.model.outcome == "refused");
+              .model.reason == "deposit-returned"
+              and (.chain.txid | txid)
+              and (.chain.refusal.hashes | index($state) != null)
+              and (.chain.refusal.scripts | index("state") != null))
+            and ([.steps[].registry] | unique | length) == 1
+            and ([.steps[0,1,2].request] | unique | length) == 1
+            and ([.steps[3,4,5].request] | unique | length) == 1
+            and .steps[0].request != .steps[3].request
+            and (.transactions | length) == 2
+          ' "$f" > /dev/null || { echo 'FAIL: CG24 early rejection evidence moved'; exit 1; }
+          # Each reject is placed in a named window; the interpreter refuses to
+          # submit outside it. The run log states each placement with the
+          # transaction's validity interval and the window it lies in.
+          p1="$(grep -c "^placement: CG24 reject in the processing window validity=\[[0-9]*,[0-9]*) window=\[[0-9]*,[0-9]*) tx=[0-9a-f]\{64\}$" "$log" || true)"
+          p2="$(grep -c "^placement: CG24 reject in the owner's retraction window validity=\[[0-9]*,[0-9]*) window=\[[0-9]*,[0-9]*) tx=[0-9a-f]\{64\}$" "$log" || true)"
+          if [ "$p1" -ne 3 ] || [ "$p2" -ne 3 ]; then
+            echo "FAIL: CG24 placements moved: processing=$p1 retraction=$p2, expected 3 and 3"
+            exit 1
+          fi
+          echo 'GREEN = early rejection held: inside the processing window and inside the retraction window, the untampered reject is accepted by the chain and the model, refunding the owner and leaving the state as it was; the short and misdirected refunds are refused by both for deposit-returned. The consumer R9_reject_needs_rejectable stays unmet (CG09, held).'
       # The timing refusals are compared in their own finite-window story.
       # The exit chapter above compares the other retraction admission refusals.
       - name: Run the retraction window as a packaged app

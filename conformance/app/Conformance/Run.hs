@@ -170,6 +170,7 @@ runRows rawRows receiptsDir = do
                         <> issue177Rows
                         <> issue258Rows
                         <> issue205Rows
+                        <> issue320Rows
                         <> sequenceRows
                     )
                 )
@@ -210,6 +211,7 @@ runRows rawRows receiptsDir = do
                             <> issue177Rows
                             <> issue258Rows
                             <> issue205Rows
+                            <> issue320Rows
                             <> sequenceRows
                        )
             ]
@@ -227,6 +229,7 @@ runRows rawRows receiptsDir = do
                                 <> issue177Rows
                                 <> issue258Rows
                                 <> issue205Rows
+                                <> issue320Rows
                                 <> sequenceRows
                           )
             ]
@@ -315,6 +318,7 @@ validateRows raw = do
                         <> issue177Rows
                         <> issue258Rows
                         <> issue205Rows
+                        <> issue320Rows
                         <> sequenceRows
                     )
                 )
@@ -628,5 +632,6 @@ runRowIn env marker row = case row of
     "CG21" -> runCG21 env
     "CG22" -> runCG22 env
     "CG23" -> runCG23 env
+    "CG24" -> runCG24 env
     "sequence" -> runSequence env
     _ -> failWith ("run cannot execute row: " <> row)

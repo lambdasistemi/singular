@@ -24,6 +24,7 @@ module Conformance.Run.CgRows
     , runCG21
     , runCG22
     , runCG23
+    , runCG24
     , runSequence
     , ensurePresentV3
     , setupDelete
@@ -46,6 +47,7 @@ import Conformance.Run.Submit
 import Conformance.Run.Units
 import Conformance.Run.Wallet
 
+import Conformance.Edge.EarlyReject qualified as EarlyRejectStory
 import Conformance.Edge.Exit qualified as ExitStory
 import Conformance.Edge.Register qualified as RegistrationStory
 import Conformance.Edge.Retire qualified as RetirementStory
@@ -1723,7 +1725,8 @@ runCG22 env = do
 -- ---------------------------------------------------------
 
 {- | CG23: a request that is never folded, in two registries of its own: one
-whose requests become rejectable a second after their retract window opens,
+whose rejects are placed after their owner's retraction window, which closes a
+second after it opens,
 where a reject refunding the owner one lovelace short and to another address is
 refused before the untampered reject; and one whose requests stay retractable
 for thirty seconds, where the owner's return one lovelace short, to another
@@ -1763,8 +1766,10 @@ runCG23 env = do
     retraction <- ensureRowCage env "story-retraction" 1_000 30_000
     _ <- largestWalletUtxo (envProv env)
     _ <-
-        runLive
+        runLiveNamed
             env
+            "CG23"
+            []
             ( ExitStory.story
                 (Live.Context rejection genesisAddr)
                 (Live.Context retraction genesisAddr)
@@ -1781,6 +1786,47 @@ runCG23 env = do
             records
         )
     writeStoryReceipt env "CG23" records
+
+{- | CG24 (#320): a folder rejects a pending request before its owner's
+retraction deadline. Two insertion requests are booked together in a registry
+of their own. The first is rejected while it can still be folded, the second
+while its owner can still retract it; in each window a reject refunding the
+owner one lovelace short and one refunding another key are refused before the
+untampered reject of the same request. A processing and a retraction window of
+two minutes each leave time for three rejects inside each.
+-}
+runCG24 :: Env -> IO ()
+runCG24 env = do
+    either
+        failWith
+        pure
+        ( Live.validateLive
+            ( EarlyRejectStory.story
+                (Live.Context "early rejection" "holder wallet")
+            )
+        )
+    writeIORef (envLiveRecords env) []
+    writeIORef (envLiveMeasurements env) []
+    cage <- ensureRowCage env "story-early-rejection" 120_000 120_000
+    let (first, second) = EarlyRejectStory.requests genesisAddr
+    _ <-
+        runLiveNamed
+            env
+            "CG24"
+            [(cage, first), (cage, second)]
+            (EarlyRejectStory.story (Live.Context cage genesisAddr))
+    records <- readIORef (envLiveRecords env)
+    require "CG24 did not compare its six requests" (length records == 6)
+    require
+        "early rejection chapter has a disagreement or unsupported step"
+        ( all
+            ( \case
+                Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
+                _ -> False
+            )
+            records
+        )
+    writeStoryReceipt env "CG24" records
 
 {- | An unnamed seven-edge program using exactly the chapter interpreter.
 The receipt is required by the running book before it renders success.

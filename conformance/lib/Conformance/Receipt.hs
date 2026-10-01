@@ -920,11 +920,13 @@ loadReceipts dir = do
                     Left
                         (path <> ": retraction window requires before, accepted control, after")
         ("CG23", Just steps) -> stepsComplete path r steps
+        ("CG24", Just steps) -> stepsComplete path r steps
         ("sequence", Just steps) -> stepsComplete path r steps
         ("CG21", Nothing) -> Left (path <> ": registration names no live steps")
         ("CG22", Nothing) -> Left (path <> ": retirement names no live steps")
         ("CG07", Nothing) -> Left (path <> ": retraction window names no live steps")
         ("CG23", Nothing) -> Left (path <> ": exit chapter names no live steps")
+        ("CG24", Nothing) -> Left (path <> ": early rejection names no live steps")
         ("sequence", Nothing) -> Left (path <> ": sequence names no live steps")
         (_, Nothing) -> Right r
         (_, Just _) -> Left (path <> ": only live stories carry steps")
