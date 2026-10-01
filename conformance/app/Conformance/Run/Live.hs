@@ -932,7 +932,7 @@ foldingBuilder env cage tid exit alteration placement request named before elsew
         if exit == Live.Fold
             then storyWitness env cfg key (Live.requestWallet request)
             else pure Nothing
-    (actions, root, lower) <- case exit of
+    (actions, root, lower, reach) <- case exit of
         Live.Reject -> do
             placed <-
                 maybe
@@ -940,7 +940,7 @@ foldingBuilder env cage tid exit alteration placement request named before elsew
                     pure
                     placement
             let (_, submittedAt) = requestDatumOf (snd named)
-                (opens, _) =
+                (opens, closes) =
                     Live.placementWindow
                         placed
                         submittedAt
@@ -948,8 +948,9 @@ foldingBuilder env cage tid exit alteration placement request named before elsew
                         (stateRetractTime before)
             -- A window that has not opened is waited for; the lower bound falls
             -- inside it. The upper bound is set when the transaction is built,
-            -- and the whole interval is checked against the window before it is
-            -- submitted.
+            -- far enough ahead to outlast building and submitting it, and never
+            -- past a window that closes; the whole interval is checked against
+            -- the window before it is submitted.
             sleepUntil (opens + 500)
             lower <-
                 Cage.withView (envProv env) $ \v ->
@@ -958,10 +959,19 @@ foldingBuilder env cage tid exit alteration placement request named before elsew
                 ( [Types.Rejected]
                 , Root (unOnChainRoot (stateRoot before))
                 , Just lower
+                , \now ->
+                    map
+                        (maybe id (\c -> min (c - 1_000)) closes . (now +))
+                        [30_000, 20_000, 15_000, 8_000]
                 )
         _ -> do
             (proofs, root) <- storyProofs env cage tid [named]
-            pure (map Update proofs, root, Nothing)
+            pure
+                ( map Update proofs
+                , root
+                , Nothing
+                , \now -> [now + 8_000, now + 7_500, now + 7_000]
+                )
     stateUtxo <- cageStateUtxo env cage
     (pot, funder) <- collateralPotWithChange env
     let initialUnits = ExUnits 0 0
@@ -994,7 +1004,7 @@ foldingBuilder env cage tid exit alteration placement request named before elsew
             upper <-
                 Cage.withView
                     (envProv env)
-                    (\v -> trySlots v [now + 8_000, now + 7_500, now + 7_000])
+                    (`trySlots` reach now)
             transaction <-
                 assembleFoldWithFee
                     env
