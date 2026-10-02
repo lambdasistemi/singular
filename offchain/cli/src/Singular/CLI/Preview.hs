@@ -21,11 +21,12 @@ confirmation: its bodies are built for this moment — a booking carries the
 time it was built — and nothing it prints is an observation of a chain
 effect.
 
-An insertion or a termination is two transactions and the second, the
-fold, exists only once the booking is on chain. The preview measures the
-booking, and bounds the fold from the network's parameters; the writing
-command measures the fold after the booking confirms and before it submits
-it.
+An insertion or a termination is booked by one transaction and folded by
+another, which exists only once the booking is on chain and is built by
+`registry fold` (or by the booking command given its fold switch). The
+preview measures the booking, and bounds the fold from the network's
+parameters; the fold is measured when it is built, after the booking
+confirms and before it is signed.
 -}
 module Singular.CLI.Preview
     ( Kind (..)
@@ -269,8 +270,8 @@ foldBound :: PParams ConwayEra -> Live -> Outlay -> Value
 foldBound pp live outlay =
     object
         [ "status"
-            .= ( "measured after the booking confirms and before the fold is \
-                 \submitted; bounded here from the network's parameters"
+            .= ( "measured when the fold is built, after the booking confirms and \
+                 \before it is signed; bounded here from the network's parameters"
                     :: Text
                )
         , "feeBound" .= outlayFoldBound outlay

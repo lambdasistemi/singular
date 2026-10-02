@@ -1,7 +1,7 @@
 # Connecting singular to a node
 
 You run the `singular` registry commands — `create`, `insert`, `update`,
-`terminate` and `inspect` — against a cardano node you already run: a
+`terminate`, `fold` and `inspect` — against a cardano node you already run: a
 public test network's node, or a development network you started yourself.
 You tell each command where the node is and which network it carries; the
 command reads the chain through that node, signs with your key, submits,
@@ -14,22 +14,24 @@ command refuses before it reads or submits anything.
 
 | Setting | Commands | What it is |
 | --- | --- | --- |
-| `--node-socket PATH` | all five | The node's node-to-client socket, the file `cardano-node` creates with `--socket-path`. |
-| `--network-magic N` | all five | The magic of the network the node runs: 1 for preprod, 2 for preview, 42 for the factory development network. Mainnet's magic is refused for writes. |
-| `--wallet-skey FILE` | `create`, `insert`, `update`, `terminate` | Your payment signing key: a `cardano-cli` text envelope, its `cborHex` value or the 32 key bytes as bare hex, or the 32 raw key bytes. The key funds and signs every write; it is read and never printed — only the address derived from it appears. `inspect` refuses it. |
-| `--confirm-timeout SECONDS` | the four writes | How long each submission may take to appear on chain; ten minutes when not given. Past it the command stops with the submission journalled as unconfirmed and never resubmits it. |
-| `--backend node` or `--backend indexer` | all five | Where the command reads addresses from: the node itself (`node`, the default) or an index the command builds by following the node's chain from its first block (`indexer`). Any other value is refused before anything runs. See [Reading through an index](#reading-through-an-index). |
-| `--registry DIR` | all five | The directory that holds one registry: its identity, its mirror of the chain and its journal. `create` makes it; every later command reads it. |
-| `--blueprint PLUTUS_JSON` | all five | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. |
+| `--node-socket PATH` | all six | The node's node-to-client socket, the file `cardano-node` creates with `--socket-path`. |
+| `--network-magic N` | all six | The magic of the network the node runs: 1 for preprod, 2 for preview, 42 for the factory development network. Mainnet's magic is refused for writes. |
+| `--wallet-skey FILE` | `create`, `insert`, `update`, `terminate`, `fold` | Your payment signing key: a `cardano-cli` text envelope, its `cborHex` value or the 32 key bytes as bare hex, or the 32 raw key bytes. The key funds and signs every write; it is read and never printed — only the address derived from it appears. `inspect` refuses it. |
+| `--confirm-timeout SECONDS` | the five writes | How long each submission may take to appear on chain; ten minutes when not given. Past it the command stops with the submission journalled as unconfirmed and never resubmits it. |
+| `--backend node` or `--backend indexer` | all six | Where the command reads addresses from: the node itself (`node`, the default) or an index the command builds by following the node's chain from its first block (`indexer`). Any other value is refused before anything runs. See [Reading through an index](#reading-through-an-index). |
+| `--registry DIR` | all six | The directory that holds one registry: its identity, its mirror of the chain and its journal. `create` makes it; every later command reads it. |
+| `--blueprint PLUTUS_JSON` | all six | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. |
 | `--wallet-address ADDR` | `create`, `insert`, `update`, `terminate` | Your wallet's public address, in place of the signing key on a preview: the command reads that wallet and prints what it would submit, and signs, submits and journals nothing. |
 | `--seed TXID#IX` or `--preview` | `create` | The output of your wallet the new registry is booted from, which fixes its identity; or, with `--preview`, the identity a seed from your wallet would give, without submitting anything. |
 | `--preview` | `insert`, `update`, `terminate` | Build and measure what the command would submit — fee, measured units, stated collateral, outlay — from the wallet a public address names, and print it; nothing is signed, submitted or journalled. |
-| `--fund-input TXID#IX` | `insert`, `update`, `terminate` | The wallet output that funds and collateralises the write. `create` and `inspect` refuse it rather than ignore it. |
-| `--max-outlay LOVELACE` | `insert`, `update`, `terminate` | The most the write may put out of your wallet. A booking or update past it is not signed; an insert or terminate whose fold, built after its booking confirms, costs more than the booking left of it stops partial, its request pending and the fold unsigned. `create` and `inspect` refuse it. |
+| `--fund-input TXID#IX` | `insert`, `update`, `terminate`, `fold` | The wallet output that funds and collateralises the write. `create` and `inspect` refuse it rather than ignore it. |
+| `--max-outlay LOVELACE` | `insert`, `update`, `terminate`, `fold` | The most the write may put out of your wallet. A booking, an update or a fold past it is not signed; an insert or terminate given `--fold` whose fold, built after its booking confirms, costs more than the booking left of it stops partial, its request pending and the fold unsigned. `create` and `inspect` refuse it. |
+| `--fold` | `insert`, `terminate` | Also fold the request this command just booked, in the same command and by the same routine `registry fold` runs. Without it the command books and stops. A preview and `update` refuse it. |
+| `--request TXID#IX` | `fold` | The pending request the caller expects to fold. The fold is refused when it is not the one pending; without it the fold takes the one pending request. |
 | `--key HEX` | `insert`, `update`, `terminate`, `inspect` | The registry key the command acts on, as hex bytes. |
 | `--envelope ENVELOPE_JSON` | `insert` | The key's first value: the open-datum envelope, its protected control and its payload. |
 | `--payload DATUM_JSON` | `update` | The key's new payload; the protected control stays as it was. |
-| `--receipt FILE` | all five | Also write the JSON receipt the command prints on standard output to this file. |
+| `--receipt FILE` | all six | Also write the JSON receipt the command prints on standard output to this file. |
 
 The three node settings travel together on a write: naming one or two of
 them is refused as partially configured, and so is a write that names none,
@@ -44,6 +46,57 @@ singular registry insert --registry ./reg --blueprint plutus.json \
   --node-socket /run/cardano/node.socket --network-magic 1 \
   --wallet-skey ~/keys/payment.skey
 ```
+
+## Booking and folding
+
+An `insert` or a `terminate` books a request and stops. The request waits at
+the registry; the command's receipt names it, the booking's transaction, and
+the fold deadline — the request's submission time plus the registry's
+processing time — as a POSIX time, and as a slot when the node converts it. Nothing is folded, and the
+registry's root, its mirror and its saved state do not move.
+
+`registry fold` folds that request. It is an ordinary command: it signs and
+funds with the wallet it is given, journals its own transactions, and may be
+run by any wallet, not only the one that booked. The registry directory is the
+shared state: the booking leaves there the envelope an insertion delivers, and
+the fold reads it back and checks it against the hash the request names before
+it builds anything.
+
+```mermaid
+sequenceDiagram
+    participant R as Requester's wallet
+    participant D as Registry directory
+    participant F as Folder's wallet
+    participant N as Node
+    R->>N: insert or terminate: the booking
+    R->>D: an insertion's envelope
+    N-->>R: request pending, fold deadline
+    F->>D: registry fold reads the pending request
+    F->>N: the fold, signed and funded by the folder
+    F->>D: journal, mirror and saved state follow the fold
+```
+
+The registry's fold takes every pending request, so a fold is built only while
+exactly one is pending. Before anything is signed the command refuses, naming
+the reason: nothing pending; the request named by `--request` is not the one
+pending; more than one pending, each named; an insertion whose envelope is not
+in the registry directory or is not the one the request names; an edge other
+than an insertion or a termination; the outlay past `--max-outlay`; a funding
+output that is not the wallet's; and a request whose processing deadline has
+passed or is within thirty seconds of passing, judged on the host's clock and named by its time, and by its slot when the node converts it.
+Run after its own booking by `--fold`, a fold that cannot be built or signed
+stops the command partial, naming the request that stays pending.
+
+That check is the fast refusal, not the proof. After the fold is built and
+before it is signed, its validity upper bound is judged again from the built
+body and the host clock: the bound must be at or before the slot of the
+deadline when the node converts it, or, when it does not, must begin at or
+before the deadline time; a bound the node cannot convert, or a clock that has
+meanwhile come within the margin, is refused unsigned, with the bound, the
+clock and the deadline in the receipt.
+
+The deadline the fold is judged against is the one the booking's receipt
+states. A fold refused for it submitted nothing, and its request stays pending.
 
 ## One path to every node
 
@@ -180,7 +233,7 @@ submitted.
 
 ## Test-harness hooks
 
-You never set these. The released `singular` reads eleven environment
+You never set these. The released `singular` reads twelve environment
 variables whose only purpose is to let the project's own tests stop a
 command at an exact point — to inspect it there, kill it there, or make it
 meet no answer from the node — and check what it leaves behind. When none
@@ -206,6 +259,7 @@ flowchart LR
 | `SINGULAR_HARNESS_HOLD_AFTER_SEND` | a submission sent, its answer not yet journalled |
 | `SINGULAR_HARNESS_HOLD_AFTER_SUBMIT` | the node's acceptance of a submission journalled |
 | `SINGULAR_HARNESS_HOLD_STEP` | names the submission step (for example `boot`, `fold`, `update`) at which the two holds above stop; they stop at no other step, and at none when it is unset |
+| `SINGULAR_HARNESS_HOLD_BEFORE_BUILD` | a fold that has passed its deadline guard, before it is built |
 | `SINGULAR_HARNESS_HOLD_BEFORE_COMMIT` | a fold's local commit about to start |
 | `SINGULAR_HARNESS_HOLD_AFTER_MIRROR` | a fold's mirror saved, the rest of its local commit not yet |
 | `SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED` | a fold committed locally, its observation not yet journalled |

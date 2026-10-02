@@ -18,14 +18,21 @@ Each step below is a separate process against one development node, and
 each prints one JSON receipt. The saved registry directory carries the
 identity from one process to the next.
 
+An `insert` or a `terminate` books and stops: its request waits at the
+registry, and its receipt names the request and the deadline by which it must
+be folded. The fold is its own command, `registry fold`, run with whichever
+wallet folds. Every command signs with the wallet it is given.
+
 ```mermaid
 flowchart LR
-  Create[create] --> Insert[insert]
-  Insert --> Inspect1[inspect: Active]
+  Create[create] --> Insert[insert: booked, pending]
+  Insert --> Fold1[fold]
+  Fold1 --> Inspect1[inspect: Active]
   Inspect1 --> Update[update]
   Update --> Inspect2[inspect: new payload, same root]
-  Inspect2 --> Terminate[terminate]
-  Terminate --> Inspect3[inspect: Terminal, deposit released]
+  Inspect2 --> Terminate[terminate: booked, pending]
+  Terminate --> Fold2[fold]
+  Fold2 --> Inspect3[inspect: Terminal, deposit released]
 ```
 
 ## Build the commands
@@ -43,11 +50,12 @@ blueprint=../onchain/plutus.json
 
 The development node is private and generated: a fresh chain whose
 genesis funds the wallets you name. Its keys are 32 random bytes in hex;
-they fund nothing outside this node.
+they fund nothing outside this node. Alice books, and Bob folds.
 
 ```bash
 od -An -tx1 -N32 /dev/urandom | tr -d ' \n' > alice.skey
-"$devnet" --fund-skey alice.skey --fund-outputs 4 --fund-lovelace 2000000000 > devnet.out &
+od -An -tx1 -N32 /dev/urandom | tr -d ' \n' > bob.skey
+"$devnet" --fund-skey alice.skey --fund-skey bob.skey --fund-outputs 6 --fund-lovelace 2000000000 > devnet.out &
 sock="$(head -n1 devnet.out)"   # the node's socket, once it is printed
 node=(--node-socket "$sock" --network-magic 42)
 ```
@@ -59,27 +67,39 @@ node=(--node-socket "$sock" --network-magic 42)
 "$singular" registry create --preview --registry reg --blueprint "$blueprint" "${node[@]}" --wallet-skey alice.skey
 "$singular" registry create --seed TXID#IX --registry reg --blueprint "$blueprint" "${node[@]}" --wallet-skey alice.skey
 
-# 2. Insert a key under an envelope naming this registry and Alice as controller.
+# 2. Book an insertion of a key under an envelope naming this registry and Alice as
+#    controller. The request stays pending; the receipt names it and its fold deadline.
 "$singular" registry insert --registry reg --blueprint "$blueprint" --key 616c696365 \
   --envelope envelope.json "${node[@]}" --wallet-skey alice.skey
 
-# 3. Read it back: no signing key, nothing submitted.
+# 3. Fold it, before that deadline. Any wallet may fold: here, Bob's.
+"$singular" registry fold --registry reg --blueprint "$blueprint" "${node[@]}" --wallet-skey bob.skey
+
+# 4. Read it back: no signing key, nothing submitted.
 "$singular" registry inspect --registry reg --blueprint "$blueprint" --key 616c696365 "${node[@]}"
 
-# 4. Replace the payload.
+# 5. Replace the payload.
 "$singular" registry update --registry reg --blueprint "$blueprint" --key 616c696365 \
   --payload payload.json "${node[@]}" --wallet-skey alice.skey
 
-# 5. Read it back.
+# 6. Read it back.
 "$singular" registry inspect --registry reg --blueprint "$blueprint" --key 616c696365 "${node[@]}"
 
-# 6. Terminate the key: the fold burns its token and releases the deposit.
+# 7. Book the termination of the key.
 "$singular" registry terminate --registry reg --blueprint "$blueprint" --key 616c696365 \
   "${node[@]}" --wallet-skey alice.skey
 
-# 7. Read it back.
+# 8. Fold it: the fold burns the token and releases the deposit.
+"$singular" registry fold --registry reg --blueprint "$blueprint" "${node[@]}" --wallet-skey bob.skey
+
+# 9. Read it back.
 "$singular" registry inspect --registry reg --blueprint "$blueprint" --key 616c696365 "${node[@]}"
 ```
+
+Run the fold of a request before the deadline its booking's receipt names
+(`foldDeadline`); a later fold is refused by `singular`, naming the deadline,
+before anything is signed. Giving `insert` or `terminate` the `--fold` switch
+books and folds in one command, with one wallet.
 
 The envelope is Plutus data in the detailed JSON schema: constructor 0
 over the control and the payload, the control being constructor 0 over
@@ -96,19 +116,28 @@ payload, like the one `update` writes, is any Plutus data.
    and the published reference outputs. Every later command derives the
    pins again from this archive's blueprint and the saved seed, and
    refuses a registry directory whose saved pins differ.
-2. **`singular registry insert`** books the insertion through the application and folds it:
-   the key's one active token lands in an output at the application,
-   carrying your envelope inline.
-3. **`singular registry inspect`** reads the key `active`, with the holding, its envelope and
+2. **`singular registry insert`** books the insertion through the application: its
+   receipt names the pending request, the booking's transaction, the envelope kept
+   for the fold and `foldDeadline`, the time (and, where the node converts it, the slot) by which the fold must
+   happen. Nothing is folded, and the registry's root and your saved state do not
+   move.
+3. **`singular registry fold`** folds that one pending request with the wallet that runs
+   it, which need not be the wallet that booked: the key's one active token lands in
+   an output at the application, carrying your envelope inline. Its receipt names the
+   request, the key, the edge, the fold's transaction, the output it delivered, the
+   new root, the host clock at which it was decided and how many milliseconds remained before the deadline.
+4. **`singular registry inspect`** reads the key `active`, with the holding, its envelope and
    payload, the registry's root and the chain point it read at.
-4. **`singular registry update`** replaces only the payload. The receipt's root equals the
+5. **`singular registry update`** replaces only the payload. The receipt's root equals the
    root before it.
-5. **`singular registry inspect`** shows the new payload, the same control and deposit, and
+6. **`singular registry inspect`** shows the new payload, the same control and deposit, and
    the same root.
-6. **`singular registry terminate`** books the termination against the live holding and
-   folds it: the token is burned and the protected deposit is paid back
-   to the controller together with everything else the fold owes you.
-7. **`singular registry inspect`** reads the key `terminal`, with no holding.
+7. **`singular registry terminate`** books the termination against the live holding:
+   its receipt names the pending request, the live output the fold will release and
+   the deposit.
+8. **`singular registry fold`** folds it: the token is burned and the protected deposit is
+   paid back to the controller together with everything else the fold owes you.
+9. **`singular registry inspect`** reads the key `terminal`, with no holding.
 
 A command that stops prints why, in one outcome class with its own exit
 status: `client-refusal` (nothing submitted), `ledger-refusal`,
@@ -124,7 +153,9 @@ overwrites on its own:
 - **partial** names what was left behind. An insertion of a key the
   registry already holds is booked by the application and then cannot be
   folded: the receipt names the pending request, and its deposit stays
-  locked in it.
+  locked in it. A fold that is asked for after its request's deadline, or
+  that the registry cannot take, is a **client-refusal** that submitted
+  nothing; the request stays pending.
 - **timeout** names the submitted transaction when its confirmation did
   not arrive within `--confirm-timeout` seconds (default 600). The entry
   stays unresolved, and every later write on that registry refuses until
@@ -172,12 +203,13 @@ the writing command measures it after the booking confirms and before it
 submits it. A preview is not a confirmation: its bodies are built for one
 moment.
 
-`insert`, `update` and `terminate` take `--fund-input TXID#IX`, the wallet output
-that funds and collateralises the write, and `--max-outlay LOVELACE`. A booking
-or an update past it is not signed. An insert or terminate also folds after its
-booking confirms, and its fold, built then, is signed only if it costs no more
-than the booking left of the allowance; past that, the command stops partial,
-naming its pending request, and nothing more is signed or sent. `create` and
+`insert`, `update`, `terminate` and `fold` take `--fund-input TXID#IX`, the wallet
+output that funds and collateralises the write, and `--max-outlay LOVELACE`. A
+booking, an update or a fold past it is not signed. An insert or terminate given
+`--fold` also folds after its booking confirms, and its fold, built then, is signed
+only if it costs no more than the booking left of the allowance; past that, the
+command stops partial, naming its pending request, and nothing more is signed or
+sent. `create` and
 `inspect` enforce neither flag, so they refuse both by name, before any key is
 read, rather than ignore them. Each transaction a command builds rests on one
 snapshot of the network's protocol parameters, read once for it: the booking's

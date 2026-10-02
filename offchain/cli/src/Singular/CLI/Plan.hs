@@ -121,6 +121,8 @@ data Booked = Booked
     , bookedDestination :: (ByteString, ByteString)
     , bookedDeposit :: Integer
     , bookedApproval :: BookingApproval
+    , bookedPreimage :: Maybe Envelope
+    -- ^ The envelope the fold will deliver, kept for it before the booking is submitted
     }
 
 -- | An insertion of @key@ under @envelope@, by @caller@.
@@ -154,6 +156,7 @@ planInsert live caller key envelope = do
             { bookedEdge = edgeInsertActive
             , bookedDestination = insertDestination Testnet (applied s) envelope
             , bookedDeposit = ctlDeposit c
+            , bookedPreimage = Just envelope
             , bookedApproval =
                 (insertApproval Testnet (applied s) stateIn envelope)
                     { baScriptReference = Just appRef
@@ -180,6 +183,7 @@ planTerminate live caller key outs = do
             { bookedEdge = edgeUpdateTerminal
             , bookedDestination = terminateDestination
             , bookedDeposit = edgeDeposit
+            , bookedPreimage = Nothing
             , bookedApproval =
                 (terminateApproval (applied s) stateIn liveIn key (ctlController c))
                     { baScriptReference = Just appRef

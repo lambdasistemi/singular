@@ -37,6 +37,7 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
+import Data.Either (fromLeft)
 import Data.List (isInfixOf, sort)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
@@ -134,8 +135,8 @@ commandLine = describe "the command line" $ do
         parseCommand ["--help"] `shouldBe` Right Help
         parseCommand ["registry", "--help"] `shouldBe` Right Help
         parseCommand [] `shouldBe` Right Help
-    it "names the five commands and only them in its usage" $ do
-        forM5 ["create", "insert", "update", "terminate", "inspect"] $ \c ->
+    it "names the six commands and only them in its usage" $ do
+        forM5 ["create", "insert", "update", "terminate", "fold", "inspect"] $ \c ->
             usage `shouldSatisfy` isInfixOf ("singular registry " <> c)
         usage `shouldNotSatisfy` isInfixOf "registry delete"
     it "refuses a command it does not support" $
@@ -177,6 +178,7 @@ commandLine = describe "the command line" $ do
                         , entryFund = Nothing
                         , entryMaxOutlay = Nothing
                         , entryReceipt = Nothing
+                        , entryFold = False
                         }
                 )
     it "refuses an insert without its envelope" $
@@ -245,6 +247,7 @@ commandLine = describe "the command line" $ do
                 `shouldBe` Right (Just 0)
             insert ["--confirm-timeout", "soon"]
                 `shouldBe` Left (BadValue "--confirm-timeout" "is not a whole number of seconds")
+    foldRows
     preview
     it "refuses a write against mainnet" $
         parseCommand
@@ -289,10 +292,12 @@ commandLine = describe "the command line" $ do
             <> node
             <> wallet
         , ["registry", "terminate", "--key", "6b6579"] <> reg <> node <> wallet
+        , ["registry", "fold"] <> reg <> node <> wallet
         , ["registry", "inspect", "--key", "6b6579"] <> reg <> node
         ]
     forM5 xs f = mapM_ f xs
     preview = previewRows
+    foldRows = foldCommandRows
     writeSettings =
         WriteSettings
             { writeNode = NodeSettings "/run/node.socket" 42
@@ -1152,6 +1157,7 @@ previewRows = describe "--preview" $ do
                         , entryFund = Nothing
                         , entryMaxOutlay = Nothing
                         , entryReceipt = Nothing
+                        , entryFold = False
                         }
                 )
     it "refuses a signing key beside --preview before anything is read" $
@@ -1294,3 +1300,151 @@ previewRows = describe "--preview" $ do
     isLeftContaining needle = \case
         Left why -> needle `isInfixOf` why
         Right _ -> False
+
+-- ---------------------------------------------------------
+-- Booking and folding as separate commands
+-- ---------------------------------------------------------
+
+foldCommandRows :: Spec
+foldCommandRows = describe "booking and folding as separate commands" $ do
+    let fold extra =
+            parseCommand (["registry", "fold"] <> reg <> node <> wallet <> extra)
+        insertWith extra =
+            parseCommand
+                ( ["registry", "insert", "--key", "6b6579", "--envelope", "/e.json"]
+                    <> reg
+                    <> node
+                    <> wallet
+                    <> extra
+                )
+        terminateWith extra =
+            parseCommand
+                ( ["registry", "terminate", "--key", "6b6579"]
+                    <> reg
+                    <> node
+                    <> wallet
+                    <> extra
+                )
+        outRef n = either error id (parseOutRef (T.pack (replicate 64 n <> "#1")))
+        refusesBadValue flag = \case
+            Left (BadValue name _) -> name == flag
+            _ -> False
+        refusesNaming flag word = \case
+            Left (BadValue name why) -> name == flag && word `isInfixOf` why
+            _ -> False
+        writes =
+            WriteSettings
+                { writeNode = NodeSettings "/run/node.socket" 42
+                , writeWalletKey = "/keys/payment.skey"
+                , writeConfirmTimeout = Nothing
+                }
+    it "reads a fold with its registry, node and wallet and nothing else" $
+        fold []
+            `shouldBe` Right
+                ( Fold
+                    FoldArgs
+                        { foldRegistry = "/srv/reg"
+                        , foldBlueprint = "/srv/plutus.json"
+                        , foldWrite = writes
+                        , foldRequest = Nothing
+                        , foldFund = Nothing
+                        , foldMaxOutlay = Nothing
+                        , foldReceipt = Nothing
+                        }
+                )
+    it
+        "reads the request, the funding output, the outlay and the receipt a fold names"
+        $ fold
+            [ "--request"
+            , replicate 64 'a' <> "#0"
+            , "--fund-input"
+            , replicate 64 'c' <> "#1"
+            , "--max-outlay"
+            , "3000000"
+            , "--receipt"
+            , "/r.json"
+            ]
+            `shouldBe` Right
+                ( Fold
+                    FoldArgs
+                        { foldRegistry = "/srv/reg"
+                        , foldBlueprint = "/srv/plutus.json"
+                        , foldWrite = writes
+                        , foldRequest =
+                            Just
+                                (either error id (parseOutRef (T.pack (replicate 64 'a' <> "#0"))))
+                        , foldFund = Just (outRef 'c')
+                        , foldMaxOutlay = Just 3_000_000
+                        , foldReceipt = Just "/r.json"
+                        }
+                )
+    it "refuses a request that is not a transaction output reference" $
+        fold ["--request", "not-a-request"]
+            `shouldBe` Left
+                ( BadValue
+                    "--request"
+                    (fromLeft "parsed" (parseOutRef "not-a-request"))
+                )
+    it
+        "refuses a fold with no node and wallet rather than starting a node"
+        $ parseCommand (["registry", "fold"] <> reg)
+            `shouldSatisfy` isLeftWith (\case UnsafeSettings _ -> True; _ -> False)
+    it "refuses, by name, what a fold decides from its request"
+        $ forM_
+            [ ("--key", ["--key", "6b6579"])
+            , ("--envelope", ["--envelope", "/e.json"])
+            , ("--payload", ["--payload", "/p.json"])
+            , ("--preview", ["--preview"])
+            , ("--fold", ["--fold"])
+            ]
+        $ \(flag, extra) -> fold extra `shouldSatisfy` refusesBadValue flag
+    it "books only unless --fold is given, on insert and on terminate" $ do
+        fmap entryFoldOf (insertWith []) `shouldBe` Right False
+        fmap entryFoldOf (insertWith ["--fold"]) `shouldBe` Right True
+        fmap entryFoldOf (terminateWith []) `shouldBe` Right False
+        fmap entryFoldOf (terminateWith ["--fold"]) `shouldBe` Right True
+    it "refuses --fold where nothing is booked to be folded, by name" $ do
+        parseCommand
+            ( [ "registry"
+              , "update"
+              , "--key"
+              , "6b6579"
+              , "--payload"
+              , "/p.json"
+              , "--fold"
+              ]
+                <> reg
+                <> node
+                <> wallet
+            )
+            `shouldSatisfy` refusesNaming "--fold" "insert and terminate"
+        parseCommand
+            ( [ "registry"
+              , "insert"
+              , "--preview"
+              , "--key"
+              , "6b6579"
+              , "--envelope"
+              , "/e.json"
+              , "--fold"
+              ]
+                <> reg
+                <> node
+                <> ["--wallet-address", "addr_test1"]
+            )
+            `shouldSatisfy` refusesNaming "--fold" "preview"
+    it "refuses --request on every command but fold, by name" $ do
+        insertWith ["--request", replicate 64 'a' <> "#0"]
+            `shouldSatisfy` refusesNaming "--request" "registry fold"
+        terminateWith ["--request", replicate 64 'a' <> "#0"]
+            `shouldSatisfy` refusesNaming "--request" "registry fold"
+    it "describes fold and --fold in its usage" $ do
+        usage
+            `shouldSatisfy` isInfixOf "singular registry fold --registry DIR"
+        usage `shouldSatisfy` isInfixOf "--request TXID#IX"
+        usage `shouldSatisfy` isInfixOf "[--fold]"
+  where
+    entryFoldOf = \case
+        Insert e -> entryFold e
+        Terminate e -> entryFold e
+        _ -> error "not an entry command"

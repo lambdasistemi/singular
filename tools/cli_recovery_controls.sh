@@ -253,7 +253,7 @@ envelope() {
           {bytes:$a},{bytes:$k},{bytes:$c},{int:2000000}]},
         {map:[{k:{bytes:"6e616d65"},v:{bytes:"616c696365"}}]}]}' >"$1"
 }
-insert_of() { args=(registry insert --key "$1" --envelope "$work/$1.json" "${common[@]}" "${node[@]}" "${alice[@]}"); }
+insert_of() { args=(registry insert --fold --key "$1" --envelope "$work/$1.json" "${common[@]}" "${node[@]}" "${alice[@]}"); }
 
 # ------------------------------------------------------------------
 # The registry
@@ -384,7 +384,7 @@ clause "the journal was only appended to and no body changed" appended_only s2
 control="killed after the mirror"
 snap s3
 reached=0
-held terminate-a SINGULAR_HARNESS_HOLD_AFTER_MIRROR registry terminate --key 6b0a \
+held terminate-a SINGULAR_HARNESS_HOLD_AFTER_MIRROR registry terminate --fold --key 6b0a \
   "${common[@]}" "${node[@]}" "${alice[@]}" || reached=1
 clause "the terminate was killed after its mirror was saved, before state.json" is_equal "$reached" 0
 saved_fold="$(fold_since s3)"

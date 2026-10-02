@@ -9,7 +9,15 @@
 # two generated wallets (alice, bob), and every registry command is a
 # separate process against it:
 #
-#   create -> insert -> inspect -> update -> inspect -> terminate -> inspect
+#   create -> insert -> fold -> inspect -> update -> inspect
+#          -> terminate -> fold -> inspect
+#
+# An insert or a terminate books and leaves its request pending; `registry
+# fold` folds it, signed by a wallet other than the booking's. The combined
+# `--fold` form is run where a control needs the fold to follow its own
+# booking in one process. The journey also books a request and lets its
+# processing deadline pass: the late fold is refused by the client, by name,
+# before anything is signed.
 #
 # Each process leaves one JSON receipt. Assertions read those receipts,
 # the target directory's own journal and files, and nothing else. A
@@ -152,7 +160,7 @@ fi
 # One persistent development node
 # ------------------------------------------------------------------
 "$devnet" --fund-skey "$work/alice.skey" --fund-skey "$work/bob.skey" \
-  --fund-outputs 4 --fund-lovelace 2000000000 \
+  --fund-outputs 6 --fund-lovelace 2000000000 \
   >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
 # The node is the devnet runner's child: reap both, so no node of this
@@ -218,6 +226,31 @@ refused() {
     || fail "$name: the target's journal moved; a refusal submitted something"
 }
 field() { jq -r "$2" "$receipts/$1.json"; }
+# local_files: the bytes of the files a booking must leave alone — the mirror
+# and the state it commits to — as one digest.
+local_files() { (cd "$reg" && sha256sum registry.mirror.json state.json | sha256sum | cut -d' ' -f1); }
+# booked NAME: a booking-only receipt names its pending request (the
+# booking's own output 0), the requester, and the deadline by which it must be
+# folded, as a POSIX time and, when the node converts it, a slot; it states no fold and no root.
+booked() {
+  jq -e '(.request | test("^[0-9a-f]{64}#0$")) and .request == (.booking + "#0")
+      and (.requester | test("^[0-9a-f]{56}$"))
+      and (.foldDeadline.posixMs | type == "number")
+      and ((.foldDeadline.slot | type == "number") or (.foldDeadline.slot == null and .foldDeadline.slotUnavailable == "beyond the node\u0027s conversion horizon"))
+      and (has("fold") | not) and (has("root") | not)' "$receipts/$1.json" >/dev/null \
+    || fail "$1: the booking's receipt does not name its pending request, requester and fold deadline, or it claims a fold"
+}
+# booking_only NAME: since journal line BEFORE the command left exactly the
+# booking's four phases and the mirror and state it started with.
+booking_only() {
+  local name="$1" before="$2" files="$3"
+  [ "$(local_files)" = "$files" ] || fail "$name: a booking moved the mirror or state.json"
+  [ "$((($(journal_lines "$reg")) - before))" -eq 4 ] \
+    || fail "$name: the booking left $((($(journal_lines "$reg")) - before)) journal lines, expected its four phases"
+  tail -n +"$((before + 1))" "$reg/journal.jsonl" \
+    | jq -s -e '(map(.journalEvent) == ["prepared", "submitted", "confirmed", "observed"]) and (map(.journalStep) | unique == ["book"]) and (map(.journalTxId) | unique | length == 1)' >/dev/null \
+    || fail "$name: the journal lines the booking left are not one booking's prepared, submitted, confirmed and observed"
+}
 # prepared_points DIR: the view point of each prepared line of DIR's
 # journal, one JSON object each; a line missing any of the four fields
 # fails the journey.
@@ -245,13 +278,13 @@ envelope() {
 # The command surface
 # ------------------------------------------------------------------
 "$singular" --help >"$work/help.txt"
-for c in create insert update terminate inspect; do
+for c in create insert update terminate fold inspect; do
   grep -q "singular registry $c" "$work/help.txt" || fail "help does not name registry $c"
 done
 status=0
 "$singular" registry inspect --key 00 "${common[@]}" "${node[@]}" "${alice[@]}" >/dev/null 2>&1 || status=$?
 [ "$status" -eq 2 ] || fail "inspect accepted a signing key (exit $status)"
-say "help names the five commands; a signing key on inspect is refused"
+say "help names the six commands; a signing key on inspect is refused"
 
 # ------------------------------------------------------------------
 # 1. create
@@ -345,11 +378,48 @@ refused insert-over-allowance client-refusal -- registry insert --key "$key" \
 jq -e '.outlay.withinAllowance == false and .outlay.allowance == 1000000' \
   "$receipts/insert-over-allowance.json" >/dev/null || fail "the refusal does not state the outlay and the allowance"
 
+[ ! -e "$reg/preimages" ] || fail "a refused booking left an envelope in the registry directory"
+
+# The booking alone: alice's insert leaves its request pending, the mirror,
+# the root and state.json as they were, and names the deadline.
+before="$(journal_lines "$reg")"
+files_before="$(local_files)"
 run insert success -- registry insert --key "$key" --envelope "$work/alice.json" \
   "${common[@]}" "${node[@]}" "${alice[@]}"
+booked insert
+booking_only insert "$before" "$files_before"
+[ "$(field insert .requester)" = "$alicekey" ] || fail "the booking's requester is not alice's key"
+# The envelope the fold will deliver is kept under the hash the request names.
+stored="$reg/preimages/$(field insert .envelopeHash).json"
+[ -f "$stored" ] || fail "the booking kept no envelope under its hash"
+jq -e --slurpfile e "$work/alice.json" '. == $e[0]' "$stored" >/dev/null \
+  || fail "the kept envelope is not the one inserted"
+run inspect-pending success -- registry inspect --key "$key" "${common[@]}" "${node[@]}"
+[ "$(field inspect-pending .leaf)" = unknown ] || fail "inspect after a booking alone does not read the key unknown to the registry"
+
+# The fold is bob's: another wallet folds alice's request, and the receipt
+# names the same deadline, the same request, and a validity bound at it.
+run fold success -- registry fold --request "$(field insert .request)" \
+  "${common[@]}" "${node[@]}" "${bob[@]}"
+fold_ok() {
+  jq -e --slurpfile b "$receipts/$2.json" '
+      .request == $b[0].request and .foldDeadline.posixMs == $b[0].foldDeadline.posixMs
+      and .folder != $b[0].requester and .edge == "'"$3"'"
+      and (.fold | test("^[0-9a-f]{64}$"))
+      and (.validUntilSlot | type == "number")
+      and (if .foldDeadline.slot != null then .validUntilSlot == .foldDeadline.slot else true end)
+      and (.hostClockMs + 30000 < .foldDeadline.posixMs)
+      and (.remainingMs | type == "number" and . > 30000)' "$receipts/$1.json" >/dev/null \
+    || fail "$1: the fold does not name the booking's request and deadline, or was signed by the booker"
+}
+fold_ok fold insert insertActive
+[ "$(field fold .folder)" = "$bobkey" ] || fail "alice's request was not folded with bob's key"
+jq -e --slurpfile e "$work/alice.json" '.key == "'"$key"'" and .envelope == $e[0] and (.liveOutput | test("#"))' \
+  "$receipts/fold.json" >/dev/null || fail "the fold does not deliver alice's envelope at her key"
 run inspect-1 success -- registry inspect --key "$key" "${common[@]}" "${node[@]}"
 [ "$(field inspect-1 .leaf)" = active ] || fail "inspect after insert is not active"
-[ "$(field inspect-1 .root)" = "$(field insert .root)" ] || fail "inspect root differs from insert"
+[ "$(field inspect-1 .root)" = "$(field fold .root)" ] || fail "inspect root differs from the fold's"
+[ "$(field inspect-1 .root)" != "$(field inspect-pending .root)" ] || fail "the fold did not move the root"
 jq -e --slurpfile e "$work/alice.json" '.applicationOutput.envelope == $e[0]' \
   "$receipts/inspect-1.json" >/dev/null || fail "the holding's envelope is not the one inserted"
 # The index-read report is the indexer backend's own: the same inspect at
@@ -369,8 +439,38 @@ fi
 # bob, a wallet that did not create the registry, inserts his own key.
 bkey=6b657942
 envelope "$work/bob.json" "$bobkey" "$bkey"
+before="$(journal_lines "$reg")"
+files_before="$(local_files)"
 run bob-insert success -- registry insert --key "$bkey" --envelope "$work/bob.json" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
+booked bob-insert
+booking_only bob-insert "$before" "$files_before"
+[ "$(field bob-insert .requester)" = "$bobkey" ] || fail "the booking's requester is not bob's key"
+# The fold refuses, before it builds anything, an insertion whose envelope it
+# cannot deliver: none kept under the request's hash, or another envelope
+# under that name. Each leaves the journal as it was; the kept envelope is
+# then put back.
+bstored="$reg/preimages/$(field bob-insert .envelopeHash).json"
+[ -f "$bstored" ] || fail "bob's booking kept no envelope under its hash"
+mv "$bstored" "$work/bob-envelope.aside"
+refused fold-no-envelope client-refusal -- registry fold "${common[@]}" "${node[@]}" "${alice[@]}"
+jq -e '.reason | contains("no envelope is stored")' "$receipts/fold-no-envelope.json" >/dev/null \
+  || fail "the fold without an envelope does not say so: $(field fold-no-envelope .reason)"
+cp "$work/alice.json" "$bstored"
+refused fold-other-envelope client-refusal -- registry fold "${common[@]}" "${node[@]}" "${alice[@]}"
+jq -e '.reason | contains("another envelope")' "$receipts/fold-other-envelope.json" >/dev/null \
+  || fail "the fold with another envelope does not say so: $(field fold-other-envelope .reason)"
+mv "$work/bob-envelope.aside" "$bstored"
+# A funding output the folder's wallet does not hold is refused by name too.
+refused fold-bad-funding client-refusal -- registry fold --fund-input "$(printf '%064d' 0)#0" \
+  "${common[@]}" "${node[@]}" "${alice[@]}"
+jq -e '.reason | contains("cannot fund the fold")' "$receipts/fold-bad-funding.json" >/dev/null \
+  || fail "the fold with a stranger's funding output does not say so: $(field fold-bad-funding .reason)"
+# Alice folds bob's insertion: the request is named by nothing but being the
+# one pending.
+run bob-fold success -- registry fold "${common[@]}" "${node[@]}" "${alice[@]}"
+fold_ok bob-fold bob-insert insertActive
+[ "$(field bob-fold .folder)" = "$alicekey" ] || fail "bob's request was not folded with alice's key"
 run inspect-bob success -- registry inspect --key "$bkey" "${common[@]}" "${node[@]}"
 [ "$(field inspect-bob .leaf)" = active ] || fail "bob's key is not active"
 
@@ -391,7 +491,7 @@ run update success -- registry update --key "$key" --payload "$work/payload.json
   "${common[@]}" "${node[@]}" "${alice[@]}"
 run inspect-2 success -- registry inspect --key "$key" "${common[@]}" "${node[@]}"
 [ "$(field inspect-2 .leaf)" = active ] || fail "inspect after update is not active"
-[ "$(field inspect-2 .root)" = "$(field bob-insert .root)" ] || fail "the update moved the root"
+[ "$(field inspect-2 .root)" = "$(field bob-fold .root)" ] || fail "the update moved the root"
 jq -e --slurpfile p "$work/payload.json" '.applicationOutput.payload == $p[0]' \
   "$receipts/inspect-2.json" >/dev/null || fail "the holding does not carry the new payload"
 
@@ -437,8 +537,13 @@ refused concurrent-writer concurrent-writer -- registry insert --key 6b657943 \
 kill "$(cat "$work/lock.pid")" 2>/dev/null || true
 wait "$holder" 2>/dev/null || true
 flock --fcntl --nonblock "$reg/.lock" true || setup_fail "the lock holder did not release $reg/.lock"
-run insert-after-release success -- registry insert --key 6b657943 \
+# The combined form: --fold books and then folds in the one process, by the
+# routine `registry fold` runs, and prints both transactions.
+run insert-after-release success -- registry insert --fold --key 6b657943 \
   --envelope "$work/alice-c.json" "${common[@]}" "${node[@]}" "${alice[@]}"
+jq -e '(.booking | test("^[0-9a-f]{64}$")) and (.fold | test("^[0-9a-f]{64}$")) and .booking != .fold
+    and (.liveOutput | test("#")) and has("root")' "$receipts/insert-after-release.json" >/dev/null \
+  || fail "the combined insert does not name its booking, its fold and the output it delivered"
 
 # ------------------------------------------------------------------
 # 5. terminate, killed after the node accepted its fold
@@ -455,7 +560,7 @@ preview_ok terminate-preview booking
 before="$(journal_lines "$reg")"
 rm -f "$work/fold.go" "$work/fold.go.waiting"
 SINGULAR_HARNESS_HOLD_AFTER_SUBMIT="$work/fold.go" SINGULAR_HARNESS_HOLD_STEP=fold \
-  "$singular" registry terminate --key "$key" "${common[@]}" "${node[@]}" "${alice[@]}" \
+  "$singular" registry terminate --fold --key "$key" "${common[@]}" "${node[@]}" "${alice[@]}" \
   >"$receipts/terminate-killed.json" 2>&1 &
 victim=$!
 for _ in $(seq 1 1200); do
@@ -512,7 +617,23 @@ say "the next write reconciled the killed fold from the chain once; inspect read
 # ------------------------------------------------------------------
 # 6. terminate bob normally; a write works again
 # ------------------------------------------------------------------
+before="$(journal_lines "$reg")"
+files_before="$(local_files)"
 run bob-terminate success -- registry terminate --key "$bkey" "${common[@]}" "${node[@]}" "${bob[@]}"
+booked bob-terminate
+booking_only bob-terminate "$before" "$files_before"
+jq -e '(.released | test("^[0-9a-f]{64}#[0-9]+$")) and (.deposit | type == "number" and . > 0)' \
+  "$receipts/bob-terminate.json" >/dev/null \
+  || fail "the termination booking does not name the live output its fold will release"
+run inspect-bob-booked success -- registry inspect --key "$bkey" "${common[@]}" "${node[@]}"
+[ "$(field inspect-bob-booked .leaf)" = active ] || fail "bob's key is not still active after a termination booking alone"
+# Alice folds bob's termination, naming the request.
+run bob-terminate-fold success -- registry fold --request "$(field bob-terminate .request)" \
+  "${common[@]}" "${node[@]}" "${alice[@]}"
+fold_ok bob-terminate-fold bob-terminate updateTerminal
+[ "$(field bob-terminate-fold .folder)" = "$alicekey" ] || fail "bob's termination was not folded with alice's key"
+[ "$(field bob-terminate-fold .released)" = "$(field bob-terminate .released)" ] \
+  || fail "the fold released another output than the booking named"
 run inspect-4 success -- registry inspect --key "$bkey" "${common[@]}" "${node[@]}"
 [ "$(field inspect-4 .leaf)" = terminal ] || fail "bob's key is not terminal"
 
@@ -524,6 +645,58 @@ prepared_points "$reg" | jq -e -s --argjson s "$read_slot" \
   'length > 0 and all(.slot <= $s)' >/dev/null \
   || fail "a write's journalled view point is missing or later than inspect-4's ($read_slot)"
 say "every write journalled its build view's point, no later than slot $read_slot"
+
+# A request nobody folds: alice books one more insertion and leaves it. The
+# registry's fold takes every pending request, so this is the journey's last
+# booking; the late fold below is its control.
+envelope "$work/alice-d.json" "$alicekey" 6b657944
+before="$(journal_lines "$reg")"
+files_before="$(local_files)"
+run late-insert success -- registry insert --key 6b657944 --envelope "$work/alice-d.json" \
+  "${common[@]}" "${node[@]}" "${alice[@]}"
+booked late-insert
+booking_only late-insert "$before" "$files_before"
+
+# A fold held between its guard and its build. The guard admits it with more
+# than the margin to spare; the process is held until less than the margin
+# remains, then released. The fold it builds is judged again from its own body
+# and the clock, and is refused before anything is signed: the journal does not
+# move. (The next section's late fold is the guard's own refusal.)
+deadline_ms="$(field late-insert .foldDeadline.posixMs)"
+margin_ms=30000
+wait_ms=$((deadline_ms - 45000 - $(date +%s%3N)))
+[ "$wait_ms" -gt -20000 ] || setup_fail "the late request has less than 25 s left: the held fold would meet the guard instead"
+if [ "$wait_ms" -gt 0 ]; then
+  say "waiting $((wait_ms / 1000 + 1)) s until 45 s of the late request's window remain"
+  sleep $((wait_ms / 1000 + 1))
+fi
+before="$(journal_lines "$reg")"
+rm -f "$work/build.go" "$work/build.go.waiting"
+SINGULAR_HARNESS_HOLD_BEFORE_BUILD="$work/build.go" \
+  "$singular" registry fold --request "$(field late-insert .request)" \
+  "${common[@]}" "${node[@]}" "${bob[@]}" >"$receipts/fold-held.json" 2>"$receipts/fold-held.err" &
+held=$!
+for _ in $(seq 1 600); do
+  [ -e "$work/build.go.waiting" ] && break
+  kill -0 "$held" 2>/dev/null || break
+  sleep 0.1
+done
+[ -e "$work/build.go.waiting" ] || setup_fail "the fold never reached its hold between the guard and the build: $(cat "$receipts/fold-held.json")"
+hold_for=$(((deadline_ms - margin_ms + 3000 - $(date +%s%3N)) / 1000 + 1))
+[ "$hold_for" -le 0 ] || sleep "$hold_for"
+touch "$work/build.go"
+status=0
+wait "$held" || status=$?
+[ "$(jq -r .outcome "$receipts/fold-held.json")" = client-refusal ] && [ "$status" -eq 10 ] \
+  || fail "the held fold: outcome $(jq -r .outcome "$receipts/fold-held.json") (exit $status), expected client-refusal"
+jq -e '.reason | contains("the built fold is not signed")' "$receipts/fold-held.json" >/dev/null \
+  || fail "the held fold was not refused by the post-build check: $(field fold-held .reason)"
+jq -e --slurpfile l "$receipts/late-insert.json" '
+    .foldDeadline.posixMs == $l[0].foldDeadline.posixMs and .pendingRequest == $l[0].request
+    and (.hostClockMs + 30000 >= .foldDeadline.posixMs) and (.validUntilSlot | type == "number")' \
+  "$receipts/fold-held.json" >/dev/null || fail "the held fold's refusal does not carry the bound, the clock and the deadline"
+[ "$(journal_lines "$reg")" = "$before" ] || fail "the held fold submitted something"
+say "a fold held between its guard and its build: refused before it was signed, the journal unmoved"
 
 # ------------------------------------------------------------------
 # 7. create races and interruptions, on their own targets
@@ -579,6 +752,33 @@ jq -e '.incompleteCreate.seed' "$receipts/inspect-interrupted.json" >/dev/null \
 jq -e --arg t "$first_tx" 'select(.journalTxId == $t and .journalEvent == "observed")' \
   "$inter/journal.jsonl" >/dev/null || fail "the killed create's accepted submission was never observed"
 say "an interrupted create is refused a second boot and read back from its journal"
+
+# ------------------------------------------------------------------
+# 7b. a fold that comes too late
+# ------------------------------------------------------------------
+# The request booked above is folded by no one until its processing deadline
+# has passed. A fold of it is then refused by the client, quickly and by
+# name, before anything is signed: the reason names the deadline and the
+# receipt states it as the booking did.
+deadline_ms="$(field late-insert .foldDeadline.posixMs)"
+wait_ms=$((deadline_ms + 3000 - $(date +%s%3N)))
+if [ "$wait_ms" -gt 0 ]; then
+  say "waiting $((wait_ms / 1000 + 1)) s for the late request's processing deadline to pass"
+  sleep $((wait_ms / 1000 + 1))
+fi
+started="$(date +%s)"
+refused fold-late client-refusal -- registry fold --request "$(field late-insert .request)" \
+  "${common[@]}" "${node[@]}" "${bob[@]}"
+took=$(($(date +%s) - started))
+jq -e --slurpfile l "$receipts/late-insert.json" '
+    (.reason | contains("processing deadline") and contains("has passed"))
+    and .foldDeadline.posixMs == $l[0].foldDeadline.posixMs and .pendingRequest == $l[0].request' \
+  "$receipts/fold-late.json" >/dev/null \
+  || fail "the late fold does not name the deadline and the request it left pending: $(field fold-late .reason)"
+[ "$took" -le 30 ] || fail "the late fold took ${took}s to be refused; a client refusal reads one view and stops"
+run inspect-late success -- registry inspect --key 6b657944 "${common[@]}" "${node[@]}"
+[ "$(field inspect-late .leaf)" = unknown ] || fail "the refused late fold moved the registry"
+say "a fold after the deadline: refused in ${took}s, naming the deadline; its request stays pending"
 
 # ------------------------------------------------------------------
 # 8. the node lost after an accepted submission (last: the node dies)
