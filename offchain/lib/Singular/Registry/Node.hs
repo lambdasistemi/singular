@@ -56,7 +56,9 @@ module Singular.Registry.Node
     ( -- * Capabilities
       Capabilities (..)
     , withCapabilities
+    , withExternalCapabilities
     , capabilitiesOf
+    , signedSubmitter
 
       -- * Signed writes
     , SignedTx
@@ -120,6 +122,8 @@ module Singular.Registry.Node
     , defaultFundingFloor
     , checkFunding
     ) where
+
+import Data.Word (Word32)
 
 import Cardano.Tx.Ledger (ConwayTx)
 
@@ -213,6 +217,16 @@ them after it returns.
 -}
 withCapabilities :: (Capabilities -> IO a) -> IO a
 withCapabilities k = withNode (k . capabilitiesOf)
+
+{- | Open an external node at a socket and magic, funded by the key in the
+named file, and run the body with its capabilities. Runner startup only.
+-}
+withExternalCapabilities
+    :: FilePath -> Word32 -> FilePath -> (Capabilities -> IO a) -> IO a
+withExternalCapabilities sock magic skey k =
+    withNodeMode
+        (External (ExternalNode sock magic skey))
+        (k . capabilitiesOf)
 
 -- | The capabilities of an open session.
 capabilitiesOf :: NodeSession -> Capabilities

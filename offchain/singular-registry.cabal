@@ -568,6 +568,7 @@ executable devnet
   default-language: GHC2021
   hs-source-dirs:   devnet
   main-is:          Main.hs
+  other-modules:    Devnet.Probe
   build-depends:
     , aeson
     , async
@@ -809,6 +810,7 @@ test-suite e2e-tests
     Singular.Registry.E2E.Config
     Singular.Registry.E2E.ConfigSpec
     Singular.Registry.E2E.Criterion3Spec
+    Singular.Registry.E2E.Fixture
     Singular.Registry.E2E.DriverSpec
     Singular.Registry.E2E.Fork81Spec
     Singular.Registry.E2E.NodeSpec

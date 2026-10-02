@@ -62,13 +62,13 @@ import Cardano.Ledger.Mary.Value
     , MultiAsset (..)
     )
 import Cardano.Node.Client.E2E.Setup (genesisAddr)
-import Cardano.Node.Client.Submitter (Submitter)
 import Cardano.Tx.Ledger (ConwayTx)
 import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Short qualified as SBS
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Lens.Micro ((^.))
+import Singular.Registry.Node (Capabilities)
 
 import Singular.Registry.Blueprint
     ( Blueprint
@@ -307,7 +307,7 @@ book
     :: CageConfig
     -> NamingCodes
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TokenId
     -> ByteString
     -> Edge
@@ -328,7 +328,7 @@ committed trie.
 foldOnce
     :: CageConfig
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TrieManager IO
     -> TokenId
     -> [(TxIn, TxOut ConwayEra)]
@@ -347,7 +347,7 @@ The root is read on either side and must move.
 foldAndMirror
     :: CageConfig
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TrieManager IO
     -> TokenId
     -> [(TxIn, TxOut ConwayEra)]
