@@ -14,7 +14,7 @@ them, without asserting a deposit that the request never held.
 -}
 module Singular.CLI.Reclaim (runReclaim) where
 
-import Control.Monad (unless)
+import Control.Monad (unless, when)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.Foldable (toList)
 import Data.Set qualified as Set
@@ -200,7 +200,7 @@ runReclaim a = attached
             live <- attachLive v s
             ownerOuts <- Cage.viewUTxOsAt v recipient
             pure (requests, live, ownerOuts)
-        unless (named `notElem` map fst pendingAfter) $
+        when (named `elem` map fst pendingAfter) $
             failWith
                 Partial
                 "the reclaim confirmed but its request output is still live"
