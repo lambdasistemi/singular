@@ -17,7 +17,10 @@ rather than against one fixed configuration.
 The entry point is deliberately edge-agnostic: it takes a starting state, a
 setup trace and a request, so a connected retirement is the same call with a
 setup trace rather than a second adapter. A retraction also carries the witness
-its admission reads, so the model admits it before it pays it.
+its admission reads, so the model admits it before it pays it. A question that
+names a `question` is one of the driver's batch questions, `foldBatch` or
+`rejectBatch`, and is answered with the batch row the driver produces; a question
+naming none is a single request, exactly as before.
 -/
 
 open Lean Singular Singular.Driver
@@ -57,8 +60,19 @@ def toRequest (j : Json) : Except String Request := do
   -- Whether the request names a datum for its delivered output: a caller that
   -- says nothing describes a booking naming an empty datum hash, which names none.
   let namesDatum ← optionalBool j "namesDatum"
+  -- The mint a request claims, which only a batch's mint guard reads: a caller
+  -- that names none claims nothing.
+  let claimed ← match j.getObjVal? "claimed" with
+    | .error _ => pure []
+    | .ok Json.null => pure []
+    | .ok (Json.arr entries) =>
+      entries.toList.mapM fun entry => do
+        let kind : TokenKind ← (entry.getObjVal? "kind") >>= fromJson?
+        let quantity : Int ← (entry.getObjVal? "quantity") >>= fromJson?
+        pure (kind, quantity)
+    | .ok _ => throw "claimed is not an array"
   let base : Request :=
-    { edge, key, owner, refundAddress, deposit, output, approval := none, claimed := [], tip
+    { edge, key, owner, refundAddress, deposit, output, approval := none, claimed, tip
     , reference, namesDatum }
   let approval ←
     match j.getObjVal? "approval" with
@@ -127,17 +141,20 @@ def toWitness (j : Json) (exit : Exit) : Except String (Option RetractWitness) :
   | .ok w, .retract => some <$> fromJson? w
   | .ok _, _ => throw "only a retraction question carries a witness"
 
+/-- The setup trace a question names, as requests. -/
+def toSetup (j : Json) : Except String (List Request) :=
+  match j.getObjVal? "setup" with
+  | .error _ => pure []
+  | .ok (Json.arr steps) => steps.toList.mapM toRequest
+  | .ok _ => .error "setup is not an array"
+
 /-- One evaluation: a starting state, a lawful setup trace, and the request, taken
 by the exit the caller names; a retraction under the witness it carries. -/
 def toScenario (j : Json) : Except String Scenario := do
   let start ← (j.getObjVal? "start") >>= toState
   let request ← (j.getObjVal? "request") >>= toRequest
   let lovelace ← (j.getObjVal? "lovelace") >>= fromJson?
-  let setup ←
-    match j.getObjVal? "setup" with
-    | .error _ => pure []
-    | .ok (Json.arr steps) => steps.toList.mapM toRequest
-    | .ok _ => .error "setup is not an array"
+  let setup ← toSetup j
   let theoremName ← (j.getObjVal? "theorem") >>= fromJson?
   let statementSha256 ← (j.getObjVal? "statementSha256") >>= fromJson?
   let id ← (j.getObjVal? "id") >>= fromJson?
@@ -180,11 +197,52 @@ def toOutput (j : Json) : Except String TxOutput := do
   pure { role, datum, address := some address, stateTokens := 0, config := none
        , commitment := none, assets := [], lovelace, reference }
 
+/-- A batch question: `foldBatch`, requests each folded on its own edge, or
+`rejectBatch`, requests each named with the exit it takes and, optionally, the
+outputs of a transaction the caller observed to be judged. A batch names no
+single request, exit, lovelace or witness: the model builds no transaction for
+it. -/
+def toBatchScenario (j : Json) (question : String) : Except String BatchScenario := do
+  for single in ["request", "exit", "lovelace", "witness", "inputs"] do
+    if (j.getObjVal? single).isOk then
+      throw s!"a batch question names no {single}"
+  let start ← (j.getObjVal? "start") >>= toState
+  let setup ← toSetup j
+  let theoremName : String ← (j.getObjVal? "theorem") >>= fromJson?
+  let statementSha256 : String ← (j.getObjVal? "statementSha256") >>= fromJson?
+  let id : String ← (j.getObjVal? "id") >>= fromJson?
+  let items ← match j.getObjVal? "requests" with
+    | .ok (Json.arr items) => pure items.toList
+    | .ok _ => throw "requests is not an array"
+    | .error _ => throw "a batch question names no requests"
+  let outputs ← match j.getObjVal? "outputs" with
+    | .error _ => pure none
+    | .ok (Json.arr observed) => some <$> observed.toList.mapM toOutput
+    | .ok _ => throw "outputs is not an array"
+  let batch ← match question with
+    | "foldBatch" => do
+      if outputs.isSome then throw "a fold batch question judges no outputs"
+      BatchQuestion.foldBatch <$> items.mapM toRequest
+    | "rejectBatch" =>
+      BatchQuestion.rejectBatch <$> items.mapM fun (item : Json) => do
+        let request ← (item.getObjVal? "request") >>= toRequest
+        let exit ← toExit item request
+        pure (exit, request)
+    | other => throw s!"no declared batch question is named {other}"
+  pure
+    { id, theoremName, statementSha256
+    , kind := "witness", mutates := none
+    , requiresReachableState := !setup.isEmpty
+    , start, setup, question := batch, outputs }
+
 /-- Evaluate, and answer with the row the driver produces. A question carrying the
 inputs and outputs of a transaction the caller observed is also answered with the
 driver's judgement of them, under `settle`: the reason `spend` or `settle` gives,
 or `null` when the transaction spends what the exit may and pays what it owes. -/
 def answer (j : Json) : Except String Json := do
+  if let .ok named := j.getObjVal? "question" then
+    let question : String ← fromJson? named
+    return batchScenarioJson (← toBatchScenario j question)
   let scenario ← toScenario j
   let row := scenarioJson scenario
   match j.getObjVal? "outputs" with

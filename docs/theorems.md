@@ -5,10 +5,10 @@ registry-mode model supplies, that each one is proved, and from which axioms.
 Every declaration keeps its qualified name and a digest of its statement text, so
 a changed or missing obligation is detectable rather than merely unlikely.
 
-All 42 declarations of the registry's own statement module are **PROVED**
+All 44 declarations of the registry's own statement module are **PROVED**
 from the standard axioms — `propext`, `Classical.choice`, `Quot.sound` — and
 nothing else. The naming instance adds 7, its lifecycle 9
-and its wire encoding 5, for **63** in total, each with its own
+and its wire encoding 5, for **65** in total, each with its own
 manifest and its own compiled gate.
 
 ## What the eleven promises are
@@ -54,6 +54,7 @@ consequences rather than as separate arguments.
 | `Singular.Statements.exit_settles_on_lovelace_received` | Value an exit does not owe is unconstrained, for every exit alike: when each recipient the exit owes receives at least as much from a second list of outputs as from a first — the summed lovelace of the outputs paying it by role and address, or for a retraction's return bound to its request the largest such output — the second settles whenever the first does: adding outputs or lovelace never unsettles a transaction, and fees and the folder's tip play no part | `28e4e54c3429bd02296aaf609b24ab9defa96458de759eb2e403347ec84afd74` | PROVED |
 | `Singular.Statements.fold_batch_claimed_mint_by_kind_key` | T1 — the fold's mint guard is per `(TokenKind, Key)`, strictly finer than a per-kind one, witnessed by a reachable state whose equal-per-kind batch is observed to be refused | `9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988` | PROVED |
 | `Singular.Statements.fold_batch_cons` | — | `9e8c6a06d60361ae94b24f50f014c7830bfdd5d22aa8b7a62a8ca9230f689153` | PROVED |
+| `Singular.Statements.fold_batch_of_one_is_step` | A batch of one folds as its step — for one request whose claimed mint is its own edge's delta, `foldBatch` over that request alone is exactly `step`: refused for the same reason, or accepted with the same state, mint and payments | `09dc61dcbe8e7a4a68b170944bb42cdcf6ece9af9fc006af96135cfab1185f87` | PROVED |
 | `Singular.Statements.fold_requires_no_signer` | T1 — no fold requires a signer: at every one of the seven edges the transaction the model builds has an empty signer list, and neither the step nor the transaction changes when the approval carries a different signature set | `7c24885ca77300bda88d97830ff54d237ddca2de3e3fdbd93cb1239a51a3eece` | PROVED |
 | `Singular.Statements.insert_absent_inversion` | — | `b2ca14e3aa29caef0841c246964e5e64b600eef9ff64c0865677a1219d31525d` | PROVED |
 | `Singular.Statements.insert_absent_transaction_row` | Complete absent-insertion transaction: refund-only custody, sole-asset key, the deposit locked at the cage and listed as its one payment, root and custody effects, keyed mint, no required signers, and no destination output | `a7e93824be2944e55b6482d0836111450522a7ed04eb57c262656f8903adaec6` | PROVED |
@@ -67,6 +68,7 @@ consequences rather than as separate arguments.
 | `Singular.Statements.only_retract_owes_the_tip` | Only a retract owes the tip: for every exit, what it owes is unchanged by the tip a request holds exactly when the exit is not a retract | `df27296176ea7a88ac2d8fcaf3047e5521838fe9dabe493183ef26ac21dd624f` | PROVED |
 | `Singular.Statements.readAt_true_iff` | — | `69c6c811a286c3436e0b230319f762de5c3c89e977a8a1d075859159e87d5916` | PROVED |
 | `Singular.Statements.read_changes_nothing` | — | `0a53256f91fbd4e8d4de2e8e2b9add39fc6a04ad10327d594d3f74acabdb6120` | PROVED |
+| `Singular.Statements.reject_batch_of_one_is_reject` | A batch of one reject judges as the reject — the driver's judgement of a one-request batch of rejects, `settle` over its concatenated obligations, is exactly its judgement of the single reject's transaction over the same outputs, whatever inputs that transaction spends | `9f0e815f13a2ce1e41ecd3d19792aa741ade3187fb951fbce6b3fa4b87b1f42c` | PROVED |
 | `Singular.Statements.retract_admitted_iff` | Retraction, when — a pending request's owner can retract it exactly when it inserts a key or reads a terminal one, the owner is among the transaction's signatories, and the validity interval lies inside phase 2: from submission plus the processing time, included, to that plus the retraction time, which the excluded upper bound may reach and not pass. The request script names this rule's refusal `not-phase2`: its exact-outcome tests admit the two endpoints themselves and refuse with that name one unit before the lower bound and one unit past the upper, and for an open interval alike | `6c9c65f00e1b9054319ae2151908af4336717df5642f31aace963aa80cb29f57` | PROVED |
 | `Singular.Statements.retract_pays_exactly_its_obligations` | An executed retract pays exactly what it owes: for every registry state and request, the retract leaves the state as it was, mints nothing, and pays exactly its obligations, the deposit and the tip to the owner through an output bound to the request; nothing the state holds enters its payments | `a9ec205a3afaf4c62ff1e25f396d035fafbd25b34597e858c5468f6f77403390` | PROVED |
 | `Singular.Statements.retract_refusal_first_failing` | Retraction, why not — a refused retraction names the first check it fails, in the request script's order: `withdraw-insert-only` for an update or delete request whoever signed and whenever, then `retract-owner` without the owner's signature inside phase 2 or not, then `not-phase2` | `506966483299dfa897bb988c179646373d3dfcf7a1a20728fdf0cae217197ffc` | PROVED |
