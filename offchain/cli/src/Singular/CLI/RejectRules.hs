@@ -26,6 +26,7 @@ module Singular.CLI.RejectRules
     , OpenRequest (..)
     , Why (..)
     , rejectGate
+    , windowStatus
     , renderRejectRefusal
 
       -- * What it refunds
@@ -89,13 +90,18 @@ rejectGate tip booked
     open =
         [ OpenRequest r b why
         | (r, b, slot) <- booked
-        , Just why <- [stillOpen slot]
+        , Right why <- [windowStatus tip slot]
         ]
-    stillOpen = \case
-        Nothing -> Just DeadlineUnconverted
-        Just s
-            | tip < s -> Just (BeforeDeadline tip s)
-            | otherwise -> Nothing
+
+{- | The shared deadline reading: a known, reached slot is closed; an
+unconverted deadline remains open, as does a known slot ahead of the tip.
+-}
+windowStatus :: Integer -> Maybe Integer -> Either Integer Why
+windowStatus tip = \case
+    Nothing -> Right DeadlineUnconverted
+    Just s
+        | tip < s -> Right (BeforeDeadline tip s)
+        | otherwise -> Left s
 
 -- | One line naming the refusal and every request it names.
 renderRejectRefusal :: RejectRefusal -> String
