@@ -35,11 +35,11 @@ flowchart LR
 
 | ID | Requirement | Observable result |
 | --- | --- | --- |
-| R264-1 | Lint discovers every included active Haskell source directory, including the Cabal executables and naming sources beyond the four currently scanned directories. | The existing `.#lint` command rejects a deliberately malformed file placed in a newly covered active directory; the same command passes after removal. The inventory below explains any exclusion. |
-| R264-2 | Remove only repeated dependency declarations from the Cabal component that contains them. | The Cabal declaration is unambiguous and the classified supported components build through the new CI carrier. |
-| R264-3 | Preserve public library exports and executable names. | Compare the exact before and after Cabal declarations and build the supported components; identify every unbuilt legacy executable. |
-| R264-4 | Keep formatting changes separate and mechanical. | A reviewer can identify layout-only source diffs apart from the two configuration files. Signatures, strictness, imports, and behavior remain stable. |
-| R264-5 | Classify every Cabal component against live required workflows and currently supported command closure. | The inventory labels every declaration as built here, covered by another required job with command, or unbuildable/unverified with issue and reason. An unknown new component or omitted-classification drift makes the inventory gate fail; a selected included component's failure makes the carrier fail. Control mutations are restored byte-for-byte. |
+| lint-discovers-included-active-haskell-source-directory | Lint discovers every included active Haskell source directory, including the Cabal executables and naming sources beyond the four currently scanned directories. | The existing `.#lint` command rejects a deliberately malformed file placed in a newly covered active directory; the same command passes after removal. The inventory below explains any exclusion. |
+| remove-repeated-dependency-declarations-from-cabal-component | Remove only repeated dependency declarations from the Cabal component that contains them. | The Cabal declaration is unambiguous and the classified supported components build through the new CI carrier. |
+| preserve-public-library-exports-executable-names | Preserve public library exports and executable names. | Compare the exact before and after Cabal declarations and build the supported components; identify every unbuilt legacy executable. |
+| keep-formatting-changes-separate-mechanical | Keep formatting changes separate and mechanical. | A reviewer can identify layout-only source diffs apart from the two configuration files. Signatures, strictness, imports, and behavior remain stable. |
+| classify-cabal-component-against-live-required-workflows | Classify every Cabal component against live required workflows and currently supported command closure. | The inventory labels every declaration as built here, covered by another required job with command, or unbuildable/unverified with issue and reason. An unknown new component or omitted-classification drift makes the inventory gate fail; a selected included component's failure makes the carrier fail. Control mutations are restored byte-for-byte. |
 
 ## Source inventory at intake
 
@@ -83,9 +83,9 @@ they require their own reviewable diff.
 CI currently runs `(cd offchain && nix run --quiet .#lint)` and root
 `nix build --quiet .#build-gate`. The root build gate closes root docs/model
 packages, not all off-chain Cabal components. Selected registry workflow jobs
-build off-chain targets. The epic owner answered Q-001 by authorizing a new
-off-chain component build carrier in `ci.yml` and `offchain/flake.nix`. A-005,
-A-008 and A-009 narrow its required scope to the components used by current
+build off-chain targets. The epic owner answered operator question (Q-001) by authorizing a new
+off-chain component build carrier in `ci.yml` and `offchain/flake.nix`. operator answer (A-005),
+operator answer (A-008) and operator answer (A-009) narrow its required scope to the components used by current
 required workflows and currently supported registry commands, plus the library
 and its test components. The carrier must reject an unclassified new component,
 omitted-classification drift and any build failure in its included set. A green
@@ -93,7 +93,7 @@ carrier establishes only that set, never a package-wide build.
 
 ## Candidate boundary and epic completion
 
-At source revision `b69ecca7b7c5efb9f2106d9717d3e2bcb275b063`, Gate S v11
+At source revision `b69ecca7b7c5efb9f2106d9717d3e2bcb275b063`, acceptance checks v11
 and the exact pushed-head Off-chain lint CI job discovered 70 off-chain Haskell
 files in 22 source directories: 20 Cabal source-directory values and two
 direct-GHC naming directories. This documentation correction changes no source
@@ -124,14 +124,14 @@ every tracked code source to actual checks, including code beyond off-chain
 Haskell. This ticket supplies the bounded off-chain foundation and reports its
 gaps. The independent verifier source fence remains in force here. The first
 full component carrier run found a pre-existing compile error in
-`connected-verifier`; its failed receipt is retained. A-005 assigns that
+`connected-verifier`; its failed receipt is retained. operator answer (A-005) assigns that
 executable's repair to [#282](https://github.com/lambdasistemi/singular/issues/282)
 and requires it to remain declared and marked unbuildable/unverified in this
 ticket's component inventory. The next carrier run directly failed at
-`recovery-rows`, which imports the removed `registerConsumerImpl`. A-008 maps
-the named retired D6 NYA journeys `recovery-rows`, `retirement-rows` and
+`recovery-rows`, which imports the removed `registerConsumerImpl`. operator answer (A-008) maps
+the named retired D6 Naming Your Assets journeys `recovery-rows`, `retirement-rows` and
 `repair-rows` to [#172](https://github.com/lambdasistemi/singular/issues/172)
-after exact source/workflow and current dependency checks. A-009 maps
+after exact source/workflow and current dependency checks. operator answer (A-009) maps
 `register-rows`, which D6 does not name, to
 [#283](https://github.com/lambdasistemi/singular/issues/283) as a separate
 unbuildable/unverified command. The current carrier receipt does not prove
@@ -139,13 +139,13 @@ those other executables' own build results. All five remain declared and
 exposed. That 14/5 proposal was superseded by a 10-built/9-unverified
 classification after all seven named legacy journeys were assessed. The
 classified carrier inventories all 19 declarations and its ten-member
-included set passed the exact `b69ecca` Gate S v11 and pushed-head CI job,
+included set passed the exact `b69ecca` acceptance checks v11 and pushed-head CI job,
 with independent Opus review of the carrier and its direct negative controls.
 This is compile/inventory evidence only; none of the nine retained commands
 gains a build or journey pass. #278 still owns lint and formatting of every
 retained source.
 
-## A-011 forward correction to current release instructions
+## operator answer (A-011) forward correction to current release instructions
 
 As a person reading the current on-chain archive instructions, I need to know
 which commands have been built and verified against the integrated Lean source
@@ -171,10 +171,10 @@ RED until built. No documentation edit can establish command buildability.
 Keep #172, #282 and #283 as the distinct repairs; preserve Cabal declarations,
 apps, public names, historical tags and archives. Conformance remains outside
 this ticket. The 10/9 carrier received direct negative controls, an actual
-GREEN build, and independent review at the `b69ecca` candidate. Its Gate S v11
+GREEN build, and independent review at the `b69ecca` candidate. Its acceptance checks v11
 ran `release-artifacts` GREEN and recorded local `release-check` as HOST-BLOCKED
-under A-012; the exact pushed-head `release-check` CI job passed. The subsequent
-documentation correction at `e276bab` passed its own Opus review, Gate S v12
+under operator answer (A-012); the exact pushed-head `release-check` CI job passed. The subsequent
+documentation correction at `e276bab` passed its own Opus review, acceptance checks v12
 and exact-head CI on the earlier main base `2ae29b0`. After main advanced to
 `80eba16` through #289, those results became historical SHA-bound evidence;
 the rebased candidate needs fresh review, gate and exact pushed-head CI before

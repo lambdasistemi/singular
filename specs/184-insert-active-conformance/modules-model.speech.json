@@ -1,7 +1,7 @@
 {
   "changed-responsibilities": [
     {
-      "text": "The runner executes CG21, the receipt library validates it, the workflow asserts it and the consumer page describes what ran.",
+      "text": "The runner executes register-active-key, the receipt library validates it, the workflow asserts it and the consumer page describes what ran.",
       "pause": 400
     }
   ],
@@ -25,6 +25,6 @@
   ],
   "_source": {
     "file": "modules-model.md",
-    "sha256": "241e76af98e5e1d1dd12a6ebdf65d18af628897b9234da3214b70155ea480d48"
+    "sha256": "edf30f36e50820229b010971b3bf13c12be6a917d4a443833622c0b77f3b1238"
   }
 }

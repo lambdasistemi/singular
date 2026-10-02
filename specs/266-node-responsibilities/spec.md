@@ -23,11 +23,11 @@ flowchart LR
 
 | ID | Requirement | Observable acceptance |
 | --- | --- | --- |
-| R266-1 | Give each moved declaration one owner and retain the current `Singular.Registry.Node` exports and named callers. | A complete before and after map, unchanged facade export list and compiled original caller closure. |
-| R266-2 | Preserve devnet and external configuration, CLI and environment precedence, network refusal, wallet derivation and key secrecy. | Existing pure Node tests, connection tests and the unchanged command builds pass. |
-| R266-3 | Preserve session, follower, funding and address-read lifetimes. Each process global or IORef has one owner, its old initialization point and its old cleanup point. | A global-owner map and compiled execution that observes both normal and exceptional cleanup. |
-| R266-4 | Preserve funding, submission, confirmation, protocol-parameter and address-read effects, including the independent observation boundary. | Focused Node suite, fresh-blueprint E2E and bounded journey pass on the candidate; a relevant negative control proves the cleanup test can fail. |
-| R266-5 | Explain the ownership graph, flow, invariants, facade, callers and common edit locations to contributors. | Architecture guide, navigation, valid source/generated API links and curated speech pass the active docs and presentation checks. |
+| give-moved-declaration-one-owner-retain-current | Give each moved declaration one owner and retain the current `Singular.Registry.Node` exports and named callers. | A complete before and after map, unchanged facade export list and compiled original caller closure. |
+| preserve-devnet-external-configuration-cli-environment-precedence | Preserve devnet and external configuration, CLI and environment precedence, network refusal, wallet derivation and key secrecy. | Existing pure Node tests, connection tests and the unchanged command builds pass. |
+| preserve-session-follower-funding-address-read-lifetimes | Preserve session, follower, funding and address-read lifetimes. Each process global or IORef has one owner, its old initialization point and its old cleanup point. | A global-owner map and compiled execution that observes both normal and exceptional cleanup. |
+| preserve-funding-submission-confirmation-protocol-parameter-address | Preserve funding, submission, confirmation, protocol-parameter and address-read effects, including the independent observation boundary. | Focused Node suite, fresh-blueprint end-to-end and bounded journey pass on the candidate; a relevant negative control proves the cleanup test can fail. |
+| explain-ownership-graph-flow-invariants-facade-callers | Explain the ownership graph, flow, invariants, facade, callers and common edit locations to contributors. | Architecture guide, navigation, valid source/generated API links and curated speech pass the active docs and presentation checks. |
 
 ## Evidence boundary
 

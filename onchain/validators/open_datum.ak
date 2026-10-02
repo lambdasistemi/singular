@@ -67,7 +67,7 @@ validator open_datum(registry: ByteArray) {
   mint(redeemer: OpenDatumMint, policy_id: PolicyId, tx: Transaction) {
     let moved = tokens(tx.mint, policy_id)
     if pureBurn(moved) {
-      // An approval is evidence, never a consumable (D-APPROVAL):
+      // An approval is evidence, never a consumable (approval-asset-binding):
       // destroying your own copy costs the registry nothing.
       True
     } else {
@@ -548,7 +548,7 @@ fn ownFold(
 }
 
 /// What the given registry folds owe one payee, summed, and the duties
-/// they create together (#253, DM-C2):
+/// they create together (#253, DM-seven-admitted-edges):
 /// each fold's deposits, reject refunds and custody refunds to that key,
 /// read with the registry's own `dutiesOf`, `custodyOwedOf` and
 /// `payeeOwed`. `None` when a fold's custody refunds cannot be read.

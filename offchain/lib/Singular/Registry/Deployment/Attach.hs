@@ -92,7 +92,7 @@ data CageParts = CageParts
     { partsStateBytes :: SBS.ShortByteString
     , partsRequestBytes :: SBS.ShortByteString
     , partsApplicationPolicy :: SBS.ShortByteString
-    {- ^ The application policy the registry pins (#157 D-BOOT): the
+    {- ^ The application policy the registry pins (#157 genesis-policy-pins): the
     naming application script's applied hash for this registry
     identity, read from the partitions' `script-identity.json`.
     -}
@@ -118,7 +118,7 @@ cageConfigFor :: Deployment -> CageParts -> Either String CageConfig
 cageConfigFor dep parts = do
     seedIn <- parseOutRef (depSeedOutRef dep)
     -- The manifest keeps its own vocabulary for the pin it recorded; the
-    -- field it names is the one #157 C7 renamed the active policy.
+    -- field it names is the one #157 state-datum-fields renamed the active policy.
     when
         ( T.pack (hex (SBS.fromShort (partsActivePolicy parts)))
             /= depRepresentativePolicy dep

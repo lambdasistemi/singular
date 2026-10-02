@@ -1,7 +1,7 @@
 {
   "source-map": [
     {
-      "text": "The conformance job runs the packaged test app in the conformance directory with no environment. The app builds the blueprint only when it is not given, then runs the unit suite, the fold budget regression and the book, stopping at the first failure. The regression target links the test fixture, runs row CG21 and exits nonzero on an exception. The fixture refuses a one-below submission and hands its fallback to the runner as default units. The runner evaluates and allocates a budget per purpose, checks before submitting that the assembled transaction carries exactly that declaration, and attributes a node refusal to execution budget when it can. A purpose missing from the declaration map takes the default.",
+      "text": "The conformance job runs the packaged test app in the conformance directory with no environment. The app builds the blueprint only when it is not given, then runs the unit suite, the fold budget regression and the book, stopping at the first failure. The regression target links the test fixture, runs row register-active-key and exits nonzero on an exception. The fixture refuses a one-below submission and hands its fallback to the runner as default units. The runner evaluates and allocates a budget per purpose, checks before submitting that the assembled transaction carries exactly that declaration, and attributes a node refusal to execution budget when it can. A purpose missing from the declaration map takes the default.",
       "pause": 500
     }
   ],
@@ -19,6 +19,6 @@
   ],
   "_source": {
     "file": "research.md",
-    "sha256": "6a7bacc7b82aa9d2640721ead26214ce1e4b09ff85aa812d2f05952c7f213f28"
+    "sha256": "4d0aecd8bc6a95b43275a690d44cb47db742bafc10a5ed521143bf97d63b02ee"
   }
 }

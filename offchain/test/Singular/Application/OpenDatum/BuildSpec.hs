@@ -172,7 +172,7 @@ constants = describe "constants" $ do
         maxKeyBytes `shouldBe` 32
 
 -- ---------------------------------------------------------
--- INV-360-BYTES
+-- Envelope bytes match the hand-built value
 -- ---------------------------------------------------------
 
 bytes :: Spec
@@ -189,7 +189,7 @@ bytes = describe "the builder against the hand-built envelope" $ do
         ctlVersion (envControl (built baseline)) `shouldBe` envelopeVersion
 
 -- ---------------------------------------------------------
--- INV-360-BYTES per field, INV-360-SOURCE
+-- Each field preserves the envelope bytes and source values
 -- ---------------------------------------------------------
 
 altPayload :: Value
@@ -224,7 +224,7 @@ perField =
                 `shouldNotBe` dataCbor (expectedData baseline)
 
 -- ---------------------------------------------------------
--- INV-360-KEY
+-- Key text and byte spelling
 -- ---------------------------------------------------------
 
 utf8 :: Text -> ByteString
@@ -266,7 +266,7 @@ keyReading = describe "reading a key" $ do
             `shouldBe` Right (BS.replicate 32 0x6b)
 
 -- ---------------------------------------------------------
--- INV-360-REFUSE: the key
+-- Refusing an invalid key
 -- ---------------------------------------------------------
 
 keyRefusals :: Spec
@@ -293,7 +293,7 @@ keyRefusals = describe "refusing a key" $ do
         readKey KeyText (T.replicate 17 "é") `shouldBe` Left (KeyTooLong 34)
 
 -- ---------------------------------------------------------
--- INV-360-REFUSE: the deposit
+-- Refusing an invalid deposit
 -- ---------------------------------------------------------
 
 depositReading :: Spec
@@ -333,7 +333,7 @@ depositReading = describe "reading a deposit" $ do
             ]
 
 -- ---------------------------------------------------------
--- INV-360-REFUSE: the payload
+-- Refusing an invalid payload
 -- ---------------------------------------------------------
 
 payloadReading :: Spec

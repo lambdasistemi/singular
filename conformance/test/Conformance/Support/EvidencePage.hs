@@ -9,6 +9,7 @@ read back by its rendered text.
 -}
 module Conformance.Support.EvidencePage (spec) where
 
+import Conformance.RowNames (historicalRowNames)
 import Control.Monad (forM_)
 import Data.Aeson (Value (..), decode)
 import Data.Aeson.Key qualified as Key
@@ -159,19 +160,26 @@ spec = describe "Appendix: computing the published evidence page" $ do
                     rowLineById row (section "Requirements a run did not pass" page)
             stale <-
                 renderedPage
-                    <$> rendered rows (snapshotOf "fixture-base" (unmetAs "CG10"))
-            lineOf "CG10" stale
+                    <$> rendered
+                        rows
+                        (snapshotOf "fixture-base" (unmetAs "fold-against-superseded-root"))
+            lineOf "fold-against-superseded-root" stale
                 `shouldSatisfy` T.isInfixOf
                     "the chain refuses, Lean has no counterpart to compare with (operator ruling 2026-10-02"
-            lineOf "CG10" stale
+            lineOf "fold-against-superseded-root" stale
                 `shouldSatisfy` T.isInfixOf "lambdasistemi/singular#346"
             early <-
                 renderedPage
-                    <$> rendered rows (snapshotOf "fixture-base" (unmetAs "CG09"))
-            lineOf "CG09" early
+                    <$> rendered
+                        rows
+                        ( snapshotOf
+                            "fixture-base"
+                            (unmetAs "reject-before-deadline-consumer-requirement")
+                        )
+            lineOf "reject-before-deadline-consumer-requirement" early
                 `shouldSatisfy` T.isInfixOf
                     "does not do what the consumer requirement states (operator ruling 2026-10-01"
-            lineOf "CG09" early
+            lineOf "reject-before-deadline-consumer-requirement" early
                 `shouldSatisfy` T.isInfixOf "lambdasistemi/cardano-keri#468"
             case receipts of
                 r0 : _ ->
@@ -372,7 +380,7 @@ tableIds page =
     , isName (T.strip c)
     ]
   where
-    isName c = T.length c == 4 && T.all isAlphaNum c && T.take 1 c == "C"
+    isName c = c `elem` map snd historicalRowNames
 
 rowLine :: Row -> Text -> Text
 rowLine r page =

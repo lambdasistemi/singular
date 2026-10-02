@@ -14,7 +14,7 @@ Extend `tools/check_site.py` so browser-style resolution with the
 project prefix and GitHub README/blob rewrite is part of `docs-check`.
 Keep the existing local-relative and speech coverage checks.
 
-Exclusive first-touch files (parent NOTE-001): `README.md`,
+Exclusive first-touch files (parent operator note (NOTE-001)): `README.md`,
 `README.speech.json`, `docs/simulation.md`,
 `docs/simulation.speech.json`. `docs/design.md` and other
 prefix-escaping raw HTML hrefs are in inventory scope; further
@@ -22,11 +22,11 @@ overlaps go through parent before simultaneous edits.
 
 ## Slice
 
-One slice: CTA destinations, wording, inventory, checker, speech.
+One slice: link to the playable simulator destinations, wording, inventory, checker, speech.
 
 ## Verification
 
-Focused gate (runtime `./gate.sh`): GitHub-rewrite CTA identity,
+Focused gate (runtime `./gate.sh`): GitHub-rewrite link to the playable simulator identity,
 built-site prefix resolution, inventory non-empty, `just build-docs`,
 `python3 tools/check_site.py site`, `just check-presentation`.
 Do not run Lean/simulator/browser locally. CI on the candidate still

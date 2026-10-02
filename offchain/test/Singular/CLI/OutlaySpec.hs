@@ -148,8 +148,8 @@ spec = describe "a command's outlay against an approved allowance (#300)" $ do
     it
         "stops the fold its own view makes dearer than what its booking left of the allowance, and passes the one it does not"
         $ do
-            -- The allowance a booking under P1 was approved against: its fee, its
-            -- bond and the fold's bound under P1's parameters, exactly.
+            -- The allowance a booking under tree-change-requires-approval was approved against: its fee, its
+            -- bond and the fold's bound under tree-change-requires-approval's parameters, exactly.
             let booking = bookingWith 400_000 3_000_000
                 p1 = preprodParams
                 p2 = preprodParams & ppTxFeePerByteL .~ CoinPerByte (CompactCoin 10_000)
@@ -160,7 +160,7 @@ spec = describe "a command's outlay against an approved allowance (#300)" $ do
             -- each view's parameters after the booking confirmed.
             underP1 <- builtFoldUnder p1
             underP2 <- builtFoldUnder p2
-            -- What makes the two cases mean something: P1's fold is within what
+            -- What makes the two cases mean something: tree-change-requires-approval's fold is within what
             -- is left, P2's is past it.
             Just (outlayTotal (foldOutlay underP1)) `shouldSatisfy` (<= left)
             Just (outlayTotal (foldOutlay underP2)) `shouldSatisfy` (> left)

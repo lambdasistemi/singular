@@ -7,7 +7,7 @@ interface wins. Constitution: `.specify/memory/constitution.md` v1.0.0.
 
 Base: `1bee7ca1d069737c81d441d1e895beff32392886`.
 
-Scope amended 2026-09-16 by desk ruling **A-001** (inbox `NOTE-001`): #156 is one
+Scope amended 2026-09-16 by desk ruling **operator answer (A-001)** (inbox `operator note (NOTE-001)`): #156 is one
 atomic-green PR carrying two sequential slices. Bound issue bodies:
 #154 `3001eb32…`, #156 `58619675…`, #163 `59ecff0c…` — each verified.
 
@@ -57,14 +57,14 @@ differs.
 
 ## Requirements
 
-### R1 — the alphabet (interface §1)
+### alphabet-interface — the alphabet (interface §1)
 
 `Leaf` and `State` are the only leaf vocabulary. `Value`, `incarnation`,
 `assetScope` and `reuseIdentity` are **removed, not renamed**. There is no
 application value in a leaf and no version counter. `deleteActive` recreates the
 key: a deleted key is `Unknown` again and may be inserted again as the same key.
 
-### R2 — the seven edges (interface §2)
+### seven-edges-interface — the seven edges (interface §2)
 
 | edge | primitive | from → to | delta |
 |---|---|---|---|
@@ -78,10 +78,10 @@ key: a deleted key is `Unknown` again and may be inserted again as the same key.
 
 There is no free-form `update`: the only updates are the two state moves above.
 
-### R3 — the refused combinations, as the complement of R2
+### refused-combinations-as-complement — the refused combinations, as the complement of seven-edges-interface
 
-**Every `(primitive, value, before-leaf)` triple that is not a row of the R2
-table is refused.** R3 is not a list; it is the complement, and the model states
+**Every `(primitive, value, before-leaf)` triple that is not a row of the seven-edges-interface
+table is refused.** refused-combinations-as-complement is not a list; it is the complement, and the model states
 it that way so that a triple nobody thought of is refused by construction rather
 than by omission.
 
@@ -97,7 +97,7 @@ observe:
 | any `insert` on a `Known` leaf | the key exists |
 | `delete` on `Unknown` | there is nothing to delete |
 | any edge out of `Known Terminal` | terminal admits none; `deleteTerminal` is one case of this fact, not a second fact |
-| `Read Active`, `Read Absent` | only a leaf that can no longer move may be attested (R5, and the structural guard S1 rests on) |
+| `Read Active`, `Read Absent` | only a leaf that can no longer move may be attested (read-interface, and the structural guard terminal-attestation-sound rests on) |
 | a batch of zero requests | the empty-fold rule refuses zero *requests* |
 | a mint differing from the summed delta | the cage's delta is read off the edges it folded |
 
@@ -105,14 +105,14 @@ Distinct reasons are required where the distinction is **observable**. Two
 refusals of one underlying fact — `deleteTerminal` and "any edge out of
 `Terminal`" — are not required to carry two reasons.
 
-### R4 — admission (interface §3)
+### admission-interface — admission (interface §3)
 
 Each of the six tree edges is admitted only if the request carries an approval
 token minted under `Config.applicationPolicy`. `witnessTerminal` requires none.
 Policing is checked at fold time as the presence of the approval; nothing
 application-specific runs at fold time. The pins are immutable across folds.
 
-**D-APPROVAL — what one approval certifies** (#157's frozen contract, carried
+**approval-asset-binding — what one approval certifies** (#157's frozen contract, carried
 here so the Lean model and the cage agree). An approval is scoped by the tuple
 `(edge, key, owner, destination)`; its asset name is
 `blake2b_256(edge ‖ key ‖ owner ‖ destination)`; and it is **not burned at the
@@ -120,7 +120,7 @@ fold**. So an approval minted under the pinned policy but naming a different
 edge, key, owner or destination does **not** admit this request: right policy is
 necessary and not sufficient.
 
-### R5 — the read (interface §2)
+### read-interface — the read (interface §2)
 
 `Read(value)` proves `key → value` against the **fold's root at that action's
 position in the batch**, not the batch's initial or final root, and leaves the
@@ -129,56 +129,56 @@ leaf unchanged. A fold of only reads is a fold: the empty-fold rule refuses zero
 `Read Active` and `Read Absent`, so no attestation of a leaf that can still move
 is ever produced.
 
-### R6 — token custody and routing
+### token-custody-routing — token custody and routing
 
 Absent tokens are routed to the cage's own custody, so any later fold can consume
 them without a signature. Active and terminal tokens go to the output the request
-names. **R-ADA** below settles where the absent token's value goes when it is
+names. **custody-lovelace-refund** below settles where the absent token's value goes when it is
 consumed: to the refund address the `insertAbsent` request named, recorded in the
 custody datum beside the token.
 
-### R7 — the state configuration
+### state-configuration — the state configuration
 
 `root, maxFee, processTime, retractTime, applicationPolicy, activePolicy,
 absentPolicy, terminalPolicy` — **eight fields**. `consumerPin` is gone;
 `representativePolicy` becomes `activePolicy`.
 
-### R8 — the statements
+### statements — the statements
 
-P1, L1, S1, S2, S3, O1, T1 and W1–W4, exactly as the interface states them, each
+tree-change-requires-approval, request-spent-once-in-order, terminal-attestation-sound, terminal-attestation-permanent, supply-matches-leaf-state, booking-requires-untaken-key, terminal-key-cannot-change and active-witness-unique–witness-kinds-exclude, exactly as the interface states them, each
 proved without `sorryAx`, each with a Given/When/Then and one executable model
 observation. Rows in `plan.md`.
 
-### R9 — the instances
+### instances — the instances
 
 The **open application** — a policy that certifies everything — is the smallest
-instantiation and is proved first; every statement in R8 holds for it. **Naming**
+instantiation and is proved first; every statement in statements holds for it. **Naming**
 is the second: the record UTxO holds the active token; `maintain` and `recover`
 never touch the trie; retirement completion is `updateTerminal`; the approval
-policy follows **R-NM4** for all six edges. The existing naming statements
+policy follows **naming-approval-rules** for all six edges. The existing naming statements
 (`naming_delete_refused`, `WellFormed`, the recovery rows) are re-stated over the
 new model with their meaning preserved.
 
 `over_terminal` is **not** one of them: it lives in `Singular.Statements`
 (Statements.lean:142), not in the naming layer, and the interface **supersedes**
-it with T1 rather than preserving it. Because the generic module also carries
-`over_no_representative`, `resolve_over` and the `consumer` theorems, slice A's
-handback must include a **retirement map** — see R12.
+it with terminal-key-cannot-change rather than preserving it. Because the generic module also carries
+`over_no_representative`, `resolve_over` and the `consumer` theorems, model slice's
+handback must include a **retirement map** — see retirement-map-for-generic-statements.
 
-### R12 — the retirement map for the generic statements
+### retirement-map-for-generic-statements — the retirement map for the generic statements
 
 Slice A's handback carries, for **all 44** declarations in the base
 `lean/theorem-debt.json`, exactly one disposition each:
 
 - **carried** — same meaning, same or new identity;
 - **renamed** — to which exact identity;
-- **retired** — with the reason (`consumerPin` removed, subsumed by T1, …).
+- **retired** — with the reason (`consumerPin` removed, subsumed by terminal-key-cannot-change, …).
 
 Without it an auditor cannot distinguish a dropped guarantee from a rename, and
 the page-against-manifest check passes happily on a manifest that quietly lost
 rows.
 
-### R10 — the model-bound tooling and pages (slice A)
+### model-bound-tooling-pages-slice — the model-bound tooling and pages (model slice)
 
 `tools/check_model.py` and the corpus generators are **opened to the new
 identities**. The discipline stays and is not weakened: every identity matched
@@ -187,9 +187,9 @@ STATED, byte-for-byte corpus regeneration. `docs/theorems.md`,
 `docs/model-ledger.md` and `docs/mutants.md` are regenerated or rewritten against
 the new model with fresh speech stamps.
 
-### R11 — the simulator and its pages (slice B, #163)
+### simulator-its-pages-slice-b — the simulator and its pages (simulator slice, #163)
 
-A **separately authored** transcription of the frozen slice-A Lean interface:
+A **separately authored** transcription of the frozen model-slice Lean interface:
 the generic profile exposes the seven edges and the read, refuses the illegal
 combinations **by name**, and shows the token movement per edge; the naming
 profile shows the Over witness minted by a folded read and freely burned.
@@ -202,11 +202,11 @@ restamped.
 
 ## Decisions
 
-Interface §9's three open items. Two are now **operator rulings** (A-002); one
+Interface §9's three open items. Two are now **operator rulings** (operator answer (A-002)); one
 was accepted as this ticket proposed it. They are no longer proposals, and
 changing any of them needs a new operator ruling, not a ticket-owner decision.
 
-### D-CODEC — the three-state leaf codec (frozen sibling contract, accepted)
+### three-state-leaf-codec — the three-state leaf codec (frozen sibling contract, accepted)
 
 The leaf value is **one byte**: `0x00` Absent, `0x01` Active, `0x02` Terminal.
 Every other byte string **does not decode, and no root the cage produced contains
@@ -225,9 +225,9 @@ Obligations: `encode`/`decode` total and mutually inverse on valid bytes,
 injective, decidable; no byte decodes to two states; a naming-era leaf byte string
 does not decode. #157 and #152 consume this verbatim.
 
-### R-ADA — the absent token's deposit belongs to the inserter (operator ruling)
+### custody-lovelace-refund — the absent token's deposit belongs to the inserter (operator ruling)
 
-**Operator ruling, A-002. It replaces this ticket's proposed D-ADA, which is
+**Operator ruling, operator answer (A-002). It replaces this ticket's proposed retired-custody-value-proposal, which is
 rejected.**
 
 The `insertAbsent` request names a refund address. That address is recorded in
@@ -239,12 +239,12 @@ The model must state the consequence: **cage custody holds exactly the
 outstanding absent tokens, each with its refund address and its value.**
 
 Why the ticket's proposal was wrong, recorded so it is not re-proposed: under
-D-ADA whoever obtains a `deleteAbsent` approval harvests the inserter's min-ADA,
+retired-custody-value-proposal whoever obtains a `deleteAbsent` approval harvests the inserter's min-ADA,
 so in the open registry every absent witness is a bounty; and where the inserter
 and the booker differ — a successor registry, reserved spellings — the
 "value-neutral for whoever funded it" derivation is simply false.
 
-### D-SELF — whether the registry refuses `insertAbsent` on its own account (accepted)
+### application-decides-absence-booking — whether the registry refuses `insertAbsent` on its own account (accepted)
 
 **It does not.** `insertAbsent` is admitted exactly like the other five tree
 edges: by an approval under the pinned application policy, and by nothing else.
@@ -256,9 +256,9 @@ sentence that governs every other edge." A registry-level refusal would contradi
 that sentence and would remove the successor-registry and reserved-spellings
 instances of §8. The model carries **no** `insertAbsent`-specific refusal.
 
-### R-NM4 — naming's rule for the three absent edges (operator ruling)
+### naming-approval-rules — naming's rule for the three absent edges (operator ruling)
 
-**Operator ruling, A-002.** It completes NM4, which this ticket had left
+**Operator ruling, operator answer (A-002).** It completes naming-approvals-bind-request, which this ticket had left
 incomplete for the absent edges.
 
 | edge | naming's approval policy certifies on |
@@ -267,7 +267,7 @@ incomplete for the absent edges.
 | `updateActive` | the signature of the controller who will own the record — exactly as `insertActive`; booking a witnessed-absent name is indistinguishable from booking an unknown one |
 | `deleteAbsent` | the signature of **the refund address the `insertAbsent` request named** — the inserter only, never anyone else, never nobody |
 | `insertActive` | the controller's signature |
-| `updateTerminal` | **the committed recovery key** — the key whose hash the record commits to, revealed and signing exactly as `Recover` proves it — **or** a distinct-member quorum. The current control key alone **never** certifies it (operator ruling, NOTE-008). |
+| `updateTerminal` | **the committed recovery key** — the key whose hash the record commits to, revealed and signing exactly as `Recover` proves it — **or** a distinct-member quorum. The current control key alone **never** certifies it (operator ruling, operator note (NOTE-008)). |
 | `deleteActive` | **never** |
 
 The story these rows serve: Carol owns the **witness** — only she can retract it,
@@ -280,7 +280,7 @@ custody.
 
 Every refusal above is observable as a distinct refusal reason, not a silent
 no-op, and each has a control that can produce it. In the simulator each is
-refused **by name** (R11).
+refused **by name** (simulator-its-pages-slice-b).
 
 ## Observable success
 

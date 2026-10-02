@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Retention control for the dedicated conformance row steps (#287).
 #
-# Each of the CG07, CG22 and CG23 steps runs its row through
+# Each of the retract-outside-window, retire-active-key and reject-and-retract-refund-controls steps runs its row through
 # dedicated-row.sh. A row that fails must still leave its receipts and its
 # replay index where the always-run upload collects them. This control runs
 # that same script with a stand-in row that writes the index a differing step

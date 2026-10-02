@@ -10,7 +10,7 @@ License     : Apache-2.0
 Registers a script stake credential so a later withdrawal from it does
 not fail on ledger for the wrong reason.
 
-#157 C10: the consumer-registration builder is DELETED with the pinned
+#157 removed-consumer-encoding: the consumer-registration builder is DELETED with the pinned
 consumer it registered. There is no consumer script to register and no
 mandatory withdrawal left to make possible, and a function that
 registers nothing would be a trap for the next reader. What remains is
@@ -42,11 +42,11 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.Provider (View (..))
 
--- | Empty query GADT (no context needed).
+-- | Empty query generalized algebraic data type (no context needed).
 data NoCtx a
 
-{- | Wrap the view's script evaluation for the DSL (no scripts execute
-here, but the DSL still calls back through this interface).
+{- | Wrap the view's script evaluation for the story language (no scripts execute
+here, but the story language still calls back through this interface).
 -}
 mkEvalTx
     :: View IO

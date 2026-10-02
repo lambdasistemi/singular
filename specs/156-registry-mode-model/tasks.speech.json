@@ -5,7 +5,7 @@
       "pause": 400
     }
   ],
-  "slice-b-163-simulator-author-muse-auditor-opus-lean-simulations-auditor": [
+  "simulator-slice-163-simulator-author-muse-auditor-opus-lean-simulations-auditor": [
     {
       "text": "Nine tasks, starting only after the model slice's audit passes: the profiles, the named refusals, replay agreement, the journeys and their limits, the clarity record, the counts, the browser checks and fresh speech.",
       "pause": 400
@@ -25,6 +25,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "9235543b3867ad53339f8ecb169de9732681a49cf496375bf71e75c252c2be68"
+    "sha256": "47bdfe1ea1885d5a3287c4895e0447a539d89f0f0276b81f60241f7629a0eb50"
   }
 }

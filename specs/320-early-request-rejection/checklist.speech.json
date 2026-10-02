@@ -1,7 +1,7 @@
 {
   "specification-quality": [
     {
-      "text": "The specification names the actor and outcome, cites the model for each requirement or marks it as outside the model, covers success and refusal, names each invariant's layer, lists what stays unchanged, and preserves the consumer conflict. No requirement depends on an open decision: the early reject row is settled as CG24 with CG23's two timing sentences.",
+      "text": "The specification names the actor and outcome, cites the model for each requirement or marks it as outside the model, covers success and refusal, names each invariant's layer, lists what stays unchanged, and preserves the consumer conflict. No requirement depends on an open decision: the early reject row is settled as reject-inside-processing-and-retraction-windows with reject-and-retract-refund-controls's two timing sentences.",
       "pause": 400
     }
   ],
@@ -19,6 +19,6 @@
   ],
   "_source": {
     "file": "checklist.md",
-    "sha256": "d5a920e48f4226e2b89f71abfa52a513b3c4713fb5af8e924c6691b141adb8a2"
+    "sha256": "b26b2fbdce7ebd262a03e9cdf0b5d9137c5f16f895929f25d0593b63797523f7"
   }
 }

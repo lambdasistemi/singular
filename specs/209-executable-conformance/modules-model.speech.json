@@ -9,12 +9,12 @@
       "pause": 400
     },
     {
-      "text": "Three closing rules: promote reusable model codecs into the nearest model-owned interface module rather than cloning encoders into conformance, never create one oracle and proof pair per theorem, and preserve simulator corpus compatibility. The data contracts are D01 through D06 and the interface contracts are F01 through F05.",
+      "text": "Three closing rules: promote reusable model codecs into the nearest model-owned interface module rather than cloning encoders into conformance, never create one oracle and proof pair per theorem, and preserve simulator corpus compatibility. The data contracts are surface-identity-qualified-model-declaration-definition-digest through execution-receipt-candidate-tree-model-corpus-identities and the interface contracts are run-surface through execute-scenario.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "modules-model.md",
-    "sha256": "c45fbb168cb156b13058348c74fd2dee27a2733b1261e6124b945d8acb78449d"
+    "sha256": "754a57188ac5c92050b034152ced7becbee45de4382ffdd3343afae0a58bfb28"
   }
 }

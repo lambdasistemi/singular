@@ -95,11 +95,11 @@ Token disposal, refund economics and the application's conditions for approving 
 ```mermaid
 sequenceDiagram
   participant A as Application spending script
-  participant O1 as Application UTxO (state 1, NFT)
+  participant booking-requires-untaken-key as Application UTxO (state 1, NFT)
   participant O2 as Application UTxO (state 2, same NFT)
-  A->>O1: spend under the application's own rules
+  A->>booking-requires-untaken-key: spend under the application's own rules
   A->>O2: create successor carrying the same representative
-  Note over O1,O2: no registry request, no mint, no burn<br/>the key stays Active
+  Note over booking-requires-untaken-key,O2: no registry request, no mint, no burn<br/>the key stays Active
 ```
 
 While the NFT is in application custody, the application spending validator governs its movement and state changes. An application update can spend one application UTxO and produce its successor with the same NFT. This need not change the registry.

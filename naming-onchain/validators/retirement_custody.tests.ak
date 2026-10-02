@@ -479,7 +479,7 @@ test custody_wrong_spelling_refuses() fail {
 /// custody is spent, the active token it holds is exactly the burn the
 /// delta requires, and the name's leaf is `0x02` forever. Nobody signs —
 /// the retirement already decided; completion only executes it.
-test n8_completion_folds_the_terminal_update_accepts() {
+test completion_folds_the_terminal_update_accepts() {
   retirement_custody.retirement_custody.spend(
     None,
     #"00",
@@ -496,7 +496,7 @@ test n8_completion_folds_the_terminal_update_accepts() {
 /// A completion whose burn is not the asset the custody holds is not
 /// this completion: the held token would survive a transition that says
 /// it died.
-test n8_completion_burning_another_token_refuses() fail {
+test completion_burning_another_token_refuses() fail {
   retirement_custody.retirement_custody.spend(
     None,
     #"00",

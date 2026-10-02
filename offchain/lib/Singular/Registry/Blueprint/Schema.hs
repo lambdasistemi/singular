@@ -61,7 +61,7 @@ data Schema
       -}
       SList Schema
     | {- | @{"dataType": "list", "items": [<schema>, ...]}@ — Aiken's
-      FIXED TUPLE (#157 D-DEST): an ARRAY of positional item
+      FIXED TUPLE (#157 request-destination-binding): an ARRAY of positional item
       schemas. On the wire it is a Plutus @List@ of exactly that
       arity, each element of its own declared type, which is what
       distinguishes it from 'SList' and why it cannot share that

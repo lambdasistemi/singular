@@ -4,7 +4,7 @@ Description : Edge vocabulary, request datum, and phase classification
 License     : Apache-2.0
 
 What a registry request names and when its age allows acting on it: the
-C2 row-index edge vocabulary, the request datum with its codec, and the
+seven-admitted-edges row-index edge vocabulary, the request datum with its codec, and the
 accept\/retract\/reject phase classification. Reads only
 "Singular.Registry.Wire.Primitive"; nothing here is importable by a
 caller — the public surface is the "Singular.Registry.Types" facade.
@@ -48,7 +48,7 @@ import Singular.Registry.Wire.Primitive
     , unD
     )
 
-{- | The C2 row index a request names (#183, Lean @Request.edge@,
+{- | The seven-admitted-edges row index a request names (#183, Lean @Request.edge@,
 Aiken @lib\/edgeInsertAbsent@ … @edgeWitnessTerminal@).
 
 An edge names its own leaf bytes, so no value bytes travel with a
@@ -115,7 +115,7 @@ data OnChainRequest = OnChainRequest
     , requestKey :: !ByteString
     -- ^ Trie key to operate on
     , requestEdge :: !Edge
-    {- ^ The C2 row index this request names (#183). The edge names the
+    {- ^ The seven-admitted-edges row index this request names (#183). The edge names the
     trie move and its leaf bytes; no value bytes travel here.
     -}
     , requestDeposit :: !Integer
@@ -127,7 +127,7 @@ data OnChainRequest = OnChainRequest
     -- ^ POSIX time (ms) when the request was submitted
     , requestDestination :: !(ByteString, ByteString)
     {- ^ Where this request's minted token goes, and the hash of the
-    inline datum the receiving output must carry (#157 D-DEST;
+    inline datum the receiving output must carry (#157 request-destination-binding;
     appended last). Encoded as a two-element list, exactly as Aiken
     encodes a tuple. Empty datum hash means a datum-less output; for
     edge 0 the address component is the refund address.

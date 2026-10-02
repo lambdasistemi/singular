@@ -54,7 +54,7 @@ use registry/refusal.{depositReturned, refundShort}
 use types.{State}
 
 /// Why a payee of this fold is not paid what the fold owes it, or `None`
-/// (#253, DM-C2). `owed` is one floor per payment credential: the
+/// (#253, DM-seven-admitted-edges). `owed` is one floor per payment credential: the
 /// deposits of the edges that deliver nothing (3, 4, 5) and the refunds
 /// of rejected rows, at the owner's key, and the custody refunds, at the
 /// payment credential of the address each custody recorded — summed.
@@ -177,7 +177,7 @@ pub fn refundFault(
   }
 }
 
-/// The floors a fold owes its payees, one per payment credential (DM-C2):
+/// The floors a fold owes its payees, one per payment credential (DM-seven-admitted-edges):
 /// each owner's deposits and reject refunds at their key, plus every
 /// custody refund to an address with that key. A credential owed custody
 /// refunds alone is left out: the per-address sums (`custodyFault`)

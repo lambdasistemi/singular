@@ -239,7 +239,7 @@ skipEvalUnits txLimit blockLimit n =
             (minimum [gMem, share tMem, share bMem])
             (minimum [gSteps, share tSteps, share bSteps])
 
--- | Empty query GADT (no context needed).
+-- | Empty query generalized algebraic data type (no context needed).
 data NoCtx a
 
 -- | Run speculative trie operations to compute proofs and the new root.
@@ -373,7 +373,7 @@ buildProgram
             let f = tx ^. bodyTxL . feeTxBodyL
             in  if f > Coin 0 then Tx.Ok f else Tx.Iterate f
         mapM_ Tx.output extraOutputs
-        -- #157 C10: the pinned consumer and its mandatory withdrawal are
+        -- #157 removed-consumer-encoding: the pinned consumer and its mandatory withdrawal are
         -- gone. Every rule it re-walked beside the fold — request value
         -- coverage, the mint binding — is the cage's own now, checked
         -- once from the transaction's own evidence.

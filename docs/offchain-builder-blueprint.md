@@ -30,7 +30,7 @@ flowchart TD
     subgraph Fold owners
         UC[Update.Context — queries, proofs, state, slot, context]
         UD[Update.Duties — what a fold's requests owe]
-        UB[Update.Build — evaluation adapter, one DSL program]
+        UB[Update.Build — evaluation adapter, one story language program]
     end
     BP -->|re-exports| BS
     BP -->|re-exports| BA
@@ -83,7 +83,7 @@ under a separate ticket's fence. The fold's own owners live behind the
 | `Singular.Registry.TxBuilder.Internal.Edges` | The decisions a builder shares with the cage: what each registry edge does to the trie, what an edge owes the mint, the approval asset name, the pinned consumer binding, and attribution of node and evaluation failures to a named script hash. |
 | `Singular.Registry.TxBuilder.Update.Context` | The fold's preparation: the registry context and its empty value, state/request/fee lookup, ordered speculative proofs, the state continuation output and script, the validity upper slot, and completing a partly empty context from the provider. |
 | `Singular.Registry.TxBuilder.Update.Duties` | The fold's decisions: `RegistryDuties` and the one derivation of what a fold's requests owe — mints, destinations, custody spends, burn sources, deposit and approval returns, no required signer. |
-| `Singular.Registry.TxBuilder.Update.Build` | The fold's assembly: the empty query GADT, the evaluation adapter, and the one transaction DSL program (spends, mints, outputs, signatures, scripts or references, collateral, validity). |
+| `Singular.Registry.TxBuilder.Update.Build` | The fold's assembly: the empty query generalized algebraic data type, the evaluation adapter, and the one transaction story language program (spends, mints, outputs, signatures, scripts or references, collateral, validity). |
 
 ## Where common changes land
 

@@ -87,7 +87,7 @@ applyDataParam d sbs =
 
 {- | Apply an integer parameter to a UPLC script.
 
-`witness(kind, registry)` (#157 C5) takes its kind as a plain integer, and
+`witness(kind, registry)` (#157 mint-matches-edge-deltas) takes its kind as a plain integer, and
 the deployment applies it three times. Wrapping the `Data` encoding here
 keeps the 'PlutusCore.Data' vocabulary inside this module, where the rest
 of the blueprint's encoding already lives.

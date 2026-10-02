@@ -69,6 +69,7 @@ the site check fails until it and this list agree.
 - <a href="../conformance/lib/Conformance/Receipt.hs" data-api="module">Conformance.Receipt</a> — <a href="../conformance/lib/Conformance/Receipt.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Refusal.hs" data-api="module">Conformance.Refusal</a> — <a href="../conformance/lib/Conformance/Refusal.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Replay.hs" data-api="module">Conformance.Replay</a> — <a href="../conformance/lib/Conformance/Replay.hs" data-api="source">source</a>
+- <a href="../conformance/lib/Conformance/RowNames.hs" data-api="module">Conformance.RowNames</a> — <a href="../conformance/lib/Conformance/RowNames.hs" data-api="source">source</a> — associates historical receipt keys with descriptive requirement names
 - <a href="../conformance/lib/Conformance/Rows.hs" data-api="module">Conformance.Rows</a> — <a href="../conformance/lib/Conformance/Rows.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Story/Binding.hs" data-api="module">Conformance.Story.Binding</a> — <a href="../conformance/lib/Conformance/Story/Binding.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Story/Identity.hs" data-api="module">Conformance.Story.Identity</a> — <a href="../conformance/lib/Conformance/Story/Identity.hs" data-api="source">source</a>

@@ -7,7 +7,7 @@
   ],
   "the-denominator": [
     {
-      "text": "The inventory file carries forty-six rows with forty-five owned. Row CK zero six — bonds, poison, the juvenility window and the signature threshold — is recorded as out of scope: it belongs to cardano-keri's checkpoint machine, and is never claimed here.",
+      "text": "The inventory file carries forty-six rows with forty-five owned. Row consumer-resolution zero six — bonds, poison, the juvenility window and the signature threshold — is recorded as out of scope: it belongs to cardano-keri's checkpoint machine, and is never claimed here.",
       "pause": 400
     },
     {
@@ -35,7 +35,7 @@
       "pause": 400
     },
     {
-      "text": "Eleven rows, four dispositions that must never be mistaken for one another. Unmet by ruling: the early rejection, CG zero nine. The consumer requires that a folder must not reject a request during its processing window, while Singular's model lets a folder reject a request with no timing admission, and the chain accepts that reject. By operator ruling of the first of October 2026 the consumer requirement is kept unmet, and alignment is tracked in cardano-keri issue four sixty-eight. The same verdict also keeps unmet three rows where the chain refuses and Lean has no counterpart to compare with: the stale-proof fold, the surplus action and the wrong constructor, by operator ruling of the second of October, each with its follow-up, issues three forty-six, three forty-five and three forty-seven. Held: executed, and the consumer requirement is unmet — the empty fold and the crossed refunds. Resolved by ruling: defect evidence of the outstanding owner gate. Superseded: observations kept, claims withdrawn, no execution credit. Retired: the two stake script hook rows, which the registry interface does not have. The run ends non-zero while anything is held or unmet — never a pass.",
+      "text": "Eleven rows, four dispositions that must never be mistaken for one another. Unmet by ruling: the early rejection, registry-operations zero nine. The consumer requires that a folder must not reject a request during its processing window, while Singular's model lets a folder reject a request with no timing admission, and the chain accepts that reject. By operator ruling of the first of October 2026 the consumer requirement is kept unmet, and alignment is tracked in cardano-keri issue four sixty-eight. The same verdict also keeps unmet three rows where the chain refuses and Lean has no counterpart to compare with: the stale-proof fold, the surplus action and the wrong constructor, by operator ruling of the second of October, each with its follow-up, issues three forty-six, three forty-five and three forty-seven. Held: executed, and the consumer requirement is unmet — the empty fold and the crossed refunds. Resolved by ruling: defect evidence of the outstanding owner gate. Superseded: observations kept, claims withdrawn, no execution credit. Retired: the two stake script hook rows, which the registry interface does not have. The run ends non-zero while anything is held or unmet — never a pass.",
       "pause": 400
     },
     {
@@ -89,7 +89,7 @@
       "pause": 400
     }
   ],
-  "cs07-unmarked-and-escalated": [
+  "proof-step-constructor-witnesses-unmarked-and-escalated": [
     {
       "text": "This section preserves historical observations from the earlier source revisions named in the report. Its old schema, parameter counts, accepting paths and pending repair descriptions are not current candidate evidence. Read the current ownerless integration section for the present contract.",
       "pause": 400
@@ -113,7 +113,7 @@
       "pause": 400
     },
     {
-      "text": "Serialized size is the tight dimension: about seventy percent of the transaction maximum for folds, about half for boots. The canonical session records its worst case in its CL zero one receipt; the registry session reads the worst accepting folds of the update, delete and re-insert rows off their receipts, and its other rows keep their worst cases in their own receipts.",
+      "text": "Serialized size is the tight dimension: about seventy percent of the transaction maximum for folds, about half for boots. The canonical session records its worst case in its execution-limits zero one receipt; the registry session reads the worst accepting folds of the update, delete and re-insert rows off their receipts, and its other rows keep their worst cases in their own receipts.",
       "pause": 400
     },
     {
@@ -123,7 +123,7 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "b67e882ed185a85239385f9a712fd8a71eec625c30fe5948e37502c8aecaf0fd"
+    "sha256": "edd649c5c9817e9b1f3a63dc36b813c4f00c34b2415bbb312fdb7af43368899f"
   },
   "historical-execution-reports": [
     {
@@ -149,7 +149,7 @@
       "pause": 400
     },
     {
-      "text": "Row CS zero seven is unmarked with a finding, never a gap and never a pass. The migrating constructor is recorded unreachable with its validator-read reason. Refusal reasons keep every failing script hash in ledger order.",
+      "text": "Proof-step constructor coverage is unmarked with a finding, never a gap and never a pass. The migrating constructor is recorded unreachable with its validator-read reason. Refusal reasons keep every failing script hash in ledger order.",
       "pause": 400
     }
   ],

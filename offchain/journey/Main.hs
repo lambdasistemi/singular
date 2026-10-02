@@ -32,7 +32,7 @@ This is the vehicle for Singular's naming claim, not the claim:
 nothing this runner prints describes a name as claimed, registered
 or maintained. It exercises the registry protocol only.
 
-It uses the same code path as the E2E suite — 'bootTokenImpl',
+It uses the same code path as the end-to-end suite — 'bootTokenImpl',
 'requestEdgeImpl', 'updateTokenImpl' and a real node-to-client
 connection to a real 'cardano-node' spawned as a subprocess. No
 mocks, no stubbed node.

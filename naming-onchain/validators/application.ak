@@ -10,7 +10,7 @@ use cardano/transaction.{
 }
 use naming.{NamingRecord, RetirementQuorum, mpfs_state_hash}
 
-/// The registry's own active-token policy (#157 C7): genesis sets it,
+/// The registry's own active-token policy (#157 state-datum-fields): genesis sets it,
 /// every fold preserves it. Read from the spent state when present, else
 /// from the reference (NOTE-014 item A1) — retires authenticate without
 /// spending.
@@ -90,13 +90,13 @@ pub const retirement_custody_hash =
 /// approvals are minted at request creation, one per request, carried by
 /// the request UTxO and never burned — no script of naming's runs at fold
 /// time at all. The cage recomputes each approval's name from the request
-/// it rides and refuses a mismatch (C4, D-APPROVAL), so this validator's
+/// it rides and refuses a mismatch (tree-edge-admission-by-approval, approval-asset-binding), so this validator's
 /// only job is to decide WHEN an edge may be certified.
 ///
 /// The `spend` purpose governs the record UTxOs the fold creates. There
 /// is no pending claim any more, and so no `Fold` and no `Cancel`: a
 /// booking is an approval plus a cage request, and the record comes into
-/// being as the fold's own output (N3).
+/// being as the fold's own output (record-created-by-fold).
 ///
 /// Row demand (from the accepted v0.2.0 corpus, `LM-LR-LT rows`):
 ///
@@ -106,7 +106,7 @@ pub const retirement_custody_hash =
 ///   signing, becomes the controller.
 /// - `LT02`/`LT03` (`retire`): the quorum route. `LT01` is retired as a
 ///   row — the current control key alone no longer ends a name
-///   (D-TERMINATE, want-ledger R1).
+///   (recovery-authorizes-retirement, the recovery authorization requirement).
 pub type ApplicationRedeemer {
   /// Ordinary maintenance (`LM` rows).
   Maintain
@@ -123,8 +123,8 @@ pub type ApplicationRedeemer {
   Recover { revealed_control: ByteArray, registry: ByteArray }
 }
 
-/// Redeemer of the application policy's mint purpose (#157 N2): certify
-/// one edge of C2 for one key, one owner and one destination. The asset
+/// Redeemer of the application policy's mint purpose (#157 application-approval-minting): certify
+/// one edge of seven-admitted-edges for one key, one owner and one destination. The asset
 /// name minted must equal the approval binding of exactly that tuple.
 ///
 /// `WithdrawApproval` and `InsertApproval` are retired with the claim
@@ -193,7 +193,7 @@ validator application {
           trace @"approval-quantity"
           False
         } else if bound != approval_name(edge, key, owner, destination) {
-          // The name IS the binding (D-APPROVAL). The cage recomputes the
+          // The name IS the binding (approval-asset-binding). The cage recomputes the
           // same bytes from the request; one formula, two partitions.
           trace @"approval-binding"
           False
@@ -213,7 +213,7 @@ validator application {
   }
 }
 
-/// The approval binding (#157 D-APPROVAL): the identical formula the
+/// The approval binding (#157 approval-asset-binding): the identical formula the
 /// cage recomputes — `blake2b_256(edge ‖ key ‖ owner ‖ destination)`,
 /// the destination being its address bytes followed by its datum hash.
 /// Transcribed rather than imported because the package fence blocks the
@@ -234,7 +234,7 @@ pub fn approval_name(
   )
 }
 
-/// The six arms of R-NM4 (#157 N2). Edge indices are the C2 row indices:
+/// The six arms of naming-approval-rules (#157 application-approval-minting). Edge indices are the seven-admitted-edges row indices:
 /// `0` insertAbsent, `1` insertActive, `2` updateActive, `3`
 /// updateTerminal, `4` deleteAbsent, `5` deleteActive.
 fn approve(
@@ -265,7 +265,7 @@ fn approve(
     // insertActive / updateActive — the controller who will own the
     // record signs, and the destination binds the record datum, so the
     // folder cannot create Alice's record with a controller of its own
-    // choosing (D-DEST).
+    // choosing (request-destination-binding).
     if !has(tx.extra_signatories, owner) {
       trace @"controller-signature"
       False
@@ -468,7 +468,7 @@ fn custody_refund_of(input: Input) -> Option<ByteArray> {
 }
 
 /// `LM01` accepts; `LM02` (no signature), `LM03` (tampered control or
-/// recovery field) and `LM04` (altered quorum) refuse. NM2 (#157 N9):
+/// recovery field) and `LM04` (altered quorum) refuse. local-record-update-preserves-registry (#157 N9):
 /// maintenance never touches the trie, so the registry state may not be
 /// a spent input of this transaction at all.
 fn maintain(record: NamingRecord, claim: Input, tx: Transaction) -> Bool {
@@ -513,7 +513,7 @@ fn next_control_commitment(revealed_control: ByteArray) -> ByteArray {
 }
 
 /// Does this reveal prove the record's committed next-control key, and
-/// does that key sign? The one proof `Recover` uses (#157 D-TERMINATE).
+/// does that key sign? The one proof `Recover` uses (#157 recovery-authorizes-retirement).
 fn recovery_proved(
   record: NamingRecord,
   revealed_control: ByteArray,
@@ -583,7 +583,7 @@ fn recover(
 /// and in registry mode it also co-creates the completion request that
 /// will fold `Update(0x01, 0x02)` (#157 N4).
 ///
-/// **Who may end a name (D-TERMINATE, want-ledger R1, 2026-09-16).** The
+/// **Who may end a name (recovery-authorizes-retirement, the recovery authorization requirement, 2026-09-16).** The
 /// committed recovery key — revealed and signing, the proof `Recover`
 /// uses — or a distinct-member quorum. The CURRENT control key alone does
 /// not: a thief holding Alice's current key can change where her name
@@ -607,7 +607,7 @@ fn retire(
     False
   } else {
     let (_, expected) = referenced_registry(tx)
-    // The record carries the active token of exactly this key (D-ASSET:
+    // The record carries the active token of exactly this key (token-name-is-registry-key:
     // under each token policy the asset name IS the registry key), and
     // exactly that asset lands at the custody script.
     if stored != key || quantity_of(claim.output.value, expected, stored) != 1 {
@@ -684,7 +684,7 @@ fn retirement_completion(
     [request] ->
       when completion_owner_of(request, key) is {
         Some(owner) -> {
-          // The terminate edge names no destination (R-NM4 row 3), so the
+          // The terminate edge names no destination (naming-approval-rules row 3), so the
           // binding is over the key and its owner alone.
           let bound = approval_name(3, key, owner, (#"", #""))
           if quantity_of(request.value, own_hash, bound) == 1 {

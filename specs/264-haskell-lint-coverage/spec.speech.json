@@ -23,7 +23,7 @@
       "pause": 400
     }
   ],
-  "a-011-forward-correction-to-current-release-instructions": [
+  "operator-answer-a-011-forward-correction-to-current-release-instructions": [
     {
       "text": "The operator ruled the old release README outdated and directed a forward correction. Current and future instructions distinguish verified commands from retained legacy commands; already published archives remain unchanged. The assembled archive checker and four checksum-valid negative controls enforce the corrected availability promise. The earlier documentation correction passed its own gate and exact-head CI on the old main base. Main now binds accepted Lean source 03fd9e0 and constitution version 1.10, whose retraction admission is outside this ticket's bounded fold journey. The rebased head needs fresh audit, gate and exact-head CI. Nothing here makes an unbuilt legacy command work or verifies retraction behavior.",
       "pause": 400
@@ -31,6 +31,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "4f5bc3e43ddda0ac644f17a7ca1546041aa561145464b369a07123544facf364"
+    "sha256": "fb35202741eb273a94da8825688d0a355de2fda716a33bb48a36ed04baaf2beb"
   }
 }

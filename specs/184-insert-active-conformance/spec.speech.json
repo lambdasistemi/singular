@@ -1,7 +1,7 @@
 {
   "runnable-story": [
     {
-      "text": "The runnable story is one generic conformance session that executes CG21 and emits a complete candidate-bound receipt.",
+      "text": "The runnable story is one generic conformance session that executes register-active-key and emits a complete candidate-bound receipt.",
       "pause": 400
     }
   ],
@@ -19,7 +19,7 @@
   ],
   "receipt-truth-contract": [
     {
-      "text": "CG21 must carry complete edge evidence and honest transaction observations. The loader rejects missing fields and never invents a trace the ledger did not surface.",
+      "text": "register-active-key must carry complete edge evidence and honest transaction observations. The loader rejects missing fields and never invents a trace the ledger did not surface.",
       "pause": 400
     }
   ],
@@ -37,6 +37,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "b553e14fb88a1cc6cafb063c16f75799d5decba67251917e386f8a3888271171"
+    "sha256": "8bed231907722af753c8070f96e3ec3f87206a90fe755855234619f44d3363fa"
   }
 }

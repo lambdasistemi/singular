@@ -73,7 +73,7 @@ import Singular.Registry.Types
     , UpdateRedeemer (..)
     )
 
--- | Empty query GADT (no context needed).
+-- | Empty query generalized algebraic data type (no context needed).
 data NoCtx a
 
 {- | Build a reject transaction for every pending request
@@ -247,7 +247,7 @@ rejectValidity view = do
                 [120_000, 60_000, 30_000, 10_000, 5_000, 2_000, 1_000]
     pure (lowerSlot, upperSlot)
 
--- | Wrap the Provider's viewEvaluateTx for the DSL.
+-- | Wrap the Provider's viewEvaluateTx for the story language.
 mkRejectEvalTx
     :: View IO
     -> ConwayTx
@@ -266,7 +266,7 @@ mkRejectEvalTx view tx = do
             )
             r
 
--- | The TxBuild DSL program for a reject tx.
+-- | The TxBuild story language program for a reject tx.
 buildRejectProgram
     :: CageConfig
     -> PParams ConwayEra
@@ -323,7 +323,7 @@ buildRejectProgram
                     )
                     reqUtxos
         mapM_ Tx.output refundOuts
-        -- #157 C10: the pinned consumer and its mandatory withdrawal are
+        -- #157 removed-consumer-encoding: the pinned consumer and its mandatory withdrawal are
         -- gone. Every rule it re-walked beside the fold — request value
         -- coverage, the mint binding — is the cage's own now, checked
         -- once from the transaction's own evidence.

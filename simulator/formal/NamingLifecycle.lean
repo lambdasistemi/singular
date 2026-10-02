@@ -2,8 +2,8 @@ import Singular.Naming
 
 /-! Lifecycle for the naming profile over the registry-mode model.
 `maintain` and `recover` replace the record's fixture and never touch the
-trie — the root is equal before and after (NM2). Retirement is authorized per
-R-NM4 (NM3), creates the ordinary-validator pending request and leaves the leaf
+trie — the root is equal before and after (local-record-update-preserves-registry). Retirement is authorized per
+naming-approval-rules (retirement-removes-active-witness), creates the ordinary-validator pending request and leaves the leaf
 active; a separate completion applies `updateTerminal`. The consumer binding
 pins the eight-field datum's policies plus the same-registry cage token and
 applied request-validator identity; `consumerPin` and `representativePolicy`
@@ -91,7 +91,7 @@ def recoveredFixture : NamingFixture :=
   ({ aliceFixture with controlAddress := nextControllerAddress, nextControlCommitment := freshControllerCommitment } : NamingFixture)
 
 /-- Maintenance: the certified fixture fields other than the payment
-destination are preserved; the trie is untouched (NM2). -/
+destination are preserved; the trie is untouched (local-record-update-preserves-registry). -/
 def maintainDestination (state : NamingState) (key : Nat) (candidate : NamingFixture)
     (signers : List NamingAddress) : Except String NamingState := do
   let record ←
@@ -106,7 +106,7 @@ def maintainDestination (state : NamingState) (key : Nat) (candidate : NamingFix
     { record with fixture := candidate } :: state.records.filter (·.key != key) }
 
 /-- Recovery: the revealed key commits to the record's commitment and signs;
-the fresh commitment differs. The trie is untouched (NM2). -/
+the fresh commitment differs. The trie is untouched (local-record-update-preserves-registry). -/
 def recoverController (hasher : RecoveryHasher) (state : NamingState) (key : Nat)
     (revealed : NamingAddress) (candidate : NamingFixture)
     (signers : List NamingAddress) : Except String NamingState := do
@@ -128,7 +128,7 @@ def recoverController (hasher : RecoveryHasher) (state : NamingState) (key : Nat
   pure { state with records :=
     { record with fixture := candidate } :: state.records.filter (·.key != key) }
 
-/-- Retirement phase one under R-NM4 — recovery key or quorum, never the
+/-- Retirement phase one under naming-approval-rules — recovery key or quorum, never the
 control key alone. It creates the pending request; completion is separate. -/
 def namingRetireLifecycle (state : NamingState) (key : Nat) (signatures : List (List Nat))
     (revealed : Option NamingAddress) : Except String NamingState :=

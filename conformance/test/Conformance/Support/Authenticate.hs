@@ -3,10 +3,10 @@ Module      : Conformance.Support.Authenticate
 Description : Canonical-authentication decision tests (issue #69)
 
 The rival fixtures below are the shapes the devnet rows meet: a
-consistent rival under the same policy at the same address (CA02),
-and a forged ada-only output at the canonical address (CA05). The
+consistent rival under the same policy at the same address (rival-seed-authentication),
+and a forged ada-only output at the canonical address (tokenless-output-authentication). The
 weak authenticator's designed acceptance of the rival is itself
-asserted: it is the CA03 control, and a control that could not
+asserted: it is the policy-address-only-authentication-control control, and a control that could not
 accept would prove nothing.
 -}
 module Conformance.Support.Authenticate (spec) where

@@ -7,12 +7,12 @@
   ],
   "gate-and-resource-policy": [
     {
-      "text": "Gate S version two uses the existing docs check and release check CI commands to verify candidate Haddock and the future archive. The documentation slice starts after a committed source checkpoint, a frozen gate and independent contract approval.",
+      "text": "acceptance checks version two uses the existing docs check and release check CI commands to verify candidate Haddock and the future archive. The documentation slice starts after a committed source checkpoint, a frozen gate and independent contract approval.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "a1424688c2410a7fe4f7c43b98a7c902d9eabc1ad3ff24277d9d37ba5155a5bc"
+    "sha256": "beb5a25c95c4b776561f6d934d8a2b93eed5c9f6e66bbe5fc766a02f1b3a9ece"
   }
 }

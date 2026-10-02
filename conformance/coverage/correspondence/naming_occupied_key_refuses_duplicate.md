@@ -67,9 +67,9 @@ claimedTwice 1` folds the winner; folding `2` now meets an occupied key and must
 
 | check identity | layer | what ran | result |
 |---|---|---|---|
-| `evaluation.spike.cg05.story` (tasty-bdd evaluation spike) | real-boundary story exercise | row **CG05** — Insert on an already-present key — through the packaged conformance runner on a real devnet with the compiled blueprint; refusal observed script-attributed; executing negative control (fresh cage, valid insert accepted) proved the refusal discriminates; receipt `receipt-CG05.json` produced | story **passed**; deliberate-failure mode **exited 1** as required (see `../evaluation/README.md`) |
+| `evaluation.spike.cg05.story` (tasty-bdd evaluation spike) | real-boundary story exercise | row **insert-occupied-key** — Insert on an already-present key — through the packaged conformance runner on a real devnet with the compiled blueprint; refusal observed script-attributed; executing negative control (fresh cage, valid insert accepted) proved the refusal discriminates; receipt `receipt-CG05.json` produced | story **passed**; deliberate-failure mode **exited 1** as required (see `../evaluation/README.md`) |
 
-Honest limits of that evidence: CG05 exercises the **generic** occupied-key refusal the
+Honest limits of that evidence: insert-occupied-key exercises the **generic** occupied-key refusal the
 naming theorem rests on (`Model.lean:175`), not the naming-profile wrapper
 (`namingFoldRequest`) — the naming production boundary (Aiken naming validators + epic-17
 traces) is not yet available. This is a missing **mapping/layer row** in the record, not a
@@ -79,7 +79,7 @@ neither layer.
 ## 5. What is *not* modeled here
 
 - The refusal message's *attribution on chain* (which script/phase emitted it) is observed
-  by the CG row runner, not asserted by this theorem — the theorem says only the value
+  by the registry-operations row runner, not asserted by this theorem — the theorem says only the value
   `.error "occupied-key"`.
 - Fee, bond, tip and custody effects around the refusal are out of this theorem's scope
   (they belong to the fold/wire obligations, separate rows).
@@ -113,7 +113,7 @@ neither layer.
   },
   "evidence": {
     "checkId": "evaluation.spike.cg05.story",
-    "runner": "conformance row CG05 (real devnet + compiled blueprint)",
+    "runner": "conformance row insert-occupied-key (real devnet + compiled blueprint)",
     "evaluation": "../evaluation/README.md"
   },
   "recordStatus": "unmapped, insufficient-layer — this page is correspondence, not coverage"

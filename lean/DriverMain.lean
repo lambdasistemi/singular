@@ -233,7 +233,7 @@ def scenarios : List Scenario :=
     , requiresReachableState := true, start := sTimed, setup := [registerActive]
     , exit := .retract, request := registerRetracted, lovelace := lovelace
     , witness := some { retractionWitness with validFrom := 10999 } }
-    -- DR09's retraction, valid until 11501: one past phase 2's excluded upper
+    -- The pending-request retraction, valid until 11501: one past phase 2's excluded upper
     -- bound, submission 10000 plus processing 1000 plus retraction 500, so the
     -- model refuses it as outside phase 2.
   , { id := "DR13-retract-after-phase2"
@@ -243,7 +243,7 @@ def scenarios : List Scenario :=
     , requiresReachableState := true, start := sTimed, setup := [registerActive]
     , exit := .retract, request := registerRetracted, lovelace := lovelace
     , witness := some { retractionWitness with validTo := 11501 } }
-    -- DR02's registration claiming the token its edge mints: the single step a
+    -- The active registration claiming the token its edge mints: the single step a
     -- one-request batch must fold exactly as.
   , { id := "DR14-register-active-claimed"
     , theoremName := insertActiveTheorem, statementSha256 := insertActiveDigest

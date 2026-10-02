@@ -5,31 +5,31 @@ quickstart, checklist and tasks at this commit.
 
 ```mermaid
 flowchart LR
-    FR[FR-01..FR-16] --> M[M1..M9]
-    M --> T[T001..T043]
-    T --> G[G1..G10]
+    FR[Refusal capture, replay and comparison requirements] --> M[Replay and evidence components]
+    M --> T[Implementation and verification tasks]
+    T --> G[Acceptance checks]
 ```
 
 ## Coverage
 
 | Requirement | Model | Tasks | Gate |
 |---|---|---|---|
-| FR-01 capture | M3, D1 | T022, T027 | G6, G7, G10 |
-| FR-02 traced build | M1 | T011 | G8 |
-| FR-03 toolchain | M1, D2 | T010, T012 | G8 |
-| FR-04 parameters | M3 | T024 | G2 |
-| FR-05 same context | M3 | T001, T023 | G2, G6 |
-| FR-06 deployed reproduction | M2, M3, D5 | T020, T025 | G2, G6 |
-| FR-07 reason | M2, D5 | T020, T021 | G2 |
-| FR-08 classes | M2, D5 | T020 | G2 |
-| FR-09 comparison | M2, M4, D6 | T030 | G2, G6, G9 |
-| FR-10 extent classes | M5, `extent.md` | T028, T031 | G7, G10 |
-| FR-11 receipt | M6 | T032 | G6, G7 (after Q-001) |
-| FR-12 wrong-reason control | M8 | T033, T037 | G9 |
-| FR-13 accepting control | M3, contract index | T034 | G10 |
-| FR-14 extent | M9 | T038 | G10 |
-| FR-15 book | M7 | T040–T042 | G1, G2 |
-| FR-16 fence | plan owned paths | every slice | G5 and the path diff |
+| capture-refused-transaction capture | conformance-run-replay, replaycapsule | capturecapsule-at-validator-rejection-driver-steps, run-retire-active-key-reject-retract | retirement-refund-window-reasons, registration-and-attribution-reasons, complete-refusal-extent |
+| traced-validator-build traced build | build-traced-registry-blueprint-from-onchain-build | traced-blueprint-output-from-onchain-packages | toolchain-correspondence-check |
+| toolchain-correspondence toolchain | build-traced-registry-blueprint-from-onchain-build, tracedprovenance-output-read-by | red-correspondence-check-fails-on-base, correspondence-check-untraced-rebuild-reproduces-onchain | toolchain-correspondence-check |
+| matching-script-parameters parameters | conformance-run-replay | applydeployedparameters-parameters-mismatch-untraced-application-does | conformance-suite |
+| matching-ledger-context same context | conformance-run-replay | read-pinned-cardano-node-clients-offchain, purposearguments-from-capsule-through-seam | conformance-suite, retirement-refund-window-reasons |
+| deployed-refusal-reproduction deployed reproduction | conformance-replay, conformance-run-replay, replayclass | red-table-driven-unit-cases-for, evaluatebytes-replayrefusal-capsule-files-per-contracts | conformance-suite, retirement-refund-window-reasons |
+| single-observed-trace reason | conformance-replay, replayclass | red-table-driven-unit-cases-for, conformance-replay-turns-green | conformance-suite |
+| separate-evidence-classes classes | conformance-replay, replayclass | red-table-driven-unit-cases-for | conformance-suite |
+| compare-observed-refusal-reasons comparison | conformance-replay, changed-signatures, reasoncomparison | red-refused-refused-step-differing-admitted | conformance-suite, retirement-refund-window-reasons, wrong-reason-failing-control |
+| classify-refusal-comparison-extent extent classes | conformance-refusal-attribution-callers, `extent.md` | from-receipts-replay-index-discover-complete, attribution-rows-fill-branch-from-admitted | registration-and-attribution-reasons, complete-refusal-extent |
+| self-contained-replay-receipt receipt | serialize-load-replay-fields-decided-by-q | receipt-replay-object-data-model-written | retirement-refund-window-reasons, registration-and-attribution-reasons (after operator question (Q-001)) |
+| wrong-reason-control wrong-reason control | wrong-reason-control-one-row-one-step | wrong-reason-control-mode-unit-red, control-step-altered-leg-non-zero-naming | wrong-reason-failing-control |
+| accepting-replay-control accepting control | conformance-run-replay, contract index | accepting-control-per-refusing-script-role | complete-refusal-extent |
+| discovered-refusal-extent extent | github-workflows-conformance-yml | extent-over-receipt-non-empty-guard-refusal | complete-refusal-extent |
+| book-states-observation-limits book | restate-limit-text-enforces-its-condition-until | restate-limit-in-conformance-book-method–update-conformance-story-usage-restated-text | root-checks, conformance-suite |
+| replay-change-boundary fence | plan owned paths | every slice | deployed-hashes-unchanged and the path diff |
 
 Every requirement has a model row, a task and a gate row; no task lacks a
 requirement.
@@ -38,23 +38,23 @@ requirement.
 
 | # | Severity | Finding | Disposition |
 |---|---|---|---|
-| A1 | high | FR-11 conflicts between the issue's wording and the packet's wire freeze | operator ruling 2026-10-01: one self-contained receipt; additive optional replay object (FR-11); R3b released |
-| A2 | medium | Constitution, `docs/theorems.md` and an onchain comment state the limit outside the fence | A-002: fence holds; D287-DOC residual after evidence (T043) |
-| A3 | medium | The ledger seam (M3 `purposeArguments`) is a lead, not verified at the pin | T001 first; failure is a placement challenge |
-| A4 | medium | FR-15's condition cannot be derived by the book until #225; it is enforced by CI (G10) | stated in FR-15 and M7 |
-| A5 | low | The deployed-trace premise is unverified; a byte search could not settle it (reason names are data values) | T026 stops the campaign if false |
-| A6 | low | Reason vocabulary: Lean returns reasons as strings, with no enumeration to validate against | FR-07 takes the single user trace verbatim; FR-09 compares it with Lean's reason for that step |
-| A7 | low | G6–G10 are CI changes in this ticket; falsified by the base's missing reasons and the control's altered leg, proved by the pushed head's CI | plan gate note |
-| A8 | high | The denominator was first read as driver-compared steps only; epic NOTE-001 rules every live refusal in, classified against Lean itself | FR-10, FR-14, FR-15 amended; `extent.md`; T028 |
-| A9 | high | CG09 (phase-1 reject): Lean admits every reject, the chain refuses before the retract window closes | Q-003; A-003 hold; operator ruling 2026-10-01 (A-010): Lean kept, validator repaired in a predecessor; CG09 unmet until it lands and the build correspondence is rebound | operator ruling 2026-10-01: Lean kept, validator repaired in a predecessor; CG09 unmet until it lands |
-| A10 | high | Review 001: a differing or unobserved reason reached no durable record, because the runner throws before writing and rows require agreement first | FR-09, D6, contract index, T030 name the sites; index written before the row acts |
-| A11 | high | Review 001: the accepting control had no failing CI command | FR-13 through the index; G10 requires it; T034 |
-| A12 | high | Review 002: the extent label selected whether a refusal must agree, so a driver-compared refusal labelled B, C or D escaped the check | Class A is the mechanical fact of an executed model reason; B/C/D only from the committed table; unclassified fails (FR-10, FR-14, G10, T038) |
+| self-contained-replay-receipt-conflicts-between-the-issue | high | self-contained-replay-receipt conflicts between the issue's wording and the packet's wire freeze | operator ruling 2026-10-01: one self-contained receipt; additive optional replay object (self-contained-replay-receipt); R3b released |
+| documentation-outside-refusal-fence | medium | Constitution, `docs/theorems.md` and an onchain comment state the limit outside the fence | operator answer (A-002): fence holds; residual-after-evidence residual after evidence (prepare-residual-for-epic-from-evidence) |
+| pinned-replay-argument-seam | medium | The ledger seam (conformance-run-replay `purposeArguments`) is a lead, not verified at the pin | read-pinned-cardano-node-clients-offchain first; failure is a placement challenge |
+| book-states-observation-limits-s-condition-cannot-be | medium | book-states-observation-limits's condition cannot be derived by the book until #225; it is enforced by CI (complete-refusal-extent) | stated in book-states-observation-limits and restate-limit-text-enforces-its-condition-until |
+| the-deployed-trace-premise-is-unverified-a-byte | low | The deployed-trace premise is unverified; a byte search could not settle it (reason names are data values) | premise-run-on-retract-outside-window stops the campaign if false |
+| reason-vocabulary-lean-returns-reasons-as-strings-with | low | Reason vocabulary: Lean returns reasons as strings, with no enumeration to validate against | single-observed-trace takes the single user trace verbatim; compare-observed-refusal-reasons compares it with Lean's reason for that step |
+| retirement-refund-window-reasons-complete-refusal-extent-are | low | retirement-refund-window-reasons–complete-refusal-extent are CI changes in this ticket; falsified by the base's missing reasons and the control's altered leg, proved by the pushed head's CI | plan gate note |
+| the-denominator-was-first-read-as-driver-compared | high | The denominator was first read as driver-compared steps only; epic operator note (NOTE-001) rules every live refusal in, classified against Lean itself | classify-refusal-comparison-extent, discovered-refusal-extent, book-states-observation-limits amended; `extent.md`; from-receipts-replay-index-discover-complete |
+| reject-before-deadline-consumer-requirement-phase-1-reject | high | reject-before-deadline-consumer-requirement (phase-1 reject): Lean admits every reject, the chain refuses before the retract window closes | operator question (Q-003); operator answer (A-003) hold; operator ruling 2026-10-01 (operator answer (A-010)): Lean kept, validator repaired in a predecessor; reject-before-deadline-consumer-requirement unmet until it lands and the build correspondence is rebound | operator ruling 2026-10-01: Lean kept, validator repaired in a predecessor; reject-before-deadline-consumer-requirement unmet until it lands |
+| review-001-a-differing-or-unobserved-reason-reached | high | Review 001: a differing or unobserved reason reached no durable record, because the runner throws before writing and rows require agreement first | compare-observed-refusal-reasons, reasoncomparison, contract index, red-refused-refused-step-differing-admitted name the sites; index written before the row acts |
+| review-001-the-accepting-control-had-no-failing | high | Review 001: the accepting control had no failing CI command | accepting-replay-control through the index; complete-refusal-extent requires it; accepting-control-per-refusing-script-role |
+| review-002-the-extent-label-selected-whether-a | high | Review 002: the extent label selected whether a refusal must agree, so a driver-compared refusal labelled B, C or D escaped the check | Class A is the mechanical fact of an executed model reason; B/C/D only from the committed table; unclassified fails (classify-refusal-comparison-extent, discovered-refusal-extent, complete-refusal-extent, extent-over-receipt-non-empty-guard-refusal) |
 
 ## Terminology
 
 "Chain-side reason" is the admitted traced reason only; "unobserved" always
-carries a D5 cause; "attribution row" means a row whose runner only attributes its refusal, which says nothing about whether Lean gives a reason; the extent classes (`extent.md`) say that.
+carries a replayclass cause; "attribution row" means a row whose runner only attributes its refusal, which says nothing about whether Lean gives a reason; the extent classes (`extent.md`) say that.
 Used identically across spec, models and tasks.
 
 ## Size

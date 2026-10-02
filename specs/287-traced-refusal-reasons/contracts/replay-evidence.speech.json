@@ -23,7 +23,7 @@
       "pause": 500
     }
   ],
-  "offline-compiler-diagnostic-t036b": [
+  "offline-compiler-diagnostic-wrong-redeemer-constructor-index-offline-compiler": [
     {
       "text": "For a purpose that printed no user trace, an offline replay with all compiler traces may record a compiler diagnostic beside the original outcome. It is never a reason, never compared with Lean, and never enters a receipt or the index.",
       "pause": 500
@@ -37,6 +37,6 @@
   ],
   "_source": {
     "file": "replay-evidence.md",
-    "sha256": "34f9d382f2b01b9e09fcb328f9eb1cbd4643bb6092f86733d4a28ccfea9d8c03"
+    "sha256": "01b0853b2b8f994d89702d596bd84b64112dd5a85baf1413733351150c6b0c8b"
   }
 }

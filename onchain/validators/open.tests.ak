@@ -12,7 +12,7 @@ use types.{Approve, OpenRedeemer}
 // The open policy mints one approval token per scoping tuple
 // `(edge, key, owner, destination)`, for the six TREE edges 0..5. Its
 // asset name IS the binding: `lib.approvalName` over the whole tuple, the
-// same function the cage recomputes at fold time (D-APPROVAL), so an
+// same function the cage recomputes at fold time (approval-asset-binding), so an
 // approval cannot be pointed at a request it was not minted for.
 //
 // `witnessTerminal` (edge 6) needs no approval at all in the model

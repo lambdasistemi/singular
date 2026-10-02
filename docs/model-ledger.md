@@ -37,8 +37,8 @@ satisfy every count.
 
 | base declaration | disposition | reason |
 | --- | --- | --- |
-| `insert_commitment_injective` | **retired** | the Insert/Withdraw commitment pair is gone; approval identity is now the D-APPROVAL tuple commitment, bound by `no_tree_change_without_approval` |
-| `action_domain_separation` | **retired** | the Insert/Withdraw commitment pair is gone; approval identity is now the D-APPROVAL tuple commitment, bound by `no_tree_change_without_approval` |
+| `insert_commitment_injective` | **retired** | the Insert/Withdraw commitment pair is gone; approval identity is now the approval-asset-binding tuple commitment, bound by `no_tree_change_without_approval` |
+| `action_domain_separation` | **retired** | the Insert/Withdraw commitment pair is gone; approval identity is now the approval-asset-binding tuple commitment, bound by `no_tree_change_without_approval` |
 | `createInsert_iff` | **retired** | the free-form action algebra is gone. The registry has seven edges and no `release`, `evolve`, `outsider`, `withdraw` or `moveAction`; their inversions are superseded by the seven edge inversions |
 | `mintWithdraw_iff` | **retired** | the free-form action algebra is gone. The registry has seven edges and no `release`, `evolve`, `outsider`, `withdraw` or `moveAction`; their inversions are superseded by the seven edge inversions |
 | `release_iff` | **retired** | the free-form action algebra is gone. The registry has seven edges and no `release`, `evolve`, `outsider`, `withdraw` or `moveAction`; their inversions are superseded by the seven edge inversions |
@@ -53,28 +53,28 @@ satisfy every count.
 | `foldOne_insert_iff` | **retired** | the three-operation fold is replaced by the seven edges; their inversions are the seven `*_inversion` statements |
 | `foldOne_terminal_iff` | **retired** | the three-operation fold is replaced by the seven edges; their inversions are the seven `*_inversion` statements |
 | `sequential_fold_cons` | **renamed** | `fold_batch_cons` — the cons inversion, restated over `foldActions` because `foldBatch` refuses an empty tail |
-| `supply_conservation` | **retired** | superseded by S3 `biconditional_supply_sync` with W1 and W2, which state the supply law as a biconditional rather than as conservation across one step |
-| `over_terminal` | **retired** | superseded by T1 `termination`. It is a generic statement, not a naming one, and T1 states the stronger fact: a terminal leaf admits no edge at all, so the key is never re-booked |
-| `over_no_representative` | **retired** | superseded by W4 `witness_kinds_exclude`: a terminal key carries no active token because the three kinds exclude each other |
-| `pending_insert_no_representative` | **retired** | there is no pending state: `insertActive` books in one fold, and O1 `occupancy` states when it may |
-| `minting_requires_configured_issuer` | **renamed** | `no_tree_change_without_approval` (P1), which additionally pins the four policies across the fold |
-| `withdrawal_preserves_registry_supply` | **retired** | there is no withdrawal edge; refunds are the absent token's deposit, bound by R-ADA in the corpus and by the custody conjunct of the invariant |
-| `exact_withdraw_scope` | **retired** | there is no withdrawal edge; refunds are the absent token's deposit, bound by R-ADA in the corpus and by the custody conjunct of the invariant |
-| `local_evolution_registry_unchanged` | **retired** | `release` and `evolve` are application-side moves that never touch the trie; NM2 states that as root equality for naming's `maintain` and `recover` |
-| `release_is_operation_specific` | **retired** | `release` and `evolve` are application-side moves that never touch the trie; NM2 states that as root equality for naming's `maintain` and `recover` |
-| `release_removes_application_custody` | **retired** | `release` and `evolve` are application-side moves that never touch the trie; NM2 states that as root equality for naming's `maintain` and `recover` |
-| `request_single_spend` | **retired** | the incarnation and approval-scope machinery is gone (R1); a request is spent once as part of L1 `booked_at_most_once` |
-| `approval_scope_checked` | **retired** | the incarnation and approval-scope machinery is gone (R1); a request is spent once as part of L1 `booked_at_most_once` |
-| `outsider_not_admitted` | **renamed** | `no_tree_change_without_approval` (P1): an unapproved request is not folded, now stated for every tree edge at once |
-| `native_witness_even_zero_net` | **retired** | the consumer hook is gone (R7, `consumerPin` removed); the mint check is the cage's own summed delta, exercised by the corpus fold rows |
-| `nonzero_action_invokes_policy` | **retired** | the consumer hook is gone (R7, `consumerPin` removed); the mint check is the cage's own summed delta, exercised by the corpus fold rows |
-| `nonempty_fold_invokes_consumer` | **retired** | the consumer hook is gone (R7, `consumerPin` removed); the mint check is the cage's own summed delta, exercised by the corpus fold rows |
-| `existing_action_does_not_refresh_scope` | **retired** | asset-scope reuse is gone with `assetScope` and `incarnation` (R1) |
-| `resolve_unauthenticated` | **retired** | the `Resolution` vocabulary is gone. A consumer reads tokens, never the root (interface §7), so what replaced it is W1–W4 plus the leaf itself |
-| `resolve_absent` | **retired** | the `Resolution` vocabulary is gone. A consumer reads tokens, never the root (interface §7), so what replaced it is W1–W4 plus the leaf itself |
-| `resolve_over` | **retired** | the `Resolution` vocabulary is gone. A consumer reads tokens, never the root (interface §7), so what replaced it is W1–W4 plus the leaf itself |
-| `resolve_address_iff` | **retired** | the `Resolution` vocabulary is gone. A consumer reads tokens, never the root (interface §7), so what replaced it is W1–W4 plus the leaf itself |
-| `resolve_pending_iff` | **retired** | the `Resolution` vocabulary is gone. A consumer reads tokens, never the root (interface §7), so what replaced it is W1–W4 plus the leaf itself |
+| `supply_conservation` | **retired** | superseded by supply-matches-leaf-state `biconditional_supply_sync` with active-witness-unique and absent-witness-unique, which state the supply law as a biconditional rather than as conservation across one step |
+| `over_terminal` | **retired** | superseded by terminal-key-cannot-change `termination`. It is a generic statement, not a naming one, and terminal-key-cannot-change states the stronger fact: a terminal leaf admits no edge at all, so the key is never re-booked |
+| `over_no_representative` | **retired** | superseded by witness-kinds-exclude `witness_kinds_exclude`: a terminal key carries no active token because the three kinds exclude each other |
+| `pending_insert_no_representative` | **retired** | there is no pending state: `insertActive` books in one fold, and booking-requires-untaken-key `occupancy` states when it may |
+| `minting_requires_configured_issuer` | **renamed** | `no_tree_change_without_approval` (tree-change-requires-approval), which additionally pins the four policies across the fold |
+| `withdrawal_preserves_registry_supply` | **retired** | there is no withdrawal edge; refunds are the absent token's deposit, bound by custody-lovelace-refund in the corpus and by the custody conjunct of the invariant |
+| `exact_withdraw_scope` | **retired** | there is no withdrawal edge; refunds are the absent token's deposit, bound by custody-lovelace-refund in the corpus and by the custody conjunct of the invariant |
+| `local_evolution_registry_unchanged` | **retired** | `release` and `evolve` are application-side moves that never touch the trie; local-record-update-preserves-registry states that as root equality for naming's `maintain` and `recover` |
+| `release_is_operation_specific` | **retired** | `release` and `evolve` are application-side moves that never touch the trie; local-record-update-preserves-registry states that as root equality for naming's `maintain` and `recover` |
+| `release_removes_application_custody` | **retired** | `release` and `evolve` are application-side moves that never touch the trie; local-record-update-preserves-registry states that as root equality for naming's `maintain` and `recover` |
+| `request_single_spend` | **retired** | the incarnation and approval-scope machinery is gone (retired incarnation and scope machinery); a request is spent once as part of request-spent-once-in-order `booked_at_most_once` |
+| `approval_scope_checked` | **retired** | the incarnation and approval-scope machinery is gone (retired incarnation and scope machinery); a request is spent once as part of request-spent-once-in-order `booked_at_most_once` |
+| `outsider_not_admitted` | **renamed** | `no_tree_change_without_approval` (tree-change-requires-approval): an unapproved request is not folded, now stated for every tree edge at once |
+| `native_witness_even_zero_net` | **retired** | the consumer hook is gone (retired consumer hook, `consumerPin` removed); the mint check is the cage's own summed delta, exercised by the corpus fold rows |
+| `nonzero_action_invokes_policy` | **retired** | the consumer hook is gone (retired consumer hook, `consumerPin` removed); the mint check is the cage's own summed delta, exercised by the corpus fold rows |
+| `nonempty_fold_invokes_consumer` | **retired** | the consumer hook is gone (retired consumer hook, `consumerPin` removed); the mint check is the cage's own summed delta, exercised by the corpus fold rows |
+| `existing_action_does_not_refresh_scope` | **retired** | asset-scope reuse is gone with `assetScope` and `incarnation` (retired incarnation and scope machinery) |
+| `resolve_unauthenticated` | **retired** | the `Resolution` vocabulary is gone. A consumer reads tokens, never the root (interface §7), so what replaced it is active-witness-unique–witness-kinds-exclude plus the leaf itself |
+| `resolve_absent` | **retired** | the `Resolution` vocabulary is gone. A consumer reads tokens, never the root (interface §7), so what replaced it is active-witness-unique–witness-kinds-exclude plus the leaf itself |
+| `resolve_over` | **retired** | the `Resolution` vocabulary is gone. A consumer reads tokens, never the root (interface §7), so what replaced it is active-witness-unique–witness-kinds-exclude plus the leaf itself |
+| `resolve_address_iff` | **retired** | the `Resolution` vocabulary is gone. A consumer reads tokens, never the root (interface §7), so what replaced it is active-witness-unique–witness-kinds-exclude plus the leaf itself |
+| `resolve_pending_iff` | **retired** | the `Resolution` vocabulary is gone. A consumer reads tokens, never the root (interface §7), so what replaced it is active-witness-unique–witness-kinds-exclude plus the leaf itself |
 | `release_registry_independent` | **retired** | registry-independence of the old action algebra; the registry-mode equivalent is that the guarantees hold for every application unconditionally, which is what the open-application instance demonstrates |
 | `insert_creation_registry_independent` | **retired** | registry-independence of the old action algebra; the registry-mode equivalent is that the guarantees hold for every application unconditionally, which is what the open-application instance demonstrates |
 | `whole_release_acceptance_independent` | **retired** | registry-independence of the old action algebra; the registry-mode equivalent is that the guarantees hold for every application unconditionally, which is what the open-application instance demonstrates |
@@ -102,7 +102,7 @@ Not covered, and named rather than left to be discovered:
   Lean it ships to the Lean it was built from. That is agreement on the
   exported inputs, not equivalence — and the transcriber is the model's
   author, so it is not an independent measurement either.
-- **Plurality from genesis.** W3 states that from any reachable terminal state
+- **Plurality from genesis.** terminal-witnesses-plural states that from any reachable terminal state
   arbitrarily many attestations can be minted. It does not construct a terminal
   key with zero attestations from genesis; that is a reachability claim about a
   fresh key and is not proved here.

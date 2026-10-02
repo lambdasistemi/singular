@@ -5,7 +5,7 @@ As a contributor, I want one visible owner for each option, scenario step and de
 ## Delivery
 
 1. Bind #270 and dependent issues, base/model, active workflow commands, command options and original CLI/JSON/narration/exit observations. Preserve the clean unrelated checkout. Open the draft PR before implementation.
-2. Freeze a finite Gate S and execution budgets from the current workflow and its nested Nix commands. The approved GLM coder owns all implementation, tests, docs and commits; the approved Opus auditor independently reviews exact candidates. No other seat is commissioned.
+2. Freeze a finite acceptance checks and execution budgets from the current workflow and its nested Nix commands. The approved GLM coder owns all implementation, tests, docs and commits; the approved Opus auditor independently reviews exact candidates. No other seat is commissioned.
 3. Extract journey, insert-active, update-terminal and deployment in bounded command-local steps, preserving public entry paths and independent control ownership. Each moved declaration has one definition. Keep component source declarations and imports explicit. Do not migrate journey into the #202 driver.
 4. Ship a contributor guide, module-purpose prose, diagrams, real caller/API links, navigation and speech with the code. Verify presentation and archive content as distinct claims.
 5. Run the supported checkout journey and both extracted edge commands with positive and relevant refusal controls, capture before/after output and JSON shapes, run lint/component/focused/root CI and release checks, and obtain an exact-candidate audit. Handoff the draft PR to epic #272; do not merge or deploy.

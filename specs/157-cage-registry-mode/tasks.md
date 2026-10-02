@@ -5,55 +5,55 @@ the author. Order follows `plan.md`.
 
 ## Types and codec
 
-- [ ] T157-01 — `State` eight fields; `Operation.Read`; `Request.destination`;
+- [ ] state-eight-fields-operation-read-request-destination — `State` eight fields; `Operation.Read`; `Request.destination`;
       `CageDatum.AbsentCustody`; blueprint regenerated; Haskell encodings follow
       (`blueprint-check` green).
-- [ ] T157-02 — codec helpers in `lib.ak` (`decodeState`, `edgeOf`,
+- [ ] codec-helpers-in-lib-ak-decodestate-edgeof — codec helpers in `lib.ak` (`decodeState`, `edgeOf`,
       `deltaOf`, `approvalName`, `destinationMatches`) with their unit rows.
 
 ## The cage
 
-- [ ] T157-03 — admissibility: the seven rows accept, every other shape refuses
-      with its own trace, before the proof (G1–G3).
-- [ ] T157-04 — the read at its position; batches of only reads (G4, G5).
-- [ ] T157-05 — admission by bound approval; reads need none; pins preserved
-      (A1–A4).
-- [ ] T157-06 — the delta against the mint, per key, all three policies
-      (M1–M5).
-- [ ] T157-07 — destinations and custody; the custody spending path; R-ADA
-      refunds with inserter ≠ booker (T1–T5).
-- [ ] T157-08 — tip coverage in the cage; reads retractable (V1, V2).
-- [ ] T157-09 — `consumer.ak`, its tests, the pin and the withdrawal
+- [ ] admissibility-seven-rows-accept-other-shape-refuses — admissibility: the seven rows accept, every other shape refuses
+      with its own trace, before the proof (request-whose-value-bytes-not-x00-x01–refused-shape-folded-refused-its-own-trace).
+- [ ] read-at-its-position-batches-reads — the read at its position; batches of only reads (insert-j-read-k-x02-insert-l, batch-reads-folded-accepted-root-unchanged).
+- [ ] admission-by-bound-approval-reads-need-none — admission by bound approval; reads need none; pins preserved
+      (tree-change-needs-approval–configuration-pins-preserved).
+- [ ] delta-against-mint-per-key-three-policies — the delta against the mint, per key, all three policies
+      (fold-insert-x01-k-mint-carries-two–any-fold-any-asset-moves-under-token).
+- [ ] destinations-custody-custody-spending-path-r-ada — destinations and custody; the custody spending path; custody-lovelace-refund
+      refunds with inserter ≠ booker (active-token-requested-destination–custody-spend-requires-consuming-fold).
+- [ ] tip-coverage-in-cage-reads-retractable-v1 — tip coverage in the cage; reads retractable (request-covers-tip, terminal-read-owner-retraction).
+- [ ] consumer-ak-its-tests-pin-withdrawal-requirement — `consumer.ak`, its tests, the pin and the withdrawal
       requirement deleted in one commit.
 
 ## The token policies
 
-- [ ] T157-10 — `witness(kind, registry)`; three instances; co-presence with a
-      `Modify`; terminal burn free; `representative.ak` retired (P1–P3).
+- [ ] witness-kind-registry-three-instances-co-presence — `witness(kind, registry)`; three instances; co-presence with a
+      `Modify`; terminal burn free; `representative.ak` retired (witness-kind-registry-for-kind-minted-or–fold-that-mints-under-token-policy-asset).
 
 ## Naming
 
-- [ ] T157-11 — `Approve` arm for the six edges per R-NM4 (N1–N5).
-- [ ] T157-12 — the fold-created record; `Fold`/`Cancel`/claim lifecycle
-      removed (N7).
-- [ ] T157-13 — `Retire` authorized by the committed recovery key or the
+- [ ] approve-arm-for-six-edges-per-r — `Approve` arm for the six edges per naming-approval-rules (controller-authorizes-active-insertion–active-deletion-never-certified).
+- [ ] fold-created-record-fold-cancel-claim-lifecycle — the fold-created record; `Fold`/`Cancel`/claim lifecycle
+      removed (fold-created-record-holds-active-token).
+- [ ] retire-authorized-by-committed-recovery-key-or — `Retire` authorized by the committed recovery key or the
       quorum, never the current control key alone; co-mints the terminate
       approval and the completion request; completion folds
-      `Update(0x01,0x02)` (N6, N8).
-- [ ] T157-13b — the destination output of a folded booking or read carries at
-      least the request's value minus the tip (T6).
-- [ ] T157-14 — `Maintain`/`Recover` rows re-run; `naming.ak` loses its value
-      vocabulary (N9, N10).
-- [ ] T157-15 — `just test` and `just script-identity-regen` in both partitions;
+      `Update(0x01,0x02)` (recovery-authorizes-retirement, retirement-custody-burns-held-token).
+- [ ] destination-output-folded-booking-or-read-carries — the destination output of a folded booking or read carries at
+      least the request's value minus the tip (request-deposit-returned).
+- [ ] maintain-recover-rows-re-run-naming-ak — `Maintain`/`Recover` rows re-run; `naming.ak` loses its value
+      vocabulary (local-record-change-preserves-registry, terminal-key-refuses-tree-change).
+- [ ] just-test-just-script-identity-regen-in — `just test` and `just script-identity-regen` in both partitions;
       hashes in the handback.
 
 ## Consumers and docs
 
-- [ ] T157-16 — conformance re-baselined; contract change stated with old and
-      new fields side by side (X1).
-- [ ] T157-17 — the three naming docs updated; speech restamped;
-      `just check-presentation` green (X2).
-- [ ] T157-18 — the trace-label table `Aiken trace → Lean reason`, total.
+- [ ] conformance-re-baselined-contract-change-stated-old — conformance re-baselined; contract change stated with old and
+      new fields side by side (compiled-wire-conformance).
+- [ ] three-naming-updated-speech-restamped-just-check — the three naming docs updated; speech restamped;
+      `just check-presentation` green (published-naming-lifecycle).
+- [ ] trace-label-table-aiken-trace-lean-reason — the trace-label table `Aiken trace → Lean reason`, total.
 
 ## Gate-held, not a task
 

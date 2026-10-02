@@ -454,21 +454,26 @@ spec = describe "before a replay evaluates" $ do
             "evaluates only the purposes the user-defined replay left without a user trace"
             $ fmap
                 (map (prDeployedHash . fst))
-                (diagnosedPurposes userDefinedCS04 (diagnosticCS04 Nothing))
+                ( diagnosedPurposes
+                    userDefinedWrongRedeemerConstructorIndex
+                    (diagnosticWrongRedeemerConstructorIndex Nothing)
+                )
                 `shouldBe` Right ["state", "request"]
         it
             "is refused when the diagnostic code could not be applied with the deployed parameters"
             $ diagnosedPurposes
-                userDefinedCS04
-                (diagnosticCS04 (Just ("request", Unobserved ParametersMismatch)))
+                userDefinedWrongRedeemerConstructorIndex
+                ( diagnosticWrongRedeemerConstructorIndex
+                    (Just ("request", Unobserved ParametersMismatch))
+                )
                 `shouldSatisfy` isLeftE
         it
             "is refused when the deployed bytes no longer reproduce the refusal"
             $ diagnosedPurposes
-                userDefinedCS04
+                userDefinedWrongRedeemerConstructorIndex
                 ( map
                     (\p -> p{prDeployed = Just (run Succeeded [])})
-                    (diagnosticCS04 Nothing)
+                    (diagnosticWrongRedeemerConstructorIndex Nothing)
                 )
                 `shouldSatisfy` isLeftE
         it "names each way a diagnostic run ends, and none is a reason" $
@@ -489,7 +494,9 @@ spec = describe "before a replay evaluates" $ do
                            , "logged"
                            ]
         it "writes compiler diagnostics with their logs, never a reason" $ do
-            let outcome = case diagnosedPurposes userDefinedCS04 (diagnosticCS04 Nothing) of
+            let outcome = case diagnosedPurposes
+                    userDefinedWrongRedeemerConstructorIndex
+                    (diagnosticWrongRedeemerConstructorIndex Nothing) of
                     Right pairs ->
                         diagnosticOutcome "txid" "capture" (diagnosticBuild allFlags) pairs
                     Left _ -> Null
@@ -528,7 +535,7 @@ spec = describe "before a replay evaluates" $ do
                             object
                                 [ "kind" .= ("refusal" :: Text)
                                 , "rejectedTxId" .= ("tx-cs04" :: Text)
-                                , "row" .= ("CS04" :: Text)
+                                , "row" .= ("wrong-redeemer-constructor-index" :: Text)
                                 ]
                     session <- newReplayIndex dir
                     addRejection
@@ -548,27 +555,39 @@ spec = describe "before a replay evaluates" $ do
                     stepComparison "state" "key-exists" purposes
                         `shouldBe` Uncompared ContextUnavailable
                     fmap (map receiptRow) <$> loadReceipts dir
-                        `shouldReturn` Right ["CG05"]
+                        `shouldReturn` Right ["insert-occupied-key"]
     describe "the wrong-reason control" $ do
-        let control = ReasonControl "CG07" 0 "retract-owner"
+        let control = ReasonControl "retract-outside-window" 0 "retract-owner"
         it "reads ROW:STEP:REASON" $
-            parseReasonControl "CG07:0:retract-owner" `shouldBe` Right control
+            parseReasonControl "retract-outside-window:0:retract-owner"
+                `shouldBe` Right control
         it "refuses a control it cannot read" $ do
-            parseReasonControl "CG07:first:retract-owner" `shouldSatisfy` isLeftE
-            parseReasonControl "CG07:0" `shouldSatisfy` isLeftE
-            parseReasonControl "CG07:0:" `shouldSatisfy` isLeftE
+            parseReasonControl "retract-outside-window:first:retract-owner"
+                `shouldSatisfy` isLeftE
+            parseReasonControl "retract-outside-window:0" `shouldSatisfy` isLeftE
+            parseReasonControl "retract-outside-window:0:" `shouldSatisfy` isLeftE
         it "the altered step cannot compare agrees" $
             stepComparison
                 "m"
-                (controlledReason (Just control) "CG07" 0 "not-phase2")
+                ( controlledReason
+                    (Just control)
+                    "retract-outside-window"
+                    0
+                    "not-phase2"
+                )
                 [("m", Admitted "not-phase2")]
                 `shouldNotBe` Agrees
         it "every other step, and the run without the control, is untouched" $ do
-            controlledReason (Just control) "CG07" 2 "not-phase2"
+            controlledReason
+                (Just control)
+                "retract-outside-window"
+                2
+                "not-phase2"
                 `shouldBe` "not-phase2"
-            controlledReason (Just control) "CG22" 0 "not-booked"
+            controlledReason (Just control) "retire-active-key" 0 "not-booked"
                 `shouldBe` "not-booked"
-            controlledReason Nothing "CG07" 0 "not-phase2" `shouldBe` "not-phase2"
+            controlledReason Nothing "retract-outside-window" 0 "not-phase2"
+                `shouldBe` "not-phase2"
   where
     isEvaluationError = \case
         EvaluationError _ -> True
@@ -601,9 +620,9 @@ run outcome logs =
         , runLogs = logs
         }
 
--- | CS04's user-defined replay: the witness admitted, state and request silent.
-userDefinedCS04 :: [PurposeReplay]
-userDefinedCS04 =
+-- | wrong-redeemer-constructor-index's user-defined replay: the witness admitted, state and request silent.
+userDefinedWrongRedeemerConstructorIndex :: [PurposeReplay]
+userDefinedWrongRedeemerConstructorIndex =
     [ purpose "mint 0" "witness" (Admitted "no-fold") ["no-fold"]
     , purpose "spend 2" "state" (Unobserved NoUserTrace) []
     , purpose "spend 0" "request" (Unobserved NoUserTrace) []
@@ -623,8 +642,9 @@ userDefinedCS04 =
 logs one compiler trace, the request script none; one purpose may instead be
 given the cause its diagnostic application ended with.
 -}
-diagnosticCS04 :: Maybe (Text, ReplayClass) -> [PurposeReplay]
-diagnosticCS04 failed =
+diagnosticWrongRedeemerConstructorIndex
+    :: Maybe (Text, ReplayClass) -> [PurposeReplay]
+diagnosticWrongRedeemerConstructorIndex failed =
     [ applied "mint 0" "witness" ["no-fold"]
     , applied "spend 2" "state" ["expect Some(x) = datum"]
     , applied "spend 0" "request" []
@@ -674,7 +694,7 @@ freshDiagnosticDir name = do
     createDirectoryIfMissing True (dir </> "replay" </> "tx-cs04")
     pure dir
 
--- | The diagnostic write path, run on CS04's replays in a receipts directory.
+-- | The diagnostic write path, run on wrong-redeemer-constructor-index's replays in a receipts directory.
 diagnose :: FilePath -> IO ()
 diagnose dir =
     writeDiagnostic
@@ -685,7 +705,7 @@ diagnose dir =
         "tx-cs04"
         "deployed.json"
         "diagnostic.json"
-        userDefinedCS04
+        userDefinedWrongRedeemerConstructorIndex
         ( Right
             ReplaySetup
                 { rsProvenance = diagnosticBuild allFlags
@@ -694,4 +714,4 @@ diagnose dir =
                 , rsUnrouted = []
                 }
         )
-        (const (pure (diagnosticCS04 Nothing)))
+        (const (pure (diagnosticWrongRedeemerConstructorIndex Nothing)))

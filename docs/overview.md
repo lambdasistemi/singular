@@ -14,20 +14,20 @@ flowchart TB
     A3["Authorizes the release of its NFT<br/>into an exact Update or Delete request"]
   end
   subgraph S["Singular — owns key state and NFT supply"]
-    S1["Key state: absent · Active · Over"]
-    S2["Request validity and custody"]
-    S3["Representative minting and burning<br/>coupled to registry transitions"]
+    terminal-attestation-sound["Key state: absent · Active · Over"]
+    terminal-attestation-permanent["Request validity and custody"]
+    supply-matches-leaf-state["Representative minting and burning<br/>coupled to registry transitions"]
   end
   subgraph M["MPF — owns the authenticated map"]
     M1["Absence proof for Insert"]
     M2["Existing-value proof for Update and Delete"]
     M3["Successive roots across a fold"]
   end
-  A3 --> S2
-  A1 --> S2
-  S3 --> M3
-  S1 --> M1
-  S1 --> M2
+  A3 --> terminal-attestation-permanent
+  A1 --> terminal-attestation-permanent
+  supply-matches-leaf-state --> M3
+  terminal-attestation-sound --> M1
+  terminal-attestation-sound --> M2
 ```
 
 | Layer | Responsibility |

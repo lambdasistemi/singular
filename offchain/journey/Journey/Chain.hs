@@ -3,7 +3,7 @@ Module      : Journey.Chain
 Description : The journey's wallet, registry configuration and chain reads
 License     : Apache-2.0
 
-Shared plumbing, the same code path as the E2E suite: the funding
+Shared plumbing, the same code path as the end-to-end suite: the funding
 wallet and its key, the registry configuration for one boot seed, the
 token a boot minted, signed submission that waits for confirmation, and
 'readChainState' — the state datum read straight from the chain, the
@@ -83,7 +83,7 @@ genesisSignKey :: SignKeyDSIGN Ed25519DSIGN
 genesisSignKey = funderSignKey
 
 {- | Build a 'CageConfig' from state and request script bytes
-plus the boot seed 'OnChainTxOutRef', exactly as the E2E
+plus the boot seed 'OnChainTxOutRef', exactly as the end-to-end
 suite does. The state validator takes no parameters: its raw
 bytes are hashed as they are, so the configuration's state
 hash is the blueprint code's own hash.
@@ -108,7 +108,7 @@ cageCfg stateBytes requestBytes codes seed =
             , defaultProcessTime = 30_000
             , defaultRetractTime = 30_000
             , defaultTip = Coin 1_000_000
-            , -- #157 D-BOOT: the four pins for THIS registry identity,
+            , -- #157 genesis-policy-pins: the four pins for THIS registry identity,
               -- derived from the registry blueprint's own compiled code
               -- (`loadRegistryCodesFromEnv`) — the open application
               -- validator's own hash, and `witness(kind, registry)` at kinds

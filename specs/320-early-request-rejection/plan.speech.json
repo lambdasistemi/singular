@@ -1,25 +1,25 @@
 {
   "strategy": [
     {
-      "text": "Three slices on one branch. First the validators, their tests and identities, with CG09's expectation moving in the same commit because the chain's answer to it changes there. Then the product builder with its devnet test. Then the story language placement, CG23 made explicit, and the new early reject row CG24. Each commit keeps CI green.",
+      "text": "Three slices on one branch. First the validators, their tests and identities, with reject-before-deadline-consumer-requirement's expectation moving in the same commit because the chain's answer to it changes there. Then the product builder with its devnet test. Then the story language placement, reject-and-retract-refund-controls made explicit, and the new early reject row reject-inside-processing-and-retraction-windows. Each commit keeps CI green.",
       "pause": 400
     }
   ],
   "constitution-check": [
     {
-      "text": "Lean stays the authority and the code moves to it. The consumer conflict stays held and the fold timing gap is recorded, not resolved here. Each evidence class is named and never substituted. RED, GREEN, sizes, costs and limits are kept. Nothing historical is rewritten. The early reject claim is said in the suite's own language, and CG09 stays published as unmet.",
+      "text": "Lean stays the authority and the code moves to it. The consumer conflict stays held and the fold timing gap is recorded, not resolved here. Each evidence class is named and never substituted. RED, GREEN, sizes, costs and limits are kept. Nothing historical is rewritten. The early reject claim is said in the suite's own language, and reject-before-deadline-consumer-requirement stays published as unmet.",
       "pause": 400
     }
   ],
   "slices": [
     {
-      "text": "The first slice delivers the validator repair and must show RED on the base through the new compiled tests, then green suites, identities and CG09 held. The second slice delivers the builder and a devnet run in both early windows. The third slice delivers CG24, compared with the model, keeps CG23's assertion unchanged, and grows the book to six chapters. The required behavioural RED is the compiled one; the live defect is the retained refused transaction.",
+      "text": "The first slice delivers the validator repair and must show RED on the base through the new compiled tests, then green suites, identities and reject-before-deadline-consumer-requirement held. The second slice delivers the builder and a devnet run in both early windows. The third slice delivers reject-inside-processing-and-retraction-windows, compared with the model, keeps reject-and-retract-refund-controls's assertion unchanged, and grows the book to six chapters. The required behavioural RED is the compiled one; the live defect is the retained refused transaction.",
       "pause": 400
     }
   ],
   "path-fence": [
     {
-      "text": "Each slice has an exact list of writable paths, including every file that enumerates rows for CG24. The first slice's fence includes the naming hash comparison in the deployed identity check and the speech companions of its two doc pages, and the third slice's includes the consumer page's companion. Manifests change only through their generators and pins only to regenerated values. The model, the constitution, the locks, any receipt encoding, every other row, the book and historical evidence are forbidden.",
+      "text": "Each slice has an exact list of writable paths, including every file that enumerates rows for reject-inside-processing-and-retraction-windows. The first slice's fence includes the naming hash comparison in the deployed identity check and the speech companions of its two doc pages, and the third slice's includes the consumer page's companion. Manifests change only through their generators and pins only to regenerated values. The model, the constitution, the locks, any receipt encoding, every other row, the book and historical evidence are forbidden.",
       "pause": 400
     }
   ],
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "dc47d89c3ffb194e37d268e36e86a54773b2b618d7c44489d8050585a7b40ebe"
+    "sha256": "bc046f5c9769e36f70ba6870a2afd049f899e6b084f42d17a6c4190b9941b05e"
   }
 }

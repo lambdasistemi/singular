@@ -34,7 +34,7 @@ flowchart LR
 ```
 
 `logs` holds each run's log lines verbatim, bounded; the deployed run's
-logs are kept for T026's premise evidence.
+logs are kept for premise-run-on-retract-outside-window's premise evidence.
 
 ## `index.json`
 
@@ -44,19 +44,19 @@ met them:
 "captureId", "row", "step" | null, "role", "classes": [...], "extentClass" (A written by the runner exactly when "modelReason" is present; B, C or D read from `extent.md`'s committed table; otherwise "unclassified"),
 "modelReason" | null, "comparison": "agrees" | "differs" | "uncompared" | null }`.
 The entry is written, with its comparison, before the runner acts on the
-comparison, so a failing row keeps it. The CI extent (G10) counts refusals from
+comparison, so a failing row keeps it. The CI extent (complete-refusal-extent) counts refusals from
 receipts and index together and requires each exactly once, and requires, for
 every role that refused, one accepting-control entry whose deployed and traced
 runs both succeeded.
 
 ## Offline correction
 
-A capsule replayed offline (`replay-capsule`, T029c) writes
+A capsule replayed offline (`replay-capsule`, witness-route-witness-witness-replayed-captured) writes
 `replay-offline/<rejectedTxId>/outcome.json` beside the receipts it came from,
 with the recomputed `captureId`, the blueprints used and the command; the
 original `replay/<rejectedTxId>/outcome.json` stays byte-identical.
 
-## Offline compiler diagnostic (T036b)
+## Offline compiler diagnostic (wrong-redeemer-constructor-index-offline-compiler)
 
 `replay-diagnostic/<rejectedTxId>/outcome.json`, written only by
 `replay-capsule --diagnostic`: per purpose left `no-user-trace`,
@@ -72,7 +72,7 @@ receipt or the index, and never overwrites `replay-offline`.
 - Missing capsule files make every class of that rejection `capture-incomplete`.
 - In CI, every step that runs a row publishes its receipts path to the
   always-run artifact upload before the row runs, so a failing row's
-  `replay/` directory is uploaded with the original failure preserved (T039).
+  `replay/` directory is uploaded with the original failure preserved (retention-at-ci-boundary-e209-note-recut).
 - The receipt itself names both hashes, the reason or cause and the capture
   identity (data-model "Receipt replay object"); these files are its
   supporting proof and are joined to it by `captureId` and the rejected

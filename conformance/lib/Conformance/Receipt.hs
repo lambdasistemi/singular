@@ -15,9 +15,9 @@ plan. Receipts live under the run's own output directory — never in
 the tracked tree — and @list@ takes the directory as @--receipts@
 or @CONFORMANCE_RECEIPTS@, defaulting to none.
 
-Two venues need no node. CS01 checks Haskell encodings against the
+Two venues need no node. blueprint-encoding-round-trip checks Haskell encodings against the
 compiled blueprint's declared schemas read at run time
-(@blueprint-check@); CS06 checks parameter application in Haskell
+(@blueprint-check@); script-parameter-application checks parameter application in Haskell
 (@param-check@). Both record @mem@/@cpu@ zero — no script executed
 — and @txSize@ the measured serialized bytes, with no transactions.
 Every other accepted row is a @node-submit@ observation with
@@ -66,6 +66,7 @@ import Conformance.Replay
     , ReplayEvidence (..)
     , causeName
     )
+import Conformance.RowNames (canonicalRowName)
 import Conformance.Story.Live
     ( BatchTamper (..)
     , Edge (..)
@@ -197,7 +198,7 @@ data Verdict
     | {- | a user ruling resolved the row's question; the observation
       is retained (as history or defect evidence) under the ruling,
       never read as a pass and never as conformance credit (A-001:
-      CG13 is resolved-by-ruling, not a fourth unresolved hold)
+      historical-owner-change is resolved-by-ruling, not a fourth unresolved hold)
       -}
       ResolvedByRuling
     | {- | an unmet consumer requirement, kept by operator ruling
@@ -207,7 +208,7 @@ data Verdict
       what the registry deliberately does not do
       (lambdasistemi/singular#320); alignment is
       lambdasistemi/cardano-keri#468. Also, by operator ruling 2026-10-02
-      (narrowed #287), a row with no model counterpart: CG10, CG12 and CS04,
+      (narrowed #287), a row with no model counterpart: fold-against-superseded-root, surplus-fold-actions and wrong-redeemer-constructor-index,
       whose follow-ups are lambdasistemi/singular#346, #345 and #347.
       Recorded, published, never read as a pass: the run exits non-zero
       while any row is unmet.
@@ -318,7 +319,7 @@ caller's verdict: green requires every entry accepted-or-refused;
 any residual or gap forces partial.
 -}
 declaredConstructors :: Text -> Maybe [(Text, Integer)]
-declaredConstructors "CS03" =
+declaredConstructors "update-redeemer-constructor-witnesses" =
     Just
         [ ("Contribute", 1)
         , ("Modify", 2)
@@ -326,7 +327,7 @@ declaredConstructors "CS03" =
         , ("End", 0)
         , ("Sweep", 4)
         ]
-declaredConstructors "CS05" =
+declaredConstructors "request-and-mint-constructor-witnesses" =
     Just
         [ ("Update", 0)
         , ("Rejected", 1)
@@ -336,7 +337,7 @@ declaredConstructors "CS05" =
         ]
 declaredConstructors _ = Nothing
 
-{- | Off-chain identity-derivation evidence (CA04, E18 venue): the
+{- | Off-chain identity-derivation evidence (applied-validator-identity, E18 venue): the
 deployed address derived through the PRODUCTION path against the
 ACTUAL observed chain address, per validator by declared arity.
 This is explicitly NOT phase-2 ledger evidence — the venue string
@@ -444,7 +445,7 @@ data Receipt = Receipt
     every complete row; JSON-compatible: absent on old receipts).
     -}
     , receiptDerivation :: !(Maybe [DerivationEvidence])
-    {- ^ off-chain identity-derivation evidence (CA04 only; Nothing
+    {- ^ off-chain identity-derivation evidence (applied-validator-identity only; Nothing
     elsewhere; JSON-compatible).
     -}
     , receiptSteps :: !(Maybe [Value])
@@ -458,7 +459,7 @@ data Receipt = Receipt
 
 instance FromJSON Receipt where
     parseJSON = withObject "Receipt" $ \o ->
-        Receipt
+        Receipt . canonicalRowName
             <$> o .: "row"
             <*> o .: "outcome"
             <*> o .: "verdict"
@@ -524,11 +525,11 @@ writeReceiptFile dir r = case checkReceiptSize bounded of
             Nothing -> value
     updateField _ _ value = value
 
-{- | Receipts stay readable: the CG05 refusal once embedded the whole
+{- | Receipts stay readable: the insert-occupied-key refusal once embedded the whole
 compiled validator (~30KB of base64) because @show@ on the
 evaluation context prints every script and cost model.
 
-The bound is measured (#287): the largest live receipt, CG23's, is 12 563
+The bound is measured (#287): the largest live receipt, reject-and-retract-refund-controls's, is 12 563
 bytes, and 15 214 with the traced replay of each of its nine failing
 purposes and the correspondence its reasons rely on; 18 432 leaves it a
 fifth of headroom.
@@ -991,12 +992,12 @@ chainObservedWithOutref t = case T.stripPrefix "chain-observed " t of
     Just rest -> not (T.null (T.strip rest))
     Nothing -> False
 
-{- | CA04 completeness: exactly the state match, the request
+{- | applied-validator-identity completeness: exactly the state match, the request
 distinct and the corrupted refusal — a missing negative is an
 incomplete receipt, never a pass.
 -}
-completeCA04 :: [DerivationEvidence] -> Bool
-completeCA04 ds =
+completeAppliedValidatorIdentity :: [DerivationEvidence] -> Bool
+completeAppliedValidatorIdentity ds =
     sort [(deValidator d, deOutcome d) | d <- ds]
         == sort
             [ ("request.request", DerivDistinct)
@@ -1045,23 +1046,23 @@ loadReceipts dir = do
                     >>= checkReplay path
     checkDerivation path r = case receiptDerivation r of
         Nothing ->
-            if receiptRow r == "CA04"
+            if receiptRow r == "applied-validator-identity"
                 then
                     Left
                         ( path
-                            <> ": CA04 receipt names no derivation evidence — unknown or incomplete, never covered"
+                            <> ": applied-validator-identity receipt names no derivation evidence — unknown or incomplete, never covered"
                         )
                 else Right r
         Just ds
-            | receiptRow r /= "CA04" ->
+            | receiptRow r /= "applied-validator-identity" ->
                 Left
                     ( path
-                        <> ": only CA04 carries derivation evidence"
+                        <> ": only applied-validator-identity carries derivation evidence"
                     )
-            | not (completeCA04 ds) ->
+            | not (completeAppliedValidatorIdentity ds) ->
                 Left
                     ( path
-                        <> ": CA04 derivation evidence is incomplete — want state match, request distinct and corrupted refused"
+                        <> ": applied-validator-identity derivation evidence is incomplete — want state match, request distinct and corrupted refused"
                     )
             | null ds ->
                 Left (path <> ": derivation evidence is empty")
@@ -1085,7 +1086,7 @@ loadReceipts dir = do
                     )
             | otherwise -> Right r
     checkEdge path r = case (receiptRow r, receiptSteps r) of
-        ("CG07", Just steps) -> do
+        ("retract-outside-window", Just steps) -> do
             checked <- stepsComplete path r steps
             let field name (Object fields) = KM.lookup name fields
                 field _ _ = Nothing
@@ -1115,11 +1116,11 @@ loadReceipts dir = do
                 batchSteps path r steps
             -- Every program's receipt: one record per compared request or batch.
             | otherwise -> stepsComplete path r steps
-        ("CG21", Nothing) -> Left (path <> ": registration names no live steps")
-        ("CG22", Nothing) -> Left (path <> ": retirement names no live steps")
-        ("CG07", Nothing) -> Left (path <> ": retraction window names no live steps")
-        ("CG23", Nothing) -> Left (path <> ": exit chapter names no live steps")
-        ("CG24", Nothing) -> Left (path <> ": early rejection names no live steps")
+        ("register-active-key", Nothing) -> Left (path <> ": registration names no live steps")
+        ("retire-active-key", Nothing) -> Left (path <> ": retirement names no live steps")
+        ("retract-outside-window", Nothing) -> Left (path <> ": retraction window names no live steps")
+        ("reject-and-retract-refund-controls", Nothing) -> Left (path <> ": exit chapter names no live steps")
+        ("reject-inside-processing-and-retraction-windows", Nothing) -> Left (path <> ": early rejection names no live steps")
         ("sequence", Nothing) -> Left (path <> ": sequence names no live steps")
         (_, Nothing) -> Right r
     isBatchStep step = case step of
@@ -1273,21 +1274,21 @@ loadReceipts dir = do
         emptyJust (Just t) = T.null t
         emptyJust Nothing = False
     checkAccepted p x
-        | receiptRow x == "CA04"
+        | receiptRow x == "applied-validator-identity"
         , receiptVenue x == derivationVenue =
-            checkCA04Accepted p x
-        | receiptRow x == "CA04" =
+            checkAppliedValidatorIdentityAccepted p x
+        | receiptRow x == "applied-validator-identity" =
             Left
                 ( p
-                    <> ": CA04 venue must be "
+                    <> ": applied-validator-identity venue must be "
                     <> T.unpack derivationVenue
                 )
         | receiptVenue x == "node-submit" = checkNodeAccepted p x
         | receiptVenue x == "blueprint-check"
-        , receiptRow x == "CS01" =
+        , receiptRow x == "blueprint-encoding-round-trip" =
             checkLocalAccepted p x
         | receiptVenue x == "param-check"
-        , receiptRow x == "CS06" =
+        , receiptRow x == "script-parameter-application" =
             checkLocalAccepted p x
         | otherwise =
             Left
@@ -1298,26 +1299,26 @@ loadReceipts dir = do
                     <> T.unpack (receiptVenue x)
                     <> ", want node-submit or its own local venue"
                 )
-    checkCA04Accepted p x
+    checkAppliedValidatorIdentityAccepted p x
         | null (receiptTransactions x) =
             Left
                 ( p
-                    <> ": CA04 row names no provenance boot transaction"
+                    <> ": applied-validator-identity row names no provenance boot transaction"
                 )
         | any isNothing [receiptMem x, receiptCpu x, receiptTxSize x] =
             Left
                 ( p
-                    <> ": CA04 row misses measurements"
+                    <> ": applied-validator-identity row misses measurements"
                 )
         | isJust (receiptRejected x) =
             Left
                 ( p
-                    <> ": CA04 row must not name a rejected transaction"
+                    <> ": applied-validator-identity row must not name a rejected transaction"
                 )
         | isJust (receiptRefusal x) =
             Left
                 ( p
-                    <> ": CA04 row must not carry a refusal"
+                    <> ": applied-validator-identity row must not carry a refusal"
                 )
         | otherwise = Right x
     checkNodeAccepted p x
@@ -1494,10 +1495,10 @@ surface refuses to render it.
 -}
 unmetRuling :: Text -> Maybe UnmetRuling
 unmetRuling = \case
-    "CG09" -> Just (ConsumerRequirementUnmet "lambdasistemi/cardano-keri#468")
-    "CG10" -> Just (NoModelCounterpart "lambdasistemi/singular#346")
-    "CG12" -> Just (NoModelCounterpart "lambdasistemi/singular#345")
-    "CS04" -> Just (NoModelCounterpart "lambdasistemi/singular#347")
+    "reject-before-deadline-consumer-requirement" -> Just (ConsumerRequirementUnmet "lambdasistemi/cardano-keri#468")
+    "fold-against-superseded-root" -> Just (NoModelCounterpart "lambdasistemi/singular#346")
+    "surplus-fold-actions" -> Just (NoModelCounterpart "lambdasistemi/singular#345")
+    "wrong-redeemer-constructor-index" -> Just (NoModelCounterpart "lambdasistemi/singular#347")
     _ -> Nothing
 
 -- | An unmet ruling in plain words, naming the issue that would close it.

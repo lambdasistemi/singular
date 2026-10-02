@@ -555,9 +555,9 @@ spec =
             $ property
             $ forAll genScenario
             $ \sc -> ioProperty $ do
-                -- P1 then P2: the first acquisition holds P1, every later one P2,
+                -- tree-change-requires-approval then P2: the first acquisition holds tree-change-requires-approval, every later one P2,
                 -- with a fee per byte ten times as high. The booking is built inside
-                -- one acquisition and must be the P1 build; a booking built from a
+                -- one acquisition and must be the tree-change-requires-approval build; a booking built from a
                 -- P2 view must be dearer, so the parameters do reach the body.
                 acquired <- newIORef (0 :: Int)
                 let p1 = preprodParams

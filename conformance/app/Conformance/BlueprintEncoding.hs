@@ -1,6 +1,6 @@
 {- |
-Module      : Conformance.CS01
-Description : CS01 blueprint schema checks for Haskell encodings
+Module      : Conformance.BlueprintEncoding
+Description : blueprint-encoding-round-trip blueprint schema checks for Haskell encodings
 License     : Apache-2.0
 
 Every 'ToData'/'FromData' instance in
@@ -16,7 +16,7 @@ If the blueprint does not declare enough to check a given type, the
 row reports precisely which type and why, rather than weakening to a
 round trip. Every declared type is checked; there are no gaps.
 
-#157 C10: the consumer redeemer is gone with the consumer script, so
+#157 removed-consumer-encoding: the consumer redeemer is gone with the consumer script, so
 its encoder-only row goes with it — there is no blueprint definition
 left for it to check against, and a row that checked nothing would be
 worse than an absent one.
@@ -26,8 +26,8 @@ demands index 99 for 'End': the real 'End' (index 0) must fail its
 schema, and the run must fail naming the mismatch. A checker that
 accepts everything would pass the control and reveal itself.
 -}
-module Conformance.CS01
-    ( runCS01
+module Conformance.BlueprintEncoding
+    ( runBlueprintEncodingRoundTrip
     ) where
 
 import Control.Exception (ErrorCall (..), throwIO)
@@ -88,9 +88,10 @@ import Conformance.Receipt
     , writeReceiptFile
     )
 
--- | Run CS01 against the blueprint at the given path.
-runCS01 :: FilePath -> FilePath -> String -> Bool -> IO ()
-runCS01 blueprintPath receiptsDir base dirty = do
+-- | Run blueprint-encoding-round-trip against the blueprint at the given path.
+runBlueprintEncodingRoundTrip
+    :: FilePath -> FilePath -> String -> Bool -> IO ()
+runBlueprintEncodingRoundTrip blueprintPath receiptsDir base dirty = do
     control <- lookupEnv "CONFORMANCE_CONTROL"
     let spoil = control == Just "wrong-index"
     emit "control" (fromMaybe "normal" control)
@@ -110,7 +111,7 @@ runCS01 blueprintPath receiptsDir base dirty = do
     bpId <- blueprintId bp
     let receipt =
             Receipt
-                { receiptRow = "CS01"
+                { receiptRow = "blueprint-encoding-round-trip"
                 , receiptOutcome = Accepted
                 , receiptTransactions = []
                 , receiptRefusal = Nothing
@@ -132,13 +133,13 @@ runCS01 blueprintPath receiptsDir base dirty = do
     writeReceiptFile receiptsDir receipt
     emit
         "row"
-        ( "CS01: ACCEPTED "
+        ( "blueprint-encoding-round-trip: ACCEPTED "
             <> show nTypes
             <> " types vs blueprint, size="
             <> show fsize
         )
 
-{- | The armed control for the fixed-tuple schema (#157 D-DEST): demand
+{- | The armed control for the fixed-tuple schema (#157 request-destination-binding): demand
 that a THREE-element list validate against the two-element destination
 pair. It cannot, because a tuple is validated at exact arity — so the
 run exits nonzero and the row is shown able to notice a loosened
@@ -149,13 +150,13 @@ armWrongArity :: Map.Map Text Schema -> IO ()
 armWrongArity defs = do
     emit
         "control"
-        "CS01 ARMED (blueprint-wrong-arity): demanding a three-element \
+        "blueprint-encoding-round-trip ARMED (blueprint-wrong-arity): demanding a three-element \
         \list validate as the two-element destination pair"
     schema <- case Map.lookup destinationTupleDef defs of
         Just sc -> pure sc
         Nothing ->
             failWith
-                ( "CS01 control cannot arm: no "
+                ( "blueprint-encoding-round-trip control cannot arm: no "
                     <> T.unpack destinationTupleDef
                     <> " definition in the blueprint"
                 )
@@ -167,7 +168,7 @@ armWrongArity defs = do
                 "a three-element list validated as the pair"
         else
             failWith
-                "CS01 ARMED (blueprint-wrong-arity): the three-element \
+                "blueprint-encoding-round-trip ARMED (blueprint-wrong-arity): the three-element \
                 \list was refused, as the contract requires"
 
 -- | The blueprint's own name for the destination pair's schema.
@@ -249,7 +250,7 @@ sampleState =
 {- | Second round-trip sample varying one pin (NOTE-046: the old stake
 None/Some variation has no subject — the state carries no stake
 script). A single-variable difference keeps the pair discriminating,
-and the pin it varies is the one #157 C7 renamed the active policy.
+and the pin it varies is the one #157 state-datum-fields renamed the active policy.
 -}
 sampleStateAltPolicy :: OnChainTokenState
 sampleStateAltPolicy =
@@ -290,7 +291,7 @@ requireSchema defs defName d label =
     case Map.lookup defName defs of
         Nothing ->
             failWith
-                ( "CS01 gap: blueprint has no definition "
+                ( "blueprint-encoding-round-trip gap: blueprint has no definition "
                     <> T.unpack defName
                     <> " for "
                     <> label
@@ -300,7 +301,7 @@ requireSchema defs defName d label =
                 then emit ("check-" <> label) "schema ok"
                 else
                     failWith
-                        ( "CS01: "
+                        ( "blueprint-encoding-round-trip: "
                             <> label
                             <> " Data does not validate against "
                             <> T.unpack defName
@@ -314,7 +315,7 @@ requireIndex (Constr ix _) want label =
         then emit ("index-" <> label) ("Constr " <> show ix <> " ok")
         else
             failWith
-                ( "CS01: "
+                ( "blueprint-encoding-round-trip: "
                     <> label
                     <> " has Constr "
                     <> show ix
@@ -322,7 +323,12 @@ requireIndex (Constr ix _) want label =
                     <> show want
                 )
 requireIndex other _ label =
-    failWith ("CS01: " <> label <> " is not a Constr: " <> show other)
+    failWith
+        ( "blueprint-encoding-round-trip: "
+            <> label
+            <> " is not a Constr: "
+            <> show other
+        )
 
 -- ---------------------------------------------------------
 -- Per-type checks
@@ -350,9 +356,13 @@ checkRoot defs = do
     requireSchema defs "ByteArray" (toD sampleRoot) "OnChainRoot"
     case toD sampleRoot of
         B _ -> emit "index-OnChainRoot" "bytes ok (no constructor)"
-        other -> failWith ("CS01: OnChainRoot is not bytes: " <> show other)
+        other ->
+            failWith
+                ( "blueprint-encoding-round-trip: OnChainRoot is not bytes: "
+                    <> show other
+                )
 
-{- | The C2 row index on the wire (#183). There is no standalone
+{- | The seven-admitted-edges row index on the wire (#183). There is no standalone
 operation type any more: the edge is an integer field of the request,
 and what a consumer has to agree about is WHERE it sits and that any
 tag travels — including one the cage refuses.
@@ -366,13 +376,20 @@ checkEdge defs = do
         Just (I e)
             | e == requestEdge sampleRequest ->
                 emit "edge-field" "the edge is the integer at request field 3"
-        other -> failWith ("CS01: request field 3 is not the edge: " <> show other)
+        other ->
+            failWith
+                ( "blueprint-encoding-round-trip: request field 3 is not the edge: "
+                    <> show other
+                )
     case at 4 sampleRequest of
         Just (I d)
             | d == requestDeposit sampleRequest ->
                 emit "deposit-field" "the deposit is the integer at request field 4"
         other ->
-            failWith ("CS01: request field 4 is not the deposit: " <> show other)
+            failWith
+                ( "blueprint-encoding-round-trip: request field 4 is not the deposit: "
+                    <> show other
+                )
     -- Every admitted row, and one the cage refuses: a consumer that
     -- could not encode an inadmissible tag could not exercise the
     -- refusal that answers it.
@@ -429,7 +446,7 @@ checkCageDatum defs = do
     requireSchema defs "types/CageDatum" (toD custody) "AbsentCustody"
     requireIndex (toD req) 0 "RequestDatum"
     requireIndex (toD st) 1 "StateDatum"
-    -- #157 D-CUSTODY: appended at index 2; 0 and 1 do not move.
+    -- #157 absent-custody-datum: appended at index 2; 0 and 1 do not move.
     requireIndex (toD custody) 2 "AbsentCustody"
 
 checkMintRedeemer :: Map.Map Text Schema -> IO ()
@@ -493,12 +510,14 @@ checkUpdateRedeemer defs spoil = do
     requireIndex (toD sweep) 4 "Sweep"
     let bad = Constr 99 []
     case Map.lookup "types/UpdateRedeemer" defs of
-        Nothing -> failWith "CS01 gap: no types/UpdateRedeemer definition"
+        Nothing ->
+            failWith
+                "blueprint-encoding-round-trip gap: no types/UpdateRedeemer definition"
         Just schema ->
             if validateData defs schema bad
                 then
                     failWith
-                        "CS01 control failed: Constr 99 validates against UpdateRedeemer"
+                        "blueprint-encoding-round-trip control failed: Constr 99 validates against UpdateRedeemer"
                 else emit "control-bad-index" "Constr 99 correctly rejected"
 
 checkProofStep :: Map.Map Text Schema -> IO ()
@@ -552,8 +571,12 @@ requireRoundTripReal x label =
         Just y ->
             if y == x
                 then emit ("roundtrip-" <> label) "ok"
-                else failWith ("CS01: " <> label <> " round trip mismatch")
-        Nothing -> failWith ("CS01: " <> label <> " FromData failed")
+                else
+                    failWith
+                        ("blueprint-encoding-round-trip: " <> label <> " round trip mismatch")
+        Nothing ->
+            failWith
+                ("blueprint-encoding-round-trip: " <> label <> " FromData failed")
 
 class RealFromData a where
     realFromData :: Data -> Maybe a
@@ -583,7 +606,7 @@ instance RealFromData OnChainRequest where
                     , requestEdge = edge
                     , requestDeposit = dep
                     , requestSubmittedAt = sub
-                    , -- #157 D-DEST: appended last, and a two-element list
+                    , -- #157 request-destination-binding: appended last, and a two-element list
                       -- exactly as Aiken encodes a tuple.
                       requestDestination = (da, dh)
                     }
@@ -750,11 +773,15 @@ checkFieldTitles titles = do
 expectFields :: TitleMap -> Text -> Text -> [Text] -> IO ()
 expectFields titles defName constrName want =
     case Map.lookup defName titles of
-        Nothing -> failWith ("CS01 gap: no titles for " <> T.unpack defName)
+        Nothing ->
+            failWith
+                ( "blueprint-encoding-round-trip gap: no titles for "
+                    <> T.unpack defName
+                )
         Just cs -> case [fs | (t, _, fs) <- cs, t == constrName] of
             [] ->
                 failWith
-                    ( "CS01: no constructor "
+                    ( "blueprint-encoding-round-trip: no constructor "
                         <> T.unpack constrName
                         <> " in "
                         <> T.unpack defName
@@ -764,7 +791,7 @@ expectFields titles defName constrName want =
                     then emit ("fields-" <> T.unpack constrName) "order ok"
                     else
                         failWith
-                            ( "CS01: field order for "
+                            ( "blueprint-encoding-round-trip: field order for "
                                 <> T.unpack constrName
                                 <> " is "
                                 <> show fs

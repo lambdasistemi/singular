@@ -84,7 +84,7 @@ pub type TokenId {
 /// - All datum variants can be serialized/deserialized as inline datums
 /// - Pattern matching on `CageDatum` correctly distinguishes `RequestDatum`
 ///   from `StateDatum`
-/// - The seven `edge` row indices land on their C2 rows (0 insertAbsent
+/// - The seven `edge` row indices land on their seven-admitted-edges rows (0 insertAbsent
 ///   through 6 witnessTerminal)
 /// - `MintRedeemer` and `UpdateRedeemer` cover all action types exhaustively
 /// Parameters for migrating a caged token from an old validator to a new one.
@@ -218,33 +218,33 @@ pub type State {
   /// Duration (in milliseconds) of Phase 2 — the requester retract window.
   /// Set at mint time; enforced immutable across Modify/Reject operations.
   retract_time: Int,
-  /// The application policy that certifies requests (#157 C4/C7). A
+  /// The application policy that certifies requests (#157 tree-edge-admission-by-approval/C7). A
   /// request whose operation changes the trie is folded only if its UTxO
   /// carries exactly one asset under this policy at quantity 1, whose
   /// asset name is the approval binding of that request
-  /// (`lib.approvalName`, D-APPROVAL). No application script runs at fold
+  /// (`lib.approvalName`, approval-asset-binding). No application script runs at fold
   /// time: the approval is evidence the application already certified the
   /// edge, and the cage recomputes its name rather than trusting it.
   /// Set at genesis, preserved by every `Modify`.
   application_policy: PolicyId,
   /// The policy that mints the ACTIVE token (#157 C5/C7, renamed from
   /// `representative_policy`): the live registration's witness. Under it
-  /// the asset name is the registry key itself (D-ASSET).
+  /// the asset name is the registry key itself (token-name-is-registry-key).
   /// Set at genesis, preserved by every `Modify`.
   active_policy: PolicyId,
   /// The policy that mints the ABSENT token (#157 C5/C7): the witness
   /// that a key is known-absent, held in the cage's own custody beside
-  /// the inserter's refund address (D-CUSTODY).
+  /// the inserter's refund address (absent-custody-datum).
   /// Set at genesis, preserved by every `Modify`.
   absent_policy: PolicyId,
   /// The policy that mints the TERMINAL token (#157 C5/C7): the witness
   /// that a key is over, forever. Minted by a `Read(0x02)` at the read's
-  /// position in the fold; freely burnable by its holder (W3).
+  /// position in the fold; freely burnable by its holder (terminal-witnesses-plural).
   /// Set at genesis, preserved by every `Modify`.
   terminal_policy: PolicyId,
 }
 
-/// The C2 row index of a request (#183, Lean `Request.edge`). An edge names
+/// The seven-admitted-edges row index of a request (#183, Lean `Request.edge`). An edge names
 /// its own leaf bytes, so no value bytes travel with the request:
 ///
 /// | edge | name              | trie move            |
@@ -269,7 +269,7 @@ pub type State {
 ///
 /// A request to modify a caged token's MPF, on the Lean wire (#183).
 ///
-/// The request carries the C2 row index (`edge` 0-6, Lean `Request.edge`)
+/// The request carries the seven-admitted-edges row index (`edge` 0-6, Lean `Request.edge`)
 /// instead of value bytes: the edge names its own leaf bytes (see above),
 /// so illegal value-byte shapes are inexpressible. No `tip` field: the
 /// fold requires the input lovelace to reach `state.tip`
@@ -327,7 +327,7 @@ pub type Request {
   /// The key to insert/update/delete in the MPF.
   /// This is an arbitrary ByteArray that becomes a key in the Merkle trie.
   requestKey: ByteArray,
-  /// The C2 row index of this request (0-6; see above).
+  /// The seven-admitted-edges row index of this request (0-6; see above).
   /// The edge names the trie move and its leaf bytes.
   edge: Int,
   /// The deposit (in lovelace) the request rides with, over and above the tip.
@@ -357,7 +357,7 @@ pub type Request {
   /// Phase 2 (requester retract). A reject reads no time.
   submitted_at: Int,
   /// Where this request's minted token goes, and the inline datum the
-  /// receiving output must carry (#157 D-DEST; appended last, so the
+  /// receiving output must carry (#157 request-destination-binding; appended last, so the
   /// published field order never moves): the binary address bytes and
   /// the BLAKE2b-256 hash of the receiving output's inline datum (empty
   /// for a datum-less output).
@@ -367,9 +367,9 @@ pub type Request {
   /// it could create her record with a controller of its own choosing.
   /// The cage requires exactly one output matching both and carrying
   /// the minted token, holding at least this request's value minus the
-  /// tip (C6, T6). For edge 0 the token goes to the cage's own
+  /// tip (token-destinations-and-refunds, request-deposit-returned). For edge 0 the token goes to the cage's own
   /// custody instead and the first component is the refund address
-  /// (D-CUSTODY); for edge 6 it is where the terminal token goes.
+  /// (absent-custody-datum); for edge 6 it is where the terminal token goes.
   destination: (ByteArray, ByteArray),
 }
 
@@ -410,13 +410,13 @@ pub type CageDatum {
   RequestDatum(Request)
   /// The current state of a caged token
   StateDatum(State)
-  /// The cage's own custody of an absent token (#157 D-CUSTODY;
+  /// The cage's own custody of an absent token (#157 absent-custody-datum;
   /// appended at index 2, so `RequestDatum` 0 and `StateDatum` 1 never
   /// move). A fold of edge 0 mints the absent token and locks
   /// it here, at the cage's own address, beside the address the inserter
   /// named for their refund. The witnessed key is the sole non-ADA asset
   /// in the custody output, not a second datum identity. Its lovelace
-  /// is the request's residual after the tip — the min-ADA that R-ADA
+  /// is the request's residual after the tip — the min-ADA that custody-lovelace-refund
   /// returns.
   ///
   /// The cage's spending path for it is exactly one shape: spent in a

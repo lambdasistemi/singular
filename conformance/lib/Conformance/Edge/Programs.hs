@@ -211,39 +211,39 @@ do so through their own runner.
 outsideVocabulary :: [(Text, Text)]
 outsideVocabulary =
     [
-        ( "CG10"
+        ( "fold-against-superseded-root"
         , "a fold whose proof was built against a root the registry has since superseded. The model takes no proof and no authenticated root, so it has no reason to compare with the chain's refusal (lambdasistemi/singular#346). The conformance session runs the refusal and its accepting control on the devnet; the model comparison stays unmet by ruling."
         )
     ,
-        ( "CG12"
+        ( "surplus-fold-actions"
         , "a fold carrying an action beyond its requests, and one missing an action. The model takes requests, not an action list, so it has no reason to compare with the chain's refusals (lambdasistemi/singular#345). The conformance session runs both refusals and an accepting control on the devnet; the model comparison stays unmet by ruling."
         )
     ,
-        ( "CG13"
+        ( "historical-owner-change"
         , "a fold that changes the registry's owner. The registry has no owner role (the ownerless-registry ruling of 2026-09-12, commit f3a68b1b) and the model has none either; the earlier observation is history and the claim is withdrawn."
         )
     ,
-        ( "CG14"
+        ( "retired-stake-hook-with-withdrawal"
         , "a fold carrying a withdrawal under a stake_script hook. The registry interface has no stake_script hook (registry mode, no hook) and the model has no withdrawal; the row is retired and nothing runs it."
         )
     ,
-        ( "CG15"
+        ( "retired-stake-hook-without-withdrawal"
         , "the same fold with its withdrawal absent. The registry interface has no stake_script hook (registry mode, no hook) and the model has no withdrawal; the row is retired and nothing runs it."
         )
     ,
-        ( "CG16"
+        ( "historical-owner-signed-sweep"
         , "an owner-signed sweep of an output that is not a request. The registry has no owner role and no sweep: its scripts refuse a sweep for every party (the ownerless-registry ruling of 2026-09-12, commit f3a68b1b), and the model has no sweep. The earlier observation is history and the claim is withdrawn; no run sweeps a registry."
         )
     ,
-        ( "CG17"
+        ( "historical-non-owner-sweep"
         , "a sweep by someone other than the owner. The registry has no owner role and no sweep (the ownerless-registry ruling of 2026-09-12, commit f3a68b1b), and the model has no sweep; the earlier observation is history and the claim is withdrawn."
         )
     ,
-        ( "CG18"
+        ( "historical-registry-termination"
         , "ending the registry by burning its state token. The registry has no termination: its state script refuses End for every party (the ownerless-registry ruling of 2026-09-12, commit f3a68b1b), and the model has no termination exit. The claim that End is accepted is withdrawn; no run ends a registry."
         )
     ,
-        ( "CG20"
+        ( "historical-permissionless-fold"
         , "a fold whose owner's required signer is removed. The registry has no owner role, so there is no owner signer to remove; that no fold requires a signer is compared on every fold the programs run, through the transaction's required signers."
         )
     ]
@@ -381,7 +381,7 @@ chapter title introduction summary = Just (Chapter title introduction summary)
 registration :: Program
 registration =
     Program
-        { programRow = "CG21"
+        { programRow = "register-active-key"
         , programRegistries = [standard "story-registration" "registration"]
         , programWallets = [Wallet SecondWallet "recipient wallet"]
         , programCohort = noCohort
@@ -399,7 +399,7 @@ registration =
 occupied :: Program
 occupied =
     Program
-        { programRow = "CG05"
+        { programRow = "insert-occupied-key"
         , programRegistries = [standard "occupied-insert" "occupied insert"]
         , programWallets = [runner "holder wallet"]
         , programCohort = noCohort
@@ -417,7 +417,7 @@ occupied =
 retirement :: Program
 retirement =
     Program
-        { programRow = "CG22"
+        { programRow = "retire-active-key"
         , programRegistries =
             [ standard "story-retirement" "retirement"
             , standard "story-unknown-key comparison" "comparison"
@@ -438,7 +438,7 @@ retirement =
 exits :: Program
 exits =
     Program
-        { programRow = "CG23"
+        { programRow = "reject-and-retract-refund-controls"
         , programRegistries =
             [ Registry "story-rejection" "rejection" 1_000 1_000
             , Registry "story-retraction" "retraction" 1_000 30_000
@@ -459,7 +459,7 @@ exits =
 earlyRejection :: Program
 earlyRejection =
     Program
-        { programRow = "CG24"
+        { programRow = "reject-inside-processing-and-retraction-windows"
         , programRegistries =
             [Registry "story-early-rejection" "early rejection" 120_000 120_000]
         , programWallets = [runner "holder wallet"]
@@ -482,7 +482,7 @@ earlyRejection =
 retractionWindow :: Program
 retractionWindow =
     Program
-        { programRow = "CG07"
+        { programRow = "retract-outside-window"
         , programRegistries =
             [standard "story-retraction-window" "retraction window"]
         , programWallets = [runner "owner wallet"]
@@ -539,12 +539,13 @@ foldsOf row name reading requests =
         }
 
 insertion :: Program
-insertion = foldsOf "CG01" "cg01" "insertion" [(InsertAbsent, "cg01-key")]
+insertion =
+    foldsOf "insert-key" "cg01" "insertion" [(InsertAbsent, "cg01-key")]
 
 update :: Program
 update =
     foldsOf
-        "CG02"
+        "update-existing-key"
         "cg02"
         "update"
         [(InsertAbsent, "cg02-key"), (UpdateActive, "cg02-key")]
@@ -552,7 +553,7 @@ update =
 deletion :: Program
 deletion =
     foldsOf
-        "CG03"
+        "delete-existing-key"
         "cg03"
         "deletion"
         [(InsertAbsent, "cg03-key"), (DeleteAbsent, "cg03-key")]
@@ -560,7 +561,7 @@ deletion =
 reinsertion :: Program
 reinsertion =
     foldsOf
-        "CG04"
+        "reinsert-deleted-key"
         "cg04"
         "reinsertion"
         [ (InsertAbsent, "cg04-key")
@@ -572,7 +573,7 @@ reinsertion =
 phase2Retraction :: Program
 phase2Retraction =
     Program
-        { programRow = "CG06"
+        { programRow = "retract-inside-window"
         , programRegistries =
             [Registry "cg06" "retraction in phase 2" 1_000 30_000]
         , programWallets = [runner "owner wallet"]
@@ -590,7 +591,7 @@ phase2Retraction =
 lateRejection :: Program
 lateRejection =
     Program
-        { programRow = "CG08"
+        { programRow = "reject-after-window"
         , programRegistries =
             [Registry "cg08" "rejection after the windows" 1_000 1_000]
         , programWallets = [runner "holder wallet"]
@@ -618,7 +619,7 @@ refused: its requirement is kept unmet by ruling.
 processingRejection :: Program
 processingRejection =
     Program
-        { programRow = "CG09"
+        { programRow = "reject-before-deadline-consumer-requirement"
         , programRegistries =
             [Registry "cg09" "processing-window rejection" 30_000 5_000]
         , programWallets = [Wallet (OwnerWallet 10_000_000) "owner wallet"]
@@ -673,7 +674,7 @@ accepting control: one insertion folded on the same registry.
 emptyFold :: Program
 emptyFold =
     Program
-        { programRow = "CG11"
+        { programRow = "empty-fold"
         , programRegistries = [standard "cg11" "empty fold"]
         , programWallets = [runner "holder wallet"]
         , programCohort = noCohort
@@ -702,7 +703,7 @@ beside the same two refunded as owed.
 refundRouting :: Program
 refundRouting =
     Program
-        { programRow = "CG19"
+        { programRow = "request-value-and-refund-routing"
         , programRegistries = [standard "cg19" "refund routing"]
         , programWallets =
             [ Wallet (OwnerWallet 25_000_000) "first owner wallet"

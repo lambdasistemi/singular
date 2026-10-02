@@ -11,7 +11,7 @@
       "pause": 350
     },
     {
-      "text": "The source-derived inventory at the ticket 267 candidate measures 89 discovered Haskell files in 23 source directories: Fourmolu selects 87 after the two verifier exclusions, and HLint selects 76 within ten directories. The added end-to-end witness belongs to all three sets. At ae4fe9a, the lint app passed in the final Gate S off-chain lint row and in pushed-head continuous integration; that gate row reported 89 discovered files in 23 directories, Fourmolu over 87 files, and HLint over ten directories with no hints. These green receipts cover only the selected extents. At the ticket 270 candidate the same app reported 128 discovered files in 23 directories, Fourmolu over 126, and HLint over ten directories with no hints. The thirty new command modules sit inside already declared source directories, so discovery found them without a configuration change. Since ticket 278 slice two, the formatter runs under the house fourmolu yaml committed at the repository root, passed explicitly to every entrypoint so a missing configuration fails loudly instead of falling back to Fourmolu defaults, over every discovered offchain Haskell source with no exclusions: one hundred twenty-eight files at this writing, the two formerly fenced verifier sources included. HLint runs over the same files: the thirteen directories ticket 264 left outside it had their hints resolved at the source, and the exclusion list is gone. Compare the next actual lint output with this inventory.",
+      "text": "The source-derived inventory at the ticket 267 candidate measures 89 discovered Haskell files in 23 source directories: Fourmolu selects 87 after the two verifier exclusions, and HLint selects 76 within ten directories. The added end-to-end witness belongs to all three sets. At ae4fe9a, the lint app passed in the final acceptance checks off-chain lint row and in pushed-head continuous integration; that gate row reported 89 discovered files in 23 directories, Fourmolu over 87 files, and HLint over ten directories with no hints. These green receipts cover only the selected extents. At the ticket 270 candidate the same app reported 128 discovered files in 23 directories, Fourmolu over 126, and HLint over ten directories with no hints. The thirty new command modules sit inside already declared source directories, so discovery found them without a configuration change. Since ticket 278 slice two, the formatter runs under the house fourmolu yaml committed at the repository root, passed explicitly to every entrypoint so a missing configuration fails loudly instead of falling back to Fourmolu defaults, over every discovered offchain Haskell source with no exclusions: one hundred twenty-eight files at this writing, the two formerly fenced verifier sources included. HLint runs over the same files: the thirteen directories ticket 264 left outside it had their hints resolved at the source, and the exclusion list is gone. Compare the next actual lint output with this inventory.",
       "pause": 500
     },
     {
@@ -33,6 +33,6 @@
   ],
   "_source": {
     "file": "offchain-development.md",
-    "sha256": "28e14b4f58e0dd70a4eb92d9b005cdfe3f66803ef79869cbd2af99887fe79797"
+    "sha256": "fb24ef7a3b7e0505b74c8eb4b4a3761e3de9e168670200e8fbd0c0ee5ebede68"
   }
 }

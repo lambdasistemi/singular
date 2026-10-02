@@ -5,7 +5,7 @@
       "pause": 400
     }
   ],
-  "prepublication-repair-2026-09-21-full-s3-and-unconditional-laws": [
+  "prepublication-repair-2026-09-21-full-unconditional-laws-and-unconditional-laws": [
     {
       "text": "Two defects in the initial implementation were caught by prepublication owner checks and repaired against the Lean model. First, resolve rows could pass while contradicting the supply law, because the checker required one witness for the matching leaf but omitted the requirement for zero witnesses otherwise. It now requires both directions for active and absent witnesses, while still allowing plural terminal attestations. Second, the law gated itself on its own output, letting a violating state hide as an inactive hypothesis. The unconditional laws now apply to all ten accepted rows. On the preserved witness-dropping mutant, the report shows nine rows holding and one violating the supply and active-witness laws; the old report omitted that violation as vacuous.",
       "pause": 400
@@ -25,6 +25,6 @@
   ],
   "_source": {
     "file": "mapping.md",
-    "sha256": "92c52310a00193da6cae76f353267c3f7cb77d6437fa49e8d984cd43e02d2f88"
+    "sha256": "484a58c56b63fb6bc5801433529db83fde7d30341288f474206d114e6e25dbc5"
   }
 }

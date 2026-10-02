@@ -1,11 +1,11 @@
-# Superseded owner-authority tests (operator ruling NOTE-028/A-003)
+# Superseded owner-authority tests (operator ruling operator note (NOTE-028)/A-003)
 
 These tests asserted registry-owner authority and were removed or recut by
 the issue #77 ownerless repair. They are kept here verbatim as defect
 witnesses: this is what the pre-repair tree accepted. Do not reintroduce
 them; their replacements are named below.
 
-RED subject for the repair (NOTE-008 correction): behavioural RED is
+RED subject for the repair (operator note (NOTE-008) correction): behavioural RED is
 constructible and was reproduced on the known base by root — a 70-line
 test-only patch (sha256
 `b499e18577d97ab77e4b0f20d4501d6bce34a9d97cb9b174c9a42acfb596d2c5`)

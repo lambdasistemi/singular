@@ -337,14 +337,14 @@ statePin si = case filter isState (siValidators si) of
     isState v = "state.state" `T.isPrefixOf` vpTitle v
 
 -- ---------------------------------------------------------
--- The bounded controls (C1, C2, C3)
+-- The bounded controls (C1, seven-admitted-edges, C3)
 -- ---------------------------------------------------------
 
 data Control
     = ControlNone
     | -- | C1: a wrong field in the expected datum.
       ControlDatum
-    | -- | C2: a wrong expected representative quantity.
+    | -- | seven-admitted-edges: a wrong expected representative quantity.
       ControlRepresentative
     | -- | C3: an expected state that does not match result.state.
       ControlState
@@ -538,7 +538,7 @@ runLi01 control si stateBytes requestBytes = do
                     <> appliedHex
                     <> " but it held "
                     <> show (Set.toList witnessHashes)
-        -- Marker: witness shape, asserted on the signed tx (C2).
+        -- Marker: witness shape, asserted on the signed tx (seven-admitted-edges).
         stepWitnessShape control cfg appliedHex seedName signed txid seedRef
         -- Marker: seed consumed, observed from the chain.
         walletAfter <- Cage.queryUTxOs prov genesisAddr
@@ -707,7 +707,7 @@ nextControlCommitmentOf addressBytes0 =
         )
 
 -- ---------------------------------------------------------
--- Step: witness shape (marker li01-witness-shape, control C2)
+-- Step: witness shape (marker li01-witness-shape, control seven-admitted-edges)
 -- ---------------------------------------------------------
 
 {- | Assert the submitted transaction's witness shape against the
@@ -742,7 +742,7 @@ stepWitnessShape control cfg appliedHex seedName signed txid seedRef = do
                 <> appliedHex
                 <> ": {seed-derived name: 1}}"
     -- The row mints no representative: assert the minted quantity
-    -- under any other policy is 0 (C2 raises the expectation to 1,
+    -- under any other policy is 0 (seven-admitted-edges raises the expectation to 1,
     -- and this check must then fail naming both quantities).
     let representativeQty =
             sum

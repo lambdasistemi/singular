@@ -23,10 +23,10 @@ Look for the rejection cases named by their window. Each one submits the builder
 ```sh
 cd conformance
 blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG09 --receipts-dir "$(mktemp -d)"
+REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run reject-before-deadline-consumer-requirement --receipts-dir "$(mktemp -d)"
 ```
 
-CG09's receipt shows the chain accepting a processing-window rejection, with the verdict `unmet-by-ruling`. Its consumer requirement still says refuse and, by operator ruling 2026-10-01, remains unmet. CG24 is run the same way. Each of its steps is compared with the model, and the log states the window each reject was placed in.
+reject-before-deadline-consumer-requirement's receipt shows the chain accepting a processing-window rejection, with the verdict `unmet-by-ruling`. Its consumer requirement still says refuse and, by operator ruling 2026-10-01, remains unmet. reject-inside-processing-and-retraction-windows is run the same way. Each of its steps is compared with the model, and the log states the window each reject was placed in.
 
 ## Identities
 

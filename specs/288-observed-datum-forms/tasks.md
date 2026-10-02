@@ -4,7 +4,7 @@ As a conformance reader, I want the reported datum form to reflect the ledger an
 
 ## Implementation
 
-- [ ] T288-01: repair the five affected roles with executable observer/comparator discrimination, retain RED/GREEN evidence, and verify connected cases without changing model semantics or refactor-owned files.
+- [ ] repair-five-affected-roles-executable-observer-comparator: repair the five affected roles with executable observer/comparator discrimination, retain RED/GREEN evidence, and verify connected cases without changing model semantics or refactor-owned files.
 
 ## Acceptance
 

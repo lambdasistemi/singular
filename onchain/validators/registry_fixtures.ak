@@ -62,7 +62,7 @@ pub const retractTime: Int = 10_000
 pub const tip: Int = 1_000_000
 
 /// The deposit a request rides with, over and above the tip. The fold
-/// returns it to the destination (#157 T6, want-ledger R4).
+/// returns it to the destination (#157 request-deposit-returned, the deposit-return requirement).
 pub const deposit: Int = 2_000_000
 
 pub const requestLovelace: Int = tip + deposit
@@ -74,7 +74,7 @@ pub const stateLovelace: Int = 5_000_000
 // ----------------------------------------------------------------------------
 
 /// Registry keys. Under each token policy the asset name IS the key
-/// (#157 D-ASSET), so these double as asset names.
+/// (#157 token-name-is-registry-key), so these double as asset names.
 pub const keyA: ByteArray = #"6b657941"
 
 pub const keyB: ByteArray = #"6b657942"
@@ -90,7 +90,7 @@ pub const activeLeaf: ByteArray = #"01"
 pub const terminalLeaf: ByteArray = #"02"
 
 /// Binary addresses, as the request's `destination` carries them
-/// (#157 D-DEST). `0x60` is an enterprise payment-key address, `0x70`
+/// (#157 request-destination-binding). `0x60` is an enterprise payment-key address, `0x70`
 /// an enterprise script address, `0x00` a base address with both
 /// credentials.
 pub const bookerAddress: ByteArray =
@@ -360,8 +360,8 @@ pub fn stateOutputOf(state: State) -> Output {
 // Requests and approvals
 // ----------------------------------------------------------------------------
 
-/// The approval the application minted for this edge (#157 C4,
-/// D-APPROVAL): one asset under the application policy whose name is the
+/// The approval the application minted for this edge (#157 tree-edge-admission-by-approval,
+/// approval-asset-binding): one asset under the application policy whose name is the
 /// binding of exactly this request.
 pub fn approval(
   edge: Int,
@@ -376,7 +376,7 @@ pub fn requestRef(index: Int) -> OutputReference {
   OutputReference { transaction_id: #"52455155455354", output_index: index }
 }
 
-/// The request datum on the final wire (#183 slice b): the C2 row index
+/// The request datum on the final wire (#183 slice b): the seven-admitted-edges row index
 /// (`edge` 0-6) with no value bytes and no `tip`; `deposit` is the value
 /// above the tip the request rides with (`held - state.tip`).
 pub fn requestDatum(
@@ -401,7 +401,7 @@ pub fn requestDatum(
 /// A request UTxO carrying its approval and its deposit.
 /// `lovelace` must be `tip + deposit`; the fold checks `held >= tip` and
 /// `deposit == held - tip`. Non-read rows must carry their approval;
-/// reads carry none (C4).
+/// reads carry none (tree-edge-admission-by-approval).
 pub fn requestInput(
   index: Int,
   key: ByteArray,
@@ -609,7 +609,7 @@ pub fn foldTxWith(
   }
 }
 
-/// A custody UTxO carrying another non-ADA asset: the shape T3 refuses.
+/// A custody UTxO carrying another non-ADA asset: the shape absent-token-registry-custody refuses.
 pub fn custodyOutputWithExtra(
   tokenKey: ByteArray,
   refund: ByteArray,
@@ -669,7 +669,7 @@ pub fn foreignStateInput(root: ByteArray) -> Input {
 }
 
 /// The request validator's own address: where a deployed request UTxO
-/// actually sits (#157 T5). It is NOT the cage's address — the request
+/// actually sits (#157 custody-spend-requires-consuming-fold). It is NOT the cage's address — the request
 /// script is parametrised by the state policy and the cage token, and
 /// hashes to something else entirely — so a custody rule that compared
 /// addresses would refuse every honest fold on chain.

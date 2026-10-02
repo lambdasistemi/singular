@@ -1,4 +1,4 @@
-// Ticket #81 / CS07 regression: lone-Fork exclusion with skip > 0.
+// Ticket #81 / proof-step-constructor-witnesses regression: lone-Fork exclusion with skip > 0.
 //
 // Upstream aiken-lang/merkle-patricia-forestry v2.1.0
 // must accept the real absence witness the builder produces for key

@@ -16,11 +16,11 @@ flowchart LR
 
 | ID | Requirement | Executing or inspected witness |
 | --- | --- | --- |
-| R268-1 | Each original type, constructor, selector, strict field, helper and instance has exactly one owner; `Singular.Registry.Types` keeps its public exports. | Declaration map in `data-model.md`, source review, Cabal library and supported consumer builds. |
-| R268-2 | Every existing encoding, constructor index and field order stays the same, including refund-only custody and the different instance sets. | Independent literal `Data` assertions in `TypesSpec`, existing vector generator against the committed Aiken golden, focused cage tests and Aiken checks. |
-| R268-3 | Existing callers, including their observable type use, continue through the `Types` facade. | Full caller inventory at the base and candidate, supported component build, focused suite and fresh-blueprint E2E and journey executions. Source search for type reflection is a lead and must be checked against actual consumers. |
-| R268-4 | The new modules are cohesive, acyclic and documented for contributors with a navigable source and generated API reference. | Dependency review, Cabal declaration, source-derived guide and complete generated module/source manifest, rendered links, diagram and synchronized speech checks. |
-| R268-5 | Independent evidence boundaries and published conformance state remain intact. | Unchanged Conformance source/receipt/book diff fence, existing Conformance consumers as compatibility checks, and explicit PR limits. |
+| original-type-constructor-selector-strict-field-helper | Each original type, constructor, selector, strict field, helper and instance has exactly one owner; `Singular.Registry.Types` keeps its public exports. | Declaration map in `data-model.md`, source review, Cabal library and supported consumer builds. |
+| existing-encoding-constructor-index-field-order-stays | Every existing encoding, constructor index and field order stays the same, including refund-only custody and the different instance sets. | Independent literal `Data` assertions in `TypesSpec`, existing vector generator against the committed Aiken golden, focused cage tests and Aiken checks. |
+| existing-callers-including-their-observable-type-use | Existing callers, including their observable type use, continue through the `Types` facade. | Full caller inventory at the base and candidate, supported component build, focused suite and fresh-blueprint end-to-end and journey executions. Source search for type reflection is a lead and must be checked against actual consumers. |
+| new-modules-cohesive-acyclic-documented-for-contributors | The new modules are cohesive, acyclic and documented for contributors with a navigable source and generated API reference. | Dependency review, Cabal declaration, source-derived guide and complete generated module/source manifest, rendered links, diagram and synchronized speech checks. |
+| independent-evidence-boundaries-published-conformance-state-remain | Independent evidence boundaries and published conformance state remain intact. | Unchanged Conformance source/receipt/book diff fence, existing Conformance consumers as compatibility checks, and explicit PR limits. |
 
 ## Boundary
 

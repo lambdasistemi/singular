@@ -1051,7 +1051,7 @@ runRows env recAccept1 recAccept2 recRefusals recDuplicates recR1 recR2 recOver 
     snapR2 <- mustSnap env recR2
     snapR2r <- rowRecoverRecord env snapR2 "RR2"
     _ <- rowRetireRecoveredQuorum env snapR2r
-    -- Mismatched pair (NOTE-029 N2): LT01 custody with the RR1
+    -- Mismatched pair (NOTE-029 application-approval-minting): LT01 custody with the RR1
     -- request must refuse (wrong pairing, each piece genuine).
     rowN2Mismatch env signedLT01 signedRR1
     -- Permanent retirement (NOTE-027/028/042): the genuinely claimed
@@ -1830,7 +1830,7 @@ rowOVBurnOnlyRefused env custody = do
         "a burn with no registry transition refuses"
         signed
 
-{- | Mismatched pair (NOTE-029 N2): LT01's live custody with RR1's
+{- | Mismatched pair (NOTE-029 application-approval-minting): LT01's live custody with RR1's
 pending request — each piece genuine (live custody, valid Update
 proof, exact burn of the custody-held rep), but the pairing is
 wrong (different creator transactions). Must refuse at local
@@ -1850,7 +1850,7 @@ requireFired label = \case
     ProbeFired detail -> emit "control" (label <> " control fired correctly: " <> detail)
     ProbeBroken detail -> failWith ("CONTROL broken: " <> label <> ": " <> detail)
 
-{- | Build a mismatched-pair fold (N2 shape): the given custody with
+{- | Build a mismatched-pair fold (application-approval-minting shape): the given custody with
 the given foreign request. Shared by the MainRun row and both
 control modes; callers pin the outcome (refusal, wrong marker, or
 acceptance). Throws local-evaluation failures as exceptions.
@@ -1948,7 +1948,7 @@ rowN2Mismatch env signedLT01 signedRR1 = do
             failWith
                 "N2: mismatched-pair fold BUILT — expected local-evaluation refusal (co-creation)"
 
-{- | N2 wrong-reason control (NOTE-033): the mismatched pair must
+{- | application-approval-minting wrong-reason control (NOTE-033): the mismatched pair must
 refuse, and the strict pin must reject the impossible marker.
 -}
 rowN2ControlWrongReason
@@ -1976,7 +1976,7 @@ rowN2ControlWrongReason env signedCustody decoyReq = do
             pure
                 (ProbeBroken "mismatched-pair fold BUILT (occupied pairing bypassed?)")
 
-{- | N2 valid-mode refusal (NOTE-033): the mismatched pair refuses
+{- | application-approval-minting valid-mode refusal (NOTE-033): the mismatched pair refuses
 under strict pins (recorded, continued to the terminal fail).
 -}
 rowN2ValidRefusal
@@ -1993,7 +1993,7 @@ rowN2ValidRefusal env signedCustody decoyReq = do
             pure (ProbeFired "mismatched pair refused under strict pins")
         Right _ -> pure (ProbeBroken "mismatched-pair fold BUILT (expected refusal)")
 
-{- | N2 valid-mode acceptance (NOTE-033): the CORRECT pair builds and
+{- | application-approval-minting valid-mode acceptance (NOTE-033): the CORRECT pair builds and
 submits accepted (genuine completion shape); the mirror syncs the
 completed Update (later builds need the current root); caught,
 recorded and continued (the run's terminal fail stays
@@ -2625,7 +2625,7 @@ runControlValid env recRefusals = do
     -- First a genuine refusal (emits a row, proving the runner ran).
     rowLT08 env snap
     -- Control record for the eval-branch controls (NOTE-033): its
-    -- own custody, so N2 pairs genuinely without touching MainRun
+    -- own custody, so application-approval-minting pairs genuinely without touching MainRun
     -- records. Retired validly as setup (accepts, not a guard).
     (txCtl, recCtl) <-
         setupRecoveryRecord env (envDatum env) "ctl" "rt-ctl"

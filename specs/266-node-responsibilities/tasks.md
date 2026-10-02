@@ -14,9 +14,9 @@ flowchart LR
 
 | Task | Completion evidence | Status |
 | --- | --- | --- |
-| T266-01 | Intake, original declaration and global maps, model binding, draft PR and frozen gate. | Done |
-| T266-02 | Options then wallet extraction, original facade exports and callers retained. | Done |
-| T266-03 | Indexing, funding, session and confirmation extraction with one owner per global and unchanged normal and exceptional cleanup. | Done |
-| T266-04 | Focused Node behavior and cleanup checks, with a real negative control. | Done |
-| T266-05 | Contributor architecture, module/source/API links, navigation, diagram and curated speech. | Done |
-| T266-06 | Exact-head gate, fresh-blueprint E2E, journey, unchanged consumer compilation, independent audit and draft PR handback. | Done |
+| intake-original-declaration-global-maps-model-binding | Intake, original declaration and global maps, model binding, draft PR and frozen gate. | Done |
+| options-wallet-extraction-original-facade-exports-callers | Options then wallet extraction, original facade exports and callers retained. | Done |
+| indexing-funding-session-confirmation-extraction-one-owner | Indexing, funding, session and confirmation extraction with one owner per global and unchanged normal and exceptional cleanup. | Done |
+| focused-node-behavior-cleanup-checks-real-negative | Focused Node behavior and cleanup checks, with a real negative control. | Done |
+| contributor-architecture-module-source-api-links-navigation | Contributor architecture, module/source/API links, navigation, diagram and curated speech. | Done |
+| exact-head-gate-fresh-blueprint-e2e-journey | Exact-head gate, fresh-blueprint end-to-end, journey, unchanged consumer compilation, independent audit and draft PR handback. | Done |

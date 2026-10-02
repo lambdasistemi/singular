@@ -5,37 +5,37 @@
       "pause": 400
     }
   ],
-  "d-01-a-rejects-admission": [
+  "reject-s-admission-a-rejects-admission": [
     {
       "text": "A reject is admitted by the state for any validity range. The checks before and after it stay: tip coverage, deposit match, a missing action, the owner's refund floor of what the request holds minus the tip, and the modify judgement.",
       "pause": 400
     }
   ],
-  "d-02-the-requests-matching-action": [
+  "request-s-matching-action-the-requests-matching-action": [
     {
       "text": "A request spent by contribute is paired with one action of the state's fold, in input order. The request script admits the spend in the processing window, or when that matching action is a reject, in any window. Anything else is refused, so nothing the state does not fold is admitted outside the processing window.",
       "pause": 400
     }
   ],
-  "d-03-windows": [
+  "windows-windows": [
     {
       "text": "The window boundaries do not change. The processing window predicate stays for updates and the retraction window predicate stays for retractions. Only the after the windows or future dated predicate goes.",
       "pause": 400
     }
   ],
-  "d-04-reject-placement-in-the-story-language": [
+  "reject-placement-in-story-language-reject-placement-in-the-story-language": [
     {
       "text": "In the story language every reject names its window: the processing window, the owner's retraction window, or after the windows. The interpreter checks the built transaction against that window before submitting, and a mismatch is a setup failure. The control that rendering is total covers every placement. Placements add no receipt field; the run log states each placement with the transaction's validity interval and the window.",
       "pause": 400
     }
   ],
-  "d-05-cg09s-result": [
+  "reject-before-deadline-consumer-requirement-s-result-reject-before-deadline-consumer-requirements-result": [
     {
-      "text": "CG09 keeps its row and its requirement. Its control comes first: the same reject one lovelace short, submitted through the existing helper that fails the run unless the refusal is attributed to the state script. Then the untampered reject, with full fold execution units, is accepted, and the verdict is unmet by ruling: Singular's model and the consumer's theorem disagree, the chain sides with Singular, and by operator ruling of the first of October 2026 the consumer requirement is kept unmet. The session records it apart from the held rows and still ends non-zero.",
+      "text": "reject-before-deadline-consumer-requirement keeps its row and its requirement. Its control comes first: the same reject one lovelace short, submitted through the existing helper that fails the run unless the refusal is attributed to the state script. Then the untampered reject, with full fold execution units, is accepted, and the verdict is unmet by ruling: Singular's model and the consumer's theorem disagree, the chain sides with Singular, and by operator ruling of the first of October 2026 the consumer requirement is kept unmet. The session records it apart from the held rows and still ends non-zero.",
       "pause": 400
     }
   ],
-  "d-06-builder-selection": [
+  "builder-selection-builder-selection": [
     {
       "text": "The builder selects every pending request of this registry and refuses to build when there is none. Its transaction has a finite validity interval starting at the current tip and bound to no deadline. Refunds and the state continuation are as today.",
       "pause": 400
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "bb238df4c9eabc77ec051ec550a1df363d8549c3f1fcc72b67eb6c021a12c302"
+    "sha256": "3db5a5a4e0a67aa9acc0c8451e883240236a602c45d996f0868a1983720933d9"
   }
 }

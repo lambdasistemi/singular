@@ -235,13 +235,13 @@ scriptHashBytes :: ScriptHash -> ByteString
 scriptHashBytes (ScriptHash h) =
     hashToBytes h
 
--- | Build a 'CageDatum' for a request at one C2 edge (#183).
+-- | Build a 'CageDatum' for a request at one seven-admitted-edges edge (#183).
 mkRequestDatum
     :: TokenId
     -> Addr
     -> ByteString
     -> Edge
-    -- ^ The C2 row index the request names
+    -- ^ The seven-admitted-edges row index the request names
     -> Integer
     -- ^ The deposit the request rides with, over and above the tip
     -> Integer
@@ -257,7 +257,7 @@ mkRequestDatum tid addr key edge deposit submittedAt =
         (BS.empty, BS.empty)
 
 {- | A request datum naming where the edge it books delivers (#157
-D-DEST). The cage reads the destination for every edge that mints an
+request-destination-binding). The cage reads the destination for every edge that mints an
 active or terminal token, and the approval that certifies the edge binds
 these same bytes, so the booking and the fold cannot disagree about where
 the token goes.
@@ -267,7 +267,7 @@ mkRequestDatumWith
     -> Addr
     -> ByteString
     -> Edge
-    -- ^ The C2 row index the request names
+    -- ^ The seven-admitted-edges row index the request names
     -> Integer
     -- ^ The deposit the request rides with, over and above the tip
     -> Integer
@@ -408,7 +408,7 @@ policyIdFromPin pin = case hashFromBytes (SBS.fromShort pin) of
                 <> show pin
             )
 
-{- | The address a request's binary destination names (#157 D-DEST). The
+{- | The address a request's binary destination names (#157 request-destination-binding). The
 bytes are a full Cardano address, network byte and all, so nothing here
 supplies a network of its own.
 -}

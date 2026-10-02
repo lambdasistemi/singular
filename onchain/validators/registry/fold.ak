@@ -1,5 +1,5 @@
 //// The fold: one pass over the transaction's inputs that admits each request
-//// of this registry and walks the trie (#157 C1–C5, C8; #183).
+//// of this registry and walks the trie (#157 leaf-codec-and-operations–mint-matches-edge-deltas, request-covers-tip; #183).
 ////
 //// ## Responsibility
 ////
@@ -92,7 +92,7 @@ fn policyOfKind(pins: State, kind: Int) -> PolicyId {
   }
 }
 
-/// Admission by approval (#157 C4, D-APPROVAL): the request's UTxO must
+/// Admission by approval (#157 tree-edge-admission-by-approval, approval-asset-binding): the request's UTxO must
 /// carry exactly one asset under the pins's application policy, at
 /// quantity 1, whose asset name is the approval binding of THIS request.
 /// The cage recomputes the name; a folder cannot substitute another
@@ -174,7 +174,7 @@ fn stepRequest(
   } = request
   let held = lovelace_of(input.output.value)
   if held < pins.tip {
-    // C8 (was the pinned consumer's R1): the cage checks carriage now.
+    // request-covers-tip (was the pinned consumer's R1): the cage checks carriage now.
     // Costless fabricated requests would otherwise fold for free —
     // trie spam at zero price.
     halt(acc, @"tip-coverage")
@@ -216,7 +216,7 @@ fn stepRequest(
               let checked =
                 if tag == edgeWitnessTerminal {
                   // A read does not require an approval and does not check
-                  // its absence (C4).
+                  // its absence (tree-edge-admission-by-approval).
                   popped
                 } else {
                   admitted(popped, pins, tag, request, input.output.value)
@@ -242,8 +242,8 @@ fn stepRequest(
   }
 }
 
-/// Walk the trie one step and record what the edge owes (#157 C3, C5,
-/// C6). The read is verified where it sits in the batch, against the
+/// Walk the trie one step and record what the edge owes (#157 read-preserves-intermediate-root, mint-matches-edge-deltas,
+/// token-destinations-and-refunds). The read is verified where it sits in the batch, against the
 /// intermediate root, and leaves the leaf exactly as it found it.
 fn applyEdge(
   acc: Fold,
@@ -302,7 +302,7 @@ fn applyEdge(
     None -> {
       let advanced =
         if edge == edgeWitnessTerminal {
-          // C3: no new proof code. `mpf.has` is the library's own inclusion
+          // read-preserves-intermediate-root: no new proof code. `mpf.has` is the library's own inclusion
           // check and is total, so a proof against the wrong root is an
           // attributable refusal rather than a crash inside the library —
           // and `readFault` above has already run it and halted with the

@@ -100,7 +100,7 @@ which complete their funding preflight before spending.
 ## Deviations
 
 There is no dedicated issue for this repair. The mandate is the PR
-body plus the operator's A-004 ruling (fund only positive lifecycle
+body plus the operator's operator answer (A-004) ruling (fund only positive lifecycle
 actors and actual deposits from live parameters, evaluate execution
 costs before signing, stop any aggregate per-transaction overflow).
 Tickets #102 and #18 are referenced and are not closed by this PR.

@@ -48,9 +48,7 @@ spec = describe "registry reject" $ do
     gate
     refunds
 
--- | The n-th request: a distinct transaction output.
-
--- | The n-th request: a distinct transaction output.
+-- | A request numbered by its distinct transaction output.
 request :: Int -> TxIn
 request n =
     either error id $
@@ -153,7 +151,7 @@ gate = describe "the decision to build a reject" $ do
                         , show (retractEnds bounds)
                         ]
     it
-        "takes every pending request once each is past its deadline's slot (n > 1)"
+        "takes every pending request once each is past its deadline's slot (several requests)"
         $ property
         $ forAll (chooseInteger (2, 6))
         $ \n ->
@@ -165,7 +163,7 @@ gate = describe "the decision to build a reject" $ do
                     in  fmap (map fst) (rejectGate tip booked)
                             === Right (map (\(r, _, _) -> r) booked)
     it
-        "builds nothing while any request is inside its window, and names exactly those (n > 1)"
+        "builds nothing while any request is inside its window, and names exactly those (several requests)"
         $ property
         $ forAll (listOf1 genSlots)
         $ \slots ->

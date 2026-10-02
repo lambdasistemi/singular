@@ -1,4 +1,4 @@
-//// The cage's own custody of absent tokens (#157 D-CUSTODY).
+//// The cage's own custody of absent tokens (#157 absent-custody-datum).
 ////
 //// ## Responsibility
 ////

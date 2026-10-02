@@ -97,7 +97,7 @@ inventory:
 inventory-controls:
     bash tools/code_inventory_controls.sh
 
-# #278 S2: apply the house Fourmolu configuration (fourmolu.yaml at the
+# #278 terminal-attestation-permanent: apply the house Fourmolu configuration (fourmolu.yaml at the
 # repository root) to every discovered Haskell source — offchain and
 # conformance, the formerly fenced verifier sources and the evaluation
 # spike included, no directory exclusions. Run within nix develop.
@@ -113,7 +113,7 @@ format:
 format-check:
     bash tools/format_haskell.sh check
 
-# Negative and positive controls for the Haskell format check (#278 S2):
+# Negative and positive controls for the Haskell format check (#278 terminal-attestation-permanent):
 # a source Fourmolu defaults accept but the house configuration rejects
 # must fail the check (proving the configuration is read) and its formatter
 # correction must pass it again; a tree without the configuration must

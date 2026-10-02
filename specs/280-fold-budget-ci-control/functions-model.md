@@ -19,4 +19,4 @@ The patch changes no signature. It replaces the value bound as the per-purpose d
 
 ## Regression target, conditional
 
-Only under R280-06: `main :: IO ()` in `BudgetMain` keeps its command line, `--receipts-dir DIR`. It exits nonzero when the CG21 session ends without the row's expected verdict, including when the runner's own honest fold is refused.
+Only under if-mutant-command-exits-regression-cannot-fail: `main :: IO ()` in `BudgetMain` keeps its command line, `--receipts-dir DIR`. It exits nonzero when the register-active-key session ends without the row's expected verdict, including when the runner's own honest fold is refused.

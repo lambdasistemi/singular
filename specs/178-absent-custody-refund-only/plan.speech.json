@@ -1,11 +1,11 @@
 {
   "contract": [
     {
-      "text": "Delivery begins with the wire correction and minimal adaptations of its existing consumers. The new conformance row comes last and stays held until the parent announces the DSL merge. Both remain required for ticket acceptance. The commit owner records executable failure evidence, implements the correction, and requests checkpoint reviews. The persistent auditor reviews committed decisions through the ticket owner. Push requires every checkpoint approval, local root checks and the coverage snapshot. Review readiness additionally requires the exact pushed head's Registry and Conformance jobs to pass. The ticket has a four-hour wall, assessed halfway; missing work remains explicit."
+      "text": "Delivery begins with the wire correction and minimal adaptations of its existing consumers. The new conformance row comes last and stays held until the parent announces the story language merge. Both remain required for ticket acceptance. The commit owner records executable failure evidence, implements the correction, and requests checkpoint reviews. The persistent auditor reviews committed decisions through the ticket owner. Push requires every checkpoint approval, local root checks and the coverage snapshot. Review readiness additionally requires the exact pushed head's Registry and Conformance jobs to pass. The ticket has a four-hour wall, assessed halfway; missing work remains explicit."
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "5ca79095d7361c8dd8f526e7a3dafaec70b9a12613a623e8931788a21d350cd2"
+    "sha256": "11d2a51fbb6a034203fa48e4b5573a26dcd0d0d82231a9da65e58cfb7c0a085b"
   }
 }

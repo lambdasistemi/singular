@@ -390,8 +390,8 @@ inductive Folds : RegistryState → List Request → Result → Prop where
 
 /-- A step is admitted iff either it is a verified read, or it is a tree edge
 whose approval has the right policy and a tuple matching the request
-(D-APPROVAL), whose R2 row matches the before-leaf, and whose custody or active
-token is present when the row consumes one. This is the complement of the R2
+(approval-asset-binding), whose seven-edge row matches the before-leaf, and whose custody or active
+token is present when the row consumes one. This is the complement of the seven-edge
 table, stated once, for every proof to draw on. -/
 
 theorem refusal_none_iff (s : RegistryState) (a : Action) : refusal s a = none ↔

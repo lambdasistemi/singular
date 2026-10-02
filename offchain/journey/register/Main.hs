@@ -1723,7 +1723,7 @@ retractPendingRequest env (reqIn, reqOut) = do
 
 {- | Phase 3 resume: a permissionless fold consumes the expired request
 as Rejected (refund to the requester, trie root unchanged) — the same
-rejectRequestsImpl builder the E2E refund-floor control uses — then the
+rejectRequestsImpl builder the end-to-end refund-floor control uses — then the
 run claims fresh.
 -}
 rejectPendingRequests :: Env -> IO ()
@@ -2237,7 +2237,7 @@ finalSweep env alice bob _foldTxAlice = do
         "final-active-records-present: both folded names Active, no duplicates"
 
 -- ---------------------------------------------------------
--- Ownerless rows: submitted refusals on the same cage (S3)
+-- Ownerless rows: submitted refusals on the same cage (supply-matches-leaf-state)
 -- ---------------------------------------------------------
 
 -- | Spend redeemer `End` (constructor 0, no fields).
@@ -2251,7 +2251,7 @@ burningRedeemer env =
     in  PLC.Constr 2 [PLC.Constr 0 [PLC.B (SBS.fromShort sbs)]]
 
 {- | Require a phase-2 refusal naming the operation's script, assert the
-root did not move, and record the S3 row. Structural checks corroborate;
+root did not move, and record the supply-matches-leaf-state row. Structural checks corroborate;
 the node's attribution decides (NOTE-011).
 -}
 requireRefusal
@@ -5042,7 +5042,7 @@ checkPinnedConsumer unappliedHex = do
 -- ---------------------------------------------------------
 
 -- ---------------------------------------------------------
--- Raw evidence (S3 verifier contract)
+-- Raw evidence (supply-matches-leaf-state verifier contract)
 -- ---------------------------------------------------------
 
 {- | CBOR version for evidence serialization. Runner and verifier share

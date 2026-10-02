@@ -7,18 +7,18 @@ Responsibility and dependency direction only. No bodies, no algorithms.
 ```
 Singular.Model                  the alphabet, the edges, the fold, the codec
   ├── Singular.Lemmas                 supporting lemmas over Model
-  ├── Singular.Statements             P1, L1, S1–S3, O1, T1, W1–W4
+  ├── Singular.Statements             tree-change-requires-approval, request-spent-once-in-order, terminal-attestation-sound–supply-matches-leaf-state, booking-requires-untaken-key, terminal-key-cannot-change, active-witness-unique–witness-kinds-exclude
   │     └── Singular.Audit                 compiled axiom gate over Statements
   ├── Singular.OpenApp                the open application, the smallest instance
   └── Singular.Naming*                naming as the second instance
         └── Singular.Naming*Audit          compiled axiom gates over naming statements
 
 lean/*.json corpora  ←  lean/{Main,NamingMain,LifecycleMain}.lean   (generated)
-tools/check_model.py ←  reads the sources and the generated corpora   (slice A)
-docs/{theorems,model-ledger,mutants}.md                              (slice A)
+tools/check_model.py ←  reads the sources and the generated corpora   (model slice)
+docs/{theorems,model-ledger,mutants}.md                              (model slice)
 
-simulator/**                     a transcription of the FROZEN slice-A interface
-docs/{simulation,LEAN-CLARITY}.md, design counts, front-page counts   (slice B)
+simulator/**                     a transcription of the FROZEN model-slice interface
+docs/{simulation,LEAN-CLARITY}.md, design counts, front-page counts   (simulator slice)
 ```
 
 Nothing above depends on anything below it. **No naming identifier appears in
@@ -26,7 +26,7 @@ Nothing above depends on anything below it. **No naming identifier appears in
 in the application, which is what makes the open application a proof of that fact
 rather than a restatement of it.
 
-The slice-B arrow points **into** the frozen slice-A interface and never back out.
+The slice-B arrow points **into** the frozen model-slice interface and never back out.
 The simulator reads the Lean; the Lean never accommodates the simulator.
 
 ## Changed responsibilities
@@ -42,7 +42,7 @@ The simulator reads the Lean; the Lean never accommodates the simulator.
 | `docs/theorems.md` | The declaration inventory and correspondence for the new statements. | A |
 | `docs/model-ledger.md` | The requirement-to-behaviour map for the new model, with the previous ledger's rows retired or carried explicitly. | A |
 | `docs/mutants.md` | The mutation ledger for the new model, including the four the interface names, each with the law it must break. | A |
-| `simulator/**` | A separately authored transcription of the frozen slice-A interface: both profiles, the seven edges, the read, named refusals, corpus replay. | B |
+| `simulator/**` | A separately authored transcription of the frozen model-slice interface: both profiles, the seven edges, the read, named refusals, corpus replay. | B |
 | `docs/simulation.md`, `docs/LEAN-CLARITY.md` | The journeys and their finite-model limits; what the formal artifacts did and did not communicate to the transcriber. | B |
 | front page, `docs/design.md` | Counts equal to what actually replays. | B |
 

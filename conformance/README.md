@@ -6,7 +6,7 @@ promises, what has been demonstrated, and what remains uncovered.
 
 Read [the product book](BOOK.md), then follow [the test reading path](test/README.md)
 from registration to batch behavior. The stories are generated from the same
-DSL programs that execute. The appendix checks our evidence machinery.
+story language programs that execute. The appendix checks our evidence machinery.
 
 The book distinguishes receipt validation from chain execution. To gather
 new chain evidence, use the runner below. Row identifiers here are command
@@ -16,7 +16,7 @@ arguments; the book uses the requirements' own words.
 
 ```sh
 nix run ./conformance#conformance -- list
-nix run ./conformance#conformance -- run CG02 CG03 CG04 CG05
+nix run ./conformance#conformance -- run update-existing-key delete-existing-key reinsert-deleted-key insert-occupied-key
 ```
 
 `list` prints the complete 46-row inventory from `rows.json` with each
@@ -26,15 +26,15 @@ blueprint comes from the caller at run time:
 
 ```sh
 blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05
+REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run update-existing-key delete-existing-key reinsert-deleted-key insert-occupied-key
 ```
 
 The runner sets its own unique `TMPDIR` before starting a node and
 never touches the default path, so concurrent devnet lanes on one host
 keep their databases.
 
-`rows.json` carries the complete inventory: the 43 owned consumer rows
-plus CK06 (cardano-keri's checkpoint policy), recorded as out-of-scope
+`rows.json` carries the complete inventory: the 45 owned consumer rows
+plus checkpoint-and-treasury-policy (cardano-keri's checkpoint policy), recorded as out-of-scope
 so the boundary is visible. `rows.json` never carries `executed` —
 that state is computed from run receipts, never typed. A `run` writes
 one `receipt-<ROW>.json` per executed row under its own output
@@ -42,12 +42,12 @@ directory (never the tracked tree); `list` prints a row as executed
 only when a receipt for it exists and matches the current base:
 
 ```sh
-REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05 --receipts-dir ./out
+REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run update-existing-key delete-existing-key reinsert-deleted-key insert-occupied-key --receipts-dir ./out
 nix run --quiet .#conformance -- list --receipts ./out
 ```
 
 (`CONFORMANCE_RECEIPTS=DIR` when the flag is absent; default none.)
-CK06 is out of scope and recorded in `docs/consumer-conformance.md`,
+checkpoint-and-treasury-policy is out of scope and recorded in `docs/consumer-conformance.md`,
 never claimed.
 
 ## Registration checked against executable Lean

@@ -1,6 +1,6 @@
 {- |
-Module      : Conformance.CS06
-Description : CS06 parameter application checks in Haskell
+Module      : Conformance.ScriptParameters
+Description : script-parameter-application parameter application checks in Haskell
 License     : Apache-2.0
 
 Every parameterized script publishes its parameter count and
@@ -9,7 +9,7 @@ applied hash derived in Haskell must equal the on-chain address the
 builders use. The blueprint declares: state 0 params (null —
 zero-parameter state, NOTE-060), request 2 params
 (@statePolicyId@, @cageTokenName@) and staking 0 params (null). The
-consumer validator is gone with #157 C10 and declares nothing.
+consumer validator is gone with #157 removed-consumer-encoding and declares nothing.
 
 The row verifies the unapplied layer (Haskell hash of the raw
 blueprint code equals the blueprint's pinned hash), derives the
@@ -24,8 +24,8 @@ The executing negative control (@CONFORMANCE_CONTROL=wrong-params@)
 demands 1 param for state: the real blueprint has 0, and the run
 must fail naming the mismatch.
 -}
-module Conformance.CS06
-    ( runCS06
+module Conformance.ScriptParameters
+    ( runScriptParameterApplication
     ) where
 
 import Control.Exception (ErrorCall (..), throwIO)
@@ -69,9 +69,10 @@ import Conformance.Receipt
     , writeReceiptFile
     )
 
--- | Run CS06 against the blueprint at the given path.
-runCS06 :: FilePath -> FilePath -> String -> Bool -> IO ()
-runCS06 blueprintPath receiptsDir base dirty = do
+-- | Run script-parameter-application against the blueprint at the given path.
+runScriptParameterApplication
+    :: FilePath -> FilePath -> String -> Bool -> IO ()
+runScriptParameterApplication blueprintPath receiptsDir base dirty = do
     control <- lookupEnv "CONFORMANCE_CONTROL"
     let spoil = control == Just "wrong-params"
     emit "control" (fromMaybe "normal" control)
@@ -91,7 +92,7 @@ runCS06 blueprintPath receiptsDir base dirty = do
     bpId <- blueprintId bp
     let receipt =
             Receipt
-                { receiptRow = "CS06"
+                { receiptRow = "script-parameter-application"
                 , receiptOutcome = Accepted
                 , receiptTransactions = []
                 , receiptRefusal = Nothing
@@ -113,7 +114,7 @@ runCS06 blueprintPath receiptsDir base dirty = do
     writeReceiptFile receiptsDir receipt
     emit
         "row"
-        ( "CS06: ACCEPTED params state=0 request=2 staking=0, applied-size="
+        ( "script-parameter-application: ACCEPTED params state=0 request=2 staking=0, applied-size="
             <> show appliedSize
         )
 
@@ -164,25 +165,33 @@ lookupParams m prefix =
 checkCounts :: ParamMap -> Bool -> IO ()
 checkCounts params spoil = do
     case lookupParams params "state.state" of
-        Nothing -> failWith "CS06 gap: no state.state validator in blueprint"
+        Nothing ->
+            failWith
+                "script-parameter-application gap: no state.state validator in blueprint"
         Just Nothing ->
             if spoil
                 then
                     failWith
-                        "CS06 wrong-params control: state.state has null params, demanded 1"
+                        "script-parameter-application wrong-params control: state.state has null params, demanded 1"
                 else emit "params-state" "count 0 (null, arity 0) ok"
         Just (Just []) ->
             if spoil
                 then
                     failWith
-                        "CS06 wrong-params control: state.state has [] params, demanded 1"
+                        "script-parameter-application wrong-params control: state.state has [] params, demanded 1"
                 else emit "params-state" "count 0 ([] arity 0) ok"
         Just (Just ps) ->
             failWith
-                ("CS06: state.state has params, want arity 0: " <> show ps)
+                ( "script-parameter-application: state.state has params, want arity 0: "
+                    <> show ps
+                )
     case lookupParams params "request.request" of
-        Nothing -> failWith "CS06 gap: no request.request validator in blueprint"
-        Just Nothing -> failWith "CS06: request.request has null params, want 2"
+        Nothing ->
+            failWith
+                "script-parameter-application gap: no request.request validator in blueprint"
+        Just Nothing ->
+            failWith
+                "script-parameter-application: request.request has null params, want 2"
         Just (Just ps) -> do
             emit "params-request" (show (length ps) <> " " <> show ps)
             if length ps == 2
@@ -199,25 +208,32 @@ checkCounts params spoil = do
                                 then emit "params-request" "count 2, order and encoding ok"
                                 else
                                     failWith
-                                        ( "CS06: request param order is "
+                                        ( "script-parameter-application: request param order is "
                                             <> show [t1, t2]
                                             <> ", want [statePolicyId,cageTokenName]"
                                         )
-                        _ -> failWith "CS06: request params shape unexpected"
+                        _ ->
+                            failWith
+                                "script-parameter-application: request params shape unexpected"
                 else
                     failWith
-                        ("CS06: request.request has " <> show (length ps) <> " params, want 2")
+                        ( "script-parameter-application: request.request has "
+                            <> show (length ps)
+                            <> " params, want 2"
+                        )
     case lookupParams params "staking.staking" of
-        Nothing -> failWith "CS06 gap: no staking.staking validator in blueprint"
+        Nothing ->
+            failWith
+                "script-parameter-application gap: no staking.staking validator in blueprint"
         Just Nothing -> emit "params-staking" "count 0 (null) ok"
         Just (Just ps) ->
             failWith
-                ( "CS06: staking.staking has "
+                ( "script-parameter-application: staking.staking has "
                     <> show (length ps)
                     <> " params, want 0 (null)"
                 )
 
--- #157 C10: the consumer validator is deleted, so there is no
+-- #157 removed-consumer-encoding: the consumer validator is deleted, so there is no
 -- parameter declaration of its left to check. A row that kept
 -- looking for it would report a gap that is the contract.
 
@@ -226,7 +242,12 @@ requireParam ps want =
     if want `elem` ps
         then emit ("param-" <> T.unpack (fst want)) "encoding ok"
         else
-            failWith ("CS06: missing param " <> show want <> " in " <> show ps)
+            failWith
+                ( "script-parameter-application: missing param "
+                    <> show want
+                    <> " in "
+                    <> show ps
+                )
 
 -- ---------------------------------------------------------
 -- Unapplied layer: Haskell hash equals the blueprint hash
@@ -239,9 +260,10 @@ checkUnapplied bp = do
                 (v : _) -> Just v
                 [] -> Nothing
     case byTitle "state.state" of
-        Nothing -> failWith "CS06 gap: no state.state validator"
+        Nothing ->
+            failWith "script-parameter-application gap: no state.state validator"
         Just v -> case extractCompiledCode "state.state" bp of
-            Nothing -> failWith "CS06 gap: no state.state code"
+            Nothing -> failWith "script-parameter-application gap: no state.state code"
             Just code -> do
                 let computed = hexBytes (scriptHashBytes (computeScriptHash code))
                     pinned = T.unpack (vHash v)
@@ -252,15 +274,18 @@ checkUnapplied bp = do
                     then emit "unapplied-state" "match ok"
                     else
                         failWith
-                            ( "CS06: state unapplied hash "
+                            ( "script-parameter-application: state unapplied hash "
                                 <> computed
                                 <> " /= blueprint "
                                 <> pinned
                             )
     case byTitle "request.request" of
-        Nothing -> failWith "CS06 gap: no request.request validator"
+        Nothing ->
+            failWith
+                "script-parameter-application gap: no request.request validator"
         Just v -> case extractCompiledCode "request.request" bp of
-            Nothing -> failWith "CS06 gap: no request.request code"
+            Nothing ->
+                failWith "script-parameter-application gap: no request.request code"
             Just code -> do
                 let computed = hexBytes (scriptHashBytes (computeScriptHash code))
                     pinned = T.unpack (vHash v)
@@ -271,7 +296,7 @@ checkUnapplied bp = do
                     then emit "unapplied-request" "match ok"
                     else
                         failWith
-                            ( "CS06: request unapplied hash "
+                            ( "script-parameter-application: request unapplied hash "
                                 <> computed
                                 <> " /= blueprint "
                                 <> pinned
@@ -287,7 +312,7 @@ checkUnapplied bp = do
                     then emit "unapplied-staking" "match ok"
                     else
                         failWith
-                            ( "CS06: staking unapplied hash "
+                            ( "script-parameter-application: staking unapplied hash "
                                 <> computed
                                 <> " /= blueprint "
                                 <> pinned
@@ -300,10 +325,11 @@ checkUnapplied bp = do
 checkApplied :: Blueprint -> IO Int
 checkApplied bp = do
     stateBytes <- case extractCompiledCode "state.state" bp of
-        Nothing -> failWith "CS06 gap: no state.state code"
+        Nothing -> failWith "script-parameter-application gap: no state.state code"
         Just c -> pure c
     requestBytes <- case extractCompiledCode "request.request" bp of
-        Nothing -> failWith "CS06 gap: no request.request code"
+        Nothing ->
+            failWith "script-parameter-application gap: no request.request code"
         Just c -> pure c
     let unappliedStateHash = computeScriptHash stateBytes
         -- Zero-parameter state (NOTE-060): the bytes deploy directly.
@@ -324,7 +350,7 @@ checkApplied bp = do
         then emit "applied-state" "extra application changes the hash ok"
         else
             failWith
-                "CS06 control failed: List[] application did not change the state hash"
+                "script-parameter-application control failed: List[] application did not change the state hash"
     -- Request: source order vs swapped order must differ.
     let sampleToken = OnChainTokenId (BuiltinByteString "cs06-token")
         OnChainTokenId (BuiltinByteString tokenBytes) = sampleToken
@@ -351,12 +377,12 @@ checkApplied bp = do
         then emit "applied-request" "application changes the hash ok"
         else
             failWith
-                "CS06 control failed: request application did not change the hash"
+                "script-parameter-application control failed: request application did not change the hash"
     if swappedHash /= correctHash
         then emit "applied-request" "param order discriminates ok"
         else
             failWith
-                "CS06 control failed: swapped request params give the same hash"
+                "script-parameter-application control failed: swapped request params give the same hash"
     let stakingSize = maybe 0 SBS.length (extractCompiledCode "staking.staking" bp)
         sizes =
             [ SBS.length stateBytes

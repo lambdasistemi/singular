@@ -7,7 +7,7 @@ Description : #323 — one operation reads the chain at one point
 License     : Apache-2.0
 
 The #300 review found the ordinary CLI reading protocol parameters for
-its preview (P1) and the builder reading them again (P2): a change that
+its preview (tree-change-requires-approval) and the builder reading them again (P2): a change that
 lands between the two reads enters the built body, so the preview and
 the body disagree. These rows run the real request builder against the in-memory chain
 adapter, change the protocol parameters and the wallet between the
