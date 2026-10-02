@@ -679,8 +679,10 @@ test-suite cage-tests
     Singular.Application.OpenDatum.BuildersSpec
     Singular.Application.OpenDatum.BuildSpec
     Singular.Application.OpenDatum.EnvelopeSpec
+    Singular.CLI.InsertEnvelopeSpec
     Singular.CLISpec
     Singular.CLI.Command
+    Singular.CLI.InsertEnvelope
     Singular.CLI.OutlaySpec
     Singular.CLI.Outlay
     Singular.CLI.Node
@@ -946,6 +948,7 @@ executable singular
     Singular.CLI.Command
     Singular.CLI.Create
     Singular.CLI.Entry
+    Singular.CLI.InsertEnvelope
     Singular.CLI.Inspect
     Singular.CLI.Live
     Singular.CLI.Outlay

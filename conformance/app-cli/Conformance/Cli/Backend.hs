@@ -161,7 +161,6 @@ import Singular.Application.OpenDatum.Envelope
     , Envelope (..)
     , StateAsset (..)
     , dataToJson
-    , envelopeToJson
     , envelopeVersion
     , registryBytes
     )
@@ -1285,13 +1284,13 @@ commandArgs env c target key r = do
             reg <- openRegistry env target
             w <- loadWallet (fromIntegral (optMagic o)) (optWalletKey o)
             let e = envelopeOfRun env reg (addrKeyHashBytes (walletAddr w)) key
-                path = envEvidence env </> printf "step-%03d-envelope.json" (rcStep r)
-            BL.writeFile path (encodePretty (envelopeToJson e))
+                path = envEvidence env </> printf "step-%03d-payload.json" (rcStep r)
+            BL.writeFile path (encodePretty (dataToJson (envPayload e)))
             pure
                 ( ["registry", "insert"]
                     <> common
                     <> keyArg
-                    <> ["--envelope", path]
+                    <> ["--payload", path]
                     <> node
                     <> wallet
                     <> outlay
