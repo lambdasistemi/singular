@@ -103,6 +103,22 @@ sed -i "0,/^  unverified = \\[/s//  unverified = [\\n    { kind = \"exe\"; name 
   "$scratch/t/offchain/nix/component-inventory.nix"
 expect retired-unknown 1 "^retired: inventory row 'no-such-component' names no Cabal component"
 
+# A spec is exempt only as the own test of an allowlisted backend module
+# it imports: naming a consumer module, or one it does not import, fails.
+fresh
+printf 'offchain/e2e-test/Planted/OwnSpec.hs: own test of offchain/journey/Journey/Chain.hs — a consumer named as the subject\n' \
+  >>"$scratch/t/tools/node-confinement.allow"
+mkdir -p "$scratch/t/offchain/e2e-test/Planted"
+printf 'module Planted.OwnSpec where\n\nimport Journey.Chain ()\n\nrawSend = submitTx\n' >"$scratch/t/offchain/e2e-test/Planted/OwnSpec.hs"
+expect own-test-of-consumer 1 "^allowlist: 'offchain/e2e-test/Planted/OwnSpec.hs' is an own test of 'offchain/journey/Journey/Chain.hs', which is not an allowlisted backend module"
+
+fresh
+printf 'offchain/e2e-test/Planted/OwnSpec.hs: own test of offchain/lib/Singular/Registry/Node.hs — does not import it\n' \
+  >>"$scratch/t/tools/node-confinement.allow"
+mkdir -p "$scratch/t/offchain/e2e-test/Planted"
+printf 'module Planted.OwnSpec where\n\nrawSend = submitTx\n' >"$scratch/t/offchain/e2e-test/Planted/OwnSpec.hs"
+expect own-test-not-imported 1 "^allowlist: 'offchain/e2e-test/Planted/OwnSpec.hs' does not import Singular.Registry.Node, the backend module it claims to test"
+
 fresh
 printf 'offchain/cli/Main.hs:\n' >>"$scratch/t/tools/node-confinement.allow"
 expect reasonless-entry 1 "'offchain/cli/Main.hs' carries no reason"
@@ -122,4 +138,4 @@ for root in "${roots[@]}"; do
   expect "empty-extent $root" 2 "^EMPTY EXTENT: no Haskell sources under .*/$root\$"
 done
 
-echo "PASS node-confinement-controls: $((2 * planted + 8 + ${#roots[@]})) controls over ${#roots[@]} scanned roots, a backend name planted in each"
+echo "PASS node-confinement-controls: $((2 * planted + 10 + ${#roots[@]})) controls over ${#roots[@]} scanned roots, a backend name planted in each"

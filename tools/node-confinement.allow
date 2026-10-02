@@ -1,7 +1,9 @@
 # Modules allowed to name the node backend (tools/node_confinement_check.sh).
 # One per line: <path from the repository root>: <why it must>.
+# A spec is exempt only as a backend's own test: "<spec path>: own test of
+# <allowlisted backend module path> — <why>"; it must import that module.
 offchain/cli/src/Singular/CLI/Node.hs: composition — resolves the node settings once and opens the read interface, the signed-only write and the confirmation the commands are handed
 offchain/lib/Singular/Registry/Node.hs: runner startup — opens the session a runner's mode names and hands the runner its capabilities (withCapabilities, withExternalCapabilities); re-exports session opening for the fixtures below
 offchain/devnet/Devnet/Probe.hs: composition — the devnet probe reads a node's raw ledger snapshot and its UTxO by output reference, which the read interface does not answer, over its own node-to-client connection
 offchain/e2e-test/Singular/Registry/E2E/Fixture.hs: fixture startup — spawns the end-to-end devnet, follows it with the indexer and hands the specs their capabilities
-offchain/e2e-test/Singular/Registry/E2E/NodeSpec.hs: the session's own test — opens external-node sessions by mode against a real devnet to test the handshake, magic refusal, reads and confirmation of the session itself
+offchain/e2e-test/Singular/Registry/E2E/NodeSpec.hs: own test of offchain/lib/Singular/Registry/Node.hs — opens external-node sessions by mode against a real devnet to test the handshake, magic refusal, reads and confirmation of the session itself
