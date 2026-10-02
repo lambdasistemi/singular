@@ -126,15 +126,13 @@ library
 common live-runner
   hs-source-dirs:   app
   other-modules:
-    Conformance.BlueprintEncoding
-    Conformance.ScriptParameters
     Conformance.ForkKeys
     Conformance.Mirror
     Conformance.Run
     Conformance.FoldFixture
     Conformance.Run.ForkProbe
     Conformance.Run.CgRows
-    Conformance.Run.CsRows
+    Conformance.Run.Wire
     Conformance.Run.Authentication
     Conformance.Run.Live
     Conformance.Run.Retraction

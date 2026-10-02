@@ -119,7 +119,7 @@ usage = do
         "env:   CONFORMANCE_RECEIPTS=DIR (list, when --receipts is absent)"
     hPutStrLn
         stderr
-        "env:   CONFORMANCE_CONTROL=wrong-reason|false-claim (run control)"
+        "env:   CONFORMANCE_CONTROL=CONTROL (a control of the authentication or wire round-trip vocabulary)"
     exitFailure
 
 {- | Execute every live chapter and the unnamed sequence first. A book cannot be generated from fixtures or

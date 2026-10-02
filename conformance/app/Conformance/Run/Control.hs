@@ -27,6 +27,7 @@ import System.Environment (lookupEnv)
 import Conformance.Authentication.Programs qualified as Authentication
 import Conformance.Edge.Programs (Program (..), programs)
 import Conformance.Mirror (failWith)
+import Conformance.Wire.Programs qualified as Wire
 
 -- ---------------------------------------------------------
 -- Row vocabulary and control modes
@@ -42,17 +43,9 @@ session by a notElem-registry-operations catch-all). A row in no family fails lo
 authenticationRows :: [String]
 authenticationRows = map Authentication.programRow Authentication.programs
 
+-- | The serialization rows, read off the wire round-trip programs.
 wireRows :: [String]
-wireRows =
-    [ "blueprint-encoding-round-trip"
-    , "submitted-datum-byte-round-trip"
-    , "update-redeemer-constructor-witnesses"
-    , "wrong-redeemer-constructor-index"
-    , "request-and-mint-constructor-witnesses"
-    , "script-parameter-application"
-    , "proof-step-constructor-witnesses"
-    , "state-fields-chain-round-trip"
-    ]
+wireRows = map Wire.programRow Wire.programs
 
 -- | Every row a program runs, read off the programs themselves.
 programRows :: [String]

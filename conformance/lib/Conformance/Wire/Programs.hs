@@ -22,7 +22,7 @@ module Conformance.Wire.Programs
     , Transaction (..)
     , Purpose (..)
     , Constructor (..)
-    , Datum (..)
+    , ReadBackDatum (..)
     , Sample (..)
     , Encoding (..)
     , Validator (..)
@@ -84,11 +84,11 @@ data Transaction
 -- | Which redeemers of a transaction a constructor is read from.
 data Purpose
     = -- | the redeemers of the inputs the transaction spends
-      Spending
+      SpentInputs
     | -- | the redeemers of the policies it mints or burns under
-      Minting
+      MintedPolicies
     | -- | the actions inside the state script's modify redeemer
-      RequestActions
+      ModifyActions
     deriving stock (Eq, Show, Enum, Bounded)
 
 -- | A constructor of an on-chain type, by name and wire index.
@@ -99,7 +99,7 @@ data Constructor = Constructor
     deriving stock (Eq, Show)
 
 -- | A datum a program reads back from the chain.
-data Datum
+data ReadBackDatum
     = -- | the state datum the registry's boot wrote
       StateDatumOf String
     | -- | the request datum a request for this key wrote
@@ -167,9 +167,9 @@ data Requirement = Required | IfPresent
 -- | One step of a wire round-trip program.
 data Instruction
     = -- | boot a registry from the wallet's largest output
-      Boot Registry
+      BootRegistry Registry
     | -- | submit a request for a key on an edge, outside any fold
-      Request String String Edge
+      SubmitRequest String String Edge
     | {- | book a key on an edge through the registry's published references,
       then fold it; the folded key is walked in the committed trie
       -}
@@ -180,11 +180,11 @@ data Instruction
       -}
       BookAndTamperFold String String Edge Integer
     | -- | after the retraction window opens, the owner retracts the request for a key
-      Retract String String
+      RetractRequest String String
     | -- | after both windows close, a folder rejects the registry's pending requests
-      Reject String
+      RejectPending String
     | -- | the datum written by the submitting transaction is read back from the chain identical
-      DatumReadBack Datum
+      DatumReadBack ReadBackDatum
     | -- | the registry's state read back from the chain equals its boot's, field by field
       StateFieldsReadBack String
     | -- | the registry's state datum encodes this many fields
@@ -250,7 +250,7 @@ data Standing
     | -- | the instructions held, and these constructors stay unexercised
       PartialCoverage [Residual]
     | -- | the chain refused as required, and the requirement is kept unmet by this ruling
-      UnmetByRuling String
+      KeptUnmetByRuling String
     deriving stock (Eq, Show)
 
 -- | One serialization row.
@@ -266,7 +266,15 @@ data Program = Program
 -- | Every serialization row, in inventory order.
 programs :: [Program]
 programs =
-    []
+    [ blueprintEncoding
+    , submittedDatum
+    , updateRedeemerWitnesses
+    , wrongRedeemerIndex
+    , requestAndMintWitnesses
+    , scriptParameters
+    , proofSteps
+    , stateFields
+    ]
 
 programFor :: String -> Maybe Program
 programFor row = find ((== row) . programRow) programs
@@ -286,6 +294,295 @@ needsDevnet = any onDevnet . programInstructions
         ExtraApplicationChangesHash{} -> False
         RequestApplicationDiscriminates -> False
         _ -> True
+
+-- ---------------------------------------------------------
+-- The programs
+-- ---------------------------------------------------------
+
+con :: String -> Integer -> Constructor
+con = Constructor
+
+blueprintEncoding :: Program
+blueprintEncoding =
+    Program
+        "blueprint-encoding-round-trip"
+        []
+        ( [ EncodingConforms TokenIdentifier "types/TokenId" (ConstructorAt 0)
+          , EncodingConforms
+                OutputReference
+                "cardano/transaction/OutputReference"
+                (ConstructorAt 0)
+          , EncodingConforms TrieRoot "ByteArray" PlainBytes
+          , RequestFieldAt 3 "edge"
+          , RequestFieldAt 4 "deposit"
+          ]
+            <> [ EncodingConforms (RequestOnEdge edge) "types/Request" SchemaOnly
+               | edge <- [0 .. 7]
+               ]
+            <> [ EncodingConforms RequestSample "types/Request" (ConstructorAt 0)
+               , EncodingConforms StateSample "types/State" (ConstructorAt 0)
+               , EncodingConforms StateWithActivePolicyVaried "types/State" SchemaOnly
+               , EncodingConforms
+                    RequestDatumSample
+                    "types/CageDatum"
+                    (ConstructorAt 0)
+               , EncodingConforms StateDatumSample "types/CageDatum" (ConstructorAt 1)
+               , EncodingConforms
+                    AbsentCustodySample
+                    "types/CageDatum"
+                    (ConstructorAt 2)
+               , EncodingConforms MintingSample "types/MintRedeemer" (ConstructorAt 0)
+               , EncodingConforms
+                    MigratingSample
+                    "types/MintRedeemer"
+                    (ConstructorAt 1)
+               , EncodingConforms BurningSample "types/MintRedeemer" (ConstructorAt 2)
+               , EncodingConforms MigrationSample "types/Migration" (ConstructorAt 0)
+               , EncodingConforms UpdateSample "types/RequestAction" (ConstructorAt 0)
+               , EncodingConforms
+                    RejectedSample
+                    "types/RequestAction"
+                    (ConstructorAt 1)
+               , EncodingConforms EndSample "types/UpdateRedeemer" (ConstructorAt 0)
+               , EncodingConforms
+                    ContributeSample
+                    "types/UpdateRedeemer"
+                    (ConstructorAt 1)
+               , EncodingConforms ModifySample "types/UpdateRedeemer" (ConstructorAt 2)
+               , EncodingConforms
+                    RetractSample
+                    "types/UpdateRedeemer"
+                    (ConstructorAt 3)
+               , EncodingConforms SweepSample "types/UpdateRedeemer" (ConstructorAt 4)
+               , UnnamedConstructorRefused "types/UpdateRedeemer" 99
+               , EncodingConforms BranchSample proofStep (ConstructorAt 0)
+               , EncodingConforms ForkSample proofStep (ConstructorAt 1)
+               , EncodingConforms LeafSample proofStep (ConstructorAt 2)
+               , EncodingConforms
+                    NeighborSample
+                    "aiken/merkle_patricia_forestry/Neighbor"
+                    (ConstructorAt 0)
+               , FixedTupleArity "Tuple<<ByteArray,ByteArray>>" 2
+               , FieldOrder
+                    "types/State"
+                    "State"
+                    [ "root"
+                    , "tip"
+                    , "process_time"
+                    , "retract_time"
+                    , "application_policy"
+                    , "active_policy"
+                    , "absent_policy"
+                    , "terminal_policy"
+                    ]
+               , FieldOrder
+                    "types/Request"
+                    "Request"
+                    [ "requestToken"
+                    , "requestOwner"
+                    , "requestKey"
+                    , "edge"
+                    , "deposit"
+                    , "submitted_at"
+                    , "destination"
+                    ]
+               , FieldOrder "types/Migration" "Migration" ["oldPolicy", "tokenId"]
+               , FieldOrder "types/TokenId" "TokenId" ["assetName"]
+               , FieldOrder
+                    "cardano/transaction/OutputReference"
+                    "OutputReference"
+                    ["transaction_id", "output_index"]
+               , FieldOrder
+                    "aiken/merkle_patricia_forestry/Neighbor"
+                    "Neighbor"
+                    ["nibble", "prefix", "root"]
+               , FieldOrder proofStep "Branch" ["skip", "neighbors"]
+               , FieldOrder proofStep "Fork" ["skip", "neighbor"]
+               , FieldOrder proofStep "Leaf" ["skip", "key", "value"]
+               ]
+        )
+        Holds
+  where
+    proofStep = "aiken/merkle_patricia_forestry/ProofStep"
+
+submittedDatum :: Program
+submittedDatum =
+    Program
+        "submitted-datum-byte-round-trip"
+        [BootOf "datum", RequestFor "datum" key]
+        [ BootRegistry (Registry "datum" Standard)
+        , SubmitRequest "datum" key InsertActive
+        , DatumReadBack (StateDatumOf "datum")
+        , DatumReadBack (RequestDatumOf "datum" key)
+        ]
+        Holds
+  where
+    key = "datum-read-back-key"
+
+updateRedeemerWitnesses :: Program
+updateRedeemerWitnesses =
+    Program
+        "update-redeemer-constructor-witnesses"
+        [FoldOf "modify" modifyKey, RetractionOf "retraction" retractKey]
+        [ BootRegistry (Registry "modify" Standard)
+        , BookAndFold "modify" modifyKey InsertActive
+        , ConstructorWitnessed
+            (FoldOf "modify" modifyKey)
+            SpentInputs
+            (con "Modify" 2)
+        , ConstructorWitnessed
+            (FoldOf "modify" modifyKey)
+            SpentInputs
+            (con "Contribute" 1)
+        , BootRegistry (Registry "retraction" FastRetraction)
+        , SubmitRequest "retraction" retractKey InsertActive
+        , RetractRequest "retraction" retractKey
+        , ConstructorWitnessed
+            (RetractionOf "retraction" retractKey)
+            SpentInputs
+            (con "Retract" 3)
+        ]
+        ( PartialCoverage
+            [ Residual
+                (con "End" 0)
+                NamedResidual
+                "the state script refuses End for every party under the ownerless-registry ruling (commit f3a68b1b removed its builder); no accepting path exists"
+            , Residual
+                (con "Sweep" 4)
+                NamedResidual
+                "the request script refuses Sweep for every party under the ownerless-registry ruling (commit f3a68b1b removed its builder); no accepting path exists"
+            ]
+        )
+  where
+    modifyKey = "modify-witness-key"
+    retractKey = "retract-witness-key"
+
+wrongRedeemerIndex :: Program
+wrongRedeemerIndex =
+    Program
+        "wrong-redeemer-constructor-index"
+        []
+        [ BootRegistry (Registry "tampered" Standard)
+        , BookAndTamperFold "tampered" tamperedKey InsertActive 5
+        , RefusedByStateScript "tampered" tamperedKey
+        , BootRegistry (Registry "control" Standard)
+        , BookAndFold "control" controlKey InsertActive
+        ]
+        ( KeptUnmetByRuling
+            "kept unmet by operator ruling 2026-10-02 (narrowed #287; model follow-up lambdasistemi/singular#347); Singular's Lean has no vocabulary for decoding a redeemer, so it gives no reason to compare with the chain's"
+        )
+  where
+    tamperedKey = "wrong-index-key"
+    controlKey = "wrong-index-control-key"
+
+requestAndMintWitnesses :: Program
+requestAndMintWitnesses =
+    Program
+        "request-and-mint-constructor-witnesses"
+        [BootOf "update", FoldOf "update" updateKey, RejectionIn "rejection"]
+        [ BootRegistry (Registry "update" Standard)
+        , ConstructorWitnessed
+            (BootOf "update")
+            MintedPolicies
+            (con "Minting" 0)
+        , BookAndFold "update" updateKey InsertActive
+        , ConstructorWitnessed
+            (FoldOf "update" updateKey)
+            ModifyActions
+            (con "Update" 0)
+        , BootRegistry (Registry "rejection" FastRejection)
+        , SubmitRequest "rejection" rejectKey InsertActive
+        , RejectPending "rejection"
+        , ConstructorWitnessed
+            (RejectionIn "rejection")
+            ModifyActions
+            (con "Rejected" 1)
+        ]
+        ( PartialCoverage
+            [ Residual
+                (con "Burning" 2)
+                NamedResidual
+                "no accepting path: End, which burned the state token, was removed with the owner role (commit f3a68b1b)"
+            , Residual
+                (con "Migrating" 1)
+                ExplicitGap
+                "refused unconditionally under the ownerless-registry ruling, with no attributed witness and no discriminator; the wire constructor stays at index 1"
+            ]
+        )
+  where
+    updateKey = "update-witness-key"
+    rejectKey = "reject-witness-key"
+
+scriptParameters :: Program
+scriptParameters =
+    Program
+        "script-parameter-application"
+        []
+        [ ParametersDeclared state NoParameters
+        , ParametersDeclared
+            request
+            ( ExactParameters
+                [ ("statePolicyId", "#/definitions/cardano~1assets~1PolicyId")
+                , ("cageTokenName", "#/definitions/cardano~1assets~1AssetName")
+                ]
+            )
+        , ParametersDeclared staking NoParameterField
+        , UnappliedHashPinned state Required
+        , UnappliedHashPinned request Required
+        , UnappliedHashPinned staking IfPresent
+        , ExtraApplicationChangesHash state
+        , RequestApplicationDiscriminates
+        ]
+        Holds
+  where
+    state = Validator "state.state"
+    request = Validator "request.request"
+    staking = Validator "staking.staking"
+
+proofSteps :: Program
+proofSteps =
+    Program
+        "proof-step-constructor-witnesses"
+        (BootOf "proof" : [FoldOf "proof" key | (key, _) <- folds])
+        ( BootRegistry (Registry "proof" Standard)
+            : concat
+                [ [ BookAndFold "proof" key InsertAbsent
+                  , ProofShape (FoldOf "proof" key) steps
+                  ]
+                | (key, steps) <- folds
+                ]
+                <> [ ProofStepsWitnessed
+                        [con "Branch" 0, con "Fork" 1, con "Leaf" 2]
+                   ]
+        )
+        Holds
+  where
+    -- The keys' bytes fix the trie's shape, so they are kept as they were
+    -- first chosen: the third fold is the historical absence of a key whose
+    -- path forks between the first two, and the last two widen the trie until
+    -- a branch appears.
+    folds =
+        [ ("cs07-fork-A", [])
+        , ("cs07-fork-B1294", [2])
+        , ("cs07-fork-C11", [1])
+        , ("cs07-fork-D127", [2, 1])
+        , ("cs07-fork-E400", [2, 0])
+        ]
+
+stateFields :: Program
+stateFields =
+    Program
+        "state-fields-chain-round-trip"
+        [BootOf "base", BootOf "varied"]
+        [ BootRegistry (Registry "base" Standard)
+        , BootRegistry (Registry "varied" ActivePolicyVaried)
+        , StateFieldsReadBack "base"
+        , StateFieldsReadBack "varied"
+        , StateFieldCount "base" 8
+        , VariedFieldDiffers "base" "varied"
+        , PoliciesDerived "base"
+        ]
+        Holds
 
 -- ---------------------------------------------------------
 -- Why each row is outside the model
@@ -359,14 +656,14 @@ transactionReading t = case t of
 
 purposeReading :: Purpose -> String
 purposeReading p = case p of
-    Spending -> "among the redeemers of the inputs it spends"
-    Minting -> "among the redeemers of the policies it mints under"
-    RequestActions -> "among the request actions of its modify redeemer"
+    SpentInputs -> "among the redeemers of the inputs it spends"
+    MintedPolicies -> "among the redeemers of the policies it mints under"
+    ModifyActions -> "among the request actions of its modify redeemer"
 
 constructorReading :: Constructor -> String
 constructorReading c = constructorName c <> " (index " <> show (constructorIndex c) <> ")"
 
-datumReading :: Datum -> String
+datumReading :: ReadBackDatum -> String
 datumReading d = case d of
     StateDatumOf r -> "the state datum **" <> r <> "**'s boot wrote"
     RequestDatumOf r k -> "the request datum written for **" <> k <> "** in **" <> r <> "**"
@@ -416,9 +713,9 @@ parametersReading p = case p of
 -- | One instruction as a sentence of the book.
 instructionReading :: Instruction -> String
 instructionReading instruction = case instruction of
-    Boot (Registry r v) ->
+    BootRegistry (Registry r v) ->
         "Boot the registry **" <> r <> "**" <> variationReading v <> "."
-    Request r k e ->
+    SubmitRequest r k e ->
         "Submit a request for **"
             <> k
             <> "** on "
@@ -444,13 +741,13 @@ instructionReading instruction = case instruction of
             <> "**, build its fold and retarget the modify redeemer to index "
             <> show index
             <> ", which the validator does not name, keeping its fields; the ledger must refuse it in phase two."
-    Retract r k ->
+    RetractRequest r k ->
         "Once the retraction window opens, the owner retracts the request for **"
             <> k
             <> "** in **"
             <> r
             <> "**."
-    Reject r ->
+    RejectPending r ->
         "Once both windows close, a folder rejects the pending request in **"
             <> r
             <> "**."
@@ -584,7 +881,7 @@ renderProgram p =
                     | r <- residuals
                     ]
                 <> ".\n\n"
-        UnmetByRuling ruling -> "The requirement is " <> ruling <> ".\n\n"
+        KeptUnmetByRuling ruling -> "The requirement is " <> ruling <> ".\n\n"
 
 {- | The controls of this vocabulary. Each demands the opposite of the checks
 it arms, and a run under it must fail.
@@ -644,12 +941,12 @@ data InstructionKind
 
 instructionKind :: Instruction -> InstructionKind
 instructionKind instruction = case instruction of
-    Boot _ -> Booting
-    Request{} -> Requesting
+    BootRegistry _ -> Booting
+    SubmitRequest{} -> Requesting
     BookAndFold{} -> Folding
     BookAndTamperFold{} -> TamperingFold
-    Retract{} -> Retracting
-    Reject _ -> Rejecting
+    RetractRequest{} -> Retracting
+    RejectPending _ -> Rejecting
     DatumReadBack _ -> ReadingDatumBack
     StateFieldsReadBack _ -> ReadingStateBack
     StateFieldCount{} -> CountingStateFields
@@ -681,28 +978,28 @@ validateProgram p = do
         foldM step ([], [], []) (programInstructions p)
     mapM_ (produced transactions) (programCites p)
     case programStanding p of
-        UnmetByRuling _
+        KeptUnmetByRuling _
             | null tampered ->
                 Left (row <> " is unmet by ruling but refuses nothing")
         _ -> Right ()
   where
     row = programRow p
     step known@(registries, transactions, tampered) instruction = case instruction of
-        Boot registry@(Registry name _)
+        BootRegistry registry@(Registry name _)
             | name `elem` map registryName registries ->
                 Left (row <> " boots " <> name <> " twice")
             | otherwise ->
                 Right (registry : registries, BootOf name : transactions, tampered)
-        Request r k _ ->
+        SubmitRequest r k _ ->
             (registries, RequestFor r k : transactions, tampered)
                 <$ booted known r
         BookAndFold r k _ ->
             (registries, FoldOf r k : transactions, tampered) <$ booted known r
         BookAndTamperFold r k _ _ -> (registries, transactions, (r, k) : tampered) <$ booted known r
-        Retract r k -> do
+        RetractRequest r k -> do
             produced transactions (RequestFor r k)
             Right (registries, RetractionOf r k : transactions, tampered)
-        Reject r
+        RejectPending r
             | any (requestIn r) transactions ->
                 Right (registries, RejectionIn r : transactions, tampered)
             | otherwise ->

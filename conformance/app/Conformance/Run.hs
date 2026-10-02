@@ -1,29 +1,17 @@
 {- |
 Module      : Conformance.Run
-Description : The conformance sessions: canonical identity, registry rows and serialization
+Description : The conformance sessions: registry identity, registry operations and the wire format
 License     : Apache-2.0
 
 One @run@ boots an isolated devnet per session and executes the requested
 rows in canonical order. Every result is read back from the chain.
 
-The registry-identity rows (issue #69) run as their own session: a designation
-split publishes a canonical seed, canonical-seed-identity boots the canonical registry
-and matches its on-chain token name against the SHA-256 derivation,
-rival-seed-authentication initializes a rival registry from a second seed — which the
-ledger ACCEPTS (naming-correspondence.md, "What t50 settled": a
-permissionless ledger cannot prohibit a rival; canonical identity is
-a derivation the consumer authenticates, not a refusal the chain
-performs) — and asserts the rival's acceptance, the name difference
-and the canonical registry's unaffected state, each read back from
-the chain. policy-address-only-authentication-control is the executing control: an authenticator that
-checks only policy and address accepts the rival, proving rival-seed-authentication's
-rejection is attributable to the derived name alone. applied-validator-identity derives
-the applied address from the pinned unapplied hash plus the declared
-parameters and compares it with the address the chain reports.
-tokenless-output-authentication forges an output at the canonical address carrying no registry
-token: creating an output does not execute the receiving script, and
-the run must show no script executed — not merely that nothing bad
-happened.
+The registry-identity rows run as their own session, each a program of the
+authentication vocabulary ("Conformance.Authentication.Programs") executed by
+one interpreter ("Conformance.Run.Authentication"). The session publishes the
+canonical seed before its first row; a rival booted from another seed is
+accepted by the ledger, and the consumer's authentication rejects it on the
+derived name.
 
 The registry rows run as their own session. A row with a program
 ("Conformance.Edge.Programs") runs it through the generic interpreter, in
@@ -32,24 +20,22 @@ its neighbours; fold-against-superseded-root and surplus-fold-actions, which the
 refusals and accepting controls. A held, unmet or failing row ends the
 session non-zero, naming every such row.
 
-@CONFORMANCE_CONTROL=wrong-reason@ arms the serialization refusal matcher against
-an impossible marker (the run must fail naming what came back; a registry
-session refuses it, no registry row matching a refusal against a marker);
-@CONFORMANCE_CONTROL=false-claim@, in a registry-identity session, binds the fabricated
-wrong-seed derivation to canonical-seed-identity's name match (it must fail).
-@CONFORMANCE_CONTROL=naive-authenticator@ makes policy-address-only-authentication-control require the
-policy+address-only authenticator to reject the rival, which it
-cannot (the run must fail naming the accepted rival);
-@CONFORMANCE_CONTROL=unapplied-address@ makes applied-validator-identity require the
-unapplied layer's address to pass for the deployed script, which it
-cannot (the run must fail). All prove the harness fails when it
-should.
+The serialization rows are programs of the wire round-trip vocabulary
+("Conformance.Wire.Programs") executed by one interpreter
+("Conformance.Run.Wire"): those that need no node are checked against the
+compiled blueprint before any devnet starts, the others in their own session.
+
+@CONFORMANCE_CONTROL@ names a control of either vocabulary. It demands the
+opposite of every instruction it arms, so the run must fail where that
+instruction runs; a run none of whose requested rows it arms is refused rather
+than allowed to pass vacuously.
 -}
 module Conformance.Run (runForkProbe, runRows) where
 
 import Conformance.FoldFixture qualified as FoldFixture
 
 import Conformance.Authentication.Programs qualified as Authentication
+import Conformance.Classification (armsRow)
 import Conformance.Edge.Programs (programFor)
 import Conformance.Run.Authentication
     ( openIdentitySession
@@ -58,13 +44,14 @@ import Conformance.Run.Authentication
 import Conformance.Run.Cage
 import Conformance.Run.CgRows
 import Conformance.Run.Control
-import Conformance.Run.CsRows
 import Conformance.Run.Environment
 import Conformance.Run.ForkProbe
 import Conformance.Run.Node (checkHarnessGenesis, withReplayingNode)
 import Conformance.Run.Receipts
 import Conformance.Run.Replay (ReplayIndex (..))
 import Conformance.Run.Wallet
+import Conformance.Run.Wire (runWireLocalRow, runWireSession)
+import Conformance.Wire.Programs qualified as Wire
 
 import Control.Exception
     ( ErrorCall (..)
@@ -95,13 +82,11 @@ import Singular.Registry.TxBuilder.Internal
     ( txInToRef
     )
 
-import Conformance.BlueprintEncoding (runBlueprintEncodingRoundTrip)
 import Conformance.Mirror
     ( emit
     , failWith
     , newMirror
     )
-import Conformance.ScriptParameters (runScriptParameterApplication)
 
 -- ---------------------------------------------------------
 -- Entry point
@@ -112,28 +97,15 @@ runRows rawRows receiptsDir = do
     rows <- validateRows rawRows
     control <- readControl
     emit "control" (show control)
-    let identityRequested = any (`elem` authenticationRows) rows
-        cgRequested = any (`elem` cgSessionRows) rows
-    -- Armed controls must never pass vacuously: each mode belongs to
-    -- one session, and a session it cannot fire in is refused here.
-    when (identityRequested && control == WrongReason) $
-        failWith
-            "wrong-reason arms a refusal matcher, but the registry-identity rows \
-            \assert no ledger refusal (the rival is accepted by \
-            \design); use naive-authenticator, false-claim or \
-            \unapplied-address"
-    when (cgRequested && control == WrongReason) $
-        failWith
-            "wrong-reason arms a refusal matcher, but no registry-operations row matches a \
-            \refusal against it; a compared refusal's reason is controlled \
-            \by CONFORMANCE_REASON_CONTROL"
+    -- A control demands the opposite of the instructions it arms. A session
+    -- none of whose requested rows it arms would pass vacuously, so it is
+    -- refused here.
     when
-        ( cgRequested
-            && control `elem` [NaiveAuthenticator, UnappliedAddress, FalseClaim]
-        )
-        $ failWith
-            "naive-authenticator, unapplied-address and false-claim are registry-identity \
-            \controls; the registry-operations rows they cannot arm would pass vacuously"
+        (control /= Normal && not (any (armsRow (controlName control)) rows)) $
+        failWith
+            ( controlName control
+                <> " arms no requested row: under it the run would pass vacuously"
+            )
     blueprintPath <- requireEnv "REGISTRY_BLUEPRINT"
     -- Observe tree identity before any side effect: creating the
     -- receipts directory first would always report dirty.
@@ -142,18 +114,11 @@ runRows rawRows receiptsDir = do
     dirty <- requireTreeClean
     emit "tree" (if dirty then "dirty (receipts record it)" else "clean")
     createDirectoryIfMissing True receiptsDir
-    let localRows =
-            [ r
-            | r <- rows
-            , r
-                `elem` ["blueprint-encoding-round-trip", "script-parameter-application"]
+    let localPrograms =
+            [ p | r <- rows, Just p <- [Wire.programFor r], not (Wire.needsDevnet p)
             ]
-        devnetRows =
-            [ r
-            | r <- rows
-            , r
-                `notElem` ["blueprint-encoding-round-trip", "script-parameter-application"]
-            ]
+        localRows = map Wire.programRow localPrograms
+        devnetRows = [r | r <- rows, r `notElem` localRows]
         cgDevnet = [r | r <- devnetRows, r `elem` cgSessionRows]
         identityDevnet = [r | r <- devnetRows, r `elem` authenticationRows]
         wireDevnet = [r | r <- devnetRows, r `elem` wireRows]
@@ -165,7 +130,9 @@ runRows rawRows receiptsDir = do
     unless (null unpartitioned) $
         failWith
             ("rows in no partition: " <> unwords unpartitioned)
-    mapM_ (runLocalRow blueprintPath receiptsDir base dirty) localRows
+    mapM_
+        (runWireLocalRow blueprintPath receiptsDir base dirty control)
+        localPrograms
     unless (null devnetRows) $ do
         (stateBytes, requestBytes, namingCodes) <- loadCodes blueprintPath
         checkHarnessGenesis
@@ -191,12 +158,10 @@ runRows rawRows receiptsDir = do
         unless (null wireDevnet) $
             bracketTmpDir $ do
                 withReplayingNode blueprintPath receiptsDir (T.pack nodeVer) $ \caps replayIndex ->
-                    runCSSession
-                        wireDevnet
+                    runWireSession
+                        [p | r <- wireDevnet, Just p <- [Wire.programFor r]]
                         control
-                        stateBytes
-                        requestBytes
-                        namingCodes
+                        (stateBytes, requestBytes, namingCodes)
                         nodeVer
                         base
                         dirty
@@ -207,13 +172,6 @@ runRows rawRows receiptsDir = do
         emit
             "complete"
             (show (length localRows) <> "/" <> show (length rows) <> " rows ok")
-
-runLocalRow
-    :: FilePath -> FilePath -> String -> Bool -> String -> IO ()
-runLocalRow blueprintPath receiptsDir base dirty row = case row of
-    "blueprint-encoding-round-trip" -> runBlueprintEncodingRoundTrip blueprintPath receiptsDir base dirty
-    "script-parameter-application" -> runScriptParameterApplication blueprintPath receiptsDir base dirty
-    _ -> failWith ("run cannot execute local row: " <> row)
 
 validateRows :: [String] -> IO [String]
 validateRows [] =
