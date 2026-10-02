@@ -49,8 +49,6 @@ library
     , cardano-strict-containers
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-node-clients
-    , cardano-node-clients:devnet
     , cardano-slotting
     , cardano-tx-tools:tx-build
     , containers             >=0.6  && <0.8
@@ -253,7 +251,6 @@ executable journey
     , cardano-ledger-core
     , cardano-ledger-mary
     , singular-registry
-    , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-tx-tools:tx-build
     , containers

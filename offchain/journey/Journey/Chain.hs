@@ -32,11 +32,6 @@ import Cardano.Ledger.Mary.Value (MultiAsset (..))
 import Cardano.Node.Client.E2E.Setup
     ( Ed25519DSIGN
     , SignKeyDSIGN
-    , addKeyWitness
-    )
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
     )
 import Cardano.Tx.Ledger (ConwayTx)
 
@@ -49,7 +44,15 @@ import Singular.Registry.Ledger
     , Coin (..)
     , TokenId (..)
     )
-import Singular.Registry.Node (awaitTx, funderAddr, funderSignKey)
+import Singular.Registry.Node
+    ( Capabilities (..)
+    , SubmitResult (..)
+    , funderAddr
+    , funderSignKey
+    , signTx
+    , signedTx
+    , submitSigned
+    )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Edges qualified as Edges
 import Singular.Registry.TxBuilder.Internal
@@ -140,15 +143,15 @@ extractTokenId cfg tx =
 {- | Sign with the devnet genesis key, submit and wait for
 confirmation. Fails the journey on a rejected transaction.
 -}
-submitWithGenesis :: Submitter IO -> ConwayTx -> IO ConwayTx
-submitWithGenesis submit unsigned = do
-    let signed = addKeyWitness genesisSignKey unsigned
-    result <- submitTx submit signed
+submitWithGenesis :: Capabilities -> ConwayTx -> IO ConwayTx
+submitWithGenesis caps unsigned = do
+    let signed = signTx genesisSignKey unsigned
+    result <- submitSigned (capSubmit caps) signed
     case result of
         Submitted _ -> pure ()
         Rejected reason -> failWith ("tx rejected: " <> show reason)
-    awaitTx signed
-    pure signed
+    capConfirm caps (signedTx signed)
+    pure (signedTx signed)
 
 {- | Read the current state datum for a token straight from
 the chain: the state UTxO at the cage address. This is the
