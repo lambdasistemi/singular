@@ -230,11 +230,15 @@ prepared_points() {
         end' "$1/journal.jsonl" || fail "$1: a write did not journal its view point"
 }
 
+# hexof TEXT: the hex of the key bytes, for the envelope's hand-built JSON.
+hexof() { printf '%s' "$1" | od -An -tx1 | tr -d ' \n'; }
+
 # envelope FILE CONTROLLER KEY [REGISTRY_NAME] [ACTIVE]: an envelope with
-# a nested payload, naming this registry unless told otherwise.
+# a nested payload (KEY is the key text), naming this registry unless told
+# otherwise.
 envelope() {
   local file="$1" controller="$2" key="$3" name="${4:-$token}" active="${5:-$active}"
-  jq -n --arg s "$state" --arg t "$name" --arg a "$active" --arg k "$key" --arg c "$controller" '
+  jq -n --arg s "$state" --arg t "$name" --arg a "$active" --arg k "$(hexof "$key")" --arg c "$controller" '
       {constructor:0, fields:[
         {constructor:0, fields:[{int:1},{constructor:0,fields:[{bytes:$s},{bytes:$t}]},
           {bytes:$a},{bytes:$k},{bytes:$c},{int:2000000}]},
@@ -249,7 +253,7 @@ for c in create insert update terminate inspect; do
   grep -q "singular registry $c" "$work/help.txt" || fail "help does not name registry $c"
 done
 status=0
-"$singular" registry inspect --key 00 "${common[@]}" "${node[@]}" "${alice[@]}" >/dev/null 2>&1 || status=$?
+"$singular" registry inspect --key-hex 00 "${common[@]}" "${node[@]}" "${alice[@]}" >/dev/null 2>&1 || status=$?
 [ "$status" -eq 2 ] || fail "inspect accepted a signing key (exit $status)"
 say "help names the five commands; a signing key on inspect is refused"
 
@@ -296,16 +300,16 @@ say "registry $token booted from $seed"
 # ------------------------------------------------------------------
 # 2. insert (alice), with its refusals
 # ------------------------------------------------------------------
-key=6b657941
+key=keyA
 envelope "$work/alice.json" "$alicekey" "$key"
-envelope "$work/alice-other-key.json" "$alicekey" 6b657958
+envelope "$work/alice-other-key.json" "$alicekey" keyX
 envelope "$work/alice-other-registry.json" "$alicekey" "$key" 00
-envelope "$work/alice-by-bob.json" "$alicekey" 6b657942
+envelope "$work/alice-by-bob.json" "$alicekey" keyB
 refused insert-envelope-key-mismatch client-refusal -- registry insert --key "$key" \
   --envelope "$work/alice-other-key.json" "${common[@]}" "${node[@]}" "${alice[@]}"
 refused insert-other-registry client-refusal -- registry insert --key "$key" \
   --envelope "$work/alice-other-registry.json" "${common[@]}" "${node[@]}" "${alice[@]}"
-refused insert-not-controller client-refusal -- registry insert --key 6b657942 \
+refused insert-not-controller client-refusal -- registry insert --key keyB \
   --envelope "$work/alice-by-bob.json" "${common[@]}" "${node[@]}" "${bob[@]}"
 
 # A preview builds and measures what the insert would submit, for the public
@@ -336,7 +340,7 @@ status=0
 "$singular" registry insert --preview --key "$key" --envelope "$work/alice.json" "${common[@]}" \
   "${node[@]}" --wallet-address "$alice_addr" "${alice[@]}" >/dev/null 2>&1 || status=$?
 [ "$status" -eq 2 ] || fail "an insert preview accepted a signing key (exit $status)"
-refused insert-preview-not-controller client-refusal -- registry insert --preview --key 6b657942 \
+refused insert-preview-not-controller client-refusal -- registry insert --preview --key keyB \
   --envelope "$work/alice-by-bob.json" "${common[@]}" "${node[@]}" --wallet-address "$bob_addr"
 # An allowance below the measured outlay stops the insert before it signs or
 # sends anything.
@@ -367,7 +371,7 @@ if [ "$backend" = indexer ]; then
 fi
 
 # bob, a wallet that did not create the registry, inserts his own key.
-bkey=6b657942
+bkey=keyB
 envelope "$work/bob.json" "$bobkey" "$bkey"
 run bob-insert success -- registry insert --key "$bkey" --envelope "$work/bob.json" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
@@ -406,7 +410,7 @@ mv "$work/mirror.aside" "$reg/registry.mirror.json"
 # A changed application selector.
 cp "$reg/registry.json" "$work/registry.json.aside"
 jq '.confApplication = "open.open"' "$work/registry.json.aside" >"$reg/registry.json"
-refused insert-selector-changed client-refusal -- registry insert --key 6b657943 \
+refused insert-selector-changed client-refusal -- registry insert --key keyC \
   --envelope "$work/alice.json" "${common[@]}" "${node[@]}" "${alice[@]}"
 cp "$work/registry.json.aside" "$reg/registry.json"
 # No node at all.
@@ -417,7 +421,7 @@ run inspect-no-node node-unavailable -- registry inspect --key "$key" "${common[
 # target's actual lock (an fcntl open-file-description lock, which conflicts
 # with the command's own fcntl lock) and is verified to hold it; the
 # command is then refused without reading or submitting anything.
-envelope "$work/alice-c.json" "$alicekey" 6b657943
+envelope "$work/alice-c.json" "$alicekey" keyC
 rm -f "$work/lock.held" "$work/lock.pid"
 # The holding process is the exec'd sleep itself, so killing it releases
 # the lock (the open-file description dies with its last holder).
@@ -432,12 +436,12 @@ done
 if flock --fcntl --nonblock "$reg/.lock" true; then
   setup_fail "the lock holder does not hold $reg/.lock"
 fi
-refused concurrent-writer concurrent-writer -- registry insert --key 6b657943 \
+refused concurrent-writer concurrent-writer -- registry insert --key keyC \
   --envelope "$work/alice-c.json" "${common[@]}" "${node[@]}" "${alice[@]}"
 kill "$(cat "$work/lock.pid")" 2>/dev/null || true
 wait "$holder" 2>/dev/null || true
 flock --fcntl --nonblock "$reg/.lock" true || setup_fail "the lock holder did not release $reg/.lock"
-run insert-after-release success -- registry insert --key 6b657943 \
+run insert-after-release success -- registry insert --key keyC \
   --envelope "$work/alice-c.json" "${common[@]}" "${node[@]}" "${alice[@]}"
 
 # ------------------------------------------------------------------
@@ -568,7 +572,7 @@ run create-after-kill client-refusal -- registry create --seed "$seed_i" --regis
   --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
 [ "$(journal_lines "$inter")" = "$inter_lines" ] || fail "a create after the kill submitted something"
 for _ in $(seq 1 60); do
-  run inspect-interrupted partial -- registry inspect --key 00 --registry "$inter" \
+  run inspect-interrupted partial -- registry inspect --key-hex 00 --registry "$inter" \
     --blueprint "$blueprint" "${node[@]}"
   jq -e --arg t "$first_tx" '.observed | index($t)' "$receipts/inspect-interrupted.json" >/dev/null && break
   sleep 2
@@ -587,7 +591,7 @@ jq -n '{int: 42}' >"$work/payload-2.json"
 before="$(journal_lines "$reg")"
 rm -f "$work/update.go" "$work/update.go.waiting"
 SINGULAR_HARNESS_HOLD_AFTER_SUBMIT="$work/update.go" SINGULAR_HARNESS_HOLD_STEP=update \
-  "$singular" registry update --key 6b657943 --payload "$work/payload-2.json" --confirm-timeout 30 \
+  "$singular" registry update --key keyC --payload "$work/payload-2.json" --confirm-timeout 30 \
   "${common[@]}" "${node[@]}" "${alice[@]}" >"$receipts/update-node-lost.json" 2>"$receipts/update-node-lost.err" &
 victim=$!
 for _ in $(seq 1 1200); do

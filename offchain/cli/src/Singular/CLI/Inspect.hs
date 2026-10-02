@@ -101,6 +101,7 @@ import Singular.CLI.Registry
     ( checkNetwork
     , configPath
     , hexT
+    , keyFields
     , pendingPath
     , renderIdentityError
     )
@@ -271,16 +272,16 @@ inspectSaved dir key sock magic a = do
                             , "holdings" .= map (txInText . fst . fst) holdings
                             ]
                 labels =
-                    [ ("key", toJSON (hexT key))
-                    , ("chainPoint", toJSON chainPoint)
-                    , ("mechanism", toJSON ("node-to-client local state query" :: Text))
-                    ,
-                        ( "freshness"
-                        , toJSON ("read at the chain point above, in this process" :: Text)
-                        )
-                    , ("root", toJSON (hexT root))
-                    , ("applicationOutput", application)
-                    ]
+                    keyFields key
+                        <> [ ("chainPoint", toJSON chainPoint)
+                           , ("mechanism", toJSON ("node-to-client local state query" :: Text))
+                           ,
+                               ( "freshness"
+                               , toJSON ("read at the chain point above, in this process" :: Text)
+                               )
+                           , ("root", toJSON (hexT root))
+                           , ("applicationOutput", application)
+                           ]
                         <> reconciledFields reconciled
                 agrees = \case
                     Active -> length holdings == 1

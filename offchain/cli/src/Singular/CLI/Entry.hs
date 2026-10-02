@@ -100,6 +100,7 @@ import Singular.CLI.Registry
     ( LocalState (..)
     , checkNetwork
     , hexT
+    , keyFields
     , renderIdentityError
     , writeLocalState
     )
@@ -476,13 +477,14 @@ runInsert a = case entryMode a of
                 receipt
                     "insert"
                     Success
-                    [ ("key", toJSON (hexT key))
-                    , ("booking", toJSON (txIdHex booking))
-                    , ("fold", toJSON (txIdHex fold))
-                    , ("liveOutput", toJSON (txInText liveIn))
-                    , ("envelope", envelopeToJson seen)
-                    , ("root", toJSON (hexT root))
-                    ]
+                    ( keyFields key
+                        <> [ ("booking", toJSON (txIdHex booking))
+                           , ("fold", toJSON (txIdHex fold))
+                           , ("liveOutput", toJSON (txInText liveIn))
+                           , ("envelope", envelopeToJson seen)
+                           , ("root", toJSON (hexT root))
+                           ]
+                    )
 
 -- ---------------------------------------------------------
 -- update
@@ -552,12 +554,13 @@ runUpdate a = case entryMode a of
                 receipt
                     "update"
                     Success
-                    [ ("key", toJSON (hexT key))
-                    , ("update", toJSON (txIdHex signed))
-                    , ("liveOutput", toJSON (txInText liveIn))
-                    , ("payload", dataToJson (envPayload seen))
-                    , ("root", toJSON (hexT rootAfter))
-                    ]
+                    ( keyFields key
+                        <> [ ("update", toJSON (txIdHex signed))
+                           , ("liveOutput", toJSON (txInText liveIn))
+                           , ("payload", dataToJson (envPayload seen))
+                           , ("root", toJSON (hexT rootAfter))
+                           ]
+                    )
 
 -- ---------------------------------------------------------
 -- terminate
@@ -605,13 +608,14 @@ runTerminate a = case entryMode a of
                 receipt
                     "terminate"
                     Success
-                    [ ("key", toJSON (hexT key))
-                    , ("booking", toJSON (txIdHex booking))
-                    , ("fold", toJSON (txIdHex fold))
-                    , ("released", toJSON (txInText liveIn))
-                    , ("deposit", toJSON (ctlDeposit c))
-                    , ("root", toJSON (hexT root))
-                    ]
+                    ( keyFields key
+                        <> [ ("booking", toJSON (txIdHex booking))
+                           , ("fold", toJSON (txIdHex fold))
+                           , ("released", toJSON (txInText liveIn))
+                           , ("deposit", toJSON (ctlDeposit c))
+                           , ("root", toJSON (hexT root))
+                           ]
+                    )
 
 {- | A build failure's own words, without the script bytes and context a
 Plutus failure carries after them.

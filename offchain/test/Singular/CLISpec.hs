@@ -162,7 +162,7 @@ commandLine = describe "the command line" $ do
                 )
     it "reads an insert at a hex key with its envelope" $
         parseCommand
-            ( ["registry", "insert", "--key", "6b6579", "--envelope", "/e.json"]
+            ( ["registry", "insert", "--key", "key", "--envelope", "/e.json"]
                 <> reg
                 <> node
                 <> wallet
@@ -182,11 +182,11 @@ commandLine = describe "the command line" $ do
                 )
     it "refuses an insert without its envelope" $
         parseCommand
-            (["registry", "insert", "--key", "6b6579"] <> reg <> node <> wallet)
+            (["registry", "insert", "--key", "key"] <> reg <> node <> wallet)
             `shouldSatisfy` isLeftWith isMissing
     it "reads an update with its payload, and refuses one without" $ do
         parseCommand
-            ( ["registry", "update", "--key", "6b6579", "--payload", "/p.json"]
+            ( ["registry", "update", "--key", "key", "--payload", "/p.json"]
                 <> reg
                 <> node
                 <> wallet
@@ -195,33 +195,84 @@ commandLine = describe "the command line" $ do
                 Right (Update e) -> entryDocument e == Just "/p.json"
                 _ -> False
         parseCommand
-            (["registry", "update", "--key", "6b6579"] <> reg <> node <> wallet)
+            (["registry", "update", "--key", "key"] <> reg <> node <> wallet)
             `shouldSatisfy` isLeftWith isMissing
-    it "refuses a key that is not hex" $ do
+    it "reads --key as text and --key-hex as base16, to the same key" $
+        forM_ keyCommands $ \command -> do
+            let keyOf extra = fmap commandKey (parseCommand (command <> extra))
+            keyOf ["--key", "alice"] `shouldBe` Right (Key "alice")
+            keyOf ["--key-hex", "616c696365"] `shouldBe` Right (Key "alice")
+            keyOf ["--key-hex", "616c696365"] `shouldBe` keyOf ["--key", "alice"]
+            keyOf ["--key-hex=616c696365"] `shouldBe` Right (Key "alice")
+    it "takes a hex-looking --key as the text it spells" $
+        forM_ keyCommands $ \command ->
+            fmap commandKey (parseCommand (command <> ["--key", "6b65"]))
+                `shouldBe` Right (Key "6b65")
+    it "reads --key text as its UTF-8 bytes" $
+        fmap commandKey (parseCommand (insertCommand <> ["--key", "caf\233"]))
+            `shouldBe` Right (Key (BS.pack [0x63, 0x61, 0x66, 0xc3, 0xa9]))
+    it "refuses --key-hex that is not base16, naming it" $
+        forM_ keyCommands $ \command -> do
+            parseCommand (command <> ["--key-hex", "zz"])
+                `shouldSatisfy` refusedWith "--key-hex is not base16"
+            parseCommand (command <> ["--key-hex", "abc"])
+                `shouldSatisfy` refusedWith "--key-hex is not base16"
+    it "refuses an empty key, as text and as hex, naming it" $
+        forM_ keyCommands $ \command -> do
+            parseCommand (command <> ["--key", ""])
+                `shouldSatisfy` refusedWith "--key is empty"
+            parseCommand (command <> ["--key-hex", ""])
+                `shouldSatisfy` refusedWith "--key is empty"
+    it
+        "accepts a key of exactly 32 bytes and refuses 33, in either spelling"
+        $ forM_ keyCommands
+        $ \command -> do
+            let at n = replicate n 'a'
+                hexAt n = replicate (2 * n) 'a'
+            fmap commandKey (parseCommand (command <> ["--key", at maxKeyBytes]))
+                `shouldBe` Right (Key (BC.pack (at maxKeyBytes)))
+            fmap
+                commandKey
+                (parseCommand (command <> ["--key-hex", hexAt maxKeyBytes]))
+                `shouldSatisfy` either (const False) (const True)
+            parseCommand (command <> ["--key", at (maxKeyBytes + 1)])
+                `shouldSatisfy` refusedWith "at most 32 bytes"
+            parseCommand (command <> ["--key-hex", hexAt (maxKeyBytes + 1)])
+                `shouldSatisfy` refusedWith "at most 32 bytes"
+    it "counts the bytes of a text key, not its characters" $
+        -- 17 two-byte characters are 34 bytes
         parseCommand
-            (["registry", "insert", "--key", "zz"] <> reg <> node <> wallet)
-            `shouldSatisfy` isLeftWith isMalformed
-        parseCommand
-            (["registry", "terminate", "--key", "abc"] <> reg <> node <> wallet)
-            `shouldSatisfy` isLeftWith isMalformed
-    it "accepts a key of exactly 32 bytes and refuses 33" $ do
-        let hexOf n = replicate (2 * n) 'a'
-        parseCommand
-            (["registry", "inspect", "--key", hexOf maxKeyBytes] <> reg <> node)
-            `shouldSatisfy` either (const False) (const True)
-        parseCommand
-            ( ["registry", "inspect", "--key", hexOf (maxKeyBytes + 1)]
-                <> reg
-                <> node
-            )
-            `shouldBe` Left (KeyOversized (maxKeyBytes + 1))
+            (insertCommand <> ["--key", concat (replicate 17 "\233")])
+            `shouldSatisfy` refusedWith "at most 32 bytes"
+    it
+        "refuses a --key the terminal's encoding could not decode, never reading it as text"
+        $
+        -- the runtime hands undecodable argument bytes over as lone surrogates
+        parseCommand (insertCommand <> ["--key", "caf\xDCC3\xDCA9"])
+            `shouldSatisfy` refusedWith "run under a UTF-8 locale"
+    it "takes the key once, by --key or by --key-hex" $
+        forM_ keyCommands $ \command -> do
+            parseCommand
+                (command <> ["--key", "alice", "--key-hex", "616c696365"])
+                `shouldSatisfy` refusedWith "--key-hex excludes --key"
+            parseCommand command `shouldBe` Left (MissingFlag "--key")
+    it "refuses a bad key before it asks for a node or a wallet" $
+        parseCommand (["registry", "insert", "--key-hex", "zz"] <> reg)
+            `shouldSatisfy` refusedWith "--key-hex is not base16"
+    it "shows a receipt's key as hex and, when it is UTF-8, as text" $ do
+        keyFields "alice"
+            `shouldBe` [ ("key", Aeson.String "616c696365")
+                       , ("keyText", Aeson.String "alice")
+                       ]
+        keyFields (BS.pack [0xff, 0x00])
+            `shouldBe` [("key", Aeson.String "ff00")]
     it "refuses a signing key on inspect" $
         parseCommand
-            (["registry", "inspect", "--key", "6b6579"] <> reg <> node <> wallet)
+            (["registry", "inspect", "--key", "key"] <> reg <> node <> wallet)
             `shouldBe` Left SigningKeyNotAccepted
     it "refuses a write with a partial node and wallet setting" $
         parseCommand
-            ( ["registry", "insert", "--key", "6b6579"]
+            ( ["registry", "insert", "--key", "key"]
                 <> reg
                 <> ["--node-socket", "/run/node.socket"]
             )
@@ -231,7 +282,7 @@ commandLine = describe "the command line" $ do
         $ do
             let insert extra =
                     parseCommand
-                        ( ["registry", "insert", "--key", "6b6579", "--envelope", "/e.json"]
+                        ( ["registry", "insert", "--key", "key", "--envelope", "/e.json"]
                             <> reg
                             <> node
                             <> wallet
@@ -249,18 +300,18 @@ commandLine = describe "the command line" $ do
     preview
     it "refuses a write against mainnet" $
         parseCommand
-            ( ["registry", "insert", "--key", "6b6579"]
+            ( ["registry", "insert", "--key", "key"]
                 <> reg
                 <> ["--node-socket", "/s", "--network-magic", "764_824_073"]
                 <> wallet
             )
             `shouldSatisfy` isLeftWith (unsafeMentions "764_824_073")
     it "refuses a write with no node at all rather than spawning one" $
-        parseCommand (["registry", "insert", "--key", "6b6579"] <> reg)
+        parseCommand (["registry", "insert", "--key", "key"] <> reg)
             `shouldSatisfy` isLeftWith isUnsafe
     it "names a missing registry directory" $
         parseCommand
-            (["registry", "inspect", "--key", "6b6579", "--blueprint", "b"] <> node)
+            (["registry", "inspect", "--key", "key", "--blueprint", "b"] <> node)
             `shouldBe` Left (MissingFlag "--registry")
     it
         "reads every command under the indexer backend as it reads it under \
@@ -281,16 +332,16 @@ commandLine = describe "the command line" $ do
   where
     commands =
         [ ["registry", "create", "--seed", seedText] <> reg <> node <> wallet
-        , ["registry", "insert", "--key", "6b6579", "--envelope", "/e.json"]
+        , ["registry", "insert", "--key", "key", "--envelope", "/e.json"]
             <> reg
             <> node
             <> wallet
-        , ["registry", "update", "--key", "6b6579", "--payload", "/p.json"]
+        , ["registry", "update", "--key", "key", "--payload", "/p.json"]
             <> reg
             <> node
             <> wallet
-        , ["registry", "terminate", "--key", "6b6579"] <> reg <> node <> wallet
-        , ["registry", "inspect", "--key", "6b6579"] <> reg <> node
+        , ["registry", "terminate", "--key", "key"] <> reg <> node <> wallet
+        , ["registry", "inspect", "--key", "key"] <> reg <> node
         ]
     forM5 xs f = mapM_ f xs
     preview = previewRows
@@ -301,7 +352,29 @@ commandLine = describe "the command line" $ do
             , writeConfirmTimeout = Nothing
             }
     isUnknown = \case UnknownCommand _ -> True; _ -> False
-    isMalformed = \case KeyMalformed _ -> True; _ -> False
+    refusedWith needle = \case
+        Left e -> needle `isInfixOf` renderCLIError e
+        Right _ -> False
+    commandKey = \case
+        Insert e -> entryKey e
+        Update e -> entryKey e
+        Terminate e -> entryKey e
+        Inspect i -> inspectKey i
+        other -> error ("not a key command: " <> show other)
+    insertCommand =
+        ["registry", "insert", "--envelope", "/e.json"]
+            <> reg
+            <> node
+            <> wallet
+    keyCommands =
+        [ insertCommand
+        , ["registry", "update", "--payload", "/p.json"]
+            <> reg
+            <> node
+            <> wallet
+        , ["registry", "terminate"] <> reg <> node <> wallet
+        , ["registry", "inspect"] <> reg <> node
+        ]
     isMissing = \case MissingFlag _ -> True; _ -> False
     isUnsafe = \case UnsafeSettings _ -> True; _ -> False
     unsafeMentions s = \case
@@ -1135,7 +1208,7 @@ previewRows = describe "--preview" $ do
                   , "insert"
                   , "--preview"
                   , "--key"
-                  , "6b6579"
+                  , "key"
                   , "--envelope"
                   , "/e.json"
                   ]
@@ -1222,7 +1295,7 @@ previewRows = describe "--preview" $ do
             `shouldBe` Left PreviewTakesNoKey
     it "refuses an address on a command that signs" $ do
         parseCommand
-            ( ["registry", "insert", "--key", "6b6579", "--envelope", "/e.json"]
+            ( ["registry", "insert", "--key", "key", "--envelope", "/e.json"]
                 <> reg
                 <> node
                 <> wallet
@@ -1243,10 +1316,10 @@ previewRows = describe "--preview" $ do
                         )
                 inspect extra =
                     parseCommand
-                        (["registry", "inspect", "--key", "6b6579"] <> reg <> node <> extra)
+                        (["registry", "inspect", "--key", "key"] <> reg <> node <> extra)
                 terminate extra =
                     parseCommand
-                        ( ["registry", "terminate", "--key", "6b6579"]
+                        ( ["registry", "terminate", "--key", "key"]
                             <> reg
                             <> node
                             <> wallet

@@ -84,8 +84,8 @@ expect documented-missing 1 '^documented, not in --help: the settings table give
 
 # A flag documented for a command whose --help does not give it.
 fresh
-sed -i 's/^| `--key HEX` | `insert`, `update`, `terminate`, `inspect` |/| `--key HEX` | `create`, `insert`, `update`, `terminate`, `inspect` |/' "$table"
-grep -q '^| `--key HEX` | `create`' "$table" || {
+sed -i 's/^| `--key KEY` | `insert`, `update`, `terminate`, `inspect` |/| `--key KEY` | `create`, `insert`, `update`, `terminate`, `inspect` |/' "$table"
+grep -q '^| `--key KEY` | `create`' "$table" || {
   echo "SETUP-FAIL: the key row did not change" >&2
   exit 2
 }
