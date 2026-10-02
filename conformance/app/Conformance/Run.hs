@@ -101,8 +101,8 @@ runRows rawRows receiptsDir = do
     -- none of whose requested rows it arms would pass vacuously, so it is
     -- refused here.
     when
-        (control /= Normal && not (any (armsRow (controlName control)) rows)) $
-        failWith
+        (control /= Normal && not (any (armsRow (controlName control)) rows))
+        $ failWith
             ( controlName control
                 <> " arms no requested row: under it the run would pass vacuously"
             )
