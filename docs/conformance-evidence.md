@@ -60,7 +60,7 @@ flowchart LR
 
 | Name | Requirement | Expected outcome | State |
 | --- | --- | --- | --- |
-| CG09 | Rejected when not rejectable. | refuse | unmet by a ruling: the registry deliberately does not do what the consumer's theorem requires |
+| CG09 | Rejected when not rejectable. | refuse | unmet by a ruling: the registry deliberately does not do what the consumer's theorem requires (alignment lambdasistemi/cardano-keri#468) |
 | CG11 | Empty fold (Modify []). | observe and report | held: the chain sided with Singular's model against the consumer's theorem, pending a ruling |
 | CG12 | Surplus actions beyond the matched request inputs. | observe and report | held: the chain sided with Singular's model against the consumer's theorem, pending a ruling |
 | CG19 | Refund routing follows the request: processed value routes to the request's destination minus the folder's tip; refunds go to the refund address recorded in custody; a crossed allocation is refused by the state script (interface, registry mode: no hook). Rejected produces refund owners at the recorded floor. | observe and report — refused, with the consumer-model conflict unresolved (crossed allocation enforced by the state script); rejected-action refund-floor control separate | held: the chain sided with Singular's model against the consumer's theorem, pending a ruling |

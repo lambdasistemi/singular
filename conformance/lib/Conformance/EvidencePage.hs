@@ -74,7 +74,13 @@ import System.Exit (exitFailure)
 import System.FilePath (takeExtension, (</>))
 import System.IO (hPutStrLn, stderr)
 
-import Conformance.Receipt (Receipt (..), Verdict (..), loadReceipts)
+import Conformance.Receipt
+    ( Receipt (..)
+    , Verdict (..)
+    , loadReceipts
+    , unmetReading
+    , unmetRuling
+    )
 import Conformance.Rows
     ( Row (..)
     , RowState (..)
@@ -82,6 +88,7 @@ import Conformance.Rows
     , effectiveState
     , loadRows
     )
+import Data.Maybe (isNothing)
 
 -- | Where the snapshot's files were copied from: one CI run's artifact.
 data Source = Source
@@ -243,10 +250,21 @@ validateSnapshot rows snap = do
         "the snapshot holds no contract result"
     mapM_ receiptBound (snapReceipts snap)
     mapM_ resultBound (snapContract snap)
+    mapM_ unmetStated (snapReceipts snap)
     sameCases
   where
     base = snapBase snap
     known = map rowId rows
+    -- An unmet row is published only with the ruling that keeps it unmet.
+    unmetStated r =
+        whenL
+            ( receiptVerdict r == UnmetByRuling
+                && isNothing (unmetRuling (receiptRow r))
+            )
+            ( "the receipt for "
+                <> T.unpack (receiptRow r)
+                <> " is unmet by a ruling no reader surface states"
+            )
     receiptBound r = do
         whenL
             (receiptRow r `notElem` known)
@@ -439,7 +457,7 @@ layout model rows snap =
         , Section
             2
             "Requirements a run did not pass"
-            (requirementTable [(r, verdictText v) | (r, v) <- recorded])
+            (requirementTable [(r, verdictText (rowId r) v) | (r, v) <- recorded])
             [ count recorded
                 <> " requirements ran on this code revision with a result that is not a \
                    \pass. They are listed with the reason the run recorded."
@@ -630,17 +648,15 @@ isFailed _ = False
 isNotSupported ContractNotSupported{} = True
 isNotSupported _ = False
 
-verdictText :: Verdict -> Text
-verdictText = \case
+verdictText :: Text -> Verdict -> Text
+verdictText row = \case
     AgreesWithModel -> "agrees with the model"
     HeldQ002 ->
         "held: the chain sided with Singular's model against the consumer's \
         \theorem, pending a ruling"
     DivergesFromLean -> "diverges: the chain contradicts Singular's model"
     ResolvedByRuling -> "resolved by a ruling: retained as history, not a pass"
-    UnmetByRuling ->
-        "unmet by a ruling: the registry deliberately does not do what the \
-        \consumer's theorem requires"
+    UnmetByRuling -> maybe "unmet by a ruling" unmetReading (unmetRuling row)
     Partial -> "partial"
 
 -- | python-markdown's table-of-contents id, as MkDocs renders it.

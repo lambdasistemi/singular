@@ -43,6 +43,8 @@ import Conformance.Receipt
     , RefusalInfo (..)
     , Verdict (..)
     , storyCorrespondence
+    , unmetReading
+    , unmetRuling
     , writeReceiptFile
     )
 
@@ -359,6 +361,7 @@ debtReport held unmet failed =
            \unmet by operator ruling; receipts carry verdict \
            \unmet-by-ruling): "
         <> named unmet
+        <> concatMap meaning unmet
         <> "\n- Failing against this candidate \
            \(verdict diverges-from-lean — the chain \
            \refused what the Lean requires \
@@ -368,3 +371,12 @@ debtReport held unmet failed =
            \carry to the user."
   where
     named rows = if null rows then "none" else unwords rows
+    -- Which ruling keeps each unmet row unmet, in plain words.
+    meaning row =
+        "\n  - "
+            <> row
+            <> ": "
+            <> maybe
+                "unmet by a ruling no reader surface states"
+                (T.unpack . unmetReading)
+                (unmetRuling (T.pack row))

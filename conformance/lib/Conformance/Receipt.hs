@@ -32,6 +32,9 @@ does not move.
 module Conformance.Receipt
     ( Outcome (..)
     , Verdict (..)
+    , UnmetRuling (..)
+    , unmetRuling
+    , unmetReading
     , RefusalInfo (..)
     , ReplayEvidence (..)
     , ReplayCorrespondence (..)
@@ -1459,3 +1462,44 @@ batchSteps :: FilePath -> Receipt -> [Value] -> Either String Receipt
 batchSteps path receipt steps
     | null steps = Left (path <> ": batch steps name no batch")
     | otherwise = receipt <$ mapM_ (batchRecordProblem path) steps
+
+{- | Why a row stands @unmet-by-ruling@: the two meanings the operator's
+rulings give that one verdict, each with the issue that would close it.
+-}
+data UnmetRuling
+    = {- | the registry deliberately does not do what the consumer's theorem
+      requires (ruling 2026-10-01); the alignment issue
+      -}
+      ConsumerRequirementUnmet Text
+    | {- | Singular's model has no counterpart to compare the chain's outcome
+      with, while the chain does what the requirement asks (ruling
+      2026-10-02); the model follow-up
+      -}
+      NoModelCounterpart Text
+    deriving stock (Show, Eq)
+
+{- | The ruling that keeps each unmet row unmet. A row recorded
+@unmet-by-ruling@ that is not listed has no stated meaning, and a reader
+surface refuses to render it.
+-}
+unmetRuling :: Text -> Maybe UnmetRuling
+unmetRuling = \case
+    "CG09" -> Just (ConsumerRequirementUnmet "lambdasistemi/cardano-keri#468")
+    "CG10" -> Just (NoModelCounterpart "lambdasistemi/singular#346")
+    "CG12" -> Just (NoModelCounterpart "lambdasistemi/singular#345")
+    "CS04" -> Just (NoModelCounterpart "lambdasistemi/singular#347")
+    _ -> Nothing
+
+-- | An unmet ruling in plain words, naming the issue that would close it.
+unmetReading :: UnmetRuling -> Text
+unmetReading = \case
+    ConsumerRequirementUnmet issue ->
+        "unmet by a ruling: the registry deliberately does not do what the \
+        \consumer's theorem requires (alignment "
+            <> issue
+            <> ")"
+    NoModelCounterpart issue ->
+        "unmet by a ruling: Singular's model has no counterpart to compare \
+        \with, while the chain does what the requirement asks (model follow-up "
+            <> issue
+            <> ")"
