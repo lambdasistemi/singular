@@ -30,6 +30,7 @@ import Singular.Registry.ContractNode
     ( Leg (..)
     , guardOnDevnet
     , nodeHarness
+    , phaseLogOnDevnet
     )
 import Singular.Registry.ContractSuite (contractSuite)
 import Singular.Registry.Node.Options (Backend (..))
@@ -50,6 +51,7 @@ main = do
                 contractSuite (nodeHarness Generated NodeBackend)
                 contractSuite (nodeHarness Generated IndexerBackend)
                 guardOnDevnet
+                phaseLogOnDevnet
 
 {- | The external node the command line names: all three settings, none,
 or a refusal naming what is missing.

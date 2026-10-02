@@ -63,6 +63,7 @@ module Singular.Registry.TxBuilder.Edges
     ) where
 
 import Control.Monad (unless, when)
+import Data.Aeson ((.=))
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
@@ -72,6 +73,7 @@ import Data.Map.Strict qualified as Map
 import Data.Ord (Down (..))
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
+import Data.Text (Text)
 import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
@@ -130,6 +132,7 @@ import Singular.Registry.Blueprint.Params
     )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId)
+import Singular.Registry.Node.PhaseLog (phaseLogFromEnv, timedPhase)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.ConnectedFold
     ( RawRedeemer (..)
@@ -802,6 +805,41 @@ bookEdgeMeasured
     -- ^ The wallet output the caller chose to fund and collateralise
     -> IO ConwayTx
 bookEdgeMeasured cfg v payerAddr tokenId key edge dest deposit approval refs chosen = do
+    lg <- phaseLogFromEnv
+    timedPhase
+        lg
+        "build-body"
+        ["builder" .= ("bookEdgeMeasured" :: Text)]
+        (const [])
+        ( measuredBody
+            cfg
+            v
+            payerAddr
+            tokenId
+            key
+            edge
+            dest
+            deposit
+            approval
+            refs
+            chosen
+        )
+
+-- | The measured booking, unlogged: the builder 'bookEdgeMeasured' times.
+measuredBody
+    :: CageConfig
+    -> Cage.View IO
+    -> Addr
+    -> TokenId
+    -> ByteString
+    -> Edge
+    -> (ByteString, ByteString)
+    -> Integer
+    -> BookingApproval
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Maybe TxIn
+    -> IO ConwayTx
+measuredBody cfg v payerAddr tokenId key edge dest deposit approval refs chosen = do
     requireAdmissible key edge
     let pp = Cage.viewProtocolParams v
     utxos <- Cage.viewUTxOsAt v payerAddr

@@ -19,6 +19,7 @@ import Singular.Registry.NodeCleanupSpec qualified
 import Singular.Registry.NodeSpec qualified
 import Singular.Registry.NodeWaitSpec qualified
 import Singular.Registry.OneViewSpec qualified
+import Singular.Registry.PhaseLogSpec qualified
 import Singular.Registry.ProviderSpec qualified
 import Singular.Registry.TxBuilder.BookEdgeSpec qualified
 import Singular.Registry.TxBuilder.BootSpec qualified
@@ -47,6 +48,7 @@ main = hspec $ do
     Singular.Registry.NodeSpec.spec
     Singular.Registry.NodeWaitSpec.spec
     Singular.Registry.OneViewSpec.spec
+    Singular.Registry.PhaseLogSpec.spec
     Singular.Registry.ProviderSpec.spec
     Singular.Registry.IndexerViewSpec.spec
     Singular.Registry.LifecycleSpec.spec

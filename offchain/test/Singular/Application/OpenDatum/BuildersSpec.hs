@@ -21,16 +21,19 @@ import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Short qualified as SBS
-import Data.Either (isLeft)
+import Data.Either (isLeft, isRight)
+import Data.IORef (atomicModifyIORef', newIORef, readIORef)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
-import Lens.Micro ((&), (.~))
+import Lens.Micro ((&), (.~), (^.))
 import Test.Hspec
 
 import Cardano.Ledger.Address (Addr)
+import Cardano.Ledger.Api.Tx (witsTxL)
 import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL, mkBasicTxOut)
+import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
@@ -38,6 +41,7 @@ import Cardano.Ledger.Mary.Value
     , MultiAsset (..)
     , PolicyID (..)
     )
+import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import PlutusCore.Data qualified as PLC
 import PlutusCore.Version (plcVersion110)
 import PlutusLedgerApi.V3 (serialiseUPLC)
@@ -48,6 +52,12 @@ import Singular.Application.OpenDatum.Book
 import Singular.Application.OpenDatum.Envelope
 import Singular.Application.OpenDatum.Script
 import Singular.Application.OpenDatum.Update
+import Singular.PhaseLogFixture
+    ( logObjects
+    , phaseLines
+    , textField
+    , withLogFile
+    )
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (NamingCodes (..), applyBytesParam)
 import Singular.Registry.Config (CageConfig (..))
@@ -58,7 +68,10 @@ import Singular.Registry.Deployment
     , renderOutRef
     )
 import Singular.Registry.Ledger (Coin (..), ConwayEra, TxIn)
-import Singular.Registry.StubView (stubView)
+import Singular.Registry.Node.PhaseLog (loggedProvider, phaseLogAt)
+import Singular.Registry.Provider (View (..), withView)
+import Singular.Registry.StubView (servingView, stubView)
+import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
 import Singular.Registry.TxBuilder.Edges (BookingApproval (..))
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
@@ -244,6 +257,52 @@ updates = describe "a payload update" $ do
                 , uaChange = wallet
                 , uaReference = Nothing
                 }
+    it
+        "logs the build of an update, refused or built, as the preview of an update reaches it (#363)"
+        $ withLogFile
+        $ \path -> do
+            r <- updatePayloadTx (args (liveWith 1 Nothing))
+            r `shouldSatisfy` isLeft
+            objects <- logObjects path
+            map (textField "builder") (phaseLines "build-body" objects)
+                `shouldBe` [Just "updatePayloadTx"]
+            map (textField "outcome") (phaseLines "build-body" objects)
+                `shouldBe` [Just "refused"]
+    it
+        "an update that builds is logged as one build and its evaluations, \
+        \the same as a refused one is (#363)"
+        $ withLogFile
+        $ \path -> do
+            evaluations <- newIORef (0 :: Int)
+            let view =
+                    stubView
+                        { viewProtocolParams = preprodParams
+                        , viewEvaluateTx = \tx -> do
+                            atomicModifyIORef' evaluations (\n -> (n + 1, ()))
+                            let Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
+                            pure (Map.map (const (Right (ExUnits 500_000 200_000_000))) m)
+                        }
+                funding = mkBasicTxOut wallet (MaryValue (Coin 9_000_000_000) mempty)
+                held = liveWith 1 (Just (envelopeToData envelope))
+            built <-
+                withView (loggedProvider (phaseLogAt path) (servingView view)) $ \v ->
+                    updatePayloadTx
+                        UpdateArgs
+                            { uaView = v
+                            , uaApplied = applied
+                            , uaHolding = (ref '4' 1, held)
+                            , uaPayload = PLC.I 7
+                            , uaFee = (ref '6' 0, funding)
+                            , uaChange = wallet
+                            , uaReference = Nothing
+                            }
+            built `shouldSatisfy` isRight
+            measured <- readIORef evaluations
+            objects <- logObjects path
+            measured `shouldSatisfy` (> 0)
+            length (phaseLines "eval" objects) `shouldBe` measured
+            map (textField "outcome") (phaseLines "build-body" objects)
+                `shouldBe` [Just "ok"]
     it "refuses a live output with no inline datum, building nothing" $ do
         r <- updatePayloadTx (args (liveWith 1 Nothing))
         r `shouldSatisfy` isLeft
