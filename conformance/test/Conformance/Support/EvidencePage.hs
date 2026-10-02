@@ -161,14 +161,16 @@ spec = describe "Appendix: computing the published evidence page" $ do
                 renderedPage
                     <$> rendered rows (snapshotOf "fixture-base" (unmetAs "CG10"))
             lineOf "CG10" stale
-                `shouldSatisfy` T.isInfixOf "Singular's model has no counterpart to compare with"
+                `shouldSatisfy` T.isInfixOf
+                    "the chain refuses, Lean has no counterpart to compare with (operator ruling 2026-10-02"
             lineOf "CG10" stale
                 `shouldSatisfy` T.isInfixOf "lambdasistemi/singular#346"
             early <-
                 renderedPage
                     <$> rendered rows (snapshotOf "fixture-base" (unmetAs "CG09"))
             lineOf "CG09" early
-                `shouldSatisfy` T.isInfixOf "does not do what the consumer's theorem requires"
+                `shouldSatisfy` T.isInfixOf
+                    "does not do what the consumer requirement states (operator ruling 2026-10-01"
             lineOf "CG09" early
                 `shouldSatisfy` T.isInfixOf "lambdasistemi/cardano-keri#468"
             case receipts of

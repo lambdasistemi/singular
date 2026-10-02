@@ -1471,9 +1471,8 @@ data UnmetRuling
       requires (ruling 2026-10-01); the alignment issue
       -}
       ConsumerRequirementUnmet Text
-    | {- | Singular's model has no counterpart to compare the chain's outcome
-      with, while the chain does what the requirement asks (ruling
-      2026-10-02); the model follow-up
+    | {- | the chain refuses and Lean has no counterpart to compare with
+      (ruling 2026-10-02, "Narrow #287"); the model follow-up
       -}
       NoModelCounterpart Text
     deriving stock (Show, Eq)
@@ -1495,11 +1494,10 @@ unmetReading :: UnmetRuling -> Text
 unmetReading = \case
     ConsumerRequirementUnmet issue ->
         "unmet by a ruling: the registry deliberately does not do what the \
-        \consumer's theorem requires (alignment "
+        \consumer requirement states (operator ruling 2026-10-01; "
             <> issue
             <> ")"
     NoModelCounterpart issue ->
-        "unmet by a ruling: Singular's model has no counterpart to compare \
-        \with, while the chain does what the requirement asks (model follow-up "
+        "unmet by a ruling: the chain refuses, Lean has no counterpart to \
+        \compare with (operator ruling 2026-10-02 \"Narrow #287\"); follow-up "
             <> issue
-            <> ")"
