@@ -36,6 +36,9 @@ flowchart LR
   Inspect3 --> Reject[reject: a request past both windows]
   Reject --> Insert2[insert: a new request]
   Insert2 --> Fold3[fold]
+  Fold3 --> Reclaim[reclaim: owner takes a new pending request back]
+  Reclaim --> Insert3[insert: another request]
+  Insert3 --> Fold4[fold]
 ```
 
 ## Build the commands
@@ -108,6 +111,20 @@ node=(--node-socket "$sock" --network-magic 42)
 
 # 12. Fold it.
 "$singular" registry fold --registry reg --blueprint "$blueprint" "${node[@]}" --wallet-skey alice.skey
+
+# 13. Book a different insertion and keep its request reference from the receipt.
+#     Let its processing deadline pass, then reclaim during its retract window.
+"$singular" registry insert --registry reg --blueprint "$blueprint" --key carol \
+  --payload payload.json "${node[@]}" --wallet-skey alice.skey
+"$singular" registry reclaim --registry reg --blueprint "$blueprint" --request TXID#IX \
+  "${node[@]}" --wallet-skey alice.skey
+
+# 14. The reclaimed request no longer blocks the next insertion.
+"$singular" registry insert --registry reg --blueprint "$blueprint" --key dave \
+  --payload payload.json "${node[@]}" --wallet-skey alice.skey
+
+# 15. Fold it with Bob's wallet.
+"$singular" registry fold --registry reg --blueprint "$blueprint" "${node[@]}" --wallet-skey bob.skey
 ```
 
 Run the fold of a request before the deadline its booking's receipt names
@@ -177,6 +194,25 @@ insert receipt and the preview receipt print the envelope it built.
     is that shape on this chain, not general reject-refund conformance.
 11. **`singular registry insert`** books a new request, which the cleared registry now takes.
 12. **`singular registry fold`** folds it, and the key reads `active`.
+13. **`singular registry reclaim`** takes back a new pending insertion that nobody
+    folded, inside its retract window. An earlier attempt is refused, naming when
+    it opens; another wallet is refused as not the request's owner. The owner's
+    successful receipt names the request, retract transaction, actual locked value,
+    recipient and returned output, with the request reference as its inline datum.
+    The journey reads the pending request before and the return after from the node
+    independently, and checks them against the receipt and saved signed bodies.
+    Edits to those amounts, recipient, output reference or binding fail the checks.
+    The tip slot against the converted deadline slots decides the window, never the
+    host clock. Opening requires a converted processing deadline that the tip has
+    reached. An unconverted retract deadline counts as still open, exactly as
+    reject reads it, while a known reached deadline proves closure. The built
+    interval must fit the window; a build failure fails the success check. The
+    devnet's conversion horizon remains a known availability limit (#370).
+    After the window closes the refusal names `registry reject`. Updates and
+    deletions cannot be retracted; Lean allows insertions and terminal witnesses.
+    The root, mirror and `state.json` stay where they were.
+14. **`singular registry insert`** books a new request after reclaim.
+15. **`singular registry fold`** folds it, and an independent inspection reads `active`.
 
 A command that stops prints why, in one outcome class with its own exit
 status: `client-refusal` (nothing submitted), `ledger-refusal`,

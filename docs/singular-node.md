@@ -1,7 +1,7 @@
 # Connecting singular to a node
 
 You run the `singular` registry commands — `create`, `insert`, `update`,
-`terminate`, `fold`, `reject` and `inspect` — against a cardano node you already run: a
+`terminate`, `fold`, `reclaim`, `reject` and `inspect` — against a cardano node you already run: a
 public test network's node, or a development network you started yourself.
 You tell each command where the node is and which network it carries; the
 command reads the chain through that node, signs with your key, submits,
@@ -14,26 +14,26 @@ command refuses before it reads or submits anything.
 
 | Setting | Commands | What it is |
 | --- | --- | --- |
-| `--node-socket PATH` | all seven | The node's node-to-client socket, the file `cardano-node` creates with `--socket-path`. |
-| `--network-magic N` | all seven | The magic of the network the node runs: 1 for preprod, 2 for preview, 42 for the factory development network. Mainnet's magic is refused for writes. |
-| `--wallet-skey FILE` | `create`, `insert`, `update`, `terminate`, `fold`, `reject` | Your payment signing key: a `cardano-cli` text envelope, its `cborHex` value or the 32 key bytes as bare hex, or the 32 raw key bytes. The key funds and signs every write; it is read and never printed — only the address derived from it appears. `inspect` refuses it. |
-| `--confirm-timeout SECONDS` | the six writes | How long each submission may take to appear on chain; ten minutes when not given. Past it the command stops with the submission journalled as unconfirmed and never resubmits it. |
-| `--backend node` or `--backend indexer` | all seven | Where the command reads addresses from: the node itself (`node`, the default) or an index the command builds by following the node's chain from its first block (`indexer`). Any other value is refused before anything runs. See [Reading through an index](#reading-through-an-index). |
-| `--registry DIR` | all seven | The directory that holds one registry: its identity, its mirror of the chain and its journal. `create` makes it; every later command reads it. |
-| `--blueprint PLUTUS_JSON` | all seven | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. |
+| `--node-socket PATH` | all eight | The node's node-to-client socket, the file `cardano-node` creates with `--socket-path`. |
+| `--network-magic N` | all eight | The magic of the network the node runs: 1 for preprod, 2 for preview, 42 for the factory development network. Mainnet's magic is refused for writes. |
+| `--wallet-skey FILE` | `create`, `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject` | Your payment signing key: a `cardano-cli` text envelope, its `cborHex` value or the 32 key bytes as bare hex, or the 32 raw key bytes. The key funds and signs every write; it is read and never printed — only the address derived from it appears. `inspect` refuses it. |
+| `--confirm-timeout SECONDS` | the seven writes | How long each submission may take to appear on chain; ten minutes when not given. Past it the command stops with the submission journalled as unconfirmed and never resubmits it. |
+| `--backend node` or `--backend indexer` | all eight | Where the command reads addresses from: the node itself (`node`, the default) or an index the command builds by following the node's chain from its first block (`indexer`). Any other value is refused before anything runs. See [Reading through an index](#reading-through-an-index). |
+| `--registry DIR` | all eight | The directory that holds one registry: its identity, its mirror of the chain and its journal. `create` makes it; every later command reads it. |
+| `--blueprint PLUTUS_JSON` | all eight | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. |
 | `--wallet-address ADDR` | `create`, `insert`, `update`, `terminate` | Your wallet's public address, in place of the signing key on a preview: the command reads that wallet and prints what it would submit, and signs, submits and journals nothing. |
 | `--seed TXID#IX` or `--preview` | `create` | The output of your wallet the new registry is booted from, which fixes its identity; or, with `--preview`, the identity a seed from your wallet would give, without submitting anything. |
 | `--preview` | `insert`, `update`, `terminate` | Build and measure what the command would submit — fee, measured units, stated collateral, outlay — from the wallet a public address names, and print it; nothing is signed, submitted or journalled. |
-| `--fund-input TXID#IX` | `insert`, `update`, `terminate`, `fold`, `reject` | The wallet output that funds and collateralises the write. `create` and `inspect` refuse it rather than ignore it. |
-| `--max-outlay LOVELACE` | `insert`, `update`, `terminate`, `fold`, `reject` | The most the write may put out of your wallet. A booking, an update, a fold or a reject past it is not signed; an insert or terminate given `--fold` whose fold, built after its booking confirms, costs more than the booking left of it stops partial, its request pending and the fold unsigned. `create` and `inspect` refuse it. |
+| `--fund-input TXID#IX` | `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject` | The wallet output that funds and collateralises the write. `create` and `inspect` refuse it rather than ignore it. |
+| `--max-outlay LOVELACE` | `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject` | The most the write may put out of your wallet. A booking, an update, a fold, reclaim or reject past it is not signed; an insert or terminate given `--fold` whose fold, built after its booking confirms, costs more than the booking left of it stops partial, its request pending and the fold unsigned. `create` and `inspect` refuse it. |
 | `--fold` | `insert`, `terminate` | Also fold the request this command just booked, in the same command and by the same routine `registry fold` runs. Without it the command books and stops. A preview and `update` refuse it. |
-| `--request TXID#IX` | `fold` | The pending request the caller expects to fold. The fold is refused when it is not the one pending; without it the fold takes the one pending request. |
+| `--request TXID#IX` | `fold`, `reclaim` | The pending request to act on. Required by reclaim, which takes back only that request. On fold it is optional: without it the fold takes the one pending request. A named request that is not pending is refused. |
 | `--key KEY` | `insert`, `update`, `terminate`, `inspect` | The registry key the command acts on, as text: its UTF-8 bytes, between 1 and 32 of them. A string that looks like hex is still text. Give this or `--key-hex`, not both. |
 | `--key-hex HEX` | `insert`, `update`, `terminate`, `inspect` | The same key spelled as base16 bytes, for a key that is not printable text. The receipts print every key as hex, and as text when its bytes are valid UTF-8. |
 | `--outputs-at ADDR` | `inspect` | A public address, bech32, whose outputs the receipt also lists, each with its output reference and what it actually holds, read from the node. It is a read apart from any write: nothing is signed, submitted or journalled. Every other command refuses it. |
 | `--payload DATUM_JSON` | `insert`, `update` | The key's payload, a datum in detailed-schema JSON. `insert` makes it the key's first value: the command builds the protected control itself, from the registry's state asset and active policy, the key, the signing wallet's payment key hash as controller (the public address's on a preview) and the deposit. `update` replaces the payload; the protected control stays as it was. A file that is not Plutus data is refused: by `insert`, in either mode, before anything is read from the node; by `update`, before anything is signed or submitted. |
 | `--deposit LOVELACE` | `insert` | The deposit the key's envelope protects, a whole number of lovelace: 2 000 000 when not given, and refused below that. The minimum is the client's own policy; the chain enforces only that a request's deposit equals the control's at booking and that an update keeps at least the control's deposit, and sets no floor. |
-| `--receipt FILE` | all seven | Also write the JSON receipt the command prints on standard output to this file. |
+| `--receipt FILE` | all eight | Also write the JSON receipt the command prints on standard output to this file. |
 
 The three node settings travel together on a write: naming one or two of
 them is refused as partially configured, and so is a write that names none,
@@ -99,6 +99,43 @@ clock and the deadline in the receipt.
 
 The deadline the fold is judged against is the one the booking's receipt
 states. A fold refused for it submitted nothing, and its request stays pending.
+
+## Reclaiming your pending request
+
+As a requester, you can take back your pending insertion or terminal-witness
+request after its processing deadline, while its retract window remains open.
+`registry reclaim` requires `--request TXID#IX` and signs with the wallet you
+give it. It refuses before building when that request is not pending, belongs
+to another wallet, or names an update or deletion edge that Lean cannot retract.
+
+```bash
+singular registry reclaim --registry reg --blueprint onchain/plutus.json \
+  --request TXID#IX --node-socket "$sock" --network-magic 42 \
+  --wallet-skey alice.skey --receipt reclaim.json
+```
+
+The command judges the window from its own view's tip slot and converted
+processing deadline: that deadline must convert, and the tip must reach it.
+The retract deadline stays open while its converted slot is ahead of the tip,
+or while it is beyond the view's conversion horizon, exactly as reject judges it.
+An unconverted processing deadline does not prove opening and is refused before
+the window, naming the opening time. A known, reached retract deadline is closed;
+the refusal names `registry reject` as the way to clear expired requests. No
+host clock or estimated slot decides admission. The development node's short
+conversion horizon may still prevent the builder from providing a valid bound;
+a build failure is no evidence of a successful reclaim.
+
+Inside the window, the existing retract builder pays the owner all the
+request's locked lovelace in one output whose inline datum is that request's
+reference. The command checks that output and the built validity interval before
+signing. When the retract deadline has no slot, the built upper bound must still
+be placed in time by that same view and be no later than the deadline. The
+receipt names the request, retract transaction, actual locked value,
+owner, return address and output, returned value and any minimum-output top-up.
+It does not assume a protected holding deposit ever reached the request.
+After confirmation, it reads back the consumed request, exact return output and
+unchanged registry root before journalling `observed`. The mirror and `state.json`
+do not move. The next request can be booked and folded normally.
 
 ## Rejecting expired requests
 
