@@ -116,8 +116,8 @@ spec = describe "the extent of a run's refusals" $ do
                 completeReceipts
                 `shouldSatisfy` mentions "CG77"
         it
-            "refuses a listed row's refusal whose replay records what the table does not list" $
-            extentProblems
+            "refuses a listed row's refusal whose replay records what the table does not list"
+            $ extentProblems
                 table
                 ( replaceEntry
                     ( withClasses
