@@ -25,6 +25,7 @@ module Singular.CLI.FoldRules
     , postBuildCheck
     , boundStartMs
     , boundStartTime
+    , postBuildDecision
     , placedEdge
 
       -- * Which request
@@ -355,3 +356,33 @@ placedEdge slotOf lo0 hi0 = do
             case placed of
                 Just _ -> go mid hi
                 Nothing -> go lo mid
+
+{- | The verdict on a built fold, from what the build left and what the view
+and the clock say: the host clock after the build, the deadline time, the
+deadline's slot when the view converts it, the built body's upper bound, and
+the view's conversion of a time to a slot. When the deadline has no slot the
+bound is placed in time first, by 'boundStartTime', and a bound the view
+cannot place gives the verdict that refuses it. It returns the time the bound
+begins at, when it was placed, beside the verdict. This is the one decision
+the fold takes before signing; "Singular.CLI.Fold" refuses unsigned on a
+refusal.
+-}
+postBuildDecision
+    :: (Monad m)
+    => (Integer -> m (Maybe Integer))
+    -- ^ The view's conversion of a time to a slot
+    -> Integer
+    -- ^ The host clock after the build, POSIX milliseconds
+    -> Integer
+    -- ^ The deadline, POSIX milliseconds
+    -> Maybe Integer
+    -- ^ The deadline's slot in the view, when it converts it
+    -> Maybe Integer
+    -- ^ The built fold's @invalidHereafter@
+    -> m (PostBuild, Maybe Integer)
+postBuildDecision slotOf now deadline deadlineSlot upper = do
+    boundTime <- case (deadlineSlot, upper) of
+        (Nothing, Just u) -> boundStartTime slotOf now u
+        _ -> pure Nothing
+    pure
+        (postBuildCheck now deadline deadlineSlot upper boundTime, boundTime)

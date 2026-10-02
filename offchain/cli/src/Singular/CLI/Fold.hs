@@ -359,9 +359,7 @@ foldPending at FoldSpec{..} = do
                 deadline <- deadlineOf v req st
                 now <- currentPosixMs
                 remaining <- case foldWindow foldMarginMs now (deadlineMs deadline) of
-                    FoldOpen left ->
-                        harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_BUILD" Nothing
-                            >> pure left
+                    FoldOpen left -> pure left
                     FoldClosed left ->
                         stop'
                             ClientRefusal
@@ -485,17 +483,14 @@ foldPending at FoldSpec{..} = do
                 postNow <- currentPosixMs
                 let upperI = toInteger . unSlotNo <$> upper
                     deadlineSlotI = toInteger . unSlotNo <$> deadlineSlot deadline
-                boundTime <- case (deadlineSlotI, upperI) of
-                    (Nothing, Just u) -> boundTimeOf v postNow u
-                    _ -> pure Nothing
-                let verdict =
-                        postBuildCheck
-                            postNow
-                            (deadlineMs deadline)
-                            deadlineSlotI
-                            upperI
-                            boundTime
-                    postBuildFields =
+                (verdict, boundTime) <-
+                    postBuildDecision
+                        (fmap (fmap (toInteger . unSlotNo)) . slotAt v)
+                        postNow
+                        (deadlineMs deadline)
+                        deadlineSlotI
+                        upperI
+                let postBuildFields =
                         [ ("foldDeadline", deadlineJson deadline)
                         , ("hostClockMs", toJSON postNow)
                         , ("validUntilSlot", toJSON upperI)
@@ -600,16 +595,6 @@ foldPending at FoldSpec{..} = do
             , fdDecidedAt = plDecidedAt plan
             , fdRemaining = plRemaining plan
             }
-
-{- | The time at which the built fold's upper-bound slot begins, as the view
-that built it converts times: bisection between a time it places before the
-slot and one it places at or after it. A bound it cannot place is no time.
--}
-boundTimeOf
-    :: Cage.View IO -> Integer -> Integer -> IO (Maybe Integer)
-boundTimeOf v = boundStartTime slotOf
-  where
-    slotOf ms = fmap (toInteger . unSlotNo) <$> slotAt v ms
 
 -- | The verdict's short name, as a receipt states it.
 postBuildName :: PostBuild -> Text

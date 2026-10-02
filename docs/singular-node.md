@@ -234,7 +234,7 @@ submitted.
 
 ## Test-harness hooks
 
-You never set these. The released `singular` reads twelve environment
+You never set these. The released `singular` reads eleven environment
 variables whose only purpose is to let the project's own tests stop a
 command at an exact point — to inspect it there, kill it there, or make it
 meet no answer from the node — and check what it leaves behind. When none
@@ -260,7 +260,6 @@ flowchart LR
 | `SINGULAR_HARNESS_HOLD_AFTER_SEND` | a submission sent, its answer not yet journalled |
 | `SINGULAR_HARNESS_HOLD_AFTER_SUBMIT` | the node's acceptance of a submission journalled |
 | `SINGULAR_HARNESS_HOLD_STEP` | names the submission step (for example `boot`, `fold`, `update`) at which the two holds above stop; they stop at no other step, and at none when it is unset |
-| `SINGULAR_HARNESS_HOLD_BEFORE_BUILD` | a fold that has passed its deadline guard, before it is built |
 | `SINGULAR_HARNESS_HOLD_BEFORE_COMMIT` | a fold's local commit about to start |
 | `SINGULAR_HARNESS_HOLD_AFTER_MIRROR` | a fold's mirror saved, the rest of its local commit not yet |
 | `SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED` | a fold committed locally, its observation not yet journalled |

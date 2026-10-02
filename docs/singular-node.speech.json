@@ -83,7 +83,7 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "45af91426c1de2a97dd9c26104ba4e586b76240b13fc0587ea5be75ef9f9adf1"
+    "sha256": "c0136445c3d686061cdeb136470d861c99b4c4fac0cb065c5835e4e71db4bd3d"
   },
   "reading-through-an-index": [
     {
@@ -125,7 +125,7 @@
   ],
   "test-harness-hooks": [
     {
-      "text": "You never set these. The released singular reads twelve environment variables whose only purpose is to let the project's own tests stop a command at an exact point, to inspect it, kill it, or make it meet no answer from the node. When none is set, as every operator runs it, they do nothing. The release verification checks this on every run.",
+      "text": "You never set these. The released singular reads eleven environment variables whose only purpose is to let the project's own tests stop a command at an exact point, to inspect it, kill it, or make it meet no answer from the node. When none is set, as every operator runs it, they do nothing. The release verification checks this on every run.",
       "pause": 500
     },
     {
@@ -133,7 +133,7 @@
       "pause": 400
     },
     {
-      "text": "A table lists the variables. The hold points are: before a write takes the registry lock; after a submission is sent; after the node's acceptance is journalled; after a fold passes its deadline guard and before it is built; before a fold's local commit; after its mirror is saved; before its observation is journalled; and, in a rollback, before the mirror is rebuilt and before the saved state follows. The hold step variable names the one submission step the two submission holds stop at, and with it unset they stop nowhere. The two drop variables name a step whose send does not happen, or whose answer is discarded.",
+      "text": "A table lists the variables. The hold points are: before a write takes the registry lock; after a submission is sent; after the node's acceptance is journalled; before a fold's local commit; after its mirror is saved; before its observation is journalled; and, in a rollback, before the mirror is rebuilt and before the saved state follows. The hold step variable names the one submission step the two submission holds stop at, and with it unset they stop nowhere. The two drop variables name a step whose send does not happen, or whose answer is discarded.",
       "pause": 500
     }
   ]

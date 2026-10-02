@@ -350,8 +350,7 @@ write @PATH.waiting@ and wait until @PATH@ exists, so a control can
 inspect or kill the process at exactly that boundary. The points are
 @SINGULAR_HARNESS_HOLD_AFTER_SEND@ (the send made, its answer not yet
 journalled), @SINGULAR_HARNESS_HOLD_AFTER_SUBMIT@ (the node's acceptance
-journalled), between a fold's deadline guard and its build,
-@SINGULAR_HARNESS_HOLD_BEFORE_BUILD@, and, around a fold's local commit,
+journalled), and, around a fold's local commit,
 @SINGULAR_HARNESS_HOLD_BEFORE_COMMIT@, @SINGULAR_HARNESS_HOLD_AFTER_MIRROR@
 and @SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED@; around a rollback's return of
 the local files, @SINGULAR_HARNESS_HOLD_BEFORE_REWIND@ (the rollback

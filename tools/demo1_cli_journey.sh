@@ -699,46 +699,31 @@ run late-insert success -- registry insert --key keyD --payload "$work/payload-i
 booked late-insert
 booking_only late-insert "$before" "$files_before"
 
-# A fold held between its guard and its build. The guard admits it with more
-# than the margin to spare; the process is held until less than the margin
-# remains, then released. The fold it builds is judged again from its own body
-# and the clock, and is refused before anything is signed: the journal does not
-# move. (The next section's late fold is the guard's own refusal.)
+# A fold near its request's deadline. Within the margin a fold needs to be
+# included, the client refuses it up front, by name, before it builds anything:
+# nothing is signed, submitted or journalled. (The fold the guard admits is judged
+# again from its built body, `postBuildDecision`, which a unit witness proves;
+# on a development network that second check cannot be reached end to end,
+# because near a window's end the library's own fallback times lie past the
+# node's horizon and no fold is built there, #370.)
 deadline_ms="$(field late-insert .foldDeadline.posixMs)"
 margin_ms=30000
-wait_ms=$((deadline_ms - 45000 - $(date +%s%3N)))
-[ "$wait_ms" -gt -20000 ] || setup_fail "the late request has less than 25 s left: the held fold would meet the guard instead"
+wait_ms=$((deadline_ms - 20000 - $(date +%s%3N)))
+[ "$wait_ms" -gt -10000 ] || setup_fail "the late request has less than 10 s of margin left: the near fold would meet the passed deadline instead"
 if [ "$wait_ms" -gt 0 ]; then
-  say "waiting $((wait_ms / 1000 + 1)) s until 45 s of the late request's window remain"
+  say "waiting $((wait_ms / 1000 + 1)) s until 20 s of the late request's window remain"
   sleep $((wait_ms / 1000 + 1))
 fi
-before="$(journal_lines "$reg")"
-rm -f "$work/build.go" "$work/build.go.waiting"
-SINGULAR_HARNESS_HOLD_BEFORE_BUILD="$work/build.go" \
-  "$singular" registry fold --request "$(field late-insert .request)" \
-  "${common[@]}" "${node[@]}" "${bob[@]}" >"$receipts/fold-held.json" 2>"$receipts/fold-held.err" &
-held=$!
-for _ in $(seq 1 600); do
-  [ -e "$work/build.go.waiting" ] && break
-  kill -0 "$held" 2>/dev/null || break
-  sleep 0.1
-done
-[ -e "$work/build.go.waiting" ] || setup_fail "the fold never reached its hold between the guard and the build: $(cat "$receipts/fold-held.json")"
-hold_for=$(((deadline_ms - margin_ms + 3000 - $(date +%s%3N)) / 1000 + 1))
-[ "$hold_for" -le 0 ] || sleep "$hold_for"
-touch "$work/build.go"
-status=0
-wait "$held" || status=$?
-[ "$(jq -r .outcome "$receipts/fold-held.json")" = client-refusal ] && [ "$status" -eq 10 ] \
-  || fail "the held fold: outcome $(jq -r .outcome "$receipts/fold-held.json") (exit $status), expected client-refusal"
-jq -e '.reason | contains("the built fold is not signed")' "$receipts/fold-held.json" >/dev/null \
-  || fail "the held fold was not refused by the post-build check: $(field fold-held .reason)"
-jq -e --slurpfile l "$receipts/late-insert.json" '
-    .foldDeadline.posixMs == $l[0].foldDeadline.posixMs and .pendingRequest == $l[0].request
-    and (.hostClockMs + 30000 >= .foldDeadline.posixMs) and (.validUntilSlot | type == "number")' \
-  "$receipts/fold-held.json" >/dev/null || fail "the held fold's refusal does not carry the bound, the clock and the deadline"
-[ "$(journal_lines "$reg")" = "$before" ] || fail "the held fold submitted something"
-say "a fold held between its guard and its build: refused before it was signed, the journal unmoved"
+refused fold-near client-refusal -- registry fold --request "$(field late-insert .request)" \
+  "${common[@]}" "${node[@]}" "${bob[@]}"
+jq -e --slurpfile l "$receipts/late-insert.json" --argjson m "$margin_ms" '
+    (.reason | contains("within the") and contains("no fold is built") and (contains("could not be built") | not))
+    and .foldDeadline.posixMs == $l[0].foldDeadline.posixMs and .pendingRequest == $l[0].request
+    and (.remainingMs > 0 and .remainingMs <= $m) and (.hostClockMs + $m >= .foldDeadline.posixMs)
+    and (.submissions | length == 0)' \
+  "$receipts/fold-near.json" >/dev/null \
+  || fail "the fold near the deadline was not refused up front, by name, with nothing submitted: $(field fold-near .reason)"
+say "a fold near the deadline: refused up front by the guard, naming it, nothing signed or submitted"
 
 # ------------------------------------------------------------------
 # 7. create races and interruptions, on their own targets

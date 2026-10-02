@@ -83,6 +83,7 @@ spec :: Spec
 spec = describe "registry fold" $ do
     window
     postBuild
+    postBuildDecisions
     boundTimes
     target
     kinds
@@ -539,3 +540,67 @@ boundTimes = describe "the start time of a built fold's bound" $ do
                     probed = runIdentity (placedEdge (Identity . conv) 0 (hi + 10))
                 in  maybe True (\t -> t >= 0 && t <= hi + 10 && isJust (conv t)) probed
                         === True
+
+-- ---------------------------------------------------------
+-- The decision on a built fold, before it is signed
+-- ---------------------------------------------------------
+
+{- | The post-build witness: the one decision the fold takes over a built
+body's upper bound, driven with a controlled clock and a controlled
+converter. The development network cannot reach it end to end: near a
+window's end the library's own fallback times lie past the node's
+horizon, so no fold is built there to be judged.
+-}
+postBuildDecisions :: Spec
+postBuildDecisions = describe
+    "the decision on a built fold's bound, over a clock and a converter"
+    $ do
+        let deadline = 1_700_000_120_000
+            early = deadline - 2 * foldMarginMs
+            -- slots of 100 ms, placed up to a horizon
+            viewAt horizon ms
+                | ms < 0 || ms > horizon = Identity Nothing
+                | otherwise = Identity (Just (ms `div` 100))
+            decide horizon now deadlineSlot upper =
+                runIdentity
+                    (postBuildDecision (viewAt horizon) now deadline deadlineSlot upper)
+            farHorizon = deadline + 600_000
+        it
+            "admits a bound whose start the view places at or before the deadline"
+            $ do
+                let bound = (early + libraryFallbackMs) `div` 100
+                decide farHorizon early Nothing (Just bound)
+                    `shouldBe` (PostBuildAdmitted BoundByTime, Just (bound * 100))
+        it
+            "admits at the deadline's own slot when the view converts the deadline"
+            $ decide farHorizon early (Just 5_000) (Just 5_000)
+                `shouldBe` (PostBuildAdmitted BoundByDeadlineSlot, Nothing)
+        it
+            "refuses a bound that begins after the deadline, which no time the search can confirm reaches"
+            $ do
+                let bound = (deadline + 1_000) `div` 100
+                fst (decide farHorizon early Nothing (Just bound))
+                    `shouldSatisfy` \case PostBuildRefused _ -> True; _ -> False
+        it "refuses a bound the view cannot place, never estimating a time" $
+            decide (-1) early Nothing (Just 12_345)
+                `shouldBe` (PostBuildRefused BoundUnconvertible, Nothing)
+        it "refuses a fold with no upper bound" $
+            fst (decide farHorizon early Nothing Nothing)
+                `shouldBe` PostBuildRefused NoUpperBound
+        it
+            "refuses, whatever the bound says, when the clock after the build is within the margin"
+            $ fst
+                (decide farHorizon (deadline - foldMarginMs) (Just 5_000) (Just 5_000))
+                `shouldBe` PostBuildRefused ClockWithinMargin
+        it
+            "admits a bound only when its start is placed at or before the deadline"
+            $ property
+            $ forAll
+                (chooseInteger (early `div` 100 - 50, deadline `div` 100 + 200))
+            $ \bound ->
+                forAll (chooseInteger (early, deadline + 20_000)) $ \horizon ->
+                    case decide horizon early Nothing (Just bound) of
+                        (PostBuildAdmitted _, Just start) ->
+                            (start <= deadline, start == bound * 100) === (True, True)
+                        (PostBuildAdmitted _, Nothing) -> property False
+                        (PostBuildRefused _, _) -> property True
