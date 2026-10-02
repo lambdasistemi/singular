@@ -37,18 +37,18 @@
   ],
   "_source": {
     "file": "naming-lifecycle.md",
-    "sha256": "a281c635fe83e462e4f72d2ccdfa5b01c382871c30a2c778a87c5cbea45b5944"
+    "sha256": "dd0960a93ea4655ba1a70204e405460117b8178909bd7b2cd10900b907e1f049"
   },
   "how-a-name-moves-in-the-registry": [
     {
       "pause": 400,
-      "text": "A name is one key in the registry's authenticated map, and the value of that key is a single byte: zero for absent, one for active, two for terminal. Seven requests move a key and nothing else does, and each one moves a witness token — the thing a reader actually looks at, never the root. The witnesses obey four laws. A witness moves only inside a fold. The fold decides how many and where, summing the witness column of the requests it consumed so the transaction's mint must equal that sum exactly. A terminal witness is its holder's to destroy, because saying a name is over costs the registry nothing. And the asset name is the registry key, so identity is the pair of policy and key. No application script runs at fold time: naming certifies an edge in advance by minting one approval whose name binds the edge, the key, the owner and the destination, and the cage recomputes that name from the request itself."
+      "text": "Naming is an instance of the registry, not a layer bolted beside it. A name is one key in the registry's authenticated map whose value is a single byte — absent, active or terminal — and seven requests move a key, each one moving a witness token that is what a reader looks at, never the root. The naming walkthrough states the state table, the seven requests and the four witness laws once; this page uses them without repeating them. Two things are naming's own. Ending a name needs the committed recovery key or the retirement quorum, and never the current control key alone. And no application script runs at fold time: the naming validator certifies an edge in advance by minting one approval whose asset name binds the edge, the key, the owner and the destination, and the registry recomputes that name from the request itself and refuses anything that does not match. A folder can be anyone, which is exactly why the destination is bound: without it a folder could route your name to itself."
     }
   ],
   "book-a-name": [
     {
       "pause": 400,
-      "text": "There is no pending claim any more, so there is nothing to fold and nothing to cancel. A booking is an approval and a request. Alice mints one approval whose asset name binds the edge, the key, herself as owner, and the destination — the application's own address with the hash of the datum her record will carry. Minting it needs her signature, and that is the only signature anybody ever checks for this booking. She attaches it to a registry request and lets go. Whoever folds the batch next creates her record at the address she bound, with the datum she bound, carrying the active witness and the deposit her request rode with, less the folder's tip."
+      "text": "A booking has no separate claim to stage first and no Withdraw edge to cancel one with. It is two things, an approval and a request, and the request waits until someone folds it. Alice mints one approval whose asset name binds the edge, the key, herself as owner, and the destination — the application's own address with the hash of the datum her record will carry. Minting it needs her signature, and that is the only signature anybody ever checks for this booking. She attaches it to a registry request and lets go. Whoever folds the batch next creates her record at the address she bound, with the datum she bound, carrying the active witness and the deposit her request rode with, less the folder's tip."
     }
   ],
   "witness-that-a-name-is-free": [

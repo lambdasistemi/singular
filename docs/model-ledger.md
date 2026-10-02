@@ -96,7 +96,7 @@ promises over states reachable from genesis.
 Not covered, and named rather than left to be discovered:
 
 - **On-chain conformance.** Nothing here says the cage validator implements this
-  model. That is the next ticket's obligation.
+  model. Whether the deployed validators do is the subject of the [conformance evidence](conformance-evidence.md), not of this ledger.
 - **The simulator.** It replays 38 registry rows, 24 naming rows and 21
   lifecycle rows and reproduces each verdict, and a mirror check binds the
   Lean it ships to the Lean it was built from. That is agreement on the

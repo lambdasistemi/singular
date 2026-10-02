@@ -11,29 +11,30 @@ nav:
       - Index: docs/demos/index.md
       - 23 October — Maintain and recover a name: docs/demos/d02-naming.md
       - 30 October — Name Your Address stretch: docs/demos/d03-escrow.md
-  - Design:
-      - Responsibilities: docs/overview.md
+  - Original design:
+      - Responsibilities and terminology: docs/overview.md
       - Lifecycle and custody: docs/lifecycle.md
       - Certification: docs/certification.md
   - Naming walkthrough: docs/naming-demo.md
   - Naming lifecycle: docs/naming-lifecycle.md
   - Ending a name: docs/retirement.md
   - Recovery and retirement: docs/recovery-retirement.md
-  - Record value and recovery: docs/record-value.md
+  - Keep recovery and retirement available: docs/record-value.md
   - Run against your own preprod node: docs/consumer-onboarding.md
   - Connecting singular to a node: docs/singular-node.md
   - Download and verify a release: docs/verify-release.md
   - Conformance evidence: docs/conformance-evidence.md
+  - Consumer conformance record: docs/consumer-conformance.md
   - The preprod record: docs/preprod.md
   - Demo 1 on preprod, what a reviewer checks: docs/demo1-preprod.md
   - Executable candidate:
       - Review guide: docs/design.md
       - Play the simulation: docs/simulation.md
-      - First demo model play: docs/first-demo.md
+      - First demo, registry handoff on preprod: docs/first-demo.md
       - Decisions and abstractions: docs/decisions.md
       - Model coverage: docs/model-ledger.md
       - Theorem statements: docs/theorems.md
-      - Mutation proposals: docs/mutants.md
+      - Mutation ledger: docs/mutants.md
       - Lean clarity: docs/LEAN-CLARITY.md
   - Prior art: docs/prior-art.md
   - Protocol specification: specs/protocol/spec.md
