@@ -23,6 +23,7 @@ import Data.ByteString.Short qualified as SBS
 import Data.Functor.Identity (Identity (..))
 import Data.List (isInfixOf)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (isJust)
 import Data.Text qualified as T
 import Data.Word (Word64)
 import System.Directory (createDirectoryIfMissing)
@@ -82,6 +83,7 @@ spec :: Spec
 spec = describe "registry fold" $ do
     window
     postBuild
+    boundTimes
     target
     kinds
     funding
@@ -242,27 +244,28 @@ postBuild = describe "the built fold's validity bound" $ do
                 | otherwise = Identity Nothing
         runIdentity (boundStartMs slotOf 0 8 3) `shouldBe` Nothing
     it
-        "returns a time only when the view placed it at the slot and the time before it short of it" $
-        property $
-            forAll (chooseInteger (2, 9)) $ \k ->
-                forAll (chooseInteger (0, 8)) $ \r ->
-                    forAll (chooseInteger (10, 5_000)) $ \u ->
-                        forAll (chooseInteger (0, 400)) $ \loStep ->
-                            -- a converter that fails at arbitrary interior times
-                            let conv ms
-                                    | ms < 0 = Nothing
-                                    | ms `mod` k == r `mod` k && ms /= lo && ms /= hi = Nothing
-                                    | otherwise = Just (ms `div` 10)
-                                lo = max 0 (u * 10 - loStep - 1)
-                                hi = u * 10 + 50
-                                confirmed t = case (conv t, conv (t - 1)) of
-                                    (Just a, Just b) -> a >= u && b < u
-                                    _ -> False
-                            in  maybe
-                                    True
-                                    confirmed
-                                    (runIdentity (boundStartMs (Identity . conv) lo hi u))
-                                    === True
+        "returns a time only when the view placed it at the slot and the time before it short of it"
+        $ property
+        $ forAll (chooseInteger (2, 9))
+        $ \k ->
+            forAll (chooseInteger (0, 8)) $ \r ->
+                forAll (chooseInteger (10, 5_000)) $ \u ->
+                    forAll (chooseInteger (0, 400)) $ \loStep ->
+                        -- a converter that fails at arbitrary interior times
+                        let conv ms
+                                | ms < 0 = Nothing
+                                | ms `mod` k == r `mod` k && ms /= lo && ms /= hi = Nothing
+                                | otherwise = Just (ms `div` 10)
+                            lo = max 0 (u * 10 - loStep - 1)
+                            hi = u * 10 + 50
+                            confirmed t = case (conv t, conv (t - 1)) of
+                                (Just a, Just b) -> a >= u && b < u
+                                _ -> False
+                        in  maybe
+                                True
+                                confirmed
+                                (runIdentity (boundStartMs (Identity . conv) lo hi u))
+                                === True
     it
         "finds nothing when the view does not place the ends around the slot"
         $ do
@@ -477,3 +480,62 @@ funding = describe "the funding a fold is built from" $ do
             fundedView (Just chosen) wallet serving >>= \case
                 Left why -> why `shouldSatisfy` isInfixOf "not an ada-only output"
                 Right _ -> expectationFailure ("accepted " <> show chosen)
+
+-- ---------------------------------------------------------
+-- The start time of a fold's bound, inside the node's horizon
+-- ---------------------------------------------------------
+
+boundTimes :: Spec
+boundTimes = describe "the start time of a built fold's bound" $ do
+    -- A view that places a time only up to its horizon, in slots of 100 ms.
+    let viewAt horizon ms
+            | ms < 0 || ms > horizon = Identity Nothing
+            | otherwise = Identity (Just (ms `div` 100))
+        startOf slot = slot * 100
+    it
+        "is found when the library bounded the fold inside a horizon that ends before the clock's reach"
+        $ property
+        $ forAll (chooseInteger (1_000_000, 9_000_000))
+        $ \libraryClock ->
+            forAll (elements [libraryFallbackMs, 5_000, 2_000]) $ \width ->
+                forAll (chooseInteger (1, 20_000)) $ \elapsed ->
+                    forAll (chooseInteger (0, 5_000)) $ \spare ->
+                        -- the library converted libraryClock + width; the host clock has
+                        -- since moved on by `elapsed`, and the horizon ends `spare` past
+                        -- the later of the two, so the clock's own reach (+ 30 s) is past it
+                        let now = libraryClock + elapsed
+                            horizon = max (libraryClock + width) now + spare
+                            bound = (libraryClock + width) `div` 100
+                        in  runIdentity (boundStartTime (viewAt horizon) now bound)
+                                === Just (startOf bound)
+    it
+        "is still refused when no time the view places is at or after the bound's slot"
+        $ property
+        $ forAll (chooseInteger (1_000_000, 9_000_000))
+        $ \now ->
+            forAll (chooseInteger (1, 400)) $ \beyond ->
+                -- the horizon ends before the bound's slot begins
+                let horizon = now + 5_000
+                    bound = horizon `div` 100 + beyond
+                in  runIdentity (boundStartTime (viewAt horizon) now bound) === Nothing
+    it "is found as before when the horizon is far" $
+        property $
+            forAll (chooseInteger (1_000_000, 9_000_000)) $ \now ->
+                forAll (chooseInteger (1, libraryFallbackMs)) $ \width ->
+                    let bound = (now + width) `div` 100
+                    in  runIdentity (boundStartTime (viewAt (now + 600_000)) now bound)
+                            === Just (startOf bound)
+    it
+        "searches only times the view places, whatever it fails to place inside the range"
+        $ property
+        $ forAll (chooseInteger (2, 9))
+        $ \k ->
+            forAll (chooseInteger (100, 5_000)) $ \hi ->
+                -- a converter that places times up to hi - 1 except at arbitrary interior ones
+                let conv ms
+                        | ms < 0 || ms >= hi = Nothing
+                        | ms /= 0 && ms `mod` k == 1 = Nothing
+                        | otherwise = Just (ms `div` 10)
+                    probed = runIdentity (placedEdge (Identity . conv) 0 (hi + 10))
+                in  maybe True (\t -> t >= 0 && t <= hi + 10 && isJust (conv t)) probed
+                        === True

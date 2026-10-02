@@ -251,11 +251,11 @@ runInsert a = case entryMode a of
                                 Success
                                 ( keyFields key
                                     <> [ ("booking", toJSON (txIdHex booking))
-                                , ("fold", toJSON (txIdHex (fdTx folded)))
-                                , ("liveOutput", toJSON (txInText liveIn))
-                                , ("envelope", envelopeToJson seen)
-                                , ("root", toJSON (hexT (fdRoot folded)))
-                                    ]
+                                       , ("fold", toJSON (txIdHex (fdTx folded)))
+                                       , ("liveOutput", toJSON (txInText liveIn))
+                                       , ("envelope", envelopeToJson seen)
+                                       , ("root", toJSON (hexT (fdRoot folded)))
+                                       ]
                                 )
                         Released{} -> receipt "insert" Success []
                 else
@@ -264,10 +264,10 @@ runInsert a = case entryMode a of
                             "insert"
                             Success
                             ( keyFields key
-                                    <> pendingFields (callerKey at) booking deadline
-                                    <> [ ("envelope", envelopeToJson envelope)
-                                       , ("envelopeHash", toJSON (hexT (envelopeHash envelope)))
-                                       ]
+                                <> pendingFields (callerKey at) booking deadline
+                                <> [ ("envelope", envelopeToJson envelope)
+                                   , ("envelopeHash", toJSON (hexT (envelopeHash envelope)))
+                                   ]
                             )
 
 -- update
@@ -339,10 +339,10 @@ runUpdate a = case entryMode a of
                     Success
                     ( keyFields key
                         <> [ ("update", toJSON (txIdHex signed))
-                    , ("liveOutput", toJSON (txInText liveIn))
-                    , ("payload", dataToJson (envPayload seen))
-                    , ("root", toJSON (hexT rootAfter))
-                        ]
+                           , ("liveOutput", toJSON (txInText liveIn))
+                           , ("payload", dataToJson (envPayload seen))
+                           , ("root", toJSON (hexT rootAfter))
+                           ]
                     )
 
 -- ---------------------------------------------------------
@@ -374,11 +374,11 @@ runTerminate a = case entryMode a of
                                 Success
                                 ( keyFields key
                                     <> [ ("booking", toJSON (txIdHex booking))
-                                , ("fold", toJSON (txIdHex (fdTx folded)))
-                                , ("released", toJSON (txInText released))
-                                , ("deposit", toJSON deposit)
-                                , ("root", toJSON (hexT (fdRoot folded)))
-                                    ]
+                                       , ("fold", toJSON (txIdHex (fdTx folded)))
+                                       , ("released", toJSON (txInText released))
+                                       , ("deposit", toJSON deposit)
+                                       , ("root", toJSON (hexT (fdRoot folded)))
+                                       ]
                                 )
                         Delivered{} -> receipt "terminate" Success []
                 else
@@ -387,8 +387,8 @@ runTerminate a = case entryMode a of
                             "terminate"
                             Success
                             ( keyFields key
-                                    <> pendingFields (callerKey at) booking deadline
-                                    <> [ ("released", toJSON (txInText liveIn))
-                                       , ("deposit", toJSON (ctlDeposit c))
-                                       ]
+                                <> pendingFields (callerKey at) booking deadline
+                                <> [ ("released", toJSON (txInText liveIn))
+                                   , ("deposit", toJSON (ctlDeposit c))
+                                   ]
                             )

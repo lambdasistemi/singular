@@ -24,6 +24,8 @@ module Singular.CLI.FoldRules
     , BoundBasis (..)
     , postBuildCheck
     , boundStartMs
+    , boundStartTime
+    , placedEdge
 
       -- * Which request
     , FoldTargetRefusal (..)
@@ -291,3 +293,65 @@ fundedView chosen addr v = do
                     { Cage.viewUTxOsAt = \a ->
                         if a == addr then pure [one] else Cage.viewUTxOsAt v a
                     }
+
+{- | The time at which a built fold's upper-bound slot begins, as the view
+that built it converts times; nothing when it cannot place the bound.
+
+The bound is the view's conversion of a time within 'libraryFallbackMs' of
+the library's clock reading, which is no later than the host's clock @now@
+here, so the bound's start lies within 'libraryFallbackMs' of @now@, and the
+view placed that time, so it lies inside the view's horizon. The search for
+the bound's start therefore uses only times the view places: its high end is
+the latest time in that reach the view places ('placedEdge'), never a time
+beyond its horizon, which it could only answer with nothing.
+-}
+boundStartTime
+    :: (Monad m)
+    => (Integer -> m (Maybe Integer))
+    -- ^ The view's conversion of a time to a slot
+    -> Integer
+    -- ^ The host clock after the build, POSIX milliseconds
+    -> Integer
+    -- ^ The built fold's @invalidHereafter@
+    -> m (Maybe Integer)
+boundStartTime slotOf now u = firstJust attempts
+  where
+    attempts =
+        [ placedEdge slotOf now (now + libraryFallbackMs)
+            >>= maybe (pure Nothing) (\hi -> boundStartMs slotOf (now - before) hi u)
+        | before <- [60_000, 10_000, 1_000]
+        ]
+    firstJust [] = pure Nothing
+    firstJust (a : rest) =
+        a >>= \found -> maybe (firstJust rest) (pure . Just) found
+
+{- | The latest time in @[lo, hi]@ the view places in a slot, found by asking
+only the view: @hi@ itself when it places it; otherwise, from a placed @lo@,
+the edge of what it places, by bisection. Nothing when it places neither
+@lo@ nor @hi@. A time is returned only if the view placed it.
+-}
+placedEdge
+    :: (Monad m)
+    => (Integer -> m (Maybe Integer))
+    -> Integer
+    -> Integer
+    -> m (Maybe Integer)
+placedEdge slotOf lo0 hi0 = do
+    atHi <- slotOf hi0
+    case atHi of
+        Just _ -> pure (Just hi0)
+        Nothing -> do
+            atLo <- slotOf lo0
+            case atLo of
+                Nothing -> pure Nothing
+                Just _ -> go lo0 hi0
+  where
+    -- lo is placed by the view, hi is not
+    go lo hi
+        | hi - lo <= 1 = pure (Just lo)
+        | otherwise = do
+            let mid = lo + (hi - lo) `div` 2
+            placed <- slotOf mid
+            case placed of
+                Just _ -> go mid hi
+                Nothing -> go lo mid

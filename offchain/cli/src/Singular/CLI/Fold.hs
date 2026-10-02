@@ -607,17 +607,9 @@ slot and one it places at or after it. A bound it cannot place is no time.
 -}
 boundTimeOf
     :: Cage.View IO -> Integer -> Integer -> IO (Maybe Integer)
-boundTimeOf v now u = firstJust attempts
+boundTimeOf v = boundStartTime slotOf
   where
     slotOf ms = fmap (toInteger . unSlotNo) <$> slotAt v ms
-    attempts =
-        [ boundStartMs slotOf (now - before) (now + ahead) u
-        | before <- [60_000, 10_000, 1_000]
-        , ahead <- [libraryFallbackMs, 5_000, 2_000]
-        ]
-    firstJust [] = pure Nothing
-    firstJust (a : rest) =
-        a >>= \found -> maybe (firstJust rest) (pure . Just) found
 
 -- | The verdict's short name, as a receipt states it.
 postBuildName :: PostBuild -> Text
