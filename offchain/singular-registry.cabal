@@ -69,6 +69,7 @@ library
 
   exposed-modules:
     Singular.Application.OpenDatum.Book
+    Singular.Application.OpenDatum.Build
     Singular.Application.OpenDatum.Envelope
     Singular.Application.OpenDatum.Release
     Singular.Application.OpenDatum.Script
@@ -676,6 +677,7 @@ test-suite cage-tests
   main-is:          Main.hs
   other-modules:
     Singular.Application.OpenDatum.BuildersSpec
+    Singular.Application.OpenDatum.BuildSpec
     Singular.Application.OpenDatum.EnvelopeSpec
     Singular.CLISpec
     Singular.CLI.Command
