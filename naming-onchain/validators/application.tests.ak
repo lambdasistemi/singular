@@ -34,7 +34,7 @@ test mirror_decodes_registry_state() {
 /// LM01-maintenance-accepts: the controller signs; only the payment
 /// destination is maintained (Some(destination) -> none); control,
 /// commitment and quorum are preserved; the record's value continues.
-test lm01_maintenance_accepts() {
+test maintenance_accepts() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   application.application.spend(
@@ -53,7 +53,7 @@ test lm01_maintenance_accepts() {
 
 /// LM02-maintenance-unauthorized-refused: the control signature is the
 /// only difference; its absence alone refuses.
-test lm02_maintenance_unauthorized_refuses() fail {
+test maintenance_unauthorized_refuses() fail {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   application.application.spend(
@@ -72,7 +72,7 @@ test lm02_maintenance_unauthorized_refuses() fail {
 
 /// LM03-maintenance-field-tamper-refused: signed, but the
 /// next-control commitment was tampered with.
-test lm03_commitment_tamper_refuses() fail {
+test commitment_tamper_refuses() fail {
   let source = source_record()
   let tampered =
     with_commitment(fixtures.maintained_record(), tampered_commitment)
@@ -92,7 +92,7 @@ test lm03_commitment_tamper_refuses() fail {
 
 /// LM04-maintenance-quorum-alteration-refused: signed, but the
 /// retirement quorum was altered — it is not maintainable.
-test lm04_quorum_alteration_refuses() fail {
+test quorum_alteration_refuses() fail {
   let source = source_record()
   let altered =
     with_quorum(
@@ -285,7 +285,7 @@ fn recovery_successor() {
   )
 }
 
-test lr01_recovery_accepts() {
+test recovery_accepts() {
   let source = recovery_source()
   let successor = recovery_successor()
   application.application.spend(
@@ -331,7 +331,7 @@ fn forged_commitment(revealed: ByteArray) -> ByteArray {
   blake2b_256(revealed)
 }
 
-test lr02_wrong_reveal_refuses() fail {
+test wrong_reveal_refuses() fail {
   let source = recovery_source()
   let successor = recovery_successor()
   application.application.spend(
@@ -353,7 +353,7 @@ test lr02_wrong_reveal_refuses() fail {
   )
 }
 
-test lr03_missing_signer_refuses() fail {
+test missing_signer_refuses() fail {
   let source = recovery_source()
   let successor = recovery_successor()
   application.application.spend(
@@ -375,7 +375,7 @@ test lr03_missing_signer_refuses() fail {
   )
 }
 
-test lr04_replay_refuses() fail {
+test replay_refuses() fail {
   let consumed_reveal = recovery_revealed
   let successor_as_source =
     with_commitment(
@@ -402,7 +402,7 @@ test lr04_replay_refuses() fail {
   )
 }
 
-test lr05_old_controller_refuses() fail {
+test old_controller_refuses() fail {
   let recovered = fixtures.with_control(source_record(), recovery_revealed)
   let maintained =
     fixtures.with_control(fixtures.maintained_record(), recovery_revealed)
@@ -425,7 +425,7 @@ test lr05_old_controller_refuses() fail {
   )
 }
 
-test lr05_recovered_controller_maintains_accepts() {
+test recovered_controller_maintains_accepts() {
   let recovered = fixtures.with_control(source_record(), recovery_revealed)
   let maintained =
     fixtures.with_control(fixtures.maintained_record(), recovery_revealed)
@@ -448,7 +448,7 @@ test lr05_recovered_controller_maintains_accepts() {
   )
 }
 
-test lr06_forged_digest_refuses() fail {
+test forged_digest_refuses() fail {
   let source =
     with_commitment(source_record(), forged_commitment(recovery_revealed))
   let successor = recovery_successor()
@@ -471,7 +471,7 @@ test lr06_forged_digest_refuses() fail {
   )
 }
 
-test lr07_wrong_signer_refuses() fail {
+test wrong_signer_refuses() fail {
   let source = recovery_source()
   let successor = recovery_successor()
   application.application.spend(
@@ -493,7 +493,7 @@ test lr07_wrong_signer_refuses() fail {
   )
 }
 
-test lr08_missing_fresh_refuses() fail {
+test missing_fresh_refuses() fail {
   let source = recovery_source()
   let stale =
     with_commitment(
@@ -514,7 +514,7 @@ test lr08_missing_fresh_refuses() fail {
   )
 }
 
-test lr10_registry_tamper_refuses() fail {
+test registry_tamper_refuses() fail {
   let source = recovery_source()
   let successor = recovery_successor()
   application.application.spend(
@@ -536,7 +536,7 @@ test lr10_registry_tamper_refuses() fail {
   )
 }
 
-test lr11_quorum_tamper_refuses() fail {
+test quorum_tamper_refuses() fail {
   let source = recovery_source()
   let tampered =
     with_quorum(
@@ -651,7 +651,7 @@ fn retirement_source() {
 }
 
 fn retirement_claim_value() {
-  // #157 D-ASSET: the record carries the ACTIVE token whose asset name
+  // #157 token-name-is-registry-key: the record carries the ACTIVE token whose asset name
   // IS the registry key — the hashed representative name is gone.
   add(record_value, rep_policy, fixtures.registry_key, 1)
 }
@@ -705,7 +705,7 @@ fn retirement_custody_output(value) {
 
 /// LT02-quorum-retirement-accepts: the quorum alone retires with no
 /// controller signature.
-test lt02_quorum_retirement_accepts() {
+test quorum_retirement_accepts() {
   let source = retirement_source()
   application.application.spend(
     Some(fixtures.as_datum(source)),
@@ -729,7 +729,7 @@ test lt02_quorum_retirement_accepts() {
 
 /// LT03-insufficient-quorum-refused: one distinct signature short of the
 /// threshold, no controller signature.
-test lt03_insufficient_quorum_refuses() fail {
+test insufficient_quorum_refuses() fail {
   let source = retirement_source()
   application.application.spend(
     Some(fixtures.as_datum(source)),
@@ -747,7 +747,7 @@ test lt03_insufficient_quorum_refuses() fail {
 
 /// eraseDups is load-bearing: one member signing twice does not reach a
 /// threshold of two.
-test lt03_duplicate_member_refuses() fail {
+test duplicate_member_refuses() fail {
   let source = retirement_source()
   application.application.spend(
     Some(fixtures.as_datum(source)),
@@ -768,7 +768,7 @@ test lt03_duplicate_member_refuses() fail {
 /// at threshold 2 are well-formed (distinct 2), but the duplicated
 /// member alone must not retire. A `length` in place of `distinct_count`
 /// would accept this.
-test lt03_duplicate_stored_member_refuses() fail {
+test duplicate_stored_member_refuses() fail {
   let source =
     with_quorum(
       source_record(),
@@ -846,7 +846,7 @@ fn extra_token(value) {
   add(value, extra_policy, "junk", 1)
 }
 
-test lr01_with_extra_token_refuses() {
+test with_extra_token_refuses() {
   let source = recovery_source()
   let successor = recovery_successor()
   !application.application.spend(
@@ -873,7 +873,7 @@ test lr01_with_extra_token_refuses() {
   )
 }
 
-test lm01_with_extra_token_accepts() {
+test with_extra_token_accepts() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   application.application.spend(

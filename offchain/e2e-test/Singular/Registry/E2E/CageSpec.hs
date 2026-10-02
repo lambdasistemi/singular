@@ -3,7 +3,7 @@
 
 {- |
 Module      : Singular.Registry.E2E.CageSpec
-Description : E2E tests for the full cage protocol
+Description : end-to-end tests for the full cage protocol
 License     : Apache-2.0
 -}
 module Singular.Registry.E2E.CageSpec
@@ -140,8 +140,8 @@ import Singular.Registry.Types
     , edgeInsertActive
     )
 
-{- | Full cage protocol E2E test spec.
-Receives the blueprint resolved by the E2E entrypoint.
+{- | Full cage protocol end-to-end test spec.
+Receives the blueprint resolved by the end-to-end entrypoint.
 -}
 spec :: Blueprint -> Spec
 spec bp = describe "Request processing, retraction and rejection" $ do
@@ -167,7 +167,7 @@ spec bp = describe "Request processing, retraction and rejection" $ do
 -- Test implementation
 -- ---------------------------------------------------------
 
--- | Full cage E2E coverage.
+-- | Full cage end-to-end coverage.
 cageFlowSpec
     :: SBS.ShortByteString
     -> SBS.ShortByteString
@@ -186,7 +186,7 @@ cageFlowSpec stateBytes requestBytes = do
                         tokenId
                         Testnet
 
-            -- #157 C2: an insert takes an edge only when its value is a
+            -- #157 seven-admitted-edges: an insert takes an edge only when its value is a
             -- leaf. This row books the witnessed absence of "hello"
             -- (edge 0), carrying the approval the cage demands of every
             -- processed request, and folds it.
@@ -993,7 +993,7 @@ cageCfg
 cageCfg stateBytes requestBytes codes seed =
     let appliedStateBytes = stateBytes
         stateHash = computeScriptHash appliedStateBytes
-        -- #157 D-BOOT: the four pins for THIS registry identity, derived
+        -- #157 genesis-policy-pins: the four pins for THIS registry identity, derived
         -- from the naming partition's own compiled code exactly as the
         -- conformance rows derive them (A-014). The registry id a witness
         -- policy is parameterized by is the state policy plus the token
@@ -1018,7 +1018,7 @@ cageCfg stateBytes requestBytes codes seed =
             }
 
 -- ---------------------------------------------------------
--- Registry-mode edges (#157 C2, C4, D-APPROVAL)
+-- Registry-mode edges (#157 seven-admitted-edges, tree-edge-admission-by-approval, approval-asset-binding)
 -- ---------------------------------------------------------
 
 {- | Sign with the genesis key, submit and wait: the submission

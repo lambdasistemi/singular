@@ -2178,7 +2178,7 @@ holdingsOf reg key live =
     , heldOf c o == 1
     ]
 
--- | The empty query GADT a hand-built program runs under.
+-- | The empty query generalized algebraic data type a hand-built program runs under.
 data NoQuery a
 
 {- | Build one hand-made transaction against the key's live holding and

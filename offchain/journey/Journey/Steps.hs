@@ -125,7 +125,7 @@ stepRequest cfg codes prov caps tid = do
     before <- Cage.withView prov (`Cage.viewUTxOsAt` reqAddr)
     require "request: request address empty before the request" $
         null before
-    -- #157 C4, D-APPROVAL: a tree edge is BOOKED, not merely requested.
+    -- #157 tree-edge-admission-by-approval, approval-asset-binding: a tree edge is BOOKED, not merely requested.
     -- The approval the registry's open application mints (its code read
     -- from REGISTRY_BLUEPRINT) certifies which edge this is, for whom and
     -- where it delivers; the request carries it to the fold.

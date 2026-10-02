@@ -4,8 +4,8 @@ Description : Split out of Conformance.Run (#263); see that module's header
 License     : Apache-2.0
 -}
 module Conformance.Run.Receipts
-    ( writeCL01Receipt
-    , writeCaCL01
+    ( writeExecutionUnitsAndTransactionSizeReceipt
+    , writeCaExecutionUnitsAndTransactionSize
     , writeStoryReceipt
     , addReceiptSteps
     , writeRowReceipt
@@ -48,18 +48,24 @@ import Conformance.Receipt
     , writeReceiptFile
     )
 
-{- | CL01 for the registry rows: the worst units and size across the accepting
-folds of CG02, CG03 and CG04, each read off the step that folded it in its row's
+{- | execution-units-and-transaction-size for the registry rows: the worst units and size across the accepting
+folds of update-existing-key, delete-existing-key and reinsert-deleted-key, each read off the step that folded it in its row's
 receipt, with the fold transactions named. This receipt records that every
-accepting fold of those rows reported against the devnet maxima. Full CL01
+accepting fold of those rows reported against the devnet maxima. Full execution-units-and-transaction-size
 closes when every accepting row in the inventory reports.
 -}
-writeCL01Receipt :: Env -> [String] -> IO ()
-writeCL01Receipt env rows = do
-    receipts <- mapM readRowReceipt ["CG02", "CG03", "CG04"]
+writeExecutionUnitsAndTransactionSizeReceipt
+    :: Env -> [String] -> IO ()
+writeExecutionUnitsAndTransactionSizeReceipt env rows = do
+    receipts <-
+        mapM
+            readRowReceipt
+            ["update-existing-key", "delete-existing-key", "reinsert-deleted-key"]
     case (rows, sequence receipts) of
         (requested, Just rs)
-            | all (`elem` requested) ["CG02", "CG03", "CG04"] -> do
+            | all
+                (`elem` requested)
+                ["update-existing-key", "delete-existing-key", "reinsert-deleted-key"] -> do
                 let transactions = concatMap receiptTransactions rs
                     measured =
                         [ units
@@ -68,11 +74,11 @@ writeCL01Receipt env rows = do
                         , Just units <- [stepMeasured step]
                         ]
                 require
-                    "CL01: an accepting fold of CG02, CG03 or CG04 carries no units"
+                    "execution-units-and-transaction-size: an accepting fold of update-existing-key, delete-existing-key or reinsert-deleted-key carries no units"
                     (not (null measured) && length measured == length transactions)
                 writeRowReceipt
                     env
-                    "CL01"
+                    "execution-units-and-transaction-size"
                     Accepted
                     AgreesWithModel
                     (map T.unpack transactions)
@@ -86,7 +92,7 @@ writeCL01Receipt env rows = do
         _ ->
             emit
                 "measure"
-                "CL01 not receipted: run did not cover CG02 CG03 CG04"
+                "execution-units-and-transaction-size not receipted: run did not cover update-existing-key delete-existing-key reinsert-deleted-key"
   where
     readRowReceipt row = do
         let path =
@@ -111,21 +117,24 @@ writeCL01Receipt env rows = do
                 Just (round m, round c, round s)
         _ -> Nothing :: Maybe (Integer, Integer, Integer)
 
-{- | CL01 for the CA rows: worst-case units and size across the
-session's two accepting boots (CA01 canonical, CA02 rival). CA03 and
-CA04 name one of those two transactions and reuse its measurements;
-CA05 executes no script and reports zeros honestly. Written only
-when the full CA set ran, and bound to the run's own receipts.
+{- | execution-units-and-transaction-size for the registry-identity rows: worst-case units and size across the
+session's two accepting boots (canonical-seed-identity canonical, rival-seed-authentication rival). policy-address-only-authentication-control and
+applied-validator-identity name one of those two transactions and reuse its measurements;
+tokenless-output-authentication executes no script and reports zeros honestly. Written only
+when the full registry-identity set ran, and bound to the run's own receipts.
 -}
-writeCaCL01 :: Env -> [String] -> IO ()
-writeCaCL01 env rows
+writeCaExecutionUnitsAndTransactionSize :: Env -> [String] -> IO ()
+writeCaExecutionUnitsAndTransactionSize env rows
     | all (`elem` rows) caRows = do
-        receipts <- mapM readRowReceipt ["CA01", "CA02"]
+        receipts <-
+            mapM
+                readRowReceipt
+                ["canonical-seed-identity", "rival-seed-authentication"]
         case sequence receipts of
             Just rs ->
                 writeRowReceipt
                     env
-                    "CL01"
+                    "execution-units-and-transaction-size"
                     Accepted
                     AgreesWithModel
                     (map T.unpack (concatMap receiptTransactions rs))
@@ -139,11 +148,11 @@ writeCaCL01 env rows
             Nothing ->
                 emit
                     "measure"
-                    "CL01 not receipted: the CA01/CA02 receipts are missing"
+                    "execution-units-and-transaction-size not receipted: the canonical-seed-identity/rival-seed-authentication receipts are missing"
     | otherwise =
         emit
             "measure"
-            "CL01 not receipted: run did not cover CA01 CA02 CA03 CA04 CA05"
+            "execution-units-and-transaction-size not receipted: run did not cover canonical-seed-identity rival-seed-authentication policy-address-only-authentication-control applied-validator-identity tokenless-output-authentication"
   where
     readRowReceipt row = do
         let path =

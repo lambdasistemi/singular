@@ -172,7 +172,7 @@ the run fails.
 
 - It is **not** a Singular demonstration. No output line names
   anything as claimed, registered or maintained.
-- It is **not** a test suite. The E2E suite is the `e2e-tests`
+- It is **not** a test suite. The end-to-end suite is the `e2e-tests`
   component in [`offchain/e2e-test/`](../e2e-test/main.hs), whose specs
   are
   [`CageSpec`](../e2e-test/Singular/Registry/E2E/CageSpec.hs),

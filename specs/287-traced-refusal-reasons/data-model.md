@@ -1,6 +1,6 @@
 # Data model: traced refusal reasons
 
-Owned by `modules-model.md` M2 unless stated. Wire shapes of stored files are in
+Owned by `modules-model.md` conformance-replay unless stated. Wire shapes of stored files are in
 `contracts/replay-evidence.md`.
 
 ```mermaid
@@ -14,7 +14,7 @@ flowchart LR
     A --> CMP[ReasonComparison]
 ```
 
-## D1 ReplayCapsule
+## replaycapsule ReplayCapsule
 
 | Field | Meaning |
 |---|---|
@@ -31,7 +31,7 @@ Invariants: captured before the run's next submission; `resolved` covers every
 reference in the transaction or the capsule is incomplete (class
 `capture-incomplete`); never edited after `captureId` is computed.
 
-## D2 TracedProvenance (M1 output, read by M3)
+## tracedprovenance-output-read-by TracedProvenance (build-traced-registry-blueprint-from-onchain-build output, read by conformance-run-replay)
 
 | Field | Meaning |
 |---|---|
@@ -41,23 +41,23 @@ reference in the transaction or the capsule is incomplete (class
 | `untracedHashes` | every validator hash of the same toolchain built without traces |
 | `validators` | titles and parameter schemas of the traced blueprint |
 
-Invariant: the correspondence check (FR-03) passed for this provenance; at run
+Invariant: the correspondence check (toolchain-correspondence) passed for this provenance; at run
 time the deployed blueprint's hashes equal `untracedHashes`, else no replay is
 admitted (`toolchain-mismatch`).
 
-## D3 PurposeReplay
+## purposereplay PurposeReplay
 
 One failing purpose of one capsule: `deployedHash` (the failing hash),
 `tracedHash` (hash of the traced code with the same parameters), the purpose
 (spend, mint, …) and redeemer index, and two runs.
 
-## D4 ReplayRun
+## replayrun ReplayRun
 
 `bytesHash`, `budgetLimit`, `budgetUsed`, `outcome ∈ {succeeded, validator-failure(logs), budget-exhausted, evaluation-error(text)}`.
 The deployed run's limit is the transaction's declared units for the purpose;
 the traced run's is the protocol per-transaction maximum.
 
-## D5 ReplayClass
+## replayclass ReplayClass
 
 `admitted(reason)` or `unobserved(cause)`, cause one of:
 `capture-incomplete`, `context-unavailable`, `toolchain-mismatch`,
@@ -79,28 +79,28 @@ Invariant: `admitted` ⇔ deployed `validator-failure` ∧ traced
 `validator-failure` with exactly one user-defined log line ∧ no earlier cause;
 `reason` is that line verbatim.
 
-## D6 ReasonComparison
+## reasoncomparison ReasonComparison
 
 `agrees` (admitted ∧ reason = Lean's), `differs(chain, lean)`,
 `uncompared(cause)`. Only a step where both sides refuse and the model names a
-reason is compared; that fact, not a label, makes the refusal class A; attribution rows carry D5 only. Durability: the index entry
-(contract) records `modelReason` and the D6 value before the runner acts on it.
+reason is compared; that fact, not a label, makes the refusal class A; attribution rows carry replayclass only. Durability: the index entry
+(contract) records `modelReason` and the reasoncomparison value before the runner acts on it.
 `differs` then fails the row, so its evidence survives in the replay index
 though no receipt is written for a failed row. `uncompared` does not fail the
 row: the step's existing outcome comparison stays `agrees`, the receipt is
 written with no chain-side reason, and the index names the cause; it is never
 counted as reason agreement.
 
-## Receipt replay object (FR-11, operator ruling 2026-10-01)
+## Receipt replay object (self-contained-replay-receipt, operator ruling 2026-10-01)
 
 Additive and optional, on step `chain.refusal` and on `RefusalInfo`:
 `replay = { deployedHash, tracedHash, reason | cause, captureId }`, one per
-failing purpose (a list where several purposes fail). `reason` only for D5
-`admitted`; `cause` the D5 name otherwise; `tracedHash` absent only when no
+failing purpose (a list where several purposes fail). `reason` only for replayclass
+`admitted`; `cause` the replayclass name otherwise; `tracedHash` absent only when no
 traced application exists (`no-replay-route`, `unidentified-script`). Once per
 receipt with any `replay`: `replayCorrespondence = { source, compiler, flags,
-untracedHashesDigest }` from D2. Existing fields (`trace`, `branch`, `limit`,
+untracedHashesDigest }` from tracedprovenance-output-read-by. Existing fields (`trace`, `branch`, `limit`,
 `hashes`) keep their meaning. Loader: absent object accepted (legacy); present
 object must be complete and agree with `trace`/`branch`; size cap raised only
 to the measured largest receipt with the object plus headroom (the current
-largest, CG22 at 0287727, is 12 910 bytes before it).
+largest, retire-active-key at 0287727, is 12 910 bytes before it).

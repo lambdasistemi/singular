@@ -7,7 +7,7 @@
   ],
   "every-caller-of-the-old-rule": [
     {
-      "text": "Every place that encodes the old timing has a disposition: the predicate and its wrapper are deleted, the state and request scripts are repaired, properties and tests are restated, doc comments reworded, the builder's timing filter removed, the conformance interpreter's wait replaced by an explicit placement, CG09 moved to held, CG23's two timing sentences restated, and the row count, book chapters, dispatcher and published counts extended for CG24. The builder's existing callers only ever reject expired requests, so they keep their behaviour.",
+      "text": "Every place that encodes the old timing has a disposition: the predicate and its wrapper are deleted, the state and request scripts are repaired, properties and tests are restated, doc comments reworded, the builder's timing filter removed, the conformance interpreter's wait replaced by an explicit placement, reject-before-deadline-consumer-requirement moved to held, reject-and-retract-refund-controls's two timing sentences restated, and the row count, book chapters, dispatcher and published counts extended for reject-inside-processing-and-retraction-windows. The builder's existing callers only ever reject expired requests, so they keep their behaviour.",
       "pause": 400
     }
   ],
@@ -31,6 +31,6 @@
   ],
   "_source": {
     "file": "research.md",
-    "sha256": "cc48cb834dbc1d75c600eb52134edec20da2801f31d0e1068df04854eb7ca16b"
+    "sha256": "d790bbded143345e71e14a2dc7f7458b966d87b008c1a8caf74bd2a1f8c528e3"
   }
 }

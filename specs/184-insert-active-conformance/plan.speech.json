@@ -1,7 +1,7 @@
 {
   "status-and-vertical-cut": [
     {
-      "text": "One implementation task makes the generic conformance session execute CG21 and emit its complete receipt across all required layers.",
+      "text": "One implementation task makes the generic conformance session execute register-active-key and emit its complete receipt across all required layers.",
       "pause": 400
     }
   ],
@@ -31,12 +31,12 @@
   ],
   "budget-and-remainder": [
     {
-      "text": "The owner has four hours and one final Gate S. Only a green coherent vertical can be pushed at the cap.",
+      "text": "The owner has four hours and one final acceptance checks. Only a green coherent vertical can be pushed at the cap.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "ab688fe302ef640c113d713c0ab36d23e171498471add8fdbe90cc939141110e"
+    "sha256": "78acc50ea6b760450cf6b2107d4807d9fa8ed4171b89594304cc0c8cddd61b42"
   }
 }

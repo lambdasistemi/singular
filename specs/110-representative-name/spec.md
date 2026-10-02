@@ -102,11 +102,11 @@ same policy and name.
 
 ## Deviations
 
-The mandate is issue #110 with the NOTE-001/A-001 binding ruling
+The mandate is issue #110 with the operator note (NOTE-001)/A-001 binding ruling
 (Lean and theorems unchanged; concrete name exactly
 `blake2b_256(spelling bytes)`; permanent Over; incarnation zero;
 registry distinction in the representative policy parameters; demo
-and `register-rows` print the identical command) plus the A-003
+and `register-rows` print the identical command) plus the operator answer (A-003)
 acceptance addition (foreign-registry retirement test refuses;
 witnessless devnet retire refused by the node). The diff carries no
 `lean/` files, matching the ruling; the ticket's own step 3 allowed

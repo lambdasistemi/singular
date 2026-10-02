@@ -8,7 +8,7 @@ module Conformance.Run.CsRows
     , runCSSession
     , reportCSPartials
     , runCSRow
-    , runCS02
+    , runSubmittedDatumByteRoundTrip
     , findStateDatum
     , findRequestDatum
     , isStateDatum
@@ -19,20 +19,20 @@ module Conformance.Run.CsRows
     , measureUnitsProv
     , emitMeasureProv
     , writeCSReceipt
-    , runCS08
+    , runStateFieldsChainRoundTrip
     , stateDatumArity
     , expectedStateFromTx
-    , runCS07
+    , runProofStepConstructorWitnesses
     , cs03KeyA
     , cs03KeyB
     , fastRetractCfgLocal
     , fastRejectCfgLocal
-    , runCS03
+    , runUpdateRedeemerConstructorWitnesses
     , findRequestTxIn
-    , runCS04
+    , runWrongRedeemerConstructorIndex
     , tamperModifyToBadIndex
-    , attributeCS04Refusal
-    , runCS05
+    , attributeWrongRedeemerConstructorIndexRefusal
+    , runRequestAndMintConstructorWitnesses
     , writeGapMigrating
     ) where
 
@@ -188,7 +188,7 @@ import Conformance.Refusal
     )
 
 -- ---------------------------------------------------------
--- CS devnet session (serialization boundary)
+-- serialization devnet session (serialization boundary)
 -- ---------------------------------------------------------
 
 cs02Key :: ByteString
@@ -219,7 +219,7 @@ runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty
                     (scriptHashBytes (computeScriptHash requestBytes))
     _ <- Cage.withView prov (pure . Cage.viewProtocolParams)
     checkFunding prov funderAddr defaultFundingFloor
-    -- Every CS row boots by reference: publish the state validator
+    -- Every serialization row boots by reference: publish the state validator
     -- once, before any row picks its seed.
     ensureStateRefWith prov submit stateBytes
     mapM_
@@ -249,10 +249,10 @@ runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty
     -- enumerates the known partial set; anything else is a failure.
     reportCSPartials receiptsDir rows
     -- An unmet row must never read as green either: the session ends with
-    -- the same debt report a CG session gives, naming it.
+    -- the same debt report a registry-operations session gives, naming it.
     reportCSUnmet receiptsDir rows
 
-{- | Session-end accounting of the CS rows kept unmet by ruling: receipts with
+{- | Session-end accounting of the serialization rows kept unmet by ruling: receipts with
 verdict @unmet-by-ruling@ among the rows just run end the session non-zero
 with the debt report naming them.
 -}
@@ -269,7 +269,7 @@ reportCSUnmet receiptsDir rows = do
         [] -> pure ()
         unmet -> throwIO (ErrorCall (debtReport [] unmet []))
 
-{- | Session-end partial accounting for the CS rows: receipts with
+{- | Session-end partial accounting for the serialization rows: receipts with
 verdict partial among the rows just run end the session with the
 specifically accounted partial status (exit 1, distinct report).
 A loader rejection (including a success verdict carrying partial
@@ -316,8 +316,8 @@ runCSRow
     -> String
     -> IO ()
 runCSRow index prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr row = case row of
-    "CS02" ->
-        runCS02
+    "submitted-datum-byte-round-trip" ->
+        runSubmittedDatumByteRoundTrip
             prov
             submit
             stateBytes
@@ -329,8 +329,8 @@ runCSRow index prov submit stateBytes requestBytes namingCodes nodeVer base dirt
             receiptsDir
             control
             blueprintIdStr
-    "CS03" ->
-        runCS03
+    "update-redeemer-constructor-witnesses" ->
+        runUpdateRedeemerConstructorWitnesses
             prov
             submit
             stateBytes
@@ -342,8 +342,8 @@ runCSRow index prov submit stateBytes requestBytes namingCodes nodeVer base dirt
             receiptsDir
             control
             blueprintIdStr
-    "CS04" ->
-        runCS04
+    "wrong-redeemer-constructor-index" ->
+        runWrongRedeemerConstructorIndex
             index
             prov
             submit
@@ -356,8 +356,8 @@ runCSRow index prov submit stateBytes requestBytes namingCodes nodeVer base dirt
             receiptsDir
             control
             blueprintIdStr
-    "CS05" ->
-        runCS05
+    "request-and-mint-constructor-witnesses" ->
+        runRequestAndMintConstructorWitnesses
             prov
             submit
             stateBytes
@@ -369,8 +369,8 @@ runCSRow index prov submit stateBytes requestBytes namingCodes nodeVer base dirt
             receiptsDir
             control
             blueprintIdStr
-    "CS07" ->
-        runCS07
+    "proof-step-constructor-witnesses" ->
+        runProofStepConstructorWitnesses
             prov
             submit
             stateBytes
@@ -382,8 +382,8 @@ runCSRow index prov submit stateBytes requestBytes namingCodes nodeVer base dirt
             receiptsDir
             control
             blueprintIdStr
-    "CS08" ->
-        runCS08
+    "state-fields-chain-round-trip" ->
+        runStateFieldsChainRoundTrip
             prov
             submit
             stateBytes
@@ -395,12 +395,12 @@ runCSRow index prov submit stateBytes requestBytes namingCodes nodeVer base dirt
             receiptsDir
             control
             blueprintIdStr
-    _ -> failWith ("CS row not yet implemented: " <> row)
+    _ -> failWith ("serialization row not yet implemented: " <> row)
 
-{- | CS02: datum bytes constructed in Haskell and submitted are read
+{- | submitted-datum-byte-round-trip: datum bytes constructed in Haskell and submitted are read
 back identical (byte-compare submitted vs chain-observed).
 -}
-runCS02
+runSubmittedDatumByteRoundTrip
     :: Cage.Provider IO
     -> Capabilities
     -> SBS.ShortByteString
@@ -413,7 +413,7 @@ runCS02
     -> Control
     -> String
     -> IO ()
-runCS02 prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
+runSubmittedDatumByteRoundTrip prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
     (seedTxIn, _) <- largestWalletUtxo prov
     let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seedTxIn)
     unsignedBoot <-
@@ -442,18 +442,18 @@ runCS02 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
                 "control"
                 "false-datum armed: demanding state bytes match request bytes"
             require
-                "CS02: submitted state bytes differ from chain-observed (control)"
+                "submitted-datum-byte-round-trip: submitted state bytes differ from chain-observed (control)"
                 (submittedStateDatum == submittedReqDatum)
         _ -> do
             require
-                ( "CS02: state datum bytes differ: submitted "
+                ( "submitted-datum-byte-round-trip: state datum bytes differ: submitted "
                     <> show submittedStateDatum
                     <> " vs chain "
                     <> show observedStateDatum
                 )
                 (submittedStateDatum == observedStateDatum)
             require
-                ( "CS02: request datum bytes differ: submitted "
+                ( "submitted-datum-byte-round-trip: request datum bytes differ: submitted "
                     <> show submittedReqDatum
                     <> " vs chain "
                     <> show observedReqDatum
@@ -462,10 +462,10 @@ runCS02 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     let sizeBoot = txSizeBytes signedBoot
         sizeReq = txSizeBytes signedReq
         size = max sizeBoot sizeReq
-    emitMeasureProv prov "CS02" mem cpu size
+    emitMeasureProv prov "submitted-datum-byte-round-trip" mem cpu size
     writeCSReceipt
         receiptsDir
-        "CS02"
+        "submitted-datum-byte-round-trip"
         Accepted
         AgreesWithModel
         [txIdHex signedBoot, txIdHex signedReq]
@@ -480,7 +480,9 @@ runCS02 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
         nodeVer
         blueprintIdStr
         Nothing
-    emit "row" "CS02: ACCEPTED datum bytes identical (state+request)"
+    emit
+        "row"
+        "submitted-datum-byte-round-trip: ACCEPTED datum bytes identical (state+request)"
 
 -- | Find the state inline datum in an unsigned transaction's outputs.
 findStateDatum :: ConwayTx -> Datum ConwayEra
@@ -491,7 +493,9 @@ findStateDatum tx =
          , Just d <- [datumOfTxOut out]
          ] of
         [d] -> d
-        _ -> error "CS02: unsigned tx has no single state datum"
+        _ ->
+            error
+                "submitted-datum-byte-round-trip: unsigned tx has no single state datum"
 
 -- | Find the request inline datum for a key in an unsigned tx.
 findRequestDatum :: ByteString -> ConwayTx -> Datum ConwayEra
@@ -502,7 +506,9 @@ findRequestDatum key tx =
          , Just d <- [datumOfTxOut out]
          ] of
         [d] -> d
-        _ -> error "CS02: unsigned tx has no single request datum"
+        _ ->
+            error
+                "submitted-datum-byte-round-trip: unsigned tx has no single request datum"
 
 isStateDatum :: TxOut ConwayEra -> Bool
 isStateDatum out = case extractCageDatum out of
@@ -527,10 +533,12 @@ readStateDatum prov cfg tid = do
             prov
             (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) tid utxos of
-        Nothing -> failWith "CS02: no state UTxO on chain"
+        Nothing -> failWith "submitted-datum-byte-round-trip: no state UTxO on chain"
         Just (_, out) -> case datumOfTxOut out of
             Just d -> pure d
-            Nothing -> failWith "CS02: state UTxO has no inline datum"
+            Nothing ->
+                failWith
+                    "submitted-datum-byte-round-trip: state UTxO has no inline datum"
 
 readRequestDatum
     :: Cage.Provider IO
@@ -548,10 +556,12 @@ readRequestDatum prov cfg tid key = do
     case matching of
         [out] -> case datumOfTxOut out of
             Just d -> pure d
-            Nothing -> failWith "CS02: request UTxO has no inline datum"
+            Nothing ->
+                failWith
+                    "submitted-datum-byte-round-trip: request UTxO has no inline datum"
         _ ->
             failWith
-                ( "CS02: expected one request UTxO for key, found "
+                ( "submitted-datum-byte-round-trip: expected one request UTxO for key, found "
                     <> show (length matching)
                 )
 
@@ -617,7 +627,7 @@ writeCSReceipt
     -> IO ()
 writeCSReceipt = writeCSReceiptWith Nothing
 
--- | A CS receipt stating the traced build its refusal's replay relies on.
+-- | A serialization receipt stating the traced build its refusal's replay relies on.
 writeCSReceiptWith
     :: Maybe ReplayCorrespondence
     -> FilePath
@@ -660,15 +670,15 @@ writeCSReceiptWith correspondence dir row outcome verdict txs refusal rejected m
             , receiptVenue = venue
             }
 
-{- | CS08 (#157 X1): the eight fields of `OnChainTokenState` survive a
+{- | state-fields-chain-round-trip (#157 X1): the eight fields of `OnChainTokenState` survive a
 chain round trip, with the ACTIVE policy varied Base versus Alt
-(NOTE-046: no stake script exists to vary; #157 C7 renamed the field
-this row always varied). The four pinned policies are the ones D-BOOT
+(NOTE-046: no stake script exists to vary; #157 state-datum-fields renamed the field
+this row always varied). The four pinned policies are the ones genesis-policy-pins
 derives — the application policy from the naming application script and
 the three token policies from `witness(kind, registry)` applied — so
 this row is also what says the derivation reaches the chain intact.
 -}
-runCS08
+runStateFieldsChainRoundTrip
     :: Cage.Provider IO
     -> Capabilities
     -> SBS.ShortByteString
@@ -681,7 +691,7 @@ runCS08
     -> Control
     -> String
     -> IO ()
-runCS08 prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
+runStateFieldsChainRoundTrip prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
     -- Base cage: all four pins derived for its own registry identity.
     (seedBase, _) <- largestWalletUtxo prov
     let cfgBase = cageCfg stateBytes requestBytes namingCodes (txInToRef seedBase)
@@ -708,29 +718,29 @@ runCS08 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
         FalseDatum -> do
             emit "control" "false-datum armed: demanding Base==Alt"
             require
-                "CS08: Base and Alt states unexpectedly match (control)"
+                "state-fields-chain-round-trip: Base and Alt states unexpectedly match (control)"
                 (observedBase == observedAlt)
         LegacySixField -> do
             emit
                 "control"
-                "CS08 ARMED (legacy-six-field): demanding the retired \
+                "state-fields-chain-round-trip ARMED (legacy-six-field): demanding the retired \
                 \six-field state encoding of the chain's own datum"
             require
-                ( "CS08: the chain state encodes "
+                ( "state-fields-chain-round-trip: the chain state encodes "
                     <> show (stateDatumArity observedBase)
                     <> " fields, not the six the retired contract had"
                 )
                 (stateDatumArity observedBase == 6)
         _ -> do
             require
-                ( "CS08: Base state fields differ: expected "
+                ( "state-fields-chain-round-trip: Base state fields differ: expected "
                     <> show expectedBase
                     <> " vs chain "
                     <> show observedBase
                 )
                 (expectedBase == observedBase)
             require
-                ( "CS08: Alt state fields differ: expected "
+                ( "state-fields-chain-round-trip: Alt state fields differ: expected "
                     <> show expectedAlt
                     <> " vs chain "
                     <> show observedAlt
@@ -738,65 +748,65 @@ runCS08 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
                 (expectedAlt == observedAlt)
             -- The eight fields, each explicitly, against the boot tx.
             require
-                "CS08: Base root mismatch"
+                "state-fields-chain-round-trip: Base root mismatch"
                 (stateRoot observedBase == stateRoot expectedBase)
             require
-                "CS08: Alt root mismatch"
+                "state-fields-chain-round-trip: Alt root mismatch"
                 (stateRoot observedAlt == stateRoot expectedAlt)
             require
-                "CS08: Base tip mismatch"
+                "state-fields-chain-round-trip: Base tip mismatch"
                 (stateMaxFee observedBase == stateMaxFee expectedBase)
             require
-                "CS08: Alt tip mismatch"
+                "state-fields-chain-round-trip: Alt tip mismatch"
                 (stateMaxFee observedAlt == stateMaxFee expectedAlt)
             require
-                "CS08: Base processTime mismatch"
+                "state-fields-chain-round-trip: Base processTime mismatch"
                 (stateProcessTime observedBase == stateProcessTime expectedBase)
             require
-                "CS08: Alt processTime mismatch"
+                "state-fields-chain-round-trip: Alt processTime mismatch"
                 (stateProcessTime observedAlt == stateProcessTime expectedAlt)
             require
-                "CS08: Base retractTime mismatch"
+                "state-fields-chain-round-trip: Base retractTime mismatch"
                 (stateRetractTime observedBase == stateRetractTime expectedBase)
             require
-                "CS08: Alt retractTime mismatch"
+                "state-fields-chain-round-trip: Alt retractTime mismatch"
                 (stateRetractTime observedAlt == stateRetractTime expectedAlt)
             require
-                "CS08: Base applicationPolicy mismatch"
+                "state-fields-chain-round-trip: Base applicationPolicy mismatch"
                 (stateAppPolicy observedBase == stateAppPolicy expectedBase)
             require
-                "CS08: Alt applicationPolicy mismatch"
+                "state-fields-chain-round-trip: Alt applicationPolicy mismatch"
                 (stateAppPolicy observedAlt == stateAppPolicy expectedAlt)
             require
-                "CS08: Base activePolicy mismatch"
+                "state-fields-chain-round-trip: Base activePolicy mismatch"
                 (stateActivePolicy observedBase == stateActivePolicy expectedBase)
             require
-                "CS08: Alt activePolicy mismatch"
+                "state-fields-chain-round-trip: Alt activePolicy mismatch"
                 (stateActivePolicy observedAlt == stateActivePolicy expectedAlt)
             require
-                "CS08: Base absentPolicy mismatch"
+                "state-fields-chain-round-trip: Base absentPolicy mismatch"
                 (stateAbsentPolicy observedBase == stateAbsentPolicy expectedBase)
             require
-                "CS08: Alt absentPolicy mismatch"
+                "state-fields-chain-round-trip: Alt absentPolicy mismatch"
                 (stateAbsentPolicy observedAlt == stateAbsentPolicy expectedAlt)
             require
-                "CS08: Base terminalPolicy mismatch"
+                "state-fields-chain-round-trip: Base terminalPolicy mismatch"
                 (stateTerminalPolicy observedBase == stateTerminalPolicy expectedBase)
             require
-                "CS08: Alt terminalPolicy mismatch"
+                "state-fields-chain-round-trip: Alt terminalPolicy mismatch"
                 (stateTerminalPolicy observedAlt == stateTerminalPolicy expectedAlt)
             -- The varied field discriminates; the held fields are stable.
             require
-                "CS08: Base and Alt activePolicy unexpectedly match"
+                "state-fields-chain-round-trip: Base and Alt activePolicy unexpectedly match"
                 (stateActivePolicy observedBase /= stateActivePolicy observedAlt)
             require
-                "CS08: applicationPolicy moved between cages"
+                "state-fields-chain-round-trip: applicationPolicy moved between cages"
                 (stateAppPolicy observedBase == stateAppPolicy observedAlt)
-            -- D-BOOT: the pins are DERIVED. A placeholder would be all
+            -- genesis-policy-pins: the pins are DERIVED. A placeholder would be all
             -- zeroes, and the three token policies are three distinct
             -- applications of one script, so they cannot coincide.
             require
-                "CS08: a pinned policy is a placeholder (28 zero bytes)"
+                "state-fields-chain-round-trip: a pinned policy is a placeholder (28 zero bytes)"
                 ( BuiltinByteString (BS.replicate 28 0)
                     `notElem` [ stateAppPolicy observedBase
                               , stateActivePolicy observedBase
@@ -805,7 +815,7 @@ runCS08 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
                               ]
                 )
             require
-                "CS08: the three derived token policies are not distinct"
+                "state-fields-chain-round-trip: the three derived token policies are not distinct"
                 ( let ps =
                         [ stateActivePolicy observedBase
                         , stateAbsentPolicy observedBase
@@ -816,10 +826,10 @@ runCS08 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     let mem = max mem1 mem2
         cpu = max cpu1 cpu2
         size = max (txSizeBytes signedBootBase) (txSizeBytes signedBootAlt)
-    emitMeasureProv prov "CS08" mem cpu size
+    emitMeasureProv prov "state-fields-chain-round-trip" mem cpu size
     writeCSReceipt
         receiptsDir
-        "CS08"
+        "state-fields-chain-round-trip"
         Accepted
         AgreesWithModel
         [txIdHex signedBootBase, txIdHex signedBootAlt]
@@ -836,10 +846,10 @@ runCS08 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
         Nothing
     emit
         "row"
-        "CS08: ACCEPTED eight fields survive (Base+AltActivePolicy)"
+        "state-fields-chain-round-trip: ACCEPTED eight fields survive (Base+AltActivePolicy)"
 
 {- | How many fields the state datum actually encodes. The retired
-contract had six; #157 C7 made it eight, and the armed control demands
+contract had six; #157 state-datum-fields made it eight, and the armed control demands
 the old arity so the row is shown able to notice a regression.
 -}
 stateDatumArity :: OnChainTokenState -> Int
@@ -854,13 +864,15 @@ expectedStateFromTx tx =
          , Just (StateDatum s) <- [extractCageDatum out]
          ] of
         [s] -> pure s
-        _ -> failWith "CS08: unsigned boot has no single StateDatum"
+        _ ->
+            failWith
+                "state-fields-chain-round-trip: unsigned boot has no single StateDatum"
 
-{- | CS07: sequential absence folds exercise Leaf, lone Fork and Branch.
+{- | proof-step-constructor-witnesses: sequential absence folds exercise Leaf, lone Fork and Branch.
 The C fold uses the exact historical C-over-{A,B} regression; D and E
 widen the trie until a Branch is witnessed by another accepted fold.
 -}
-runCS07
+runProofStepConstructorWitnesses
     :: Cage.Provider IO
     -> Capabilities
     -> SBS.ShortByteString
@@ -873,7 +885,7 @@ runCS07
     -> Control
     -> String
     -> IO ()
-runCS07 prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
+runProofStepConstructorWitnesses prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
     tm <- mkPureTrieManager
     (seed, _) <- largestWalletUtxo prov
     let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seed)
@@ -907,12 +919,12 @@ runCS07 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
         cpu = maximum [c | (_, _, c) <- folds]
         size = maximum [txSizeBytes tx | (tx, _, _) <- folds]
     require
-        "CS07: missing accepted ProofStep witness"
+        "proof-step-constructor-witnesses: missing accepted ProofStep witness"
         (all (`elem` witnessed) [0, 1, 2])
-    emitMeasureProv prov "CS07" mem cpu size
+    emitMeasureProv prov "proof-step-constructor-witnesses" mem cpu size
     writeCSReceipt
         receiptsDir
-        "CS07"
+        "proof-step-constructor-witnesses"
         Accepted
         AgreesWithModel
         (txIdHex signedBoot : [txIdHex tx | (tx, _, _) <- folds])
@@ -929,7 +941,7 @@ runCS07 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
         Nothing
     emit
         "row"
-        "CS07: ACCEPTED Branch/Fork/Leaf and Neighbor; C-over-{A,B} absence folded"
+        "proof-step-constructor-witnesses: ACCEPTED Branch/Fork/Leaf and Neighbor; C-over-{A,B} absence folded"
   where
     insertWitness cfg tm tid refs (key, expectedSteps) = do
         _ <-
@@ -946,14 +958,14 @@ runCS07 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
             ctx <- RegistryEdges.registryContextFor cfg namingCodes v refs
             updateTokenWithDuties cfg v tm tid genesisAddr ctx
         require
-            ( "CS07: unexpected proof for "
+            ( "proof-step-constructor-witnesses: unexpected proof for "
                 <> show key
                 <> ": "
                 <> show (proofStepConstrs unsignedFold)
             )
             (proofStepConstrs unsignedFold == expectedSteps)
         require
-            "CS07: malformed Fork Neighbor"
+            "proof-step-constructor-witnesses: malformed Fork Neighbor"
             (forkNeighborsWellFormed unsignedFold)
         (mem, cpu) <- measureUnitsProv prov unsignedFold
         signedFold <- submitWithGenesis submit unsignedFold
@@ -962,10 +974,10 @@ runCS07 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
             CageTrie.getRoot trie
         observed <- readChainState cfg prov tid
         require
-            "CS07: chain root differs from committed trie"
+            "proof-step-constructor-witnesses: chain root differs from committed trie"
             (unOnChainRoot (stateRoot observed) == unRoot root)
         emit
-            "CS07-fold"
+            "proof-step-constructor-witnesses-fold"
             ( show key
                 <> " steps="
                 <> show expectedSteps
@@ -992,7 +1004,7 @@ fastRejectCfgLocal cfg =
         , defaultRetractTime = 1_000
         }
 
-runCS03
+runUpdateRedeemerConstructorWitnesses
     :: Cage.Provider IO
     -> Capabilities
     -> SBS.ShortByteString
@@ -1005,7 +1017,7 @@ runCS03
     -> Control
     -> String
     -> IO ()
-runCS03 prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
+runUpdateRedeemerConstructorWitnesses prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
     tm <- mkPureTrieManager
     (seedA, _) <- largestWalletUtxo prov
     let cfgA = cageCfg stateBytes requestBytes namingCodes (txInToRef seedA)
@@ -1037,10 +1049,10 @@ runCS03 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
         ctxA <- RegistryEdges.registryContextFor cfgA namingCodes v refsA
         updateTokenWithDuties cfgA v tm tidA genesisAddr ctxA
     require
-        "CS03: Modify witness missing Constr 2"
+        "update-redeemer-constructor-witnesses: Modify witness missing Constr 2"
         (2 `elem` spendingConstrs unsignedFoldA)
     require
-        "CS03: Contribute witness missing Constr 1"
+        "update-redeemer-constructor-witnesses: Contribute witness missing Constr 1"
         (1 `elem` spendingConstrs unsignedFoldA)
     (memFold, cpuFold) <- measureUnitsProv prov unsignedFoldA
     signedFoldA <- submitWithGenesis submit unsignedFoldA
@@ -1074,7 +1086,7 @@ runCS03 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
             prov
             (\v -> retractRequestImpl cfgB v tidB reqTxInB genesisAddr)
     require
-        "CS03: Retract witness missing Constr 3"
+        "update-redeemer-constructor-witnesses: Retract witness missing Constr 3"
         (3 `elem` spendingConstrs unsignedRetract)
     (memRetract, cpuRetract) <- measureUnitsProv prov unsignedRetract
     signedRetract <- submitWithGenesis submit unsignedRetract
@@ -1096,11 +1108,13 @@ runCS03 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
                 "control"
                 "missing-witness armed: demanding Retract absent from its own tx (deliberately false)"
             require
-                "CS03: Retract unexpectedly absent from its own tx (control)"
+                "update-redeemer-constructor-witnesses: Retract unexpectedly absent from its own tx (control)"
                 (3 `notElem` spendingConstrs signedRetract)
         _ ->
             require
-                ("CS03: missing accept witnesses: " <> show missing)
+                ( "update-redeemer-constructor-witnesses: missing accept witnesses: "
+                    <> show missing
+                )
                 (null missing)
     let mem = maximum [memBootA, memFold, memBootB, memRetract]
         cpu = maximum [cpuBootA, cpuFold, cpuBootB, cpuRetract]
@@ -1111,10 +1125,15 @@ runCS03 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
                 , txSizeBytes signedBootB
                 , txSizeBytes signedRetract
                 ]
-    emitMeasureProv prov "CS03" mem cpu size
+    emitMeasureProv
+        prov
+        "update-redeemer-constructor-witnesses"
+        mem
+        cpu
+        size
     writeCSReceipt
         receiptsDir
-        "CS03"
+        "update-redeemer-constructor-witnesses"
         Accepted
         Partial
         [txIdHex signedFoldA, txIdHex signedRetract]
@@ -1160,7 +1179,7 @@ runCS03 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
         )
     emit
         "row"
-        "CS03: PARTIAL Contribute/Modify/Retract executed; End/Sweep named residuals (E18)"
+        "update-redeemer-constructor-witnesses: PARTIAL Contribute/Modify/Retract executed; End/Sweep named residuals (E18)"
 
 findRequestTxIn
     :: Cage.Provider IO -> CageConfig -> TokenId -> ByteString -> IO TxIn
@@ -1179,11 +1198,11 @@ findRequestTxIn prov cfg tid key = do
                     <> show (length matching)
                 )
 
-{- | CS04: wrong constructor index refused, attributed to the script. The
+{- | wrong-redeemer-constructor-index: wrong constructor index refused, attributed to the script. The
 model has no vocabulary for decoding a redeemer, so there is no model reason
 to compare: the model comparison is unmet (#347).
 -}
-runCS04
+runWrongRedeemerConstructorIndex
     :: ReplayIndex
     -> Cage.Provider IO
     -> Capabilities
@@ -1197,7 +1216,7 @@ runCS04
     -> Control
     -> String
     -> IO ()
-runCS04 index prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
+runWrongRedeemerConstructorIndex index prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
     tm <- mkPureTrieManager
     (seed, _) <- largestWalletUtxo prov
     let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seed)
@@ -1254,7 +1273,7 @@ runCS04 index prov submit stateBytes requestBytes namingCodes nodeVer base dirty
             _ -> stateMarker
     case result of
         Rejected reason ->
-            attributeCS04Refusal
+            attributeWrongRedeemerConstructorIndexRefusal
                 index
                 receiptsDir
                 base
@@ -1269,7 +1288,7 @@ runCS04 index prov submit stateBytes requestBytes namingCodes nodeVer base dirty
                 (txIdHex signedBad)
         Submitted txid ->
             failWith
-                ( "CS04 FINDING: wrong-index fold accepted (txid "
+                ( "wrong-redeemer-constructor-index FINDING: wrong-index fold accepted (txid "
                     <> txInHex txid
                     <> ") — reported, not relabelled"
                 )
@@ -1303,7 +1322,9 @@ runCS04 index prov submit stateBytes requestBytes namingCodes nodeVer base dirty
         ctxC <- RegistryEdges.registryContextFor cfgC namingCodes v refsC
         updateTokenWithDuties cfgC v tm tidC genesisAddr ctxC
     _ <- submitWithGenesis submit unsignedFoldC
-    emit "control" "CS04 control: fresh cage accepted a valid fold"
+    emit
+        "control"
+        "wrong-redeemer-constructor-index control: fresh cage accepted a valid fold"
 
 {- | Retarget a valid Modify fold to Constr 5 keeping its fields:
 same CBOR size (tags 2 and 5 both one byte), so fee and collateral
@@ -1329,14 +1350,14 @@ tamperModifyToBadIndex prov tx = do
             & witsTxL . rdmrsTxWitsL .~ badRedeemers
         )
 
-{- | Attribute a CS04 refusal. The tampered fold breaks fold consistency
+{- | Attribute a wrong-redeemer-constructor-index refusal. The tampered fold breaks fold consistency
 shared by the state, request and active-witness scripts, so more than one
 can refuse in one submission and the ledger's failure-list order is not
 stable. The invariant the row asserts is that the state script — whose
 redeemer was tampered — refused; the recorded script set is derived from
 the observed hashes in ledger order, never tuned to a run.
 -}
-attributeCS04Refusal
+attributeWrongRedeemerConstructorIndexRefusal
     :: ReplayIndex
     -> FilePath
     -> String
@@ -1350,7 +1371,7 @@ attributeCS04Refusal
     -> String
     -> String
     -> IO ()
-attributeCS04Refusal index receiptsDir base dirty nodeVer blueprintIdStr marker stateMarker requestMarker activeWitnessMarker text rejectedTxid =
+attributeWrongRedeemerConstructorIndexRefusal index receiptsDir base dirty nodeVer blueprintIdStr marker stateMarker requestMarker activeWitnessMarker text rejectedTxid =
     case matchRefusal marker text of
         Right () -> do
             admitted <-
@@ -1359,7 +1380,9 @@ attributeCS04Refusal index receiptsDir base dirty nodeVer blueprintIdStr marker 
             correspondence <- sessionCorrespondence index
             let hashes = refusalScriptHashes text
             require
-                ("CS04: state script did not refuse; scripts named: " <> show hashes)
+                ( "wrong-redeemer-constructor-index: state script did not refuse; scripts named: "
+                    <> show hashes
+                )
                 (stateMarker `elem` hashes)
             roles <- mapM toRole hashes
             let trimmed = trimRefusal text
@@ -1369,7 +1392,7 @@ attributeCS04Refusal index receiptsDir base dirty nodeVer blueprintIdStr marker 
             writeCSReceiptWith
                 (correspondence <* nonEmpty replay)
                 receiptsDir
-                "CS04"
+                "wrong-redeemer-constructor-index"
                 Refused
                 UnmetByRuling
                 []
@@ -1401,7 +1424,7 @@ attributeCS04Refusal index receiptsDir base dirty nodeVer blueprintIdStr marker 
                 Nothing
             emit
                 "unmet"
-                ( "CS04 UNMET BY RULING: kept unmet by operator ruling "
+                ( "wrong-redeemer-constructor-index UNMET BY RULING: kept unmet by operator ruling "
                     <> "2026-10-02 (narrowed #287; model follow-up "
                     <> "lambdasistemi/singular#347); Singular's Lean has no "
                     <> "vocabulary for decoding a redeemer, so it gives no reason to "
@@ -1409,7 +1432,7 @@ attributeCS04Refusal index receiptsDir base dirty nodeVer blueprintIdStr marker 
                 )
             emit
                 "row"
-                ( "CS04: REFUSED wrong index by "
+                ( "wrong-redeemer-constructor-index: REFUSED wrong index by "
                     <> intercalate "+" roles
                     <> " (state marker 0x"
                     <> shortMarker stateMarker
@@ -1417,16 +1440,22 @@ attributeCS04Refusal index receiptsDir base dirty nodeVer blueprintIdStr marker 
                 )
         Left mismatch ->
             failWith
-                ("CS04: refusal did not attribute (" <> show mismatch <> "): " <> text)
+                ( "wrong-redeemer-constructor-index: refusal did not attribute ("
+                    <> show mismatch
+                    <> "): "
+                    <> text
+                )
   where
     toRole h
         | h == stateMarker = pure "state"
         | h == requestMarker = pure "request"
         | h == activeWitnessMarker = pure "witness-active"
-        | otherwise = failWith ("CS04: refusal names unknown script " <> h)
+        | otherwise =
+            failWith
+                ("wrong-redeemer-constructor-index: refusal names unknown script " <> h)
 
--- | CS05: RequestAction + MintRedeemer coverage, Migrating as gap.
-runCS05
+-- | request-and-mint-constructor-witnesses: RequestAction + MintRedeemer coverage, Migrating as gap.
+runRequestAndMintConstructorWitnesses
     :: Cage.Provider IO
     -> Capabilities
     -> SBS.ShortByteString
@@ -1439,7 +1468,7 @@ runCS05
     -> Control
     -> String
     -> IO ()
-runCS05 prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
+runRequestAndMintConstructorWitnesses prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
     tm <- mkPureTrieManager
     (seedC, _) <- largestWalletUtxo prov
     let cfgC = cageCfg stateBytes requestBytes namingCodes (txInToRef seedC)
@@ -1450,7 +1479,7 @@ runCS05 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     tidC <- extractTokenId cfgC signedBootC
     createTrie tm tidC
     require
-        "CS05: Minting witness missing Constr 0"
+        "request-and-mint-constructor-witnesses: Minting witness missing Constr 0"
         (0 `elem` mintConstrs signedBootC)
     refsC <-
         RegistryEdges.publishCageRefs
@@ -1474,7 +1503,7 @@ runCS05 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
         ctxC <- RegistryEdges.registryContextFor cfgC namingCodes v refsC
         updateTokenWithDuties cfgC v tm tidC genesisAddr ctxC
     require
-        "CS05: Update witness missing Constr 0"
+        "request-and-mint-constructor-witnesses: Update witness missing Constr 0"
         (0 `elem` requestActionConstrs unsignedFoldC)
     (memFold, cpuFold) <- measureUnitsProv prov unsignedFoldC
     signedFoldC <- submitWithGenesis submit unsignedFoldC
@@ -1504,7 +1533,7 @@ runCS05 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     unsignedReject <-
         Cage.withView prov (\v -> rejectRequestsImpl cfgD v tidD genesisAddr)
     require
-        "CS05: Rejected witness missing Constr 1"
+        "request-and-mint-constructor-witnesses: Rejected witness missing Constr 1"
         (1 `elem` requestActionConstrs unsignedReject)
     (memReject, cpuReject) <- measureUnitsProv prov unsignedReject
     signedReject <- submitWithGenesis submit unsignedReject
@@ -1525,10 +1554,14 @@ runCS05 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
         MissingWitness -> do
             emit "control" "missing-witness armed: demanding Rejected absent"
             require
-                "CS05: Rejected unexpectedly present (control)"
+                "request-and-mint-constructor-witnesses: Rejected unexpectedly present (control)"
                 (1 `notElem` actionsReject)
         _ ->
-            require ("CS05: missing witnesses: " <> show missing) (null missing)
+            require
+                ( "request-and-mint-constructor-witnesses: missing witnesses: "
+                    <> show missing
+                )
+                (null missing)
     writeGapMigrating receiptsDir base blueprintIdStr
     let mem = maximum [memBoot, memFold, memReject]
         cpu = maximum [cpuBoot, cpuFold, cpuReject]
@@ -1538,10 +1571,15 @@ runCS05 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
                 , txSizeBytes signedFoldC
                 , txSizeBytes signedReject
                 ]
-    emitMeasureProv prov "CS05" mem cpu size
+    emitMeasureProv
+        prov
+        "request-and-mint-constructor-witnesses"
+        mem
+        cpu
+        size
     writeCSReceipt
         receiptsDir
-        "CS05"
+        "request-and-mint-constructor-witnesses"
         Accepted
         Partial
         [txIdHex signedBootC, txIdHex signedFoldC, txIdHex signedReject]
@@ -1581,25 +1619,27 @@ runCS05 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
                     "Migrating"
                     1
                     StandingGap
-                    "unconditional refusal under ownerless ruling (no attributed witness, no discriminator); wire Constr 1 retained; historical gap gap-CS05-Migrating.txt retained as history"
+                    "unconditional refusal under ownerless ruling (no attributed witness, no discriminator); wire Constr 1 retained; historical gap gap-request-and-mint-constructor-witnesses-Migrating.txt retained as history"
                 ]
             )
         )
     emit
         "row"
-        "CS05: PARTIAL Update/Rejected/Minting executed; Burning named residual (E18); Migrating gap"
+        "request-and-mint-constructor-witnesses: PARTIAL Update/Rejected/Minting executed; Burning named residual (E18); Migrating gap"
 
 writeGapMigrating :: FilePath -> String -> String -> IO ()
 writeGapMigrating receiptsDir base blueprintIdStr = do
     let gap =
-            "row: CS05\nconstructor: Migrating (MintRedeemer 1)\nstatus: gap\nreason: unconditional refusal under the ownerless ruling (no attributed witness, no discriminator); wire Constr 1 retained. Historical: previousPolicies=[] on the imported partition (state.ak validateMigration FR1) described the pre-ownerless gap; the allowlist and function are gone with the owner role.\nbase: "
+            "row: request-and-mint-constructor-witnesses\nconstructor: Migrating (MintRedeemer 1)\nstatus: gap\nreason: unconditional refusal under the ownerless ruling (no attributed witness, no discriminator); wire Constr 1 retained. Historical: previousPolicies=[] on the imported partition (state.ak validateMigration FR1) described the pre-ownerless gap; the allowlist and function are gone with the owner role.\nbase: "
                 <> base
                 <> "\nblueprint: "
                 <> blueprintIdStr
                 <> "\n"
     BSL.writeFile
-        (receiptsDir </> "gap-CS05-Migrating.txt")
+        ( receiptsDir
+            </> "gap-request-and-mint-constructor-witnesses-Migrating.txt"
+        )
         (BSL.fromStrict (TE.encodeUtf8 (T.pack gap)))
     emit
         "gap"
-        "CS05 Migrating unconditional refusal (ownerless); wire retained, history noted"
+        "request-and-mint-constructor-witnesses Migrating unconditional refusal (ownerless); wire retained, history noted"

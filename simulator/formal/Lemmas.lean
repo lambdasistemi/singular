@@ -390,7 +390,7 @@ inductive Folds : RegistryState → List Request → Result → Prop where
 
 /-- A step is admitted iff either it is a verified read, or it is a tree edge
 whose approval has the right policy and a tuple matching the request
-(D-APPROVAL), whose R2 row matches the before-leaf, and whose custody or active
+(approval-asset-binding), whose R2 row matches the before-leaf, and whose custody or active
 token is present when the row consumes one. This is the complement of the R2
 table, stated once, for every proof to draw on. -/
 

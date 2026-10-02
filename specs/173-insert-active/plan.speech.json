@@ -45,7 +45,7 @@
       "pause": 500
     },
     {
-      "text": "Grok and Codex author the C I table. A mute persistent senior vets decisions without rerunning gates, may add existing C I rows, and may escalate a wrong requirement. Push waits for every approval and one ticket-owner Gate S run.",
+      "text": "Grok and Codex author the C I table. A mute persistent senior vets decisions without rerunning gates, may add existing C I rows, and may escalate a wrong requirement. Push waits for every approval and one ticket-owner acceptance checks run.",
       "pause": 400
     }
   ],
@@ -61,6 +61,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "c0a2a01d60b61416e3811cbb801d74f111fe72bb91dc118747ddcd18fc34047c"
+    "sha256": "bbc9ab2b3c70f40bee488fd3cb936994c116c2b1a4f721ef6d827a1a074150ce"
   }
 }

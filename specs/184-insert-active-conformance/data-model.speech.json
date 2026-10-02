@@ -1,7 +1,7 @@
 {
   "cg21-receipt-relationship": [
     {
-      "text": "One CG21 receipt binds one accepted fold and two distinct refusal legs, each with its own accepted control.",
+      "text": "One register-active-key receipt binds one accepted fold and two distinct refusal legs, each with its own accepted control.",
       "pause": 400
     }
   ],
@@ -19,12 +19,12 @@
   ],
   "validation-invariants": [
     {
-      "text": "CG21 fields are mandatory, keyed-mint keys are distinct, observations share the candidate-bound run and absent traces stay absent.",
+      "text": "register-active-key fields are mandatory, keyed-mint keys are distinct, observations share the candidate-bound run and absent traces stay absent.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "7c637f4e9e8f65880d911e025b46091775ba445069967bb8cec664e13f3d5fc2"
+    "sha256": "8e67d1f0a0730528c03937f3a64c4acce402a2025ae3ce8204757301664a58e1"
   }
 }

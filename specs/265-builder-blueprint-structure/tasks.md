@@ -16,9 +16,9 @@ flowchart LR
 
 | Task | Completion evidence | Status |
 | --- | --- | --- |
-| T265-01 | Intake binding, PR #219 overlap disposition, frozen gate and RED controls. | Done |
-| T265-02 | Blueprint extraction with complete declaration mapping and original facade exports. | Done |
-| T265-03 | Builder extraction with focused imports, complete mapping and acyclic owners. | Done |
-| T265-04 | Contributor architecture, navigation, module references and speech companion. | Done |
-| T265-05 | Exact-head Gate S results, unchanged consumer compile checks, independent Opus checkpoint report and draft PR handback. | Done |
-| T265-06 | Same-revision generated Haddock reference for the affected off-chain library, Cabal-derived `exposed-modules` and `other-modules` source navigation, exact `docs-check` content-mismatch negative control, and existing `release-check` future archive check under A-001/A-002. | Done |
+| intake-binding-pr-overlap-disposition-frozen-gate | Intake binding, PR #219 overlap disposition, frozen gate and RED controls. | Done |
+| blueprint-extraction-complete-declaration-mapping-original-facade | Blueprint extraction with complete declaration mapping and original facade exports. | Done |
+| builder-extraction-focused-imports-complete-mapping-acyclic | Builder extraction with focused imports, complete mapping and acyclic owners. | Done |
+| contributor-architecture-navigation-module-references-speech-companion | Contributor architecture, navigation, module references and speech companion. | Done |
+| exact-head-acceptance-checks-results-unchanged-consumer | Exact-head acceptance checks results, unchanged consumer compile checks, independent Opus checkpoint report and draft PR handback. | Done |
+| same-revision-generated-haddock-reference-for-affected | Same-revision generated Haddock reference for the affected off-chain library, Cabal-derived `exposed-modules` and `other-modules` source navigation, exact `docs-check` content-mismatch negative control, and existing `release-check` future archive check under operator answer (A-001)/A-002. | Done |

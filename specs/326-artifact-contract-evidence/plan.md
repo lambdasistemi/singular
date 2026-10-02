@@ -4,34 +4,34 @@
 
 **Invariants.**
 
-- I1 One suite, every adapter (R1, R2): the same case list runs against each adapter; a per-adapter exception is named in the suite's output.
-- I2 One view, one point (R2, R6): every read an operation makes, harness included, comes from one view whose point names slot and block hash.
-- I3 No node call inside a view by another route (R3).
-- I4 Signing is the only constructor of `SignedTx` (R4).
-- I5 Backend and mode selection confined to adapter construction and fixture startup, by source check (R6).
-- I6 Documented surface equals the binary's surface (R7, R10).
-- I7 Evidence computed, never typed (R8, R9): every published verdict and state is derived from receipts, sums or the binary's own output.
-- I8 Model effects unchanged (R11).
+- one-suite-adapter-same-case-list-runs One suite, every adapter (one-shared-contract-suite-success-refusal-consistency, suite-s-consistency-cases-cover-read-inside): the same case list runs against each adapter; a per-adapter exception is named in the suite's output.
+- one-view-one-point-read-operation-makes One view, one point (suite-s-consistency-cases-cover-read-inside, journeys-deployment-insert-active-update-terminal-runners): every read an operation makes, harness included, comes from one view whose point names slot and block hash.
+- no-node-call-inside-view-by-another No node call inside a view by another route (no-node-call-happens-inside-view-except).
+- signing-constructor-signedtx Signing is the only constructor of `SignedTx` (signedtx-can-be-obtained-by-signing-ci).
+- backend-mode-selection-confined-adapter-construction-fixture Backend and mode selection confined to adapter construction and fixture startup, by source check (journeys-deployment-insert-active-update-terminal-runners).
+- documented-surface-equals-binary-s-surface Documented surface equals the binary's surface (flags-documented-for-singular-equal-flags-its, no-epic-flag-executable-or-output-remains).
+- evidence-computed-never-typed-published-verdict-state Evidence computed, never typed (v-release-publishes-singular-cli-archive-its, conformance-states-on-published-evidence-page-computed): every published verdict and state is derived from receipts, sums or the binary's own output.
+- model-effects-unchanged Model effects unchanged (lean-governed-behaviour-unchanged-existing-ci-job).
 
 **Live boundaries.** Generated DevNet node (ordinary adapter, generated and external legs); the GitHub release assets of tag `v0.8.0`; the docs site build.
 
 **Slices.** Ordered by the scope-cut rule (contract suite, then migration, then artifact).
 
-- S1 Contract suite and interface controls: R1, R2, R3, R4, R5, R11. Node and in-memory first; the indexer instance binds after #324 lands on main (one rebase).
-- S2 Consumer migration and confinement: R6, R7, R11.
-- S3 Artifact and evidence: R8, R9, R10, R11, and the docs that describe them.
+- contract-suite-interface-controls-node-in-memory Contract suite and interface controls: one-shared-contract-suite-success-refusal-consistency, suite-s-consistency-cases-cover-read-inside, no-node-call-happens-inside-view-except, signedtx-can-be-obtained-by-signing-ci, node-adapter-s-external-leg-already-running, lean-governed-behaviour-unchanged-existing-ci-job. Node and in-memory first; the indexer instance binds after #324 lands on main (one rebase).
+- consumer-migration-confinement Consumer migration and confinement: journeys-deployment-insert-active-update-terminal-runners, flags-documented-for-singular-equal-flags-its, lean-governed-behaviour-unchanged-existing-ci-job.
+- artifact-evidence-that-describe-them Artifact and evidence: v-release-publishes-singular-cli-archive-its, conformance-states-on-published-evidence-page-computed, no-epic-flag-executable-or-output-remains, lean-governed-behaviour-unchanged-existing-ci-job, and the docs that describe them.
 
 Each slice is bisect-safe and leaves `singular` runnable.
 
-**Cut record.** Deadline 2026-10-02 morning. S1 is the floor. A slice not accepted by 2026-10-02T07:00Z is cut: its unmet requirements are filed as follow-up issues under #322, named in the PR, and the PR completes with the accepted slices. The v0.8.0 verification receipt exists only after the epic owner merges release PR #203; the PR states the assets it verified (name, sha256, tag) once that run is green.
+**Cut record.** Deadline 2026-10-02 morning. contract-suite-interface-controls-node-in-memory is the floor. A slice not accepted by 2026-10-02T07:00Z is cut: its unmet requirements are filed as follow-up issues under #322, named in the PR, and the PR completes with the accepted slices. The v0.8.0 verification receipt exists only after the epic owner merges release PR #203; the PR states the assets it verified (name, sha256, tag) once that run is green.
 
-**Constraints.** Owned: `offchain/test` contract suite and its registration, the consumers named in R6 and their compile-only callers, `tools/node_confinement_*` and its allowlist, CI workflow steps for R3/R4/R5/R7/R8, release assembly for R8, conformance evidence rendering and `docs/`. Not owned: `Provider.hs`/`View.hs` semantics (frozen by #323) and `Node/Indexer*.hs` (#324): a needed change there is a question. No public-chain submission, no funded keys.
+**Constraints.** Owned: `offchain/test` contract suite and its registration, the consumers named in journeys-deployment-insert-active-update-terminal-runners and their compile-only callers, `tools/node_confinement_*` and its allowlist, CI workflow steps for no-node-call-happens-inside-view-except/signedtx-can-be-obtained-by-signing-ci/node-adapter-s-external-leg-already-running/flags-documented-for-singular-equal-flags-its/v-release-publishes-singular-cli-archive-its, release assembly for v-release-publishes-singular-cli-archive-its, conformance evidence rendering and `docs/`. Not owned: `Provider.hs`/`View.hs` semantics (frozen by #323) and `Node/Indexer*.hs` (#324): a needed change there is a question. No public-chain submission, no funded keys.
 
 
 **Amendments.**
 
-- A1 (S1, gate synthesis): the suite is the `contract-tests` component with flake apps `contract-tests` and `contract-external`, run by the registry.yml `contract` job; an adapter's unsupported cases are a fixed list in its harness, each reported as not supported by that adapter with the reason, never counted as passed. I3 is enforced at run time by the node session: a node call issued from inside an acquired view by another route fails by name (`NodeCallInView`) instead of hanging.
-- A2 (order, operator ruling): slices run serially, one pair at a time, in the order S1, S3a (R8, R10), S3b (R9), S2.
-- A3 (R4 restated): outside `Node/Submit.hs` no route constructs a `SignedTx` (constructor, coerce, record syntax), proved by fixtures with a control; Submit's export list is frozen against a committed allowlist with a planted-export control. An already allowed export changed to forge, or an instance added in Submit, is caught by review, not CI.
-- A4 (R10): the `SINGULAR_HARNESS_*` hooks are the production CLI's test-harness hooks, inert when unset (a control proves it on the ordinary journey) and documented; moving them out of the released binary is a follow-up.
-- A5 (D2 extended): a spec may be allowlisted by the confinement check only as a backend's own test, its entry naming the backend module it exercises, which must itself be an allowlisted backend module; consumer specs never qualify. Components the inventory classifies `unverified` are excluded from the scan by derivation.
+- A1 (contract-suite-interface-controls-node-in-memory, gate synthesis): the suite is the `contract-tests` component with flake apps `contract-tests` and `contract-external`, run by the registry.yml `contract` job; an adapter's unsupported cases are a fixed list in its harness, each reported as not supported by that adapter with the reason, never counted as passed. no-node-call-inside-view-by-another is enforced at run time by the node session: a node call issued from inside an acquired view by another route fails by name (`NodeCallInView`) instead of hanging.
+- A2 (order, operator ruling): slices run serially, one pair at a time, in the order contract-suite-interface-controls-node-in-memory, S3a (v-release-publishes-singular-cli-archive-its, no-epic-flag-executable-or-output-remains), S3b (conformance-states-on-published-evidence-page-computed), consumer-migration-confinement.
+- A3 (signedtx-can-be-obtained-by-signing-ci restated): outside `Node/Submit.hs` no route constructs a `SignedTx` (constructor, coerce, record syntax), proved by fixtures with a control; Submit's export list is frozen against a committed allowlist with a planted-export control. An already allowed export changed to forge, or an instance added in Submit, is caught by review, not CI.
+- A4 (no-epic-flag-executable-or-output-remains): the `SINGULAR_HARNESS_*` hooks are the production CLI's test-harness hooks, inert when unset (a control proves it on the ordinary journey) and documented; moving them out of the released binary is a follow-up.
+- A5 (confinement-allowlist-entry-file-reason-it-composition extended): a spec may be allowlisted by the confinement check only as a backend's own test, its entry naming the backend module it exercises, which must itself be an allowlisted backend module; consumer specs never qualify. Components the inventory classifies `unverified` are excluded from the scan by derivation.

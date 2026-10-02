@@ -10,15 +10,15 @@ Every registry row with a program ("Conformance.Edge.Programs") runs through
 booked, its story interpreted by the generic live interpreter, each compared
 record held to what the program expects, and one receipt written whose verdict
 the program's standing gives. Two rows the model cannot express still run for
-their chain evidence, each through its own runner: CG10, a fold against a
-superseded root, and CG12, a fold whose actions do not pair with its requests.
+their chain evidence, each through its own runner: fold-against-superseded-root, a fold against a
+superseded root, and surplus-fold-actions, a fold whose actions do not pair with its requests.
 The batch harness executes the story language's batch instructions and belongs
 to no row.
 -}
 module Conformance.Run.CgRows
     ( runProgram
-    , runCG10
-    , runCG12
+    , runFoldAgainstSupersededRoot
+    , runSurplusFoldActions
     , runBatchHarness
     ) where
 
@@ -210,7 +210,7 @@ expect row (index, expected, record) = case expected of
             ]
         _ -> [] :: [Text]
 
-{- | CG10: Stale fold against a superseded root
+{- | fold-against-superseded-root: Stale fold against a superseded root
 (R7_stale_fold_refused). The stale claims are captured against the
 cage's root BEFORE any fold; one request folds normally and the
 root advances; then a fold for the remaining request is assembled
@@ -223,8 +223,8 @@ The model takes no proof and no authenticated root, and admits the
 insertion on that unoccupied key, so there is no model reason to compare:
 the model comparison is unmet (#346).
 -}
-runCG10 :: Env -> IO ()
-runCG10 env = do
+runFoldAgainstSupersededRoot :: Env -> IO ()
+runFoldAgainstSupersededRoot env = do
     cage <- ensureRowCage env "cg-main" 30_000 30_000
     let cfg = rcCfg cage
     tid <- cageTid cage
@@ -236,7 +236,7 @@ runCG10 env = do
         rowRequestAndFold
             env
             cage
-            "CG10"
+            "fold-against-superseded-root"
             "cg10-key-a"
             "cg10-value-a"
             edgeInsertAbsent
@@ -259,19 +259,19 @@ runCG10 env = do
     staleTx <- assembleFoldWithFee env staleSpec
     emit
         "row"
-        ( "CG10: fold carrying proof steps captured against the \
+        ( "fold-against-superseded-root: fold carrying proof steps captured against the \
           \superseded root submitted; the state script must refuse "
             <> "(R7_stale_fold_refused)"
         )
     submitExpectRefused
         env
-        "CG10"
+        "fold-against-superseded-root"
         UnmetByRuling
         (stateMarkerOf cfg)
         staleTx
     recordUnmet
         env
-        "CG10"
+        "fold-against-superseded-root"
         "kept unmet by operator ruling 2026-10-02 (narrowed #287; model follow-up lambdasistemi/singular#346)"
         ( "Singular's Lean takes no proof and no authenticated root and "
             <> "admits the insertion on that unoccupied key, so it gives no "
@@ -306,19 +306,21 @@ runCG10 env = do
                 }
     handFresh <- assembleFoldWithFee env freshSpec
     calibrateFold (fst state) handFresh libFold
-    emit "calibration" "CG10 control: hand model matches the library fold"
+    emit
+        "calibration"
+        "fold-against-superseded-root control: hand model matches the library fold"
     (mem, cpu) <- measureUnits env handFresh
     signed <-
         submitExpectAccepted env (signTx genesisSignKey handFresh)
     let size = txSizeBytes signed
-    emitMeasure env "CG10-control" mem cpu size
+    emitMeasure env "fold-against-superseded-root-control" mem cpu size
     rowCommit env cage "cg10-key-c" edgeInsertAbsent
     emit
         "control"
-        "CG10 control: the same request folded against the live root \
+        "fold-against-superseded-root control: the same request folded against the live root \
         \is accepted — the refusal is the staleness, not the shape"
 
-{- | CG12: Surplus actions beyond the matched request inputs (the
+{- | surplus-fold-actions: Surplus actions beyond the matched request inputs (the
 2026-09-03 audit; upstream cardano-mpfs-onchain#100). The accepted
 candidate REFUSES the surplus tail (state.ak validModify `expect
 actionsTail == []`): every supplied action must pair with an actual
@@ -331,8 +333,8 @@ by ruling (2026-10-02), never a pass.
 The model takes no action list, so neither refusal has a model reason to
 compare: the model comparison is unmet (#345).
 -}
-runCG12 :: Env -> IO ()
-runCG12 env = do
+runSurplusFoldActions :: Env -> IO ()
+runSurplusFoldActions env = do
     cage <- ensureRowCage env "cg-main" 30_000 30_000
     let cfg = rcCfg cage
     tid <- cageTid cage
@@ -363,11 +365,16 @@ runCG12 env = do
     -- debt reduction. Row contract is observe-and-report.
     emit
         "row"
-        "CG12: submitting the surplus fold for its candidate-bound observation"
-    submitExpectRefused env "CG12" UnmetByRuling (stateMarkerOf cfg) hand
+        "surplus-fold-actions: submitting the surplus fold for its candidate-bound observation"
+    submitExpectRefused
+        env
+        "surplus-fold-actions"
+        UnmetByRuling
+        (stateMarkerOf cfg)
+        hand
     recordUnmet
         env
-        "CG12"
+        "surplus-fold-actions"
         "kept unmet by operator ruling 2026-10-02 (narrowed #287; model follow-up lambdasistemi/singular#345)"
         ( "Singular's Lean takes no action list (its step and foldBatch "
             <> "consume requests only), so it gives no reason to compare; the "
@@ -379,7 +386,7 @@ runCG12 env = do
         )
     emit
         "row"
-        ( "CG12: the chain REFUSED a fold with a surplus action (one "
+        ( "surplus-fold-actions: the chain REFUSED a fold with a surplus action (one "
             <> "request, two actions) — recorded, unmet by ruling (#345), "
             <> "never read as a pass"
         )
@@ -391,18 +398,20 @@ runCG12 env = do
     state2 <- cageStateUtxo env cage
     (firstSorted, _) <- case sortOn fst [reqB, reqC] of
         [a, b] -> pure (a, b)
-        _ -> failWith "CG12 control: expected exactly two requests"
+        _ ->
+            failWith "surplus-fold-actions control: expected exactly two requests"
     (firstSteps, rootFirst) <- case extractCageDatum (snd firstSorted) of
         Just (RequestDatum rq)
             | requestEdge rq == edgeInsertAbsent ->
                 speculativeInsert env cage tid (requestKey rq) leafAbsent
         Just (RequestDatum _) ->
-            failWith "CG12 control: expected an insertAbsent request"
-        _ -> failWith "CG12 control: no request datum"
+            failWith
+                "surplus-fold-actions control: expected an insertAbsent request"
+        _ -> failWith "surplus-fold-actions control: no request datum"
     pot2 <- collateralPot env
     let (firstSorted2, secondSorted2) = case sortOn fst [reqB, reqC] of
             [a, b] -> (a, b)
-            _ -> error "CG12 control: exactly two requests"
+            _ -> error "surplus-fold-actions control: exactly two requests"
         deficitSpec =
             ( rowSpec
                 cage
@@ -418,17 +427,17 @@ runCG12 env = do
     ctrlTx <- assembleFoldWithFee env deficitSpec
     emit
         "row"
-        "CG12 control: two requests, one action — the deficit must be \
+        "surplus-fold-actions control: two requests, one action — the deficit must be \
         \refused"
     submitExpectRefusedControl
         env
-        "CG12"
+        "surplus-fold-actions"
         AgreesWithModel
         (stateMarkerOf cfg)
         ctrlTx
     emit
         "control"
-        "CG12 control: the deficit is refused; the surplus is refused — \
+        "surplus-fold-actions control: the deficit is refused; the surplus is refused — \
         \exact pairing is enforced both directions"
     -- Accepting control: one fresh request, exactly one action — the
     -- same path accepts. A refusal is only informative next to an
@@ -459,11 +468,11 @@ runCG12 env = do
     signedD <-
         submitExpectAccepted env (signTx genesisSignKey exactTx)
     let sizeD = txSizeBytes signedD
-    emitMeasure env "CG12-exact" memD cpuD sizeD
+    emitMeasure env "surplus-fold-actions-exact" memD cpuD sizeD
     rowCommit env cage "cg12-key-d" edgeInsertAbsent
     emit
         "control"
-        ( "CG12 control: exact 1:1 fold accepted (tx="
+        ( "surplus-fold-actions control: exact 1:1 fold accepted (tx="
             <> txIdHex signedD
             <> ") — the refusals are specific to surplus and deficit"
         )

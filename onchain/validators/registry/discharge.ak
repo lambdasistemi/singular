@@ -1,4 +1,4 @@
-//// Discharging each collected duty against the transaction (#157 C6, #177).
+//// Discharging each collected duty against the transaction (#157 token-destinations-and-refunds, #177).
 ////
 //// ## Responsibility
 ////
@@ -112,7 +112,7 @@ fn dutyFault(
       //
       // The strict form is what settles the Lean row's
       // `kindCount t.state .active r.key = 0`: with one unit on an
-      // input and the mint pinned at `-1` by C5, ledger conservation
+      // input and the mint pinned at `-1` by mint-matches-edge-deltas, ledger conservation
       // leaves the outputs carrying none. No separate output rule is
       // added for the two to disagree over.
       //
@@ -151,9 +151,9 @@ fn dutyFault(
 }
 
 /// Why a minted active or terminal token's delivery fails, or `None`
-/// (#157 C6, T1, T6).
+/// (#157 token-destinations-and-refunds, active-token-requested-destination, request-deposit-returned).
 ///
-/// `deposit-returned` is T6 / want-ledger R4: no folder incentive exists
+/// `deposit-returned` is request-deposit-returned / the deposit-return requirement: no folder incentive exists
 /// in this version, so the deposit that rode the request returns with
 /// the token. The folder earns the tip and nothing else. `floor` is the
 /// SUM over the requests that share this carrier, so a second deposit

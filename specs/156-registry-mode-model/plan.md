@@ -1,6 +1,6 @@
 # #156 — plan, slices and invariant mandate
 
-Two sequential slices in one PR (ruling A-001). Every invariant row binds a Lean
+Two sequential slices in one PR (ruling operator answer (A-001)). Every invariant row binds a Lean
 identity, a Given/When/Then, the executable observation that exhibits it, and a
 control able to fail **for the intended reason**. A row whose only check would be
 a source-text match is not a row: it is a blocked question naming the row.
@@ -44,7 +44,7 @@ Operator ruling, verbatim: "use codex as eo, opus as to, glm or muse as co";
 this epic.
 
 - Slice A author `glm` — the one GLM seat this ticket is capped at.
-- Slice B author `muse` — a different seat from slice A's author, as A-001
+- Slice B author `muse` — a different seat from slice A's author, as operator answer (A-001)
   requires, and inside the operator's GLM/Muse rule. **No escalation needed**:
   both launchers resolve in a non-interactive shell (`/home/paolino/.local/bin/glm`,
   `/home/paolino/.local/bin/muse`).
@@ -71,7 +71,7 @@ this epic.
 - No `sorry` outside the frozen statements module; `audit_sources` keeps
   rejecting `axiom`, `admit`, `unsafe`, `implemented_by`, `extern` in `lean/`.
 - **Nothing lands red; intermediate red heads on the draft branch are allowed.**
-  A-002 relaxed this ticket's stricter reading: slice A may be pushed to the
+  operator answer (A-002) relaxed this ticket's stricter reading: slice A may be pushed to the
   draft branch with the simulator legs red, so an audited candidate is not
   stranded on one worktree for the duration of slice B. Only the head marked
   ready-for-review must be green, locally and on GitHub CI.
@@ -88,24 +88,24 @@ that observation fail, and fail for the named reason.
 
 | id | Lean identity | Given / When / Then | Observation | Control |
 |---|---|---|---|---|
-| D1 | `Singular.Leaf`, `Singular.State` | Given any key; when its leaf is read; then it is `Unknown` or `Known s` with `s ∈ {Absent, Active, Terminal}` and nothing else. | Corpus rows covering all four leaf shapes | A leaf carrying an application payload does not elaborate |
-| D1b | absence of the old vocabulary | Given the **elaborated environment**; when `Singular.Value`, `Entry.incarnation`, `Representative.assetScope`, `Config.reuseIdentity`, `Config.consumerPin` are looked up; then none resolves. | An environment query in the audit gate, not a grep | Re-adding any one of them makes the query find it and the leg fail |
-| D2 | `Singular.Edge`, `Singular.delta` | Given an edge; when it is folded; then its from→to transition and its token delta are exactly the R2 table. | One accepted corpus row per edge with its recorded delta | Each edge with a delta off by one is refused `net-mint-mismatch` |
-| D3 | `Singular.Read`, root threading | Given a batch `[…, Read k v, …]`; when the fold reaches position k; then the proof is verified against the **intermediate** root at that position and the leaf is unchanged. | An accepted `[Insert k v, Read k v]` batch; leaf equal before and after | `[Insert j, Read k Terminal, Insert l]` where the proof for `k` is valid **only** against the middle root: refused against the initial root and refused against the final root. A read at the last position is not a control — there the intermediate root *is* the final root, and at position 0 it is the initial root |
-| D4 | `Singular.admits`, `Config.applicationPolicy` | Given a tree-edge request without an approval under the pinned policy; when folded; then refused. Given `witnessTerminal` without one; then accepted. Given an approval under the pinned policy whose `(edge, key, owner, destination)` tuple does not match the request; then **refused** — right policy is necessary, not sufficient (D-APPROVAL). | One refusal row per tree edge; one accepted read row; one mismatched-tuple refusal | An approval under another policy is refused; a tuple-mismatched approval under the *correct* policy is refused |
-| D5 | `Singular.Config` | Given the state datum; when its fields are enumerated; then exactly the eight of R7; no `consumerPin`. | Eight-field round-trip row | A nine-field or `consumerPin`-bearing datum does not decode |
-| D6 | `Singular.step` refusal reasons | Given **any `(primitive, value, before-leaf)` triple that is not a row of the R2 table**, plus a zero-request batch and a mint ≠ the summed delta; when folded; then each is refused, and reasons are distinct **where the distinction is observable**. The refused reads `Read Active` and `Read Absent` are part of this set — the structural guard S1 rests on them. | One refusal row per named case of R3's table, reasons pairwise distinct except where R3 says one fact | Removing one guard turns its row accepted. `deleteTerminal` and "any edge out of `Terminal`" are one fact and are not required to carry two reasons |
-| D7 | `Singular.route` | Given a fold minting an absent token; when it completes; then the absent token is in cage custody and the active/terminal tokens are at the request's named output. | Custody rows per token kind | An absent token routed to the request's output is refused |
-| R-ADA | `Singular.route` (value), custody datum | Given `Known Absent` whose absent token sits in cage custody with the refund address the `insertAbsent` request named; when `updateActive` or `deleteAbsent` consumes it; then the value it held is paid to **that refund address**. | Value-flow row for both edges, with the inserter and the consumer distinct | Paying the consuming request's output, paying the folder, or retaining it in custody is refused. The row where inserter = consumer is not a control: it cannot distinguish R-ADA from the rejected D-ADA |
-| D-CUST | custody invariant | Given any reachable state; when cage custody is enumerated; then it holds exactly the outstanding absent tokens, each with its refund address and its value — no more, no less. | Custody census row | An absent token in custody with no refund address, or a custody entry with no outstanding token, fails |
+| singular-leaf-singular-state | `Singular.Leaf`, `Singular.State` | Given any key; when its leaf is read; then it is `Unknown` or `Known s` with `s ∈ {Absent, Active, Terminal}` and nothing else. | Corpus rows covering all four leaf shapes | A leaf carrying an application payload does not elaborate |
+| absence-old-vocabulary | absence of the old vocabulary | Given the **elaborated environment**; when `Singular.Value`, `Entry.incarnation`, `Representative.assetScope`, `Config.reuseIdentity`, `Config.consumerPin` are looked up; then none resolves. | An environment query in the audit gate, not a grep | Re-adding any one of them makes the query find it and the leg fail |
+| singular-edge-singular-delta | `Singular.Edge`, `Singular.delta` | Given an edge; when it is folded; then its from→to transition and its token delta are exactly the seven-edges-interface table. | One accepted corpus row per edge with its recorded delta | Each edge with a delta off by one is refused `net-mint-mismatch` |
+| singular-read-root-threading | `Singular.Read`, root threading | Given a batch `[…, Read k v, …]`; when the fold reaches position k; then the proof is verified against the **intermediate** root at that position and the leaf is unchanged. | An accepted `[Insert k v, Read k v]` batch; leaf equal before and after | `[Insert j, Read k Terminal, Insert l]` where the proof for `k` is valid **only** against the middle root: refused against the initial root and refused against the final root. A read at the last position is not a control — there the intermediate root *is* the final root, and at position 0 it is the initial root |
+| singular-admits-config-applicationpolicy | `Singular.admits`, `Config.applicationPolicy` | Given a tree-edge request without an approval under the pinned policy; when folded; then refused. Given `witnessTerminal` without one; then accepted. Given an approval under the pinned policy whose `(edge, key, owner, destination)` tuple does not match the request; then **refused** — right policy is necessary, not sufficient (approval-asset-binding). | One refusal row per tree edge; one accepted read row; one mismatched-tuple refusal | An approval under another policy is refused; a tuple-mismatched approval under the *correct* policy is refused |
+| state-datum-its-fields-enumerated-exactly-eight | `Singular.Config` | Given the state datum; when its fields are enumerated; then exactly the eight of state-configuration; no `consumerPin`. | Eight-field round-trip row | A nine-field or `consumerPin`-bearing datum does not decode |
+| singular-step-refusal-reasons | `Singular.step` refusal reasons | Given **any `(primitive, value, before-leaf)` triple that is not a row of the seven-edges-interface table**, plus a zero-request batch and a mint ≠ the summed delta; when folded; then each is refused, and reasons are distinct **where the distinction is observable**. The refused reads `Read Active` and `Read Absent` are part of this set — the structural guard terminal-attestation-sound rests on them. | One refusal row per named case of refused-combinations-as-complement's table, reasons pairwise distinct except where refused-combinations-as-complement says one fact | Removing one guard turns its row accepted. `deleteTerminal` and "any edge out of `Terminal`" are one fact and are not required to carry two reasons |
+| fold-minting-absent-token-it-completes-absent | `Singular.route` | Given a fold minting an absent token; when it completes; then the absent token is in cage custody and the active/terminal tokens are at the request's named output. | Custody rows per token kind | An absent token routed to the request's output is refused |
+| custody-lovelace-refund | `Singular.route` (value), custody datum | Given `Known Absent` whose absent token sits in cage custody with the refund address the `insertAbsent` request named; when `updateActive` or `deleteAbsent` consumes it; then the value it held is paid to **that refund address**. | Value-flow row for both edges, with the inserter and the consumer distinct | Paying the consuming request's output, paying the folder, or retaining it in custody is refused. The row where inserter = consumer is not a control: it cannot distinguish custody-lovelace-refund from the rejected retired-custody-value-proposal |
+| absent-custody-datum | custody invariant | Given any reachable state; when cage custody is enumerated; then it holds exactly the outstanding absent tokens, each with its refund address and its value — no more, no less. | Custody census row | An absent token in custody with no refund address, or a custody entry with no outstanding token, fails |
 
 ### Codec — frozen sibling contract for #157 and #152
 
 | id | Lean identity | Given / When / Then | Observation | Control |
 |---|---|---|---|---|
-| C1 | `Singular.encodeState`, `Singular.decodeState` | Given any `State`; when encoded then decoded; then the original returns. `0x00`/`0x01`/`0x02`. | Round-trip row per state | A codec mapping two states to one byte fails the round trip |
-| C2 | `decodeState` totality | Given any byte string that is not one of the three; when decoded; then no state is produced and the cage refuses the leaf. | Refusal rows for `0x03`, empty, multi-byte | A permissive decoder accepts `0x03`; that row must then fail |
-| C3 | naming-era bytes | Given a leaf byte string from the naming era; when decoded; then it is not a valid leaf. | Refusal row over a naming-era byte string | A decoder that still accepts naming bytes fails this row |
+| singular-encodestate-singular-decodestate | `Singular.encodeState`, `Singular.decodeState` | Given any `State`; when encoded then decoded; then the original returns. `0x00`/`0x01`/`0x02`. | Round-trip row per state | A codec mapping two states to one byte fails the round trip |
+| any-byte-string-that-not-one-three | `decodeState` totality | Given any byte string that is not one of the three; when decoded; then no state is produced and the cage refuses the leaf. | Refusal rows for `0x03`, empty, multi-byte | A permissive decoder accepts `0x03`; that row must then fail |
+| leaf-byte-string-from-naming-era-decoded | naming-era bytes | Given a leaf byte string from the naming era; when decoded; then it is not a valid leaf. | Refusal row over a naming-era byte string | A decoder that still accepts naming bytes fails this row |
 
 ### Statements (interface §6 and §4)
 
@@ -120,28 +120,28 @@ all syntactic states is wrong, not stronger.
 
 | id | Lean identity | Given / When / Then |
 |---|---|---|
-| I-P1 | `Singular.Statements.no_tree_change_without_approval` | Given any reachable state and any fold; when a tree change occurs; then the request carried an approval under the pinned application policy, and the pins are equal before and after. |
-| I-L1 | `Singular.Statements.booked_at_most_once` | Given any reachable state; when a batch is folded; then a key is booked at most once at a time, the batch is atomic, and each request is spent once. |
-| I-S1 | `Singular.Statements.terminal_attestation_sound` | Given any reachable state and a terminal token for `key`; when its provenance is traced; then it was minted by a fold that accepted `Read Terminal` for `key`, which holds only if the leaf was `Known Terminal`. No attestation of an `Active`, `Absent` or `Unknown` key exists. |
-| I-S2 | `Singular.Statements.terminal_attestation_permanent` | Given any reachable state `s` and a terminal token valid in it; when any sequence of folds is applied; then it is valid in every later state, because a `Terminal` leaf admits no edge that moves it. |
-| I-S3 | `Singular.Statements.biconditional_supply_sync` | Given any reachable state and any key and either biconditional kind; when the supply is counted; then it is 1 iff the key is in that token's state, and 0 otherwise — unconditionally. Identity is `(policy, key)`; a key recreated after `deleteActive` carries the same identity, by design. |
-| I-O1 | `Singular.Statements.occupancy` | Given any reachable state and a key whose leaf is `Active` or `Terminal`; when a booking edge is folded; then refused; and when the key is not taken, it succeeds. |
-| I-T1 | `Singular.Statements.termination` | Given any reachable state and a key whose leaf is `Known Terminal`; when any edge is attempted; then refused, so the key stays terminated forever and is never re-booked. |
-| I-W1 | `Singular.Statements.active_witness_unique` | Given any reachable state and any key; when active tokens are counted; then at most one, and exactly one iff the leaf is `Known Active`. |
-| I-W2 | `Singular.Statements.absent_witness_unique` | Given any reachable state and any key; when absent tokens are counted; then at most one, and exactly one iff the leaf is `Known Absent`. |
-| I-W3 | `Singular.Statements.terminal_witness_plural` | Given any reachable state and a key whose leaf is `Known Terminal`; when terminal tokens are minted or burned; then any number may exist, all true, all freely burnable; and any exists only if the leaf is `Known Terminal`. |
-| I-W4 | `Singular.Statements.witness_kinds_exclude` | Given any reachable state and any key; when the outstanding witnesses are examined; then at most one **kind** is outstanding: a consumer finding one kind knows the other two do not exist, without reading the state. |
+| I-tree-change-requires-approval | `Singular.Statements.no_tree_change_without_approval` | Given any reachable state and any fold; when a tree change occurs; then the request carried an approval under the pinned application policy, and the pins are equal before and after. |
+| I-request-spent-once-in-order | `Singular.Statements.booked_at_most_once` | Given any reachable state; when a batch is folded; then a key is booked at most once at a time, the batch is atomic, and each request is spent once. |
+| I-terminal-attestation-sound | `Singular.Statements.terminal_attestation_sound` | Given any reachable state and a terminal token for `key`; when its provenance is traced; then it was minted by a fold that accepted `Read Terminal` for `key`, which holds only if the leaf was `Known Terminal`. No attestation of an `Active`, `Absent` or `Unknown` key exists. |
+| I-terminal-attestation-permanent | `Singular.Statements.terminal_attestation_permanent` | Given any reachable state `s` and a terminal token valid in it; when any sequence of folds is applied; then it is valid in every later state, because a `Terminal` leaf admits no edge that moves it. |
+| I-supply-matches-leaf-state | `Singular.Statements.biconditional_supply_sync` | Given any reachable state and any key and either biconditional kind; when the supply is counted; then it is 1 iff the key is in that token's state, and 0 otherwise — unconditionally. Identity is `(policy, key)`; a key recreated after `deleteActive` carries the same identity, by design. |
+| I-booking-requires-untaken-key | `Singular.Statements.occupancy` | Given any reachable state and a key whose leaf is `Active` or `Terminal`; when a booking edge is folded; then refused; and when the key is not taken, it succeeds. |
+| I-terminal-key-cannot-change | `Singular.Statements.termination` | Given any reachable state and a key whose leaf is `Known Terminal`; when any edge is attempted; then refused, so the key stays terminated forever and is never re-booked. |
+| I-active-witness-unique | `Singular.Statements.active_witness_unique` | Given any reachable state and any key; when active tokens are counted; then at most one, and exactly one iff the leaf is `Known Active`. |
+| I-absent-witness-unique | `Singular.Statements.absent_witness_unique` | Given any reachable state and any key; when absent tokens are counted; then at most one, and exactly one iff the leaf is `Known Absent`. |
+| I-terminal-witnesses-plural | `Singular.Statements.terminal_witness_plural` | Given any reachable state and a key whose leaf is `Known Terminal`; when terminal tokens are minted or burned; then any number may exist, all true, all freely burnable; and any exists only if the leaf is `Known Terminal`. |
+| I-witness-kinds-exclude | `Singular.Statements.witness_kinds_exclude` | Given any reachable state and any key; when the outstanding witnesses are examined; then at most one **kind** is outstanding: a consumer finding one kind knows the other two do not exist, without reading the state. |
 
 ### Instances
 
 | id | Given / When / Then | Observation | Control |
 |---|---|---|---|
-| OA1 | Given the open application — a policy that certifies everything; when each statement I-P1…I-W4 is instantiated at it; then all hold. The smallest instantiation, proved **first**. | Instantiation of every statement at the open policy | A statement that silently assumed naming's policy fails to instantiate |
-| NM1 | Given naming; when a record is registered; then the record UTxO holds the active token and the trie carries only `Active`. | Naming corpus registration rows | A record whose data sits in the leaf fails D1 |
-| NM2 | Given a live record; when `maintain` or `recover` runs; then the application UTxO is spent and **the trie is untouched** — root equal before and after. | Root-equality rows for both moves | A maintain that changes the root is refused |
-| NM3 | Given retirement; when it completes; then it is `updateTerminal`, and `over_terminal` and `naming_delete_refused` hold over the new model. | Re-stated naming statements at their preserved identities | Re-admitting either statement turns the build red |
-| NM4 | Given naming's approval policy; when a request arrives on each of the six edges; then it is certified exactly per **R-NM4**: `insertAbsent` for anyone; `updateActive` on the signature of the controller who will own the record; `deleteAbsent` on the signature of the refund address the `insertAbsent` request named; `insertActive` on the controller's; `updateTerminal` on **the committed recovery key revealed and signing, or a distinct-member quorum** — never the current control key alone (NOTE-008); `deleteActive` never. | One admission row per edge | Per edge: an approval for `deleteActive` at all; a `deleteAbsent` approval under **any signature but the refund address's**, and one under **no** signature; an `updateActive` approval **without** the controller's signature; an `updateTerminal` signed by **the current control key alone**, and one below quorum — each refused |
-| NM5 | Given the naming recovery rows and `WellFormed`; when re-stated over the new model; then their meaning is preserved. | The lifecycle corpus replays under the new identities | A dropped recovery row is missing from the regenerated manifest |
+| open-application-law-instances | Given the open application — a policy that certifies everything; when each statement I-tree-change-requires-approval…I-witness-kinds-exclude is instantiated at it; then all hold. The smallest instantiation, proved **first**. | Instantiation of every statement at the open policy | A statement that silently assumed naming's policy fails to instantiate |
+| record-binds-active-registration | Given naming; when a record is registered; then the record UTxO holds the active token and the trie carries only `Active`. | Naming corpus registration rows | A record whose data sits in the leaf fails singular-leaf-singular-state |
+| local-record-update-preserves-registry | Given a live record; when `maintain` or `recover` runs; then the application UTxO is spent and **the trie is untouched** — root equal before and after. | Root-equality rows for both moves | A maintain that changes the root is refused |
+| retirement-removes-active-witness | Given retirement; when it completes; then it is `updateTerminal`, and `over_terminal` and `naming_delete_refused` hold over the new model. | Re-stated naming statements at their preserved identities | Re-admitting either statement turns the build red |
+| naming-approvals-bind-request | Given naming's approval policy; when a request arrives on each of the six edges; then it is certified exactly per **naming-approval-rules**: `insertAbsent` for anyone; `updateActive` on the signature of the controller who will own the record; `deleteAbsent` on the signature of the refund address the `insertAbsent` request named; `insertActive` on the controller's; `updateTerminal` on **the committed recovery key revealed and signing, or a distinct-member quorum** — never the current control key alone (operator note (NOTE-008)); `deleteActive` never. | One admission row per edge | Per edge: an approval for `deleteActive` at all; a `deleteAbsent` approval under **any signature but the refund address's**, and one under **no** signature; an `updateActive` approval **without** the controller's signature; an `updateTerminal` signed by **the current control key alone**, and one below quorum — each refused |
+| recovery-preserves-record-rules | Given the naming recovery rows and `WellFormed`; when re-stated over the new model; then their meaning is preserved. | The lifecycle corpus replays under the new identities | A dropped recovery row is missing from the regenerated manifest |
 
 ### Mutants — the four named in #154
 
@@ -158,23 +158,23 @@ may not be presented as one. For each mutant the ledger records, per mutant:
 
 | id | mutant | must break |
 |---|---|---|
-| M1 | mint a second active token for a key | I-W1, and I-S3 for the active kind |
-| M2 | mint an absent token for an active key | I-W2 and I-W4 |
-| M3 | attest an active key (`Read Active` admitted) | I-S1 |
-| M4 | leave the absent token outstanding on `updateActive` | I-S3 and I-W4 |
+| mint-second-active-token-for-key | mint a second active token for a key | I-active-witness-unique, and I-supply-matches-leaf-state for the active kind |
+| mint-absent-token-for-active-key | mint an absent token for an active key | I-absent-witness-unique and I-witness-kinds-exclude |
+| attest-active-key-read-active-admitted | attest an active key (`Read Active` admitted) | I-terminal-attestation-sound |
+| leave-absent-token-outstanding-on-updateactive | leave the absent token outstanding on `updateActive` | I-supply-matches-leaf-state and I-witness-kinds-exclude |
 
 `docs/mutants.md` today declares every row PROPOSED / NOT EXECUTED and defines a
 kill as "the mutated model no longer builds". Both statements are superseded for
 these four: they are executed, and a build failure alone does not count.
 
-### R12 — the retirement map for the 44 generic declarations
+### retirement-map-for-generic-statements — the retirement map for the 44 generic declarations
 
 | id | obligation |
 |---|---|
-| R12 | Slice A's handback gives **each** of the 44 declarations in the base `lean/theorem-debt.json` exactly one disposition: **carried** (same meaning, same or new identity), **renamed** (to which exact identity), or **retired** (with the reason). |
+| retirement-map-for-generic-statements | Slice A's handback gives **each** of the 44 declarations in the base `lean/theorem-debt.json` exactly one disposition: **carried** (same meaning, same or new identity), **renamed** (to which exact identity), or **retired** (with the reason). |
 
 This exists because `over_terminal` is in `Singular.Statements`
-(Statements.lean:142), not the naming layer, and T1 **supersedes** it rather than
+(Statements.lean:142), not the naming layer, and terminal-key-cannot-change **supersedes** it rather than
 preserving it — as do `over_no_representative`, `resolve_over` and the `consumer`
 theorems in the same module. Without the map an auditor cannot tell a dropped
 guarantee from a rename, and the page-against-manifest check (X1/A7) passes
@@ -190,7 +190,7 @@ The gate cannot judge these; the independent auditor must.
 |---|---|
 | Y1 | **The four mutants.** Each elaborates; the kill is a named statement whose proof no longer closes **or** a corpus row whose verdict flips, recorded per mutant; each with a positive control. No compile-failure kill. |
 | Y2 | **`tools/check_model.py` still checks what it claims.** The author rewrites the file gate leg A2 runs, so A2 judges through an artifact under the author's control. Diff it against base and demonstrate, with **one seeded control each**, that exact-identity matching, PROVED-only-from-standard-axioms, STATED-for-admitted, byte-for-byte corpus regeneration and the keyword/proof-hole audit each still **fail** when violated. |
-| Y3 | **R12's retirement map** is complete and honest against the base manifest. |
+| Y3 | **retirement-map-for-generic-statements's retirement map** is complete and honest against the base manifest. |
 
 ### A starting-state defect this slice must correct
 
@@ -227,7 +227,7 @@ rows leaves the next divergence undetected.
 | id | Given / When / Then | Observation | Control |
 |---|---|---|---|
 | B1 | Given the frozen slice-A interface; when the generic profile is played; then the seven edges and the read are exposed, with the token movement shown per edge. | Simulator profile exercised over every edge | An edge missing from the profile fails the denominator check |
-| B2 | Given each illegal combination of R3; when attempted in the simulator; then it is refused **by name**, matching the model's reason. | One named refusal per combination | A generic "invalid" refusal that does not name the combination fails |
+| B2 | Given each illegal combination of refused-combinations-as-complement; when attempted in the simulator; then it is refused **by name**, matching the model's reason. | One named refusal per combination | A generic "invalid" refusal that does not name the combination fails |
 | B3 | Given the new corpora; when the simulator replays them; then every finite row agrees with the Lean-computed result. | Full-corpus replay with an executed/discovered denominator | A single altered expected verdict turns the replay red |
 | B4 | Given the naming profile; when a retired key is read; then the Over witness is minted by a **folded read** and can be freely burned. | Naming profile journey | Minting it without a folded read fails |
 | B5 | Given the front page and `docs/design.md`; when their counts are read; then they equal what actually replays. | Counts derived from the replay, not hand-written | A stale count fails its check |
@@ -250,7 +250,7 @@ throws during elaboration on any non-standard axiom, so a `sorryAx` reddens the
 build itself; every discovered `*Statements` module actually reaching the
 compiled axiom report; exact identity/manifest discipline with byte-for-byte
 corpus regeneration; removed-vocabulary absence from the **elaborated
-environment**; the refusal set of R3 including the refused reads, with distinct
+environment**; the refusal set of refused-combinations-as-complement including the refused reads, with distinct
 reasons where the distinction is observable; the owned pages' declaration table
 equal to its manifest; fresh speech stamps; and the diff staying inside slice A's
 surface **measured from the frozen planning head**.
@@ -260,7 +260,7 @@ execute the four mutants (Y1), does not verify `tools/check_model.py` still
 checks what it claims (Y2), does not judge the retirement map (Y3), and does not
 claim the repository green. Those are the independent audit's.
 
-Changes from `a2`, all from A-002:
+Changes from `a2`, all from operator answer (A-002):
 
 - **A3 is dropped, not weakened.** It could not flip independently of A1:
   `Audit.lean:25` throws at `lake build` on any non-standard axiom, so the
@@ -272,8 +272,8 @@ Changes from `a2`, all from A-002:
 - **A5's removed list gains** `Singular.Operation` and
   `Singular.Config.representativePolicy` — the latter is renamed to
   `activePolicy`, so the old name surviving is exactly the failure to catch.
-- **A6 gains the refused reads.** `Read Active` and `Read Absent` were in R5 but
-  in neither R3 nor A6's required set, so the structural guard S1 depends on was
+- **approval-binding-control gains the refused reads.** `Read Active` and `Read Absent` were in read-interface but
+  in neither refused-combinations-as-complement nor approval-binding-control's required set, so the structural guard terminal-attestation-sound depends on was
   unbound by the gate.
 - **A9 diffs from the frozen planning head, not the base, and drops `specs/`
   from its allowlist.** As written in `a2` the author could rewrite the mandate

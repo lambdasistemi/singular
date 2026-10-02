@@ -4,12 +4,12 @@
 
 {- |
 Module      : Singular.Registry.TxBuilder.Update.Build
-Description : Fold transaction assembly — one DSL program
+Description : Fold transaction assembly — one story language program
 License     : Apache-2.0
 
-The transaction side of a fold: the empty query GADT the fold's DSL
+The transaction side of a fold: the empty query generalized algebraic data type the fold's story language
 programs run under, the evaluation adapter that turns the provider's
-script budgets into the shape the DSL consumes, and the one program
+script budgets into the shape the story language consumes, and the one program
 that assembles the update transaction — spends, mints, outputs,
 signatures, scripts or references, collateral and validity — from the
 prepared context and the decided duties.
@@ -82,10 +82,10 @@ import Singular.Registry.Types
     , UpdateRedeemer (..)
     )
 
--- | Empty query GADT (no context needed).
+-- | Empty query generalized algebraic data type (no context needed).
 data NoCtx a
 
--- | Wrap the view's script evaluation for the DSL.
+-- | Wrap the view's script evaluation for the story language.
 mkEvalTx
     :: View IO
     -> ConwayTx
@@ -107,7 +107,7 @@ mkEvalTx view tx = do
             )
             r
 
--- | The TxBuild DSL program for an update tx.
+-- | The TxBuild story language program for an update tx.
 buildProgram
     :: CageConfig
     -> PParams ConwayEra
@@ -155,7 +155,7 @@ buildProgram
             in  if f > Coin 0
                     then Tx.Ok f
                     else Tx.Iterate f
-        -- #157 C10: the pinned consumer and its mandatory withdrawal are
+        -- #157 removed-consumer-encoding: the pinned consumer and its mandatory withdrawal are
         -- gone. Every rule it re-walked beside the fold — request value
         -- coverage, the mint binding — is the cage's own now, checked
         -- once from the transaction's own evidence.

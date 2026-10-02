@@ -62,7 +62,8 @@ programSpec = describe
                 -- The quantifier's controls: nothing to classify, a row nothing
                 -- classifies, and a classification for a row the group lacks.
                 classifyGroup [] `shouldSatisfy` isLeft
-                classifyGroup (group <> ["CG99"]) `shouldSatisfy` isLeft
+                classifyGroup (group <> ["unknown-requirement"])
+                    `shouldSatisfy` isLeft
                 classifyGroup (drop 1 group) `shouldSatisfy` isLeft
 
         it "Reads each program's kind off its instructions" $ do
@@ -82,7 +83,10 @@ programSpec = describe
 
         it
             "Retires the stake_script hook rows against the registry interface, which has no hook"
-            $ forM_ ["CG14", "CG15"]
+            $ forM_
+                [ "retired-stake-hook-with-withdrawal"
+                , "retired-stake-hook-without-withdrawal"
+                ]
             $ \row -> do
                 fmap programRow (programFor row) `shouldBe` Nothing
                 case classify (T.pack row) of
@@ -113,20 +117,22 @@ programSpec = describe
             "Cites no end-to-end example the registry's suite no longer has, for the custody rows superseded with the owner role"
             $ do
                 rows <- loadCommitted
-                forM_ ["CG16", "CG18"] $ \row ->
-                    case [r | r <- rows, rowId r == row] of
-                        [r] -> do
-                            rowEvidence r `shouldBe` Nothing
-                            T.unpack (rowExpected r) `shouldSatisfy` isPrefixOf "superseded"
-                        _ ->
-                            expectationFailure (T.unpack row <> " is not in the inventory once")
+                forM_
+                    ["historical-owner-signed-sweep", "historical-registry-termination"]
+                    $ \row ->
+                        case [r | r <- rows, rowId r == row] of
+                            [r] -> do
+                                rowEvidence r `shouldBe` Nothing
+                                T.unpack (rowExpected r) `shouldSatisfy` isPrefixOf "superseded"
+                            _ ->
+                                expectationFailure (T.unpack row <> " is not in the inventory once")
 
         it
             "Publishes each registry row's classification under its requirement in the book"
             $ do
                 rows <- loadCommitted
                 let book = renderBook rows []
-                forM_ [r | r <- rows, rowGroup r == "CG"] $ \r -> do
+                forM_ [r | r <- rows, rowGroup r == "registry-operations"] $ \r -> do
                     let section = requirementSection (T.unpack (rowRequirement r)) book
                         expected = case classify (rowId r) of
                             Right (Composed EdgeComposition) ->
@@ -142,28 +148,45 @@ programSpec = describe
     readings p = map registryReading (programRegistries p)
 
 compositions :: [Text]
-compositions = ["CG01", "CG02", "CG03", "CG04", "CG05", "CG06", "CG08", "CG11"]
+compositions =
+    [ "insert-key"
+    , "update-existing-key"
+    , "delete-existing-key"
+    , "reinsert-deleted-key"
+    , "insert-occupied-key"
+    , "retract-inside-window"
+    , "reject-after-window"
+    , "empty-fold"
+    ]
 
 tampers :: [Text]
-tampers = ["CG07", "CG09", "CG19", "CG21", "CG22", "CG23", "CG24"]
+tampers =
+    [ "retract-outside-window"
+    , "reject-before-deadline-consumer-requirement"
+    , "request-value-and-refund-routing"
+    , "register-active-key"
+    , "retire-active-key"
+    , "reject-and-retract-refund-controls"
+    , "reject-inside-processing-and-retraction-windows"
+    ]
 
 outside :: [Text]
 outside =
-    [ "CG10"
-    , "CG12"
-    , "CG13"
-    , "CG14"
-    , "CG15"
-    , "CG16"
-    , "CG17"
-    , "CG18"
-    , "CG20"
+    [ "fold-against-superseded-root"
+    , "surplus-fold-actions"
+    , "historical-owner-change"
+    , "retired-stake-hook-with-withdrawal"
+    , "retired-stake-hook-without-withdrawal"
+    , "historical-owner-signed-sweep"
+    , "historical-non-owner-sweep"
+    , "historical-registry-termination"
+    , "historical-permissionless-fold"
     ]
 
 registryRows :: IO [Text]
 registryRows = do
     rows <- loadCommitted
-    pure [rowId r | r <- rows, rowGroup r == "CG"]
+    pure [rowId r | r <- rows, rowGroup r == "registry-operations"]
 
 loadCommitted :: IO [Row]
 loadCommitted = do

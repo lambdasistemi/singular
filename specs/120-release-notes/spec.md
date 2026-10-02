@@ -68,7 +68,7 @@ internal boilerplate.
 
 The mandate is issue #120 (four frozen acceptance items, one
 `fix(release):` PR, merge through merge-guard, authority
-NOTE-003, no Lean or contract behaviour change). The diff
+operator note (NOTE-003), no Lean or contract behaviour change). The diff
 implements all four items. Two notes, neither a user-visible
 disagreement. No question raised.
 

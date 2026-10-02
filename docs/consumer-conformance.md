@@ -29,8 +29,10 @@ name.
 
 ## The denominator
 
-`conformance/rows.json` carries **46 rows, 45 owned**: CA01–CA05,
-CG01–CG24, CS01–CS08, CK01–CK05, CL01–CL03, plus CK06 (bonds, poison,
+`conformance/rows.json` carries **46 rows, 45 owned**: five registry identity
+requirements, twenty-four registry operation requirements, eight serialization
+requirements, five consumer resolution requirements and three execution-limit
+requirements, plus the checkpoint and treasury policy (bonds, poison,
 the juvenility window `W`, the signature threshold) recorded as
 **out of scope** — it belongs to cardano-keri's checkpoint machine
 and treasury, explicitly never claimed by Singular. `list` prints the
@@ -187,11 +189,11 @@ being replayed. A build or a green check of expected debt grants no coverage.
 
 | Surface | Current contract and remaining limit |
 | --- | --- |
-| State codec, CS01/CS02/CS08 | The eight fields are root, maxFee, processTime, retractTime, applicationPolicy, activePolicy, absentPolicy and terminalPolicy. The state round-trip row boots two cages and compares all eight fields submitted versus chain-observed, including the four derived pins; its armed control demands the old six-field encoding and fails. Historical owner, stake_script and consumer-pin receipts do not establish this codec. |
-| Blueprint encodings, CS01 | Every encoder/decoder pair in the registry types is compared against the compiled blueprint's own declared schema, constructor index and field order — including the appended read operation, the appended request destination and the appended custody datum. The retired consumer encoder is gone with its script. |
-| Parameters, CS06 | State and staking declare zero parameters. Request retains two ordered parameters, statePolicyId and cageTokenName, and order discrimination. The witness policy declares two, kind and registry. The former state allowlist is absent. |
-| Address derivation, CA04 | State uses the production derivation compared with the actual chain address. The same comparison rejects an erroneous extra application with every other input fixed. Its receipt records addresses, arity, decisions and the off-chain identity venue; it is not a phase-2 rejection. Request retains applied-versus-unapplied address discrimination. |
-| Generic observations, CG11/CG19 | Both require observe-and-report and remain held-q002; CG12 has no counterpart in Singular's model and is unmet by ruling ([lambdasistemi/singular#345](https://github.com/lambdasistemi/singular/issues/345)). Current refusals need structural phase/script attribution and an accepting control; a missing named failure branch remains an explicit limit. An observation does not fulfill the consumer requirement. |
+| State codec, blueprint-encoding-round-trip/submitted-datum-byte-round-trip/state-fields-chain-round-trip | The eight fields are root, maxFee, processTime, retractTime, applicationPolicy, activePolicy, absentPolicy and terminalPolicy. The state round-trip row boots two cages and compares all eight fields submitted versus chain-observed, including the four derived pins; its armed control demands the old six-field encoding and fails. Historical owner, stake_script and consumer-pin receipts do not establish this codec. |
+| Blueprint encodings, blueprint-encoding-round-trip | Every encoder/decoder pair in the registry types is compared against the compiled blueprint's own declared schema, constructor index and field order — including the appended read operation, the appended request destination and the appended custody datum. The retired consumer encoder is gone with its script. |
+| Parameters, script-parameter-application | State and staking declare zero parameters. Request retains two ordered parameters, statePolicyId and cageTokenName, and order discrimination. The witness policy declares two, kind and registry. The former state allowlist is absent. |
+| Address derivation, applied-validator-identity | State uses the production derivation compared with the actual chain address. The same comparison rejects an erroneous extra application with every other input fixed. Its receipt records addresses, arity, decisions and the off-chain identity venue; it is not a phase-2 rejection. Request retains applied-versus-unapplied address discrimination. |
+| Generic observations, empty-fold/request-value-and-refund-routing | Both require observe-and-report and remain held-q002; surplus-fold-actions has no counterpart in Singular's model and is unmet by ruling ([lambdasistemi/singular#345](https://github.com/lambdasistemi/singular/issues/345)). Current refusals need structural phase/script attribution and an accepting control; a missing named failure branch remains an explicit limit. An observation does not fulfill the consumer requirement. |
 
 ## Historical execution reports
 
@@ -205,8 +207,8 @@ receipts as evidence for the current candidate.
 Devnet sessions run in order, each on an isolated node with its own
 published world: the generic registry rows first — the four issue-#63
 rows plus the issue-#70 rows below — then the canonical identity rows,
-then the serialization boundary rows. Two further checks, CS01 and
-CS06, never start a node at all: they compare Haskell values against
+then the serialization boundary rows. Two further checks, blueprint-encoding-round-trip and
+script-parameter-application, never start a node at all: they compare Haskell values against
 the compiled blueprint read at run time, so a reader totalling "rows
 executed on a real devnet" counts the thirteen generic, five
 canonical-identity and five serialization rows below — never the local
@@ -218,12 +220,12 @@ Against a real devnet, one cage, one key, in order:
 
 | row | outcome | evidence |
 |---|---|---|
-| CG02 generic Update v1→v2 | accept | inclusion proof for v2 implies the chain-read root; forged-value proof does not (control) |
-| CG03 generic Delete | accept | exclusion proof verifies against the chain-read root (empty trie); pre-delete proof bound to the deleted value does not (control) |
-| CG04 re-Insert v3 | accept | inclusion proof for v3 implies the chain-read root; forged-value proof does not (control) |
-| CG05 Insert on occupied key | **refuse** | hand-built fold submitted; node refuses in phase 2, attributed to the state script (`874e476d…`, `CekError`); fresh cage accepts a valid insert (control) |
+| update-existing-key generic Update v1→v2 | accept | inclusion proof for v2 implies the chain-read root; forged-value proof does not (control) |
+| delete-existing-key generic Delete | accept | exclusion proof verifies against the chain-read root (empty trie); pre-delete proof bound to the deleted value does not (control) |
+| reinsert-deleted-key re-Insert v3 | accept | inclusion proof for v3 implies the chain-read root; forged-value proof does not (control) |
+| insert-occupied-key Insert on occupied key | **refuse** | hand-built fold submitted; node refuses in phase 2, attributed to the state script (`874e476d…`, `CekError`); fresh cage accepts a valid insert (control) |
 
-CG05's refusal is a node verdict on a submitted transaction, the
+insert-occupied-key's refusal is a node verdict on a submitted transaction, the
 li-refusals bar: the fold is hand-built (the library builder cannot
 emit a transaction whose scripts do not evaluate) and calibrated
 against the library builder on every valid fold — same inputs,
@@ -296,15 +298,15 @@ refusal to the script that failed and retain their accepting controls.
 | row | outcome | evidence |
 |---|---|---|
 | Retract outside phase 2 | **refuse before and after; accept inside** | The dedicated story submits three owner-signed retractions with finite validity bounds. Both outside-window attempts must be refused by the request script and by the model for `not-phase2`; the same first request retracted inside its window is accepted by both. The second request is booked alongside the first in the same registry, with the same owner and edge, and shares its accepting control. The receipt records each comparison. |
-| CG09 a folder must not reject a request during its processing window | accept — **unmet-by-ruling** (historically **refuse**) | the consumer requires that a folder must not reject a request during its processing window (cardano-keri `R9_reject_needs_rejectable`, `0e638fad`, `RegistryGoals.lean` blob `d38e81c0`); Singular's model lets a folder reject a request with no timing admission, and since #320 the chain accepts that reject. By operator ruling 2026-10-01 the requirement is kept unmet: the row is recorded `unmet-by-ruling` and never counted as passing, and alignment is [cardano-keri#468](https://github.com/lambdasistemi/cardano-keri/issues/468); the same reject refunding the owner one lovelace short is refused in-run first, attributed to the state script (control). Historically the node refused the reject at script validation, attributed to the state script (`ce7615f6…`), and the same request rejected by the library after its retraction window was accepted in-run |
-| CG10 fold with stale proofs | **refuse** — **unmet-by-ruling** | stale proofs against a superseded root refused, attributed to the state script; the same shape folded against the live root is accepted in-run (control) — the refusal is the staleness, not the shape. The chain refuses; Lean has no counterpart to compare with. By operator ruling 2026-10-02 ("Narrow #287") the row is recorded `unmet-by-ruling`, never a pass; follow-up [lambdasistemi/singular#346](https://github.com/lambdasistemi/singular/issues/346) |
-| CG11 empty fold | accept — **held-q002** | the chain accepts a fold carrying no actions (tx `b670c28e…`); with one live request waiting, empty actions are refused in-run (control) — the acceptance is specific to the empty fold |
-| CG12 surplus action | **refuse** — **unmet-by-ruling** | two actions over one request are refused, attributed to the state script (traced reason `surplus-actions`); one action fewer than there are requests is refused too (`missing-action`), and an exact one-to-one fold is accepted in-run (control). The chain refuses; Lean has no counterpart to compare with. By operator ruling 2026-10-02 ("Narrow #287") the row is recorded `unmet-by-ruling`, never a pass; follow-up [lambdasistemi/singular#345](https://github.com/lambdasistemi/singular/issues/345). Historically, before the cage repair, the surplus was accepted (tx `facebfe6…`) |
-| CG13 owner change via Modify | accept — **defect evidence** | the chain accepted a Modify changing the state owner to `0xab…ab`, signed by the previous owner (tx `78e49eea…`); resolved-by-ruling: the registry has no owner role at all, so the transfer is a privilege that must not exist — retained as defect evidence of the outstanding owner gate |
-| CG17 sweep by a non-owner | **refuse** — superseded claim | the sweep is refused, attributed to the request script (`7f32c3e7…`); the same sweep signed as the owner is accepted in-run (control). SUPERSEDED: it asserted registry-owner authority, which does not exist — observation preserved, conformance claim withdrawn |
-| CG19 crossed refunds | accept — **held-q002** | bonds of 5 and 3 ada refunded crossed (4 and 2 ada, aggregate exactly the validator's ceiling), accepted (tx `566ddc80…`); refunds totalling below the aggregate floor are refused in-run (control) — the range is real, and it is still not the requirement |
-| CG20 permissionless fold | accept | after the #79 repair the fold with NO owner signer is accepted (tx `4142f7d6…`, mem 717070 / cpu 231585673 / size 11442); the same fold WITH the owner signer is accepted in-run (control) — see F-002 below |
-| CG14 / CG15 stake_script hook | **retired** | nothing runs them: the registry interface (registry mode) has no stake_script hook and the model has no withdrawal. History: the pinned staking credential could not register (`MissingScriptWitnessesUTXOW` without the witness, cert-purpose `CekError` with it), so the hook never reached a ledger |
+| reject-before-deadline-consumer-requirement a folder must not reject a request during its processing window | accept — **unmet-by-ruling** (historically **refuse**) | the consumer requires that a folder must not reject a request during its processing window (cardano-keri `R9_reject_needs_rejectable`, `0e638fad`, `RegistryGoals.lean` blob `d38e81c0`); Singular's model lets a folder reject a request with no timing admission, and since #320 the chain accepts that reject. By operator ruling 2026-10-01 the requirement is kept unmet: the row is recorded `unmet-by-ruling` and never counted as passing, and alignment is [cardano-keri#468](https://github.com/lambdasistemi/cardano-keri/issues/468); the same reject refunding the owner one lovelace short is refused in-run first, attributed to the state script (control). Historically the node refused the reject at script validation, attributed to the state script (`ce7615f6…`), and the same request rejected by the library after its retraction window was accepted in-run |
+| fold-against-superseded-root fold with stale proofs | **refuse** — **unmet-by-ruling** | stale proofs against a superseded root refused, attributed to the state script; the same shape folded against the live root is accepted in-run (control) — the refusal is the staleness, not the shape. The chain refuses; Lean has no counterpart to compare with. By operator ruling 2026-10-02 ("Narrow #287") the row is recorded `unmet-by-ruling`, never a pass; follow-up [lambdasistemi/singular#346](https://github.com/lambdasistemi/singular/issues/346) |
+| empty-fold empty fold | accept — **held-q002** | the chain accepts a fold carrying no actions (tx `b670c28e…`); with one live request waiting, empty actions are refused in-run (control) — the acceptance is specific to the empty fold |
+| surplus-fold-actions surplus action | **refuse** — **unmet-by-ruling** | two actions over one request are refused, attributed to the state script (traced reason `surplus-actions`); one action fewer than there are requests is refused too (`missing-action`), and an exact one-to-one fold is accepted in-run (control). The chain refuses; Lean has no counterpart to compare with. By operator ruling 2026-10-02 ("Narrow #287") the row is recorded `unmet-by-ruling`, never a pass; follow-up [lambdasistemi/singular#345](https://github.com/lambdasistemi/singular/issues/345). Historically, before the cage repair, the surplus was accepted (tx `facebfe6…`) |
+| historical-owner-change owner change via Modify | accept — **defect evidence** | the chain accepted a Modify changing the state owner to `0xab…ab`, signed by the previous owner (tx `78e49eea…`); resolved-by-ruling: the registry has no owner role at all, so the transfer is a privilege that must not exist — retained as defect evidence of the outstanding owner gate |
+| historical-non-owner-sweep sweep by a non-owner | **refuse** — superseded claim | the sweep is refused, attributed to the request script (`7f32c3e7…`); the same sweep signed as the owner is accepted in-run (control). SUPERSEDED: it asserted registry-owner authority, which does not exist — observation preserved, conformance claim withdrawn |
+| request-value-and-refund-routing crossed refunds | accept — **held-q002** | bonds of 5 and 3 ada refunded crossed (4 and 2 ada, aggregate exactly the validator's ceiling), accepted (tx `566ddc80…`); refunds totalling below the aggregate floor are refused in-run (control) — the range is real, and it is still not the requirement |
+| historical-permissionless-fold permissionless fold | accept | after the #79 repair the fold with NO owner signer is accepted (tx `4142f7d6…`, mem 717070 / cpu 231585673 / size 11442); the same fold WITH the owner signer is accepted in-run (control) — see F-002 below |
+| retired-stake-hook-with-withdrawal / retired-stake-hook-without-withdrawal stake_script hook | **retired** | nothing runs them: the registry interface (registry mode) has no stake_script hook and the model has no withdrawal. History: the pinned staking credential could not register (`MissingScriptWitnessesUTXOW` without the witness, cert-purpose `CekError` with it), so the hook never reached a ledger |
 
 The retraction story gives the registry thirty seconds for processing and thirty
 more for retraction. Its waits follow the submission times read from the booked
@@ -316,32 +318,32 @@ the Aiken tests establish the open-interval `not-phase2` refusal.
 
 **Four dispositions, never to be mistaken for one another.**
 
-**Unmet by ruling** (`unmet-by-ruling`; CG09, CG10, CG12, CS04): executed,
+**Unmet by ruling** (`unmet-by-ruling`; reject-before-deadline-consumer-requirement, fold-against-superseded-root, surplus-fold-actions, wrong-redeemer-constructor-index): executed,
 and kept unmet by an operator ruling. The one verdict carries two meanings,
-and every row states which. CG09: the registry deliberately does not do what the consumer
+and every row states which. reject-before-deadline-consumer-requirement: the registry deliberately does not do what the consumer
 requirement states, kept unmet by operator ruling 2026-10-01. The consumer requires that a folder must not reject a
 request during its processing window (cardano-keri
 `R9_reject_needs_rejectable`, `0e638fad`, blob `d38e81c0`); Singular's
 model lets a folder reject a request with no timing admission, and the chain
 accepts that reject (#320). Alignment is
 [cardano-keri#468](https://github.com/lambdasistemi/cardano-keri/issues/468).
-CG10, CG12 and CS04: the chain refuses, Lean has no counterpart to compare
-with, kept unmet by operator ruling 2026-10-02 ("Narrow #287"); follow-ups: CG10 [lambdasistemi/singular#346](https://github.com/lambdasistemi/singular/issues/346),
-CG12 [lambdasistemi/singular#345](https://github.com/lambdasistemi/singular/issues/345), CS04 [lambdasistemi/singular#347](https://github.com/lambdasistemi/singular/issues/347).
+fold-against-superseded-root, surplus-fold-actions and wrong-redeemer-constructor-index: the chain refuses, Lean has no counterpart to compare
+with, kept unmet by operator ruling 2026-10-02 ("Narrow #287"); follow-ups: fold-against-superseded-root [lambdasistemi/singular#346](https://github.com/lambdasistemi/singular/issues/346),
+surplus-fold-actions [lambdasistemi/singular#345](https://github.com/lambdasistemi/singular/issues/345), wrong-redeemer-constructor-index [lambdasistemi/singular#347](https://github.com/lambdasistemi/singular/issues/347).
 The session ends non-zero while any row is unmet; it is never a pass.
-**Held** (`held-q002`; CG11, CG19): executed, with the consumer
-requirements still unmet. CG11 recorded
+**Held** (`held-q002`; empty-fold, request-value-and-refund-routing): executed, with the consumer
+requirements still unmet. empty-fold recorded
 a conflict with the pre-revision
-Singular model; rejecting empty batches is now approved. CG19 requires the
+Singular model; rejecting empty batches is now approved. request-value-and-refund-routing requires the
 operation-specific value-routing repair. The rows move only after the
 required implementation and execution evidence is accepted.
-**Resolved-by-ruling** (CG13): a ruling settled the row's question;
+**Resolved-by-ruling** (historical-owner-change): a ruling settled the row's question;
 the observation is retained as defect evidence of the outstanding
 owner gate — never a pass, never an owner-semantics claim.
-**Superseded** (CG16, CG17, CG18): the expectation asserted authority,
+**Superseded** (historical-owner-signed-sweep, historical-non-owner-sweep, historical-registry-termination): the expectation asserted authority,
 a sweep or a termination that does not exist at this commit; observations
 are preserved, claims are withdrawn, and no execution credit attaches.
-**Retired** (CG14, CG15): the registry interface has no stake_script
+**Retired** (retired-stake-hook-with-withdrawal, retired-stake-hook-without-withdrawal): the registry interface has no stake_script
 hook, so nothing runs them.
 
 **Evidence provenance.** The receipts cited in this section are the
@@ -349,14 +351,14 @@ generic session's ship run, taken fresh at clean tip `1d98d51` after
 the receipt-overwrite repair (blueprint
 `state:ce7615f6… request:8970c286…`, cardano-node 10.7.0, every
 receipt `dirty: false`, every held row carrying its acceptance with
-transaction id and measurements). CG20's first post-repair execution
+transaction id and measurements). historical-permissionless-fold's first post-repair execution
 was at clean tip `748c4a9` (txid `fe54d3a6…`); its ship-run repetition
 at `1d98d51` is `4142f7d6…`. The overwritten pre-repair receipts are
 retained only as evidence of that defect.
 
-**Held rows (Q-002, story 2).** CG11 and CG19 are executed holds,
-never passes; CG12, held when this history was written, is now unmet by
-ruling (above). Only CG11 was established as a direct conflict
+**Held rows (operator question (Q-002), story 2).** empty-fold and request-value-and-refund-routing are executed holds,
+never passes; surplus-fold-actions, held when this history was written, is now unmet by
+ruling (above). Only empty-fold was established as a direct conflict
 between the two model results. In the pinned pre-revision contract,
 Singular's Lean permits the empty fold (`foldItems`, `| s, [] => .ok` — `Model.lean`
 188–189) and pairs each request with exactly one action in its
@@ -390,16 +392,16 @@ not a reason to reintroduce `stake_script` or to assert its old mechanism
 is the required one. The remaining requirements stay unmet; the receipts carry
 verdict `held-q002` and the session ends non-zero while anything is
 held — a hold can never read as a pass, and a verdict moves only by
-execution. CG13 is resolved-by-ruling, not a fourth unresolved hold:
+execution. historical-owner-change is resolved-by-ruling, not a fourth unresolved hold:
 its receipt carries `resolved-by-ruling`, its acceptance stays defect
 evidence, and it is outside the held-set.
 
 A repair this slice had to make to keep that sentence true: a refused
 control used to submit through the same path as a refusal ROW and
-wrote its refusal under the row's id, so CG11/CG12/CG19's held
+wrote its refusal under the row's id, so empty-fold/surplus-fold-actions/request-value-and-refund-routing's held
 receipts were being replaced by their controls' refusals in every
 earlier receipts directory — receipts asserting the opposite of the
-executed finding (CG13's survived only because its control was
+executed finding (historical-owner-change's survived only because its control was
 retired, which is what isolated the cause). The control now writes
 nothing: its outcome is run-log evidence under its own identity, it
 cannot silently pass (an accepted control fails the run as a FINDING;
@@ -411,10 +413,10 @@ receipts in `/tmp/t70-receipts*` are kept untouched as evidence of
 the defect, never relabelled as fresh proof; the receipts cited by
 this page are the ones taken fresh at the clean tip after the repair.
 
-**CG20 and F-002, both halves by execution.** An independent audit
+**historical-permissionless-fold and F-002, both halves by execution.** An independent audit
 found that the runner itself always supplied the state owner's
 signature, so no fold row in the suite could have observed the owner
-gate; CG20 was built as the exact regression property. Executed
+gate; historical-permissionless-fold was built as the exact regression property. Executed
 against the pre-#79 candidate it was REFUSED, attributed to the state
 script, and recorded `diverges-from-lean` (receipt retained as
 history). After epic 17's #79 repair it was executed again: the fold
@@ -429,28 +431,28 @@ what moved is the candidate, and the verdict moved by execution only —
 never by editing a row or flipping a stored receipt.
 
 **The owner-dependency extent.** Before #79, every fold-based row
-flowed through `validateOwnership`: CG02–CG05, CG09–CG15, CG17 and
-CG19 depended on the state owner's signature, while CG07's retract
+flowed through `validateOwnership`: update-existing-key–insert-occupied-key, reject-before-deadline-consumer-requirement–retired-stake-hook-without-withdrawal, historical-non-owner-sweep and
+request-value-and-refund-routing depended on the state owner's signature, while retract-outside-window's retract
 never did (it depends only on the request owner). #79 removed the gate
 from Modify folding, and the 2026-09-12 operator ruling settles more:
 the registry has **no owner role whatsoever** — not latent, not
 transferable, not gating `End` or migration. `state.ak`'s `End` and
 `validateMigration` still call `validateOwnership`; those calls are
-outstanding conformance defects owned by epic 17, and CG13's accepted
+outstanding conformance defects owned by epic 17, and historical-owner-change's accepted
 owner change is their executed evidence.
 
-**Superseded rows, observations preserved.** CG13 is
+**Superseded rows, observations preserved.** historical-owner-change is
 resolved-by-ruling: the owner-pinning question has no premise left to
 be pending on, the acceptance is defect evidence, and the retired
 control (previous-owner `End` refused, new-owner accepted) tested
-behaviour that must not exist — it was never landed. CG17's refusal
+behaviour that must not exist — it was never landed. historical-non-owner-sweep's refusal
 and its owner-signed control stay in the record with the conformance
 claim withdrawn: a gate that tests authority that does not exist
-discriminates nothing Singular owes. CG16 and CG18 are
+discriminates nothing Singular owes. historical-owner-signed-sweep and historical-registry-termination are
 superseded the same way: the registry has no sweep and no termination,
 the end-to-end examples they cited were removed on 2026-09-12
 (`f3a68b1b`), nothing runs either row, and `list` prints both
-`uncovered`. **CG14/CG15 are retired: the registry interface has no
+`uncovered`. **retired-stake-hook-with-withdrawal/retired-stake-hook-without-withdrawal are retired: the registry interface has no
 stake_script hook, so nothing runs them.** The
 imported partition's `State.stake_script` hook supplies registry-owner
 authority by another name, which is exactly why epic 17 removes the
@@ -458,33 +460,33 @@ field; the pinned staking credential cannot register anyway (the
 cause above), so the hook never reached a ledger. Preserved history
 stays unchanged, and changing applicability earns no execution credit.
 
-**CL01 for this session** is written from the accepting folds of CG02,
-CG03 and CG04, each read off the step that folded it in its row's
+**execution-units-and-transaction-size for this session** is written from the accepting folds of update-existing-key,
+delete-existing-key and reinsert-deleted-key, each read off the step that folded it in its row's
 receipt; the other rows' worst cases live in their own receipts.
 
 ### The canonical identity rows
 
-A designation split publishes the canonical seed; CA01 boots the
-canonical registry from it; CA02 initializes a rival from a second
+A designation split publishes the canonical seed; canonical-seed-identity boots the
+canonical registry from it; rival-seed-authentication initializes a rival from a second
 seed through the same bootstrap path; a second split publishes the
 rival seed, so no boot can ever consume the wrong UTxO as its
 funder.
 
 | row | outcome | evidence |
 |---|---|---|
-| CA01 derived name recomputed and matched | accept | the state UTxO carries exactly the SHA-256 of the published seed's outRef, quantity 1; a fabricated outRef's derivation does not match (control) |
-| CA02 rival registry from a second seed | **rival accepted on chain; authentication rejects** | the node accepts the rival's bootstrap tx; both token names read back from the chain differ (each SHA-256 of its own seed's outRef); the canonical registry is unaffected — same UTxO, value and datum bytes as the CA01 snapshot; the derived name accepts the canonical and rejects the rival |
-| CA03 policy+address-only authenticator | control must fail the run | the weak authenticator accepts the rival read back from the chain while the full authenticator rejects the same value — the name is the only discriminator; armed (`naive-authenticator`), the run fails naming the accepted rival |
-| CA04 applied-address derivation | accept | the manifest pins unapplied `d42860fa97…` with 1 declared parameter; applied in Haskell to `ce7615f6ba4…`; the derived address equals the address the chain reports and the library's; the unapplied address does not pass (control; armed run fails) |
-| CA05 forged output at the canonical address | authentication rejects; no script ran | a forged output carrying the canonical address and datum but no token is accepted by the ledger with **no script executed** — no witness, no redeemer, no mint, empty node evaluation — and the same detector fires on the boot tx (control); authentication rejects it on the missing token |
+| canonical-seed-identity derived name recomputed and matched | accept | the state UTxO carries exactly the SHA-256 of the published seed's outRef, quantity 1; a fabricated outRef's derivation does not match (control) |
+| rival-seed-authentication rival registry from a second seed | **rival accepted on chain; authentication rejects** | the node accepts the rival's bootstrap tx; both token names read back from the chain differ (each SHA-256 of its own seed's outRef); the canonical registry is unaffected — same UTxO, value and datum bytes as the canonical-seed-identity snapshot; the derived name accepts the canonical and rejects the rival |
+| policy-address-only-authentication-control policy+address-only authenticator | control must fail the run | the weak authenticator accepts the rival read back from the chain while the full authenticator rejects the same value — the name is the only discriminator; armed (`naive-authenticator`), the run fails naming the accepted rival |
+| applied-validator-identity applied-address derivation | accept | the manifest pins unapplied `d42860fa97…` with 1 declared parameter; applied in Haskell to `ce7615f6ba4…`; the derived address equals the address the chain reports and the library's; the unapplied address does not pass (control; armed run fails) |
+| tokenless-output-authentication forged output at the canonical address | authentication rejects; no script ran | a forged output carrying the canonical address and datum but no token is accepted by the ledger with **no script executed** — no witness, no redeemer, no mint, empty node evaluation — and the same detector fires on the boot tx (control); authentication rejects it on the missing token |
 
-CA02 asserts an **acceptance**: the ledger takes the rival, and the
+rival-seed-authentication asserts an **acceptance**: the ledger takes the rival, and the
 consumer's authentication is what excludes it. The receipt records
 the ledger's verdict (accepted, with the rival's txid and
 measurements); the rejection is asserted on chain-read assets and
 named in the run — never relabelled as a refusal, never skipped
 because the outcome reads oddly. The acceptance is the finding, and
-it is the accepted design. CA03 is what makes CA02 worth anything:
+it is the accepted design. policy-address-only-authentication-control is what makes rival-seed-authentication worth anything:
 a check that cannot fail proves nothing, so the weak authenticator's
 acceptance of the rival is itself executed and required.
 
@@ -496,11 +498,11 @@ on the same isolated node, in canonical order:
 
 | row | outcome | evidence |
 |---|---|---|
-| CS02 datum bytes submitted and read back | accept | boot `StateDatum` plus one request `RequestDatum`, byte-compared submitted `Datum` versus chain-observed `Datum` for both; units from the boot minting, size the larger of the two transactions; corrupted comparison fails the run (control) |
-| CS03 every `UpdateRedeemer` constructor executed | accept | one executing witness per constructor — `End` 0, `Contribute` 1, `Modify` 2, `Retract` 3, `Sweep` 4 — each read back from the redeemer of a submitted transaction the validator executed (the `Modify` fold carries `Modify` and `Contribute` together); four witness transactions named; a skipped witness fails the run (control) |
-| CS04 redeemer at a wrong constructor index | **refuse** — **unmet-by-ruling** | valid fold retargeted to `Constr` 5 keeping its fields (same CBOR size, so fee and collateral stay sufficient and any refusal attributes to the script); node refuses in phase 2 with `CekError`, attributed to **both** cage scripts (`state+request`, ledger order, unstable — the tamper breaks fold consistency the request script also checks); fresh cage accepts a valid fold (control); impossible marker fails the run (control). The chain refuses; Lean has no counterpart to compare with. By operator ruling 2026-10-02 ("Narrow #287") the row is recorded `unmet-by-ruling`, never a pass; follow-up [lambdasistemi/singular#347](https://github.com/lambdasistemi/singular/issues/347) |
-| CS05 `RequestAction` and `MintRedeemer` coverage | accept, with one recorded gap | `Update`, `Rejected` (phase-3 reject), `Minting` (boot), `Burning` (end) each executed and read back from its redeemer; `Migrating` is unreachable on the imported partition (`previousPolicies=[]`, so `has(previousPolicies, oldPolicy)` fails at `state.ak` `validateMigration` FR1) and is recorded as a gap with that reason in `gap-CS05-Migrating.txt` — never a pass, never omitted; a skipped witness fails the run (control) |
-| CS08 `OnChainTokenState` six fields round trip | accept, schema pending | two boots, `stake_script` `None` and `Some` (staking hash), all six fields byte-identical submitted versus chain-observed; corrupted comparison fails the run (control). The six fields include the owner field epic 17 is removing: the schema repair is pending, this expectation is superseded at that repair, and the row will be re-executed against the repaired blueprint |
+| submitted-datum-byte-round-trip datum bytes submitted and read back | accept | boot `StateDatum` plus one request `RequestDatum`, byte-compared submitted `Datum` versus chain-observed `Datum` for both; units from the boot minting, size the larger of the two transactions; corrupted comparison fails the run (control) |
+| update-redeemer-constructor-witnesses every `UpdateRedeemer` constructor executed | accept | one executing witness per constructor — `End` 0, `Contribute` 1, `Modify` 2, `Retract` 3, `Sweep` 4 — each read back from the redeemer of a submitted transaction the validator executed (the `Modify` fold carries `Modify` and `Contribute` together); four witness transactions named; a skipped witness fails the run (control) |
+| wrong-redeemer-constructor-index redeemer at a wrong constructor index | **refuse** — **unmet-by-ruling** | valid fold retargeted to `Constr` 5 keeping its fields (same CBOR size, so fee and collateral stay sufficient and any refusal attributes to the script); node refuses in phase 2 with `CekError`, attributed to **both** cage scripts (`state+request`, ledger order, unstable — the tamper breaks fold consistency the request script also checks); fresh cage accepts a valid fold (control); impossible marker fails the run (control). The chain refuses; Lean has no counterpart to compare with. By operator ruling 2026-10-02 ("Narrow #287") the row is recorded `unmet-by-ruling`, never a pass; follow-up [lambdasistemi/singular#347](https://github.com/lambdasistemi/singular/issues/347) |
+| request-and-mint-constructor-witnesses `RequestAction` and `MintRedeemer` coverage | accept, with one recorded gap | `Update`, `Rejected` (phase-3 reject), `Minting` (boot), `Burning` (end) each executed and read back from its redeemer; `Migrating` is unreachable on the imported partition (`previousPolicies=[]`, so `has(previousPolicies, oldPolicy)` fails at `state.ak` `validateMigration` FR1) and is recorded as a gap with that reason in `gap-request-and-mint-constructor-witnesses-Migrating.txt` — never a pass, never omitted; a skipped witness fails the run (control) |
+| state-fields-chain-round-trip `OnChainTokenState` six fields round trip | accept, schema pending | two boots, `stake_script` `None` and `Some` (staking hash), all six fields byte-identical submitted versus chain-observed; corrupted comparison fails the run (control). The six fields include the owner field epic 17 is removing: the schema repair is pending, this expectation is superseded at that repair, and the row will be re-executed against the repaired blueprint |
 
 ### The serialization checks that need no node
 
@@ -510,12 +512,12 @@ these rows never appear in a devnet-executed count.
 
 | row | outcome | evidence |
 |---|---|---|
-| CS01 Haskell encodings against the blueprint schema | accept (`blueprint-check`), schema pending | all thirteen `ToData` types round-trip **and** each constructor index and field order matches the compiled blueprint's declared schema read at run time (`REGISTRY_BLUEPRINT`), including field-title order; no type needed a gap; `Constr` 99 validates against nothing and index 99 demanded for `End` fails the run (control); `txSize` is the blueprint file size in bytes, 92048. The checked schema is the six-field owner-bearing state: superseded at epic 17's pending repair, re-executed against the repaired blueprint |
-| CS06 parameter application derived in Haskell | accept (`param-check`) | parameter counts and encodings published from the blueprint — state 1 (`previousPolicies`), request 2 (`statePolicyId`, `cageTokenName`, in source order), staking 0 — unapplied hashes match the pinned blueprint hashes, the applied state hash is `874e476d…`, non-empty allowlists and swapped request params discriminate; 2 demanded for state fails the run (control); `txSize` is the largest applied script size in bytes, 7805 |
+| blueprint-encoding-round-trip Haskell encodings against the blueprint schema | accept (`blueprint-check`), schema pending | all thirteen `ToData` types round-trip **and** each constructor index and field order matches the compiled blueprint's declared schema read at run time (`REGISTRY_BLUEPRINT`), including field-title order; no type needed a gap; `Constr` 99 validates against nothing and index 99 demanded for `End` fails the run (control); `txSize` is the blueprint file size in bytes, 92048. The checked schema is the six-field owner-bearing state: superseded at epic 17's pending repair, re-executed against the repaired blueprint |
+| script-parameter-application parameter application derived in Haskell | accept (`param-check`) | parameter counts and encodings published from the blueprint — state 1 (`previousPolicies`), request 2 (`statePolicyId`, `cageTokenName`, in source order), staking 0 — unapplied hashes match the pinned blueprint hashes, the applied state hash is `874e476d…`, non-empty allowlists and swapped request params discriminate; 2 demanded for state fails the run (control); `txSize` is the largest applied script size in bytes, 7805 |
 
-### CS07: unmarked and escalated
+### proof-step-constructor-witnesses: unmarked and escalated
 
-CS07 carries no receipt and prints `uncovered`: `Branch` and `Leaf`
+proof-step-constructor-witnesses carries no receipt and prints `uncovered`: `Branch` and `Leaf`
 are witnessed on chain across many accepted folds, but no accepted
 fold has ever carried a `Fork`, and two independently ground
 lone-`Fork` absence proofs — each verified by the mts Haskell stack
@@ -551,54 +553,54 @@ Maxima queried from the running node, never hardcoded:
 
 | fold | mem (headroom) | cpu (headroom) | size (headroom) |
 |---|---|---|---|
-| CG02 Update | 649162 (139350838) | 217096102 (9782903898) | 11451 (4933) |
-| CG03 Delete | 638564 (139361436) | 213717823 (9786282177) | 11451 (4933) |
-| CG04 re-Insert | 616554 (139383446) | 200156393 (9799843607) | 11451 (4933) |
-| CG11 empty fold (held) | 273449 (139726551) | 87149465 (9912850535) | 8388 (7996) |
-| CG12 surplus action (held) | 905068 (139094932) | 295812293 (9704187707) | 11555 (4829) |
-| CG13 owner change (defect) | 628372 (139371628) | 207905393 (9792094607) | 11403 (4981) |
-| CG19 crossed refunds (held) | 1122369 (138877631) | 376904236 (9623095764) | 11613 (4771) |
-| CG20 permissionless fold | 717070 (139282930) | 231585673 (9768414327) | 11442 (4942) |
-| CA01 canonical boot | 143440 (139856560) | 46848478 (9953151522) | 8502 (7882) |
-| CA02 rival boot | 143440 (139856560) | 46848478 (9953151522) | 8502 (7882) |
-| CA05 forged payment | 0 (140000000) | 0 (10000000000) | 333 (16051) |
-| CS02 datum round trip | 143440 (139856560) | 46848478 (9953151522) | 8466 (7918) |
-| CS03 five witnesses | 629296 (139370704) | 204228993 (9795771007) | 11423 (4961) |
-| CS05 four witnesses | 649502 (139350498) | 217245659 (9782754341) | 11423 (4961) |
-| CS08 state None+Some | 147634 (139852366) | 49473955 (9950526045) | 8497 (7887) |
+| update-existing-key Update | 649162 (139350838) | 217096102 (9782903898) | 11451 (4933) |
+| delete-existing-key Delete | 638564 (139361436) | 213717823 (9786282177) | 11451 (4933) |
+| reinsert-deleted-key re-Insert | 616554 (139383446) | 200156393 (9799843607) | 11451 (4933) |
+| empty-fold empty fold (held) | 273449 (139726551) | 87149465 (9912850535) | 8388 (7996) |
+| surplus-fold-actions surplus action (held) | 905068 (139094932) | 295812293 (9704187707) | 11555 (4829) |
+| historical-owner-change owner change (defect) | 628372 (139371628) | 207905393 (9792094607) | 11403 (4981) |
+| request-value-and-refund-routing crossed refunds (held) | 1122369 (138877631) | 376904236 (9623095764) | 11613 (4771) |
+| historical-permissionless-fold permissionless fold | 717070 (139282930) | 231585673 (9768414327) | 11442 (4942) |
+| canonical-seed-identity canonical boot | 143440 (139856560) | 46848478 (9953151522) | 8502 (7882) |
+| rival-seed-authentication rival boot | 143440 (139856560) | 46848478 (9953151522) | 8502 (7882) |
+| tokenless-output-authentication forged payment | 0 (140000000) | 0 (10000000000) | 333 (16051) |
+| submitted-datum-byte-round-trip datum round trip | 143440 (139856560) | 46848478 (9953151522) | 8466 (7918) |
+| update-redeemer-constructor-witnesses five witnesses | 629296 (139370704) | 204228993 (9795771007) | 11423 (4961) |
+| request-and-mint-constructor-witnesses four witnesses | 649502 (139350498) | 217245659 (9782754341) | 11423 (4961) |
+| state-fields-chain-round-trip state None+Some | 147634 (139852366) | 49473955 (9950526045) | 8497 (7887) |
 
 Execution units stay under 3.8% of the maxima for every row (worst:
-CG19's crossed-refunds fold at 3.77% cpu, still ~26× headroom; CA05
+request-value-and-refund-routing's crossed-refunds fold at 3.77% cpu, still ~26× headroom; tokenless-output-authentication
 reports zeros honestly: no script purpose exists to evaluate).
 Serialized size is the tight dimension at ~71% of `maxTxSize` for
-folds and ~52% for boots; larger batches (CL02) may press against it
-first. The canonical session's worst case is recorded in its CL01
-receipt; the registry session's CL01 reads the worst accepting folds of
-CG02, CG03 and CG04 off their receipts' steps, and its other rows'
-worst cases live in their own receipts; the CS rows carry theirs in the row receipts, and no CS CL01
+folds and ~52% for boots; larger batches (fold-batch-size-boundary) may press against it
+first. The canonical session's worst case is recorded in its execution-units-and-transaction-size
+receipt; the registry session's execution-units-and-transaction-size reads the worst accepting folds of
+update-existing-key, delete-existing-key and reinsert-deleted-key off their receipts' steps, and its other rows'
+worst cases live in their own receipts; the serialization rows carry theirs in the row receipts, and no serialization execution-units-and-transaction-size
 is claimed yet. Refusal reasons keep every failing script hash in ledger
 order — a tampered fold can fail two scripts, and trimming volume
 never trims identities — under the same run-enforced 16KB bound.
 
 ## Historical limits
 
-- **Programs with end-to-end references**: CG01, CG06 and CG08 run as
+- **Programs with end-to-end references**: insert-key, retract-inside-window and reject-after-window run as
   programs in the registry session, their state computed from those
   receipts; the epic-16 `CageSpec` examples they cite remain supporting
-  references. CG16 and CG18 cite none: the examples they cited were
+  references. historical-owner-signed-sweep and historical-registry-termination cite none: the examples they cited were
   removed on 2026-09-12 (`f3a68b1b`), nothing runs either row, and both
   are **superseded** by the ownerless-registry ruling (no sweep, no
   termination) — history earns no conformance credit.
-- **Executed, unmet by ruling, not a pass**: CG09 records the early
+- **Executed, unmet by ruling, not a pass**: reject-before-deadline-consumer-requirement records the early
   rejection the consumer forbids and the chain accepts, kept unmet by
-  operator ruling 2026-10-01 (`unmet-by-ruling`). CG10, CG12 and CS04: the
+  operator ruling 2026-10-01 (`unmet-by-ruling`). fold-against-superseded-root, surplus-fold-actions and wrong-redeemer-constructor-index: the
   chain refuses, Lean has no counterpart to compare with, kept unmet by
   operator ruling 2026-10-02 ("Narrow #287")
   ([lambdasistemi/singular#346](https://github.com/lambdasistemi/singular/issues/346), [lambdasistemi/singular#345](https://github.com/lambdasistemi/singular/issues/345), [lambdasistemi/singular#347](https://github.com/lambdasistemi/singular/issues/347)).
-- **Executed holds, not passes**: CG11 and CG19 remain held by
-  execution. CG11 records the
+- **Executed holds, not passes**: empty-fold and request-value-and-refund-routing remain held by
+  execution. empty-fold records the
   pre-revision empty-fold conflict with
-  R8_empty_fold_refused; CG19 violates the consumer's required operation-specific fold
+  R8_empty_fold_refused; request-value-and-refund-routing violates the consumer's required operation-specific fold
   value routing (`Registry.processBody`, `Registry.stepFn`,
   `Cage.delegated_is_registry`). `R11_contribute_value` states the
   deposit amount and is not that fold requirement. Upstream
@@ -606,22 +608,22 @@ never trims identities — under the same run-enforced 16KB bound.
   `#101` is open, and **Singular owns the required local repair**.
   `R5_plugin_pinned` concerns the plugin, not a registry owner. The
   consumer requirements stay unmet; a held row is
-  never a pass, and the verdicts move only by execution. CG13's owner
+  never a pass, and the verdicts move only by execution. historical-owner-change's owner
   change is retained as **defect evidence** of the outstanding owner
   gate, resolved-by-ruling, with its defect owned by epic 17.
-- **Superseded, never pending**: CG16, CG17 and CG18 asserted
+- **Superseded, never pending**: historical-owner-signed-sweep, historical-non-owner-sweep and historical-registry-termination asserted
   registry-owner authority, a sweep or a termination that does not
   exist — observations preserved, claims withdrawn, no execution credit
-  for changed applicability. CG14/CG15 are **retired**: the registry
+  for changed applicability. retired-stake-hook-with-withdrawal/retired-stake-hook-without-withdrawal are **retired**: the registry
   interface has no stake_script hook, so nothing runs them.
-- **Uncovered**: CS07, CK(01–05) and CL02–CL03 print `uncovered` (as
-  do CG14/CG15, retired, and CG16/CG18, superseded — no receipts). CS07 is not
+- **Uncovered**: proof-step-constructor-witnesses, consumer-resolution(01–05) and fold-batch-size-boundary–observed-toolchain-and-environment print `uncovered` (as
+  do retired-stake-hook-with-withdrawal/retired-stake-hook-without-withdrawal, retired, and historical-owner-signed-sweep/historical-registry-termination, superseded — no receipts). proof-step-constructor-witnesses is not
   merely uncovered: its `Fork` finding is filed for a user story and
   the row stays unmarked until that story resolves — an unmarked row
-  with a finding, never a gap and never a pass. CS05's `Migrating` gap
+  with a finding, never a gap and never a pass. request-and-mint-constructor-witnesses's `Migrating` gap
   is of the recorded kind, with its validator-read reason beside the
   receipts.
-- **Schema pending (epic 17)**: CS01, CS02 and CS08 describe the
+- **Schema pending (epic 17)**: blueprint-encoding-round-trip, submitted-datum-byte-round-trip and state-fields-chain-round-trip describe the
   six-field owner-bearing `OnChainTokenState`. The ownerless schema
   repair is pending; their expectations are superseded at that repair,
   their receipts stay valid as history, and the rows will be
@@ -634,26 +636,26 @@ never trims identities — under the same run-enforced 16KB bound.
   it.
 - **Green expected-debt CI grants no conformance credit**: the
   workflow's generic-rows step asserts declared debt — exact receipt
-  set, exact verdict per receipt, held set exactly CG11 CG19,
-  unmet set exactly CG09 CG10 CG12,
+  set, exact verdict per receipt, held set exactly empty-fold request-value-and-refund-routing,
+  unmet set exactly reject-before-deadline-consumer-requirement fold-against-superseded-root surplus-fold-actions,
   nothing failing — and nothing more. It pays neither the held rows
-  nor a full CL01, and strict completion and release stay RED on that
+  nor a full execution-units-and-transaction-size, and strict completion and release stay RED on that
   debt.
-- **Out of scope**: CK06 (cardano-keri), the naming rows (epic 16
+- **Out of scope**: checkpoint-and-treasury-policy (cardano-keri), the naming rows (epic 16
   demonstration, not consumer evidence), LR/LT rows (epic 17).
-- The CA rows authenticate the canonical registry as the consumer
+- The registry-identity rows authenticate the canonical registry as the consumer
   derives it from the published seed. They do not evidence the
-  serialization boundary (CS), the constructor coverage (CS03–CS05)
-  or the batch limits (CL02).
+  serialization boundary (serialization), the constructor coverage (update-redeemer-constructor-witnesses–request-and-mint-constructor-witnesses)
+  or the batch limits (fold-batch-size-boundary).
 - The measurements above are devnet folds of single requests. They
-  say nothing about batch limits (CL02) or any other environment
-  (CL03 records the observed one below).
+  say nothing about batch limits (fold-batch-size-boundary) or any other environment
+  (observed-toolchain-and-environment records the observed one below).
 
 ## Current replay commands
 
 Run from the repository or extracted source root with Nix available.
 Use a fresh directory outside the tracked tree for each family. The
-generic session runs ten rows and may also emit its CL01 measurement
+generic session runs ten rows and may also emit its execution-units-and-transaction-size measurement
 receipt; the serialization session runs five devnet rows and two local
 checks. Superseded rows remain listed and are not runtime commands.
 
@@ -663,16 +665,16 @@ blueprint="$(nix build --quiet --no-link --print-out-paths ./onchain#plutus-blue
 receipts="$(mktemp -d /tmp/singular-conformance.XXXXXX)"
 
 # The finite retraction window has its own three-step model-compared receipt.
-REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run CG07 --receipts-dir "$receipts/retraction-window"
+REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run retract-outside-window --receipts-dir "$receipts/retraction-window"
 
-# Expected exit 1: exact held set CG11, CG19; unmet set CG09, CG10, CG12; no failed rows.
-REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run CG02 CG03 CG04 CG05 CG09 CG10 CG11 CG12 CG19 CG21 --receipts-dir "$receipts/generic"
+# Expected exit 1: exact held set empty-fold, request-value-and-refund-routing; unmet set reject-before-deadline-consumer-requirement, fold-against-superseded-root, surplus-fold-actions; no failed rows.
+REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run update-existing-key delete-existing-key reinsert-deleted-key insert-occupied-key reject-before-deadline-consumer-requirement fold-against-superseded-root empty-fold surplus-fold-actions request-value-and-refund-routing register-active-key --receipts-dir "$receipts/generic"
 
 # Expected exit 0 after all five identity rows and their controls.
-REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run CA01 CA02 CA03 CA04 CA05 --receipts-dir "$receipts/identity"
+REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run canonical-seed-identity rival-seed-authentication policy-address-only-authentication-control applied-validator-identity tokenless-output-authentication --receipts-dir "$receipts/identity"
 
-# Expected exit 1: CS03 and CS05 are partial; CS04 is unmet by ruling (#347); the other four agree.
-REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run CS01 CS02 CS03 CS04 CS05 CS06 CS08 --receipts-dir "$receipts/serialization"
+# Expected exit 1: update-redeemer-constructor-witnesses and request-and-mint-constructor-witnesses are partial; wrong-redeemer-constructor-index is unmet by ruling (#347); the other four agree.
+REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run blueprint-encoding-round-trip submitted-datum-byte-round-trip update-redeemer-constructor-witnesses wrong-redeemer-constructor-index request-and-mint-constructor-witnesses script-parameter-application state-fields-chain-round-trip --receipts-dir "$receipts/serialization"
 
 nix run ./conformance#conformance -- list --receipts "$receipts/generic"
 nix run ./conformance#conformance -- list --receipts "$receipts/identity"
@@ -695,7 +697,7 @@ exit alone does not prove an armed control fired. See
 `conformance.yml` for the executable session and receipt checks.
 
 The Fork oracle and its probes remain available without a node or
-blueprint; their output is local proof evidence, not CS07 completion:
+blueprint; their output is local proof evidence, not proof-step-constructor-witnesses completion:
 
 ```sh
 nix run ./conformance#conformance -- find-fork-keys
@@ -719,6 +721,6 @@ unapplied request script hash `8970c286…` (re-pinned from
 imported-validator repair; `onchain/REPAIR.patch` records the change,
 `PROVENANCE.md` the authority). The issue-#70 rows were executed
 against blueprint `state:ce7615f6ba4de80dfa9b9c6aef680666472ba4ed7e640ff55aad7c6e
-request:8970c286…`; the pre-#79 executions (CG20's refusal,
+request:8970c286…`; the pre-#79 executions (historical-permissionless-fold's refusal,
 the former bespoke retraction and the stale-request/proof refusals) are history at the earlier hashes. Environments other than
 this devnet shape are explicitly not covered.

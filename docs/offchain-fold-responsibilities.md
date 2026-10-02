@@ -60,7 +60,7 @@ flowchart TD
     Callers[Callers — tests, commands, journeys, conformance] -->|import the six public names| U[Singular.Registry.TxBuilder.Update — facade and orchestration]
     U -->|queries, proofs, state, slot, context completion| C[Update.Context]
     U -->|what the requests owe| D[Update.Duties]
-    U -->|evaluation adapter and the one DSL program| B[Update.Build]
+    U -->|evaluation adapter and the one story language program| B[Update.Build]
     D -->|reads the context a caller hands in| C
     B -->|reads the duties the fold decided| D
     C -->|edges| IE[TxBuilder.Internal.Edges]
@@ -92,7 +92,7 @@ action types.
 | `Singular.Registry.TxBuilder.Update` | The six public exports and the two fold entry points; the sequence of preparation, decision and assembly. Nothing else. |
 | `Singular.Registry.TxBuilder.Update.Context` | The `RegistryContext` a caller hands in and its empty value; finding the state, request and fee UTxOs; the ordered speculative proofs through the trie; the new state output and the cage script; the validity upper slot; completing a partly empty context from the provider. |
 | `Singular.Registry.TxBuilder.Update.Duties` | `RegistryDuties` and `registryDuties`: the one derivation of what a fold's requests owe — mints under the three token policies, destinations, custody spends, burn sources, deposit and approval returns, and the (empty) signer set. |
-| `Singular.Registry.TxBuilder.Update.Build` | `NoCtx`, the evaluation adapter over the provider, and the one transaction DSL program: spends, mints, outputs, signatures, attached or referenced scripts, collateral and validity. |
+| `Singular.Registry.TxBuilder.Update.Build` | `NoCtx`, the evaluation adapter over the provider, and the one transaction story language program: spends, mints, outputs, signatures, attached or referenced scripts, collateral and validity. |
 
 ## The flow a fold runs
 
@@ -110,7 +110,7 @@ sequenceDiagram
     Facade->>Ctx: completeContext — cage/holder inventories, cage script default
     Facade->>Dut: registryDuties — what these requests owe
     Facade->>Ctx: computeUpperSlot — earliest request deadline
-    Facade->>Bld: mkEvalTx + buildProgram — the one DSL program
+    Facade->>Bld: mkEvalTx + buildProgram — the one story language program
     Bld-->>Facade: assembled transaction
     Facade-->>Caller: the built ConwayTx
 ```
@@ -129,7 +129,7 @@ the active burn's net `-1` with its held input and no carrier output;
 the exact holder and custody input selections; the per-owner grouping
 of deposit returns and a deletion's approval inside its deposit
 output; and the built body's empty required-signer set through the
-public entry. The new fresh-blueprint E2E case directly compares the
+public entry. The new fresh-blueprint end-to-end case directly compares the
 previously unpinned accepted-edge effects on finite connected stages,
 with in-run mutants and real post-state observations. Its two-request
 ordering witness controls the provider's enumeration of real outputs;

@@ -1,7 +1,7 @@
 {
   "responsibilities-after-the-repair": [
     {
-      "text": "Eleven modules. The fold owns a reject's refund duties with no timing rule. The request script admits its spend in the processing window or when the state rejects that same request. The old predicate is removed. Tests and properties restate the model's rule. Identity files carry regenerated hashes. The builder drops its timing. The end to end test proves it. The story language names a reject's window, the interpreter realizes it, the rows own their verdicts, CG24 joins the dispatcher, the book and the row count, and publication states the current behaviour.",
+      "text": "Eleven modules. The fold owns a reject's refund duties with no timing rule. The request script admits its spend in the processing window or when the state rejects that same request. The old predicate is removed. Tests and properties restate the model's rule. Identity files carry regenerated hashes. The builder drops its timing. The end to end test proves it. The story language names a reject's window, the interpreter realizes it, the rows own their verdicts, reject-inside-processing-and-retraction-windows joins the dispatcher, the book and the row count, and publication states the current behaviour.",
       "pause": 400
     }
   ],
@@ -19,6 +19,6 @@
   ],
   "_source": {
     "file": "modules-model.md",
-    "sha256": "4639d25799b5d63fe75be5bbbe345cfc93c93276273ceafcf140c4fa9b7624f2"
+    "sha256": "1c4b3d9077070a31846999405000742f3ad90977884c05596aaf8f9feb78dd2e"
   }
 }

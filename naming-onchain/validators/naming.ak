@@ -239,14 +239,14 @@ pub fn mpfs_state_policy(datum: Data) -> PolicyId {
 }
 
 /// The registry's pinned application policy — the one that certifies
-/// requests (#157 C4). Naming's own mint purpose IS that policy, so a
+/// requests (#157 tree-edge-admission-by-approval). Naming's own mint purpose IS that policy, so a
 /// record can check the registry it belongs to names it.
 pub fn mpfs_state_application_policy(datum: Data) -> PolicyId {
   expect MpfsStateDatum(state) = datum
   state.application_policy
 }
 
-/// The registry's pinned terminal policy (#157 C5).
+/// The registry's pinned terminal policy (#157 mint-matches-edge-deltas).
 pub fn mpfs_state_terminal_policy(datum: Data) -> PolicyId {
   expect MpfsStateDatum(state) = datum
   state.terminal_policy
@@ -380,7 +380,7 @@ pub fn mpfs_state_datum_with_root(
   datum
 }
 
-/// Mirror of the cage's `AbsentCustody` datum (#157 D-CUSTODY, index 2 —
+/// Mirror of the cage's `AbsentCustody` datum (#157 absent-custody-datum, index 2 —
 /// `MpfsRequest` 0 and `MpfsStateDatum` 1 keep theirs). The application
 /// reads a custody UTxO as a REFERENCE input when it certifies a
 /// `deleteAbsent`: the refund address the cage recorded is the signature

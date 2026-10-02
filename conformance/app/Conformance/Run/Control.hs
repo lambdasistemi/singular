@@ -32,12 +32,27 @@ import Conformance.Mirror (failWith)
 
 {- | Row families by explicit membership. Every partition below filters by
 these lists, never by exclusion: a catch-all partition silently absorbs
-the next family of rows (CA01-CA05 were once routed into the CS
-session by a notElem-CG catch-all). A row in no family fails loudly.
+the next family of rows (canonical-seed-identity-tokenless-output-authentication were once routed into the serialization
+session by a notElem-registry-operations catch-all). A row in no family fails loudly.
 -}
 caRows, csRows :: [String]
-caRows = ["CA01", "CA02", "CA03", "CA04", "CA05"]
-csRows = ["CS01", "CS02", "CS03", "CS04", "CS05", "CS06", "CS07", "CS08"]
+caRows =
+    [ "canonical-seed-identity"
+    , "rival-seed-authentication"
+    , "policy-address-only-authentication-control"
+    , "applied-validator-identity"
+    , "tokenless-output-authentication"
+    ]
+csRows =
+    [ "blueprint-encoding-round-trip"
+    , "submitted-datum-byte-round-trip"
+    , "update-redeemer-constructor-witnesses"
+    , "wrong-redeemer-constructor-index"
+    , "request-and-mint-constructor-witnesses"
+    , "script-parameter-application"
+    , "proof-step-constructor-witnesses"
+    , "state-fields-chain-round-trip"
+    ]
 
 -- | Every row a program runs, read off the programs themselves.
 programRows :: [String]
@@ -47,7 +62,7 @@ programRows = map programRow programs
 their chain evidence, each through its own runner.
 -}
 outsideRows :: [String]
-outsideRows = ["CG10", "CG12"]
+outsideRows = ["fold-against-superseded-root", "surplus-fold-actions"]
 
 {- | Harness runs a session executes beside the rows: no row in @rows.json@,
 no chapter of the book and no receipt anything reads. @batch@ executes the story
@@ -71,23 +86,23 @@ data Control
     | WrongParams
     | FalseDatum
     | MissingWitness
-    | {- | CA03 armed: the policy+address-only authenticator must
-      reject the rival, which it cannot. Proves CA02's rejection
+    | {- | policy-address-only-authentication-control armed: the policy+address-only authenticator must
+      reject the rival, which it cannot. Proves rival-seed-authentication's rejection
       is attributable to the derived name and nothing else.
       -}
       NaiveAuthenticator
-    | {- | CA04 armed: the unapplied layer's address must pass for
+    | {- | applied-validator-identity armed: the unapplied layer's address must pass for
       the deployed script, which it cannot. Proves the identity
       layers are genuinely distinct and the check can fail.
       -}
       UnappliedAddress
-    | {- | CS01 armed (#157 D-DEST): a three-element list must validate
+    | {- | blueprint-encoding-round-trip armed (#157 request-destination-binding): a three-element list must validate
       against the two-element destination pair, which it cannot —
       the fixed tuple is checked at exact arity. Proves the schema
       oracle was not loosened into a homogeneous list rule.
       -}
       BlueprintWrongArity
-    | {- | CS08 armed (#157 X1): the retired SIX-field state encoding
+    | {- | state-fields-chain-round-trip armed (#157 X1): the retired SIX-field state encoding
       must decode the chain's datum, which it cannot — the datum has
       eight fields now. Proves the round-trip row is reading the new
       contract and would notice a regression to the old one.

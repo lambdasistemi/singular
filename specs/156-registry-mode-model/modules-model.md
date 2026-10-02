@@ -7,7 +7,7 @@ Responsibility and dependency direction only. No bodies, no algorithms.
 ```
 Singular.Model                  the alphabet, the edges, the fold, the codec
   ├── Singular.Lemmas                 supporting lemmas over Model
-  ├── Singular.Statements             P1, L1, S1–S3, O1, T1, W1–W4
+  ├── Singular.Statements             tree-change-requires-approval, request-spent-once-in-order, terminal-attestation-sound–supply-matches-leaf-state, booking-requires-untaken-key, terminal-key-cannot-change, active-witness-unique–witness-kinds-exclude
   │     └── Singular.Audit                 compiled axiom gate over Statements
   ├── Singular.OpenApp                the open application, the smallest instance
   └── Singular.Naming*                naming as the second instance

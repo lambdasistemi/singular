@@ -8,16 +8,16 @@ constraints. No bodies.
 | declaration | shape | constraint |
 |---|---|---|
 | `decodeState(bytes: ByteArray) -> Option<Int>` | `0x00`→0, `0x01`→1, `0x02`→2, else `None` | total; the only codec |
-| `edgeOf(op: Operation, before: Option<Int>) -> Option<Int>` | the C2 row index or `None` | `None` for every refused shape; pure |
-| `deltaOf(edge: Int) -> List<(Int, Int)>` | `(kind, quantity)` pairs per C2 | read off the edge and nothing else |
-| `approvalName(edge: Int, key, owner, destination) -> ByteArray` | `blake2b_256(edge ‖ key ‖ owner ‖ destination)` | D-APPROVAL; shared with naming's tests |
-| `destinationMatches(dest: (ByteArray, ByteArray), out: Output) -> Bool` | address equality and inline-datum hash equality | D-DEST |
+| `edgeOf(op: Operation, before: Option<Int>) -> Option<Int>` | the seven-admitted-edges row index or `None` | `None` for every refused shape; pure |
+| `deltaOf(edge: Int) -> List<(Int, Int)>` | `(kind, quantity)` pairs per seven-admitted-edges | read off the edge and nothing else |
+| `approvalName(edge: Int, key, owner, destination) -> ByteArray` | `blake2b_256(edge ‖ key ‖ owner ‖ destination)` | approval-asset-binding; shared with naming's tests |
+| `destinationMatches(dest: (ByteArray, ByteArray), out: Output) -> Bool` | address equality and inline-datum hash equality | request-destination-binding |
 
 ## `onchain/validators/state.ak`
 
 | declaration | shape | constraint |
 |---|---|---|
-| `mkAction(...)` | fold step over inputs | admits only C2 shapes (`edgeOf`); `Read` via `mpf.update(root, key, proof, v, v) == root`; accumulates the per-key delta and the destination obligations |
+| `mkAction(...)` | fold step over inputs | admits only seven-admitted-edges shapes (`edgeOf`); `Read` via `mpf.update(root, key, proof, v, v) == root`; accumulates the per-key delta and the destination obligations |
 | `validModify(state, input, policyId, tokenId, tx, actions)` | the fold | preserves seven fields; requires the approval on each tree edge (`approvalName` recomputed); checks the summed delta against `tx.mint` under the three policies; checks each destination and custody output; checks `lovelace_of(request) ≥ tip`; refuses zero consumed requests; no withdrawal requirement |
 | `validCustodySpend(datum: AbsentCustody, tx)` | the cage's spending path for a custody UTxO | spent only inside a `Modify` consuming `Update(0x00,0x01)` or `Delete(0x00)` for its key; refund output at `refund` ≥ held lovelace |
 | `validateMint(seed, policyId, tx)` | genesis | sets the four policies; no pin width check |
@@ -40,7 +40,7 @@ constraints. No bodies.
 |---|---|---|
 | `ApplicationRedeemer` | `Maintain`, `Retire { key }`, `Recover { revealed_control, registry }` | `Fold`, `Cancel` removed |
 | `ApplicationMintRedeemer` | `Approve { edge, key, owner, destination }` | asset name `== approvalName(..)`; exactly one asset moves |
-| `approve(edge, key, owner, destination, tx) -> Bool` | the six arms of R-NM4 | `insertAbsent` unconditional; `insertActive`/`updateActive` owner signs and `destination` is the application address with a well-formed record datum hash; `updateTerminal` the committed recovery key (reveal + signature, as `recover`) or quorum from the record input — never the current control key alone; `deleteAbsent` refund key signs, custody as reference input; `deleteActive` `False` |
+| `approve(edge, key, owner, destination, tx) -> Bool` | the six arms of naming-approval-rules | `insertAbsent` unconditional; `insertActive`/`updateActive` owner signs and `destination` is the application address with a well-formed record datum hash; `updateTerminal` the committed recovery key (reveal + signature, as `recover`) or quorum from the record input — never the current control key alone; `deleteAbsent` refund key signs, custody as reference input; `deleteActive` `False` |
 | `retire(record, custody_out, key, revealed_control, tx)` | authorized by the committed recovery key (reveal of `next_control_commitment` + its signature) or by the quorum; the same transaction mints `Approve { updateTerminal, key, .. }` and creates the completion request | LT01 (control key alone) is retired as a row; LT02/LT03 stand; a wrong reveal refuses |
 
 ## `naming-onchain/validators/naming.ak`
@@ -55,8 +55,8 @@ constraints. No bodies.
 
 | declaration | shape | constraint |
 |---|---|---|
-| `CageConfig` | gains `cfgApplicationPolicy`, `cfgActivePolicy`, `cfgAbsentPolicy`, `cfgTerminalPolicy`; loses `cfgConsumerPin` | each derived from the partitions' `script-identity.json` given the registry identity (D-BOOT); never a literal |
-| `bootStateFromCfg :: CageConfig -> OnChainRoot -> OnChainTokenState` | the eight-field boot datum | the four pins from the config; CS08 round-trips them |
+| `CageConfig` | gains `cfgApplicationPolicy`, `cfgActivePolicy`, `cfgAbsentPolicy`, `cfgTerminalPolicy`; loses `cfgConsumerPin` | each derived from the partitions' `script-identity.json` given the registry identity (genesis-policy-pins); never a literal |
+| `bootStateFromCfg :: CageConfig -> OnChainRoot -> OnChainTokenState` | the eight-field boot datum | the four pins from the config; state-fields-chain-round-trip round-trips them |
 
 ## Removed
 

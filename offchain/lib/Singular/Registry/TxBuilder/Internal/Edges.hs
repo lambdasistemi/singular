@@ -19,7 +19,7 @@ This is the edges-and-binding owner extracted from
 it and is its only intended consumer surface.
 -}
 module Singular.Registry.TxBuilder.Internal.Edges
-    ( -- * Registry-mode edges (#157 C2)
+    ( -- * Registry-mode edges (#157 seven-admitted-edges)
       leafAbsent
     , leafActive
     , leafTerminal
@@ -84,10 +84,10 @@ import Singular.Registry.Types
     )
 
 -- ---------------------------------------------------------
--- Registry-mode edges (#157 C2)
+-- Registry-mode edges (#157 seven-admitted-edges)
 -- ---------------------------------------------------------
 
-{- | The three leaf states the registry admits (#157 D-CODEC). Requests
+{- | The three leaf states the registry admits (#157 three-state-leaf-codec). Requests
 carry an edge, not a value, so these are no longer something a builder
 chooses: they are the bytes each edge's trie move reads and writes, and
 'walkEdge' below is the one place that pairs them with their edge.
@@ -108,7 +108,7 @@ and AFTER an insert, exactly as the cage's own walk does.
 A tag outside the table names no move: the cage refuses it
 `edge-inadmissible` before touching the trie, so the builder walks
 nothing either and states the proof the refusal will be judged against.
-A read (edge 6) leaves the leaf where it is (#157 C3).
+A read (edge 6) leaves the leaf where it is (#157 read-preserves-intermediate-root).
 
 One site, so the connected fold and the update builder cannot drift
 apart about what an edge does to the trie.
@@ -159,7 +159,7 @@ policyOfKind cfg kind = case kind of
     2 -> cfgTerminalPolicy cfg
     _ -> error "policyOfKind: not a token kind"
 
-{- | The approval binding (#157 D-APPROVAL): the asset name the application
+{- | The approval binding (#157 approval-asset-binding): the asset name the application
 policy mints to certify one edge, @blake2b_256(edge ‖ key ‖ owner ‖
 destination address ‖ destination datum hash)@. One formula, recomputed by
 the cage from the request it rides; a builder that computes it differently

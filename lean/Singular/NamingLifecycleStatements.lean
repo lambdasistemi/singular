@@ -41,7 +41,7 @@ theorem commitment_vectors_are_distinct_and_32_bytes :
     nextControllerCommitment != wrongDomainCommitment := by
   refine ⟨by rfl, by rfl, by rfl, by rfl, by rfl⟩
 
-/-- **NM2** — maintenance preserves the untouched control fields and refuses
+/-- **local-record-update-preserves-registry** — maintenance preserves the untouched control fields and refuses
 an unauthorized signature. -/
 theorem destination_preserves_and_refuses :
     (maintainDestination activeOnce aliceKey clearedFixture
@@ -61,7 +61,7 @@ theorem recovery_installs_and_refuses :
       .error "recovery-commitment" := by
   refine ⟨by rfl, by rfl⟩
 
-/-- **NM3 / R-NM4** — retirement by quorum or by the committed recovery key
+/-- **retirement-removes-active-witness / naming-approval-rules** — retirement by quorum or by the committed recovery key
 accepts; below quorum without the recovery key refuses. -/
 theorem retirement_authorization_rows :
     (namingRetireLifecycle activeOnce aliceKey

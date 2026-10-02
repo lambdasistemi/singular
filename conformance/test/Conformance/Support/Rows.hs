@@ -19,6 +19,7 @@ import Test.Hspec
     , shouldSatisfy
     )
 
+import Conformance.RowNames (canonicalRowName, historicalRowNames)
 import Conformance.Rows
     ( Row (..)
     , RowState (..)
@@ -33,6 +34,20 @@ import Paths_conformance (getDataFileName)
 
 spec :: Spec
 spec = describe "Appendix: keeping the published requirements complete" $ do
+    it
+        "Associates every historical receipt key with exactly one current requirement"
+        $ do
+            rows <- loadCommitted
+            let current = map rowId rows
+            length historicalRowNames `shouldBe` expectedRowCount
+            length (nub (map snd historicalRowNames)) `shouldBe` expectedRowCount
+            map snd historicalRowNames `shouldSatisfy` (all (`elem` current))
+            map (canonicalRowName . fst) historicalRowNames
+                `shouldBe` map snd historicalRowNames
+            map canonicalRowName current `shouldBe` current
+            canonicalRowName "unknown-requirement"
+                `shouldBe` "unknown-requirement"
+
     it
         "Includes every expected requirement once and counts the requirements owned by the registry"
         $ do
@@ -50,7 +65,7 @@ spec = describe "Appendix: keeping the published requirements complete" $ do
         "Identifies checkpoint policy as outside the registry's responsibilities"
         $ do
             rows <- loadCommitted
-            case filter ((== "CK06") . rowId) rows of
+            case filter ((== "checkpoint-and-treasury-policy") . rowId) rows of
                 [ck06] -> rowState ck06 `shouldBe` OutOfScope
                 _ ->
                     expectationFailure
@@ -60,9 +75,9 @@ spec = describe "Appendix: keeping the published requirements complete" $ do
         "Keeps the reject and retract exit controls a requirement of their own, apart from the retirement"
         $ do
             rows <- loadCommitted
-            case filter ((== "CG23") . rowId) rows of
+            case filter ((== "reject-and-retract-refund-controls") . rowId) rows of
                 [exits] -> do
-                    rowGroup exits `shouldBe` "CG"
+                    rowGroup exits `shouldBe` "registry-operations"
                     rowRequirement exits
                         `shouldSatisfy` (\text -> all (`T.isInfixOf` text) ["reject", "retract"])
                 _ ->
@@ -111,13 +126,13 @@ loadCommitted = do
 
 badStateRow :: BSL.ByteString
 badStateRow =
-    "{\"id\":\"CX01\",\"group\":\"CG\","
+    "{\"id\":\"CX01\",\"group\":\"registry-operations\","
         <> "\"requirement\":\"r\",\"source\":\"s\","
         <> "\"expected\":\"accept\",\"state\":\"flying\"}"
 
 executedStateRow :: BSL.ByteString
 executedStateRow =
-    "{\"id\":\"CX01\",\"group\":\"CG\","
+    "{\"id\":\"CX01\",\"group\":\"registry-operations\","
         <> "\"requirement\":\"r\",\"source\":\"s\","
         <> "\"expected\":\"accept\",\"state\":\"executed\"}"
 

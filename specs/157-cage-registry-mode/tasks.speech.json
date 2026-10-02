@@ -5,11 +5,11 @@
       "pause": 500
     },
     {
-      "text": "[ ] T157-01 — State eight fields; Operation.Read; Request.destination;.",
+      "text": "[ ] state-eight-fields-operation-read-request-destination — State eight fields; Operation.Read; Request.destination;.",
       "pause": 300
     },
     {
-      "text": "CageDatum.AbsentCustody; blueprint regenerated; Haskell encodings follow       (blueprint-check green). - [ ] T157-02 — codec helpers in lib.ak (decodeState, edgeOf,       deltaOf, approvalName, destinationMatches) with their unit rows.",
+      "text": "CageDatum.AbsentCustody; blueprint regenerated; Haskell encodings follow       (blueprint-check green). - [ ] codec-helpers-in-lib-ak-decodestate-edgeof — codec helpers in lib.ak (decodeState, edgeOf,       deltaOf, approvalName, destinationMatches) with their unit rows.",
       "pause": 400
     }
   ],
@@ -19,11 +19,11 @@
       "pause": 500
     },
     {
-      "text": "[ ] T157-03 — admissibility: the seven rows accept, every other shape refuses.",
+      "text": "[ ] admissibility-seven-rows-accept-other-shape-refuses — admissibility: the seven rows accept, every other shape refuses.",
       "pause": 300
     },
     {
-      "text": "with its own trace, before the proof (G1–G3). - [ ] T157-04 — the read at its position; batches of only reads (G4, G5). - [ ] T157-05 — admission by bound approval; reads need none; pins preserved       (A1–A4). - [ ] T157-06 — the delta against the mint, per key, all three policies       (M1–M5). - [ ] T157-07 — destinations and custody; the custody spending path; R-ADA       refunds with inserter ≠ booker (T1–T5). - [ ] T157-08 — tip coverage in the cage; reads retractable (V1, V2). - [ ] T157-09 — consumer.ak, its tests, the pin and the withdrawal       requirement deleted in one commit.",
+      "text": "with its own trace, before the proof (request-whose-value-bytes-not-x00-x01–refused-shape-folded-refused-its-own-trace). - [ ] read-at-its-position-batches-reads — the read at its position; batches of only reads (insert-j-read-k-x02-insert-l, batch-reads-folded-accepted-root-unchanged). - [ ] admission-by-bound-approval-reads-need-none — admission by bound approval; reads need none; pins preserved       (A1–A4). - [ ] delta-against-mint-per-key-three-policies — the delta against the mint, per key, all three policies       (fold-insert-x01-k-mint-carries-two–any-fold-any-asset-moves-under-token). - [ ] destinations-custody-custody-spending-path-r-ada — destinations and custody; the custody spending path; custody-lovelace-refund       refunds with inserter ≠ booker (active-token-requested-destination–custody-spend-requires-consuming-fold). - [ ] tip-coverage-in-cage-reads-retractable-v1 — tip coverage in the cage; reads retractable (V1, V2). - [ ] consumer-ak-its-tests-pin-withdrawal-requirement — consumer.ak, its tests, the pin and the withdrawal       requirement deleted in one commit.",
       "pause": 400
     }
   ],
@@ -33,11 +33,11 @@
       "pause": 500
     },
     {
-      "text": "[ ] T157-10 — witness(kind, registry); three instances; co-presence with a.",
+      "text": "[ ] witness-kind-registry-three-instances-co-presence — witness(kind, registry); three instances; co-presence with a.",
       "pause": 300
     },
     {
-      "text": "Modify; terminal burn free; representative.ak retired (P1–P3).",
+      "text": "Modify; terminal burn free; representative.ak retired (witness-kind-registry-for-kind-minted-or–fold-that-mints-under-token-policy-asset).",
       "pause": 400
     }
   ],
@@ -47,15 +47,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] T157-11 — Approve arm for the six edges per R-NM4 (N1–N5)..",
+      "text": "[ ] approve-arm-for-six-edges-per-r — Approve arm for the six edges per naming-approval-rules (N1–N5)..",
       "pause": 300
     },
     {
-      "text": "[ ] T157-12 — the fold-created record; Fold/Cancel/claim lifecycle.",
+      "text": "[ ] fold-created-record-fold-cancel-claim-lifecycle — the fold-created record; Fold/Cancel/claim lifecycle.",
       "pause": 300
     },
     {
-      "text": "removed (N7). - [ ] T157-13 — Retire authorized by the committed recovery key or the       quorum, never the current control key alone; co-mints the terminate       approval and the completion request; completion folds       Update(0x01,0x02) (N6, N8). - [ ] T157-13b — the destination output of a folded booking or read carries at       least the request's value minus the tip (T6). - [ ] T157-14 — Maintain/Recover rows re-run; naming.ak loses its value       vocabulary (N9, N10). - [ ] T157-15 — just test and just script-identity-regen in both partitions;       hashes in the handback.",
+      "text": "removed (N7). - [ ] retire-authorized-by-committed-recovery-key-or — Retire authorized by the committed recovery key or the       quorum, never the current control key alone; co-mints the terminate       approval and the completion request; completion folds       Update(0x01,0x02) (N6, N8). - [ ] destination-output-folded-booking-or-read-carries — the destination output of a folded booking or read carries at       least the request's value minus the tip (request-deposit-returned). - [ ] maintain-recover-rows-re-run-naming-ak — Maintain/Recover rows re-run; naming.ak loses its value       vocabulary (N9, N10). - [ ] just-test-just-script-identity-regen-in — just test and just script-identity-regen in both partitions;       hashes in the handback.",
       "pause": 400
     }
   ],
@@ -65,11 +65,11 @@
       "pause": 500
     },
     {
-      "text": "[ ] T157-16 — conformance re-baselined; contract change stated with old and.",
+      "text": "[ ] conformance-re-baselined-contract-change-stated-old — conformance re-baselined; contract change stated with old and.",
       "pause": 300
     },
     {
-      "text": "new fields side by side (X1). - [ ] T157-17 — the three naming docs updated; speech restamped;       just check-presentation green (X2). - [ ] T157-18 — the trace-label table Aiken trace → Lean reason, total.",
+      "text": "new fields side by side (X1). - [ ] three-naming-updated-speech-restamped-just-check — the three naming docs updated; speech restamped;       just check-presentation green (X2). - [ ] trace-label-table-aiken-trace-lean-reason — the trace-label table Aiken trace → Lean reason, total.",
       "pause": 400
     }
   ],
@@ -85,6 +85,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "107b14422a6cc160d95691a9c64fede360e42a80ac79e3abe34cc0e856b6cf7d"
+    "sha256": "2b3538b40ef6314aad235152e7a83a884594298b89e60d23282389f2d3b0dc3d"
   }
 }

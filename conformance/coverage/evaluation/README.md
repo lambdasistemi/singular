@@ -10,7 +10,7 @@ copy and no lock file was refreshed.
 Recommendation returned to the epic-18 owner with this evidence; adoption is a separate,
 owner-owned decision. Nothing here reduces any obligation's debt.
 
-## What was run (per the NOTE-001/NOTE-002 conditions, in order)
+## What was run (per the operator note (NOTE-001)/NOTE-002 conditions, in order)
 
 One real Lean obligation, one real implementation boundary, no toy:
 
@@ -19,7 +19,7 @@ One real Lean obligation, one real implementation boundary, no toy:
   the now-occupied key is refused with the named registry reason; the Lean model pins the
   refusal at `Singular/Model.lean:175` (`occupied-key`).
 - **Implementation execution:** the packaged conformance runner
-  (`nix build ./conformance#conformance`) driving row **CG05** — *Insert on a key that is
+  (`nix build ./conformance#conformance`) driving row **insert-occupied-key** — *Insert on a key that is
   already present* — against a real devnet with the real compiled blueprint, including its
   executing negative control (a fresh cage accepting a valid insert, proving the refusal
   discriminates).
@@ -87,7 +87,7 @@ control line `the refusal discriminates`; the receipt artifact `receipt-CG05.jso
 
 ## What the library supplies, and what our adapter must add
 
-Supplies: phase-indexed `Language` GADT (`Given`/`GivenAndAfter`/`When`/`Then`/`End`), free
+Supplies: phase-indexed `Language` generalized algebraic data type (`Given`/`GivenAndAfter`/`When`/`Then`/`End`), free
 do-notation, Tasty integration (`testBehavior`/`testBehaviorIO`/`testBehaviorF`), teardown
 ordering, per-`Then` assertions fed from the `When` result.
 
@@ -122,7 +122,7 @@ behind a thin Singular adapter, conditional on:**
    CI;
 3. operator review of the two representative rendered stories — the ground instance
    (`../correspondence/naming_occupied_key_refuses_duplicate.md`) and the equivalence under
-   load (`../correspondence/fold_iff.md`) — before any DSL scales across the suite.
+   load (`../correspondence/fold_iff.md`) — before any story language scales across the suite.
 
 GHC 9.12.3 compatibility is established for the evaluated surface by this spike's builds
 and runs. Alternative frameworks were not evaluated (out of scope by instruction). This

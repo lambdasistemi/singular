@@ -2,7 +2,7 @@ import Singular.Lemmas
 import Singular.Driver
 
 /-! The public statement surface of the registry-mode model. The eleven
-promises of the interface — P1, L1, S1, S2, S3, O1, T1, W1–W4 — and the seven
+promises of the interface — tree-change-requires-approval, request-spent-once-in-order, terminal-attestation-sound, terminal-attestation-permanent, supply-matches-leaf-state, booking-requires-untaken-key, terminal-key-cannot-change, active-witness-unique–witness-kinds-exclude — and the seven
 edge inversions, the fold inversions and the read facts. Every declaration
 quantifies over states reachable from genesis by folds; over arbitrary `State`
 values the supply laws are simply false. -/
@@ -18,7 +18,7 @@ theorem readAt_true_iff (s : RegistryState) (key : Key) :
   unfold readAt
   simp [Bool.and_eq_true]
 
-/-- **P1** — no tree change without approval, and the pins never move. -/
+/-- **tree-change-requires-approval** — no tree change without approval, and the pins never move. -/
 theorem no_tree_change_without_approval (s : RegistryState) (r : Request) (t : Result)
     (h : Reachable s) (hok : step s r = .ok t) (htree : r.edge ≠ .witnessTerminal) :
     (∃ ap, r.approval = some ap ∧ ap.policy = s.config.applicationPolicy ∧
@@ -50,7 +50,7 @@ theorem no_tree_change_without_approval (s : RegistryState) (r : Request) (t : R
       rcases hcase with ⟨hE, _⟩ | ⟨hE, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ <;>
         simp [applyEdge, hE])
 
-/-- **L1** — each request is spent once and in order (the fold is a step
+/-- **request-spent-once-in-order** — each request is spent once and in order (the fold is a step
 chain), a refusal anywhere refuses the whole batch, and no key ends the batch
 booked twice. -/
 theorem booked_at_most_once (s : RegistryState) (batch : List Request) (t : Result)
@@ -123,14 +123,14 @@ theorem booked_at_most_once (s : RegistryState) (batch : List Request) (t : Resu
     obtain ⟨_, _, hA2, _, hC2, _, _, _⟩ := reachable_consistent t.state hreach
     exact ⟨hA2 key, hC2 key⟩
 
-/-- **S1** — every terminal attestation in a reachable state is about a leaf
+/-- **terminal-attestation-sound** — every terminal attestation in a reachable state is about a leaf
 that is terminal: no attestation of an Active, Absent or Unknown key exists. -/
 theorem terminal_attestation_sound (s : RegistryState) (key : Key) (out : Nat)
     (h : Reachable s) (hmem : { key := key, kind := .terminal, output := out } ∈ s.held) :
     trieGet s.trie key = .known .terminal := by
   exact (reachable_consistent s h).2.2.2.2.2.1 _ hmem rfl
 
-/-- The provenance half of S1: a terminal token enters the ledger only through
+/-- The provenance half of terminal-attestation-sound: a terminal token enters the ledger only through
 an admitted `witnessTerminal` step whose read was verified. -/
 theorem terminal_mint_only_by_read (s : RegistryState) (r : Request) (t : Result)
     (hok : step s r = .ok t) (key : Key)
@@ -176,7 +176,7 @@ theorem terminal_mint_only_by_read (s : RegistryState) (r : Request) (t : Result
       simp only [kindCount] at this
       omega
 
-/-- **S2** — a terminal attestation is valid in every later state: a terminal
+/-- **terminal-attestation-permanent** — a terminal attestation is valid in every later state: a terminal
 leaf admits no edge that moves it, and no edge burns an attestation. -/
 theorem terminal_attestation_permanent (s : RegistryState) (acts : List Request) (t : Result)
     (h : Reachable s) (hok : foldBatch s acts = .ok t) (key : Key) (out : Nat)
@@ -211,7 +211,7 @@ theorem terminal_attestation_permanent (s : RegistryState) (acts : List Request)
           (step_preserves_terminal_holding s b m key out hterm hmem hs)
           (step_preserves_terminal s b m key hterm hs) hrest
 
-/-- **S3** — the biconditional supply law, unconditionally over reachable
+/-- **supply-matches-leaf-state** — the biconditional supply law, unconditionally over reachable
 states: supply is 1 iff the key is in that token's state, 0 otherwise. -/
 theorem biconditional_supply_sync (s : RegistryState) (h : Reachable s) (key : Key) :
     (kindCount s .active key = 1 ↔ trieGet s.trie key = .known .active) ∧
@@ -237,7 +237,7 @@ theorem biconditional_supply_sync (s : RegistryState) (h : Reachable s) (key : K
       have hnot1 : custodyCount s key ≠ 1 := fun hEq => hne ((hC1 key).mp hEq)
       omega
 
-/-- **O1** — occupancy: a booking edge succeeds only on a key that is not
+/-- **booking-requires-untaken-key** — occupancy: a booking edge succeeds only on a key that is not
 taken, and books it. -/
 theorem occupancy (s : RegistryState) (r : Request) (t : Result) (h : Reachable s)
     (hok : step s r = .ok t)
@@ -260,7 +260,7 @@ theorem occupancy (s : RegistryState) (r : Request) (t : Result) (h : Reachable 
         by rw [h1, trieGet_set_eq]⟩
     all_goals (rcases hedge with h2 | h2 <;> (rw [h2] at hE; exact absurd hE (by decide)))
 
-/-- **O1**, converse: a booking edge on an untaken key, with a matching
+/-- **booking-requires-untaken-key**, converse: a booking edge on an untaken key, with a matching
 approval, succeeds. -/
 theorem occupancy_free_key_succeeds (s : RegistryState) (h : Reachable s) (key : Key)
     (owner out : Nat) (hfree : trieGet s.trie key = .unknown)
@@ -277,7 +277,7 @@ theorem occupancy_free_key_succeeds (s : RegistryState) (h : Reachable s) (key :
   exact ⟨applyEdge s (Request.mk .insertActive key owner 0 0 out (some ap) []),
     ok_of_refusal s _ href⟩
 
-/-- **T1** — termination: on a terminal key every leaf-moving edge is refused,
+/-- **terminal-key-cannot-change** — termination: on a terminal key every leaf-moving edge is refused,
 forever, so the key stays terminated and is never re-booked. Supersedes the
 base `over_terminal`. -/
 theorem termination (s : RegistryState) (key : Key) (h : Reachable s)
@@ -299,21 +299,21 @@ theorem termination (s : RegistryState) (key : Key) (h : Reachable s)
   · intro acts t hfold
     exact foldActions_preserves_terminal s acts t key hterm (foldBatch_inv s acts t hfold).2
 
-/-- **W1** — at most one active token, exactly one iff the leaf is Active. -/
+/-- **active-witness-unique** — at most one active token, exactly one iff the leaf is Active. -/
 theorem active_witness_unique (s : RegistryState) (h : Reachable s) (key : Key) :
     kindCount s .active key ≤ 1 ∧
     (kindCount s .active key = 1 ↔ trieGet s.trie key = .known .active) := by
   obtain ⟨_, hA1, hA2, _, _, _, _, _⟩ := reachable_consistent s h
   exact ⟨hA2 key, hA1 key⟩
 
-/-- **W2** — at most one absent witness, exactly one iff the leaf is Absent. -/
+/-- **absent-witness-unique** — at most one absent witness, exactly one iff the leaf is Absent. -/
 theorem absent_witness_unique (s : RegistryState) (h : Reachable s) (key : Key) :
     custodyCount s key ≤ 1 ∧
     (custodyCount s key = 1 ↔ trieGet s.trie key = .known .absent) := by
   obtain ⟨_, _, _, hC1, hC2, _, _, _⟩ := reachable_consistent s h
   exact ⟨hC2 key, hC1 key⟩
 
-/-- **W3** — terminal attestations are plural, all true, and freely mintable
+/-- **terminal-witnesses-plural** — terminal attestations are plural, all true, and freely mintable
 while the leaf is terminal; none exists otherwise. -/
 theorem terminal_witness_plural (s : RegistryState) (key : Key) (h : Reachable s)
     (hterm : trieGet s.trie key = .known .terminal) (out : Nat) :
@@ -352,7 +352,7 @@ theorem terminal_witness_plural (s : RegistryState) (key : Key) (h : Reachable s
       obtain ⟨v, _, hv, hcfg, htrie, hvc⟩ := hmint u out hu hru hleaf
       exact ⟨v.state, hv, by rw [hvc, hcount]; omega, by rw [htrie]; exact hleaf⟩
 
-/-- **W4** — kind exclusion: at most one kind of witness is outstanding for a
+/-- **witness-kinds-exclude** — kind exclusion: at most one kind of witness is outstanding for a
 key, so a consumer that finds one kind knows the other two do not exist. -/
 theorem witness_kinds_exclude (s : RegistryState) (h : Reachable s) (key : Key) :
     (kindCount s .active key > 0 → custodyCount s key = 0 ∧ kindCount s .terminal key = 0) ∧
@@ -536,7 +536,7 @@ theorem insert_active_inversion (s : RegistryState) (r : Request) (t : Result)
       (by rw [hmint', hmint]) (by rw [hpaid', hpaid]))
 /-- Inversion of an admitted `updateActive` — booking a witnessed name; the
 consumed absent token's value is paid to the refund address its custody datum
-records (R-ADA). -/
+records (custody-lovelace-refund). -/
 theorem update_active_inversion (s : RegistryState) (r : Request) (t : Result)
     (he : r.edge = .updateActive) (c : Custody)
     (hc : s.custody.find? (·.key == r.key) = some c) :
@@ -665,7 +665,7 @@ theorem update_terminal_inversion (s : RegistryState) (r : Request) (t : Result)
         (by rw [hcust', hcust]) (by rw [hheld', hheld]))
       (by rw [hmint', hmint]) (by rw [hpaid', hpaid]))
 /-- Inversion of an admitted `deleteAbsent` — the witness retracts, the deposit
-returns to the inserter (R-ADA), and the key reads `Unknown` again. -/
+returns to the inserter (custody-lovelace-refund), and the key reads `Unknown` again. -/
 theorem delete_absent_inversion (s : RegistryState) (r : Request) (t : Result)
     (he : r.edge = .deleteAbsent) (c : Custody)
     (hc : s.custody.find? (·.key == r.key) = some c) :
@@ -978,7 +978,7 @@ theorem insert_absent_transaction_row (s : RegistryState) (r : Request) (t : Res
     by simp [destinationDatumBinds, hap, hbind], hfree, htrie,
     by simp [onlyRootChanged, hcfg], by rw [hcfg, htrie], hcust, hheld, hcount, rfl, rfl⟩
 
-/-- **#173 T1** — the transaction an admitted `insertActive` builds.
+/-- **#173 terminal-key-cannot-change** — the transaction an admitted `insertActive` builds.
 
 The conclusion is one equation on the transaction `txOf` constructs from the
 executed step, so every clause quantifies over a built value rather than over a
@@ -1168,7 +1168,7 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
     by rw [hheld]; exact List.mem_cons_self,
     rfl, rfl, rfl, hsigtx, hsecondtx, hadmits, hcross⟩
 
-/-- **#177 T1** — the transaction an admitted `updateTerminal` builds.
+/-- **#177 terminal-key-cannot-change** — the transaction an admitted `updateTerminal` builds.
 
 Retirement is the first edge whose mint is negative, so it is the first whose
 tokens have to come from somewhere. The conclusion is one equation on the value
@@ -1413,7 +1413,7 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
     hnotbooked _ r he (by simp) hadm,
     hmissing _ r he (by simpa using hbefore) (by simp) (by simpa using hadm)⟩
 
-/-- **#173 T1** — the fold's mint guard is per `(TokenKind, Key)`.
+/-- **#173 terminal-key-cannot-change** — the fold's mint guard is per `(TokenKind, Key)`.
 
 An accepted fold's claimed and actual keyed sums agree; a nonempty batch whose
 every request applies but whose keyed sums differ is refused

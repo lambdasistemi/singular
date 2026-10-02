@@ -168,7 +168,7 @@ pub fn retractRefusal(
   let Request { requestOwner, requestToken, edge, submitted_at, .. } = request
   let Transaction { extra_signatories, validity_range, .. } = tx
   expect requestToken == cageToken
-  // Insert-and-read retraction (issue #79 Defect 2; #157 C9, D-RETRACT):
+  // Insert-and-read retraction (issue #79 Defect 2; #157 owner-retraction, D-RETRACT):
   // Lean `step .withdraw` throws `withdraw-insert-only` for any request
   // that is neither, and `step .escape` throws
   // `completion-only-custody`. An update (retirement) or delete request

@@ -30,17 +30,17 @@ flowchart TD
   with `branch = Nothing` and a fixed limit; callers `Run/Submit.hs:65,133`,
   `Run/CgRows.hs:1424`.
 - Receipt bounds: `maxReceiptBytes = 16384`, `maxLiveStepReasonChars = 300`;
-  CI holds CG23 and CG07 receipts at 14745 bytes.
+  CI holds reject-and-retract-refund-controls and retract-outside-window receipts at 14745 bytes.
 
 ## Refused steps CI produces today
 
-From `.github/workflows/conformance.yml` assertions: CG22 four
-(`not-booked`, `key-unknown`, two `deposit-returned`); CG23 eight (reject and
+From `.github/workflows/conformance.yml` assertions: retire-active-key four
+(`not-booked`, `key-unknown`, two `deposit-returned`); reject-and-retract-refund-controls eight (reject and
 retract tampers: `deposit-returned`, `retract-state-spent`,
-`withdraw-insert-only`, `retract-owner`); CG07 two (`not-phase2`); CG21 three
+`withdraw-insert-only`, `retract-owner`); retract-outside-window two (`not-phase2`); register-active-key three
 (`key-exists`, `destination`, `deposit-returned`). Attribution refusals run in
-the generic (CG05, CG09, CG10, CG19) and serialization (CS04) sessions. This
-list is a lead: the ticket's denominator is counted from receipts (FR-14).
+the generic (insert-occupied-key, reject-before-deadline-consumer-requirement, fold-against-superseded-root, request-value-and-refund-routing) and serialization (wrong-redeemer-constructor-index) sessions. This
+list is a lead: the ticket's denominator is counted from receipts (discovered-refusal-extent).
 
 ## Reason vocabulary on chain
 
@@ -58,8 +58,8 @@ The validators construct the Lean refusal names verbatim (`onchain/validators/re
   Lead: Aiken's `build` defaults to silent traces, matching the issue's evidence
   (run 36043950326: ten of ten refusals, `CekError`, no logs). The comment at
   `onchain/validators/registry/refusal.ak:26-28` says the published blueprint
-  keeps user traces; T026 settles this by evaluating the deployed bytes with
-  logs on a captured refusal (Q-002). A byte search is not discriminating:
+  keeps user traces; premise-run-on-retract-outside-window settles this by evaluating the deployed bytes with
+  logs on a captured refusal (operator question (Q-002)). A byte search is not discriminating:
   the deployed compiled code contains `deposit-returned`, `not-phase2`,
   `key-exists` and `retract-owner` because the reasons are data values the
   validators compute, whatever the trace level (planning observation,
@@ -70,7 +70,7 @@ The validators construct the Lean refusal names verbatim (`onchain/validators/re
   (`onchain/flake.nix:74-100`).
 - `onchain/flake.lock`, `conformance/flake.lock` and `offchain/flake.lock`
   pin identical nixpkgs revisions, so the conformance flake's `pkgs.aiken` is
-  expected to be the deployed compiler. FR-03 turns that expectation into a check.
+  expected to be the deployed compiler. toolchain-correspondence turns that expectation into a check.
 - The runner gets the deployed blueprint through `REGISTRY_BLUEPRINT`; the
   conformance app wrapper sets `NAMING_BLUEPRINT` by `--set-default`
   (`conformance/flake.nix:289,307`), a carrier pattern for a traced blueprint.
@@ -85,7 +85,7 @@ The validators construct the Lean refusal names verbatim (`onchain/validators/re
 - Lead (unverified at pin `0e73121d` of cardano-node-clients): evaluation is the
   ledger's `evalTxExUnits` over the node's UTxO, system start and era history,
   and a validation failure carries the ledger's script-with-context value — the
-  exact script and arguments for the purpose. T001 verifies this at the pin.
+  exact script and arguments for the purpose. read-pinned-cardano-node-clients-offchain verifies this at the pin.
 
 ## Alternatives rejected
 
@@ -95,7 +95,7 @@ The validators construct the Lean refusal names verbatim (`onchain/validators/re
 - Ledger re-evaluation with the traced script placed in the UTxO: ledger lookup
   is by hash and would still run the deployed bytes or fail to find the script.
 - Reading reasons from the model or from the Aiken test suite: not chain
-  evidence (FR-08).
+  evidence (separate-evidence-classes).
 - `--trace-filter all`: adds compiler `expect` traces, so "exactly one
   user-defined trace" would no longer identify the refusal.
 
@@ -104,4 +104,4 @@ The validators construct the Lean refusal names verbatim (`onchain/validators/re
 - Limit text: `conformance/lib/Conformance/Book.hs:51`; committed render
   `conformance/BOOK.md:343`; asserted by `conformance/test/Conformance/Story/Usage.hs:83`.
 - Also stated in `docs/theorems.md:133-136` and constitution rows `retract`,
-  `settle` (`.specify/memory/constitution.md:421,429`): outside the fence (Q-002).
+  `settle` (`.specify/memory/constitution.md:421,429`): outside the fence (operator question (Q-002)).

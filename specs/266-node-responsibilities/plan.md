@@ -42,7 +42,7 @@ allowed. Conformance implementation and evidence, Lean, validators, unrelated
 commands, dependency upgrades and workflows are excluded. A need to edit one
 of those surfaces is a question to the epic owner before proceeding.
 
-Gate S maps every requirement to a verbatim active CI command and the root
+acceptance checks maps every requirement to a verbatim active CI command and the root
 gate. Cheap invocations are local no-Nix compile or test probes; expensive
 invocations include Nix builds, apps, aggregate gates and devnet. The coder
 has at most 80 cheap and 20 expensive invocations across the ticket; each

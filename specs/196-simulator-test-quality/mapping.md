@@ -11,9 +11,9 @@ review baseline `e19ca5efacb23acdbef51110f003dddc35ad592c`):
   `statementsSha256 b0f8867e…22acab`, `theoremManifestSha256 bbc2cdf9…9aef6c`.
 - The observable result of an admitted transition is the whole
   `Singular.Result` `{state, mint, paid}`:
-  `Singular.applyEdge` returns `mint := assetDelta a` (the R2 delta of
+  `Singular.applyEdge` returns `mint := assetDelta a` (the edge-delta delta of
   the edge) and `paid := [(c.refundAddress, c.value)]` for `updateActive` /
-  `deleteAbsent` over the request key's custody entry (R-ADA); `step` is
+  `deleteAbsent` over the request key's custody entry (custody-lovelace-refund); `step` is
   `refusal` or `applyEdge`. The gate now compares all three observables.
 - Keyed mint evidence rows are exports of
   `Singular.Statements.fold_batch_claimed_mint_by_kind_key`; the transcription
@@ -27,7 +27,7 @@ review baseline `e19ca5efacb23acdbef51110f003dddc35ad592c`):
 |---|---|---|
 | `corpus verdict/<id>` | accepted/refused verdict per exported case | unchanged |
 | `corpus state/<id>` | accepted case end-state vs Lean `result.state` | unchanged |
-| `corpus mint/<id>` (new) | — nothing | the admitted case's `value.mint` equals the R2 delta of the case's own edge |
+| `corpus mint/<id>` (new) | — nothing | the admitted case's `value.mint` equals the edge-delta delta of the case's own edge |
 | `corpus refund/<id>` (new) | — nothing | the admitted case's `value.paid` equals the custody refund (destination **and** amount) the case's own `before` state requires |
 | `no corpus case observes a refund` (new) | — nothing | guards the refund observation against silent vacuity |
 | `ada destination/<id>` | refund destination only | replaced by `ada refund/<id>`: destination **and** the fixture's deposited amount |
@@ -49,7 +49,7 @@ refusals, page build identity, the Over witness journey (behavior), lifecycle
 by-id rows and retirement-reason checks. The handwritten fold controls remain
 behavioral controls, not a coverage catalogue; no second catalogue was added.
 
-## Prepublication repair (2026-09-21): full S3 and unconditional laws
+## Prepublication repair (2026-09-21): full unconditional-laws and unconditional laws
 
 Prepublication owner checks found two original-criteria failures against the
 candidate; both repaired against clear Lean, no operator ruling needed.
@@ -57,13 +57,13 @@ candidate; both repaired against clear Lean, no operator ruling needed.
 1. **Resolve rows accepted a contradictory observation.** The checker encoded
    only the one-iff half of `Singular.Statements.biconditional_supply_sync`:
    NRP03-resolve-active mutated to leaf `{known:{s:'terminal'}}` with
-   `active:2, absent:0, terminal:0` passed all 24 rows, though S3 also claims
+   `active:2, absent:0, terminal:0` passed all 24 rows, though unconditional-laws also claims
    zero active supply whenever the leaf is not active (and zero absent
    whenever it is not absent). RED: the mutation was accepted. GREEN: the
    checker now requires all four conjuncts — `(active===1)===leaf active`,
    `(active===0)===leaf not active`, and the same pair for absent — so absence
    and wrong-multiplicity rows are rejected by name. Plural terminal witnesses
-   stay allowed on a terminal leaf (W3); NRP05 with `terminal:2` passes as a
+   stay allowed on a terminal leaf (terminal-witnesses-plural); NRP05 with `terminal:2` passes as a
    positive control. Kind exclusion, previously its own branch, is no longer
    checked separately: with the zero halves in place a positive count pins the
    leaf and one leaf cannot be two states, so every exclusion-failing row
@@ -74,11 +74,11 @@ candidate; both repaired against clear Lean, no operator ruling needed.
    `applies:false` while `law:false` — the violation hid as an inactive
    hypothesis. Lean's law is unconditional over reachable states; output
    witness presence is its consequence, never its hypothesis. `applies` for
-   W1, W2, W4 and S3 is now constant; `law` is the exact full consequent
-   (W1/W2 gain their iff conjuncts; S3 gains both zero halves). S1's `applies`
+   active-witness-unique, absent-witness-unique, witness-kinds-exclude and unconditional-laws is now constant; `law` is the exact full consequent
+   (active-witness-unique/absent-witness-unique gain their iff conjuncts; unconditional-laws gains both zero halves). terminal-attestation-sound's `applies`
    follows its own quantifier: any terminal attestation in `held`, not only
    the action's key. Termination and occupancy keep their real hypotheses.
-   Corpus coverage moved (S3/W1/W2/W4: applicable 10, vacuous 0; S1 stays
+   Corpus coverage moved (unconditional-laws/active-witness-unique/absent-witness-unique/witness-kinds-exclude: applicable 10, vacuous 0; terminal-attestation-sound stays
    2/2/8); no check was weakened — the repaired law layer run against a
    preserved witness-dropping mutant flags `biconditional_supply_sync` 9/10
    and `active_witness_unique` 9/10 where the old one reported 3 held / 7
@@ -92,7 +92,7 @@ row is an example of the law's consequent, never its quantifier — the
 quantifier remains Lean's proof. `applicable` now means rows where the
 statement's own declared hypotheses hold (all accepted rows for the
 unconditional laws); `vacuous` is meaningful only for termination, occupancy
-and S1; `exercised` requires applicable>0 with held===applicable, i.e. every
+and terminal-attestation-sound; `exercised` requires applicable>0 with held===applicable, i.e. every
 applicable row's consequent evaluated and held. A defect that drops or
 duplicates a witness on any accepted row now lands in `held<applicable` and
 fails the gate as `law violated on a corpus row: <name>`.
@@ -103,7 +103,7 @@ reads as violated).
 
 Verification of this repair: focused node controls (RED before, GREEN after)
 for both defects including the wrong-multiplicity and four-healthy-leaf shapes
-of S3; `node simulator/{mirror-check.mjs,build.mjs --check,gate.mjs,gate.mjs
+of unconditional-laws; `node simulator/{mirror-check.mjs,build.mjs --check,gate.mjs,gate.mjs
 --selftest}` all exit 0; then the one remaining budgeted
 `nix run --quiet .#simulator-check` exit 0 (suite now 3/3 spent; browser-check
 remained 3/3 spent, not rerun; page rebuilt, `index.html` sha256
@@ -150,7 +150,7 @@ Commands and results (all run from the worktree root):
   the ada rows add the destination-named control. If the Lean corpus ever
   stops exporting a refund case, `no corpus case observes a refund at all`
   fails rather than passing quietly.
-- Mint expectations are derived from the transcription's R2 delta table; the
+- Mint expectations are derived from the transcription's edge-delta delta table; the
   table itself is anchored to Lean through the accepted cases' end states, the
   keyed evidence rows, and the fold controls — not re-proved here.
 - `folds`/`keyedMintRows`/`transactions` are inspected as exported evidence;

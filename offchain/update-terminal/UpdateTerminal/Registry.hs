@@ -140,7 +140,7 @@ data Registry = Registry
     , regTidBytes :: ByteString
     }
 
--- | The three C2 rows this story walks (#183).
+-- | The three seven-admitted-edges rows this story walks (#183).
 insertOp, absentOp, retireOp :: Edge
 insertOp = edgeInsertActive
 absentOp = edgeInsertAbsent

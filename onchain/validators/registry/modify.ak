@@ -1,5 +1,5 @@
 //// The `Modify` decision: whether a fold of the registry's state is valid,
-//// and if not, the one reason why (#157 C1–C8, #253).
+//// and if not, the one reason why (#157 leaf-codec-and-operations–request-covers-tip, #253).
 ////
 //// ## Responsibility
 ////
@@ -82,7 +82,7 @@ pub fn validModify(
     // conservation plus the rejected-row floors close the rest.
     Some(@"state-drain")
   } else if !pinsPreserved(pins, next) {
-    // C7: the seven non-root fields are registry configuration — genesis
+    // state-datum-fields: the seven non-root fields are registry configuration — genesis
     // sets them, every fold preserves them. A fold altering any of them
     // refuses here, before any root, delta or destination check.
     Some(@"pins-altered")
@@ -115,8 +115,8 @@ pub fn validModify(
     } else if mpf.root(folded.trie) != next.root {
       Some(@"root")
     } else if !mintMatches(pins, folded.minted, mint) {
-      // C5: the transaction's mint under the three pinned token policies
-      // equals the summed C2 column exactly — asset by asset, quantity
+      // mint-matches-edge-deltas: the transaction's mint under the three pinned token policies
+      // equals the summed seven-admitted-edges column exactly — asset by asset, quantity
       // by quantity — and nothing else moves under them. A mint that
       // adds, omits, doubles or renames one asset is one delta mismatch.
       //
@@ -159,7 +159,7 @@ pub fn validModify(
   }
 }
 
-/// C7: every field but the root survives the fold unchanged.
+/// state-datum-fields: every field but the root survives the fold unchanged.
 fn pinsPreserved(before: State, after: State) -> Bool {
   and {
     before.tip == after.tip,
@@ -172,7 +172,7 @@ fn pinsPreserved(before: State, after: State) -> Bool {
   }
 }
 
-/// C5: the mint under each of the three pinned token policies equals the
+/// mint-matches-edge-deltas: the mint under each of the three pinned token policies equals the
 /// summed delta exactly. Both sides are compared as the ledger's own
 /// normalized token maps, so a zero net movement must be absent rather
 /// than present-at-zero.

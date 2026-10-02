@@ -13,16 +13,16 @@ flowchart LR
     admit --> cmp[compareReason]
 ```
 
-## M2 `Conformance.Replay`
+## conformance-replay `Conformance.Replay`
 
 | Function | Arguments | Result | Constraint |
 |---|---|---|---|
-| `admitReason` | `deployedRun :: ReplayRun`, `tracedRun :: ReplayRun`, `precondition :: Maybe UnobservedCause` | `ReplayClass` | pure; the precondition carries an earlier cause (capture, toolchain, parameters) and wins; implements D5's invariant |
-| `compareReason` | `leanReason :: Text`, `chainReplay :: ReplayClass` | `ReasonComparison` | pure; D6 |
+| `admitReason` | `deployedRun :: ReplayRun`, `tracedRun :: ReplayRun`, `precondition :: Maybe UnobservedCause` | `ReplayClass` | pure; the precondition carries an earlier cause (capture, toolchain, parameters) and wins; implements replayclass's invariant |
+| `compareReason` | `leanReason :: Text`, `chainReplay :: ReplayClass` | `ReasonComparison` | pure; reasoncomparison |
 | `captureIdOf` | `capsuleFiles :: [(FilePath, ByteString)]` | `Text` | pure; order-independent over canonical names |
 | `userTraces` | `logs :: [Text]` | `[Text]` | pure; the user-defined lines of an evaluation log under the traced flags |
 
-## M3 `Conformance.Run.Replay`
+## conformance-run-replay `Conformance.Run.Replay`
 
 | Function | Arguments | Result | Constraint |
 |---|---|---|---|
@@ -35,12 +35,12 @@ flowchart LR
 `PurposeContext` is the ledger's script-with-arguments value for one purpose;
 `deployedConfig` is the run's existing deployed configuration.
 
-## M4–M8 changed signatures
+## changed-signatures–wrong-reason-control-one-row-one-step changed signatures
 
 | Function | Change |
 |---|---|
 | `Conformance.Run.Step.StepRefused` | its reason field holds `[PurposeReplay]` (via `ReplayClass`) instead of the node-text substring tag; `storyRefusalTag` is removed with its last caller |
-| `Conformance.Run.Live` comparison of a refused step | takes `ReasonComparison` into the step's `comparison`: `agrees` only on D6 `agrees` |
-| `Conformance.Refusal.attributeRefusalReceipt` | gains `replay :: [PurposeReplay]`; `branch`/`limit` from it (FR-10) |
-| `Conformance.Book` limits paragraph | text restated (FR-15); its condition is enforced by G10 at the head, since deriving the book from receipts is #225 |
+| `Conformance.Run.Live` comparison of a refused step | takes `ReasonComparison` into the step's `comparison`: `agrees` only on reasoncomparison `agrees` |
+| `Conformance.Refusal.attributeRefusalReceipt` | gains `replay :: [PurposeReplay]`; `branch`/`limit` from it (classify-refusal-comparison-extent) |
+| `Conformance.Book` limits paragraph | text restated (book-states-observation-limits); its condition is enforced by complete-refusal-extent at the head, since deriving the book from receipts is #225 |
 | `Conformance.Run.Control` | gains the wrong-reason control: `row`, `step index`, `replacementReason :: Text` |

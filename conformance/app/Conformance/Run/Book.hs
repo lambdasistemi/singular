@@ -194,7 +194,7 @@ speculativeApplyAll env _cage tid reqs =
   where
     applyOne trie (_, out) =
         -- #183: the edge names the move and its leaf bytes, from the
-        -- table the cage reads (#157 C3: a read proves its key and
+        -- table the cage reads (#157 read-preserves-intermediate-root: a read proves its key and
         -- leaves it alone).
         speculativeStep trie key edge
       where
@@ -234,7 +234,7 @@ keyProof trie key =
             _ <- CageTrie.delete trie key
             pure exclusion
 
-{- | Commit a landed edge to a row cage's trie (#157 C3: a read
+{- | Commit a landed edge to a row cage's trie (#157 read-preserves-intermediate-root: a read
 commits nothing, which `walkEdge` already knows).
 -}
 rowCommit :: Env -> RowCage -> ByteString -> Edge -> IO ()
@@ -253,7 +253,7 @@ pendingRequests env cage = do
             (`Cage.viewUTxOsAt` requestAddrFromCfg cfg tid (network cfg))
     pure (sortOn fst (findRequestUtxos tid reqUtxos))
 
-{- | Book one registry-mode edge (#157 C2, C4, D-DEST): create the request
+{- | Book one registry-mode edge (#157 seven-admitted-edges, tree-edge-admission-by-approval, request-destination-binding): create the request
 and, for a tree edge, mint the approval that certifies it under the
 registry's pinned application policy. A Terminal read carries none (#240).
 
@@ -267,7 +267,7 @@ disagree about what was certified: a drift makes the honest fold refuse
 with `approval-binding` rather than pass quietly.
 
 Which signature or reference the naming application demands is the edge's
-own business (R-NM4): an absence witness needs none, an activation needs
+own business (naming-approval-rules): an absence witness needs none, an activation needs
 the controller, and a deletion needs the custody's refund address and the
 custody itself in view.
 -}
@@ -390,7 +390,7 @@ bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
         )
     pure (TxIn (txIdTx signed) (TxIx 0), reqOut)
 
-{- | Where an edge delivers (#157 D-DEST, R-NM4).
+{- | Where an edge delivers (#157 request-destination-binding, naming-approval-rules).
 
 An absence names the address its deposit comes back to, and no datum. An
 activation names the naming application's own address and the record datum

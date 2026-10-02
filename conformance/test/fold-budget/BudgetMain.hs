@@ -10,7 +10,9 @@ main = do
     args <- getArgs
     case args of
         ["--receipts-dir", dir] -> do
-            outcome <- try (runRows ["CG21"] dir) :: IO (Either SomeException ())
+            outcome <-
+                try (runRows ["register-active-key"] dir)
+                    :: IO (Either SomeException ())
             case outcome of
                 Left err -> do
                     putStrLn ("fold-budget regression: " <> displayException err)

@@ -2,13 +2,13 @@
 
 The ticket owner stamps tasks at acceptance.
 
-- [x] T326-01 (S1) Shared contract suite over in-memory and node adapters, evidence class in its output (M1, D1, F1) (R1, R2; I1, I2).
-- [x] T326-02 (S1) Indexer instance of the suite after #324 is on main (R1; I1).
-- [x] T326-03 (S1) CI-run controls: no node call inside a view, `SignedTx` must-not-compile (M3) (R3, R4; I3, I4).
-- [x] T326-04 (S1) External-node leg in CI (M2) (R5; I1).
-- [x] T326-05 (S2) Journeys, deployment, insert-active, update-terminal, runners and conformance harness on the capabilities; harness context and fold in one view (M4, F2) (R6; I2, I5, I8).
-- [x] T326-06 (S2) Confinement check widened, runner allowlist entry removed (D2) (R6; I5).
-- [x] T326-07 (S2) Documented flags equal `--help`, CI-checked (R7; I6).
-- [x] T326-08 (S3) Release archive states its model revision; post-publish verification app and release job (M5, D3, F3) (R8; I7).
-- [x] T326-09 (S3) Evidence page computed from receipts with uncovered requirements by name and per-adapter contract results (M6, D4, F4) (R9; I7).
-- [x] T326-10 (S3) No epic-only surface; docs describe download, verification and evidence (R10; I6).
+- [x] shared-contract-suite-over-in-memory-node (contract-suite-interface-controls-node-in-memory) Shared contract suite over in-memory and node adapters, evidence class in its output (contract-suite-module-under-offchain-test-owns, contract-case-name-kind-success-refusal-consistency, F1) (one-shared-contract-suite-success-refusal-consistency, suite-s-consistency-cases-cover-read-inside; one-suite-adapter-same-case-list-runs, one-view-one-point-read-operation-makes).
+- [x] indexer-instance-suite-after-on-main (contract-suite-interface-controls-node-in-memory) Indexer instance of the suite after #324 is on main (one-shared-contract-suite-success-refusal-consistency; one-suite-adapter-same-case-list-runs).
+- [x] ci-run-controls-no-node-call-inside (contract-suite-interface-controls-node-in-memory) CI-run controls: no node call inside a view, `SignedTx` must-not-compile (compile-failure-controls-control-live-in-ci) (no-node-call-happens-inside-view-except, signedtx-can-be-obtained-by-signing-ci; no-node-call-inside-view-by-another, signing-constructor-signedtx).
+- [x] external-node-leg-in-ci (contract-suite-interface-controls-node-in-memory) External-node leg in CI (external-node-leg-test-entry-or-flake) (node-adapter-s-external-leg-already-running; one-suite-adapter-same-case-list-runs).
+- [x] journeys-deployment-insert-active-update-terminal-runners (consumer-migration-confinement) Journeys, deployment, insert-active, update-terminal, runners and conformance harness on the capabilities; harness context and fold in one view (consumers-depend-on-provider-view-signedsubmitter-one, F2) (journeys-deployment-insert-active-update-terminal-runners; one-view-one-point-read-operation-makes, backend-mode-selection-confined-adapter-construction-fixture, model-effects-unchanged).
+- [x] confinement-check-widened-runner-allowlist-entry-removed (consumer-migration-confinement) Confinement check widened, runner allowlist entry removed (confinement-allowlist-entry-file-reason-it-composition) (journeys-deployment-insert-active-update-terminal-runners; backend-mode-selection-confined-adapter-construction-fixture).
+- [x] documented-flags-equal-help-ci-checked (consumer-migration-confinement) Documented flags equal `--help`, CI-checked (flags-documented-for-singular-equal-flags-its; documented-surface-equals-binary-s-surface).
+- [x] release-archive-states-its-model-revision-post (artifact-evidence-that-describe-them) Release archive states its model revision; post-publish verification app and release job (release-assembly-gains-model-revision-member-verification, release-model-revision-application-model-commit-release, F3) (v-release-publishes-singular-cli-archive-its; evidence-computed-never-typed-published-verdict-state).
+- [x] evidence-page-computed-from-receipts-uncovered-requirements (artifact-evidence-that-describe-them) Evidence page computed from receipts with uncovered requirements by name and per-adapter contract results (conformance-evidence-page-rendered-from-receipts-by, evidence-state-per-requirement-executed-or-partial, F4) (conformance-states-on-published-evidence-page-computed; evidence-computed-never-typed-published-verdict-state).
+- [x] no-epic-surface-describe-download-verification-evidence (artifact-evidence-that-describe-them) No epic-only surface; docs describe download, verification and evidence (no-epic-flag-executable-or-output-remains; documented-surface-equals-binary-s-surface).

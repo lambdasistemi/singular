@@ -32,19 +32,19 @@ Historical live evidence that the defect is reachable: during ticket 287 an adeq
 | `offchain/lib/Singular/Registry/Wire/Request.hs` `requestPhase` | docs say it mirrors the validator's rejectability | restate as a resuming client's choice of exit; behaviour unchanged |
 | `offchain/e2e-test/.../CageSpec.hs` | only "rejects a phase-3 request" | add processing- and retraction-window cases |
 | `conformance/app/Conformance/Run/Live.hs` reject arm | waits until after the retraction deadline | place the reject in the window the story names |
-| `conformance/lib/Conformance/Story/Live.hs`, `Edge/Exit.hs`, `Book.hs` | prose "once it may no longer be folded" | restate; CG23 places its rejects after the windows explicitly |
-| `conformance/app/Conformance/Run/CgRows.hs` CG09 | expects refusal, verdict `agrees-with-model` | expect acceptance, verdict held |
-| `.github/workflows/conformance.yml` generic rows | CG09 expected `agrees-with-model`, held set CG11 CG12 CG19 | CG09 held, held set CG09 CG11 CG12 CG19 |
-| `docs/consumer-conformance.md` CG09 row | "refuse" | current observation: accepted and held; historical refusal kept |
-| `conformance/rows.json` CG23 | requirement text "once the request may no longer be folded" | restate the two timing sentences only; append CG24 (gate, The rows change) |
-| `conformance/lib/Conformance/Rows.hs` | `expectedRowCount = 45` and its description | 46, CG24 named |
-| `conformance/app/Main.hs` `runBook` | the book runs five live chapters | six, CG24 added |
-| `conformance/lib/Conformance/Book.hs`, `conformance/lib/Conformance/Receipt.hs` | per-row chapter text and per-row step completeness | add CG24's case; no receipt field, constructor or encoding changes |
-| `conformance/app/Conformance/Run.hs`, `conformance/app/Conformance/Run/Control.hs` | the row dispatcher and per-issue row lists | add CG24 |
-| `conformance/README.md`, `docs/consumer-conformance.md` | row counts and ranges ("45 rows, 44 owned", "CG01–CG23") | 46 rows, 45 owned, CG01–CG24 |
+| `conformance/lib/Conformance/Story/Live.hs`, `Edge/Exit.hs`, `Book.hs` | prose "once it may no longer be folded" | restate; reject-and-retract-refund-controls places its rejects after the windows explicitly |
+| `conformance/app/Conformance/Run/CgRows.hs` reject-before-deadline-consumer-requirement | expects refusal, verdict `agrees-with-model` | expect acceptance, verdict held |
+| `.github/workflows/conformance.yml` generic rows | reject-before-deadline-consumer-requirement expected `agrees-with-model`, held set empty-fold surplus-fold-actions request-value-and-refund-routing | reject-before-deadline-consumer-requirement held, held set reject-before-deadline-consumer-requirement empty-fold surplus-fold-actions request-value-and-refund-routing |
+| `docs/consumer-conformance.md` reject-before-deadline-consumer-requirement row | "refuse" | current observation: accepted and held; historical refusal kept |
+| `conformance/rows.json` reject-and-retract-refund-controls | requirement text "once the request may no longer be folded" | restate the two timing sentences only; append reject-inside-processing-and-retraction-windows (gate, The rows change) |
+| `conformance/lib/Conformance/Rows.hs` | `expectedRowCount = 45` and its description | 46, reject-inside-processing-and-retraction-windows named |
+| `conformance/app/Main.hs` `runBook` | the book runs five live chapters | six, reject-inside-processing-and-retraction-windows added |
+| `conformance/lib/Conformance/Book.hs`, `conformance/lib/Conformance/Receipt.hs` | per-row chapter text and per-row step completeness | add reject-inside-processing-and-retraction-windows's case; no receipt field, constructor or encoding changes |
+| `conformance/app/Conformance/Run.hs`, `conformance/app/Conformance/Run/Control.hs` | the row dispatcher and per-issue row lists | add reject-inside-processing-and-retraction-windows |
+| `conformance/README.md`, `docs/consumer-conformance.md` | row counts and ranges ("45 rows, 44 owned", "insert-key–reject-and-retract-refund-controls") | 46 rows, 45 owned, insert-key–reject-inside-processing-and-retraction-windows |
 | `.github/workflows/registry.yml` e2e comment | "rejects a phase-3 request" | reword |
 
-Callers of the builder whose behaviour must survive: the register journey's resume path, which rejects pending requests only once `requestPhase` says reject; the CS05 conformance row; the e2e phase-3 case. None of them selects a subset. In each caller's scenario every pending request is already past its windows when the builder runs, so removing the timing filter does not change what those callers reject. A caller with fresher pending requests would now reject those too. The builder's contract states this, and choosing a subset is out of scope.
+Callers of the builder whose behaviour must survive: the register journey's resume path, which rejects pending requests only once `requestPhase` says reject; the request-and-mint-constructor-witnesses conformance row; the e2e phase-3 case. None of them selects a subset. In each caller's scenario every pending request is already past its windows when the builder runs, so removing the timing filter does not change what those callers reject. A caller with fresher pending requests would now reject those too. The builder's contract states this, and choosing a subset is out of scope.
 
 ## How far a changed state hash reaches
 
@@ -75,8 +75,8 @@ Historical evidence also names these hashes (`conformance/review/**`, `conforman
 | off-chain lint, build, unit, vectors | `ci.yml:64`, `ci.yml:96`, `registry.yml:413-414`, `registry.yml:193-194` | `nix run --quiet .#lint`; `nix build --quiet .#component-build`; `nix run --quiet .#cage-tests`; `nix develop --quiet --command just vectors-check` |
 | devnet e2e through the product builder | `registry.yml:305-309` | registry blueprint, then `nix run --quiet .#cage-tests-e2e` |
 | conformance book and unit suite | `conformance.yml:144-146` | `nix run --quiet .#conformance-tests` |
-| exit row CG23 | `conformance.yml:236-290` | blueprint, `run CG23`, receipt assertions |
-| generic rows incl. CG09 | `conformance.yml:337-526` | blueprint, `run CG02 … CG21`, expected-debt assertions |
+| exit row reject-and-retract-refund-controls | `conformance.yml:236-290` | blueprint, `run reject-and-retract-refund-controls`, receipt assertions |
+| generic rows incl. reject-before-deadline-consumer-requirement | `conformance.yml:337-526` | blueprint, `run update-existing-key … register-active-key`, expected-debt assertions |
 | root CI | `ci.yml:255` | `nix develop --quiet -c just ci` |
 | release assembly | `ci.yml:308` | `nix run --quiet .#release-artifacts -- "$dir"` |
 

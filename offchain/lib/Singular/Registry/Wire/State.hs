@@ -45,7 +45,7 @@ import Singular.Registry.Wire.Request
     ( OnChainRequest (..)
     )
 
-{- | On-chain token state. Matches Aiken @types\/State@ (#157 C7: eight
+{- | On-chain token state. Matches Aiken @types\/State@ (#157 state-datum-fields: eight
 fields, replacing the six). `consumer_pin` is deleted with the pinned
 consumer; `representative_policy` is renamed `active_policy`; the
 application, absent and terminal policies are new. All four policies are
@@ -61,7 +61,7 @@ data OnChainTokenState = OnChainTokenState
     , stateRetractTime :: !Integer
     -- ^ Requester retract window duration (ms)
     , stateAppPolicy :: !BuiltinByteString
-    {- ^ The application policy that certifies requests (#157 C4): a
+    {- ^ The application policy that certifies requests (#157 tree-edge-admission-by-approval): a
     request whose operation changes the trie is folded only if its
     UTxO carries one asset under this policy whose name is the
     request's approval binding.
@@ -69,7 +69,7 @@ data OnChainTokenState = OnChainTokenState
     , stateActivePolicy :: !BuiltinByteString
     {- ^ The policy that mints the ACTIVE token (renamed from the
     representative policy). Under it the asset name is the registry
-    key itself (#157 D-ASSET).
+    key itself (#157 token-name-is-registry-key).
     -}
     , stateAbsentPolicy :: !BuiltinByteString
     {- ^ The policy that mints the ABSENT token, held in the cage's own
@@ -83,7 +83,7 @@ data OnChainTokenState = OnChainTokenState
     deriving stock (Show, Eq)
 
 {- | The active-token policy as plain bytes (issue #77 E-001, renamed by
-#157 C7): unwraps the `BuiltinByteString` for hex comparison in
+#157 state-datum-fields): unwraps the `BuiltinByteString` for hex comparison in
 verifiers. Named for the field it reads — no alias of the
 representative policy survives.
 -}
@@ -91,17 +91,17 @@ stateActivePolicyBytes :: OnChainTokenState -> ByteString
 stateActivePolicyBytes st = case stateActivePolicy st of
     BuiltinByteString bs -> bs
 
--- | The application policy as plain bytes (#157 C4).
+-- | The application policy as plain bytes (#157 tree-edge-admission-by-approval).
 stateAppPolicyBytes :: OnChainTokenState -> ByteString
 stateAppPolicyBytes st = case stateAppPolicy st of
     BuiltinByteString bs -> bs
 
--- | The absent-token policy as plain bytes (#157 C5).
+-- | The absent-token policy as plain bytes (#157 mint-matches-edge-deltas).
 stateAbsentPolicyBytes :: OnChainTokenState -> ByteString
 stateAbsentPolicyBytes st = case stateAbsentPolicy st of
     BuiltinByteString bs -> bs
 
--- | The terminal-token policy as plain bytes (#157 C5).
+-- | The terminal-token policy as plain bytes (#157 mint-matches-edge-deltas).
 stateTerminalPolicyBytes :: OnChainTokenState -> ByteString
 stateTerminalPolicyBytes st = case stateTerminalPolicy st of
     BuiltinByteString bs -> bs
@@ -115,7 +115,7 @@ data CageDatum
     | -- | Current token state (Constr 1)
       StateDatum !OnChainTokenState
     | {- | The cage's own custody of an absent token (Constr 2, #157
-      D-CUSTODY; appended, so 0 and 1 never move): the address the
+      absent-custody-datum; appended, so 0 and 1 never move): the address the
       inserter named for the refund. The registry key is the sole
       non-ADA asset carried by the output.
       -}

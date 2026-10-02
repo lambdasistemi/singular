@@ -2,7 +2,7 @@
 
 As a joiner, I can claim, recover and retire names using my existing registry
 without first funding the large devnet refusal fixtures. This implements the
-operator's 2026-09-14 A-004 ruling; Lean revision
+operator's 2026-09-14 operator answer (A-004) ruling; Lean revision
 `bbd81f2f86c07a9963e9a6aa35c1a8457d7ba38e` and validators are unchanged.
 
 **Availability (2026-09-25):** the three naming runners this page describes

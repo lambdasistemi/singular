@@ -17,7 +17,7 @@ version counter, no incarnation. A key has exactly one leaf.
 `Config.reuseIdentity`, `Config.consumerPin`. A rename would preserve a
 distinction the registry does not make.
 
-## The leaf codec (frozen contract — D-CODEC)
+## The leaf codec (frozen contract — three-state-leaf-codec)
 
 | state | byte |
 |---|---|
@@ -29,7 +29,7 @@ Validation: encoding is total and injective; decoding is defined on exactly thes
 three one-byte strings and undefined everywhere else, including the empty string,
 any longer string, and `0x03`. Naming-era leaf bytes are not valid leaves.
 
-## The state configuration — eight fields (R7)
+## The state configuration — eight fields (state-configuration)
 
 | field | role | changed |
 |---|---|---|
@@ -43,20 +43,20 @@ any longer string, and `0x03`. Naming-era leaf bytes are not valid leaves.
 | `terminalPolicy` | mints the terminal token | new |
 
 `consumerPin` is removed. All eight are pinned when the registry's seed is spent
-and are equal before and after every fold (I-P1).
+and are equal before and after every fold (I-tree-change-requires-approval).
 
 ## Token kinds
 
 | kind | witnesses | shape | supply rule |
 |---|---|---|---|
-| active | `Active` | biconditional | exactly one iff `Known Active`, else none (I-W1, I-S3) |
-| absent | `Absent` | biconditional | exactly one iff `Known Absent`, else none (I-W2, I-S3) |
-| terminal | `Terminal` | implicational | any number; any exists only if `Known Terminal`; freely burnable (I-W3) |
+| active | `Active` | biconditional | exactly one iff `Known Active`, else none (I-active-witness-unique, I-supply-matches-leaf-state) |
+| absent | `Absent` | biconditional | exactly one iff `Known Absent`, else none (I-absent-witness-unique, I-supply-matches-leaf-state) |
+| terminal | `Terminal` | implicational | any number; any exists only if `Known Terminal`; freely burnable (I-terminal-witnesses-plural) |
 
 Identity is `(policy, key)`. After a `deleteActive` a recreated key carries the
 same identity, by design.
 
-**Kind exclusion (I-W4):** for any key, at most one kind is ever outstanding. One
+**Kind exclusion (I-witness-kinds-exclude):** for any key, at most one kind is ever outstanding. One
 terminal token excludes the active and the absent token; an active token excludes
 an absent token and every terminal token; an absent token excludes an active token
 and every terminal token.
@@ -65,7 +65,7 @@ and every terminal token.
 
 | token | custody | value on consumption |
 |---|---|---|
-| absent | the cage's own, so a later fold consumes it without a signature | paid to **the refund address the `insertAbsent` request named** (R-ADA) |
+| absent | the cage's own, so a later fold consumes it without a signature | paid to **the refund address the `insertAbsent` request named** (custody-lovelace-refund) |
 | active | the output the request names | — |
 | terminal | the output the request names | — |
 
@@ -73,7 +73,7 @@ The absent token's **custody datum carries that refund address**, recorded when
 `insertAbsent` is folded. Both exits — `updateActive` and `deleteAbsent` — pay
 there, never to the consuming request's output and never to the folder.
 
-Invariant (D-CUST): cage custody holds exactly the outstanding absent tokens,
+Invariant (absent-custody-datum): cage custody holds exactly the outstanding absent tokens,
 **each with its refund address and its value** — no more, no less.
 
 The deposit belongs to the inserter, not to whoever ends the absence. Paying the
@@ -83,7 +83,7 @@ no sense in which the consumer funded it.
 
 ## Edges and deltas
 
-The R2 table in `spec.md` is the definition. Each edge's delta is read off the
+The seven-edges-interface table in `spec.md` is the definition. Each edge's delta is read off the
 edge and nothing else; the cage sums the column for the edges it folded and
 refuses any mint under the pinned token policies that differs from that sum.
 
@@ -91,12 +91,12 @@ refuses any mint under the pinned token policies that differs from that sum.
 
 | invariant | statement |
 |---|---|
-| occupancy | "taken" is `Active` or `Terminal`; a booking edge succeeds iff the key is not taken (I-O1) |
-| termination | a `Terminal` leaf admits no edge, ever (I-T1, I-S2) |
-| sync | biconditional supply is 1 iff the key is in that state (I-S3) |
-| atomicity | a batch is all-or-nothing; a request is spent once (I-L1) |
-| pins | the four policies are immutable across folds (I-P1) |
-| reads | a read changes no leaf and no root, and only `Read Terminal` is admitted (R5, I-S1) |
+| occupancy | "taken" is `Active` or `Terminal`; a booking edge succeeds iff the key is not taken (I-booking-requires-untaken-key) |
+| termination | a `Terminal` leaf admits no edge, ever (I-terminal-key-cannot-change, I-terminal-attestation-permanent) |
+| sync | biconditional supply is 1 iff the key is in that state (I-supply-matches-leaf-state) |
+| atomicity | a batch is all-or-nothing; a request is spent once (I-request-spent-once-in-order) |
+| pins | the four policies are immutable across folds (I-tree-change-requires-approval) |
+| reads | a read changes no leaf and no root, and only `Read Terminal` is admitted (read-interface, I-terminal-attestation-sound) |
 
 ## Application data
 

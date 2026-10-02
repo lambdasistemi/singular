@@ -47,8 +47,8 @@ The operator approved this roster on 2026-09-30. The ticket owner is Claude Opus
 
 | Row | Command | Where | Expected |
 | --- | --- | --- | --- |
-| Mutant | `REGISTRY_BLUEPRINT=<bp> nix run --quiet .#conformance-tests` | `conformance/` of the mutant commit | nonzero, with the four ordered R280-01 witnesses |
-| Restored | the same command | `conformance/` of the candidate | 0, with the R280-02 witnesses |
+| Mutant | `REGISTRY_BLUEPRINT=<bp> nix run --quiet .#conformance-tests` | `conformance/` of the mutant commit | nonzero, with the four ordered fixed-fallback-mutant-candidate-exactly-one-committed witnesses |
+| Restored | the same command | `conformance/` of the candidate | 0, with the same-command-on-clean-candidate-evaluated-declaration witnesses |
 | Identity | `git diff <candidate> <mutant>` against the committed patch; record agreement on blueprint, genesis, node, command and environment | recorder output | equal |
 | Root CI | `nix develop --quiet -c just ci` | repository root at the final head | 0 |
 | Format | `nix run --quiet .#format-check` | `conformance/` | 0 |

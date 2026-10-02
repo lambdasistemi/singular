@@ -67,7 +67,7 @@ identity.
 ## The approval
 
 Minted under `application_policy`, quantity 1, asset name
-`blake2b_256(edge ‖ key ‖ owner ‖ destination)`; `edge` one byte, the C2 row
+`blake2b_256(edge ‖ key ‖ owner ‖ destination)`; `edge` one byte, the seven-admitted-edges row
 index (`0` insertAbsent … `5` deleteActive). Carried by the request UTxO;
 recomputed by the cage; not burned at fold.
 
@@ -84,7 +84,7 @@ recomputed by the cage; not burned at fold.
 | invariant | statement |
 |---|---|
 | pins | the seven non-root fields are equal before and after every `Modify` |
-| admissibility | only the seven C2 rows change or read the trie |
+| admissibility | only the seven seven-admitted-edges rows change or read the trie |
 | admission | every consumed tree-edge request carries its bound approval |
 | delta | mint under the three token policies equals the summed column exactly |
 | custody | cage custody holds exactly the outstanding absent tokens, each with its key and refund address |

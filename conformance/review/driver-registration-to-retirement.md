@@ -33,7 +33,7 @@ with `Singular.settle`'s reason when they do not.
 
 ## The registration
 
-`DR02-register-active`, bound to `Singular.Statements.insert_active_transaction_row` at statement `f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508`.
+`register-active`, bound to `Singular.Statements.insert_active_transaction_row` at statement `f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508`.
 The request is `insertActive` on key 42, owner
 42, routed to output 555, with a deposit of 55 and carrying an
 approval scoped to exactly that tuple. It starts from the empty registry, so
@@ -55,7 +55,7 @@ Outcome: **accepted**. The complete declared boundary:
 
 ## The retirement of that same registration
 
-`DR03-retire-registered`, bound to `Singular.Statements.update_terminal_transaction_row` at statement `6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068`.
+`retire-registered`, bound to `Singular.Statements.update_terminal_transaction_row` at statement `6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068`.
 
 This is the row the constitution's lifecycle rule is about. Its starting state
 is not constructed: its setup trace is the registration above, re-executed
@@ -88,15 +88,15 @@ deposit goes back to the owner: one owner output, with no datum, carrying the
 deposit and naming the approval it returns, and that payment is the row's
 `paid`. The registration's deposit instead goes with the token, in the
 destination output. No terminal token is minted, because the
-model's R2 table mints one only for `witnessTerminal`.
+model's edge-delta table mints one only for `witnessTerminal`.
 
 ## The refusals beside them
 
 | scenario | mutates | request | outcome | reason the model gave |
 |---|---|---|---|---|
-| `DR04-register-absent-unapproved` | `DR01-register-absent` | `insertAbsent` key 5 | refused | `no-approval` |
-| `DR05-register-active-twice` | `DR02-register-active` | `insertActive` key 42 | refused | `key-exists` |
-| `DR06-retire-unregistered` | `DR03-retire-registered` | `updateTerminal` key 42 | refused | `key-unknown` |
+| `register-absent-unapproved` | `register-absent` | `insertAbsent` key 5 | refused | `no-approval` |
+| `register-active-twice` | `register-active` | `insertActive` key 42 | refused | `key-exists` |
+| `retire-unregistered` | `retire-registered` | `updateTerminal` key 42 | refused | `key-unknown` |
 
 Each reason is one `Singular.refusal` can actually produce. The model check
 reads that vocabulary off the model source, so a transport or process failure

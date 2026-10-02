@@ -7,7 +7,7 @@ else — is this key known, and where in its life is it.
 Seven edges move a leaf, each an MPFS primitive applied to a state, each a delta
 over three token kinds. Six of them are tree changes admitted only by an
 approval under the pinned application policy whose scoping tuple matches the
-request (D-APPROVAL); the seventh, `witnessTerminal`, is a read that changes
+request (approval-asset-binding); the seventh, `witnessTerminal`, is a read that changes
 nothing and needs none. The fold sums the deltas of the edges it folded and
 refuses any claimed mint that differs.
 
@@ -265,7 +265,7 @@ def rootOf (t : Trie) : ByteArray :=
   ByteArray.mk (u64bytes (fnv1a bytes)).toArray
 
 /-- One outstanding absent token in cage custody: the token, the refund address
-the `insertAbsent` request named, and the value the token holds (R-ADA). -/
+the `insertAbsent` request named, and the value the token holds (custody-lovelace-refund). -/
 structure Custody where
   key : Key
   refundAddress : Nat
@@ -376,7 +376,7 @@ tuple it commits to. -/
 def approvalAssetName (e : Edge) (key owner destination : Nat) : Nat :=
   ((fnv1a [edgeOrdinal e, key.toUInt8, owner.toUInt8, destination.toUInt8]) &&& 0xFFFFFFFF).toNat
 
-/-- An approval scoped by the tuple `(edge, key, owner, destination)` (D-APPROVAL,
+/-- An approval scoped by the tuple `(edge, key, owner, destination)` (approval-asset-binding,
 #157's frozen contract). Its asset name is the canonical commitment over its
 tuple; the model stands in for `blake2b_256`. It carries the signatures its
 policy certified it on. It is evidence, never a consumable: the fold burns
@@ -394,7 +394,7 @@ structure Approval where
 /-- One request: apply one of the seven edges to one key. `owner` is the
 controller (or, for the absent edges, the refund address) the request acts for;
 the refund address is named by `insertAbsent` and recorded in the custody datum
-(R-ADA); `deposit` is the value the absent token holds; `output` is where active
+(custody-lovelace-refund); `deposit` is the value the absent token holds; `output` is where active
 and terminal tokens are routed; `approval` is the admission evidence; `claimed`
 is the mint the transaction claims for this request, summed by the fold; `tip`
 is what the request holds beyond its deposit (on chain `held − deposit`);
@@ -502,7 +502,7 @@ def canonicalRequest (e : Edge) : Request :=
   | .deleteAbsent => { edge := e, key := 5, owner := 91, refundAddress := 91 }
   | _ => { edge := e, key := 5, owner := 42, output := 99 }
 
-/-- The real admission decision for a request (R4 with D-APPROVAL). The six
+/-- The real admission decision for a request (R4 with approval-asset-binding). The six
 tree edges need an approval under the pinned application policy whose
 `(edge, key, owner, destination)` tuple matches the request and whose asset
 name binds its own tuple: right policy is necessary and not sufficient.
@@ -588,7 +588,7 @@ def combineResults (first rest : Result) : Result :=
 
 /-- Apply an admitted edge. The trie change, the token ledgers and the mint are
 exactly the R2 row of the edge; consuming an absent token pays its value to the
-refund address recorded in its custody datum (R-ADA). -/
+refund address recorded in its custody datum (custody-lovelace-refund). -/
 def applyEdge (s : RegistryState) (a : Action) : Result :=
   let entry := s.custody.find? (·.key == a.key)
   let state : RegistryState :=
@@ -1238,7 +1238,7 @@ namespace Oracle
 
 /-- The four admission cases the oracle distinguishes. `mismatched` is an
 approval under the correct pinned policy whose `(edge, key, owner, destination)`
-tuple does not match — the case that makes D-APPROVAL observable. -/
+tuple does not match — the case that makes approval-asset-binding observable. -/
 inductive Approval where
   | none | application | other | mismatched
   deriving Repr, BEq, DecidableEq
@@ -1249,7 +1249,7 @@ inductive Destination where
   deriving Repr, BEq, DecidableEq
 
 /-- The three candidate deposit destinations for a consumed absent token. Only
-the first is correct (R-ADA); the other two exist so a wrong answer is
+the first is correct (custody-lovelace-refund); the other two exist so a wrong answer is
 expressible and therefore detectable. -/
 inductive RefundTarget where
   | insertRefundAddress | requestOutput | folder
@@ -1300,7 +1300,7 @@ def encode (s : State) : List UInt8 := (encodeState s).toList
 /-- The leaf codec, the other way, including bytes that must not decode. -/
 def decode (bytes : List UInt8) : Option State := decodeState bytes.toByteArray
 
-/-- Admission for all four approval cases (R4, D-SELF and D-APPROVAL), answered
+/-- Admission for all four approval cases (R4, D-SELF and approval-asset-binding), answered
 by the real per-request decision at the edge's canonical request. -/
 def admits (e : Edge) (a : Approval) : Bool :=
   admitsFor referenceConfig (canonicalRequest e) (toApproval e a)
@@ -1329,7 +1329,7 @@ def referenceEdgeRequest (e : Edge) : Request :=
   { r with deposit := 55
          , approval := if e == .witnessTerminal then none else some (canonicalApproval e) }
 
-/-- R-ADA, observed by executing the model: fold each edge at the canonical
+/-- custody-lovelace-refund, observed by executing the model: fold each edge at the canonical
 state and classify where the consumed absent token's value was paid. The two
 edges that consume the absent token pay the refund address its custody datum
 records; a wrong model pays the consuming request's output, the folder, or

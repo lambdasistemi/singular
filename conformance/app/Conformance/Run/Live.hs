@@ -3900,7 +3900,7 @@ bumpObservedMint value = case value of
     _ -> value
 
 -- ---------------------------------------------------------
--- CG21 helpers (#184)
+-- register-active-key helpers (#184)
 -- ---------------------------------------------------------
 
 -- | Hex, as the receipt records it.
@@ -4032,14 +4032,15 @@ cg21RequestFacts out = do
     rq <- case extractCageDatum out of
         Just (RequestDatum r) -> pure r
         _ -> failWith "generic edge: the request UTxO carries no request datum"
-    -- #183: the request states its C2 row itself; there is nothing to
+    -- #183: the request states its seven-admitted-edges row itself; there is nothing to
     -- derive. A tag outside the table names no approval binding, so a
     -- row that reads one would be reading a fact that does not exist.
     edgeIx <- do
         let e = requestEdge rq
         if e >= edgeInsertAbsent && e <= edgeWitnessTerminal
             then pure e
-            else failWith "CG21: the request names no admissible edge"
+            else
+                failWith "register-active-key: the request names no admissible edge"
     let BuiltinByteString owner = requestOwner rq
         Coin lovelace = out ^. coinTxOutL
     pure

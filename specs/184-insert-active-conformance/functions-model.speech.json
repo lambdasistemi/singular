@@ -1,13 +1,13 @@
 {
   "runner-entry-point": [
     {
-      "text": "Run CG21 executes the complete fold, refusal and control story in the current open-registry session and writes one receipt.",
+      "text": "Run register-active-key executes the complete fold, refusal and control story in the current open-registry session and writes one receipt.",
       "pause": 400
     }
   ],
   "receipt-validation": [
     {
-      "text": "CG21 receipt validation rejects missing or incomplete edge evidence without changing unrelated rows.",
+      "text": "register-active-key receipt validation rejects missing or incomplete edge evidence without changing unrelated rows.",
       "pause": 400
     }
   ],
@@ -25,6 +25,6 @@
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "4afc90e734b45e98a969a6493fbd6d2bb3fbf2307ff9a8ff6e4ecdf0142825bb"
+    "sha256": "eb9d39088fe2de30b618f6505d5ba8d8ed03dd01348a7c9cd28251a44539eeee"
   }
 }

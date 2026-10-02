@@ -5,7 +5,7 @@ import Singular.NamingLifecycle
 absence-witness request. The datum is exactly outer `Constr 0 [inner]`, where
 inner is `Constr 0` with four fields. The request wire carries the
 `insertAbsent` scoping tuple including the refund address the request names;
-the approval's asset name is the canonical commitment over the tuple (D-APPROVAL). -/
+the approval's asset name is the canonical commitment over the tuple (approval-asset-binding). -/
 
 namespace Singular
 open Lean
@@ -184,7 +184,7 @@ def Nat.toWire (n : Nat) : WireData := .integer n
 /-- The `insertAbsent` request wire: the scoping tuple plus the refund
 address and deposit, CBOR-serialised as `Constr 0` with six integer fields.
 The refund address the request names is what the cage records in the custody
-datum (R-ADA) and what naming's policy certifies retraction on (R-NM4). -/
+datum (custody-lovelace-refund) and what naming's policy certifies retraction on (naming-approval-rules). -/
 structure WitnessRequestWire where
   edgeOrdinalWire : Nat
   key : Nat

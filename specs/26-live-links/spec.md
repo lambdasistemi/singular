@@ -26,31 +26,31 @@ rather than a repository directory or a 404.
 
 ## Requirements
 
-- R-CTA-README: GitHub-rendered README CTA destination is the canonical
+- R-link to the playable simulator-README: GitHub-rendered README link to the playable simulator destination is the canonical
   playable HTML, verified by resolving the href the way GitHub rewrites
   relative links and checking response/content identity.
-- R-CTA-DOCS: Simulation and design page CTAs open that same playable
+- R-link to the playable simulator-DOCS: Simulation and design page CTAs open that same playable
   HTML from GitHub blob rendering and from built/deployed docs (project
   prefix `/singular/`, trailing-slash and no-trailing-slash directory
   URLs).
-- R-CANONICAL: Dual-context CTA and published-model HTML hrefs use the
+- canonical-published-links: Dual-context link to the playable simulator and published-model HTML hrefs use the
   absolute canonical GitHub Pages URL so GitHub does not rewrite them
   into blob/tree paths.
-- R-WORDING: Nearby wording names the live generic registry simulator
+- simulator-link-description: Nearby wording names the live generic registry simulator
   (Delete allowed) and proved-model limits. No naming-engine behavior.
-- R-INVENTORY: Every reader-facing link under MkDocs/site coverage plus
+- complete-link-inventory: Every reader-facing link under MkDocs/site coverage plus
   README is inventoried (Markdown and raw HTML href/src, nav, assets,
   anchors). Internal destinations and fragments are checked against
   built HTML with prefix-aware browser resolution. External URLs are
   requested with bounded timeout/concurrency. Redirects and final
   status are captured. Confirmed 404/broken anchor is distinct from
   network denial or 403/429.
-- R-FIX: Broken in-scope links found by the inventory are corrected.
+- repair-discovered-broken-links: Broken in-scope links found by the inventory are corrected.
   Intended source-code destinations stay source-code destinations.
   Third-party moved docs get the authoritative replacement, not a guess.
-- R-SPEECH: Bound speech companions are restamped when page prose or
+- speech-matches-page: Bound speech companions are restamped when page prose or
   links change.
-- R-CHECK: The docs site check no longer treats a filesystem-relative
+- served-document-link-check: The docs site check no longer treats a filesystem-relative
   hit as proof of browser navigation under the project prefix or in
   GitHub README/blob context.
 
@@ -62,15 +62,15 @@ copy. Not a child of 15 or 20.
 
 ## Invariants
 
-- INV-26-README-PLAYABLE (BLOCKING): GitHub-resolved README CTA response
+- github-resolved-readme-cta-response-playable-html (BLOCKING): GitHub-resolved README link to the playable simulator response
   is the playable HTML (title and Delete), not a GitHub tree/blob page.
-- INV-26-DOCS-PLAYABLE (BLOCKING): Simulation and design CTAs, resolved
+- simulation-design-ctas-resolved-from-github-blob (BLOCKING): Simulation and design CTAs, resolved
   from GitHub blob context and from `site_url` directory URLs, are that
   same playable HTML.
-- INV-26-PREFIX (BLOCKING): A built-page relative href that 404s from
+- built-page-relative-href-that-s-from (BLOCKING): A built-page relative href that 404s from
   the no-trailing-slash page URL or that GitHub rewrites to a missing
   blob path is a failure even if the file exists under `site/`.
-- INV-26-INVENTORY (BLOCKING): Inventory denominator is discovered from
+- inventory-denominator-discovered-from-readme-plus-built (BLOCKING): Inventory denominator is discovered from
   README plus built HTML, not a hand list. Empty inventory is failure.
-- INV-26-EXTERNAL (ADVISORY): Named external blockers include source,
+- named-external-blockers-include-source-url-status (ADVISORY): Named external blockers include source,
   URL, and status; they do not count as a pass.

@@ -1,9 +1,9 @@
 {- |
 Module      : Conformance.ForkKeys
-Description : Offline grind for CS07 Fork-yielding trie keys
+Description : Offline grind for proof-step-constructor-witnesses Fork-yielding trie keys
 License     : Apache-2.0
 
-CS07 needs a fold whose `ProofStep` list contains `Fork` (index 1).
+proof-step-constructor-witnesses needs a fold whose `ProofStep` list contains `Fork` (index 1).
 Per @mts@\' @MPF.Proof.Insertion@: a level yields `Fork` when the
 branch has exactly one non-empty sibling and that sibling is itself
 a branch (a subtree holding two or more keys) rather than a leaf.

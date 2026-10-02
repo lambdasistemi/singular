@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Negative and positive controls for tools/code_inventory.py (#278 S1).
+# Negative and positive controls for tools/code_inventory.py (#278 terminal-attestation-sound).
 #
 # Each control exports the classified tree to a fresh scratch copy — a copy
 # that carries NO .git directory, so every control run also re-proves the

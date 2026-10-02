@@ -10,7 +10,7 @@
 #      formatted by the pinned Aiken, diffed against the committed
 #      golden `onchain/validators/cage_vectors.ak` (D-003/D-006);
 #   2. an explicit order — the Aiken blueprint build is a job of its
-#      own and the devnet E2E job runs only after it (`needs:`): if the
+#      own and the devnet end-to-end job runs only after it (`needs:`): if the
 #      blueprint cannot build, the expensive devnet job is skipped
 #      instead of failing later for the same reason. Freshness itself is
 #      NOT carried by the ordering edge: the e2e recipe builds
@@ -255,13 +255,13 @@ jobs:
       # revises the corpus.
       - name: Compare the vendored wire vectors with the live corpus
         run: nix develop ./offchain --quiet --command bash offchain/naming/run-drift-check.sh
-  # D6 (issue #157): the NYA application journeys are retired from this
+  # D6 (issue #157): the Naming Your Assets application journeys are retired from this
   # workflow's required set. Six job blocks stood here and ran seven
   # journey surfaces — `li01`, `li-refusals`, `lmlc` (the `naming-rows`
   # job), `recovery`, `retirement` together with its retained
   # `retire-verify` exhibit, and `repair`. Every one of them consumes the
   # naming application rather than the registry, so their application-level
-  # re-cut is issue #172 under the NYA epic #174, once #154 closes.
+  # re-cut is issue #172 under the Naming Your Assets epic #174, once #154 closes.
   # Retired means the job blocks are gone: none is stubbed green, turned
   # into a conditional skip, or given any other substitute success path
   # here. The registry-protocol jobs (`e2e`, `journey`) and the generic

@@ -337,7 +337,7 @@
           // (demo1 system)
         )
       );
-      # #278 S2: the root development shell carries the pinned house
+      # #278 terminal-attestation-permanent: the root development shell carries the pinned house
       # formatter — the exact Fourmolu the off-chain lock resolves, exposed
       # by the offchain flake — so `just format`, `just format-check` and
       # `just format-controls` (all inside `just ci`) run the one pinned

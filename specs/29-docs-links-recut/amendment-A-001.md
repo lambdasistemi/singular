@@ -1,6 +1,6 @@
-# Amendment A-001 — pending-publication class authorized, auto heuristic rejected (parent ruling, no original rewrite)
+# Amendment operator answer (A-001) — pending-publication class authorized, auto heuristic rejected (parent ruling, no original rewrite)
 
-Parent answer `../answers/A-001-publication-state-and-budget.md` read FULL; Q-001 + BLOCKED-exec6.md acknowledged as owner evidence (not audit). No merge/tag/release.
+Parent answer `../answers/A-001-publication-state-and-budget.md` read FULL; operator question (Q-001) + BLOCKED-exec6.md acknowledged as owner evidence (not audit). No merge/tag/release.
 
 ## Budget (authoritative, replaces plan.md ceilings)
 

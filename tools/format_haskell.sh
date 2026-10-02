@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # House Fourmolu application/check over the discovered Haskell extent
-# (issue #278 S2).
+# (issue #278 terminal-attestation-permanent).
 #
 # ONE configuration — the committed fourmolu.yaml at the repository root —
 # is passed explicitly to every invocation, so a missing configuration

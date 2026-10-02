@@ -13,12 +13,12 @@
   ],
   "regression-target-conditional": [
     {
-      "text": "Only if the mutant passes, the regression target keeps its command line and exits nonzero when the CG21 session ends without its expected verdict.",
+      "text": "Only if the mutant passes, the regression target keeps its command line and exits nonzero when the register-active-key session ends without its expected verdict.",
       "pause": 500
     }
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "6015f63f33163a1901b6e64cec8265f82960bac5913c6fb98b5970bb0e2320e0"
+    "sha256": "1ee757582c80835b7a6b83e1161ac8da0aa3caa3faff54475559261a39628bcd"
   }
 }

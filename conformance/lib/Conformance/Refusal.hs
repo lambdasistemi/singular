@@ -65,7 +65,7 @@ unrelated diagnostic text must not satisfy the check.
 
 Two vocabularies, one discipline. At submit the node speaks
 @PlutusFailure@ (the li-refusals precedent). At build evaluation
-the DSL reports the node's per-purpose failure, whose text speaks
+the story language reports the node's per-purpose failure, whose text speaks
 @CekError@: the CEK machine executed the script and it errored.
 Both are the node's word for script-execution failure, never for a
 phase-1 ledger refusal — and both must name the script.
@@ -207,11 +207,11 @@ wrongReasonMarker =
 -- ====================================================================
 -- Refusal receipts: who writes, and who must never overwrite (A-002)
 --
--- The CG11/CG12/CG19 defect: a refused CONTROL submitted through the
+-- The empty-fold/surplus-fold-actions/request-value-and-refund-routing defect: a refused CONTROL submitted through the
 -- same helper as a refusal ROW wrote its refusal under the row's id,
 -- replacing the row's own held receipt in every receipts directory.
 -- The receipts then asserted three held rows were refused — the exact
--- opposite of their executed findings. CG13's receipt survived only
+-- opposite of their executed findings. historical-owner-change's receipt survived only
 -- because its control was retired before the final runs, which is
 -- what isolated the cause.
 

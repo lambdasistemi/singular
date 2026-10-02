@@ -5,24 +5,24 @@ Retroactive record, written 2026-09-15 from PR #112 merged at
 
 The tasks are the PR's commits in order, each done with its sha.
 
-- [x] T110-1 `0a75b764d17f79893e64facfa79567df865f0d53` feat: bind
+- [x] bind-representative-policies-their-registry `0a75b764d17f79893e64facfa79567df865f0d53` feat: bind
   representative policies to their registry.
-- [x] T110-2 `bea5e36a3ce5d823575a11417b0c5da7b0ffb18c` feat: derive
+- [x] derive-representatives-from-spelling-witness-retirement-registry `bea5e36a3ce5d823575a11417b0c5da7b0ffb18c` feat: derive
   representatives from spelling and witness retirement registry.
-- [x] T110-3 `900936f948441c9dbbbcd48c08660bdf065c629a` fix: exercise
+- [x] exercise-registry-refusal-follow-accepted-retirement-evidence `900936f948441c9dbbbcd48c08660bdf065c629a` fix: exercise
   registry refusal and follow accepted retirement evidence.
-- [x] T110-4 `83da8c6e228df7c2c19bc1d4be2bc35f1ac841e8` docs:
+- [x] distinguish-over-from-unclaimed-spelling `83da8c6e228df7c2c19bc1d4be2bc35f1ac841e8` docs:
   distinguish Over from an unclaimed spelling.
-- [x] T110-5 `d796fdabff43be7f74045f242754f6e9423aa58f` feat: deploy
+- [x] deploy-verify-registry-bound-representative-policies `d796fdabff43be7f74045f242754f6e9423aa58f` feat: deploy
   and verify registry-bound representative policies.
-- [x] T110-6 `64b005363f1f201a4593616d4b5420bbd96590ab` fix: verify
+- [x] verify-attached-request-identity-without-local-boot `64b005363f1f201a4593616d4b5420bbd96590ab` fix: verify
   attached request identity without a local boot.
-- [x] T110-7 `279d14191c892218719235a0b031668eb28a79eb` fix(ci):
+- [x] ci-keep-checks-out-build-gate `279d14191c892218719235a0b031668eb28a79eb` fix(ci):
   keep checks out of the build gate.
-- [x] T110-8 `e8079e4fbe25c974a8078674e1a4b4f8dddb87e3`
+- [x] offchain-preserve-reference-publications-funding-bootstrap `e8079e4fbe25c974a8078674e1a4b4f8dddb87e3`
   fix(offchain): preserve reference publications when funding
   bootstrap.
-- [x] T110-9 `7e49825a6c6a52dde674ef57d3052d917a923776` fix(ci): run
+- [x] ci-run-required-check-on-pull-requests `7e49825a6c6a52dde674ef57d3052d917a923776` fix(ci): run
   every required check on all pull requests.
 
 ## Slice

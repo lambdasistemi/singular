@@ -83,7 +83,7 @@
       "pause": 500
     },
     {
-      "text": "Minted under application_policy, quantity 1, asset name blake2b_256(edge ‖ key ‖ owner ‖ destination); edge one byte, the C2 row index (0 insertAbsent … 5 deleteActive). Carried by the request UTxO; recomputed by the cage; not burned at fold.",
+      "text": "Minted under application_policy, quantity 1, asset name blake2b_256(edge ‖ key ‖ owner ‖ destination); edge one byte, the seven-admitted-edges row index (0 insertAbsent … 5 deleteActive). Carried by the request UTxO; recomputed by the cage; not burned at fold.",
       "pause": 400
     }
   ],
@@ -103,6 +103,6 @@
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "4f0628ddc0535925d93e9c9a4e3a9c309994bb469e7540d269fcbccf7d06f1c3"
+    "sha256": "824d7bf6fa6d171cd452563e2e7464bd0713194b209966de3dbbe5cfb0c86e1c"
   }
 }

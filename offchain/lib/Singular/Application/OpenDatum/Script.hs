@@ -6,7 +6,7 @@ Module      : Singular.Application.OpenDatum.Script
 Description : Which application a registry pins, and its applied script
 License     : Apache-2.0
 
-A registry pins one application policy at boot (#157 D-BOOT). The open
+A registry pins one application policy at boot (#157 genesis-policy-pins). The open
 registry pins the parameterless @open.open@, whose compiled hash is its
 policy. An open-datum registry pins @open_datum.open_datum@ applied to
 its own registry identity (state policy ‖ state token name). That

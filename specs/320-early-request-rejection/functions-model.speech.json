@@ -7,18 +7,18 @@
   ],
   "changed-same-signature": [
     {
-      "text": "The request script's contribute check and the fold's per request step change their rule but not their signatures, except that the contribute check may take the request's own output reference. The builder's exported functions keep their signatures. CG09's runner records acceptance as unmet by ruling.",
+      "text": "The request script's contribute check and the fold's per request step change their rule but not their signatures, except that the contribute check may take the request's own output reference. The builder's exported functions keep their signatures. reject-before-deadline-consumer-requirement's runner records acceptance as unmet by ruling.",
       "pause": 400
     }
   ],
   "added": [
     {
-      "text": "The story language gains a placement type with three values, a placed reject and a placed tampered reject. A new early reject story and the CG24 row runner are added.",
+      "text": "The story language gains a placement type with three values, a placed reject and a placed tampered reject. A new early reject story and the reject-inside-processing-and-retraction-windows row runner are added.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "f60d0bb24d19c9bcbe72eaec95f49de0c60d0589291a8b43e6de044efd57ddbe"
+    "sha256": "61ee188ef520a555a5d01559932f452b4039cde70cc443edd132f10b449d957f"
   }
 }

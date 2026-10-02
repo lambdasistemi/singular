@@ -37,7 +37,7 @@ separately supports proof correctness.
 
 Each of the seven comparison classes runs once on the live captured
 observation and immediately again on a single field-mutated copy
-inside this same E2E invocation: the live call must pass and the
+inside this same end-to-end invocation: the live call must pass and the
 mutant must fail with its own stable @C3-…@ token.
 -}
 module Singular.Registry.E2E.Criterion3Spec (spec) where
@@ -1303,7 +1303,7 @@ bumpOne cfg m = case Map.toList m of
 -- Live and mutant runners (in-run controls)
 -- ---------------------------------------------------------
 
-{- | The live observation must pass. Runs inside the same E2E
+{- | The live observation must pass. Runs inside the same end-to-end
 invocation as the capture.
 -}
 livePass :: String -> Either String () -> Expectation

@@ -5,7 +5,7 @@ open Lean
 
 /-! The generic registry-mode corpus: every R2 edge accepted, the full
 complement of R2 refused with its observable reason, the codec both ways, the
-read bound to the intermediate root, custody and R-ADA value flow, the mint
+read bound to the intermediate root, custody and custody-lovelace-refund value flow, the mint
 check and the zero-request rule. Expectations are authored from the mandate;
 results are computed from the model. -/
 
@@ -144,7 +144,7 @@ def readRows : List Case :=
       ({ edge := .witnessTerminal, key := 42, output := 700 } : Request)
   ]
 
--- GC: the custody census (D-CUST). An absent token lives in the cage's own
+-- GC: the custody census (absent-custody-datum). An absent token lives in the cage's own
 -- custody, so the two edges that consume one are refused when it is missing
 -- even though the leaf says absent, and the census is exactly the outstanding
 -- absent tokens.
@@ -191,7 +191,7 @@ def batchMint : Option String :=
       , approval := apFor .insertAbsent 5 91 0, claimed := [(.absent, 2)] } ] with
   | .error e => some e | .ok _ => none
 
--- R-ADA value flow: the inserter (91) is paid, not the consumer's output
+-- custody-lovelace-refund value flow: the inserter (91) is paid, not the consumer's output
 def adaRows : List (String × Bool × (List (Nat × Nat))) :=
   [ ("GAda-update-active-pays-refund", true,
       match step (witnessed s0 42) (req .updateActive 42 42 555) with
@@ -221,7 +221,7 @@ def configRow : Bool :=
   | .ok c => c == cfg
   | .error _ => false
 
-/-! ### T1 — the `insertActive` transaction row and the keyed mint rows (#173)
+/-! ### terminal-key-cannot-change — the `insertActive` transaction row and the keyed mint rows (#173)
 
 Every field of the rows below is read off a fold this file executes or off the
 model definition `Singular.Statements.insert_active_transaction_row` and
@@ -345,7 +345,7 @@ def absentRowJson : Json :=
       , ("destinationDatumBinds", toJson (destinationDatumBinds absentRequest)) ]
   | _, _ => Json.mkObj [("profile", "insertAbsent"), ("accepted", toJson false)]
 
-/-! ### T1 — the `updateTerminal` transaction row (#177)
+/-! ### terminal-key-cannot-change — the `updateTerminal` transaction row (#177)
 
 Retirement is the first row in this corpus whose mint is negative, and a
 negative mint is the one thing a transaction cannot simply assert: the token has
@@ -1168,7 +1168,7 @@ def main : IO Unit := do
     let ok := if expectSome then res.isSome else res.isNone
     unless ok do throw (IO.userError s!"{id} failed")
   unless configRow do throw (IO.userError "GD-config roundtrip failed")
-  -- T1: the transaction row and the keyed mint rows are verdicts, not claims
+  -- terminal-key-cannot-change: the transaction row and the keyed mint rows are verdicts, not claims
   unless (match txResult with | .ok _ => true | .error _ => false) do
     throw (IO.userError "T1 insertActive transaction was refused")
   unless (match txBuilt with | .ok _ => true | .error _ => false) do

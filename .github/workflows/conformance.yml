@@ -70,7 +70,7 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #278 S2: the Conformance Haskell tree under the house Fourmolu
+      # #278 terminal-attestation-permanent: the Conformance Haskell tree under the house Fourmolu
       # configuration — the one committed fourmolu.yaml at the repository
       # root, passed explicitly so a missing configuration fails loudly
       # instead of falling back to Fourmolu defaults. The app discovers
@@ -84,7 +84,7 @@ jobs:
       # and positive controls run there too via `just format-controls`.
       - run: nix run --quiet .#format-check
         working-directory: conformance
-      # #278 S3: HLint over the same discovered extent, with the pinned
+      # #278 supply-matches-leaf-state: HLint over the same discovered extent, with the pinned
       # HLint the off-chain lint resolves; no exclusions, no ignore file.
       - run: nix run --quiet .#hlint-check
         working-directory: conformance
@@ -109,14 +109,14 @@ jobs:
       # (#232), each in registries of its own on a real devnet, every
       # request and batch compared with the model: insert, update,
       # delete, re-insert after delete, the insert on an occupied key,
-      # a retraction in phase 2, a reject after the windows (CG01-CG06,
-      # CG08), CG09 unmet by ruling (#320) with its recorded
-      # refund-position divergence (#361), the held rows CG11/CG19, and
-      # the registration chapter CG21. CG10 and CG12, which the model
+      # a retraction in phase 2, a reject after the windows (insert-key-retract-inside-window,
+      # reject-after-window), reject-before-deadline-consumer-requirement unmet by ruling (#320) with its recorded
+      # refund-position divergence (#361), the held rows empty-fold/request-value-and-refund-routing, and
+      # the registration chapter register-active-key. fold-against-superseded-root and surplus-fold-actions, which the model
       # cannot express (#346, #345), run their own refusals and stay
-      # unmet by ruling. CG13, CG16, CG17, CG18 and CG20 are NOT run:
+      # unmet by ruling. historical-owner-change, historical-owner-signed-sweep, historical-non-owner-sweep, historical-registry-termination and historical-permissionless-fold are NOT run:
       # the registry has no owner role, no sweep and no termination
-      # (ownerless-registry ruling, f3a68b1b); CG14/CG15 are retired:
+      # (ownerless-registry ruling, f3a68b1b); retired-stake-hook-with-withdrawal/retired-stake-hook-without-withdrawal are retired:
       # the registry interface has no stake_script hook. Each is
       # published outside the model's vocabulary with its reason.
       #
@@ -126,10 +126,10 @@ jobs:
       # expected-debt assertion below reads the session's ACTUAL
       # results and demands exactly the thirteen rows, exactly the
       # expected verdict per row (receipts), no divergence, and a
-      # non-zero exit accounted for by exactly the held rows CG11
-      # CG19 and the unmet rows CG09 CG10 CG12, and nothing else. A GREEN STEP IS NOT A FULFILLED
+      # non-zero exit accounted for by exactly the held rows empty-fold
+      # request-value-and-refund-routing and the unmet rows reject-before-deadline-consumer-requirement fold-against-superseded-root surplus-fold-actions, and nothing else. A GREEN STEP IS NOT A FULFILLED
       # CONSUMER PROMISE: R5/R8/R11 stay unmet (upstream #100/#101);
-      # strict completion and release stay RED on that debt. Issue #69 then runs the CA
+      # strict completion and release stay RED on that debt. Issue #69 then runs the registry-identity
       # rows as their own session: the consumer's authentication of
       # the canonical registry identity, with the rival the ledger
       # cannot refuse executed beside it. The unit suite (inventory
@@ -180,7 +180,7 @@ jobs:
       # e5_deposit_diverted_to_another_address_refuses (deposit-returned).
       # The ledger's own reason comes from the traced replay of each refused
       # transaction (#287) and must equal the model's.
-      - name: Run the dedicated CG22 retirement row as a packaged app
+      - name: Run the dedicated retire-active-key retirement row as a packaged app
         run: |
           set -e
           cd conformance
@@ -188,11 +188,11 @@ jobs:
           # The row runs through the wrapper the retention control executes.
           CONFORMANCE_DEDICATED_RECEIPTS="${CONFORMANCE_DEDICATED_RECEIPTS:-$(mktemp -d "$RUNNER_TEMP/conformance-dedicated.XXXXXX")}"
           export CONFORMANCE_DEDICATED_RECEIPTS
-          receipts="$CONFORMANCE_DEDICATED_RECEIPTS/CG22"
-          bash test/ci/dedicated-row.sh CG22 -- env REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG22
+          receipts="$CONFORMANCE_DEDICATED_RECEIPTS/retire-active-key"
+          bash test/ci/dedicated-row.sh retire-active-key -- env REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run retire-active-key
           head_sha="$(git rev-parse HEAD)"
-          f="$receipts/receipt-CG22.json"
-          test -f "$f" || { echo 'FAIL: missing CG22 receipt'; exit 1; }
+          f="$receipts/receipt-retire-active-key.json"
+          test -f "$f" || { echo 'FAIL: missing retire-active-key receipt'; exit 1; }
           state_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "state.state.spend" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
           # jq expands its own --arg variables inside this program.
           # shellcheck disable=SC2016
@@ -201,7 +201,7 @@ jobs:
             def text: type == "string" and length > 0;
             def complete: .comparison == "agrees" and .tamper == null
               and (.compared | length) == 9 and .perturbation.refused > 0;
-            .row == "CG22"
+            .row == "retire-active-key"
             and .verdict == "agrees-with-model"
             and .base == $base and .dirty == false
             and (.blueprint | text) and (.node | text)
@@ -231,8 +231,8 @@ jobs:
             and .steps[5].registry == .steps[6].registry
             and .steps[0].registry != .steps[4].registry
             and (.transactions | length) == 7
-          ' "$f" > /dev/null || { echo 'FAIL: CG22 retirement evidence moved'; exit 1; }
-          bash test/ci/replay-evidence.sh steps "$f" || { echo 'FAIL: CG22 refused steps lack the traced replay of their reason'; exit 1; }
+          ' "$f" > /dev/null || { echo 'FAIL: retire-active-key retirement evidence moved'; exit 1; }
+          bash test/ci/replay-evidence.sh steps "$f" || { echo 'FAIL: retire-active-key refused steps lack the traced replay of their reason'; exit 1; }
           # #326 R9: the dedicated rows' receipts are kept together as the
           # conformance-story-receipts artifact, beside the generic session's.
           STORY_RECEIPTS="$(mktemp -d "$RUNNER_TEMP/story-receipts.XXXXXX")"
@@ -261,7 +261,7 @@ jobs:
       # run in the separate finite-window chapter below.
       # The ledger's own reason comes from the traced replay of each refused
       # transaction (#287) and must equal the model's.
-      - name: Run the dedicated CG23 exit row as a packaged app
+      - name: Run the dedicated reject-and-retract-refund-controls exit row as a packaged app
         run: |
           set -e
           cd conformance
@@ -269,14 +269,14 @@ jobs:
           # The row runs through the wrapper the retention control executes.
           CONFORMANCE_DEDICATED_RECEIPTS="${CONFORMANCE_DEDICATED_RECEIPTS:-$(mktemp -d "$RUNNER_TEMP/conformance-dedicated.XXXXXX")}"
           export CONFORMANCE_DEDICATED_RECEIPTS
-          receipts="$CONFORMANCE_DEDICATED_RECEIPTS/CG23"
-          bash test/ci/dedicated-row.sh CG23 -- env REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG23
+          receipts="$CONFORMANCE_DEDICATED_RECEIPTS/reject-and-retract-refund-controls"
+          bash test/ci/dedicated-row.sh reject-and-retract-refund-controls -- env REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run reject-and-retract-refund-controls
           head_sha="$(git rev-parse HEAD)"
-          f="$receipts/receipt-CG23.json"
-          test -f "$f" || { echo 'FAIL: missing CG23 receipt'; exit 1; }
+          f="$receipts/receipt-reject-and-retract-refund-controls.json"
+          test -f "$f" || { echo 'FAIL: missing reject-and-retract-refund-controls receipt'; exit 1; }
           # The margin is nine tenths of the receipt bound (18 432 bytes): with the
-          # traced replay of its refusals CG23 measured 15 214 bytes (#287).
-          test "$(wc -c < "$f")" -le 16588 || { echo "FAIL: CG23 receipt exceeds its margin"; exit 1; }
+          # traced replay of its refusals reject-and-retract-refund-controls measured 15 214 bytes (#287).
+          test "$(wc -c < "$f")" -le 16588 || { echo "FAIL: reject-and-retract-refund-controls receipt exceeds its margin"; exit 1; }
           state_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "state.state.spend" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
           # jq expands its own --arg variables inside this program.
           # shellcheck disable=SC2016
@@ -285,7 +285,7 @@ jobs:
             def text: type == "string" and length > 0;
             def complete: .comparison == "agrees" and .tamper == null
               and (.compared | length) == 9 and .perturbation.refused > 0;
-            .row == "CG23"
+            .row == "reject-and-retract-refund-controls"
             and .verdict == "agrees-with-model"
             and .base == $base and .dirty == false
             and (.blueprint | text) and (.node | text)
@@ -324,10 +324,10 @@ jobs:
             and .steps[8].witness.signatories == []
             and (.steps[9] | .request.owner as $owner | .witness.signatories | index($owner) != null)
             and (.transactions | length) == 2
-          ' "$f" > /dev/null || { echo 'FAIL: CG23 exit evidence moved'; exit 1; }
-          bash test/ci/replay-evidence.sh steps "$f" || { echo 'FAIL: CG23 refused steps lack the traced replay of their reason'; exit 1; }
+          ' "$f" > /dev/null || { echo 'FAIL: reject-and-retract-refund-controls exit evidence moved'; exit 1; }
+          bash test/ci/replay-evidence.sh steps "$f" || { echo 'FAIL: reject-and-retract-refund-controls refused steps lack the traced replay of their reason'; exit 1; }
           cp "$f" "$STORY_RECEIPTS/"
-      # CG24 (#320): a folder rejects a pending request before its owner's
+      # reject-inside-processing-and-retraction-windows (#320): a folder rejects a pending request before its owner's
       # retraction deadline. Two insertion requests are booked together in a
       # registry of their own; the first is rejected inside its processing
       # window, the second inside its owner's retraction window. In each window
@@ -342,7 +342,7 @@ jobs:
       # early_reject_refund_one_lovelace_short_in_the_processing_window_refuses_by_name,
       # early_reject_refund_to_another_key_in_the_processing_window_refuses_by_name
       # and their retraction-window twins).
-      - name: Run the dedicated CG24 early rejection row as a packaged app
+      - name: Run the dedicated reject-inside-processing-and-retraction-windows early rejection row as a packaged app
         run: |
           set -eo pipefail
           cd conformance
@@ -350,14 +350,14 @@ jobs:
           # The row runs through the wrapper the retention control executes.
           CONFORMANCE_DEDICATED_RECEIPTS="${CONFORMANCE_DEDICATED_RECEIPTS:-$(mktemp -d "$RUNNER_TEMP/conformance-dedicated.XXXXXX")}"
           export CONFORMANCE_DEDICATED_RECEIPTS
-          receipts="$CONFORMANCE_DEDICATED_RECEIPTS/CG24"
+          receipts="$CONFORMANCE_DEDICATED_RECEIPTS/reject-inside-processing-and-retraction-windows"
           log="$RUNNER_TEMP/cg24.log"
-          bash test/ci/dedicated-row.sh CG24 -- env REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG24 2>&1 | tee "$log"
+          bash test/ci/dedicated-row.sh reject-inside-processing-and-retraction-windows -- env REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run reject-inside-processing-and-retraction-windows 2>&1 | tee "$log"
           head_sha="$(git rev-parse HEAD)"
-          f="$receipts/receipt-CG24.json"
-          test -f "$f" || { echo 'FAIL: missing CG24 receipt'; exit 1; }
-          # Nine tenths of the receipt bound (18 432 bytes), as for CG23.
-          test "$(wc -c < "$f")" -le 16588 || { echo "FAIL: CG24 receipt exceeds its margin"; exit 1; }
+          f="$receipts/receipt-reject-inside-processing-and-retraction-windows.json"
+          test -f "$f" || { echo 'FAIL: missing reject-inside-processing-and-retraction-windows receipt'; exit 1; }
+          # Nine tenths of the receipt bound (18 432 bytes), as for reject-and-retract-refund-controls.
+          test "$(wc -c < "$f")" -le 16588 || { echo "FAIL: reject-inside-processing-and-retraction-windows receipt exceeds its margin"; exit 1; }
           state_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "state.state.spend" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
           # jq expands its own --arg variables inside this program.
           # shellcheck disable=SC2016
@@ -366,7 +366,7 @@ jobs:
             def text: type == "string" and length > 0;
             def complete: .comparison == "agrees" and .tamper == null
               and (.compared | length) == 9 and .perturbation.refused > 0;
-            .row == "CG24"
+            .row == "reject-inside-processing-and-retraction-windows"
             and .verdict == "agrees-with-model"
             and .base == $base and .dirty == false
             and (.blueprint | text) and (.node | text)
@@ -387,19 +387,19 @@ jobs:
             and ([.steps[3,4,5].request] | unique | length) == 1
             and .steps[0].request != .steps[3].request
             and (.transactions | length) == 2
-          ' "$f" > /dev/null || { echo 'FAIL: CG24 early rejection evidence moved'; exit 1; }
+          ' "$f" > /dev/null || { echo 'FAIL: reject-inside-processing-and-retraction-windows early rejection evidence moved'; exit 1; }
           # Each reject is placed in a named window; the interpreter refuses to
           # submit outside it. The run log states each placement with the
           # transaction's validity interval and the window it lies in.
-          p1="$(grep -c "^placement: CG24 reject in the processing window validity=\[[0-9]*,[0-9]*) window=\[[0-9]*,[0-9]*) tx=[0-9a-f]\{64\}$" "$log" || true)"
-          p2="$(grep -c "^placement: CG24 reject in the owner's retraction window validity=\[[0-9]*,[0-9]*) window=\[[0-9]*,[0-9]*) tx=[0-9a-f]\{64\}$" "$log" || true)"
+          p1="$(grep -c "^placement: reject-inside-processing-and-retraction-windows reject in the processing window validity=\[[0-9]*,[0-9]*) window=\[[0-9]*,[0-9]*) tx=[0-9a-f]\{64\}$" "$log" || true)"
+          p2="$(grep -c "^placement: reject-inside-processing-and-retraction-windows reject in the owner's retraction window validity=\[[0-9]*,[0-9]*) window=\[[0-9]*,[0-9]*) tx=[0-9a-f]\{64\}$" "$log" || true)"
           if [ "$p1" -ne 3 ] || [ "$p2" -ne 3 ]; then
-            echo "FAIL: CG24 placements moved: processing=$p1 retraction=$p2, expected 3 and 3"
+            echo "FAIL: reject-inside-processing-and-retraction-windows placements moved: processing=$p1 retraction=$p2, expected 3 and 3"
             exit 1
           fi
-          bash test/ci/replay-evidence.sh steps "$f" || { echo 'FAIL: CG24 refused steps lack the traced replay of their reason'; exit 1; }
+          bash test/ci/replay-evidence.sh steps "$f" || { echo 'FAIL: reject-inside-processing-and-retraction-windows refused steps lack the traced replay of their reason'; exit 1; }
           cp "$f" "$STORY_RECEIPTS/"
-          echo 'GREEN = early rejection held: inside the processing window and inside the retraction window, the untampered reject is accepted by the chain and the model, refunding the owner and leaving the state as it was; the short and misdirected refunds are refused by both for deposit-returned. The consumer R9_reject_needs_rejectable stays unmet (CG09, unmet-by-ruling).'
+          echo 'GREEN = early rejection held: inside the processing window and inside the retraction window, the untampered reject is accepted by the chain and the model, refunding the owner and leaving the state as it was; the short and misdirected refunds are refused by both for deposit-returned. The consumer R9_reject_needs_rejectable stays unmet (reject-before-deadline-consumer-requirement, unmet-by-ruling).'
       # The timing refusals are compared in their own finite-window story.
       # The exit chapter above compares the other retraction admission refusals.
       - name: Run the retraction window as a packaged app
@@ -410,17 +410,17 @@ jobs:
           # The row runs through the wrapper the retention control executes.
           CONFORMANCE_DEDICATED_RECEIPTS="${CONFORMANCE_DEDICATED_RECEIPTS:-$(mktemp -d "$RUNNER_TEMP/conformance-dedicated.XXXXXX")}"
           export CONFORMANCE_DEDICATED_RECEIPTS
-          receipts="$CONFORMANCE_DEDICATED_RECEIPTS/CG07"
-          bash test/ci/dedicated-row.sh CG07 -- env REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG07
+          receipts="$CONFORMANCE_DEDICATED_RECEIPTS/retract-outside-window"
+          bash test/ci/dedicated-row.sh retract-outside-window -- env REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run retract-outside-window
           head_sha="$(git rev-parse HEAD)"
-          f="$receipts/receipt-CG07.json"
+          f="$receipts/receipt-retract-outside-window.json"
           test -f "$f" || { echo 'FAIL: missing retraction window receipt'; exit 1; }
-          # Nine tenths of the receipt bound (18 432 bytes), as for CG23.
+          # Nine tenths of the receipt bound (18 432 bytes), as for reject-and-retract-refund-controls.
           test "$(wc -c < "$f")" -le 16588 || { echo 'FAIL: retraction window receipt exceeds its margin'; exit 1; }
           # shellcheck disable=SC2016
           nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" '
             def txid: type == "string" and test("^[0-9a-f]{64}$");
-            .row == "CG07" and .verdict == "agrees-with-model"
+            .row == "retract-outside-window" and .verdict == "agrees-with-model"
             and .base == $base and .dirty == false
             and (.steps | length) == 3
             and ([.steps[].edge] == ["insertActive","insertActive","insertActive"])
@@ -463,47 +463,47 @@ jobs:
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           receipts="$(mktemp -d "$RUNNER_TEMP/conformance-reason-control.XXXXXX")"
           set +e
-          CONFORMANCE_REASON_CONTROL=CG07:0:retract-owner REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG07 --receipts-dir "$receipts" 2>&1 | tee /tmp/reason-control.log
+          CONFORMANCE_REASON_CONTROL=retract-outside-window:0:retract-owner REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run retract-outside-window --receipts-dir "$receipts" 2>&1 | tee /tmp/reason-control.log
           run_rc=${PIPESTATUS[0]}
           set -e
           [ "$run_rc" -eq 1 ] || { echo "FAIL: the altered row exited $run_rc, not the handled failure 1"; exit 1; }
           grep -q 'model and chain refuse for different reasons for retract at window-first: chain=not-phase2 lean=retract-owner' /tmp/reason-control.log || { echo 'FAIL: the altered row did not fail naming both reasons'; exit 1; }
-          test ! -e "$receipts/receipt-CG07.json" || { echo 'FAIL: the altered row wrote a receipt'; exit 1; }
+          test ! -e "$receipts/receipt-retract-outside-window.json" || { echo 'FAIL: the altered row wrote a receipt'; exit 1; }
           nix run --quiet nixpkgs#jq -- -e 'any(.[]; .kind == "refusal" and .comparison == "differs" and .modelReason == "retract-owner")' "$receipts/replay/index.json" > /dev/null || { echo 'FAIL: the replay index lost the differing comparison'; exit 1; }
       - name: Run the generic rows as a packaged app without a dev shell
         working-directory: conformance
         run: bash ../.github/scripts/ci_generic_rows.sh
-      # Issue #69: canonical identity authentication. CA02 asserts
+      # Issue #69: canonical identity authentication. rival-seed-authentication asserts
       # the ledger's acceptance of a rival registry from a second
       # seed — the settled finding, never relabelled as a refusal —
       # and the consumer's rejection of it on the derived name;
-      # CA03 proves the name check is the discriminator; CA05 shows
+      # policy-address-only-authentication-control proves the name check is the discriminator; tokenless-output-authentication shows
       # no script executed when a forged output is created at the
       # canonical address.
       - name: Run the canonical-identity rows as a packaged app without a dev shell
         working-directory: conformance
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CA01 CA02 CA03 CA04 CA05 --receipts-dir "$CONFORMANCE_RECEIPTS"
-          # exact CA04 derivation evidence: state arity-0 match,
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run canonical-seed-identity rival-seed-authentication policy-address-only-authentication-control applied-validator-identity tokenless-output-authentication --receipts-dir "$CONFORMANCE_RECEIPTS"
+          # exact applied-validator-identity derivation evidence: state arity-0 match,
           # request arity-2 distinct, corrupted refusal — off-chain
           # venue throughout, boot txid as provenance.
-          nix run --quiet nixpkgs#jq -- -e '.verdict == "agrees-with-model" and .venue == "off-chain-identity (not phase-2)" and ([.derivation[] | .validator + "/" + .outcome] | sort == ["request.request/distinct", "state.state/match", "state.state/refused"])' "${CONFORMANCE_RECEIPTS}"/receipt-CA04.json > /dev/null || { echo 'FAIL: CA04 derivation evidence moved'; exit 1; }
-      # Armed CA04 negative (NOTE-062/067, E18 venue): the same
+          nix run --quiet nixpkgs#jq -- -e '.verdict == "agrees-with-model" and .venue == "off-chain-identity (not phase-2)" and ([.derivation[] | .validator + "/" + .outcome] | sort == ["request.request/distinct", "state.state/match", "state.state/refused"])' "${CONFORMANCE_RECEIPTS}"/receipt-applied-validator-identity.json > /dev/null || { echo 'FAIL: applied-validator-identity derivation evidence moved'; exit 1; }
+      # Armed applied-validator-identity negative (NOTE-062/067, E18 venue): the same
       # checker demanding the corrupted derivation pass must fail
       # with the exact message. A control that cannot fail proves
       # nothing; this step fails if the run unexpectedly succeeds.
-      - name: Prove the CA04 corrupted-derivation check can fail
+      - name: Prove the applied-validator-identity corrupted-derivation check can fail
         working-directory: conformance
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           armed_receipts="$(mktemp -d "$RUNNER_TEMP/conformance-armed.XXXXXX")"
           set +e
-          CONFORMANCE_CONTROL=unapplied-address REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CA01 CA04 --receipts-dir "$armed_receipts" 2>&1 | tee /tmp/ca04-armed.log
+          CONFORMANCE_CONTROL=unapplied-address REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run canonical-seed-identity applied-validator-identity --receipts-dir "$armed_receipts" 2>&1 | tee /tmp/ca04-armed.log
           run_rc=${PIPESTATUS[0]}
           set -e
-          [ "$run_rc" -ne 0 ] || { echo 'FAIL: armed CA04 negative unexpectedly passed'; exit 1; }
-          grep -q 'CA04 ARMED (unapplied-address)' /tmp/ca04-armed.log || { echo 'FAIL: armed CA04 did not fail with the exact message'; exit 1; }
+          [ "$run_rc" -ne 0 ] || { echo 'FAIL: armed applied-validator-identity negative unexpectedly passed'; exit 1; }
+          grep -q 'applied-validator-identity ARMED (unapplied-address)' /tmp/ca04-armed.log || { echo 'FAIL: armed applied-validator-identity did not fail with the exact message'; exit 1; }
           echo 'ARMED = corrupted-derivation check proved able to fail.'
       # Issue #68: the serialization boundary — Haskell datum, redeemer
       # and parameter encodings against the compiled blueprint plus
@@ -511,10 +511,10 @@ jobs:
       # itself. Issue #157 split this family by edge; issue #183 cuts
       # the request wire to its edge index and RETURNS the three rows
       # that were waiting on that final wire. The session is now six:
-      # CS01 and CS06 check the blueprint locally and need no node;
-      # CS02, CS04, CS07 and CS08 execute on the devnet.
+      # blueprint-encoding-round-trip and script-parameter-application check the blueprint locally and need no node;
+      # submitted-datum-byte-round-trip, wrong-redeemer-constructor-index, proof-step-constructor-witnesses and state-fields-chain-round-trip execute on the devnet.
       #
-      # Five agree with the model by being ACCEPTED. CS04 agrees with
+      # Five agree with the model by being ACCEPTED. wrong-redeemer-constructor-index agrees with
       # it by being REFUSED — a tampered Modify index the cage must
       # reject — so the assertions below bind the VERDICT
       # (agrees-with-model) for every row and never the outcome. This
@@ -522,12 +522,12 @@ jobs:
       # ZERO, and any partial or held report in it is a failure rather
       # than expected debt.
       #
-      # CS03 and CS05 stay out and stay unstubbed; they travel with
+      # update-redeemer-constructor-witnesses and request-and-mint-constructor-witnesses stay out and stay unstubbed; they travel with
       # #177/#179.
       #
       # The assertion binds the terminal state this exact session
       # really prints — the devnet leg's own completion line and the
-      # runner's exit line — then requires exactly the six CS receipt
+      # runner's exit line — then requires exactly the six serialization receipt
       # IDs with no missing or extra receipt, each with its real
       # verdict, on a clean tree, bound to the candidate.
       - name: Run the serialization rows as a packaged app without a dev shell
@@ -535,60 +535,60 @@ jobs:
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           set +e
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CS01 CS02 CS04 CS06 CS07 CS08 --receipts-dir "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/serialization-rows.log
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run blueprint-encoding-round-trip submitted-datum-byte-round-trip wrong-redeemer-constructor-index script-parameter-application proof-step-constructor-witnesses state-fields-chain-round-trip --receipts-dir "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/serialization-rows.log
           run_rc=${PIPESTATUS[0]}
           set -e
-          echo "serialization session exit: $run_rc (expected: exactly 1 — the debt report naming CS04, unmet by ruling)"
+          echo "serialization session exit: $run_rc (expected: exactly 1 — the debt report naming wrong-redeemer-constructor-index, unmet by ruling)"
           head_sha="$(git rev-parse HEAD)"
-          # 1. the EXACT status, never a tolerated range: CS04 has no model
+          # 1. the EXACT status, never a tolerated range: wrong-redeemer-constructor-index has no model
           #    counterpart and is unmet by operator ruling 2026-10-02
           #    (lambdasistemi/singular#347), so the session ends 1 with the
-          #    debt report naming exactly CS04; any other exit is an
+          #    debt report naming exactly wrong-redeemer-constructor-index; any other exit is an
           #    unexamined build/setup/crash.
           [ "$run_rc" -eq 1 ] || { echo "FAIL: serialization exit $run_rc is not the unmet-debt exit 1"; exit 1; }
           # 2. complete terminal evidence for the session actually run:
-          #    the CS devnet leg completes its four devnet rows
-          #    (CS02, CS04, CS07, CS08)...
-          grep -q 'complete: 4/4 rows ok' /tmp/serialization-rows.log || { echo 'FAIL: the CS devnet leg did not complete its four devnet rows (mid-run failure or crash)'; exit 1; }
-          #    ...no partial row, and the debt report naming exactly CS04 as
+          #    the serialization devnet leg completes its four devnet rows
+          #    (submitted-datum-byte-round-trip, wrong-redeemer-constructor-index, proof-step-constructor-witnesses, state-fields-chain-round-trip)...
+          grep -q 'complete: 4/4 rows ok' /tmp/serialization-rows.log || { echo 'FAIL: the serialization devnet leg did not complete its four devnet rows (mid-run failure or crash)'; exit 1; }
+          #    ...no partial row, and the debt report naming exactly wrong-redeemer-constructor-index as
           #    unmet, nothing held and nothing failing.
           if grep -q 'ROWS PARTIAL' /tmp/serialization-rows.log; then
             echo 'FAIL: a row reported PARTIAL'
             exit 1
           fi
           grep -q 'ROWS THE RUN CANNOT REPORT AS PASSING' /tmp/serialization-rows.log || { echo 'FAIL: the session ended without its debt report'; exit 1; }
-          [ "$(sed -n 's/^- Unmet by ruling .*unmet-by-ruling): //p' /tmp/serialization-rows.log)" = "CS04" ] || { echo 'FAIL: the unmet set is not exactly CS04'; exit 1; }
-          [ "$(sed -n 's/^- Held .*held-q002): //p' /tmp/serialization-rows.log)" = "none" ] || { echo 'FAIL: a CS row is held'; exit 1; }
-          [ "$(sed -n 's/^- Failing .*accepted): //p' /tmp/serialization-rows.log)" = "none" ] || { echo 'FAIL: a CS row is failing'; exit 1; }
-          grep -q '^unmet: CS04 UNMET BY RULING: .*lambdasistemi/singular#347' /tmp/serialization-rows.log || { echo 'FAIL: CS04 unmet without its follow-up'; exit 1; }
-          # 3. exactly the six CS receipt IDs, no missing and no extra
-          printf '%s\n' CS01 CS02 CS04 CS06 CS07 CS08 | sort > /tmp/expected-cs.txt
-          nix run --quiet nixpkgs#jq -- -r '.row' "${CONFORMANCE_RECEIPTS}"/receipt-CS*.json | sort > /tmp/receipt-cs.txt
+          [ "$(sed -n 's/^- Unmet by ruling .*unmet-by-ruling): //p' /tmp/serialization-rows.log)" = "wrong-redeemer-constructor-index" ] || { echo 'FAIL: the unmet set is not exactly wrong-redeemer-constructor-index'; exit 1; }
+          [ "$(sed -n 's/^- Held .*held-q002): //p' /tmp/serialization-rows.log)" = "none" ] || { echo 'FAIL: a serialization row is held'; exit 1; }
+          [ "$(sed -n 's/^- Failing .*accepted): //p' /tmp/serialization-rows.log)" = "none" ] || { echo 'FAIL: a serialization row is failing'; exit 1; }
+          grep -q '^unmet: wrong-redeemer-constructor-index UNMET BY RULING: .*lambdasistemi/singular#347' /tmp/serialization-rows.log || { echo 'FAIL: wrong-redeemer-constructor-index unmet without its follow-up'; exit 1; }
+          # 3. exactly the six serialization receipt IDs, no missing and no extra
+          printf '%s\n' blueprint-encoding-round-trip submitted-datum-byte-round-trip wrong-redeemer-constructor-index script-parameter-application proof-step-constructor-witnesses state-fields-chain-round-trip | sort > /tmp/expected-cs.txt
+          nix run --quiet nixpkgs#jq -- -r '.row' "${CONFORMANCE_RECEIPTS}"/receipt-serialization*.json | sort > /tmp/receipt-cs.txt
           #    Compared with bash builtins, not diff: this step runs a packaged
           #    app without a dev shell, and an absent diff previously reported
           #    'receipt set mismatch' — an unavailable tool misattributed as a
           #    substantive failure. No external command, so no such path remains.
           if [ "$(</tmp/expected-cs.txt)" != "$(</tmp/receipt-cs.txt)" ]; then
-            echo 'FAIL: CS receipt set mismatch (missing or extra row)'
+            echo 'FAIL: serialization receipt set mismatch (missing or extra row)'
             echo '--- expected ---'; while IFS= read -r l; do echo "$l"; done < /tmp/expected-cs.txt
             echo '--- receipts ---'; while IFS= read -r l; do echo "$l"; done < /tmp/receipt-cs.txt
             exit 1
           fi
           # 4. every row its real verdict — agrees-with-model for the rows
-          #    that accept, unmet-by-ruling for CS04 — never partial and
+          #    that accept, unmet-by-ruling for wrong-redeemer-constructor-index — never partial and
           #    never held, on a clean tree, bound to this candidate
-          for row in CS01 CS02 CS04 CS06 CS07 CS08; do
+          for row in blueprint-encoding-round-trip submitted-datum-byte-round-trip wrong-redeemer-constructor-index script-parameter-application proof-step-constructor-witnesses state-fields-chain-round-trip; do
             f="${CONFORMANCE_RECEIPTS}/receipt-$row.json"
             test -f "$f" || { echo "FAIL: missing receipt for $row"; exit 1; }
             want=agrees-with-model
-            [ "$row" != CS04 ] || want=unmet-by-ruling
+            [ "$row" != wrong-redeemer-constructor-index ] || want=unmet-by-ruling
             [ "$(nix run --quiet nixpkgs#jq -- -r '.verdict' "$f")" = "$want" ] || { echo "FAIL: unexpected verdict for $row"; exit 1; }
             [ "$(nix run --quiet nixpkgs#jq -- -r '.dirty' "$f")" = "false" ] || { echo "FAIL: $row receipt records a dirty tree"; exit 1; }
             [ "$(nix run --quiet nixpkgs#jq -- -r '.base' "$f")" = "$head_sha" ] || { echo "FAIL: $row not bound to $head_sha"; exit 1; }
           done
-          # 5. #287: CS04's refusal carries the traced replay of its transaction.
-          bash test/ci/replay-evidence.sh attribution "${CONFORMANCE_RECEIPTS}/receipt-CS04.json" || { echo 'FAIL: CS04 refusal lacks the traced replay'; exit 1; }
-          echo 'GREEN = serialization assertion held: CS01 CS02 CS04 CS06 CS07 CS08 executed on a clean candidate-bound tree; CS01 CS02 CS06 CS07 CS08 agree with the model, CS04 is refused by the chain and unmet by ruling (no model counterpart, lambdasistemi/singular#347); no partial and no held row.'
+          # 5. #287: wrong-redeemer-constructor-index's refusal carries the traced replay of its transaction.
+          bash test/ci/replay-evidence.sh attribution "${CONFORMANCE_RECEIPTS}/receipt-wrong-redeemer-constructor-index.json" || { echo 'FAIL: wrong-redeemer-constructor-index refusal lacks the traced replay'; exit 1; }
+          echo 'GREEN = serialization assertion held: blueprint-encoding-round-trip submitted-datum-byte-round-trip wrong-redeemer-constructor-index script-parameter-application proof-step-constructor-witnesses state-fields-chain-round-trip executed on a clean candidate-bound tree; blueprint-encoding-round-trip submitted-datum-byte-round-trip script-parameter-application proof-step-constructor-witnesses state-fields-chain-round-trip agree with the model, wrong-redeemer-constructor-index is refused by the chain and unmet by ruling (no model counterpart, lambdasistemi/singular#347); no partial and no held row.'
       # Loader and inventory enforcement over the session receipts:
       # the loader validates every receipt (constructor accounting
       # included — a false success or an omitted constructor fails
@@ -597,8 +597,8 @@ jobs:
       # grep alone is acceptance: the assertions above bind the
       # verdicts. NOTE-058: the state assertion parses the TSV
       # (column 4), never a substring. Non-vacuity is two-sided —
-      # CS01, CS02, CS04, CS06, CS07 and CS08 must each appear exactly
-      # once and read executed, and no other CS row may render executed
+      # blueprint-encoding-round-trip, submitted-datum-byte-round-trip, wrong-redeemer-constructor-index, script-parameter-application, proof-step-constructor-witnesses and state-fields-chain-round-trip must each appear exactly
+      # once and read executed, and no other serialization row may render executed
       # or partial, so a missing, duplicated or extra receipt fails
       # here. The quantity is what the assertion is over: the counters
       # are per id so one row rendering twice cannot pay for another
@@ -610,7 +610,7 @@ jobs:
           c1=0 c2=0 c4=0 c6=0 c7=0 c8=0 extra=""
           while IFS= read -r row || [[ -n "$row" ]]; do
             id=${row%%$'\t'*}
-            [[ "$id" == CS* ]] || continue
+            [[ "$id" == serialization* ]] || continue
             # Preserve empty TSV fields; whitespace IFS would collapse them.
             for column in 1 2 3; do
               [[ "$row" == *$'\t'* ]] || { echo "FAIL: $id missing state column after field $column"; exit 1; }
@@ -618,23 +618,23 @@ jobs:
             done
             state=${row%%$'\t'*}
             case "$id" in
-              CS01) c1=$((c1 + 1)); [[ "$state" == executed ]] || { echo "FAIL: CS01 state: $state"; exit 1; } ;;
-              CS02) c2=$((c2 + 1)); [[ "$state" == executed ]] || { echo "FAIL: CS02 state: $state"; exit 1; } ;;
-              CS04) c4=$((c4 + 1)); [[ "$state" == unmet-by-ruling ]] || { echo "FAIL: CS04 state: $state"; exit 1; } ;;
-              CS06) c6=$((c6 + 1)); [[ "$state" == executed ]] || { echo "FAIL: CS06 state: $state"; exit 1; } ;;
-              CS07) c7=$((c7 + 1)); [[ "$state" == executed ]] || { echo "FAIL: CS07 state: $state"; exit 1; } ;;
-              CS08) c8=$((c8 + 1)); [[ "$state" == executed ]] || { echo "FAIL: CS08 state: $state"; exit 1; } ;;
+              blueprint-encoding-round-trip) c1=$((c1 + 1)); [[ "$state" == executed ]] || { echo "FAIL: blueprint-encoding-round-trip state: $state"; exit 1; } ;;
+              submitted-datum-byte-round-trip) c2=$((c2 + 1)); [[ "$state" == executed ]] || { echo "FAIL: submitted-datum-byte-round-trip state: $state"; exit 1; } ;;
+              wrong-redeemer-constructor-index) c4=$((c4 + 1)); [[ "$state" == unmet-by-ruling ]] || { echo "FAIL: wrong-redeemer-constructor-index state: $state"; exit 1; } ;;
+              script-parameter-application) c6=$((c6 + 1)); [[ "$state" == executed ]] || { echo "FAIL: script-parameter-application state: $state"; exit 1; } ;;
+              proof-step-constructor-witnesses) c7=$((c7 + 1)); [[ "$state" == executed ]] || { echo "FAIL: proof-step-constructor-witnesses state: $state"; exit 1; } ;;
+              state-fields-chain-round-trip) c8=$((c8 + 1)); [[ "$state" == executed ]] || { echo "FAIL: state-fields-chain-round-trip state: $state"; exit 1; } ;;
               *) if [[ "$state" == executed || "$state" == partial ]]; then extra="$extra $id"; fi ;;
             esac
           done < /tmp/inventory-render.log
-          [[ "$c1" == 1 ]] || { echo "FAIL: CS01 rows: $c1"; exit 1; }
-          [[ "$c2" == 1 ]] || { echo "FAIL: CS02 rows: $c2"; exit 1; }
-          [[ "$c4" == 1 ]] || { echo "FAIL: CS04 rows: $c4"; exit 1; }
-          [[ "$c6" == 1 ]] || { echo "FAIL: CS06 rows: $c6"; exit 1; }
-          [[ "$c7" == 1 ]] || { echo "FAIL: CS07 rows: $c7"; exit 1; }
-          [[ "$c8" == 1 ]] || { echo "FAIL: CS08 rows: $c8"; exit 1; }
+          [[ "$c1" == 1 ]] || { echo "FAIL: blueprint-encoding-round-trip rows: $c1"; exit 1; }
+          [[ "$c2" == 1 ]] || { echo "FAIL: submitted-datum-byte-round-trip rows: $c2"; exit 1; }
+          [[ "$c4" == 1 ]] || { echo "FAIL: wrong-redeemer-constructor-index rows: $c4"; exit 1; }
+          [[ "$c6" == 1 ]] || { echo "FAIL: script-parameter-application rows: $c6"; exit 1; }
+          [[ "$c7" == 1 ]] || { echo "FAIL: proof-step-constructor-witnesses rows: $c7"; exit 1; }
+          [[ "$c8" == 1 ]] || { echo "FAIL: state-fields-chain-round-trip rows: $c8"; exit 1; }
           [[ -z "$extra" ]] || { echo "FAIL: serialization rows outside this ticket's set render as run:$extra"; exit 1; }
-          echo 'INVENTORY = CS01/CS02/CS06/CS07/CS08 executed and CS04 unmet-by-ruling (column 4, each exactly once), no other CS row run, loader accepted the accounting.'
+          echo 'INVENTORY = blueprint-encoding-round-trip/submitted-datum-byte-round-trip/script-parameter-application/proof-step-constructor-witnesses/state-fields-chain-round-trip executed and wrong-redeemer-constructor-index unmet-by-ruling (column 4, each exactly once), no other serialization row run, loader accepted the accounting.'
       # #287: the extent of every live run above. Each run's replay index
       # must name each refusal its receipts record exactly once; a refusal
       # whose step carried the model's reason is class A, agreeing or
@@ -649,20 +649,20 @@ jobs:
         run: |
           nix run --quiet .#conformance-extent -- ../specs/287-traced-refusal-reasons/extent.md \
             "$CONFORMANCE_RECEIPTS" \
-            "$CONFORMANCE_DEDICATED_RECEIPTS/CG22" \
-            "$CONFORMANCE_DEDICATED_RECEIPTS/CG23" \
-            "$CONFORMANCE_DEDICATED_RECEIPTS/CG24" \
-            "$CONFORMANCE_DEDICATED_RECEIPTS/CG07"
-      # CS04, CS07 and CS08 are back in the run list above, re-cut on
-      # the final request wire (#183). CS03 and CS05 still travel with
+            "$CONFORMANCE_DEDICATED_RECEIPTS/retire-active-key" \
+            "$CONFORMANCE_DEDICATED_RECEIPTS/reject-and-retract-refund-controls" \
+            "$CONFORMANCE_DEDICATED_RECEIPTS/reject-inside-processing-and-retraction-windows" \
+            "$CONFORMANCE_DEDICATED_RECEIPTS/retract-outside-window"
+      # wrong-redeemer-constructor-index, proof-step-constructor-witnesses and state-fields-chain-round-trip are back in the run list above, re-cut on
+      # the final request wire (#183). update-redeemer-constructor-witnesses and request-and-mint-constructor-witnesses still travel with
       # #177/#179 and are still not stubbed.
       #
-      # STILL RETIRED, still not stubbed: the step "CS07 missing-Fork
+      # STILL RETIRED, still not stubbed: the step "proof-step-constructor-witnesses missing-Fork
       # control fails". It armed a control over the byte-level shape of
       # the PREVIOUS cage wire — a request value the edge wire cannot
-      # express — so returning CS07 does not return that control. It is
+      # express — so returning proof-step-constructor-witnesses does not return that control. It is
       # removed outright: no stub, no skip, no echo standing in for it.
-      # What CS07 asserts now is the proof shape its own row builds.
+      # What proof-step-constructor-witnesses asserts now is the proof shape its own row builds.
       - name: Preserve candidate-bound conformance receipts
         if: always() && (env.CONFORMANCE_RECEIPTS != '' || env.CONFORMANCE_DEDICATED_RECEIPTS != '')
         uses: actions/upload-artifact@v4
