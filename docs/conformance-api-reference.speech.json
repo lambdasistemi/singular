@@ -1,11 +1,11 @@
 {
   "_source": {
     "file": "conformance-api-reference.md",
-    "sha256": "3fbd0810298aef2555b43f547b40bf150c408326bac121eb35679304a27d826f"
+    "sha256": "0e98328eca3247616a944ca2243c39b7dfdf0815c4f9f47d6d1052441a1c2881"
   },
   "what-this-reference-contains": [
     {
-      "text": "As a contributor changing the conformance library, a story program, a model binding, a comparison, a receipt check or a rendering, I want to click a module and land on its real interface, signatures, documentation and highlighted source, for exactly the code this repository ships.",
+      "text": "As a contributor changing the conformance library, a story program, a model binding, a comparison, a receipt check or a rendering, I want to click a module and land on its real interface, signatures, documentation and highlighted source, for exactly the code this repository ships. Historical receipt keys are associated with descriptive requirement names by the row-name module; the receipt reader then applies the same evidence checks.",
       "pause": 400
     },
     {
