@@ -1,25 +1,29 @@
 -- | A book rendered from the same programs the live backend executes.
 module Conformance.Book (renderBook, bookStories, bookReceipts) where
 
-import Conformance.Edge.EarlyReject qualified as EarlyReject
-import Conformance.Edge.Exit qualified as Exit
-import Conformance.Edge.Occupied qualified as Occupied
-import Conformance.Edge.Register qualified as Register
-import Conformance.Edge.Retire qualified as Retire
-import Conformance.Edge.RetractionWindow qualified as RetractionWindow
-import Conformance.Edge.Sequence qualified as Sequence
+import Conformance.Edge.Programs
+    ( Chapter (..)
+    , Classification (..)
+    , Kind (..)
+    , Program (..)
+    , classify
+    , displayStory
+    , programFor
+    , programs
+    )
 import Conformance.Receipt (Receipt (..), Verdict (..))
 import Conformance.Rows (Row (..), RowState (..))
-import Conformance.Story.Live (Context (..), renderLive)
+import Conformance.Story.Live (renderLive)
 import Data.Aeson (Value (..))
 import Data.Aeson.KeyMap qualified as KM
 import Data.Foldable (toList)
 import Data.List (intercalate)
+import Data.Maybe (isJust)
 import Data.Text qualified as T
 
 -- | The stories a book run executes, renders and requires, in book order.
 bookStories :: [String]
-bookStories = ["CG21", "CG05", "CG22", "CG23", "CG24", "CG07", "sequence"]
+bookStories = [programRow p | p <- programs, isJust (programChapter p)]
 
 {- | The receipts a book renders: one per story of the book, each agreeing
 with the model, in book order; a missing or disagreeing story is refused,
@@ -46,39 +50,7 @@ renderBook requirements receipts =
         <> concatMap
             result
             [r | name <- bookStories, r <- receipts, receiptRow r == T.pack name]
-        <> "## Register a key and receive its active token\n\n"
-        <> "A requester submits two distinct active registrations and then repeats one key. The delivery is then sent to another address, and paid one lovelace short, beside the same untampered request. Every step is compared with the executable registry model.\n\n"
-        <> renderLive
-            (Register.story (Context "registration" "recipient wallet"))
-        <> "## Insert on a key the registry already holds\n\n"
-        <> "In a registry of its own, a key is booked by an insertion and made active by an update, each accepted and compared with the executable registry model. The same insertion on that key must then be refused by the ledger and by the model.\n\n"
-        <> renderLive
-            (Occupied.story (Context "occupied insert" "holder wallet"))
-        <> "## Retire a registration and burn its active token\n\n"
-        <> "The holder first registers a key in this run. Retirement must consume and burn that very token and change the key to Terminal. A never-registered key and a key recorded as Absent must be refused, each beside a successful retirement in the same registry. A deletion then owes its owner the deposit back: paid one lovelace short, and paid to another address, it must be refused beside the untampered deletion.\n\n"
-        <> renderLive
-            ( Retire.story
-                (Context "retirement" "holder wallet")
-                (Context "comparison" "holder wallet")
-            )
-        <> "## A request that is never folded\n\n"
-        <> "A request can leave the queue without a fold. After its owner's retraction window has closed, a folder rejects it and must refund its owner the deposit, keeping the tip; while it is still retractable, its owner retracts it and must get back everything it held, deposit and tip, through an output whose inline datum is the retracted request's own output reference. Each refund paid one lovelace short or to another address, a return bound to another request, and a retraction spending the registry's state beside it must be refused, each beside the untampered exit of the same request.\n\n"
-        <> renderLive
-            ( Exit.story
-                (Context "rejection" "holder wallet")
-                (Context "retraction" "holder wallet")
-            )
-        <> "## A folder rejects a request before its retraction deadline\n\n"
-        <> "A reject carries no admission: the model accepts it in every window, and the chain does too. Two insertion requests from the same owner are booked together in a registry of their own. The first is rejected while it can still be folded, the second while its owner can still retract it. In each window a reject refunding the owner one lovelace short, and one refunding another key, must be refused by both, leaving the request pending; the untampered reject of the same request must be accepted by both, refund the owner the deposit and leave the registry state as it was. Each reject's validity interval is checked to lie inside the window its step names before it is submitted.\n\n"
-        <> renderLive
-            (EarlyReject.story (Context "early rejection" "holder wallet"))
-        <> "## Retract only inside phase 2\n\n"
-        <> "Two insertion requests from the same owner are booked in one registry before either exits. The first is retracted before phase 2, then inside it; the second is retracted after its window closes. Both outside-window retractions must be refused, and the in-window retraction must be accepted. The second request shares the first's accepting control: once its own window is over it cannot have an in-window retry. The registry allows thirty seconds for processing and thirty more for retraction; waits follow each request's recorded submission time.\n\n"
-        <> renderLive
-            (RetractionWindow.story (Context "retraction window" "owner wallet"))
-        <> "## A sequence no chapter names\n\n"
-        <> "This program uses the same live interpreter for each listed request. Each step records its own model and chain outcome; any unsupported result carries the reason observed at the booking or fold boundary.\n\n"
-        <> renderLive (Sequence.story (Context "sequence" "holder wallet"))
+        <> concatMap chapterText programs
         <> "## What these runs do not establish\n\n"
         <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none for a fold and the owner for a retraction, and the comparison reads them from the submitted transaction. The registration chapter folds two registrations in one transaction that mints both tokens at the first request's key; it is compared on its outcome and, both refusing, on the reason. The model builds no transaction for a batch, so no other observation of a batch is compared. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. The model admits a retraction only when the pending request inserts a key or reads a terminal one, its owner is among the transaction's required signers, and its validity interval lies inside phase 2. The interval starts no earlier than submission plus the processing time; its excluded upper bound may reach, but not pass, the end of the retraction time that follows. The model represents only finite validity bounds. Open validity intervals remain a named gap: the Aiken tests establish their not-phase2 refusal, but no live model comparison can represent them. The early rejections are compared in the processing window and the retraction window of one registry; a fold of an update in the retraction window is not compared there, because the validator refuses it while the model admits it, a separate tracked discrepancy. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
         <> refusalLimits
@@ -107,40 +79,17 @@ renderBook requirements receipts =
             <> "`.\n\n"
             <> maybe
                 ""
-                ( \steps -> case receiptRow receipt of
-                    "CG05" ->
-                        "Occupied-key insertion compared "
-                            <> outcomeCounts steps
-                            <> concatMap refusedStep steps
-                    "CG21" ->
-                        "Registration compared "
+                ( \steps -> case programFor (T.unpack (receiptRow receipt)) >>= programChapter of
+                    Just chapterOf ->
+                        chapterSummary chapterOf
+                            <> " "
                             <> outcomeCounts steps
                             <> concatMap detection steps
                             <> concatMap refusedStep steps
                             <> concatMap refusedBatch steps
-                    "CG22" ->
-                        "Retirement compared "
-                            <> outcomeCounts steps
-                            <> concatMap refusedStep steps
-                    "CG23" ->
-                        "Rejection and retraction compared "
-                            <> outcomeCounts steps
-                            <> concatMap refusedStep steps
                             <> admissionEvidence steps
-                    "CG24" ->
-                        "Early rejection compared "
-                            <> outcomeCounts steps
-                            <> concatMap refusedStep steps
-                    "CG07" ->
-                        "Retraction window compared "
-                            <> outcomeCounts steps
-                            <> concatMap refusedStep steps
                             <> windowEvidence steps
-                    "sequence" ->
-                        "Unnamed sequence compared "
-                            <> outcomeCounts steps
-                            <> concatMap refusedStep steps
-                    _ -> ""
+                    Nothing -> ""
                 )
                 (receiptSteps receipt)
     requirement row =
@@ -157,6 +106,39 @@ renderBook requirements receipts =
                 ""
                 (\e -> "Existing evidence: " <> T.unpack e <> "\n\n")
                 (rowEvidence row)
+            <> classification row
+    -- A chapter is a program the book renders whole, with what it is for.
+    chapterText p = case programChapter p of
+        Just chapterOf ->
+            "## "
+                <> chapterTitle chapterOf
+                <> "\n\n"
+                <> chapterIntroduction chapterOf
+                <> "\n\n"
+                <> rendered p
+        Nothing -> ""
+    rendered p =
+        either
+            (\problem -> "The program cannot be rendered: " <> problem <> "\n\n")
+            renderLive
+            (displayStory p)
+    -- How a registry row is run, read off the program that runs it or the
+    -- reason the model cannot express it.
+    classification row
+        | rowGroup row /= "CG" = ""
+        | otherwise = case classify (rowId row) of
+            Right (Composed kind) ->
+                kindReading kind
+                    <> maybe "." whereRun (programFor (T.unpack (rowId row)))
+            Right (Outside reason) ->
+                "Outside the model's vocabulary: " <> T.unpack reason <> "\n\n"
+            Left problem -> "Not classified: " <> problem <> "\n\n"
+    kindReading EdgeComposition =
+        "Run as an edge composition over the registry's operations"
+    kindReading Tamper = "Run as a tamper of an edge's transaction"
+    whereRun p = case programChapter p of
+        Just chapterOf -> ", in the chapter \"" <> chapterTitle chapterOf <> "\" above.\n\n"
+        Nothing -> ", in the conformance session:\n\n" <> rendered p
     stateName Uncovered = "uncovered"
     stateName BoundElsewhere = "bound elsewhere"
     stateName OutOfScope = "outside the registry's scope"

@@ -10,10 +10,9 @@ module Conformance.Run.Live
     , LiveStep (..)
     , LiveState (..)
     , runLive
-    , runLiveWithRequests
     , runLiveNamed
     , newLiveState
-    , compareHandBatch
+    , tamperedRefunds
     , mintOnFirstKey
     , submitEdge
     , storyReferences
@@ -169,6 +168,7 @@ import Cardano.Ledger.Api.Tx.Out
     , coinTxOutL
     , datumTxOutL
     , getMinCoinTxOut
+    , mkBasicTxOut
     , referenceScriptTxOutL
     , valueTxOutL
     )
@@ -186,6 +186,7 @@ import Cardano.Ledger.Keys (KeyRole (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.Plutus.Data (Data (..), binaryDataToData)
 import Cardano.Ledger.TxIn (TxIn (..), txInToText)
+import Cardano.Node.Client.E2E.Setup (Ed25519DSIGN, SignKeyDSIGN)
 import Cardano.Tx.Balance (BalanceResult (..), balanceTx)
 import Cardano.Tx.Ledger (ConwayTx)
 
@@ -325,16 +326,19 @@ data LiveState = LiveState
             (Map.Map (String, String, Int, ByteString) (TxIn, TxOut ConwayEra))
     , liveRow :: String
     -- ^ the row the story runs for, naming its placement lines
+    , liveSigners :: [(Addr, SignKeyDSIGN Ed25519DSIGN)]
+    -- ^ the wallets a booked request may name as its owner, with their keys
     }
 
 -- | Interpret shared story instructions against the running node and builders.
 runLive
     :: Env -> Live.Story RowCage Addr LiveStep Value Value res -> IO res
-runLive env = runLiveWithRequests env []
+runLive env = runLiveNamed env "" [] []
 
 -- | The interpreter's state for one row, before it acts on any registry.
-newLiveState :: String -> IO LiveState
-newLiveState row =
+newLiveState
+    :: String -> [(Addr, SignKeyDSIGN Ed25519DSIGN)] -> IO LiveState
+newLiveState row signers =
     LiveState
         <$> newLiveIdentities
         <*> newIORef 0
@@ -345,103 +349,27 @@ newLiveState row =
         <*> newIORef Map.empty
         <*> newIORef Map.empty
         <*> pure row
+        <*> pure signers
 
-{- | A batch a row assembled and submitted itself, asked of the model's matching
-batch question and compared as a story's batch is ('batchRecord'), the refusal
-reason included. Each request is named beside the wallet that booked it, its
-owner, and its booked output; they are asked in the transaction's input order,
-each folded request claiming what the transaction mints at its key. The
-registry must be one the row's interpreter state first saw empty: every
-question starts from there.
--}
-compareHandBatch
-    :: Env
-    -> LiveState
-    -> RowCage
-    -> Live.Exit
-    -> [(Live.EdgeRequest Addr, Addr, (TxIn, TxOut ConwayEra))]
-    -> ConwayTx
-    -> SubmitResult
-    -> IO Value
-compareHandBatch env state cage exit requests signed result = do
-    let cfg = rcCfg cage
-        ids = liveIds state
-    (tid, before) <- enterRegistry env state cage
-    let registry = show tid
-    mapM_ (noteRequest state cage registry . (\(r, _, _) -> r)) requests
-    let booked = sortOn (\(_, _, (reqIn, _)) -> reqIn) requests
-    asked <- forM booked $ \(request, owner, (reqIn, reqOut)) -> do
-        require
-            "a compared batch request's owner is the wallet it names"
-            (Live.requestWallet request == owner)
-        let Coin bond = reqOut ^. coinTxOutL
-            deposit = bond - stateMaxFee before
-        require
-            "booked request holds less than the on-chain processing tip"
-            (deposit >= 0)
-        reference <-
-            allocateIdentity
-                (liveReferences ids)
-                (ReferenceIdentity (txInReference reqIn))
-        modelRequest <-
-            storyModelRequestBy
-                owner
-                ids
-                cfg
-                exit
-                request
-                deposit
-                (stateMaxFee before)
-                (Just reference)
-                (Right reqOut)
-        bindBookedApproval ids cfg reqOut modelRequest
-        pure $ case (exit, modelRequest) of
-            (Live.Fold, Object fields) ->
-                Object
-                    ( KM.insert
-                        "claimed"
-                        (toJSON (claimedAt cfg signed (Live.requestKey request)))
-                        fields
-                    )
-            (Live.Fold, other) -> other
-            _ -> object ["exit" .= String "reject", "request" .= modelRequest]
-    batchRecord
-        env
-        state
-        cage
-        exit
-        Nothing
-        [booking | (_, _, booking) <- booked]
-        asked
-        signed
-        result
-        (Map.empty, Map.empty)
-
-{- | Book a cohort before running its exits, retaining each request under its
-registry, key, edge and owner. Timing stories need both requests pending
-before the first window opens; ordinary stories still book as they act.
--}
-runLiveWithRequests
-    :: Env
-    -> [(RowCage, Live.EdgeRequest Addr)]
-    -> Live.Story RowCage Addr LiveStep Value Value res
-    -> IO res
-runLiveWithRequests env = runLiveNamed env ""
-
-{- | 'runLiveWithRequests' for a named row: each placed reject is logged under
-the row, with its validity interval and the window it lies in.
+{- | Run a row's story. Its cohort is booked before the first instruction, each
+request retained under its registry, key, edge and wallet: timing stories need
+both requests pending before the first window opens, while ordinary stories
+book as they act. Each placed reject is logged under the row, with its validity
+interval and the window it lies in. A booked request may name as its owner only
+a wallet given here, with the key that signs its booking.
 -}
 runLiveNamed
     :: Env
     -> String
     -> [(RowCage, Live.EdgeRequest Addr)]
+    -> [(Addr, SignKeyDSIGN Ed25519DSIGN)]
     -> Live.Story RowCage Addr LiveStep Value Value res
     -> IO res
-runLiveNamed env row prepared program = do
-    state <- newLiveState row
+runLiveNamed env row prepared signers program = do
+    state <- newLiveState row signers
     forM_ prepared $ \(cage, request) -> do
         tid <- cageTid cage
-        named <- bookStoryRequest env cage request
+        named <- bookStoryRequest env state cage request Nothing
         let pendingKey =
                 ( show tid
                 , Live.requestKey request
@@ -524,15 +452,22 @@ runLiveNamed env row prepared program = do
             modifyIORef' (livePendingComparisons state) (+ 1)
             pure step
         Live.FoldBatch alteration registry requests ->
-            submitBatch env state registry Live.Fold Nothing alteration requests
-        Live.RejectBatchWithin placement registry requests ->
+            submitBatch
+                env
+                state
+                registry
+                Live.Fold
+                Nothing
+                (Left <$> alteration)
+                [(request, Nothing) | request <- requests]
+        Live.RejectBatchWithin placement alteration registry requests ->
             submitBatch
                 env
                 state
                 registry
                 Live.Reject
                 (Just placement)
-                Nothing
+                (Right <$> alteration)
                 requests
         Live.Observe step -> observeStep env state step
         Live.Compare step observation -> do
@@ -549,26 +484,65 @@ runLiveNamed env row prepared program = do
         when (exit == Live.Reject) $
             failWith "setup: a reject reached the interpreter without a placement"
 
--- | The same booking path for a prepared cohort and a single story action.
+{- | The same booking path for a prepared cohort, a single story action and a
+batch. A request with a booking is booked by its owner, signing with the key the
+row gave for that wallet, and holds its deposit beside the tip; any other is
+booked by the runner's own wallet with the default deposit.
+-}
 bookStoryRequest
-    :: Env -> RowCage -> Live.EdgeRequest Addr -> IO (TxIn, TxOut ConwayEra)
-bookStoryRequest env cage request = do
+    :: Env
+    -> LiveState
+    -> RowCage
+    -> Live.EdgeRequest Addr
+    -> Maybe (Live.Booking Addr)
+    -> IO (TxIn, TxOut ConwayEra)
+bookStoryRequest env state cage request booking = do
     let key = TE.encodeUtf8 (T.pack (Live.requestKey request))
         edge = fromIntegral (fromEnum (Live.requestEdge request))
         cfg = rcCfg cage
     tid <- cageTid cage
     refs <- storyReferences env cage key edge
+    (owner, signer, deposit) <- case booking of
+        Nothing -> pure (genesisAddr, genesisSignKey, cgDeposit)
+        Just (Live.Booking owner deposit) -> case lookup owner (liveSigners state) of
+            Just signer -> pure (owner, signer, deposit)
+            Nothing ->
+                failWith
+                    "setup: a booked request names an owner the row gave no key for"
     bookEdge
         env
         cfg
         tid
-        genesisAddr
-        genesisSignKey
+        owner
+        signer
         key
         edge
         (storyDestination request)
         refs
-        (defaultTipCoin cfg + cgDeposit)
+        (defaultTipCoin cfg + deposit)
+
+{- | Name the owner a booking names as a wallet of the registry, while booking:
+its identity is allocated and its outputs are read as the registry's.
+-}
+noteOwner :: LiveState -> String -> Addr -> IO ()
+noteOwner state registry owner = do
+    _ <-
+        allocateIdentity
+            (liveWallets (liveIds state))
+            (WalletIdentity (serialiseAddr owner))
+    modifyIORef'
+        (liveRegistryWallets state)
+        ( Map.alter
+            ( \known ->
+                Just
+                    ( case known of
+                        Just wallets | owner `elem` wallets -> wallets
+                        Just wallets -> owner : wallets
+                        Nothing -> [owner]
+                    )
+            )
+            registry
+        )
 
 -- | The destination the edge books and the approval decision reads.
 storyDestination :: Live.EdgeRequest Addr -> (ByteString, ByteString)
@@ -613,7 +587,7 @@ submitEdge env state cage exit alteration placement request = do
         Map.lookup pendingKey <$> readIORef (livePendingRequests state)
     booking <- case (exit, retained) of
         (_, Just named) -> pure (Right named)
-        _ -> try @ErrorCall (bookStoryRequest env cage request)
+        _ -> try @ErrorCall (bookStoryRequest env state cage request Nothing)
     case booking of
         Left failure -> case stripPrefix
             ( "conformance: bookEdge refused (edge "
@@ -922,16 +896,22 @@ submitEdge env state cage exit alteration placement request = do
     -- consume none.
     custodyOf refs = if exit == Live.Fold then listToMaybe refs else Nothing
 
-{- | One batch instruction: book every request, take them all by one exit in one
-transaction — folded, each on its own edge, or rejected in the window the
-placement names — submit it, and ask the model the matching batch question
-through the transport. The requests are spent, and asked, in the transaction's
-input order, which is the order the registry folds them in. Each folded request
-claims what an honest folder claims for it, the delta of its own edge, which the
-model reads off its own table rather than off the transaction built. The
-record says what the chain did, what the model answered and whether their
-outcomes agree; comparing the batch's observations is left to the row that
-submits it.
+{- | One batch instruction: book every request — or take the one a refused batch
+left pending under the same registry, key, edge and wallet — take them all by
+one exit in one transaction — folded, each on its own edge, or rejected in the
+window the placement names — submit it, and ask the model the matching batch
+question through the transport. A request whose booking names an owner and a
+deposit is booked by that owner holding that deposit; any other is booked by
+the runner's own wallet with the default deposit. The requests are spent, and
+asked, in the transaction's input order, which is the order the registry folds
+them in. Each folded request claims what an honest folder claims for it, the
+delta of its own edge, which the model reads off its own table rather than off
+the transaction built. A refund tamper changes the refunds a reject batch pays
+before its units are declared, so the tampered transaction is the one
+evaluated. The record says what the chain did, what the model answered and
+whether their outcomes agree; comparing the batch's observations is left to the
+row that submits it. An accepted batch is measured, as an accepted step is, and
+an accepted reject batch must leave the registry's root as it was.
 -}
 submitBatch
     :: Env
@@ -939,21 +919,37 @@ submitBatch
     -> RowCage
     -> Live.Exit
     -> Maybe Live.Placement
-    -> Maybe Live.BatchTamper
-    -> [Live.EdgeRequest Addr]
+    -> Maybe (Either Live.BatchTamper Live.RefundTamper)
+    -> [(Live.EdgeRequest Addr, Maybe (Live.Booking Addr))]
     -> IO Value
 submitBatch env state cage exit placement alteration requests = do
     let cfg = rcCfg cage
         ids = liveIds state
     (tid, before) <- enterRegistry env state cage
     let registry = show tid
-    mapM_ (noteRequest state cage registry) requests
-    booked <-
-        sortOn (fst . snd)
-            <$> mapM
-                (\request -> (,) request <$> bookStoryRequest env cage request)
-                requests
-    modelRequests <- forM booked $ \(request, (reqIn, reqOut)) -> do
+        pendingKeyOf request =
+            ( registry
+            , Live.requestKey request
+            , fromEnum (Live.requestEdge request)
+            , serialiseAddr (Live.requestWallet request)
+            )
+    mapM_ (noteRequest state cage registry . fst) requests
+    -- The owner a booking names is a wallet of this registry, named while
+    -- booking.
+    mapM_
+        (noteOwner state registry . Live.bookingOwner)
+        [booking | (_, Just booking) <- requests]
+    named <- forM requests $ \(request, booking) -> do
+        retained <-
+            Map.lookup (pendingKeyOf request)
+                <$> readIORef (livePendingRequests state)
+        utxo <-
+            maybe (bookStoryRequest env state cage request booking) pure retained
+        pure (request, maybe genesisAddr Live.bookingOwner booking, utxo)
+    let sorted = sortOn (\(_, _, (reqIn, _)) -> reqIn) named
+        booked = [(request, utxo) | (request, _, utxo) <- sorted]
+        owners = [owner | (_, owner, _) <- sorted]
+    modelRequests <- forM (zip booked owners) $ \((request, (reqIn, reqOut)), owner) -> do
         let Coin bond = reqOut ^. coinTxOutL
             deposit = bond - stateMaxFee before
         require
@@ -964,7 +960,8 @@ submitBatch env state cage exit placement alteration requests = do
                 (liveReferences ids)
                 (ReferenceIdentity (txInReference reqIn))
         modelRequest <-
-            storyModelRequest
+            storyModelRequestBy
+                owner
                 ids
                 cfg
                 exit
@@ -1038,6 +1035,19 @@ submitBatch env state cage exit placement alteration requests = do
                 , \now -> [now + 8_000, now + 7_500, now + 7_000]
                 )
         Live.Retract -> failWith "setup: a batch takes no retraction"
+    (refunds, besides) <- case alteration of
+        Just (Right refundTamper)
+            | exit /= Live.Reject ->
+                failWith "setup: a refund tamper reached a batch that is not a reject"
+            | otherwise ->
+                either failWith pure $
+                    tamperedRefunds
+                        refundTamper
+                        [ let Coin bond = out ^. coinTxOutL in bond - stateMaxFee before
+                        | (_, (_, out)) <- booked
+                        ]
+                        owners
+        _ -> pure ([], [])
     stateUtxo <- cageStateUtxo env cage
     (pot, funder) <- collateralPotWithChange env
     let spec =
@@ -1047,6 +1057,8 @@ submitBatch env state cage exit placement alteration requests = do
                 , fsHolderUtxos = witnesses
                 , fsFunder = Just funder
                 , fsLower = lower
+                , fsRefunds = refunds
+                , fsExtraOutputs = besides
                 }
         build units = do
             now <- currentPosixMs
@@ -1059,8 +1071,7 @@ submitBatch env state cage exit placement alteration requests = do
         forM_ booked $ \(_, (_, reqOut)) ->
             checkPlacement env (liveRow state) placed reqOut before unsigned
     let tampered = case alteration of
-            Nothing -> unsigned
-            Just Live.MintOnFirstKey -> case booked of
+            Just (Left Live.MintOnFirstKey) -> case booked of
                 (first, _) : _ ->
                     mintOnFirstKey
                         (pinnedPolicies cfg)
@@ -1068,6 +1079,7 @@ submitBatch env state cage exit placement alteration requests = do
                         [TE.encodeUtf8 (T.pack (Live.requestKey r)) | (r, _) <- booked]
                         unsigned
                 [] -> unsigned
+            _ -> unsigned
         signedWitnessed = signTx genesisSignKey tampered
         signed = signedTx signedWitnessed
         -- An honest folder claims, for each request, the delta of its own edge;
@@ -1077,8 +1089,8 @@ submitBatch env state cage exit placement alteration requests = do
         -- tampered batch claims what its transaction mints at each key, read
         -- off the transaction as submitted.
         claimOf request = case alteration of
-            Nothing -> String "canonical"
-            Just _ -> toJSON (claimedAt cfg signed (Live.requestKey request))
+            Just (Left _) -> toJSON (claimedAt cfg signed (Live.requestKey request))
+            _ -> String "canonical"
         asked =
             [ case (exit, modelRequest) of
                 (Live.Fold, Object fields) ->
@@ -1088,18 +1100,42 @@ submitBatch env state cage exit placement alteration requests = do
             | ((request, _), modelRequest) <- zip booked modelRequests
             ]
     result <- submitTxResilient (envSubmit env) signedWitnessed
-    case result of
+    measured <- case result of
         Submitted _ -> do
             confirmTx env signed
+            forM_ booked $ \(request, _) ->
+                modifyIORef'
+                    (livePendingRequests state)
+                    (Map.delete (pendingKeyOf request))
             -- Only a fold moves the trie; a reject leaves it.
-            when (exit == Live.Fold) $
-                forM_ booked $ \(request, _) ->
+            if exit == Live.Fold
+                then forM_ booked $ \(request, _) ->
                     rowCommit
                         env
                         cage
                         (TE.encodeUtf8 (T.pack (Live.requestKey request)))
                         (fromIntegral (fromEnum (Live.requestEdge request)))
-        Rejected _ -> pure ()
+                else do
+                    after <- readRegistryState env cage
+                    require
+                        "an accepted reject batch moved the registry's root"
+                        (stateRoot after == stateRoot before)
+            (mem, cpu) <-
+                either
+                    (failWith . T.unpack)
+                    pure
+                    (aggregatePurposeUnits measurements)
+            let size = txSizeBytes signed
+            modifyIORef' (envLiveMeasurements env) (<> [(mem, cpu, size)])
+            pure (Just (mem, cpu, size))
+        Rejected _ -> do
+            -- A refused batch leaves its requests pending; a later batch naming
+            -- them spends the same ones.
+            forM_ booked $ \(request, utxo) ->
+                modifyIORef'
+                    (livePendingRequests state)
+                    (Map.insert (pendingKeyOf request) utxo)
+            pure Nothing
     batchRecord
         env
         state
@@ -1110,7 +1146,30 @@ submitBatch env state cage exit placement alteration requests = do
         asked
         signed
         result
+        measured
         (measurements, declaredPairs)
+
+{- | The refunds a refund tamper pays, in the transaction's input order, from
+what each request is owed and who owns it, and the outputs it adds beside them:
+the change takes what a shortfall withholds unless the tamper puts it at the
+first owner's key.
+-}
+tamperedRefunds
+    :: Live.RefundTamper
+    -> [Integer]
+    -> [Addr]
+    -> Either String ([Integer], [TxOut ConwayEra])
+tamperedRefunds alteration owed owners = case (alteration, owed, owners) of
+    (Live.CrossedRefunds, first : rest@(_ : _), _) -> Right (rest <> [first], [])
+    (Live.CrossedRefunds, _, _) -> Left "crossed refunds need two requests to cross"
+    (Live.ShortFirstRefund lovelace, first : rest, _) ->
+        Right (first - lovelace : rest, [])
+    (Live.SplitFirstRefund lovelace, first : rest, owner : _) ->
+        Right
+            ( first - lovelace : rest
+            , [mkBasicTxOut owner (MaryValue (Coin 2_000_000) mempty)]
+            )
+    _ -> Left "a tampered refund needs a request to refund"
 
 {- | Ask the model the batch a submitted transaction took, and compare. The
 question is the model's matching batch question from where the registry's
@@ -1127,14 +1186,15 @@ batchRecord
     -> LiveState
     -> RowCage
     -> Live.Exit
-    -> Maybe Live.BatchTamper
+    -> Maybe (Either Live.BatchTamper Live.RefundTamper)
     -> [(TxIn, TxOut ConwayEra)]
     -> [Value]
     -> ConwayTx
     -> SubmitResult
+    -> Maybe (Integer, Integer, Integer)
     -> (PurposeMeasurements, PurposeUnits)
     -> IO Value
-batchRecord env state cage exit alteration booked asked signed result (measured, declared) = do
+batchRecord env state cage exit alteration booked asked signed result units (measured, declared) = do
     let cfg = rcCfg cage
         ids = liveIds state
         txid = T.pack (txIdHex signed)
@@ -1234,7 +1294,9 @@ batchRecord env state cage exit alteration booked asked signed result (measured,
         (chainOutcome, chain) = case chainSide of
             Right () ->
                 ( String "accepted"
-                , object ["outcome" .= String "accepted", "txid" .= txid]
+                , object $
+                    ["outcome" .= String "accepted", "txid" .= txid]
+                        <> ["measured" .= measuredJsonOf m | Just m <- [units]]
                 )
             Left (StepRefused _ hashes rejection) ->
                 ( String "refused"
@@ -1278,7 +1340,7 @@ batchRecord env state cage exit alteration booked asked signed result (measured,
             object $
                 [ "registry" .= registryId
                 , "batch" .= batchName
-                , "tamper" .= fmap Live.batchTamperName alteration
+                , "tamper" .= fmap tamperOf alteration
                 , "requests" .= asked
                 , "model" .= object ["outcome" .= modelOutcome, "reason" .= modelReason]
                 , "chain" .= chain
@@ -1286,12 +1348,16 @@ batchRecord env state cage exit alteration booked asked signed result (measured,
                 , "compared" .= ["outcome" :: T.Text]
                 ]
                     <> ["outputs" .= outputs | Just outputs <- [judged]]
+                    <> [ "shortfall" .= lovelace
+                       | Just (Right changed) <- [alteration]
+                       , Just lovelace <- [Live.refundShortfall changed]
+                       ]
     modifyIORef' (envLiveRecords env) (<> [record])
     emit
         "batch"
         ( T.unpack batchName
             <> " tamper="
-            <> maybe "none" Live.batchTamperName alteration
+            <> maybe "none" tamperOf alteration
             <> " model="
             <> show modelOutcome
             <> " modelReason="
@@ -1316,6 +1382,14 @@ batchRecord env state cage exit alteration booked asked signed result (measured,
                     )
         _ -> pure ()
     pure record
+  where
+    tamperOf = either Live.batchTamperName Live.refundTamperName
+
+{- | The units and size of an accepted transaction, as a record carries them:
+the measurement row reads the worst of them across the folds it names.
+-}
+measuredJsonOf :: (Integer, Integer, Integer) -> Value
+measuredJsonOf (mem, cpu, size) = object ["mem" .= mem, "cpu" .= cpu, "size" .= size]
 
 {- | What a transaction mints at a key under the registry's three pinned token
 policies, by kind, read off the transaction as submitted.
@@ -3254,9 +3328,13 @@ compareStep env state step observation = do
             Just (lean, Agrees) -> Just lean
             _ -> Nothing
         (chainOutcome, chain) = case lsOutcome step of
-            StepAccepted transaction _ ->
+            StepAccepted transaction units ->
                 ( String "accepted"
-                , object ["outcome" .= String "accepted", "txid" .= txIdHex transaction]
+                , object
+                    [ "outcome" .= String "accepted"
+                    , "txid" .= txIdHex transaction
+                    , "measured" .= measuredJsonOf units
+                    ]
                 )
             StepRefused transaction hashes rejection ->
                 ( String "refused"

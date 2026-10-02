@@ -12,10 +12,7 @@ module Conformance.Run.Book
     , keyProof
     , speculativeStep
     , rowCommit
-    , paddedRequest
     , pendingRequests
-    , commitTm
-    , commitTmKey
     , bookEdge
     , edgeDestination
     , edgeDestinationFor
@@ -245,38 +242,6 @@ rowCommit env cage key edge = do
     tid <- cageTid cage
     withTrie (envTm env) tid $ \t -> void (walkEdge t key edge)
 
-{- | Book one absence on a row cage at an explicit bond (#157 A-009).
-
-The bond is the caller's, because CG19 needs two different ones to
-cross. What was a bare payment carrying a request datum is now a booking:
-the edge is certified, the destination names where the deposit comes back,
-and the approval rides the request to the fold.
--}
-paddedRequest
-    :: Env
-    -> RowCage
-    -> Addr
-    -> SignKeyDSIGN Ed25519DSIGN
-    -> ByteString
-    -> ByteString
-    -> Integer
-    -> IO (TxIn, TxOut ConwayEra)
-paddedRequest env cage payerAddr payerSk key _val bond = do
-    let cfg = rcCfg cage
-    tid <- cageTid cage
-    dest <- edgeDestinationFor env payerAddr edgeInsertAbsent
-    bookEdge
-        env
-        cfg
-        tid
-        payerAddr
-        payerSk
-        key
-        edgeInsertAbsent
-        dest
-        []
-        bond
-
 -- | Every pending request UTxO of a row cage, in tx-input order.
 pendingRequests :: Env -> RowCage -> IO [(TxIn, TxOut ConwayEra)]
 pendingRequests env cage = do
@@ -287,17 +252,6 @@ pendingRequests env cage = do
             (envProv env)
             (`Cage.viewUTxOsAt` requestAddrFromCfg cfg tid (network cfg))
     pure (sortOn fst (findRequestUtxos tid reqUtxos))
-
-{- | Commit a landed op to the builder trie. Speculative folds never
-commit ('withSpeculativeTrie' discards), so the caller keeps the
-trie in step or the next fold proves against a stale root.
--}
-commitTm :: Env -> Edge -> IO ()
-commitTm env = commitTmKey env cgKey
-
-commitTmKey :: Env -> ByteString -> Edge -> IO ()
-commitTmKey env cgKey' edge =
-    withTrie (envTm env) (envTid env) $ \t -> void (walkEdge t cgKey' edge)
 
 {- | Book one registry-mode edge (#157 C2, C4, D-DEST): create the request
 and, for a tree edge, mint the approval that certifies it under the

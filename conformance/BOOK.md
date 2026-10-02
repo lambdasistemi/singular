@@ -494,11 +494,33 @@ Source: cardano-keri: registered-key consistency and registry leaves changing on
 
 Existing evidence: offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs: boots state and applies a request update
 
+Run as an edge composition over the registry's operations, in the conformance session:
+
+- Submit **insertAbsent** for **cg01-key** in **insertion**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **cg01-key**.
+
+- Compare **cg01-key** and its observation with the executable registry model.
+
 ### Generic Update (OpUpdate old new) on an existing key folds; the root advances and the new value reads back from chain.
 
 Expected: accept. Planned evidence status: uncovered.
 
 Source: protocol spec registry transitions.
+
+Run as an edge composition over the registry's operations, in the conformance session:
+
+- Submit **insertAbsent** for **cg02-key** in **update**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **cg02-key**.
+
+- Compare **cg02-key** and its observation with the executable registry model.
+
+- Submit **updateActive** for **cg02-key** in **update**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **cg02-key**.
+
+- Compare **cg02-key** and its observation with the executable registry model.
 
 ### Generic Delete (OpDelete old) on an existing key folds; the key returns to absence, proved by a read from chain.
 
@@ -506,17 +528,53 @@ Expected: accept. Planned evidence status: uncovered.
 
 Source: protocol spec; issue #18 Delete preservation.
 
+Run as an edge composition over the registry's operations, in the conformance session:
+
+- Submit **insertAbsent** for **cg03-key** in **deletion**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **cg03-key**.
+
+- Compare **cg03-key** and its observation with the executable registry model.
+
+- Submit **deleteAbsent** for **cg03-key** in **deletion**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **cg03-key**.
+
+- Compare **cg03-key** and its observation with the executable registry model.
+
 ### After deleting a key, re-Insert the same key (reincarnation).
 
 Expected: accept. Planned evidence status: uncovered.
 
 Source: protocol spec: Delete MUST permit a later Insert.
 
+Run as an edge composition over the registry's operations, in the conformance session:
+
+- Submit **insertAbsent** for **cg04-key** in **reinsertion**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **cg04-key**.
+
+- Compare **cg04-key** and its observation with the executable registry model.
+
+- Submit **deleteAbsent** for **cg04-key** in **reinsertion**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **cg04-key**.
+
+- Compare **cg04-key** and its observation with the executable registry model.
+
+- Submit **insertAbsent** for **cg04-key** in **reinsertion**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **cg04-key**.
+
+- Compare **cg04-key** and its observation with the executable registry model.
+
 ### Insert on a key that is already present.
 
 Expected: refuse, attributed to the script that refused. Planned evidence status: uncovered.
 
 Source: protocol spec: the fold MUST NOT accept Insert for an occupied key.
+
+Run as an edge composition over the registry's operations, in the chapter "Insert on a key the registry already holds" above.
 
 ### Retract in phase 2 returns bond+tip, registry untouched.
 
@@ -526,11 +584,21 @@ Source: cardano-keri: retraction timing, unchanged registry state and the return
 
 Existing evidence: offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs: retracts a phase-2 request
 
+Run as an edge composition over the registry's operations, in the conformance session:
+
+- Retract the **insertActive** for **cg06-key** in **retraction in phase 2** as its owner, using the owner wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **cg06-key**.
+
+- Compare **cg06-key** and its observation with the executable registry model.
+
 ### Retract outside phase 2.
 
 Expected: refuse the owner-signed retraction before phase 2 and after phase 2, with model reason not-phase2 and request-script attribution, beside the accepted owner-signed retraction inside phase 2. Planned evidence status: uncovered.
 
 Source: Singular.Statements.retract_admitted_iff and Singular.Statements.retract_refusal_first_failing; cardano-keri retraction timing.
+
+Run as a tamper of an edge's transaction, in the chapter "Retract only inside phase 2" above.
 
 ### Rejected when rejectable.
 
@@ -540,11 +608,27 @@ Source: cardano-keri R9_reject_enabled.
 
 Existing evidence: offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs: rejects a phase-3 request
 
+Run as an edge composition over the registry's operations, in the conformance session:
+
+- Reject the **insertActive** for **cg08-key** in **rejection after the windows** after its owner's retraction window has closed, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **cg08-key**.
+
+- Compare **cg08-key** and its observation with the executable registry model.
+
 ### Rejected when not rejectable.
 
 Expected: refuse. Planned evidence status: uncovered.
 
 Source: cardano-keri R9_reject_needs_rejectable.
+
+Run as a tamper of an edge's transaction, in the conformance session:
+
+- Reject, in one transaction while the request can still be folded with the first request's refund 1 lovelace short, **insertAbsent** for **cg09-key** in **processing-window rejection**, using the owner wallet, booked **cg09-key** by the owner wallet with a deposit of 3000000 lovelace, and ask the executable registry model the same batch.
+
+- Reject, in one transaction while the request can still be folded with the first request's refund 1 lovelace short in its own position and two ada more in another output at the same owner's key, **insertAbsent** for **cg09-key** in **processing-window rejection**, using the owner wallet, booked **cg09-key** by the owner wallet with a deposit of 3000000 lovelace, and ask the executable registry model the same batch.
+
+- Reject, in one transaction while the request can still be folded, **insertAbsent** for **cg09-key** in **processing-window rejection**, using the owner wallet, booked **cg09-key** by the owner wallet with a deposit of 3000000 lovelace, and ask the executable registry model the same batch.
 
 ### Stale fold against a superseded root.
 
@@ -552,11 +636,23 @@ Expected: refuse. Planned evidence status: uncovered.
 
 Source: cardano-keri R7_stale_fold_refused.
 
+Outside the model's vocabulary: a fold whose proof was built against a root the registry has since superseded. The model takes no proof and no authenticated root, so it has no reason to compare with the chain's refusal (lambdasistemi/singular#346). The conformance session runs the refusal and its accepting control on the devnet; the model comparison stays unmet by ruling.
+
 ### Empty fold (Modify []).
 
 Expected: observe and report. Planned evidence status: uncovered.
 
 Source: cardano-keri R8_empty_fold_refused.
+
+Run as an edge composition over the registry's operations, in the conformance session:
+
+- Fold, in one transaction, no request in **empty fold**, and ask the executable registry model the same batch.
+
+- Submit **insertAbsent** for **cg11-key** in **empty fold**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **cg11-key**.
+
+- Compare **cg11-key** and its observation with the executable registry model.
 
 ### Surplus actions beyond the matched request inputs.
 
@@ -564,31 +660,39 @@ Expected: observe and report. Planned evidence status: uncovered.
 
 Source: cardano-keri audit 2026-09-03.
 
+Outside the model's vocabulary: a fold carrying an action beyond its requests, and one missing an action. The model takes requests, not an action list, so it has no reason to compare with the chain's refusals (lambdasistemi/singular#345). The conformance session runs both refusals and an accepting control on the devnet; the model comparison stays unmet by ruling.
+
 ### Owner/hook pinning: a Modify that changes the state owner.
 
 Expected: superseded — observation preserved, conformance claim withdrawn (registry has no owner role; owner-pin transfer asserted authority that does not exist). Planned evidence status: bound elsewhere.
 
 Source: cardano-keri R5_plugin_pinned.
 
+Outside the model's vocabulary: a fold that changes the registry's owner. The registry has no owner role (the ownerless-registry ruling of 2026-09-12, commit f3a68b1b) and the model has none either; the earlier observation is history and the claim is withdrawn.
+
 ### stake_script hook set: a fold carrying the matching withdrawal.
 
-Expected: could-not-execute — superseded imported-partition material. Planned evidence status: uncovered.
+Expected: retired — the registry interface has no stake_script hook, so nothing runs this row. Planned evidence status: uncovered.
 
 Source: imported partition shared.ak, types.ak.
+
+Outside the model's vocabulary: a fold carrying a withdrawal under a stake_script hook. The registry interface has no stake_script hook (registry mode, no hook) and the model has no withdrawal; the row is retired and nothing runs it.
 
 ### stake_script hook set, withdrawal absent.
 
-Expected: could-not-execute — superseded imported-partition material. Planned evidence status: uncovered.
+Expected: retired — the registry interface has no stake_script hook, so nothing runs this row. Planned evidence status: uncovered.
 
 Source: imported partition shared.ak, types.ak.
 
+Outside the model's vocabulary: the same fold with its withdrawal absent. The registry interface has no stake_script hook (registry mode, no hook) and the model has no withdrawal; the row is retired and nothing runs it.
+
 ### Sweep of a non-legitimate UTxO, owner-signed.
 
-Expected: superseded — observation preserved, conformance claim withdrawn (registry has no owner role; owner-signed sweep asserted authority that does not exist). Planned evidence status: bound elsewhere.
+Expected: superseded — observation preserved, conformance claim withdrawn (registry has no owner role; owner-signed sweep asserted authority that does not exist). Planned evidence status: uncovered.
 
 Source: cage custody.
 
-Existing evidence: offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs: sweeps malformed request-address UTxOs
+Outside the model's vocabulary: an owner-signed sweep of an output that is not a request. The registry has no owner role and no sweep: its scripts refuse a sweep for every party (the ownerless-registry ruling of 2026-09-12, commit f3a68b1b), and the model has no sweep. The earlier observation is history and the claim is withdrawn; no run sweeps a registry.
 
 ### Sweep by a non-owner.
 
@@ -596,19 +700,31 @@ Expected: SUPERSEDED by operator ruling (registry has no owner role): observatio
 
 Source: cage custody.
 
+Outside the model's vocabulary: a sweep by someone other than the owner. The registry has no owner role and no sweep (the ownerless-registry ruling of 2026-09-12, commit f3a68b1b), and the model has no sweep; the earlier observation is history and the claim is withdrawn.
+
 ### End burns the state token and closes the cage.
 
-Expected: accept. Planned evidence status: bound elsewhere.
+Expected: superseded — claim withdrawn (the registry has no termination: End is refused for every party). Planned evidence status: uncovered.
 
 Source: cage custody.
 
-Existing evidence: offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs: ends a cage by burning the state token
+Outside the model's vocabulary: ending the registry by burning its state token. The registry has no termination: its state script refuses End for every party (the ownerless-registry ruling of 2026-09-12, commit f3a68b1b), and the model has no termination exit. The claim that End is accepted is withdrawn; no run ends a registry.
 
 ### Refund routing follows the request: processed value routes to the request's destination minus the folder's tip; refunds go to the refund address recorded in custody; a crossed allocation is refused by the state script (interface, registry mode: no hook). Rejected produces refund owners at the recorded floor.
 
-Expected: observe and report — refused, with the consumer-model conflict unresolved (crossed allocation enforced by the state script); rejected-action refund-floor control separate. Planned evidence status: uncovered.
+Expected: observe and report — refused, with the consumer-model conflict unresolved (crossed allocation enforced by the state script); the rejected-action refund-floor control runs in the same program. Planned evidence status: uncovered.
 
 Source: cardano-keri R11_contribute_value, R11_retract_value; interface gist 2fb03c2e (registry mode).
+
+Run as a tamper of an edge's transaction, in the conformance session:
+
+- Reject, in one transaction after its owner's retraction window has closed with each owner refunded, in its refund's position, what the next request's owner is owed, **insertAbsent** for **cg19-key-a**, **insertAbsent** for **cg19-key-b** in **refund routing**, using the first owner wallet, the second owner wallet, booked **cg19-key-a** by the first owner wallet with a deposit of 4000000 lovelace, **cg19-key-b** by the second owner wallet with a deposit of 2000000 lovelace, and ask the executable registry model the same batch.
+
+- Reject, in one transaction after its owner's retraction window has closed, **insertAbsent** for **cg19-key-a**, **insertAbsent** for **cg19-key-b** in **refund routing**, using the first owner wallet, the second owner wallet, booked **cg19-key-a** by the first owner wallet with a deposit of 4000000 lovelace, **cg19-key-b** by the second owner wallet with a deposit of 2000000 lovelace, and ask the executable registry model the same batch.
+
+- Reject, in one transaction after its owner's retraction window has closed with the first request's refund 1000 lovelace short, **insertAbsent** for **cg19-rej-a**, **insertAbsent** for **cg19-rej-b** in **refund routing**, using the first owner wallet, the second owner wallet, booked **cg19-rej-a** by the first owner wallet with a deposit of 4000000 lovelace, **cg19-rej-b** by the second owner wallet with a deposit of 2000000 lovelace, and ask the executable registry model the same batch.
+
+- Reject, in one transaction after its owner's retraction window has closed, **insertAbsent** for **cg19-rej-a**, **insertAbsent** for **cg19-rej-b** in **refund routing**, using the first owner wallet, the second owner wallet, booked **cg19-rej-a** by the first owner wallet with a deposit of 4000000 lovelace, **cg19-rej-b** by the second owner wallet with a deposit of 2000000 lovelace, and ask the executable registry model the same batch.
 
 ### Every ToData/FromData instance in Singular.Registry.Types round-trips, and its constructor index and field order match the compiled blueprint's declared schema, not merely itself.
 
@@ -718,11 +834,15 @@ Expected: superseded — observation preserved, conformance claim withdrawn (reg
 
 Source: Singular.Statements.fold_iff sufficiency direction (Lean); observation history: FAILED against the pre-#79 candidate (owner gate), ACCEPTED against the repaired candidate by execution.
 
+Outside the model's vocabulary: a fold whose owner's required signer is removed. The registry has no owner role, so there is no owner signer to remove; that no fold requires a signer is compared on every fold the programs run, through the transaction's required signers.
+
 ### One `insertActive` request folds on the open registry and places exactly one `(activePolicy, key)` token in the output at the address and inline datum the request named. A second `insertActive` at the same known key is refused `key-exists`. A two-request batch at two DISTINCT keys whose claimed mint agrees per kind but disagrees per `(kind, key)` is refused `net-mint-mismatch`.
 
 Expected: accept the fold; refuse the same-key duplicate `key-exists`; refuse the two-key wrong-distribution batch `net-mint-mismatch`; both refusals carry an accepting control. Planned evidence status: uncovered.
 
 Source: Singular.Statements.insert_active_transaction_row and Singular.Statements.fold_batch_claimed_mint_by_kind_key (Lean 854f56f); issue #173; open application, distinct refusal fixtures and the published trace limit.
+
+Run as a tamper of an edge's transaction, in the chapter "Register a key and receive its active token" above.
 
 ### On a real devnet, `insertActive` then `updateTerminal` at one key: the active witness the insert delivered is the exact input the retirement burns, exactly one `(activePolicy, key)` is destroyed, no output carries it afterwards, and the committed trie leaf becomes Terminal. `updateTerminal` on an Unknown key and on an Absent key are refused with their own named reasons, each against an accepting control.
 
@@ -730,17 +850,23 @@ Expected: accept the insert and the retirement; the active quantity goes 1 -> 0 
 
 Source: Singular.Statements.update_terminal_transaction_row and Singular.Statements.update_terminal_inversion (Lean 871c5df); issue #177; connected retirement and distinct refusal controls.
 
+Run as a tamper of an edge's transaction, in the chapter "Retire a registration and burn its active token" above.
+
 ### On a real devnet, a request that is never folded leaves the queue by a reject or a retract. A reject must refund its owner the deposit; a retract by its owner must return everything the request held, through an output whose inline datum is the retracted request's own output reference. Each refund or return one lovelace short or to another key, a return bound to another request, and a retract spending the registry state beside it are refused by the chain and by the model, each beside the untampered exit of the same request, which both accept. The live consumer for the rule that only a retract returns the tip is the reject that keeps the tip beside the retract that returns it; fold consumers are in the fold rows. The guarantee that retract obligations depend only on the request remains a named gap: Lean proves this for every request and registry state, while this live run covers one registry state and no executable consumer varies it.
 
 Expected: refuse a reject refunding the owner one lovelace short and to another key, `deposit-returned`, beside the accepted untampered reject; refuse a retraction returning one lovelace short, to another key and bound to another output reference, `deposit-returned`, and one spending the registry state beside it, `retract-state-spent`, beside the accepted untampered retraction. Planned evidence status: uncovered.
 
 Source: Singular.Statements.exit_settles_on_lovelace_received and Singular.Statements.no_exit_strands_the_deposit; issue #258; Singular.Statements.only_retract_owes_the_tip: consumed by the live reject that keeps the tip and retract that returns it; fold consumers are in the registration (CG21) and retirement (CG22) rows. Singular.Statements.obligations_read_only_the_request: named gap, proved in Lean for every request and registry state, but the live run covers one registry state and no executable consumer varies it.
 
+Run as a tamper of an edge's transaction, in the chapter "A request that is never folded" above.
+
 ### On a real devnet, a folder may reject a pending request before its owner's retraction deadline. A reject while the request can still be folded, and one while its owner can still retract it, are each accepted by the chain and by the model, refund the owner the deposit and leave the registry state as it was. In each window a reject refunding the owner one lovelace short or to another key is refused by the chain and by the model.
 
 Expected: accept a reject while the request can still be folded and one while its owner can still retract it, each refunding the owner the deposit and leaving the registry state as it was; refuse, in each window, a reject refunding the owner one lovelace short and one refunding another key, `deposit-returned`. Planned evidence status: uncovered.
 
 Source: Singular.exitStep and Singular.exitAdmission: a reject carries no admission; Singular.obligations for a reject; Singular.Statements.admitted_exit_is_the_exit and Singular.Statements.built_transaction_settles; issue #320.
+
+Run as a tamper of an edge's transaction, in the chapter "A folder rejects a request before its retraction deadline" above.
 
 ## Appendix: checking the evidence machinery
 

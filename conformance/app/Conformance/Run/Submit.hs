@@ -66,8 +66,9 @@ attributeSubmitRefusal env row verdict marker text rejectedTxid = do
     -- scripts in an order that is not stable, so the matcher asserts
     -- the expected script is AMONG them (the reason text is matched
     -- raw, never a single first hash). The write policy lives in the
-    -- library (A-002): a refusal ROW's receipt IS the row outcome.
-    let script = if row == "CG07" then "request" else "state"
+    -- library (A-002): a refusal ROW's receipt IS the row outcome. Every row
+    -- that attributes here is refused by the state script.
+    let script = "state"
     traced <- tracedRefusal env marker rejectedTxid
     r <-
         attributeRefusalReceipt
@@ -137,7 +138,7 @@ submitExpectRefusedControl env row verdict marker tx = do
 attributeControlRefusal
     :: Env -> String -> Verdict -> String -> String -> String -> IO ()
 attributeControlRefusal env row verdict marker text rejectedTxid = do
-    let script = if row == "CG07" then "request" else "state"
+    let script = "state"
     traced <- tracedRefusal env marker rejectedTxid
     r <-
         attributeRefusalReceipt

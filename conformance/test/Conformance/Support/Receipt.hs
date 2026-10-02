@@ -577,8 +577,8 @@ liveStepChecks = describe "Checking compared requests in live receipts" $ do
     it "accepts a complete compared request" $
         loadLive acceptedLive `shouldReturn` Right 1
     it
-        "Rejects registration evidence submitted under a different requirement"
-        $ loadLive acceptedLive{receiptRow = "CG02"}
+        "Rejects registration evidence submitted under a requirement no program runs"
+        $ loadLive acceptedLive{receiptRow = "CG10"}
             >>= (`shouldSatisfy` isLeft)
     it
         "accepts the occupied-key insertion's compared requests under its own requirement"
@@ -1792,8 +1792,9 @@ batchChecks = describe "Checking a batch the model's batch questions compared" $
         "accepts the empty fold's attribution receipt with its compared batch"
         $ loadRow (emptyFoldWith [refusedBatchRecord]) `shouldReturn` Right 1
     it
-        "rejects an attribution receipt carrying a step that is not a batch"
-        $ loadRow (emptyFoldWith (concat (receiptSteps story)))
+        "rejects compared requests on a row no program runs"
+        $ loadRow
+            ((emptyFoldWith (concat (receiptSteps story))){receiptRow = "CG10"})
             >>= (`shouldSatisfy` isLeft)
     it
         "accepts CG09's unmet receipt carrying its recorded refund-position divergence"
