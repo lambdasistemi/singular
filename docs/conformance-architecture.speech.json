@@ -1,7 +1,7 @@
 {
   "_source": {
     "file": "conformance-architecture.md",
-    "sha256": "5be8691f3f13e4d61ecb86f94dd53d9f7e2fb54063a2c4065eb6a20ececf4ca8"
+    "sha256": "edc99bf7bd7759e3a1ca0762f95e6a7c5d364a66ecbd79a38c6a2c7bc304fb11"
   },
   "the-story-this-serves": [
     {
@@ -15,7 +15,7 @@
   ],
   "what-the-library-owns": [
     {
-      "text": "A table of the library's concerns and their owners. The description language: reusable theorem and clause structure, independent of registry actions. Story programs: programs over the nine exits of the model, seven folds, a reject and a retract, expressed as edge requests, tamperings and comparisons, with one program per edge and one for the keyed mint.",
+      "text": "A table of the library's concerns and their owners. The description language: reusable theorem and clause structure, independent of registry actions. Story programs: programs over the nine exits of the model, seven folds, a reject and a retract, expressed as edge requests, tamperings and comparisons, with one program per edge and one for the keyed mint. Programs outside the model: the registry-identity requirements as programs of an authentication vocabulary, and the serialization requirements as programs of a wire round-trip vocabulary, each with why the model cannot express it; every model-facing requirement is classified once as an edge composition, a tamper of an edge's transaction, or outside the model.",
       "pause": 400
     },
     {
@@ -37,7 +37,7 @@
       "pause": 500
     },
     {
-      "text": "The library never imports the app: the arrow runs one way, from the live runner into the library. The app modules — the command router, the row runners, the wallet, cage and submission owners, and the live interpreter that gives the story programs their live effects — are executables, outside the generated reference and documented here only by their boundary. The runner's own internal division is deferred work owned by the conformance epic, not delivered by the review this page came from.",
+      "text": "The library never imports the app: the arrow runs one way, from the live runner into the library. The app modules — the command router, the remaining row runners, the wallet, cage and submission owners, the live interpreter that gives the story programs their live effects, and the two interpreters that execute the authentication and wire round-trip programs — are executables, outside the generated reference and documented here only by their boundary. The runner's own internal division is deferred work owned by the conformance epic, not delivered by the review this page came from.",
       "pause": 400
     },
     {

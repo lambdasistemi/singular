@@ -1,7 +1,7 @@
 {
   "_source": {
     "file": "conformance-api-reference.md",
-    "sha256": "0e98328eca3247616a944ca2243c39b7dfdf0815c4f9f47d6d1052441a1c2881"
+    "sha256": "ae5a7f561ca4753772217d012bc496f470f8fc4c6a26917685400923a7452bb3"
   },
   "what-this-reference-contains": [
     {
@@ -13,11 +13,11 @@
       "pause": 400
     },
     {
-      "text": "The module extent is the public library of the Conformance Cabal file: every exposed module and the one package-internal owner. That complete extent is thirty-one modules.",
+      "text": "The module extent is the public library of the Conformance Cabal file: every exposed module and the one package-internal owner. That complete extent is thirty-four modules.",
       "pause": 300
     },
     {
-      "text": "The thirty exposed modules are what a caller imports: the story programs, the registry rows as programs with their classification, the stories' binding and identity, the ordinary CLI's refusal controls and their receipt-computed verdicts, the model transport and the Lean oracle, the registration and perturbation comparisons, the receipt record and its validation, the refusal attribution, the row inventory, the purpose-unit arithmetic, the node-refusal rendering, the payment observation, the traced replay's classification of a live refusal and the extent of a run's refusals against the model. A list of thirty-one module names follows, each with its source link.",
+      "text": "The thirty-three exposed modules are what a caller imports: the story programs, the registry rows as programs with their classification, the authentication and wire-format requirements as programs of their own vocabularies, every model-facing requirement's classification, the stories' binding and identity, the ordinary CLI's refusal controls and their receipt-computed verdicts, the model transport and the Lean oracle, the registration and perturbation comparisons, the receipt record and its validation, the refusal attribution, the row inventory, the purpose-unit arithmetic, the node-refusal rendering, the payment observation, the traced replay's classification of a live refusal and the extent of a run's refusals against the model. A list of thirty-one module names follows, each with its source link.",
       "pause": 500
     },
     {

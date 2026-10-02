@@ -26,9 +26,10 @@ themselves at the revision you are viewing.
 
 The module extent is the public library of the Conformance Cabal file —
 every exposed module and the one package-internal owner. That complete
-extent is 31 modules. The 30 exposed modules are what a caller imports:
+extent is 34 modules. The 33 exposed modules are what a caller imports:
 the story programs, the registry rows as programs with their
-classification, the stories' binding and identity, the ordinary CLI's
+classification, the authentication and wire-format requirements as programs
+of their own vocabularies, every model-facing requirement's classification, the stories' binding and identity, the ordinary CLI's
 refusal controls and their receipt-computed verdicts, the model transport
 and the Lean oracle, the registration and perturbation comparisons, the
 receipt record and its validation, the refusal attribution, the row
@@ -44,7 +45,9 @@ changes. The extent below is the complete documented module surface, and
 the site check fails until it and this list agree.
 
 - <a href="../conformance/lib/Conformance/Authenticate.hs" data-api="module">Conformance.Authenticate</a> — <a href="../conformance/lib/Conformance/Authenticate.hs" data-api="source">source</a>
+- <a href="../conformance/lib/Conformance/Authentication/Programs.hs" data-api="module">Conformance.Authentication.Programs</a> — <a href="../conformance/lib/Conformance/Authentication/Programs.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Book.hs" data-api="module">Conformance.Book</a> — <a href="../conformance/lib/Conformance/Book.hs" data-api="source">source</a>
+- <a href="../conformance/lib/Conformance/Classification.hs" data-api="module">Conformance.Classification</a> — <a href="../conformance/lib/Conformance/Classification.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Cli/Controls.hs" data-api="module">Conformance.Cli.Controls</a> — <a href="../conformance/lib/Conformance/Cli/Controls.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Compare/Perturbation.hs" data-api="module">Conformance.Compare.Perturbation</a> — <a href="../conformance/lib/Conformance/Compare/Perturbation.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Compare/Registration.hs" data-api="module">Conformance.Compare.Registration</a> — <a href="../conformance/lib/Conformance/Compare/Registration.hs" data-api="source">source</a>
@@ -75,6 +78,7 @@ the site check fails until it and this list agree.
 - <a href="../conformance/lib/Conformance/Story/Identity.hs" data-api="module">Conformance.Story.Identity</a> — <a href="../conformance/lib/Conformance/Story/Identity.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Story/Live.hs" data-api="module">Conformance.Story.Live</a> — <a href="../conformance/lib/Conformance/Story/Live.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Story/Specification.hs" data-api="module">Conformance.Story.Specification</a> — <a href="../conformance/lib/Conformance/Story/Specification.hs" data-api="source">source</a>
+- <a href="../conformance/lib/Conformance/Wire/Programs.hs" data-api="module">Conformance.Wire.Programs</a> — <a href="../conformance/lib/Conformance/Wire/Programs.hs" data-api="source">source</a>
 
 ## How the reference stays honest
 

@@ -123,7 +123,7 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "edd649c5c9817e9b1f3a63dc36b813c4f00c34b2415bbb312fdb7af43368899f"
+    "sha256": "4704ce48c4d6e0722388fd1b8b7eeda6ff4f269f3d668b4016d5083a6874796e"
   },
   "historical-execution-reports": [
     {
@@ -165,11 +165,11 @@
   ],
   "current-replay-commands": [
     {
-      "text": "Build the current blueprint and use a fresh receipt directory outside the tracked tree for each session. Run ten generic rows, five canonical identity rows, then five serialization devnet rows and two local checks. Superseded rows remain in the inventory but are not runtime commands.",
+      "text": "Build the current blueprint and use a fresh receipt directory outside the tracked tree for each session. Run ten generic rows, five canonical identity rows, then four serialization devnet rows and two local checks, and finally the two constructor-coverage rows on their own. Superseded rows remain in the inventory but are not runtime commands.",
       "pause": 400
     },
     {
-      "text": "The generic session must end with exactly the two held rows and the three unmet rows, the identity session must succeed, and the serialization session must show its two partial rows, with the wrong constructor unmet by ruling. A nonzero exit alone proves nothing: inspect exact identities, source binding, verdicts, residuals and controls. An armed control must reach its intended assertion; an ordinary partial exit is not a control failure.",
+      "text": "The generic session must end with exactly the two held rows and the three unmet rows, the identity session must succeed, and the serialization session must end with the wrong constructor unmet by ruling and nothing else owed. The constructor-coverage run shows the update redeemer row partial and stops when the ledger refuses the request and mint row's rejection for size, tracked in issue 385. A nonzero exit alone proves nothing: inspect exact identities, source binding, verdicts, residuals and controls. An armed control must reach its intended assertion; an ordinary partial exit is not a control failure, and a control that arms no requested row is refused before anything runs.",
       "pause": 400
     }
   ],

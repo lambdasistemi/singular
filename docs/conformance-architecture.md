@@ -33,6 +33,7 @@ in.
 | --- | --- | --- |
 | The description language | <a href="../conformance/lib/Conformance/Story/Specification.hs" data-api="module">Conformance.Story.Specification</a> | reusable theorem and clause structure, independent of registry actions |
 | Story programs | <a href="../conformance/lib/Conformance/Story/Live.hs" data-api="module">Conformance.Story.Live</a>, the edge programs <a href="../conformance/lib/Conformance/Edge/Register.hs" data-api="module">Conformance.Edge.Register</a>, <a href="../conformance/lib/Conformance/Edge/Retire.hs" data-api="module">Conformance.Edge.Retire</a>, <a href="../conformance/lib/Conformance/Edge/RetractionWindow.hs" data-api="module">Conformance.Edge.RetractionWindow</a>, <a href="../conformance/lib/Conformance/Edge/Sequence.hs" data-api="module">Conformance.Edge.Sequence</a>, <a href="../conformance/lib/Conformance/Edge/Exit.hs" data-api="module">Conformance.Edge.Exit</a>, <a href="../conformance/lib/Conformance/Edge/EarlyReject.hs" data-api="module">Conformance.Edge.EarlyReject</a>, and <a href="../conformance/lib/Conformance/Fold/KeyedMint.hs" data-api="module">Conformance.Fold.KeyedMint</a> | programs over the nine exits of the model — seven folds, a reject and a retract — expressed as edge requests, tamperings and comparisons |
+| Programs outside the model | <a href="../conformance/lib/Conformance/Authentication/Programs.hs" data-api="module">Conformance.Authentication.Programs</a>, <a href="../conformance/lib/Conformance/Wire/Programs.hs" data-api="module">Conformance.Wire.Programs</a>, <a href="../conformance/lib/Conformance/Classification.hs" data-api="module">Conformance.Classification</a> | the registry-identity requirements as programs of an authentication vocabulary and the serialization requirements as programs of a wire round-trip vocabulary, each with why the model cannot express it; every model-facing requirement classified once as an edge composition, a tamper of an edge's transaction, or outside the model |
 | Theorem bindings | <a href="../conformance/lib/Conformance/Story/Binding.hs" data-api="module">Conformance.Story.Binding</a> | revision-bound Lean identities and statement anchors |
 | Run-scoped identities | <a href="../conformance/lib/Conformance/Story/Identity.hs" data-api="module">Conformance.Story.Identity</a> | identity allocation during actions; observation only looks up |
 | Model transport | <a href="../conformance/lib/Conformance/Lean/Oracle.hs" data-api="module">Conformance.Lean.Oracle</a>, <a href="../conformance/lib/Conformance/Lean/Registration.hs" data-api="module">Conformance.Lean.Registration</a>, <a href="../conformance/lib/Conformance/Lean/Retirement.hs" data-api="module">Conformance.Lean.Retirement</a> | the JSON transport for the model's expected observations and verdicts, and the chapter bindings that name them |
@@ -59,10 +60,12 @@ flowchart TD
 ```
 
 The library never imports the app: the arrow runs one way, from the
-live runner into the library. The app modules — the command router and
-the row runners, the wallet, cage and submission owners, and
+live runner into the library. The app modules — the command router, the
+remaining row runners, the wallet, cage and submission owners,
 [`Conformance.Run.Live`](https://github.com/lambdasistemi/singular/blob/main/conformance/app/Conformance/Run/Live.hs),
-the interpreter that gives the story programs their live effects — are
+the interpreter that gives the story programs their live effects, and the
+two interpreters that execute the authentication and wire round-trip
+programs (`Conformance.Run.Authentication`, `Conformance.Run.Wire`) — are
 executables, outside the generated reference and documented here only by
 their boundary. The runner's own internal division is deferred work
 owned by the conformance epic, not delivered by the review this page

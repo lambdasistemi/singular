@@ -656,8 +656,8 @@ never trims identities — under the same run-enforced 16KB bound.
 Run from the repository or extracted source root with Nix available.
 Use a fresh directory outside the tracked tree for each family. The
 generic session runs ten rows and may also emit its execution-units-and-transaction-size measurement
-receipt; the serialization session runs five devnet rows and two local
-checks. Superseded rows remain listed and are not runtime commands.
+receipt; the serialization session runs four devnet rows and two local
+checks, and the two constructor-coverage rows run on their own. Superseded rows remain listed and are not runtime commands.
 
 ```sh
 nix run ./conformance#conformance -- list
@@ -673,8 +673,11 @@ REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run update-
 # Expected exit 0 after all five identity rows and their controls.
 REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run canonical-seed-identity rival-seed-authentication policy-address-only-authentication-control applied-validator-identity tokenless-output-authentication --receipts-dir "$receipts/identity"
 
-# Expected exit 1: update-redeemer-constructor-witnesses and request-and-mint-constructor-witnesses are partial; wrong-redeemer-constructor-index is unmet by ruling (#347); the other four agree.
-REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run blueprint-encoding-round-trip submitted-datum-byte-round-trip update-redeemer-constructor-witnesses wrong-redeemer-constructor-index request-and-mint-constructor-witnesses script-parameter-application state-fields-chain-round-trip --receipts-dir "$receipts/serialization"
+# Expected exit 1: wrong-redeemer-constructor-index is unmet by ruling (#347); the other five agree.
+REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run blueprint-encoding-round-trip submitted-datum-byte-round-trip wrong-redeemer-constructor-index script-parameter-application proof-step-constructor-witnesses state-fields-chain-round-trip --receipts-dir "$receipts/serialization"
+
+# Expected exit 1: update-redeemer-constructor-witnesses is partial (End and Sweep unexercised); request-and-mint-constructor-witnesses stops when the ledger refuses its rejection for size, 20189 bytes against 16384, and writes no receipt (#385).
+REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run update-redeemer-constructor-witnesses request-and-mint-constructor-witnesses --receipts-dir "$receipts/constructor-coverage"
 
 nix run ./conformance#conformance -- list --receipts "$receipts/generic"
 nix run ./conformance#conformance -- list --receipts "$receipts/identity"
@@ -693,7 +696,9 @@ exit must name the intended failed assertion: the wrong refusal reason,
 forged value or datum, weak authenticator, corrupted state derivation
 (legacy flag `unapplied-address`), wrong constructor index, wrong
 parameter count or deliberately missing witness. The normal partial
-exit alone does not prove an armed control fired. See
+exit alone does not prove an armed control fired. A control that arms none
+of the requested rows is refused before anything runs, rather than passing
+vacuously. See
 `conformance.yml` for the executable session and receipt checks.
 
 The Fork oracle and its probes remain available without a node or
