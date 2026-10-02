@@ -1,0 +1,30 @@
+{
+  "stories-and-observable-outcomes": [
+    {
+      "text": "The persistent socket backend becomes the default. Each acquired view sends one composed request for its addresses and assets. Incomplete answers are refused by name, with empty answers accepted only when completeness is established. Ledger operations stay on the node; a spent input is a named ledger refusal. The old in-process address backend is removed. CI must run the connected registry journey through the persistent daemon.",
+      "pause": 450
+    }
+  ],
+  "read-and-trust-boundaries": [
+    {
+      "text": "The diagram shows the command reading addresses and assets from the daemon, then using an acquired node view for parameters, time and evaluation, and the node for submission. The sources may describe different moments. The index reports outputs; it does not prove registry membership or Terminal status. A spent-input rejection protects that spend, without promising that every mixed read is detected.",
+      "pause": 450
+    }
+  ],
+  "model-binding-and-preservation": [
+    {
+      "text": "The exact model revision is bound in the page. Existing Singular steps and transactions remain authoritative for authorization, token identity, datum bytes, roots, custody, refunds and witnesses. The socket is a representation change, governed by the issue for its read protocol and completeness requirements. Any change to a model-observable outcome is held for a user ruling.",
+      "pause": 450
+    }
+  ],
+  "acceptance-evidence-and-limits": [
+    {
+      "text": "Every issue acceptance line is still open. Full repository CI and the socket-backed development journey must pass on the exact implementation head, with controlled-fault red evidence for atomicity. Product claims belong in the public suite language and state is computed from receipts. This intake establishes source findings and a plan only. Public networks remain read-only.",
+      "pause": 450
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "5ccbf015c7849dc28f7c14185b1ba15031848f8b8ee70c81035db8a238f0ff97"
+  }
+}

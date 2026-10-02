@@ -1,0 +1,36 @@
+{
+  "architecture-and-ownership": [
+    {
+      "text": "The diagram separates CLI composition, the socket adapter, persistent daemon, provider, node session, builders, submission and receipts. The daemon owns snapshots; the node owns ledger operations. Each view gathers its complete lookup set into one composed request. Exact wire fields wait for the upstream release.",
+      "pause": 450
+    }
+  ],
+  "commands-and-their-acquired-views": [
+    {
+      "text": "The source map covers five registry commands plus help. Create previews read the wallet; create submissions alternate builds and confirmed readbacks for state and references. Entry previews use one preparation view. Insert and terminate attach, book, read the request, fold, then read results in later views. Update builds once and reads holdings and root afterward. Inspect reads reconciliation, references, state and holdings in one view. Cross-cutting setup, funding, confirmation and logging views must also be accounted for. These are source phases, not measured query counts.",
+      "pause": 450
+    }
+  ],
+  "slices-and-release-prerequisites": [
+    {
+      "text": "Intake produces the reviewable contract and stops. A head-bound epic acceptance and the composed socket release are needed before freezing implementation. Replacement, deletion and dependency migration must preserve confirmations. Behavioral checks and the connected development journey then demonstrate the contract, with exact-head CI and the authorized auditor trail.",
+      "pause": 450
+    }
+  ],
+  "gate-commands-and-acceptance-mapping": [
+    {
+      "text": "The table maps flags to existing flag checks, components to the packaged build, views and completeness to contract suites, and spent inputs and the journey to the packaged Demo One job. New cases must land with their CI wiring. Full root CI remains required alongside the journey. Source searches classify deletion scope but cannot prove behavior. The new intake directory receives a focused presentation check because the repository-wide check scans selected spec roots.",
+      "pause": 450
+    }
+  ],
+  "intake-handoff-and-verification-limits": [
+    {
+      "text": "The intake has finite page ceilings and does not claim unavailable token or cost measurements. Publish the factual draft pull request and its exact head, then stop for epic-owner acceptance. No implementation or extra worker launch is authorized by a skill recipe.",
+      "pause": 450
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "a195ca02e0b8e59229abdce5bd5db69030d15f1dd8967cc16a5bac38b25a328f"
+  }
+}
