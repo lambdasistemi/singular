@@ -136,6 +136,7 @@ common live-runner
     Conformance.Run.Cage
     Conformance.Run.Wallet
     Conformance.Run.Submit
+    Conformance.Run.Node
     Conformance.Run.Environment
     Conformance.Run.Observe
     Conformance.Run.Manifest
@@ -190,6 +191,7 @@ executable cli-controls
   other-modules:
     Conformance.Cli.Admission
     Conformance.Cli.Backend
+    Conformance.Cli.Node
     Conformance.Cli.Proof
   build-depends:
     , aeson >=2.1 && <2.3
@@ -203,8 +205,6 @@ executable cli-controls
     , cardano-ledger-binary
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-node-clients
-    , cardano-node-clients:devnet
     , cardano-tx-tools:tx-build
     , conformance
     , containers >=0.6 && <0.8
@@ -281,7 +281,6 @@ test-suite conformance-tests
     , bytestring >=0.11 && <0.13
     , cardano-crypto-class
     , cardano-ledger-binary
-    , cardano-node-clients
     , cardano-node-clients:devnet
     , conformance
     , mts:mpf-write

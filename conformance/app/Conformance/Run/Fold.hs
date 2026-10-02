@@ -598,15 +598,6 @@ assembleFoldWithFee env0 fs =
             then pure tx
             else go env (n + 1) needed
 
-{- | The environment with every read served by one held view. A fold is
-one transaction built from one acquired chain state; holding the view
-also spares the acquisitions that would otherwise spend a near-now
-validity window between assembly and submission. The view stays valid
-only inside the scope that acquired it.
--}
-pinnedTo :: Cage.View IO -> Env -> Env
-pinnedTo v env = env{envProv = Cage.Provider (\k -> k v)}
-
 {- | A FoldSpec with this cage's defaults: derive refunds and
 signers, no withdrawal, no state override, deadline validity.
 -}
@@ -727,7 +718,7 @@ rowRequestAndFold env cage label key _val _op = do
     emit "calibration" (label <> ": hand model matches the library fold")
     (mem, cpu) <- measureUnits env unsignedFold
     writeIORef (rcUnits cage) (mem, cpu)
-    signed <- submitWithGenesis (envSubmit env) unsignedFold
+    signed <- submitWithGenesis (envCaps env) unsignedFold
     let size = txSizeBytes signed
     emitMeasure env label mem cpu size
     -- Commit what was FOLDED, which is the absence this row booked: the
@@ -1198,7 +1189,7 @@ requestAndFoldKey env label key op = do
     emit "calibration" (label <> ": hand model matches the library fold")
     (mem, cpu) <- measureUnits env unsignedFold
     writeIORef (envValidUnits env) (mem, cpu)
-    signed <- submitWithGenesis (envSubmit env) unsignedFold
+    signed <- submitWithGenesis (envCaps env) unsignedFold
     let size = txSizeBytes signed
     emitMeasure env label mem cpu size
     pure (signed, mem, cpu, size)

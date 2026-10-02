@@ -96,8 +96,6 @@ import Cardano.Ledger.Credential (Credential (..))
 import MPF.Hashes (MPFHash)
 import MPF.Proof.Insertion (MPFProof (..))
 
-import Cardano.Node.Client.E2E.Setup (addKeyWitness)
-import Cardano.Node.Client.Submitter (SubmitResult (..))
 import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.Registry.Blueprint
@@ -112,6 +110,11 @@ import Singular.Registry.Ledger
     , ExUnits (..)
     , Root (..)
     , TokenId (..)
+    )
+import Singular.Registry.Node
+    ( SubmitResult (..)
+    , signTx
+    , signedTx
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
@@ -322,8 +325,9 @@ runCG05 env marker = do
                 "eval-observation"
                 "unexpected: the poisoned fold evaluated; submitting anyway"
     handTx <- buildRefusedFold env
-    let signed = addKeyWitness genesisSignKey handTx
-    result <- submitTxResilient (envSubmit env) signed
+    let signedWitnessed = signTx genesisSignKey handTx
+        signed = signedTx signedWitnessed
+    result <- submitTxResilient (envSubmit env) signedWitnessed
     case result of
         Rejected reason ->
             attributeSubmitRefusal
@@ -369,7 +373,7 @@ controlFreshCage env = do
                 (defaultRetractTime cfg0)
     unsignedBoot <-
         Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
-    signedBoot <- submitWithGenesis (envSubmit env) unsignedBoot
+    signedBoot <- submitWithGenesis (envCaps env) unsignedBoot
     tid <- extractTokenId cfg signedBoot
     createTrie (envTm env) tid
     -- #157: a valid insert is a booked edge. The control cage is its own
@@ -420,7 +424,7 @@ controlFreshCage env = do
         Cage.withView
             prov
             (\v -> updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx)
-    _ <- submitWithGenesis (envSubmit env) foldTx
+    _ <- submitWithGenesis (envCaps env) foldTx
     mirror <- newMirror
     verifyPresentValue
         cfg
@@ -575,8 +579,9 @@ runCG09 env = do
           \process window; the consumer requires a refusal "
             <> "(R9_reject_needs_rejectable), Singular's Lean admits it"
         )
-    let signed = addKeyWitness genesisSignKey hand
-    result <- submitTxResilient (envSubmit env) signed
+    let signedWitnessed = signTx genesisSignKey hand
+        signed = signedTx signedWitnessed
+    result <- submitTxResilient (envSubmit env) signedWitnessed
     case result of
         Submitted txid -> do
             (mem, cpu) <- measureUnits env hand
@@ -709,7 +714,7 @@ runCG10 env = do
     emit "calibration" "CG10 control: hand model matches the library fold"
     (mem, cpu) <- measureUnits env handFresh
     signed <-
-        submitExpectAccepted env (addKeyWitness genesisSignKey handFresh)
+        submitExpectAccepted env (signTx genesisSignKey handFresh)
     let size = txSizeBytes signed
     emitMeasure env "CG10-control" mem cpu size
     rowCommit env cage "cg10-key-c" edgeInsertAbsent
@@ -802,7 +807,7 @@ runCG11 env = do
     ctrlTx <- assembleFoldWithFee env ctrlSpec
     (memC, cpuC) <- measureUnits env ctrlTx
     signedC <-
-        submitExpectAccepted env (addKeyWitness genesisSignKey ctrlTx)
+        submitExpectAccepted env (signTx genesisSignKey ctrlTx)
     let sizeC = txSizeBytes signedC
     emitMeasure env "CG11-control" memC cpuC sizeC
     rowCommit env cage "cg11-key" edgeInsertAbsent
@@ -950,7 +955,7 @@ runCG12 env = do
     exactTx <- assembleFoldWithFee env exactSpec
     (memD, cpuD) <- measureUnits env exactTx
     signedD <-
-        submitExpectAccepted env (addKeyWitness genesisSignKey exactTx)
+        submitExpectAccepted env (signTx genesisSignKey exactTx)
     let sizeD = txSizeBytes signedD
     emitMeasure env "CG12-exact" memD cpuD sizeD
     rowCommit env cage "cg12-key-d" edgeInsertAbsent
@@ -1008,7 +1013,7 @@ runCG14 env = do
         (Map.toList evalMap)
     (mem, cpu) <- measureUnits env unsigned
     writeIORef (rcUnits cage) (mem, cpu)
-    signed <- submitExpectAccepted env unsigned
+    signed <- submitExpectAccepted env (signTx genesisSignKey unsigned)
     let size = txSizeBytes signed
     emitMeasure env "CG14-hook-fold" mem cpu size
     writeRowReceipt
@@ -1127,7 +1132,7 @@ runCG15 env = do
             prov
             (\v -> updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx)
     (mem, cpu) <- measureUnits env libFold
-    signed <- submitExpectAccepted env libFold
+    signed <- submitExpectAccepted env (signTx genesisSignKey libFold)
     let size = txSizeBytes signed
     emitMeasure env "CG15-control" mem cpu size
     emit
@@ -1245,8 +1250,10 @@ runCG19 env = do
     emit
         "row"
         "CG19: submitting the crossed-refund fold for its candidate-bound observation"
-    let signedCrossed = addKeyWitness genesisSignKey hand
-    crossResult <- submitTxResilient (envSubmit env) signedCrossed
+    let signedCrossedWitnessed = signTx genesisSignKey hand
+        signedCrossed = signedTx signedCrossedWitnessed
+    crossResult <-
+        submitTxResilient (envSubmit env) signedCrossedWitnessed
     case crossResult of
         Submitted txid -> do
             (mem, cpu) <- measureUnits env hand
@@ -1334,7 +1341,7 @@ runCG19 env = do
             acceptTx <- assembleFoldWithFee env acceptSpec
             (memA, cpuA) <- measureUnits env acceptTx
             signedA <-
-                submitExpectAccepted env (addKeyWitness genesisSignKey acceptTx)
+                submitExpectAccepted env (signTx genesisSignKey acceptTx)
             let sizeA = txSizeBytes signedA
             emitMeasure env "CG19-routed" memA cpuA sizeA
             emit
@@ -1463,8 +1470,9 @@ runCG19RejectedFloor env cage tid = do
         assembleFoldWithFee
             env
             (baseSpec state matchedReqs [owed1 - 1000, owed2] pot lowerSlot upperU)
-    let signedUnder = addKeyWitness genesisSignKey underTx
-    underResult <- submitTxResilient (envSubmit env) signedUnder
+    let signedUnderWitnessed = signTx genesisSignKey underTx
+        signedUnder = signedTx signedUnderWitnessed
+    underResult <- submitTxResilient (envSubmit env) signedUnderWitnessed
     underReason <- case underResult of
         Rejected reason -> pure (T.unpack (TE.decodeUtf8Lenient reason))
         Submitted txid ->
@@ -1517,7 +1525,7 @@ runCG19RejectedFloor env cage tid = do
             (baseSpec state2 matchedReqs [owed1, owed2] pot2 lowerSlot upperO)
     (memO, cpuO) <- measureUnits env overTx
     signedO <-
-        submitExpectAccepted env (addKeyWitness genesisSignKey overTx)
+        submitExpectAccepted env (signTx genesisSignKey overTx)
     let sizeO = txSizeBytes signedO
     emitMeasure env "CG19-rejected-floor-funded" memO cpuO sizeO
     -- Root unchanged (Rejected Inserts were never in the trie):
