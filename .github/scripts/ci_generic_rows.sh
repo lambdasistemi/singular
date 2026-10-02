@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The generic conformance rows as a packaged app without a dev shell, run from
+# The registry rows as a packaged app without a dev shell, run from
 # conformance/ by the Conformance workflow. Kept as a file rather than an inline
 # step: actionlint writes an inline script into a pipe before its checker
 # starts reading, which never completes for a script larger than the pipe
@@ -11,11 +11,14 @@ blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blu
 CONFORMANCE_RECEIPTS="$(mktemp -d "$RUNNER_TEMP/conformance-receipts.XXXXXX")"
 export CONFORMANCE_RECEIPTS
 printf 'CONFORMANCE_RECEIPTS=%s\n' "$CONFORMANCE_RECEIPTS" >>"$GITHUB_ENV"
+rows="CG01 CG02 CG03 CG04 CG05 CG06 CG08 CG09 CG10 CG11 CG12 CG19 CG21"
 set +e
-REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05 CG09 CG10 CG11 CG12 CG19 CG21 --receipts-dir "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/generic-rows.log
+# The row list is word-split on purpose: one argument per row.
+# shellcheck disable=SC2086
+REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run $rows --receipts-dir "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/generic-rows.log
 run_rc=${PIPESTATUS[0]}
 set -e
-echo "generic session exit: $run_rc (expected: exactly 1, the handled session-debt exit)"
+echo "registry session exit: $run_rc (expected: exactly 1, the handled session-debt exit)"
 # --- expected-debt assertion over ACTUAL session results
 # --- (A-001, NOTE-002: never success from a bare nonzero or
 # --- an error label; build/setup/crash/unknown must FAIL)
@@ -28,9 +31,9 @@ head_sha="$(git rev-parse HEAD)"
   echo "FAIL: session exit $run_rc is not the known session-debt exit 1 — a build/setup/crash exit is an unexamined failure, not expected debt"
   exit 1
 }
-# 2. complete session evidence: all 10 rows executed...
-grep -q 'complete: 10/10 rows ok' /tmp/generic-rows.log || {
-  echo 'FAIL: the session did not complete all 10 rows (mid-run failure or crash)'
+# 2. complete session evidence: all 13 rows executed...
+grep -q 'complete: 13/13 rows ok' /tmp/generic-rows.log || {
+  echo 'FAIL: the session did not complete all 13 rows (mid-run failure or crash)'
   exit 1
 }
 #    ...and the terminal failure is the held-rows debt report
@@ -38,8 +41,9 @@ grep -q 'ROWS THE RUN CANNOT REPORT AS PASSING' /tmp/generic-rows.log || {
   echo 'FAIL: the terminal failure is not the held-rows debt report'
   exit 1
 }
-# 3. exactly the ten rows plus the session CL01, no extras
-printf '%s\n' CG02 CG03 CG04 CG05 CG09 CG10 CG11 CG12 CG19 CG21 CL01 | sort >/tmp/expected-rows.txt
+# 3. exactly the thirteen rows plus the session CL01, no extras
+# shellcheck disable=SC2086
+printf '%s\n' $rows CL01 | sort >/tmp/expected-rows.txt
 nix run --quiet nixpkgs#jq -- -r '.row' "${CONFORMANCE_RECEIPTS}"/receipt-*.json | sort >/tmp/receipt-rows.txt
 #    Compared with bash builtins, not diff: this step runs a packaged
 #    app without a dev shell, and an absent diff previously reported
@@ -57,13 +61,14 @@ fi
 #    bound to this candidate on a clean tree (dirty:false)
 expect_verdict() {
   case "$1" in
-    CG02 | CG03 | CG04 | CG05 | CG21 | CL01) printf 'agrees-with-model' ;;
+    CG01 | CG02 | CG03 | CG04 | CG05 | CG06 | CG08 | CG21 | CL01) printf 'agrees-with-model' ;;
     CG09 | CG10 | CG12) printf 'unmet-by-ruling' ;;
     CG11 | CG19) printf 'held-q002' ;;
     *) printf 'UNKNOWN-ROW' ;;
   esac
 }
-for row in CG02 CG03 CG04 CG05 CG09 CG10 CG11 CG12 CG19 CG21 CL01; do
+# shellcheck disable=SC2086
+for row in $rows CL01; do
   f="${CONFORMANCE_RECEIPTS}/receipt-$row.json"
   test -f "$f" || {
     echo "FAIL: missing receipt for $row"
@@ -84,9 +89,22 @@ for row in CG02 CG03 CG04 CG05 CG09 CG10 CG11 CG12 CG19 CG21 CL01; do
     exit 1
   }
 done
-# 5. CL01 carries the session's measurement evidence: nonzero
-#    units and size, folds named — refuse missing or divergent
-nix run --quiet nixpkgs#jq -- -e '.mem > 0 and .cpu > 0 and .txSize > 0 and (.transactions | length > 0)' "${CONFORMANCE_RECEIPTS}"/receipt-CL01.json >/dev/null || {
+# 5. CL01 carries the session's measurement evidence: the worst units and
+#    size of the accepting folds of CG02, CG03 and CG04, read off their
+#    receipts' steps, those folds named — refuse missing or divergent
+# jq expands its own --slurpfile variables.
+# shellcheck disable=SC2016
+nix run --quiet nixpkgs#jq -- -e \
+  --slurpfile cg02 "${CONFORMANCE_RECEIPTS}"/receipt-CG02.json \
+  --slurpfile cg03 "${CONFORMANCE_RECEIPTS}"/receipt-CG03.json \
+  --slurpfile cg04 "${CONFORMANCE_RECEIPTS}"/receipt-CG04.json '
+  ([$cg02[0], $cg03[0], $cg04[0]] | map(.steps[] | select(.chain.outcome == "accepted") | .chain)) as $folds
+  | ($folds | length) == 7
+  and .transactions == ($folds | map(.txid))
+  and .mem == ($folds | map(.measured.mem) | max) and .mem > 0
+  and .cpu == ($folds | map(.measured.cpu) | max) and .cpu > 0
+  and .txSize == ($folds | map(.measured.size) | max) and .txSize > 0
+' "${CONFORMANCE_RECEIPTS}"/receipt-CL01.json >/dev/null || {
   echo 'FAIL: CL01 measurement evidence missing or divergent'
   exit 1
 }
@@ -124,9 +142,9 @@ failing="$(sed -n 's/^- Failing .*accepted): //p' /tmp/generic-rows.log)"
 state_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "state.state.spend" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
 # #157 C8/C10: `consumer.ak` is deleted and every rule it re-walked
 # beside the fold is the cage's own, so there is no consumer hook to
-# bind and the cage alone decides. The control below binds the
-# refusal to the state script instead.
-for row in CG11 CG12; do
+# bind and the cage alone decides. The rows the model cannot express,
+# CG10 and CG12, keep their attributed refusal receipts.
+for row in CG10 CG12; do
   f="${CONFORMANCE_RECEIPTS}/receipt-$row.json"
   # jq expands its own --arg variables inside this program.
   # shellcheck disable=SC2016
@@ -142,70 +160,46 @@ for row in CG11 CG12; do
     exit 1
   }
 done
-# CG19 under the registry-mode cage is REFUSED at the state script
-# (A-015): the interface routes a processed request to its own
-# destination minus the tip and a refund to the address custody
-# records, so a crossed allocation -- one request's value routed to
-# another's target, or to a hook the mandate deleted -- is a routing
-# the cage refuses. Same structural refusal evidence as CG11/CG12.
-# jq expands its own --arg variables inside this program.
-# shellcheck disable=SC2016
-nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
-  .outcome == "refused" and .venue == "node-submit"
-  and (.rejected | test("^[0-9a-f]{64}$"))
-  and .refusal.phase == "phase-2"
-  and (.refusal.hashes | index($state) != null)
-  and ((.refusal.branch | type == "string" and length > 0)
-    or (.refusal.limit | type == "string" and length > 0))
-' "${CONFORMANCE_RECEIPTS}"/receipt-CG19.json >/dev/null || {
-  echo 'FAIL: CG19 structural refusal evidence moved'
-  exit 1
-}
-grep -q '^control: CG11 control: nonempty fold accepted (tx=[0-9a-f]\{64\})' /tmp/generic-rows.log || {
-  echo 'FAIL: CG11 accepting control txid missing'
+grep -q '^control: CG10 control: the same request folded against the live root is accepted' /tmp/generic-rows.log || {
+  echo 'FAIL: CG10 accepting control missing'
   exit 1
 }
 grep -q '^control: CG12 control: exact 1:1 fold accepted (tx=[0-9a-f]\{64\})' /tmp/generic-rows.log || {
   echo 'FAIL: CG12 accepting control txid missing'
   exit 1
 }
-# 8. standalone rejected-floor control receipt mandatory:
-#    two nonempty obligations, ordered pair, paid-vs-owed,
-#    phase/hash/limit, both txids, counterpart, identity.
-c="${CONFORMANCE_RECEIPTS}/control-CG19-rejected-floor.json"
-test -f "$c" || {
-  echo 'FAIL: missing CG19-rejected-floor control receipt'
-  exit 1
-}
-# jq expands its own --arg/--slurpfile variables.
-# shellcheck disable=SC2016
-nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" --arg state "$state_hash" --slurpfile row "${CONFORMANCE_RECEIPTS}"/receipt-CG19.json '
-  def txid: type == "string" and test("^[0-9a-f]{64}$");
-  def text: type == "string" and length > 0;
-  .control == "CG19-rejected-floor" and .row == "CG19"
-  and .base == $base and .dirty == false
-  and .blueprint == $row[0].blueprint and .node == $row[0].node
-  and .authority == $state and .actions == ["Rejected", "Rejected"]
-  and (.obligations | length == 2)
-  and (.obligations | all(.[]; (.owner | text) and (.owed | type == "number" and . > 1000)))
-  and (."ordered-requests" | length == 2)
-  and ([."ordered-requests"[] | {owner, owed}] == .obligations)
-  and (."ordered-requests" | all(.[]; (.outref | text) and (.key | text)))
-  and ([."ordered-requests"[].outref] | unique | length == 2)
-  and ([.bounds.lowerSlot, .bounds.upperUnderpaid, .bounds.upperFunded] | all(.[]; text))
-  and (.pairing | text)
-  and .underpaid.outcome == "refused" and .underpaid.phase == "phase-2"
-  and (.underpaid.hashes | index($state) != null)
-  and (.underpaid.limit | text) and (.underpaid.txid | txid)
-  and .underpaid.paid == [(.obligations[0].owed - 1000), .obligations[1].owed]
-  and .funded.outcome == "accepted" and (.funded.txid | txid)
-  and .funded.txid != .underpaid.txid
-  and .funded.paid == [.obligations[].owed]
-  and (.funded | .mem > 0 and .cpu > 0 and .size > 0)
-' "$c" >/dev/null || {
-  echo 'FAIL: CG19-rejected-floor pair evidence moved'
-  exit 1
-}
+# 8. The edge compositions (#232): each row's program, in registries of its
+#    own, every request accepted by the chain and by the model and compared
+#    on all nine observations, its transactions the envelope's.
+#    CG01 inserts; CG02 inserts and updates; CG03 inserts and deletes; CG04
+#    inserts, deletes and inserts again at the same key; CG06 retracts an
+#    insertion inside phase 2; CG08 rejects one after the windows.
+for spec in \
+  'CG01:[["insertAbsent","insertAbsent"]]' \
+  'CG02:[["insertAbsent","insertAbsent"],["updateActive","updateActive"]]' \
+  'CG03:[["insertAbsent","insertAbsent"],["deleteAbsent","deleteAbsent"]]' \
+  'CG04:[["insertAbsent","insertAbsent"],["deleteAbsent","deleteAbsent"],["insertAbsent","insertAbsent"]]' \
+  'CG06:[["insertActive","retract"]]' \
+  'CG08:[["insertActive","reject"]]'; do
+  row="${spec%%:*}"
+  shape="${spec#*:}"
+  # shellcheck disable=SC2016
+  nix run --quiet nixpkgs#jq -- -e --argjson shape "$shape" '
+    def txid: type == "string" and test("^[0-9a-f]{64}$");
+    ([.steps[] | [.edge, .exit]] == $shape)
+    and all(.steps[]; .tamper == null)
+    and ([.steps[].registry] | unique | length) == 1
+    and ([.steps[].request.key] | unique | length) == 1
+    and all(.steps[];
+      .model.outcome == "accepted" and .chain.outcome == "accepted"
+      and (.chain.txid | txid) and .comparison == "agrees"
+      and (.compared | length) == 9 and (.perturbation.refused > 0))
+    and .transactions == [.steps[].chain.txid]
+  ' "${CONFORMANCE_RECEIPTS}/receipt-$row.json" >/dev/null || {
+    echo "FAIL: $row program evidence moved"
+    exit 1
+  }
+done
 # CG05 (#287): the insertion on an occupied key is a compared story.
 # An insertAbsent books the key in the row's registry and an
 # updateActive makes it active, the state the shared session key has
@@ -310,16 +304,43 @@ nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
 #     it and the chain accepts it. By operator ruling 2026-10-01 the
 #     consumer requirement is kept unmet (alignment:
 #     lambdasistemi/cardano-keri#468): the verdict is unmet-by-ruling,
-#     never agreement and never held-q002. Its control, the same
-#     reject one lovelace short, is refused by the state script first.
+#     never agreement and never held-q002. Its program rejects one
+#     request, owned by a wallet that receives no change, three times
+#     while it can still be folded, each asked of the model's reject
+#     batch: first refunding the owner one lovelace short, refused by
+#     the state script and by the model for deposit-returned; then the
+#     known divergence (lambdasistemi/singular#361, operator ruling
+#     2026-10-02 "Record now, fix later"): one lovelace short at the
+#     refund's position and two ada more in another output at the
+#     owner's key, refused by the chain for deposit-returned (the traced
+#     replay's reason) and accepted by the model, which sums the owner's
+#     outputs — a disagreement, never a pass; last the reject itself,
+#     accepted by both.
 # shellcheck disable=SC2016
-nix run --quiet nixpkgs#jq -- -e '
+nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
+  def txid: type == "string" and test("^[0-9a-f]{64}$");
   .row == "CG09" and .outcome == "accepted" and .verdict == "unmet-by-ruling"
   and .venue == "node-submit"
-  and (.transactions | length) == 1
-  and (.transactions[0] | test("^[0-9a-f]{64}$"))
+  and (.steps | length) == 3
+  and all(.steps[]; .batch == "rejectBatch" and (.requests | length) == 1)
+  and ([.steps[].requests[0].request] | unique | length) == 1
+  and .steps[0].requests[0].request.deposit == 3000000
+  and ([.steps[] | [.tamper, .shortfall]]
+    == [["short-first-refund", 1], ["split-first-refund", 1], [null, null]])
+  and (.steps[0] | .model == {"outcome": "refused", "reason": "deposit-returned"}
+    and .chain.outcome == "refused" and (.chain.refusal.hashes | index($state) != null)
+    and .chain.refusal.trace == "deposit-returned" and .comparison == "agrees"
+    and ([.outputs[] | select(.role == "owner") | .lovelace] == [2999999]))
+  and (.steps[1] | .model.outcome == "accepted"
+    and .chain.outcome == "refused"
+    and any(.chain.refusal.replay[]; .reason == "deposit-returned")
+    and .chain.refusal.trace == null
+    and .comparison == "disagrees")
+  and (.steps[2] | .model.outcome == "accepted" and .chain.outcome == "accepted"
+    and (.chain.txid | txid) and .comparison == "agrees")
+  and .transactions == [.steps[2].chain.txid]
 ' "${CONFORMANCE_RECEIPTS}"/receipt-CG09.json >/dev/null || {
-  echo 'FAIL: CG09 unmet acceptance evidence moved'
+  echo 'FAIL: CG09 unmet acceptance, control or divergence evidence moved'
   exit 1
 }
 grep -q '^unmet: CG09 UNMET BY RULING: ' /tmp/generic-rows.log || {
@@ -330,46 +351,87 @@ if grep -q '^held: CG09 ' /tmp/generic-rows.log; then
   echo 'FAIL: CG09 recorded held'
   exit 1
 fi
-grep -q '^control: CG09 control: REFUSED at submit, attributed to state (phase-2, marker 0x[0-9a-f][0-9a-f]*)' /tmp/generic-rows.log || {
-  echo 'FAIL: CG09 refused control not attributed to the state script'
+grep -q '^divergence: CG09 KNOWN DIVERGENCE (lambdasistemi/singular#361): ' /tmp/generic-rows.log || {
+  echo 'FAIL: CG09 divergence not recorded by the run'
   exit 1
 }
-# 11. #287: the empty fold and the crossed refunds are compared with
-#     the model's batch questions: CG11's receipt carries the fold
-#     batch over no request, refused by both for empty-fold, CG19's the
-#     reject batch of its two requests judged on the crossed refunds,
-#     refused by both for deposit-returned, each with the reason the
-#     traced replay admits for the state script.
-for row in CG11 CG19; do
-  case "$row" in
-    CG11) batch=foldBatch requests=0 reason=empty-fold ;;
-    CG19) batch=rejectBatch requests=2 reason=deposit-returned ;;
-  esac
-  # shellcheck disable=SC2016
-  nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" --arg batch "$batch" \
-    --argjson requests "$requests" --arg reason "$reason" '
-    .rejected as $rejected
-    | (.steps | length) == 1
-    and (.steps[0] | .batch == $batch and (.requests | length) == $requests
-      and .model == {"outcome": "refused", "reason": $reason}
-      and .chain.outcome == "refused" and .chain.txid == $rejected
-      and (.chain.refusal.hashes | index($state) != null)
-      and .chain.refusal.trace == $reason
-      and .comparison == "agrees")
-  ' "${CONFORMANCE_RECEIPTS}/receipt-$row.json" >/dev/null || {
-    echo "FAIL: $row batch comparison with the model moved"
-    exit 1
-  }
-done
-# 12. #287: the controls of CG09 and CG19 that refuse a reject paying its
-#     owner short are compared with the model's reject batch too; their
-#     comparisons are in the session's replay index, not in a row receipt.
-#     CG09's control: one entry, deposit-returned, agreeing. CG19: its
-#     crossed refunds and its rejected-floor control, two entries.
-#     The agreement holds for the fixtures' shape only: every output at an
-#     owner's key is its refund. The chain judges refunds by position, the
-#     model by the owner's summed outputs; that conflict is recorded in
-#     specs/287-traced-refusal-reasons/extent.md and escalated.
+# 11. CG11 (#287): the empty fold is compared with the model's fold batch
+#     over no request, refused by both for empty-fold with the reason the
+#     traced replay admits for the state script, beside its accepting
+#     control, an insertion folded on the same registry.
+# shellcheck disable=SC2016
+nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
+  def txid: type == "string" and test("^[0-9a-f]{64}$");
+  (.steps | length) == 2
+  and (.steps[0] | .batch == "foldBatch" and (.requests | length) == 0
+    and .model == {"outcome": "refused", "reason": "empty-fold"}
+    and .chain.outcome == "refused" and (.chain.txid | txid)
+    and (.chain.refusal.hashes | index($state) != null)
+    and .chain.refusal.trace == "empty-fold"
+    and .comparison == "agrees")
+  and (.steps[1] | .edge == "insertAbsent" and .tamper == null
+    and .model.outcome == "accepted" and .chain.outcome == "accepted"
+    and .comparison == "agrees" and (.compared | length) == 9)
+  and ([.steps[].registry] | unique | length) == 1
+  and .transactions == [.steps[1].chain.txid]
+' "${CONFORMANCE_RECEIPTS}"/receipt-CG11.json >/dev/null || {
+  echo 'FAIL: CG11 empty fold or its accepting control moved'
+  exit 1
+}
+# 12. CG19: refund routing under the registry-mode cage (A-015). Two
+#     requests owned by two wallets that receive no change, holding unequal
+#     deposits (4 and 2 ada beside the tip), are rejected together after the
+#     windows, each asked of the model's reject batch judged on the refunds
+#     the transaction pays: each owner refunded what the other is owed,
+#     refused by the state script and by the model for deposit-returned;
+#     the same two requests refunded as owed, accepted by both. Then the
+#     rejected-action refund floor: two more requests of the same owners,
+#     the first refunded a thousand lovelace short, refused by both for
+#     deposit-returned, then the same two refunded as owed, accepted by
+#     both. A crossed allocation is a routing the cage refuses.
+# shellcheck disable=SC2016
+nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
+  def txid: type == "string" and test("^[0-9a-f]{64}$");
+  def owed: [.requests[].request.deposit];
+  def paid: . as $s | [.requests[].request.owner as $o
+    | [$s.outputs[] | select(.role == "owner" and .address == $o) | .lovelace] | add];
+  (.steps | length) == 4
+  and all(.steps[]; .batch == "rejectBatch" and (.requests | length) == 2)
+  and ([.steps[] | [.tamper, .shortfall]]
+    == [["crossed-refunds", null], [null, null], ["short-first-refund", 1000], [null, null]])
+  and all(.steps[]; ([.requests[].request.owner] | unique | length) == 2
+    and (owed | sort) == [2000000, 4000000])
+  and (.steps[0].requests == .steps[1].requests)
+  and (.steps[2].requests == .steps[3].requests)
+  and ([.steps[0].requests[].request.key] != [.steps[2].requests[].request.key])
+  and (.steps[0] | paid == (owed | reverse))
+  and (.steps[2] | paid == [(owed[0] - 1000), owed[1]])
+  and all(.steps[1], .steps[3]; paid == owed)
+  and all(.steps[0], .steps[2];
+    .model == {"outcome": "refused", "reason": "deposit-returned"}
+    and .chain.outcome == "refused" and (.chain.txid | txid)
+    and (.chain.refusal.hashes | index($state) != null)
+    and .chain.refusal.trace == "deposit-returned"
+    and .comparison == "agrees")
+  and all(.steps[1], .steps[3];
+    .model.outcome == "accepted" and .chain.outcome == "accepted"
+    and (.chain.txid | txid) and .comparison == "agrees"
+    and .chain.measured.mem > 0 and .chain.measured.size > 0)
+  and .transactions == [.steps[1].chain.txid, .steps[3].chain.txid]
+' "${CONFORMANCE_RECEIPTS}"/receipt-CG19.json >/dev/null || {
+  echo 'FAIL: CG19 refund routing or refund-floor evidence moved'
+  exit 1
+}
+# 13. #287: the controls of CG09 and CG19 that refuse a reject paying its
+#     owner short are compared with the model's reject batch; their
+#     comparisons are in the session's replay index too. CG09's control:
+#     one entry, deposit-returned, agreeing. CG19: its crossed refunds and
+#     its rejected-floor control, two entries. The agreement holds for the
+#     fixtures' shape only: every output at an owner's key is its refund.
+#     The chain judges refunds by position, the model by the owner's summed
+#     outputs; CG09's divergence records that conflict
+#     (lambdasistemi/singular#361), and its refusal carries no model reason
+#     in the replay index.
 for pair in CG09:1 CG19:2; do
   row="${pair%%:*}"
   want="${pair##*:}"
@@ -384,30 +446,6 @@ for pair in CG09:1 CG19:2; do
     exit 1
   }
 done
-# 13. #287, operator ruling 2026-10-02 "Record now, fix later": CG09's
-#     receipt records the known refund-position divergence
-#     (lambdasistemi/singular#361) — a reject paying its owner one lovelace
-#     short at the refund's position and the remainder in another output at
-#     the owner's key, refused by the chain for deposit-returned (the traced
-#     replay's reason) and accepted by the model. It is a disagreement, never
-#     a pass, and its refusal carries no model reason in the replay index.
-# shellcheck disable=SC2016
-nix run --quiet nixpkgs#jq -- -e '
-  (.steps | length) == 1
-  and (.steps[0] | .batch == "rejectBatch" and (.requests | length) == 1
-    and .model.outcome == "accepted"
-    and .chain.outcome == "refused"
-    and any(.chain.refusal.replay[]; .reason == "deposit-returned")
-    and .chain.refusal.trace == null
-    and .comparison == "disagrees")
-' "${CONFORMANCE_RECEIPTS}"/receipt-CG09.json >/dev/null || {
-  echo 'FAIL: CG09 divergence record moved'
-  exit 1
-}
-grep -q '^divergence: CG09 KNOWN DIVERGENCE (lambdasistemi/singular#361): ' /tmp/generic-rows.log || {
-  echo 'FAIL: CG09 divergence not recorded by the run'
-  exit 1
-}
 # shellcheck disable=SC2016
 got="$(nix run --quiet nixpkgs#jq -- -r '
   [.[] | select(.kind == "refusal" and .row == "CG09" and .modelReason == null
@@ -418,21 +456,21 @@ got="$(nix run --quiet nixpkgs#jq -- -r '
   exit 1
 }
 # 14. #287: every refusal of the session carries the traced replay
-#     of its transaction (test/ci/replay-evidence.sh): the story
-#     rows' and the batches' refused steps meet the model's reason,
-#     and each attribution row names, per failing purpose, the reason
-#     the replay admitted or the cause it admits none.
-for row in CG05 CG11 CG19 CG21; do
+#     of its transaction (test/ci/replay-evidence.sh): the programs'
+#     refused steps and batches meet the model's reason, and each
+#     attribution row names, per failing purpose, the reason the replay
+#     admitted or the cause it admits none.
+for row in CG05 CG09 CG11 CG19 CG21; do
   bash test/ci/replay-evidence.sh steps "${CONFORMANCE_RECEIPTS}/receipt-$row.json" || {
     echo "FAIL: $row refused steps lack the traced replay of their reason"
     exit 1
   }
 done
-for row in CG10 CG11 CG12 CG19; do
+for row in CG10 CG12; do
   bash test/ci/replay-evidence.sh attribution "${CONFORMANCE_RECEIPTS}/receipt-$row.json" || {
     echo "FAIL: $row refusal lacks the traced replay"
     exit 1
   }
 done
-echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and the tampered-payment controls are recorded, with held debt exactly CG11 CG19 and CG09 CG10 CG12 unmet by ruling; CG09 records the known refund-position divergence (#361). The empty fold, the crossed refunds, the two short reject controls and the registration batch are each refused by the chain and by the model for the reason the traced replay admits.'
+echo 'GREEN = expected-debt assertion held: 13 rows executed on a clean candidate-bound tree, each with a program compared step by step with the model except CG10 and CG12, which the model cannot express; held debt exactly CG11 CG19 and CG09 CG10 CG12 unmet by ruling; CG09 records the known refund-position divergence (#361). The empty fold, the crossed refunds, the short reject refunds and the registration batch are each refused by the chain and by the model for the reason the traced replay admits.'
 echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused, R9_reject_needs_rejectable and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'

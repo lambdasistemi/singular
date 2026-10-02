@@ -19,13 +19,9 @@ module Conformance.Mirror
     ( Mirror
     , newMirror
     , mirrorInsert
-    , mirrorDelete
     , readChainState
-    , inclusionProofFrom
     , mirrorExclusionSteps
     , mirrorExclusionVerifies
-    , verifyPresentValue
-    , verifyAbsentKey
     , emit
     , failWith
     , require
@@ -78,12 +74,7 @@ import MPF.Proof.Exclusion
     , mpfExclusionProofSteps
     , verifyMPFExclusionProof
     )
-import MPF.Proof.Insertion
-    ( MPFProof (..)
-    , MPFProofStep (..)
-    , foldMPFProof
-    , mkMPFInclusionProof
-    )
+import MPF.Proof.Insertion (MPFProofStep (..))
 
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (TokenId)
@@ -111,11 +102,6 @@ newMirror = newIORef emptyMPFInMemoryDB
 mirrorInsert :: Mirror -> ByteString -> ByteString -> IO ()
 mirrorInsert ref k v = do
     _ <- CageTrie.insert (mkPureTrieFromRef ref) k v
-    pure ()
-
-mirrorDelete :: Mirror -> ByteString -> IO ()
-mirrorDelete ref k = do
-    _ <- CageTrie.delete (mkPureTrieFromRef ref) k
     pure ()
 
 {- | Whether mts itself verifies an absence proof for @key@ against the
@@ -177,182 +163,6 @@ readChainState cfg prov tid = do
                 failWith
                     "verify: state UTxO datum is not a StateDatum"
 
-{- | Verify the key is provably present with the expected value: fold
-the inclusion proof built from the mirror and compare the root it
-implies against the root read back from the chain. Then the
-executing negative control: the same proof bound to a forged value
-must imply a different root, or the row cannot discriminate and the
-run fails.
--}
-verifyPresentValue
-    :: CageConfig
-    -> Cage.Provider IO
-    -> Mirror
-    -> TokenId
-    -> ByteString
-    -- ^ Key under test
-    -> ByteString
-    -- ^ Value the chain must hold
-    -> ByteString
-    -- ^ Forged value the control binds
-    -> IO ()
-verifyPresentValue cfg prov mirrorRef tid key val forged = do
-    mirrorInsert mirrorRef key val
-    chainRoot <- stateRoot <$> readChainState cfg prov tid
-    db <- readIORef mirrorRef
-    base <- case inclusionProofFrom db key of
-        Just p -> pure p
-        Nothing ->
-            failWith $
-                "proved-present failed: key "
-                    <> textOf key
-                    <> " has no inclusion proof; chain root 0x"
-                    <> hex (unOnChainRoot chainRoot)
-    let claimed = base{mpfProofValueHash = mkMPFHash val}
-        implied = foldMPFProof mpfHashing claimed
-    require
-        ( "proved-present failed: key "
-            <> textOf key
-            <> " value "
-            <> textOf val
-            <> ": proof implies root 0x"
-            <> hex (renderMPFHash implied)
-            <> " but the chain read root 0x"
-            <> hex (unOnChainRoot chainRoot)
-        )
-        (renderMPFHash implied == unOnChainRoot chainRoot)
-    emit
-        "verify-present"
-        ( "proved present key="
-            <> textOf key
-            <> " value="
-            <> textOf val
-            <> " root=0x"
-            <> hex (unOnChainRoot chainRoot)
-        )
-    let falseClaim = base{mpfProofValueHash = mkMPFHash forged}
-        falseRoot = foldMPFProof mpfHashing falseClaim
-    require
-        ( "false-claim accepted: key "
-            <> textOf key
-            <> " claimed value "
-            <> textOf forged
-            <> " reproduced the chain read root 0x"
-            <> hex (unOnChainRoot chainRoot)
-            <> " — the negative case is not negative"
-        )
-        (renderMPFHash falseRoot /= unOnChainRoot chainRoot)
-    emit
-        "verify-false-claim"
-        ( "rejected false claim key="
-            <> textOf key
-            <> " claimed value="
-            <> textOf forged
-            <> ": proof implies root 0x"
-            <> hex (renderMPFHash falseRoot)
-            <> " which differs from the chain read root 0x"
-            <> hex (unOnChainRoot chainRoot)
-        )
-
-{- | Verify the key is provably absent: fold the exclusion proof and
-check it against the chain-read root. Then the executing negative
-control: the pre-delete inclusion proof bound to the deleted value
-must imply a different root than the chain now reads, or the
-absence check cannot discriminate. With @spoil@ (the false-claim
-armed control) the check runs against the pre-delete root instead
-and must fail the run.
--}
-verifyAbsentKey
-    :: CageConfig
-    -> Cage.Provider IO
-    -> Mirror
-    -> TokenId
-    -> ByteString
-    -- ^ Key under test
-    -> ByteString
-    -- ^ Deleted value the control binds
-    -> MPFProof MPFHash
-    -- ^ Pre-delete inclusion proof the control binds it into
-    -> OnChainRoot
-    -- ^ Pre-delete chain root the spoil mode checks against
-    -> Bool
-    -- ^ Spoil (false-claim armed control)
-    -> IO ()
-verifyAbsentKey
-    cfg
-    prov
-    mirrorRef
-    tid
-    key
-    oldVal
-    preProof
-    preRoot
-    spoil = do
-        mirrorDelete mirrorRef key
-        chainRoot <- stateRoot <$> readChainState cfg prov tid
-        db <- readIORef mirrorRef
-        proof <- case exclusionProofFrom db key of
-            Just p -> pure p
-            Nothing ->
-                failWith $
-                    "proved-absent failed: key "
-                        <> textOf key
-                        <> " has no exclusion proof — the state holds it"
-                        <> "; chain root 0x"
-                        <> hex (unOnChainRoot chainRoot)
-        if spoil
-            then do
-                trustedSpoiled <- trustedRootFromChain preRoot
-                require
-                    "false-claim armed: CG absence check against the \
-                    \pre-delete root did not fail the run"
-                    ( verifyMPFExclusionProof
-                        mpfHashing
-                        trustedSpoiled
-                        proof
-                    )
-            else do
-                trusted <- trustedRootFromChain chainRoot
-                require
-                    ( "proved-absent failed: key "
-                        <> textOf key
-                        <> ": exclusion proof does not verify against the \
-                           \chain read root 0x"
-                        <> hex (unOnChainRoot chainRoot)
-                    )
-                    (verifyMPFExclusionProof mpfHashing trusted proof)
-                emit
-                    "verify-absent"
-                    ( "proved absent key="
-                        <> textOf key
-                        <> " root=0x"
-                        <> hex (unOnChainRoot chainRoot)
-                    )
-                let falseClaim =
-                        preProof{mpfProofValueHash = mkMPFHash oldVal}
-                    falseRoot = foldMPFProof mpfHashing falseClaim
-                require
-                    ( "false-claim accepted: key "
-                        <> textOf key
-                        <> " claimed value "
-                        <> textOf oldVal
-                        <> " reproduced the chain read root 0x"
-                        <> hex (unOnChainRoot chainRoot)
-                        <> " — the negative case is not negative"
-                    )
-                    (renderMPFHash falseRoot /= unOnChainRoot chainRoot)
-                emit
-                    "verify-false-claim"
-                    ( "rejected false claim key="
-                        <> textOf key
-                        <> " claimed value="
-                        <> textOf oldVal
-                        <> ": proof implies root 0x"
-                        <> hex (renderMPFHash falseRoot)
-                        <> " which differs from the chain read root 0x"
-                        <> hex (unOnChainRoot chainRoot)
-                    )
-
 -- ---------------------------------------------------------
 -- Mirror internals (the journey pattern)
 -- ---------------------------------------------------------
@@ -390,22 +200,6 @@ exclusionProofFrom db k =
         runMPFPure db $
             runMPFPureTransaction mpfCodecs $
                 mkMPFExclusionProof
-                    []
-                    fromHexKVIdentity
-                    mpfHashing
-                    MPFStandaloneMPFCol
-                    (mpfKeyPath k)
-
-{- | Build the inclusion proof for a raw key against a snapshot of
-the mirror database.
--}
-inclusionProofFrom
-    :: MPFInMemoryDB -> ByteString -> Maybe (MPFProof MPFHash)
-inclusionProofFrom db k =
-    fst $
-        runMPFPure db $
-            runMPFPureTransaction mpfCodecs $
-                mkMPFInclusionProof
                     []
                     fromHexKVIdentity
                     mpfHashing

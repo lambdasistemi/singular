@@ -1,7 +1,7 @@
 {
   "_source": {
     "file": "conformance-api-reference.md",
-    "sha256": "6859edc420218c7f5842b672e6aebae2e06ea01b20273fa39f2131921a4301c9"
+    "sha256": "3fbd0810298aef2555b43f547b40bf150c408326bac121eb35679304a27d826f"
   },
   "what-this-reference-contains": [
     {
@@ -13,11 +13,11 @@
       "pause": 400
     },
     {
-      "text": "The module extent is the public library of the Conformance Cabal file: every exposed module and the one package-internal owner. That complete extent is thirty modules.",
+      "text": "The module extent is the public library of the Conformance Cabal file: every exposed module and the one package-internal owner. That complete extent is thirty-one modules.",
       "pause": 300
     },
     {
-      "text": "The twenty-nine exposed modules are what a caller imports: the story programs and their binding and identity, the ordinary CLI's refusal controls and their receipt-computed verdicts, the model transport and the Lean oracle, the registration and perturbation comparisons, the receipt record and its validation, the refusal attribution, the row inventory, the purpose-unit arithmetic, the node-refusal rendering, the payment observation, the traced replay's classification of a live refusal and the extent of a run's refusals against the model. A list of thirty module names follows, each with its source link.",
+      "text": "The thirty exposed modules are what a caller imports: the story programs, the registry rows as programs with their classification, the stories' binding and identity, the ordinary CLI's refusal controls and their receipt-computed verdicts, the model transport and the Lean oracle, the registration and perturbation comparisons, the receipt record and its validation, the refusal attribution, the row inventory, the purpose-unit arithmetic, the node-refusal rendering, the payment observation, the traced replay's classification of a live refusal and the extent of a run's refusals against the model. A list of thirty-one module names follows, each with its source link.",
       "pause": 500
     },
     {
