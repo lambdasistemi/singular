@@ -1,5 +1,61 @@
 # Changelog
 
+## [0.10.0](https://github.com/lambdasistemi/singular/compare/v0.9.0...v0.10.0) (2026-10-02)
+
+
+### Features
+
+* --key reads text on every command, --key-hex reads hex ([#360](https://github.com/lambdasistemi/singular/issues/360)) ([9fec93e](https://github.com/lambdasistemi/singular/commit/9fec93e636209ea44165e4cc783353abc580ae52))
+* build the open-datum envelope from its sources ([#360](https://github.com/lambdasistemi/singular/issues/360)) ([5ad7e4b](https://github.com/lambdasistemi/singular/commit/5ad7e4b995b6c6280158e68df617109005cd6cf9))
+* **cli:** book and fold as separate commands ([04c86cd](https://github.com/lambdasistemi/singular/commit/04c86cd8ad68ca6ac24d79f7f68e7d41b924fbb9))
+* **cli:** book and fold as separate commands ([c51b521](https://github.com/lambdasistemi/singular/commit/c51b521d4a5426b6ba64452e465eb5c6217e7c94))
+* **cli:** opt-in phase log and timestamped journal ([#363](https://github.com/lambdasistemi/singular/issues/363)) ([dabf88a](https://github.com/lambdasistemi/singular/commit/dabf88a5e4aaaedebdf95ba87a1b7fb0d8b49733))
+* **cli:** opt-in phase log and timestamped journal ([#363](https://github.com/lambdasistemi/singular/issues/363)) ([0121c05](https://github.com/lambdasistemi/singular/commit/0121c05dcd17739551e101f6ecab1906608c11fb))
+* **cli:** registry reject clears expired requests ([b264efa](https://github.com/lambdasistemi/singular/commit/b264efae3f8eca60e7b8b9178e9ffa9523b6b30a))
+* **cli:** registry reject clears expired requests ([d32ca92](https://github.com/lambdasistemi/singular/commit/d32ca92ee42aa310387f9e7072e10c2d6a9f8add))
+* **conformance:** compare batch refusals through the model's batch questions ([#287](https://github.com/lambdasistemi/singular/issues/287)) ([17fc4b2](https://github.com/lambdasistemi/singular/commit/17fc4b2e7905ccc079622affb94e7c4e5ff50f1e))
+* **conformance:** migrate registry rows onto generic programs ([#232](https://github.com/lambdasistemi/singular/issues/232), [#291](https://github.com/lambdasistemi/singular/issues/291)) ([3b7a06b](https://github.com/lambdasistemi/singular/commit/3b7a06bee8850ad6745f61ff5be7631fb8274909))
+* **conformance:** record the refund-position divergence and keep the rows with no model counterpart unmet ([#287](https://github.com/lambdasistemi/singular/issues/287)) ([9614e47](https://github.com/lambdasistemi/singular/commit/9614e47ffb57be865a60871dbf482c416ac49faf))
+* **conformance:** run every expressible registry row as a program ([#232](https://github.com/lambdasistemi/singular/issues/232)) ([dad931c](https://github.com/lambdasistemi/singular/commit/dad931c373164984e08cb66e5b81580e77124b90))
+* registry insert builds its envelope; --envelope removed ([#360](https://github.com/lambdasistemi/singular/issues/360)) ([c4c0bfe](https://github.com/lambdasistemi/singular/commit/c4c0bfeb64d2e581efdf6e059f634d96e2088659))
+
+
+### Fixes
+
+* bind references and workflow checks to descriptive names ([1d0f379](https://github.com/lambdasistemi/singular/commit/1d0f379dd8b94458cc61c61892b3a31ef3128580))
+* **cli:** find a fold bound's start time inside the node's horizon ([d46fcbc](https://github.com/lambdasistemi/singular/commit/d46fcbc837f7377af2ce1cde35edc58b3e346df5))
+* **cli:** registry fold refuses --key-hex as it refuses --key ([e250536](https://github.com/lambdasistemi/singular/commit/e250536ef71044fbb5fd1d1959948843dd886a4e))
+* **cli:** the journey proves the fold's fast refusal; the built-bound check is proved by its unit witness ([ee25912](https://github.com/lambdasistemi/singular/commit/ee259122665aaf72b4b59fe16361de2f36e20fdd))
+* **conformance:** a committed extent row admits only the refusals its traced reasons name ([#287](https://github.com/lambdasistemi/singular/issues/287)) ([7c91b98](https://github.com/lambdasistemi/singular/commit/7c91b98bf031e83681d093d8b967db812401e0a8))
+* **conformance:** CG09 waits for its accepted reject before the next row ([#287](https://github.com/lambdasistemi/singular/issues/287)) ([b25e485](https://github.com/lambdasistemi/singular/commit/b25e4851107160c032d230d35d540a3f7b043234))
+* **conformance:** CG16 and CG18 cite no removed end-to-end example ([#291](https://github.com/lambdasistemi/singular/issues/291)) ([0453213](https://github.com/lambdasistemi/singular/commit/0453213e0bc6e6ccf101d4ba4981fdbb85949ab5))
+* **conformance:** every reader surface says which ruling keeps a row unmet ([#287](https://github.com/lambdasistemi/singular/issues/287)) ([fd83f76](https://github.com/lambdasistemi/singular/commit/fd83f768433fb57f19790d68b3f624736ce722cb))
+* **conformance:** record the reject-refund conflict the compared fixtures avoid ([#287](https://github.com/lambdasistemi/singular/issues/287)) ([5490c58](https://github.com/lambdasistemi/singular/commit/5490c5864a25446767e9b758150e5f9f5f4a5e45))
+* **conformance:** state each unmet row's reason in the ruling's own words ([#287](https://github.com/lambdasistemi/singular/issues/287)) ([6c4b815](https://github.com/lambdasistemi/singular/commit/6c4b815cca98999bcdb943c1a7647b746a7325c8))
+* **conformance:** the retention control needs only bash, grep and sed ([#287](https://github.com/lambdasistemi/singular/issues/287)) ([4422739](https://github.com/lambdasistemi/singular/commit/4422739604f2cdb1ca5f766dbec9de6c1ff8b22b))
+
+
+### Documentation
+
+* align speech sections with renamed headings ([ef7b688](https://github.com/lambdasistemi/singular/commit/ef7b6882f9a85c6021905351d5db07aad6ca2ec1))
+* clarify test comments and specification references ([1a071c7](https://github.com/lambdasistemi/singular/commit/1a071c76e2f92346db18619ed8d8ab1d35706bda))
+* **conformance:** list the row programs in the API reference ([#232](https://github.com/lambdasistemi/singular/issues/232)) ([df818ae](https://github.com/lambdasistemi/singular/commit/df818ae518aecbaeda2da1b41b31ed85e92d8f7e))
+* **conformance:** re-render the book from the integrated head's receipts ([#287](https://github.com/lambdasistemi/singular/issues/287)) ([45dfd5e](https://github.com/lambdasistemi/singular/commit/45dfd5e80cdc93a9c1307899ba0e343c3562f8cc))
+* **conformance:** re-render the book with each registry row's classification ([#232](https://github.com/lambdasistemi/singular/issues/232)) ([24e4da8](https://github.com/lambdasistemi/singular/commit/24e4da82af8679b84a4ccb3958a8d6a11d72a43c))
+* **conformance:** the API reference lists the traced replay, the extent and the occupied-key story ([#287](https://github.com/lambdasistemi/singular/issues/287)) ([ba56d66](https://github.com/lambdasistemi/singular/commit/ba56d666de4df4559ee21657bf44ea67ff4dc6dc))
+* describe the deadline slot directly ([eb81efc](https://github.com/lambdasistemi/singular/commit/eb81efcc1669047bce7a793bc11f77304be53921))
+* finish named specifications and refresh simulator mirror ([f7a47ef](https://github.com/lambdasistemi/singular/commit/f7a47efbf0b0f06425f4948b56c3249459e0a254))
+* list the envelope builder in the off-chain API reference ([#360](https://github.com/lambdasistemi/singular/issues/360)) ([244fe05](https://github.com/lambdasistemi/singular/commit/244fe05fa7599f31dedcb70a7e8b28ccc6b39625))
+* name requirements and test cases in plain language ([444c077](https://github.com/lambdasistemi/singular/commit/444c0775a88b10d1b58e4426036fc5602ea6a3e9))
+* name the phase-log owner in the node ownership guide ([#363](https://github.com/lambdasistemi/singular/issues/363)) ([723bf47](https://github.com/lambdasistemi/singular/commit/723bf47a3e93d787095f017e3df866bd2c3a5f2e))
+* reconcile site with registry mode, manifests and releases ([56b432c](https://github.com/lambdasistemi/singular/commit/56b432c45f1109c98d9068296c165911c6a35076))
+* reconcile site with registry mode, manifests and releases ([e2cc2fb](https://github.com/lambdasistemi/singular/commit/e2cc2fb0c4b9f9fb9e30064c2135b1912afc6799))
+* regenerate registry book from live stories ([e3e0d51](https://github.com/lambdasistemi/singular/commit/e3e0d51682bc1ae22ade72af0e0deb2544bf201d))
+* regenerate the registry book after integrating reject ([a5f0e15](https://github.com/lambdasistemi/singular/commit/a5f0e15eb29d4c7e85134fa34a52e1eb70827fd7))
+* **specs:** narrow [#287](https://github.com/lambdasistemi/singular/issues/287)'s acceptance to the operator's rulings of 2026-10-02 ([d0f4309](https://github.com/lambdasistemi/singular/commit/d0f430938e016c74c5c9527d0e2d9ae44282882a))
+* **specs:** record [#362](https://github.com/lambdasistemi/singular/issues/362)'s booking, fold, reclaim and reject specification ([840a9a3](https://github.com/lambdasistemi/singular/commit/840a9a3544e4f297383f1ee2fb4d52b8f12ee60a))
+* **specs:** state per slice what [#362](https://github.com/lambdasistemi/singular/issues/362)'s checks run, and that the preprod equality is still to be shown ([7df3dfb](https://github.com/lambdasistemi/singular/commit/7df3dfb3992c27a6a291a76f50aad369721fc0ca))
+
 ## [0.9.0](https://github.com/lambdasistemi/singular/compare/v0.8.0...v0.9.0) (2026-10-02)
 
 
