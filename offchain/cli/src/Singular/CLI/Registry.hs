@@ -40,6 +40,7 @@ module Singular.CLI.Registry
     , pinsOf
     , partsOf
     , hexT
+    , keyFields
     , parseEnterpriseAddress
 
       -- * Files
@@ -74,6 +75,7 @@ import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
 import Data.Word (Word32, Word64)
 import GHC.Generics (Generic)
 import System.Directory (doesFileExist)
@@ -268,6 +270,16 @@ partsOf cfg =
 
 hexT :: ByteString -> Text
 hexT = T.pack . BC.unpack . B16.encode
+
+{- | The receipt fields that name a key: its hex, and its text when the
+bytes are valid UTF-8.
+-}
+keyFields :: ByteString -> [(Text, Aeson.Value)]
+keyFields key =
+    ("key", toJSON (hexT key))
+        : [ ("keyText", toJSON text)
+          | Right text <- [TE.decodeUtf8' key]
+          ]
 
 -- ---------------------------------------------------------
 -- Files

@@ -26,7 +26,8 @@ command refuses before it reads or submits anything.
 | `--preview` | `insert`, `update`, `terminate` | Build and measure what the command would submit — fee, measured units, stated collateral, outlay — from the wallet a public address names, and print it; nothing is signed, submitted or journalled. |
 | `--fund-input TXID#IX` | `insert`, `update`, `terminate` | The wallet output that funds and collateralises the write. `create` and `inspect` refuse it rather than ignore it. |
 | `--max-outlay LOVELACE` | `insert`, `update`, `terminate` | The most the write may put out of your wallet. A booking or update past it is not signed; an insert or terminate whose fold, built after its booking confirms, costs more than the booking left of it stops partial, its request pending and the fold unsigned. `create` and `inspect` refuse it. |
-| `--key HEX` | `insert`, `update`, `terminate`, `inspect` | The registry key the command acts on, as hex bytes. |
+| `--key KEY` | `insert`, `update`, `terminate`, `inspect` | The registry key the command acts on, as text: its UTF-8 bytes, between 1 and 32 of them. A string that looks like hex is still text. Give this or `--key-hex`, not both. |
+| `--key-hex HEX` | `insert`, `update`, `terminate`, `inspect` | The same key spelled as base16 bytes, for a key that is not printable text. The receipts print every key as hex, and as text when its bytes are valid UTF-8. |
 | `--envelope ENVELOPE_JSON` | `insert` | The key's first value: the open-datum envelope, its protected control and its payload. |
 | `--payload DATUM_JSON` | `update` | The key's new payload; the protected control stays as it was. |
 | `--receipt FILE` | all five | Also write the JSON receipt the command prints on standard output to this file. |
@@ -40,7 +41,7 @@ settings are read from the command line only; the one exception is the
 
 ```sh
 singular registry insert --registry ./reg --blueprint plutus.json \
-  --key 6b657941 --envelope alice.json \
+  --key keyA --envelope alice.json \
   --node-socket /run/cardano/node.socket --network-magic 1 \
   --wallet-skey ~/keys/payment.skey
 ```

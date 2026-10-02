@@ -132,7 +132,7 @@ take() {
   [ "$status" -eq 0 ] || fail_control "take $name did not hold (exit $status)"
   grep -m3 "uncovered" "$work/$name.md" >&2 || true
   # The key ends Terminal by the ordinary inspect, and no request is left pending.
-  "$singular" registry inspect --key "$(printf '%s' "$key" | od -An -tx1 | tr -d ' \n')" \
+  "$singular" registry inspect --key "$key" \
     "${common[@]}" "${node[@]}" >"$receipts/inspect-$name.json"
   [ "$(jq -r .leaf "$receipts/inspect-$name.json")" = terminal ] \
     || fail_control "take $name: the key is not Terminal afterwards"
@@ -274,7 +274,7 @@ indexer_stop() { # NAME KEY OUTCOME MODE KOIOS_URL_OR_EMPTY
   [ "$(jq -r .outcome "$last")" = "$outcome" ] || fail_control "$name: the read ended $(jq -r .outcome "$last"), not $outcome"
   [ "$(actions_of "$name" | grep -cE '^(read-indexer blockfrost|craft early-withdrawal|run terminate)' || true)" -eq 0 ] \
     || fail_control "$name: an action ran after the take had to stop"
-  "$singular" registry inspect --key "$(printf '%s' "$key" | od -An -tx1 | tr -d ' \n')" \
+  "$singular" registry inspect --key "$key" \
     "${common[@]}" "${node[@]}" >"$receipts/inspect-$name.json"
   [ "$(jq -r .leaf "$receipts/inspect-$name.json")" = active ] \
     || fail_control "$name: the key is not still Active, so something was written after the stop"
@@ -305,7 +305,7 @@ tampered_stop() { # NAME KEY FACT NEEDLE
   [ "$(jq -r .outcome "$last")" = success ] || fail_control "$name: the tampered read did not end success, so it tests nothing"
   [ "$(actions_of "$name" | grep -cE '^(read-indexer blockfrost|craft early-withdrawal|run terminate)' || true)" -eq 0 ] \
     || fail_control "$name: an action ran after the take had to stop"
-  "$singular" registry inspect --key "$(printf '%s' "$key" | od -An -tx1 | tr -d ' \n')" \
+  "$singular" registry inspect --key "$key" \
     "${common[@]}" "${node[@]}" >"$receipts/inspect-$name.json"
   [ "$(jq -r .leaf "$receipts/inspect-$name.json")" = active ] \
     || fail_control "$name: the key is not still Active, so something was written after the stop"

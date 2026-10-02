@@ -60,26 +60,31 @@ node=(--node-socket "$sock" --network-magic 42)
 "$singular" registry create --seed TXID#IX --registry reg --blueprint "$blueprint" "${node[@]}" --wallet-skey alice.skey
 
 # 2. Insert a key under an envelope naming this registry and Alice as controller.
-"$singular" registry insert --registry reg --blueprint "$blueprint" --key 616c696365 \
+"$singular" registry insert --registry reg --blueprint "$blueprint" --key alice \
   --envelope envelope.json "${node[@]}" --wallet-skey alice.skey
 
 # 3. Read it back: no signing key, nothing submitted.
-"$singular" registry inspect --registry reg --blueprint "$blueprint" --key 616c696365 "${node[@]}"
+"$singular" registry inspect --registry reg --blueprint "$blueprint" --key alice "${node[@]}"
 
 # 4. Replace the payload.
-"$singular" registry update --registry reg --blueprint "$blueprint" --key 616c696365 \
+"$singular" registry update --registry reg --blueprint "$blueprint" --key alice \
   --payload payload.json "${node[@]}" --wallet-skey alice.skey
 
 # 5. Read it back.
-"$singular" registry inspect --registry reg --blueprint "$blueprint" --key 616c696365 "${node[@]}"
+"$singular" registry inspect --registry reg --blueprint "$blueprint" --key alice "${node[@]}"
 
 # 6. Terminate the key: the fold burns its token and releases the deposit.
-"$singular" registry terminate --registry reg --blueprint "$blueprint" --key 616c696365 \
+"$singular" registry terminate --registry reg --blueprint "$blueprint" --key alice \
   "${node[@]}" --wallet-skey alice.skey
 
 # 7. Read it back.
-"$singular" registry inspect --registry reg --blueprint "$blueprint" --key 616c696365 "${node[@]}"
+"$singular" registry inspect --registry reg --blueprint "$blueprint" --key alice "${node[@]}"
 ```
+
+`--key` is the key as text, its UTF-8 bytes; the envelope carries the same
+bytes as hex (`616c696365` is `alice`). `--key-hex 616c696365` names that
+key too, which is how a key that is not printable text is given. A key is
+1 to 32 bytes either way.
 
 The envelope is Plutus data in the detailed JSON schema: constructor 0
 over the control and the payload, the control being constructor 0 over
