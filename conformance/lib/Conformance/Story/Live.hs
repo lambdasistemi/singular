@@ -12,6 +12,8 @@ module Conformance.Story.Live
     , EdgeRequest (..)
     , Tamper (..)
     , tamperName
+    , BatchTamper (..)
+    , batchTamperName
     , Placement (..)
     , placementName
     , placementReading
@@ -26,6 +28,7 @@ module Conformance.Story.Live
     , retract
     , tamperExit
     , foldBatch
+    , tamperFoldBatch
     , rejectBatchWithin
     , observe
     , compareWithModel
@@ -120,6 +123,21 @@ tamperName Unsigned = "unsigned"
 tamperName BeforePhase2 = "before-phase-2"
 tamperName AfterPhase2 = "after-phase-2"
 
+{- | A change to the transaction of a fold batch. 'MintOnFirstKey' mints every
+token the batch delivers at the key of its first request, the deliveries
+carrying it: the same quantity of each kind, at the wrong keys.
+-}
+data BatchTamper = MintOnFirstKey
+    deriving stock (Eq, Show, Enum, Bounded)
+
+batchTamperName :: BatchTamper -> String
+batchTamperName MintOnFirstKey = "mint-on-first-key"
+
+-- | The batch tamper as the book reads it.
+batchTamperReading :: BatchTamper -> String
+batchTamperReading MintOnFirstKey =
+    "every token the transaction mints moved onto the first request's key"
+
 {- | Where a reject is placed: a fact about the submitted transaction, not a
 tamper. The model gives a reject no admission, so its answer does not depend
 on it; the chain is asked in the window the story names.
@@ -177,7 +195,10 @@ data LiveI reg wal step obs cmp result where
     Observe :: step -> LiveI reg wal step obs cmp obs
     Compare :: step -> obs -> LiveI reg wal step obs cmp cmp
     FoldBatch
-        :: reg -> [EdgeRequest wal] -> LiveI reg wal step obs cmp cmp
+        :: Maybe BatchTamper
+        -> reg
+        -> [EdgeRequest wal]
+        -> LiveI reg wal step obs cmp cmp
     RejectBatchWithin
         :: Placement
         -> reg
@@ -226,7 +247,19 @@ as one instruction; its answer is what the model and the chain each said.
 -}
 foldBatch
     :: reg -> [EdgeRequest wal] -> Story reg wal step obs cmp cmp
-foldBatch registry requests = action (FoldBatch registry requests)
+foldBatch registry requests = action (FoldBatch Nothing registry requests)
+
+{- | Fold these requests in one transaction changed by the batch tamper, and ask
+the model the same batch, each request claiming what that transaction mints at
+its key.
+-}
+tamperFoldBatch
+    :: BatchTamper
+    -> reg
+    -> [EdgeRequest wal]
+    -> Story reg wal step obs cmp cmp
+tamperFoldBatch alteration registry requests =
+    action (FoldBatch (Just alteration) registry requests)
 
 {- | A folder rejects these requests in one transaction, in the window the
 placement names, and the model is asked the same batch: its @rejectBatch@
@@ -380,9 +413,14 @@ renderAction instruction rest = case instruction of
                 <> "** and its observation with the executable registry model."
             )
             (rest ("comparison for " <> handle))
-    FoldBatch registry requests ->
+    FoldBatch alteration registry requests ->
         step
-            ( "Fold, in one transaction, "
+            ( "Fold, in one transaction"
+                <> maybe
+                    ""
+                    (\changed -> " with " <> batchTamperReading changed)
+                    alteration
+                <> ", "
                 <> batched requests registry
                 <> ", and ask the executable registry model the same batch."
             )

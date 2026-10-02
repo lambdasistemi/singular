@@ -1,0 +1,60 @@
+{
+  "status": [
+    {
+      "text": "The final delivery joins main 13f2b2e without rewriting the branch, and follows the operator's narrowed acceptance. The traced build, capture and replay, comparison and book slices are done. The last slice compares the batch refusals through the fold and reject batch questions, publishes the stale-root fold, the surplus actions and the wrong constructor as unmet model comparisons with their issues, and puts the early-rejection row under the same replay and extent checks. The ticket owner's frozen gate is the CI on the pushed head. The earlier status follows as history.",
+      "pause": 500
+    }
+  ],
+  "binding": [
+    {
+      "text": "The final delivery is joined with main 13f2b2e and constitution 1.12.0, and its build correspondence is checked against the repaired validators. The original binding follows: issue, branch, base, constitution and unchanged Lean and corpus, with three epic-held gates carried forward.",
+      "pause": 500
+    }
+  ],
+  "constitution-check": [
+    {
+      "text": "Lean's names are the oracle and are never edited. The traced replay is a distinct evidence class, linked to the chain by a deployed replay. Unobserved reasons stay visible, the extent is counted, and harness evidence goes to the appendix.",
+      "pause": 500
+    }
+  ],
+  "strategy": [
+    {
+      "text": "Build a traced blueprint with a correspondence check. Capture each rejection. Replay deployed then traced bytes on the ledger's own arguments and classify. Compare reasons. Publish through the receipt, CI and the book.",
+      "pause": 500
+    }
+  ],
+  "slices-bisect-safe-each-ships-alone": [
+    {
+      "text": "Four slices, each shippable: the traced build, the capture and replay, the comparison with receipt fields, controls and CI, and finally the book. A premise run stops the work if the deployed bytes already carry the trace.",
+      "pause": 500
+    }
+  ],
+  "owned-paths-frozen-for-implementation": [
+    {
+      "text": "Only the conformance flake, its Haskell sources and tests, its generated book and the conformance workflow may change. Everything else, including the off-chain library, on-chain code, Lean, docs and locks, is forbidden. The final delivery also changes the generic rows script main moved out of the workflow, the node-confinement allowlist for the replay module, and this ticket's own planning pages.",
+      "pause": 500
+    }
+  ],
+  "execution-schedule": [
+    {
+      "text": "Every invocation writes a receipt and the tally is the count of receipts, checked before each run. Cheap in-shell builds have a ceiling of one hundred fifty, Nix builds thirty, devnet runs ten, with per-invocation time limits and no invented aggregate clock. Every failure is attributed to implementation, contract, environment or supervision.",
+      "pause": 500
+    }
+  ],
+  "gate-verbatim-ci-commands-synthesized-by-the-ticket-owner-no-gate-author-seat-in-the-approved-team": [
+    {
+      "text": "Ten rows, each a command from the workflows: root CI, the unit suite, format, lint, the deployment identity check, the dedicated and generic row steps with extended assertions, and three new steps for toolchain correspondence, the wrong-reason control and the counted, classified extent, where no label can exempt a compared refusal, with its accepting controls.",
+      "pause": 500
+    }
+  ],
+  "risks": [
+    {
+      "text": "A reject's refund is judged by position on chain and by the owner's summed outputs in the model, so the compared rejects agree for their fixtures' shape only, and the phase-one reject row records the divergence, tracked in issue 361. The ledger seam is unverified at the pin, the exit row's receipt is close to its size margin, and traced code costs more than the declared budget.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "debe25c8b1fd5e7959d9fd0ad2a3aa04b2c710fba409c96fdf4c817e4d24df02"
+  }
+}

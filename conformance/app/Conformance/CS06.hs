@@ -103,6 +103,7 @@ runCS06 blueprintPath receiptsDir base dirty = do
                 , receiptPartial = Nothing
                 , receiptDerivation = Nothing
                 , receiptSteps = Nothing
+                , receiptReplayCorrespondence = Nothing
                 , receiptNode = T.pack nodeVer
                 , receiptBlueprint = T.pack bpId
                 , receiptVenue = "param-check"

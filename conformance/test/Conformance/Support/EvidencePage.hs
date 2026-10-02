@@ -124,7 +124,7 @@ spec = describe "Appendix: computing the published evidence page" $ do
             let notPassing =
                     [ v
                     | v <- [minBound .. maxBound]
-                    , v `notElem` [AgreesWithModel, Partial]
+                    , v `notElem` [AgreesWithModel, Partial, UnmetByRuling]
                     ]
             length notPassing `shouldSatisfy` (> 1)
             forM_ notPassing $ \verdict ->
@@ -145,6 +145,44 @@ spec = describe "Appendix: computing the published evidence page" $ do
                         _ ->
                             expectationFailure
                                 "the fixture's requirement is not in the inventory once"
+
+    it
+        "Shows each unmet row with the ruling that keeps it, and refuses one no ruling states"
+        $ do
+            (rows, receipts) <- fixtures
+            let unmetAs row = case receipts of
+                    r0 : rest ->
+                        r0{receiptRow = row, receiptVerdict = UnmetByRuling}
+                            : filter ((/= row) . receiptRow) rest
+                    [] -> []
+                lineOf row page =
+                    rowLineById row (section "Requirements a run did not pass" page)
+            stale <-
+                renderedPage
+                    <$> rendered rows (snapshotOf "fixture-base" (unmetAs "CG10"))
+            lineOf "CG10" stale
+                `shouldSatisfy` T.isInfixOf
+                    "the chain refuses, Lean has no counterpart to compare with (operator ruling 2026-10-02"
+            lineOf "CG10" stale
+                `shouldSatisfy` T.isInfixOf "lambdasistemi/singular#346"
+            early <-
+                renderedPage
+                    <$> rendered rows (snapshotOf "fixture-base" (unmetAs "CG09"))
+            lineOf "CG09" early
+                `shouldSatisfy` T.isInfixOf
+                    "does not do what the consumer requirement states (operator ruling 2026-10-01"
+            lineOf "CG09" early
+                `shouldSatisfy` T.isInfixOf "lambdasistemi/cardano-keri#468"
+            case receipts of
+                r0 : _ ->
+                    refusal
+                        rows
+                        ( snapshotOf
+                            "fixture-base"
+                            (r0{receiptVerdict = UnmetByRuling} : drop 1 receipts)
+                        )
+                        "no reader surface states"
+                [] -> expectationFailure "the fixture holds no receipt"
 
     it "Shows a partial run as partly demonstrated" $ do
         rows <- committedRows
@@ -377,3 +415,9 @@ everyPositionAt items tamper property
                     [if j == i then tamper x else x | (j, x) <- zip [0 ..] items]
             )
             [0 .. length items - 1]
+
+-- | The table lines of the page naming the requirement with this id.
+rowLineById :: Text -> Text -> Text
+rowLineById rid page =
+    T.unlines
+        [l | l <- T.lines page, T.isPrefixOf ("| " <> rid <> " |") l]

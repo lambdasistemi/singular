@@ -11,6 +11,7 @@ module Conformance.Run.Submit
     , submitExpectAccepted
     , submitExpectRefused
     , submitWithGenesis
+    , tracedRefusal
     , confirmTx
     , millis
     ) where
@@ -48,7 +49,14 @@ import Conformance.Mirror
 import Conformance.Receipt (Verdict (..))
 import Conformance.Refusal
     ( RefusalRole (..)
+    , TracedRefusal (..)
     , attributeRefusalReceipt
+    )
+import Conformance.Replay (admittedFor)
+import Conformance.Run.Replay
+    ( purposesOf
+    , replayEvidenceOf
+    , sessionCorrespondence
     )
 
 attributeSubmitRefusal
@@ -60,6 +68,7 @@ attributeSubmitRefusal env row verdict marker text rejectedTxid = do
     -- raw, never a single first hash). The write policy lives in the
     -- library (A-002): a refusal ROW's receipt IS the row outcome.
     let script = if row == "CG07" then "request" else "state"
+    traced <- tracedRefusal env marker rejectedTxid
     r <-
         attributeRefusalReceipt
             RefusalRow
@@ -74,6 +83,7 @@ attributeSubmitRefusal env row verdict marker text rejectedTxid = do
             (envDirty env)
             (envNode env)
             (envBlueprint env)
+            traced
     case r of
         Right () ->
             emit
@@ -128,6 +138,7 @@ attributeControlRefusal
     :: Env -> String -> Verdict -> String -> String -> String -> IO ()
 attributeControlRefusal env row verdict marker text rejectedTxid = do
     let script = if row == "CG07" then "request" else "state"
+    traced <- tracedRefusal env marker rejectedTxid
     r <-
         attributeRefusalReceipt
             RefusalControl
@@ -142,6 +153,7 @@ attributeControlRefusal env row verdict marker text rejectedTxid = do
             (envDirty env)
             (envNode env)
             (envBlueprint env)
+            traced
     case r of
         Right () ->
             emit
@@ -278,3 +290,16 @@ confirmTx = envConfirm
 -- | A monotonic-clock duration in whole milliseconds, for the run log.
 millis :: Double -> String
 millis seconds = show (round (seconds * 1000) :: Integer) <> " ms"
+
+{- | What the traced replay of a rejection established, read from the session's
+replay index: the reason it admitted for the script a row attributes the
+rejection to, the replay of each failing purpose, and the traced build.
+-}
+tracedRefusal :: Env -> String -> String -> IO TracedRefusal
+tracedRefusal env marker rejectedTxid = do
+    let index = envReplay env
+        txid = T.pack rejectedTxid
+    TracedRefusal . admittedFor (T.pack marker)
+        <$> purposesOf index txid
+        <*> replayEvidenceOf index txid
+        <*> sessionCorrespondence index

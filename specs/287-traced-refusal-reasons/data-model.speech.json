@@ -1,0 +1,48 @@
+{
+  "d1-replaycapsule": [
+    {
+      "text": "A capsule holds the rejected transaction, every output it spends or references, the node's parameters and time translation, and the failing hashes, captured before the next submission and bound by a content hash.",
+      "pause": 500
+    }
+  ],
+  "d2-tracedprovenance-m1-output-read-by-m3": [
+    {
+      "text": "The traced build records its source, compiler, flags and the untraced hashes of the same toolchain, which must equal the deployed blueprint's.",
+      "pause": 500
+    }
+  ],
+  "d3-purposereplay": [
+    {
+      "text": "One failing purpose: the deployed and traced hashes and two runs.",
+      "pause": 500
+    }
+  ],
+  "d4-replayrun": [
+    {
+      "text": "A run records the bytes, the budget and the outcome. The deployed run keeps the declared budget; the traced run gets the protocol maximum.",
+      "pause": 500
+    }
+  ],
+  "d5-replayclass": [
+    {
+      "text": "A reason is admitted only when the deployed bytes fail as a validator and the traced bytes fail with exactly one user trace; otherwise the class names one distinct cause, including phase one, setup failure, timeout and client exception, and it separates a script with no replay route, a replayed script whose parameters do not reproduce the hash, and a script no family explains.",
+      "pause": 500
+    }
+  ],
+  "d6-reasoncomparison": [
+    {
+      "text": "A step agrees only on equal reasons. The index entry is written before the runner acts, so a differing step fails its row and still leaves its evidence, and an unobserved step keeps its row, writes its receipt without a reason and names its cause.",
+      "pause": 500
+    }
+  ],
+  "receipt-replay-object-fr-11-operator-ruling-2026-10-01": [
+    {
+      "text": "Each refusal now carries one optional replay object with both hashes, the observed reason or the named cause, and the capture identity, plus once per receipt the build correspondence it relied on. Older receipts without it still load; an incomplete one is rejected, and the size limit is set from measured receipts.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "f0b2a3f2820a29548085861d4e4a088e501f8d2d637235e963a83c5df917d1eb"
+  }
+}

@@ -14,14 +14,21 @@ submitter.
 Confirmation follows the mode: on the devnet the indexer reports the
 block that carries the transaction, and how long that took is logged;
 against an external node the historical fixed five-second wait stands.
+
+A row session's node also replays every refused submission with traced
+validators before the next one goes out ('withReplayingNode', #287): the
+replay reads the refused transaction's inputs, the protocol parameters and
+the era history over the same node-to-client connection.
 -}
 module Conformance.Run.Node
     ( checkHarnessGenesis
     , withHarnessNode
+    , withReplayingNode
     ) where
 
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (async, cancel)
+import Data.Text (Text)
 import GHC.Clock (getMonotonicTime)
 
 import Cardano.Node.Client.N2C.Connection
@@ -31,6 +38,9 @@ import Cardano.Node.Client.N2C.Connection
     )
 import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
+import Cardano.Node.Client.N2C.Types (LSQChannel)
+import Cardano.Node.Client.Provider qualified as N2C
+import Cardano.Node.Client.Submitter (Submitter)
 import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Node
     ( Capabilities (..)
@@ -50,6 +60,12 @@ import Singular.Registry.Node
 
 import Conformance.Mirror (emit, txIdHex)
 import Conformance.Run.Environment (checkGenesis)
+import Conformance.Run.Replay
+    ( ReplayEnv (..)
+    , ReplayIndex
+    , capturingSubmitter
+    , newReplayEnv
+    )
 import Conformance.Run.Submit (millis)
 
 {- | Before a devnet spawns, its genesis directory must carry the devnet
@@ -62,7 +78,40 @@ checkHarnessGenesis = devnetGenesis >>= mapM_ checkGenesis
 connection is closed when the body returns.
 -}
 withHarnessNode :: (Capabilities -> IO a) -> IO a
-withHarnessNode body = withNodeSocket $ \sock -> do
+withHarnessNode body =
+    openHarnessNode
+        (\_ _ submit -> pure (submit, ()))
+        (\caps () -> body caps)
+
+{- | Open the harness's node as 'withHarnessNode' does, with every refused
+submission captured and replayed before the next one: the blueprint the
+traced build is made from, the receipts directory the replay evidence goes
+beside, and the node's identity. The body also receives the replay index,
+to name the row each rejection belongs to.
+-}
+withReplayingNode
+    :: FilePath
+    -> FilePath
+    -> Text
+    -> (Capabilities -> ReplayIndex -> IO a)
+    -> IO a
+withReplayingNode blueprintPath receiptsDir nodeId =
+    openHarnessNode $ \n2c lsqCh submit -> do
+        replay <- newReplayEnv n2c lsqCh blueprintPath receiptsDir nodeId
+        pure (capturingSubmitter replay submit, reIndex replay)
+
+{- | The node connection, its submitter shaped by the first argument before
+anything submits through it.
+-}
+openHarnessNode
+    :: ( N2C.Provider IO
+         -> LSQChannel
+         -> Submitter IO
+         -> IO (Submitter IO, r)
+       )
+    -> (Capabilities -> r -> IO a)
+    -> IO a
+openHarnessNode wrap body = withNodeSocket $ \sock -> do
     lsqCh <- newLSQChannel 16
     ltxsCh <- newLTxSChannel 16
     nodeThread <-
@@ -72,9 +121,14 @@ withHarnessNode body = withNodeSocket $ \sock -> do
                 sock
                 lsqCh
                 ltxsCh
-    let nodeProv = adaptProvider sessionMagic (mkN2CProvider lsqCh)
+    let n2c = mkN2CProvider lsqCh
+        nodeProv = adaptProvider sessionMagic n2c
     awaitConnection sessionMagic sock nodeThread nodeProv
-    let submit = boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
+    (submit, extra) <-
+        wrap
+            n2c
+            lsqCh
+            (boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh))
     prov <- followedProvider nodeProv submit
     result <-
         body
@@ -83,6 +137,7 @@ withHarnessNode body = withNodeSocket $ \sock -> do
                 , capSubmit = signedSubmitter submit
                 , capConfirm = confirm
                 }
+            extra
     cancel nodeThread
     pure result
 

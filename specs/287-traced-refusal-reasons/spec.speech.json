@@ -1,0 +1,42 @@
+{
+  "stories": [
+    {
+      "text": "Three stories. The reason is observed and compared. The comparison can fail when Lean's reason is deliberately wrong. And a refusal whose reason cannot be observed says why, so the book keeps an honest limit.",
+      "pause": 500
+    }
+  ],
+  "requirements": [
+    {
+      "text": "The run captures each refused transaction with the outputs it spends and the node's parameters. A test-owned build adds traces to the same validator source and toolchain, checked by rebuilding the deployed hashes. The traced script gets the deployed parameters and the very arguments the ledger built. The deployed bytes must reproduce the refusal first. One user trace is the chain-side reason; anything else is recorded as unobserved with its cause. Setup failures, budget exhaustion, timeouts and model-derived reasons earn nothing. A different reason fails the row after its evidence is written; an unobserved reason keeps the row and is published with its cause. A control with a wrong Lean reason must fail, an accepting control must pass and is checked in CI, and CI counts every refused step from the receipts. Every live refusal is classified against Lean itself: compared whenever the runner asked the model, which no label can undo, and published as a missing comparison otherwise. Nothing on chain, in Lean or in the constitution changes.",
+      "pause": 500
+    }
+  ],
+  "success-criteria": [
+    {
+      "text": "Every refused step CI compares with Lean shows a traced reason equal to Lean's, both hashes and a capture identity, and every other refusal shows its reason or cause and its class. The wrong-reason control fails and its restoration passes. The toolchain check and accepting control pass, and the deployed hashes are unchanged.",
+      "pause": 500
+    }
+  ],
+  "clarifications": [
+    {
+      "text": "A runner that only attributes a refusal does not put it outside Lean: it is classified, and a missing comparison is published. The operator chose one self-contained receipt, so the receipt grows by one optional object. For the phase-one reject the operator kept Lean and had the validator repaired; that repair has landed, the build correspondence is rebound to it, and the consumer requirement stays unmet by ruling. Texts outside the fence stay unchanged; a documentation follow-up is tracked separately. Open validity intervals stay a named non-goal.",
+      "pause": 500
+    }
+  ],
+  "authority-and-evidence": [
+    {
+      "text": "Issue 287 under epic 209, on base 3f04e50, joined with main 13f2b2e and constitution 1.12.0. Lean's reasons are the oracle. The replay is script execution on captured context, distinct from the chain's own execution, and the book says so.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "88b8af58c1d8433e0c2641eed3dfc6ba3e952f6fae890319c882c4a11a0745f6"
+  },
+  "narrowed-acceptance-operator-rulings-2026-10-02": [
+    {
+      "text": "The final delivery joins the latest main, with the repaired validators and the driver's two batch questions, and the operator narrowed what it must show. Every refusal the model describes is compared on its reason. The empty fold, the crossed refunds with their short-reject control, and the two-key batch whose mint lands on the wrong key are compared through the fold and reject batch questions, and so is the phase-one reject's short control. The stale-root fold, the surplus actions and the wrong constructor have nothing in the model to compare with, so each is published as unmet, with what its traced replay recorded and the issue that would add it. The phase-one reject stays unmet by ruling. The not-observed limit goes only where every refusal has its traced replay, and the failing wrong-reason control stays in CI. The three rows with no model counterpart carry the verdict unmet by ruling and stay in the debt report. The refund-position divergence is recorded on the devnet in the phase-one reject row, never as a pass, and tracked in issue 361.",
+      "pause": 500
+    }
+  ]
+}
