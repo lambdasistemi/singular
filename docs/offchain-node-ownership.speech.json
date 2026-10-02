@@ -13,7 +13,7 @@
       "pause": 300
     },
     {
-      "text": "The table then names each owner's responsibility in one line, from mode parsing through key handling, following, funding, connection, confirmation and the wait bound, then the three chain owners: the node adapter, where one view is one acquired state with its network, era, slot and block hash; the in-memory chain behind the same read interface; and the write capability, which takes signed transactions only.",
+      "text": "The table then names each owner's responsibility in one line, from mode parsing through key handling, following, funding, connection, confirmation and the wait bound, then the chain owners: the node adapter, where one view is one acquired state with its network, era, slot and block hash; the in-memory chain behind the same read interface; the write capability, which takes signed transactions only; and the phase log, the opt-in timestamped log of a command's phases, which also wraps the read interface to write one line for each view and each read.",
       "pause": 300
     },
     {
@@ -97,6 +97,6 @@
   ],
   "_source": {
     "file": "offchain-node-ownership.md",
-    "sha256": "bf7cec41d0a896ef510643d3d1331ef6d58d158fdcad81de108797bbaa1560fd"
+    "sha256": "157b0499b6011ced80c090ecb1f1ba783e660a6d160c6bea4d8c5e2d63a46328"
   }
 }
