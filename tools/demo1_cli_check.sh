@@ -15,10 +15,10 @@
 #    and its fold by another wallet among them, with the archive's own
 #    blueprint, beside its process controls.
 # 3. The run page, DEMO1.md, in that extraction must number exactly the
-#    nine commands, each in its position: create, insert, fold, inspect,
-#    update, inspect, terminate, fold, inspect. Copies of the page without
-#    the fold of the insertion, without update, without the inspection that
-#    follows update and without the termination must each fail that same
+#    twelve commands, each in its position: create, insert, fold, inspect,
+#    update, inspect, terminate, fold, inspect, reject, insert, fold. Copies of the
+#    page without the fold of the insertion, without update, without the inspection that
+#    follows update, without the termination and without the reject must each fail that same
 #    check (its own controls).
 # 4. The retained insert-active and update-terminal archive commands run
 #    from the same extracted archive with their accepting and refusing
@@ -53,17 +53,17 @@ page_steps() {
   # shellcheck disable=SC2016 # the backticks are the page's own Markdown
   sed -n 's/^\([0-9][0-9]*\)\. \*\*`singular registry \([a-z][a-z]*\)`\*\*.*/\1:\2/p' "$1" | tr '\n' ' '
 }
-# The page documents exactly the nine commands of the journey, in position.
+# The page documents exactly the twelve commands of the journey, in position.
 page_ok() {
-  [ "$(page_steps "$1")" = "1:create 2:insert 3:fold 4:inspect 5:update 6:inspect 7:terminate 8:fold 9:inspect " ]
+  [ "$(page_steps "$1")" = "1:create 2:insert 3:fold 4:inspect 5:update 6:inspect 7:terminate 8:fold 9:inspect 10:reject 11:insert 12:fold " ]
 }
 # without STEP: the page with its numbered step STEP removed.
 # shellcheck disable=SC2016 # the backticks are the page's own Markdown
 without() { grep -v "^$2"'\. \*\*`singular registry ' "$1"; }
 test -f "$extracted/DEMO1.md" || fail "the archive carries no DEMO1.md run page"
 page_ok "$extracted/DEMO1.md" \
-  || fail "DEMO1.md's numbered steps are not the nine commands in position: $(page_steps "$extracted/DEMO1.md")"
-for control in "7 terminate" "3 fold-of-the-insertion" "5 update" "6 inspect-after-update"; do
+  || fail "DEMO1.md's numbered steps are not the twelve commands in position: $(page_steps "$extracted/DEMO1.md")"
+for control in "7 terminate" "3 fold-of-the-insertion" "5 update" "6 inspect-after-update" "10 reject"; do
   step="${control%% *}" what="${control#* }"
   without "$extracted/DEMO1.md" "$step" >"$scratch/DEMO1-without-$what.md"
   if page_ok "$scratch/DEMO1-without-$what.md"; then

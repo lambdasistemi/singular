@@ -19,12 +19,12 @@
   ],
   "verification": [
     {
-      "text": "Continuous integration on each exact head runs the unit suite, the Demo 1 journey from the release archive, the controls, the flags check and the full lint and documentation checks.",
+      "text": "Each slice's pull request runs its own evidence: the fold first, then reject, reclaim and the cross-wallet recovery control, alongside the flags check and the full lint and documentation checks. A slice claims only what it runs.",
       "pause": 350
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "33347335ae10b86ca040b39605d006b673c417cfd910ee87c1fe1d77eec3a256"
+    "sha256": "8272917ea5405e41ba7de3403405f0967ff91759dfe21f828d0a0633be67f0c0"
   }
 }
