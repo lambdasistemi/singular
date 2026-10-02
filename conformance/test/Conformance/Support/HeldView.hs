@@ -61,21 +61,22 @@ refusedWith fragment (ErrorCall message) = fragment `isInfixOf` message
 spec :: Spec
 spec =
     describe
-        "Appendix: a hand-built transaction takes its chain inputs from one view" $ do
-        it "accepts an input the assembly's view holds as the row read it" $
-            heldInput (viewOf [input 5_000_000]) "state" (input 5_000_000)
-                `shouldReturn` ()
-        it "refuses, by name, an input spent before the assembly's view" $
-            heldInput (viewOf []) "state" (input 5_000_000)
-                `shouldThrow` refusedWith
-                    "the state input TxIn"
-        it
-            "names the spent input as not unspent at the assembly's chain point" $
-            heldInput (viewOf []) "request" (input 5_000_000)
-                `shouldThrow` refusedWith
-                    "is not unspent at the assembly's chain point"
-        it
-            "refuses, by name, an input that holds something else in the assembly's view" $
-            heldInput (viewOf [input 4_000_000]) "funder" (input 5_000_000)
-                `shouldThrow` refusedWith
-                    "changed between the row's read and the assembly's view"
+        "Appendix: a hand-built transaction takes its chain inputs from one view"
+        $ do
+            it "accepts an input the assembly's view holds as the row read it" $
+                heldInput (viewOf [input 5_000_000]) "state" (input 5_000_000)
+                    `shouldReturn` ()
+            it "refuses, by name, an input spent before the assembly's view" $
+                heldInput (viewOf []) "state" (input 5_000_000)
+                    `shouldThrow` refusedWith
+                        "the state input TxIn"
+            it
+                "names the spent input as not unspent at the assembly's chain point"
+                $ heldInput (viewOf []) "request" (input 5_000_000)
+                    `shouldThrow` refusedWith
+                        "is not unspent at the assembly's chain point"
+            it
+                "refuses, by name, an input that holds something else in the assembly's view"
+                $ heldInput (viewOf [input 4_000_000]) "funder" (input 5_000_000)
+                    `shouldThrow` refusedWith
+                        "changed between the row's read and the assembly's view"
