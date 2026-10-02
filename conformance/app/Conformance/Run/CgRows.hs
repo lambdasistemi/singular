@@ -449,6 +449,9 @@ runCG09 env = do
     result <- submitTxResilient (envSubmit env) signedWitnessed
     case result of
         Submitted txid -> do
+            -- The next row reads the wallet this reject spent from: wait until the
+            -- reject is on chain, or it may spend the same output again.
+            confirmTx env signed
             let size = txSizeBytes signed
             emitMeasure env "CG09" mem cpu size
             writeRowReceipt
