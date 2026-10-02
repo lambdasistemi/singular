@@ -21,11 +21,21 @@ if [ -z "$real" ]; then
   real="$(nix build --quiet --no-link --print-out-paths "$repo/offchain#singular")/bin/singular"
 fi
 
+mapfile -t pages < <(bash "$check" --pages "$repo")
+[ ${#pages[@]} -gt 0 ] || {
+  echo "SETUP-FAIL: the check reads no Markdown page" >&2
+  exit 2
+}
+
+# The scratch tree: every page the check reads, at its own path.
 fresh() {
   rm -rf "$scratch/t"
   mkdir -p "$scratch/t/tools"
-  cp -r "$repo/docs" "$scratch/t/docs"
-  [ -f "$repo/README.md" ] && cp "$repo/README.md" "$scratch/t/"
+  for p in "${pages[@]}"; do
+    rel=${p#"$repo"/}
+    mkdir -p "$scratch/t/$(dirname "$rel")"
+    cp "$p" "$scratch/t/$rel"
+  done
   binary="$real"
 }
 
@@ -86,6 +96,18 @@ fresh
 printf '\n```sh\nsingular registry inspect --registry ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
 expect invocation-unknown 1 'docs/cli-recovery.md:[0-9]+: singular registry inspect --made-up-flag'
 
+# The release archive's run page, invoking the binary through a variable
+# and through a path: an unknown flag there fails, by page and line.
+fresh
+printf '\n```sh\n"$singular" registry update --registry reg --run-page-flag 1\n```\n' \
+  >>"$scratch/t/onchain-release/DEMO1.md"
+expect run-page-variable 1 'onchain-release/DEMO1.md:[0-9]+: singular registry update --run-page-flag'
+
+fresh
+printf '\n```sh\n./bin/singular registry terminate --registry reg \\\n  --path-form-flag 1\n```\n' \
+  >>"$scratch/t/onchain-release/DEMO1.md"
+expect run-page-path 1 'onchain-release/DEMO1.md:[0-9]+: singular registry terminate --path-form-flag'
+
 # A subcommand's own --help disagrees with the top-level help.
 fresh
 cat >"$scratch/singular" <<EOF
@@ -114,4 +136,4 @@ fresh
 sed -i 's/^## The settings you give/## Settings, renamed/' "$table"
 expect empty-table 2 '^EMPTY EXTENT: .*has no settings table row'
 
-echo "PASS cli-flags-controls: 9 controls"
+echo "PASS cli-flags-controls: 11 controls over ${#pages[@]} pages"

@@ -11,7 +11,10 @@
 #     the help prints anywhere else belongs to no command and is refused.
 #   * the documentation: the settings table of docs/singular-node.md, one
 #     row per flag naming the commands that take it, and every
-#     `singular registry COMMAND ...` invocation in docs/ and README.md.
+#     `singular registry COMMAND ...` invocation on any Markdown page of
+#     the tree (docs, README, the release archive's run pages), however
+#     the binary is named: `singular`, `"$singular"`, a path ending in
+#     `/singular`.
 #
 # Refused, each by name: a (flag, command) pair --help prints and the table
 # does not, or the table states and --help does not; an invocation using a
@@ -23,7 +26,22 @@
 # Usage: tools/cli_flags_check.sh [repo-root]
 #        SINGULAR=/path/to/singular overrides the binary, which is otherwise
 #        built from the repository's offchain flake.
+#        tools/cli_flags_check.sh --pages [repo-root] prints the pages read.
 set -euo pipefail
+
+# Every Markdown page in the tree — the docs site, the README, the release
+# archive's run pages, the specifications — discovered, never listed;
+# build and dependency directories are not pages.
+markdown_pages() {
+  find "$1" \( -name .git -o -name dist-newstyle -o -name node_modules \
+    -o -name .lake -o -name result -o -name 'result-*' \) -prune \
+    -o -name '*.md' -type f -print | sort
+}
+
+if [ "${1:-}" = --pages ]; then
+  markdown_pages "${2:-.}"
+  exit 0
+fi
 
 root=${1:-.}
 table_doc="$root/docs/singular-node.md"
@@ -163,10 +181,11 @@ done
 if ! cmp -s "$scratch/help.pairs" "$scratch/doc.pairs"; then status=1; fi
 
 # Every documented invocation uses only flags its command's --help prints.
-mapfile -t pages < <(
-  find "$root/docs" -name '*.md' | sort
-  [ -f "$root/README.md" ] && echo "$root/README.md"
-)
+mapfile -t pages < <(markdown_pages "$root")
+[ ${#pages[@]} -gt 0 ] || {
+  echo "EMPTY EXTENT: no Markdown page under $root" >&2
+  exit 2
+}
 invocations=0
 for page in "${pages[@]}"; do
   rel=${page#"$root"/}
@@ -189,9 +208,9 @@ for page in "${pages[@]}"; do
     }
     {
       if (cmd != "") { acc = acc " " $0; if ($0 !~ /\\[[:space:]]*$/) flush(); next }
-      if (match($0, /singular registry [a-z]+/)) {
-        split(substr($0, RSTART, RLENGTH), w, " ")
-        cmd = w[3]; start = NR; acc = substr($0, RSTART + RLENGTH)
+      if (match($0, /(^|[^A-Za-z0-9_-])("?[$][{]?singular[}]?"?|[A-Za-z0-9_.~\/-]*singular)[ \t]+registry[ \t]+[a-z]+/)) {
+        n = split(substr($0, RSTART, RLENGTH), w, /[ \t]+/)
+        cmd = w[n]; start = NR; acc = substr($0, RSTART + RLENGTH)
         if ($0 !~ /\\[[:space:]]*$/) flush()
       }
     }
