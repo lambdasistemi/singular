@@ -140,7 +140,7 @@ commandLine = describe "the command line" $ do
         parseCommand ["--help"] `shouldBe` Right Help
         parseCommand ["registry", "--help"] `shouldBe` Right Help
         parseCommand [] `shouldBe` Right Help
-    it "names the seven commands and only them in its usage" $ do
+    it "names the eight commands and only them in its usage" $ do
         forM5
             [ "create"
             , "insert"
@@ -148,6 +148,7 @@ commandLine = describe "the command line" $ do
             , "terminate"
             , "fold"
             , "reject"
+            , "reclaim"
             , "inspect"
             ]
             $ \c ->
@@ -379,6 +380,7 @@ commandLine = describe "the command line" $ do
                 `shouldBe` Left (BadValue "--confirm-timeout" "is not a whole number of seconds")
     foldRows
     rejectRows
+    reclaimCommandRows
     outputsAtRows
     preview
     it "refuses a write against mainnet" $
@@ -1618,7 +1620,8 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
                 <> ["--wallet-address", "addr_test1"]
             )
             `shouldSatisfy` refusesNaming "--fold" "preview"
-    it "refuses --request on every command but fold, by name" $ do
+    it
+        "refuses --request on commands that neither fold nor reclaim, by name" $ do
         insertWith ["--request", replicate 64 'a' <> "#0"]
             `shouldSatisfy` refusesNaming "--request" "registry fold"
         terminateWith ["--request", replicate 64 'a' <> "#0"]
@@ -1714,6 +1717,69 @@ rejectCommandRows = describe "rejecting the registry's expired requests" $ do
         usage
             `shouldSatisfy` isInfixOf "singular registry reject --registry DIR"
         usage `shouldSatisfy` isInfixOf "past both its windows"
+
+reclaimCommandRows :: Spec
+reclaimCommandRows = describe "reclaiming the requester's pending request" $ do
+    let reclaim extra =
+            parseCommand
+                (["registry", "reclaim"] <> reg <> node <> wallet <> extra)
+        named = ["--request", replicate 64 'a' <> "#0"]
+        bad flag = \case
+            Left (BadValue name _) -> name == flag
+            _ -> False
+    it "reads the named request with this command's wallet" $
+        case reclaim named of
+            Right (Reclaim a) -> do
+                reclaimRequest a
+                    `shouldBe` either error id (parseOutRef (T.pack (replicate 64 'a' <> "#0")))
+                reclaimRegistry a `shouldBe` "/srv/reg"
+                reclaimBlueprint a `shouldBe` "/srv/plutus.json"
+                reclaimWrite a
+                    `shouldBe` WriteSettings
+                        (NodeSettings "/run/node.socket" 42)
+                        "/keys/payment.skey"
+                        Nothing
+                reclaimFund a `shouldBe` Nothing
+                reclaimMaxOutlay a `shouldBe` Nothing
+                reclaimReceipt a `shouldBe` Nothing
+            other -> expectationFailure ("expected reclaim, got " <> show other)
+    it "reads funding, maximum outlay and receipt settings" $
+        reclaim
+            ( named
+                <> [ "--fund-input"
+                   , replicate 64 'c' <> "#1"
+                   , "--max-outlay"
+                   , "3000000"
+                   , "--receipt"
+                   , "/r.json"
+                   ]
+            )
+            `shouldSatisfy` \case
+                Right (Reclaim a) ->
+                    reclaimFund a
+                        == Just
+                            (either error id (parseOutRef (T.pack (replicate 64 'c' <> "#1"))))
+                        && reclaimMaxOutlay a == Just 3000000
+                        && reclaimReceipt a == Just "/r.json"
+                _ -> False
+    it "requires a request rather than choosing another pending one" $
+        reclaim [] `shouldBe` Left (MissingFlag "--request")
+    it "refuses a malformed request by name" $
+        reclaim ["--request", "not-a-request"] `shouldSatisfy` bad "--request"
+    it "requires a node and wallet" $
+        parseCommand (["registry", "reclaim"] <> reg <> named)
+            `shouldSatisfy` isLeftWith (\case UnsafeSettings _ -> True; _ -> False)
+    it "refuses the settings of booking and preview commands"
+        $ forM_
+            [ ("--key", ["--key", "key"])
+            , ("--key-hex", ["--key-hex", "616c696365"])
+            , ("--deposit", ["--deposit", "2000000"])
+            , ("--payload", ["--payload", "/p.json"])
+            , ("--preview", ["--preview"])
+            , ("--fold", ["--fold"])
+            ]
+        $ \(flag, extra) ->
+            reclaim (named <> extra) `shouldSatisfy` bad flag
 
 -- ---------------------------------------------------------
 -- Reading another address's outputs from the node

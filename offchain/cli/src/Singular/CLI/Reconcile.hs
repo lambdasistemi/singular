@@ -100,6 +100,7 @@ import Cardano.Ledger.Api.Tx.Body
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , addrTxOutL
+    , datumTxOutL
     , referenceScriptTxOutL
     )
 import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
@@ -156,6 +157,7 @@ import Singular.CLI.Registry
     , writeLocalState
     )
 import Singular.CLI.Session (failWith, failWithFields, harnessHoldAt)
+import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger
     ( Addr
     , AssetName (..)
@@ -168,7 +170,10 @@ import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TxBuilder.Internal
     ( extractCageDatum
+    , mkInlineDatum
     , scriptHashBytes
+    , toPlcData
+    , txInToRef
     , walkEdge
     )
 import Singular.Registry.Types (CageDatum (..))
@@ -736,6 +741,12 @@ observe command dir readKey recovered = do
         Just ("request", _)
             | Just (RequestDatum _) <- extractCageDatum out0 ->
                 pure (Just (command <> ": the request output is live"))
+        Just ("reclaim", h)
+            | Right request <- parseOutRef (T.drop 1 h)
+            , Just inputs <- journalInputs p
+            , txInText request `elem` inputs
+            , out0 ^. datumTxOutL == mkInlineDatum (toPlcData (txInToRef request)) ->
+                pure (Just (command <> ": the request-bound return output is live"))
         Just ("active", h) -> withKey p $ \key -> \case
             (Right Active, Right (_, e))
                 | ":" <> hexT (envelopeHash e) == h ->
