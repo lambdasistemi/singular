@@ -1471,6 +1471,13 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
             , ("--fold", ["--fold"])
             ]
         $ \(flag, extra) -> fold extra `shouldSatisfy` refusesBadValue flag
+    it
+        "refuses every flag that spells a key, by name, so none is silently ignored"
+        $ do
+            -- the key reader's own flag set, which must hold both spellings
+            map fst keyFlags `shouldBe` ["--key", "--key-hex"]
+            forM_ keyFlags $ \(flag, _) ->
+                fold [flag, "616c696365"] `shouldSatisfy` refusesBadValue flag
     it "books only unless --fold is given, on insert and on terminate" $ do
         fmap entryFoldOf (insertWith []) `shouldBe` Right False
         fmap entryFoldOf (insertWith ["--fold"]) `shouldBe` Right True

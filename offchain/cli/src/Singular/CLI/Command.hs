@@ -45,6 +45,7 @@ module Singular.CLI.Command
     , renderCLIError
     , usage
     , maxKeyBytes
+    , keyFlags
     ) where
 
 import Control.Monad (forM_, unless, when)
@@ -196,6 +197,12 @@ data CLIError
       UnsupportedFlag String String
     deriving stock (Eq, Show)
 
+{- | The flags that spell a registry key, each with how it spells it: the one set
+the key reader and every command that refuses a key are derived from.
+-}
+keyFlags :: [(String, KeyEncoding)]
+keyFlags = [("--key", KeyText), ("--key-hex", KeyHex)]
+
 -- | Parse a command line.
 parseCommand :: [String] -> Either CLIError Command
 parseCommand args = do
@@ -316,13 +323,15 @@ parseCommand args = do
     foldArgs flags = do
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
-        forM_ ["--key", "--envelope", "--payload", "--preview", "--fold"] $ \flag ->
-            when (isJust (lookup flag flags)) $
-                Left
-                    ( BadValue
-                        flag
-                        "is not accepted by registry fold: it folds the pending request, whose key and edge the request names"
-                    )
+        forM_
+            (map fst keyFlags <> ["--envelope", "--payload", "--preview", "--fold"])
+            $ \flag ->
+                when (isJust (lookup flag flags)) $
+                    Left
+                        ( BadValue
+                            flag
+                            "is not accepted by registry fold: it folds the pending request, whose key and edge the request names"
+                        )
         when (isJust (lookup "--wallet-address" flags)) $
             Left addressNeedsPreview
         settings <- writeSettings flags
@@ -421,10 +430,11 @@ parseCommand args = do
                     }
     -- --key is the text of the key and --key-hex its base16: one of the two,
     -- read by the library, so no command keeps a decoder of its own.
-    keyFrom flags = case (optional "--key" flags, optional "--key-hex" flags) of
-        (Just _, Just _) ->
-            Left (BadValue "--key-hex" "excludes --key: name the key once")
-        (Just argument, Nothing)
+    keyFrom flags = case [ (encoding, argument)
+                         | (flag, encoding) <- keyFlags
+                         , Just argument <- [optional flag flags]
+                         ] of
+        [(KeyText, argument)]
             | any isSurrogate argument ->
                 Left
                     ( BadValue
@@ -432,8 +442,9 @@ parseCommand args = do
                         "is not text in this locale's encoding: run under a UTF-8 locale, or spell the bytes with --key-hex"
                     )
             | otherwise -> readKeyAs KeyText argument
-        (Nothing, Just argument) -> readKeyAs KeyHex argument
-        (Nothing, Nothing) -> Left (MissingFlag "--key")
+        [(KeyHex, argument)] -> readKeyAs KeyHex argument
+        [] -> Left (MissingFlag "--key")
+        _ -> Left (BadValue "--key-hex" "excludes --key: name the key once")
     readKeyAs encoding argument =
         Key <$> first KeyRefused (readKey encoding (T.pack argument))
     isSurrogate c = generalCategory c == Surrogate
