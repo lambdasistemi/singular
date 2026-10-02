@@ -1,12 +1,19 @@
 -- | A book rendered from the same programs the live backend executes.
 module Conformance.Book (renderBook, bookStories, bookReceipts) where
 
+import Conformance.Authentication.Programs qualified as Authentication
+import Conformance.Classification
+    ( Classified (..)
+    , Vocabulary (..)
+    , classifiedGroups
+    , classifyRow
+    , vocabularyReading
+    )
+import Conformance.Classification qualified as Classification
 import Conformance.Edge.Programs
     ( Chapter (..)
-    , Classification (..)
     , Kind (..)
     , Program (..)
-    , classify
     , displayStory
     , programFor
     , programs
@@ -14,6 +21,7 @@ import Conformance.Edge.Programs
 import Conformance.Receipt (Receipt (..), Verdict (..))
 import Conformance.Rows (Row (..), RowState (..))
 import Conformance.Story.Live (renderLive)
+import Conformance.Wire.Programs qualified as Wire
 import Data.Aeson (Value (..))
 import Data.Aeson.KeyMap qualified as KM
 import Data.Foldable (toList)
@@ -125,14 +133,46 @@ renderBook requirements receipts =
     -- How a registry row is run, read off the program that runs it or the
     -- reason the model cannot express it.
     classification row
-        | rowGroup row /= "registry-operations" = ""
-        | otherwise = case classify (rowId row) of
-            Right (Composed kind) ->
-                kindReading kind
-                    <> maybe "." whereRun (programFor (T.unpack (rowId row)))
-            Right (Outside reason) ->
-                "Outside the model's vocabulary: " <> T.unpack reason <> "\n\n"
+        | rowGroup row `notElem` classifiedGroups = ""
+        | otherwise = case classifyRow row of
+            Right (Classified _ Classification.EdgeComposition _) -> composed EdgeComposition row
+            Right (Classified _ Classification.TransactionTamper _) -> composed Tamper row
+            Right (Classified _ (Classification.OutsideModel reason) vocabulary) ->
+                "Outside the model's vocabulary: "
+                    <> T.unpack reason
+                    <> "\n\n"
+                    <> maybe "" (ranIn (T.unpack (rowId row))) vocabulary
             Left problem -> "Not classified: " <> problem <> "\n\n"
+    composed kind row =
+        kindReading kind
+            <> maybe "." whereRun (programFor (T.unpack (rowId row)))
+    -- A row outside the model is said in a vocabulary of its own, rendered
+    -- from the same program the runner executes.
+    ranIn name vocabulary = case vocabulary of
+        EdgeStories -> ""
+        AuthenticationVocabulary ->
+            maybe
+                ""
+                ( \p ->
+                    "Run in "
+                        <> vocabularyReading vocabulary
+                        <> ", in the registry-identity session:\n\n"
+                        <> Authentication.renderProgram p
+                )
+                (Authentication.programFor name)
+        WireRoundTrip ->
+            maybe
+                ""
+                ( \p ->
+                    "Run in "
+                        <> vocabularyReading vocabulary
+                        <> ( if Wire.needsDevnet p
+                                then ", in the serialization session on the devnet:\n\n"
+                                else ", locally against the compiled blueprint:\n\n"
+                           )
+                        <> Wire.renderProgram p
+                )
+                (Wire.programFor name)
     kindReading EdgeComposition =
         "Run as an edge composition over the registry's operations"
     kindReading Tamper = "Run as a tamper of an edge's transaction"

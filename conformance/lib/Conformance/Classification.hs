@@ -22,7 +22,11 @@ module Conformance.Classification
     , armsRow
     ) where
 
+import Conformance.Authentication.Programs qualified as Authentication
+import Conformance.Edge.Programs qualified as Edge
 import Conformance.Rows (Row (..))
+import Conformance.Wire.Programs qualified as Wire
+import Data.List (nub)
 import Data.Text (Text)
 import Data.Text qualified as T
 
@@ -64,17 +68,79 @@ classifiedGroups = ["registry-operations", "registry-identity", "serialization"]
 
 -- | One requirement's classification, read off what runs it.
 classifyRow :: Row -> Either String Classified
-classifyRow row = Left (T.unpack (rowId row) <> " is not classified")
+classifyRow row = case rowGroup row of
+    "registry-operations" -> case Edge.classify (rowId row) of
+        Right (Edge.Composed Edge.EdgeComposition) ->
+            Right (Classified (rowId row) EdgeComposition (Just EdgeStories))
+        Right (Edge.Composed Edge.Tamper) ->
+            Right (Classified (rowId row) TransactionTamper (Just EdgeStories))
+        Right (Edge.Outside reason) ->
+            Right (Classified (rowId row) (OutsideModel reason) Nothing)
+        Left problem -> Left problem
+    "registry-identity" ->
+        outside
+            AuthenticationVocabulary
+            (Authentication.outsideReason name)
+            (Authentication.programFor name)
+    "serialization" ->
+        outside WireRoundTrip (Wire.outsideReason name) (Wire.programFor name)
+    other -> Left (name <> " is in the unclassified group " <> T.unpack other)
+  where
+    name = T.unpack (rowId row)
+    outside vocabulary reason program = case reason of
+        Just why ->
+            Right
+                ( Classified
+                    (rowId row)
+                    (OutsideModel (T.pack why))
+                    (vocabulary <$ program)
+                )
+        Nothing -> Left (name <> " is not classified")
 
 {- | Every requirement of the classified groups, classified exactly once. An
 empty extent, a requirement listed twice, and a program or reason for a
 requirement the inventory does not hold are refused.
 -}
 classifyInventory :: [Row] -> Either String [Classified]
-classifyInventory _ = Left "the inventory is not classified"
+classifyInventory rows
+    | null group = Left "there is no requirement to classify"
+    | length (nub ids) /= length ids =
+        Left "a requirement is listed twice"
+    | not (null strays) =
+        Left
+            ("classified rows the inventory does not hold: " <> unwords strays)
+    | otherwise = do
+        _ <- Edge.classifyGroup (map T.pack (held "registry-operations"))
+        traverse classifyRow group
+  where
+    group = [r | r <- rows, rowGroup r `elem` classifiedGroups]
+    ids = map rowId group
+    held groupName = [T.unpack (rowId r) | r <- group, rowGroup r == groupName]
+    strays =
+        [ name
+        | name <-
+            map Authentication.programRow Authentication.programs
+                <> map fst Authentication.outsideReasons
+        , name `notElem` held "registry-identity"
+        ]
+            <> [ name
+               | name <-
+                    map Wire.programRow Wire.programs <> map fst Wire.outsideReasons
+               , name `notElem` held "serialization"
+               ]
 
 {- | Whether a control arms a row: some instruction of the row's program
 demands the opposite under it.
 -}
 armsRow :: String -> String -> Bool
-armsRow _ _ = False
+armsRow control row =
+    maybe
+        False
+        ( any (Authentication.armedBy control)
+            . Authentication.programInstructions
+        )
+        (Authentication.programFor row)
+        || maybe
+            False
+            (any (Wire.armedBy control) . Wire.programInstructions)
+            (Wire.programFor row)

@@ -154,7 +154,37 @@ outsideReason row = lookup row outsideReasons
 
 -- | Every registry-identity row the model cannot express, with its reason.
 outsideReasons :: [(String, String)]
-outsideReasons = []
+outsideReasons = reasons
+  where
+    noIdentity =
+        "the model has no seed, token name or registry address: the registry's address is a named unobservable and the model has no byte representation. "
+    reasons =
+        [
+            ( "canonical-seed-identity"
+            , noIdentity
+                <> "The naming profile's consumer binding states a seed binding over abstract numbers, but it is not on the model driver's declared surface, so nothing is compared with the model."
+            )
+        ,
+            ( "rival-seed-authentication"
+            , noIdentity
+                <> "Booting a registry is not one of the model's exits, and authentication reads a token name the model does not have."
+            )
+        ,
+            ( "policy-address-only-authentication-control"
+            , noIdentity
+                <> "This row is a control over the authenticator itself; the model has no counterpart."
+            )
+        ,
+            ( "applied-validator-identity"
+            , noIdentity
+                <> "Script hashes, parameter application and addresses are below the model; the derivation is checked off chain against the address the chain reports."
+            )
+        ,
+            ( "tokenless-output-authentication"
+            , noIdentity
+                <> "Creating an output is not an operation of the model."
+            )
+        ]
 
 seedReading :: Seed -> String
 seedReading CanonicalSeed = "the canonical seed"
