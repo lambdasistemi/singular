@@ -1,0 +1,12 @@
+{
+  "responsibilities": [
+    {
+      "text": "The model keeps its laws. The driver alone turns them into batch answers. The transport carries questions, the story language owns instructions, and the executor submits and asks.",
+      "pause": 350
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "4fdc25e06f1c599c1eb2dcbb7ac6d4e0bb5dcdb4f8d34a1293a04e3ab602e6be"
+  }
+}
