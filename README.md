@@ -8,7 +8,7 @@ A permissionless registry on Cardano for unique identities and independent appli
 
 **An application developer** wants keys that are unique across everyone using the application — names, identifiers, handles — without running a registrar. They supply one parameter, their application policy ID, and get a registry in which every active key is represented by exactly one NFT sitting in one of their own application outputs. Singular mints that NFT when a certified registration is folded in, burns it when the key is retired or released, and lets a released key be registered again.
 
-**A user of that application** asks it to register a key. The application approves the exact proposal — including the refund address stored in the request — and the request waits, holding no NFT, until someone folds it into the registry. Before folding, a separately authorized cancellation copies that stored refund address and leaves the name free; redirecting the refund, relying only on Insert certification, cancelling after fold, or replaying cancellation is refused. No fee, deposit, price, or bond rule is inferred.
+**A user of that application** asks it to register a key. The application approves the exact proposal — including the refund address stored in the request — and the request waits, holding no NFT, until someone folds it into the registry. Before folding, a separately authorized cancellation copies that stored refund address and leaves the name free; redirecting the refund, relying only on Insert certification, cancelling after fold, or replaying cancellation is refused. The registry fixes where a deposit returns, never its amount: no fee, price or bond rule is part of it.
 
 **A holder of an active name** wants to keep payment routing current, recover through a committed next controller, or retire the name permanently. The [naming lifecycle](docs/naming-lifecycle.md) covers destination maintenance, recovery through the committed key, and retirement by that key or by a distinct-member quorum — never by the current control key alone. Twenty-one lifecycle rows are replayed in the simulator against the Lean that computed them. It remains an unaccepted design candidate, not an observed ledger execution.
 
@@ -19,6 +19,8 @@ A permissionless registry on Cardano for unique identities and independent appli
 **An integrator with their own node** wants to run the whole thing on a public test network, funded by a wallet whose key never leaves their machine. [Run against your own preprod node](docs/consumer-onboarding.md) covers the release download, the node and wallet setup, the funding diagnostic and each journey end to end.
 
 ## How the parts fit
+
+The diagram and table in this section record the original three-operation design: Insert, Update and Delete requests, an application-minted Withdraw, and the states Absent, `Active` and `Over`. The registry-mode model that the Lean proves, the simulator replays and the conformance suite compares against the deployed validators moves a key through seven edges and calls the terminal state `Terminal`. Where the two differ, registry mode is current: [how a name moves in the registry](docs/naming-demo.md#how-a-name-moves-in-the-registry) shows the seven edges, and the [model ledger](docs/model-ledger.md#the-retirement-map) records what replaced each part of the original design.
 
 ```mermaid
 flowchart LR
@@ -54,23 +56,24 @@ The configured application policy ID is the authorization anchor. It mints actio
 
 Insert carries no representative NFT, can fail at folding if its key is occupied, and can be withdrawn with the required authorization. Update/Delete carry the existing representative after the application authorizes its exact release, and retain it until completion. The concrete request-token arrangement for Update/Delete remains open.
 
-Read the design in order:
+Read the design in order. The first three pages and the protocol specification record the original design; the naming pages and the simulation describe the registry-mode model that supersedes it where they differ.
 
 1. [Responsibilities and terminology](docs/overview.md)
 2. [Requests, folding and NFT custody](docs/lifecycle.md)
 3. [Certification and identity binding](docs/certification.md)
-4. [Naming walkthrough: register, resolve, change address](docs/naming-demo.md)
+4. [Naming: book a name, retire it, attest it](docs/naming-demo.md)
 5. [Naming lifecycle: maintain, recover, retire](docs/naming-lifecycle.md)
-6. [Play and reproduce the simulation](docs/simulation.md)
-7. [Prior art and reuse candidates](docs/prior-art.md)
-8. [Draft protocol specification and acceptance scenarios](specs/protocol/spec.md)
-9. [Run against your own preprod node](docs/consumer-onboarding.md)
+6. [Ending a name](docs/retirement.md) and [recovering control on a real ledger](docs/recovery-retirement.md)
+7. [Play and reproduce the simulation](docs/simulation.md)
+8. [Prior art and reuse candidates](docs/prior-art.md)
+9. [Draft protocol specification and acceptance scenarios](specs/protocol/spec.md)
+10. [Run against your own preprod node](docs/consumer-onboarding.md) and [the preprod record](docs/preprod.md)
 
 ## Design status
 
-These documents record the adopted design and name the decisions still needed for a concrete protocol. The [executable design candidate](docs/design.md) has **42** proved declarations — 24 for the registry, 7 for the naming instance, 6 for its lifecycle and 5 for its wire encoding — plus a [playable simulation](docs/simulation.md) transcribed from them. The focused checks replay 38 registry rows, 24 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance, compiled Cardano validator, or ledger execution is claimed. The [coverage ledger](docs/model-ledger.md) distinguishes finite executable evidence from conditions, abstractions and omissions, and the [clarity record](docs/LEAN-CLARITY.md) states plainly how much independence that evidence has.
+These documents record the adopted design and name the decisions still needed for a concrete protocol. The [executable design candidate](docs/design.md) has **65** proved declarations — 44 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a [playable simulation](docs/simulation.md) transcribed from them. The focused checks replay 38 registry rows, 24 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in [the preprod record](docs/preprod.md), and the [conformance evidence](docs/conformance-evidence.md) states which consumer requirements a named code revision demonstrated against them. The [coverage ledger](docs/model-ledger.md) distinguishes finite executable evidence from conditions, abstractions and omissions, and the [clarity record](docs/LEAN-CLARITY.md) states plainly how much independence that evidence has.
 
-The Nix-built documentation archive is a review bundle, not a released protocol artifact. It contains the rendered site and a runnable, locked workspace with raw model and corpus files, the naming contract, scenarios, simulator and replay sources, checkers, and exact identities. Reproduction starts from a fresh extraction, verifies `artifacts/SHA256SUMS`, and runs the archive's own flake; a checkout pass does not substitute. [Build and release details](docs/building.md) give the exact commands. No tag or publication is authorized by this candidate.
+The Nix-built documentation archive is a review bundle, not a released protocol artifact. It contains the rendered site and a runnable, locked workspace with raw model and corpus files, the naming contract, scenarios, simulator and replay sources, checkers, and exact identities. Reproduction starts from a fresh extraction, verifies `artifacts/SHA256SUMS`, and runs the archive's own flake; a checkout pass does not substitute. [Build and release details](docs/building.md) give the exact commands and describe the release pipeline that publishes the archive from a tag on main.
 
 Singular uses MPF as its authenticated registry data structure. The product it was imported from is a separate application with potentially reusable mechanics. The implementation stack and shared-library boundaries remain unselected; extracting a shared library is future work.
 

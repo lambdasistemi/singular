@@ -26,56 +26,21 @@ flowchart LR
 ## How a name moves in the registry
 
 Naming is an instance of the registry, not a layer bolted beside it. A name is
-one key in the registry's authenticated map, and the value of that key is a
-single byte:
+one key in the registry's authenticated map whose value is a single byte —
+Absent, Active or Terminal — and seven requests move a key, each one moving a
+witness token that is what a reader looks at, never the root. The naming
+walkthrough states [the state table, the seven requests and the four witness
+laws](naming-demo.md#how-a-name-moves-in-the-registry) once; this page uses
+them without repeating them.
 
-| state | byte | what it says |
-| --- | --- | --- |
-| Absent | `0x00` | somebody has witnessed that this name is free, and put up a deposit to say so |
-| Active | `0x01` | the name is booked and live |
-| Terminal | `0x02` | the name is over, forever |
-
-Seven requests move a key, and nothing else does. Each one moves a witness
-token, and the witness is what a reader looks at — never the root:
-
-| request | before | after | witness moved |
-| --- | --- | --- | --- |
-| insert absent | no key | Absent | one absent witness minted into the cage's own custody |
-| insert active | no key | Active | one active witness minted to the booker |
-| update absent to active | Absent | Active | the absent witness burned, an active witness minted |
-| update active to terminal | Active | Terminal | the active witness burned |
-| delete absent | Absent | no key | the absent witness burned, the deposit returned |
-| delete active | Active | no key | the active witness burned |
-| read terminal | Terminal | Terminal | one terminal witness minted, the key untouched |
-
-Every other shape is refused before any proof is checked, and each refusal
-carries one trace label naming its own reason.
-
-The witnesses obey four laws:
-
-1. **A witness moves only inside a fold.** A mint or a burn under the absent,
-   active or terminal policy is accepted only in a transaction that spends the
-   registry's state token and folds it.
-2. **The fold decides how many, and where.** It sums the witness column of the
-   requests it consumed, and the transaction's mint under the three policies
-   must equal that sum exactly — asset by asset, quantity by quantity. Nothing
-   else may move under them.
-3. **A terminal witness is its holder's to destroy.** It says a name is over,
-   forever; burning your own copy costs the registry nothing, so that burn
-   alone needs no fold.
-4. **The asset name is the registry key.** Identity is the pair of policy and
-   key, so a name recreated after a delete carries the same identity again.
-
-One edge carries a rule of its own: ending a name needs the committed recovery key or the retirement quorum, and never the current control key alone.
-
-**No application script at fold time.** The naming validator is not
-executed by a fold at all. What it does instead is certify an edge in advance:
-it mints one approval whose asset name binds the edge, the key, the owner and
-the destination, the requester attaches that approval to their request, and the
-cage recomputes the name from the request itself and refuses anything that does
-not match. A folder is permissionless and can therefore be anyone, which is
-exactly why the destination is bound: without it a folder could route your name
-to itself.
+Two things are naming's own. Ending a name needs the committed recovery key or
+the retirement quorum, and never the current control key alone. And no
+application script runs at fold time: the naming validator certifies an edge in
+advance by minting one approval whose asset name binds the edge, the key, the
+owner and the destination, and the registry recomputes that name from the
+request itself and refuses anything that does not match. A folder is
+permissionless and can therefore be anyone, which is exactly why the
+destination is bound: without it a folder could route your name to itself.
 
 ## Change the payment destination
 
@@ -97,8 +62,9 @@ The transition refuses a missing or wrong controller witness, more than one dest
 
 ## Book a name
 
-There is no pending claim any more, and so nothing to fold and nothing to
-cancel. A booking is two things: an approval and a request.
+A booking has no separate claim to stage first and no Withdraw edge to cancel
+one with. It is two things: an approval and a request, and the request waits
+until someone folds it.
 
 Alice mints one approval under the naming policy. Its asset name binds the edge
 she is taking, the key she is taking it on, herself as the owner, and the

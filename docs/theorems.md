@@ -98,7 +98,7 @@ single theorem turns the build red, so a `sorry` cannot reach this page.
 
 `tools/check_model.py` then cross-checks three things that are easy to let drift
 apart: the source declarations against the manifests, the compiled axiom report
-against both, and — added by this ticket — **this page against the manifest**.
+against both, and — added after the drift below was found — **this page against the manifest**.
 The last one exists because it was missing: before it, the page claimed 41
 declarations while the manifest held 44, and three proved statements appeared
 nowhere. The check is set equality, and the total above is derived from the

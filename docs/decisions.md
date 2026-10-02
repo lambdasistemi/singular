@@ -1,8 +1,10 @@
 # Decisions and executable abstractions
 
+**Status.** This page records the original three-operation design: Insert, Update and Delete requests, an application-minted Withdraw, and the states Absent, `Active` and `Over`. The registry-mode model that the Lean proves, the simulator replays and the conformance suite compares against the deployed validators moves a key through seven edges and calls the terminal state `Terminal`; where the two differ, registry mode is current. [How a name moves in the registry](naming-demo.md#how-a-name-moves-in-the-registry) shows the seven edges, and the [model ledger](model-ledger.md#the-retirement-map) records what replaced each part of this design.
+
 As an application designer, use these decisions to distinguish behavior you can explore from construction choices you still need to settle. A successful modeled transition satisfies the selected logical checks; a refusal exposes a failed obligation. Neither result chooses your deployed scripts or proves your application policy.
 
-The reviewed behavioral baseline is the [protocol specification](../specs/protocol/spec.md), [responsibilities](overview.md), [lifecycle](lifecycle.md), [certification boundary](certification.md) and [illustrative naming profile](naming-demo.md) merged in commit `fac38e643aa5d93f5bb6bb88acd9b9dd5b78e66f`. The current main presentation changes (`40aa6fc`) do not constitute a new source review or change this candidate’s frozen formal identities. The executable candidate adds an executable interpretation for review. It does not close the construction decisions below.
+The reviewed behavioral baseline is the [protocol specification](../specs/protocol/spec.md), [responsibilities](overview.md), [lifecycle](lifecycle.md), [certification boundary](certification.md) and [naming walkthrough](naming-demo.md). The executable candidate adds an executable interpretation for review. It does not close the construction decisions below.
 
 ## Adopted behavior
 

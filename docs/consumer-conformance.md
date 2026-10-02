@@ -1,4 +1,4 @@
-# Consumer conformance (epic 18, issues #63, #69 and #68)
+# Consumer conformance record
 
 As a Singular integrator, I can replay the current conformance interface,
 distinguish partial evidence from completed coverage, and trace older

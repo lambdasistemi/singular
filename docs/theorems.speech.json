@@ -13,7 +13,7 @@
   ],
   "how-this-register-is-kept-honest": [
     {
-      "text": "A compiled gate runs while the library elaborates and fails the build if any theorem depends on an axiom outside the standard three, so a sorry cannot reach this page. The model checker then cross-checks the sources against the manifests, the compiled axiom report against both, and this page against the manifest. That last check exists because it was missing: before it, the page claimed forty-one declarations while the manifest held forty-four, and three proved statements appeared nowhere.",
+      "text": "A compiled gate runs while the library elaborates and fails the build if any theorem depends on an axiom outside the standard three, so a sorry cannot reach this page. The model checker then cross-checks the sources against the manifests, the compiled axiom report against both, and, added after the drift was found, this page against the manifest. That last check exists because it was missing: before it, the page claimed forty-one declarations while the manifest held forty-four, and three proved statements appeared nowhere.",
       "pause": 400
     }
   ],
@@ -25,6 +25,6 @@
   ],
   "_source": {
     "file": "theorems.md",
-    "sha256": "10c7ef4cfa7dac1d9382655b755d420f538432fa626357f7e111709d5b445502"
+    "sha256": "15037ae5f5aecdb1c940cbd4b448c0ccbe408183db1aea994997b527ef1ac949"
   }
 }

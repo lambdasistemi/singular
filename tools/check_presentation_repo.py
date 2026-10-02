@@ -14,6 +14,8 @@ raise SystemExit(
             "docs/theorems.md",
             "--register",
             "docs/mutants.md",
+            "--register",
+            "docs/consumer-conformance.md",
             "README.md",
             "docs",
             "specs/protocol",
