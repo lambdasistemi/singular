@@ -53,6 +53,7 @@ the site check fails until it and this list agree.
 - <a href="../conformance/lib/Conformance/Edge/RetractionWindow.hs" data-api="module">Conformance.Edge.RetractionWindow</a> — <a href="../conformance/lib/Conformance/Edge/RetractionWindow.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Sequence.hs" data-api="module">Conformance.Edge.Sequence</a> — <a href="../conformance/lib/Conformance/Edge/Sequence.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Evidence/Asset.hs" data-api="module">Conformance.Evidence.Asset</a> — <a href="../conformance/lib/Conformance/Evidence/Asset.hs" data-api="source">source</a>
+- <a href="../conformance/lib/Conformance/EvidencePage.hs" data-api="module">Conformance.EvidencePage</a> — <a href="../conformance/lib/Conformance/EvidencePage.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Fold/KeyedMint.hs" data-api="module">Conformance.Fold.KeyedMint</a> — <a href="../conformance/lib/Conformance/Fold/KeyedMint.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Lean/Oracle.hs" data-api="module">Conformance.Lean.Oracle</a> — <a href="../conformance/lib/Conformance/Lean/Oracle.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Lean/Registration.hs" data-api="module">Conformance.Lean.Registration</a> — <a href="../conformance/lib/Conformance/Lean/Registration.hs" data-api="source">source</a>
