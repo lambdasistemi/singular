@@ -31,6 +31,7 @@ module Singular.Registry.TxBuilder.Internal.Lookup
 
       -- * Evaluate and balance
     , evaluateAndBalance
+    , evaluateAndBalanceReferencing
     , placeholderExUnits
 
       -- * Time and slot helpers
@@ -148,71 +149,87 @@ evaluateAndBalance
     -> ConwayTx
     -- ^ Unbalanced tx with placeholder ExUnits
     -> IO ConwayTx
-evaluateAndBalance view pp inputUtxos changeAddr tx =
-    do
-        let existingIns =
-                tx ^. bodyTxL . inputsTxBodyL
-            allIns =
-                foldl
-                    ( \s (tin, _) ->
-                        Set.insert tin s
-                    )
-                    existingIns
+evaluateAndBalance prov pp inputUtxos =
+    evaluateAndBalanceReferencing prov pp inputUtxos []
+
+{- | 'evaluateAndBalance' for a transaction that reads scripts from
+reference outputs (#300): the resolved outputs are handed to the balancer,
+which charges the ledger's per-byte tier for every reference-script byte the
+transaction references, exactly as the node will.
+-}
+evaluateAndBalanceReferencing
+    :: View IO
+    -> PParams ConwayEra
+    -> [(TxIn, TxOut ConwayEra)]
+    -- ^ All input UTxOs (fee + script)
+    -> [(TxIn, TxOut ConwayEra)]
+    -- ^ The resolved reference outputs
+    -> Addr
+    -- ^ Change address
+    -> ConwayTx
+    -- ^ Unbalanced tx with placeholder ExUnits
+    -> IO ConwayTx
+evaluateAndBalanceReferencing prov pp inputUtxos refUtxos changeAddr tx =
+    measure withInputs >>= settle (6 :: Int)
+  where
+    withInputs =
+        tx
+            & bodyTxL . inputsTxBodyL
+                .~ foldl
+                    (\s (tin, _) -> Set.insert tin s)
+                    (tx ^. bodyTxL . inputsTxBodyL)
                     inputUtxos
-            txForEval =
-                tx
-                    & bodyTxL . inputsTxBodyL
-                        .~ allIns
-        evalResult <- viewEvaluateTx view txForEval
-        let failures =
-                [ (p, e)
-                | (p, Left e) <-
-                    Map.toList evalResult
-                ]
-        if null failures
-            then pure ()
-            else
+
+    -- What the node's evaluator says every redeemer costs; a failing script
+    -- stops the build, it is never declared.
+    measure t = do
+        evalResult <- viewEvaluateTx prov t
+        case [(p, e) | (p, Left e) <- Map.toList evalResult] of
+            [] ->
+                pure (Map.fromList [(p, eu) | (p, Right eu) <- Map.toList evalResult])
+            failures ->
                 error $
-                    "evaluateAndBalance: \
-                    \script eval failed: "
-                        <> show failures
-        let
-            Redeemers rdmrMap =
-                tx ^. witsTxL . rdmrsTxWitsL
-            patched =
-                Map.mapWithKey
-                    ( \purpose (dat, eu) ->
-                        case Map.lookup
-                            purpose
-                            evalResult of
-                            Just (Right eu') ->
-                                (dat, eu')
-                            _ -> (dat, eu)
+                    "evaluateAndBalance: script eval failed: " <> show failures
+
+    -- The transaction with these units declared and its fee and change
+    -- balanced for them.
+    balanced units =
+        let Redeemers declared = tx ^. witsTxL . rdmrsTxWitsL
+            newRedeemers =
+                Redeemers
+                    ( Map.mapWithKey
+                        (\purpose (dat, eu) -> (dat, Map.findWithDefault eu purpose units))
+                        declared
                     )
-                    rdmrMap
-            newRedeemers = Redeemers patched
-            integrity =
-                computeScriptIntegrity
-                    pp
-                    newRedeemers
-            patched' =
+            patched =
                 tx
-                    & witsTxL . rdmrsTxWitsL
-                        .~ newRedeemers
-                    & bodyTxL
-                        . scriptIntegrityHashTxBodyL
-                        .~ integrity
-        case balanceTx
-            pp
-            inputUtxos
-            []
-            changeAddr
-            patched' of
-            Left err ->
-                error $
-                    "evaluateAndBalance: "
-                        <> show err
-            Right br -> pure (balancedTx br)
+                    & witsTxL . rdmrsTxWitsL .~ newRedeemers
+                    & bodyTxL . scriptIntegrityHashTxBodyL
+                        .~ computeScriptIntegrity pp newRedeemers
+        in  case balanceTx pp inputUtxos refUtxos changeAddr patched of
+                Left err -> error $ "evaluateAndBalance: " <> show err
+                Right br -> balancedTx br
+
+    {- A script reads its own transaction: the fee and the change it is
+    balanced to are part of what it is evaluated on, and the fee in turn
+    depends on the units declared. The units measured on the body before
+    balancing can therefore fall short of what the balanced body needs, and a
+    node that re-runs the script refuses a declaration that is a few units too
+    small. The balanced body is measured again, and the declaration raised
+    and the body balanced again until the body the node will see is one its
+    own measurement fits inside. -}
+    settle 0 _ =
+        error
+            "evaluateAndBalance: the declared units did not settle on the balanced body"
+    settle n units = do
+        let candidate = balanced units
+        seen <- measure candidate
+        if Map.isSubmapOfBy fits seen units
+            then pure candidate
+            else settle (n - 1) (Map.unionWith raise units seen)
+
+    fits (ExUnits m s) (ExUnits m' s') = m <= m' && s <= s'
+    raise (ExUnits m s) (ExUnits m' s') = ExUnits (max m m') (max s s')
 
 -- | Find a UTxO by its 'TxIn'.
 findUtxoByTxIn

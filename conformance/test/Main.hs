@@ -4,6 +4,7 @@ module Main (main) where
 import Conformance.Story.Usage qualified as Usage
 import Conformance.Support.Binding qualified as Binding
 import Conformance.Support.CliAdmission qualified as CliAdmission
+import Conformance.Support.CliAttach qualified as CliAttach
 import Conformance.Support.CliControls qualified as CliControls
 import Conformance.Support.CliProof qualified as CliProof
 import Conformance.Support.EvidencePage qualified as EvidencePage
@@ -64,3 +65,4 @@ suite = do
         CliControls.spec
         CliProof.spec
         CliAdmission.spec
+        CliAttach.spec

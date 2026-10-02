@@ -27,7 +27,7 @@
       "pause": 400
     },
     {
-      "text": "Inspect never signs, funds or submits, and a stale or unavailable read never prints a confirmed status. Interrupted work keeps its transaction ids and known partial state, and a create never overwrites. The archive journey keeps the same registry and key across processes, and any omitted command or altered receipt is detected. The documentation duty is advisory: it must describe the candidate accurately and claim nothing about preprod, release or full conformance.",
+      "text": "An indexer's read of an Active key counts only when it finds exactly one output holding exactly one of the token and agrees with the node's fresh inspect; one that is missing, unreachable, stale or disagreeing is never a confirmation and ends a take before its next write. Inspect never signs, funds or submits, and a stale or unavailable read never prints a confirmed status. Interrupted work keeps its transaction ids and known partial state, and a create never overwrites. The archive journey keeps the same registry and key across processes, and any omitted command or altered receipt is detected. The documentation duty is advisory: it must describe the candidate accurately and claim nothing about preprod, release or full conformance.",
       "pause": 400
     }
   ],
@@ -57,6 +57,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "ccd08a2981fa03f793fc7d02d51ee81e3a6052ecf82b46949013077ebb720ec7"
+    "sha256": "1df9144b63e2476a821026ccd11fab829f6b5b93fd8432e3e7ef55f06fe6e4b7"
   }
 }

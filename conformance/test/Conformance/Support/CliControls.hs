@@ -1,22 +1,28 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE NumericUnderscores #-}
 
 -- | The refusal controls are judged from receipts, and only from receipts.
 module Conformance.Support.CliControls (spec) where
 
 import Conformance.Cli.Admission (sha256Hex)
 import Conformance.Cli.Controls
-    ( ClauseResult (..)
+    ( Account (..)
+    , ClauseResult (..)
     , ClauseStatus (..)
     , CliI (..)
     , Command (..)
     , Crafted (..)
+    , Indexer (..)
+    , IndexerRead (..)
     , Observation (..)
     , ProcessEvidence (..)
     , Provocation (..)
     , Receipt (..)
+    , Stated (..)
     , Story
     , Submission (..)
     , Target (..)
+    , actionsOf
     , attribution
     , commandName
     , controlsStory
@@ -24,10 +30,13 @@ import Conformance.Cli.Controls
     , duplicateRefused
     , duplicateStory
     , emptyReceipt
+    , forbiddenInPermanent
     , held
+    , indexerName
     , judge
     , obligationBindings
     , outline
+    , permanentStory
     , provocationName
     , rejectionEvidence
     , renderControls
@@ -66,7 +75,7 @@ import Data.ByteString qualified as BS
 import Data.Char (ord)
 import Data.Either (isLeft)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
-import Data.List (isInfixOf)
+import Data.List (isInfixOf, nub)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Test.Hspec
@@ -161,6 +170,7 @@ honestReceipts story = do
                 updates = length [() | u <- before, u == t <> ":update"]
                 terminal = (t <> ":terminate") `elem` before
             modifyIORef' inserted (commandMark c t k :)
+            when again $ modifyIORef' inserted ((t <> ":partial") :)
             emit ("run " <> T.pack (commandName c)) t k $ \r ->
                 if again
                     then r{rcOutcome = "partial", rcPendingRequest = Just "b0#0"}
@@ -193,6 +203,24 @@ honestReceipts story = do
                             )
                                 { rcRefusingScripts = [appHash]
                                 }
+        ReadIndexer ix (Target t) k inspected ->
+            emit ("read-indexer " <> T.pack (indexerName ix)) t k $ \r ->
+                r
+                    { rcOutcome = "success"
+                    , rcReadbackFile = Just "evidence/readback.json"
+                    , rcReadbackSha256 = Just "00"
+                    , rcIndexer = Just (honestRead ix k inspected)
+                    , rcMaxLag = Just 600
+                    }
+        Reclaim (Target t) k _ _ -> do
+            modifyIORef' inserted ((t <> ":reclaim") :)
+            emit "reclaim" t k $ \r ->
+                r
+                    { rcOutcome = "accepted"
+                    , rcTxId = Just "e1"
+                    , rcPendingRequest = Just "b0#0"
+                    , rcEvidence = ["evidence/step-e1.cbor.hex"]
+                    }
         Book (Target t) k ->
             emit "book" t k $ \r -> r{rcOutcome = "accepted", rcTxId = Just "b1"}
         FoldUnevaluated (Target t) k ->
@@ -204,13 +232,18 @@ honestReceipts story = do
                             , rcTxId = Just "f1"
                             , rcEvidence = ["evidence/step-f1.cbor.hex"]
                             }
-                in  if t `notElem` ["duplicate", "resurrection"]
+                in  if t `notElem` ["duplicate", "resurrection", "permanent"]
                         then base{rcOutcome = "accepted"}
                         else
                             (rejected ["PlutusFailure", "CekError"] base)
                                 { rcRefusingScripts = [stateHash]
                                 }
-        Observe (Target t) k ->
+        Observe (Target t) k -> do
+            before <- readIORef inserted
+            let partials = length [() | m <- before, m == t <> ":partial"]
+                reclaims = length [() | m <- before, m == t <> ":reclaim"]
+                pendingNow = t /= "permanent" || partials > reclaims
+                released = if t == "permanent" then 2_800_000 * toInteger reclaims else 0
             emit "observe" t k $ \r ->
                 r
                     { rcOutcome = "observed"
@@ -219,10 +252,10 @@ honestReceipts story = do
                             ( Observation
                                 "00"
                                 (Just "h#1")
-                                (Just 4000000)
-                                ["b0#0"]
-                                3000000
-                                100
+                                (Just 4_000_000)
+                                ["b0#0" | pendingNow]
+                                (if pendingNow then 3_000_000 else 0)
+                                (100 + released)
                                 (Just "active")
                             )
                     }
@@ -231,9 +264,27 @@ honestReceipts story = do
             n <- readIORef step
             modifyIORef' step (+ 1)
             let r =
-                    (fill (emptyReceipt n name (T.pack t) (T.pack k)))
-                        { rcAdmission = Just []
-                        }
+                    bounded
+                        (fill (emptyReceipt n name (T.pack t) (T.pack k)))
+                            { rcAdmission = Just []
+                            }
+                bounded x
+                    | t == "permanent"
+                    , name `elem` ["reclaim", "fold-unevaluated"]
+                        || "craft " `T.isPrefixOf` name =
+                        x
+                            { rcAllowance = Just 5_000_000
+                            , rcAccount =
+                                Just
+                                    ( Account
+                                        200_000
+                                        ["w#0"]
+                                        (Just 300_000)
+                                        (Just 9_000_000)
+                                        ["b0#0", "w#1"]
+                                    )
+                            }
+                    | otherwise = x
             modifyIORef' out (r :)
             pure r
 
@@ -550,7 +601,12 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
             partial =
                 renderControls (judge withoutWithdrawal controlsStory) controlsStory
         full
-            `shouldSatisfy` isInfixOf "30 of 31 approved cases are covered live; 1 are not."
+            `shouldSatisfy` isInfixOf "30 of 32 approved cases are covered live; 2 are not."
+        -- the indexer read belongs to a take on an existing registry: the
+        -- development controls do not reach it, and say so
+        full
+            `shouldSatisfy` isInfixOf
+                "| the Active key read from two public indexers before its termination | client obligation `INV300-INDEXER`, no model statement | uncovered"
         -- the ruled-out case stays visible and uncovered, citing its ruling
         full
             `shouldSatisfy` isInfixOf
@@ -722,6 +778,398 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                             (pure ())
             validateControls unfounded `shouldSatisfy` isLeft
 
+    describe "one take on a registry that already exists" $ do
+        let key = "demo1-take"
+            story = permanentStory key
+            titled s results = [crStatus r | r <- results, s `isInfixOf` crTitle r]
+        it
+            "states every clause once, each refusal beside an accepting control"
+            $ do
+                validateControls story `shouldBe` Right ()
+                length (outline story) `shouldBe` 29
+                length (nub (map fst (outline story))) `shouldBe` 5
+        it "holds every clause on an honest take" $ do
+            rs <- honestReceipts story
+            let results = judge rs story
+            statuses results `shouldBe` replicate 29 Held
+            held results `shouldBe` True
+        it
+            "never creates a registry or provokes a command, and the instrument can tell"
+            $ do
+                actionsOf story `shouldSatisfy` all (`notElem` forbiddenInPermanent)
+                actionsOf story `shouldSatisfy` elem "reclaim"
+                -- the same quantifier finds them in the story that does both
+                filter (`elem` forbiddenInPermanent) (actionsOf controlsStory)
+                    `shouldSatisfy` ( \found -> "run create" `elem` found && any (T.isPrefixOf "provoke ") found
+                                    )
+                -- and covers every provocation this domain defines
+                length (filter (T.isPrefixOf "provoke ") forbiddenInPermanent)
+                    `shouldBe` length [minBound .. maxBound :: Provocation]
+        it
+            "does not hold a retraction that left a request behind, took another, or moved the wallet"
+            $ do
+                rs <- honestReceipts story
+                let reclaimClauses = titled "retraction of that request"
+                    after = [r | r <- rs, rcAction r == "observe", rcTarget r == "permanent"]
+                    swapLast f = case reverse after of
+                        (lastObserve : _) -> map (\r -> if r == lastObserve then f r else r) rs
+                        [] -> rs
+                    stillPending =
+                        swapLast
+                            ( \r ->
+                                r
+                                    { rcObservation = fmap (\o -> o{obPending = ["b0#0"]}) (rcObservation r)
+                                    }
+                            )
+                    wallet =
+                        swapLast
+                            ( \r ->
+                                r
+                                    { rcObservation =
+                                        fmap
+                                            (\o -> o{obWalletLovelace = obWalletLovelace o + 1})
+                                            (rcObservation r)
+                                    }
+                            )
+                    refused =
+                        alter "reclaim" "permanent" (\r -> r{rcOutcome = "ledger-refused"}) rs
+                    noFee = alter "reclaim" "permanent" (\r -> r{rcAccount = Nothing}) rs
+                length (filter (/= Held) (reclaimClauses (judge rs story)))
+                    `shouldBe` 0
+                mapM_
+                    ( \mutated -> reclaimClauses (judge mutated story) `shouldSatisfy` any isNotHeld
+                    )
+                    [stillPending, wallet, refused, noFee]
+        it
+            "does not hold a refusal whose collateral is unbounded, unstated or unreturned"
+            $ do
+                rs <- honestReceipts story
+                let account f r = r{rcAccount = fmap f (rcAccount r)}
+                    over =
+                        alter
+                            "fold-unevaluated"
+                            "permanent"
+                            (account (\a -> a{acCollateralTotal = Just 9_000_000}))
+                            rs
+                    none =
+                        alter
+                            "fold-unevaluated"
+                            "permanent"
+                            (account (\a -> a{acCollateralTotal = Nothing}))
+                            rs
+                    kept =
+                        alter
+                            "craft update-by-stranger"
+                            "permanent"
+                            (account (\a -> a{acCollateralReturn = Nothing}))
+                            rs
+                    unread =
+                        alter
+                            "craft early-withdrawal"
+                            "permanent"
+                            (\r -> r{rcAccount = Nothing})
+                            rs
+                    failsWith mutated needle =
+                        show (judge mutated story) `shouldSatisfy` isInfixOf needle
+                failsWith over "over the bound of 5000000"
+                failsWith none "states no total collateral"
+                failsWith kept "returns no part of its collateral input"
+                failsWith unread "collateral the transaction states is not recorded"
+                statuses (judge rs story) `shouldSatisfy` all (== Held)
+        it
+            "does not hold any node-judged transaction of a take that set no collateral allowance"
+            $ do
+                rs <- honestReceipts story
+                let unbounded act =
+                        alter act "permanent" (\r -> r{rcAllowance = Nothing}) rs
+                    exposure = titled "within the operator's explicit allowance"
+                    clauseOf act
+                        | act == "reclaim" = titled "retraction of that request"
+                        | otherwise = exposure
+                length (exposure (judge rs story)) `shouldBe` 4
+                -- one mutation per node-judged action of the take: each is
+                -- caught by the clause that bounds that refusal, not by luck
+                mapM_
+                    ( \act -> do
+                        let results = judge (unbounded act) story
+                        clauseOf act results `shouldSatisfy` any isNotHeld
+                        show results
+                            `shouldSatisfy` isInfixOf "no collateral allowance was set"
+                    )
+                    [ "craft update-by-stranger"
+                    , "craft early-withdrawal"
+                    , "fold-unevaluated"
+                    , "reclaim"
+                    ]
+        it
+            "does not hold an indexer's read that is missing, unavailable, stale or in disagreement with the node"
+            $ do
+                rs <- honestReceipts story
+                let indexerClauses = titled "finds exactly one output"
+                    koios = alterRead "read-indexer koios"
+                    alterRead act f =
+                        alter act "permanent" f rs
+                    withRead f r = r{rcIndexer = fmap f (rcIndexer r)}
+                    mutations :: [(String, [Receipt], String)]
+                    mutations =
+                        [
+                            ( "unavailable"
+                            , koios (\r -> r{rcOutcome = "provider-unavailable"})
+                            , "not success"
+                            )
+                        ,
+                            ( "mismatch outcome"
+                            , koios (\r -> r{rcOutcome = "provider-mismatch"})
+                            , "not success"
+                            )
+                        ,
+                            ( "record unread"
+                            , koios (\r -> r{rcIndexer = Nothing})
+                            , "was not read back"
+                            )
+                        ,
+                            ( "record not admitted"
+                            , koios
+                                ( \r -> r{rcAdmission = Just ["the retained readback record is missing"]}
+                                )
+                            , "the retained readback record is missing"
+                            )
+                        ,
+                            ( "no configured lag"
+                            , koios (\r -> r{rcMaxLag = Nothing})
+                            , "no maximum lag the take was configured with"
+                            )
+                        , -- the raw facts change while every stated flag stays true
+
+                            ( "two holders"
+                            , koios
+                                (withRead (\i -> i{irHolders = (<> [("x#1", 1)]) <$> irHolders i}))
+                            , "counts 2 outputs holding the token"
+                            )
+                        ,
+                            ( "two of the token"
+                            , koios
+                                ( withRead
+                                    (\i -> i{irHolders = map (\(o, _) -> (o, 2)) <$> irHolders i})
+                                )
+                            , "holds 2 of the token"
+                            )
+                        ,
+                            ( "no holder"
+                            , koios (withRead (\i -> i{irHolders = Just []}))
+                            , "counts 0 outputs holding the token"
+                            )
+                        ,
+                            ( "no answer kept"
+                            , koios (withRead (\i -> i{irHolders = Nothing}))
+                            , "keeps no provider answer"
+                            )
+                        ,
+                            ( "answer names another output"
+                            , koios (withRead (\i -> i{irHolders = Just [("x#9", 1)]}))
+                            , "not the output the record reports"
+                            )
+                        ,
+                            ( "two addresses"
+                            , alterRead
+                                "read-indexer blockfrost"
+                                (withRead (\i -> i{irHolderAddresses = Just 2}))
+                            , "counts 2 addresses holding the token"
+                            )
+                        ,
+                            ( "other output"
+                            , koios
+                                ( withRead
+                                    (\i -> i{irIndexerOutput = "x#9", irHolders = Just [("x#9", 1)]})
+                                )
+                            , "is not the node's"
+                            )
+                        ,
+                            ( "record datum not the answer's"
+                            , koios (withRead (\i -> i{irAnswerDatum = Just "d87a80"}))
+                            , "does not carry"
+                            )
+                        ,
+                            ( "record tip not the answer's"
+                            , koios (withRead (\i -> i{irAnswerTip = Just 50}))
+                            , "but the provider's answer says 50"
+                            )
+                        ,
+                            ( "other datum bytes"
+                            , koios (withRead (\i -> i{irIndexerDatumCbor = "d87a80"}))
+                            , "datum bytes are not the node's"
+                            )
+                        ,
+                            ( "other datum hash"
+                            , koios
+                                ( withRead
+                                    ( \i ->
+                                        i
+                                            { irIndexerDatumHashComputed = Just "ee"
+                                            , irIndexerDatumHashRecorded = "ee"
+                                            }
+                                    )
+                                )
+                            , "is not the node's datum hash"
+                            )
+                        ,
+                            ( "recorded hash not the bytes' hash"
+                            , koios (withRead (\i -> i{irIndexerDatumHashRecorded = "ee"}))
+                            , "not the hash of its own datum bytes"
+                            )
+                        ,
+                            ( "hash never computed"
+                            , koios (withRead (\i -> i{irIndexerDatumHashComputed = Nothing}))
+                            , "computed no hash"
+                            )
+                        ,
+                            ( "behind"
+                            , koios
+                                ( withRead
+                                    (\i -> i{irIndexerTipSlot = subtract 700 <$> irIndexerTipSlot i})
+                                )
+                            , "slots behind the node, beyond the 600 allowed"
+                            )
+                        ,
+                            ( "a malformed whole number kept"
+                            , koios
+                                ( withRead
+                                    ( \i ->
+                                        i{irMalformed = ["the koios answer's quantity of the token is 1.4"]}
+                                    )
+                                )
+                            , "keeps a malformed fact: the koios answer's quantity of the token is 1.4"
+                            )
+                        ,
+                            ( "no tip"
+                            , koios (withRead (\i -> i{irIndexerTipSlot = Nothing}))
+                            , "keeps no indexer tip"
+                            )
+                        ,
+                            ( "run under another lag"
+                            , koios (withRead (\i -> i{irMaxLagSlots = Just 100_000}))
+                            , "not the 600 the take configured"
+                            )
+                        , -- a stated summary its facts contradict
+
+                            ( "states not holding"
+                            , koios (withRead (\i -> i{irStated = (irStated i){stHolds = False}}))
+                            , "states holds False, but its facts say True"
+                            )
+                        ,
+                            ( "states another lag"
+                            , koios
+                                (withRead (\i -> i{irStated = (irStated i){stLagSlots = Just 5}}))
+                            , "states a lag of 5 slots"
+                            )
+                        , -- identities
+
+                            ( "another policy"
+                            , koios (withRead (\i -> i{irPolicy = "ee"}))
+                            , "the policy the indexer was asked about"
+                            )
+                        ,
+                            ( "another asset name"
+                            , koios (withRead (\i -> i{irAssetName = "00"}))
+                            , "the asset name the indexer was asked about"
+                            )
+                        ,
+                            ( "node side not the inspect's"
+                            , koios (withRead (\i -> i{irNodeDatumHash = "ff"}))
+                            , "the record's node datum hash is not the inspect's"
+                            )
+                        ,
+                            ( "another provider's record"
+                            , koios (withRead (\i -> i{irProvider = "blockfrost"}))
+                            , "not of the indexer asked"
+                            )
+                        ]
+                length (indexerClauses (judge rs story)) `shouldBe` 2
+                indexerClauses (judge rs story) `shouldSatisfy` all (== Held)
+                mapM_
+                    ( \(_, mutated, needle) -> do
+                        let results = judge mutated story
+                        indexerClauses results `shouldSatisfy` any isNotHeld
+                        show results `shouldSatisfy` isInfixOf needle
+                    )
+                    mutations
+        it
+            "does not hold a retraction of any request but the one the insertion's receipt names"
+            $ do
+                rs <- honestReceipts story
+                let reclaimClauses = titled "retraction of that request"
+                    other =
+                        alter
+                            "reclaim"
+                            "permanent"
+                            (\r -> r{rcPendingRequest = Just "zz#9"})
+                            rs
+                    otherBody =
+                        alter
+                            "reclaim"
+                            "permanent"
+                            ( \r ->
+                                r
+                                    { rcAccount =
+                                        fmap (\a -> a{acSpends = ["w#1"]}) (rcAccount r)
+                                    }
+                            )
+                            rs
+                    unnamed =
+                        alter
+                            "run insert"
+                            "permanent"
+                            ( \r ->
+                                if rcOutcome r == "partial" then r{rcPendingRequest = Nothing} else r
+                            )
+                            rs
+                mapM_
+                    ( \mutated ->
+                        reclaimClauses (judge mutated story) `shouldSatisfy` any isNotHeld
+                    )
+                    [other, otherBody, unnamed]
+                reclaimClauses (judge rs story) `shouldSatisfy` all (== Held)
+
+-- | What an indexer's record keeps when it agrees with the inspect it was asked about.
+honestRead :: Indexer -> String -> Receipt -> IndexerRead
+honestRead ix k inspected =
+    IndexerRead
+        { irProvider = T.pack (indexerName ix)
+        , irPolicy = "cc"
+        , irAssetName = T.pack (hexOf k)
+        , irHolders = Just [(out, 1)]
+        , irHolderAddresses = if ix == Blockfrost then Just 1 else Nothing
+        , irAnswerDatum = Just "d87980"
+        , irAnswerTip = Just 100
+        , irIndexerOutput = out
+        , irIndexerDatumCbor = "d87980"
+        , irIndexerDatumHashRecorded = "dd"
+        , irIndexerDatumHashComputed = Just "dd"
+        , irIndexerTipSlot = Just 100
+        , irMaxLagSlots = Just 600
+        , irNodeOutput = out
+        , irNodeDatumCbor = "d87980"
+        , irNodeDatumHash = "dd"
+        , irNodeChainPoint = "100.aa"
+        , irStated =
+            Stated
+                { stHolds = True
+                , stSameOutput = True
+                , stSameDatumBytes = True
+                , stSameDatumHash = True
+                , stWithinLag = True
+                , stLagSlots = Just 0
+                }
+        , irMalformed = []
+        }
+  where
+    out = case rcCommand inspected of
+        Just (Object o)
+            | Just (Object a) <- KeyMap.lookup "applicationOutput" o
+            , Just (String s) <- KeyMap.lookup "output" a ->
+                s
+        _ -> ""
+
 appHash :: T.Text
 appHash = "a99"
 
@@ -747,17 +1195,17 @@ commandReceipt c k updates terminal = case c of
             , "liveOutput" .= ("i#1" :: String)
             , "envelope" .= envelope "p0"
             ]
-    Update n ->
+    Update _ ->
         object
             [ "outcome" .= ("success" :: String)
-            , "liveOutput" .= ("u" <> show n <> "#0")
-            , "payload" .= payload ("p" <> show n)
+            , "liveOutput" .= ("u" <> show (updates + 1) <> "#0")
+            , "payload" .= payload ("p" <> show (updates + 1))
             , "root" .= ("r1" :: String)
             ]
     Terminate ->
         object
             [ "outcome" .= ("success" :: String)
-            , "deposit" .= (2000000 :: Int)
+            , "deposit" .= (2_000_000 :: Int)
             , "released" .= ("t#1" :: String)
             ]
     Inspect
@@ -776,15 +1224,18 @@ commandReceipt c k updates terminal = case c of
                     , "leaf" .= ("active" :: String)
                     , "key" .= hexOf k
                     , "root" .= ("r1" :: String)
+                    , "chainPoint" .= ("100.aa" :: String)
                     , "applicationOutput"
                         .= object
                             [ "output"
                                 .= (if updates == 0 then "i#1" else "u" <> show updates <> "#0")
+                            , "datumHash" .= ("dd" :: String)
+                            , "datumCbor" .= ("d87980" :: String)
                             , "envelope" .= envelope p
                             , "payload" .= payload p
                             , "controller" .= ("c0" :: String)
-                            , "deposit" .= (2000000 :: Int)
-                            , "lovelace" .= (2000000 :: Int)
+                            , "deposit" .= (2_000_000 :: Int)
+                            , "lovelace" .= (2_000_000 :: Int)
                             ]
                     ]
   where

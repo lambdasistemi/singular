@@ -135,10 +135,176 @@ overwrites on its own:
 - A second **create** on the same directory is refused, including one that
   was held while another create finished.
 
+## On a public network
+
+The same commands run against a public node. Nothing on this page has
+been run there; receipts from such a run are published separately, and
+this page only says how to make one and what stops it.
+
+**Fund the wallet with two ada-only outputs.** The registry's first
+publication is paid from an ada-only output other than the seed while the
+seed stays unspent, so a wallet whose only output is the seed cannot
+create: `create` and `create --preview` refuse it before anything is
+submitted and name the missing output. A single funded output is first
+split by an ordinary wallet transaction into a seed and a funding output.
+
+**Preview with a public address, then write.** A preview names the caller
+by an enterprise address instead of a signing key, reads through a
+connection that cannot sign or send, and writes nothing: the registry
+directory is byte for byte the same afterwards.
+
+```bash
+# The identity a seed gives, and what each write would cost, from public facts alone.
+"$singular" registry create --preview --registry reg --blueprint "$blueprint" \
+  --node-socket "$sock" --network-magic 1 --wallet-address "$address"
+"$singular" registry insert --preview --registry reg --blueprint "$blueprint" --key "$key" \
+  --envelope envelope.json --node-socket "$sock" --network-magic 1 --wallet-address "$address"
+```
+
+The preview receipt names the wallet outputs it selects, each body's fee,
+the execution units the node's own evaluator measured for each script, the
+total collateral each states and the collateral it returns, a digest of the
+protocol parameters it was built under, and the outlay: the fee, the bond
+the booking locks and a bound on the fold that follows. An insertion or a
+termination is two transactions and the fold exists only once its booking
+has confirmed, so the preview bounds the fold from the network's parameters;
+the writing command measures it after the booking confirms and before it
+submits it. A preview is not a confirmation: its bodies are built for one
+moment.
+
+`insert`, `update` and `terminate` take `--fund-input TXID#IX`, the wallet output
+that funds and collateralises the write, and `--max-outlay LOVELACE`. A booking
+or an update past it is not signed. An insert or terminate also folds after its
+booking confirms, and its fold, built then, is signed only if it costs no more
+than the booking left of the allowance; past that, the command stops partial,
+naming its pending request, and nothing more is signed or sent. `create` and
+`inspect` enforce neither flag, so they refuse both by name, before any key is
+read, rather than ignore them. Each transaction a command builds rests on one
+snapshot of the network's protocol parameters, read once for it: the booking's
+build, measurement and allowance decision share one, and the preview's digest
+names it; the fold, which cannot exist until the booking confirms, is built and
+judged under a snapshot of its own. A fee is never declared: the booking's units are measured on the
+body that will be submitted, and its total collateral is stated and the
+rest of its funding output returned. A funding output that cannot leave a return
+of at least its minimum ada is refused before anything is submitted, never
+collateralised whole.
+
+**The four refusals on a registry that already exists.** `cli-controls`
+takes an existing registry directory and a fresh key, through a node someone
+else runs, and never creates a registry or starts, stops or resets a node:
+
+```bash
+cli-controls attach --singular "$singular" --blueprint "$blueprint" \
+  --ledger applications/open-datum/ledgers.json \
+  --node-socket "$sock" --network-magic 1 --wallet-skey wallet.skey --stranger-skey stranger.skey \
+  --registry reg --key take-one --collateral-allowance 10000000 --max-outlay 40000000 \
+  --readback tools/demo1_readback.sh --blockfrost-credential-file "$BLOCKFROST_KEY_FILE" --work take-one
+```
+
+It builds from this archive: make a scratch copy of the extracted tree,
+`git init` and `git add` it there (Nix reads a flake from a Git tree), then
+`nix build ./conformance#cli-controls`. The take inserts the key, refuses an
+update another wallet's signature stands for beside the controller's own
+update, refuses a release outside any fold beside the terminate that
+releases the same holding inside one, and refuses a second insertion of the
+Active key and an insertion of the Terminal key, each booked and then refused
+at its fold. Every insertion refusal leaves its request pending, and a
+registry's fold takes every pending request, so the take retracts each one as
+its owner inside the request's retract window (a processing window of 120
+seconds, then a retract window of 30). The retraction returns the bond and
+costs its fee; the verdict requires the wallet to hold exactly that. A
+refusal's submission is refused by the node and its receipt says so; whether a
+node could ever collect collateral for one is not claimed, so every
+node-judged transaction of the take states its total collateral within
+`--collateral-allowance` and returns the rest of its funding output — read
+from the body the receipt retained. The allowance is required: a take without
+one is refused before it writes anything, and a transaction that states no
+total, a total over it or no return is not signed.
+
+The take reads its key from two public indexers while the key is Active: after
+the controller's own update and the fresh inspect that follows it, before any
+refusal of a release or the termination, it runs `tools/demo1_readback.sh`
+for Koios and for Blockfrost from the policy id and asset name that inspect
+names, and compares the output reference, the inline datum's bytes and hash
+and the chain position with that inspect. The take keeps the script's record,
+digested, and judges it from the facts it keeps, never from the summary it
+states: the provider's own answers counted into the outputs holding the token,
+the reported output, datum bytes and tip, each checked against those answers,
+the datum's hash computed again from its bytes, and the lag measured from the
+inspect's chain point against the maximum lag the take was run with. A record
+whose stated verdict its facts contradict does not hold. An indexer that is
+missing, unreachable, behind the node or in disagreement is never a
+confirmation, and the take stops before its next write. The record's digest
+proves that the bytes judged are the bytes kept; it does not prove that the
+provider answered honestly, which no check here can. `--readback` and
+`--blockfrost-credential-file` are required before anything is written, and
+`--koios-base-url`, `--blockfrost-base-url` and `--max-lag` override the
+public services and the lag allowed; the credential file is a reference the
+script reads, never the take. On a development node there is no public
+indexer, so `tools/demo1_cli_attach.sh` points the take at
+`tools/demo1_mock_indexer.py`, a stand-in that answers in the services' shapes
+from the inspect receipt the take has just written, and shows it disagree
+and go unreachable.
+
+**Fund the wallet for the whole take.** A write spends the wallet's largest
+ada-only output, and an approval a booking mints returns to the wallet when
+its request is folded or retracted and rides in the change output from then
+on: the retraction of a refused insertion's request has the request's bond as
+one output and the change, carrying the approval asset, as the other. That
+output is no longer ada-only, and the next write needs another. A refusal
+states its collateral from the largest ada-only output, and the balancer takes
+a whole output as collateral, with no return, when what is left of it cannot
+carry one. The take therefore refuses, before it writes anything, a wallet
+that does not hold one ada-only output for every insert, terminate and
+retraction of its story and one more, each at least the larger of the
+collateral allowance and the outlay bound plus the ledger's minimum output.
+
+The take goes on only from the outcome each step names. A booking's `partial`
+stop, a refusal the node returns for the script that owns the rule, and the
+ordinary commands' `success` advance the take, and only when the receipt
+predicates of that step hold; a client error, an unknown or unconfirmed
+submission, a timeout, a lost node, a concurrent writer or any requirement that
+does not hold stops the take before its next action, with its receipts kept.
+The retraction names the request the take's own insertion left pending, and
+spends it only while the registry still reads as the readback that saw it
+pending did: a missing, replaced or another owner's request is refused and no
+other is substituted.
+
+**Read the key back from two public indexers.** `tools/demo1_readback.sh`
+starts from the policy id and asset name alone:
+
+```bash
+"$singular" registry inspect --registry reg --blueprint "$blueprint" --key "$key" \
+  --node-socket "$sock" --network-magic 1 > inspect.json
+tools/demo1_readback.sh --provider koios --policy "$policy" --name "$name" \
+  --inspect inspect.json --out koios.json
+tools/demo1_readback.sh --provider blockfrost --policy "$policy" --name "$name" \
+  --inspect inspect.json --out blockfrost.json --credential-file "$BLOCKFROST_KEY_FILE"
+```
+
+It records each request and the complete response, the output the indexer
+says holds the asset, its inline datum, that datum's hash recomputed here,
+the indexer's own tip and the node's chain point, and the lag between them;
+it succeeds only when the indexer finds exactly one output holding exactly
+one of the asset and its output reference, datum bytes and datum hash are the
+node's, within `--max-lag` slots. A provider that needs a key reads it from
+the file named, hands it to curl on standard input, and never puts it in an
+argument, the environment, a log, a receipt or a recording.
+
+**Stopping.** Any outcome other than the one a step names, with its receipt
+predicates holding, stops the take: the ordinary commands' `success`, the
+booking's `partial` stop and the node's refusal at the script that owns the
+rule are the only outcomes a step advances on. Inspect only, record the outcome as it is — a timeout is not a refusal
+and a budget overrun is not a script's refusal — reconcile what is locked,
+and continue only on a separately approved decision. Nothing resubmits,
+reboots or retries by itself, and a reclaim retracts only a request the take
+itself observed pending.
+
 ## What this does not claim
 
 The open-datum application protects the payload and the deposit, nothing
 more; it is a demonstration of the registry's mechanics. This page and
 its receipts are evidence of behaviour on a private development node
-only — not of any public network, indexing service, release or complete
+only. Public-network receipts, when they exist, are published separately and are not
+claimed here; nor is any release or complete
 conformance.

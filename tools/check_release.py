@@ -172,6 +172,19 @@ if onchain_present:
             # without the page that documents it.
             "DEMO1.md",
             "offchain/cli/Main.hs",
+            # #300: the refusal controls and the indexer readback replay from
+            # the archive: the runner, its take, the readback, the statement
+            # ledger and specification it binds, and the flake inputs it reads.
+            "conformance/app-cli/Main.hs",
+            "conformance/flake.nix",
+            "tools/demo1_cli_attach.sh",
+            "tools/demo1_readback.sh",
+            "tools/demo1_mock_indexer.py",
+            "tools/demo1_readback_tamper.sh",
+            "applications/open-datum/ledgers.json",
+            "specs/299-singular-cli/spec.md",
+            "lean-toolchain",
+            "flake.lock",
             "onchain/plutus.json",
             "onchain/script-identity.json",
             "onchain/aiken.toml",

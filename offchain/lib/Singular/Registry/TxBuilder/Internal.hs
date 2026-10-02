@@ -71,6 +71,7 @@ module Singular.Registry.TxBuilder.Internal
 
       -- * Evaluate and balance
     , evaluateAndBalance
+    , evaluateAndBalanceReferencing
     , placeholderExUnits
 
       -- * Constants
@@ -150,6 +151,7 @@ import Singular.Registry.TxBuilder.Internal.Lookup
     , computeScriptIntegrity
     , currentPosixMs
     , evaluateAndBalance
+    , evaluateAndBalanceReferencing
     , findRequestUtxos
     , findStateUtxo
     , findUtxoByTxIn
