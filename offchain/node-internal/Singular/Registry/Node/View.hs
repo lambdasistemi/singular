@@ -37,6 +37,7 @@ import Ouroboros.Consensus.HardFork.Combinator.AcrossEras
 import Ouroboros.Network.Block qualified as Chain
 import Ouroboros.Network.Magic (NetworkMagic (..))
 
+import Singular.Registry.Node.PhaseLog (phaseLogFromEnv, queryPhase)
 import Singular.Registry.Provider
     ( ChainPoint (..)
     , Provider
@@ -49,13 +50,16 @@ import Singular.Registry.Provider
 nodeProvider :: NetworkMagic -> N2C.Provider IO -> Provider IO
 nodeProvider magic n2c = scopedProvider $ \action ->
     lost $ N2C.withAcquired n2c $ \h -> do
-        snapshot <- N2C.queryLedgerSnapshotH h
+        lg <- phaseLogFromEnv
+        snapshot <-
+            queryPhase lg "ledgerSnapshot" (const 1) (N2C.queryLedgerSnapshotH h)
         point <-
             maybe
                 (throwIO AcquiredAtOrigin)
                 pure
                 (chainPointOf magic snapshot)
-        pp <- N2C.queryProtocolParamsH h
+        pp <-
+            queryPhase lg "protocolParams" (const 1) (N2C.queryProtocolParamsH h)
         action
             View
                 { viewPoint = point

@@ -245,15 +245,9 @@ submission_tx() { field "$1" "[.submissions[]? | select(.step == \"$2\") | .tx] 
 is_equal() { [ -n "$1" ] && [ "$1" != null ] && [ "$1" = "$2" ]; }
 is_txid() { [[ "$1" =~ ^[0-9a-f]{64}$ ]]; }
 
-# envelope FILE CONTROLLER KEY
-envelope() {
-  jq -n --arg s "$state" --arg t "$token" --arg a "$active" --arg k "$3" --arg c "$2" '
-      {constructor:0, fields:[
-        {constructor:0, fields:[{int:1},{constructor:0,fields:[{bytes:$s},{bytes:$t}]},
-          {bytes:$a},{bytes:$k},{bytes:$c},{int:2000000}]},
-        {map:[{k:{bytes:"6e616d65"},v:{bytes:"616c696365"}}]}]}' >"$1"
-}
-insert_of() { args=(registry insert --fold --key-hex "$1" --envelope "$work/$1.json" "${common[@]}" "${node[@]}" "${alice[@]}"); }
+# The payload every insert here carries; the command builds the rest of the
+# envelope from the registry, the key and the signing wallet.
+insert_of() { args=(registry insert --fold --key-hex "$1" --payload "$work/insert-payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"); }
 
 # ------------------------------------------------------------------
 # The registry
@@ -262,11 +256,8 @@ run preview registry create --preview "${common[@]}" "${node[@]}" "${alice[@]}"
 outcome_is preview success || setup_fail "create --preview did not succeed"
 run create registry create --seed "$(field preview .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
 outcome_is create success || setup_fail "create did not succeed"
-state="$(field create .pins.pinState)"
 token="$(field create .token)"
-active="$(field create .pins.pinActive)"
-alicekey="$(field create .walletKeyHash)"
-for k in 6b0a 6b0b 6b0c 6b0d 6b0e 6b0f 6b10 6b11; do envelope "$work/$k.json" "$alicekey" "$k"; done
+jq -n '{map:[{k:{bytes:"6e616d65"},v:{bytes:"616c696365"}}]}' >"$work/insert-payload.json"
 jq -n '{int: 42}' >"$work/payload.json"
 say "registry $token created"
 
@@ -617,10 +608,6 @@ run preview-rb registry create --preview "${common[@]}" "${node[@]}" "${alice[@]
 outcome_is preview-rb success || setup_fail "the second create --preview did not succeed"
 run create-rb registry create --seed "$(field preview-rb .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
 outcome_is create-rb success || setup_fail "the second create did not succeed"
-state="$(field create-rb .pins.pinState)"
-token="$(field create-rb .token)"
-active="$(field create-rb .pins.pinActive)"
-for k in 6c00 6c01 6c02; do envelope "$work/$k.json" "$alicekey" "$k"; done
 insert_of 6c00
 run insert-rb0 "${args[@]}"
 outcome_is insert-rb0 success || setup_fail "the insert before the snapshot did not succeed"

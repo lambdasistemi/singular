@@ -89,9 +89,16 @@ import Cardano.Tx.Balance (refScriptsSize)
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Cardano.Ledger.Core (Script)
+import Singular.PhaseLogFixture
+    ( logObjects
+    , phaseLines
+    , textField
+    , withLogFile
+    )
 import Singular.Registry.Blueprint (applyBytesParam)
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (ConwayEra)
+import Singular.Registry.Node.PhaseLog (loggedProvider, phaseLogAt)
 import Singular.Registry.Provider (Provider (..), View (..))
 import Singular.Registry.StubView (servingView, stubView)
 import Singular.Registry.TxBuilder.BookingFixture
@@ -424,6 +431,51 @@ mutations =
 spec :: Spec
 spec =
     describe "a booking's fee, units and collateral are measured (#300)" $ do
+        it
+            "logs the build of a measured booking and each evaluation it \
+            \made, as the preview of an insert prepares one (#363)"
+            $ withLogFile
+            $ \path -> do
+                let sc =
+                        Scenario
+                            { scWallet = zipWith Held txIns [9_000_000_000, 5_000_000_000]
+                            , scUnits = ExUnits 500_000 200_000_000
+                            , scSlope = 10
+                            , scDeposit = 2_000_000
+                            , scByReference = False
+                            , scPinned = Nothing
+                            }
+                    base = viewFor sc
+                evaluations <- newIORef (0 :: Int)
+                let counted =
+                        base
+                            { viewEvaluateTx = \tx ->
+                                atomicModifyIORef' evaluations (\n -> (n + 1, ()))
+                                    >> viewEvaluateTx base tx
+                            }
+                _ <-
+                    withView (loggedProvider (phaseLogAt path) (servingView counted)) $ \v ->
+                        bookEdgeMeasured
+                            cfg
+                            v
+                            payer
+                            tokenId
+                            key0
+                            edge0
+                            (edgeDestinationOf cfg codes payer edge0)
+                            (scDeposit sc)
+                            (approvalFor sc)
+                            []
+                            Nothing
+                measured <- readIORef evaluations
+                objects <- logObjects path
+                -- the balancer evaluates more than once: the count is not one
+                measured `shouldSatisfy` (> 0)
+                length (phaseLines "eval" objects) `shouldBe` measured
+                map (textField "builder") (phaseLines "build-body" objects)
+                    `shouldBe` [Just "bookEdgeMeasured"]
+                map (textField "outcome") (phaseLines "build-body" objects)
+                    `shouldBe` [Just "ok"]
         it
             "holds for every generated wallet, evaluator reading and funding choice"
             $ property

@@ -40,6 +40,7 @@ import Data.ByteString.Lazy qualified as BL
 import Data.Either (fromLeft)
 import Data.List (isInfixOf, sort)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (isJust)
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~))
@@ -68,6 +69,10 @@ import Cardano.Ledger.Mary.Value (MaryValue (..))
 
 import MPF.Backend.Pure (MPFInMemoryDB (..))
 
+import Singular.Application.OpenDatum.Build
+    ( DepositRefusal (..)
+    , minimumDeposit
+    )
 import Singular.CLI.Command
 
 import Singular.CLI.Proof
@@ -160,9 +165,9 @@ commandLine = describe "the command line" $ do
                         , createReceipt = Nothing
                         }
                 )
-    it "reads an insert at a hex key with its envelope" $
+    it "reads an insert with its payload and the default deposit" $
         parseCommand
-            ( ["registry", "insert", "--key", "key", "--envelope", "/e.json"]
+            ( ["registry", "insert", "--key", "key", "--payload", "/p.json"]
                 <> reg
                 <> node
                 <> wallet
@@ -174,17 +179,82 @@ commandLine = describe "the command line" $ do
                         , entryBlueprint = "/srv/plutus.json"
                         , entryMode = Submit writeSettings
                         , entryKey = Key "key"
-                        , entryDocument = Just "/e.json"
+                        , entryDocument = Just "/p.json"
+                        , entryDeposit = Just minimumDeposit
                         , entryFund = Nothing
                         , entryMaxOutlay = Nothing
                         , entryReceipt = Nothing
                         , entryFold = False
                         }
                 )
-    it "refuses an insert without its envelope" $
+    it "reads --deposit on an insert, at the minimum and above it"
+        $ forM_
+            [ ("2000000", 2_000_000)
+            , ("2000001", 2_000_001)
+            , ("35000000", 35_000_000)
+            ]
+        $ \(argument, lovelace) ->
+            fmap
+                ( \case
+                    Insert e -> entryDeposit e
+                    _ -> Nothing
+                )
+                ( parseCommand
+                    ( ["registry", "insert", "--key", "key", "--payload", "/p.json"]
+                        <> ["--deposit", argument]
+                        <> reg
+                        <> node
+                        <> wallet
+                    )
+                )
+                `shouldBe` Right (Just lovelace)
+    it "refuses a deposit that is not an integer, or is below the minimum" $ do
+        let insertWith argument =
+                parseCommand
+                    ( ["registry", "insert", "--key", "key", "--payload", "/p.json"]
+                        <> ["--deposit", argument]
+                        <> reg
+                        <> node
+                        <> wallet
+                    )
+        forM_ ["two", "2e6", "2.5", "", "0x10", "+2000000"] $ \argument ->
+            insertWith argument `shouldBe` Left (DepositRefused DepositNotInteger)
+        insertWith "1999999"
+            `shouldBe` Left (DepositRefused (DepositBelowMinimum 1_999_999))
+        insertWith "-5"
+            `shouldBe` Left (DepositRefused (DepositBelowMinimum (-5)))
+        insertWith "0"
+            `shouldBe` Left (DepositRefused (DepositBelowMinimum 0))
+        renderCLIError (DepositRefused (DepositBelowMinimum 1_999_999))
+            `shouldSatisfy` isInfixOf "below the minimum of 2000000 lovelace"
+    it "takes --deposit from an insert only"
+        $ forM_
+            [ ["registry", "update", "--payload", "/p.json"]
+            , ["registry", "terminate"]
+            ]
+        $ \command ->
+            parseCommand
+                ( command
+                    <> ["--key", "key", "--deposit", "2000000"]
+                    <> reg
+                    <> node
+                    <> wallet
+                )
+                `shouldBe` Left
+                    ( BadValue
+                        "--deposit"
+                        "is a registry insert flag: only insert sets a deposit"
+                    )
+    it
+        "no longer reads the flag that carried a hand-built envelope, on any command"
+        $ forM_ commands
+        $ \line ->
+            parseCommand (line <> [removedFlag, "/e.json"])
+                `shouldBe` Left (BadValue removedFlag "is not a flag singular reads")
+    it "refuses an insert without its payload" $
         parseCommand
             (["registry", "insert", "--key", "key"] <> reg <> node <> wallet)
-            `shouldSatisfy` isLeftWith isMissing
+            `shouldBe` Left (MissingFlag "--payload")
     it "reads an update with its payload, and refuses one without" $ do
         parseCommand
             ( ["registry", "update", "--key", "key", "--payload", "/p.json"]
@@ -283,7 +353,7 @@ commandLine = describe "the command line" $ do
         $ do
             let insert extra =
                     parseCommand
-                        ( ["registry", "insert", "--key", "key", "--envelope", "/e.json"]
+                        ( ["registry", "insert", "--key", "key", "--payload", "/p.json"]
                             <> reg
                             <> node
                             <> wallet
@@ -332,9 +402,11 @@ commandLine = describe "the command line" $ do
                 `shouldBe` Left
                     (BadValue "--backend" "names node or indexer, not nodes")
   where
+    -- Spelled apart: no line of the tree names the removed flag.
+    removedFlag = "--" <> "envelope"
     commands =
         [ ["registry", "create", "--seed", seedText] <> reg <> node <> wallet
-        , ["registry", "insert", "--key", "key", "--envelope", "/e.json"]
+        , ["registry", "insert", "--key", "key", "--payload", "/p.json"]
             <> reg
             <> node
             <> wallet
@@ -366,7 +438,7 @@ commandLine = describe "the command line" $ do
         Inspect i -> inspectKey i
         other -> error ("not a key command: " <> show other)
     insertCommand =
-        ["registry", "insert", "--envelope", "/e.json"]
+        ["registry", "insert", "--payload", "/p.json"]
             <> reg
             <> node
             <> wallet
@@ -558,7 +630,10 @@ journal = describe "the journal of a write" $ do
             let entries =
                     [submitted "boot" "t1", confirmed "boot" "t1", submitted "book" "t2"]
             mapM_ (appendJournal dir) entries
-            readJournal dir `shouldReturn` entries
+            read' <- readJournal dir
+            -- each line comes back as appended, plus the time of its append
+            map (\e -> e{journalTime = Nothing}) read' `shouldBe` entries
+            map (isJust . journalTime) read' `shouldBe` map (const True) entries
     it "names the submission a process never saw confirmed" $ do
         unresolved [submitted "boot" "t1"]
             `shouldBe` Just (submitted "boot" "t1")
@@ -665,6 +740,7 @@ journal = describe "the journal of a write" $ do
             , journalEdge = Nothing
             , journalRootBefore = Nothing
             , journalRootAfter = Nothing
+            , journalTime = Nothing
             }
 
 -- ---------------------------------------------------------
@@ -918,6 +994,7 @@ recovery = describe "recovery after an uncertain submission" $ do
             , journalEdge = Nothing
             , journalRootBefore = Nothing
             , journalRootAfter = Nothing
+            , journalTime = Nothing
             }
     foldLine from to =
         (line "f" "prepared")
@@ -1164,6 +1241,7 @@ jline t e =
         , journalEdge = Nothing
         , journalRootBefore = Nothing
         , journalRootAfter = Nothing
+        , journalTime = Nothing
         }
 
 {- | Start a process that rewrites a file over and over, kill it at a
@@ -1207,8 +1285,8 @@ previewRows = describe "--preview" $ do
                   , "--preview"
                   , "--key"
                   , "key"
-                  , "--envelope"
-                  , "/e.json"
+                  , "--payload"
+                  , "/p.json"
                   ]
                     <> reg
                     <> extra
@@ -1226,13 +1304,27 @@ previewRows = describe "--preview" $ do
                                 (NodeSettings "/run/node.socket" 1)
                                 (textOf Testnet payerHash)
                         , entryKey = Key "key"
-                        , entryDocument = Just "/e.json"
+                        , entryDocument = Just "/p.json"
+                        , entryDeposit = Just minimumDeposit
                         , entryFund = Nothing
                         , entryMaxOutlay = Nothing
                         , entryReceipt = Nothing
                         , entryFold = False
                         }
                 )
+    it
+        "reads --deposit on an insert preview, and refuses one below the minimum"
+        $ do
+            let address = ["--wallet-address", textOf Testnet payerHash]
+                depositOf = \case
+                    Insert e -> entryDeposit e
+                    _ -> Nothing
+            fmap
+                depositOf
+                (insertPreview (previewNode "1" <> address <> ["--deposit", "3000000"]))
+                `shouldBe` Right (Just 3_000_000)
+            insertPreview (previewNode "1" <> address <> ["--deposit", "1999999"])
+                `shouldBe` Left (DepositRefused (DepositBelowMinimum 1_999_999))
     it "refuses a signing key beside --preview before anything is read" $
         insertPreview
             ( previewNode "1"
@@ -1294,7 +1386,7 @@ previewRows = describe "--preview" $ do
             `shouldBe` Left PreviewTakesNoKey
     it "refuses an address on a command that signs" $ do
         parseCommand
-            ( ["registry", "insert", "--key", "key", "--envelope", "/e.json"]
+            ( ["registry", "insert", "--key", "key", "--payload", "/p.json"]
                 <> reg
                 <> node
                 <> wallet
@@ -1384,7 +1476,7 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
             parseCommand (["registry", "fold"] <> reg <> node <> wallet <> extra)
         insertWith extra =
             parseCommand
-                ( ["registry", "insert", "--key", "6b6579", "--envelope", "/e.json"]
+                ( ["registry", "insert", "--key", "6b6579", "--payload", "/p.json"]
                     <> reg
                     <> node
                     <> wallet
@@ -1465,7 +1557,7 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
     it "refuses, by name, what a fold decides from its request"
         $ forM_
             [ ("--key", ["--key", "6b6579"])
-            , ("--envelope", ["--envelope", "/e.json"])
+            , ("--deposit", ["--deposit", "2000000"])
             , ("--payload", ["--payload", "/p.json"])
             , ("--preview", ["--preview"])
             , ("--fold", ["--fold"])
@@ -1504,8 +1596,8 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
               , "--preview"
               , "--key"
               , "6b6579"
-              , "--envelope"
-              , "/e.json"
+              , "--payload"
+              , "/p.json"
               , "--fold"
               ]
                 <> reg

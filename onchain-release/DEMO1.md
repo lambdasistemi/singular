@@ -67,10 +67,10 @@ node=(--node-socket "$sock" --network-magic 42)
 "$singular" registry create --preview --registry reg --blueprint "$blueprint" "${node[@]}" --wallet-skey alice.skey
 "$singular" registry create --seed TXID#IX --registry reg --blueprint "$blueprint" "${node[@]}" --wallet-skey alice.skey
 
-# 2. Book an insertion of a key under an envelope naming this registry and Alice as
-#    controller. The request stays pending; the receipt names it and its fold deadline.
+# 2. Book an insertion of a key with its first payload; Alice's wallet is its controller.
+#    The request stays pending; the receipt names it and its fold deadline.
 "$singular" registry insert --registry reg --blueprint "$blueprint" --key alice \
-  --envelope envelope.json "${node[@]}" --wallet-skey alice.skey
+  --payload payload.json "${node[@]}" --wallet-skey alice.skey
 
 # 3. Fold it, before that deadline. Any wallet may fold: here, Bob's.
 "$singular" registry fold --registry reg --blueprint "$blueprint" "${node[@]}" --wallet-skey bob.skey
@@ -101,18 +101,24 @@ Run the fold of a request before the deadline its booking's receipt names
 before anything is signed. Giving `insert` or `terminate` the `--fold` switch
 books and folds in one command, with one wallet.
 
-`--key` is the key as text, its UTF-8 bytes; the envelope carries the same
-bytes as hex (`616c696365` is `alice`). `--key-hex 616c696365` names that
-key too, which is how a key that is not printable text is given. A key is
-1 to 32 bytes either way.
+`--key` is the key as text, its UTF-8 bytes (`616c696365` is `alice`).
+`--key-hex 616c696365` names that key too, which is how a key that is not
+printable text is given. A key is 1 to 32 bytes either way.
 
-The envelope is Plutus data in the detailed JSON schema: constructor 0
-over the control and the payload, the control being constructor 0 over
-the version `1`, the registry's state asset (its state policy and token
-name, as the create receipt prints them in `pins.pinState` and `token`),
-the active policy (`pins.pinActive`), the key, the controller's payment
-key hash (`walletKeyHash`) and the protected deposit in lovelace. The
-payload, like the one `update` writes, is any Plutus data.
+The payload is Plutus data in the detailed JSON schema, any datum, the
+same form `update --payload` takes. `insert` builds the key's envelope
+around it: constructor 0 over the control and the payload, the control
+being constructor 0 over the version `1`, the registry's state asset
+(its state policy and token name, as the create receipt prints them in
+`pins.pinState` and `token`), the active policy (`pins.pinActive`), the
+key, the controller's payment key hash (the signing wallet's, which the
+create receipt prints as `walletKeyHash`) and the protected deposit in
+lovelace. The deposit is 2 000 000 when `--deposit` is not given;
+`--deposit LOVELACE` names another amount, and one below 2 000 000 is
+refused. That minimum is the client's own policy: the chain checks only
+that a request's deposit equals the control's at booking and that an
+update keeps at least the control's deposit, and sets no floor. The
+insert receipt and the preview receipt print the envelope it built.
 
 ## What you should see
 
@@ -194,7 +200,7 @@ directory is byte for byte the same afterwards.
 "$singular" registry create --preview --registry reg --blueprint "$blueprint" \
   --node-socket "$sock" --network-magic 1 --wallet-address "$address"
 "$singular" registry insert --preview --registry reg --blueprint "$blueprint" --key "$key" \
-  --envelope envelope.json --node-socket "$sock" --network-magic 1 --wallet-address "$address"
+  --payload payload.json --node-socket "$sock" --network-magic 1 --wallet-address "$address"
 ```
 
 The preview receipt names the wallet outputs it selects, each body's fee,

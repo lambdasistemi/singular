@@ -60,9 +60,12 @@ import Text.Read (readMaybe)
 
 import Cardano.Ledger.TxIn (TxIn)
 import Singular.Application.OpenDatum.Build
-    ( KeyEncoding (..)
+    ( DepositRefusal (..)
+    , KeyEncoding (..)
     , KeyRefusal (..)
     , maxKeyBytes
+    , minimumDeposit
+    , readDeposit
     , readKey
     )
 import Singular.CLI.Node (backendSetting, writeTarget)
@@ -125,8 +128,12 @@ data EntryArgs = EntryArgs
     , entryMode :: EntryMode
     , entryKey :: Key
     , entryDocument :: Maybe FilePath
-    {- ^ @insert@: the envelope's detailed-schema JSON (@--envelope@);
-    @update@: the new payload's (@--payload@); @terminate@: none
+    {- ^ @insert@ and @update@: the payload's detailed-schema JSON
+    (@--payload@); @terminate@: none
+    -}
+    , entryDeposit :: Maybe Integer
+    {- ^ @insert@: the protected deposit in lovelace (@--deposit@, else the
+    minimum); @update@ and @terminate@: none
     -}
     , entryFund :: Maybe TxIn
     -- ^ @--fund-input@: the wallet output to fund and collateralise from
@@ -188,6 +195,8 @@ data CLIError
     | BadValue String String
     | -- | the key reader's named reason
       KeyRefused KeyRefusal
+    | -- | the deposit reader's named reason
+      DepositRefused DepositRefusal
     | UnsafeSettings String
     | SigningKeyNotAccepted
     | PreviewTakesNoKey
@@ -219,13 +228,15 @@ parseCommand args = do
                     >> refuseFold flags
                     >> (Create <$> createArgs flags)
             ["registry", "insert"] ->
-                refuseRequest flags
-                    >> (Insert <$> entryArgs True (Just "--envelope") flags)
+                refuseRequest flags >> (Insert <$> insertArgs flags)
             ["registry", "update"] ->
                 refuseRequest flags
+                    >> refuseDeposit flags
                     >> (Update <$> entryArgs False (Just "--payload") flags)
             ["registry", "terminate"] ->
-                refuseRequest flags >> (Terminate <$> entryArgs True Nothing flags)
+                refuseRequest flags
+                    >> refuseDeposit flags
+                    >> (Terminate <$> entryArgs True Nothing flags)
             ["registry", "fold"] -> Fold <$> foldArgs flags
             ["registry", "inspect"] ->
                 refuseSpendingFlags "inspect" flags
@@ -284,6 +295,22 @@ parseCommand args = do
                 , createPreview = preview
                 , createReceipt = optional "--receipt" flags
                 }
+    -- An insert is an entry command that also names the deposit its envelope
+    -- protects: --deposit LOVELACE, else the minimum, read by the library.
+    insertArgs flags = do
+        parsed <- entryArgs True (Just "--payload") flags
+        deposit <-
+            first
+                DepositRefused
+                (readDeposit (T.pack <$> optional "--deposit" flags))
+        pure parsed{entryDeposit = Just deposit}
+    refuseDeposit flags =
+        when (isJust (lookup "--deposit" flags)) $
+            Left
+                ( BadValue
+                    "--deposit"
+                    "is a registry insert flag: only insert sets a deposit"
+                )
     entryArgs books document flags = do
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
@@ -315,6 +342,7 @@ parseCommand args = do
                 , entryMode = mode
                 , entryKey = key
                 , entryDocument = doc
+                , entryDeposit = Nothing
                 , entryFund = fund
                 , entryMaxOutlay = outlay
                 , entryReceipt = optional "--receipt" flags
@@ -324,7 +352,7 @@ parseCommand args = do
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
         forM_
-            (map fst keyFlags <> ["--envelope", "--payload", "--preview", "--fold"])
+            (map fst keyFlags <> ["--deposit", "--payload", "--preview", "--fold"])
             $ \flag ->
                 when (isJust (lookup flag flags)) $
                     Left
@@ -495,7 +523,7 @@ tokens = go [] []
         , "--wallet-address"
         , "--fund-input"
         , "--max-outlay"
-        , "--envelope"
+        , "--deposit"
         , "--payload"
         , "--request"
         , "--backend"
@@ -519,6 +547,14 @@ renderCLIError = \case
             <> " bytes; a registry key is at most "
             <> show maxKeyBytes
             <> " bytes"
+    DepositRefused DepositNotInteger ->
+        "--deposit is not a whole number of lovelace"
+    DepositRefused (DepositBelowMinimum n) ->
+        "--deposit "
+            <> show n
+            <> " is below the minimum of "
+            <> show minimumDeposit
+            <> " lovelace"
     UnsafeSettings why -> why
     SigningKeyNotAccepted ->
         "inspect takes no signing key: it reads, and never funds or submits"
@@ -541,11 +577,11 @@ usage =
         , "  singular registry create --preview --registry DIR --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] --node-socket PATH --network-magic N --wallet-address ADDR"
         , "  singular registry insert --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --envelope ENVELOPE_JSON"
+        , "      --payload DATUM_JSON [--deposit LOVELACE]"
         , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
         , "  singular registry insert --preview --registry DIR --blueprint PLUTUS_JSON"
-        , "      (--key KEY | --key-hex HEX) --envelope ENVELOPE_JSON"
+        , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON [--deposit LOVELACE]"
         , "      --node-socket PATH --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry update --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"

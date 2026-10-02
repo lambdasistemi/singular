@@ -31,6 +31,7 @@ module Singular.Registry.ContractNode
     ( -- * Legs
       Leg (..)
     , nodeHarness
+    , phaseLogOnDevnet
 
       -- * The session's connection guard on a real node
     , guardOnDevnet
@@ -107,6 +108,13 @@ import Cardano.Node.Client.Submitter
 import Cardano.Tx.Ledger (ConwayTx)
 import Ouroboros.Network.Magic (NetworkMagic (..))
 
+import Singular.PhaseLogFixture
+    ( logObjects
+    , phaseLines
+    , queryNames
+    , withLogEnv
+    , withLogFile
+    )
 import Singular.Registry.ContractSuite
     ( AdapterHarness (..)
     , Case (..)
@@ -486,3 +494,77 @@ guardOnDevnet =
                     Submitted _ -> pure ()
                     Rejected reason ->
                         expectationFailure ("rejected outside the view: " <> show reason)
+
+{- | The phase log, through the sessions a @singular@ command opens (#363):
+the write session, the key-free reader and the indexer backend, each on a
+generated development node. What is logged is what a command's provider and
+tip reads go through, so a constructor that stopped installing the logged
+provider fails here.
+-}
+phaseLogOnDevnet :: Spec
+phaseLogOnDevnet =
+    describe
+        "the phase log of the sessions a command opens, on a generated devnet node (#363)"
+        $ do
+            it
+                "a write session logs how long it took to open, each view it \
+                \acquires and each read and tip read through it"
+                $ withGeneratedNode
+                $ \sock _ -> withFundedKey sock $ \skey -> do
+                    wallet <- loadWallet devnetMagicWord skey
+                    let node = External (ExternalNode sock devnetMagicWord skey)
+                    withLogFile $ \path -> do
+                        answer <- withNodeModeOn NodeBackend node $ \sess -> do
+                            utxos <-
+                                withView (nsProvider sess) $ \v ->
+                                    viewUTxOsAt v (walletAddr wallet)
+                            _ <- nsTipSlot sess
+                            pure utxos
+                        objects <- logObjects path
+                        length (phaseLines "session-open" objects) `shouldBe` 1
+                        length (filter (== "tipSlot") (queryNames objects)) `shouldBe` 1
+                        -- the funding check's read and ours, each its own line
+                        length (filter (== "utxosAt") (queryNames objects))
+                            `shouldSatisfy` (>= 2)
+                        length answer `shouldSatisfy` (> 0)
+                        queryNames objects `shouldSatisfy` elem "protocolParams"
+                        queryNames objects `shouldSatisfy` elem "ledgerSnapshot"
+                        -- every acquisition reads its snapshot and parameters once; the
+                        -- one snapshot beyond them is the follower's start point
+                        length (filter (== "ledgerSnapshot") (queryNames objects))
+                            `shouldBe` 1 + length (filter (== "protocolParams") (queryNames objects))
+                        length (phaseLines "view" objects)
+                            `shouldSatisfy` (>= length (phaseLines "view-release" objects))
+                    -- unset: the same session leaves no file behind
+                    withLogEnv Nothing $
+                        withNodeModeOn NodeBackend node $ \sess ->
+                            void (nsTipSlot sess)
+            it "a key-free reader, as preview opens one, logs its views and reads" $
+                withGeneratedNode $ \sock _ -> withFundedKey sock $ \_ ->
+                    withLogFile $ \path -> do
+                        _ <-
+                            withNodeReads devnetMagicWord sock $ \r ->
+                                withView (nrProvider r) $ \v ->
+                                    viewPosixMsToSlot v 1_000_000
+                        objects <- logObjects path
+                        length (phaseLines "session-open" objects) `shouldBe` 1
+                        length (filter (== "posixMsToSlot") (queryNames objects))
+                            `shouldBe` 1
+                        length (phaseLines "view" objects) `shouldSatisfy` (>= 1)
+            it "the indexer backend logs the index's admission and its reads" $
+                withGeneratedNode $ \sock _ -> withFundedKey sock $ \skey -> do
+                    wallet <- loadWallet devnetMagicWord skey
+                    let node = External (ExternalNode sock devnetMagicWord skey)
+                    withLogFile $ \path -> do
+                        _ <- withNodeModeOn IndexerBackend node $ \sess ->
+                            withView (nsProvider sess) $ \v ->
+                                viewUTxOsAt v (walletAddr wallet)
+                        objects <- logObjects path
+                        length (filter (== "indexAdmit") (queryNames objects))
+                            `shouldSatisfy` (>= 1)
+                        length (filter (== "utxosAt") (queryNames objects))
+                            `shouldSatisfy` (>= 1)
+
+                        -- the index starts from the origin: no start-point read
+                        length (filter (== "ledgerSnapshot") (queryNames objects))
+                            `shouldBe` length (filter (== "protocolParams") (queryNames objects))

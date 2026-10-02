@@ -22,6 +22,8 @@ module Singular.CLI.Plan
 
       -- * What a booking asks
     , Booked (..)
+    , readInsertPayload
+    , insertionOf
     , planInsert
     , planTerminate
 
@@ -34,11 +36,11 @@ module Singular.CLI.Plan
     , outlayReport
     ) where
 
-import Control.Monad (unless, when)
+import Control.Monad (unless)
 import Data.Aeson (Value, object, (.=))
 import Data.Aeson qualified as Aeson
 import Data.ByteString (ByteString)
-import Data.ByteString.Short qualified as SBS
+import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import PlutusCore.Data qualified as PLC
 
@@ -54,16 +56,21 @@ import Singular.Application.OpenDatum.Book
     , terminateApproval
     , terminateDestination
     )
+import Singular.Application.OpenDatum.Build
+    ( PayloadRefusal (..)
+    , minimumDeposit
+    , readPayload
+    )
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
-    , envelopeVersion
-    , registryBytes
     )
 import Singular.Application.OpenDatum.Update
     ( UpdateArgs (..)
     , updatePayloadTx
     )
+import Singular.CLI.Command (EntryArgs (..), Key (..))
+import Singular.CLI.InsertEnvelope (insertEnvelope)
 import Singular.CLI.Live
 import Singular.CLI.Outlay
     ( Outlay (..)
@@ -73,19 +80,13 @@ import Singular.CLI.Outlay
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.Session (failWith, failWithFields)
-import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger
-    ( AssetName (..)
-    , ConwayEra
-    , TokenId (..)
-    )
+import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Edges
     ( BookingApproval (..)
     , edgeDeposit
     , selectFunding
     )
-import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
 import Singular.Registry.Types
     ( Edge
     , edgeInsertActive
@@ -125,30 +126,11 @@ data Booked = Booked
     -- ^ The envelope the fold will deliver, kept for it before the booking is submitted
     }
 
--- | An insertion of @key@ under @envelope@, by @caller@.
-planInsert
-    :: Live -> ByteString -> ByteString -> Envelope -> IO Booked
-planInsert live caller key envelope = do
+-- | An insertion under @envelope@, built by the command from its own sources.
+planInsert :: Live -> Envelope -> IO Booked
+planInsert live envelope = do
     let s = liveSaved live
-        cfg = savedCfg s
         c = envControl envelope
-        TokenId (AssetName n) = savedToken s
-        identity = scriptHashBytes (cfgScriptHash cfg) <> SBS.fromShort n
-        refuseIf bad why = when bad (failWith ClientRefusal why)
-    refuseIf
-        (ctlVersion c /= envelopeVersion)
-        "the envelope's version is not 1"
-    refuseIf
-        (registryBytes (ctlRegistry c) /= identity)
-        "the envelope names another registry's state asset"
-    refuseIf
-        (ctlActivePolicy c /= SBS.fromShort (cfgActivePolicy cfg))
-        "the envelope names another active policy"
-    refuseIf (ctlKey c /= key) "the envelope names another key than --key"
-    refuseIf
-        (ctlDeposit c <= 0)
-        "the envelope's protected deposit is not positive"
-    controllerCheck caller c
     appRef <- appReferenceOf live
     let stateIn = fst (liveState live)
     pure
@@ -162,6 +144,36 @@ planInsert live caller key envelope = do
                     { baScriptReference = Just appRef
                     }
             }
+
+-- | The payload an insert carries, from the file its @--payload@ names.
+readInsertPayload :: EntryArgs -> IO PLC.Data
+readInsertPayload a = do
+    path <-
+        maybe
+            (failWith ClientRefusal "insert needs --payload")
+            pure
+            (entryDocument a)
+    readJson path
+        >>= either (failWith ClientRefusal . refused path) pure . readPayload
+  where
+    refused path (PayloadNotPlutusData why) =
+        path <> ": --payload is not Plutus data: " <> why
+
+{- | The envelope an insert books: the saved registry, the insert's key and
+deposit, the controller (the payment key hash of whoever signs, or of the
+address a preview names) and the payload.
+-}
+insertionOf
+    :: Saved -> EntryArgs -> ByteString -> PLC.Data -> Envelope
+insertionOf s a controller =
+    insertEnvelope
+        (savedCfg s)
+        (savedToken s)
+        key
+        controller
+        (fromMaybe minimumDeposit (entryDeposit a))
+  where
+    Key key = entryKey a
 
 -- | A termination of @key@ by @caller@: its booking, its holding and envelope.
 planTerminate

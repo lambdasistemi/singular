@@ -63,7 +63,6 @@ import Singular.Application.OpenDatum.Envelope
     , Envelope (..)
     , dataFromJson
     , dataToJson
-    , envelopeFromJson
     , envelopeHash
     , envelopeToJson
     )
@@ -226,20 +225,15 @@ runInsert a = case entryMode a of
     Preview node addr -> runPreview KInsert a node addr
     Submit ws -> do
         let Key key = entryKey a
-        path <-
-            maybe
-                (failWith ClientRefusal "insert needs --envelope")
-                pure
-                (entryDocument a)
-        envelope <-
-            readJson path
-                >>= either (failWith ClientRefusal) pure . envelopeFromJson
+        payload <- readInsertPayload a
         attached (entryRegistry a) (entryBlueprint a) ws "insert" $ \at -> do
-            -- The envelope's checks, the controller and the approval are
-            -- decided in the booking's own view, from the state it holds.
+            let s = savedOf at
+                envelope = insertionOf s a (callerKey at) payload
+            -- The approval is decided in the booking's own view, from the
+            -- state it holds.
             (booking, (), deadline) <-
                 book at a key $ \_ live -> do
-                    b <- planInsert live (callerKey at) key envelope
+                    b <- planInsert live envelope
                     pure (b, ())
             if entryFold a
                 then do

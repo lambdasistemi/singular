@@ -61,6 +61,7 @@ import Control.Exception
     , SomeAsyncException
     , SomeException
     , bracket
+    , evaluate
     , fromException
     , throwIO
     , toException
@@ -68,8 +69,10 @@ import Control.Exception
     )
 import Control.Monad (void, when)
 import Data.Aeson (Value (..), object, toJSON, (.=))
+import Data.Aeson.Key (Key)
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.Foldable (toList)
@@ -124,6 +127,13 @@ import Singular.CLI.Receipt
     )
 import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Node (Wallet (..), loadWallet)
+import Singular.Registry.Node.PhaseLog
+    ( PhaseLog
+    , phaseLogEnabled
+    , phaseLogFromEnv
+    , timedPhase
+    , validityFields
+    )
 import Singular.Registry.Node.Submit
     ( SubmitResult (..)
     , signTx
@@ -407,6 +417,7 @@ blankEntry wc step txid event =
         , journalEdge = Nothing
         , journalRootBefore = Nothing
         , journalRootAfter = Nothing
+        , journalTime = Nothing
         }
 
 {- | What a submission's readback must find, journalled at @prepared@ so a
@@ -439,10 +450,12 @@ submitBuilt
     -> (Cage.View IO -> IO (ConwayTx, r))
     -> IO (ConwayTx, r)
 submitBuilt wc step expect build = do
+    lg <- phaseLogFromEnv
     (point, (unsigned, extra)) <-
         Cage.withView (capReads (wcCapabilities wc)) $ \v ->
-            (,) (Cage.viewPoint v) <$> build v
-    signed <- journalledSubmit wc step (expect extra) point unsigned
+            (,) (Cage.viewPoint v)
+                <$> timedPhase lg "build" ["step" .= step] (const []) (build v)
+    signed <- journalledSubmit lg wc step (expect extra) point unsigned
     pure (signed, extra)
 
 {- | Sign; save the signed transaction and journal @prepared@ with its
@@ -452,23 +465,29 @@ await the confirmation; journal it. Returns the signed transaction once
 confirmed. The command journals @observed@ after its own readback.
 -}
 journalledSubmit
-    :: WriteContext
+    :: PhaseLog
+    -> WriteContext
     -> Text
     -> Expectation
     -> Cage.ChainPoint
     -> ConwayTx
     -> IO ConwayTx
-journalledSubmit wc step ex point unsigned = do
-    let sealed = signTx (walletSignKey (wcWallet wc)) unsigned
-        signed = signedTx sealed
-        txid = txIdHex signed
+journalledSubmit lg wc step ex point unsigned = do
+    let txid = txIdHex unsigned
+        named = ["step" .= step, "tx" .= txid]
+    (sealed, bytes) <-
+        timedPhase lg "sign" named (const []) $ do
+            let sealed' = signTx (walletSignKey (wcWallet wc)) unsigned
+                bytes' = serialize' (eraProtVerHigh @ConwayEra) (signedTx sealed')
+            _ <- evaluate (BS.length bytes')
+            pure (sealed', bytes')
+    let signed = signedTx sealed
         dir = wcDir wc
         caps = wcCapabilities wc
         journal event detail =
             appendJournal
                 dir
                 (blankEntry wc step txid event){journalDetail = detail}
-        bytes = serialize' (eraProtVerHigh @ConwayEra) signed
         bodyPath = bodiesDir dir </> T.unpack txid <> ".cbor.hex"
     createDirectoryIfMissing True (bodiesDir dir)
     durableWrite bodyPath (B16.encode bytes)
@@ -492,10 +511,22 @@ journalledSubmit wc step ex point unsigned = do
             , journalRootAfter = hexT <$> exRootAfter ex
             }
     dropSend <- harnessDrops "SINGULAR_HARNESS_DROP_SEND" step
+    tip <- tipAtSubmission lg caps
     sentAnswer <-
         if dropSend
             then pure (Left (toException (ErrorCall "the send was not made")))
-            else try (submitSigned (capSubmit caps) sealed)
+            else
+                try
+                    ( timedPhase
+                        lg
+                        "submit"
+                        (named <> validityFields signed <> tip)
+                        ( \case
+                            Submitted _ -> ["outcome" .= ("submitted" :: Text)]
+                            Rejected _ -> ["outcome" .= ("rejected" :: Text)]
+                        )
+                        (submitSigned (capSubmit caps) sealed)
+                    )
     harnessHoldAt "SINGULAR_HARNESS_HOLD_AFTER_SEND" (Just step)
     dropAnswer <- harnessDrops "SINGULAR_HARNESS_DROP_ANSWER" step
     let answer
@@ -527,13 +558,27 @@ journalledSubmit wc step ex point unsigned = do
     -- wait never returns. A wait abandoned at the bound is cancelled
     -- without this thread waiting for that cancellation to finish.
     let limit = fromMaybe defaultConfirmSeconds (wcTimeout wc) * 1_000_000
-    waiter <- async (capConfirm caps signed (T.unpack txid))
-    outcome <- timeout limit (waitCatch waiter)
-    when (isNothing outcome) $ void (forkIO (cancel waiter))
-    let seen = case outcome of
-            Nothing -> Right Nothing
-            Just (Left e) -> Left e
-            Just (Right ()) -> Right (Just ())
+    seen <-
+        timedPhase
+            lg
+            "confirm"
+            named
+            ( \s ->
+                [ "outcome"
+                    .= case s of
+                        Left (_ :: SomeException) -> "failed" :: Text
+                        Right Nothing -> "timeout"
+                        Right (Just ()) -> "confirmed"
+                ]
+            )
+            $ do
+                waiter <- async (capConfirm caps signed (T.unpack txid))
+                outcome <- timeout limit (waitCatch waiter)
+                when (isNothing outcome) $ void (forkIO (cancel waiter))
+                pure $ case outcome of
+                    Nothing -> Right Nothing
+                    Just (Left e) -> Left e
+                    Just (Right ()) -> Right (Just ())
     case seen of
         Left (e :: SomeException) -> do
             -- The node accepted the transaction; only the wait for its
@@ -561,6 +606,24 @@ journalledSubmit wc step ex point unsigned = do
         Right (Just ()) -> do
             journal "confirmed" Nothing
             pure signed
+
+{- | The node's tip slot at the moment of submission, as a field of the
+submit line: one more view acquisition, made only when the phase log is
+on (and itself logged), so that a log that is off changes nothing the
+node sees. A tip that cannot be read is null; it never stops the
+submission.
+-}
+tipAtSubmission :: PhaseLog -> Capabilities -> IO [(Key, Value)]
+tipAtSubmission lg caps
+    | not (phaseLogEnabled lg) = pure []
+    | otherwise =
+        try
+            (Cage.withView (capReads caps) (pure . Cage.cpSlot . Cage.viewPoint))
+            >>= \case
+                Right (SlotNo s) -> pure ["tip_slot" .= s]
+                Left (e :: SomeException)
+                    | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
+                    | otherwise -> pure ["tip_slot" .= Null]
 
 {- | Journal the fourth phase: the command read back what a confirmed
 transaction made, and says what it read.

@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -20,13 +21,23 @@ the fresh point to differ.
 -}
 module Singular.CLI.WriteSpec (spec) where
 
-import Control.Exception (SomeException, try)
+import Control.Exception
+    ( SomeException
+    , bracket
+    , bracket_
+    , fromException
+    , throwIO
+    , try
+    )
+import Control.Monad (forM_, void)
 import Data.Aeson ((.:))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
+import Data.Bifunctor (first)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
+import Data.Char (toUpper)
 import Data.IORef
     ( IORef
     , modifyIORef'
@@ -34,43 +45,81 @@ import Data.IORef
     , readIORef
     , writeIORef
     )
+import Data.List (isInfixOf, sort)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (mapMaybe)
+import Data.Maybe (catMaybes, isJust, mapMaybe)
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
+import Data.Time
+    ( UTCTime
+    , addUTCTime
+    , defaultTimeLocale
+    , getCurrentTime
+    , parseTimeM
+    )
 import Data.Word (Word32)
 import Lens.Micro ((&), (.~), (^.))
-import System.FilePath ((</>))
+import System.Directory
+    ( doesDirectoryExist
+    , doesFileExist
+    , listDirectory
+    , withCurrentDirectory
+    )
+import System.Environment (lookupEnv, setEnv, unsetEnv)
+import System.FilePath (takeDirectory, (</>))
+import System.IO (hFlush, stderr, stdout)
 import System.IO.Temp (withSystemTempDirectory)
+import System.Posix.IO
+    ( OpenFileFlags (..)
+    , OpenMode (..)
+    , closeFd
+    , defaultFileFlags
+    , dup
+    , dupTo
+    , openFd
+    , stdError
+    , stdOutput
+    )
+import System.Posix.Types (Fd)
 import Test.Hspec
 
+import Cardano.Crypto.DSIGN (rawSerialiseSignKeyDSIGN)
+import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
 import Cardano.Ledger.Api.PParams (emptyPParams)
-import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx, witsTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( inputsTxBodyL
     , mkBasicTxBody
     , outputsTxBodyL
+    , vldtTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out (mkBasicTxOut)
 import Cardano.Ledger.Api.Tx.Wits (addrTxWitsL)
+import Cardano.Ledger.BaseTypes (SlotNo (..), StrictMaybe (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Node.Client.Submitter
     ( SubmitResult (..)
     , Submitter (..)
     )
 import Cardano.Tx.Ledger (ConwayTx)
+import Codec.Binary.Bech32 qualified as Bech32
 
 import Singular.CLI.Node (Capabilities (..))
 import Singular.CLI.Receipt
     ( JournalEntry (..)
+    , appendJournal
+    , outcomeName
     , readJournal
     , unresolved
     )
 import Singular.CLI.Session
-    ( WriteContext (..)
+    ( CommandFailure (..)
+    , WriteContext (..)
     , expecting
+    , journalObserved
     , submitBuilt
     , txIdHex
     )
@@ -84,6 +133,11 @@ import Singular.Registry.Node.Memory
     , mutate
     , newMemoryChain
     )
+import Singular.Registry.Node.PhaseLog
+    ( PhaseLog
+    , loggedProvider
+    , phaseLogAt
+    )
 import Singular.Registry.Node.Submit
     ( signTx
     , signedSubmitter
@@ -92,7 +146,10 @@ import Singular.Registry.Node.Submit
 import Singular.Registry.Provider qualified as Cage
 
 spec :: Spec
-spec = describe "a singular write on injected capabilities (#323)" $ do
+spec = writeRows >> phaseLogRows
+
+writeRows :: Spec
+writeRows = describe "a singular write on injected capabilities (#323)" $ do
     it
         "journals every field of the point its body was built from, \
         \though the chain moved before signing"
@@ -219,17 +276,25 @@ writeContext fx =
 chain after the view is acquired.
 -}
 write :: Fixture -> IO (ConwayTx, ())
-write fx =
-    submitBuilt (writeContext fx) "fold" (const (expecting "state")) $ \v -> do
+write fx = writeVia (writeContext fx) id fx
+
+{- | The same write through a given context, shaping the transaction it
+builds with a function.
+-}
+writeVia
+    :: WriteContext -> (ConwayTx -> ConwayTx) -> Fixture -> IO (ConwayTx, ())
+writeVia ctx shape fx =
+    submitBuilt ctx "fold" (const (expecting "state")) $ \v -> do
         writeIORef (fxBuiltAt fx) (Just (Cage.viewPoint v))
         utxos <- Cage.viewUTxOsAt v (walletAddr (fxWallet fx))
         mutate (fxChain fx) id
         let tx =
-                mkBasicTx
-                    ( mkBasicTxBody
-                        & inputsTxBodyL .~ Set.fromList (map fst utxos)
-                        & outputsTxBodyL .~ StrictSeq.fromList (map snd utxos)
-                    )
+                shape $
+                    mkBasicTx
+                        ( mkBasicTxBody
+                            & inputsTxBodyL .~ Set.fromList (map fst utxos)
+                            & outputsTxBodyL .~ StrictSeq.fromList (map snd utxos)
+                        )
         writeIORef (fxUnsigned fx) (Just tx)
         pure (tx, ())
 
@@ -279,3 +344,350 @@ outRef c =
         (error . ("WriteSpec fixture: " <>))
         id
         (parseOutRef (T.pack (replicate 64 c <> "#0")))
+
+-- ---------------------------------------------------------
+-- The phase log of a write (#363)
+-- ---------------------------------------------------------
+
+{- | The write of the ordinary CLI with @SINGULAR_LOG@ set or unset. Every
+compared value is obtained at run time: the transaction id from the
+signed body, the tip from a fresh acquisition after the write, the
+validity interval from the body that was built, and the secrets from the
+wallet's own key.
+-}
+phaseLogRows :: Spec
+phaseLogRows = describe "the phase log of a write (#363)" $ do
+    it
+        "unset: no log file, nothing on stdout or stderr and nothing else \
+        \in either directory — while the same write with the variable set \
+        \does log"
+        $ do
+            (files, cwdFiles, out, err) <- withFixture $ \fx ->
+                -- the process runs in a directory of its own, so a log written
+                -- to a default path would show there
+                withSystemTempDirectory "singular-cwd" $ \cwd ->
+                    withCurrentDirectory cwd $ withLogEnv Nothing $ do
+                        ((), out, err) <- captured (void (write fx))
+                        here <- listDirectory (takeDirectory (fxDir fx))
+                        there <- listDirectory (fxDir fx)
+                        inCwd <- listDirectory cwd
+                        pure ((sort here, sort there), inCwd, out, err)
+            cwdFiles `shouldBe` []
+            files
+                `shouldBe` ( ["payment.skey", "registry"]
+                           , ["journal.jsonl", "submissions"]
+                           )
+            (out, err) `shouldBe` ("", "")
+            -- the control: the variable is what makes the file appear
+            logged <- withFixture $ \fx -> do
+                let path = takeDirectory (fxDir fx) </> "phase.log"
+                withLogEnv (Just path) $ do
+                    _ <- writeVia (loggedContext (phaseLogAt path) fx) id fx
+                    doesFileExist path
+            logged `shouldBe` True
+    it
+        "set: a build, a signing, a submission with the tip it met and \
+        \the validity it carried, and a confirmation, each once and in \
+        \that order, for the one transaction"
+        $ withFixture
+        $ \fx -> do
+            let path = takeDirectory (fxDir fx) </> "phase.log"
+                bounded =
+                    bodyTxL . vldtTxBodyL
+                        .~ ValidityInterval (SJust (SlotNo 10)) (SJust (SlotNo 99))
+            (signed, ()) <-
+                withLogEnv (Just path) $
+                    writeVia (loggedContext (phaseLogAt path) fx) bounded fx
+            built <- readIORef (fxBuiltAt fx)
+            builtPoint <- maybe (fail "the build never ran") pure built
+            tip <-
+                Cage.cpSlot
+                    <$> Cage.withView (memoryProvider (fxChain fx)) (pure . Cage.viewPoint)
+            -- the build's own view is not the tip the submission met
+            Cage.cpSlot builtPoint `shouldNotBe` tip
+            objects <- logObjects path
+            let phased p = [o | o <- objects, field "phase" o == Just (p :: Text)]
+                txid = txIdHex signed
+                vldt = signed ^. bodyTxL . vldtTxBodyL
+                strict = \case SJust (SlotNo s) -> Just s; SNothing -> Nothing
+            map (field "step") (phased "build") `shouldBe` [Just ("fold" :: Text)]
+            map (field "tx") (phased "sign") `shouldBe` [Just txid]
+            map (field "tx") (phased "submit") `shouldBe` [Just txid]
+            map (field "tx") (phased "confirm") `shouldBe` [Just txid]
+            map (field "outcome") (phased "submit")
+                `shouldBe` [Just ("submitted" :: Text)]
+            map (field "outcome") (phased "confirm")
+                `shouldBe` [Just ("confirmed" :: Text)]
+            map (field "tip_slot") (phased "submit")
+                `shouldBe` [Just (Cage.unSlotNo tip)]
+            map (field "validity_lower") (phased "submit")
+                `shouldBe` [strict (invalidBefore vldt)]
+            map (field "validity_upper") (phased "submit")
+                `shouldBe` [strict (invalidHereafter vldt)]
+            forM_ ["build", "sign", "submit", "confirm"] $ \p ->
+                map (isNumber "duration_ms") (phased p) `shouldBe` [True]
+            [ p
+              | o <- objects
+              , Just p <- [field "phase" o :: Maybe Text]
+              , p `elem` ["build", "sign", "submit", "confirm"]
+              ]
+                `shouldBe` ["build", "sign", "submit", "confirm"]
+            let stamps = mapMaybe (field "ts") objects :: [Text]
+            stamps `shouldBe` sort stamps
+    it
+        "a confirmation that fails is logged as failed, once, with no text \
+        \of the failure"
+        $ withFixture
+        $ \fx -> do
+            let path = takeDirectory (fxDir fx) </> "phase.log"
+                ctx = loggedContext (phaseLogAt path) fx
+                caps = wcCapabilities ctx
+                broken =
+                    ctx
+                        { wcCapabilities =
+                            caps
+                                { capConfirm = \_ _ ->
+                                    throwIO (userError "403 for project_id=CRED-5c1d2")
+                                }
+                        }
+            _ <-
+                withLogEnv (Just path) (try @SomeException (writeVia broken id fx))
+            objects <- logObjects path
+            outcomesOf "confirm" objects `shouldBe` [Just "failed"]
+            raw <- BS.readFile path
+            BC.unpack raw `shouldNotSatisfy` ("CRED-5c1d2" `isInfixOf`)
+    it
+        "never writes the signing key, in any of its renderings, nor a \
+        \credential an operation failed with"
+        $ withFixture
+        $ \fx -> do
+            let path = takeDirectory (fxDir fx) </> "phase.log"
+                ctx = loggedContext (phaseLogAt path) fx
+                caps = wcCapabilities ctx
+                key = rawSerialiseSignKeyDSIGN (walletSignKey (fxWallet fx))
+                hex = B16.encode key
+                secrets =
+                    [ key
+                    , hex
+                    , BC.map toUpper hex
+                    , "5820" <> hex
+                    , BC.map toUpper ("5820" <> hex)
+                    , bech32Of "addr_sk" key
+                    , bech32Of "ed25519_sk" key
+                    ]
+                rejecting =
+                    ctx
+                        { wcCapabilities =
+                            caps
+                                { capSubmit = signedSubmitter $ Submitter $ \_ ->
+                                    throwIO (userError "401 for project_id=CRED-9e4b7")
+                                }
+                        }
+            _ <- withLogEnv (Just path) $ do
+                _ <- writeVia ctx id fx
+                try @SomeException (writeVia rejecting id fx)
+            raw <- BS.readFile path
+            -- the log has the signing and the submission it must not leak from
+            objects <- logObjects path
+            length [o | o <- objects, field "phase" o == Just ("sign" :: Text)]
+                `shouldBe` 2
+            [s | s <- secrets, s `BS.isInfixOf` raw] `shouldBe` []
+            BC.unpack raw `shouldNotSatisfy` ("CRED-9e4b7" `isInfixOf`)
+            outcomesOf "submit" objects
+                `shouldBe` [Just "submitted", Just "failed"]
+    it
+        "enabled: standard output and error stay empty, the journal is the \
+        \unset run's but for its times and body paths, and the log is a file \
+        \of its own"
+        $ do
+            let normal e = e{journalBody = Nothing, journalTime = Nothing}
+                run logPath = withFixture $ \fx -> do
+                    ((), out, err) <- withLogEnv logPath $ captured $ do
+                        _ <-
+                            writeVia
+                                ( maybe
+                                    (writeContext fx)
+                                    (\p -> loggedContext (phaseLogAt p) fx)
+                                    logPath
+                                )
+                                id
+                                fx
+                        pure ()
+                    entries <- readJournal (fxDir fx)
+                    raw <- BS.readFile (fxDir fx </> "journal.jsonl")
+                    pure (map normal entries, out, err, raw)
+            (plain, _, _, _) <- run Nothing
+            (logged, out, err, journalRaw) <-
+                withSystemTempDirectory "phase-log" $ \d -> run (Just (d </> "phase.log"))
+            (out, err) `shouldBe` ("", "")
+            logged `shouldBe` plain
+            length logged `shouldBe` 3
+            -- the journal holds journal lines only: no phase line is among them
+            [ o
+              | o <- mapMaybe (Aeson.decodeStrict @Aeson.Object) (BC.lines journalRaw)
+              , isJust (field "phase" o :: Maybe Text)
+              ]
+                `shouldBe` []
+    it
+        "a log that cannot be written changes nothing the command does: the \
+        \same journal and the same outcome, whether the confirmation holds or \
+        \fails"
+        $ withSystemTempDirectory "phase-log"
+        $ \dir -> do
+            let destinations =
+                    [ dir -- a directory is not a file to append to
+                    , dir </> "no-such-directory" </> "phase.log"
+                    ]
+                run logPath failing = withFixture $ \fx -> do
+                    let ctx0 =
+                            maybe
+                                (writeContext fx)
+                                (\p -> loggedContext (phaseLogAt p) fx)
+                                logPath
+                        caps = wcCapabilities ctx0
+                        ctx
+                            | failing =
+                                ctx0
+                                    { wcCapabilities =
+                                        caps{capConfirm = \_ _ -> throwIO (userError "the wait broke")}
+                                    }
+                            | otherwise = ctx0
+                    r <- withLogEnv logPath (try @SomeException (writeVia ctx id fx))
+                    events <- map journalEvent <$> readJournal (fxDir fx)
+                    pure
+                        ( events
+                        , case r of
+                            Right _ -> "completed"
+                            Left e -> case fromException e of
+                                Just (CommandFailure c _ _) -> outcomeName c
+                                Nothing -> "unclassified: " <> T.pack (show e)
+                        )
+            forM_ [False, True] $ \failing -> do
+                plain <- run Nothing failing
+                forM_ destinations $ \d -> run (Just d) failing `shouldReturn` plain
+            -- the destinations really were unwritable
+            doesDirectoryExist (dir </> "no-such-directory") `shouldReturn` False
+            run Nothing True
+                `shouldReturn` (["prepared", "submitted", "unconfirmed"], "partial")
+            run Nothing False
+                `shouldReturn` (["prepared", "submitted", "confirmed"], "completed")
+    it
+        "stamps every journal line it appends, from the clock at the append, \
+        \whatever the line carried"
+        $ withFixture
+        $ \fx -> do
+            t0 <- getCurrentTime
+            (signed, ()) <- withLogEnv Nothing (write fx)
+            let ctx = writeContext fx
+            journalObserved ctx "fold" signed "read back"
+            earlier <-
+                readJournal (fxDir fx) >>= \case e : _ -> pure e; [] -> fail "no journal"
+            -- a line copied from an earlier one carries its time: appending it again
+            -- must not keep the stale stamp
+            appendJournal
+                (fxDir fx)
+                earlier{journalTime = Just "2000-01-01T00:00:00.000Z"}
+            t1 <- getCurrentTime
+            raw <- BS.readFile (fxDir fx </> "journal.jsonl")
+            let objects = mapMaybe (Aeson.decodeStrict @Aeson.Object) (BC.lines raw)
+                stamps = map (field "journalTime") objects :: [Maybe Text]
+            length objects `shouldBe` 5
+            forM_ stamps $ \s -> do
+                at <-
+                    maybe
+                        (fail "a journal line without journalTime")
+                        pure
+                        (s >>= parseIso)
+                (at >= addUTCTime (-0.001) t0 && at <= t1) `shouldBe` True
+            catMaybes stamps `shouldBe` sort (catMaybes stamps)
+    it
+        "reads a journal written before the lines carried a time, with none"
+        $ withSystemTempDirectory "singular-write"
+        $ \dir -> do
+            BS.writeFile (dir </> "journal.jsonl") preS2Journal
+            entries <- readJournal dir
+            map journalTime entries `shouldBe` [Nothing, Nothing]
+            fmap journalTxId (unresolved entries) `shouldBe` Just "ab"
+            -- and a line appended after them is stamped, the old ones untouched
+            appendJournal dir (last entries){journalEvent = "confirmed"}
+            raw <- BS.readFile (dir </> "journal.jsonl")
+            BS.take (BS.length preS2Journal) raw `shouldBe` preS2Journal
+            appended <- readJournal dir
+            map (isJust . journalTime) appended `shouldBe` [False, False, True]
+
+-- | The outcome each line of this phase records.
+outcomesOf :: Text -> [Aeson.Object] -> [Maybe Text]
+outcomesOf p objects =
+    [field "outcome" o | o <- objects, field "phase" o == Just p]
+
+-- | The bech32 text of some bytes under a human-readable part.
+bech32Of :: Text -> BS.ByteString -> BS.ByteString
+bech32Of hrp bytes =
+    either (error . show) TE.encodeUtf8 $ do
+        h <- first show (Bech32.humanReadablePartFromText hrp)
+        first show (Bech32.encode h (Bech32.dataPartFromBytes bytes))
+
+-- | A write context whose reads go through the phase log, as a command's do.
+loggedContext :: PhaseLog -> Fixture -> WriteContext
+loggedContext lg fx =
+    ctx
+        { wcCapabilities = caps{capReads = loggedProvider lg (capReads caps)}
+        }
+  where
+    ctx = writeContext fx
+    caps = wcCapabilities ctx
+
+-- | Run with @SINGULAR_LOG@ set to a path or unset, restoring it after.
+withLogEnv :: Maybe FilePath -> IO a -> IO a
+withLogEnv new act = do
+    old <- lookupEnv "SINGULAR_LOG"
+    let put = maybe (unsetEnv "SINGULAR_LOG") (setEnv "SINGULAR_LOG")
+    bracket_ (put new) (put old) act
+
+-- | The log's lines, each a JSON object.
+logObjects :: FilePath -> IO [Aeson.Object]
+logObjects path = do
+    raw <- BS.readFile path
+    either fail pure $
+        traverse Aeson.eitherDecodeStrict' (BC.lines raw)
+
+parseIso :: Text -> Maybe UTCTime
+parseIso =
+    parseTimeM False defaultTimeLocale "%Y-%m-%dT%H:%M:%S%QZ" . T.unpack
+
+isNumber :: Aeson.Key -> Aeson.Object -> Bool
+isNumber k o = case field k o :: Maybe Aeson.Value of
+    Just (Aeson.Number _) -> True
+    _ -> False
+
+{- | Run an action with standard output and standard error redirected to
+files, returning what it wrote to each.
+-}
+captured :: IO a -> IO (a, BS.ByteString, BS.ByteString)
+captured act = withSystemTempDirectory "singular-captured" $ \dir -> do
+    let outPath = dir </> "stdout"
+        errPath = dir </> "stderr"
+    a <- redirecting stdOutput outPath (redirecting stdError errPath act)
+    (,,) a <$> BS.readFile outPath <*> BS.readFile errPath
+
+redirecting :: Fd -> FilePath -> IO a -> IO a
+redirecting target path act =
+    bracket
+        ( do
+            hFlush stdout >> hFlush stderr
+            saved <- dup target
+            f <-
+                openFd
+                    path
+                    WriteOnly
+                    defaultFileFlags{creat = Just 0o644, trunc = True}
+            _ <- dupTo f target
+            closeFd f
+            pure saved
+        )
+        ( \saved -> do
+            hFlush stdout >> hFlush stderr
+            _ <- dupTo saved target
+            closeFd saved
+        )
+        (const act)

@@ -58,6 +58,7 @@ import Singular.Registry.Node.Indexer
     , currentFollower
     )
 import Singular.Registry.Node.Options (NodeMode (..), die, runMode)
+import Singular.Registry.Node.PhaseLog (phaseLogFromEnv, queryPhase)
 import Singular.Registry.Node.Session
     ( NodeSession (..)
     , sessionFor
@@ -214,26 +215,28 @@ is asked only for its tip, and only while the output has not appeared.
 -}
 confirmOutputZero
     :: NodeSession -> String -> TxId -> SlotNo -> IO (Either SlotNo ())
-confirmOutputZero sess label tid deadline =
+confirmOutputZero sess label tid deadline = do
+    lg <- phaseLogFromEnv
     currentFollower
         >>= maybe
             (die (label <> ": no indexer follows this session's chain"))
-            (indexed . followingIndexer)
+            (indexed lg . followingIndexer)
   where
-    indexed idx = do
+    indexed lg idx = do
         let TxId h = tid
         seen <-
-            awaitTxIn
-                idx
-                (Indexer.TxIn (hashToBytes (extractHash h)) 0)
-                (Just confirmationPollSeconds)
+            queryPhase lg "awaitTxIn" (maybe 0 (const 1)) $
+                awaitTxIn
+                    idx
+                    (Indexer.TxIn (hashToBytes (extractHash h)) 0)
+                    (Just confirmationPollSeconds)
         case seen of
             Just _ -> pure (Right ())
             Nothing -> do
                 tip <- nsTipSlot sess
                 if tip >= deadline
                     then pure (Left deadline)
-                    else indexed idx
+                    else indexed lg idx
 
 {- | The poll-until deadline for a transaction and the wall-clock limit
 of its wait: its own validity upper bound plus a two-minute margin; the
