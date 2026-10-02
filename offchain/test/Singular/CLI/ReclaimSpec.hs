@@ -19,7 +19,7 @@ spec :: Spec
 spec = describe "registry reclaim admission" $ do
     let bounds = windowOf 1000 120000 30000
         row start end = Just ("alice" :: String, 1, bounds, start, end)
-        at tip = reclaimGate "alice" (row (Just 100) (Just 130)) tip
+        at = reclaimGate "alice" (row (Just 100) (Just 130))
     it "requires the named request to be pending" $
         reclaimGate ("alice" :: String) Nothing 110 `shouldBe` Left NotPending
     it "requires this command's wallet to own the request" $

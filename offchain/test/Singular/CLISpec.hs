@@ -1621,11 +1621,12 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
             )
             `shouldSatisfy` refusesNaming "--fold" "preview"
     it
-        "refuses --request on commands that neither fold nor reclaim, by name" $ do
-        insertWith ["--request", replicate 64 'a' <> "#0"]
-            `shouldSatisfy` refusesNaming "--request" "registry fold"
-        terminateWith ["--request", replicate 64 'a' <> "#0"]
-            `shouldSatisfy` refusesNaming "--request" "registry fold"
+        "refuses --request on commands that neither fold nor reclaim, by name"
+        $ do
+            insertWith ["--request", replicate 64 'a' <> "#0"]
+                `shouldSatisfy` refusesNaming "--request" "registry fold"
+            terminateWith ["--request", replicate 64 'a' <> "#0"]
+                `shouldSatisfy` refusesNaming "--request" "registry fold"
     it "describes fold and --fold in its usage" $ do
         usage
             `shouldSatisfy` isInfixOf "singular registry fold --registry DIR"
@@ -1759,7 +1760,7 @@ reclaimCommandRows = describe "reclaiming the requester's pending request" $ do
                     reclaimFund a
                         == Just
                             (either error id (parseOutRef (T.pack (replicate 64 'c' <> "#1"))))
-                        && reclaimMaxOutlay a == Just 3000000
+                        && reclaimMaxOutlay a == Just 3_000_000
                         && reclaimReceipt a == Just "/r.json"
                 _ -> False
     it "requires a request rather than choosing another pending one" $
