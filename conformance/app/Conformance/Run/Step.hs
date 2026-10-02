@@ -8,11 +8,9 @@ module Conformance.Run.Step
     , StepRejection (..)
     , refusedOutcome
     , judgedTransaction
-    , storyRefusalTag
     ) where
 
 import Data.Aeson (Value (..))
-import Data.List (isInfixOf)
 import Data.Text qualified as T
 
 import Cardano.Tx.Ledger (ConwayTx)
@@ -30,7 +28,7 @@ import Conformance.Refusal
 -- They cannot be constructed by a story or supplied by a JSON fixture.
 data StepOutcome
     = StepAccepted ConwayTx (Integer, Integer, Integer)
-    | StepRefused ConwayTx (Maybe T.Text) [T.Text] StepRejection
+    | StepRefused ConwayTx [T.Text] StepRejection
     | -- | Nothing a script refused: the submitted transaction, if one was.
       StepUnsupported (Maybe ConwayTx) T.Text (Maybe StepRejection)
 
@@ -48,12 +46,11 @@ an unattributed rejection.
 refusedOutcome :: String -> ConwayTx -> StepRejection -> StepOutcome
 refusedOutcome marker signed diagnostic =
     if not (null (srBudgetExceeded diagnostic))
-        then StepRefused signed Nothing [] diagnostic
+        then StepRefused signed [] diagnostic
         else case matchRefusal marker explanation of
             Right () ->
                 StepRefused
                     signed
-                    (storyRefusalTag explanation)
                     (map T.pack (refusalScriptHashes explanation))
                     diagnostic
             Left _ ->
@@ -70,15 +67,6 @@ submitted, whatever the chain answered to it.
 judgedTransaction :: Value -> StepOutcome -> Maybe ConwayTx
 judgedTransaction lawOutcome outcome = case (lawOutcome, outcome) of
     (String "accepted", StepAccepted transaction _) -> Just transaction
-    (String "accepted", StepRefused transaction _ _ _) -> Just transaction
+    (String "accepted", StepRefused transaction _ _) -> Just transaction
     (String "accepted", StepUnsupported submitted _ _) -> submitted
     _ -> Nothing
-
-storyRefusalTag :: String -> Maybe T.Text
-storyRefusalTag text =
-    case [ n
-         | n <- ["key-exists", "not-booked", "key-unknown"]
-         , n `isInfixOf` text
-         ] of
-        (n : _) -> Just (T.pack n)
-        [] -> Nothing

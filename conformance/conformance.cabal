@@ -92,12 +92,15 @@ library
     Conformance.Lean.Oracle
     Conformance.Edge.EarlyReject
     Conformance.Edge.Exit
+    Conformance.Edge.Occupied
     Conformance.Edge.Register
     Conformance.Edge.Retire
     Conformance.Edge.RetractionWindow
     Conformance.Edge.Sequence
+    Conformance.Extent
     Conformance.Fold.KeyedMint
     Conformance.Observe.Payments
+    Conformance.Replay
   other-modules:
     Conformance.Evidence.Asset
   build-depends:
@@ -113,6 +116,7 @@ library
     , template-haskell >=2.18 && <2.25
     , text >=2.0 && <2.2
     , vector >=0.13 && <0.14
+    , crypton
 
 common live-runner
   hs-source-dirs:   app
@@ -130,6 +134,7 @@ common live-runner
     Conformance.Run.Live
     Conformance.Run.Retraction
     Conformance.Run.Step
+    Conformance.Run.Replay
     Conformance.Run.Receipts
     Conformance.Run.Fold
     Conformance.Run.Book
@@ -144,6 +149,11 @@ common live-runner
     Conformance.Run.Control
     Paths_conformance
   build-depends:
+    , cardano-slotting
+    , ouroboros-consensus
+    , plutus-ledger-api
+    , serialise
+    , transformers
     , aeson >=2.1 && <2.3
     , async
     , base >=4.14 && <5
@@ -228,6 +238,20 @@ executable fold-budget-regression
   hs-source-dirs: test/fold-budget
   main-is: BudgetMain.hs
 
+-- #287: the extent check CI runs over the receipts of every live run.
+executable conformance-extent
+  import:           warnings
+  hs-source-dirs:   test/extent
+  main-is:          ExtentMain.hs
+  build-depends:
+    , aeson >=2.1 && <2.3
+    , base >=4.14 && <5
+    , conformance
+    , containers
+    , directory
+    , filepath
+    , text
+
 test-suite conformance-tests
   import:           warnings
   type:             exitcode-stdio-1.0
@@ -249,6 +273,10 @@ test-suite conformance-tests
     Conformance.Run.Live
     Conformance.Run.Retraction
     Conformance.Run.Step
+    Conformance.Run.Replay
+    Conformance.Support.Replay
+    Conformance.Support.RunReplay
+    Conformance.Support.Extent
     Conformance.Support.Retraction
     Conformance.Support.Step
     Conformance.Support.ObservedTx
@@ -287,6 +315,7 @@ test-suite conformance-tests
     , bytestring >=0.11 && <0.13
     , cardano-crypto-class
     , cardano-ledger-binary
+    , cardano-node-clients
     , cardano-node-clients:devnet
     , conformance
     , mts:mpf-write
@@ -306,6 +335,10 @@ test-suite conformance-tests
     , singular-registry
     , validation-selective
     , ouroboros-consensus:{ouroboros-consensus, cardano}
+    , plutus-ledger-api
+    , cardano-slotting
+    , serialise
+    , transformers
     , strict-sop-core
     , containers >=0.6 && <0.8
     , directory >=1.3 && <1.4

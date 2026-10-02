@@ -6,6 +6,7 @@ module Conformance.Story.Usage (spec) where
 import Conformance.Book (renderBook)
 import Conformance.Edge.EarlyReject qualified as EarlyReject
 import Conformance.Edge.Exit qualified as Exit
+import Conformance.Edge.Occupied qualified as Occupied
 import Conformance.Edge.Register qualified as Register
 import Conformance.Edge.Retire qualified as Retire
 import Conformance.Edge.RetractionWindow qualified as RetractionWindow
@@ -15,7 +16,14 @@ import Conformance.Story.Specification qualified as Specification
 import Control.Monad.Operational (ProgramViewT (Return, (:>>=)), view)
 import Data.Either (isLeft)
 import Data.Foldable (forM_)
-import Data.List (isInfixOf, isPrefixOf, nub, tails)
+import Data.List
+    ( inits
+    , isInfixOf
+    , isPrefixOf
+    , isSuffixOf
+    , nub
+    , tails
+    )
 import Test.Hspec (Spec, it, shouldBe, shouldSatisfy)
 
 spec :: Spec
@@ -123,7 +131,7 @@ spec = do
             rendered `shouldSatisfy` isInfixOf "after phase 2"
             Live.validateLive (dropFirstCompare program) `shouldSatisfy` isLeft
     it
-        "The registration chapter pays its delivery elsewhere and one lovelace short beside its untampered control"
+        "The registration chapter pays its delivery elsewhere and one lovelace short beside its untampered control, then folds two registrations minting both at the first key"
         $ do
             let rendered =
                     Live.renderLive (Register.story (Live.Context "registry" "recipient"))
@@ -132,7 +140,11 @@ spec = do
             rendered
                 `shouldSatisfy` isInfixOf "payment it owes one lovelace short"
             rendered `shouldSatisfy` isInfixOf "untampered is its control"
-            rendered `shouldSatisfy` (not . isInfixOf "batch")
+            occurrences "in one transaction" rendered `shouldBe` 1
+            occurrences
+                "Fold, in one transaction with every token the transaction mints moved onto the first request's key, **insertActive** for **minted-a**, **insertActive** for **minted-b**"
+                rendered
+                `shouldBe` 1
     it
         "The book names the extra required signer only where the registration story submits it"
         $ do
@@ -171,13 +183,68 @@ spec = do
                 `shouldSatisfy` isInfixOf "Open validity intervals remain a named gap"
             book
                 `shouldSatisfy` isInfixOf "The model represents only finite validity bounds"
-            book `shouldSatisfy` isInfixOf "Live refusal reason not observed"
             book
-                `shouldSatisfy` isInfixOf "checked against the compiled Aiken suite"
+                `shouldSatisfy` (not . isInfixOf "checked against the compiled Aiken suite")
             book
                 `shouldSatisfy` (not . isInfixOf "Retraction admission is not modelled")
             book
                 `shouldSatisfy` (not . isInfixOf "no run establishes those two refusals")
+    it
+        "The book states how refusal reasons are observed and keeps, by row, every refusal not observed or not compared"
+        $ do
+            let book = renderBook [] []
+            forM_
+                [ "Refusal reasons come from traced re-evaluation."
+                , "The deployed validators are compiled without traces"
+                , "evaluated again on the arguments the ledger built for it: once with the deployed bytes, and once with a build of the same source, compiler and parameters that keeps only the validators' own traces"
+                , "The receipt names both script hashes"
+                , "Three have no counterpart in the model, so their model comparison is unmet: each receipt carries the verdict unmet by ruling"
+                , "CS04, a fold redeemer at a wrong constructor index"
+                , "so their live refusal reason is not observed (lambdasistemi/singular#347)"
+                , "CG10, a fold whose proof was built against a root the registry has since superseded"
+                , "so nothing compares with the chain's reason (lambdasistemi/singular#346)"
+                , "CG12, a fold carrying an action beyond its requests, and one missing an action: the model takes no action list (lambdasistemi/singular#345)"
+                , "CG11, an empty fold, with the fold batch over no request"
+                , "CG19, two rejects whose refunds are crossed and two whose first refund is short, with the reject batch judged on the refunds the transaction pays"
+                , "CG09's control, a reject refunding its owner one lovelace short, with the reject batch of that one request"
+                , "that requirement stays unmet by ruling"
+                , "A reject paying its owner short in the refund's position and the rest in another output at the same key is refused by the chain and accepted by the model: CG09's receipt records that disagreement from a devnet run, a known divergence and never a pass (lambdasistemi/singular#361)."
+                , "so their agreement holds for that shape only"
+                , "Whether CG11 and CG19 meet the consuming project's requirements remains unresolved; the two rows stay held."
+                ]
+                $ \phrase -> book `shouldSatisfy` isInfixOf phrase
+            book
+                `shouldSatisfy` ( not
+                                    . isInfixOf
+                                        "Live refusal reason not observed: the deployed validators are compiled without traces"
+                                )
+            book
+                `shouldSatisfy` (not . isInfixOf "every refusal reason is observed")
+            book `shouldSatisfy` (not . isInfixOf "agrees with the model")
+            book `shouldSatisfy` (not . isInfixOf "driver has no batch question")
+            book `shouldSatisfy` (not . isInfixOf "not rendered here")
+            book
+                `shouldSatisfy` ( not
+                                    . isInfixOf
+                                        "not compared while the recorded consumer-model conflict holds them"
+                                )
+    it
+        "The book's public limits use no internal class letter or question, and name only public issues"
+        $ do
+            let limits =
+                    [ line
+                    | line <- lines (renderBook [] [])
+                    , any
+                        (`isPrefixOf` line)
+                        ["Refusal reasons come from", "Refusals outside these chapters"]
+                    ]
+            length limits `shouldBe` 2
+            forM_ ["(class", "Q-002", "#320", "R9"] $ \token ->
+                filter (token `isInfixOf`) limits `shouldBe` []
+            -- An issue is named only as a public repository issue.
+            forM_ limits $ \line ->
+                [prefix | (prefix, '#' : _) <- zip (inits line) (tails line)]
+                    `shouldSatisfy` all ("lambdasistemi/singular" `isSuffixOf`)
     it
         "The retirement chapter describes registration and retirement as model edge requests"
         $ do
@@ -208,6 +275,21 @@ spec = do
             rendered
                 `shouldSatisfy` isInfixOf
                     "Submit **deleteActive** for **deleted** in **retirement**, using the holder."
+    it
+        "The occupied-key story books its key active through accepted requests, then inserts it again, comparing each"
+        $ do
+            let program =
+                    Occupied.story (Live.Context "occupied insert" "holder wallet")
+                rendered = Live.renderLive program
+                submitted edge =
+                    "Submit **" <> edge <> "** for **occupied** in **occupied insert**"
+            Live.validateLive program `shouldBe` Right ()
+            occurrences "Compare **" rendered `shouldBe` 3
+            filter ("- Submit **" `isPrefixOf`) (lines rendered)
+                `shouldBe` [ "- " <> submitted edge <> ", using the holder wallet."
+                           | edge <- ["insertAbsent", "updateActive", "insertAbsent"]
+                           ]
+            Live.validateLive (dropFirstCompare program) `shouldSatisfy` isLeft
     it "accepts the complete unnamed sequence before submitting" $ do
         let original :: Live.Story String String String String String ()
             original = Sequence.story (Live.Context "sequence" "holder")

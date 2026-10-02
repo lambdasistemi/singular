@@ -36,10 +36,18 @@ module Conformance.Run.CsRows
     , writeGapMigrating
     ) where
 
+import Conformance.Replay (admittedFor)
 import Conformance.Run.Cage (ensureStateRefWith)
 import Conformance.Run.Control
 import Conformance.Run.Environment
 import Conformance.Run.Observe
+import Conformance.Run.Receipts (debtReport)
+import Conformance.Run.Replay
+    ( ReplayIndex (..)
+    , purposesOf
+    , replayEvidenceOf
+    , sessionCorrespondence
+    )
 import Conformance.Run.Submit
 import Conformance.Run.Units
 import Conformance.Run.Wallet
@@ -55,7 +63,9 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
+import Data.IORef (writeIORef)
 import Data.List (intercalate, isInfixOf, nub)
+import Data.List.NonEmpty (nonEmpty)
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -165,6 +175,7 @@ import Conformance.Receipt
     , PartialInfo (..)
     , Receipt (..)
     , RefusalInfo (..)
+    , ReplayCorrespondence
     , Verdict (..)
     , loadReceipts
     , writeReceiptFile
@@ -194,8 +205,9 @@ runCSSession
     -> Bool
     -> FilePath
     -> Capabilities
+    -> ReplayIndex
     -> IO ()
-runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir caps = do
+runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir caps replayIndex = do
     let prov = capReads caps
         submit = caps
     let stateMarker = hex (scriptHashBytes (computeScriptHash stateBytes))
@@ -211,18 +223,22 @@ runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty
     -- once, before any row picks its seed.
     ensureStateRefWith prov submit stateBytes
     mapM_
-        ( runCSRow
-            prov
-            submit
-            stateBytes
-            requestBytes
-            namingCodes
-            nodeVer
-            base
-            dirty
-            receiptsDir
-            control
-            blueprintIdStr
+        ( \row -> do
+            writeIORef (riRow replayIndex) (T.pack row)
+            runCSRow
+                replayIndex
+                prov
+                submit
+                stateBytes
+                requestBytes
+                namingCodes
+                nodeVer
+                base
+                dirty
+                receiptsDir
+                control
+                blueprintIdStr
+                row
         )
         rows
     emit
@@ -232,6 +248,26 @@ runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty
     -- partial naming every such row (E18 §3/§4, NOTE-052). CI
     -- enumerates the known partial set; anything else is a failure.
     reportCSPartials receiptsDir rows
+    -- An unmet row must never read as green either: the session ends with
+    -- the same debt report a CG session gives, naming it.
+    reportCSUnmet receiptsDir rows
+
+{- | Session-end accounting of the CS rows kept unmet by ruling: receipts with
+verdict @unmet-by-ruling@ among the rows just run end the session non-zero
+with the debt report naming them.
+-}
+reportCSUnmet :: FilePath -> [String] -> IO ()
+reportCSUnmet receiptsDir rows = do
+    receipts <-
+        loadReceipts receiptsDir
+            >>= either (failWith . ("unmet accounting: " <>)) pure
+    case [ T.unpack (receiptRow r)
+         | r <- receipts
+         , receiptVerdict r == UnmetByRuling
+         , T.unpack (receiptRow r) `elem` rows
+         ] of
+        [] -> pure ()
+        unmet -> throwIO (ErrorCall (debtReport [] unmet []))
 
 {- | Session-end partial accounting for the CS rows: receipts with
 verdict partial among the rows just run end the session with the
@@ -265,7 +301,8 @@ reportCSPartials receiptsDir rows = do
                 )
 
 runCSRow
-    :: Cage.Provider IO
+    :: ReplayIndex
+    -> Cage.Provider IO
     -> Capabilities
     -> SBS.ShortByteString
     -> SBS.ShortByteString
@@ -278,7 +315,7 @@ runCSRow
     -> String
     -> String
     -> IO ()
-runCSRow prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr row = case row of
+runCSRow index prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr row = case row of
     "CS02" ->
         runCS02
             prov
@@ -307,6 +344,7 @@ runCSRow prov submit stateBytes requestBytes namingCodes nodeVer base dirty rece
             blueprintIdStr
     "CS04" ->
         runCS04
+            index
             prov
             submit
             stateBytes
@@ -577,7 +615,29 @@ writeCSReceipt
     -> String
     -> Maybe PartialInfo
     -> IO ()
-writeCSReceipt dir row outcome verdict txs refusal rejected mem cpu size venue base dirty nodeVer blueprintIdStr partial =
+writeCSReceipt = writeCSReceiptWith Nothing
+
+-- | A CS receipt stating the traced build its refusal's replay relies on.
+writeCSReceiptWith
+    :: Maybe ReplayCorrespondence
+    -> FilePath
+    -> String
+    -> Outcome
+    -> Verdict
+    -> [String]
+    -> Maybe RefusalInfo
+    -> Maybe String
+    -> Maybe Integer
+    -> Maybe Integer
+    -> Maybe Integer
+    -> T.Text
+    -> String
+    -> Bool
+    -> String
+    -> String
+    -> Maybe PartialInfo
+    -> IO ()
+writeCSReceiptWith correspondence dir row outcome verdict txs refusal rejected mem cpu size venue base dirty nodeVer blueprintIdStr partial =
     writeReceiptFile dir $
         Receipt
             { receiptRow = T.pack row
@@ -594,6 +654,7 @@ writeCSReceipt dir row outcome verdict txs refusal rejected mem cpu size venue b
             , receiptPartial = partial
             , receiptDerivation = Nothing
             , receiptSteps = Nothing
+            , receiptReplayCorrespondence = correspondence
             , receiptNode = T.pack nodeVer
             , receiptBlueprint = T.pack blueprintIdStr
             , receiptVenue = venue
@@ -1118,9 +1179,13 @@ findRequestTxIn prov cfg tid key = do
                     <> show (length matching)
                 )
 
--- | CS04: wrong constructor index refused, attributed to the script.
+{- | CS04: wrong constructor index refused, attributed to the script. The
+model has no vocabulary for decoding a redeemer, so there is no model reason
+to compare: the model comparison is unmet (#347).
+-}
 runCS04
-    :: Cage.Provider IO
+    :: ReplayIndex
+    -> Cage.Provider IO
     -> Capabilities
     -> SBS.ShortByteString
     -> SBS.ShortByteString
@@ -1132,7 +1197,7 @@ runCS04
     -> Control
     -> String
     -> IO ()
-runCS04 prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
+runCS04 index prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
     tm <- mkPureTrieManager
     (seed, _) <- largestWalletUtxo prov
     let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seed)
@@ -1190,6 +1255,7 @@ runCS04 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     case result of
         Rejected reason ->
             attributeCS04Refusal
+                index
                 receiptsDir
                 base
                 dirty
@@ -1271,7 +1337,8 @@ redeemer was tampered — refused; the recorded script set is derived from
 the observed hashes in ledger order, never tuned to a run.
 -}
 attributeCS04Refusal
-    :: FilePath
+    :: ReplayIndex
+    -> FilePath
     -> String
     -> Bool
     -> String
@@ -1283,9 +1350,13 @@ attributeCS04Refusal
     -> String
     -> String
     -> IO ()
-attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker stateMarker requestMarker activeWitnessMarker text rejectedTxid =
+attributeCS04Refusal index receiptsDir base dirty nodeVer blueprintIdStr marker stateMarker requestMarker activeWitnessMarker text rejectedTxid =
     case matchRefusal marker text of
         Right () -> do
+            admitted <-
+                admittedFor (T.pack marker) <$> purposesOf index (T.pack rejectedTxid)
+            replay <- replayEvidenceOf index (T.pack rejectedTxid)
+            correspondence <- sessionCorrespondence index
             let hashes = refusalScriptHashes text
             require
                 ("CS04: state script did not refuse; scripts named: " <> show hashes)
@@ -1295,11 +1366,12 @@ attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker stateM
             unless (stateMarker `isInfixOf` trimmed) $
                 failWith
                     ("trimmer dropped the attribution; full reason: " <> take 20000 text)
-            writeCSReceipt
+            writeCSReceiptWith
+                (correspondence <* nonEmpty replay)
                 receiptsDir
                 "CS04"
                 Refused
-                AgreesWithModel
+                UnmetByRuling
                 []
                 ( Just
                     ( RefusalInfo
@@ -1307,10 +1379,13 @@ attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker stateM
                         , refusalReason = T.pack trimmed
                         , refusalPhase = "phase-2"
                         , refusalHashes = map T.pack hashes
-                        , refusalBranch = Nothing
-                        , refusalLimit =
-                            Just
-                                "no named validator branch in this compiled trace; attribution is script hash plus phase-2 only"
+                        , refusalBranch = admitted
+                        , refusalReplay = toList <$> nonEmpty replay
+                        , refusalLimit = case admitted of
+                            Just _ -> Nothing
+                            Nothing ->
+                                Just
+                                    "no named validator branch in this compiled trace; attribution is script hash plus phase-2 only"
                         }
                     )
                 )
@@ -1324,6 +1399,14 @@ attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker stateM
                 nodeVer
                 blueprintIdStr
                 Nothing
+            emit
+                "unmet"
+                ( "CS04 UNMET BY RULING: kept unmet by operator ruling "
+                    <> "2026-10-02 (narrowed #287; model follow-up "
+                    <> "lambdasistemi/singular#347); Singular's Lean has no "
+                    <> "vocabulary for decoding a redeemer, so it gives no reason to "
+                    <> "compare with the chain's"
+                )
             emit
                 "row"
                 ( "CS04: REFUSED wrong index by "

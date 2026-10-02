@@ -24,7 +24,7 @@ import System.Environment (getArgs, lookupEnv)
 import System.Exit (ExitCode (..), exitFailure, exitWith)
 import System.IO (hPutStrLn, stderr)
 
-import Conformance.Book (renderBook)
+import Conformance.Book (bookReceipts, bookStories, renderBook)
 import Conformance.EvidencePage (runEvidencePage)
 import Conformance.ForkKeys
     ( runCheckForkExclusion
@@ -36,7 +36,6 @@ import Conformance.ForkKeys
     )
 import Conformance.Receipt
     ( Receipt (..)
-    , Verdict (..)
     , currentBase
     , loadReceipts
     )
@@ -46,6 +45,7 @@ import Conformance.Rows
     , rowId
     )
 import Conformance.Run (runForkProbe, runRows)
+import Conformance.Run.Replay (runReplayCapsule)
 import Paths_conformance (getDataFileName)
 
 defaultReceiptsDir :: FilePath
@@ -65,6 +65,26 @@ main = do
         ["list"] -> runList Nothing
         ["list", "--receipts", dir] -> runList (Just dir)
         "run" : rest -> runDispatch rest
+        [ "replay-capsule"
+            , "--capsule"
+            , capsule
+            , "--deployed"
+            , deployed
+            , "--traced"
+            , traced
+            ] ->
+                runReplayCapsule args capsule deployed traced Nothing
+        [ "replay-capsule"
+            , "--capsule"
+            , capsule
+            , "--deployed"
+            , deployed
+            , "--traced"
+            , traced
+            , "--diagnostic"
+            , diagnostic
+            ] ->
+                runReplayCapsule args capsule deployed traced (Just diagnostic)
         ["example", "retirement", "--receipts-dir", dir] -> runGuarded ["CG22"] dir
         ["example", "registration", "--receipts-dir", dir] -> runGuarded ["CG21"] dir
         ["evidence-page"] -> runEvidencePage "." False
@@ -90,6 +110,9 @@ usage = do
         "       conformance -- run ROW... [--receipts-dir DIR]"
     hPutStrLn
         stderr
+        "       conformance -- replay-capsule --capsule DIR --deployed BLUEPRINT --traced BLUEPRINT [--diagnostic BLUEPRINT]"
+    hPutStrLn
+        stderr
         "       conformance -- evidence-page [--root DIR] [--write]"
     hPutStrLn
         stderr
@@ -104,21 +127,15 @@ an old receipt directory supplied in place of an actual run.
 -}
 runBook :: FilePath -> Maybe FilePath -> IO ()
 runBook dir output = do
-    runGuarded ["CG21", "CG22", "CG23", "CG24", "CG07", "sequence"] dir
+    runGuarded bookStories dir
     receipts <- loadReceipts dir >>= either fail pure
-    let chapters =
-            filter
-                ( \r ->
-                    receiptRow r
-                        `elem` ["CG21", "CG22", "CG23", "CG24", "CG07", "sequence"]
-                )
-                receipts
-    if length chapters /= 6
-        || any ((/= AgreesWithModel) . receiptVerdict) chapters
-        then
+    case bookReceipts receipts of
+        Left problem ->
             fail
-                "the running book requires every live chapter and the unnamed sequence"
-        else do
+                ( "the running book requires every live chapter and the unnamed sequence: "
+                    <> problem
+                )
+        Right chapters -> do
             path <- getDataFileName "rows.json"
             rows <- loadRows path >>= either fail pure
             case output of

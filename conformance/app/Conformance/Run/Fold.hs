@@ -11,10 +11,8 @@ module Conformance.Run.Fold
     , declaredSpec
     , rowRequestAndFold
     , declaredUnits
-    , buildRefusedFold
     , buildValidFold
     , foldUtxos
-    , poisonProofs
     , validProofs
     , assembleFold
     , foldUpperSlot
@@ -189,8 +187,8 @@ import Conformance.Mirror
 -- ---------------------------------------------------------
 
 {- | One hand-built fold transaction, fully specified. The library
-fold cannot emit transactions whose scripts do not evaluate (CG05's
-finding), so every refusal fold — and every fold whose payload
+fold cannot emit transactions whose scripts do not evaluate, so
+every refusal fold — and every fold whose payload
 exercises an unchecked validator path (surplus actions, a changed
 owner, crossed refunds) — is assembled here. Every accepting
 hand-built fold is calibrated against the library fold it parallels
@@ -229,8 +227,8 @@ data FoldSpec = FoldSpec
     @Just []@: deliberately none.
     -}
     , fsCollateral :: Maybe TxIn
-    {- ^ collateral input; @Nothing@: the fee funder (the CG05
-    shape). Refusing folds pass a dedicated 5 ADA pot instead — the
+    {- ^ collateral input; @Nothing@: the fee funder. Refusing
+    folds pass a dedicated 5 ADA pot instead — the
     whole collateral is taken on phase-2 failure, and the funder is
     the wallet's largest output.
     -}
@@ -240,6 +238,11 @@ data FoldSpec = FoldSpec
     , fsRefs :: [(TxIn, TxOut ConwayEra)]
     , fsHolderUtxos :: [(TxIn, TxOut ConwayEra)]
     , fsFunder :: Maybe (TxIn, TxOut ConwayEra)
+    , fsExtraOutputs :: [TxOut ConwayEra]
+    {- ^ outputs placed after the refunds and before the change, paid from the
+    change: a control that pays an owner beside its refund. @[]@ for every
+    ordinary fold.
+    -}
     , fsOmitUnfundedBurn :: Bool
     {- ^ The cage's reference outputs, published once at its boot and
     copied here by `rowSpec`. Reading them rather than asking for them
@@ -337,7 +340,12 @@ assembleFoldSpec env0 fs = Cage.withView (envProv env0) $ \held -> do
         Nothing -> pure (makeStateOut oldState)
         Just s -> pure (makeStateOutOverride s)
     changeOut <-
-        makeChange pp funder feeAmt (map outCoin (refundOuts refunds)) duties
+        makeChange
+            pp
+            funder
+            feeAmt
+            (map outCoin (refundOuts refunds <> fsExtraOutputs fs))
+            duties
     redeemers <- makeRedeemers fs funder duties
     scripts <- makeScripts fs refs duties
     let signers = fromMaybe harnessSigners (fsSigners fs)
@@ -358,6 +366,7 @@ assembleFoldSpec env0 fs = Cage.withView (envProv env0) $ \held -> do
                         ( newStateOut
                             : rdOutputs duties
                                 <> refundOuts refunds
+                                <> fsExtraOutputs fs
                                 <> [changeOut]
                         )
                 & feeTxBodyL .~ Coin feeAmt
@@ -581,9 +590,9 @@ assembleFoldSpec env0 fs = Cage.withView (envProv env0) $ \held -> do
 
 {- | Assemble with an iterated fee: assemble, let the ledger price
 the transaction, and repeat until the declared fee exceeds the
-estimate by a fixed margin. The margin discipline is CG05's: too
-small fails loudly at submit (phase 1, no script named); too large
-fails loudly in assembly (a refund under min-ADA).
+estimate by a fixed margin. Too small a margin fails loudly at
+submit (phase 1, no script named); too large fails loudly in
+assembly (a refund under min-ADA).
 -}
 assembleFoldWithFee :: Env -> FoldSpec -> IO ConwayTx
 assembleFoldWithFee env0 fs =
@@ -684,6 +693,7 @@ rowSpec cage tid state reqs actions root units =
         , fsHolderUtxos = []
         , fsFunder = Nothing
         , fsOmitUnfundedBurn = False
+        , fsExtraOutputs = []
         }
 
 {- | Twice the measured units: the declared budget of a refusing
@@ -796,51 +806,6 @@ declaredUnits :: (Integer, Integer) -> ExUnits
 declaredUnits (mem, cpu) =
     ExUnits (fromIntegral (mem * 2)) (fromIntegral (cpu * 2))
 
-{- | The hand-built poisoned fold for CG05: spends the state and the
-sole pending occupied-insert request exactly as the library fold
-would — same inputs, state output, refunds, redeemers, scripts,
-signers and validity — with the overwrite root the library itself
-would declare, but balanced by hand so the unevaluatable scripts
-never gate emission. The node rules on it at submit.
--}
-buildRefusedFold :: Env -> IO ConwayTx
-buildRefusedFold env0 = do
-    _ <- sessionRefUtxos env0
-    withHeldView env0 $ \env -> buildRefusedFoldIn env
-
-buildRefusedFoldIn :: Env -> IO ConwayTx
-buildRefusedFoldIn env = do
-    (stateUtxo, reqUtxos) <- foldUtxos env
-    reqUtxo <- case reqUtxos of
-        [u] -> pure u
-        _ ->
-            failWith
-                ( "CG05 hand-build: expected one pending request, found "
-                    <> show (length reqUtxos)
-                )
-    (proofs, newRoot) <- poisonProofs env
-    (memU, cpuU) <- readIORef (envValidUnits env)
-    require
-        "CG05 hand-build: no valid fold measured yet"
-        (memU > 0 && cpuU > 0)
-    let units = declaredUnits (memU, cpuU)
-    draft <- assembleFold env stateUtxo [reqUtxo] [proofs] newRoot units 0
-    pp <- Cage.withView (envProv env) (pure . Cage.viewProtocolParams)
-    -- Conway charges for the reference scripts a transaction reads, by
-    -- their size, so the estimate is given that size rather than zero.
-    refs <- sessionRefUtxos env
-    let refBytes = sum (map (refScriptSize . snd) refs)
-        Coin estFee = estimateMinFeeTx pp draft 1 0 refBytes
-        fee1 = estFee + feeMargin
-    assembleFold env stateUtxo [reqUtxo] [proofs] newRoot units fee1
-  where
-    -- \| Small margin over the ledger's own minimum-fee estimate
-    -- (which prices the declared units exactly). Too small fails
-    -- loudly at submit (phase 1, no script named); too large fails
-    -- loudly in assembly (refund under min-ADA). Neither can
-    -- masquerade as the row's verdict.
-    feeMargin = 50_000
-
 {- | The hand-built valid fold for calibration: same assembly as the
 poisoned fold but over the valid pending requests, with maximal
 declared units (it is never submitted, so its fee is irrelevant).
@@ -894,19 +859,6 @@ foldUtxos env = do
     let reqs = sortOn fst (findRequestUtxos tid reqUtxos)
     require "hand-build: no pending requests" (not (null reqs))
     pure (stateUtxo, reqs)
-
-{- | Proofs and root for the poisoned fold: the overwrite the library
-itself would declare (insert over the occupied key, proof steps,
-new root), computed through the same speculative trie the library
-folds use.
--}
-poisonProofs :: Env -> IO ([ProofStep], Root)
-poisonProofs env =
-    withSpeculativeTrie (envTm env) (envTid env) $ \trie -> do
-        _ <- CageTrie.insert trie cgKey cgV4
-        mSteps <- CageTrie.getProofSteps trie cgKey
-        r <- CageTrie.getRoot trie
-        pure (fromMaybe [] mSteps, r)
 
 {- | Proofs and root for valid folds, replicating the library's
 per-request processing through the same speculative trie.

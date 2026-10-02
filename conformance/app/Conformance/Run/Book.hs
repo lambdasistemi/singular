@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 {- |
 Module      : Conformance.Run.Book
 Description : Split out of Conformance.Run (#263); see that module's header
@@ -7,6 +9,8 @@ module Conformance.Run.Book
     ( rowRequestInsert
     , speculativeInsert
     , speculativeApplyAll
+    , keyProof
+    , speculativeStep
     , rowCommit
     , paddedRequest
     , pendingRequests
@@ -113,6 +117,7 @@ import Singular.Registry.Types
     , OnChainRequest (..)
     , ProofStep (..)
     , edgeInsertAbsent
+    , edgeInsertActive
     , edgeWitnessTerminal
     )
 
@@ -194,12 +199,43 @@ speculativeApplyAll env _cage tid reqs =
         -- #183: the edge names the move and its leaf bytes, from the
         -- table the cage reads (#157 C3: a read proves its key and
         -- leaves it alone).
-        walkEdge trie key edge
+        speculativeStep trie key edge
       where
         (key, edge) = case extractCageDatum out of
             Just (RequestDatum rq) ->
                 (requestKey rq, requestEdge rq)
             _ -> error "speculative: pending UTxO has no request datum"
+
+{- | One request's step of a speculative fold: its proof, and the trie moved
+as the edge moves it.
+-}
+speculativeStep
+    :: (Monad m) => CageTrie.Trie m -> ByteString -> Edge -> m [ProofStep]
+speculativeStep trie key edge
+    | edge == edgeInsertAbsent || edge == edgeInsertActive =
+        walkEdge trie key edge
+    | otherwise =
+        CageTrie.lookup trie key >>= \case
+            Just _ -> walkEdge trie key edge
+            -- A key the trie does not hold: the edge cannot move it, and the
+            -- script can only refuse it against an exclusion proof.
+            Nothing -> keyProof trie key
+
+{- | The proof a fold carries for one key on the trie as it stands: the
+key's inclusion proof when the trie holds it, else the exclusion proof —
+the steps an insertion of that key carries, which is what the state script
+checks a key's absence against (@mpf.miss@). The key is inserted to read
+those steps and deleted again, so the trie is left as it was.
+-}
+keyProof
+    :: (Monad m) => CageTrie.Trie m -> ByteString -> m [ProofStep]
+keyProof trie key =
+    CageTrie.getProofSteps trie key >>= \case
+        Just inclusion -> pure inclusion
+        Nothing -> do
+            exclusion <- walkEdge trie key edgeInsertAbsent
+            _ <- CageTrie.delete trie key
+            pure exclusion
 
 {- | Commit a landed edge to a row cage's trie (#157 C3: a read
 commits nothing, which `walkEdge` already knows).
@@ -211,11 +247,10 @@ rowCommit env cage key edge = do
 
 {- | Book one absence on a row cage at an explicit bond (#157 A-009).
 
-The bond is the caller's, because CG19 needs two different ones to cross
-and CG05 needs one large enough to carry its own refusal. What was a bare
-payment carrying a request datum is now a booking: the edge is certified,
-the destination names where the deposit comes back, and the approval rides
-the request to the fold.
+The bond is the caller's, because CG19 needs two different ones to
+cross. What was a bare payment carrying a request datum is now a booking:
+the edge is certified, the destination names where the deposit comes back,
+and the approval rides the request to the fold.
 -}
 paddedRequest
     :: Env
