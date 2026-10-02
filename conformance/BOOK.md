@@ -4,7 +4,7 @@ These are executable stories. The runner supplies fresh registry and wallet cont
 
 ## This run
 
-Code revision: `444c0775a88b10d1b58e4426036fc5602ea6a3e9` (clean working tree).
+Code revision: `1a071c76e2f92346db18619ed8d8ab1d35706bda` (clean working tree).
 
 Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c request:5203be8c0e949c878b4b84dbc729f12c50e45d6c67fb4c6d80370cd4`.
 
@@ -14,17 +14,17 @@ Unsupported chain folds: 0.
 
 Batches submitted in one transaction: 1, 0 accepted and 1 refused on chain.
 
-The extra-signer registration was accepted on chain (transaction `48e7b4ca135ebb9a50851c2f44b51447b18cc0bda9f04784031e4719621a283c`); the comparison detected the difference at `tx.signers`.
+The extra-signer registration was accepted on chain (transaction `fde603558df69cd65b00f9e674d416336f992e9f8cac8039319a55c9891087a0`); the comparison detected the difference at `tx.signers`.
 
-The insertActive was refused on chain (transaction `18808b77936f3578217e86c6ba67949d394e0d7f7d64cf25c4c11d6c8e6e386d`); the model refused it for `key-exists`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `key-exists`.
+The insertActive was refused on chain (transaction `7971672b51514fd16473ad33533e545c3c7beeb7dc47a2cb5dceb96e46609e3b`); the model refused it for `key-exists`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `key-exists`.
 
-The other-address insertActive was refused on chain (transaction `21808f08f525e20e3706d0e3a41b79dd6c34f75b3f9f7fa2c0f62f87c683e463`); the model refused it for `destination`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `destination`.
+The other-address insertActive was refused on chain (transaction `e35332e867ee60e7693cf302cd446e2cf2585bf768398db877139e6f36dfa5d5`); the model refused it for `destination`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `destination`.
 
-The short-by-one insertActive was refused on chain (transaction `5c614df59148d9942ecd06d7a7be2cf71d1f8ddf65d3f722aedf0a78891cb248`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
+The short-by-one insertActive was refused on chain (transaction `7a8f92689b4431e30560e5b70c223f563972b763062d871f8ac6c0f75ca60aa8`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
 
-The fold of 2 requests in one transaction, tampered mint-on-first-key, was refused on chain (transaction `44711caa96cdfba729135e054ac61db54137bb3dd9a479d5c44d8607eb4790a2`); the model's `foldBatch` refused it for `net-mint-mismatch`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `net-mint-mismatch`.
+The fold of 2 requests in one transaction, tampered mint-on-first-key, was refused on chain (transaction `6c13268eae743000e41b3de3a2702f214a7006fefc84a139baf157b54fbc281f`); the model's `foldBatch` refused it for `net-mint-mismatch`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `net-mint-mismatch`.
 
-Code revision: `444c0775a88b10d1b58e4426036fc5602ea6a3e9` (clean working tree).
+Code revision: `1a071c76e2f92346db18619ed8d8ab1d35706bda` (clean working tree).
 
 Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c request:5203be8c0e949c878b4b84dbc729f12c50e45d6c67fb4c6d80370cd4`.
 
@@ -32,9 +32,9 @@ Occupied-key insertion compared 3 requests: 2 accepted and 1 refused on chain.
 
 Unsupported chain folds: 0.
 
-The insertAbsent was refused on chain (transaction `4abf501d2d7fd63e347573564e9a07566916fa42a222cecff3d990a3f2112075`); the model refused it for `key-exists`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `key-exists`.
+The insertAbsent was refused on chain (transaction `6350663ed0d818a76997d0d1328b3df43380c60921b7af0c4cc6e4208eb91649`); the model refused it for `key-exists`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `key-exists`.
 
-Code revision: `444c0775a88b10d1b58e4426036fc5602ea6a3e9` (clean working tree).
+Code revision: `1a071c76e2f92346db18619ed8d8ab1d35706bda` (clean working tree).
 
 Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c request:5203be8c0e949c878b4b84dbc729f12c50e45d6c67fb4c6d80370cd4`.
 
@@ -42,15 +42,15 @@ Retirement compared 11 requests: 7 accepted and 4 refused on chain.
 
 Unsupported chain folds: 0.
 
-The updateTerminal was refused on chain (transaction `02f81010d9bc97684941e54ec23230f910208e45c5d766da5f73e1c0e195d2e0`); the model refused it for `not-booked`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `not-booked`.
+The updateTerminal was refused on chain (transaction `ccfc5f291f1b76f10e22a136d6e2d924fbce94ef04fbb72ca3887f2fcfcfd33d`); the model refused it for `not-booked`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `not-booked`.
 
-The updateTerminal was refused on chain (transaction `142c0545fe74b82a6eb01440ffab46f37260659ce84568291d967a2212518127`); the model refused it for `key-unknown`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `key-unknown`.
+The updateTerminal was refused on chain (transaction `6ddde664549c752f61f27aa906ccfac9b2b67c209cf6725429ce73d568a56bc1`); the model refused it for `key-unknown`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `key-unknown`.
 
-The short-by-one deleteActive was refused on chain (transaction `cd057281d3078e1e8fec558586c4706a6314d7d92eea044cd7607e520a784bbb`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
+The short-by-one deleteActive was refused on chain (transaction `cbd668cbbe23bb598d824e5b56a275fa8f3f96fdd3a643a763b3ed39691583c8`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
 
-The other-address deleteActive was refused on chain (transaction `d342bd06310d982dcb419af15da7947f8387dec66f486fe74cd4a4fee6bd9142`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
+The other-address deleteActive was refused on chain (transaction `dc9bb02301fc5cc7bdde0d7437f58fa8350e747c2acafdc3dd16e8baea0d1be8`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
 
-Code revision: `444c0775a88b10d1b58e4426036fc5602ea6a3e9` (clean working tree).
+Code revision: `1a071c76e2f92346db18619ed8d8ab1d35706bda` (clean working tree).
 
 Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c request:5203be8c0e949c878b4b84dbc729f12c50e45d6c67fb4c6d80370cd4`.
 
@@ -58,25 +58,25 @@ Rejection and retraction compared 10 requests: 2 accepted and 8 refused on chain
 
 Unsupported chain folds: 0.
 
-The short-by-one reject of insertActive was refused on chain (transaction `40d00912157607b5bcd848712148777d59c51026df78d5866548c0909c28bcba`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
+The short-by-one reject of insertActive was refused on chain (transaction `7b9436e1ed6e203e57263253caebcda2da50c93fb3e6a3b74d67911b95c3fb49`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
 
-The other-address reject of insertActive was refused on chain (transaction `827074081081061a0cc7a0eb0771f33e0dcbd1fc1424be512edf6f3ec24317f8`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
+The other-address reject of insertActive was refused on chain (transaction `49279a1e4ba46333588fae7efd91f5aa865c2ad918178b2b6fbee492444db85f`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
 
-The short-by-one retract of insertActive was refused on chain (transaction `a860ea292fa2bcdf394991e5b21706a6c8e61b01c4a21ffd4e6ac48fd62081c7`); the model refused it for `deposit-returned`. The traced replay of the deployed script `768fb4a1dd5a1aacdc791599bb5e8f039133b7403dbe1dcf241dadf6` (traced build `daae836c19123defa960e964d1f27c64342f29259d763f8c9f919431`) failed with `deposit-returned`.
+The short-by-one retract of insertActive was refused on chain (transaction `9c8bafdff1368692e1e065238ca1adc3a73b7bd419b8ef212c8acfb1988ec82a`); the model refused it for `deposit-returned`. The traced replay of the deployed script `83d205cc37fa7490ae5a9dae9346a606f34145bcca3e8cd3822ce94e` (traced build `951d566adb6c91c487797545470220022bdcc489832a0df2af7793b7`) failed with `deposit-returned`.
 
-The other-address retract of insertActive was refused on chain (transaction `f67e9ecb33b9c62594dddcdd371d312f4bffa0644ebbc44068ca4e66273d2477`); the model refused it for `deposit-returned`. The traced replay of the deployed script `768fb4a1dd5a1aacdc791599bb5e8f039133b7403dbe1dcf241dadf6` (traced build `daae836c19123defa960e964d1f27c64342f29259d763f8c9f919431`) failed with `deposit-returned`.
+The other-address retract of insertActive was refused on chain (transaction `783d83ac4e82e42276777b852fd9ad16d9e43ea4f8ff8dca52918cff7ff5a41a`); the model refused it for `deposit-returned`. The traced replay of the deployed script `83d205cc37fa7490ae5a9dae9346a606f34145bcca3e8cd3822ce94e` (traced build `951d566adb6c91c487797545470220022bdcc489832a0df2af7793b7`) failed with `deposit-returned`.
 
-The other-reference retract of insertActive was refused on chain (transaction `95a15c4b0597b18923d7a49bcc37517b26a79065cc066965bd35a82c5f4d16cb`); the model refused it for `deposit-returned`. The traced replay of the deployed script `768fb4a1dd5a1aacdc791599bb5e8f039133b7403dbe1dcf241dadf6` (traced build `daae836c19123defa960e964d1f27c64342f29259d763f8c9f919431`) failed with `deposit-returned`.
+The other-reference retract of insertActive was refused on chain (transaction `91883a20ef7da52541e3b54e3408a4454d48a0b98a0207e9204ec9a205cb8a8b`); the model refused it for `deposit-returned`. The traced replay of the deployed script `83d205cc37fa7490ae5a9dae9346a606f34145bcca3e8cd3822ce94e` (traced build `951d566adb6c91c487797545470220022bdcc489832a0df2af7793b7`) failed with `deposit-returned`.
 
-The state-spent retract of insertActive was refused on chain (transaction `9fa2771f87577c25638be709a6357244838b05659a42655367bbffe77a047168`); the model refused it for `retract-state-spent`. The traced replay of the deployed script `768fb4a1dd5a1aacdc791599bb5e8f039133b7403dbe1dcf241dadf6` (traced build `daae836c19123defa960e964d1f27c64342f29259d763f8c9f919431`) failed with `retract-state-spent`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `missing-action`.
+The state-spent retract of insertActive was refused on chain (transaction `c347b8e6516dcbbc1150b872ef5c713d737f3d2720880f7e2f58a9a15ac8e725`); the model refused it for `retract-state-spent`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `missing-action`. The traced replay of the deployed script `83d205cc37fa7490ae5a9dae9346a606f34145bcca3e8cd3822ce94e` (traced build `951d566adb6c91c487797545470220022bdcc489832a0df2af7793b7`) failed with `retract-state-spent`.
 
-The retract of updateTerminal was refused on chain (transaction `e3733209e51163a622281cfe4fe9758b2014b7c62c85dfaa28339f0a9e479ebc`); the model refused it for `withdraw-insert-only`. The traced replay of the deployed script `768fb4a1dd5a1aacdc791599bb5e8f039133b7403dbe1dcf241dadf6` (traced build `daae836c19123defa960e964d1f27c64342f29259d763f8c9f919431`) failed with `withdraw-insert-only`.
+The retract of updateTerminal was refused on chain (transaction `347f2a42c2c33401160a86f33b4f22bbc9cde5e8246240c5b379e2c56f462c69`); the model refused it for `withdraw-insert-only`. The traced replay of the deployed script `83d205cc37fa7490ae5a9dae9346a606f34145bcca3e8cd3822ce94e` (traced build `951d566adb6c91c487797545470220022bdcc489832a0df2af7793b7`) failed with `withdraw-insert-only`.
 
-The unsigned retract of insertActive was refused on chain (transaction `5bd818be7822c7416ca9f5e44e789091c3ee01ea80cc0ca4ceab82c3dd33f539`); the model refused it for `retract-owner`. The traced replay of the deployed script `768fb4a1dd5a1aacdc791599bb5e8f039133b7403dbe1dcf241dadf6` (traced build `daae836c19123defa960e964d1f27c64342f29259d763f8c9f919431`) failed with `retract-owner`.
+The unsigned retract of insertActive was refused on chain (transaction `04a141a4510bca72af41b01cda4fc8570a0437fb59e0b2d61163b5a070788926`); the model refused it for `retract-owner`. The traced replay of the deployed script `83d205cc37fa7490ae5a9dae9346a606f34145bcca3e8cd3822ce94e` (traced build `951d566adb6c91c487797545470220022bdcc489832a0df2af7793b7`) failed with `retract-owner`.
 
-The exit chapter compared both admission refusals: the unsigned insertion retraction (transaction `5bd818be7822c7416ca9f5e44e789091c3ee01ea80cc0ca4ceab82c3dd33f539`) was refused by the model for `retract-owner`, and the pending update retraction (transaction `e3733209e51163a622281cfe4fe9758b2014b7c62c85dfaa28339f0a9e479ebc`) for `withdraw-insert-only`; the chain attributes both refusals to the request validator. The owner-signed insertion control accepted by both is transaction `07daffa5756cde9c58f9521a93cb50e4aca9219653ee44d820e07cb3f71dd70a`.
+The exit chapter compared both admission refusals: the unsigned insertion retraction (transaction `04a141a4510bca72af41b01cda4fc8570a0437fb59e0b2d61163b5a070788926`) was refused by the model for `retract-owner`, and the pending update retraction (transaction `347f2a42c2c33401160a86f33b4f22bbc9cde5e8246240c5b379e2c56f462c69`) for `withdraw-insert-only`; the chain attributes both refusals to the request validator. The owner-signed insertion control accepted by both is transaction `6375c9e84167cf4cc8521ac4c495386138d7bc0c0a2eb203e7f5858f5a83cf47`.
 
-Code revision: `444c0775a88b10d1b58e4426036fc5602ea6a3e9` (clean working tree).
+Code revision: `1a071c76e2f92346db18619ed8d8ab1d35706bda` (clean working tree).
 
 Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c request:5203be8c0e949c878b4b84dbc729f12c50e45d6c67fb4c6d80370cd4`.
 
@@ -84,15 +84,15 @@ Early rejection compared 6 requests: 2 accepted and 4 refused on chain.
 
 Unsupported chain folds: 0.
 
-The short-by-one reject of insertActive was refused on chain (transaction `fd2d77fef2ece335fe95e68ad217cf560822649ea0458fe1748e50b4d2539dee`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
+The short-by-one reject of insertActive was refused on chain (transaction `7b9aa3f8618d380fd0b39738e2800b0a82a83576df1d93f87f0c46eb1dc4cb8f`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
 
-The other-address reject of insertActive was refused on chain (transaction `5bf5b0297f784a4a1703791174bdb00cac29a5bde0e198451c7ad7194e05efd2`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
+The other-address reject of insertActive was refused on chain (transaction `7336be9ac059b74a0cb1f9036b0ab30a6ae8bafb3673c94ff1226f8dbf06a00b`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
 
-The short-by-one reject of insertActive was refused on chain (transaction `563c4841c2709123c20423721093fc4302115d382355dd2a624d77659607569f`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
+The short-by-one reject of insertActive was refused on chain (transaction `574f59238165d12f714bc9a6e4a36f15badac2a7843684f6f15f15f4bf862892`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
 
-The other-address reject of insertActive was refused on chain (transaction `fd9016e124c8ca55095e34dad7a13d334e4e3cfc62383e2a46b4eed6b5790746`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
+The other-address reject of insertActive was refused on chain (transaction `b5ddcad5fc6277678d52782dadafd9055cfaab96a39cb59e6e31d5b4627c09fc`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
 
-Code revision: `444c0775a88b10d1b58e4426036fc5602ea6a3e9` (clean working tree).
+Code revision: `1a071c76e2f92346db18619ed8d8ab1d35706bda` (clean working tree).
 
 Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c request:5203be8c0e949c878b4b84dbc729f12c50e45d6c67fb4c6d80370cd4`.
 
@@ -100,13 +100,13 @@ Retraction window compared 3 requests: 1 accepted and 2 refused on chain.
 
 Unsupported chain folds: 0.
 
-The before-phase-2 retract of insertActive was refused on chain (transaction `6708e6367980a1a9dacc922f8a3dc20acdf225c7bb2f53af3e06f95ad275d4c3`); the model refused it for `not-phase2`. The traced replay of the deployed script `c2ac616e20405bd455966665e9150d0c0c45e5074b1403a077dbbd7b` (traced build `86d3db733df6b859d8ad700bb6665f4da6eee3cedaa4f99d7713c89c`) failed with `not-phase2`.
+The before-phase-2 retract of insertActive was refused on chain (transaction `69c76e095b1b6049c6e445ee9f77e139c3604e153e1d2d7dc8aa7e1e104e4f61`); the model refused it for `not-phase2`. The traced replay of the deployed script `e9d1656301ec42b10967c96e77e0fcd2d9964f8b9abf750946301c14` (traced build `870a23c0e3e2780c7bc2d6b93213596f8a9504b7a17bfac2a7c60224`) failed with `not-phase2`.
 
-The after-phase-2 retract of insertActive was refused on chain (transaction `fcf5d78b6107711dde5ff6453d38b9272a98c368a4202f44c22ddaa3d3a55c44`); the model refused it for `not-phase2`. The traced replay of the deployed script `c2ac616e20405bd455966665e9150d0c0c45e5074b1403a077dbbd7b` (traced build `86d3db733df6b859d8ad700bb6665f4da6eee3cedaa4f99d7713c89c`) failed with `not-phase2`.
+The after-phase-2 retract of insertActive was refused on chain (transaction `3d86db7940b1260409f8027041ad2528386f42c92995f6432577c7ede5cac675`); the model refused it for `not-phase2`. The traced replay of the deployed script `e9d1656301ec42b10967c96e77e0fcd2d9964f8b9abf750946301c14` (traced build `870a23c0e3e2780c7bc2d6b93213596f8a9504b7a17bfac2a7c60224`) failed with `not-phase2`.
 
-The window chapter compared both finite timing refusals: transaction `6708e6367980a1a9dacc922f8a3dc20acdf225c7bb2f53af3e06f95ad275d4c3` before phase 2 and transaction `fcf5d78b6107711dde5ff6453d38b9272a98c368a4202f44c22ddaa3d3a55c44` after phase 2. The model refused both for `not-phase2`; the chain attributes both refusals to the request validator. Their owner-signed in-window control accepted by both is transaction `a0bb94cf2b8aa22785c3acc21fb425b88833fdb36355368f0b8a90f9fdbbf96f`.
+The window chapter compared both finite timing refusals: transaction `69c76e095b1b6049c6e445ee9f77e139c3604e153e1d2d7dc8aa7e1e104e4f61` before phase 2 and transaction `3d86db7940b1260409f8027041ad2528386f42c92995f6432577c7ede5cac675` after phase 2. The model refused both for `not-phase2`; the chain attributes both refusals to the request validator. Their owner-signed in-window control accepted by both is transaction `622b22b13dab210ae5328cef60181dae03b9d56c3a6d349ed309755554d5f7b7`.
 
-Code revision: `444c0775a88b10d1b58e4426036fc5602ea6a3e9` (clean working tree).
+Code revision: `1a071c76e2f92346db18619ed8d8ab1d35706bda` (clean working tree).
 
 Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c request:5203be8c0e949c878b4b84dbc729f12c50e45d6c67fb4c6d80370cd4`.
 
@@ -874,52 +874,52 @@ The report-validation tests remain under `test/Conformance/Support`. They check 
 
 Each refused request's traced replay was evaluated from a capture of the refused transaction, the outputs it spends, the protocol parameters and the era history:
 
-Transaction `18808b77936f3578217e86c6ba67949d394e0d7f7d64cf25c4c11d6c8e6e386d`: capture `a4edf858e54eb9520c492068460452bd729be9423735bc9e783376c78efe0dc1` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+Transaction `7971672b51514fd16473ad33533e545c3c7beeb7dc47a2cb5dceb96e46609e3b`: capture `35a3e5df8d579763a52fca1e0c8f5386bd1e350fc3f3f0233d2fd047269cdaf6` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `21808f08f525e20e3706d0e3a41b79dd6c34f75b3f9f7fa2c0f62f87c683e463`: capture `be44aa2609c372f23723d865eee24a53c7559bf2b42beaa52f868a3aec63f76b` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+Transaction `e35332e867ee60e7693cf302cd446e2cf2585bf768398db877139e6f36dfa5d5`: capture `f31572583f20e8b2efa94046f9ef447a14a0f75bbcf888e0a61590a6ac2feff7` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `5c614df59148d9942ecd06d7a7be2cf71d1f8ddf65d3f722aedf0a78891cb248`: capture `91f89e8a617707b1540d67d2cd82b0b69e5cda5ecfda2a747728cfffa10139d5` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+Transaction `7a8f92689b4431e30560e5b70c223f563972b763062d871f8ac6c0f75ca60aa8`: capture `e420b1f2e9ba9d5991729c2121ff508b9d08045559a288d7b6cfab984ddd44ef` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `44711caa96cdfba729135e054ac61db54137bb3dd9a479d5c44d8607eb4790a2`: capture `c135a28850bd93f38e7373059f9591179f28e39ad7271215f6052bdc0509dadb` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+Transaction `6c13268eae743000e41b3de3a2702f214a7006fefc84a139baf157b54fbc281f`: capture `6af3c989f694576e6cee473308f5d1e5251776863fa89f460db8e6943613f5e2` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `4abf501d2d7fd63e347573564e9a07566916fa42a222cecff3d990a3f2112075`: capture `5b4a8d6fb27cdb4d139c9ca638abcf77c01e8853f7082d5acb2d0609d2b3b6ec` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+Transaction `6350663ed0d818a76997d0d1328b3df43380c60921b7af0c4cc6e4208eb91649`: capture `d9a522a3db69107756a52c0e6865e3b1adfaa17a140cde089edc4d74bed78a9a` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `02f81010d9bc97684941e54ec23230f910208e45c5d766da5f73e1c0e195d2e0`: capture `57de98ad2d58455beaec8b26e8686ca9a22cd438aede372b3ce05e3da0e63c70` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+Transaction `ccfc5f291f1b76f10e22a136d6e2d924fbce94ef04fbb72ca3887f2fcfcfd33d`: capture `080edb54a0293da23b5c55f48c7668e6e41705280cf4807a549cff7b8140545d` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `142c0545fe74b82a6eb01440ffab46f37260659ce84568291d967a2212518127`: capture `46c9c28916bdfbfef84d8c71ab624b5a481aa9e2d67546eaf0777656e8045900` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+Transaction `6ddde664549c752f61f27aa906ccfac9b2b67c209cf6725429ce73d568a56bc1`: capture `3781b8efd56e9185022f32324136dee6a28dc0006c30339dd9620bf6885f09f3` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `cd057281d3078e1e8fec558586c4706a6314d7d92eea044cd7607e520a784bbb`: capture `eb1341f148888c63b5dc1f2b204cb665448d12dc1ea15d44fba12883c04431a0` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+Transaction `cbd668cbbe23bb598d824e5b56a275fa8f3f96fdd3a643a763b3ed39691583c8`: capture `878c0e738ef604eb2509963e4a9558f16bae1fc0ace612dc6897871f60bed66f` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `d342bd06310d982dcb419af15da7947f8387dec66f486fe74cd4a4fee6bd9142`: capture `f528790948062ed989b0f2e47a4766a696f9ff102650a380ef502f7289b64924` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+Transaction `dc9bb02301fc5cc7bdde0d7437f58fa8350e747c2acafdc3dd16e8baea0d1be8`: capture `311cf2be524bde016cce0a98cdeddc196a9ada401339f64bf44e99593facc147` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `40d00912157607b5bcd848712148777d59c51026df78d5866548c0909c28bcba`: capture `d25ba74934d7380a44dbdf8907d531d7a5f8888e5f7a0d2b6013e406f0b07c6f` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+Transaction `7b9436e1ed6e203e57263253caebcda2da50c93fb3e6a3b74d67911b95c3fb49`: capture `fdaa7f2ce19427211b648efa85799f2779fa475ae9be2be8d5a00364b53d6052` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `827074081081061a0cc7a0eb0771f33e0dcbd1fc1424be512edf6f3ec24317f8`: capture `61e3d15dbca011a9f50d964ac902a7806b4bb07935256ee3a918283e49a8b711` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+Transaction `49279a1e4ba46333588fae7efd91f5aa865c2ad918178b2b6fbee492444db85f`: capture `090152b5c1dcab287acc9e21b237c50d9b95ffccb4eb1b5036addd1f200e73e7` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `a860ea292fa2bcdf394991e5b21706a6c8e61b01c4a21ffd4e6ac48fd62081c7`: capture `e55f2629cb1e0807cf7201e5c98459d611fd969b0b6dad56081e8b94e22d28e9` of the deployed script `768fb4a1dd5a1aacdc791599bb5e8f039133b7403dbe1dcf241dadf6`.
+Transaction `9c8bafdff1368692e1e065238ca1adc3a73b7bd419b8ef212c8acfb1988ec82a`: capture `4db9598c3ae73d7ad03584a56e415b73197c01516057618cc20015891bcf1be0` of the deployed script `83d205cc37fa7490ae5a9dae9346a606f34145bcca3e8cd3822ce94e`.
 
-Transaction `f67e9ecb33b9c62594dddcdd371d312f4bffa0644ebbc44068ca4e66273d2477`: capture `f99f681c57c9ae2097bf1aa41a79d720b5bedbcf1a0cfd89c362635589c999d9` of the deployed script `768fb4a1dd5a1aacdc791599bb5e8f039133b7403dbe1dcf241dadf6`.
+Transaction `783d83ac4e82e42276777b852fd9ad16d9e43ea4f8ff8dca52918cff7ff5a41a`: capture `840045de220625f3c13eb8dff2aca345a6fa8e53c67a56b258b440d6f0a3857a` of the deployed script `83d205cc37fa7490ae5a9dae9346a606f34145bcca3e8cd3822ce94e`.
 
-Transaction `95a15c4b0597b18923d7a49bcc37517b26a79065cc066965bd35a82c5f4d16cb`: capture `0dfc1765f9a81f3a1429135a8283622b71b81b3e3f7f679cbe9436393c305679` of the deployed script `768fb4a1dd5a1aacdc791599bb5e8f039133b7403dbe1dcf241dadf6`.
+Transaction `91883a20ef7da52541e3b54e3408a4454d48a0b98a0207e9204ec9a205cb8a8b`: capture `35b672b48e13bf9ac01b95b46d471b1a44efac6ed82ffd08828d8df8d0b1c2ea` of the deployed script `83d205cc37fa7490ae5a9dae9346a606f34145bcca3e8cd3822ce94e`.
 
-Transaction `9fa2771f87577c25638be709a6357244838b05659a42655367bbffe77a047168`: capture `d6d5484475b4618e0d8ecfba9a984ffcdcc6d4117c731f5c10d2be90838f3313` of the deployed script `768fb4a1dd5a1aacdc791599bb5e8f039133b7403dbe1dcf241dadf6`.
+Transaction `c347b8e6516dcbbc1150b872ef5c713d737f3d2720880f7e2f58a9a15ac8e725`: capture `91b5d48b114aab6d8230a38b7c77c894b45a455b91052bcc6e8a58ef3e5cb8f6` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `9fa2771f87577c25638be709a6357244838b05659a42655367bbffe77a047168`: capture `d6d5484475b4618e0d8ecfba9a984ffcdcc6d4117c731f5c10d2be90838f3313` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+Transaction `c347b8e6516dcbbc1150b872ef5c713d737f3d2720880f7e2f58a9a15ac8e725`: capture `91b5d48b114aab6d8230a38b7c77c894b45a455b91052bcc6e8a58ef3e5cb8f6` of the deployed script `83d205cc37fa7490ae5a9dae9346a606f34145bcca3e8cd3822ce94e`.
 
-Transaction `e3733209e51163a622281cfe4fe9758b2014b7c62c85dfaa28339f0a9e479ebc`: capture `b34284cf91f9ff959cf9a9f771d7b286806fe4e9e0513aa0bb3fa4d46d2ab0e7` of the deployed script `768fb4a1dd5a1aacdc791599bb5e8f039133b7403dbe1dcf241dadf6`.
+Transaction `347f2a42c2c33401160a86f33b4f22bbc9cde5e8246240c5b379e2c56f462c69`: capture `76d450666404a17cc75a6d63c78d5c5da8155802e20c3edffaeca2fab10c507b` of the deployed script `83d205cc37fa7490ae5a9dae9346a606f34145bcca3e8cd3822ce94e`.
 
-Transaction `5bd818be7822c7416ca9f5e44e789091c3ee01ea80cc0ca4ceab82c3dd33f539`: capture `8d1fd74ab81770f4dbc4bd31883756ee3ec52caf6fe593487af9ad23ee612ce6` of the deployed script `768fb4a1dd5a1aacdc791599bb5e8f039133b7403dbe1dcf241dadf6`.
+Transaction `04a141a4510bca72af41b01cda4fc8570a0437fb59e0b2d61163b5a070788926`: capture `e3d1981f24a5e66d1348a3ef0a311a143921116219a9bd7b691fbcdf139695ba` of the deployed script `83d205cc37fa7490ae5a9dae9346a606f34145bcca3e8cd3822ce94e`.
 
-Transaction `fd2d77fef2ece335fe95e68ad217cf560822649ea0458fe1748e50b4d2539dee`: capture `ae55dfb504416b7e16b788fb1f453c347f65494d756e713825922e99eed5a1a3` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+Transaction `7b9aa3f8618d380fd0b39738e2800b0a82a83576df1d93f87f0c46eb1dc4cb8f`: capture `234ebd2fe6c4df7c5f4597db1a1417067d90fc6bf356b8541e6d6888285d7bbd` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `5bf5b0297f784a4a1703791174bdb00cac29a5bde0e198451c7ad7194e05efd2`: capture `2c16883d026c064172a03495f42a34886641f5a1303706f5ae5968fb116af317` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+Transaction `7336be9ac059b74a0cb1f9036b0ab30a6ae8bafb3673c94ff1226f8dbf06a00b`: capture `45954430d90e1b991ac4c4559a53d04f7c32868c9a819e59248cd3a9cbeea07b` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `563c4841c2709123c20423721093fc4302115d382355dd2a624d77659607569f`: capture `0dc3b317e40bd5d777388ae5a9005656db63f2e0a17bcea6472d86cbee40f124` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+Transaction `574f59238165d12f714bc9a6e4a36f15badac2a7843684f6f15f15f4bf862892`: capture `533a05520336dcaa901c3c767a60a2a407c9b2ead16a3af4f0ef9bb06e147a45` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `fd9016e124c8ca55095e34dad7a13d334e4e3cfc62383e2a46b4eed6b5790746`: capture `58b9bc54b45f72f0cd9770c26a6225ea95527acd7558c440b40cbfc2e2546b5a` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+Transaction `b5ddcad5fc6277678d52782dadafd9055cfaab96a39cb59e6e31d5b4627c09fc`: capture `5b393a1f9bd4465b5a936a8285cce68faad0f6f2d2e856c044e82a35a3d92c6b` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `6708e6367980a1a9dacc922f8a3dc20acdf225c7bb2f53af3e06f95ad275d4c3`: capture `cb09f1a8373039549bccc6df8ca6f72e775347cfb2fe78346053530103cf51fc` of the deployed script `c2ac616e20405bd455966665e9150d0c0c45e5074b1403a077dbbd7b`.
+Transaction `69c76e095b1b6049c6e445ee9f77e139c3604e153e1d2d7dc8aa7e1e104e4f61`: capture `14b7ba67d05cce31c59035726f836e43fa79ffdf345719e863854ae023bab93e` of the deployed script `e9d1656301ec42b10967c96e77e0fcd2d9964f8b9abf750946301c14`.
 
-Transaction `fcf5d78b6107711dde5ff6453d38b9272a98c368a4202f44c22ddaa3d3a55c44`: capture `e4e2b6d3c7d091fa9c8573ea0de613af691308330ab2e59ffe4440574fa701c8` of the deployed script `c2ac616e20405bd455966665e9150d0c0c45e5074b1403a077dbbd7b`.
+Transaction `3d86db7940b1260409f8027041ad2528386f42c92995f6432577c7ede5cac675`: capture `e91af46eabcb6e0d2d5aef58a9508e05bf4802d17fab0b893da9f1c3073cca98` of the deployed script `e9d1656301ec42b10967c96e77e0fcd2d9964f8b9abf750946301c14`.
 
 The generated book is committed to the repository and is not yet reachable from the documentation site, tracked as #218. The general census of Haskell specification bindings remains tracked in #213.
