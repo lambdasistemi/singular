@@ -38,7 +38,7 @@ specific spend, not every consequence of a mixed read.
 
 The intake binds repository and model revision
 `3b7a06bee8850ad6745f61ff5be7631fb8274909`, constitution 1.12.0.
-[Singular.Model](https://github.com/lambdasistemi/singular/blob/3b7a06bee8850ad6745f61ff5be7631fb8274909/lean/Singular/Model.lean) defines `Singular.step`,
+`lean/Singular/Model.lean` defines `Singular.step`,
 `Singular.exitStep`, `Singular.txOfExit`, `Singular.txOf`,
 `Singular.retractAdmission` and `Singular.admittedExitStep`.
 `Singular.step` refuses through `refusal` before `applyEdge`; `txOfExit`
@@ -51,7 +51,12 @@ preserve authorization, token identity, datum bytes, state/root effects,
 custody, refunds and witnesses. It does not amend a model transition or turn
 a node/indexer transport error into a Lean refusal. The model supplies no
 socket protocol or claim that the node and indexer share a block: those
-engineering requirements come from the issue and operator rulings.
+engineering requirements come from the issue and operator rulings. The exact
+bound definition is inspectable from a clean checkout:
+
+```sh
+git show 3b7a06bee8850ad6745f61ff5be7631fb8274909:lean/Singular/Model.lean
+```
 
 The implementation mapping is composition in `Singular.CLI.Node` and
 `Singular.Registry.Node.Session`, observation through `Singular.Registry.Provider`,
