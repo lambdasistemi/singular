@@ -23,7 +23,7 @@
       "pause": 400
     }
   ],
-  "invariant-rows-slice-a": [
+  "invariant-rows-model-slice": [
     {
       "text": "Each row binds a Lean identity, a given-when-then, the executable observation that exhibits it, and a control able to fail for the intended reason.",
       "pause": 400
@@ -59,13 +59,13 @@
       "pause": 400
     }
   ],
-  "r12-the-retirement-map-for-the-44-generic-declarations": [
+  "retirement-map-for-generic-statements-the-retirement-map-for-the-44-generic-declarations": [
     {
       "text": "Each of the forty-four base declarations is carried, renamed to a named identity, or retired with a reason. The retirement theorem is in the generic module and is superseded rather than preserved, so without the map a dropped guarantee is indistinguishable from a rename.",
       "pause": 400
     }
   ],
-  "slice-a-audit-obligations-beyond-the-gate": [
+  "model-slice-audit-obligations-beyond-the-gate": [
     {
       "text": "Three things the gate cannot judge: the four mutants with their kill classification and positive controls; that the model checker still checks what it claims, since the author rewrites the very file one gate leg runs; and that the retirement map is complete against the base manifest.",
       "pause": 400
@@ -77,7 +77,7 @@
       "pause": 400
     }
   ],
-  "invariant-rows-slice-b-163": [
+  "invariant-rows-simulator-slice-163": [
     {
       "text": "Seven simulator rows: the edges and the read exposed, every illegal combination refused by name, full replay agreement, the naming profile's Over witness, counts equal to what replays, fresh speech, and a clarity record.",
       "pause": 400

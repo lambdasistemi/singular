@@ -89,7 +89,7 @@
       "pause": 400
     }
   ],
-  "cs07-unmarked-and-escalated": [
+  "proof-step-constructor-witnesses-unmarked-and-escalated": [
     {
       "text": "This section preserves historical observations from the earlier source revisions named in the report. Its old schema, parameter counts, accepting paths and pending repair descriptions are not current candidate evidence. Read the current ownerless integration section for the present contract.",
       "pause": 400
@@ -123,7 +123,7 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "13862dc39e1885f833b3b163d7e1000dd4143438238b564d3586517ee403f63f"
+    "sha256": "edd649c5c9817e9b1f3a63dc36b813c4f00c34b2415bbb312fdb7af43368899f"
   },
   "historical-execution-reports": [
     {
@@ -149,7 +149,7 @@
       "pause": 400
     },
     {
-      "text": "Row serialization zero seven is unmarked with a finding, never a gap and never a pass. The migrating constructor is recorded unreachable with its validator-read reason. Refusal reasons keep every failing script hash in ledger order.",
+      "text": "Proof-step constructor coverage is unmarked with a finding, never a gap and never a pass. The migrating constructor is recorded unreachable with its validator-read reason. Refusal reasons keep every failing script hash in ledger order.",
       "pause": 400
     }
   ],

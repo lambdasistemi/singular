@@ -1,5 +1,5 @@
 {
-  "cg21-receipt-relationship": [
+  "register-active-key-receipt-relationship": [
     {
       "text": "One register-active-key receipt binds one accepted fold and two distinct refusal legs, each with its own accepted control.",
       "pause": 400

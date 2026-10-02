@@ -616,7 +616,7 @@ never trims identities — under the same run-enforced 16KB bound.
   exist — observations preserved, claims withdrawn, no execution credit
   for changed applicability. retired-stake-hook-with-withdrawal/retired-stake-hook-without-withdrawal are **retired**: the registry
   interface has no stake_script hook, so nothing runs them.
-- **Uncovered**: proof-step-constructor-witnesses, consumer-resolution(01–05) and fold-batch-size-boundary–observed-toolchain-and-environment print `uncovered` (as
+- **Uncovered**: proof-step-constructor-witnesses, the five consumer-resolution requirements and fold-batch-size-boundary–observed-toolchain-and-environment print `uncovered` (as
   do retired-stake-hook-with-withdrawal/retired-stake-hook-without-withdrawal, retired, and historical-owner-signed-sweep/historical-registry-termination, superseded — no receipts). proof-step-constructor-witnesses is not
   merely uncovered: its `Fork` finding is filed for a user story and
   the row stays unmarked until that story resolves — an unmarked row

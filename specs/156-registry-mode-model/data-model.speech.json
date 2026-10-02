@@ -5,13 +5,13 @@
       "pause": 400
     }
   ],
-  "the-leaf-codec-frozen-contract-d-codec": [
+  "the-leaf-codec-frozen-contract-three-state-leaf-codec": [
     {
       "text": "One byte per state: zero absent, one active, two terminal. Encoding is total and injective; decoding is defined on exactly those three one-byte strings and nowhere else, including the empty string and anything longer.",
       "pause": 400
     }
   ],
-  "the-state-configuration-eight-fields-r7": [
+  "the-state-configuration-eight-fields-state-configuration": [
     {
       "text": "Root, maximum fee, process time, retract time, and the four policies. The consumer pin is removed, and all eight are pinned when the seed is spent and equal before and after every fold.",
       "pause": 400

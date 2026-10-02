@@ -5,13 +5,13 @@
       "pause": 350
     }
   ],
-  "slice-s1-the-driver-answers-both-questions": [
+  "slice-driver-answers-both-questions-the-driver-answers-both-questions": [
     {
       "text": "The first slice makes the driver, its proofs, transport, corpus, model check and translation table answer both batch questions.",
       "pause": 350
     }
   ],
-  "slice-s2-the-story-language-says-a-batch": [
+  "slice-story-language-says-batch-the-story-language-says-a-batch": [
     {
       "text": "The second slice lets a story submit a multi-request fold and a multi-request reject and ask the model, without moving any conformance row.",
       "pause": 350

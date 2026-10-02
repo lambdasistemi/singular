@@ -1,5 +1,5 @@
 {
-  "x1-conformance-re-baselined": [
+  "compiled-wire-conformance-conformance-re-baselined": [
     {
       "text": "compiled-wire-conformance — conformance re-baselined.",
       "pause": 500
@@ -9,7 +9,7 @@
       "pause": 400
     }
   ],
-  "d-dest-the-request-names-where-its-token-goes": [
+  "request-destination-binding-the-request-names-where-its-token-goes": [
     {
       "text": "request-destination-binding — the request names where its token goes.",
       "pause": 500
@@ -27,7 +27,7 @@
       "pause": 400
     }
   ],
-  "c10-deletions": [
+  "deletions-deletions": [
     {
       "text": "deletions — deletions.",
       "pause": 500
@@ -37,7 +37,7 @@
       "pause": 400
     }
   ],
-  "n1-the-three-token-policies": [
+  "controller-authorizes-active-insertion-the-three-token-policies": [
     {
       "text": "controller-authorizes-active-insertion — the three token policies.",
       "pause": 500
@@ -47,7 +47,7 @@
       "pause": 400
     }
   ],
-  "x2-the-naming-docs": [
+  "published-naming-lifecycle-the-naming-docs": [
     {
       "text": "published-naming-lifecycle — the naming docs.",
       "pause": 500
@@ -63,7 +63,7 @@
       "pause": 500
     }
   ],
-  "n2-the-approval-policy-six-edges": [
+  "controller-authorizes-absent-to-active-update-the-approval-policy-six-edges": [
     {
       "text": "controller-authorizes-absent-to-active-update — the approval policy: six edges.",
       "pause": 500
@@ -81,7 +81,7 @@
       "pause": 400
     }
   ],
-  "c9-retraction": [
+  "owner-retraction-retraction": [
     {
       "text": "owner-retraction — retraction.",
       "pause": 500
@@ -91,7 +91,7 @@
       "pause": 400
     }
   ],
-  "d-approval-what-an-approval-certifies": [
+  "approval-asset-binding-what-an-approval-certifies": [
     {
       "text": "approval-asset-binding — what an approval certifies.",
       "pause": 500
@@ -105,7 +105,7 @@
       "pause": 400
     }
   ],
-  "n3-the-record-is-created-by-the-fold-not-by-a-claim": [
+  "absent-insertion-needs-no-signature-the-record-is-created-by-the-fold-not-by-a-claim": [
     {
       "text": "absent-insertion-needs-no-signature — the record is created by the fold, not by a claim.",
       "pause": 500
@@ -125,7 +125,7 @@
       "pause": 400
     }
   ],
-  "d-asset-one-asset-name-convention": [
+  "token-name-is-registry-key-one-asset-name-convention": [
     {
       "text": "token-name-is-registry-key — one asset-name convention.",
       "pause": 500
@@ -135,7 +135,7 @@
       "pause": 400
     }
   ],
-  "c3-the-read": [
+  "read-preserves-intermediate-root-the-read": [
     {
       "text": "read-preserves-intermediate-root — the read.",
       "pause": 500
@@ -145,7 +145,7 @@
       "pause": 400
     }
   ],
-  "n6-evidence": [
+  "recovery-authorizes-retirement-evidence": [
     {
       "text": "recovery-authorizes-retirement — evidence.",
       "pause": 500
@@ -155,7 +155,7 @@
       "pause": 400
     }
   ],
-  "c7-the-state-datum": [
+  "state-datum-fields-the-state-datum": [
     {
       "text": "state-datum-fields — the state datum.",
       "pause": 500
@@ -173,7 +173,7 @@
       "pause": 400
     }
   ],
-  "c5-the-delta-and-the-mint": [
+  "mint-matches-edge-deltas-the-delta-and-the-mint": [
     {
       "text": "mint-matches-edge-deltas — the delta and the mint.",
       "pause": 500
@@ -231,7 +231,7 @@
       "pause": 400
     }
   ],
-  "d-boot-where-the-four-pinned-policy-ids-come-from-at-genesis": [
+  "genesis-policy-pins-where-the-four-pinned-policy-ids-come-from-at-genesis": [
     {
       "text": "genesis-policy-pins — where the four pinned policy ids come from at genesis.",
       "pause": 500
@@ -249,7 +249,7 @@
       "pause": 400
     }
   ],
-  "c8-request-value-coverage-moves-into-the-cage": [
+  "request-covers-tip-request-value-coverage-moves-into-the-cage": [
     {
       "text": "request-covers-tip — request value coverage moves into the cage.",
       "pause": 500
@@ -259,7 +259,7 @@
       "pause": 400
     }
   ],
-  "n5-maintain-and-recover-never-touch-the-trie": [
+  "active-deletion-never-certified-maintain-and-recover-never-touch-the-trie": [
     {
       "text": "active-deletion-never-certified — maintain and recover never touch the trie.",
       "pause": 500
@@ -269,7 +269,7 @@
       "pause": 400
     }
   ],
-  "x3-the-existing-journeys-are-nyas-amendment-of-2026-09-18-epic-owner-r3": [
+  "x3-the-existing-journeys-are-naming-your-assetss-amendment-of-2026-09-18-epic-owner-r3": [
     {
       "text": "X3 — the existing journeys are Naming Your Assets's (amendment of 2026-09-18, epic owner r3).",
       "pause": 500
@@ -295,7 +295,7 @@
       "pause": 400
     }
   ],
-  "c6-destinations": [
+  "token-destinations-and-refunds-destinations": [
     {
       "text": "token-destinations-and-refunds — destinations.",
       "pause": 500
@@ -323,7 +323,7 @@
       "pause": 400
     }
   ],
-  "n4-retirement-and-completion": [
+  "refund-owner-authorizes-absent-deletion-retirement-and-completion": [
     {
       "text": "refund-owner-authorizes-absent-deletion — retirement and completion.",
       "pause": 500
@@ -333,7 +333,7 @@
       "pause": 400
     }
   ],
-  "d-custody-the-absent-tokens-home": [
+  "absent-custody-datum-the-absent-tokens-home": [
     {
       "text": "absent-custody-datum — the absent token's home.",
       "pause": 500
@@ -359,7 +359,7 @@
       "pause": 500
     }
   ],
-  "c4-admission-by-approval": [
+  "tree-edge-admission-by-approval-admission-by-approval": [
     {
       "text": "tree-edge-admission-by-approval — admission by approval.",
       "pause": 500
@@ -393,7 +393,7 @@
       "pause": 400
     }
   ],
-  "d-terminate-who-obtains-the-terminate-approval-and-when": [
+  "recovery-authorizes-retirement-who-obtains-the-terminate-approval-and-when": [
     {
       "text": "recovery-authorizes-retirement — who obtains the terminate approval, and when.",
       "pause": 500
@@ -403,7 +403,7 @@
       "pause": 400
     }
   ],
-  "c2-the-seven-combinations-and-everything-else-refused": [
+  "seven-admitted-edges-the-seven-combinations-and-everything-else-refused": [
     {
       "text": "seven-admitted-edges — the seven combinations, and everything else refused.",
       "pause": 500
@@ -417,7 +417,7 @@
       "pause": 400
     }
   ],
-  "c1-the-leaf-codec-and-the-operations": [
+  "leaf-codec-and-operations-the-leaf-codec-and-the-operations": [
     {
       "text": "leaf-codec-and-operations — the leaf codec and the operations.",
       "pause": 500

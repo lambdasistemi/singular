@@ -5,19 +5,19 @@
       "pause": 400
     }
   ],
-  "s1-validators-identities-and-cg09": [
+  "validators-identities-reject-before-deadline-consumer-requirement-validators-identities-and-reject-before-deadline-consumer-requirement": [
     {
       "text": "The first slice is done with its evidence: RED on the base, where the state and refund floor tests fail with the old guard's trace and the request tests fail on the request script's timing expectation; both purposes repaired; the pairing rule held by two mutations; the old predicate removed; both manifests and every pin regenerated, with a derived envelope digest caught and fixed forward; the naming comparison seen failing on a stale pin; reject-before-deadline-consumer-requirement accepted and held behind its refused control; the public reject-before-deadline-consumer-requirement text in words; and the state side of the update timing named by its own refusal, with a guard removal mutant that fails the four new refusal tests and one existing update test while the in-window twin still passes. Its limits are stated with each task: the update timing is outside the model, the naming check reads byte presence, units are not per purpose ledger figures, and the whole generic session has not run.",
       "pause": 400
     }
   ],
-  "s2-product-builder": [
+  "product-builder-product-builder": [
     {
       "text": "The second slice is done with its evidence: the builder selects every pending request and carries a finite validity from the current slot, the off-chain lint, build and unit suite pass, and a devnet run rejects through the builder inside the processing window and inside the retraction window, reading the refund and the unchanged state back from the ledger, with the phase three case unchanged. Its limits: the vectors check did not run, no live run used the old builder, and one unprocessable request now blocks every builder reject.",
       "pause": 400
     }
   ],
-  "s3-evidence-in-the-story-language": [
+  "evidence-in-story-language-evidence-in-the-story-language": [
     {
       "text": "The third slice is done with its evidence: every reject in the story language names its window, the interpreter checks it before submitting, the book renders all three and runs six chapters, reject-and-retract-refund-controls keeps its check byte for byte, and reject-inside-processing-and-retraction-windows runs its six steps with every comparison agreeing and three placements inside each window. Its limits: refusal reasons are attributed by script hash rather than observed, and the whole generic session and root CI have not run.",
       "pause": 400
