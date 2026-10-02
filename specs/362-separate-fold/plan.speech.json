@@ -1,0 +1,30 @@
+{
+  "model-binding": [
+    {
+      "text": "The Lean model is unchanged. A fold of one request equals a single step, the windows follow the request phase, and the chain's exclusive upper bound is why the built bound may equal the deadline slot.",
+      "pause": 350
+    }
+  ],
+  "decisions": [
+    {
+      "text": "The combined form stays only on request. The fold reads an insertion's envelope from a hash-keyed store in the registry directory. A fold takes one request. Time is the deadline's authority and a slot is never estimated. A fast guard is followed by a check of the built bound. Reject and reclaim judge their windows on the node's own view, and refunds are bound to node reads.",
+      "pause": 350
+    }
+  ],
+  "slices": [
+    {
+      "text": "Booking and fold come first, then reject, then reclaim, then a recovery control for a fold by another wallet. Each is one reviewed change in its own pull request.",
+      "pause": 350
+    }
+  ],
+  "verification": [
+    {
+      "text": "Each slice's pull request runs its own evidence: the fold first, then reject, reclaim and the cross-wallet recovery control, alongside the flags check and the full lint and documentation checks. A slice claims only what it runs.",
+      "pause": 350
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "8272917ea5405e41ba7de3403405f0967ff91759dfe21f828d0a0633be67f0c0"
+  }
+}

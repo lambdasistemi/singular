@@ -1030,6 +1030,7 @@ tamper locked-assets '.rejected[0].locked.assets = []'
 tamper tip '.rejected[0].tip += 1'
 tamper returned '.rejected[0].returned.lovelace += 1'
 tamper top-up '.rejected[0].topUp += 1'
+# shellcheck disable=SC2016 # Single quotes preserve the jq program's variable.
 tamper index '.rejected[0].returned as $x | .rejected[0].returned.index = ($x.index + 1) | .rejected[0].returned.output = (($x.output | sub("#[0-9]+$"; "")) + "#" + (($x.index + 1) | tostring))'
 tamper index-only '.rejected[0].returned.index += 1'
 tamper output '.rejected[0].returned.output |= sub("#[0-9]+$"; "#9")'
