@@ -6,8 +6,8 @@ Three bisect-safe slices on one branch, one pull request. Each slice ships its o
 
 ```mermaid
 flowchart TD
-    S1[S1 validators, tests, identities, reject-before-deadline-consumer-requirement held] --> S2[S2 product builder and devnet e2e]
-    S2 --> S3[S3 story placement, reject-and-retract-refund-controls explicit, reject-inside-processing-and-retraction-windows early-reject row]
+    S1[Validators, tests, identities, reject-before-deadline-consumer-requirement held] --> S2[Product builder and devnet e2e]
+    S2 --> S3[Story placement, reject-and-retract-refund-controls explicit, reject-inside-processing-and-retraction-windows early-reject row]
     S3 --> G[Exact-head gate]
 ```
 

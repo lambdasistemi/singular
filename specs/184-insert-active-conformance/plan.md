@@ -24,8 +24,8 @@ the receipt is asserted.
 ## Owner sequence
 
 The commit owner first commits an executable RED bundle for the acceptance
-lines. It then turns A184-FOLD/A184-CONJUNCTS, A184-DUPLICATE,
-A184-KEYED-MINT/A184-SEQUENCE, and A184-WIRING/A184-COPIES green as committed
+lines. It then turns open-registration-fold/registration-transaction-conjuncts, duplicate-key-refusal-control,
+keyed-mint-distribution-control/proofs-use-latest-committed-root, and runner-receipts-and-workflow-agree/documentation-and-evidence-agree green as committed
 checkpoints. Each checkpoint carries one decision record for the persistent
 auditor and the owner continues without waiting.
 

@@ -162,7 +162,7 @@ new model with their meaning preserved.
 `over_terminal` is **not** one of them: it lives in `Singular.Statements`
 (Statements.lean:142), not in the naming layer, and the interface **supersedes**
 it with terminal-key-cannot-change rather than preserving it. Because the generic module also carries
-`over_no_representative`, `resolve_over` and the `consumer` theorems, slice A's
+`over_no_representative`, `resolve_over` and the `consumer` theorems, model slice's
 handback must include a **retirement map** — see retirement-map-for-generic-statements.
 
 ### retirement-map-for-generic-statements — the retirement map for the generic statements
@@ -178,7 +178,7 @@ Without it an auditor cannot distinguish a dropped guarantee from a rename, and
 the page-against-manifest check passes happily on a manifest that quietly lost
 rows.
 
-### model-bound-tooling-pages-slice — the model-bound tooling and pages (slice A)
+### model-bound-tooling-pages-slice — the model-bound tooling and pages (model slice)
 
 `tools/check_model.py` and the corpus generators are **opened to the new
 identities**. The discipline stays and is not weakened: every identity matched
@@ -187,9 +187,9 @@ STATED, byte-for-byte corpus regeneration. `docs/theorems.md`,
 `docs/model-ledger.md` and `docs/mutants.md` are regenerated or rewritten against
 the new model with fresh speech stamps.
 
-### simulator-its-pages-slice-b — the simulator and its pages (slice B, #163)
+### simulator-its-pages-slice-b — the simulator and its pages (simulator slice, #163)
 
-A **separately authored** transcription of the frozen slice-A Lean interface:
+A **separately authored** transcription of the frozen model-slice Lean interface:
 the generic profile exposes the seven edges and the read, refuses the illegal
 combinations **by name**, and shows the token movement per edge; the naming
 profile shows the Over witness minted by a folded read and freely burned.

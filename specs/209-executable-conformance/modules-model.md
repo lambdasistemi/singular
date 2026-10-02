@@ -13,4 +13,4 @@
 Promote reusable model codecs from Main into the nearest model-owned interface
 module; Main may consume them. Do not clone encoders into conformance or create
 one oracle/proof pair per theorem. Preserve simulator corpus compatibility.
-Data contracts are surface-identity-qualified-model-declaration-definition-digest–execution-receipt-candidate-tree-model-corpus-identities; interface contracts are F01–F05.
+Data contracts are surface-identity-qualified-model-declaration-definition-digest–execution-receipt-candidate-tree-model-corpus-identities; interface contracts are run-surface–execute-scenario.

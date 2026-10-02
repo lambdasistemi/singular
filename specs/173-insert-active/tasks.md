@@ -15,8 +15,8 @@ layer-shaped tasks.
 ## Implementation slice — one runnable
 
 - [ ] **insert-active-from-released-archive-in-one — `insert-active` from the released archive.** In one Opus
-  owner run, implement A173-BOOT, A173-APPROVAL, A173-EDGE, A173-REFUSALS,
-  A173-COMMAND and updated-encoding-consumers across the exact surface in `plan.md`. After
+  owner run, implement boot-pins-open-registry-identities, open-approval-binding-and-burn-controls, active-insertion-delivers-requested-token, duplicate-key-and-keyed-mint-controls,
+  released-command-runs-without-checkout and updated-encoding-consumers across the exact surface in `plan.md`. After
   merge, a person with the extracted archive and no checkout runs the
   documented packaged `insert-active` invocation against a devnet, sees the
   open registry boot, one active token at the named wallet output, the same-key

@@ -41,7 +41,7 @@ spec = describe "Appendix: keeping the published requirements complete" $ do
             let current = map rowId rows
             length historicalRowNames `shouldBe` expectedRowCount
             length (nub (map snd historicalRowNames)) `shouldBe` expectedRowCount
-            map snd historicalRowNames `shouldSatisfy` (all (`elem` current))
+            map snd historicalRowNames `shouldSatisfy` all (`elem` current)
             map (canonicalRowName . fst) historicalRowNames
                 `shouldBe` map snd historicalRowNames
             map canonicalRowName current `shouldBe` current

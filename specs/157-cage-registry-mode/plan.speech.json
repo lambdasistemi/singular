@@ -127,7 +127,7 @@
       "pause": 500
     },
     {
-      "text": "A table of 11 rows, columns id, binds, Given / When / Then, Observation, Control. The rows: N1; N2; N3; N4; N5; N6; request-deposit-returned; N7; N8; N9; N10.",
+      "text": "A table of 11 rows, columns id, binds, Given / When / Then, Observation, Control. The rows: controller-authorizes-active-insertion; controller-authorizes-absent-to-active-update; absent-insertion-needs-no-signature; refund-owner-authorizes-absent-deletion; active-deletion-never-certified; recovery-authorizes-retirement; request-deposit-returned; fold-created-record-holds-active-token; retirement-custody-burns-held-token; local-record-change-preserves-registry; terminal-key-refuses-tree-change.",
       "pause": 400
     }
   ],
@@ -161,7 +161,7 @@
       "pause": 500
     },
     {
-      "text": "A table of 4 rows, columns id, binds, Given / When / Then, Observation, Control. The rows: A1; A2; A3; A4.",
+      "text": "A table of 4 rows, columns id, binds, Given / When / Then, Observation, Control. The rows: tree-change-needs-approval; approval-binds-request; read-needs-no-approval; configuration-pins-preserved.",
       "pause": 400
     }
   ],
@@ -171,7 +171,7 @@
       "pause": 500
     },
     {
-      "text": "A table of 2 rows, columns id, Given / When / Then, Observation, Control. The rows: X1; X2.",
+      "text": "A table of 2 rows, columns id, Given / When / Then, Observation, Control. The rows: compiled-wire-conformance; published-naming-lifecycle.",
       "pause": 400
     }
   ],
@@ -181,7 +181,7 @@
       "pause": 500
     },
     {
-      "text": "A table of 2 rows, columns id, binds, Given / When / Then, Observation, Control. The rows: V1; V2.",
+      "text": "A table of 2 rows, columns id, binds, Given / When / Then, Observation, Control. The rows: request-covers-tip; terminal-read-owner-retraction.",
       "pause": 400
     }
   ],
@@ -207,6 +207,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "64558fa32fc91c39b6fdd333b90443cd94581ea47206a869e3289e50e6d403c8"
+    "sha256": "8f319888746ef0bb234f3f5405990cbbb072cf8858a9090bf1f53755841935f0"
   }
 }

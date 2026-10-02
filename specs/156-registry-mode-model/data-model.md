@@ -43,20 +43,20 @@ any longer string, and `0x03`. Naming-era leaf bytes are not valid leaves.
 | `terminalPolicy` | mints the terminal token | new |
 
 `consumerPin` is removed. All eight are pinned when the registry's seed is spent
-and are equal before and after every fold (I-tree-change-requires-approval).
+and are equal before and after every fold (tree-change-requires-approval).
 
 ## Token kinds
 
 | kind | witnesses | shape | supply rule |
 |---|---|---|---|
-| active | `Active` | biconditional | exactly one iff `Known Active`, else none (I-active-witness-unique, I-supply-matches-leaf-state) |
-| absent | `Absent` | biconditional | exactly one iff `Known Absent`, else none (I-absent-witness-unique, I-supply-matches-leaf-state) |
-| terminal | `Terminal` | implicational | any number; any exists only if `Known Terminal`; freely burnable (I-terminal-witnesses-plural) |
+| active | `Active` | biconditional | exactly one iff `Known Active`, else none (active-witness-unique, supply-matches-leaf-state) |
+| absent | `Absent` | biconditional | exactly one iff `Known Absent`, else none (absent-witness-unique, supply-matches-leaf-state) |
+| terminal | `Terminal` | implicational | any number; any exists only if `Known Terminal`; freely burnable (terminal-witnesses-plural) |
 
 Identity is `(policy, key)`. After a `deleteActive` a recreated key carries the
 same identity, by design.
 
-**Kind exclusion (I-witness-kinds-exclude):** for any key, at most one kind is ever outstanding. One
+**Kind exclusion (witness-kinds-exclude):** for any key, at most one kind is ever outstanding. One
 terminal token excludes the active and the absent token; an active token excludes
 an absent token and every terminal token; an absent token excludes an active token
 and every terminal token.
@@ -91,12 +91,12 @@ refuses any mint under the pinned token policies that differs from that sum.
 
 | invariant | statement |
 |---|---|
-| occupancy | "taken" is `Active` or `Terminal`; a booking edge succeeds iff the key is not taken (I-booking-requires-untaken-key) |
-| termination | a `Terminal` leaf admits no edge, ever (I-terminal-key-cannot-change, I-terminal-attestation-permanent) |
-| sync | biconditional supply is 1 iff the key is in that state (I-supply-matches-leaf-state) |
-| atomicity | a batch is all-or-nothing; a request is spent once (I-request-spent-once-in-order) |
-| pins | the four policies are immutable across folds (I-tree-change-requires-approval) |
-| reads | a read changes no leaf and no root, and only `Read Terminal` is admitted (read-interface, I-terminal-attestation-sound) |
+| occupancy | "taken" is `Active` or `Terminal`; a booking edge succeeds iff the key is not taken (booking-requires-untaken-key) |
+| termination | a `Terminal` leaf admits no edge, ever (terminal-key-cannot-change, terminal-attestation-permanent) |
+| sync | biconditional supply is 1 iff the key is in that state (supply-matches-leaf-state) |
+| atomicity | a batch is all-or-nothing; a request is spent once (request-spent-once-in-order) |
+| pins | the four policies are immutable across folds (tree-change-requires-approval) |
+| reads | a read changes no leaf and no root, and only `Read Terminal` is admitted (read-interface, terminal-attestation-sound) |
 
 ## Application data
 

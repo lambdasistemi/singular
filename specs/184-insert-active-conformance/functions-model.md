@@ -4,7 +4,7 @@
 
 | function | arguments | result | constraints |
 |---|---|---|---|
-| `runCG21` | `Env` | `IO ()` | Executes the complete register-active-key fold/refusal/control story in the current open-registry session and writes one complete receipt. |
+| `runRegisterActiveKey` | `Env` | `IO ()` | Executes the complete register-active-key fold/refusal/control story in the current open-registry session and writes one complete receipt. |
 
 ## Receipt validation
 
@@ -16,7 +16,7 @@
 
 | boundary | retained contract |
 |---|---|
-| row dispatcher | Selecting `register-active-key` reaches `runCG21`; unknown rows still fail. |
+| row dispatcher | Selecting `register-active-key` reaches `runRegisterActiveKey`; unknown rows still fail. |
 | receipt encoder/decoder | The edge field remains optional at the outer receipt level for compatibility and complete when present. |
 | generic-row command | The workflow invokes the packaged conformance runner and asserts its receipt directory after execution. |
 

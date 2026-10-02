@@ -1,7 +1,7 @@
 {
   "x1-conformance-re-baselined": [
     {
-      "text": "X1 — conformance re-baselined.",
+      "text": "compiled-wire-conformance — conformance re-baselined.",
       "pause": 500
     },
     {
@@ -39,7 +39,7 @@
   ],
   "n1-the-three-token-policies": [
     {
-      "text": "N1 — the three token policies.",
+      "text": "controller-authorizes-active-insertion — the three token policies.",
       "pause": 500
     },
     {
@@ -49,7 +49,7 @@
   ],
   "x2-the-naming-docs": [
     {
-      "text": "X2 — the naming docs.",
+      "text": "published-naming-lifecycle — the naming docs.",
       "pause": 500
     },
     {
@@ -65,7 +65,7 @@
   ],
   "n2-the-approval-policy-six-edges": [
     {
-      "text": "N2 — the approval policy: six edges.",
+      "text": "controller-authorizes-absent-to-active-update — the approval policy: six edges.",
       "pause": 500
     },
     {
@@ -77,7 +77,7 @@
       "pause": 400
     },
     {
-      "text": "WithdrawApproval and InsertApproval are retired with the claim mechanism (N3). Approvals are minted at request creation, one per request.",
+      "text": "WithdrawApproval and InsertApproval are retired with the claim mechanism (absent-insertion-needs-no-signature). Approvals are minted at request creation, one per request.",
       "pause": 400
     }
   ],
@@ -101,13 +101,13 @@
       "pause": 400
     },
     {
-      "text": "Contract with #156: the model's admits must scope an approval by the same tuple. #156's D4 leaves the scope shape to its author; this decision fixes it.",
+      "text": "Contract with #156: the model's admits must scope an approval by the same tuple. #156's singular-admits-config-applicationpolicy leaves the scope shape to its author; this decision fixes it.",
       "pause": 400
     }
   ],
   "n3-the-record-is-created-by-the-fold-not-by-a-claim": [
     {
-      "text": "N3 — the record is created by the fold, not by a claim.",
+      "text": "absent-insertion-needs-no-signature — the record is created by the fold, not by a claim.",
       "pause": 500
     },
     {
@@ -147,7 +147,7 @@
   ],
   "n6-evidence": [
     {
-      "text": "N6 — evidence.",
+      "text": "recovery-authorizes-retirement — evidence.",
       "pause": 500
     },
     {
@@ -169,7 +169,7 @@
       "pause": 300
     },
     {
-      "text": "consumer_pin is deleted. representative_policy is renamed active_policy. Genesis (validateMint) sets all four policies; every Modify preserves all eight but root. This is the contract change cardano-keri conforms to (blueprint-encoding-round-trip/submitted-datum-byte-round-trip/state-fields-chain-round-trip), re-baselined in this ticket (X1 below).",
+      "text": "consumer_pin is deleted. representative_policy is renamed active_policy. Genesis (validateMint) sets all four policies; every Modify preserves all eight but root. This is the contract change cardano-keri conforms to (blueprint-encoding-round-trip/submitted-datum-byte-round-trip/state-fields-chain-round-trip), re-baselined in this ticket (compiled-wire-conformance below).",
       "pause": 400
     }
   ],
@@ -189,7 +189,7 @@
       "pause": 500
     },
     {
-      "text": "Adjudicated wanted, and visible (want-ledger R2 and R3):",
+      "text": "Adjudicated wanted, and visible (want-ledger seven-edges-interface and refused-combinations-as-complement):",
       "pause": 400
     },
     {
@@ -201,7 +201,7 @@
       "pause": 400
     },
     {
-      "text": "The naming docs (X2) state both in the retirement section.",
+      "text": "The naming docs (published-naming-lifecycle) state both in the retirement section.",
       "pause": 400
     }
   ],
@@ -237,11 +237,11 @@
       "pause": 500
     },
     {
-      "text": "Ruling on ticket-157's operator question (Q-002) (2026-09-17). The runner's CageConfig carries the four pins the eight-field datum needs — cfgApplicationPolicy, cfgActivePolicy, cfgAbsentPolicy, cfgTerminalPolicy — and cfgConsumerPin is deleted. None is typed by hand: each is derived from the two partitions' script-identity.json given the registry identity the boot transaction is about to create — the application policy is the naming application script's applied hash; the three witness policies are witness(kind, registry) applied for kind 0, 1, 2 (N1). The conformance rows blueprint-encoding-round-trip/submitted-datum-byte-round-trip/state-fields-chain-round-trip assert that the derivation round-trips through the boot datum. A placeholder id, or a retained removed field, is a contract change and is refused as a finding.",
+      "text": "Ruling on ticket-157's operator question (Q-002) (2026-09-17). The runner's CageConfig carries the four pins the eight-field datum needs — cfgApplicationPolicy, cfgActivePolicy, cfgAbsentPolicy, cfgTerminalPolicy — and cfgConsumerPin is deleted. None is typed by hand: each is derived from the two partitions' script-identity.json given the registry identity the boot transaction is about to create — the application policy is the naming application script's applied hash; the three witness policies are witness(kind, registry) applied for kind 0, 1, 2 (controller-authorizes-active-insertion). The conformance rows blueprint-encoding-round-trip/submitted-datum-byte-round-trip/state-fields-chain-round-trip assert that the derivation round-trips through the boot datum. A placeholder id, or a retained removed field, is a contract change and is refused as a finding.",
       "pause": 400
     },
     {
-      "text": "The executable half of X1 stays in #157. The encoding change forces exactly seven library files to follow under -Werror — Config.hs, TxBuilder/{ConnectedFold,Reject,Update,Internal}.hs, and (amendment of 2026-09-17, ticket-157 operator question (Q-003)) Deployment.hs and TxBuilder/Register.hs — and those are in this ticket's surface as \"what the encodings force to compile\". The bounded registry journey is adapted in #157; the seven Naming Your Assets journeys remain #172's under #174.",
+      "text": "The executable half of compiled-wire-conformance stays in #157. The encoding change forces exactly seven library files to follow under -Werror — Config.hs, TxBuilder/{ConnectedFold,Reject,Update,Internal}.hs, and (amendment of 2026-09-17, ticket-157 operator question (Q-003)) Deployment.hs and TxBuilder/Register.hs — and those are in this ticket's surface as \"what the encodings force to compile\". The bounded registry journey is adapted in #157; the seven Naming Your Assets journeys remain #172's under #174.",
       "pause": 400
     },
     {
@@ -261,7 +261,7 @@
   ],
   "n5-maintain-and-recover-never-touch-the-trie": [
     {
-      "text": "N5 — maintain and recover never touch the trie.",
+      "text": "active-deletion-never-certified — maintain and recover never touch the trie.",
       "pause": 500
     },
     {
@@ -275,7 +275,7 @@
       "pause": 500
     },
     {
-      "text": "The journeys on main — li01, li-refusals, lmlc, recovery, retirement, retire-verify, repair — are consumers of the naming application, not of the registry. Their re-cut is #172 under the Naming Your Assets epic #174, after #154 closes. In this ticket their CI jobs are retired from the required set with a recorded mapping, D6; none is stubbed green. No new journey is authored here: witness-rows is #158's, against the open application, #173.",
+      "text": "The journeys on main — li01, li-refusals, lmlc, recovery, retirement, retire-verify, repair — are consumers of the naming application, not of the registry. Their re-cut is #172 under the Naming Your Assets epic #174, after #154 closes. In this ticket their CI jobs are retired from the required set with a recorded mapping, singular-step-refusal-reasons; none is stubbed green. No new journey is authored here: witness-rows is #158's, against the open application, #173.",
       "pause": 400
     }
   ],
@@ -309,7 +309,7 @@
       "pause": 300
     },
     {
-      "text": "carrying it, with inline datum AbsentCustody { key, refund } where refund   is the address the request named (absent-custody-datum). No other asset in that output. - absent token consumed (Update(0x00,0x01), Delete(0x00)) — the custody   UTxO for that key is a spent input; its lovelace is paid to an output at its   refund address (custody-lovelace-refund, #156). The cage's own spending path for a custody   UTxO is: spent in a Modify that consumes a request for that key with one of   these two operations, and nothing else. - active or terminal token minted — exactly one output at the request's   named destination, with the inline datum whose hash the request names, carrying   the token (request-destination-binding) and at least the request's value minus the tip: the   deposit that rode the request returns to the requester as that output's   value. The folder earns the tip and nothing else (want-ledger R4: no folder   incentive exists in this version, so the deposit is returned). For Update(0x01,0x02) the active token must be an input   and burned; the cage does not care where it came from — the application's   custody does (N4).",
+      "text": "carrying it, with inline datum AbsentCustody { key, refund } where refund   is the address the request named (absent-custody-datum). No other asset in that output. - absent token consumed (Update(0x00,0x01), Delete(0x00)) — the custody   UTxO for that key is a spent input; its lovelace is paid to an output at its   refund address (custody-lovelace-refund, #156). The cage's own spending path for a custody   UTxO is: spent in a Modify that consumes a request for that key with one of   these two operations, and nothing else. - active or terminal token minted — exactly one output at the request's   named destination, with the inline datum whose hash the request names, carrying   the token (request-destination-binding) and at least the request's value minus the tip: the   deposit that rode the request returns to the requester as that output's   value. The folder earns the tip and nothing else (want-ledger R4: no folder   incentive exists in this version, so the deposit is returned). For Update(0x01,0x02) the active token must be an input   and burned; the cage does not care where it came from — the application's   custody does (refund-owner-authorizes-absent-deletion).",
       "pause": 400
     }
   ],
@@ -325,11 +325,11 @@
   ],
   "n4-retirement-and-completion": [
     {
-      "text": "N4 — retirement and completion.",
+      "text": "refund-owner-authorizes-absent-deletion — retirement and completion.",
       "pause": 500
     },
     {
-      "text": "Retire changes its controller path: it is authorized by the committed recovery key (reveal of next_control_commitment plus that key's signature, the proof Recover uses) or by the quorum — never by the current control key alone. A thief holding Alice's current key can change where the name pays until she recovers; they can no longer end it. The authorized transaction moves the active token from the record into completion-only custody, mints the updateTerminal approval (N2 — the same proof is present) and creates the completion request carrying it — today's co-created request. Completion is the fold of Update(0x01, 0x02): the custody UTxO is spent, its held token is the burn the delta requires, and the record's name is 0x02 forever. retirement_custody.ak keeps its rules; over_marker_for and the naming-specific value vocabulary in naming.ak are deleted.",
+      "text": "Retire changes its controller path: it is authorized by the committed recovery key (reveal of next_control_commitment plus that key's signature, the proof Recover uses) or by the quorum — never by the current control key alone. A thief holding Alice's current key can change where the name pays until she recovers; they can no longer end it. The authorized transaction moves the active token from the record into completion-only custody, mints the updateTerminal approval (controller-authorizes-absent-to-active-update — the same proof is present) and creates the completion request carrying it — today's co-created request. Completion is the fold of Update(0x01, 0x02): the custody UTxO is spent, its held token is the burn the delta requires, and the record's name is 0x02 forever. retirement_custody.ak keeps its rules; over_marker_for and the naming-specific value vocabulary in naming.ak are deleted.",
       "pause": 400
     }
   ],
@@ -369,7 +369,7 @@
       "pause": 400
     },
     {
-      "text": "This replaces the mandatory consumer withdrawal, the pin equality and consumer.ak's R2. It generalises what the application checked at fold for inserts to all six edges, inside the cage.",
+      "text": "This replaces the mandatory consumer withdrawal, the pin equality and consumer.ak's seven-edges-interface. It generalises what the application checked at fold for inserts to all six edges, inside the cage.",
       "pause": 400
     }
   ],
@@ -379,7 +379,7 @@
       "pause": 500
     },
     {
-      "text": "Every refusal in seven-admitted-edges, tree-edge-admission-by-approval, mint-matches-edge-deltas, token-destinations-and-refunds, N1, N2 and N4 is a distinct trace label, observable in a script failure, and has a test row that produces it and a control that shows the accepting shape.",
+      "text": "Every refusal in seven-admitted-edges, tree-edge-admission-by-approval, mint-matches-edge-deltas, token-destinations-and-refunds, controller-authorizes-active-insertion, controller-authorizes-absent-to-active-update and refund-owner-authorizes-absent-deletion is a distinct trace label, observable in a script failure, and has a test row that produces it and a control that shows the accepting shape.",
       "pause": 400
     }
   ],
@@ -399,7 +399,7 @@
       "pause": 500
     },
     {
-      "text": "As N4: in the Retire transaction, on the committed recovery key's proof or the quorum's signatures. Operator adjudication of want-ledger row R1 (2026-09-16): a name must not be endable by whoever holds the current control key, because a key thief and Alice are indistinguishable there; the recovery key is the one thing the thief does not have. LT01 (controller retirement accepts) is therefore retired as a row: the current control key alone is refused; the committed key accepts; LT02/LT03 stand.",
+      "text": "As refund-owner-authorizes-absent-deletion: in the Retire transaction, on the committed recovery key's proof or the quorum's signatures. Operator adjudication of want-ledger row R1 (2026-09-16): a name must not be endable by whoever holds the current control key, because a key thief and Alice are indistinguishable there; the recovery key is the one thing the thief does not have. LT01 (controller retirement accepts) is therefore retired as a row: the current control key alone is refused; the committed key accepts; LT02/LT03 stand.",
       "pause": 400
     }
   ],
@@ -429,6 +429,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "9ab335ddefeceaf37913dec4f67b8731e27f1f994a37a1fb6cd37100056e06be"
+    "sha256": "4e875d251253bf21fae204efd372f888afe46962835241e2de9d050e00e854b4"
   }
 }

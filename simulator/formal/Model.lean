@@ -121,7 +121,7 @@ instance : LawfulBEq TokenKind where
   eq_of_beq {a b} h := by cases a <;> cases b <;> first | rfl | exact absurd h (by decide)
   rfl {a} := by cases a <;> rfl
 
-/-- The R2 table: each edge's delta, read off the edge and nothing else. -/
+/-- The seven-edge table: each edge's delta, read off the edge and nothing else. -/
 def delta (e : Edge) : List (TokenKind × Int) :=
   match e with
   | .insertAbsent => [(.absent, 1)]
@@ -162,7 +162,7 @@ which is exactly the fault `assetSame` catches and a per-kind sum does not. -/
 def assetKindTotal (ds : List (Asset × Int)) (k : TokenKind) : Int :=
   ds.foldl (fun n p => if p.1.1 == k then n + p.2 else n) 0
 
-/-- The R2 from→to column: `none` is refusal; every edge out of
+/-- The seven-edge from→to column: `none` is refusal; every edge out of
 `known terminal` is `none`. -/
 def transition (e : Edge) (before : Leaf) : Option Leaf :=
   match e, before with
@@ -452,7 +452,7 @@ def requestDestination (r : Request) : Nat :=
 /-- One fold action is one request. -/
 def Action := Request
 
-/-- The keyed delta of one request: the edge's R2 delta, each entry named by the
+/-- The keyed delta of one request: the edge's seven-edge delta, each entry named by the
 key the request moves. -/
 def assetDelta (a : Action) : List (Asset × Int) :=
   (delta a.edge).map fun p => ((p.1, a.key), p.2)
@@ -471,7 +471,7 @@ def claimedMint (batch : List Action) : List (Asset × Int) :=
 def actualMint (batch : List Action) : List (Asset × Int) :=
   batch.foldl (fun acc b => assetPlus acc (assetDelta b)) []
 
-/-- Where a minted token is routed (R6). -/
+/-- Where a minted token is routed (token-routing). -/
 inductive Destination where
   | cageCustody | requestOutput
   deriving Repr, BEq, DecidableEq, ToJson, FromJson
@@ -502,12 +502,12 @@ def canonicalRequest (e : Edge) : Request :=
   | .deleteAbsent => { edge := e, key := 5, owner := 91, refundAddress := 91 }
   | _ => { edge := e, key := 5, owner := 42, output := 99 }
 
-/-- The real admission decision for a request (R4 with approval-asset-binding). The six
+/-- The real admission decision for a request (approval-admission with approval-asset-binding). The six
 tree edges need an approval under the pinned application policy whose
 `(edge, key, owner, destination)` tuple matches the request and whose asset
 name binds its own tuple: right policy is necessary and not sufficient.
 `witnessTerminal` requires none and is never refused for carrying a stray
-one (D-SELF: `insertAbsent` is admitted exactly like the other five tree
+one (application-decides-absence-booking: `insertAbsent` is admitted exactly like the other five tree
 edges, by an approval under the pinned policy and nothing else). -/
 def admitsFor (c : Config) (r : Request) (approval : Option Approval) : Bool :=
   match r.edge with
@@ -527,7 +527,7 @@ def admits (c : Config) (e : Edge) (approval : Option Approval) : Bool :=
   admitsFor c (canonicalRequest e) approval
 
 /-- The refusal decision: `none` admits, `some why` refuses with an observable
-reason. This is the complement of the R2 table, stated as a function, so a
+reason. This is the complement of the seven-edge table, stated as a function, so a
 triple nobody thought of is refused by construction rather than by omission. -/
 def refusal (s : RegistryState) (a : Action) : Option String :=
   let before := trieGet s.trie a.key
@@ -587,7 +587,7 @@ def combineResults (first rest : Result) : Result :=
   { state := rest.state, mint := assetPlus first.mint rest.mint, paid := first.paid ++ rest.paid }
 
 /-- Apply an admitted edge. The trie change, the token ledgers and the mint are
-exactly the R2 row of the edge; consuming an absent token pays its value to the
+exactly the seven-edge row of the edge; consuming an absent token pays its value to the
 refund address recorded in its custody datum (custody-lovelace-refund). -/
 def applyEdge (s : RegistryState) (a : Action) : Result :=
   let entry := s.custody.find? (·.key == a.key)
@@ -638,7 +638,7 @@ def applyEdge (s : RegistryState) (a : Action) : Result :=
   { state := state, mint := assetDelta a, paid := paid }
 
 /-- The step function: refuse every `(primitive, value, before-leaf)` triple
-outside the R2 table — the refused reads included — and otherwise apply the
+outside the seven-edge table — the refused reads included — and otherwise apply the
 edge. -/
 def step (s : RegistryState) (a : Action) : Except String Result :=
   match refusal s a with
@@ -1286,7 +1286,7 @@ def toApproval (e : Edge) : Approval → Option Singular.Approval := fun
     let perturbed := approvalAssetName e (r.key + 1) r.owner (requestDestination r)
     some { ap with key := r.key + 1, assetName := perturbed }
 
-/-- The R2 from→to column, observed. -/
+/-- The seven-edge from→to column, observed. -/
 def transition (e : Edge) (before : Leaf) : Option Leaf :=
   Singular.transition e before
 
@@ -1300,12 +1300,12 @@ def encode (s : State) : List UInt8 := (encodeState s).toList
 /-- The leaf codec, the other way, including bytes that must not decode. -/
 def decode (bytes : List UInt8) : Option State := decodeState bytes.toByteArray
 
-/-- Admission for all four approval cases (R4, D-SELF and approval-asset-binding), answered
+/-- Admission for all four approval cases (approval-admission, application-decides-absence-booking and approval-asset-binding), answered
 by the real per-request decision at the edge's canonical request. -/
 def admits (e : Edge) (a : Approval) : Bool :=
   admitsFor referenceConfig (canonicalRequest e) (toApproval e a)
 
-/-- Routing (R6, D7), observed. -/
+/-- Routing (token-routing, value-routing), observed. -/
 def route (k : TokenKind) : Destination :=
   match Singular.route k (canonicalRequest .insertActive) with
   | .cageCustody => .cageCustody

@@ -17,11 +17,11 @@ Lean tree builds**: a tree with the new `Model.lean` and the old
 `NamingStatements.lean` does not compile, so it is not a bisect point. Slice A is
 therefore indivisible.
 
-Because the simulator is a hand transcription of the model, slice A's tree is
+Because the simulator is a hand transcription of the model, model slice's tree is
 green on the model gate and red on the simulator. That is expected and bounded:
 it is never pushed and never claimed as repository-green.
 
-Order inside slice A is fixed by the issue: **definitions first**, so the model
+Order inside model slice is fixed by the issue: **definitions first**, so the model
 can be reasoned about; then the generic statements; then the open application as
 the smallest instantiation, proved first; then naming; then the generated
 surfaces and the pages.
@@ -33,8 +33,8 @@ surfaces and the pages.
 | **A — model** | `lean/**` (definitions, statements, proofs, lemmas, manifests, debt surfaces, `lean/*.json` corpora and their generators); `tools/check_model.py`; `docs/theorems.md`, `docs/model-ledger.md`, `docs/mutants.md` and their speech stamps | `glm --approve` loading `lean-creator` + `lean4` | fresh Opus loading `lean-auditor` |
 | **B — simulator (#163)** | `simulator/**`; `docs/simulation.md`, `docs/LEAN-CLARITY.md`; the model-bound browser checks; the replayed corpora and the counts on the front page and `docs/design.md`; their speech stamps | `muse --approve` loading `lean-simulations` | fresh Opus loading `lean-simulations-auditor` |
 
-**Slice B does not start until slice A's audit passes and the slice-A Lean
-interface is frozen.** Slice B transcribes the frozen interface; it never edits
+**Simulator slice does not start until model slice's audit passes and the model-slice Lean
+interface is frozen.** Simulator slice transcribes the frozen interface; it never edits
 it. A slice-B finding against the Lean is a Q to this ticket owner, not a repair.
 
 ### Staffing, checked against the operator's rule
@@ -44,7 +44,7 @@ Operator ruling, verbatim: "use codex as eo, opus as to, glm or muse as co";
 this epic.
 
 - Slice A author `glm` — the one GLM seat this ticket is capped at.
-- Slice B author `muse` — a different seat from slice A's author, as operator answer (A-001)
+- Simulator slice author `muse` — a different seat from model slice's author, as operator answer (A-001)
   requires, and inside the operator's GLM/Muse rule. **No escalation needed**:
   both launchers resolve in a non-interactive shell (`/home/paolino/.local/bin/glm`,
   `/home/paolino/.local/bin/muse`).
@@ -71,14 +71,14 @@ this epic.
 - No `sorry` outside the frozen statements module; `audit_sources` keeps
   rejecting `axiom`, `admit`, `unsafe`, `implemented_by`, `extern` in `lean/`.
 - **Nothing lands red; intermediate red heads on the draft branch are allowed.**
-  operator answer (A-002) relaxed this ticket's stricter reading: slice A may be pushed to the
+  operator answer (A-002) relaxed this ticket's stricter reading: model slice may be pushed to the
   draft branch with the simulator legs red, so an audited candidate is not
-  stranded on one worktree for the duration of slice B. Only the head marked
+  stranded on one worktree for the duration of simulator slice. Only the head marked
   ready-for-review must be green, locally and on GitHub CI.
 - Planning artifacts carry no implementation. The authors own every line of Lean,
   every generator row, every proof, and every line of simulator JavaScript.
 
-## Invariant rows — slice A
+## Invariant rows — model slice
 
 `Given / When / Then` is the obligation. **Observation** is the executable model
 row or inversion that exhibits it. **Control** is the seeded fault that must make
@@ -120,23 +120,23 @@ all syntactic states is wrong, not stronger.
 
 | id | Lean identity | Given / When / Then |
 |---|---|---|
-| I-tree-change-requires-approval | `Singular.Statements.no_tree_change_without_approval` | Given any reachable state and any fold; when a tree change occurs; then the request carried an approval under the pinned application policy, and the pins are equal before and after. |
-| I-request-spent-once-in-order | `Singular.Statements.booked_at_most_once` | Given any reachable state; when a batch is folded; then a key is booked at most once at a time, the batch is atomic, and each request is spent once. |
-| I-terminal-attestation-sound | `Singular.Statements.terminal_attestation_sound` | Given any reachable state and a terminal token for `key`; when its provenance is traced; then it was minted by a fold that accepted `Read Terminal` for `key`, which holds only if the leaf was `Known Terminal`. No attestation of an `Active`, `Absent` or `Unknown` key exists. |
-| I-terminal-attestation-permanent | `Singular.Statements.terminal_attestation_permanent` | Given any reachable state `s` and a terminal token valid in it; when any sequence of folds is applied; then it is valid in every later state, because a `Terminal` leaf admits no edge that moves it. |
-| I-supply-matches-leaf-state | `Singular.Statements.biconditional_supply_sync` | Given any reachable state and any key and either biconditional kind; when the supply is counted; then it is 1 iff the key is in that token's state, and 0 otherwise — unconditionally. Identity is `(policy, key)`; a key recreated after `deleteActive` carries the same identity, by design. |
-| I-booking-requires-untaken-key | `Singular.Statements.occupancy` | Given any reachable state and a key whose leaf is `Active` or `Terminal`; when a booking edge is folded; then refused; and when the key is not taken, it succeeds. |
-| I-terminal-key-cannot-change | `Singular.Statements.termination` | Given any reachable state and a key whose leaf is `Known Terminal`; when any edge is attempted; then refused, so the key stays terminated forever and is never re-booked. |
-| I-active-witness-unique | `Singular.Statements.active_witness_unique` | Given any reachable state and any key; when active tokens are counted; then at most one, and exactly one iff the leaf is `Known Active`. |
-| I-absent-witness-unique | `Singular.Statements.absent_witness_unique` | Given any reachable state and any key; when absent tokens are counted; then at most one, and exactly one iff the leaf is `Known Absent`. |
-| I-terminal-witnesses-plural | `Singular.Statements.terminal_witness_plural` | Given any reachable state and a key whose leaf is `Known Terminal`; when terminal tokens are minted or burned; then any number may exist, all true, all freely burnable; and any exists only if the leaf is `Known Terminal`. |
-| I-witness-kinds-exclude | `Singular.Statements.witness_kinds_exclude` | Given any reachable state and any key; when the outstanding witnesses are examined; then at most one **kind** is outstanding: a consumer finding one kind knows the other two do not exist, without reading the state. |
+| tree-change-requires-approval | `Singular.Statements.no_tree_change_without_approval` | Given any reachable state and any fold; when a tree change occurs; then the request carried an approval under the pinned application policy, and the pins are equal before and after. |
+| request-spent-once-in-order | `Singular.Statements.booked_at_most_once` | Given any reachable state; when a batch is folded; then a key is booked at most once at a time, the batch is atomic, and each request is spent once. |
+| terminal-attestation-sound | `Singular.Statements.terminal_attestation_sound` | Given any reachable state and a terminal token for `key`; when its provenance is traced; then it was minted by a fold that accepted `Read Terminal` for `key`, which holds only if the leaf was `Known Terminal`. No attestation of an `Active`, `Absent` or `Unknown` key exists. |
+| terminal-attestation-permanent | `Singular.Statements.terminal_attestation_permanent` | Given any reachable state `s` and a terminal token valid in it; when any sequence of folds is applied; then it is valid in every later state, because a `Terminal` leaf admits no edge that moves it. |
+| supply-matches-leaf-state | `Singular.Statements.biconditional_supply_sync` | Given any reachable state and any key and either biconditional kind; when the supply is counted; then it is 1 iff the key is in that token's state, and 0 otherwise — unconditionally. Identity is `(policy, key)`; a key recreated after `deleteActive` carries the same identity, by design. |
+| booking-requires-untaken-key | `Singular.Statements.occupancy` | Given any reachable state and a key whose leaf is `Active` or `Terminal`; when a booking edge is folded; then refused; and when the key is not taken, it succeeds. |
+| terminal-key-cannot-change | `Singular.Statements.termination` | Given any reachable state and a key whose leaf is `Known Terminal`; when any edge is attempted; then refused, so the key stays terminated forever and is never re-booked. |
+| active-witness-unique | `Singular.Statements.active_witness_unique` | Given any reachable state and any key; when active tokens are counted; then at most one, and exactly one iff the leaf is `Known Active`. |
+| absent-witness-unique | `Singular.Statements.absent_witness_unique` | Given any reachable state and any key; when absent tokens are counted; then at most one, and exactly one iff the leaf is `Known Absent`. |
+| terminal-witnesses-plural | `Singular.Statements.terminal_witness_plural` | Given any reachable state and a key whose leaf is `Known Terminal`; when terminal tokens are minted or burned; then any number may exist, all true, all freely burnable; and any exists only if the leaf is `Known Terminal`. |
+| witness-kinds-exclude | `Singular.Statements.witness_kinds_exclude` | Given any reachable state and any key; when the outstanding witnesses are examined; then at most one **kind** is outstanding: a consumer finding one kind knows the other two do not exist, without reading the state. |
 
 ### Instances
 
 | id | Given / When / Then | Observation | Control |
 |---|---|---|---|
-| open-application-law-instances | Given the open application — a policy that certifies everything; when each statement I-tree-change-requires-approval…I-witness-kinds-exclude is instantiated at it; then all hold. The smallest instantiation, proved **first**. | Instantiation of every statement at the open policy | A statement that silently assumed naming's policy fails to instantiate |
+| open-application-law-instances | Given the open application — a policy that certifies everything; when each statement tree-change-requires-approval…witness-kinds-exclude is instantiated at it; then all hold. The smallest instantiation, proved **first**. | Instantiation of every statement at the open policy | A statement that silently assumed naming's policy fails to instantiate |
 | record-binds-active-registration | Given naming; when a record is registered; then the record UTxO holds the active token and the trie carries only `Active`. | Naming corpus registration rows | A record whose data sits in the leaf fails singular-leaf-singular-state |
 | local-record-update-preserves-registry | Given a live record; when `maintain` or `recover` runs; then the application UTxO is spent and **the trie is untouched** — root equal before and after. | Root-equality rows for both moves | A maintain that changes the root is refused |
 | retirement-removes-active-witness | Given retirement; when it completes; then it is `updateTerminal`, and `over_terminal` and `naming_delete_refused` hold over the new model. | Re-stated naming statements at their preserved identities | Re-admitting either statement turns the build red |
@@ -158,10 +158,10 @@ may not be presented as one. For each mutant the ledger records, per mutant:
 
 | id | mutant | must break |
 |---|---|---|
-| mint-second-active-token-for-key | mint a second active token for a key | I-active-witness-unique, and I-supply-matches-leaf-state for the active kind |
-| mint-absent-token-for-active-key | mint an absent token for an active key | I-absent-witness-unique and I-witness-kinds-exclude |
-| attest-active-key-read-active-admitted | attest an active key (`Read Active` admitted) | I-terminal-attestation-sound |
-| leave-absent-token-outstanding-on-updateactive | leave the absent token outstanding on `updateActive` | I-supply-matches-leaf-state and I-witness-kinds-exclude |
+| mint-second-active-token-for-key | mint a second active token for a key | active-witness-unique, and supply-matches-leaf-state for the active kind |
+| mint-absent-token-for-active-key | mint an absent token for an active key | absent-witness-unique and witness-kinds-exclude |
+| attest-active-key-read-active-admitted | attest an active key (`Read Active` admitted) | terminal-attestation-sound |
+| leave-absent-token-outstanding-on-updateactive | leave the absent token outstanding on `updateActive` | supply-matches-leaf-state and witness-kinds-exclude |
 
 `docs/mutants.md` today declares every row PROPOSED / NOT EXECUTED and defines a
 kill as "the mutated model no longer builds". Both statements are superseded for
@@ -177,20 +177,20 @@ This exists because `over_terminal` is in `Singular.Statements`
 (Statements.lean:142), not the naming layer, and terminal-key-cannot-change **supersedes** it rather than
 preserving it — as do `over_no_representative`, `resolve_over` and the `consumer`
 theorems in the same module. Without the map an auditor cannot tell a dropped
-guarantee from a rename, and the page-against-manifest check (X1/A7) passes
+guarantee from a rename, and the page-against-manifest check (declarations-match-manifest/declarations-match-manifest) passes
 happily on a manifest that quietly lost rows. The map is checked against the base
 manifest, so a declaration that appears in neither the new manifest nor the map
 is a finding.
 
-### Slice-A audit obligations beyond the gate
+### Model-slice audit obligations beyond the gate
 
 The gate cannot judge these; the independent auditor must.
 
 | id | obligation |
 |---|---|
-| Y1 | **The four mutants.** Each elaborates; the kill is a named statement whose proof no longer closes **or** a corpus row whose verdict flips, recorded per mutant; each with a positive control. No compile-failure kill. |
-| Y2 | **`tools/check_model.py` still checks what it claims.** The author rewrites the file gate leg A2 runs, so A2 judges through an artifact under the author's control. Diff it against base and demonstrate, with **one seeded control each**, that exact-identity matching, PROVED-only-from-standard-axioms, STATED-for-admitted, byte-for-byte corpus regeneration and the keyword/proof-hole audit each still **fail** when violated. |
-| Y3 | **retirement-map-for-generic-statements's retirement map** is complete and honest against the base manifest. |
+| definition-mutant-controls | **The four mutants.** Each elaborates; the kill is a named statement whose proof no longer closes **or** a corpus row whose verdict flips, recorded per mutant; each with a positive control. No compile-failure kill. |
+| model-checker-controls | **`tools/check_model.py` still checks what it claims.** The author rewrites the file gate leg model-identity-and-manifest-checks runs, so model-identity-and-manifest-checks judges through an artifact under the author's control. Diff it against base and demonstrate, with **one seeded control each**, that exact-identity matching, PROVED-only-from-standard-axioms, STATED-for-admitted, byte-for-byte corpus regeneration and the keyword/proof-hole audit each still **fail** when violated. |
+| retirement-map-audit | **retirement-map-for-generic-statements's retirement map** is complete and honest against the base manifest. |
 
 ### A starting-state defect this slice must correct
 
@@ -216,25 +216,25 @@ Two obligations follow:
 
 | id | obligation |
 |---|---|
-| X1 | The rewritten `docs/theorems.md` equals its manifest exactly — every declaration present, the total derived rather than asserted. |
-| X2 | **The check becomes permanent.** `tools/check_model.py` gains the page-against-manifest cross-check, so the class cannot recur once this ticket's gate is gone. Nothing in the repository checks it today, which is why a three-row gap survived a release. The check must be seen to fail before it is trusted. |
+| declarations-match-manifest | The rewritten `docs/theorems.md` equals its manifest exactly — every declaration present, the total derived rather than asserted. |
+| permanent-manifest-page-check | **The check becomes permanent.** `tools/check_model.py` gains the page-against-manifest cross-check, so the class cannot recur once this ticket's gate is gone. Nothing in the repository checks it today, which is why a three-row gap survived a release. The check must be seen to fail before it is trusted. |
 
-X2 is the finding turned into a property. A repair that only fixes the three
+permanent-manifest-page-check is the finding turned into a property. A repair that only fixes the three
 rows leaves the next divergence undetected.
 
-## Invariant rows — slice B (#163)
+## Invariant rows — simulator slice (#163)
 
 | id | Given / When / Then | Observation | Control |
 |---|---|---|---|
-| B1 | Given the frozen slice-A interface; when the generic profile is played; then the seven edges and the read are exposed, with the token movement shown per edge. | Simulator profile exercised over every edge | An edge missing from the profile fails the denominator check |
-| B2 | Given each illegal combination of refused-combinations-as-complement; when attempted in the simulator; then it is refused **by name**, matching the model's reason. | One named refusal per combination | A generic "invalid" refusal that does not name the combination fails |
-| B3 | Given the new corpora; when the simulator replays them; then every finite row agrees with the Lean-computed result. | Full-corpus replay with an executed/discovered denominator | A single altered expected verdict turns the replay red |
-| B4 | Given the naming profile; when a retired key is read; then the Over witness is minted by a **folded read** and can be freely burned. | Naming profile journey | Minting it without a folded read fails |
-| B5 | Given the front page and `docs/design.md`; when their counts are read; then they equal what actually replays. | Counts derived from the replay, not hand-written | A stale count fails its check |
-| B6 | Given every changed page; when `just check-presentation` runs; then speech is fresh and stamped. | `just check-presentation` exit 0 | An unstamped page fails |
-| B7 | Given the transcription; when `docs/LEAN-CLARITY.md` is written; then it records what the formal artifacts did and did not communicate to the transcriber. | The page, authored from the transcription experience | — (a record, not a check) |
+| simulator-exposes-every-edge | Given the frozen model-slice interface; when the generic profile is played; then the seven edges and the read are exposed, with the token movement shown per edge. | Simulator profile exercised over every edge | An edge missing from the profile fails the denominator check |
+| simulator-refuses-illegal-combinations-by-name | Given each illegal combination of refused-combinations-as-complement; when attempted in the simulator; then it is refused **by name**, matching the model's reason. | One named refusal per combination | A generic "invalid" refusal that does not name the combination fails |
+| simulator-replays-all-corpus-rows | Given the new corpora; when the simulator replays them; then every finite row agrees with the Lean-computed result. | Full-corpus replay with an executed/discovered denominator | A single altered expected verdict turns the replay red |
+| terminal-witness-minted-by-read | Given the naming profile; when a retired key is read; then the Over witness is minted by a **folded read** and can be freely burned. | Naming profile journey | Minting it without a folded read fails |
+| published-counts-match-replay | Given the front page and `docs/design.md`; when their counts are read; then they equal what actually replays. | Counts derived from the replay, not hand-written | A stale count fails its check |
+| speech-matches-page | Given every changed page; when `just check-presentation` runs; then speech is fresh and stamped. | `just check-presentation` exit 0 | An unstamped page fails |
+| formal-transcription-experience | Given the transcription; when `docs/LEAN-CLARITY.md` is written; then it records what the formal artifacts did and did not communicate to the transcriber. | The page, authored from the transcription experience | — (a record, not a check) |
 
-Slice B states its finite-model limits explicitly: the simulator exhibits the
+Simulator slice states its finite-model limits explicitly: the simulator exhibits the
 corpora it replays and proves nothing universally.
 
 ## Gates
@@ -242,8 +242,8 @@ corpora it replays and proves nothing universally.
 Three frozen artifacts, each proved able to fail **per failure class** before the
 work it judges begins, and each audited blind before that work starts.
 
-**Gate A — slice A, focused**, version `a3`. Deliberately **not**
-whole-repository green, since the simulator is red until slice B by
+**Model acceptance checks — model slice, focused**, version `a3`. Deliberately **not**
+whole-repository green, since the simulator is red until simulator slice by
 construction. Classes: the gate's own hash-bound header; Lean elaboration —
 which is **also** where axiom cleanliness is bound, because `Singular.Audit`
 throws during elaboration on any non-standard axiom, so a `sorryAx` reddens the
@@ -252,36 +252,36 @@ compiled axiom report; exact identity/manifest discipline with byte-for-byte
 corpus regeneration; removed-vocabulary absence from the **elaborated
 environment**; the refusal set of refused-combinations-as-complement including the refused reads, with distinct
 reasons where the distinction is observable; the owned pages' declaration table
-equal to its manifest; fresh speech stamps; and the diff staying inside slice A's
+equal to its manifest; fresh speech stamps; and the diff staying inside model slice's
 surface **measured from the frozen planning head**.
 
-What gate A does **not** do, stated so a green run is not misread: it does not
-execute the four mutants (Y1), does not verify `tools/check_model.py` still
-checks what it claims (Y2), does not judge the retirement map (Y3), and does not
+What model acceptance checks does **not** do, stated so a green run is not misread: it does not
+execute the four mutants (definition-mutant-controls), does not verify `tools/check_model.py` still
+checks what it claims (model-checker-controls), does not judge the retirement map (retirement-map-audit), and does not
 claim the repository green. Those are the independent audit's.
 
 Changes from `a2`, all from operator answer (A-002):
 
-- **A3 is dropped, not weakened.** It could not flip independently of A1:
+- **separate-axiom-check is dropped, not weakened.** It could not flip independently of lean-elaboration:
   `Audit.lean:25` throws at `lake build` on any non-standard axiom, so the
   build is already red before a separate axiom leg runs — including under the
   "clean seed" the v2 packet proposed. A leg that cannot fail on its own is
   worse than no leg, because it looks like a second opinion. The class is now
-  documented against A1 and A4, which do bind it, and no build is spent proving
+  documented against lean-elaboration and compiled-axiom-report, which do bind it, and no build is spent proving
   a leg that cannot fail.
-- **A5's removed list gains** `Singular.Operation` and
+- **removed-vocabulary-check's removed list gains** `Singular.Operation` and
   `Singular.Config.representativePolicy` — the latter is renamed to
   `activePolicy`, so the old name surviving is exactly the failure to catch.
 - **approval-binding-control gains the refused reads.** `Read Active` and `Read Absent` were in read-interface but
   in neither refused-combinations-as-complement nor approval-binding-control's required set, so the structural guard terminal-attestation-sound depends on was
   unbound by the gate.
-- **A9 diffs from the frozen planning head, not the base, and drops `specs/`
+- **frozen-scope-check diffs from the frozen planning head, not the base, and drops `specs/`
   from its allowlist.** As written in `a2` the author could rewrite the mandate
   it is judged against and the gate would allow it.
 
-**Gate B — slice B, focused.** Classes: simulator build and self-test; full
+**Simulator acceptance checks — simulator slice, focused.** Classes: simulator build and self-test; full
 corpus replay agreement; named refusal of every illegal combination; browser
-checks; the count checks of B5; presentation and speech stamps.
+checks; the count checks of published-counts-match-replay; presentation and speech stamps.
 
 **Ticket gate — the atomic result.** `nix develop --quiet -c just ci` exit 0 plus
 both focused gates, run on the combined tree, plus green GitHub CI on the exact
@@ -297,7 +297,7 @@ pushed head. This is the only gate that may claim the repository green.
   classified from a compile failure;
 - regenerated corpora, manifests and every owned page corresponding to the
   accepted revision, with fresh speech stamps;
-- a fresh independent Opus `lean-auditor` report for slice A and a fresh
-  independent Opus `lean-simulations-auditor` report for slice B, each bound to
+- a fresh independent Opus `lean-auditor` report for model slice and a fresh
+  independent Opus `lean-simulations-auditor` report for simulator slice, each bound to
   its candidate and base;
 - green GitHub CI on the exact pushed head, which is pushed once, never red.

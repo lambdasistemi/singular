@@ -978,7 +978,7 @@ theorem insert_absent_transaction_row (s : RegistryState) (r : Request) (t : Res
     by simp [destinationDatumBinds, hap, hbind], hfree, htrie,
     by simp [onlyRootChanged, hcfg], by rw [hcfg, htrie], hcust, hheld, hcount, rfl, rfl⟩
 
-/-- **#173 terminal-key-cannot-change** — the transaction an admitted `insertActive` builds.
+/-- **#173 registration-transaction-and-keyed-mint** — the transaction an admitted `insertActive` builds.
 
 The conclusion is one equation on the transaction `txOf` constructs from the
 executed step, so every clause quantifies over a built value rather than over a
@@ -1168,7 +1168,7 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
     by rw [hheld]; exact List.mem_cons_self,
     rfl, rfl, rfl, hsigtx, hsecondtx, hadmits, hcross⟩
 
-/-- **#177 terminal-key-cannot-change** — the transaction an admitted `updateTerminal` builds.
+/-- **#177 retirement-transaction-and-burn-source** — the transaction an admitted `updateTerminal` builds.
 
 Retirement is the first edge whose mint is negative, so it is the first whose
 tokens have to come from somewhere. The conclusion is one equation on the value
@@ -1413,7 +1413,7 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
     hnotbooked _ r he (by simp) hadm,
     hmissing _ r he (by simpa using hbefore) (by simp) (by simpa using hadm)⟩
 
-/-- **#173 terminal-key-cannot-change** — the fold's mint guard is per `(TokenKind, Key)`.
+/-- **#173 registration-transaction-and-keyed-mint** — the fold's mint guard is per `(TokenKind, Key)`.
 
 An accepted fold's claimed and actual keyed sums agree; a nonempty batch whose
 every request applies but whose keyed sums differ is refused

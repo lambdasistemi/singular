@@ -38,15 +38,15 @@ Anything outside this map is a planning challenge, not an implicit widening.
 One Opus commit owner receives only the frozen spec, task, Lean rows, acceptance checks and
 source fence. It works inside one four-hour run:
 
-1. Commit the RED bundle for A173-BOOT through updated-encoding-consumers, using only existing
+1. Commit the RED bundle for boot-pins-open-registry-identities through updated-encoding-consumers, using only existing
    CI job commands later frozen in acceptance checks. This is the first decision-review
    checkpoint.
 2. Plant the open/witness/request substrate and its boot builders, then make
-   A173-BOOT and A173-APPROVAL green as separate committed checkpoints.
-3. Implement the cage edge with request/fold builders and make A173-EDGE then
-   A173-REFUSALS green as separate committed checkpoints.
+   boot-pins-open-registry-identities and open-approval-binding-and-burn-controls green as separate committed checkpoints.
+3. Implement the cage edge with request/fold builders and make active-insertion-delivers-requested-token then
+   duplicate-key-and-keyed-mint-controls green as separate committed checkpoints.
 4. Add the packaged command and drive it through end-to-end, journey, conformance,
-   docs and archive assembly; make A173-COMMAND and updated-encoding-consumers green as
+   docs and archive assembly; make released-command-runs-without-checkout and updated-encoding-consumers green as
    separate committed checkpoints.
 5. Regenerate only the enumerated identity/blueprint/coverage/page/speech
    consumers, preserving every update/delete/read on-chain-edge-case row and verdict, and create

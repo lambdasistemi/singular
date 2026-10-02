@@ -109,7 +109,7 @@ new:
 | 0 | `requestToken` | `requestToken` |
 | 1 | `requestOwner` | `requestOwner` |
 | 2 | `requestKey` | `requestKey` |
-| 3 | `requestValue: Operation` — `Insert v` / `Delete v` / `Update old new` / `Read v` | `edge: Int` — the C2 row index, `0`-`6` |
+| 3 | `requestValue: Operation` — `Insert v` / `Delete v` / `Update old new` / `Read v` | `edge: Int` — the seven-edge table index, `0`-`6` |
 | 4 | `tip: Int` — must equal `state.tip` | `deposit: Int` — must equal the request output's lovelace less `state.tip` |
 | 5 | `submitted_at` | `submitted_at` |
 | 6 | `destination` | `destination` |

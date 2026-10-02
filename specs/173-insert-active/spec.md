@@ -60,11 +60,11 @@ These are the implementation owner's decision-review checkpoints.
 
 | line | invariant and observable result |
 |---|---|
-| A173-BOOT | One boot derives and pins the parameterless open policy plus active/absent/terminal witnesses from the on-chain identity manifest; the resulting eight-field datum decodes with no naming input. |
-| A173-APPROVAL | All six open approval mints and pure burns accept; wrong binding, edge 6/7 and quantity widening refuse by name. |
-| A173-EDGE | One `insertActive` request folds, produces the modeled transaction shape and places exactly one `(activePolicy,key)` token at the named wallet output. |
-| A173-REFUSALS | Repeating the same key refuses `key-exists`; the two-distinct-key equal-per-kind/wrong-key fixture refuses `net-mint-mismatch`; accepting controls for both remain. |
-| A173-COMMAND | The released archive's documented `insert-active` invocation boots and runs the story on a devnet without a checkout. |
+| boot-pins-open-registry-identities | One boot derives and pins the parameterless open policy plus active/absent/terminal witnesses from the on-chain identity manifest; the resulting eight-field datum decodes with no naming input. |
+| open-approval-binding-and-burn-controls | All six open approval mints and pure burns accept; wrong binding, edge 6/7 and quantity widening refuse by name. |
+| active-insertion-delivers-requested-token | One `insertActive` request folds, produces the modeled transaction shape and places exactly one `(activePolicy,key)` token at the named wallet output. |
+| duplicate-key-and-keyed-mint-controls | Repeating the same key refuses `key-exists`; the two-distinct-key equal-per-kind/wrong-key fixture refuses `net-mint-mismatch`; accepting controls for both remain. |
+| released-command-runs-without-checkout | The released archive's documented `insert-active` invocation boots and runs the story on a devnet without a checkout. |
 | updated-encoding-consumers | Conformance rows, end-to-end example, journey, identities, workflow assertions, coverage records, consumer-conformance page, run page and archive manifest all name the same policies, fields, edge and verdicts. |
 
 ## Copies and published contracts

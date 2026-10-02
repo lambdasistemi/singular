@@ -65,7 +65,7 @@ flowchart LR
   return every C or D as a user story to the ticket owner, with receipt and
   trace.
 
-## capture-replay repairs (E209 operator answer (A-006), operator answer (A-007))
+## capture-replay repairs (Epic #209 operator answer (A-006), operator answer (A-007))
 
 - [x] retire-active-key-exclusion-proof-via [local checks] retire-active-key: exclusion proof via the fallback of `storyProofs`.
   Live evidence (D-006) shows it does not reach the story's path; superseded
@@ -121,7 +121,7 @@ flowchart LR
   requires, per refused step with a model reason, `replay.reason` equal to
   `model.reason`, the two hashes, the `captureId`, and the receipt's
   `replayCorrespondence`.
-- [x] retention-at-ci-boundary-e209-note-recut Retention at the CI boundary (E209 operator note (NOTE-003) recut of review 003):
+- [x] retention-at-ci-boundary-e209-note-recut Retention at the CI boundary (Epic #209 operator note (NOTE-003) recut of review 003):
   each dedicated retract-outside-window, retire-active-key and reject-and-retract-refund-controls step publishes its receipts path to the
   workflow's always-run `conformance-receipts` upload before invoking the row;
   on the row's non-zero exit the step keeps that exit status and leaves a
@@ -133,9 +133,9 @@ flowchart LR
   or the retention and observing it fail. Reviewed with the comparison-receipt-controls-ci-done-released-by implementation
   checkpoint and its real control receipt, not as a separate prose round.
 - [x] extend-generic-serialization-steps-jq registration-and-attribution-reasons: extend generic and serialization steps' jq.
-- [x] insert-occupied-key-executing-consumer-e209 [local checks] insert-occupied-key executing consumer (E209 operator answer (A-011)): insert-occupied-key runs as a story through the
+- [x] insert-occupied-key-executing-consumer-e209 [local checks] insert-occupied-key executing consumer (Epic #209 operator answer (A-011)): insert-occupied-key runs as a story through the
   generic interpreter (new `conformance/lib/Conformance/Edge/Occupied.hs`,
-  `runCG05` → the shared live runner): its occupied starting state is created
+  `runInsertOccupiedKey` → the shared live runner): its occupied starting state is created
   by real accepted connected actions and readbacks, the original occupied-insert
   case is kept (insertAbsent on the occupied key), and the actual setup,
   config and request reach the generic Lean question. Accepted control and the
@@ -145,7 +145,7 @@ flowchart LR
   insert-occupied-key checkpoint review; the generic step's CI assertions read the story
   receipt (refused step model `key-exists`, trace `key-exists`, comparison
   agrees, connected accepted control).
-- [x] wrong-redeemer-constructor-index-offline-compiler [local checks] wrong-redeemer-constructor-index offline compiler diagnostic (E209 operator answer (A-012)): a second test-owned
+- [x] wrong-redeemer-constructor-index-offline-compiler [local checks] wrong-redeemer-constructor-index offline compiler diagnostic (Epic #209 operator answer (A-012)): a second test-owned
   build of the same registry source, compiler and pins with
   `--trace-filter all --trace-level verbose`, checked against the same untraced
   twin; offline only, from the retained wrong-redeemer-constructor-index capsule, with the captured
@@ -169,7 +169,7 @@ flowchart LR
 
 - [x] restate-limit-in-conformance-book-method [local checks] Restate the limit in `Conformance.Book`: method, both hashes,
   deployed bytes carry no traces, remaining unobserved refusals by row.
-- [x] insert-occupied-key-in-book-e209 [local checks] insert-occupied-key in the book (E209 operator answer (A-013)): the book run executes and renders the
+- [x] insert-occupied-key-in-book-e209 [local checks] insert-occupied-key in the book (Epic #209 operator answer (A-013)): the book run executes and renders the
   occupied-key story beside the five existing chapters and the sequence, from one
   declared book-story extent used for execution, rendering and completeness;
   `conformance/app/Main.hs` changes only in `runBook`'s row selection, receipt

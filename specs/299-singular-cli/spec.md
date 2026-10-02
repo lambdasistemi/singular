@@ -32,7 +32,7 @@ All rows below are BLOCKING unless marked ADVISORY. Client safety refusals are n
 | indexer-read-agrees-with-node (INV300-INDEXER) | An indexer's read of an Active key, asked from its policy and asset name alone, counts only when the indexer finds exactly one output holding exactly one of the token and that output's reference, datum bytes, datum hash and chain position are the node's fresh inspect's, within the lag allowed; a missing, unreachable, stale or disagreeing indexer is never a confirmation and ends a take before its next write. |
 | interrupted-submissions-preserved (INV299-PARTIAL) | Submitted txids, confirmations and known partial state are preserved on interruption/timeout; create never overwrites, retries never silently reboot/resubmit. |
 | packaged-command-process-boundaries | Packaged commands work across process boundaries on one persistent node, with same registry/key and runtime identities; omitted command/page or altered receipt is detected. |
-| candidate-documentation-and-gaps | ADVISORY: supported instructions and named gaps accurately describe the candidate and receipt layer; no preprod/release/full-M1/KERI claim is inferred. |
+| candidate-documentation-and-gaps | ADVISORY: supported instructions and named gaps accurately describe the candidate and receipt layer; no preprod/release/full-first milestone/KERI claim is inferred. |
 
 ## Model binding and evidence limits
 

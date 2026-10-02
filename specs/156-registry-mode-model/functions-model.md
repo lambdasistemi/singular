@@ -37,7 +37,7 @@ audit bind to these exact identities.
 
 ## The oracle observation surface — required, and read-only to the author
 
-The gate's frozen oracle (leg A10) evaluates the model **at inputs the ticket
+The gate's frozen oracle (leg independent-model-oracle) evaluates the model **at inputs the ticket
 owner fixed before any code existed** and compares to expected outputs the author
 cannot regenerate. That is what makes the gate measure correspondence instead of
 self-consistency, and it is the repair for the UNFIT verdict the blind gate audit
@@ -63,11 +63,11 @@ These are **observations, not a second model.** Each must be defined in terms of
 the real model — the fold, the transition, the routing the cage performs — never
 as an independent table written to satisfy the oracle. A surface that hard-codes
 the oracle's answers while the model does something else is the exact defect the
-anti-cheat pass looks for, and obligation Y1's mutants are what catch it: mutate
+anti-cheat pass looks for, and obligation definition-mutant-controls's mutants are what catch it: mutate
 the model and the observations must move with it.
 
 The oracle itself lives **outside the repository**, in the ticket runtime root.
-Gate leg A9 refuses any diff that touches the mandate or the oracle, so the
+Gate leg frozen-scope-check refuses any diff that touches the mandate or the oracle, so the
 author cannot see the expected values, edit them, or regenerate them.
 
 ## Statements
@@ -76,17 +76,17 @@ The eleven identities are fixed in `plan.md` and are repeated here as the bindin
 list for the manifest and the axiom report:
 
 ```
-Singular.Statements.no_tree_change_without_approval     -- P1
-Singular.Statements.booked_at_most_once                 -- L1
-Singular.Statements.terminal_attestation_sound          -- S1
-Singular.Statements.terminal_attestation_permanent      -- S2
-Singular.Statements.biconditional_supply_sync           -- S3
-Singular.Statements.occupancy                           -- O1
-Singular.Statements.termination                         -- T1
-Singular.Statements.active_witness_unique               -- W1
-Singular.Statements.absent_witness_unique               -- W2
-Singular.Statements.terminal_witness_plural             -- W3
-Singular.Statements.witness_kinds_exclude               -- W4
+Singular.Statements.no_tree_change_without_approval     -- tree-change-requires-approval
+Singular.Statements.booked_at_most_once                 -- request-spent-once-in-order
+Singular.Statements.terminal_attestation_sound          -- terminal-attestation-sound
+Singular.Statements.terminal_attestation_permanent      -- terminal-attestation-permanent
+Singular.Statements.biconditional_supply_sync           -- supply-matches-leaf-state
+Singular.Statements.occupancy                           -- booking-requires-untaken-key
+Singular.Statements.termination                         -- terminal-key-cannot-change
+Singular.Statements.active_witness_unique               -- active-witness-unique
+Singular.Statements.absent_witness_unique               -- absent-witness-unique
+Singular.Statements.terminal_witness_plural             -- terminal-witnesses-plural
+Singular.Statements.witness_kinds_exclude               -- witness-kinds-exclude
 ```
 
 Edge inversions accompany them, one per edge, exposing the exact guards and

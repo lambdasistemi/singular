@@ -459,8 +459,8 @@ data Receipt = Receipt
 
 instance FromJSON Receipt where
     parseJSON = withObject "Receipt" $ \o ->
-        Receipt
-            <$> (canonicalRowName <$> o .: "row")
+        Receipt . canonicalRowName
+            <$> o .: "row"
             <*> o .: "outcome"
             <*> o .: "verdict"
             <*> o .: "transactions"

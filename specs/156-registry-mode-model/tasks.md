@@ -23,8 +23,8 @@ proved before naming.
 - [ ] token-custody-routing-including-absent-token-s — token custody and routing, including the absent token's value on
       consumption (fold-minting-absent-token-it-completes-absent, retired-custody-value-proposal).
 - [ ] proved-sorry-free-at-their-bound-identities — tree-change-requires-approval, request-spent-once-in-order, terminal-attestation-sound, terminal-attestation-permanent, supply-matches-leaf-state, booking-requires-untaken-key, terminal-key-cannot-change proved sorry-free at their bound
-      identities (I-tree-change-requires-approval … I-terminal-key-cannot-change).
-- [ ] four-witness-laws-proved-sorry-free-i — the four witness laws active-witness-unique–witness-kinds-exclude proved sorry-free (I-active-witness-unique … I-witness-kinds-exclude).
+      identities (tree-change-requires-approval … terminal-key-cannot-change).
+- [ ] four-witness-laws-proved-sorry-free-i — the four witness laws active-witness-unique–witness-kinds-exclude proved sorry-free (active-witness-unique … witness-kinds-exclude).
 - [ ] edge-inversions-one-per-edge-exposing-guards — edge inversions, one per edge, exposing guards and effects.
 - [ ] open-application-as-smallest-instance-promise-instantiated — the open application as the smallest instance; every promise
       instantiated at it (open-application-law-instances). Proved before naming.
@@ -46,10 +46,10 @@ proved before naming.
       positive control, each classified statement-kill or row-kill, none from a
       compile failure (mint-second-active-token-for-key–leave-absent-token-outstanding-on-updateactive).
 - [ ] theorems-md-equals-its-manifest-exactly-total — `docs/theorems.md` equals its manifest exactly, with the total
-      derived rather than asserted (X1). The base tree ships 44 manifest
+      derived rather than asserted (declarations-match-manifest). The base tree ships 44 manifest
       declarations against 41 page rows.
 - [ ] tools-check-model-py-gains-page-against — `tools/check_model.py` gains the page-against-manifest
-      cross-check, seen to fail before it is trusted (X2), so the gap that
+      cross-check, seen to fail before it is trusted (permanent-manifest-page-check), so the gap that
       survived v0.6.1 cannot recur once this ticket's gate is gone.
 - [ ] refused-reads-read-active-read-absent-in — the refused reads `Read Active` and `Read Absent` are in the
       refusal set with rows and controls, and refused-combinations-as-complement is stated as the complement of
@@ -65,35 +65,35 @@ proved before naming.
       not arbitrary `State` values (operator answer (A-002) SPEC 3).
 - [ ] singular-oracle-observation-surface-defined-in-terms — the `Singular.Oracle.*` observation surface, defined in terms of
       the real model rather than as an independent table, so the frozen oracle
-      (gate leg A10) can evaluate the model at the ticket owner's inputs.
+      (gate leg independent-model-oracle) can evaluate the model at the ticket owner's inputs.
 
-## Slice B — `#163 simulator` (author `muse`, auditor Opus `lean-simulations-auditor`)
+## Simulator slice — `#163 simulator` (author `muse`, auditor Opus `lean-simulations-auditor`)
 
-Starts only after slice A's audit passes and its interface is frozen.
+Starts only after model slice's audit passes and its interface is frozen.
 
 - [ ] generic-profile-exposes-seven-edges-read-token — the generic profile exposes the seven edges and the read, with
-      the token movement shown per edge (B1).
+      the token movement shown per edge (simulator-exposes-every-edge).
 - [ ] illegal-combination-refused-by-name-matching-model — every illegal combination refused **by name**, matching the
-      model's reason (B2).
+      model's reason (simulator-refuses-illegal-combinations-by-name).
 - [ ] full-replay-agreement-against-new-corpora-executed — full replay agreement against the new corpora, with an
-      executed/discovered denominator (B3).
+      executed/discovered denominator (simulator-replays-all-corpus-rows).
 - [ ] naming-profile-over-witness-minted-by-folded — the naming profile: the Over witness minted by a folded read and
-      freely burned (B4).
+      freely burned (terminal-witness-minted-by-read).
 - [ ] simulation-md-describes-journeys-states-finite-model — `docs/simulation.md` describes the journeys and states the
       finite-model limits.
 - [ ] lean-clarity-md-records-what-new-formal — `docs/LEAN-CLARITY.md` records what the new formal artifacts did
-      and did not communicate to the transcriber (B7).
+      and did not communicate to the transcriber (formal-transcription-experience).
 - [ ] counts-on-front-page-in-design-md — the counts on the front page and in `docs/design.md` equal what
-      actually replays (B5).
+      actually replays (published-counts-match-replay).
 - [ ] browser-checks-replay-against-new-model — browser checks replay against the new model.
 - [ ] changed-page-restamped-just-check-presentation-passes — every changed page restamped; `just check-presentation` passes
-      (B6).
+      (speech-matches-page).
 
 ## Gate-held, not a task
 
 `nix develop --quiet -c just model` and `nix develop --quiet -c just ci` exit 0
 are the gates' criteria, not checkboxes. Only the ticket gate, on the combined
-tree, may claim the repository green — slice A is green on its own gate and red
+tree, may claim the repository green — model slice is green on its own gate and red
 on the simulator by construction, and is never pushed in that state.
 
 ## Forward repair after merge

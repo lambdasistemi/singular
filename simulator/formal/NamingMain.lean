@@ -6,7 +6,7 @@ open Lean
 
 /-! The naming corpus over the registry-mode model: registration (record-binds-active-registration), the
 absent edges with custody-lovelace-refund custody (naming-approval-rules story), retirement per naming-approval-rules as amended
-(NM3/NM4), the refused reads and re-registration (terminal-key-cannot-change), and the observations. -/
+(retirement-removes-active-witness/naming-approval-rules), the refused reads and re-registration (terminal-key-cannot-change), and the observations. -/
 
 def ns0 : NamingState := namingInitial
 

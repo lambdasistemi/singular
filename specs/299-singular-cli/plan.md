@@ -12,10 +12,10 @@ Baseline before behavior edits: classified component build, root `nix develop --
 
 Archive check starts one persistent external development node, runs ordinary CLI processes with actual generated development wallet/seed/key and release-provided blueprint identities, and retains five-process continuity evidence plus relevant failure controls. It runs outside the checkout and never hides the journey in one lifecycle process. Readbacks bind fresh state output/reference/datum/commitment and actual holdings/mint/returns to chain points. Local proof/state and observed ledger facts are separately labelled.
 
-Exact overlapping surfaces: Cabal/component inventory/offchain flake, registry workflow, archive assembly/check, first-demo/speech/mkdocs. E209 Conformance remains untouched; E272/#278/#302 continue. Refresh immediate owner receipts and exact path diffs at dispatch/integration; serialize only actual intersections. No reset/rebase/interrupt of foreign lanes.
+Exact overlapping surfaces: Cabal/component inventory/offchain flake, registry workflow, archive assembly/check, first-demo/speech/mkdocs. Epic #209 Conformance remains untouched; Epic #272/#278/#302 continue. Refresh immediate owner receipts and exact path diffs at dispatch/integration; serialize only actual intersections. No reset/rebase/interrupt of foreign lanes.
 
 Local source/build, Lean, compiled scripts, development node, remote CI, acceptance, merge, release and preprod are separate claims. #300 owns the concrete pinned artifact/public-chain checkpoint and publication; #299 performs none of those external actions.
 
 Artifact ceilings: spec8KiB; plan4KiB; each model3KiB; tasks2KiB; combined planning20KiB; worker packet10KiB. Exact bytes/lines and hashes go in runtime manifest before launch. Signature/placement ambiguity returns to owner before changing architecture; affected behavioral ambiguity routes to operator under constitution.
 
-Dispatch base: accepted #278 merge 09026002e78f5b1e4d09cbd93ca2e7e7e356e4f2, tree-identical to selected 6b0feb5. E272 parked after S2; E209 retains #288/#304. The destination-row ruling holds termination correspondence acceptance; independent work continues.
+Dispatch base: accepted #278 merge 09026002e78f5b1e4d09cbd93ca2e7e7e356e4f2, tree-identical to selected 6b0feb5. Epic #272 parked after its second slice; Epic #209 retains #288/#304. The destination-row ruling holds termination correspondence acceptance; independent work continues.

@@ -3,8 +3,8 @@ open Singular
 open Singular.Driver
 open Lean
 
-/-! The generic registry-mode corpus: every R2 edge accepted, the full
-complement of R2 refused with its observable reason, the codec both ways, the
+/-! The generic registry-mode corpus: every seven-edge edge accepted, the full
+complement of seven-edge refused with its observable reason, the codec both ways, the
 read bound to the intermediate root, custody and custody-lovelace-refund value flow, the mint
 check and the zero-request rule. Expectations are authored from the mandate;
 results are computed from the model. -/
@@ -74,7 +74,7 @@ def retiredState : RegistryState :=
   match step (booked s0 42) (req .updateTerminal 42 42 555) with
   | .ok r => r.state | .error _ => s0
 
--- accepted edges (one per R2 row, with its delta observed in the result)
+-- accepted edges (one per seven-edge row, with its delta observed in the result)
 def accInsertAbsent : Case :=
   runCase "GA01-insert-absent-accepted" true "" (witnessed s0 7)
     (req .insertAbsent 8 91 0)
@@ -96,7 +96,7 @@ def accWitnessTerminal : Case :=
   runCase "GA07-witness-terminal-accepted" true "" retiredState
     ({ edge := .witnessTerminal, key := 42, output := 700 } : Request)
 
--- R3 complement refusals: every non-R2 (edge, before) pair
+-- refused-edge-combinations complement refusals: every non-seven-edge (edge, before) pair
 def refusals : List Case :=
   let taken := booked s0 42            -- known active
   let retired := match step (booked s0 42) (req .updateTerminal 42 42 555) with
@@ -221,7 +221,7 @@ def configRow : Bool :=
   | .ok c => c == cfg
   | .error _ => false
 
-/-! ### terminal-key-cannot-change — the `insertActive` transaction row and the keyed mint rows (#173)
+/-! ### transaction-correspondence — the `insertActive` transaction row and the keyed mint rows (#173)
 
 Every field of the rows below is read off a fold this file executes or off the
 model definition `Singular.Statements.insert_active_transaction_row` and
@@ -345,7 +345,7 @@ def absentRowJson : Json :=
       , ("destinationDatumBinds", toJson (destinationDatumBinds absentRequest)) ]
   | _, _ => Json.mkObj [("profile", "insertAbsent"), ("accepted", toJson false)]
 
-/-! ### terminal-key-cannot-change — the `updateTerminal` transaction row (#177)
+/-! ### transaction-correspondence — the `updateTerminal` transaction row (#177)
 
 Retirement is the first row in this corpus whose mint is negative, and a
 negative mint is the one thing a transaction cannot simply assert: the token has
@@ -1168,40 +1168,40 @@ def main : IO Unit := do
     let ok := if expectSome then res.isSome else res.isNone
     unless ok do throw (IO.userError s!"{id} failed")
   unless configRow do throw (IO.userError "GD-config roundtrip failed")
-  -- terminal-key-cannot-change: the transaction row and the keyed mint rows are verdicts, not claims
+  -- transaction-correspondence: the transaction row and the keyed mint rows are verdicts, not claims
   unless (match txResult with | .ok _ => true | .error _ => false) do
-    throw (IO.userError "T1 insertActive transaction was refused")
+    throw (IO.userError "Transaction correspondence insertActive transaction was refused")
   unless (match txBuilt with | .ok _ => true | .error _ => false) do
-    throw (IO.userError "T1 the model built no transaction for an admitted insertActive")
+    throw (IO.userError "Transaction correspondence the model built no transaction for an admitted insertActive")
   unless txSecondReason == "key-exists" do
-    throw (IO.userError s!"T1 second insertActive: {txSecondReason}")
-  unless approvalsIn txRequest == 1 do throw (IO.userError "T1 approval count")
-  unless lovelaceCoversTip cfg txLovelace do throw (IO.userError "T1 tip not covered")
-  unless destinationDatumBinds txRequest do throw (IO.userError "T1 destination datum")
-  unless openAdmitsEveryTuple cfg do throw (IO.userError "T1 open policy admission")
+    throw (IO.userError s!"Transaction correspondence second insertActive: {txSecondReason}")
+  unless approvalsIn txRequest == 1 do throw (IO.userError "Transaction correspondence approval count")
+  unless lovelaceCoversTip cfg txLovelace do throw (IO.userError "Transaction correspondence tip not covered")
+  unless destinationDatumBinds txRequest do throw (IO.userError "Transaction correspondence destination datum")
+  unless openAdmitsEveryTuple cfg do throw (IO.userError "Transaction correspondence open policy admission")
   unless !crossRegistrySeparation cfg otherRegistry txRequest do
-    throw (IO.userError "T1 cross-registry separation is a non-goal, not a promise")
+    throw (IO.userError "Transaction correspondence cross-registry separation is a non-goal, not a promise")
   unless (match foldActions s0 keyedWrongKey with | .ok _ => true | .error _ => false) do
-    throw (IO.userError "T1 wrong-key batch: a request failed to apply, so the refusal is not the keyed guard's")
+    throw (IO.userError "Transaction correspondence wrong-key batch: a request failed to apply, so the refusal is not the keyed guard's")
   unless foldReason (foldBatch s0 keyedAccepted) == "" do
-    throw (IO.userError "T1 keyed accepted row refused")
+    throw (IO.userError "Transaction correspondence keyed accepted row refused")
   unless foldReason (foldBatch s0 keyedWrongKey) == "net-mint-mismatch" do
-    throw (IO.userError s!"T1 wrong-key row: {foldReason (foldBatch s0 keyedWrongKey)}")
+    throw (IO.userError s!"Transaction correspondence wrong-key row: {foldReason (foldBatch s0 keyedWrongKey)}")
   unless absentTxCorrect do
-    throw (IO.userError "T1 insertAbsent constructed transaction violates refund-only custody row")
+    throw (IO.userError "Transaction correspondence insertAbsent constructed transaction violates refund-only custody row")
   -- #177: the transaction an admitted updateTerminal builds is a verdict too
   unless (match retireResult with | .ok _ => true | .error _ => false) do
-    throw (IO.userError "T1 updateTerminal was refused at a booked key")
+    throw (IO.userError "Transaction correspondence updateTerminal was refused at a booked key")
   unless (match retireTx with | .ok _ => true | .error _ => false) do
-    throw (IO.userError "T1 the model built no transaction for an admitted updateTerminal")
+    throw (IO.userError "Transaction correspondence the model built no transaction for an admitted updateTerminal")
   unless retireBurnSourced do
-    throw (IO.userError s!"T1 updateTerminal burns {repr retireBurned} and its inputs spend {repr retireSpent}: the burn has no source")
+    throw (IO.userError s!"Transaction correspondence updateTerminal burns {repr retireBurned} and its inputs spend {repr retireSpent}: the burn has no source")
   unless retireOutputsPositive do
-    throw (IO.userError "T1 updateTerminal: an output is left holding a quantity an output cannot hold")
+    throw (IO.userError "Transaction correspondence updateTerminal: an output is left holding a quantity an output cannot hold")
   unless (match retireTx with
       | .ok tx => tx.refunds == [(retireRequest.owner, retireRequest.deposit)] && tx.signers.isEmpty
       | .error _ => false) do
-    throw (IO.userError "T1 updateTerminal: refunds are not the deposit back to the owner, or a signer is required")
+    throw (IO.userError "Transaction correspondence updateTerminal: refunds are not the deposit back to the owner, or a signer is required")
   for (id, expected, before) in retirementRefusalRows do
     unless retireRefusal before == expected do
       throw (IO.userError s!"{id}: {retireRefusal before} (expected {expected})")

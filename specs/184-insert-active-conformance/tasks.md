@@ -17,8 +17,8 @@ not separate layer tasks.
 ## Implementation vertical — one runnable
 
 - [x] **execute-register-active-key-emit-its-receipt — execute register-active-key and emit its receipt.** In one commit-owner run,
-  implement A184-FOLD, A184-CONJUNCTS, A184-DUPLICATE,
-  A184-KEYED-MINT, A184-SEQUENCE, A184-WIRING and A184-COPIES across the
+  implement open-registration-fold, registration-transaction-conjuncts, duplicate-key-refusal-control,
+  keyed-mint-distribution-control, proofs-use-latest-committed-root, runner-receipts-and-workflow-agree and documentation-and-evidence-agree across the
   exact surface in `plan.md`. After merge, the conformance generic-row step
   runs register-active-key on the open registry and its receipt reports the fold, delivered
   asset, both refusals and both accepting controls.

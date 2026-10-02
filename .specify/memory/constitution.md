@@ -64,7 +64,7 @@ Deferred placeholders: none.
 Sync impact report
 Version: 1.10.0 -> 1.10.1 (the retract row stops denying the two exercised out-of-window cases)
 Amended: 2026-09-26
-Authority: issue #205 repair (parent #199), operator ruling operator answer (A-004)-constitution, T3.
+Authority: issue #205 repair (parent #199), the constitution ruling (A-004-constitution) and the live retraction controls.
 Changed obligations: none. The `retract` translation row retires its named limit: the
 chain runs an owner-signed retraction of an insertion whose finite validity interval
 starts before phase 2, and one whose finite interval ends after it; the request script
@@ -85,7 +85,7 @@ Deferred placeholders: none.
 Sync impact report
 Version: 1.9.0 -> 1.10.0 (the driver admits a retraction before it pays it)
 Amended: 2026-09-25
-Authority: issue #239 (parent #209), T2.
+Authority: issue #239 (parent #209), the retraction admission task.
 Changed obligations: every operation runs through `Singular.admittedExitStep` and
 builds through `Singular.admittedTxOfExit`; a retraction is admitted first by
 `Singular.retractAdmission` under the witness its scenario carries (the request's
@@ -101,7 +101,7 @@ carries its witness, no other question may), `Conformance.Run.Live` (the model
 question for a retraction), `tools/check_model.py` and the simulator mirror.
 Checked: declared operations, observations, unobservable names and judgements
 unchanged; the surface digest and protocol version unchanged.
-Named limit: no live retraction is refused yet (T3 of #239); no retraction outside
+Named limit: no live retraction is refused yet (the live retraction controls of #239); no retraction outside
 phase 2 is run against the chain (#205); the chain's refusal reason is not observed
 (#287).
 Templates: no template change required.
@@ -109,7 +109,7 @@ Deferred placeholders: none.
 
 Version: 1.8.0 -> 1.9.0 (a retraction's return is bound to its request; the driver judges what a transaction spends)
 Amended: 2026-09-24
-Authority: issue #258 (parent #209), Amendments 6, 7, 10, 12, 14 and 15, T6.
+Authority: issue #258 (parent #209), Amendments 6, 7, 10, 12, 14 and 15, the refund-reference binding task.
 Changed obligations: a retract owes its owner deposit and tip through one output
 bound to the request's own output reference (`Request.reference`), presented as an
 inline datum (`TxOutput.reference`); `settle` pays that return only by such an output
@@ -132,7 +132,7 @@ Deferred placeholders: none.
 
 Version: 1.7.0 -> 1.8.0 (the driver judges an observed transaction's payments)
 Amended: 2026-09-24
-Authority: issue #258 (parent #209), Amendments 12 to 14, T5.
+Authority: issue #258 (parent #209), Amendments 12 to 14, the request-bound return task.
 Changed obligations: the driver declares one judgement, `settle`: given the
 outputs of a transaction a caller observed, translated by the identity rules,
 it answers `Singular.settle` over what the scenario's exit owes. The model's
@@ -468,7 +468,7 @@ checked first, and observes no transaction, since the model builds none for it.
 | law premise | identity | `Singular.Driver.consistentB`, the decidable finite characterization of `Singular.Consistent` over the keys a state actually mentions. It is checked on the state reached by the setup trace *before* any accepted observation is reported. A key the state mentions nowhere satisfies every conjunct trivially, which is why the finite extent does not weaken the premise. |
 | starting state | identity | reached by running the setup trace through the law. A scenario that declares `requiresReachableState` must supply a non-empty trace, so a state typed in with the key already active cannot stand in for a lifecycle nobody executed. |
 | outcome class | identity | `accepted`, `refused` and `unsupported` are disjoint. Only `accepted` carries observations; `refused` carries a reason `Singular.retractAdmission`, `Singular.refusal` or `Singular.exitStep` can produce, a retraction only one of admission's, and a fold batch only one `Singular.foldBatch` gives; `unsupported` is the driver failing to reach the case — a retraction with no witness among them — and is never reported as a ledger refusal. |
-| `concreteTrieHash` | unobservable | the real authenticated-map root a chain would carry. The model commits with FNV-1a and S01 introduces no Cardano byte model, so no byte-level agreement between `root` and a real registry root is claimed anywhere. |
+| `concreteTrieHash` | unobservable | the real authenticated-map root a chain would carry. The model commits with FNV-1a and the executable specification introduces no Cardano byte model, so no byte-level agreement between `root` and a real registry root is claimed anywhere. |
 | `outputMinimumAda` | unobservable | The ledger's actual minimum ada remains outside the model. Each transaction output's model `lovelace` is a floor — the cage output's deposit, a delivering fold's destination deposit, an owner output's payment, zero on an output paying no recipient — so a consumer requires observed `lovelace >= model`, reads each payment's value in `paid` and `tx.refunds` by the same rule, and compares every other field for equality. Surplus above the model floor remains unobservable. |
 | `registryAddress` | unobservable | the registry's own address. The model has no vocabulary for it and the state output's address is `none` rather than an invented constant. |
 | `scriptExecutionUnits` | unobservable | execution budget and fee measurement are ledger facts with no model counterpart. |

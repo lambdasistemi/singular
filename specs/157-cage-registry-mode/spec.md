@@ -103,7 +103,7 @@ leaves with the request's residual value; it certifies nothing else because
 its name binds this key, this edge, this owner and this destination.
 
 This replaces the mandatory consumer withdrawal, the pin equality and
-`consumer.ak`'s R2. It generalises what the application checked at fold for
+`consumer.ak`'s seven-edges-interface. It generalises what the application checked at fold for
 inserts to all six edges, inside the cage.
 
 ### mint-matches-edge-deltas — the delta and the mint
@@ -131,10 +131,10 @@ For each consumed request the cage requires, per token moved:
   named destination, with the inline datum whose hash the request names, carrying
   the token (request-destination-binding) **and at least the request's value minus the tip**: the
   deposit that rode the request returns to the requester as that output's
-  value. The folder earns the tip and nothing else (want-ledger R4: no folder
+  value. The folder earns the tip and nothing else (the folder value obligation: no folder
   incentive exists in this version, so the deposit is returned). For `Update(0x01,0x02)` the active token must be an input
   and burned; the cage does not care where it came from — the application's
-  custody does (N4).
+  custody does (refund-owner-authorizes-absent-deletion).
 
 ### state-datum-fields — the state datum
 
@@ -148,11 +148,11 @@ application_policy, active_policy, absent_policy, terminal_policy
 `consumer_pin` is deleted. `representative_policy` is renamed `active_policy`.
 Genesis (`validateMint`) sets all four policies; every `Modify` preserves all
 eight but `root`. This is the contract change cardano-keri conforms to
-(blueprint-encoding-round-trip/submitted-datum-byte-round-trip/state-fields-chain-round-trip), re-baselined in this ticket (X1 below).
+(blueprint-encoding-round-trip/submitted-datum-byte-round-trip/state-fields-chain-round-trip), re-baselined in this ticket (compiled-wire-conformance below).
 
 ### request-covers-tip — request value coverage moves into the cage
 
-`consumer.ak`'s R1 — every consumed request carries lovelace at least its
+`consumer.ak`'s request tip coverage rule — every consumed request carries lovelace at least its
 stated tip — is a cage check now, beside the existing `tip == state.tip`.
 
 ### owner-retraction — retraction
@@ -170,18 +170,18 @@ unchanged.
 
 ## Requirements — naming (`naming-onchain/validators`)
 
-### N1 — the three token policies
+### controller-authorizes-active-insertion — the three token policies
 
 One parametrised minting script, **`witness(kind, registry)`**, instantiated
 three times (kind `0` absent, `1` active, `2` terminal) to give the three policy
 ids pinned at genesis. Its rule: a mint or burn under this policy is accepted
 only in a transaction that spends the registry's state token with `Modify` —
 co-presence with the cage, which computes how many and where. The terminal
-instance additionally accepts any burn unconditionally (W3: freely burnable).
+instance additionally accepts any burn unconditionally (terminal witnesses: freely burnable).
 `representative.ak` and its `Fold`/`Retire` redeemers are retired; the active
 policy is `witness(1, registry)`.
 
-### N2 — the approval policy: six edges
+### controller-authorizes-absent-to-active-update — the approval policy: six edges
 
 The application script's `mint` purpose certifies edges. Its redeemer becomes
 one constructor, `Approve { edge, key, owner, destination }`, and the asset
@@ -197,9 +197,9 @@ name minted must equal the approval binding (approval-asset-binding). Per naming
 | `deleteActive` | never — the arm refuses |
 
 `WithdrawApproval` and `InsertApproval` are retired with the claim mechanism
-(N3). Approvals are minted at request creation, one per request.
+(absent-insertion-needs-no-signature). Approvals are minted at request creation, one per request.
 
-### N3 — the record is created by the fold, not by a claim
+### absent-insertion-needs-no-signature — the record is created by the fold, not by a claim
 
 There is no pending claim UTxO, no `Fold`, no `Cancel`. A booking is: the
 controller mints an `insertActive` (or `updateActive`) approval binding the
@@ -208,7 +208,7 @@ record output at the application address with that datum and the active token
 (token-destinations-and-refunds). `ApplicationRedeemer` becomes `Maintain`, `Retire`, `Recover` — a
 contract change for the runners' encodings, re-baselined here.
 
-### N4 — retirement and completion
+### refund-owner-authorizes-absent-deletion — retirement and completion
 
 `Retire` changes its controller path: it is authorized by the **committed
 recovery key** (reveal of `next_control_commitment` plus that key's signature,
@@ -216,18 +216,18 @@ the proof `Recover` uses) or by the quorum — never by the current control key
 alone. A thief holding Alice's current key can change where the name pays until
 she recovers; they can no longer end it. The authorized transaction moves the
 active token from the record into completion-only custody, mints the
-`updateTerminal` approval (N2 — the same proof is present) and creates the
+`updateTerminal` approval (controller-authorizes-absent-to-active-update — the same proof is present) and creates the
 completion request carrying it — today's co-created request. Completion is the fold of `Update(0x01, 0x02)`: the custody UTxO is
 spent, its held token is the burn the delta requires, and the record's name is
 `0x02` forever. `retirement_custody.ak` keeps its rules; `over_marker_for` and
 the naming-specific value vocabulary in `naming.ak` are deleted.
 
-### N5 — `maintain` and `recover` never touch the trie
+### active-deletion-never-certified — `maintain` and `recover` never touch the trie
 
 Unchanged in mechanics; the rows that say the registry root is untouched by
 them are kept and re-run.
 
-### N6 — evidence
+### recovery-authorizes-retirement — evidence
 
 Rows in the existing `LM`/`LR`/`LT` style for every refusal above, each with
 a control; every #156 theorem bound to at least one executable check seen to
@@ -236,7 +236,7 @@ the four #154 mutants executed at Aiken level (plan).
 
 ## Requirements — consumers and docs
 
-### X1 — conformance re-baselined
+### compiled-wire-conformance — conformance re-baselined
 
 blueprint-encoding-round-trip, submitted-datum-byte-round-trip and script-parameter-application are #157's serialization rows, re-cut against the
 eight-field datum, the `Read` operation, the destination field, the
@@ -254,11 +254,11 @@ The journeys on `main` — `li01`, `li-refusals`, `lmlc`, `recovery`,
 `retirement`, `retire-verify`, `repair` — are consumers of the naming
 application, not of the registry. Their re-cut is #172 under the Naming Your Assets epic
 #174, after #154 closes. In this ticket their CI jobs are retired from the
-required set with a recorded mapping (D6); none is stubbed green. No new
+required set with a recorded mapping (singular-step-refusal-reasons); none is stubbed green. No new
 journey is authored here: `witness-rows` is #158's, against the open
 application (#173).
 
-### X2 — the naming docs
+### published-naming-lifecycle — the naming docs
 
 `docs/naming-lifecycle.md`, `docs/naming-demo.md` and `docs/recovery-retirement.md`
 gain the state table, the seven edges with their tokens, the four laws of the
@@ -284,7 +284,7 @@ destination is the same authority and is harmless; a different owner, edge or
 destination cannot use it.
 
 **Contract with #156:** the model's `admits` must scope an approval by the same
-tuple. #156's D4 leaves the scope shape to its author; this decision fixes it.
+tuple. #156's singular-admits-config-applicationpolicy leaves the scope shape to its author; this decision fixes it.
 
 ### request-destination-binding — the request names where its token goes
 
@@ -329,8 +329,8 @@ argument does not apply to them.
 
 ### recovery-authorizes-retirement — who obtains the terminate approval, and when
 
-As N4: in the `Retire` transaction, on the **committed recovery key's** proof or
-the quorum's signatures. Operator adjudication of want-ledger row R1
+As refund-owner-authorizes-absent-deletion: in the `Retire` transaction, on the **committed recovery key's** proof or
+the quorum's signatures. Operator adjudication of the recovery authorization row
 (2026-09-16): a name must not be endable by whoever holds the current control
 key, because a key thief and Alice are indistinguishable there; the recovery
 key is the one thing the thief does not have. `LT01` (controller retirement
@@ -346,11 +346,11 @@ is deleted. None is typed by hand: each is **derived** from the two partitions'
 `script-identity.json` given the registry identity the boot transaction is about
 to create — the application policy is the naming application script's applied
 hash; the three witness policies are `witness(kind, registry)` applied for
-`kind` 0, 1, 2 (N1). The conformance rows blueprint-encoding-round-trip/submitted-datum-byte-round-trip/state-fields-chain-round-trip assert that the
+`kind` 0, 1, 2 (controller-authorizes-active-insertion). The conformance rows blueprint-encoding-round-trip/submitted-datum-byte-round-trip/state-fields-chain-round-trip assert that the
 derivation round-trips through the boot datum. A placeholder id, or a retained
 removed field, is a contract change and is refused as a finding.
 
-The executable half of X1 stays in #157. The encoding change forces exactly
+The executable half of compiled-wire-conformance stays in #157. The encoding change forces exactly
 seven library files to follow under `-Werror` — `Config.hs`,
 `TxBuilder/{ConnectedFold,Reject,Update,Internal}.hs`, and (amendment of
 2026-09-17, ticket-157 operator question (Q-003)) `Deployment.hs` and `TxBuilder/Register.hs` —
@@ -369,7 +369,7 @@ function that registers nothing is a trap for the next reader.
 
 ### Known weaknesses, stated so they are read
 
-Adjudicated *wanted, and visible* (want-ledger R2 and R3):
+Adjudicated *wanted, and visible* (want-ledger seven-edges-interface and refused-combinations-as-complement):
 
 - **The quorum is fixed for the life of the name.** No action rewrites
   `retirement_quorum` after booking; a member who is lost or hostile is
@@ -377,11 +377,11 @@ Adjudicated *wanted, and visible* (want-ledger R2 and R3):
 - **The quorum can retire the name while the controller is present.** Nothing
   checks that Alice is gone; a threshold of members ends the name at any time.
 
-The naming docs (X2) state both in the retirement section.
+The naming docs (published-naming-lifecycle) state both in the retirement section.
 
 ## Rejection behavior
 
-Every refusal in seven-admitted-edges, tree-edge-admission-by-approval, mint-matches-edge-deltas, token-destinations-and-refunds, N1, N2 and N4 is a distinct trace label,
+Every refusal in seven-admitted-edges, tree-edge-admission-by-approval, mint-matches-edge-deltas, token-destinations-and-refunds, controller-authorizes-active-insertion, controller-authorizes-absent-to-active-update and refund-owner-authorizes-absent-deletion is a distinct trace label,
 observable in a script failure, and has a test row that produces it and a
 control that shows the accepting shape.
 

@@ -21,14 +21,14 @@ value the supply laws are simply false.
 ```mermaid
 flowchart TD
     G["Reachable state<br/>(genesis, closed under accepted folds)"] --> C["Consistent:<br/>root commits the map,<br/>supply laws, custody soundness"]
-    C --> S3["S3 sync<br/>W1 active unique<br/>W2 absent unique<br/>W4 kinds exclude"]
-    C --> S1["S1 soundness"]
-    S1 --> S2["S2 permanence"]
-    C --> O1["O1 occupancy"]
-    O1 --> T1["T1 termination"]
-    C --> P1["P1 policing"]
-    C --> L1["L1 atomicity"]
-    S1 --> W3["W3 plurality"]
+    C --> S3["Supply matches leaf state<br/>Active witness unique<br/>Absent witness unique<br/>Witness kinds exclude"]
+    C --> S1["Terminal attestation soundness"]
+    S1 --> S2["Terminal attestation permanence"]
+    C --> O1["Booking requires an untaken key"]
+    O1 --> T1["Terminal key cannot change"]
+    C --> P1["Tree change requires approval"]
+    C --> L1["Request spent once in order"]
+    S1 --> W3["Terminal witnesses may be plural"]
 ```
 
 Every promise is reached through one invariant — `Consistent` — that the model

@@ -39,13 +39,13 @@ flowchart LR
 
 | line | severity | observable result |
 |---|---|---|
-| A184-FOLD | BLOCKING | register-active-key accepts one fold under the open policy and the receipt names the open policy and parameter count, fold transaction, active policy/key, minted assets, requested and observed destination, and exactly one delivered active asset. |
-| A184-CONJUNCTS | BLOCKING | The receipt asserts separately that refunds and signers are empty, destination datum bytes bind to the request, the request covers the tip, only the registry root changes, and that root commits the landed trie. |
-| A184-DUPLICATE | BLOCKING | A second insert at the same committed key is refused on chain with state-script attribution and a fresh-key transaction through the same builder accepts in the same run. The compiled validator suite owns the `key-exists` name because ledger logs may be empty. |
-| A184-KEYED-MINT | BLOCKING | Two distinct keys with claimed `2/0` and actual `1/1` distribution are refused on chain with state-script attribution, while the same keys with correct `1/1` distribution accept in the same run. The compiled validator suite owns the `net-mint-mismatch` name. |
-| A184-SEQUENCE | BLOCKING | Every accepted fold is committed into the manager trie before the next proof is built; no control or refusal is proved against the boot root after an earlier fold landed. |
-| A184-WIRING | BLOCKING | register-active-key is in the generic-row invocation, expected receipt set, accounting and verdict assertions; the old #184 mapping comment is removed; the workflow step and root `just ci` both exit 0. |
-| A184-COPIES | ADVISORY, required | `rows.json`, workflow assertions, receipt schema and tests, consumer page and speech all describe the same executed row and honest trace limit. No residual is authorized for this acceptance line. |
+| open-registration-fold | BLOCKING | register-active-key accepts one fold under the open policy and the receipt names the open policy and parameter count, fold transaction, active policy/key, minted assets, requested and observed destination, and exactly one delivered active asset. |
+| registration-transaction-conjuncts | BLOCKING | The receipt asserts separately that refunds and signers are empty, destination datum bytes bind to the request, the request covers the tip, only the registry root changes, and that root commits the landed trie. |
+| duplicate-key-refusal-control | BLOCKING | A second insert at the same committed key is refused on chain with state-script attribution and a fresh-key transaction through the same builder accepts in the same run. The compiled validator suite owns the `key-exists` name because ledger logs may be empty. |
+| keyed-mint-distribution-control | BLOCKING | Two distinct keys with claimed `2/0` and actual `1/1` distribution are refused on chain with state-script attribution, while the same keys with correct `1/1` distribution accept in the same run. The compiled validator suite owns the `net-mint-mismatch` name. |
+| proofs-use-latest-committed-root | BLOCKING | Every accepted fold is committed into the manager trie before the next proof is built; no control or refusal is proved against the boot root after an earlier fold landed. |
+| runner-receipts-and-workflow-agree | BLOCKING | register-active-key is in the generic-row invocation, expected receipt set, accounting and verdict assertions; the old #184 mapping comment is removed; the workflow step and root `just ci` both exit 0. |
+| documentation-and-evidence-agree | ADVISORY, required | `rows.json`, workflow assertions, receipt schema and tests, consumer page and speech all describe the same executed row and honest trace limit. No residual is authorized for this acceptance line. |
 
 ## Receipt truth contract
 

@@ -11,7 +11,7 @@ rather than a repository directory or a 404.
 ## Observed (2026-09-09, main 9e8d6b57)
 
 - Live playable page HTTP 200, title "Singular · A name and its custody",
-  Delete present (generic registry simulator, not an M1 naming profile).
+  Delete present (generic registry simulator, not an first milestone naming profile).
 - GitHub README rewrites `<a href="simulator/">` to
   `/lambdasistemi/singular/blob/main/simulator`, which serves the source
   tree.
