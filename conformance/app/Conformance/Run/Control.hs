@@ -4,8 +4,8 @@ Description : Split out of Conformance.Run (#263); see that module's header
 License     : Apache-2.0
 -}
 module Conformance.Run.Control
-    ( caRows
-    , csRows
+    ( authenticationRows
+    , wireRows
     , programRows
     , outsideRows
     , harnessRows
@@ -13,6 +13,7 @@ module Conformance.Run.Control
     , canonicalRows
     , Control (..)
     , readControl
+    , controlName
     , ReasonControl (..)
     , parseReasonControl
     , controlledReason
@@ -23,6 +24,7 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import System.Environment (lookupEnv)
 
+import Conformance.Authentication.Programs qualified as Authentication
 import Conformance.Edge.Programs (Program (..), programs)
 import Conformance.Mirror (failWith)
 
@@ -35,15 +37,13 @@ these lists, never by exclusion: a catch-all partition silently absorbs
 the next family of rows (canonical-seed-identity-tokenless-output-authentication were once routed into the serialization
 session by a notElem-registry-operations catch-all). A row in no family fails loudly.
 -}
-caRows, csRows :: [String]
-caRows =
-    [ "canonical-seed-identity"
-    , "rival-seed-authentication"
-    , "policy-address-only-authentication-control"
-    , "applied-validator-identity"
-    , "tokenless-output-authentication"
-    ]
-csRows =
+
+-- | The registry-identity rows, read off the authentication programs.
+authenticationRows :: [String]
+authenticationRows = map Authentication.programRow Authentication.programs
+
+wireRows :: [String]
+wireRows =
     [ "blueprint-encoding-round-trip"
     , "submitted-datum-byte-round-trip"
     , "update-redeemer-constructor-witnesses"
@@ -76,7 +76,7 @@ cgSessionRows :: [String]
 cgSessionRows = programRows <> outsideRows <> harnessRows
 
 canonicalRows :: [String]
-canonicalRows = caRows <> csRows <> cgSessionRows
+canonicalRows = authenticationRows <> wireRows <> cgSessionRows
 
 data Control
     = Normal
@@ -172,3 +172,18 @@ controlledReason control row step lean = case control of
     Just named
         | rcRow named == row, rcStep named == step -> rcReason named
     _ -> lean
+
+-- | The name a control is set by, as the vocabularies' programs arm it.
+controlName :: Control -> String
+controlName control = case control of
+    Normal -> "normal"
+    WrongReason -> "wrong-reason"
+    FalseClaim -> "false-claim"
+    WrongIndex -> "wrong-index"
+    WrongParams -> "wrong-params"
+    FalseDatum -> "false-datum"
+    MissingWitness -> "missing-witness"
+    NaiveAuthenticator -> "naive-authenticator"
+    UnappliedAddress -> "unapplied-address"
+    BlueprintWrongArity -> "blueprint-wrong-arity"
+    LegacySixField -> "legacy-six-field"

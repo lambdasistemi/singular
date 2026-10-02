@@ -49,8 +49,12 @@ module Conformance.Run (runForkProbe, runRows) where
 
 import Conformance.FoldFixture qualified as FoldFixture
 
+import Conformance.Authentication.Programs qualified as Authentication
 import Conformance.Edge.Programs (programFor)
-import Conformance.Run.CaRows
+import Conformance.Run.Authentication
+    ( openIdentitySession
+    , runAuthenticationRow
+    )
 import Conformance.Run.Cage
 import Conformance.Run.CgRows
 import Conformance.Run.Control
@@ -108,11 +112,11 @@ runRows rawRows receiptsDir = do
     rows <- validateRows rawRows
     control <- readControl
     emit "control" (show control)
-    let caRequested = any (`elem` caRows) rows
+    let identityRequested = any (`elem` authenticationRows) rows
         cgRequested = any (`elem` cgSessionRows) rows
     -- Armed controls must never pass vacuously: each mode belongs to
     -- one session, and a session it cannot fire in is refused here.
-    when (caRequested && control == WrongReason) $
+    when (identityRequested && control == WrongReason) $
         failWith
             "wrong-reason arms a refusal matcher, but the registry-identity rows \
             \assert no ledger refusal (the rival is accepted by \
@@ -151,12 +155,12 @@ runRows rawRows receiptsDir = do
                 `notElem` ["blueprint-encoding-round-trip", "script-parameter-application"]
             ]
         cgDevnet = [r | r <- devnetRows, r `elem` cgSessionRows]
-        caDevnet = [r | r <- devnetRows, r `elem` caRows]
-        csDevnet = [r | r <- devnetRows, r `elem` csRows]
+        identityDevnet = [r | r <- devnetRows, r `elem` authenticationRows]
+        wireDevnet = [r | r <- devnetRows, r `elem` wireRows]
         unpartitioned =
             [ r
             | r <- devnetRows
-            , r `notElem` (caRows <> csRows <> cgSessionRows)
+            , r `notElem` (authenticationRows <> wireRows <> cgSessionRows)
             ]
     unless (null unpartitioned) $
         failWith
@@ -182,13 +186,13 @@ runRows rawRows receiptsDir = do
                                 receiptsDir
                                 caps
                                 replayIndex
-        session caDevnet
+        session identityDevnet
         session cgDevnet
-        unless (null csDevnet) $
+        unless (null wireDevnet) $
             bracketTmpDir $ do
                 withReplayingNode blueprintPath receiptsDir (T.pack nodeVer) $ \caps replayIndex ->
                     runCSSession
-                        csDevnet
+                        wireDevnet
                         control
                         stateBytes
                         requestBytes
@@ -221,7 +225,9 @@ validateRows raw = do
         failWith ("run cannot execute rows: " <> unwords bad)
     let requested = [r | r <- canonicalRows, r `elem` raw]
     when
-        (any (`elem` caRows) requested && any (`elem` cgSessionRows) requested)
+        ( any (`elem` authenticationRows) requested
+            && any (`elem` cgSessionRows) requested
+        )
         $ failWith
             "registry-identity and registry-operations rows run as separate sessions, one devnet \
             \each: run the identity requirements, then the registry operation requirements"
@@ -257,7 +263,7 @@ runSession
         let prov = capReads caps
         checkFunding prov funderAddr defaultFundingFloor
         _ <- Cage.withView prov (pure . Cage.viewProtocolParams)
-        let caMode = any (`elem` caRows) rows
+        let identityMode = any (`elem` authenticationRows) rows
             environment cfg world = do
                 tm <- mkPureTrieManager
                 mirror <- newMirror
@@ -294,7 +300,7 @@ runSession
                         , envBlueprintPath = blueprintPath
                         , envRefs = refsRef
                         , envValidUnits = validUnits
-                        , envCa = world
+                        , envIdentity = world
                         , envWorlds = worlds
                         , envKey2 = key2Ref
                         , envHeld = heldRef
@@ -305,34 +311,16 @@ runSession
                         , envReplay = replayIndex
                         }
         (env, bootLine) <-
-            if caMode
+            if identityMode
                 then do
-                    -- registry-identity session: publish the canonical seed by a
-                    -- designation split, then canonical-seed-identity boots from it.
-                    -- No cage is booted here: the boot IS row canonical-seed-identity.
-                    --
-                    -- The wallet is swept BEFORE the designation. After it,
-                    -- the canonical seed is an ordinary ada-only output and
-                    -- a sweep would spend the very one the config pins.
-                    consolidateWallet prov caps
-                    (seedTxIn, _) <- designateSplit prov caps "canonical"
-                    let seedRef = txInToRef seedTxIn
-                        cfg = cageCfg stateBytes requestBytes namingCodes seedRef
-                    world <-
-                        CaWorld cfg seedRef stateBytes
-                            <$> newIORef Nothing
-                            <*> newIORef Nothing
-                            <*> newIORef Nothing
-                            <*> newIORef Nothing
-                            <*> newIORef Nothing
-                            <*> newIORef Nothing
+                    -- The session's prologue publishes the canonical seed; its
+                    -- registry's boot is the first row's, so none boots here.
+                    (cfg, world) <- openIdentitySession prov caps codes
                     env <- environment cfg (Just world)
                     pure
                         ( env
-                        , "registry-identity session: canonical seed published at outRef "
-                            <> show seedRef
-                            <> " — the consumer derives the canonical \
-                               \name as SHA-256 of this outRef"
+                        , "registry-identity session: the canonical seed is published; \
+                          \the consumer derives the canonical name as SHA-256 of its output reference"
                         )
                 else do
                     -- Every registry row boots its own registries; the
@@ -354,8 +342,8 @@ runSession
                     >> runRow env row
             )
             rows
-        if caMode
-            then writeCaExecutionUnitsAndTransactionSize env rows
+        if identityMode
+            then writeIdentityExecutionUnitsAndTransactionSize env rows
             else writeExecutionUnitsAndTransactionSizeReceipt env rows
         emit
             "complete"
@@ -382,7 +370,7 @@ runRow env row = do
     -- A registry-identity row boots from the seed the session designated, so its wallet
     -- is left exactly as the designation left it. Every other row wants
     -- one ada-only output to fund from.
-    unless (row `elem` caRows) (consolidateFunding env)
+    unless (row `elem` authenticationRows) (consolidateFunding env)
     -- #177 A-003: every boot in this session references the state
     -- validator instead of carrying it inline. Idempotent, so it is
     -- established before the first row and found by every later one.
@@ -392,11 +380,9 @@ runRow env row = do
 -- | One row by what runs it: the registry-identity runners, a program, or its own runner.
 runRowIn :: Env -> String -> IO ()
 runRowIn env row = case (row, programFor row) of
-    ("canonical-seed-identity", _) -> withCa env row runCanonicalSeedIdentity
-    ("rival-seed-authentication", _) -> withCa env row runRivalSeedAuthentication
-    ("policy-address-only-authentication-control", _) -> withCa env row runPolicyAddressOnlyAuthenticationControl
-    ("applied-validator-identity", _) -> withCa env row runAppliedValidatorIdentity
-    ("tokenless-output-authentication", _) -> withCa env row runTokenlessOutputAuthentication
+    _ | Just program <- Authentication.programFor row -> case envIdentity env of
+        Just world -> runAuthenticationRow env world program
+        Nothing -> failWith (row <> " needs a registry-identity session")
     ("fold-against-superseded-root", _) -> runFoldAgainstSupersededRoot env
     ("surplus-fold-actions", _) -> runSurplusFoldActions env
     ("batch", _) -> runBatchHarness env

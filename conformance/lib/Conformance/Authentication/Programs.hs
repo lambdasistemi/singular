@@ -77,8 +77,10 @@ data Decision
 data Instruction
     = -- | publish a seed by splitting a wallet output in two
       PublishSeed Seed
-    | {- | boot a registry from a published seed; the ledger must accept it,
-      and the registry's state output is recorded as it stood after the boot
+    | {- | boot a registry from a published seed, with the canonical
+      registry's configuration and only the seed changed, so a rival differs
+      from it in the seed alone; the ledger must accept it, and the registry's
+      state output is recorded as it stood after the boot
       -}
       BootFrom Seed
     | {- | the registry's state output, read from the chain, carries exactly
@@ -143,7 +145,43 @@ sessionPrologue = [PublishSeed CanonicalSeed]
 -- | Every registry-identity row, in inventory order.
 programs :: [Program]
 programs =
-    []
+    [ Program
+        "canonical-seed-identity"
+        (CitesBootOf CanonicalSeed)
+        [BootFrom CanonicalSeed, NameIsSeedDerivation CanonicalSeed]
+    , Program
+        "rival-seed-authentication"
+        (CitesBootOf RivalSeed)
+        [ PublishSeed RivalSeed
+        , BootFrom RivalSeed
+        , NameIsSeedDerivation CanonicalSeed
+        , NameIsSeedDerivation RivalSeed
+        , NamesDiffer CanonicalSeed RivalSeed
+        , UnchangedSinceBoot CanonicalSeed
+        , Authenticate DerivedName (StateOutputOf RivalSeed) RejectsOnName
+        , Authenticate DerivedName (StateOutputOf CanonicalSeed) Accepts
+        ]
+    , Program
+        "policy-address-only-authentication-control"
+        (CitesBootOf RivalSeed)
+        [ Authenticate PolicyOnly (StateOutputOf RivalSeed) Accepts
+        , Authenticate DerivedName (StateOutputOf RivalSeed) RejectsOnName
+        ]
+    , Program
+        "applied-validator-identity"
+        (CitesBootOf CanonicalSeed)
+        [ StateIdentityPinned
+        , StateAddressDerived
+        , RequestAddressApplied
+        , CorruptedDerivationRefused
+        ]
+    , Program
+        "tokenless-output-authentication"
+        CitesForgery
+        [ ForgeTokenlessOutput
+        , Authenticate DerivedName ForgedOutput RejectsOnMissingPolicy
+        ]
+    ]
 
 programFor :: String -> Maybe Program
 programFor row = find ((== row) . programRow) programs
@@ -221,7 +259,7 @@ instructionReading instruction = case instruction of
             <> registryReading seed
             <> " from "
             <> seedReading seed
-            <> "; the ledger accepts it."
+            <> ", with the canonical registry's configuration and only the seed changed; the ledger accepts it."
     NameIsSeedDerivation seed ->
         "Read "
             <> registryReading seed

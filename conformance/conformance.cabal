@@ -135,7 +135,7 @@ common live-runner
     Conformance.Run.ForkProbe
     Conformance.Run.CgRows
     Conformance.Run.CsRows
-    Conformance.Run.CaRows
+    Conformance.Run.Authentication
     Conformance.Run.Live
     Conformance.Run.Retraction
     Conformance.Run.Step

@@ -10,8 +10,11 @@ module Conformance.Run.Environment
     , withHeldView
     , pinnedProvider
     , RowCage (..)
-    , CaWorld (..)
-    , CaSnap (..)
+    , IdentityWorld (..)
+    , PublishedSeed (..)
+    , Booted (..)
+    , Forgery (..)
+    , Measured (..)
     , requireEnv
     , loadCodes
     , loadNamingCodes
@@ -31,6 +34,7 @@ module Conformance.Run.Environment
     , txInHex
     ) where
 
+import Conformance.Authentication.Programs (Seed)
 import Conformance.FoldFixture qualified as FoldFixture
 import Conformance.Run.Control
 import Conformance.Run.Replay (ReplayIndex)
@@ -150,10 +154,10 @@ data Env = Env
     {- ^ last valid fold's measured units: the hand-built fold
     declares twice these, so the budget covers the error path
     -}
-    , envCa :: Maybe CaWorld
-    {- ^ the registry-identity session's world: the published canonical seed, the
-    boots' results, the canonical snapshot. Nothing in a registry-operations session
-    (the row validator keeps the two sessions apart).
+    , envIdentity :: Maybe IdentityWorld
+    {- ^ the registry-identity session's world: the seeds it published and the
+    registries booted from them. Nothing in a registry-operations session (the
+    row validator keeps the two sessions apart).
     -}
     , envWorlds :: IORef (Map.Map String RowCage)
     {- ^ the registry rows' registries, booted on first use by name so
@@ -202,45 +206,48 @@ data RowCage = RowCage
     -}
     }
 
-{- | The registry-identity session's world (issue #69). The canonical seed's outRef
-is the publication a consumer derives the canonical name from; the
-IORefs carry what the rows produce in order (canonical-seed-identity's token id and
-snapshot, rival-seed-authentication's rival token id and measurements for policy-address-only-authentication-control's
-receipt).
+{- | The registry-identity session's world: every seed the authentication programs
+published and the registry booted from it, and the output forged at the
+canonical address. Instructions read it; nothing else does.
 -}
-data CaWorld = CaWorld
-    { caCfg :: CageConfig
-    -- ^ the canonical cage config (seed = the published canonical seed)
-    , caSeedRef :: OnChainTxOutRef
-    , caRawState :: SBS.ShortByteString
-    {- ^ this run's unapplied state code; applied-validator-identity hashes it against the
-    pinned manifest entry before applying the declared parameters
-    -}
-    , caTidRef :: IORef (Maybe TokenId)
-    , caSnapRef :: IORef (Maybe CaSnap)
-    , caBootTxRef :: IORef (Maybe ConwayTx)
-    {- ^ canonical-seed-identity's unsigned boot tx: tokenless-output-authentication's no-script detector must fire
-    on it, proving the detector can detect a script witness
-    -}
-    , caBootMeasureRef
-        :: IORef (Maybe (String, Integer, Integer, Integer))
-    -- ^ canonical-seed-identity's boot txid and measurements; applied-validator-identity's receipt evidence
-    , caRivalTidRef :: IORef (Maybe TokenId)
-    , caRivalMeasure
-        :: IORef (Maybe (String, Integer, Integer, Integer))
-    {- ^ rival txid, mem, cpu, size — rival-seed-authentication's accepted tx, reused as
-    policy-address-only-authentication-control's receipt evidence
-    -}
+data IdentityWorld = IdentityWorld
+    { identityCodes
+        :: (SBS.ShortByteString, SBS.ShortByteString, NamingCodes)
+    -- ^ the unapplied state, request and naming code every registry boots from
+    , identitySeeds :: IORef (Map.Map Seed PublishedSeed)
+    , identityForgery :: IORef (Maybe Forgery)
     }
 
-{- | The canonical registry's chain identity at canonical-seed-identity time: the exact
-UTxO, its value and its datum. rival-seed-authentication proves the rival left it
-untouched by comparing against this snapshot read back later.
+-- | A seed a designation split published, and the registry booted from it.
+data PublishedSeed = PublishedSeed
+    { publishedReference :: OnChainTxOutRef
+    , publishedConfig :: CageConfig
+    , publishedBoot :: Maybe Booted
+    }
+
+{- | A registry's boot: its token, the unsigned boot transaction (it carries
+the state script, so a script detector must find one on it), the boot's
+measured units and size, and its state output as the boot left it.
 -}
-data CaSnap = CaSnap
-    { csIn :: TxIn
-    , csValue :: MaryValue
-    , csDatum :: Datum ConwayEra
+data Booted = Booted
+    { bootedToken :: TokenId
+    , bootedTransaction :: ConwayTx
+    , bootedMeasure :: Measured
+    , bootedState :: (TxIn, MaryValue, Datum ConwayEra)
+    }
+
+-- | The tokenless output paid to the canonical address, read back live.
+data Forgery = Forgery
+    { forgeryMeasure :: Measured
+    , forgeryOutput :: TxOut ConwayEra
+    }
+
+-- | A submitted transaction's id, memory and CPU units, and size.
+data Measured = Measured
+    { measuredId :: String
+    , measuredMem :: Integer
+    , measuredCpu :: Integer
+    , measuredSize :: Integer
     }
 
 requireEnv :: String -> IO FilePath

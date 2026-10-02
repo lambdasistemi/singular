@@ -5,7 +5,7 @@ License     : Apache-2.0
 -}
 module Conformance.Run.Receipts
     ( writeExecutionUnitsAndTransactionSizeReceipt
-    , writeCaExecutionUnitsAndTransactionSize
+    , writeIdentityExecutionUnitsAndTransactionSize
     , writeStoryReceipt
     , addReceiptSteps
     , writeRowReceipt
@@ -123,9 +123,10 @@ applied-validator-identity name one of those two transactions and reuse its meas
 tokenless-output-authentication executes no script and reports zeros honestly. Written only
 when the full registry-identity set ran, and bound to the run's own receipts.
 -}
-writeCaExecutionUnitsAndTransactionSize :: Env -> [String] -> IO ()
-writeCaExecutionUnitsAndTransactionSize env rows
-    | all (`elem` rows) caRows = do
+writeIdentityExecutionUnitsAndTransactionSize
+    :: Env -> [String] -> IO ()
+writeIdentityExecutionUnitsAndTransactionSize env rows
+    | all (`elem` rows) authenticationRows = do
         receipts <-
             mapM
                 readRowReceipt
