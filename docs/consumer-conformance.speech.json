@@ -35,7 +35,7 @@
       "pause": 400
     },
     {
-      "text": "Eleven rows, four dispositions that must never be mistaken for one another. Unmet by ruling: the early rejection, CG zero nine. The consumer requires that a folder must not reject a request during its processing window, while Singular's model lets a folder reject a request with no timing admission, and the chain accepts that reject. By operator ruling of the first of October 2026 the consumer requirement is kept unmet, and alignment is tracked in cardano-keri issue four sixty-eight. Held: executed, and the consumer requirement is unmet — the empty fold, the surplus action, the crossed refunds. Resolved by ruling: defect evidence of the outstanding owner gate. Superseded: observations kept, claims withdrawn, no execution credit. The run ends non-zero while anything is held or unmet — never a pass.",
+      "text": "Eleven rows, four dispositions that must never be mistaken for one another. Unmet by ruling: the early rejection, CG zero nine. The consumer requires that a folder must not reject a request during its processing window, while Singular's model lets a folder reject a request with no timing admission, and the chain accepts that reject. By operator ruling of the first of October 2026 the consumer requirement is kept unmet, and alignment is tracked in cardano-keri issue four sixty-eight. The same verdict also keeps unmet three rows where the chain refuses and Lean has no counterpart to compare with: the stale-proof fold, the surplus action and the wrong constructor, by operator ruling of the second of October, each with its follow-up, issues three forty-six, three forty-five and three forty-seven. Held: executed, and the consumer requirement is unmet — the empty fold and the crossed refunds. Resolved by ruling: defect evidence of the outstanding owner gate. Superseded: observations kept, claims withdrawn, no execution credit. The run ends non-zero while anything is held or unmet — never a pass.",
       "pause": 400
     },
     {
@@ -71,7 +71,7 @@
       "pause": 400
     },
     {
-      "text": "One fresh cage per row: submitted datum bytes read back identical, one executing witness per spending redeemer constructor, a wrong constructor index refused by both cage scripts, request and mint constructors covered with the unreachable migration recorded, and the six-field token state round-tripped with the stake credential absent and present.",
+      "text": "One fresh cage per row: submitted datum bytes read back identical, one executing witness per spending redeemer constructor, a wrong constructor index refused by both cage scripts, request and mint constructors covered with the unreachable migration recorded, and the six-field token state round-tripped with the stake credential absent and present. The wrong constructor index is unmet by ruling: the chain refuses, and Lean has no counterpart to compare with; follow-up issue three forty-seven.",
       "pause": 400
     },
     {
@@ -123,7 +123,7 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "abdf292112299dc9255b4b1a35bd5307ec10a331ac67881def9e39db2cc422c5"
+    "sha256": "d9d9ca2fc68ec159cce55c9140d8f42fae525e291c8b67019c2fefdc714ecc30"
   },
   "historical-execution-reports": [
     {
@@ -141,7 +141,7 @@
       "pause": 400
     },
     {
-      "text": "Four rows rest on predecessor runs and are cited, not re-executed, and a fifth is superseded with its observation preserved and no credit. The consumer-gap rows are executed holds now: the requirement stays unmet, and a held row is never a pass. The serialization schema rows await the ownerless repair before fresh execution, because coverage is not inherited across a wire-format change.",
+      "text": "Four rows rest on predecessor runs and are cited, not re-executed, and a fifth is superseded with its observation preserved and no credit. The consumer-gap rows are executed holds now, apart from the surplus action, which is unmet by ruling: the requirement stays unmet, and a held or unmet row is never a pass. The serialization schema rows await the ownerless repair before fresh execution, because coverage is not inherited across a wire-format change.",
       "pause": 400
     },
     {
@@ -169,7 +169,7 @@
       "pause": 400
     },
     {
-      "text": "The generic session must end with exactly the three held rows and the one unmet row, the identity session must succeed, and the serialization session must show its two partial rows. A nonzero exit alone proves nothing: inspect exact identities, source binding, verdicts, residuals and controls. An armed control must reach its intended assertion; an ordinary partial exit is not a control failure.",
+      "text": "The generic session must end with exactly the two held rows and the three unmet rows, the identity session must succeed, and the serialization session must show its two partial rows, with the wrong constructor unmet by ruling. A nonzero exit alone proves nothing: inspect exact identities, source binding, verdicts, residuals and controls. An armed control must reach its intended assertion; an ordinary partial exit is not a control failure.",
       "pause": 400
     }
   ],
@@ -230,7 +230,7 @@
   "current-registry-mode-integration": [
     {
       "pause": 400,
-      "text": "The released interface follows the eight-field registry-mode state contract. The historical reports below retain their original transaction identities, measurements and limitations; they are not current execution claims. Coverage requires fresh receipts bound to the source and blueprint being replayed, and a build or a green check of expected debt grants no coverage."
+      "text": "The released interface follows the eight-field registry-mode state contract. The historical reports below retain their original transaction identities, measurements and limitations; they are not current execution claims. Coverage requires fresh receipts bound to the source and blueprint being replayed, and a build or a green check of expected debt grants no coverage. The generic observations of the empty fold and the crossed refunds stay held; the surplus action is unmet by ruling, with no counterpart in the model."
     }
   ],
   "model-compared-registration-and-retirement-candidate-229": [

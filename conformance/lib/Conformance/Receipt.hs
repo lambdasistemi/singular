@@ -32,7 +32,14 @@ does not move.
 module Conformance.Receipt
     ( Outcome (..)
     , Verdict (..)
+    , UnmetRuling (..)
+    , unmetRuling
+    , unmetReading
     , RefusalInfo (..)
+    , ReplayEvidence (..)
+    , ReplayCorrespondence (..)
+    , stepReplay
+    , storyCorrespondence
     , ConstructorStanding (..)
     , ConstructorEvidence (..)
     , PartialInfo (..)
@@ -53,9 +60,16 @@ module Conformance.Receipt
 
 import Conformance.Evidence.Asset (AssetEntry (..))
 import Conformance.NodeRejection (boundedNodeReason)
+import Conformance.Replay
+    ( ReplayCorrespondence (..)
+    , ReplayEvidence (..)
+    , causeName
+    )
 import Conformance.Story.Live
-    ( Edge (..)
+    ( BatchTamper (..)
+    , Edge (..)
     , Tamper (..)
+    , batchTamperName
     , edgeName
     , tamperName
     )
@@ -63,10 +77,12 @@ import Control.Exception (ErrorCall (..), throwIO)
 
 import Data.Aeson
     ( FromJSON (..)
+    , Result (..)
     , ToJSON (..)
     , Value (..)
     , eitherDecode
     , encode
+    , fromJSON
     , object
     , withObject
     , withText
@@ -124,6 +140,10 @@ data RefusalInfo = RefusalInfo
     -}
     , refusalLimit :: !(Maybe Text)
     -- ^ explicit attribution limit when no branch is available
+    , refusalReplay :: !(Maybe [ReplayEvidence])
+    {- ^ the traced replay of each failing purpose of the refused transaction
+    (absent on receipts written before it)
+    -}
     }
     deriving stock (Show, Eq)
 
@@ -136,6 +156,7 @@ instance FromJSON RefusalInfo where
             <*> o .: "hashes"
             <*> o .:? "branch"
             <*> o .:? "limit"
+            <*> o .:? "replay"
 
 instance ToJSON RefusalInfo where
     toJSON r =
@@ -146,6 +167,7 @@ instance ToJSON RefusalInfo where
             , "hashes" .= refusalHashes r
             , "branch" .= refusalBranch r
             , "limit" .= refusalLimit r
+            , "replay" .= refusalReplay r
             ]
 
 {- | How a completed row stands against the behavioral models. The
@@ -181,8 +203,11 @@ data Verdict
       @0e638fad@, @RegistryGoals.lean@ blob @d38e81c0@) requires
       what the registry deliberately does not do
       (lambdasistemi/singular#320); alignment is
-      lambdasistemi/cardano-keri#468. Recorded, published, never read
-      as a pass: the run exits non-zero while any row is unmet.
+      lambdasistemi/cardano-keri#468. Also, by operator ruling 2026-10-02
+      (narrowed #287), a row with no model counterpart: CG10, CG12 and CS04,
+      whose follow-ups are lambdasistemi/singular#346, #345 and #347.
+      Recorded, published, never read as a pass: the run exits non-zero
+      while any row is unmet.
       -}
       UnmetByRuling
     | {- | the row executed its available legs but named constructors
@@ -421,6 +446,10 @@ data Receipt = Receipt
     -}
     , receiptSteps :: !(Maybe [Value])
     -- ^ generic live steps, each written after model and chain comparison.
+    , receiptReplayCorrespondence :: !(Maybe ReplayCorrespondence)
+    {- ^ the traced build every replay reason in the receipt relies on (absent
+    on receipts written before it)
+    -}
     }
     deriving stock (Show, Eq)
 
@@ -444,6 +473,7 @@ instance FromJSON Receipt where
             <*> o .:? "partial"
             <*> o .:? "derivation"
             <*> o .:? "steps"
+            <*> o .:? "replayCorrespondence"
 
 instance ToJSON Receipt where
     toJSON r =
@@ -465,6 +495,7 @@ instance ToJSON Receipt where
             , "partial" .= receiptPartial r
             , "derivation" .= receiptDerivation r
             , "steps" .= receiptSteps r
+            , "replayCorrespondence" .= receiptReplayCorrespondence r
             ]
 
 {- | Write one @receipt-<ROW>.json@ under the run's output directory.
@@ -493,9 +524,14 @@ writeReceiptFile dir r = case checkReceiptSize bounded of
 {- | Receipts stay readable: the CG05 refusal once embedded the whole
 compiled validator (~30KB of base64) because @show@ on the
 evaluation context prints every script and cost model.
+
+The bound is measured (#287): the largest live receipt, CG23's, is 12 563
+bytes, and 15 214 with the traced replay of each of its nine failing
+purposes and the correspondence its reasons rely on; 18 432 leaves it a
+fifth of headroom.
 -}
 maxReceiptBytes :: Int
-maxReceiptBytes = 16384
+maxReceiptBytes = 18432
 
 -- | The tampers that alter the payment an exit owes, as a step record names them.
 paymentTampers :: [Text]
@@ -521,6 +557,138 @@ retractableEdges =
 -- | Keep live node text readable inside each refusal step.
 maxLiveStepReasonChars :: Int
 maxLiveStepReasonChars = 300
+
+{- | A refused step's chain refusal with the replay of its failing purposes;
+unchanged when the replay recorded none.
+-}
+stepReplay :: [ReplayEvidence] -> Value -> Value
+stepReplay [] refusal = refusal
+stepReplay replay (Object fields) =
+    Object (KM.insert "replay" (toJSON replay) fields)
+stepReplay _ refusal = refusal
+
+{- | The correspondence a story receipt carries: the session's, exactly when
+one of its steps carries a replay.
+-}
+storyCorrespondence
+    :: Maybe ReplayCorrespondence -> [Value] -> Maybe ReplayCorrespondence
+storyCorrespondence correspondence steps
+    | any carriesReplay steps = correspondence
+    | otherwise = Nothing
+  where
+    carriesReplay step = case jsonField "refusal" =<< jsonField "chain" step of
+        Just (Object refusal) -> case KM.lookup "replay" refusal of
+            Just (Array entries) -> not (Vector.null entries)
+            _ -> False
+        _ -> False
+
+{- | A receipt's replay evidence, complete and agreeing with what the receipt
+claims: a step's @trace@ and an attribution's @branch@ are reasons a replay
+admitted, so either needs the replay that admitted it.
+-}
+checkReplay :: FilePath -> Receipt -> Either String Receipt
+checkReplay path receipt = do
+    steps <-
+        traverse
+            stepClaim
+            (zip [0 :: Int ..] (fromMaybe [] (receiptSteps receipt)))
+    let attribution =
+            [ ("refusal", refusalBranch info, refusalReplay info)
+            | Just info <- [receiptRefusal receipt]
+            ]
+        claims = concat steps <> attribution
+    mapM_
+        ( \(place, claim, replay) ->
+            either
+                (\problem -> Left (path <> ": " <> place <> ": " <> problem))
+                Right
+                (replayProblem claim replay)
+        )
+        claims
+    let reasons =
+            [ reason
+            | (_, _, Just entries) <- claims
+            , entry <- entries
+            , Just reason <- [replayReason entry]
+            ]
+    case (reasons, receiptReplayCorrespondence receipt) of
+        ([], _) -> Right receipt
+        (_, Just c)
+            | not
+                ( any
+                    T.null
+                    [ correspondenceSource c
+                    , correspondenceCompiler c
+                    , correspondenceFlags c
+                    , correspondenceDigest c
+                    ]
+                ) ->
+                Right receipt
+        _ ->
+            Left
+                (path <> ": replay reasons without the traced build they rely on")
+  where
+    stepClaim (i, step) = case jsonField "refusal" =<< jsonField "chain" step of
+        Just (Object refusal) -> do
+            replay <- case KM.lookup "replay" refusal of
+                Nothing -> Right Nothing
+                Just Null -> Right Nothing
+                Just value -> case fromJSON value of
+                    Success entries -> Right (Just entries)
+                    Error err ->
+                        Left
+                            (path <> ": step " <> show i <> ": unreadable replay: " <> err)
+            let claim = case KM.lookup "trace" refusal of
+                    Just (String reason) -> Just reason
+                    _ -> Nothing
+            Right [("step " <> show i, claim, replay)]
+        _ -> Right []
+
+{- | What is wrong with one refusal's replay against the reason the receipt
+claims for it, if anything.
+-}
+replayProblem
+    :: Maybe Text -> Maybe [ReplayEvidence] -> Either String ()
+replayProblem claim = \case
+    Nothing -> case claim of
+        Just reason ->
+            Left
+                ( "claims the traced reason "
+                    <> show reason
+                    <> " without the replay that admitted it"
+                )
+        Nothing -> Right ()
+    Just [] -> Left "replay names no failing purpose"
+    Just entries -> do
+        mapM_ entryProblem entries
+        case claim of
+            Just reason
+                | reason `notElem` [r | e <- entries, Just r <- [replayReason e]] ->
+                    Left
+                        ("claims " <> show reason <> ", a reason the replay did not admit")
+            _ -> Right ()
+  where
+    entryProblem e
+        | T.null (replayDeployedHash e) =
+            Left "replay names a purpose without its deployed hash"
+        | otherwise = case (replayReason e, replayCause e) of
+            (Just _, Just _) -> Left "replay names both a reason and a cause"
+            (Nothing, Nothing) -> Left "replay names neither a reason nor a cause"
+            (Just reason, Nothing)
+                | T.null reason -> Left "replay names an empty reason"
+                | maybe True T.null (replayTracedHash e) ->
+                    Left "replay names a reason without its traced hash"
+                | maybe True T.null (replayCaptureId e) ->
+                    Left "replay names a reason without the capture it was replayed from"
+                | otherwise -> Right ()
+            (Nothing, Just cause)
+                | cause `elem` map causeName [minBound .. maxBound] -> Right ()
+                | otherwise -> Left ("replay names an unknown cause " <> show cause)
+
+jsonField :: Key.Key -> Value -> Maybe Value
+jsonField name = \case
+    Object fields -> KM.lookup name fields
+    _ -> Nothing
 
 {- | Validate the generic evidence body independently of the runner. The
 runner computes its values; the loader refuses missing comparisons and
@@ -549,7 +717,10 @@ stepsComplete path receipt steps
     at name (Object fields) = KM.lookup name fields
     at _ _ = Nothing
     failure reason = Left (path <> ": invalid live step: " <> reason)
-    checkStep step = do
+    checkStep step = case at "batch" step of
+        Just _ -> batchRecordProblem path step
+        Nothing -> checkEdgeStep step
+    checkEdgeStep step = do
         edge <- case (at "registry" step, at "edge" step, at "request" step) of
             (Just (Number _), Just (String edge), Just (Object _))
                 | edge `elem` map (T.pack . edgeName) [minBound .. maxBound] ->
@@ -868,6 +1039,7 @@ loadReceipts dir = do
                     >>= checkPartial path
                     >>= checkDerivation path
                     >>= checkEdge path
+                    >>= checkReplay path
     checkDerivation path r = case receiptDerivation r of
         Nothing ->
             if receiptRow r == "CA04"
@@ -911,6 +1083,9 @@ loadReceipts dir = do
             | otherwise -> Right r
     checkEdge path r = case (receiptRow r, receiptSteps r) of
         ("CG21", Just steps) -> stepsComplete path r steps
+        -- The occupied-key insertion is a story since #287; an attribution
+        -- receipt written before it still loads as one.
+        ("CG05", Just steps) -> stepsComplete path r steps
         ("CG22", Just steps) -> stepsComplete path r steps
         ("CG07", Just steps) -> do
             checked <- stepsComplete path r steps
@@ -933,6 +1108,12 @@ loadReceipts dir = do
                         (path <> ": retraction window requires before, accepted control, after")
         ("CG23", Just steps) -> stepsComplete path r steps
         ("CG24", Just steps) -> stepsComplete path r steps
+        -- #287: the empty fold and the crossed refunds are compared with the
+        -- model's batch questions beside their attributed refusals.
+        ("CG11", Just steps) -> batchSteps path r steps
+        -- CG09 carries its known refund-position divergence (#361).
+        ("CG09", Just steps) -> batchSteps path r steps
+        ("CG19", Just steps) -> batchSteps path r steps
         ("sequence", Just steps) -> stepsComplete path r steps
         ("CG21", Nothing) -> Left (path <> ": registration names no live steps")
         ("CG22", Nothing) -> Left (path <> ": retirement names no live steps")
@@ -1218,3 +1399,105 @@ currentBase = do
                 "conformance list: git base unknown; \
                 \printing the declared plan"
             pure Nothing
+
+{- | A batch record, as the runner writes one for a batch submitted in one
+transaction and asked of the model's matching batch question: its registry, the
+question and the requests asked, a known tamper or none, the model's and the
+chain's outcomes and their comparison. A refusal names the scripts its hashes
+are; an agreement has one outcome on both sides, and a tampered batch agrees
+only by both refusing.
+-}
+batchRecordProblem :: FilePath -> Value -> Either String ()
+batchRecordProblem path step = do
+    case (at "registry", at "batch", at "requests") of
+        (Just (Number _), Just (String name), Just (Array _))
+            | name `elem` ["foldBatch", "rejectBatch"] -> Right ()
+        _ -> failure "missing registry, batch question or requests"
+    case at "tamper" of
+        Nothing -> Right ()
+        Just Null -> Right ()
+        Just (String name)
+            | name
+                `elem` map (T.pack . batchTamperName) [minBound .. maxBound :: BatchTamper] ->
+                Right ()
+        _ -> failure "unknown batch tamper"
+    let model = within "model" "outcome"
+        chain = within "chain" "outcome"
+    case (model, chain, at "comparison") of
+        (Just (String m), Just (String c), Just (String verdict))
+            | m `elem` ["accepted", "refused", "unsupported"]
+            , c `elem` ["accepted", "refused", "unsupported"]
+            , verdict `elem` ["agrees", "disagrees"] ->
+                Right ()
+        _ -> failure "missing or unknown model, chain or comparison outcome"
+    case chain of
+        Just (String "accepted") -> case within "chain" "txid" of
+            Just (String _) -> Right ()
+            _ -> failure "accepted batch names no transaction"
+        Just (String "refused") -> case at "chain" >>= field "refusal" of
+            Just (Object refusal)
+                | Just (Array hashes) <- KM.lookup "hashes" refusal
+                , not (Vector.null hashes) ->
+                    Right ()
+            _ -> failure "refused batch names no refusing script"
+        _ -> Right ()
+    case at "comparison" of
+        Just (String "agrees")
+            | model /= chain -> failure "batch agreement changes the outcome"
+            | at "tamper" `notElem` [Nothing, Just Null]
+            , chain /= Just (String "refused") ->
+                failure
+                    "tampered batch agreement does not have model and chain refusal"
+        _ -> Right ()
+  where
+    at name = field name step
+    within outer inner = at outer >>= field inner
+    field name = \case
+        Object fields -> KM.lookup name fields
+        _ -> Nothing
+    failure reason = Left (path <> ": invalid batch record: " <> reason)
+
+-- | A row's batch records beside its attributed refusal: every one valid.
+batchSteps :: FilePath -> Receipt -> [Value] -> Either String Receipt
+batchSteps path receipt steps
+    | null steps = Left (path <> ": batch steps name no batch")
+    | otherwise = receipt <$ mapM_ (batchRecordProblem path) steps
+
+{- | Why a row stands @unmet-by-ruling@: the two meanings the operator's
+rulings give that one verdict, each with the issue that would close it.
+-}
+data UnmetRuling
+    = {- | the registry deliberately does not do what the consumer's theorem
+      requires (ruling 2026-10-01); the alignment issue
+      -}
+      ConsumerRequirementUnmet Text
+    | {- | the chain refuses and Lean has no counterpart to compare with
+      (ruling 2026-10-02, "Narrow #287"); the model follow-up
+      -}
+      NoModelCounterpart Text
+    deriving stock (Show, Eq)
+
+{- | The ruling that keeps each unmet row unmet. A row recorded
+@unmet-by-ruling@ that is not listed has no stated meaning, and a reader
+surface refuses to render it.
+-}
+unmetRuling :: Text -> Maybe UnmetRuling
+unmetRuling = \case
+    "CG09" -> Just (ConsumerRequirementUnmet "lambdasistemi/cardano-keri#468")
+    "CG10" -> Just (NoModelCounterpart "lambdasistemi/singular#346")
+    "CG12" -> Just (NoModelCounterpart "lambdasistemi/singular#345")
+    "CS04" -> Just (NoModelCounterpart "lambdasistemi/singular#347")
+    _ -> Nothing
+
+-- | An unmet ruling in plain words, naming the issue that would close it.
+unmetReading :: UnmetRuling -> Text
+unmetReading = \case
+    ConsumerRequirementUnmet issue ->
+        "unmet by a ruling: the registry deliberately does not do what the \
+        \consumer requirement states (operator ruling 2026-10-01; "
+            <> issue
+            <> ")"
+    NoModelCounterpart issue ->
+        "unmet by a ruling: the chain refuses, Lean has no counterpart to \
+        \compare with (operator ruling 2026-10-02 \"Narrow #287\"); follow-up "
+            <> issue

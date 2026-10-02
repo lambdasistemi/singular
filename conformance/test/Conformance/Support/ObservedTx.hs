@@ -18,7 +18,7 @@ cannot say which of them the observer got right. The state leg reads the
 state input the step retained, which a fold always has and a retraction
 never does.
 -}
-module Conformance.Support.ObservedTx (spec) where
+module Conformance.Support.ObservedTx (spec, mintTamperSpec) where
 
 import Conformance.Compare.Perturbation
     ( Step (..)
@@ -38,6 +38,7 @@ import Conformance.Run.Live
     ( LiveStep (..)
     , StepOutcome (..)
     , heldObservation
+    , mintOnFirstKey
     , newLiveIdentities
     , observedStepTx
     , prepareRegistrationIdentities
@@ -57,7 +58,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as BSC
 import Data.ByteString.Short qualified as SBS
-import Data.Foldable (forM_)
+import Data.Foldable (forM_, toList)
 import Data.IORef (newIORef)
 import Data.List (sort)
 import Data.Map.Strict qualified as Map
@@ -68,7 +69,7 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Vector qualified as V
 import Data.Word (Word8)
-import Lens.Micro ((&), (.~))
+import Lens.Micro ((&), (.~), (^.))
 import System.Environment (lookupEnv)
 import Test.Hspec
     ( Expectation
@@ -84,7 +85,7 @@ import Test.Hspec
 import Cardano.Crypto.Hash.Class (hashFromBytes)
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Scripts.Data (Datum (..))
-import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx)
+import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx)
 import Cardano.Ledger.Api.Tx.Body
     ( feeTxBodyL
     , inputsTxBodyL
@@ -92,7 +93,12 @@ import Cardano.Ledger.Api.Tx.Body
     , mkBasicTxBody
     , outputsTxBodyL
     )
-import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL, mkBasicTxOut)
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , datumTxOutL
+    , mkBasicTxOut
+    , valueTxOutL
+    )
 import Cardano.Ledger.BaseTypes (Network (..), TxIx (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway (ConwayEra)
@@ -999,3 +1005,71 @@ request and destination refusals are the repair's to write on those terms.
 -}
 errorMentioning :: Text -> ErrorCall -> Bool
 errorMentioning role = T.isInfixOf role . T.pack . displayException
+
+{- | The fold batch tamper that mints every token at the first request's key:
+the quantity of each kind is kept, the keys are not, in the mint and in every
+output carrying them, and nothing else moves.
+-}
+mintTamperSpec :: Spec
+mintTamperSpec =
+    describe "Moving a fold batch's minted tokens onto its first key" $ do
+        let active = PolicyID (scriptHashOf 0x15)
+            application = PolicyID (scriptHashOf 0x14)
+            first = BSC.pack "minted-a"
+            second = BSC.pack "minted-b"
+            asset name = AssetName (SBS.toShort name)
+            minted =
+                MultiAsset
+                    ( Map.fromList
+                        [ (active, Map.fromList [(asset first, 1), (asset second, 1)])
+                        , (application, Map.fromList [(asset (BSC.pack "approval"), -2)])
+                        ]
+                    )
+            carrying name =
+                MultiAsset (Map.singleton active (Map.singleton (asset name) 1))
+            honest =
+                mkBasicTx
+                    ( mkBasicTxBody
+                        & mintTxBodyL .~ minted
+                        & outputsTxBodyL
+                            .~ StrictSeq.fromList
+                                [ outAt holderWallet 2_000_000 (carrying first) NoDatum
+                                , outAt holderWallet 2_000_000 (carrying second) NoDatum
+                                , outAt ownerWallet 9_000_000 mempty NoDatum
+                                ]
+                    )
+                    :: ConwayTx
+            tampered =
+                mintOnFirstKey
+                    [SBS.fromShort (pin 0x15)]
+                    first
+                    [first, second]
+                    honest
+            mintOf tx = tx ^. bodyTxL . mintTxBodyL
+            outputsOf tx = toList (tx ^. bodyTxL . outputsTxBodyL)
+            assetsOf out = case out ^. valueTxOutL of MaryValue _ (MultiAsset a) -> a
+        it "mints at the first key what the batch minted at all of its keys" $
+            mintOf tampered
+                `shouldBe` MultiAsset
+                    ( Map.fromList
+                        [ (active, Map.singleton (asset first) 2)
+                        , (application, Map.fromList [(asset (BSC.pack "approval"), -2)])
+                        ]
+                    )
+        it "has every delivery carry the first key" $
+            map assetsOf (outputsOf tampered)
+                `shouldBe` [ Map.singleton active (Map.singleton (asset first) 1)
+                           , Map.singleton active (Map.singleton (asset first) 1)
+                           , Map.empty
+                           ]
+        it "changes the transaction it was given" $
+            mintOf tampered `shouldSatisfy` (/= mintOf honest)
+        it "leaves a policy it was not given untouched" $
+            mintOf
+                ( mintOnFirstKey
+                    [SBS.fromShort (pin 0x16)]
+                    first
+                    [first, second]
+                    honest
+                )
+                `shouldBe` minted

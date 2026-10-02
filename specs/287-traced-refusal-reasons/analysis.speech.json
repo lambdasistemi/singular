@@ -1,0 +1,30 @@
+{
+  "coverage": [
+    {
+      "text": "Every requirement maps to a model row, a task and a gate row.",
+      "pause": 500
+    }
+  ],
+  "findings": [
+    {
+      "text": "The operator settled the receipt wording with one self-contained receipt, and the texts outside the fence stay for a follow-up. The ledger seam is verified first. The book's condition is enforced by CI until the book is derived. The deployed-trace premise is checked by the first devnet run. Reasons are compared verbatim with Lean's. The denominator now holds every live refusal, and the phase-one reject conflict is an epic-owned hold. Review one found that differing or unobserved reasons left no record and the accepting control had no failing check; both are repaired. Review two found that a label could exempt a compared refusal; class A is now a fact the runner records.",
+      "pause": 500
+    }
+  ],
+  "terminology": [
+    {
+      "text": "Chain-side reason means the admitted traced reason only, unobserved always names its cause, and an attribution row says nothing about Lean.",
+      "pause": 500
+    }
+  ],
+  "size": [
+    {
+      "text": "Artifact sizes are measured at commit; the plan stays under two hundred lines.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "analysis.md",
+    "sha256": "3dacc07dfc9e1394ac95896bfb8948f0e005ecb67766a1a5bf152124168b243d"
+  }
+}
