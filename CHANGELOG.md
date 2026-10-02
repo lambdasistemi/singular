@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/lambdasistemi/singular/compare/v0.8.0...v0.9.0) (2026-10-02)
+
+
+### Features
+
+* deliver the preprod demonstration of one registry and one key ([#300](https://github.com/lambdasistemi/singular/issues/300)) ([a08062d](https://github.com/lambdasistemi/singular/commit/a08062d0c02114064511aeeaa11fcecb7422c2c6))
+
+
+### Fixes
+
+* print and document [#300](https://github.com/lambdasistemi/singular/issues/300)'s spending and preview flags where [#326](https://github.com/lambdasistemi/singular/issues/326)'s flags check reads them ([20fede1](https://github.com/lambdasistemi/singular/commit/20fede19e8450a51882a0374cf0706e1952c755b))
+
 ## [0.8.0](https://github.com/lambdasistemi/singular/compare/v0.7.0...v0.8.0) (2026-10-02)
 
 
