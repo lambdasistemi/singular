@@ -17,8 +17,8 @@ run leaves exactly one user-defined trace; that line, verbatim, is the reason.
 Every other result is an unobserved reason with its cause, and every cause is
 its own value. A reason is compared with the model's only once admitted.
 
-Pure: the runs arrive as data. Capturing and evaluating are
-"Conformance.Run.Replay"'s.
+Pure: the runs arrive as data. Capturing and evaluating belong to the
+runner's replay module, @Conformance.Run.Replay@.
 -}
 module Conformance.Replay
     ( -- * Runs
