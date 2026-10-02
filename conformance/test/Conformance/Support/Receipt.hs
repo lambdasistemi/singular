@@ -1796,8 +1796,8 @@ batchChecks = describe "Checking a batch the model's batch questions compared" $
         $ loadRow (emptyFoldWith (concat (receiptSteps story)))
             >>= (`shouldSatisfy` isLeft)
     it
-        "accepts CG09's unmet receipt carrying its recorded refund-position divergence" $
-        loadRow
+        "accepts CG09's unmet receipt carrying its recorded refund-position divergence"
+        $ loadRow
             ( (emptyFoldWith [divergenceRecord])
                 { receiptRow = "CG09"
                 , receiptVerdict = UnmetByRuling
