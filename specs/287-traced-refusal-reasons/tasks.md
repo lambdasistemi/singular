@@ -215,5 +215,5 @@ lambdasistemi/singular#321, outside this branch.
   their traced evidence (lambdasistemi/singular#346, #345, #347): the extent
   table, the book's limits and the rows' narration, CG12 no longer said to agree
   with the model.
-- [ ] T058 Re-render `conformance/BOOK.md` with its generator from a book run at
+- [x] T058 Re-render `conformance/BOOK.md` with its generator from a book run at
   the integrated head; restamp this directory's speech companions.

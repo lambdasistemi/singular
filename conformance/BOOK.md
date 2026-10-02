@@ -4,91 +4,111 @@ These are executable stories. The runner supplies fresh registry and wallet cont
 
 ## This run
 
-Code revision: `b17037451ffc85219ae45f1495d821139194c0d1` (clean working tree).
+Code revision: `d0f430938e016c74c5c9527d0e2d9ae44282882a` (clean working tree).
 
-Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428 request:7ce2f0ecec6d6310891f82a84c433f01eaa722f3ea346abd0e231827`.
+Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c request:5203be8c0e949c878b4b84dbc729f12c50e45d6c67fb4c6d80370cd4`.
 
 Registration compared 7 requests: 4 accepted and 3 refused on chain.
 
 Unsupported chain folds: 0.
 
-The extra-signer registration was accepted on chain (transaction `a55ec11b581abf5f6cd9d881aef74d6028dba82595a3e199704f6fb39ce848a2`); the comparison detected the difference at `tx.signers`.
+Batches submitted in one transaction: 1, 0 accepted and 1 refused on chain.
 
-The insertActive was refused on chain (transaction `15a2a2aa90358f8068bf37f1587782875892f9f8973f5eae9a839c745f1e2820`); the model refused it for `key-exists`. The traced replay of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428` (traced build `b82e3473ad2269ff90ed423626273bcd34d06aac7afa6fdc1bc1eec5`) failed with `key-exists`.
+The extra-signer registration was accepted on chain (transaction `c4a1fb869bf4addd449e64e893b916767b6f9258dec49df48cdaa046dd490cc9`); the comparison detected the difference at `tx.signers`.
 
-The other-address insertActive was refused on chain (transaction `0440b93147649c08e317e2abcdff9480ade38b004db6374e3aa565bd502691eb`); the model refused it for `destination`. The traced replay of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428` (traced build `b82e3473ad2269ff90ed423626273bcd34d06aac7afa6fdc1bc1eec5`) failed with `destination`.
+The insertActive was refused on chain (transaction `59b468c31803de9a289005c80332ad393ab58b9f50490f9885b3d0bc2188842d`); the model refused it for `key-exists`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `key-exists`.
 
-The short-by-one insertActive was refused on chain (transaction `331a52d7db1a49edad3e13e7c378ca3fcca98c686689341a52c61227d72b9f07`); the model refused it for `deposit-returned`. The traced replay of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428` (traced build `b82e3473ad2269ff90ed423626273bcd34d06aac7afa6fdc1bc1eec5`) failed with `deposit-returned`.
+The other-address insertActive was refused on chain (transaction `54439edfa05076db07b0c34705af6562678da76accdabb5cbe2dc0c179a71660`); the model refused it for `destination`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `destination`.
 
-Code revision: `b17037451ffc85219ae45f1495d821139194c0d1` (clean working tree).
+The short-by-one insertActive was refused on chain (transaction `9c8614acf5b2126a57d3f302b9cde8b9073de4d6e3518815a9b1953bf74527da`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
 
-Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428 request:7ce2f0ecec6d6310891f82a84c433f01eaa722f3ea346abd0e231827`.
+The fold of 2 requests in one transaction, tampered mint-on-first-key, was refused on chain (transaction `9f76b77ba4938122a3ecaee3a2a361b3339f0ff45539148200a15a766b1e1c87`); the model's `foldBatch` refused it for `net-mint-mismatch`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `net-mint-mismatch`.
+
+Code revision: `d0f430938e016c74c5c9527d0e2d9ae44282882a` (clean working tree).
+
+Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c request:5203be8c0e949c878b4b84dbc729f12c50e45d6c67fb4c6d80370cd4`.
 
 Occupied-key insertion compared 3 requests: 2 accepted and 1 refused on chain.
 
 Unsupported chain folds: 0.
 
-The insertAbsent was refused on chain (transaction `93da10f383b6537b57382a1ba4b6867ac0f3e0fda9b8639c5d62cfa486fa8fae`); the model refused it for `key-exists`. The traced replay of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428` (traced build `b82e3473ad2269ff90ed423626273bcd34d06aac7afa6fdc1bc1eec5`) failed with `key-exists`.
+The insertAbsent was refused on chain (transaction `78c70c559aa1fba42ab5f29f322917be41355140ebc4cda795611f61bceaf350`); the model refused it for `key-exists`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `key-exists`.
 
-Code revision: `b17037451ffc85219ae45f1495d821139194c0d1` (clean working tree).
+Code revision: `d0f430938e016c74c5c9527d0e2d9ae44282882a` (clean working tree).
 
-Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428 request:7ce2f0ecec6d6310891f82a84c433f01eaa722f3ea346abd0e231827`.
+Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c request:5203be8c0e949c878b4b84dbc729f12c50e45d6c67fb4c6d80370cd4`.
 
 Retirement compared 11 requests: 7 accepted and 4 refused on chain.
 
 Unsupported chain folds: 0.
 
-The updateTerminal was refused on chain (transaction `53d30bd27599e24655b5b442ed23441d4232477556ddcfc921f953648e479df4`); the model refused it for `not-booked`. The traced replay of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428` (traced build `b82e3473ad2269ff90ed423626273bcd34d06aac7afa6fdc1bc1eec5`) failed with `not-booked`.
+The updateTerminal was refused on chain (transaction `9cab74cc09c4928a431a6b6f2b745ba7a53ea49f2822c5adabc56e673914d9c8`); the model refused it for `not-booked`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `not-booked`.
 
-The updateTerminal was refused on chain (transaction `3bb2d269929a9b4a3a63259a475fa5b9ae028f7b7810887c517a2c69a302db66`); the model refused it for `key-unknown`. The traced replay of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428` (traced build `b82e3473ad2269ff90ed423626273bcd34d06aac7afa6fdc1bc1eec5`) failed with `key-unknown`.
+The updateTerminal was refused on chain (transaction `34e0aaaceaf066668835fc3fcce510e312c222d0cdcbda5ed265d1dde76aeb57`); the model refused it for `key-unknown`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `key-unknown`.
 
-The short-by-one deleteActive was refused on chain (transaction `5de7d06502ea2fb6a458808896e00544107e15af78303645667ecef60d093a6f`); the model refused it for `deposit-returned`. The traced replay of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428` (traced build `b82e3473ad2269ff90ed423626273bcd34d06aac7afa6fdc1bc1eec5`) failed with `deposit-returned`.
+The short-by-one deleteActive was refused on chain (transaction `01d9556861cdf22c0d3275330f0564453404aeff6c042a28c43cbfdaed250e0c`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
 
-The other-address deleteActive was refused on chain (transaction `625b722327781fd16b209f4e72bb282be4e898a88064220c8fdb547531ecd248`); the model refused it for `deposit-returned`. The traced replay of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428` (traced build `b82e3473ad2269ff90ed423626273bcd34d06aac7afa6fdc1bc1eec5`) failed with `deposit-returned`.
+The other-address deleteActive was refused on chain (transaction `282a9453944df00cb47062545702614bf40395ecf933369b4f105b0ce1c2a486`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
 
-Code revision: `b17037451ffc85219ae45f1495d821139194c0d1` (clean working tree).
+Code revision: `d0f430938e016c74c5c9527d0e2d9ae44282882a` (clean working tree).
 
-Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428 request:7ce2f0ecec6d6310891f82a84c433f01eaa722f3ea346abd0e231827`.
+Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c request:5203be8c0e949c878b4b84dbc729f12c50e45d6c67fb4c6d80370cd4`.
 
 Rejection and retraction compared 10 requests: 2 accepted and 8 refused on chain.
 
 Unsupported chain folds: 0.
 
-The short-by-one reject of insertActive was refused on chain (transaction `f11761988b923bf35a7ba549cd76f9fb53b0bdfba23d8c89854915f63c26ab5c`); the model refused it for `deposit-returned`. The traced replay of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428` (traced build `b82e3473ad2269ff90ed423626273bcd34d06aac7afa6fdc1bc1eec5`) failed with `deposit-returned`.
+The short-by-one reject of insertActive was refused on chain (transaction `3a5384ec93d057efb74b01ba80beb2f9ab0840b69da77d469d782a5abc29d6c4`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
 
-The other-address reject of insertActive was refused on chain (transaction `a3f6587ec48b611521c5fdc4f63b27df786666d18a36f135b3111711b63836eb`); the model refused it for `deposit-returned`. The traced replay of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428` (traced build `b82e3473ad2269ff90ed423626273bcd34d06aac7afa6fdc1bc1eec5`) failed with `deposit-returned`.
+The other-address reject of insertActive was refused on chain (transaction `e23226d79d4b8950d6a9cfa9c3a6807361745d9a5bb6a0c9280d27821900c624`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
 
-The short-by-one retract of insertActive was refused on chain (transaction `fba69094d86ac36497feb84e55a863409ea12584a8ae94c11fa6dadea3d36487`); the model refused it for `deposit-returned`. The traced replay of the deployed script `8bffb4ea646b40eb8a1ad64ae1b2a855e72b19aa80977b584de49e2b` (traced build `8e7782e1bb116900de43f5ddf893eb0e3a7627882990b1a149cb803a`) failed with `deposit-returned`.
+The short-by-one retract of insertActive was refused on chain (transaction `c6a70611aea693cbf773de943663469fb8d9e0d5885eeca7426623c3052446f1`); the model refused it for `deposit-returned`. The traced replay of the deployed script `f93d1588050a8ee68b95ff756c461b79399fa0a88af8640239d7dc2c` (traced build `657c9fa9e652d6b4e75822a31f82b9aabd0080aaace8c3d4f9c88942`) failed with `deposit-returned`.
 
-The other-address retract of insertActive was refused on chain (transaction `c475074a8691db81561bb64155c896a941864d1f9c38ba7ecb1ddfcc0bf0c6ce`); the model refused it for `deposit-returned`. The traced replay of the deployed script `8bffb4ea646b40eb8a1ad64ae1b2a855e72b19aa80977b584de49e2b` (traced build `8e7782e1bb116900de43f5ddf893eb0e3a7627882990b1a149cb803a`) failed with `deposit-returned`.
+The other-address retract of insertActive was refused on chain (transaction `cd7764c7c9166b2efdd6e0f1d7da527136f5dd95022f6ba8daf99b8919771ade`); the model refused it for `deposit-returned`. The traced replay of the deployed script `f93d1588050a8ee68b95ff756c461b79399fa0a88af8640239d7dc2c` (traced build `657c9fa9e652d6b4e75822a31f82b9aabd0080aaace8c3d4f9c88942`) failed with `deposit-returned`.
 
-The other-reference retract of insertActive was refused on chain (transaction `58f9d98bfd376d7f6b8e55c4bd4ae0496bac691fede97473c8e7b5256470c92e`); the model refused it for `deposit-returned`. The traced replay of the deployed script `8bffb4ea646b40eb8a1ad64ae1b2a855e72b19aa80977b584de49e2b` (traced build `8e7782e1bb116900de43f5ddf893eb0e3a7627882990b1a149cb803a`) failed with `deposit-returned`.
+The other-reference retract of insertActive was refused on chain (transaction `bc422bc36a6d61180617df77e9283724e5307a7c6ca5bc1c12727c52cc57b0c2`); the model refused it for `deposit-returned`. The traced replay of the deployed script `f93d1588050a8ee68b95ff756c461b79399fa0a88af8640239d7dc2c` (traced build `657c9fa9e652d6b4e75822a31f82b9aabd0080aaace8c3d4f9c88942`) failed with `deposit-returned`.
 
-The state-spent retract of insertActive was refused on chain (transaction `36eb409aaa66bf8504f8b5a8d778b905d5e56112422f76eb28bc5d6106a20210`); the model refused it for `retract-state-spent`. The traced replay of the deployed script `8bffb4ea646b40eb8a1ad64ae1b2a855e72b19aa80977b584de49e2b` (traced build `8e7782e1bb116900de43f5ddf893eb0e3a7627882990b1a149cb803a`) failed with `retract-state-spent`. The traced replay of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428` (traced build `b82e3473ad2269ff90ed423626273bcd34d06aac7afa6fdc1bc1eec5`) failed with `missing-action`.
+The state-spent retract of insertActive was refused on chain (transaction `9e3a49993f869891f64d400936ca28a13c51173abb155878ebeee15776a42cec`); the model refused it for `retract-state-spent`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `missing-action`. The traced replay of the deployed script `f93d1588050a8ee68b95ff756c461b79399fa0a88af8640239d7dc2c` (traced build `657c9fa9e652d6b4e75822a31f82b9aabd0080aaace8c3d4f9c88942`) failed with `retract-state-spent`.
 
-The retract of updateTerminal was refused on chain (transaction `3f19d9cd0e80c77bbfdc4df023e5441577739b498f2951093d41fdba937938ac`); the model refused it for `withdraw-insert-only`. The traced replay of the deployed script `8bffb4ea646b40eb8a1ad64ae1b2a855e72b19aa80977b584de49e2b` (traced build `8e7782e1bb116900de43f5ddf893eb0e3a7627882990b1a149cb803a`) failed with `withdraw-insert-only`.
+The retract of updateTerminal was refused on chain (transaction `a582b14332680c9efdefc2e43ca2fe9c5621eaaa00a9e17d562eacf95e42150e`); the model refused it for `withdraw-insert-only`. The traced replay of the deployed script `f93d1588050a8ee68b95ff756c461b79399fa0a88af8640239d7dc2c` (traced build `657c9fa9e652d6b4e75822a31f82b9aabd0080aaace8c3d4f9c88942`) failed with `withdraw-insert-only`.
 
-The unsigned retract of insertActive was refused on chain (transaction `99a431c3fc7374f691f6c6991cd148d039db14412c58bc1300bbaa15bcdaa48d`); the model refused it for `retract-owner`. The traced replay of the deployed script `8bffb4ea646b40eb8a1ad64ae1b2a855e72b19aa80977b584de49e2b` (traced build `8e7782e1bb116900de43f5ddf893eb0e3a7627882990b1a149cb803a`) failed with `retract-owner`.
+The unsigned retract of insertActive was refused on chain (transaction `6155f4513e8038d7be9d9382e7a61f54963157a438bd84a5a20f6b8183b7d936`); the model refused it for `retract-owner`. The traced replay of the deployed script `f93d1588050a8ee68b95ff756c461b79399fa0a88af8640239d7dc2c` (traced build `657c9fa9e652d6b4e75822a31f82b9aabd0080aaace8c3d4f9c88942`) failed with `retract-owner`.
 
-The exit chapter compared both admission refusals: the unsigned insertion retraction (transaction `99a431c3fc7374f691f6c6991cd148d039db14412c58bc1300bbaa15bcdaa48d`) was refused by the model for `retract-owner`, and the pending update retraction (transaction `3f19d9cd0e80c77bbfdc4df023e5441577739b498f2951093d41fdba937938ac`) for `withdraw-insert-only`; the chain attributes both refusals to the request validator. The owner-signed insertion control accepted by both is transaction `60c782ed8098434dde0e8539c716df434aee79d1460758e0ed4a58d93dcd3537`.
+The exit chapter compared both admission refusals: the unsigned insertion retraction (transaction `6155f4513e8038d7be9d9382e7a61f54963157a438bd84a5a20f6b8183b7d936`) was refused by the model for `retract-owner`, and the pending update retraction (transaction `a582b14332680c9efdefc2e43ca2fe9c5621eaaa00a9e17d562eacf95e42150e`) for `withdraw-insert-only`; the chain attributes both refusals to the request validator. The owner-signed insertion control accepted by both is transaction `e9f43ba024248f229362895bf0848d86f8278cb7e83dde0455ed82916cdac99d`.
 
-Code revision: `b17037451ffc85219ae45f1495d821139194c0d1` (clean working tree).
+Code revision: `d0f430938e016c74c5c9527d0e2d9ae44282882a` (clean working tree).
 
-Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428 request:7ce2f0ecec6d6310891f82a84c433f01eaa722f3ea346abd0e231827`.
+Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c request:5203be8c0e949c878b4b84dbc729f12c50e45d6c67fb4c6d80370cd4`.
+
+Early rejection compared 6 requests: 2 accepted and 4 refused on chain.
+
+Unsupported chain folds: 0.
+
+The short-by-one reject of insertActive was refused on chain (transaction `8de0e2fef69fee33c7e6d9efd3f5fcae83f0fa1ccaee0e05a5311e90386fcb03`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
+
+The other-address reject of insertActive was refused on chain (transaction `099a7167b5230186907a8debf6a704799c64e9d77af6f53fdbff340c389f9c1d`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
+
+The short-by-one reject of insertActive was refused on chain (transaction `90e4d006fbd43a4514300566583cbf3b2d721de5a86b2ada65be726cc75d31e8`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
+
+The other-address reject of insertActive was refused on chain (transaction `8040d18e776c822686a59bcf78e1089b09685d65575f94f3f7d9d49121db26ff`); the model refused it for `deposit-returned`. The traced replay of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c` (traced build `25ddcbca82750e381ae564b4839d134dac33d855af0669958be46573`) failed with `deposit-returned`.
+
+Code revision: `d0f430938e016c74c5c9527d0e2d9ae44282882a` (clean working tree).
+
+Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c request:5203be8c0e949c878b4b84dbc729f12c50e45d6c67fb4c6d80370cd4`.
 
 Retraction window compared 3 requests: 1 accepted and 2 refused on chain.
 
 Unsupported chain folds: 0.
 
-The before-phase-2 retract of insertActive was refused on chain (transaction `074c2383d3c8591ea5ddb6a2ba1c2b9c574e0c2b41c6be9d1beab083c3be4faa`); the model refused it for `not-phase2`. The traced replay of the deployed script `ea30ac572fc2fb9a8936cc3430c8c133e820d8e724edb517d6c8ac1a` (traced build `0a8af7a99fd1fb82322bfe1fb7ebf5487a910a09aba959d21631cfbe`) failed with `not-phase2`.
+The before-phase-2 retract of insertActive was refused on chain (transaction `67a8b61ddc0b9effb0efe54ebfaf17314d40aca6399a0d4e74395e84e15f7c24`); the model refused it for `not-phase2`. The traced replay of the deployed script `ee1f1ac36ae0681020c34822688932a3312944159ae096aa3138ede7` (traced build `20d3fd70b7b431c12f819085f9bab9c0e82e6b34ef7ac71b2405a131`) failed with `not-phase2`.
 
-The after-phase-2 retract of insertActive was refused on chain (transaction `38803487497c7aeef6453f4dbf80181ce5bfeb53576cac62d7cb9d1f0356576b`); the model refused it for `not-phase2`. The traced replay of the deployed script `ea30ac572fc2fb9a8936cc3430c8c133e820d8e724edb517d6c8ac1a` (traced build `0a8af7a99fd1fb82322bfe1fb7ebf5487a910a09aba959d21631cfbe`) failed with `not-phase2`.
+The after-phase-2 retract of insertActive was refused on chain (transaction `27f60abb65b4749bb8456f9ed5259c547bf60b87b25bc06f6b61cdf839a31f0b`); the model refused it for `not-phase2`. The traced replay of the deployed script `ee1f1ac36ae0681020c34822688932a3312944159ae096aa3138ede7` (traced build `20d3fd70b7b431c12f819085f9bab9c0e82e6b34ef7ac71b2405a131`) failed with `not-phase2`.
 
-The window chapter compared both finite timing refusals: transaction `074c2383d3c8591ea5ddb6a2ba1c2b9c574e0c2b41c6be9d1beab083c3be4faa` before phase 2 and transaction `38803487497c7aeef6453f4dbf80181ce5bfeb53576cac62d7cb9d1f0356576b` after phase 2. The model refused both for `not-phase2`; the chain attributes both refusals to the request validator. Their owner-signed in-window control accepted by both is transaction `bc220005b7bddb7475a2211c841ee408b2134a5e6d17072dc995cd8c4c61d68a`.
+The window chapter compared both finite timing refusals: transaction `67a8b61ddc0b9effb0efe54ebfaf17314d40aca6399a0d4e74395e84e15f7c24` before phase 2 and transaction `27f60abb65b4749bb8456f9ed5259c547bf60b87b25bc06f6b61cdf839a31f0b` after phase 2. The model refused both for `not-phase2`; the chain attributes both refusals to the request validator. Their owner-signed in-window control accepted by both is transaction `7b1d1f864bc107f9b9fc83f10f4455df50c1b35b5bac9fc71ba211a3ba7cfdc3`.
 
-Code revision: `b17037451ffc85219ae45f1495d821139194c0d1` (clean working tree).
+Code revision: `d0f430938e016c74c5c9527d0e2d9ae44282882a` (clean working tree).
 
-Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428 request:7ce2f0ecec6d6310891f82a84c433f01eaa722f3ea346abd0e231827`.
+Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c request:5203be8c0e949c878b4b84dbc729f12c50e45d6c67fb4c6d80370cd4`.
 
 Unnamed sequence compared 8 requests: 8 accepted and 0 refused on chain.
 
@@ -143,6 +163,8 @@ Formal specification: `Singular.Statements.insert_active_transaction_row` @ `265
 - Observe the complete registry, token, leaf and transaction boundary after **cosigned**.
 
 - Compare **cosigned** and its observation with the executable registry model.
+
+- Fold, in one transaction with every token the transaction mints moved onto the first request's key, **insertActive** for **minted-a**, **insertActive** for **minted-b** in **registration**, using the recipient wallet, the recipient wallet, and ask the executable registry model the same batch.
 
 ## Insert on a key the registry already holds
 
@@ -246,21 +268,21 @@ Formal specification: `Singular.Statements.update_terminal_transaction_row` @ `8
 
 ## A request that is never folded
 
-A request can leave the queue without a fold. Once it may no longer be folded, a folder rejects it and must refund its owner the deposit, keeping the tip; while it is still retractable, its owner retracts it and must get back everything it held, deposit and tip, through an output whose inline datum is the retracted request's own output reference. Each refund paid one lovelace short or to another address, a return bound to another request, and a retraction spending the registry's state beside it must be refused, each beside the untampered exit of the same request.
+A request can leave the queue without a fold. After its owner's retraction window has closed, a folder rejects it and must refund its owner the deposit, keeping the tip; while it is still retractable, its owner retracts it and must get back everything it held, deposit and tip, through an output whose inline datum is the retracted request's own output reference. Each refund paid one lovelace short or to another address, a return bound to another request, and a retraction spending the registry's state beside it must be refused, each beside the untampered exit of the same request.
 
-- Reject the **insertActive** for **rejected** in **rejection** once it may no longer be folded with the payment it owes one lovelace short. The ledger and the model must both refuse it; the same request untampered is its control.
-
-- Observe the complete registry, token, leaf and transaction boundary after **rejected**.
-
-- Compare **rejected** and its observation with the executable registry model.
-
-- Reject the **insertActive** for **rejected** in **rejection** once it may no longer be folded with the payment it owes sent to another address. The ledger and the model must both refuse it; the same request untampered is its control.
+- Reject the **insertActive** for **rejected** in **rejection** after its owner's retraction window has closed with the payment it owes one lovelace short. The ledger and the model must both refuse it; the same request untampered is its control.
 
 - Observe the complete registry, token, leaf and transaction boundary after **rejected**.
 
 - Compare **rejected** and its observation with the executable registry model.
 
-- Reject the **insertActive** for **rejected** in **rejection** once it may no longer be folded, using the holder wallet.
+- Reject the **insertActive** for **rejected** in **rejection** after its owner's retraction window has closed with the payment it owes sent to another address. The ledger and the model must both refuse it; the same request untampered is its control.
+
+- Observe the complete registry, token, leaf and transaction boundary after **rejected**.
+
+- Compare **rejected** and its observation with the executable registry model.
+
+- Reject the **insertActive** for **rejected** in **rejection** after its owner's retraction window has closed, using the holder wallet.
 
 - Observe the complete registry, token, leaf and transaction boundary after **rejected**.
 
@@ -307,6 +329,46 @@ A request can leave the queue without a fold. Once it may no longer be folded, a
 - Observe the complete registry, token, leaf and transaction boundary after **retracted**.
 
 - Compare **retracted** and its observation with the executable registry model.
+
+## A folder rejects a request before its retraction deadline
+
+A reject carries no admission: the model accepts it in every window, and the chain does too. Two insertion requests from the same owner are booked together in a registry of their own. The first is rejected while it can still be folded, the second while its owner can still retract it. In each window a reject refunding the owner one lovelace short, and one refunding another key, must be refused by both, leaving the request pending; the untampered reject of the same request must be accepted by both, refund the owner the deposit and leave the registry state as it was. Each reject's validity interval is checked to lie inside the window its step names before it is submitted.
+
+- Reject the **insertActive** for **early-processing** in **early rejection** while the request can still be folded with the payment it owes one lovelace short. The ledger and the model must both refuse it; the same request untampered is its control.
+
+- Observe the complete registry, token, leaf and transaction boundary after **early-processing**.
+
+- Compare **early-processing** and its observation with the executable registry model.
+
+- Reject the **insertActive** for **early-processing** in **early rejection** while the request can still be folded with the payment it owes sent to another address. The ledger and the model must both refuse it; the same request untampered is its control.
+
+- Observe the complete registry, token, leaf and transaction boundary after **early-processing**.
+
+- Compare **early-processing** and its observation with the executable registry model.
+
+- Reject the **insertActive** for **early-processing** in **early rejection** while the request can still be folded, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **early-processing**.
+
+- Compare **early-processing** and its observation with the executable registry model.
+
+- Reject the **insertActive** for **early-retraction** in **early rejection** while its owner can still retract it with the payment it owes one lovelace short. The ledger and the model must both refuse it; the same request untampered is its control.
+
+- Observe the complete registry, token, leaf and transaction boundary after **early-retraction**.
+
+- Compare **early-retraction** and its observation with the executable registry model.
+
+- Reject the **insertActive** for **early-retraction** in **early rejection** while its owner can still retract it with the payment it owes sent to another address. The ledger and the model must both refuse it; the same request untampered is its control.
+
+- Observe the complete registry, token, leaf and transaction boundary after **early-retraction**.
+
+- Compare **early-retraction** and its observation with the executable registry model.
+
+- Reject the **insertActive** for **early-retraction** in **early rejection** while its owner can still retract it, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **early-retraction**.
+
+- Compare **early-retraction** and its observation with the executable registry model.
 
 ## Retract only inside phase 2
 
@@ -384,11 +446,11 @@ This program uses the same live interpreter for each listed request. Each step r
 
 ## What these runs do not establish
 
-Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none for a fold and the owner for a retraction, and the comparison reads them from the submitted transaction. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. The model admits a retraction only when the pending request inserts a key or reads a terminal one, its owner is among the transaction's required signers, and its validity interval lies inside phase 2. The interval starts no earlier than submission plus the processing time; its excluded upper bound may reach, but not pass, the end of the retraction time that follows. The model represents only finite validity bounds. Open validity intervals remain a named gap: the Aiken tests establish their not-phase2 refusal, but no live model comparison can represent them. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.
+Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none for a fold and the owner for a retraction, and the comparison reads them from the submitted transaction. The registration chapter folds two registrations in one transaction that mints both tokens at the first request's key; it is compared on its outcome and, both refusing, on the reason. The model builds no transaction for a batch, so no other observation of a batch is compared. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. The model admits a retraction only when the pending request inserts a key or reads a terminal one, its owner is among the transaction's required signers, and its validity interval lies inside phase 2. The interval starts no earlier than submission plus the processing time; its excluded upper bound may reach, but not pass, the end of the retraction time that follows. The model represents only finite validity bounds. Open validity intervals remain a named gap: the Aiken tests establish their not-phase2 refusal, but no live model comparison can represent them. The early rejections are compared in the processing window and the retraction window of one registry; a fold of an update in the retraction window is not compared there, because the validator refuses it while the model admits it, a separate tracked discrepancy. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.
 
-Refusal reasons come from traced re-evaluation. The deployed validators are compiled without traces, so the ledger names the script that refused but not why. Each refused transaction is evaluated again on the arguments the ledger built for it: once with the deployed bytes, and once with a build of the same source, compiler and parameters that keeps only the validators' own traces. A reason is admitted only when both evaluations fail and the traced one leaves exactly one trace; otherwise the receipt names the cause no reason was admitted. The receipt names both script hashes, and each refused request above prints what its replay recorded. Of the 18 refused requests in this run's chapters, 18 carry a reason their traced replay admitted, 0 name the cause their replay admits none, and 0 record no traced replay.
+Refusal reasons come from traced re-evaluation. The deployed validators are compiled without traces, so the ledger names the script that refused but not why. Each refused transaction is evaluated again on the arguments the ledger built for it: once with the deployed bytes, and once with a build of the same source, compiler and parameters that keeps only the validators' own traces. A reason is admitted only when both evaluations fail and the traced one leaves exactly one trace; otherwise the receipt names the cause no reason was admitted. The receipt names both script hashes, and each refused request above prints what its replay recorded. Of the 23 refused requests in this run's chapters, 23 carry a reason their traced replay admitted, 0 name the cause their replay admits none, and 0 record no traced replay.
 
-Refusals outside these chapters, by row. CS04, a redeemer at a wrong constructor index: live refusal reason not observed for the state and request scripts, whose failing path carries no user-defined trace; not compared, the behavior lies below what the model describes. CG09, a reject while the request is still in phase 1: the model admits it and the chain refuses it; the validator is to be repaired so it admits the reject, a repair not yet landed, and the consuming project's requirement that a reject before the retraction window be refused is unmet. CG10, a fold against a superseded root: not compared, a stale proof is not an input of the model, and the validator's name for the refusal is imprecise. CG11, an empty fold: the model refuses it for `empty-fold` as the consumer requires, but the driver has no batch question, so it is not compared. CG12, surplus actions and a missing action: not compared, actions are not an input of the model, so it has no counterpart. CG19, a crossed refund allocation and a two-request reject: not compared, the driver has no batch question. Whether CG11, CG12 and CG19 meet the consuming project's requirements remains unresolved; the three rows stay held. The two-key batch whose claimed mint disagrees per key: not run; live refusal reason not observed and not compared.
+Refusals outside these chapters, by row, recorded in the receipts of the conformance session rather than in this book. Three have no counterpart in the model, so their model comparison is unmet; each receipt shows what the traced replay of the refusal recorded. CS04, a fold redeemer at a wrong constructor index: the model has no vocabulary for decoding a redeemer; the witness script names its refusal, while the state and request scripts fail on a path that carries no user-defined trace, so their live refusal reason is not observed (lambdasistemi/singular#347). CG10, a fold whose proof was built against a root the registry has since superseded: the model takes no proof and no authenticated root and admits the insertion on that unoccupied key, so nothing compares with the chain's reason (lambdasistemi/singular#346). CG12, a fold carrying an action beyond its requests, and one missing an action: the model takes no action list (lambdasistemi/singular#345). The other refusals are compared with the model's batch questions, each against the reason the traced replay admits for the state script: CG11, an empty fold, with the fold batch over no request; CG19, two rejects whose refunds are crossed and two whose first refund is short, with the reject batch judged on the refunds the transaction pays; and CG09's control, a reject refunding its owner one lovelace short, with the reject batch of that one request. CG09 itself, a reject while the request can still be folded, is accepted by the chain and by the model, while the consuming project requires it refused: that requirement stays unmet by ruling. Whether CG11, CG12 and CG19 meet the consuming project's requirements remains unresolved; the three rows stay held.
 
 ## Requirements inventory
 
@@ -668,11 +730,17 @@ Expected: accept the insert and the retirement; the active quantity goes 1 -> 0 
 
 Source: Singular.Statements.update_terminal_transaction_row and Singular.Statements.update_terminal_inversion (Lean 871c5df); issue #177; connected retirement and distinct refusal controls.
 
-### On a real devnet, a request that is never folded leaves the queue by a reject or a retract. A reject once the request may no longer be folded must refund its owner the deposit; a retract by its owner must return everything the request held, through an output whose inline datum is the retracted request's own output reference. Each refund or return one lovelace short or to another key, a return bound to another request, and a retract spending the registry state beside it are refused by the chain and by the model, each beside the untampered exit of the same request, which both accept. The live consumer for the rule that only a retract returns the tip is the reject that keeps the tip beside the retract that returns it; fold consumers are in the fold rows. The guarantee that retract obligations depend only on the request remains a named gap: Lean proves this for every request and registry state, while this live run covers one registry state and no executable consumer varies it.
+### On a real devnet, a request that is never folded leaves the queue by a reject or a retract. A reject must refund its owner the deposit; a retract by its owner must return everything the request held, through an output whose inline datum is the retracted request's own output reference. Each refund or return one lovelace short or to another key, a return bound to another request, and a retract spending the registry state beside it are refused by the chain and by the model, each beside the untampered exit of the same request, which both accept. The live consumer for the rule that only a retract returns the tip is the reject that keeps the tip beside the retract that returns it; fold consumers are in the fold rows. The guarantee that retract obligations depend only on the request remains a named gap: Lean proves this for every request and registry state, while this live run covers one registry state and no executable consumer varies it.
 
 Expected: refuse a reject refunding the owner one lovelace short and to another key, `deposit-returned`, beside the accepted untampered reject; refuse a retraction returning one lovelace short, to another key and bound to another output reference, `deposit-returned`, and one spending the registry state beside it, `retract-state-spent`, beside the accepted untampered retraction. Planned evidence status: uncovered.
 
 Source: Singular.Statements.exit_settles_on_lovelace_received and Singular.Statements.no_exit_strands_the_deposit; issue #258; Singular.Statements.only_retract_owes_the_tip: consumed by the live reject that keeps the tip and retract that returns it; fold consumers are in the registration (CG21) and retirement (CG22) rows. Singular.Statements.obligations_read_only_the_request: named gap, proved in Lean for every request and registry state, but the live run covers one registry state and no executable consumer varies it.
+
+### On a real devnet, a folder may reject a pending request before its owner's retraction deadline. A reject while the request can still be folded, and one while its owner can still retract it, are each accepted by the chain and by the model, refund the owner the deposit and leave the registry state as it was. In each window a reject refunding the owner one lovelace short or to another key is refused by the chain and by the model.
+
+Expected: accept a reject while the request can still be folded and one while its owner can still retract it, each refunding the owner the deposit and leaving the registry state as it was; refuse, in each window, a reject refunding the owner one lovelace short and one refunding another key, `deposit-returned`. Planned evidence status: uncovered.
+
+Source: Singular.exitStep and Singular.exitAdmission: a reject carries no admission; Singular.obligations for a reject; Singular.Statements.admitted_exit_is_the_exit and Singular.Statements.built_transaction_settles; issue #320.
 
 ## Appendix: checking the evidence machinery
 
@@ -680,42 +748,52 @@ The report-validation tests remain under `test/Conformance/Support`. They check 
 
 Each refused request's traced replay was evaluated from a capture of the refused transaction, the outputs it spends, the protocol parameters and the era history:
 
-Transaction `15a2a2aa90358f8068bf37f1587782875892f9f8973f5eae9a839c745f1e2820`: capture `ada014237d651366c38acc998a28abcdc2572820904d3071bc6eb8b806f79865` of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428`.
+Transaction `59b468c31803de9a289005c80332ad393ab58b9f50490f9885b3d0bc2188842d`: capture `61f28bcc3318e572c5f4204e1b74b294fb542bf22accd4b95ac106c1f5d726c2` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `0440b93147649c08e317e2abcdff9480ade38b004db6374e3aa565bd502691eb`: capture `1640653d793790b8e7dc1e48e187df6b34b16bed4465b97d0195bd0700ddb822` of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428`.
+Transaction `54439edfa05076db07b0c34705af6562678da76accdabb5cbe2dc0c179a71660`: capture `3705403601f3525046ff8a370cd58223188b7b1dbe4d76b4beb3a6b06d614c71` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `331a52d7db1a49edad3e13e7c378ca3fcca98c686689341a52c61227d72b9f07`: capture `227498d5ee4abda4404b5367c1ced6871ce1fc8829d98ea87335491a6446555f` of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428`.
+Transaction `9c8614acf5b2126a57d3f302b9cde8b9073de4d6e3518815a9b1953bf74527da`: capture `fc5a099e935da23da11f88417e97decf680deee81a4f41b1d403a6a7dc904246` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `93da10f383b6537b57382a1ba4b6867ac0f3e0fda9b8639c5d62cfa486fa8fae`: capture `daac737776977b2309a63abd135700322836f5b0fbfa214924a4dd701d8677f0` of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428`.
+Transaction `9f76b77ba4938122a3ecaee3a2a361b3339f0ff45539148200a15a766b1e1c87`: capture `09e4463f4b9a13c1adeaf0b278f29af262305e6e1847d75f43c573e712826089` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `53d30bd27599e24655b5b442ed23441d4232477556ddcfc921f953648e479df4`: capture `402dc89d5f815e231bdec10ed41f45f4c9ab76e45fe8562a0273ad95badf05ef` of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428`.
+Transaction `78c70c559aa1fba42ab5f29f322917be41355140ebc4cda795611f61bceaf350`: capture `d8fc29ac2dbe3253c8f5d7c450ae37eeef636ed1c946c818689d529574a38d01` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `3bb2d269929a9b4a3a63259a475fa5b9ae028f7b7810887c517a2c69a302db66`: capture `81298d1698b91161ac362bb9b2b708ac546ec35c025982ded1614f8fc500c243` of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428`.
+Transaction `9cab74cc09c4928a431a6b6f2b745ba7a53ea49f2822c5adabc56e673914d9c8`: capture `20080010bd026480d5eb74235d93d03124d33c839dae39bdc42569c09edba998` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `5de7d06502ea2fb6a458808896e00544107e15af78303645667ecef60d093a6f`: capture `ace446c6fa1b52f34f6329deb957b8813ca3d94ece8b8abc9cd162f391a20033` of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428`.
+Transaction `34e0aaaceaf066668835fc3fcce510e312c222d0cdcbda5ed265d1dde76aeb57`: capture `8368cb42af566f501531f09650a5ab357e89c7fed71341911326f5eb96446cc6` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `625b722327781fd16b209f4e72bb282be4e898a88064220c8fdb547531ecd248`: capture `a978523f1f0d380f91fa569c952f035d0440d514f6e186243a179237f1c0ef55` of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428`.
+Transaction `01d9556861cdf22c0d3275330f0564453404aeff6c042a28c43cbfdaed250e0c`: capture `a4a148516a6bb2f37a0d2e22fef217df99d1418648114b7cd6cb67355dbc58e6` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `f11761988b923bf35a7ba549cd76f9fb53b0bdfba23d8c89854915f63c26ab5c`: capture `088272e768ff1402a7b20d3510bd6d5c7c757be67a7acbff8f316f97afcfa1f6` of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428`.
+Transaction `282a9453944df00cb47062545702614bf40395ecf933369b4f105b0ce1c2a486`: capture `473764a70e49f967f758f1b2ef2ac57f9977f9a9b54ca9fcb7d7fdf5af2b0a11` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `a3f6587ec48b611521c5fdc4f63b27df786666d18a36f135b3111711b63836eb`: capture `31a75da3214fdac767d926c21b7b89edf2f08298ddbdafd5e20c7d98a9ad9c33` of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428`.
+Transaction `3a5384ec93d057efb74b01ba80beb2f9ab0840b69da77d469d782a5abc29d6c4`: capture `b318eae187bf904f63862d2807390e4030cd66d7b1ad4e82a60d71df87202f77` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `fba69094d86ac36497feb84e55a863409ea12584a8ae94c11fa6dadea3d36487`: capture `ab5e9d34fc24cb980ca93ab5d2092b112caad7d1e3e56a810c87182f45941fb8` of the deployed script `8bffb4ea646b40eb8a1ad64ae1b2a855e72b19aa80977b584de49e2b`.
+Transaction `e23226d79d4b8950d6a9cfa9c3a6807361745d9a5bb6a0c9280d27821900c624`: capture `2923e5d5330994e678e9f1ca2e9121b309806a6c7f898b4a85a4340cdfb278f4` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `c475074a8691db81561bb64155c896a941864d1f9c38ba7ecb1ddfcc0bf0c6ce`: capture `81f0c01575a5100f378d550e0d0ca8bde160721e91be9ba5ee0e8303e4dc76f6` of the deployed script `8bffb4ea646b40eb8a1ad64ae1b2a855e72b19aa80977b584de49e2b`.
+Transaction `c6a70611aea693cbf773de943663469fb8d9e0d5885eeca7426623c3052446f1`: capture `7bcebcd119b832814a09e303eed0a0d648129a98ba900f2cc609c8efedbbb572` of the deployed script `f93d1588050a8ee68b95ff756c461b79399fa0a88af8640239d7dc2c`.
 
-Transaction `58f9d98bfd376d7f6b8e55c4bd4ae0496bac691fede97473c8e7b5256470c92e`: capture `21695c5be04328fec9f265a59549b0d278e878695c09f141acd784a5029e5727` of the deployed script `8bffb4ea646b40eb8a1ad64ae1b2a855e72b19aa80977b584de49e2b`.
+Transaction `cd7764c7c9166b2efdd6e0f1d7da527136f5dd95022f6ba8daf99b8919771ade`: capture `ff8fc471de223dd29ad1d18bf49995e166d0befb372fad182c1347e2d8f7234a` of the deployed script `f93d1588050a8ee68b95ff756c461b79399fa0a88af8640239d7dc2c`.
 
-Transaction `36eb409aaa66bf8504f8b5a8d778b905d5e56112422f76eb28bc5d6106a20210`: capture `74e4e3630057afb86179958670c7a5b549aee2a584e463b21acea48c430ec617` of the deployed script `8bffb4ea646b40eb8a1ad64ae1b2a855e72b19aa80977b584de49e2b`.
+Transaction `bc422bc36a6d61180617df77e9283724e5307a7c6ca5bc1c12727c52cc57b0c2`: capture `f994646dc868f698a4bcb91102296be6ac3846de3e840b4f95e412ac060c1b46` of the deployed script `f93d1588050a8ee68b95ff756c461b79399fa0a88af8640239d7dc2c`.
 
-Transaction `36eb409aaa66bf8504f8b5a8d778b905d5e56112422f76eb28bc5d6106a20210`: capture `74e4e3630057afb86179958670c7a5b549aee2a584e463b21acea48c430ec617` of the deployed script `1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428`.
+Transaction `9e3a49993f869891f64d400936ca28a13c51173abb155878ebeee15776a42cec`: capture `42173516eb2cd2b519bdd97d31f58314d5e36dd3dcb7e6180a555b7795eb3b5d` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
 
-Transaction `3f19d9cd0e80c77bbfdc4df023e5441577739b498f2951093d41fdba937938ac`: capture `c60eb9b1575d4026ae91dc35a914a4cb848ef6238624c4fb8cf5742bf45873d8` of the deployed script `8bffb4ea646b40eb8a1ad64ae1b2a855e72b19aa80977b584de49e2b`.
+Transaction `9e3a49993f869891f64d400936ca28a13c51173abb155878ebeee15776a42cec`: capture `42173516eb2cd2b519bdd97d31f58314d5e36dd3dcb7e6180a555b7795eb3b5d` of the deployed script `f93d1588050a8ee68b95ff756c461b79399fa0a88af8640239d7dc2c`.
 
-Transaction `99a431c3fc7374f691f6c6991cd148d039db14412c58bc1300bbaa15bcdaa48d`: capture `ae2479e296258400b9210cb4d2ec6f8de7c61812b93195a25bcad9f61bde5acf` of the deployed script `8bffb4ea646b40eb8a1ad64ae1b2a855e72b19aa80977b584de49e2b`.
+Transaction `a582b14332680c9efdefc2e43ca2fe9c5621eaaa00a9e17d562eacf95e42150e`: capture `9fde17b26ad00ee64c8cc8a456dd8d72be47c0546af31a3198bfee6599503f47` of the deployed script `f93d1588050a8ee68b95ff756c461b79399fa0a88af8640239d7dc2c`.
 
-Transaction `074c2383d3c8591ea5ddb6a2ba1c2b9c574e0c2b41c6be9d1beab083c3be4faa`: capture `b0d91d533521d1eb82d5ca14baf5e533b4e6e03a30b74fa9c8995e4beda79a09` of the deployed script `ea30ac572fc2fb9a8936cc3430c8c133e820d8e724edb517d6c8ac1a`.
+Transaction `6155f4513e8038d7be9d9382e7a61f54963157a438bd84a5a20f6b8183b7d936`: capture `513f03cae4fbffcf4ebbdf9633f5474d999ece6ae20ef22739b1f0d5920b5f2b` of the deployed script `f93d1588050a8ee68b95ff756c461b79399fa0a88af8640239d7dc2c`.
 
-Transaction `38803487497c7aeef6453f4dbf80181ce5bfeb53576cac62d7cb9d1f0356576b`: capture `33f49a4c51657d74aa5daa5fb44f5c97afdf7cd7cd0c6389e8978a503d970f99` of the deployed script `ea30ac572fc2fb9a8936cc3430c8c133e820d8e724edb517d6c8ac1a`.
+Transaction `8de0e2fef69fee33c7e6d9efd3f5fcae83f0fa1ccaee0e05a5311e90386fcb03`: capture `7d2a995c14f489eaec29d3d1191227c3c54b07729fcdaa52f0f6a2471b237ff4` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+
+Transaction `099a7167b5230186907a8debf6a704799c64e9d77af6f53fdbff340c389f9c1d`: capture `9fe6e2d60050a7e9df8eeeddb0ec32611eafbcf75d366fb3711ca008f9dd160d` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+
+Transaction `90e4d006fbd43a4514300566583cbf3b2d721de5a86b2ada65be726cc75d31e8`: capture `b12a1d43db6377ac2ed3b5816113d818baabd34c0adff679f0aeb7958b1727d2` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+
+Transaction `8040d18e776c822686a59bcf78e1089b09685d65575f94f3f7d9d49121db26ff`: capture `99bd5bd0ca2c5ab71380b056a05f9b028a583c40742367594a19017328f7ca42` of the deployed script `7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c`.
+
+Transaction `67a8b61ddc0b9effb0efe54ebfaf17314d40aca6399a0d4e74395e84e15f7c24`: capture `cfd83a01b49aad128f8b0fdfca10c3b090f46923f4b0f010b7ddd5253c5e5dff` of the deployed script `ee1f1ac36ae0681020c34822688932a3312944159ae096aa3138ede7`.
+
+Transaction `27f60abb65b4749bb8456f9ed5259c547bf60b87b25bc06f6b61cdf839a31f0b`: capture `72744affcdc2cc53ba43b2bf2d5e18d2deaecea088a3832ba6b1034e994caffb` of the deployed script `ee1f1ac36ae0681020c34822688932a3312944159ae096aa3138ede7`.
 
 The generated book is committed to the repository and is not yet reachable from the documentation site, tracked as #218. The general census of Haskell specification bindings remains tracked in #213.
