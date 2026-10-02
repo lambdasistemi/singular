@@ -170,20 +170,34 @@ while IFS= read -r line; do
 done <"$allow"
 
 # A spec is exempt only as a backend's own test: its entry reads
-# "own test of <module path> — <why>", the module it names is itself an
-# allowlisted backend module (not another own test), and the spec
-# imports it.
+# "own test of <module path> — <why>". The module it names must be one of
+# the backend's own session or adapter modules — a node-internal module
+# whose import alone names the backend (the module vocabulary above) —
+# never a composition root, facade or fixture; and the spec must name a
+# confined identifier that module defines.
 for path in "${!ownTest[@]}"; do
   subject=${ownTest[$path]}
-  if [ -z "${allowed[$subject]:-}" ] || [ -n "${ownTest[$subject]:-}" ]; then
-    echo "allowlist: '$path' is an own test of '$subject', which is not an allowlisted backend module" >&2
+  module=""
+  case "$subject" in offchain/node-internal/*)
+    [ -f "$root/$subject" ] &&
+      module=$(sed -nE 's/^module[[:space:]]+([A-Z][A-Za-z0-9_.]*)([[:space:]]|\(|$).*/\1/p' "$root/$subject" | head -1)
+    ;;
+  esac
+  if [ -z "$module" ] || ! grep -qE "^($modules)\$" <<<"$module"; then
+    echo "allowlist: '$path' is an own test of '$subject', which is not a backend session or adapter module" >&2
     status=1
     continue
   fi
-  module=$(sed -nE 's/^module[[:space:]]+([A-Z][A-Za-z0-9_.]*)([[:space:]]|\(|$).*/\1/p' "$root/$subject" | head -1)
-  if [ -z "$module" ] ||
-    ! grep -qE "^import[[:space:]]+(qualified[[:space:]]+)?${module//./\\.}([[:space:]]|$)" "$root/$path"; then
-    echo "allowlist: '$path' does not import ${module:-the module of $subject}, the backend module it claims to test" >&2
+  linked=""
+  for id in "${identifiers[@]}"; do
+    if grep -qE "^(data |newtype |type )?$id\\b" "$root/$subject" &&
+      grep -qwE "$id" "$root/$path"; then
+      linked=1
+      break
+    fi
+  done
+  if [ -z "$linked" ]; then
+    echo "allowlist: '$path' names nothing $module defines, the backend module it claims to test" >&2
     status=1
   fi
 done
