@@ -801,9 +801,7 @@ def model_unpaid_reasons(root):
     return reasons
 
 
-OBLIGATION = re.compile(
-    r"recipient := \.(\w+) request\.(\w+), atLeast := ([^}]+?) \}"
-)
+OBLIGATION = re.compile(r"recipient := \.(\w+) request\.(\w+), atLeast := ([^}]+?) \}")
 
 
 def model_reject_settlement(root):
@@ -822,7 +820,11 @@ def model_reject_settlement(root):
     assert floor_fields, f"a reject's floor names no request field: {floor!r}"
     pays = source.split("\ndef paysRecipient ", 1)[1].split("\n/--", 1)[0]
     pays_arm = next(
-        (line for line in pays.splitlines() if line.strip().startswith(f"| .{recipient} ")),
+        (
+            line
+            for line in pays.splitlines()
+            if line.strip().startswith(f"| .{recipient} ")
+        ),
         None,
     )
     assert pays_arm, f"Singular.paysRecipient reads no {recipient} recipient"
@@ -831,9 +833,7 @@ def model_reject_settlement(root):
         f"Singular.paysRecipient reads a {recipient} otherwise than by role and address"
     )
     unpaid = source.split("\ndef unpaidReason ", 1)[1].split("\n/--", 1)[0]
-    reason_arm = next(
-        line for line in unpaid.splitlines() if f".{recipient} " in line
-    )
+    reason_arm = next(line for line in unpaid.splitlines() if f".{recipient} " in line)
     reasons = REFUSAL_LITERAL.findall(reason_arm)
     assert len(reasons) == 1, (
         f"Singular.unpaidReason gives an unpaid {recipient} {reasons}, not one reason"
@@ -968,8 +968,17 @@ def fold_batch_expectation(row, refusals, transitions, deltas):
     return "accepted", None
 
 
-def check_batch_rows(corpus, generic_names, statement_digests, refusals, unpaid,
-                     transitions, deltas, leaf_bytes, settlement):
+def check_batch_rows(
+    corpus,
+    generic_names,
+    statement_digests,
+    refusals,
+    unpaid,
+    transitions,
+    deltas,
+    leaf_bytes,
+    settlement,
+):
     """Every batch row the driver answered, held to its declared question.
 
     The expected outcome and reason of every fold batch are re-derived here, not
@@ -979,7 +988,9 @@ def check_batch_rows(corpus, generic_names, statement_digests, refusals, unpaid,
     surface = driver_surface(corpus)
     batches = batch_surface(surface)
     rows = corpus.get("batches")
-    assert isinstance(rows, list) and rows, "EMPTY EXTENT: driver corpus carries no batch rows"
+    assert isinstance(rows, list) and rows, (
+        "EMPTY EXTENT: driver corpus carries no batch rows"
+    )
     ids = [r["id"] for r in rows] + [s["id"] for s in corpus["scenarios"]]
     assert len(set(ids)) == len(ids), "duplicate driver row identity"
     exits = set(surface["operations"])
@@ -998,7 +1009,9 @@ def check_batch_rows(corpus, generic_names, statement_digests, refusals, unpaid,
                 f"{rid}: setup step {i} was not an accepted transition"
             )
         if row["requiresReachableState"]:
-            assert row["setup"], f"{rid}: claims a reachable state with an empty setup trace"
+            assert row["setup"], (
+                f"{rid}: claims a reachable state with an empty setup trace"
+            )
         assert "witness" not in row, f"{rid}: a batch row carries a retraction witness"
 
         outcome = row["outcome"]
@@ -1016,7 +1029,9 @@ def check_batch_rows(corpus, generic_names, statement_digests, refusals, unpaid,
                 f"{sorted(set(batches[question]) - set(observations))}, undeclared "
                 f"{sorted(set(observations) - set(batches[question]))}"
             )
-            assert row["reason"] is None, f"{rid}: accepted rows carry no refusal reason"
+            assert row["reason"] is None, (
+                f"{rid}: accepted rows carry no refusal reason"
+            )
         else:
             assert row["reason"], f"{rid}: {outcome} rows must name a reason"
             assert observations is None, f"{rid}: {outcome} rows observe nothing"
@@ -1062,10 +1077,15 @@ def check_batch_rows(corpus, generic_names, statement_digests, refusals, unpaid,
                     "terminal": obs["config"]["terminalPolicy"],
                 }
                 for m in obs["mint"]:
-                    assert m["policy"] == policies[m["kind"]] and m["assetName"] == m["key"], (
+                    assert (
+                        m["policy"] == policies[m["kind"]]
+                        and m["assetName"] == m["key"]
+                    ), (
                         f"{rid}: mint entry {m} is not named by the pinned policy and key"
                     )
-                reported = asset_sums((m["kind"], m["key"], m["quantity"]) for m in obs["mint"])
+                reported = asset_sums(
+                    (m["kind"], m["key"], m["quantity"]) for m in obs["mint"]
+                )
                 summed = asset_sums(
                     (kind, r["key"], qty)
                     for r in row["requests"]
@@ -1104,7 +1124,9 @@ def check_batch_rows(corpus, generic_names, statement_digests, refusals, unpaid,
                 derived += 2
             if "outputs" in row:
                 assert outcome == "accepted", f"{rid}: only an answered batch is judged"
-                assert "settle" in row, f"{rid}: judged outputs carry no settle judgement"
+                assert "settle" in row, (
+                    f"{rid}: judged outputs carry no settle judgement"
+                )
                 assert row["settle"] is None or row["settle"] in unpaid, (
                     f"{rid}: settle {row['settle']!r} is not a reason Singular.settle gives"
                 )
@@ -1145,22 +1167,47 @@ def check_batch_controls(corpus, refusals):
     def some(rows, why, predicate):
         assert any(predicate(r) for r in rows), f"no batch row exhibits {why}"
 
-    some(folds, "a lawful multi-request fold",
-         lambda r: r["outcome"] == "accepted" and len(r["requests"]) >= 2)
-    some(folds, "a batch refused for its claimed mint",
-         lambda r: r["outcome"] == "refused" and r["reason"] == refusals["mismatch"]
-         and len(r["requests"]) >= 2)
-    some(folds, "an empty batch refused",
-         lambda r: r["outcome"] == "refused" and r["reason"] == refusals["empty"])
-    some(folds, "a batch whose later request fails its step",
-         lambda r: r["outcome"] == "refused" and len(r["folded"]) >= 2
-         and not r["folded"][-1]["accepted"])
-    some(rejects, "a multi-request reject judged paid",
-         lambda r: r["outcome"] == "accepted" and len(r["requests"]) >= 2
-         and "outputs" in r and r["settle"] is None)
-    some(rejects, "a multi-request reject judged short",
-         lambda r: r["outcome"] == "accepted" and len(r["requests"]) >= 2
-         and "outputs" in r and r["settle"] is not None)
+    some(
+        folds,
+        "a lawful multi-request fold",
+        lambda r: r["outcome"] == "accepted" and len(r["requests"]) >= 2,
+    )
+    some(
+        folds,
+        "a batch refused for its claimed mint",
+        lambda r: r["outcome"] == "refused"
+        and r["reason"] == refusals["mismatch"]
+        and len(r["requests"]) >= 2,
+    )
+    some(
+        folds,
+        "an empty batch refused",
+        lambda r: r["outcome"] == "refused" and r["reason"] == refusals["empty"],
+    )
+    some(
+        folds,
+        "a batch whose later request fails its step",
+        lambda r: r["outcome"] == "refused"
+        and len(r["folded"]) >= 2
+        and not r["folded"][-1]["accepted"],
+    )
+    some(
+        rejects,
+        "a multi-request reject judged paid",
+        lambda r: r["outcome"] == "accepted"
+        and len(r["requests"]) >= 2
+        and "outputs" in r
+        and r["settle"] is None,
+    )
+    some(
+        rejects,
+        "a multi-request reject judged short",
+        lambda r: r["outcome"] == "accepted"
+        and len(r["requests"]) >= 2
+        and "outputs" in r
+        and r["settle"] is not None,
+    )
+
     def short_in_sum(r):
         if r["outcome"] != "accepted" or "outputs" not in r or r["settle"] is None:
             return False
@@ -1168,19 +1215,25 @@ def check_batch_controls(corpus, refusals):
         return any(
             owners.count(o) >= 2
             and all(
-                i["request"]["deposit"] <= sum(
-                    x["lovelace"] for x in r["outputs"] if x["address"] == o
-                )
-                for i in r["requests"] if i["request"]["owner"] == o
+                i["request"]["deposit"]
+                <= sum(x["lovelace"] for x in r["outputs"] if x["address"] == o)
+                for i in r["requests"]
+                if i["request"]["owner"] == o
             )
             for o in owners
         )
 
-    some(rejects, "one owner owed by two rejects, each covered alone, short in sum",
-         short_in_sum)
-    some(rejects, "a mixed batch answered unsupported",
-         lambda r: r["outcome"] == "unsupported"
-         and len({i["exit"] for i in r["requests"]}) >= 2)
+    some(
+        rejects,
+        "one owner owed by two rejects, each covered alone, short in sum",
+        short_in_sum,
+    )
+    some(
+        rejects,
+        "a mixed batch answered unsupported",
+        lambda r: r["outcome"] == "unsupported"
+        and len({i["exit"] for i in r["requests"]}) >= 2,
+    )
 
     # Preservation, exhibited: a one-request batch beside the single-request
     # scenario taking the same request from the same state answers the same.
@@ -1188,11 +1241,13 @@ def check_batch_controls(corpus, refusals):
         request = row["requests"][0]
         request = request["request"] if operation == "reject" else request
         return [
-            s for s in corpus["scenarios"]
+            s
+            for s in corpus["scenarios"]
             if s["operation"] == operation
             and s["request"] == request
             and s["start"] == row["start"]
-            and [x["request"] for x in s["setup"]] == [x["request"] for x in row["setup"]]
+            and [x["request"] for x in s["setup"]]
+            == [x["request"] for x in row["setup"]]
         ]
 
     shared = ("config", "custody", "held", "mint", "root", "state")
@@ -1223,14 +1278,21 @@ def check_batch_controls(corpus, refusals):
                         f"{row['id']}: a one-request reject batch pays otherwise than {s['id']}"
                     )
             pairs += 1
-    for question, operation_of in (("foldBatch", "a fold"), ("rejectBatch", "a reject")):
+    for question, operation_of in (
+        ("foldBatch", "a fold"),
+        ("rejectBatch", "a reject"),
+    ):
         assert any(
-            r["question"] == question and len(r["requests"]) == 1
-            and r["outcome"] == "accepted" and twin(
+            r["question"] == question
+            and len(r["requests"]) == 1
+            and r["outcome"] == "accepted"
+            and twin(
                 r, r["requests"][0]["edge"] if question == "foldBatch" else "reject"
             )
             for r in rows
-        ), f"no one-request {question} row stands beside {operation_of} scenario it preserves"
+        ), (
+            f"no one-request {question} row stands beside {operation_of} scenario it preserves"
+        )
     return pairs
 
 
@@ -1268,12 +1330,11 @@ def batch_controls(corpus, refusals, run, settlement):
         must_refuse(f"{row['id']} judged {wrong!r}", run, mutant)
     for question in BATCH_QUESTIONS:
         mutant = copy.deepcopy(corpus)
-        mutant["surface"]["batchQuestions"][question] = (
-            mutant["surface"]["batchQuestions"][question] + ["tx"]
-        )
+        mutant["surface"]["batchQuestions"][question] = mutant["surface"][
+            "batchQuestions"
+        ][question] + ["tx"]
         must_refuse(f"{question} declaring a transaction observation", run, mutant)
     return 3 + len(refusals["step"]) + len(judged)
-
 
 
 TRANSLATION_HEADING = "## The model driver translation"
@@ -1561,8 +1622,15 @@ def main():
 
     def run_batches(corpus):
         return check_batch_rows(
-            corpus, generic_names, statement_digests, refusals, unpaid,
-            transitions, deltas, leaf_bytes, settlement,
+            corpus,
+            generic_names,
+            statement_digests,
+            refusals,
+            unpaid,
+            transitions,
+            deltas,
+            leaf_bytes,
+            settlement,
         )
 
     batch_rows, batch_derived = run_batches(driver_corpus)
