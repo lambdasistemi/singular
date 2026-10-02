@@ -1,0 +1,50 @@
+{
+  "the-story": [
+    {
+      "text": "A reviewer downloads the released archive and checks one registry and one fresh key on the public preprod network. The key is inserted, its payload is changed by its controller, it is found again through two independent public indexers, four attacks are refused at their script boundaries, and the key is terminated with its protected deposit returned. Every claim rests on a confirmed transaction or a fresh read.",
+      "pause": 400
+    },
+    {
+      "text": "This page plans the source changes that make that journey measurable and replayable. It runs nothing on the public network. Signing, submission, publication and recording each wait for a separate decision by the operator.",
+      "pause": 400
+    }
+  ],
+  "what-is-wrong-today": [
+    {
+      "text": "Four things stand between the merged tool and that journey. The booking's fee and units are declared, not measured. The two bookings name a collateral input but state neither a total collateral nor a return, while the folds, updates and boot of the same run state both, in the cases the balancer produces. And the refusal controls build their own registries instead of acting on one permanent registry, and no public indexer is asked from policy and name.",
+      "pause": 400
+    },
+    {
+      "text": "One more consequence matters for repeats. A refused duplicate or post-Terminal insertion leaves its request pending, and the registry's fold takes every pending request. On a permanent registry that leftover must be reclaimed inside the owner's thirty-second retract window, or a later take cannot fold.",
+      "pause": 400
+    }
+  ],
+  "what-changes": [
+    {
+      "text": "Five steps, each ending at its own commit. A measured booking declares the units the evaluator measured, pays the ledger's fee including the reference scripts it reads, and states its total collateral and the return of the rest of its funding output; a funding output that cannot leave a valid return is refused before anything is submitted. A read-only preparation route prints fees, units and collateral and submits nothing. The refusal controls attach to the permanent registry through a node someone else runs, with an explicit collateral allowance required before any write, a stop at any outcome it did not expect, both public indexers asked about the Active key between its update and its termination, and a reclaim bound to the exact request its own insertion left. A read-only tool asks two public indexers from policy and name. And the archive, checks and documents carry all of it with the limits stated.",
+      "pause": 400
+    }
+  ],
+  "how-it-is-checked": [
+    {
+      "text": "The checks are commands a reviewer can run from a clean checkout. The expected values of the accounting checks come from the evaluator, the generated wallet and the ledger's own functions under the public preprod parameters, never from the code under test. Each check is shown failing on a controlled alteration before it is trusted. The presentation gate now selects these pages too, and its receipt names that extent.",
+      "pause": 400
+    }
+  ],
+  "what-this-does-not-establish": [
+    {
+      "text": "Nothing here is a preprod confirmation. Live preprod cost models are read as public inputs, and a development node's evaluation is not preprod execution. A node refusing a submission and a node collecting collateral are different events and are reported separately. The duplicated token carrier case stays unrun on a live chain.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "b635f500d8f8ef552b4e25d97cc9275b7a5bbca39ae7c6677a1935672ab302ec"
+  },
+  "the-flow-of-one-write": [
+    {
+      "text": "An insertion or a termination is two transactions, and the second cannot exist until the first is on chain. The preview measures the booking and only bounds the fold. The allowance is judged on the measured booking and that bound, and a run over it stops before anything is signed. After the booking confirms, the fold is built and measured, then submitted. If the node refuses the fold, the request stays pending with its bond locked, and an explicit reclaim by the owner retracts that known request inside its window.",
+      "pause": 400
+    }
+  ]
+}

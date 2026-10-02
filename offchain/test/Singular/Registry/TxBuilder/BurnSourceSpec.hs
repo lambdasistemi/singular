@@ -31,7 +31,7 @@ no fold requires a signer, and that promise is about the SUBMITTED
 transaction's required-signer field — so the row reads that field of the
 built body, not only the duties the fold accumulated.
 -}
-module Singular.Registry.TxBuilder.BurnSourceSpec (spec) where
+module Singular.Registry.TxBuilder.BurnSourceSpec (spec, builtFoldUnder) where
 
 import Data.Bifunctor (second)
 import Data.ByteString (ByteString)
@@ -44,7 +44,7 @@ import Test.Hspec
 
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Alonzo.TxBody (reqSignerHashesTxBodyL)
-import Cardano.Ledger.Api.PParams (emptyPParams)
+import Cardano.Ledger.Api.PParams (PParams, emptyPParams)
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( inputsTxBodyL
@@ -1049,6 +1049,23 @@ utxosAt a
         [requestFor edgeInsertAbsent]
     | otherwise =
         [(feeIn, mkBasicTxOut a (MaryValue (Coin 100000000) mempty))]
+
+{- | The fold this stub registry builds through the public
+`updateTokenWithDuties` when its view holds these protocol parameters: the
+fold a command builds under its own view, after its booking confirmed (#300's
+outlay across the booking and the fold).
+-}
+builtFoldUnder :: PParams ConwayEra -> IO ConwayTx
+builtFoldUnder pp = do
+    tm <- mkPureTrieManager
+    createTrie tm foldTokenId
+    updateTokenWithDuties
+        builtCfg
+        foldProvider{viewProtocolParams = pp}
+        tm
+        foldTokenId
+        payer
+        witnessScripts
 
 {- | The fold's promise that no signer is required is a promise about
 the transaction a caller SUBMITS, so the row drives the public

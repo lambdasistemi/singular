@@ -17,6 +17,7 @@ raise SystemExit(
             "README.md",
             "docs",
             "specs/protocol",
+            "specs/300-preprod-delivery",
         ]
     )
 )

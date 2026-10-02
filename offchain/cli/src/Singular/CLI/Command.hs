@@ -28,6 +28,7 @@ module Singular.CLI.Command
       Command (..)
     , CreateArgs (..)
     , EntryArgs (..)
+    , EntryMode (..)
     , InspectArgs (..)
     , NodeSettings (..)
     , WriteSettings (..)
@@ -41,17 +42,18 @@ module Singular.CLI.Command
     , maxKeyBytes
     ) where
 
-import Control.Monad (when)
+import Control.Monad (forM_, when)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.List (isPrefixOf)
-import Data.Maybe (isJust)
+import Data.Maybe (isJust, isNothing)
 import Data.Text qualified as T
 import Data.Word (Word32)
 import Text.Read (readMaybe)
 
+import Cardano.Ledger.TxIn (TxIn)
 import Singular.CLI.Node (backendSetting, writeTarget)
 import Singular.Registry.Deployment (parseOutRef)
 
@@ -84,7 +86,10 @@ data WriteSettings = WriteSettings
 data CreateArgs = CreateArgs
     { createRegistry :: FilePath
     , createBlueprint :: FilePath
-    , createWrite :: WriteSettings
+    , createMode :: EntryMode
+    {- ^ Submit with the caller's key, or (with @--preview@ only) read for a
+    public address
+    -}
     , createSeed :: Maybe String
     -- ^ @txid#index@ of the wallet output the boot consumes
     , createPreview :: Bool
@@ -92,15 +97,31 @@ data CreateArgs = CreateArgs
     }
     deriving stock (Eq, Show)
 
--- | @registry insert@ and @registry terminate@.
+{- | What an entry command does with the transactions it builds: sign and
+submit them with the caller's key, or prepare them for a public address
+and submit nothing. A preview carries no signing key at all.
+-}
+data EntryMode
+    = Submit WriteSettings
+    | -- | The node to read, and the caller's enterprise address, bech32
+      Preview NodeSettings String
+    deriving stock (Eq, Show)
+
+-- | @registry insert@, @registry update@ and @registry terminate@.
 data EntryArgs = EntryArgs
     { entryRegistry :: FilePath
     , entryBlueprint :: FilePath
-    , entryWrite :: WriteSettings
+    , entryMode :: EntryMode
     , entryKey :: Key
     , entryDocument :: Maybe FilePath
     {- ^ @insert@: the envelope's detailed-schema JSON (@--envelope@);
     @update@: the new payload's (@--payload@); @terminate@: none
+    -}
+    , entryFund :: Maybe TxIn
+    -- ^ @--fund-input@: the wallet output to fund and collateralise from
+    , entryMaxOutlay :: Maybe Integer
+    {- ^ @--max-outlay@: lovelace the command may put out; past it nothing is
+    submitted
     -}
     , entryReceipt :: Maybe FilePath
     }
@@ -135,6 +156,11 @@ data CLIError
     | KeyOversized Int
     | UnsafeSettings String
     | SigningKeyNotAccepted
+    | PreviewTakesNoKey
+    | {- | A recognised constraint the command does not enforce: refused with
+      its name and the command, before any key is read or anything written
+      -}
+      UnsupportedFlag String String
     deriving stock (Eq, Show)
 
 -- | The longest key a registry can name: a ledger asset name.
@@ -151,18 +177,33 @@ parseCommand args = do
         else case words' of
             [] -> Right Help
             ["registry"] -> Right Help
-            ["registry", "create"] -> Create <$> createArgs flags
+            ["registry", "create"] ->
+                refuseSpendingFlags "create" flags >> (Create <$> createArgs flags)
             ["registry", "insert"] -> Insert <$> entryArgs (Just "--envelope") flags
             ["registry", "update"] -> Update <$> entryArgs (Just "--payload") flags
             ["registry", "terminate"] -> Terminate <$> entryArgs Nothing flags
-            ["registry", "inspect"] -> Inspect <$> inspectArgs flags
+            ["registry", "inspect"] ->
+                refuseSpendingFlags "inspect" flags >> (Inspect <$> inspectArgs flags)
             _ -> Left (UnknownCommand words')
   where
+    -- The constraints on a write's spending belong to insert, update and
+    -- terminate. A command that does not enforce one refuses it by name rather
+    -- than discard what the caller stated.
+    refuseSpendingFlags command flags =
+        forM_ ["--fund-input", "--max-outlay"] $ \flag ->
+            when (isJust (lookup flag flags)) $
+                Left (UnsupportedFlag flag command)
     createArgs flags = do
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
-        write <- writeSettings flags
         let preview = isJust (lookup "--preview" flags)
+            publicPreview = preview && isJust (lookup "--wallet-address" flags)
+        when (not preview && isJust (lookup "--wallet-address" flags)) $
+            Left addressNeedsPreview
+        mode <-
+            if publicPreview
+                then previewMode flags
+                else Submit <$> writeSettings flags
         seed <- case lookup "--seed" flags of
             Just (Just s) -> case parseOutRef (T.pack s) of
                 Right _ -> Right (Just s)
@@ -174,7 +215,7 @@ parseCommand args = do
             CreateArgs
                 { createRegistry = dir
                 , createBlueprint = bp
-                , createWrite = write
+                , createMode = mode
                 , createSeed = seed
                 , createPreview = preview
                 , createReceipt = optional "--receipt" flags
@@ -183,15 +224,37 @@ parseCommand args = do
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
         key <- keyFrom flags
-        write <- writeSettings flags
+        when
+            ( isNothing (lookup "--preview" flags)
+                && isJust (lookup "--wallet-address" flags)
+            )
+            $ Left addressNeedsPreview
+        mode <-
+            if isJust (lookup "--preview" flags)
+                then previewMode flags
+                else Submit <$> writeSettings flags
         doc <- traverse (`required` flags) document
+        fund <- case optional "--fund-input" flags of
+            Nothing -> Right Nothing
+            Just s -> case parseOutRef (T.pack s) of
+                Right i -> Right (Just i)
+                Left err -> Left (BadValue "--fund-input" err)
+        outlay <- case optional "--max-outlay" flags of
+            Nothing -> Right Nothing
+            Just s -> case readMaybe s of
+                Just n | n > 0 -> Right (Just n)
+                _ ->
+                    Left
+                        (BadValue "--max-outlay" "is not a positive number of lovelace")
         pure
             EntryArgs
                 { entryRegistry = dir
                 , entryBlueprint = bp
-                , entryWrite = write
+                , entryMode = mode
                 , entryKey = key
                 , entryDocument = doc
+                , entryFund = fund
+                , entryMaxOutlay = outlay
                 , entryReceipt = optional "--receipt" flags
                 }
     inspectArgs flags = do
@@ -215,6 +278,24 @@ parseCommand args = do
                 , inspectKey = key
                 , inspectReceipt = optional "--receipt" flags
                 }
+    -- A preview reads a node and names a public address; it holds no key,
+    -- so a signing key is refused before anything is read.
+    addressNeedsPreview =
+        BadValue
+            "--wallet-address"
+            "names a caller for --preview only; a write signs with --wallet-skey"
+    previewMode flags = do
+        when (isJust (lookup "--wallet-skey" flags)) $
+            Left PreviewTakesNoKey
+        sock <- required "--node-socket" flags
+        magicText <- required "--network-magic" flags
+        magic <-
+            maybe
+                (Left (BadValue "--network-magic" "not a number"))
+                Right
+                (readMaybe magicText)
+        addr <- required "--wallet-address" flags
+        pure (Preview (NodeSettings sock magic) addr)
     -- The three write settings go through the node module's own reader,
     -- so its partial-setting and mainnet refusals are this command's.
     writeSettings flags = case writeTarget args of
@@ -291,6 +372,9 @@ tokens = go [] []
         , "--key"
         , "--receipt"
         , "--confirm-timeout"
+        , "--wallet-address"
+        , "--fund-input"
+        , "--max-outlay"
         , "--envelope"
         , "--payload"
         , "--backend"
@@ -312,6 +396,13 @@ renderCLIError = \case
     UnsafeSettings why -> why
     SigningKeyNotAccepted ->
         "inspect takes no signing key: it reads, and never funds or submits"
+    PreviewTakesNoKey ->
+        "--preview takes no signing key: name the caller with --wallet-address; a preview reads, and never signs or submits"
+    UnsupportedFlag flag command ->
+        flag
+            <> " is not accepted by `registry "
+            <> command
+            <> "`: only insert, update and terminate enforce it, and a constraint the command does not enforce is refused, never ignored"
 
 -- | The supported commands.
 usage :: String
@@ -321,14 +412,31 @@ usage =
         , "  singular registry create --registry DIR --blueprint PLUTUS_JSON"
         , "      (--seed TXID#IX | --preview)"
         , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "  singular registry create --preview --registry DIR --blueprint PLUTUS_JSON"
+        , "      [--seed TXID#IX] --node-socket PATH --network-magic N --wallet-address ADDR"
         , "  singular registry insert --registry DIR --blueprint PLUTUS_JSON --key HEX"
         , "      --envelope ENVELOPE_JSON"
         , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "  singular registry insert --preview --registry DIR --blueprint PLUTUS_JSON"
+        , "      --key HEX --envelope ENVELOPE_JSON"
+        , "      --node-socket PATH --network-magic N --wallet-address ADDR"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry update --registry DIR --blueprint PLUTUS_JSON --key HEX"
         , "      --payload DATUM_JSON"
         , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "  singular registry update --preview --registry DIR --blueprint PLUTUS_JSON"
+        , "      --key HEX --payload DATUM_JSON"
+        , "      --node-socket PATH --network-magic N --wallet-address ADDR"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry terminate --registry DIR --blueprint PLUTUS_JSON --key HEX"
         , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "  singular registry terminate --preview --registry DIR --blueprint PLUTUS_JSON"
+        , "      --key HEX"
+        , "      --node-socket PATH --network-magic N --wallet-address ADDR"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry inspect --registry DIR --blueprint PLUTUS_JSON --key HEX"
         , "      --node-socket PATH --network-magic N [--receipt FILE]"
         , ""
@@ -337,6 +445,15 @@ usage =
         , "Every command also takes --backend node|indexer (default node): where its"
         , "address reads come from, the node itself or an in-process index that"
         , "follows the node's chain from its origin."
+        , "insert, update and terminate fund and collateralise from the funding input"
+        , "named, and hold to the maximum outlay stated: a booking or update past it is"
+        , "not signed, and an insert or terminate whose fold, built after its booking"
+        , "confirms, costs more than the booking left of it stops partial, its request"
+        , "pending, with the fold unsigned. create and inspect refuse both settings:"
+        , "they enforce neither."
+        , "The preview forms name the caller by a public wallet address instead of a"
+        , "signing key: they build and measure what they would submit, print it, and"
+        , "sign, submit and journal nothing."
         , "Each command prints one JSON receipt on standard output. inspect reads"
         , "only: it takes no signing key and submits nothing."
         ]

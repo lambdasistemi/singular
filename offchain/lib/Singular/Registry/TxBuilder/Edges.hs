@@ -42,6 +42,7 @@ module Singular.Registry.TxBuilder.Edges
     , stateRefIn
     , publishCageRefs
     , adaOnlyOut
+    , selectFunding
 
       -- * Booking one edge
     , BookingApproval (..)
@@ -51,6 +52,7 @@ module Singular.Registry.TxBuilder.Edges
     , bookEdgeTo
     , bookEdgeWith
     , bookEdgeTx
+    , bookEdgeMeasured
     , edgeDeposit
     , edgeDestinationOf
     , edgeRecordDatum
@@ -64,6 +66,7 @@ import Control.Monad (unless, when)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
+import Data.Foldable (toList)
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Ord (Down (..))
@@ -77,6 +80,7 @@ import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( collateralInputsTxBodyL
+    , collateralReturnTxBodyL
     , feeTxBodyL
     , inputsTxBodyL
     , mintTxBodyL
@@ -149,6 +153,7 @@ import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
     ( computeScriptIntegrity
     , currentPosixMs
+    , evaluateAndBalanceReferencing
     )
 import Singular.Registry.TxBuilder.Update
     ( RegistryContext (..)
@@ -231,6 +236,27 @@ adaOnlyOut out =
                 SNothing -> True
                 SJust _ -> False
            )
+
+{- | The wallet output a transaction is funded and collateralised from: the
+one the caller chose, which must be an ada-only output of the wallet, or else
+the largest ada-only output. A caller that chose none still gets the output
+least likely to leave the change under its minimum.
+-}
+selectFunding
+    :: Maybe TxIn
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Either String (TxIn, TxOut ConwayEra)
+selectFunding chosen utxos = case chosen of
+    Nothing -> case sortOn (Down . (^. coinTxOutL) . snd) usable of
+        [] -> Left "the payer wallet has no ada-only output"
+        (u : _) -> Right u
+    Just wanted -> case [u | u@(i, _) <- usable, i == wanted] of
+        (u : _) -> Right u
+        [] ->
+            Left
+                "the chosen funding output is not an ada-only output of the payer"
+  where
+    usable = filter (adaOnlyOut . snd) utxos
 
 -- | Publish one script as a reference output at the payer's own address.
 publishRefScript
@@ -649,18 +675,7 @@ bookEdgeTx
     -> Maybe BookingApproval
     -> IO ConwayTx
 bookEdgeTx cfg v payerAddr tokenId key edge dest deposit approval = do
-    -- #183: the tag IS the edge. A booking states its own C2 row, and a
-    -- row outside the table is one only an adversarial caller wants, so
-    -- it is refused here rather than carried to a fold that would refuse
-    -- it `edge-inadmissible` anyway.
-    when (edge < edgeInsertAbsent || edge > edgeWitnessTerminal) $
-        error
-            ( "bookEdge: edge "
-                <> show edge
-                <> " on key "
-                <> show key
-                <> " is not one of the seven admissible edges"
-            )
+    requireAdmissible key edge
     let pp = Cage.viewProtocolParams v
     utxos <- Cage.viewUTxOsAt v payerAddr
     (feeIn, feeOut) <-
@@ -671,30 +686,24 @@ bookEdgeTx cfg v payerAddr tokenId key edge dest deposit approval = do
             (u : _) -> pure u
     now <- currentPosixMs
     let MaryValue (Coin feeBal) carried = feeOut ^. valueTxOutL
-        Coin tipVal = defaultTip cfg
-        bond = tipVal + deposit
+        (reqOut, bond) =
+            requestOutput
+                cfg
+                pp
+                tokenId
+                payerAddr
+                key
+                edge
+                dest
+                deposit
+                approval
+                now
         fee = 2_000_000
         change = feeBal - bond - fee
         owner = addrKeyHashBytes payerAddr
-        requestAddr = requestAddrFromCfg cfg tokenId (network cfg)
-        -- #183: the datum binds the DEPOSIT, not the tip. The output
-        -- holds `bond` = tip + deposit, and the fold checks
-        -- `deposit == held - tip`, so the two are the same number
-        -- written once each. The min-ADA check below is what keeps
-        -- them equal: a bond raised to meet min-ADA would break the
-        -- equality silently, so the booking refuses instead.
-        datum = mkRequestDatumWith tokenId payerAddr key edge deposit now dest
-        reqOut =
-            mkBasicTxOut
-                requestAddr
-                (MaryValue (Coin bond) (maybe mempty baAsset approval))
-                & datumTxOutL .~ mkInlineDatum datum
-        Coin minAda = getMinCoinTxOut pp reqOut
     unless (change > 0) $
         error
             ("bookEdge: the payer wallet is too small (" <> show feeBal <> ")")
-    unless (bond >= minAda) $
-        error ("bookEdge: the bond is under min-ADA: " <> show bond)
     let body =
             mkBasicTxBody
                 & inputsTxBodyL .~ Set.singleton feeIn
@@ -707,6 +716,151 @@ bookEdgeTx cfg v payerAddr tokenId key edge dest deposit approval = do
                 & reqSignerHashesTxBodyL
                     .~ Set.singleton (addrWitnessKeyHash owner)
     pure (certifyBooking pp feeIn approval (mkBasicTx body))
+
+{- | A booking's edge must be one of the seven the registry admits (#183):
+the tag IS the edge. A booking states its own C2 row, and a row outside the
+table is one only an adversarial caller wants, so it is refused here rather
+than carried to a fold that would refuse it @edge-inadmissible@ anyway.
+-}
+requireAdmissible :: ByteString -> Edge -> IO ()
+requireAdmissible key edge =
+    when (edge < edgeInsertAbsent || edge > edgeWitnessTerminal) $
+        error
+            ( "bookEdge: edge "
+                <> show edge
+                <> " on key "
+                <> show key
+                <> " is not one of the seven admissible edges"
+            )
+
+{- | The request output a booking locks, and the bond it holds.
+
+Issue 183: the datum binds the DEPOSIT, not the tip. The output holds @bond@ =
+tip + deposit, and the fold checks @deposit == held - tip@, so the two are
+the same number written once each. The min-ADA check is what keeps them
+equal: a bond raised to meet min-ADA would break the equality silently, so
+the booking refuses instead.
+-}
+requestOutput
+    :: CageConfig
+    -> PParams ConwayEra
+    -> TokenId
+    -> Addr
+    -> ByteString
+    -> Edge
+    -> (ByteString, ByteString)
+    -> Integer
+    -> Maybe BookingApproval
+    -> Integer
+    -> (TxOut ConwayEra, Integer)
+requestOutput cfg pp tokenId payerAddr key edge dest deposit approval now =
+    let Coin tipVal = defaultTip cfg
+        bond = tipVal + deposit
+        datum = mkRequestDatumWith tokenId payerAddr key edge deposit now dest
+        reqOut =
+            mkBasicTxOut
+                (requestAddrFromCfg cfg tokenId (network cfg))
+                (MaryValue (Coin bond) (maybe mempty baAsset approval))
+                & datumTxOutL .~ mkInlineDatum datum
+        Coin minAda = getMinCoinTxOut pp reqOut
+    in  if bond >= minAda
+            then (reqOut, bond)
+            else error ("bookEdge: the bond is under min-ADA: " <> show bond)
+
+{- | 'bookEdgeWith' with its fee, units and collateral measured rather
+than declared (#300).
+
+The node's evaluator measures the booking's one purpose, the redeemer
+declares exactly those units, and the balancer charges the ledger's fee for
+the final body, reference scripts included — the resolved outputs the
+booking reads its script from are handed to it. The funding output, the
+wallet's largest ada-only output unless the caller chose one, is the
+collateral input, and the transaction states its total collateral at the
+protocol's percentage of the fee, rounded up, and a return carrying the rest
+of the output back. Everything is read from the one view the caller holds,
+and the booking is returned unsigned: the caller submits it after the view is
+released, and a caller that only prepares submits nothing.
+-}
+bookEdgeMeasured
+    :: CageConfig
+    -> Cage.View IO
+    {- ^ The one acquired view the booking is built, measured and certified
+    from: its protocol parameters are the ones the caller reports and judges
+    its outlay under, and nothing is submitted while it is held
+    -}
+    -> Addr
+    -> TokenId
+    -> ByteString
+    -> Edge
+    -> (ByteString, ByteString)
+    -> Integer
+    -- ^ The deposit, over and above the tip
+    -> BookingApproval
+    -> [(TxIn, TxOut ConwayEra)]
+    -- ^ The resolved outputs the booking reads its scripts from
+    -> Maybe TxIn
+    -- ^ The wallet output the caller chose to fund and collateralise
+    -> IO ConwayTx
+bookEdgeMeasured cfg v payerAddr tokenId key edge dest deposit approval refs chosen = do
+    requireAdmissible key edge
+    let pp = Cage.viewProtocolParams v
+    utxos <- Cage.viewUTxOsAt v payerAddr
+    funding <-
+        either (error . ("bookEdge: " <>)) pure (selectFunding chosen utxos)
+    now <- currentPosixMs
+    let (reqOut, _) =
+            requestOutput
+                cfg
+                pp
+                tokenId
+                payerAddr
+                key
+                edge
+                dest
+                deposit
+                (Just approval)
+                now
+        body =
+            mkBasicTxBody
+                & inputsTxBodyL .~ Set.singleton (fst funding)
+                & outputsTxBodyL .~ StrictSeq.singleton reqOut
+                & reqSignerHashesTxBodyL
+                    .~ Set.singleton (addrWitnessKeyHash (addrKeyHashBytes payerAddr))
+        unsigned = certifyBooking pp (fst funding) (Just approval) (mkBasicTx body)
+    balanced <-
+        evaluateAndBalanceReferencing
+            v
+            pp
+            [funding]
+            refs
+            payerAddr
+            unsigned
+    requireCarriesMinimums pp balanced
+    pure balanced
+
+{- | The balancer appends a change output and a collateral return whatever
+they hold. A funding output too small to leave either its minimum ada would
+make a transaction the ledger refuses, so the booking refuses it first.
+-}
+requireCarriesMinimums :: PParams ConwayEra -> ConwayTx -> IO ()
+requireCarriesMinimums pp tx = do
+    unless (all carries outs) $
+        error
+            "bookEdge: the funding output is too small to carry the booking, its fee, its collateral and their change"
+    -- The balancer collateralises the whole input, stating no return, when
+    -- what remains after the required total is under the minimum output.
+    -- A booking never puts a whole funding output at risk.
+    case body ^. collateralReturnTxBodyL of
+        SNothing ->
+            error
+                "bookEdge: the funding output cannot leave a collateral return of its minimum, so its whole value would be collateral"
+        SJust _ -> pure ()
+  where
+    body = tx ^. bodyTxL
+    outs =
+        toList (body ^. outputsTxBodyL)
+            <> [r | SJust r <- [body ^. collateralReturnTxBodyL]]
+    carries o = o ^. coinTxOutL >= getMinCoinTxOut pp o
 
 {- | What a fold of tree edges needs in hand: the three token policies
 this registry pins, the cage script custody spends run, the cage's own

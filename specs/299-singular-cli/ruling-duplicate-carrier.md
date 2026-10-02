@@ -24,15 +24,15 @@ The approved case, "an update whose continuation duplicates the token's carrier"
 
 ## The argument, stated conditionally
 
-**Pins.** The argument is read at main `24ecba3f02840424c65b68bf391fccb61b43ea2f`. On-chain sources and the Lean registry model last changed at `17df0cf3e4750a65b3f52418dbc26975967836d1`. The application model is at `de34300540223ccedf1ca85216b131fd09a148b4`. The command-line union changes none of them.
+**Pins.** The argument was written at main `24ecba3f02840424c65b68bf391fccb61b43ea2f`; its citations to the validator sources were read again at main `3f04e50d293b80360a3234ebf3114abc8172d851`, where `onchain/validators/open_datum.ak` and the registry validators are unchanged from the revision named next. On-chain sources and the Lean registry model last changed at `17df0cf3e4750a65b3f52418dbc26975967836d1`. The application model is at `de34300540223ccedf1ca85216b131fd09a148b4`. The command-line union changes none of them.
 
 The argument runs in three steps.
 
 1. **Start: one token per Active key.** The key starts with exactly one active token.
    - The registry model proves this for every reachable state in `Singular.Statements.biconditional_supply_sync`: a key's active supply is one if and only if its leaf is Active. That statement is PROVED in `lean/theorem-debt.json` under digest `7f1089607f7d6578eac69fb4b68bb4147853f29c6b6ac4067eb0db9e667f3f68`.
    - The application's invariant says each application output carries exactly one token of its own key. `OpenDatumApplication.Statements.reachable_consistent` (digest `f3d108992cbf8e634d136ae3104c2420cd2b31105f1052d7497b8bf59f5e7e59`) holds it over reachable worlds.
-2. **The update mints no active token.**
-   - The application's update and release paths mint nothing (`onchain/validators/open_datum.ak`, the spend handler).
+2. **The update mints no active token.** A payload update changes the key's active-token supply by zero; the terminate's release, by minus one.
+   - The spend handler (`onchain/validators/open_datum.ak`) makes no mint of its own and does not by itself assert that the transaction as a whole mints nothing. Its update path (`validUpdate`) requires exactly one output carrying any of the key's active token, kept at the holding's address under the same control and assets. Its release path (`validRelease`) requires the transaction to burn exactly one of the key's active token (`quantity_of(tx.mint, control.activePolicy, control.key) == -1`), which `OpenDatumApplication.Statements.release_burns_atomically` states. This argument relies on neither path to forbid a mint.
    - The key's active policy is the registry's witness policy. It accepts a mint only in a transaction that spends the registry state as a fold (`onchain/validators/witness.ak`, `foldPresent`).
    - In a fold, the registry pins the mint to the fold's own delta (`onchain/validators/registry/modify.ak`, `mintMatches`). It adds one active token only for an insertion or an Absent-to-Active update (`onchain/validators/lib.ak`). It refuses an insertion of an occupied key (`onchain/validators/registry/fold.ak`).
 3. **Conclusion: at most one output can carry the token.** The ledger conserves value. With one token among the inputs and none minted, it keeps a transaction with two one-token outputs from being valid. That transaction never reaches the application's script.

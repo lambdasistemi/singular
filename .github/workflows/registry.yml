@@ -572,6 +572,21 @@ jobs:
       # from the run's receipts.
       - name: Run the ordinary CLI's refusal controls
         run: nix run --quiet .#demo1-cli-controls
+      # #300: the same four refusals the demonstration shows, on ONE registry
+      # created once by the ordinary commands from a wallet holding one large
+      # output, and two fresh keys. The controls runner creates no registry and
+      # never stops the node; it retracts every request its refusals leave
+      # pending, so the second take can only succeed on a registry the first
+      # left usable; each clause is judged from retained receipts, and each
+      # collateral a refusal states is read from its retained body.
+      - name: Run the demonstration's four refusals on one existing registry
+        run: nix run --quiet .#demo1-cli-attach
+      # #300: the readback of a key's token output from a public indexer, from
+      # policy id and asset name alone, against a local indexer answering with
+      # the public services' shapes: each alteration fails for its own reason, and
+      # the credential reaches the indexer and appears nowhere else.
+      - name: Run the public-indexer readback against a local indexer
+        run: nix run --quiet .#demo1-readback-check
       # #325: after a lost acknowledgement or an interrupted local commit,
       # the next ordinary write reconciles from chain evidence — the
       # journalled edge applied to the mirror once, observed once, nothing

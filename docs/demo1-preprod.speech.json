@@ -1,0 +1,40 @@
+{
+  "the-story": [
+    {
+      "text": "A reviewer downloads the pinned archive and checks one registry and one fresh key on the public preprod network. The key is inserted and its payload is changed by its controller. It is found again from its policy id and asset name alone, through two independent public indexers. Four attacks are refused at their script boundaries, each beside an accepting control. The key is terminated and its protected deposit comes back. Every claim rests on a confirmed transaction or a fresh read, never on local state.",
+      "pause": 400
+    },
+    {
+      "text": "This page is the reviewer's map. It says what the archive lets you replay, what has been shown so far and on which chain, and what still waits for an explicit decision. It is not a record of a public run: none has happened.",
+      "pause": 400
+    }
+  ],
+  "what-you-run": [
+    {
+      "text": "The ordinary singular registry commands are the product path. Two more tools ship in the same archive: a controls runner that attaches to a registry that already exists, and a readback that asks a public indexer. A preview measures before anything is written. The four refusals run on one registry, each beside an accepting control, and the owner retracts only the request its own insertion left. The take asks both public indexers about the Active key between its final update and its termination, and stops if either disagrees or cannot be reached. A take refuses, before it writes, a wallet that cannot fund each of its actions, and it needs an explicit collateral allowance before it writes, and stops at any outcome it did not expect. The readback succeeds only when the output reference and the datum bytes are the node's, and the take judges what the indexer said from the answers it kept, not from the summary it wrote; a checksum shows the bytes are the ones kept, not that the indexer told the truth.",
+      "pause": 400
+    }
+  ],
+  "what-is-established-today": [
+    {
+      "text": "A booking's fee and units are measured and its collateral stated. A preview signs, submits and writes nothing. An indexer readback compares output, datum bytes, hash and lag against a local indexer. The four refusals on one existing registry, twice with fresh keys, and the same key read from two indexers before its termination, are pending: no completed gate supports them yet, and an earlier run of the gate failed. Everything here is on a development node or a local indexer; nothing is a preprod confirmation.",
+      "pause": 400
+    }
+  ],
+  "what-waits-for-a-decision": [
+    {
+      "text": "Signing and submitting on the public network, the release that publishes the archive, the recording of the actual commands, and the Blockfrost credential, which stays with its owner. A funded wallet needs two ada-only outputs before create, and a wallet with one is refused before anything is submitted.",
+      "pause": 400
+    }
+  ],
+  "what-this-does-not-show": [
+    {
+      "text": "One bounded run shows that the four refusals happen at their script boundaries for that key on that registry. It is not a universal statement about every compiled validator and ledger transaction. The duplicated token carrier case stays a model and validator test with its conditional argument, and is not run on a live chain.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "demo1-preprod.md",
+    "sha256": "4fe49db37c21d3c3354b1cafe614d8e2fd47d9e7103103cd93569e8e8da0b830"
+  }
+}

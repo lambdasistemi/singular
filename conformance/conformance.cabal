@@ -109,6 +109,7 @@ library
     , filepath >=1.4 && <1.6
     , operational >=0.2.4.2 && <0.3
     , process >=1.6 && <1.7
+    , scientific >=0.3 && <0.4
     , template-haskell >=2.18 && <2.25
     , text >=2.0 && <2.2
     , vector >=0.13 && <0.14
@@ -190,6 +191,7 @@ executable cli-controls
   main-is:          Main.hs
   other-modules:
     Conformance.Cli.Admission
+    Conformance.Cli.Attach
     Conformance.Cli.Backend
     Conformance.Cli.Node
     Conformance.Cli.Proof
@@ -265,7 +267,9 @@ test-suite conformance-tests
     Conformance.Support.CliControls
     Conformance.Support.CliProof
     Conformance.Support.CliAdmission
+    Conformance.Support.CliAttach
     Conformance.Cli.Admission
+    Conformance.Cli.Attach
     Conformance.Cli.Proof
     Conformance.Support.Receipt
     Conformance.Support.ReceiptBound

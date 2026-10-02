@@ -15,6 +15,7 @@ verdict reports; a receipt read without admission is never credited.
 -}
 module Conformance.Cli.Admission
     ( admit
+    , blake2b256Hex
     , lastEventOf
     , lastMaybe
     , sha256Hex
@@ -33,29 +34,58 @@ import Data.ByteString.Lazy qualified as BL
 import Data.Char (isSpace)
 import Data.Foldable (toList)
 import Data.List (nub)
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
+import Lens.Micro ((^.))
 import System.FilePath ((</>))
 
+import Cardano.Crypto.Hash.Blake2b (Blake2b_256)
 import Cardano.Crypto.Hash.Class (hashToBytes, hashWith)
 import Cardano.Crypto.Hash.SHA256 (SHA256)
-import Cardano.Ledger.Api.Tx (txIdTx)
+import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
+import Cardano.Ledger.Api.Tx.Body
+    ( collateralInputsTxBodyL
+    , collateralReturnTxBodyL
+    , feeTxBodyL
+    , inputsTxBodyL
+    , totalCollateralTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out (coinTxOutL)
+import Cardano.Ledger.BaseTypes (StrictMaybe (..))
 import Cardano.Ledger.Binary (decCBOR, decodeFullAnnotator)
+import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (eraProtVerHigh)
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.TxIn (TxId (..))
 import Cardano.Tx.Ledger (ConwayTx)
+import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Ledger (ConwayEra)
 
 import Conformance.Cli.Controls
-    ( JournalSpan (..)
+    ( Account (..)
+    , IndexerRead (..)
+    , JournalSpan (..)
     , ProcessEvidence (..)
     , Receipt (..)
     , Resolved (..)
     , Submission (..)
+    , decodeIndexerRead
     , rejectionEvidence
     )
+
+{- | The blake2b-256 of hex bytes, as the ledger hashes a datum, in lowercase
+hex; nothing when the text is not hex.
+-}
+blake2b256Hex :: Text -> Maybe Text
+blake2b256Hex t = case B16.decode (TE.encodeUtf8 t) of
+    Right raw ->
+        Just
+            ( TE.decodeUtf8
+                (B16.encode (hashToBytes (hashWith @Blake2b_256 id raw)))
+            )
+    Left _ -> Nothing
 
 -- | The lowercase hex SHA-256 of bytes.
 sha256Hex :: ByteString -> Text
@@ -75,14 +105,62 @@ admit :: FilePath -> Receipt -> IO Receipt
 admit work r
     | "run " `T.isPrefixOf` rcAction r = admitCommand work r
     | "provoke " `T.isPrefixOf` rcAction r = admitProcess work r
+    | "read-indexer " `T.isPrefixOf` rcAction r = admitReadback work r
     | otherwise = admitTransaction work r
+
+{- | An indexer's read: the readback record it kept, read back from the run's
+directory. The record must be the digested bytes and decode to the fields the
+verdict reads; what the verdict reports about the indexer is taken from those
+bytes, never from the receipt's own words.
+-}
+admitReadback :: FilePath -> Receipt -> IO Receipt
+admitReadback work r = case (rcReadbackFile r, rcReadbackSha256 r) of
+    (Just f, Just d) -> do
+        read' <- try (BS.readFile (work </> T.unpack f))
+        pure $ case read' of
+            Left (_ :: IOException) ->
+                r
+                    { rcAdmission =
+                        Just ["the retained readback record " <> f <> " is missing"]
+                    }
+            Right bytes
+                | sha256Hex bytes /= d ->
+                    r
+                        { rcAdmission =
+                            Just
+                                [ "the retained readback record "
+                                    <> f
+                                    <> " is not the bytes the receipt digests"
+                                ]
+                        }
+                | otherwise -> case Aeson.decodeStrict bytes >>= decodeIndexerRead of
+                    Nothing ->
+                        r
+                            { rcAdmission =
+                                Just
+                                    [ "the retained readback record does not carry the fields a readback records"
+                                    ]
+                            }
+                    Just ir ->
+                        r
+                            { rcAdmission = Just []
+                            , rcIndexer =
+                                Just
+                                    ir{irIndexerDatumHashComputed = blake2b256Hex (irIndexerDatumCbor ir)}
+                            }
+    _ ->
+        pure
+            r
+                { rcAdmission =
+                    Just ["no retained readback record is named with its digest"]
+                }
 
 -- | A hand-built transaction, booking or fold: its body and rejection.
 admitTransaction :: FilePath -> Receipt -> IO Receipt
 admitTransaction work r = case rcTxId r of
     Nothing -> pure r{rcAdmission = Just []}
     Just txid -> do
-        bodyProblems <- body txid
+        (bodyProblems, account) <- body txid
         (rejectionProblems, derived) <-
             if rcOutcome r == "ledger-refused"
                 then rejection
@@ -91,7 +169,11 @@ admitTransaction work r = case rcTxId r of
                 Just (phaseWords, failed) ->
                     r{rcPhaseWords = phaseWords, rcRefusingScripts = failed}
                 Nothing -> r
-        pure fromBytes{rcAdmission = Just (bodyProblems <> rejectionProblems)}
+        pure
+            fromBytes
+                { rcAdmission = Just (bodyProblems <> rejectionProblems)
+                , rcAccount = account
+                }
   where
     retained
         :: Text -> Maybe Text -> Maybe Text -> IO (Either [Text] ByteString)
@@ -117,23 +199,27 @@ admitTransaction work r = case rcTxId r of
     body txid = do
         bytes <- retained "body" (rcBodyFile r) (rcBodySha256 r)
         pure $ case bytes of
-            Left problems -> problems
+            Left problems -> (problems, Nothing)
             Right hexBytes -> case B16.decode (BC.filter (not . isSpace) hexBytes) of
-                Left _ -> ["the retained body is not hex"]
+                Left _ -> (["the retained body is not hex"], Nothing)
                 Right raw -> case decodeFullAnnotator
                     (eraProtVerHigh @ConwayEra)
                     "transaction"
                     decCBOR
                     (BL.fromStrict raw) of
-                    Left _ -> ["the retained body does not decode as a transaction"]
+                    Left _ ->
+                        (["the retained body does not decode as a transaction"], Nothing)
                     Right (tx :: ConwayTx)
                         | txIdHexOf tx /= txid ->
-                            [ "the retained body is transaction "
-                                <> txIdHexOf tx
-                                <> ", not the receipt's "
-                                <> txid
-                            ]
-                        | otherwise -> []
+                            (
+                                [ "the retained body is transaction "
+                                    <> txIdHexOf tx
+                                    <> ", not the receipt's "
+                                    <> txid
+                                ]
+                            , Nothing
+                            )
+                        | otherwise -> ([], Just (accountOf tx))
 
     rejection = do
         bytes <-
@@ -147,6 +233,27 @@ admitTransaction work r = case rcTxId r of
                       ]
                     , Just derived
                     )
+
+{- | What a transaction states about its fee and collateral, read from its
+body: the fee, the collateral inputs, the total collateral it declares and
+the lovelace of the collateral return it declares.
+-}
+accountOf :: ConwayTx -> Account
+accountOf tx =
+    Account
+        { acFee = let Coin f = body ^. feeTxBodyL in f
+        , acCollateralInputs =
+            map renderOutRef (Set.toList (body ^. collateralInputsTxBodyL))
+        , acCollateralTotal = case body ^. totalCollateralTxBodyL of
+            SJust (Coin c) -> Just c
+            SNothing -> Nothing
+        , acCollateralReturn = case body ^. collateralReturnTxBodyL of
+            SJust o -> Just (let Coin c = o ^. coinTxOutL in c)
+            SNothing -> Nothing
+        , acSpends = map renderOutRef (Set.toList (body ^. inputsTxBodyL))
+        }
+  where
+    body = tx ^. bodyTxL
 
 {- | An ordinary command, admitted from its registry's journal. The lines the
 journal gained while the command ran are read back from the run's files and
