@@ -66,7 +66,7 @@ import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Application.OpenDatum.Envelope
     ( dataFromJson
-    , envelopeFromJson
+    , envelopeToJson
     )
 import Singular.CLI.Command
     ( EntryArgs (..)
@@ -119,6 +119,12 @@ runPreview kind a (NodeSettings sock magic) addrText = do
     saved <- loadSaved (entryRegistry a) (entryBlueprint a)
     let Key key = entryKey a
         caller = addrKeyHashBytes addr
+    -- An insert's envelope is built, and its payload refused if it is not
+    -- Plutus data, before the node is read.
+    inserted <- case kind of
+        KInsert ->
+            Just . insertionOf saved a caller <$> readInsertPayload a
+        _ -> pure Nothing
     -- One view for the whole preparation: the state, the mirror's root
     -- against it, the wallet, the parameters, the evaluation and the chain
     -- point the report names are all that view's.
@@ -145,9 +151,11 @@ runPreview kind a (NodeSettings sock magic) addrText = do
                 )
         prepared <- case kind of
             KInsert -> do
-                envelope <- document "insert needs --envelope" envelopeFromJson
-                booked <- planInsert live caller key envelope
-                previewBooking a v live addr key booked
+                envelope <-
+                    maybe (failWith ClientRefusal "insert has no envelope") pure inserted
+                booked <- planInsert live envelope
+                (<> [("envelope", envelopeToJson envelope)])
+                    <$> previewBooking a v live addr key booked
             KTerminate -> do
                 outs <- liveOutputs v saved
                 (booked, _, _) <- planTerminate live caller key outs
