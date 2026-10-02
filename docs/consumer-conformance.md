@@ -338,8 +338,8 @@ required implementation and execution evidence is accepted.
 **Resolved-by-ruling** (CG13): a ruling settled the row's question;
 the observation is retained as defect evidence of the outstanding
 owner gate — never a pass, never an owner-semantics claim.
-**Superseded** (CG14, CG15, CG16, CG17): the expectation asserted
-authority or a schema that does not exist at this commit; observations
+**Superseded** (CG14, CG15, CG16, CG17, CG18): the expectation asserted
+authority, a termination or a schema that does not exist at this commit; observations
 are preserved, claims are withdrawn, and no execution credit attaches.
 
 **Evidence provenance.** The receipts cited in this section are the
@@ -444,11 +444,11 @@ control (previous-owner `End` refused, new-owner accepted) tested
 behaviour that must not exist — it was never landed. CG17's refusal
 and its owner-signed control stay in the record with the conformance
 claim withdrawn: a gate that tests authority that does not exist
-discriminates nothing Singular owes. CG16 (`bound-elsewhere`) is
-superseded the same way, its epic-16 observation preserved as history;
-`list` prints it `bound-elsewhere`, and only a receipt bound to the
-current base can print `executed`, so no release path can credit it as
-current conformance. **CG14/CG15 are superseded inherited-hook
+discriminates nothing Singular owes. CG16 and CG18 are
+superseded the same way: the registry has no sweep and no termination,
+the end-to-end examples they cited were removed on 2026-09-12
+(`f3a68b1b`), nothing runs either row, and `list` prints both
+`uncovered`. **CG14/CG15 are superseded inherited-hook
 expectations with could-not-execute history — not pending work.** The
 imported partition's `State.stake_script` hook supplies registry-owner
 authority by another name, which is exactly why epic 17 removes the
@@ -581,12 +581,11 @@ never trims identities — under the same run-enforced 16KB bound.
 
 ## Historical limits
 
-- **Bound, not re-executed**: CG01, CG06, CG08 and CG18 rest on
-  epic 16's `CageSpec` runs, cited per row. CG16 sits there too
-  (`bound-elsewhere`) and is **superseded**: its owner-signed sweep
-  asserted registry-owner authority, which the 2026-09-12 ruling
-  removes entirely — the epic-16 observation is preserved as history
-  and earns no conformance credit. Nothing else in the inventory has
+- **Bound, not re-executed**: CG01, CG06 and CG08 rest on epic 16's
+  `CageSpec` runs, cited per row. CG16 and CG18 cite none: the examples
+  they cited were removed on 2026-09-12 (`f3a68b1b`), nothing runs either
+  row, and both are **superseded** by the ownerless-registry ruling (no
+  sweep, no termination) — history earns no conformance credit. Nothing else in the inventory has
   ledger evidence without a receipt.
 - **Executed, unmet by ruling, not a pass**: CG09 records the early
   rejection the consumer forbids and the chain accepts, kept unmet by
@@ -608,13 +607,14 @@ never trims identities — under the same run-enforced 16KB bound.
   never a pass, and the verdicts move only by execution. CG13's owner
   change is retained as **defect evidence** of the outstanding owner
   gate, resolved-by-ruling, with its defect owned by epic 17.
-- **Superseded, never pending**: CG16 and CG17 asserted registry-owner
-  authority that does not exist — observations preserved, claims
-  withdrawn, no execution credit for changed applicability. CG14/CG15
+- **Superseded, never pending**: CG16, CG17 and CG18 asserted
+  registry-owner authority, a sweep or a termination that does not
+  exist — observations preserved, claims withdrawn, no execution credit
+  for changed applicability. CG14/CG15
   are superseded inherited-hook expectations with could-not-execute
   history; epic 17 removing `stake_script` creates no work behind them.
 - **Uncovered**: CS07, CK(01–05) and CL02–CL03 print `uncovered` (as
-  do CG14/CG15 — superseded expectations, no receipts). CS07 is not
+  do CG14/CG15 and CG16/CG18 — superseded expectations, no receipts). CS07 is not
   merely uncovered: its `Fork` finding is filed for a user story and
   the row stays unmarked until that story resolves — an unmarked row
   with a finding, never a gap and never a pass. CS05's `Migrating` gap

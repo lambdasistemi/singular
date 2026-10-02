@@ -170,14 +170,13 @@
       "state": "uncovered"
     },
     {
-      "evidence": "offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs: sweeps malformed request-address UTxOs",
       "expected": "superseded — observation preserved, conformance claim withdrawn (registry has no owner role; owner-signed sweep asserted authority that does not exist)",
       "group": "CG",
       "id": "CG16",
       "requirement": "Sweep of a non-legitimate UTxO, owner-signed.",
       "source": "cage custody",
-      "state": "bound-elsewhere",
-      "note": "SUPERSEDED by the 2026-09-12 no-owner operator ruling. Original observation preserved (issue #16 CageSpec sweep of a malformed request-address UTxO, owner-signed, accepted): valid as history, superseded as expectation — the sweep custody gate tests authority that does not exist. issue #17 owns the validator repair; re-execute against the repaired blueprint only if the repaired design reinstates a sweep authorization path."
+      "state": "uncovered",
+      "note": "SUPERSEDED by the 2026-09-12 no-owner operator ruling (commit f3a68b1b): the registry has no owner role and no sweep, and its scripts refuse a sweep for every party. The original observation (an owner-signed sweep of a malformed request-address UTxO, accepted under issue #16) is history, not coverage: the end-to-end example it cited was removed in f3a68b1b and nothing runs this row."
     },
     {
       "expected": "SUPERSEDED by operator ruling (registry has no owner role): observation preserved, claim withdrawn",
@@ -189,13 +188,13 @@
       "note": "Superseded 2026-09-12: Sweep-by-non-owner asserted registry-owner authority, which per the operator ruling does not exist. The observation (hand sweep with a non-owner required signer refused; owner-signed sweep accepted) is preserved as defect evidence of the outstanding owner gate in the request validator — issue #17 owns the repair."
     },
     {
-      "evidence": "offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs: ends a cage by burning the state token",
-      "expected": "accept",
+      "expected": "superseded — claim withdrawn (the registry has no termination: End is refused for every party)",
       "group": "CG",
       "id": "CG18",
       "requirement": "End burns the state token and closes the cage.",
       "source": "cage custody",
-      "state": "bound-elsewhere"
+      "state": "uncovered",
+      "note": "SUPERSEDED by the 2026-09-12 no-owner operator ruling (commit f3a68b1b, ownerless registry per NOTE-028/A-003): the state script refuses End for every party, and the model has no termination exit. The end-to-end example this row cited was removed in that commit and nothing runs this row; no live End run exists. The compiled Aiken suite asserts the refusal (cage_end.tests.ak end_owner_signed_refuses), which is narrower evidence than a ledger run and is not counted as coverage."
     },
     {
       "expected": "observe and report — refused, with the consumer-model conflict unresolved (crossed allocation enforced by the state script); rejected-action refund-floor control separate",

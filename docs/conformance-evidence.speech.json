@@ -14,7 +14,7 @@
   "bound-to-evidence-elsewhere": [
     {
       "pause": 400,
-      "text": "7 requirements are evidenced by another suite, named in each row."
+      "text": "5 requirements are evidenced by another suite, named in each row."
     }
   ],
   "in-memory-adapter": [
@@ -80,7 +80,7 @@
   "uncovered": [
     {
       "pause": 400,
-      "text": "12 requirements have no evidence yet."
+      "text": "14 requirements have no evidence yet."
     }
   ],
   "what-this-evidence-is-bound-to": [
@@ -90,7 +90,7 @@
     },
     {
       "pause": 400,
-      "text": "46 requirements are in the inventory. 22 were demonstrated by a run, 0 partly, 4 ran without a pass, 7 are bound to evidence elsewhere, 12 are uncovered and 1 are out of scope."
+      "text": "46 requirements are in the inventory. 22 were demonstrated by a run, 0 partly, 4 ran without a pass, 5 are bound to evidence elsewhere, 14 are uncovered and 1 are out of scope."
     },
     {
       "pause": 400,
@@ -99,6 +99,6 @@
   ],
   "_source": {
     "file": "conformance-evidence.md",
-    "sha256": "f93837975e911886b006b117a96e7cc34b2c2f30091a181c350a1cdd65b947e0"
+    "sha256": "e5919b1d994de4e0a1ed5b9dfb634a04522fe6f7c3e24256f26f94ba3af6bb23"
   }
 }

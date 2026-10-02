@@ -123,7 +123,7 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "d9d9ca2fc68ec159cce55c9140d8f42fae525e291c8b67019c2fefdc714ecc30"
+    "sha256": "0870301022f2e0ec7bff46bde3c4bc84fbfa317218bba3476953517c36fde9ca"
   },
   "historical-execution-reports": [
     {
@@ -141,7 +141,7 @@
       "pause": 400
     },
     {
-      "text": "Four rows rest on predecessor runs and are cited, not re-executed, and a fifth is superseded with its observation preserved and no credit. The consumer-gap rows are executed holds now, apart from the surplus action, which is unmet by ruling: the requirement stays unmet, and a held or unmet row is never a pass. The serialization schema rows await the ownerless repair before fresh execution, because coverage is not inherited across a wire-format change.",
+      "text": "Three rows rest on predecessor runs and are cited, not re-executed. The sweep and the termination rows cite nothing any more: the examples they cited were removed with the owner role, nothing runs them, and they are superseded with no credit. The consumer-gap rows are executed holds now, apart from the surplus action, which is unmet by ruling: the requirement stays unmet, and a held or unmet row is never a pass. The serialization schema rows await the ownerless repair before fresh execution, because coverage is not inherited across a wire-format change.",
       "pause": 400
     },
     {
