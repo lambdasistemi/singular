@@ -689,6 +689,9 @@ test-suite cage-tests
     Singular.CLI.InsertEnvelope
     Singular.CLI.OutlaySpec
     Singular.CLI.Outlay
+    Singular.CLI.RejectRules
+    Singular.CLI.RejectSpec
+    Singular.CLI.RequestWindow
     Singular.CLI.Node
     Singular.CLI.Preimage
     Singular.CLI.Proof
@@ -972,6 +975,9 @@ executable singular
     Singular.CLI.Reconcile
     Singular.CLI.Recovery
     Singular.CLI.Registry
+    Singular.CLI.Reject
+    Singular.CLI.RejectRules
+    Singular.CLI.RequestWindow
     Singular.CLI.Session
 
   build-depends:

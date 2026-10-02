@@ -29,6 +29,9 @@ module Singular.CLI.Live
     , liveOutputFor
     , holdingsFor
     , applicationReference
+    , coinOf
+    , assetsOf
+    , valueJson
 
       -- * The mirror
     , Mirror (..)
@@ -53,12 +56,23 @@ import Data.Text (Text)
 import Lens.Micro ((^.))
 
 import Cardano.Ledger.Address (Addr (..))
-import Cardano.Ledger.Api.Tx.Out (TxOut, referenceScriptTxOutL)
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , coinTxOutL
+    , referenceScriptTxOutL
+    , valueTxOutL
+    )
 import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (..))
+import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.Credential
     ( Credential (..)
     , StakeReference (..)
+    )
+import Cardano.Ledger.Mary.Value
+    ( MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID (..)
     )
 import Cardano.Ledger.TxIn (TxIn)
 
@@ -82,6 +96,7 @@ import Singular.CLI.Registry
     , Release (..)
     , checkPins
     , configPath
+    , hexT
     , loadRelease
     , partsOf
     , pinsOf
@@ -328,3 +343,24 @@ receipt command outcome fields =
 
 txInText :: TxIn -> Text
 txInText = renderOutRef
+
+-- | The lovelace an output holds.
+coinOf :: TxOut ConwayEra -> Integer
+coinOf o = let Coin c = o ^. coinTxOutL in c
+
+-- | The non-ada assets an output actually holds, as a receipt states them.
+assetsOf :: TxOut ConwayEra -> [Value]
+assetsOf o =
+    [ object
+        [ "policy" .= hexT (scriptHashBytes p)
+        , "name" .= hexT (SBS.fromShort n)
+        , "quantity" .= q
+        ]
+    | let MaryValue _ (MultiAsset m) = o ^. valueTxOutL
+    , (PolicyID p, assets) <- Map.toList m
+    , (AssetName n, q) <- Map.toList assets
+    ]
+
+-- | What an output actually holds: its lovelace and its other assets.
+valueJson :: TxOut ConwayEra -> Value
+valueJson o = object ["lovelace" .= coinOf o, "assets" .= assetsOf o]

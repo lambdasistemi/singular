@@ -17,6 +17,8 @@ below happens before anything is read or submitted.
   also folds it in the same command;
 * @registry fold@ folds the one pending request, signed and funded by
   the wallet that runs it;
+* @registry reject@ rejects every pending request, once each is past both
+  its windows, signed and funded by the wallet that runs it;
 * @registry inspect@ reads the registry and one key back, and accepts
   no signing key at all.
 
@@ -36,6 +38,7 @@ module Singular.CLI.Command
     , FoldArgs (..)
     , InspectArgs (..)
     , NodeSettings (..)
+    , RejectArgs (..)
     , WriteSettings (..)
     , Key (..)
 
@@ -167,12 +170,29 @@ data FoldArgs = FoldArgs
     }
     deriving stock (Eq, Show)
 
+-- | @registry reject@: every pending request, rejected by this wallet.
+data RejectArgs = RejectArgs
+    { rejectRegistry :: FilePath
+    , rejectBlueprint :: FilePath
+    , rejectWrite :: WriteSettings
+    , rejectFund :: Maybe TxIn
+    -- ^ @--fund-input@: the wallet output that funds and collateralises the reject
+    , rejectMaxOutlay :: Maybe Integer
+    -- ^ @--max-outlay@: lovelace the reject may put out; past it nothing is signed
+    , rejectReceipt :: Maybe FilePath
+    }
+    deriving stock (Eq, Show)
+
 -- | @registry inspect@: node settings only, never a wallet.
 data InspectArgs = InspectArgs
     { inspectRegistry :: FilePath
     , inspectBlueprint :: FilePath
     , inspectNode :: NodeSettings
     , inspectKey :: Key
+    , inspectOutputsAt :: Maybe String
+    {- ^ @--outputs-at@: a public address whose outputs the receipt also lists, read
+    from the node apart from any write
+    -}
     , inspectReceipt :: Maybe FilePath
     }
     deriving stock (Eq, Show)
@@ -185,6 +205,7 @@ data Command
     | Update EntryArgs
     | Terminate EntryArgs
     | Fold FoldArgs
+    | Reject RejectArgs
     | Inspect InspectArgs
     deriving stock (Eq, Show)
 
@@ -219,31 +240,33 @@ parseCommand args = do
     _ <- either (Left . BadValue "--backend") Right (backendSetting args)
     if "--help" `elem` map fst flags || "-h" `elem` map fst flags
         then Right Help
-        else case words' of
-            [] -> Right Help
-            ["registry"] -> Right Help
-            ["registry", "create"] ->
-                refuseSpendingFlags "create" flags
-                    >> refuseRequest flags
-                    >> refuseFold flags
-                    >> (Create <$> createArgs flags)
-            ["registry", "insert"] ->
-                refuseRequest flags >> (Insert <$> insertArgs flags)
-            ["registry", "update"] ->
-                refuseRequest flags
-                    >> refuseDeposit flags
-                    >> (Update <$> entryArgs False (Just "--payload") flags)
-            ["registry", "terminate"] ->
-                refuseRequest flags
-                    >> refuseDeposit flags
-                    >> (Terminate <$> entryArgs True Nothing flags)
-            ["registry", "fold"] -> Fold <$> foldArgs flags
-            ["registry", "inspect"] ->
-                refuseSpendingFlags "inspect" flags
-                    >> refuseRequest flags
-                    >> refuseFold flags
-                    >> (Inspect <$> inspectArgs flags)
-            _ -> Left (UnknownCommand words')
+        else
+            refuseOutputsAt words' flags >> case words' of
+                [] -> Right Help
+                ["registry"] -> Right Help
+                ["registry", "create"] ->
+                    refuseSpendingFlags "create" flags
+                        >> refuseRequest flags
+                        >> refuseFold flags
+                        >> (Create <$> createArgs flags)
+                ["registry", "insert"] ->
+                    refuseRequest flags >> (Insert <$> insertArgs flags)
+                ["registry", "update"] ->
+                    refuseRequest flags
+                        >> refuseDeposit flags
+                        >> (Update <$> entryArgs False (Just "--payload") flags)
+                ["registry", "terminate"] ->
+                    refuseRequest flags
+                        >> refuseDeposit flags
+                        >> (Terminate <$> entryArgs True Nothing flags)
+                ["registry", "fold"] -> Fold <$> foldArgs flags
+                ["registry", "reject"] -> Reject <$> rejectArgs flags
+                ["registry", "inspect"] ->
+                    refuseSpendingFlags "inspect" flags
+                        >> refuseRequest flags
+                        >> refuseFold flags
+                        >> (Inspect <$> inspectArgs flags)
+                _ -> Left (UnknownCommand words')
   where
     -- The constraints on a write's spending belong to insert, update and
     -- terminate. A command that does not enforce one refuses it by name rather
@@ -252,6 +275,18 @@ parseCommand args = do
         forM_ ["--fund-input", "--max-outlay"] $ \flag ->
             when (isJust (lookup flag flags)) $
                 Left (UnsupportedFlag flag command)
+    -- @--outputs-at@ is read by @registry inspect@ alone; any other command
+    -- refuses it by name rather than ignore it.
+    refuseOutputsAt words' flags =
+        when
+            ( isJust (lookup "--outputs-at" flags)
+                && words' /= ["registry", "inspect"]
+            )
+            $ Left
+                ( BadValue
+                    "--outputs-at"
+                    "is a registry inspect flag: only inspect reads another address's outputs"
+                )
     -- @--request@ names what @registry fold@ folds; @--fold@ belongs to the
     -- two commands that book. Any other command refuses either by name.
     refuseRequest flags =
@@ -380,6 +415,35 @@ parseCommand args = do
                 , foldMaxOutlay = outlay
                 , foldReceipt = optional "--receipt" flags
                 }
+    rejectArgs flags = do
+        dir <- required "--registry" flags
+        bp <- required "--blueprint" flags
+        forM_
+            ( ["--request"]
+                <> map fst keyFlags
+                <> ["--deposit", "--payload", "--preview", "--fold"]
+            )
+            $ \flag ->
+                when (isJust (lookup flag flags)) $
+                    Left
+                        ( BadValue
+                            flag
+                            "is not accepted by registry reject: it takes every pending request, once each is past both its windows"
+                        )
+        when (isJust (lookup "--wallet-address" flags)) $
+            Left addressNeedsPreview
+        settings <- writeSettings flags
+        fund <- fundFrom flags
+        outlay <- outlayFrom flags
+        pure
+            RejectArgs
+                { rejectRegistry = dir
+                , rejectBlueprint = bp
+                , rejectWrite = settings
+                , rejectFund = fund
+                , rejectMaxOutlay = outlay
+                , rejectReceipt = optional "--receipt" flags
+                }
     fundFrom flags = case optional "--fund-input" flags of
         Nothing -> Right Nothing
         Just s -> case parseOutRef (T.pack s) of
@@ -411,6 +475,7 @@ parseCommand args = do
                 , inspectBlueprint = bp
                 , inspectNode = NodeSettings sock magic
                 , inspectKey = key
+                , inspectOutputsAt = optional "--outputs-at" flags
                 , inspectReceipt = optional "--receipt" flags
                 }
     -- A preview reads a node and names a public address; it holds no key,
@@ -521,6 +586,7 @@ tokens = go [] []
         , "--receipt"
         , "--confirm-timeout"
         , "--wallet-address"
+        , "--outputs-at"
         , "--fund-input"
         , "--max-outlay"
         , "--deposit"
@@ -564,7 +630,7 @@ renderCLIError = \case
         flag
             <> " is not accepted by `registry "
             <> command
-            <> "`: only insert, update, terminate and fold enforce it, and a constraint the command does not enforce is refused, never ignored"
+            <> "`: only insert, update, terminate, fold and reject enforce it, and a constraint the command does not enforce is refused, never ignored"
 
 -- | The supported commands.
 usage :: String
@@ -602,8 +668,11 @@ usage =
         , "  singular registry fold --registry DIR --blueprint PLUTUS_JSON"
         , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "  singular registry reject --registry DIR --blueprint PLUTUS_JSON"
+        , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry inspect --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --node-socket PATH --network-magic N [--receipt FILE]"
+        , "      --node-socket PATH --network-magic N [--receipt FILE] [--outputs-at ADDR]"
         , ""
         , "Write commands also take --confirm-timeout SECONDS (default 600): past it"
         , "the command stops with its submission journalled and never resubmits."
@@ -614,8 +683,14 @@ usage =
         , "fold is its own command, registry fold, run by whichever wallet folds, before"
         , "the processing deadline the booking's receipt names. Given the fold switch,"
         , "either also folds, in the same command, once its booking confirms."
-        , "insert, update, terminate and fold fund and collateralise from the funding"
-        , "input named, and hold to the maximum outlay stated: a booking, an update or a"
+        , "reject clears the registry's pending requests, all or none: it is built only"
+        , "once every pending request is past both its windows, the processing window and"
+        , "the retract window after it, and until then it is refused, naming each request"
+        , "and when its retract window closes. Each owner is refunded the request's value"
+        , "less the tip in the one output designated for it; the wallet that runs it keeps"
+        , "the tip, and the registry's root does not move."
+        , "insert, update, terminate, fold and reject fund and collateralise from the funding"
+        , "input named, and hold to the maximum outlay stated: a booking, an update, a reject or a"
         , "fold past it is not signed, and a combined insert or terminate whose fold,"
         , "built after its booking confirms, costs more than the booking left of it stops"
         , "partial, its request pending, with the fold unsigned. create and inspect"
@@ -625,6 +700,8 @@ usage =
         , "sign, submit and journal nothing."
         , "A registry key is 1 to 32 bytes: KEY is read as text, its UTF-8 bytes, and HEX as"
         , "base16. A key is named once, by one of the two."
+        , "inspect also lists the registry's pending requests with what each actually locks,"
+        , "and the outputs at a public address it is given: reads apart from any write."
         , "Each command prints one JSON receipt on standard output. inspect reads"
         , "only: it takes no signing key and submits nothing."
         ]

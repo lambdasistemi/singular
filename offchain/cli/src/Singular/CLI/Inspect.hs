@@ -43,6 +43,7 @@ import Control.Exception
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.Aeson qualified as Aeson
 import Data.ByteString (ByteString)
+import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -57,10 +58,12 @@ import Cardano.Ledger.Api.Scripts.Data
     , hashBinaryData
     )
 import Cardano.Ledger.Api.Tx.Out (TxOut, coinTxOutL, datumTxOutL)
+import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (eraProtVerHigh)
 import Cardano.Ledger.Hashes (extractHash)
+import Cardano.Ledger.TxIn (TxIn)
 
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
@@ -102,6 +105,7 @@ import Singular.CLI.Registry
     , configPath
     , hexT
     , keyFields
+    , parseEnterpriseAddress
     , pendingPath
     , renderIdentityError
     )
@@ -112,6 +116,17 @@ import Singular.CLI.Session
     )
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.TxBuilder.Internal
+    ( extractCageDatum
+    , extractOwnerBytes
+    , findRequestUtxos
+    , requestAddrFromCfg
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRequest (..)
+    , edgeName
+    )
 
 runInspect :: InspectArgs -> IO Value
 runInspect a = do
@@ -249,6 +264,28 @@ inspectSaved dir key sock magic a = do
                     (Map.lookup (savedToken saved) tries)
             leaf <- authenticatedLeaf db key root
             outs <- liveOutputs v saved
+            requests <-
+                Cage.viewUTxOsAt
+                    v
+                    (requestAddrFromCfg (savedCfg saved) (savedToken saved) Testnet)
+            listed <- case inspectOutputsAt a of
+                Nothing -> pure []
+                Just text -> do
+                    addr <-
+                        either
+                            (failWith ClientRefusal . replaceFlag)
+                            pure
+                            (parseEnterpriseAddress magic text)
+                    os <- Cage.viewUTxOsAt v addr
+                    pure
+                        [
+                            ( "outputsAt"
+                            , object
+                                [ "address" .= T.pack text
+                                , "outputs" .= [outputJson i o | (i, o) <- os]
+                                ]
+                            )
+                        ]
             let holdings = holdingsFor saved key outs
                 keyOutput = liveOutputFor saved key outs
             entries <- readJournal dir
@@ -282,6 +319,16 @@ inspectSaved dir key sock magic a = do
                            , ("root", toJSON (hexT root))
                            , ("applicationOutput", application)
                            ]
+                        <> [
+                               ( "pendingRequests"
+                               , toJSON
+                                    ( map
+                                        pendingJson
+                                        (sortOn fst (findRequestUtxos (savedToken saved) requests))
+                                    )
+                               )
+                           ]
+                        <> listed
                         <> reconciledFields reconciled
                 agrees = \case
                     Active -> length holdings == 1
@@ -342,3 +389,27 @@ inspectSaved dir key sock magic a = do
                 failWith
                     NodeUnavailable
                     ("the node at " <> sock <> " could not be read: " <> show e)
+
+{- | A pending request, as the node holds it: who owns it, what it asks and
+what it actually locks.
+-}
+pendingJson :: (TxIn, TxOut ConwayEra) -> Value
+pendingJson (i, o) = case extractCageDatum o of
+    Just (RequestDatum r) ->
+        object
+            [ "request" .= txInText i
+            , "owner" .= hexT (extractOwnerBytes o)
+            , "key" .= hexT (requestKey r)
+            , "edge" .= edgeName (requestEdge r)
+            , "submittedAt" .= requestSubmittedAt r
+            , "locked" .= valueJson o
+            ]
+    _ -> object ["request" .= txInText i]
+
+-- | One output at an address the caller named, as the node holds it.
+outputJson :: TxIn -> TxOut ConwayEra -> Value
+outputJson i o = object ["output" .= txInText i, "locked" .= valueJson o]
+
+-- | The address reader names its own flag; this command's is @--outputs-at@.
+replaceFlag :: String -> String
+replaceFlag = T.unpack . T.replace "--wallet-address" "--outputs-at" . T.pack

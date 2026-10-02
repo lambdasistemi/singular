@@ -10,6 +10,7 @@ import Singular.Application.OpenDatum.EnvelopeSpec qualified
 import Singular.CLI.FoldSpec qualified
 import Singular.CLI.InsertEnvelopeSpec qualified
 import Singular.CLI.OutlaySpec qualified
+import Singular.CLI.RejectSpec qualified
 import Singular.CLI.WriteSpec qualified
 import Singular.CLISpec qualified
 import Singular.Registry.BlueprintParametersSpec qualified
@@ -67,4 +68,5 @@ main = hspec $ do
     Singular.CLISpec.spec
     Singular.CLI.OutlaySpec.spec
     Singular.CLI.FoldSpec.spec
+    Singular.CLI.RejectSpec.spec
     Singular.CLI.WriteSpec.spec

@@ -33,6 +33,9 @@ flowchart LR
   Inspect2 --> Terminate[terminate: booked, pending]
   Terminate --> Fold2[fold]
   Fold2 --> Inspect3[inspect: Terminal, deposit released]
+  Inspect3 --> Reject[reject: a request past both windows]
+  Reject --> Insert2[insert: a new request]
+  Insert2 --> Fold3[fold]
 ```
 
 ## Build the commands
@@ -94,6 +97,17 @@ node=(--node-socket "$sock" --network-magic 42)
 
 # 9. Read it back.
 "$singular" registry inspect --registry reg --blueprint "$blueprint" --key alice "${node[@]}"
+
+# 10. A request nobody folded or took back stays pending past both its windows and
+#     blocks the registry's fold. Reject it; any wallet may: here, Bob's.
+"$singular" registry reject --registry reg --blueprint "$blueprint" "${node[@]}" --wallet-skey bob.skey
+
+# 11. The registry takes requests again: book a new insertion.
+"$singular" registry insert --registry reg --blueprint "$blueprint" --key bob \
+  --payload payload.json "${node[@]}" --wallet-skey bob.skey
+
+# 12. Fold it.
+"$singular" registry fold --registry reg --blueprint "$blueprint" "${node[@]}" --wallet-skey alice.skey
 ```
 
 Run the fold of a request before the deadline its booking's receipt names
@@ -149,6 +163,20 @@ insert receipt and the preview receipt print the envelope it built.
 8. **`singular registry fold`** folds it: the token is burned and the protected deposit is
    paid back to the controller together with everything else the fold owes you.
 9. **`singular registry inspect`** reads the key `terminal`, with no holding.
+10. **`singular registry reject`** clears a request that is past both its windows: its
+    processing window, in which the registry's fold may take it, and the retract window
+    after it, in which its owner may take it back. It is refused, naming each request and
+    when its retract window closes, while any pending request is still inside a window, and
+    when nothing is pending. The windows are judged from the ledger's tip, not the host's
+    clock. Its receipt names every request rejected, the value it actually locked (its
+    lovelace and any other assets, nothing it never held), the tip the rejecting wallet keeps,
+    and the refund: the designated output, its recipient and its amount. The registry's root
+    does not move. The refund is the whole owed amount in one output to the request's owner,
+    the one shape the chain accepts: a refund split across several outputs to the same owner
+    is accepted by the model and refused by the chain (issue 361), so a successful reject
+    is that shape on this chain, not general reject-refund conformance.
+11. **`singular registry insert`** books a new request, which the cleared registry now takes.
+12. **`singular registry fold`** folds it, and the key reads `active`.
 
 A command that stops prints why, in one outcome class with its own exit
 status: `client-refusal` (nothing submitted), `ledger-refusal`,

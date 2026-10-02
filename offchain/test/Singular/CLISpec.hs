@@ -140,9 +140,18 @@ commandLine = describe "the command line" $ do
         parseCommand ["--help"] `shouldBe` Right Help
         parseCommand ["registry", "--help"] `shouldBe` Right Help
         parseCommand [] `shouldBe` Right Help
-    it "names the six commands and only them in its usage" $ do
-        forM5 ["create", "insert", "update", "terminate", "fold", "inspect"] $ \c ->
-            usage `shouldSatisfy` isInfixOf ("singular registry " <> c)
+    it "names the seven commands and only them in its usage" $ do
+        forM5
+            [ "create"
+            , "insert"
+            , "update"
+            , "terminate"
+            , "fold"
+            , "reject"
+            , "inspect"
+            ]
+            $ \c ->
+                usage `shouldSatisfy` isInfixOf ("singular registry " <> c)
         usage `shouldNotSatisfy` isInfixOf "registry delete"
     it "refuses a command it does not support" $
         parseCommand ["registry", "delete"]
@@ -369,6 +378,8 @@ commandLine = describe "the command line" $ do
             insert ["--confirm-timeout", "soon"]
                 `shouldBe` Left (BadValue "--confirm-timeout" "is not a whole number of seconds")
     foldRows
+    rejectRows
+    outputsAtRows
     preview
     it "refuses a write against mainnet" $
         parseCommand
@@ -416,11 +427,13 @@ commandLine = describe "the command line" $ do
             <> wallet
         , ["registry", "terminate", "--key", "key"] <> reg <> node <> wallet
         , ["registry", "fold"] <> reg <> node <> wallet
+        , ["registry", "reject"] <> reg <> node <> wallet
         , ["registry", "inspect", "--key", "key"] <> reg <> node
         ]
     forM5 xs f = mapM_ f xs
     preview = previewRows
     foldRows = foldCommandRows
+    rejectRows = rejectCommandRows
     writeSettings =
         WriteSettings
             { writeNode = NodeSettings "/run/node.socket" 42
@@ -1620,3 +1633,123 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
         Insert e -> entryFold e
         Terminate e -> entryFold e
         _ -> error "not an entry command"
+
+-- ---------------------------------------------------------
+-- Rejecting the registry's expired requests
+-- ---------------------------------------------------------
+
+rejectCommandRows :: Spec
+rejectCommandRows = describe "rejecting the registry's expired requests" $ do
+    let reject extra =
+            parseCommand
+                (["registry", "reject"] <> reg <> node <> wallet <> extra)
+        refusesBadValue flag = \case
+            Left (BadValue name _) -> name == flag
+            _ -> False
+        writes =
+            WriteSettings
+                { writeNode = NodeSettings "/run/node.socket" 42
+                , writeWalletKey = "/keys/payment.skey"
+                , writeConfirmTimeout = Nothing
+                }
+    it
+        "reads a reject with its registry, node and wallet and nothing else"
+        $ reject []
+            `shouldBe` Right
+                ( Reject
+                    RejectArgs
+                        { rejectRegistry = "/srv/reg"
+                        , rejectBlueprint = "/srv/plutus.json"
+                        , rejectWrite = writes
+                        , rejectFund = Nothing
+                        , rejectMaxOutlay = Nothing
+                        , rejectReceipt = Nothing
+                        }
+                )
+    it
+        "reads the funding output, the outlay and the receipt a reject names"
+        $ reject
+            [ "--fund-input"
+            , replicate 64 'c' <> "#1"
+            , "--max-outlay"
+            , "3000000"
+            , "--receipt"
+            , "/r.json"
+            ]
+            `shouldBe` Right
+                ( Reject
+                    RejectArgs
+                        { rejectRegistry = "/srv/reg"
+                        , rejectBlueprint = "/srv/plutus.json"
+                        , rejectWrite = writes
+                        , rejectFund =
+                            Just
+                                (either error id (parseOutRef (T.pack (replicate 64 'c' <> "#1"))))
+                        , rejectMaxOutlay = Just 3_000_000
+                        , rejectReceipt = Just "/r.json"
+                        }
+                )
+    it
+        "refuses a reject with no node and wallet rather than starting a node"
+        $ parseCommand (["registry", "reject"] <> reg)
+            `shouldSatisfy` isLeftWith (\case UnsafeSettings _ -> True; _ -> False)
+    it
+        "refuses, by name, what a reject does not take: it takes every pending request"
+        $ forM_
+            [ ("--request", ["--request", replicate 64 'a' <> "#0"])
+            , ("--key", ["--key", "6b6579"])
+            , ("--key-hex", ["--key-hex", "616c696365"])
+            , ("--deposit", ["--deposit", "2000000"])
+            , ("--payload", ["--payload", "/p.json"])
+            , ("--preview", ["--preview"])
+            , ("--fold", ["--fold"])
+            ]
+        $ \(flag, extra) -> reject extra `shouldSatisfy` refusesBadValue flag
+    it
+        "refuses every flag that spells a key, by name, so none is silently ignored"
+        $ forM_ keyFlags
+        $ \(flag, _) ->
+            reject [flag, "616c696365"] `shouldSatisfy` refusesBadValue flag
+    it "describes reject in its usage" $ do
+        usage
+            `shouldSatisfy` isInfixOf "singular registry reject --registry DIR"
+        usage `shouldSatisfy` isInfixOf "past both its windows"
+
+-- ---------------------------------------------------------
+-- Reading another address's outputs from the node
+-- ---------------------------------------------------------
+
+outputsAtRows :: Spec
+outputsAtRows = describe "reading the outputs at an address with inspect" $ do
+    let inspect extra =
+            parseCommand
+                (["registry", "inspect", "--key", "key"] <> reg <> node <> extra)
+        outputsAtOf = \case
+            Right (Inspect i) -> Just (inspectOutputsAt i)
+            _ -> Nothing
+        others =
+            [ ["registry", "create", "--seed", seedText] <> reg <> node <> wallet
+            , ["registry", "insert", "--key", "key", "--payload", "/p.json"]
+                <> reg
+                <> node
+                <> wallet
+            , ["registry", "update", "--key", "key", "--payload", "/p.json"]
+                <> reg
+                <> node
+                <> wallet
+            , ["registry", "terminate", "--key", "key"] <> reg <> node <> wallet
+            , ["registry", "fold"] <> reg <> node <> wallet
+            , ["registry", "reject"] <> reg <> node <> wallet
+            ]
+    it "reads the address an inspect names, and none by default" $ do
+        outputsAtOf (inspect []) `shouldBe` Just Nothing
+        outputsAtOf (inspect ["--outputs-at", "addr_test1xyz"])
+            `shouldBe` Just (Just "addr_test1xyz")
+    it "refuses it on every other command, by name, never ignoring it" $
+        forM_ others $ \line ->
+            parseCommand (line <> ["--outputs-at", "addr_test1xyz"])
+                `shouldSatisfy` \case
+                    Left (BadValue "--outputs-at" why) -> "registry inspect" `isInfixOf` why
+                    _ -> False
+    it "is described in the usage" $
+        usage `shouldSatisfy` isInfixOf "[--outputs-at ADDR]"

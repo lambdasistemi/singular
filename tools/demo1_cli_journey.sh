@@ -10,14 +10,16 @@
 # separate process against it:
 #
 #   create -> insert -> fold -> inspect -> update -> inspect
-#          -> terminate -> fold -> inspect
+#          -> terminate -> fold -> inspect -> reject -> insert -> fold
 #
 # An insert or a terminate books and leaves its request pending; `registry
 # fold` folds it, signed by a wallet other than the booking's. The combined
 # `--fold` form is run where a control needs the fold to follow its own
 # booking in one process. The journey also books a request and lets its
 # processing deadline pass: the late fold is refused by the client, by name,
-# before anything is signed.
+# before anything is signed. That request is then rejected once its retract
+# window has closed, refused by name while it is still open, and a new request
+# is folded afterwards.
 #
 # Each process leaves one JSON receipt. Assertions read those receipts,
 # the target directory's own journal and files, and nothing else. A
@@ -266,6 +268,62 @@ prepared_points() {
 # hexof TEXT: the hex of the key bytes, for the expected envelope.
 hexof() { printf '%s' "$1" | od -An -tx1 | tr -d ' \n'; }
 
+# A minimal CBOR reader, for the saved signed transactions the journal keeps:
+# the outputs of a transaction (address hex, lovelace, other assets, inline datum),
+# read apart from any receipt. Byte strings are hex strings, maps are lists of
+# [key, value] pairs, a tag is {tag, value}.
+cat >"$work/cbor.jq" <<'JQ'
+def nibble: if . >= 97 then . - 87 else . - 48 end;
+def tobytes: explode | map(nibble) | [range(0; length; 2) as $i | .[$i] * 16 + .[$i + 1]];
+def hexdig: if . < 10 then . + 48 else . + 87 end;
+def bytehex: map([(. / 16 | floor), (. % 16)] | map(hexdig)) | flatten | implode;
+def be($b; $p; $n): reduce range($p; $p + $n) as $i (0; . * 256 + $b[$i]);
+def head($b; $p):
+  $b[$p] as $h | ($h / 32 | floor) as $mt | ($h % 32) as $ai
+  | (if $ai < 24 then [$ai, $p + 1]
+     elif $ai == 24 then [$b[$p + 1], $p + 2]
+     elif $ai == 25 then [be($b; $p + 1; 2), $p + 3]
+     elif $ai == 26 then [be($b; $p + 1; 4), $p + 5]
+     elif $ai == 27 then [be($b; $p + 1; 8), $p + 9]
+     else [null, $p + 1] end) as [$arg, $q]
+  | {mt: $mt, ai: $ai, arg: $arg, q: $q};
+def dec($b; $p):
+  head($b; $p) as {mt: $mt, ai: $ai, arg: $arg, q: $q}
+  | if $mt == 0 then [$arg, $q]
+    elif $mt == 1 then [-1 - $arg, $q]
+    elif $mt == 2 then [($b[$q:$q + $arg] | bytehex), $q + $arg]
+    elif $mt == 3 then [($b[$q:$q + $arg] | implode), $q + $arg]
+    elif $mt == 4 or $mt == 5 then
+      (if $mt == 5 then 2 else 1 end) as $w
+      | (if $ai == 31 then null else $arg * $w end) as $count
+      | {p: $q, v: [], n: 0}
+      | until(
+          (if $count == null then $b[.p] == 255 else .n >= $count end);
+          dec($b; .p) as [$c, $r] | {p: $r, v: (.v + [$c]), n: (.n + 1)})
+      | (if $count == null then .p + 1 else .p end) as $e
+      | .v as $items
+      | [(if $mt == 5 then [range(0; $items | length; 2) as $i | [$items[$i], $items[$i + 1]]] else $items end), $e]
+    elif $mt == 6 then dec($b; $q) as [$v, $r] | [{tag: $arg, value: $v}, $r]
+    else [(if $ai == 20 then false elif $ai == 21 then true else null end), $q]
+    end;
+def decode: tobytes as $b | dec($b; 0) | .[0];
+def mapget($k): map(select(.[0] == $k)) | (.[0] // [null, null])[1];
+def datum_value: if type == "object" and .tag == 24 then (.value | decode) else . end;
+def out_of:
+  if (.[0] | type) == "string" then {address: .[0], v: .[1], datum: null}
+  else {address: mapget(0), v: mapget(1),
+        datum: (mapget(2) | if . == null then null elif .[0] == 1 then (.[1] | datum_value) else null end)}
+  end
+  | .coin = (if (.v | type) == "array" then .v[0] else .v end)
+  | .assets = [(if (.v | type) == "array" then .v[1][]? else empty end) | .[0] as $p | .[1][] | {policy: $p, name: .[0], quantity: .[1]}]
+  | del(.v);
+def tx_outputs: decode | .[0] | mapget(1) | map(out_of);
+# the hex of a signed transaction's body alone: the bytes whose hash is its id
+def body_span: tobytes as $b | (if $b[0] == 132 then dec($b; 1) else error("not a four-element transaction") end) as [$v, $q] | $b[1:$q] | bytehex;
+JQ
+# tx_outputs_of TXID: the outputs of the signed transaction the registry directory's journal saved.
+tx_outputs_of() { jq -R -c "$(cat "$work/cbor.jq") tx_outputs" "$reg/submissions/$1.cbor.hex"; }
+
 # payload FILE: the nested payload every insert of this journey carries.
 payload() {
   jq -n '{map:[{k:{bytes:"6e616d65"},v:{list:[{int:-7},{bytes:"616c696365"},{constructor:2,fields:[]}]}}]}' >"$1"
@@ -288,13 +346,13 @@ holds_envelope() {
 # The command surface
 # ------------------------------------------------------------------
 "$singular" --help >"$work/help.txt"
-for c in create insert update terminate fold inspect; do
+for c in create insert update terminate fold reject inspect; do
   grep -q "singular registry $c" "$work/help.txt" || fail "help does not name registry $c"
 done
 status=0
 "$singular" registry inspect --key-hex 00 "${common[@]}" "${node[@]}" "${alice[@]}" >/dev/null 2>&1 || status=$?
 [ "$status" -eq 2 ] || fail "inspect accepted a signing key (exit $status)"
-say "help names the six commands; a signing key on inspect is refused"
+say "help names the seven commands; a signing key on inspect is refused"
 
 # ------------------------------------------------------------------
 # 1. create
@@ -803,9 +861,191 @@ jq -e --slurpfile l "$receipts/late-insert.json" '
   "$receipts/fold-late.json" >/dev/null \
   || fail "the late fold does not name the deadline and the request it left pending: $(field fold-late .reason)"
 [ "$took" -le 30 ] || fail "the late fold took ${took}s to be refused; a client refusal reads one view and stops"
+# The same request is past its processing deadline but still inside its
+# retract window, where its owner may take it back: a reject, which takes
+# every pending request, is refused by the client before anything is signed,
+# naming the request and when its retract window closes.
+retract_ms="$(jq -r .confDeployment.depRetractTime "$reg/registry.json")"
+retract_ends=$((deadline_ms + retract_ms))
+[ "$(($(date +%s%3N) + 5000))" -lt "$retract_ends" ] \
+  || setup_fail "the late request's retract window is nearly over: the early reject would meet the open reject"
+refused reject-early client-refusal -- registry reject "${common[@]}" "${node[@]}" "${bob[@]}"
+jq -e --slurpfile l "$receipts/late-insert.json" --argjson e "$retract_ends" '
+    (.reason | contains($l[0].request) and contains("retract window") and contains($e | tostring))
+    and (.pendingRequests | length == 1)
+    and .pendingRequests[0].request == $l[0].request
+    and .pendingRequests[0].retractEnds == $e
+    and .pendingRequests[0].processingEnds == $l[0].foldDeadline.posixMs
+    and (.tipSlot | type == "number")
+    and (.pendingRequests[0].unplaced | type == "boolean")
+    and (.pendingRequests[0].retractEndsSlot == null or (.pendingRequests[0].retractEndsSlot | type == "number"))' \
+  "$receipts/reject-early.json" >/dev/null \
+  || fail "the early reject does not name the request and when its retract window closes: $(field reject-early .reason)"
 run inspect-late success -- registry inspect --key keyD "${common[@]}" "${node[@]}"
 [ "$(field inspect-late .leaf)" = unknown ] || fail "the refused late fold moved the registry"
 say "a fold after the deadline: refused in ${took}s, naming the deadline; its request stays pending"
+
+# ------------------------------------------------------------------
+# 7c. reject: the request nobody folded or took back is cleared
+# ------------------------------------------------------------------
+# Past both windows the request can only be rejected, and while it stays
+# pending the registry's fold, which takes every pending request, is
+# blocked. Bob rejects it with his own wallet: the whole refund goes to the
+# owner in the output designated for it, the receipt names what was locked,
+# what the folder kept and what went to whom, and the root does not move.
+wait_ms=$((retract_ends + 3000 - $(date +%s%3N)))
+if [ "$wait_ms" -gt 0 ]; then
+  say "waiting $((wait_ms / 1000 + 1)) s for the late request's retract window to close"
+  sleep $((wait_ms / 1000 + 1))
+fi
+root_before="$(field inspect-late .root)"
+before="$(journal_lines "$reg")"
+files_before="$(local_files)"
+# A funding output the rejecting wallet does not hold is refused by name, before
+# anything is signed.
+refused reject-bad-funding client-refusal -- registry reject --fund-input "$(printf '%064d' 0)#0" \
+  "${common[@]}" "${node[@]}" "${bob[@]}"
+jq -e '.reason | contains("cannot fund the reject")' "$receipts/reject-bad-funding.json" >/dev/null \
+  || fail "the reject with a stranger's funding output does not say so: $(field reject-bad-funding .reason)"
+# What the node holds before the reject: the pending request and what it actually locks.
+run inspect-before-reject success -- registry inspect --key keyD "${common[@]}" "${node[@]}"
+run reject success -- registry reject "${common[@]}" "${node[@]}" "${bob[@]}"
+[ "$(local_files)" = "$files_before" ] || fail "a reject moved the mirror or state.json"
+[ "$((($(journal_lines "$reg")) - before))" -eq 4 ] \
+  || fail "the reject left $((($(journal_lines "$reg")) - before)) journal lines, expected its four phases"
+tail -n +"$((before + 1))" "$reg/journal.jsonl" \
+  | jq -s -e --arg t "$(field reject .reject)" '(map(.journalEvent) == ["prepared", "submitted", "confirmed", "observed"]) and (map(.journalStep) | unique == ["reject"]) and (map(.journalTxId) | unique == [$t])' >/dev/null \
+  || fail "the journal lines the reject left are not one reject's prepared, submitted, confirmed and observed"
+jq -e --slurpfile l "$receipts/late-insert.json" --arg bob "$bobkey" --arg owner "$alicekey" --arg addr "$alice_addr" --arg k "$(hexof keyD)" '
+    (.reject | test("^[0-9a-f]{64}$")) and .rejector == $bob
+    and (.rejected | length == 1)
+    and (.rejected[0] as $r
+      | $r.request == $l[0].request and $r.owner == $owner and $r.key == $k
+      and $r.returned.recipient == $addr)
+    and .root == "'"$root_before"'"' "$receipts/reject.json" >/dev/null \
+  || fail "the reject receipt does not name the request, its owner and key, and the owner's address: $(jq -c .rejected "$receipts/reject.json")"
+# The receipt's money is bound to what the chain and the signed transactions say,
+# read apart from the receipt and from the reject command:
+#  - each saved signed body is bound to its claim: the transaction id the receipt
+#    claims is the hash of that body's own bytes, and the file's bytes hash to
+#    the journal's saved-body hash;
+#  - the request's locked value as the node held it before the reject, and the
+#    designated refund output as the node holds it afterwards (output reference,
+#    address and amount), read by `registry inspect` from the node;
+#  - the tip, and the designated output's index and address, from the reject's
+#    own signed body (state datum and outputs).
+# A receipt that differs in any of them turns the journey red, and each binding is
+# shown able to fail.
+# What the node holds after the reject: the outputs at the owner's address.
+run inspect-refund success -- registry inspect --key keyD --outputs-at "$alice_addr" "${common[@]}" "${node[@]}"
+reject_tx="$(field reject .reject)"
+booking_tx="$(field late-insert .booking)"
+for t in "$reject_tx" "$booking_tx"; do
+  [ "$(jq -s --arg t "$t" '[.[] | select(.journalTxId == $t and .journalEvent == "confirmed")] | length' "$reg/journal.jsonl")" = 1 ] \
+    || fail "the journal does not show $t confirmed"
+done
+# body_bound TXID FILE: zero only when FILE's body hashes to TXID and its bytes to the journal's hash.
+body_bound() {
+  local id file="$2" computed saved
+  computed="$(jq -R -r "$(cat "$work/cbor.jq") body_span" "$file" | tr -d '\n' | tr a-f A-F | basenc --base16 -d | b2sum -l 256 | cut -d' ' -f1)" || return 1
+  saved="$(tr -d '\n' <"$file" | tr a-f A-F | basenc --base16 -d | b2sum -l 256 | cut -d' ' -f1)" || return 1
+  id="$(jq -r --arg t "$1" 'select(.journalTxId == $t and .journalEvent == "prepared") | .journalBodyHash' "$reg/journal.jsonl")"
+  [ "$computed" = "$1" ] && [ -n "$id" ] && [ "$saved" = "$id" ]
+}
+for t in "$reject_tx" "$booking_tx"; do
+  body_bound "$t" "$reg/submissions/$t.cbor.hex" || fail "the saved body of $t is not the transaction it is claimed to be"
+done
+flip() { # one hex digit changed
+  local c="${1:0:1}"
+  [ "$c" = 0 ] && c=1 || c=0
+  printf '%s%s' "$c" "${1:1}"
+}
+body_bound "$(flip "$reject_tx")" "$reg/submissions/$reject_tx.cbor.hex" \
+  && fail "a body passed for a transaction id that is not its own"
+# the same bytes with their last digit changed no longer match the journal's hash
+# (the id, a hash of the body alone, still does)
+body="$(cat "$reg/submissions/$reject_tx.cbor.hex")"
+if [ "${body: -1}" = 0 ]; then last=1; else last=0; fi
+printf "%s%s" "${body%?}" "$last" >"$work/body-tampered.hex"
+cmp -s "$work/body-tampered.hex" "$reg/submissions/$reject_tx.cbor.hex" && setup_fail "the tampered body equals the saved one"
+body_bound "$reject_tx" "$work/body-tampered.hex" \
+  && fail "a body with changed bytes passed the journal's saved-body hash"
+booking_outs="$(tx_outputs_of "$booking_tx")" || fail "the booking's saved body could not be read"
+reject_outs="$(tx_outputs_of "$reject_tx")" || fail "the reject's saved body could not be read"
+# What the node held before the reject, and holds after it
+node_pending="$(jq -c --arg r "$(field late-insert .request)" '[.pendingRequests[] | select(.request == $r)]' "$receipts/inspect-before-reject.json")"
+node_refunds="$(jq -c '.outputsAt.outputs' "$receipts/inspect-refund.json")"
+[ "$(jq 'length' <<<"$node_pending")" = 1 ] || fail "the node did not show the late request pending before the reject: $node_pending"
+# reject_bound RECEIPT NODE_PENDING NODE_REFUNDS: every binding; zero only when all hold.
+reject_bound() {
+  jq -e --argjson bo "$booking_outs" --argjson ro "$reject_outs" --argjson np "$2" --argjson nr "$3" \
+    --arg owner "$alicekey" --arg tx "$reject_tx" '
+      $bo[0] as $req | $ro[0].datum.value[0].value[1] as $tip | .rejected[0] as $r
+      | ($req.coin | type == "number") and ($tip | type == "number")
+      and $r.locked.lovelace == $req.coin
+      and $r.locked.assets == [$req.assets[] | {policy, name, quantity}]
+      and ($np | length == 1) and $r.locked == $np[0].locked and $r.request == $np[0].request
+      and $r.tip == $tip
+      and $r.returned.index >= 1 and $ro[$r.returned.index] != null
+      and $r.returned.output == ($tx + "#" + ($r.returned.index | tostring))
+      and $ro[$r.returned.index].address == ("60" + $owner)
+      and $ro[$r.returned.index].coin == $r.returned.lovelace
+      and ([$nr[] | select(.output == $r.returned.output and .locked.lovelace == $r.returned.lovelace)] | length == 1)
+      and $r.returned.lovelace == ($req.coin - $tip)
+      and $r.topUp == ([$r.returned.lovelace - ($req.coin - $tip), 0] | max)
+      and $r.owner == $owner' "$1" >/dev/null
+}
+reject_bound "$receipts/reject.json" "$node_pending" "$node_refunds" \
+  || fail "the reject receipt's money differs from the chain and the signed transactions: receipt $(jq -c '.rejected[0] | {locked, tip, returned, topUp}' "$receipts/reject.json"); node before $node_pending; node after $node_refunds; reject outputs $(jq -c 'map({address, coin})' <<<"$reject_outs") tip $(jq -c '.[0].datum.value[0].value[1]' <<<"$reject_outs")"
+# Each binding can fail: a receipt edited in any one money field, or a node read
+# that differs from it, is refused.
+tamper() { # NAME JQ-EDIT
+  jq "$2" "$receipts/reject.json" >"$receipts/reject-tampered-$1.json"
+  if reject_bound "$receipts/reject-tampered-$1.json" "$node_pending" "$node_refunds"; then
+    fail "a reject receipt edited in $1 still passed the independent bindings"
+  fi
+}
+tamper locked '.rejected[0].locked.lovelace += 1'
+tamper locked-assets '.rejected[0].locked.assets = []'
+tamper tip '.rejected[0].tip += 1'
+tamper returned '.rejected[0].returned.lovelace += 1'
+tamper top-up '.rejected[0].topUp += 1'
+# shellcheck disable=SC2016 # Single quotes preserve the jq program's variable.
+tamper index '.rejected[0].returned as $x | .rejected[0].returned.index = ($x.index + 1) | .rejected[0].returned.output = (($x.output | sub("#[0-9]+$"; "")) + "#" + (($x.index + 1) | tostring))'
+tamper index-only '.rejected[0].returned.index += 1'
+tamper output '.rejected[0].returned.output |= sub("#[0-9]+$"; "#9")'
+tamper owner '.rejected[0].owner = "'"$bobkey"'"'
+# a node read that disagrees with the receipt fails it just as well
+if reject_bound "$receipts/reject.json" "$(jq -c '.[0].locked.lovelace += 1' <<<"$node_pending")" "$node_refunds"; then
+  fail "a node read of another locked value still passed the bindings"
+fi
+if reject_bound "$receipts/reject.json" "$node_pending" "$(jq -c --arg o "$(field reject .rejected[0].returned.output)" 'map(if .output == $o then .locked.lovelace += 1 else . end)' <<<"$node_refunds")"; then
+  fail "a node read of another refund amount still passed the bindings"
+fi
+if reject_bound "$receipts/reject.json" "$node_pending" "$(jq -c --arg o "$(field reject .rejected[0].returned.output)" 'map(if .output == $o then .output |= sub("#[0-9]+$"; "#9") else . end)' <<<"$node_refunds")"; then
+  fail "a node read of another output reference still passed the bindings"
+fi
+say "the reject receipt's money equals the signed transactions' (locked, tip, designated output), and each edit of it fails"
+# The refund stays at the owner's address and the root has not moved.
+run inspect-rejected success -- registry inspect --key keyD "${common[@]}" "${node[@]}"
+[ "$(field inspect-rejected .root)" = "$root_before" ] || fail "the reject moved the registry's root"
+[ "$(field inspect-rejected .leaf)" = unknown ] || fail "the rejected request's key is not unknown"
+refused fold-after-reject client-refusal -- registry fold "${common[@]}" "${node[@]}" "${bob[@]}"
+jq -e '.reason | contains("nothing is pending")' "$receipts/fold-after-reject.json" >/dev/null \
+  || fail "after the reject something is still pending: $(field fold-after-reject .reason)"
+refused reject-nothing client-refusal -- registry reject "${common[@]}" "${node[@]}" "${bob[@]}"
+jq -e '.reason | contains("nothing is pending")' "$receipts/reject-nothing.json" >/dev/null \
+  || fail "a reject with nothing pending does not say so: $(field reject-nothing .reason)"
+# Cleared, the registry folds again: a new request is booked and folded.
+run insert-after-reject success -- registry insert --key keyE --payload "$work/payload-insert.json" \
+  "${common[@]}" "${node[@]}" "${alice[@]}"
+booked insert-after-reject
+run fold-after-insert success -- registry fold --request "$(field insert-after-reject .request)" \
+  "${common[@]}" "${node[@]}" "${bob[@]}"
+fold_ok fold-after-insert insert-after-reject insertActive
+run inspect-after-reject success -- registry inspect --key keyE "${common[@]}" "${node[@]}"
+[ "$(field inspect-after-reject .leaf)" = active ] || fail "the fold after the reject did not make its key active"
+say "a reject past both windows: refunded to the owner, root unmoved, and a new request folds"
 
 # ------------------------------------------------------------------
 # 8. the node lost after an accepted submission (last: the node dies)
