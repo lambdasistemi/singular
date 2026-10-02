@@ -615,14 +615,12 @@ executable deployment
     , cardano-ledger-core
     , cardano-ledger-mary
     , singular-registry
-    , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-strict-containers
     , cardano-tx-tools:tx-build
     , containers
     , directory
     , microlens
-    , ouroboros-network
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -873,7 +871,6 @@ executable insert-active
     , cardano-ledger-mary
     , singular-registry
     , cardano-crypto-class
-    , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-tx-tools:tx-build
     , containers
@@ -915,7 +912,6 @@ executable update-terminal
     , cardano-ledger-mary
     , singular-registry
     , cardano-crypto-class
-    , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-tx-tools:tx-build
     , containers
