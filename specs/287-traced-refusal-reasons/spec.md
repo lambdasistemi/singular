@@ -38,6 +38,30 @@ flowchart LR
   naming it; the book drops "Live refusal reason not observed" only when no such
   step remains among the rows it claims.
 
+## Narrowed acceptance (operator rulings 2026-10-02)
+
+Settled for the final delivery, integrated with main `13f2b2e` (#320's
+validators, #344's batch questions):
+
+- A traced chain reason is compared with Lean's for every refusal Lean models.
+- CG11 (empty fold), CG19 (crossed refunds, and its rejected-floor control) and
+  the CG21 two-key batch whose mint disagrees per key are compared through the
+  driver's batch questions: `foldBatch` for a fold, `rejectBatch` judged on the
+  refunds the transaction pays for a reject. CG09's control, a reject paying its
+  owner one lovelace short, is compared as the reject batch of that one
+  request.
+- CG10, CG12 and CS04 have no counterpart in Lean. Each is published as an
+  unmet model comparison beside its traced chain evidence or its absence:
+  CG10 lambdasistemi/singular#346, CG12 lambdasistemi/singular#345, CS04
+  lambdasistemi/singular#347. CG12 is never narrated as agreeing with the model.
+- CG09 stays `unmet-by-ruling` (operator 2026-10-01): its reject is accepted by
+  the chain (#320) and by the model, while the consumer requires it refused; its
+  receipt, the book and CI keep it non-passing.
+- The book's "live refusal reason not observed" limit is dropped only where
+  every claimed refusal has a traced replay receipt; CS04's state and request
+  scripts keep it.
+- A wrong-reason control that fails stays in CI.
+
 ## Requirements
 
 | ID | Requirement |
@@ -78,9 +102,10 @@ flowchart LR
   (NOTE-001 from the epic).
 - CG09, ruled by the operator 2026-10-01, verbatim: "Allow rejection before the
   retraction deadline: keep Lean's current rule and repair the validator."
-  Lean stays; the validator repair is a separately scoped predecessor (#287
-  edits no on-chain code); CG09's comparison stays unmet until that repair lands
-  and #287's traced/untraced correspondence is rebound to the landed source.
+  Lean stays; the validator repair landed separately (#320), and #287's
+  traced/untraced correspondence is rebound to it by construction (FR-03 at the
+  head). CG09's reject is now accepted by both; the consumer requirement it
+  carries stays unmet by ruling.
 - The receipt grows by one optional object (FR-11), a narrow exception to the
   epic's receipt wire-format exclusion granted by the operator's ruling; the
   replay index and capsules remain supporting proof, not a substitute.
@@ -94,7 +119,7 @@ flowchart LR
 
 ## Authority and evidence
 
-Issue #287 under epic #209; base `3f04e50`, constitution 1.11.0; Lean and
-corpus unchanged. Lean's refusal names are the oracle; replay evidence is
+Issue #287 under epic #209; base `3f04e50`, integrated with main `13f2b2e`
+(constitution 1.12.0); Lean and corpus unchanged by this ticket. Lean's refusal names are the oracle; replay evidence is
 ledger-script execution evidence on captured context, distinct from the chain's
 own execution of the deployed bytes (constitution III), and the book says so.

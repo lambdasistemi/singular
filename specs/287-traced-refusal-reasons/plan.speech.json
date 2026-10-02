@@ -1,13 +1,13 @@
 {
   "status": [
     {
-      "text": "The traced build and the capture and replay slices are closed, and the comparison slice passed its gate. The operator has chosen one self-contained receipt, which releases the receipt work, and has kept Lean for the phase-one reject, with the validator repaired in a separate ticket. The receipt question waits for the operator; texts outside the fence stay and a follow-up is prepared after evidence; the phase-one reject conflict is held by the epic as an acceptance hold, not a waiver. Every live refusal counts, and comparing only some is not completion.",
+      "text": "The final delivery joins main 13f2b2e without rewriting the branch, and follows the operator's narrowed acceptance. The traced build, capture and replay, comparison and book slices are done. The last slice compares the batch refusals through the fold and reject batch questions, publishes the stale-root fold, the surplus actions and the wrong constructor as unmet model comparisons with their issues, and puts the early-rejection row under the same replay and extent checks. The ticket owner's frozen gate is the CI on the pushed head. The earlier status follows as history.",
       "pause": 500
     }
   ],
   "binding": [
     {
-      "text": "Issue, branch, base, constitution and unchanged Lean and corpus, with three epic-held gates carried forward.",
+      "text": "The final delivery is joined with main 13f2b2e and constitution 1.12.0, and its build correspondence is checked against the repaired validators. The original binding follows: issue, branch, base, constitution and unchanged Lean and corpus, with three epic-held gates carried forward.",
       "pause": 500
     }
   ],
@@ -31,7 +31,7 @@
   ],
   "owned-paths-frozen-for-implementation": [
     {
-      "text": "Only the conformance flake, its Haskell sources and tests, its generated book and the conformance workflow may change. Everything else, including the off-chain library, on-chain code, Lean, docs and locks, is forbidden.",
+      "text": "Only the conformance flake, its Haskell sources and tests, its generated book and the conformance workflow may change. Everything else, including the off-chain library, on-chain code, Lean, docs and locks, is forbidden. The final delivery also changes the generic rows script main moved out of the workflow, the node-confinement allowlist for the replay module, and this ticket's own planning pages.",
       "pause": 500
     }
   ],
@@ -55,6 +55,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "f54cedb25912ad04d39eb48a454a77931d89927a3e75697b863fe440101e1c65"
+    "sha256": "b7bb4ba43428505e531cc91cbfe4c8830f4fb9c43e12956d6415a9032361dc74"
   }
 }

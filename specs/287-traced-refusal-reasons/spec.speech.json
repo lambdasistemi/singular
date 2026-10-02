@@ -19,18 +19,24 @@
   ],
   "clarifications": [
     {
-      "text": "A runner that only attributes a refusal does not put it outside Lean: it is classified, and a missing comparison is published. The phase-one reject row is a lead conflict with Lean, sent to the epic. The operator chose one self-contained receipt, so the receipt grows by one optional object. For the phase-one reject the operator kept Lean and asked for the validator to be repaired in a separate ticket. Texts outside the fence stay unchanged; a documentation follow-up is prepared once evidence exists. Open validity intervals stay a named non-goal.",
+      "text": "A runner that only attributes a refusal does not put it outside Lean: it is classified, and a missing comparison is published. The operator chose one self-contained receipt, so the receipt grows by one optional object. For the phase-one reject the operator kept Lean and had the validator repaired; that repair has landed, the build correspondence is rebound to it, and the consumer requirement stays unmet by ruling. Texts outside the fence stay unchanged; a documentation follow-up is tracked separately. Open validity intervals stay a named non-goal.",
       "pause": 500
     }
   ],
   "authority-and-evidence": [
     {
-      "text": "Issue 287 under epic 209, on base 3f04e50 with constitution 1.11.0. Lean's reasons are the oracle. The replay is script execution on captured context, distinct from the chain's own execution, and the book says so.",
+      "text": "Issue 287 under epic 209, on base 3f04e50, joined with main 13f2b2e and constitution 1.12.0. Lean's reasons are the oracle. The replay is script execution on captured context, distinct from the chain's own execution, and the book says so.",
       "pause": 500
     }
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "861e5417ea2e5a762cc409d4bd7d12c060ea37ce16f7cbe196e85b15333c4ad5"
-  }
+    "sha256": "71c71985eaf902d059b81688ddd442616354f85283e6c6c9de8190b6e3771a80"
+  },
+  "narrowed-acceptance-operator-rulings-2026-10-02": [
+    {
+      "text": "The final delivery joins the latest main, with the repaired validators and the driver's two batch questions, and the operator narrowed what it must show. Every refusal the model describes is compared on its reason. The empty fold, the crossed refunds with their short-reject control, and the two-key batch whose mint lands on the wrong key are compared through the fold and reject batch questions, and so is the phase-one reject's short control. The stale-root fold, the surplus actions and the wrong constructor have nothing in the model to compare with, so each is published as unmet, with what its traced replay recorded and the issue that would add it. The phase-one reject stays unmet by ruling. The not-observed limit goes only where every refusal has its traced replay, and the failing wrong-reason control stays in CI.",
+      "pause": 500
+    }
+  ]
 }

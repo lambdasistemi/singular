@@ -2,6 +2,18 @@
 
 ## Status
 
+- Final delivery (2026-10-02): the branch merges main `13f2b2e` (#320's
+  validators and CG09 `unmet-by-ruling`, #344's batch questions, #326's node
+  capabilities) without rewriting its history, and narrows acceptance by the
+  operator's rulings of 2026-10-02 (spec.md, "Narrowed acceptance"). R1–R4 are
+  done; the final slice (tasks T050–T058) compares the batch refusals through
+  `foldBatch` and `rejectBatch`, publishes CG10, CG12 and CS04 as unmet model
+  comparisons (lambdasistemi/singular#346, #345, #347) and runs CG24 under the
+  same replay and extent checks. The gate is the ticket owner's frozen final
+  gate; CI on the pushed head is its evidence.
+
+Earlier status, kept as history:
+
 - Completed: team setup; root baseline `nix develop --quiet -c just ci` at
   `3f04e50` exit 0 (211 s, runtime `receipts/baseline-001`); research; this
   mandate.
@@ -19,6 +31,10 @@
   `extent.md` (epic NOTE-001); a class-A comparison alone is not completion.
 
 ## Binding
+
+Final delivery: integrated with main `13f2b2e`, constitution 1.12.0; the
+traced/untraced correspondence (FR-03) is checked against #320's
+`onchain/script-identity.json` at the head. The original binding follows.
 
 Issue #287, epic #209, branch `fix/287-traced-refusal-reasons`, base
 `3f04e50d293b80360a3234ebf3114abc8172d851`, constitution 1.11.0, Lean and
@@ -85,6 +101,12 @@ the conformance job). Everything else is forbidden, including `offchain/`,
 `onchain/`, `naming-onchain/`, `applications/`, `lean/`, `docs/`,
 `.specify/`, all flake locks. A needed change elsewhere is a placement
 challenge to the ticket owner.
+
+Final delivery adds, by the ticket owner's brief: `.github/scripts/ci_generic_rows.sh`
+(main moved the generic rows step there), `tools/node-confinement.allow` (the
+replay module reads the node beside the composition module that opens it,
+#326), and this directory's `spec.md`, `plan.md`, `tasks.md`, `extent.md`
+with their speech companions.
 
 ## Execution schedule
 
