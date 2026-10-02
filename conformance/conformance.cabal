@@ -77,6 +77,8 @@ library
     Conformance.Compare.Registration
     Conformance.Compare.Perturbation
     Conformance.Authenticate
+    Conformance.Authentication.Programs
+    Conformance.Classification
     Conformance.Receipt
     Conformance.NodeRejection
     Conformance.PurposeUnits
@@ -103,6 +105,7 @@ library
     Conformance.Fold.KeyedMint
     Conformance.Observe.Payments
     Conformance.Replay
+    Conformance.Wire.Programs
   other-modules:
     Conformance.Evidence.Asset
   build-depends:
@@ -307,6 +310,7 @@ test-suite conformance-tests
     Conformance.Support.EvidencePage
     Conformance.Support.Rows
     Conformance.Support.Programs
+    Conformance.Support.Vocabularies
     Conformance.Support.Identity
     Conformance.Support.Specification
     Conformance.Support.PurposeUnits

@@ -32,6 +32,7 @@ import Conformance.Support.Rows qualified as Rows
 import Conformance.Support.RunReplay qualified as RunReplay
 import Conformance.Support.Specification qualified as Specification
 import Conformance.Support.Step qualified as Step
+import Conformance.Support.Vocabularies qualified as Vocabularies
 import System.Environment (lookupEnv)
 import Test.Hspec (Spec, describe, hspec)
 
@@ -54,6 +55,7 @@ suite = do
         Refusal.spec
         Rows.spec
         Programs.spec
+        Vocabularies.spec
         EvidencePage.spec
         Identity.spec
         Fixture.spec
