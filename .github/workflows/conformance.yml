@@ -111,8 +111,9 @@ jobs:
       # occupied key — executed against a real devnet, each with its
       # executing negative control and its measurements against the
       # devnet's Conway protocol maxima. Issue #70 then extends the
-      # same session with its active rows: the attributed refusal CG10,
-      # CG09 unmet by ruling (#320) and the held rows CG11/CG12/CG19. CG13, CG17
+      # same session with its active rows: CG09 unmet by ruling (#320),
+      # CG10 and CG12 unmet by ruling (no model counterpart, #346, #345)
+      # and the held rows CG11/CG19. CG13, CG17
       # and CG20 are NOT run: retired superseded history per E18
       # (NOTE-046, CG16 template) — the owner-pinning transfer, the
       # custody sweep and the removed-signer regression tested an
@@ -128,7 +129,7 @@ jobs:
       # results and demands exactly the ten rows, exactly the
       # expected verdict per row (receipts), no divergence, and a
       # non-zero exit accounted for by exactly the held rows CG11
-      # CG12 CG19 and the unmet row CG09, and nothing else. A GREEN STEP IS NOT A FULFILLED
+      # CG19 and the unmet rows CG09 CG10 CG12, and nothing else. A GREEN STEP IS NOT A FULFILLED
       # CONSUMER PROMISE: R5/R8/R11 stay unmet (upstream #100/#101);
       # strict completion and release stay RED on that debt. Issue #69 then runs the CA
       # rows as their own session: the consumer's authentication of
@@ -539,28 +540,29 @@ jobs:
           REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CS01 CS02 CS04 CS06 CS07 CS08 --receipts-dir "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/serialization-rows.log
           run_rc=${PIPESTATUS[0]}
           set -e
-          echo "serialization session exit: $run_rc (expected: exactly 0 — every row agrees with the model, CS04 by refusing)"
+          echo "serialization session exit: $run_rc (expected: exactly 1 — the debt report naming CS04, unmet by ruling)"
           head_sha="$(git rev-parse HEAD)"
-          # 1. the EXACT status of an all-accepted session, never a
-          #    tolerated range: a partial or held session exits 1, and
-          #    any other exit is an unexamined build/setup/crash.
-          [ "$run_rc" -eq 0 ] || { echo "FAIL: serialization exit $run_rc is not the agrees-with-model exit 0"; exit 1; }
+          # 1. the EXACT status, never a tolerated range: CS04 has no model
+          #    counterpart and is unmet by operator ruling 2026-10-02
+          #    (lambdasistemi/singular#347), so the session ends 1 with the
+          #    debt report naming exactly CS04; any other exit is an
+          #    unexamined build/setup/crash.
+          [ "$run_rc" -eq 1 ] || { echo "FAIL: serialization exit $run_rc is not the unmet-debt exit 1"; exit 1; }
           # 2. complete terminal evidence for the session actually run:
           #    the CS devnet leg completes its four devnet rows
           #    (CS02, CS04, CS07, CS08)...
           grep -q 'complete: 4/4 rows ok' /tmp/serialization-rows.log || { echo 'FAIL: the CS devnet leg did not complete its four devnet rows (mid-run failure or crash)'; exit 1; }
-          #    ...and the runner reports its own success status line
-          grep -q '^exit_status: 0$' /tmp/serialization-rows.log || { echo 'FAIL: the runner did not report exit_status: 0'; exit 1; }
-          #    ...with neither debt report present: a partial or a held
-          #    row must never be read as this session's pass.
+          #    ...no partial row, and the debt report naming exactly CS04 as
+          #    unmet, nothing held and nothing failing.
           if grep -q 'ROWS PARTIAL' /tmp/serialization-rows.log; then
-            echo 'FAIL: a row reported PARTIAL in a session whose rows are all accepted'
+            echo 'FAIL: a row reported PARTIAL'
             exit 1
           fi
-          if grep -q 'ROWS THE RUN CANNOT REPORT AS PASSING' /tmp/serialization-rows.log; then
-            echo 'FAIL: a row reported held or failing in a session whose rows are all accepted'
-            exit 1
-          fi
+          grep -q 'ROWS THE RUN CANNOT REPORT AS PASSING' /tmp/serialization-rows.log || { echo 'FAIL: the session ended without its debt report'; exit 1; }
+          [ "$(sed -n 's/^- Unmet by ruling .*unmet-by-ruling): //p' /tmp/serialization-rows.log)" = "CS04" ] || { echo 'FAIL: the unmet set is not exactly CS04'; exit 1; }
+          [ "$(sed -n 's/^- Held .*held-q002): //p' /tmp/serialization-rows.log)" = "none" ] || { echo 'FAIL: a CS row is held'; exit 1; }
+          [ "$(sed -n 's/^- Failing .*accepted): //p' /tmp/serialization-rows.log)" = "none" ] || { echo 'FAIL: a CS row is failing'; exit 1; }
+          grep -q '^unmet: CS04 UNMET BY RULING: .*lambdasistemi/singular#347' /tmp/serialization-rows.log || { echo 'FAIL: CS04 unmet without its follow-up'; exit 1; }
           # 3. exactly the six CS receipt IDs, no missing and no extra
           printf '%s\n' CS01 CS02 CS04 CS06 CS07 CS08 | sort > /tmp/expected-cs.txt
           nix run --quiet nixpkgs#jq -- -r '.row' "${CONFORMANCE_RECEIPTS}"/receipt-CS*.json | sort > /tmp/receipt-cs.txt
@@ -574,20 +576,21 @@ jobs:
             echo '--- receipts ---'; while IFS= read -r l; do echo "$l"; done < /tmp/receipt-cs.txt
             exit 1
           fi
-          # 4. every row its real verdict — agrees-with-model, whether
-          #    the row agrees by accepting or, for CS04, by refusing —
-          #    never partial and never held, on a clean tree, bound to
-          #    this candidate
+          # 4. every row its real verdict — agrees-with-model for the rows
+          #    that accept, unmet-by-ruling for CS04 — never partial and
+          #    never held, on a clean tree, bound to this candidate
           for row in CS01 CS02 CS04 CS06 CS07 CS08; do
             f="${CONFORMANCE_RECEIPTS}/receipt-$row.json"
             test -f "$f" || { echo "FAIL: missing receipt for $row"; exit 1; }
-            [ "$(nix run --quiet nixpkgs#jq -- -r '.verdict' "$f")" = "agrees-with-model" ] || { echo "FAIL: unexpected verdict for $row"; exit 1; }
+            want=agrees-with-model
+            [ "$row" != CS04 ] || want=unmet-by-ruling
+            [ "$(nix run --quiet nixpkgs#jq -- -r '.verdict' "$f")" = "$want" ] || { echo "FAIL: unexpected verdict for $row"; exit 1; }
             [ "$(nix run --quiet nixpkgs#jq -- -r '.dirty' "$f")" = "false" ] || { echo "FAIL: $row receipt records a dirty tree"; exit 1; }
             [ "$(nix run --quiet nixpkgs#jq -- -r '.base' "$f")" = "$head_sha" ] || { echo "FAIL: $row not bound to $head_sha"; exit 1; }
           done
           # 5. #287: CS04's refusal carries the traced replay of its transaction.
           bash test/ci/replay-evidence.sh attribution "${CONFORMANCE_RECEIPTS}/receipt-CS04.json" || { echo 'FAIL: CS04 refusal lacks the traced replay'; exit 1; }
-          echo 'GREEN = agrees-with-model assertion held: CS01 CS02 CS04 CS06 CS07 CS08 executed on a clean candidate-bound tree, every verdict agrees-with-model (CS04 by refusing), no partial and no held row in the session.'
+          echo 'GREEN = serialization assertion held: CS01 CS02 CS04 CS06 CS07 CS08 executed on a clean candidate-bound tree; CS01 CS02 CS06 CS07 CS08 agree with the model, CS04 is refused by the chain and unmet by ruling (no model counterpart, lambdasistemi/singular#347); no partial and no held row.'
       # Loader and inventory enforcement over the session receipts:
       # the loader validates every receipt (constructor accounting
       # included — a false success or an omitted constructor fails
@@ -619,7 +622,7 @@ jobs:
             case "$id" in
               CS01) c1=$((c1 + 1)); [[ "$state" == executed ]] || { echo "FAIL: CS01 state: $state"; exit 1; } ;;
               CS02) c2=$((c2 + 1)); [[ "$state" == executed ]] || { echo "FAIL: CS02 state: $state"; exit 1; } ;;
-              CS04) c4=$((c4 + 1)); [[ "$state" == executed ]] || { echo "FAIL: CS04 state: $state"; exit 1; } ;;
+              CS04) c4=$((c4 + 1)); [[ "$state" == unmet-by-ruling ]] || { echo "FAIL: CS04 state: $state"; exit 1; } ;;
               CS06) c6=$((c6 + 1)); [[ "$state" == executed ]] || { echo "FAIL: CS06 state: $state"; exit 1; } ;;
               CS07) c7=$((c7 + 1)); [[ "$state" == executed ]] || { echo "FAIL: CS07 state: $state"; exit 1; } ;;
               CS08) c8=$((c8 + 1)); [[ "$state" == executed ]] || { echo "FAIL: CS08 state: $state"; exit 1; } ;;
@@ -633,7 +636,7 @@ jobs:
           [[ "$c7" == 1 ]] || { echo "FAIL: CS07 rows: $c7"; exit 1; }
           [[ "$c8" == 1 ]] || { echo "FAIL: CS08 rows: $c8"; exit 1; }
           [[ -z "$extra" ]] || { echo "FAIL: serialization rows outside this ticket's set render as run:$extra"; exit 1; }
-          echo 'INVENTORY = CS01/CS02/CS04/CS06/CS07/CS08 executed (column 4, each exactly once), no other CS row run, loader accepted the accounting.'
+          echo 'INVENTORY = CS01/CS02/CS06/CS07/CS08 executed and CS04 unmet-by-ruling (column 4, each exactly once), no other CS row run, loader accepted the accounting.'
       # #287: the extent of every live run above. Each run's replay index
       # must name each refusal its receipts record exactly once; a refusal
       # whose step carried the model's reason is class A, agreeing or

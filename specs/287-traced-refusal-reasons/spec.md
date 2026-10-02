@@ -53,7 +53,10 @@ validators, #344's batch questions):
 - CG10, CG12 and CS04 have no counterpart in Lean. Each is published as an
   unmet model comparison beside its traced chain evidence or its absence:
   CG10 lambdasistemi/singular#346, CG12 lambdasistemi/singular#345, CS04
-  lambdasistemi/singular#347. CG12 is never narrated as agreeing with the model.
+  lambdasistemi/singular#347. Their receipts carry the existing verdict
+  `unmet-by-ruling`, naming those follow-ups, and stay in the non-passing debt
+  report beside CG09 (ticket-owner decision A-001 under this ruling). CG12 is
+  never narrated as agreeing with the model.
 - CG09 stays `unmet-by-ruling` (operator 2026-10-01): its reject is accepted by
   the chain (#320) and by the model, while the consumer requires it refused; its
   receipt, the book and CI keep it non-passing.
@@ -64,10 +67,12 @@ validators, #344's batch questions):
 - Limit: the chain settles a reject's refunds by position (`refundFault`), the
   model by the sum of every output at the owner's key (`settle`). A reject paying
   its owner short in the refund's position and the rest in another output at the
-  same key is refused by the chain and accepted by the model. The compared
-  rejects keep every other output away from their owners' keys, so their
-  agreement holds for that shape only; the conflict is escalated to the user
-  (extent.md, "A conflict the compared rejects avoid").
+  same key is refused by the chain and accepted by the model. Operator ruling
+  2026-10-02, "Record now, fix later": CG09 submits that shape on the devnet
+  and its receipt records the disagreement, a known divergence and never a
+  pass; the compared rejects keep every other output away from their owners'
+  keys, so their agreement holds for that shape only. Reject-refund
+  equivalence in general stays unmet: lambdasistemi/singular#361.
 
 ## Requirements
 

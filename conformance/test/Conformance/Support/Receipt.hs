@@ -1795,6 +1795,15 @@ batchChecks = describe "Checking a batch the model's batch questions compared" $
         "rejects an attribution receipt carrying a step that is not a batch"
         $ loadRow (emptyFoldWith (concat (receiptSteps story)))
             >>= (`shouldSatisfy` isLeft)
+    it
+        "accepts CG09's unmet receipt carrying its recorded refund-position divergence" $
+        loadRow
+            ( (emptyFoldWith [divergenceRecord])
+                { receiptRow = "CG09"
+                , receiptVerdict = UnmetByRuling
+                }
+            )
+            `shouldReturn` Right 1
     it "rejects a batch step on a row no batch question compares" $
         loadRow ((emptyFoldWith [refusedBatchRecord]){receiptRow = "CG10"})
             >>= (`shouldSatisfy` isLeft)
@@ -1815,3 +1824,30 @@ batchChecks = describe "Checking a batch the model's batch questions compared" $
 -- | A record's chain object.
 batchChain :: Value -> Value
 batchChain record = fromMaybe Null (field "chain" record)
+
+{- | A reject batch the chain refused and the model accepted: the recorded
+refund-position divergence, its replay admitting @deposit-returned@ and no
+trace claimed.
+-}
+divergenceRecord :: Value
+divergenceRecord =
+    setField
+        "comparison"
+        ("disagrees" :: String)
+        ( setField
+            "tamper"
+            Null
+            ( setField
+                "model"
+                (object ["outcome" .= ("accepted" :: String), "reason" .= Null])
+                ( setField
+                    "chain"
+                    ( setRefusalField
+                        "replay"
+                        [admittedEntry{replayReason = Just "deposit-returned"}]
+                        (setRefusalField "trace" Null (batchChain refusedBatchRecord))
+                    )
+                    (setField "batch" ("rejectBatch" :: String) refusedBatchRecord)
+                )
+            )
+        )

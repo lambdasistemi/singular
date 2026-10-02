@@ -57,9 +57,9 @@ fi
 #    bound to this candidate on a clean tree (dirty:false)
 expect_verdict() {
   case "$1" in
-    CG02 | CG03 | CG04 | CG05 | CG10 | CG21 | CL01) printf 'agrees-with-model' ;;
-    CG09) printf 'unmet-by-ruling' ;;
-    CG11 | CG12 | CG19) printf 'held-q002' ;;
+    CG02 | CG03 | CG04 | CG05 | CG21 | CL01) printf 'agrees-with-model' ;;
+    CG09 | CG10 | CG12) printf 'unmet-by-ruling' ;;
+    CG11 | CG19) printf 'held-q002' ;;
     *) printf 'UNKNOWN-ROW' ;;
   esac
 }
@@ -93,13 +93,23 @@ nix run --quiet nixpkgs#jq -- -e '.mem > 0 and .cpu > 0 and .txSize > 0 and (.tr
 # 6. the run's own accounting must name exactly the expected
 #    held and unmet sets, with nothing failing against this candidate
 held="$(sed -n 's/^- Held .*held-q002): //p' /tmp/generic-rows.log)"
-[ "$held" = "CG11 CG12 CG19" ] || {
-  echo "FAIL: held set moved: got '$held', expected 'CG11 CG12 CG19'"
+[ "$held" = "CG11 CG19" ] || {
+  echo "FAIL: held set moved: got '$held', expected 'CG11 CG19'"
   exit 1
 }
 unmet="$(sed -n 's/^- Unmet by ruling .*unmet-by-ruling): //p' /tmp/generic-rows.log)"
-[ "$unmet" = "CG09" ] || {
-  echo "FAIL: unmet set moved: got '$unmet', expected 'CG09'"
+# CG10 and CG12 have no model counterpart: unmet by operator ruling
+# 2026-10-02, each naming its follow-up (#346, #345).
+[ "$unmet" = "CG09 CG10 CG12" ] || {
+  echo "FAIL: unmet set moved: got '$unmet', expected 'CG09 CG10 CG12'"
+  exit 1
+}
+grep -q '^unmet: CG10 UNMET BY RULING: .*lambdasistemi/singular#346' /tmp/generic-rows.log || {
+  echo 'FAIL: CG10 unmet without its follow-up'
+  exit 1
+}
+grep -q '^unmet: CG12 UNMET BY RULING: .*lambdasistemi/singular#345' /tmp/generic-rows.log || {
+  echo 'FAIL: CG12 unmet without its follow-up'
   exit 1
 }
 # nothing may fail against this candidate
@@ -374,7 +384,40 @@ for pair in CG09:1 CG19:2; do
     exit 1
   }
 done
-# 13. #287: every refusal of the session carries the traced replay
+# 13. #287, operator ruling 2026-10-02 "Record now, fix later": CG09's
+#     receipt records the known refund-position divergence
+#     (lambdasistemi/singular#361) — a reject paying its owner one lovelace
+#     short at the refund's position and the remainder in another output at
+#     the owner's key, refused by the chain for deposit-returned (the traced
+#     replay's reason) and accepted by the model. It is a disagreement, never
+#     a pass, and its refusal carries no model reason in the replay index.
+# shellcheck disable=SC2016
+nix run --quiet nixpkgs#jq -- -e '
+  (.steps | length) == 1
+  and (.steps[0] | .batch == "rejectBatch" and (.requests | length) == 1
+    and .model.outcome == "accepted"
+    and .chain.outcome == "refused"
+    and any(.chain.refusal.replay[]; .reason == "deposit-returned")
+    and .chain.refusal.trace == null
+    and .comparison == "disagrees")
+' "${CONFORMANCE_RECEIPTS}"/receipt-CG09.json >/dev/null || {
+  echo 'FAIL: CG09 divergence record moved'
+  exit 1
+}
+grep -q '^divergence: CG09 KNOWN DIVERGENCE (lambdasistemi/singular#361): ' /tmp/generic-rows.log || {
+  echo 'FAIL: CG09 divergence not recorded by the run'
+  exit 1
+}
+# shellcheck disable=SC2016
+got="$(nix run --quiet nixpkgs#jq -- -r '
+  [.[] | select(.kind == "refusal" and .row == "CG09" and .modelReason == null
+    and any(.classes[]; .admitted == "deposit-returned"))] | length
+' "${CONFORMANCE_RECEIPTS}/replay/index.json")"
+[ "$got" = "1" ] || {
+  echo "FAIL: CG09 divergence refusals in the replay index: $got, expected 1"
+  exit 1
+}
+# 14. #287: every refusal of the session carries the traced replay
 #     of its transaction (test/ci/replay-evidence.sh): the story
 #     rows' and the batches' refused steps meet the model's reason,
 #     and each attribution row names, per failing purpose, the reason
@@ -391,5 +434,5 @@ for row in CG10 CG11 CG12 CG19; do
     exit 1
   }
 done
-echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and the tampered-payment controls are recorded, with held debt exactly CG11 CG12 CG19 and CG09 unmet by ruling. The empty fold, the crossed refunds, the two short reject controls and the registration batch are each refused by the chain and by the model for the reason the traced replay admits.'
+echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and the tampered-payment controls are recorded, with held debt exactly CG11 CG19 and CG09 CG10 CG12 unmet by ruling; CG09 records the known refund-position divergence (#361). The empty fold, the crossed refunds, the two short reject controls and the registration batch are each refused by the chain and by the model for the reason the traced replay admits.'
 echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused, R9_reject_needs_rejectable and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'

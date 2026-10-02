@@ -63,20 +63,24 @@ reason the traced replay admits for the state script. CG09's row transaction is
 accepted by the chain and by the model, so it is no refusal; its consumer
 requirement stays unmet by ruling (operator 2026-10-01).
 
-Every other discovered refusal has no counterpart in the model. Its model
-comparison is published as unmet, beside the traced chain evidence or its
-absence, and tracked by the issue that would give the model the vocabulary:
+Every other discovered refusal is listed below. CG10, CG12 and CS04 have no
+counterpart in the model: their receipts carry the verdict `unmet-by-ruling`
+(operator ruling 2026-10-02), and their model comparison is published as unmet,
+beside the traced chain evidence or its absence, tracked by the issue that would
+give the model the vocabulary. CG09's divergence control is the one refusal Lean
+answers otherwise (class D):
 
 | Row | Refusal | Traced reason | Lean | Class |
 |---|---|---|---|---|
 | CG10 | fold whose proof was built against a superseded root | `key-exists` | the model takes no proof and no authenticated root, and admits the insertion on that unoccupied key | C — model comparison unmet, lambdasistemi/singular#346 |
 | CG12 | surplus action; missing-action control | `surplus-actions`, `missing-action` | the model takes no action list | C — model comparison unmet, lambdasistemi/singular#345 |
+| CG09 | known divergence control: a reject paying its owner one lovelace short at the refund's position and the remainder in another output at the owner's key | `deposit-returned` | `settle` sums the owner's outputs and `rejectBatch` accepts | D — recorded divergence, never a pass, lambdasistemi/singular#361 |
 | CS04 | fold redeemer at a wrong constructor index | witness `no-fold`; state and request `no-user-trace`, a failure with no user-defined trace | the model has no redeemer decoding vocabulary | C — model comparison unmet, lambdasistemi/singular#347 |
 
 The earlier leads "CG21 two-key batch `net-mint-mismatch`" and "CG11, CG19 held
 by Q-002 with no batch question" are now compared (class A); whether CG11, CG12
 and CG19 meet the consuming project's requirements stays held, a consumer
-question separate from the model comparison.
+question separate from the model comparison; CG12 is unmet by ruling.
 
 Gaps C stay in the denominator and in the book's limits. A reason comparison
 over class A is never called completion of the issue's every-row claim while a
@@ -89,11 +93,14 @@ rejected-floor control, and the story chapters' one-lovelace-short rejects)
 agree only for the shape their fixtures give the transaction: every output at a
 request owner's key is that owner's refund. The chain and the model read an
 owner's payment differently, and a transaction of another shape separates them.
-No live row submits one; the decision is with the user.
+Operator ruling 2026-10-02, "Record now, fix later": CG09 submits that shape on
+the devnet and records the disagreement in its receipt (the class D row above),
+never as a pass; reject-refund equivalence in general stays unmet,
+lambdasistemi/singular#361.
 
 | Case | Chain | Lean | Class |
 |---|---|---|---|
-| a reject paying its owner short in the refund's position and the remainder in another output at the owner's key | refused `deposit-returned`: `refundFault` (onchain/validators/registry/settlement.ak) requires the output in each consumed row's position to pay that row's owner at least what is owed | accepted: `settle` (lean/Singular/Model.lean) credits an owner the sum of every output at its key, and `rejectBatch` settles through it | D — escalated, not run |
+| a reject paying its owner short in the refund's position and the remainder in another output at the owner's key | refused `deposit-returned`: `refundFault` (onchain/validators/registry/settlement.ak) requires the output in each consumed row's position to pay that row's owner at least what is owed | accepted: `settle` (lean/Singular/Model.lean) credits an owner the sum of every output at its key, and `rejectBatch` settles through it | D — run in CG09, recorded, lambdasistemi/singular#361 |
 
 Main's CG09 control before this delivery had that shape: its request was owned
 by the genesis wallet, refunding one lovelace short, while the fold returned its

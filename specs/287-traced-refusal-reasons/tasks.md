@@ -217,3 +217,16 @@ lambdasistemi/singular#321, outside this branch.
   with the model.
 - [x] T058 Re-render `conformance/BOOK.md` with its generator from a book run at
   the integrated head; restamp this directory's speech companions.
+
+## Rulings of 2026-10-02 on the escalations (A-001)
+
+- [x] T059 Reject refund, "Record now, fix later": CG09 submits a reject paying
+  its owner one lovelace short at the refund's position and the remainder in
+  another output at the owner's key; the chain refuses it `deposit-returned`,
+  the model accepts, and the row records the disagreement in its receipt, never
+  as a pass (extent class D; book, spec and plan limits;
+  lambdasistemi/singular#361).
+- [x] T060 CG10, CG12 and CS04 receipts carry the verdict `unmet-by-ruling`,
+  naming lambdasistemi/singular#346, #345 and #347, in the non-passing debt
+  report beside CG09; the CS session reports its unmet row like the CG
+  session; CI's verdict and debt assertions move with them.

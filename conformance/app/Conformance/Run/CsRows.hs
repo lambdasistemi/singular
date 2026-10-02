@@ -41,6 +41,7 @@ import Conformance.Run.Cage (ensureStateRefWith)
 import Conformance.Run.Control
 import Conformance.Run.Environment
 import Conformance.Run.Observe
+import Conformance.Run.Receipts (debtReport)
 import Conformance.Run.Replay
     ( ReplayIndex (..)
     , purposesOf
@@ -247,6 +248,26 @@ runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty
     -- partial naming every such row (E18 §3/§4, NOTE-052). CI
     -- enumerates the known partial set; anything else is a failure.
     reportCSPartials receiptsDir rows
+    -- An unmet row must never read as green either: the session ends with
+    -- the same debt report a CG session gives, naming it.
+    reportCSUnmet receiptsDir rows
+
+{- | Session-end accounting of the CS rows kept unmet by ruling: receipts with
+verdict @unmet-by-ruling@ among the rows just run end the session non-zero
+with the debt report naming them.
+-}
+reportCSUnmet :: FilePath -> [String] -> IO ()
+reportCSUnmet receiptsDir rows = do
+    receipts <-
+        loadReceipts receiptsDir
+            >>= either (failWith . ("unmet accounting: " <>)) pure
+    case [ T.unpack (receiptRow r)
+         | r <- receipts
+         , receiptVerdict r == UnmetByRuling
+         , T.unpack (receiptRow r) `elem` rows
+         ] of
+        [] -> pure ()
+        unmet -> throwIO (ErrorCall (debtReport [] unmet []))
 
 {- | Session-end partial accounting for the CS rows: receipts with
 verdict partial among the rows just run end the session with the
@@ -1350,7 +1371,7 @@ attributeCS04Refusal index receiptsDir base dirty nodeVer blueprintIdStr marker 
                 receiptsDir
                 "CS04"
                 Refused
-                AgreesWithModel
+                UnmetByRuling
                 []
                 ( Just
                     ( RefusalInfo
@@ -1378,6 +1399,14 @@ attributeCS04Refusal index receiptsDir base dirty nodeVer blueprintIdStr marker 
                 nodeVer
                 blueprintIdStr
                 Nothing
+            emit
+                "unmet"
+                ( "CS04 UNMET BY RULING: kept unmet by operator ruling "
+                    <> "2026-10-02 (narrowed #287; model follow-up "
+                    <> "lambdasistemi/singular#347); Singular's Lean has no "
+                    <> "vocabulary for decoding a redeemer, so it gives no reason to "
+                    <> "compare with the chain's"
+                )
             emit
                 "row"
                 ( "CS04: REFUSED wrong index by "

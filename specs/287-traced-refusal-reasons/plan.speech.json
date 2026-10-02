@@ -49,12 +49,12 @@
   ],
   "risks": [
     {
-      "text": "A reject's refund is judged by position on chain and by the owner's summed outputs in the model, so the compared rejects agree for their fixtures' shape only, and the conflict is escalated. The ledger seam is unverified at the pin, the exit row's receipt is close to its size margin, and traced code costs more than the declared budget.",
+      "text": "A reject's refund is judged by position on chain and by the owner's summed outputs in the model, so the compared rejects agree for their fixtures' shape only, and the phase-one reject row records the divergence, tracked in issue 361. The ledger seam is unverified at the pin, the exit row's receipt is close to its size margin, and traced code costs more than the declared budget.",
       "pause": 500
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "7919e549a8ccde56c9f667810ced34a025c6656c006040647e8e0b19623bdc34"
+    "sha256": "debe25c8b1fd5e7959d9fd0ad2a3aa04b2c710fba409c96fdf4c817e4d24df02"
   }
 }

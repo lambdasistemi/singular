@@ -238,6 +238,11 @@ data FoldSpec = FoldSpec
     , fsRefs :: [(TxIn, TxOut ConwayEra)]
     , fsHolderUtxos :: [(TxIn, TxOut ConwayEra)]
     , fsFunder :: Maybe (TxIn, TxOut ConwayEra)
+    , fsExtraOutputs :: [TxOut ConwayEra]
+    {- ^ outputs placed after the refunds and before the change, paid from the
+    change: a control that pays an owner beside its refund. @[]@ for every
+    ordinary fold.
+    -}
     , fsOmitUnfundedBurn :: Bool
     {- ^ The cage's reference outputs, published once at its boot and
     copied here by `rowSpec`. Reading them rather than asking for them
@@ -335,7 +340,12 @@ assembleFoldSpec env0 fs = Cage.withView (envProv env0) $ \held -> do
         Nothing -> pure (makeStateOut oldState)
         Just s -> pure (makeStateOutOverride s)
     changeOut <-
-        makeChange pp funder feeAmt (map outCoin (refundOuts refunds)) duties
+        makeChange
+            pp
+            funder
+            feeAmt
+            (map outCoin (refundOuts refunds <> fsExtraOutputs fs))
+            duties
     redeemers <- makeRedeemers fs funder duties
     scripts <- makeScripts fs refs duties
     let signers = fromMaybe harnessSigners (fsSigners fs)
@@ -356,6 +366,7 @@ assembleFoldSpec env0 fs = Cage.withView (envProv env0) $ \held -> do
                         ( newStateOut
                             : rdOutputs duties
                                 <> refundOuts refunds
+                                <> fsExtraOutputs fs
                                 <> [changeOut]
                         )
                 & feeTxBodyL .~ Coin feeAmt
@@ -682,6 +693,7 @@ rowSpec cage tid state reqs actions root units =
         , fsHolderUtxos = []
         , fsFunder = Nothing
         , fsOmitUnfundedBurn = False
+        , fsExtraOutputs = []
         }
 
 {- | Twice the measured units: the declared budget of a refusing

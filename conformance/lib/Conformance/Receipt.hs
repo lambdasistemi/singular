@@ -200,8 +200,11 @@ data Verdict
       @0e638fad@, @RegistryGoals.lean@ blob @d38e81c0@) requires
       what the registry deliberately does not do
       (lambdasistemi/singular#320); alignment is
-      lambdasistemi/cardano-keri#468. Recorded, published, never read
-      as a pass: the run exits non-zero while any row is unmet.
+      lambdasistemi/cardano-keri#468. Also, by operator ruling 2026-10-02
+      (narrowed #287), a row with no model counterpart: CG10, CG12 and CS04,
+      whose follow-ups are lambdasistemi/singular#346, #345 and #347.
+      Recorded, published, never read as a pass: the run exits non-zero
+      while any row is unmet.
       -}
       UnmetByRuling
     | {- | the row executed its available legs but named constructors
@@ -1105,6 +1108,8 @@ loadReceipts dir = do
         -- #287: the empty fold and the crossed refunds are compared with the
         -- model's batch questions beside their attributed refusals.
         ("CG11", Just steps) -> batchSteps path r steps
+        -- CG09 carries its known refund-position divergence (#361).
+        ("CG09", Just steps) -> batchSteps path r steps
         ("CG19", Just steps) -> batchSteps path r steps
         ("sequence", Just steps) -> stepsComplete path r steps
         ("CG21", Nothing) -> Left (path <> ": registration names no live steps")

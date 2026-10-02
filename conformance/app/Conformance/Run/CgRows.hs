@@ -35,6 +35,7 @@ module Conformance.Run.CgRows
     , ensurePresentV1
     ) where
 
+import Conformance.Replay (admittedFor)
 import Conformance.Run.Book
 import Conformance.Run.Cage
 import Conformance.Run.Control
@@ -43,6 +44,7 @@ import Conformance.Run.Fold
 import Conformance.Run.Live
 import Conformance.Run.Observe
 import Conformance.Run.Receipts
+import Conformance.Run.Replay (purposesOf)
 import Conformance.Run.Submit
 import Conformance.Run.Units
 import Conformance.Run.Wallet
@@ -85,11 +87,13 @@ import Cardano.Ledger.Address
 
 import Cardano.Ledger.Api.Tx.Out
     ( coinTxOutL
+    , mkBasicTxOut
     )
 import Cardano.Ledger.BaseTypes
     ( Network (..)
     )
 import Cardano.Ledger.Credential (Credential (..))
+import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Node.Client.E2E.Setup (Ed25519DSIGN, SignKeyDSIGN)
 import MPF.Hashes (MPFHash)
 import MPF.Proof.Insertion (MPFProof (..))
@@ -420,6 +424,59 @@ runCG09 env = do
     require
         "CG09: the model and the chain do not agree on the short reject"
         (agreed shortCompared)
+    -- A known divergence, recorded and never a pass
+    -- (lambdasistemi/singular#361): the same reject paying its owner one
+    -- lovelace short at the refund's position, and the remainder to the owner
+    -- in another output. The chain judges the refund by its position and must
+    -- refuse it for deposit-returned; the model credits the owner the sum of
+    -- both and accepts it. The row records exactly that disagreement.
+    divergenceUpper <- insideProcessWindow
+    divergencePot <- collateralPot env
+    divergent <-
+        assembleFoldWithFee
+            env
+            (rejectWithin divergenceUpper (owed - 1) (Just divergencePot))
+                { fsExtraOutputs =
+                    [mkBasicTxOut owner (MaryValue (Coin 2_000_000) mempty)]
+                }
+    let divergentWitnessed = signTx genesisSignKey divergent
+        divergentSigned = signedTx divergentWitnessed
+    divergentResult <-
+        submitTxResilient (envSubmit env) divergentWitnessed
+    divergence <-
+        compareHandBatch
+            env
+            live
+            cage
+            Live.Reject
+            [
+                ( Live.EdgeRequest Live.InsertAbsent "cg09-key" owner
+                , owner
+                , (reqIn, reqOut)
+                )
+            ]
+            divergentSigned
+            divergentResult
+    divergentPurposes <-
+        purposesOf (envReplay env) (T.pack (txIdHex divergentSigned))
+    require
+        "CG09: the refund-position divergence did not come out as recorded \
+        \(chain refuses deposit-returned, the model accepts)"
+        ( outcomeOf "chain" divergence == Just "refused"
+            && outcomeOf "model" divergence == Just "accepted"
+            && admittedFor (T.pack (stateMarkerOf cfg)) divergentPurposes
+                == Just "deposit-returned"
+        )
+    emit
+        "divergence"
+        ( "CG09 KNOWN DIVERGENCE (lambdasistemi/singular#361): a reject paying "
+            <> "its owner one lovelace short at the refund's position and the "
+            <> "remainder in another output at the owner's key is refused by the "
+            <> "chain for deposit-returned (tx="
+            <> txIdHex divergentSigned
+            <> ") and accepted by the model, which sums the owner's outputs; "
+            <> "recorded, never a pass"
+        )
     upper <- insideProcessWindow
     hand <- assembleFoldWithFee env (rejectWithin upper owed Nothing)
     -- Every purpose's units as the node evaluates them, before submitting.
@@ -467,6 +524,9 @@ runCG09 env = do
                 (Just size)
                 "node-submit"
                 Nothing
+            -- The known divergence travels in the row's receipt, beside its
+            -- unmet verdict: a disagreement, never a pass.
+            addReceiptSteps env "CG09" [divergence]
             recordUnmet
                 env
                 "CG09"
@@ -550,9 +610,18 @@ runCG10 env = do
     submitExpectRefused
         env
         "CG10"
-        AgreesWithModel
+        UnmetByRuling
         (stateMarkerOf cfg)
         staleTx
+    recordUnmet
+        env
+        "CG10"
+        "kept unmet by operator ruling 2026-10-02 (narrowed #287; model follow-up lambdasistemi/singular#346)"
+        ( "Singular's Lean takes no proof and no authenticated root and "
+            <> "admits the insertion on that unoccupied key, so it gives no "
+            <> "reason to compare with the chain's"
+        )
+        "R7_stale_fold_refused — a fold against a superseded root is refused; the chain refuses it, the model comparison stays unmet"
     -- Control: the same request folded against the live root, the
     -- hand shape calibrated against the library fold.
     libFold <-
@@ -722,8 +791,8 @@ matching request. The held observation is the attributed refusal.
 The controls: one action FEWER than there are requests is refused
 (the deficit), and an exact 1:1 fold on the same path accepts —
 proving exact pairing is enforced both directions and the refusals
-are specific. Row contract is observe-and-report; recorded held
-pending Q-002, never a pass.
+are specific. Row contract is observe-and-report; recorded unmet
+by ruling (2026-10-02), never a pass.
 The model takes no action list, so neither refusal has a model reason to
 compare: the model comparison is unmet (#345).
 -}
@@ -760,15 +829,14 @@ runCG12 env = do
     emit
         "row"
         "CG12: submitting the surplus fold for its candidate-bound observation"
-    submitExpectRefused env "CG12" HeldQ002 (stateMarkerOf cfg) hand
-    recordHold
+    submitExpectRefused env "CG12" UnmetByRuling (stateMarkerOf cfg) hand
+    recordUnmet
         env
         "CG12"
-        "Q-002 (story 2)"
+        "kept unmet by operator ruling 2026-10-02 (narrowed #287; model follow-up lambdasistemi/singular#345)"
         ( "Singular's Lean takes no action list (its step and foldBatch "
-            <> "consume requests only), so it gives no reason to compare: the "
-            <> "model comparison is unmet (#345); the chain's reason is the "
-            <> "traced replay's"
+            <> "consume requests only), so it gives no reason to compare; the "
+            <> "chain's reason is the traced replay's"
         )
         ( "one action per request, no surplus — the consumer audit's "
             <> "finding (upstream cardano-mpfs-onchain#100 is the "
@@ -777,7 +845,7 @@ runCG12 env = do
     emit
         "row"
         ( "CG12: the chain REFUSED a fold with a surplus action (one "
-            <> "request, two actions) — recorded, held pending Q-002, "
+            <> "request, two actions) — recorded, unmet by ruling (#345), "
             <> "never read as a pass"
         )
     -- Control: two fresh requests, one action — the deficit.
@@ -2062,3 +2130,12 @@ agreed :: Value -> Bool
 agreed = \case
     Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
     _ -> False
+
+-- | A compared record's outcome on one side, @model@ or @chain@.
+outcomeOf :: KM.Key -> Value -> Maybe Text
+outcomeOf side = \case
+    Object fields
+        | Just (Object answer) <- KM.lookup side fields
+        , Just (String outcome) <- KM.lookup "outcome" answer ->
+            Just outcome
+    _ -> Nothing

@@ -571,35 +571,7 @@ runSession
             _ ->
                 throwIO
                     ( ErrorCall
-                        ( "ROWS THE RUN CANNOT REPORT AS PASSING"
-                            <> "\n- Held (Q-002, story 2: Singular's Lean and \
-                               \the consumer's theorem disagree and the \
-                               \chain sided with Singular's Lean; \
-                               \receipts carry verdict held-q002): "
-                            <> ( if null held
-                                    then "none"
-                                    else unwords (reverse held)
-                               )
-                            <> "\n- Unmet by ruling (a consumer \
-                               \requirement the registry deliberately \
-                               \does not meet, kept unmet by operator \
-                               \ruling; receipts carry verdict \
-                               \unmet-by-ruling): "
-                            <> ( if null unmet
-                                    then "none"
-                                    else unwords (reverse unmet)
-                               )
-                            <> "\n- Failing against this candidate \
-                               \(verdict diverges-from-lean — the chain \
-                               \refused what the Lean requires \
-                               \accepted): "
-                            <> ( if null failed
-                                    then "none"
-                                    else unwords (reverse failed)
-                               )
-                            <> "\nThese rows are the milestone owner's to \
-                               \carry to the user."
-                        )
+                        (debtReport (reverse held) (reverse unmet) (reverse failed))
                     )
 
 -- ---------------------------------------------------------

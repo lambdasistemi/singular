@@ -11,6 +11,7 @@ module Conformance.Run.Receipts
     , writeRowReceipt
     , recordHold
     , recordUnmet
+    , debtReport
     , writeCL01Issue70
     ) where
 
@@ -340,3 +341,30 @@ addReceiptSteps env row records = do
                     Just named -> Just named
                     Nothing -> storyCorrespondence correspondence records
             }
+
+{- | The report a session ends with while any row it ran is held, unmet or
+failing: every such row named under its verdict, so none can read as a pass.
+-}
+debtReport :: [String] -> [String] -> [String] -> String
+debtReport held unmet failed =
+    "ROWS THE RUN CANNOT REPORT AS PASSING"
+        <> "\n- Held (Q-002, story 2: Singular's Lean and \
+           \the consumer's theorem disagree and the \
+           \chain sided with Singular's Lean; \
+           \receipts carry verdict held-q002): "
+        <> named held
+        <> "\n- Unmet by ruling (a consumer \
+           \requirement the registry deliberately \
+           \does not meet, or a row with no model counterpart, kept \
+           \unmet by operator ruling; receipts carry verdict \
+           \unmet-by-ruling): "
+        <> named unmet
+        <> "\n- Failing against this candidate \
+           \(verdict diverges-from-lean — the chain \
+           \refused what the Lean requires \
+           \accepted): "
+        <> named failed
+        <> "\nThese rows are the milestone owner's to \
+           \carry to the user."
+  where
+    named rows = if null rows then "none" else unwords rows

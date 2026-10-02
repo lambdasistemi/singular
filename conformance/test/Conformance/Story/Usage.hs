@@ -198,7 +198,7 @@ spec = do
                 , "The deployed validators are compiled without traces"
                 , "evaluated again on the arguments the ledger built for it: once with the deployed bytes, and once with a build of the same source, compiler and parameters that keeps only the validators' own traces"
                 , "The receipt names both script hashes"
-                , "Three have no counterpart in the model, so their model comparison is unmet"
+                , "Three have no counterpart in the model, so their model comparison is unmet: each receipt carries the verdict unmet by ruling"
                 , "CS04, a fold redeemer at a wrong constructor index"
                 , "so their live refusal reason is not observed (lambdasistemi/singular#347)"
                 , "CG10, a fold whose proof was built against a root the registry has since superseded"
@@ -208,9 +208,9 @@ spec = do
                 , "CG19, two rejects whose refunds are crossed and two whose first refund is short, with the reject batch judged on the refunds the transaction pays"
                 , "CG09's control, a reject refunding its owner one lovelace short, with the reject batch of that one request"
                 , "that requirement stays unmet by ruling"
-                , "A reject paying its owner short in the refund's position and the rest in another output at the same key is refused by the chain and accepted by the model."
-                , "so their agreement holds for that shape only, and the decision is with the user"
-                , "Whether CG11, CG12 and CG19 meet the consuming project's requirements remains unresolved; the three rows stay held."
+                , "A reject paying its owner short in the refund's position and the rest in another output at the same key is refused by the chain and accepted by the model: CG09's receipt records that disagreement from a devnet run, a known divergence and never a pass (lambdasistemi/singular#361)."
+                , "so their agreement holds for that shape only"
+                , "Whether CG11 and CG19 meet the consuming project's requirements remains unresolved; the two rows stay held."
                 ]
                 $ \phrase -> book `shouldSatisfy` isInfixOf phrase
             book
