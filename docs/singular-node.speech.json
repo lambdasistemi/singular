@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "The table lists the settings. The node socket and the network magic go to all five commands: magic 1 is preprod, 2 is preview, 42 the factory development network, and mainnet's magic is refused for writes. The wallet signing key goes to the four writes only; it funds and signs, is never printed, and inspect refuses it. On a preview a public wallet address takes the key's place for create, insert, update and terminate, and the command prints what it would submit without signing anything. The confirm timeout bounds how long each submission may take to appear on chain, ten minutes by default; past it the submission stays journalled as unconfirmed and is never resubmitted. The backend setting, node by default or indexer, decides where every command reads addresses from: the node itself, or an index the command builds by following the node's chain from its first block. Any other value is refused before anything runs. The registry directory and the compiled blueprint go to all five commands. Create takes either a seed, the output of your wallet that fixes the new registry's identity, or the preview switch, which shows that identity without submitting. Insert, update and terminate also take the preview switch, which builds and measures what they would submit and prints it; a funding input, the wallet output that funds and collateralises the write; and a maximum outlay, past which a booking or update is not signed, and past which a fold costing more than the booking left of it stops the command partial, its request pending. Create and inspect refuse both of those. The key, given as text or with the hex setting as hex bytes, one to thirty-two bytes either way, names what the other four act on. Insert and update take the key's payload, a datum in detailed-schema JSON, which a file that is not Plutus data fails: for insert before anything is read from the node, for update before anything is signed or submitted. Insert builds the rest of the key's envelope itself, from the registry, the key, the signing wallet and a deposit of at least two million lovelace, which is the client's own policy and not a chain floor. Every command can also write the receipt it prints to a file.",
+      "text": "The table lists the settings. The node socket and the network magic go to all six commands: magic 1 is preprod, 2 is preview, 42 the factory development network, and mainnet's magic is refused for writes. The wallet signing key goes to the five writes only; it funds and signs, is never printed, and inspect refuses it. On a preview a public wallet address takes the key's place for create, insert, update and terminate, and the command prints what it would submit without signing anything. The confirm timeout bounds how long each submission may take to appear on chain, ten minutes by default; past it the submission stays journalled as unconfirmed and is never resubmitted. The backend setting, node by default or indexer, decides where every command reads addresses from: the node itself, or an index the command builds by following the node's chain from its first block. Any other value is refused before anything runs. The registry directory and the compiled blueprint go to all six commands. Create takes either a seed, the output of your wallet that fixes the new registry's identity, or the preview switch, which shows that identity without submitting. Insert, update and terminate also take the preview switch, which builds and measures what they would submit and prints it; a funding input, the wallet output that funds and collateralises the write; and a maximum outlay, past which a booking, an update or a fold is not signed, and past which a fold costing more than the booking left of it stops the command partial, its request pending. Fold takes those two as well. Create and inspect refuse both of those. The key, given as text or with the hex setting as hex bytes, one to thirty-two bytes either way, names what insert, update, terminate and inspect act on. Insert and update take the key's payload, a datum in detailed-schema JSON, which a file that is not Plutus data fails: for insert before anything is read from the node, for update before anything is signed or submitted. Insert builds the rest of the key's envelope itself, from the registry, the key, the signing wallet and a deposit of at least two million lovelace, which is the client's own policy and not a chain floor. Insert and terminate take a fold switch, which also folds the request they booked; fold takes the pending request it expects to fold. Every command can also write the receipt it prints to a file.",
       "pause": 500
     },
     {
@@ -14,6 +14,28 @@
     },
     {
       "text": "An example follows: an insert against a preprod node, naming its socket, magic one, and the payment key.",
+      "pause": 400
+    }
+  ],
+  "booking-and-folding": [
+    {
+      "text": "An insert or a terminate books a request and stops. The request waits at the registry. The command's receipt names it, the booking's transaction, and the fold deadline, which is the request's submission time plus the registry's processing time, as a POSIX time, and as a slot when the node converts it. Nothing is folded, and the registry's root, its mirror and its saved state do not move.",
+      "pause": 500
+    },
+    {
+      "text": "Registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. The registry directory is the shared state. The booking leaves there the envelope an insertion delivers, and the fold reads it back and checks it against the hash the request names before it builds anything.",
+      "pause": 500
+    },
+    {
+      "text": "The sequence diagram has four participants: the requester's wallet, the registry directory, the folder's wallet, and the node. The requester books an insert or a terminate through the node, and leaves an insertion's envelope in the directory. The node answers that the request is pending, with its fold deadline. The folder runs registry fold, which reads the pending request from the directory. It sends the fold, signed and funded by the folder, to the node, and the journal, the mirror and the saved state follow the fold.",
+      "pause": 500
+    },
+    {
+      "text": "The registry's fold takes every pending request, so a fold is built only while exactly one is pending. Before anything is signed the command refuses, naming the reason: nothing pending; the request named is not the one pending; more than one pending, each named; an insertion whose envelope is not in the registry directory or is not the one the request names; an edge other than an insertion or a termination; the outlay past the maximum; a funding output that is not the wallet's; and a request whose processing deadline has passed or is within thirty seconds of passing, judged on the host clock. Run after its own booking by the fold switch, a fold that cannot be built or signed stops the command partial, naming the request that stays pending. That check is the fast refusal, not the proof: after the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock. It must be at or before the slot of the deadline when the node converts it, or begin at or before the deadline time when it does not; a bound the node cannot convert, or a clock that has come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
+      "pause": 500
+    },
+    {
+      "text": "The deadline the fold is judged against is the one the booking's receipt states. A fold refused for it submitted nothing, and its request stays pending.",
       "pause": 400
     }
   ],
@@ -61,7 +83,7 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "c10386a5e9a57191acf5003eabdd4502569d3b5c74527ce8c298d3ce64dec5e3"
+    "sha256": "c0136445c3d686061cdeb136470d861c99b4c4fac0cb065c5835e4e71db4bd3d"
   },
   "reading-through-an-index": [
     {

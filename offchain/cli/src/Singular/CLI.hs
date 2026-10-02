@@ -7,7 +7,7 @@ Module      : Singular.CLI
 Description : Run one parsed @singular@ command
 License     : Apache-2.0
 
-'runCommand' dispatches the five registry commands and help. Each
+'runCommand' dispatches the six registry commands and help. Each
 command prints one receipt as JSON on standard output (and to
 @--receipt FILE@ when given) and ends with the exit status of its
 outcome class ("Singular.CLI.Receipt"). A command that stops early
@@ -30,11 +30,13 @@ import Singular.CLI.Command
     ( Command (..)
     , CreateArgs (..)
     , EntryArgs (..)
+    , FoldArgs (..)
     , InspectArgs (..)
     , usage
     )
 import Singular.CLI.Create (runCreate)
 import Singular.CLI.Entry (runInsert, runTerminate, runUpdate)
+import Singular.CLI.Fold (runFold)
 import Singular.CLI.Inspect (runInspect)
 import Singular.CLI.Live (receipt)
 import Singular.CLI.Receipt
@@ -52,6 +54,7 @@ runCommand = \case
     Insert a -> finish "insert" (entryReceipt a) (runInsert a)
     Update a -> finish "update" (entryReceipt a) (runUpdate a)
     Terminate a -> finish "terminate" (entryReceipt a) (runTerminate a)
+    Fold a -> finish "fold" (foldReceipt a) (runFold a)
     Inspect a -> finish "inspect" (inspectReceipt a) (runInspect a)
 
 {- | Print the receipt, write it where asked, and exit with the class of

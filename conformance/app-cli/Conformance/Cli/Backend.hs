@@ -1294,6 +1294,7 @@ commandArgs env c target key r = do
                     <> node
                     <> wallet
                     <> outlay
+                    <> ["--fold"]
                 )
         Terminate ->
             pure
@@ -1303,6 +1304,7 @@ commandArgs env c target key r = do
                     <> node
                     <> wallet
                     <> outlay
+                    <> ["--fold"]
                 )
         Update n -> do
             let path = envEvidence env </> printf "step-%03d-payload.json" (rcStep r)

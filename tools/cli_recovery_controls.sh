@@ -247,7 +247,7 @@ is_txid() { [[ "$1" =~ ^[0-9a-f]{64}$ ]]; }
 
 # The payload every insert here carries; the command builds the rest of the
 # envelope from the registry, the key and the signing wallet.
-insert_of() { args=(registry insert --key-hex "$1" --payload "$work/insert-payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"); }
+insert_of() { args=(registry insert --fold --key-hex "$1" --payload "$work/insert-payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"); }
 
 # ------------------------------------------------------------------
 # The registry
@@ -375,7 +375,7 @@ clause "the journal was only appended to and no body changed" appended_only s2
 control="killed after the mirror"
 snap s3
 reached=0
-held terminate-a SINGULAR_HARNESS_HOLD_AFTER_MIRROR registry terminate --key-hex 6b0a \
+held terminate-a SINGULAR_HARNESS_HOLD_AFTER_MIRROR registry terminate --fold --key-hex 6b0a \
   "${common[@]}" "${node[@]}" "${alice[@]}" || reached=1
 clause "the terminate was killed after its mirror was saved, before state.json" is_equal "$reached" 0
 saved_fold="$(fold_since s3)"
