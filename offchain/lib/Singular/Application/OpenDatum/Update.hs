@@ -23,7 +23,9 @@ module Singular.Application.OpenDatum.Update
     , releaseRedeemer
     ) where
 
+import Data.Aeson ((.=))
 import Data.ByteString.Short qualified as SBS
+import Data.Text (Text)
 import Data.Void (Void)
 import Lens.Micro ((&), (.~))
 
@@ -40,6 +42,7 @@ import Singular.Application.OpenDatum.Envelope
     )
 import Singular.Application.OpenDatum.Release (heldOf, liveEnvelope)
 import Singular.Registry.Ledger (ConwayEra, TxIn)
+import Singular.Registry.Node.PhaseLog (phaseLogFromEnv, timedPhase)
 import Singular.Registry.Provider (View (..))
 import Singular.Registry.TxBuilder.ConnectedFold (RawRedeemer (..))
 import Singular.Registry.TxBuilder.Internal
@@ -92,7 +95,18 @@ an envelope, or that does not hold exactly one of its key's active
 token.
 -}
 updatePayloadTx :: UpdateArgs -> IO (Either String ConwayTx)
-updatePayloadTx args = case liveEnvelope (snd (uaHolding args)) of
+updatePayloadTx args = do
+    lg <- phaseLogFromEnv
+    timedPhase
+        lg
+        "build-body"
+        ["builder" .= ("updatePayloadTx" :: Text)]
+        (either (const ["outcome" .= ("refused" :: Text)]) (const []))
+        (updateBody args)
+
+-- | The update, unlogged.
+updateBody :: UpdateArgs -> IO (Either String ConwayTx)
+updateBody args = case liveEnvelope (snd (uaHolding args)) of
     Left why -> pure (Left why)
     Right e -> do
         let c = envControl e

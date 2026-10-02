@@ -68,7 +68,6 @@ import Singular.Application.OpenDatum.Envelope
     , Envelope (..)
     , dataFromJson
     , dataToJson
-    , envelopeFromJson
     , envelopeHash
     , envelopeToJson
     )
@@ -100,6 +99,7 @@ import Singular.CLI.Registry
     ( LocalState (..)
     , checkNetwork
     , hexT
+    , keyFields
     , renderIdentityError
     , writeLocalState
     )
@@ -429,21 +429,15 @@ runInsert a = case entryMode a of
     Preview node addr -> runPreview KInsert a node addr
     Submit ws -> do
         let Key key = entryKey a
-        path <-
-            maybe
-                (failWith ClientRefusal "insert needs --envelope")
-                pure
-                (entryDocument a)
-        envelope <-
-            readJson path
-                >>= either (failWith ClientRefusal) pure . envelopeFromJson
+        payload <- readInsertPayload a
         attached (entryRegistry a) (entryBlueprint a) ws "insert" $ \at -> do
             let s = savedOf at
-            -- The envelope's checks, the controller and the approval are
-            -- decided in the booking's own view, from the state it holds.
+                envelope = insertionOf s a (callerKey at) payload
+            -- The approval is decided in the booking's own view, from the
+            -- state it holds.
             (booking, ()) <-
                 book at a key $ \_ live -> do
-                    b <- planInsert live (callerKey at) key envelope
+                    b <- planInsert live envelope
                     pure (b, ())
             (fold, root) <-
                 foldAndCommit
@@ -476,13 +470,14 @@ runInsert a = case entryMode a of
                 receipt
                     "insert"
                     Success
-                    [ ("key", toJSON (hexT key))
-                    , ("booking", toJSON (txIdHex booking))
-                    , ("fold", toJSON (txIdHex fold))
-                    , ("liveOutput", toJSON (txInText liveIn))
-                    , ("envelope", envelopeToJson seen)
-                    , ("root", toJSON (hexT root))
-                    ]
+                    ( keyFields key
+                        <> [ ("booking", toJSON (txIdHex booking))
+                           , ("fold", toJSON (txIdHex fold))
+                           , ("liveOutput", toJSON (txInText liveIn))
+                           , ("envelope", envelopeToJson seen)
+                           , ("root", toJSON (hexT root))
+                           ]
+                    )
 
 -- ---------------------------------------------------------
 -- update
@@ -552,12 +547,13 @@ runUpdate a = case entryMode a of
                 receipt
                     "update"
                     Success
-                    [ ("key", toJSON (hexT key))
-                    , ("update", toJSON (txIdHex signed))
-                    , ("liveOutput", toJSON (txInText liveIn))
-                    , ("payload", dataToJson (envPayload seen))
-                    , ("root", toJSON (hexT rootAfter))
-                    ]
+                    ( keyFields key
+                        <> [ ("update", toJSON (txIdHex signed))
+                           , ("liveOutput", toJSON (txInText liveIn))
+                           , ("payload", dataToJson (envPayload seen))
+                           , ("root", toJSON (hexT rootAfter))
+                           ]
+                    )
 
 -- ---------------------------------------------------------
 -- terminate
@@ -605,13 +601,14 @@ runTerminate a = case entryMode a of
                 receipt
                     "terminate"
                     Success
-                    [ ("key", toJSON (hexT key))
-                    , ("booking", toJSON (txIdHex booking))
-                    , ("fold", toJSON (txIdHex fold))
-                    , ("released", toJSON (txInText liveIn))
-                    , ("deposit", toJSON (ctlDeposit c))
-                    , ("root", toJSON (hexT root))
-                    ]
+                    ( keyFields key
+                        <> [ ("booking", toJSON (txIdHex booking))
+                           , ("fold", toJSON (txIdHex fold))
+                           , ("released", toJSON (txInText liveIn))
+                           , ("deposit", toJSON (ctlDeposit c))
+                           , ("root", toJSON (hexT root))
+                           ]
+                    )
 
 {- | A build failure's own words, without the script bytes and context a
 Plutus failure carries after them.

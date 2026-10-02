@@ -161,7 +161,6 @@ import Singular.Application.OpenDatum.Envelope
     , Envelope (..)
     , StateAsset (..)
     , dataToJson
-    , envelopeToJson
     , envelopeVersion
     , registryBytes
     )
@@ -1275,7 +1274,7 @@ commandArgs env c target key r = do
         wallet = ["--wallet-skey", optWalletKey o, "--confirm-timeout", "120"]
         outlay = maybe [] (\n -> ["--max-outlay", show n]) (optMaxOutlay o)
         common = ["--registry", dir, "--blueprint", optBlueprint o]
-        keyArg = ["--key", T.unpack (hex (keyBytes key))]
+        keyArg = ["--key-hex", T.unpack (hex (keyBytes key))]
     case c of
         Create -> do
             seed <- previewSeed env r "preview" (optWalletKey o) dir Nothing
@@ -1285,13 +1284,13 @@ commandArgs env c target key r = do
             reg <- openRegistry env target
             w <- loadWallet (fromIntegral (optMagic o)) (optWalletKey o)
             let e = envelopeOfRun env reg (addrKeyHashBytes (walletAddr w)) key
-                path = envEvidence env </> printf "step-%03d-envelope.json" (rcStep r)
-            BL.writeFile path (encodePretty (envelopeToJson e))
+                path = envEvidence env </> printf "step-%03d-payload.json" (rcStep r)
+            BL.writeFile path (encodePretty (dataToJson (envPayload e)))
             pure
                 ( ["registry", "insert"]
                     <> common
                     <> keyArg
-                    <> ["--envelope", path]
+                    <> ["--payload", path]
                     <> node
                     <> wallet
                     <> outlay

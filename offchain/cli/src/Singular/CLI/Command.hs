@@ -43,10 +43,9 @@ module Singular.CLI.Command
     ) where
 
 import Control.Monad (forM_, when)
+import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
-import Data.ByteString qualified as BS
-import Data.ByteString.Base16 qualified as B16
-import Data.ByteString.Char8 qualified as BC
+import Data.Char (GeneralCategory (Surrogate), generalCategory)
 import Data.List (isPrefixOf)
 import Data.Maybe (isJust, isNothing)
 import Data.Text qualified as T
@@ -54,6 +53,15 @@ import Data.Word (Word32)
 import Text.Read (readMaybe)
 
 import Cardano.Ledger.TxIn (TxIn)
+import Singular.Application.OpenDatum.Build
+    ( DepositRefusal (..)
+    , KeyEncoding (..)
+    , KeyRefusal (..)
+    , maxKeyBytes
+    , minimumDeposit
+    , readDeposit
+    , readKey
+    )
 import Singular.CLI.Node (backendSetting, writeTarget)
 import Singular.Registry.Deployment (parseOutRef)
 
@@ -114,8 +122,12 @@ data EntryArgs = EntryArgs
     , entryMode :: EntryMode
     , entryKey :: Key
     , entryDocument :: Maybe FilePath
-    {- ^ @insert@: the envelope's detailed-schema JSON (@--envelope@);
-    @update@: the new payload's (@--payload@); @terminate@: none
+    {- ^ @insert@ and @update@: the payload's detailed-schema JSON
+    (@--payload@); @terminate@: none
+    -}
+    , entryDeposit :: Maybe Integer
+    {- ^ @insert@: the protected deposit in lovelace (@--deposit@, else the
+    minimum); @update@ and @terminate@: none
     -}
     , entryFund :: Maybe TxIn
     -- ^ @--fund-input@: the wallet output to fund and collateralise from
@@ -152,8 +164,10 @@ data CLIError
     = UnknownCommand [String]
     | MissingFlag String
     | BadValue String String
-    | KeyMalformed String
-    | KeyOversized Int
+    | -- | the key reader's named reason
+      KeyRefused KeyRefusal
+    | -- | the deposit reader's named reason
+      DepositRefused DepositRefusal
     | UnsafeSettings String
     | SigningKeyNotAccepted
     | PreviewTakesNoKey
@@ -162,10 +176,6 @@ data CLIError
       -}
       UnsupportedFlag String String
     deriving stock (Eq, Show)
-
--- | The longest key a registry can name: a ledger asset name.
-maxKeyBytes :: Int
-maxKeyBytes = 32
 
 -- | Parse a command line.
 parseCommand :: [String] -> Either CLIError Command
@@ -179,9 +189,11 @@ parseCommand args = do
             ["registry"] -> Right Help
             ["registry", "create"] ->
                 refuseSpendingFlags "create" flags >> (Create <$> createArgs flags)
-            ["registry", "insert"] -> Insert <$> entryArgs (Just "--envelope") flags
-            ["registry", "update"] -> Update <$> entryArgs (Just "--payload") flags
-            ["registry", "terminate"] -> Terminate <$> entryArgs Nothing flags
+            ["registry", "insert"] -> Insert <$> insertArgs flags
+            ["registry", "update"] ->
+                refuseDeposit flags >> (Update <$> entryArgs (Just "--payload") flags)
+            ["registry", "terminate"] ->
+                refuseDeposit flags >> (Terminate <$> entryArgs Nothing flags)
             ["registry", "inspect"] ->
                 refuseSpendingFlags "inspect" flags >> (Inspect <$> inspectArgs flags)
             _ -> Left (UnknownCommand words')
@@ -220,6 +232,22 @@ parseCommand args = do
                 , createPreview = preview
                 , createReceipt = optional "--receipt" flags
                 }
+    -- An insert is an entry command that also names the deposit its envelope
+    -- protects: --deposit LOVELACE, else the minimum, read by the library.
+    insertArgs flags = do
+        parsed <- entryArgs (Just "--payload") flags
+        deposit <-
+            first
+                DepositRefused
+                (readDeposit (T.pack <$> optional "--deposit" flags))
+        pure parsed{entryDeposit = Just deposit}
+    refuseDeposit flags =
+        when (isJust (lookup "--deposit" flags)) $
+            Left
+                ( BadValue
+                    "--deposit"
+                    "is a registry insert flag: only insert sets a deposit"
+                )
     entryArgs document flags = do
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
@@ -253,6 +281,7 @@ parseCommand args = do
                 , entryMode = mode
                 , entryKey = key
                 , entryDocument = doc
+                , entryDeposit = Nothing
                 , entryFund = fund
                 , entryMaxOutlay = outlay
                 , entryReceipt = optional "--receipt" flags
@@ -321,14 +350,24 @@ parseCommand args = do
                     , writeWalletKey = skey
                     , writeConfirmTimeout = timeout
                     }
-    keyFrom flags = do
-        text <- required "--key" flags
-        bytes <- case B16.decode (BC.pack text) of
-            Right b -> Right b
-            Left _ -> Left (KeyMalformed text)
-        when (BS.length bytes > maxKeyBytes) $
-            Left (KeyOversized (BS.length bytes))
-        pure (Key bytes)
+    -- --key is the text of the key and --key-hex its base16: one of the two,
+    -- read by the library, so no command keeps a decoder of its own.
+    keyFrom flags = case (optional "--key" flags, optional "--key-hex" flags) of
+        (Just _, Just _) ->
+            Left (BadValue "--key-hex" "excludes --key: name the key once")
+        (Just argument, Nothing)
+            | any isSurrogate argument ->
+                Left
+                    ( BadValue
+                        "--key"
+                        "is not text in this locale's encoding: run under a UTF-8 locale, or spell the bytes with --key-hex"
+                    )
+            | otherwise -> readKeyAs KeyText argument
+        (Nothing, Just argument) -> readKeyAs KeyHex argument
+        (Nothing, Nothing) -> Left (MissingFlag "--key")
+    readKeyAs encoding argument =
+        Key <$> first KeyRefused (readKey encoding (T.pack argument))
+    isSurrogate c = generalCategory c == Surrogate
     required name flags = case lookup name flags of
         Just (Just v) -> Right v
         _ -> Left (MissingFlag name)
@@ -370,12 +409,13 @@ tokens = go [] []
         , "--wallet-skey"
         , "--seed"
         , "--key"
+        , "--key-hex"
         , "--receipt"
         , "--confirm-timeout"
         , "--wallet-address"
         , "--fund-input"
         , "--max-outlay"
-        , "--envelope"
+        , "--deposit"
         , "--payload"
         , "--backend"
         ]
@@ -387,12 +427,25 @@ renderCLIError = \case
         "not a command singular supports: " <> unwords ws
     MissingFlag name -> "missing " <> name
     BadValue name why -> name <> " " <> why
-    KeyMalformed text -> "--key is not hex bytes: " <> text
-    KeyOversized n ->
+    KeyRefused KeyEmpty ->
+        "--key is empty: a registry key is 1 to "
+            <> show maxKeyBytes
+            <> " bytes"
+    KeyRefused KeyNotHex -> "--key-hex is not base16 bytes"
+    KeyRefused (KeyTooLong n) ->
         "--key names "
             <> show n
             <> " bytes; a registry key is at most "
             <> show maxKeyBytes
+            <> " bytes"
+    DepositRefused DepositNotInteger ->
+        "--deposit is not a whole number of lovelace"
+    DepositRefused (DepositBelowMinimum n) ->
+        "--deposit "
+            <> show n
+            <> " is below the minimum of "
+            <> show minimumDeposit
+            <> " lovelace"
     UnsafeSettings why -> why
     SigningKeyNotAccepted ->
         "inspect takes no signing key: it reads, and never funds or submits"
@@ -414,30 +467,30 @@ usage =
         , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "  singular registry create --preview --registry DIR --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] --node-socket PATH --network-magic N --wallet-address ADDR"
-        , "  singular registry insert --registry DIR --blueprint PLUTUS_JSON --key HEX"
-        , "      --envelope ENVELOPE_JSON"
+        , "  singular registry insert --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "      --payload DATUM_JSON [--deposit LOVELACE]"
         , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry insert --preview --registry DIR --blueprint PLUTUS_JSON"
-        , "      --key HEX --envelope ENVELOPE_JSON"
+        , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON [--deposit LOVELACE]"
         , "      --node-socket PATH --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry update --registry DIR --blueprint PLUTUS_JSON --key HEX"
+        , "  singular registry update --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --payload DATUM_JSON"
         , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry update --preview --registry DIR --blueprint PLUTUS_JSON"
-        , "      --key HEX --payload DATUM_JSON"
+        , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON"
         , "      --node-socket PATH --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry terminate --registry DIR --blueprint PLUTUS_JSON --key HEX"
+        , "  singular registry terminate --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry terminate --preview --registry DIR --blueprint PLUTUS_JSON"
-        , "      --key HEX"
+        , "      (--key KEY | --key-hex HEX)"
         , "      --node-socket PATH --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry inspect --registry DIR --blueprint PLUTUS_JSON --key HEX"
+        , "  singular registry inspect --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --node-socket PATH --network-magic N [--receipt FILE]"
         , ""
         , "Write commands also take --confirm-timeout SECONDS (default 600): past it"
@@ -454,6 +507,8 @@ usage =
         , "The preview forms name the caller by a public wallet address instead of a"
         , "signing key: they build and measure what they would submit, print it, and"
         , "sign, submit and journal nothing."
+        , "A registry key is 1 to 32 bytes: KEY is read as text, its UTF-8 bytes, and HEX as"
+        , "base16. A key is named once, by one of the two."
         , "Each command prints one JSON receipt on standard output. inspect reads"
         , "only: it takes no signing key and submits nothing."
         ]

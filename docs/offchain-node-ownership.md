@@ -134,6 +134,10 @@ names link to its entry here:
 - <span id="memory-owner"></span>**Memory** — the deterministic in-memory chain
   behind the same read interface —
   <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Memory.hs">source</a>.
+- <span id="phase-log-owner"></span>**PhaseLog** — the opt-in, append-only,
+  timestamped log of a command's phases, and the logged read interface that
+  writes one line for each view acquisition and each read through it —
+  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/PhaseLog.hs">source</a>.
 - <span id="submit-owner"></span>**Submit** — the write capability, which takes
   signed transactions only —
   <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Submit.hs">source</a>.

@@ -20,6 +20,10 @@ appended before the next step starts:
    deadline.
 4. @observed@: a fresh readback of what it made.
 
+Every line is stamped with the time of its append (@journalTime@, ISO-8601
+UTC, to the millisecond); lines written before the stamp existed carry
+none and read as before.
+
 A later command may append two more, each naming the chain point it read
 and the outputs it found live: @rolled-back@, when an included
 transaction is no longer on the chain (its observation stays, superseded
@@ -82,6 +86,8 @@ import System.Posix.IO
 import System.Posix.IO.ByteString (fdWrite)
 import System.Posix.Unistd (fileSynchronise)
 
+import Singular.Registry.Node.PhaseLog (isoNow)
+
 -- | One journal line: one phase of one submission.
 data JournalEntry = JournalEntry
     { journalCommand :: Text
@@ -125,6 +131,10 @@ data JournalEntry = JournalEntry
     -}
     , journalRootAfter :: Maybe Text
     -- ^ At @prepared@, for a fold: the root the mirror commits to after it
+    , journalTime :: Maybe Text
+    {- ^ When the line was appended, ISO-8601 UTC with millisecond precision.
+    Stamped by 'appendJournal'; absent from lines written before it was
+    -}
     }
     deriving stock (Eq, Show, Generic)
 
@@ -136,14 +146,17 @@ instance FromJSON JournalEntry where
 journalPath :: FilePath -> FilePath
 journalPath dir = dir </> "journal.jsonl"
 
-{- | Append one line and make it durable — the file and its directory
-synchronised to disk — before the caller takes the next step.
+{- | Append one line, stamped with the time of the append whatever time the
+entry carried (a line copied from an earlier one must not keep that one's),
+and make it durable — the file and its directory synchronised to disk —
+before the caller takes the next step.
 -}
 appendJournal :: FilePath -> JournalEntry -> IO ()
-appendJournal dir entry =
+appendJournal dir entry = do
+    now <- isoNow
     durableAppend
         (journalPath dir)
-        (BL.toStrict (Aeson.encode entry <> "\n"))
+        (BL.toStrict (Aeson.encode entry{journalTime = Just now} <> "\n"))
 
 -- | Append bytes to a file, creating it, and synchronise file and directory.
 durableAppend :: FilePath -> BS.ByteString -> IO ()

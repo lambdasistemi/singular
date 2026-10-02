@@ -245,15 +245,9 @@ submission_tx() { field "$1" "[.submissions[]? | select(.step == \"$2\") | .tx] 
 is_equal() { [ -n "$1" ] && [ "$1" != null ] && [ "$1" = "$2" ]; }
 is_txid() { [[ "$1" =~ ^[0-9a-f]{64}$ ]]; }
 
-# envelope FILE CONTROLLER KEY
-envelope() {
-  jq -n --arg s "$state" --arg t "$token" --arg a "$active" --arg k "$3" --arg c "$2" '
-      {constructor:0, fields:[
-        {constructor:0, fields:[{int:1},{constructor:0,fields:[{bytes:$s},{bytes:$t}]},
-          {bytes:$a},{bytes:$k},{bytes:$c},{int:2000000}]},
-        {map:[{k:{bytes:"6e616d65"},v:{bytes:"616c696365"}}]}]}' >"$1"
-}
-insert_of() { args=(registry insert --key "$1" --envelope "$work/$1.json" "${common[@]}" "${node[@]}" "${alice[@]}"); }
+# The payload every insert here carries; the command builds the rest of the
+# envelope from the registry, the key and the signing wallet.
+insert_of() { args=(registry insert --key-hex "$1" --payload "$work/insert-payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"); }
 
 # ------------------------------------------------------------------
 # The registry
@@ -262,11 +256,8 @@ run preview registry create --preview "${common[@]}" "${node[@]}" "${alice[@]}"
 outcome_is preview success || setup_fail "create --preview did not succeed"
 run create registry create --seed "$(field preview .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
 outcome_is create success || setup_fail "create did not succeed"
-state="$(field create .pins.pinState)"
 token="$(field create .token)"
-active="$(field create .pins.pinActive)"
-alicekey="$(field create .walletKeyHash)"
-for k in 6b0a 6b0b 6b0c 6b0d 6b0e 6b0f 6b10 6b11; do envelope "$work/$k.json" "$alicekey" "$k"; done
+jq -n '{map:[{k:{bytes:"6e616d65"},v:{bytes:"616c696365"}}]}' >"$work/insert-payload.json"
 jq -n '{int: 42}' >"$work/payload.json"
 say "registry $token created"
 
@@ -288,7 +279,7 @@ clause "the fold was prepared, acknowledged, included and observed, once each" \
   is_equal "$(events_of "$fold")" '["prepared","submitted","confirmed","observed"]'
 clause "state.json commits to the fold's journalled root after" is_equal "$(root_now)" "$(root_after_of "$fold")"
 clause "the receipt's root is that root" is_equal "$(field insert-a .root)" "$(root_after_of "$fold")"
-run inspect-a registry inspect --key 6b0a "${common[@]}" "${node[@]}"
+run inspect-a registry inspect --key-hex 6b0a "${common[@]}" "${node[@]}"
 clause "inspect reads the key active at that root" \
   is_equal "$(field inspect-a '.outcome + "/" + .leaf + "/" + .root')" "success/active/$(root_after_of "$fold")"
 clause "the journal was only appended to and no body changed" appended_only s0
@@ -347,7 +338,7 @@ clause "the lost fold's observation was journalled by the reconciling insert" \
 clause "the fold started from the root before the lost answer" is_equal "$(root_before_of "$lost")" "$(cat "$snaps/s1.root")"
 clause "the next fold started from the lost fold's root after: one edge between" \
   is_equal "$(root_before_of "$(submission_tx insert-c fold)")" "$(root_after_of "$lost")"
-run inspect-b registry inspect --key 6b0b "${common[@]}" "${node[@]}"
+run inspect-b registry inspect --key-hex 6b0b "${common[@]}" "${node[@]}"
 clause "inspect reads the lost answer's key active" is_equal "$(field inspect-b '.outcome + "/" + .leaf')" success/active
 clause "the journal was only appended to and no body changed" appended_only s1
 
@@ -365,7 +356,7 @@ clause "the fold's last journalled phase is confirmed" is_equal "$(last_event "$
 clause "nothing was committed locally: state.json unchanged" state_kept s2
 clause "nothing was committed locally: the mirror unchanged" mirror_kept s2
 snap s2-killed
-run update-a registry update --key 6b0a --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
+run update-a registry update --key-hex 6b0a --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
 clause "the next write, an update of another key, reconciles and succeeds" outcome_is update-a success
 clause "it applied the killed fold's edge to the mirror once" is_equal "$(field update-a ".reconciled.applied | tojson")" "[\"$killed_fold\"]"
 clause "it brought state.json along" is_equal "$(field update-a .reconciled.stateFollowed)" true
@@ -374,7 +365,7 @@ clause "the killed fold is observed exactly once, by the update" \
 clause "the killed fold was prepared once, never sent again" prepared_once "$killed_fold"
 clause "the fold started from the root before the kill" is_equal "$(root_before_of "$killed_fold")" "$(cat "$snaps/s2.root")"
 clause "state.json now commits to the fold's root after: one edge" is_equal "$(root_now)" "$(root_after_of "$killed_fold")"
-run inspect-d registry inspect --key 6b0d "${common[@]}" "${node[@]}"
+run inspect-d registry inspect --key-hex 6b0d "${common[@]}" "${node[@]}"
 clause "inspect reads the killed insert's key active" is_equal "$(field inspect-d '.outcome + "/" + .leaf')" success/active
 clause "the journal was only appended to and no body changed" appended_only s2
 
@@ -384,7 +375,7 @@ clause "the journal was only appended to and no body changed" appended_only s2
 control="killed after the mirror"
 snap s3
 reached=0
-held terminate-a SINGULAR_HARNESS_HOLD_AFTER_MIRROR registry terminate --key 6b0a \
+held terminate-a SINGULAR_HARNESS_HOLD_AFTER_MIRROR registry terminate --key-hex 6b0a \
   "${common[@]}" "${node[@]}" "${alice[@]}" || reached=1
 clause "the terminate was killed after its mirror was saved, before state.json" is_equal "$reached" 0
 saved_fold="$(fold_since s3)"
@@ -403,7 +394,7 @@ clause "the killed fold was prepared once, never sent again" prepared_once "$sav
 clause "the fold started from the root before the kill" is_equal "$(root_before_of "$saved_fold")" "$(cat "$snaps/s3.root")"
 clause "the next fold started from the killed fold's root after: one edge between" \
   is_equal "$(root_before_of "$(submission_tx insert-e fold)")" "$(root_after_of "$saved_fold")"
-run inspect-t registry inspect --key 6b0a "${common[@]}" "${node[@]}"
+run inspect-t registry inspect --key-hex 6b0a "${common[@]}" "${node[@]}"
 clause "inspect reads the terminated key terminal" is_equal "$(field inspect-t '.outcome + "/" + .leaf')" success/terminal
 clause "the journal was only appended to and no body changed" appended_only s3
 
@@ -430,7 +421,7 @@ clause "the killed fold is observed exactly once, by the insert" \
 clause "the killed fold was prepared once, never sent again" prepared_once "$written_fold"
 clause "the next fold started from the killed fold's root after: one edge between" \
   is_equal "$(root_before_of "$(submission_tx insert-h fold)")" "$(root_after_of "$written_fold")"
-run inspect-g registry inspect --key 6b10 "${common[@]}" "${node[@]}"
+run inspect-g registry inspect --key-hex 6b10 "${common[@]}" "${node[@]}"
 clause "inspect reads the killed insert's key active" is_equal "$(field inspect-g '.outcome + "/" + .leaf')" success/active
 clause "the journal was only appended to and no body changed" appended_only s5
 
@@ -455,7 +446,7 @@ unsent_live="$(probe_ins "${unsent_ins[@]}")"
 clause "the node reports the unsent fold's inputs unspent" \
   jq -n -e --argjson p "$unsent_live" '($p.live | length) > 0 and ($p.spent == [])'
 snap s4-excluded
-run update-d registry update --key 6b0d --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
+run update-d registry update --key-hex 6b0d --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
 excluded_line="$(jq -c --arg t "$unsent" 'select(.journalTxId == $t and .journalEvent == "excluded")' "$journal")"
 clause "the next write journals the unsent fold excluded" \
   is_equal "$(events_of "$unsent")" '["prepared","submit-unknown","excluded"]'
@@ -482,7 +473,7 @@ clause "the unsent booking names a transaction" is_txid "$unbooked"
 # A booking carries no validity upper bound: no tip ever settles it.
 sleep 10
 snap s6-refused
-run update-e registry update --key 6b0d --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
+run update-e registry update --key-hex 6b0d --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
 clause "the next write stops partial (exit 15)" exit_is update-e 15
 clause "it names the unsent booking" is_equal "$(field update-e .unresolved.tx)" "$unbooked"
 clause "it names the case unknown" is_equal "$(field update-e .unresolved.case)" unknown
@@ -617,10 +608,6 @@ run preview-rb registry create --preview "${common[@]}" "${node[@]}" "${alice[@]
 outcome_is preview-rb success || setup_fail "the second create --preview did not succeed"
 run create-rb registry create --seed "$(field preview-rb .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
 outcome_is create-rb success || setup_fail "the second create did not succeed"
-state="$(field create-rb .pins.pinState)"
-token="$(field create-rb .token)"
-active="$(field create-rb .pins.pinActive)"
-for k in 6c00 6c01 6c02; do envelope "$work/$k.json" "$alicekey" "$k"; done
 insert_of 6c00
 run insert-rb0 "${args[@]}"
 outcome_is insert-rb0 success || setup_fail "the insert before the snapshot did not succeed"
@@ -703,7 +690,7 @@ clause "neither the booking's nor the fold's first output exists" \
 # Killed after the rollback is journalled, before the mirror is rebuilt:
 # the files still hold the rolled-back fold's root after.
 reached=0
-held inspect-rb-k1 SINGULAR_HARNESS_HOLD_BEFORE_REWIND registry inspect --key 6c01 "${common[@]}" "${node[@]}" || reached=1
+held inspect-rb-k1 SINGULAR_HARNESS_HOLD_BEFORE_REWIND registry inspect --key-hex 6c01 "${common[@]}" "${node[@]}" || reached=1
 clause "an inspect is killed after journalling the rollback, before rebuilding the mirror" is_equal "$reached" 0
 clause "at that moment both transactions are journalled rolled back" \
   is_equal "$(event_count "$rb_book" rolled-back)/$(event_count "$rb_fold" rolled-back)" 1/1
@@ -711,11 +698,11 @@ clause "at that moment the mirror and state.json are as the insert left them" \
   bash -c "[ '$(mirror_now)' = '$(cat "$snaps/rb1.mirror")' ] && [ '$(root_now)' = '$(cat "$snaps/rb1.root")' ]"
 # Killed after the mirror is rebuilt, before state.json follows it.
 reached=0
-held inspect-rb-k2 SINGULAR_HARNESS_HOLD_BEFORE_REWIND_STATE registry inspect --key 6c01 "${common[@]}" "${node[@]}" || reached=1
+held inspect-rb-k2 SINGULAR_HARNESS_HOLD_BEFORE_REWIND_STATE registry inspect --key-hex 6c01 "${common[@]}" "${node[@]}" || reached=1
 clause "a second inspect is killed after rebuilding the mirror, before state.json" is_equal "$reached" 0
 clause "at that moment the mirror holds its bytes from before the insert and state.json the insert's root" \
   bash -c "[ '$(mirror_now)' = '$(cat "$snaps/rb0.mirror")' ] && [ '$(root_now)' = '$(cat "$snaps/rb1.root")' ]"
-run inspect-rb registry inspect --key 6c01 "${common[@]}" "${node[@]}"
+run inspect-rb registry inspect --key-hex 6c01 "${common[@]}" "${node[@]}"
 clause "the next inspect journals no second rollback and rebuilds nothing more" \
   jq -e 'has("mirrorRewound") and .mirrorRewound == null and .rolledBack == []' "$receipts/inspect-rb.json"
 clause "the booking's rollback is journalled once, after its observation" \

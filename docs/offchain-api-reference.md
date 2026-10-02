@@ -25,8 +25,8 @@ viewing.
 
 The module extent is the public library of the off-chain Cabal file — every
 exposed module, every internal module, and every module the library
-re-exports under its own name. That complete extent is 53 modules in
-three kinds: 40 explicitly exposed modules and two re-exported modules
+re-exports under its own name. That complete extent is 54 modules in
+three kinds: 41 explicitly exposed modules and two re-exported modules
 are what a caller imports; the three fold owners behind the `Update`
 facade — `Singular.Registry.TxBuilder.Update.Build`, `.Context` and
 `.Duties` — the five wire owners behind the `Types` facade —
@@ -50,6 +50,7 @@ package-internal alike; the site check fails until it and this list
 agree.
 
 - <a href="../offchain/lib/Singular/Application/OpenDatum/Book.hs" data-api="module">Singular.Application.OpenDatum.Book</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Book.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Application/OpenDatum/Build.hs" data-api="module">Singular.Application.OpenDatum.Build</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Build.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Application/OpenDatum/Envelope.hs" data-api="module">Singular.Application.OpenDatum.Envelope</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Envelope.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Application/OpenDatum/Release.hs" data-api="module">Singular.Application.OpenDatum.Release</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Release.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Application/OpenDatum/Script.hs" data-api="module">Singular.Application.OpenDatum.Script</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Script.hs" data-api="source">source</a>

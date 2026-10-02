@@ -39,6 +39,7 @@ import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.List (isInfixOf, sort)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (isJust)
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~))
@@ -67,6 +68,10 @@ import Cardano.Ledger.Mary.Value (MaryValue (..))
 
 import MPF.Backend.Pure (MPFInMemoryDB (..))
 
+import Singular.Application.OpenDatum.Build
+    ( DepositRefusal (..)
+    , minimumDeposit
+    )
 import Singular.CLI.Command
 
 import Singular.CLI.Proof
@@ -159,9 +164,9 @@ commandLine = describe "the command line" $ do
                         , createReceipt = Nothing
                         }
                 )
-    it "reads an insert at a hex key with its envelope" $
+    it "reads an insert with its payload and the default deposit" $
         parseCommand
-            ( ["registry", "insert", "--key", "6b6579", "--envelope", "/e.json"]
+            ( ["registry", "insert", "--key", "key", "--payload", "/p.json"]
                 <> reg
                 <> node
                 <> wallet
@@ -173,19 +178,84 @@ commandLine = describe "the command line" $ do
                         , entryBlueprint = "/srv/plutus.json"
                         , entryMode = Submit writeSettings
                         , entryKey = Key "key"
-                        , entryDocument = Just "/e.json"
+                        , entryDocument = Just "/p.json"
+                        , entryDeposit = Just minimumDeposit
                         , entryFund = Nothing
                         , entryMaxOutlay = Nothing
                         , entryReceipt = Nothing
                         }
                 )
-    it "refuses an insert without its envelope" $
+    it "reads --deposit on an insert, at the minimum and above it"
+        $ forM_
+            [ ("2000000", 2_000_000)
+            , ("2000001", 2_000_001)
+            , ("35000000", 35_000_000)
+            ]
+        $ \(argument, lovelace) ->
+            fmap
+                ( \case
+                    Insert e -> entryDeposit e
+                    _ -> Nothing
+                )
+                ( parseCommand
+                    ( ["registry", "insert", "--key", "key", "--payload", "/p.json"]
+                        <> ["--deposit", argument]
+                        <> reg
+                        <> node
+                        <> wallet
+                    )
+                )
+                `shouldBe` Right (Just lovelace)
+    it "refuses a deposit that is not an integer, or is below the minimum" $ do
+        let insertWith argument =
+                parseCommand
+                    ( ["registry", "insert", "--key", "key", "--payload", "/p.json"]
+                        <> ["--deposit", argument]
+                        <> reg
+                        <> node
+                        <> wallet
+                    )
+        forM_ ["two", "2e6", "2.5", "", "0x10", "+2000000"] $ \argument ->
+            insertWith argument `shouldBe` Left (DepositRefused DepositNotInteger)
+        insertWith "1999999"
+            `shouldBe` Left (DepositRefused (DepositBelowMinimum 1_999_999))
+        insertWith "-5"
+            `shouldBe` Left (DepositRefused (DepositBelowMinimum (-5)))
+        insertWith "0"
+            `shouldBe` Left (DepositRefused (DepositBelowMinimum 0))
+        renderCLIError (DepositRefused (DepositBelowMinimum 1_999_999))
+            `shouldSatisfy` isInfixOf "below the minimum of 2000000 lovelace"
+    it "takes --deposit from an insert only"
+        $ forM_
+            [ ["registry", "update", "--payload", "/p.json"]
+            , ["registry", "terminate"]
+            ]
+        $ \command ->
+            parseCommand
+                ( command
+                    <> ["--key", "key", "--deposit", "2000000"]
+                    <> reg
+                    <> node
+                    <> wallet
+                )
+                `shouldBe` Left
+                    ( BadValue
+                        "--deposit"
+                        "is a registry insert flag: only insert sets a deposit"
+                    )
+    it
+        "no longer reads the flag that carried a hand-built envelope, on any command"
+        $ forM_ commands
+        $ \line ->
+            parseCommand (line <> [removedFlag, "/e.json"])
+                `shouldBe` Left (BadValue removedFlag "is not a flag singular reads")
+    it "refuses an insert without its payload" $
         parseCommand
-            (["registry", "insert", "--key", "6b6579"] <> reg <> node <> wallet)
-            `shouldSatisfy` isLeftWith isMissing
+            (["registry", "insert", "--key", "key"] <> reg <> node <> wallet)
+            `shouldBe` Left (MissingFlag "--payload")
     it "reads an update with its payload, and refuses one without" $ do
         parseCommand
-            ( ["registry", "update", "--key", "6b6579", "--payload", "/p.json"]
+            ( ["registry", "update", "--key", "key", "--payload", "/p.json"]
                 <> reg
                 <> node
                 <> wallet
@@ -194,33 +264,84 @@ commandLine = describe "the command line" $ do
                 Right (Update e) -> entryDocument e == Just "/p.json"
                 _ -> False
         parseCommand
-            (["registry", "update", "--key", "6b6579"] <> reg <> node <> wallet)
+            (["registry", "update", "--key", "key"] <> reg <> node <> wallet)
             `shouldSatisfy` isLeftWith isMissing
-    it "refuses a key that is not hex" $ do
+    it "reads --key as text and --key-hex as base16, to the same key" $
+        forM_ keyCommands $ \command -> do
+            let keyOf extra = fmap commandKey (parseCommand (command <> extra))
+            keyOf ["--key", "alice"] `shouldBe` Right (Key "alice")
+            keyOf ["--key-hex", "616c696365"] `shouldBe` Right (Key "alice")
+            keyOf ["--key-hex", "616c696365"] `shouldBe` keyOf ["--key", "alice"]
+            keyOf ["--key-hex=616c696365"] `shouldBe` Right (Key "alice")
+    it "takes a hex-looking --key as the text it spells" $
+        forM_ keyCommands $ \command ->
+            fmap commandKey (parseCommand (command <> ["--key", "6b65"]))
+                `shouldBe` Right (Key "6b65")
+    it "reads --key text as its UTF-8 bytes" $
+        fmap commandKey (parseCommand (insertCommand <> ["--key", "caf\233"]))
+            `shouldBe` Right (Key (BS.pack [0x63, 0x61, 0x66, 0xc3, 0xa9]))
+    it "refuses --key-hex that is not base16, naming it" $
+        forM_ keyCommands $ \command -> do
+            parseCommand (command <> ["--key-hex", "zz"])
+                `shouldSatisfy` refusedWith "--key-hex is not base16"
+            parseCommand (command <> ["--key-hex", "abc"])
+                `shouldSatisfy` refusedWith "--key-hex is not base16"
+    it "refuses an empty key, as text and as hex, naming it" $
+        forM_ keyCommands $ \command -> do
+            parseCommand (command <> ["--key", ""])
+                `shouldSatisfy` refusedWith "--key is empty"
+            parseCommand (command <> ["--key-hex", ""])
+                `shouldSatisfy` refusedWith "--key is empty"
+    it
+        "accepts a key of exactly 32 bytes and refuses 33, in either spelling"
+        $ forM_ keyCommands
+        $ \command -> do
+            let at n = replicate n 'a'
+                hexAt n = replicate (2 * n) 'a'
+            fmap commandKey (parseCommand (command <> ["--key", at maxKeyBytes]))
+                `shouldBe` Right (Key (BC.pack (at maxKeyBytes)))
+            fmap
+                commandKey
+                (parseCommand (command <> ["--key-hex", hexAt maxKeyBytes]))
+                `shouldSatisfy` either (const False) (const True)
+            parseCommand (command <> ["--key", at (maxKeyBytes + 1)])
+                `shouldSatisfy` refusedWith "at most 32 bytes"
+            parseCommand (command <> ["--key-hex", hexAt (maxKeyBytes + 1)])
+                `shouldSatisfy` refusedWith "at most 32 bytes"
+    it "counts the bytes of a text key, not its characters" $
+        -- 17 two-byte characters are 34 bytes
         parseCommand
-            (["registry", "insert", "--key", "zz"] <> reg <> node <> wallet)
-            `shouldSatisfy` isLeftWith isMalformed
-        parseCommand
-            (["registry", "terminate", "--key", "abc"] <> reg <> node <> wallet)
-            `shouldSatisfy` isLeftWith isMalformed
-    it "accepts a key of exactly 32 bytes and refuses 33" $ do
-        let hexOf n = replicate (2 * n) 'a'
-        parseCommand
-            (["registry", "inspect", "--key", hexOf maxKeyBytes] <> reg <> node)
-            `shouldSatisfy` either (const False) (const True)
-        parseCommand
-            ( ["registry", "inspect", "--key", hexOf (maxKeyBytes + 1)]
-                <> reg
-                <> node
-            )
-            `shouldBe` Left (KeyOversized (maxKeyBytes + 1))
+            (insertCommand <> ["--key", concat (replicate 17 "\233")])
+            `shouldSatisfy` refusedWith "at most 32 bytes"
+    it
+        "refuses a --key the terminal's encoding could not decode, never reading it as text"
+        $
+        -- the runtime hands undecodable argument bytes over as lone surrogates
+        parseCommand (insertCommand <> ["--key", "caf\xDCC3\xDCA9"])
+            `shouldSatisfy` refusedWith "run under a UTF-8 locale"
+    it "takes the key once, by --key or by --key-hex" $
+        forM_ keyCommands $ \command -> do
+            parseCommand
+                (command <> ["--key", "alice", "--key-hex", "616c696365"])
+                `shouldSatisfy` refusedWith "--key-hex excludes --key"
+            parseCommand command `shouldBe` Left (MissingFlag "--key")
+    it "refuses a bad key before it asks for a node or a wallet" $
+        parseCommand (["registry", "insert", "--key-hex", "zz"] <> reg)
+            `shouldSatisfy` refusedWith "--key-hex is not base16"
+    it "shows a receipt's key as hex and, when it is UTF-8, as text" $ do
+        keyFields "alice"
+            `shouldBe` [ ("key", Aeson.String "616c696365")
+                       , ("keyText", Aeson.String "alice")
+                       ]
+        keyFields (BS.pack [0xff, 0x00])
+            `shouldBe` [("key", Aeson.String "ff00")]
     it "refuses a signing key on inspect" $
         parseCommand
-            (["registry", "inspect", "--key", "6b6579"] <> reg <> node <> wallet)
+            (["registry", "inspect", "--key", "key"] <> reg <> node <> wallet)
             `shouldBe` Left SigningKeyNotAccepted
     it "refuses a write with a partial node and wallet setting" $
         parseCommand
-            ( ["registry", "insert", "--key", "6b6579"]
+            ( ["registry", "insert", "--key", "key"]
                 <> reg
                 <> ["--node-socket", "/run/node.socket"]
             )
@@ -230,7 +351,7 @@ commandLine = describe "the command line" $ do
         $ do
             let insert extra =
                     parseCommand
-                        ( ["registry", "insert", "--key", "6b6579", "--envelope", "/e.json"]
+                        ( ["registry", "insert", "--key", "key", "--payload", "/p.json"]
                             <> reg
                             <> node
                             <> wallet
@@ -248,18 +369,18 @@ commandLine = describe "the command line" $ do
     preview
     it "refuses a write against mainnet" $
         parseCommand
-            ( ["registry", "insert", "--key", "6b6579"]
+            ( ["registry", "insert", "--key", "key"]
                 <> reg
                 <> ["--node-socket", "/s", "--network-magic", "764_824_073"]
                 <> wallet
             )
             `shouldSatisfy` isLeftWith (unsafeMentions "764_824_073")
     it "refuses a write with no node at all rather than spawning one" $
-        parseCommand (["registry", "insert", "--key", "6b6579"] <> reg)
+        parseCommand (["registry", "insert", "--key", "key"] <> reg)
             `shouldSatisfy` isLeftWith isUnsafe
     it "names a missing registry directory" $
         parseCommand
-            (["registry", "inspect", "--key", "6b6579", "--blueprint", "b"] <> node)
+            (["registry", "inspect", "--key", "key", "--blueprint", "b"] <> node)
             `shouldBe` Left (MissingFlag "--registry")
     it
         "reads every command under the indexer backend as it reads it under \
@@ -278,18 +399,20 @@ commandLine = describe "the command line" $ do
                 `shouldBe` Left
                     (BadValue "--backend" "names node or indexer, not nodes")
   where
+    -- Spelled apart: no line of the tree names the removed flag.
+    removedFlag = "--" <> "envelope"
     commands =
         [ ["registry", "create", "--seed", seedText] <> reg <> node <> wallet
-        , ["registry", "insert", "--key", "6b6579", "--envelope", "/e.json"]
+        , ["registry", "insert", "--key", "key", "--payload", "/p.json"]
             <> reg
             <> node
             <> wallet
-        , ["registry", "update", "--key", "6b6579", "--payload", "/p.json"]
+        , ["registry", "update", "--key", "key", "--payload", "/p.json"]
             <> reg
             <> node
             <> wallet
-        , ["registry", "terminate", "--key", "6b6579"] <> reg <> node <> wallet
-        , ["registry", "inspect", "--key", "6b6579"] <> reg <> node
+        , ["registry", "terminate", "--key", "key"] <> reg <> node <> wallet
+        , ["registry", "inspect", "--key", "key"] <> reg <> node
         ]
     forM5 xs f = mapM_ f xs
     preview = previewRows
@@ -300,7 +423,29 @@ commandLine = describe "the command line" $ do
             , writeConfirmTimeout = Nothing
             }
     isUnknown = \case UnknownCommand _ -> True; _ -> False
-    isMalformed = \case KeyMalformed _ -> True; _ -> False
+    refusedWith needle = \case
+        Left e -> needle `isInfixOf` renderCLIError e
+        Right _ -> False
+    commandKey = \case
+        Insert e -> entryKey e
+        Update e -> entryKey e
+        Terminate e -> entryKey e
+        Inspect i -> inspectKey i
+        other -> error ("not a key command: " <> show other)
+    insertCommand =
+        ["registry", "insert", "--payload", "/p.json"]
+            <> reg
+            <> node
+            <> wallet
+    keyCommands =
+        [ insertCommand
+        , ["registry", "update", "--payload", "/p.json"]
+            <> reg
+            <> node
+            <> wallet
+        , ["registry", "terminate"] <> reg <> node <> wallet
+        , ["registry", "inspect"] <> reg <> node
+        ]
     isMissing = \case MissingFlag _ -> True; _ -> False
     isUnsafe = \case UnsafeSettings _ -> True; _ -> False
     unsafeMentions s = \case
@@ -480,7 +625,10 @@ journal = describe "the journal of a write" $ do
             let entries =
                     [submitted "boot" "t1", confirmed "boot" "t1", submitted "book" "t2"]
             mapM_ (appendJournal dir) entries
-            readJournal dir `shouldReturn` entries
+            read' <- readJournal dir
+            -- each line comes back as appended, plus the time of its append
+            map (\e -> e{journalTime = Nothing}) read' `shouldBe` entries
+            map (isJust . journalTime) read' `shouldBe` map (const True) entries
     it "names the submission a process never saw confirmed" $ do
         unresolved [submitted "boot" "t1"]
             `shouldBe` Just (submitted "boot" "t1")
@@ -587,6 +735,7 @@ journal = describe "the journal of a write" $ do
             , journalEdge = Nothing
             , journalRootBefore = Nothing
             , journalRootAfter = Nothing
+            , journalTime = Nothing
             }
 
 -- ---------------------------------------------------------
@@ -840,6 +989,7 @@ recovery = describe "recovery after an uncertain submission" $ do
             , journalEdge = Nothing
             , journalRootBefore = Nothing
             , journalRootAfter = Nothing
+            , journalTime = Nothing
             }
     foldLine from to =
         (line "f" "prepared")
@@ -1086,6 +1236,7 @@ jline t e =
         , journalEdge = Nothing
         , journalRootBefore = Nothing
         , journalRootAfter = Nothing
+        , journalTime = Nothing
         }
 
 {- | Start a process that rewrites a file over and over, kill it at a
@@ -1128,9 +1279,9 @@ previewRows = describe "--preview" $ do
                   , "insert"
                   , "--preview"
                   , "--key"
-                  , "6b6579"
-                  , "--envelope"
-                  , "/e.json"
+                  , "key"
+                  , "--payload"
+                  , "/p.json"
                   ]
                     <> reg
                     <> extra
@@ -1148,12 +1299,26 @@ previewRows = describe "--preview" $ do
                                 (NodeSettings "/run/node.socket" 1)
                                 (textOf Testnet payerHash)
                         , entryKey = Key "key"
-                        , entryDocument = Just "/e.json"
+                        , entryDocument = Just "/p.json"
+                        , entryDeposit = Just minimumDeposit
                         , entryFund = Nothing
                         , entryMaxOutlay = Nothing
                         , entryReceipt = Nothing
                         }
                 )
+    it
+        "reads --deposit on an insert preview, and refuses one below the minimum"
+        $ do
+            let address = ["--wallet-address", textOf Testnet payerHash]
+                depositOf = \case
+                    Insert e -> entryDeposit e
+                    _ -> Nothing
+            fmap
+                depositOf
+                (insertPreview (previewNode "1" <> address <> ["--deposit", "3000000"]))
+                `shouldBe` Right (Just 3_000_000)
+            insertPreview (previewNode "1" <> address <> ["--deposit", "1999999"])
+                `shouldBe` Left (DepositRefused (DepositBelowMinimum 1_999_999))
     it "refuses a signing key beside --preview before anything is read" $
         insertPreview
             ( previewNode "1"
@@ -1215,7 +1380,7 @@ previewRows = describe "--preview" $ do
             `shouldBe` Left PreviewTakesNoKey
     it "refuses an address on a command that signs" $ do
         parseCommand
-            ( ["registry", "insert", "--key", "6b6579", "--envelope", "/e.json"]
+            ( ["registry", "insert", "--key", "key", "--payload", "/p.json"]
                 <> reg
                 <> node
                 <> wallet
@@ -1236,10 +1401,10 @@ previewRows = describe "--preview" $ do
                         )
                 inspect extra =
                     parseCommand
-                        (["registry", "inspect", "--key", "6b6579"] <> reg <> node <> extra)
+                        (["registry", "inspect", "--key", "key"] <> reg <> node <> extra)
                 terminate extra =
                     parseCommand
-                        ( ["registry", "terminate", "--key", "6b6579"]
+                        ( ["registry", "terminate", "--key", "key"]
                             <> reg
                             <> node
                             <> wallet
