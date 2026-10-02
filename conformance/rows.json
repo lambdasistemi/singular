@@ -267,7 +267,7 @@
       "expected": "accept",
       "group": "serialization",
       "id": "state-fields-chain-round-trip",
-      "requirement": "OnChainTokenState's six fields (root, maxFee, processTime, retractTime, repPolicy, consumerPin) survive a chain round trip with the representative policy varied Base versus AltRepPolicy.",
+      "requirement": "OnChainTokenState's eight fields (root, maxFee, processTime, retractTime, applicationPolicy, activePolicy, absentPolicy, terminalPolicy) survive a chain round trip with the active policy varied between two registries.",
       "source": "issue #18 state round trip",
       "state": "uncovered"
     },
