@@ -63,7 +63,7 @@ flowchart LR
 | CG09 | Rejected when not rejectable. | refuse | unmet by a ruling: the registry deliberately does not do what the consumer requirement states (operator ruling 2026-10-01; lambdasistemi/cardano-keri#468) |
 | CG11 | Empty fold (Modify []). | observe and report | held: the chain sided with Singular's model against the consumer's theorem, pending a ruling |
 | CG12 | Surplus actions beyond the matched request inputs. | observe and report | held: the chain sided with Singular's model against the consumer's theorem, pending a ruling |
-| CG19 | Refund routing follows the request: processed value routes to the request's destination minus the folder's tip; refunds go to the refund address recorded in custody; a crossed allocation is refused by the state script (interface, registry mode: no hook). Rejected produces refund owners at the recorded floor. | observe and report — refused, with the consumer-model conflict unresolved (crossed allocation enforced by the state script); rejected-action refund-floor control separate | held: the chain sided with Singular's model against the consumer's theorem, pending a ruling |
+| CG19 | Refund routing follows the request: processed value routes to the request's destination minus the folder's tip; refunds go to the refund address recorded in custody; a crossed allocation is refused by the state script (interface, registry mode: no hook). Rejected produces refund owners at the recorded floor. | observe and report — refused, with the consumer-model conflict unresolved (crossed allocation enforced by the state script); the rejected-action refund-floor control runs in the same program | held: the chain sided with Singular's model against the consumer's theorem, pending a ruling |
 
 ## Requirements not demonstrated
 
@@ -73,8 +73,8 @@ Every requirement without a receipt for this code revision is listed with the pl
 
 | Name | Requirement | Expected outcome | State |
 | --- | --- | --- | --- |
-| CG14 | stake_script hook set: a fold carrying the matching withdrawal. | could-not-execute — superseded imported-partition material | uncovered |
-| CG15 | stake_script hook set, withdrawal absent. | could-not-execute — superseded imported-partition material | uncovered |
+| CG14 | stake_script hook set: a fold carrying the matching withdrawal. | retired — the registry interface has no stake_script hook, so nothing runs this row | uncovered |
+| CG15 | stake_script hook set, withdrawal absent. | retired — the registry interface has no stake_script hook, so nothing runs this row | uncovered |
 | CG16 | Sweep of a non-legitimate UTxO, owner-signed. | superseded — observation preserved, conformance claim withdrawn (registry has no owner role; owner-signed sweep asserted authority that does not exist) | uncovered |
 | CG17 | Sweep by a non-owner. | SUPERSEDED by operator ruling (registry has no owner role): observation preserved, claim withdrawn | uncovered |
 | CG18 | End burns the state token and closes the cage. | superseded — claim withdrawn (the registry has no termination: End is refused for every party) | uncovered |

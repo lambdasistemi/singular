@@ -58,6 +58,7 @@ module Conformance.Receipt
     , currentBase
     ) where
 
+import Conformance.Edge.Programs (programFor)
 import Conformance.Evidence.Asset (AssetEntry (..))
 import Conformance.NodeRejection (boundedNodeReason)
 import Conformance.Replay
@@ -68,9 +69,11 @@ import Conformance.Replay
 import Conformance.Story.Live
     ( BatchTamper (..)
     , Edge (..)
+    , RefundTamper (..)
     , Tamper (..)
     , batchTamperName
     , edgeName
+    , refundTamperName
     , tamperName
     )
 import Control.Exception (ErrorCall (..), throwIO)
@@ -1082,11 +1085,6 @@ loadReceipts dir = do
                     )
             | otherwise -> Right r
     checkEdge path r = case (receiptRow r, receiptSteps r) of
-        ("CG21", Just steps) -> stepsComplete path r steps
-        -- The occupied-key insertion is a story since #287; an attribution
-        -- receipt written before it still loads as one.
-        ("CG05", Just steps) -> stepsComplete path r steps
-        ("CG22", Just steps) -> stepsComplete path r steps
         ("CG07", Just steps) -> do
             checked <- stepsComplete path r steps
             let field name (Object fields) = KM.lookup name fields
@@ -1106,15 +1104,17 @@ loadReceipts dir = do
                 else
                     Left
                         (path <> ": retraction window requires before, accepted control, after")
-        ("CG23", Just steps) -> stepsComplete path r steps
-        ("CG24", Just steps) -> stepsComplete path r steps
-        -- #287: the empty fold and the crossed refunds are compared with the
-        -- model's batch questions beside their attributed refusals.
-        ("CG11", Just steps) -> batchSteps path r steps
-        -- CG09 carries its known refund-position divergence (#361).
-        ("CG09", Just steps) -> batchSteps path r steps
-        ("CG19", Just steps) -> batchSteps path r steps
-        ("sequence", Just steps) -> stepsComplete path r steps
+        (row, Just steps)
+            | isNothing (programFor (T.unpack row)) ->
+                Left (path <> ": only a program's receipt carries steps")
+            -- #287: an attribution receipt carrying, beside its own outcome,
+            -- the batch comparisons none of which landed, as the conformance
+            -- session wrote them before its rows were programs.
+            | all isBatchStep steps
+            , not (any landed steps) ->
+                batchSteps path r steps
+            -- Every program's receipt: one record per compared request or batch.
+            | otherwise -> stepsComplete path r steps
         ("CG21", Nothing) -> Left (path <> ": registration names no live steps")
         ("CG22", Nothing) -> Left (path <> ": retirement names no live steps")
         ("CG07", Nothing) -> Left (path <> ": retraction window names no live steps")
@@ -1122,7 +1122,14 @@ loadReceipts dir = do
         ("CG24", Nothing) -> Left (path <> ": early rejection names no live steps")
         ("sequence", Nothing) -> Left (path <> ": sequence names no live steps")
         (_, Nothing) -> Right r
-        (_, Just _) -> Left (path <> ": only live stories carry steps")
+    isBatchStep step = case step of
+        Object fields -> KM.member "batch" fields
+        _ -> False
+    landed step = case step of
+        Object fields
+            | Just (Object chain) <- KM.lookup "chain" fields ->
+                KM.lookup "outcome" chain == Just (String "accepted")
+        _ -> False
 
     checkPartial path r = case (receiptVerdict r, receiptPartial r) of
         (_, Nothing) -> case declaredConstructors (receiptRow r) of
@@ -1418,7 +1425,11 @@ batchRecordProblem path step = do
         Just Null -> Right ()
         Just (String name)
             | name
-                `elem` map (T.pack . batchTamperName) [minBound .. maxBound :: BatchTamper] ->
+                `elem` ( map (T.pack . batchTamperName) [minBound .. maxBound :: BatchTamper]
+                            <> map
+                                (T.pack . refundTamperName)
+                                [CrossedRefunds, ShortFirstRefund 1, SplitFirstRefund 1]
+                       ) ->
                 Right ()
         _ -> failure "unknown batch tamper"
     let model = within "model" "outcome"
