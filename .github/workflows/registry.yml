@@ -585,3 +585,12 @@ jobs:
       # refuses partial, and the verdict table fails.
       - name: Run the ordinary CLI's recovery controls
         run: nix run --quiet .#cli-recovery-controls
+      # #326: the flags documented for `singular` — the settings table of
+      # docs/singular-node.md and every documented invocation — are the
+      # flags the binary's --help and each command's --help print, pair
+      # by pair. The controls plant a flag on each side and show the check
+      # refuses each disagreement by name.
+      - name: Documented singular flags equal its --help
+        run: nix run --quiet .#cli-flags-check
+      - name: The flags check refuses each disagreement by name
+        run: nix run --quiet .#cli-flags-controls

@@ -110,6 +110,16 @@
         system:
         let
           pkgs = import nixpkgs { inherit system; };
+          flagsTools = with pkgs; [
+            bash
+            coreutils
+            diffutils
+            findutils
+            gawk
+            gnugrep
+            gnused
+            nix
+          ];
           # #326: verify a published release from its downloaded bytes —
           # sums, the stated model revision against the one the
           # conformance evidence is compiled against, archive members, and
@@ -203,6 +213,29 @@
                   nix
                 ];
                 text = ''DEMO1_CONTROLS=${./tools/demo1_cli_controls.sh} bash ${./tools/demo1_cli_controls_check.sh} "$PWD"'';
+              }
+            );
+          };
+          # #326: the flags documented for `singular` equal what its --help
+          # prints, pair by pair: `nix run --quiet .#cli-flags-check`.
+          cli-flags-check = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "cli-flags-check";
+                runtimeInputs = flagsTools;
+                text = ''bash ${./tools/cli_flags_check.sh} "$PWD"'';
+              }
+            );
+          };
+          # Its controls: `nix run --quiet .#cli-flags-controls`.
+          cli-flags-controls = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "cli-flags-controls";
+                runtimeInputs = flagsTools;
+                text = ''bash ${./tools/cli_flags_controls.sh} "$PWD"'';
               }
             );
           };
