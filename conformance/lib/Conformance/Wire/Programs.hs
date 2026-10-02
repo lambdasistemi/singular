@@ -665,7 +665,7 @@ constructorReading c = constructorName c <> " (index " <> show (constructorIndex
 
 datumReading :: ReadBackDatum -> String
 datumReading d = case d of
-    StateDatumOf r -> "the state datum **" <> r <> "**'s boot wrote"
+    StateDatumOf r -> "the state datum the boot of **" <> r <> "** wrote"
     RequestDatumOf r k -> "the request datum written for **" <> k <> "** in **" <> r <> "**"
 
 sampleReading :: Sample -> String
@@ -677,7 +677,7 @@ sampleReading s = case s of
     RequestOnEdge e
         | e <= 6 -> "a request on edge " <> show e
         | otherwise ->
-            "a request on edge " <> show e <> ", which the registry refuses"
+            "a request on edge " <> show e <> " (an edge the registry refuses)"
     StateSample -> "a state"
     StateWithActivePolicyVaried -> "a state with its active policy varied"
     RequestDatumSample -> "a request datum"
@@ -752,9 +752,9 @@ instructionReading instruction = case instruction of
             <> r
             <> "**."
     DatumReadBack d ->
-        "Read "
+        "Read back from the chain "
             <> datumReading d
-            <> " back from the chain: the bytes are the ones submitted."
+            <> ": the bytes are the ones submitted."
     StateFieldsReadBack r ->
         "Read **"
             <> r
@@ -788,7 +788,7 @@ instructionReading instruction = case instruction of
             <> " proves with "
             <> ( if null steps
                     then "no proof step"
-                    else "the proof steps " <> intercalate ", " (map show steps)
+                    else "the proof steps " <> intercalate ", " (map proofStepName steps)
                )
             <> ", every fork's neighbour is well formed, and the chain's root equals the committed trie's."
     ProofStepsWitnessed cs ->
@@ -1036,3 +1036,11 @@ validateProgram p = do
     requestIn _ _ = False
     isFold FoldOf{} = True
     isFold _ = False
+
+-- | A proof step constructor's name, by its wire index.
+proofStepName :: Integer -> String
+proofStepName index = case index of
+    0 -> "Branch"
+    1 -> "Fork"
+    2 -> "Leaf"
+    other -> "constructor " <> show other

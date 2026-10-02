@@ -226,7 +226,7 @@ outsideReasons = reasons
 
 seedReading :: Seed -> String
 seedReading CanonicalSeed = "the canonical seed"
-seedReading RivalSeed = "a rival seed"
+seedReading RivalSeed = "the rival seed"
 
 registryReading :: Seed -> String
 registryReading CanonicalSeed = "the canonical registry"
@@ -243,9 +243,9 @@ authenticatorReading PolicyOnly =
     "an authentication that checks only the policy and the address"
 
 decisionReading :: Decision -> String
-decisionReading Accepts = "accepts"
-decisionReading RejectsOnName = "rejects on the name"
-decisionReading RejectsOnMissingPolicy = "rejects: no token under the canonical policy"
+decisionReading Accepts = "accepts it"
+decisionReading RejectsOnName = "rejects it on the name"
+decisionReading RejectsOnMissingPolicy = "rejects it: no token sits under the canonical policy"
 
 -- | One instruction as a sentence of the book.
 instructionReading :: Instruction -> String
@@ -254,6 +254,8 @@ instructionReading instruction = case instruction of
         "Publish "
             <> seedReading seed
             <> " by splitting a wallet output in two."
+    BootFrom CanonicalSeed ->
+        "Boot the canonical registry from the canonical seed; the ledger accepts it."
     BootFrom seed ->
         "Boot "
             <> registryReading seed
@@ -279,10 +281,10 @@ instructionReading instruction = case instruction of
         "Pay an output to the canonical registry's address carrying its state datum and no token: no script witness, no script evaluated, accepted by the ledger and read back live; the same detector finds the script the canonical boot carried."
     Authenticate authenticator subject decision ->
         capitalise (authenticatorReading authenticator)
-            <> " "
-            <> decisionReading decision
-            <> " "
+            <> ", applied to "
             <> subjectReading subject
+            <> ", "
+            <> decisionReading decision
             <> "."
     StateIdentityPinned ->
         "The published script manifest pins the state validator to this run's blueprint code and declares no parameters."
