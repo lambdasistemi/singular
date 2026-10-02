@@ -37,6 +37,10 @@ module Singular.Registry.Node.Session
     , NodeReads (..)
     , withNodeReads
     , withNodeReadsOn
+    , readsOf
+    , assembleSession
+    , followerStart
+    , serveSession
 
       -- * Open-session state
     , withOpenSession
@@ -71,6 +75,7 @@ import Control.Exception
     , throwIO
     , try
     )
+import Data.Aeson ((.=))
 import Data.Foldable (for_)
 import Data.IORef
     ( IORef
@@ -100,6 +105,7 @@ import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Cardano.Node.Client.N2C.Types (ConnectionLost (..))
 import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (Submitter (..))
+import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
 import Data.Word (Word32, Word64)
 import Singular.Registry.Node.Funding
     ( FundingFloor
@@ -120,6 +126,14 @@ import Singular.Registry.Node.Options
     , NodeMode (..)
     , die
     , runMode
+    )
+import Singular.Registry.Node.PhaseLog
+    ( PhaseLog
+    , logPhase
+    , loggedProvider
+    , phaseLogFromEnv
+    , queryPhase
+    , startTimer
     )
 import Singular.Registry.Node.Wait
     ( boundedSubmitter
@@ -172,6 +186,8 @@ from its origin for as long as the reader runs ('originProvider').
 withNodeReadsOn
     :: Backend -> Word32 -> FilePath -> (NodeReads -> IO a) -> IO a
 withNodeReadsOn backend magicWord sock k = do
+    lg <- phaseLogFromEnv
+    opened <- startTimer
     let magic = NetworkMagic magicWord
     lsqCh <- newLSQChannel 16
     ltxsCh <- newLTxSChannel 16
@@ -182,13 +198,16 @@ withNodeReadsOn backend magicWord sock k = do
                 (mkN2CProvider lsqCh)
                 (mkN2CSubmitter ltxsCh)
         let prov = adaptProvider magic n2c
-        awaitConnection magic sock nodeThread prov
+        awaitConnection magic sock nodeThread (loggedProvider lg prov)
         case backend of
-            NodeBackend -> k NodeReads{nrProvider = prov}
+            NodeBackend -> do
+                sessionOpened lg opened
+                k (readsOf lg prov)
             IndexerBackend ->
                 followChain magic publicByronEpochSlots Nothing sock $ do
                     indexed <- originProvider prov Nothing
-                    k NodeReads{nrProvider = indexed}
+                    sessionOpened lg opened
+                    k (readsOf lg indexed)
 
 -- | The devnet genesis directory, or 'Nothing' in external mode.
 devnetGenesis :: IO (Maybe FilePath)
@@ -253,6 +272,8 @@ withNodeModeAndFunding fundingFloor backend mode k = case mode of
     External e -> connect (NetworkMagic (extMagic e)) (extSocket e)
   where
     connect magic sock = do
+        lg <- phaseLogFromEnv
+        opened <- startTimer
         lsqCh <- newLSQChannel 16
         ltxsCh <- newLTxSChannel 16
         bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $
@@ -263,40 +284,139 @@ withNodeModeAndFunding fundingFloor backend mode k = case mode of
                         (mkN2CProvider lsqCh)
                         (boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh))
                 let n2c = fst connection
-                awaitConnection magic sock nodeThread (adaptProvider magic n2c)
+                awaitConnection
+                    magic
+                    sock
+                    nodeThread
+                    (loggedProvider lg (adaptProvider magic n2c))
                 case mode of
-                    Devnet -> session magic sock connection
+                    Devnet ->
+                        serveSession
+                            lg
+                            opened
+                            fundingFloor
+                            backend
+                            mode
+                            magic
+                            sock
+                            connection
+                            k
                     External _ -> do
-                        start <- case backend of
-                            NodeBackend ->
-                                startingAt . N2C.ledgerChainPoint
-                                    <$> N2C.queryLedgerSnapshot n2c
-                            IndexerBackend -> pure Nothing
+                        start <- followerStart lg backend n2c
                         followChain magic publicByronEpochSlots start sock $
-                            session magic sock connection
-    session magic sock (n2c, submitter) = do
-        wallet <- walletForMode mode
-        let nodeProv = adaptProvider magic n2c
-        -- A devnet session reads addresses through its indexer; an external
-        -- node through the node adapter, or through the indexer backend
-        -- when that is the backend asked for.
-        prov <- case (mode, backend) of
-            (Devnet, _) -> followedProvider nodeProv submitter
-            (External _, NodeBackend) -> pure nodeProv
-            (External _, IndexerBackend) ->
-                originProvider nodeProv (Just (walletAddr wallet))
-        for_ fundingFloor (checkFunding prov (walletAddr wallet))
-        announce mode magic sock (walletAddr wallet)
-        let sess =
-                NodeSession
-                    { nsProvider = prov
-                    , nsSubmitter = submitter
-                    , nsMagic = magic
-                    , nsNetwork = walletNetwork wallet
-                    , nsTipSlot = N2C.ledgerTipSlot <$> N2C.queryLedgerSnapshot n2c
-                    , nsMode = mode
-                    }
-        withOpenSession sess (k sess)
+                            serveSession
+                                lg
+                                opened
+                                fundingFloor
+                                backend
+                                mode
+                                magic
+                                sock
+                                connection
+                                k
+
+{- | A session over a connected node client and its submitter: the wallet
+the mode names, the provider its backend reads through (the index, where
+that is asked for, covering the wallet before the first view is handed out),
+the session record, the funding check and the announcement. The part of
+opening a session after the connection, taking the connected client as a
+value.
+-}
+serveSession
+    :: PhaseLog
+    -> IO Double
+    -> Maybe FundingFloor
+    -> Backend
+    -> NodeMode
+    -> NetworkMagic
+    -> FilePath
+    -> (N2C.Provider IO, Submitter IO)
+    -> (NodeSession -> IO a)
+    -> IO a
+serveSession lg opened fundingFloor backend mode magic sock (n2c, submitter) k = do
+    wallet <- walletForMode mode
+    let nodeProv = adaptProvider magic n2c
+    -- A devnet session reads addresses through its indexer; an external
+    -- node through the node adapter, or through the indexer backend
+    -- when that is the backend asked for.
+    prov <- case (mode, backend) of
+        (Devnet, _) -> followedProvider nodeProv submitter
+        (External _, NodeBackend) -> pure nodeProv
+        (External _, IndexerBackend) ->
+            originProvider nodeProv (Just (walletAddr wallet))
+    let sess =
+            assembleSession
+                lg
+                mode
+                magic
+                (walletNetwork wallet)
+                prov
+                submitter
+                n2c
+    for_ fundingFloor (checkFunding (nsProvider sess) (walletAddr wallet))
+    announce mode magic sock (walletAddr wallet)
+    sessionOpened lg opened
+    withOpenSession sess (k sess)
+
+{- | The block an external node's follower starts at: under the node backend
+the node's own chain point, read by a direct query (one line); under the
+index backend none, because the index follows from the origin and the
+node is not asked.
+-}
+followerStart
+    :: PhaseLog
+    -> Backend
+    -> N2C.Provider IO
+    -> IO (Maybe (Indexer.SlotNo, Indexer.BlockHash))
+followerStart lg NodeBackend n2c =
+    startingAt . N2C.ledgerChainPoint
+        <$> queryPhase lg "ledgerSnapshot" (const 1) (N2C.queryLedgerSnapshot n2c)
+followerStart _ IndexerBackend _ = pure Nothing
+
+{- | The reads a key-free reader holds over a provider: the provider, logged.
+The one place a reader's provider is built, so that a reader of any
+backend reads through the phase log.
+-}
+readsOf :: PhaseLog -> Cage.Provider IO -> NodeReads
+readsOf lg prov = NodeReads{nrProvider = loggedProvider lg prov}
+
+{- | The session record over the provider a command reads through, the
+submitter and the upstream node client: its provider logged, and its tip
+read (a direct query of the node, outside any view) one line each. The one
+place a session is built.
+-}
+assembleSession
+    :: PhaseLog
+    -> NodeMode
+    -> NetworkMagic
+    -> Network
+    -> Cage.Provider IO
+    -> Submitter IO
+    -> N2C.Provider IO
+    -> NodeSession
+assembleSession lg mode magic network prov submitter n2c =
+    NodeSession
+        { nsProvider = loggedProvider lg prov
+        , nsSubmitter = submitter
+        , nsMagic = magic
+        , nsNetwork = network
+        , nsTipSlot =
+            queryPhase
+                lg
+                "tipSlot"
+                (const 1)
+                (N2C.ledgerTipSlot <$> N2C.queryLedgerSnapshot n2c)
+        , nsMode = mode
+        }
+
+{- | The line that says how long opening the session took: connecting, the
+handshake, the first view and, for a write, the funding check — what a
+command spends before its own first phase.
+-}
+sessionOpened :: PhaseLog -> IO Double -> IO ()
+sessionOpened lg opened = do
+    ms <- opened
+    logPhase lg "session-open" ["duration_ms" .= ms]
 
 {- | Byron epoch length of the public networks. A follower started at the
 tip never decodes a Byron block, and the development network has none,

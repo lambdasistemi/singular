@@ -47,7 +47,8 @@ import Control.Exception
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
-import Data.List (isInfixOf, isPrefixOf)
+import Data.IORef (atomicModifyIORef', newIORef, readIORef)
+import Data.List (isInfixOf, isPrefixOf, sort)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
@@ -77,6 +78,14 @@ import Cardano.Node.Client.UTxOIndexer.Indexer
     )
 import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
 
+import Singular.PhaseLogFixture
+    ( logObjects
+    , numberField
+    , phaseLines
+    , queryNames
+    , textField
+    , withLogFile
+    )
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.IndexerRig
 import Singular.Registry.Ledger (Coin (..), ConwayEra, PParams)
@@ -105,6 +114,7 @@ import Singular.Registry.Node.Memory
     ( ChainState (..)
     , memoryProvider
     )
+import Singular.Registry.Node.PhaseLog (loggedProvider, phaseLogAt)
 import Singular.Registry.Provider
     ( ChainPoint (..)
     , Provider (..)
@@ -123,6 +133,58 @@ spec = describe
         heldSpec
         refusalSpec
         backendSpec
+        phaseLogSpec
+
+-- ---------------------------------------------------------
+-- The phase log of the index's reads (#363)
+-- ---------------------------------------------------------
+
+phaseLogSpec :: Spec
+phaseLogSpec = describe "the phase log of the index's reads (#363)" $ do
+    it
+        "an address read answered by the index is its admission and its read, \
+        \one line each, around one view"
+        $ withRig fullCoverage
+        $ \rig -> withLogFile $ \path -> do
+            _ <- produce rig firstBlock >>= indexed rig
+            answer <-
+                withView
+                    (loggedProvider (phaseLogAt path) (adapter rig longBound))
+                    (`viewUTxOsAt` payer)
+            objects <- logObjects path
+            sort (queryNames objects) `shouldBe` ["indexAdmit", "utxosAt"]
+            [ numberField "answer_size" o
+              | o <- phaseLines "query" objects
+              , textField "query" o == Just "utxosAt"
+              ]
+                `shouldBe` [Just (fromIntegral (length answer))]
+            length answer `shouldSatisfy` (> 1)
+            length (phaseLines "view" objects) `shouldBe` 1
+    it
+        "the coverage check acquires one node view, logged with its point, \
+        \and reads the node and the index once each, beside its admission"
+        $ withRig fullCoverage
+        $ \rig -> withLogFile $ \path -> do
+            p <- produce rig firstBlock >>= indexed rig
+            acquired <- newIORef (0 :: Int)
+            let node =
+                    Provider $ \act -> do
+                        atomicModifyIORef' acquired (\n -> (n + 1, ()))
+                        withView (memoryProvider (rigChain rig)) act
+            requireCovered (rigGate rig) (readinessOf rig) longBound node payer
+            objects <- logObjects path
+            -- the node's own count of acquisitions is the expectation
+            readIORef acquired >>= (`shouldBe` 1)
+            map
+                (\o -> (numberField "slot" o, textField "hash" o))
+                (phaseLines "view" objects)
+                `shouldBe` [
+                               ( Just (fromIntegral (unSlotNo (cpSlot p)))
+                               , Just (T.pack (BC.unpack (B16.encode (cpBlockHash p))))
+                               )
+                           ]
+            sort (queryNames objects)
+                `shouldBe` ["coverageIndexRead", "indexAdmit", "utxosAt"]
 
 -- ---------------------------------------------------------
 -- The gate the follower writes through

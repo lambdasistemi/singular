@@ -39,6 +39,7 @@ import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.List (isInfixOf, sort)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (isJust)
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~))
@@ -624,7 +625,10 @@ journal = describe "the journal of a write" $ do
             let entries =
                     [submitted "boot" "t1", confirmed "boot" "t1", submitted "book" "t2"]
             mapM_ (appendJournal dir) entries
-            readJournal dir `shouldReturn` entries
+            read' <- readJournal dir
+            -- each line comes back as appended, plus the time of its append
+            map (\e -> e{journalTime = Nothing}) read' `shouldBe` entries
+            map (isJust . journalTime) read' `shouldBe` map (const True) entries
     it "names the submission a process never saw confirmed" $ do
         unresolved [submitted "boot" "t1"]
             `shouldBe` Just (submitted "boot" "t1")
@@ -731,6 +735,7 @@ journal = describe "the journal of a write" $ do
             , journalEdge = Nothing
             , journalRootBefore = Nothing
             , journalRootAfter = Nothing
+            , journalTime = Nothing
             }
 
 -- ---------------------------------------------------------
@@ -984,6 +989,7 @@ recovery = describe "recovery after an uncertain submission" $ do
             , journalEdge = Nothing
             , journalRootBefore = Nothing
             , journalRootAfter = Nothing
+            , journalTime = Nothing
             }
     foldLine from to =
         (line "f" "prepared")
@@ -1230,6 +1236,7 @@ jline t e =
         , journalEdge = Nothing
         , journalRootBefore = Nothing
         , journalRootAfter = Nothing
+        , journalTime = Nothing
         }
 
 {- | Start a process that rewrites a file over and over, kill it at a

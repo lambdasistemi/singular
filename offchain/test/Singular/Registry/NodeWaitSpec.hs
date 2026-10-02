@@ -33,6 +33,7 @@ import Control.Exception
     , throwTo
     , try
     )
+import Data.Aeson qualified as Aeson
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
@@ -90,6 +91,13 @@ import Cardano.Node.Client.UTxOIndexer.Indexer
     )
 import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
 import Cardano.Tx.Ledger (ConwayTx)
+import Singular.PhaseLogFixture
+    ( logObjects
+    , numberField
+    , phaseLines
+    , textField
+    , withLogFile
+    )
 import Singular.Registry.Ledger (Coin (..))
 import Singular.Registry.Node.Confirmation
     ( awaitTx
@@ -431,6 +439,38 @@ spec =
                         waitElapsed w
                             `shouldSatisfy` (\s -> s >= 3.9 && s < 10)
 
+        describe "the phase log of the confirmation wait (#363)" $ do
+            it
+                "an output not yet indexed is a poll that answers nothing, \
+                \each poll a query line"
+                $ withFollowedIndexer
+                $ \_ -> withLogFile $ \path -> do
+                    _ <-
+                        theWaitFailure 12_000_000 "a closed window" $
+                            confirmWithin
+                                10
+                                pastDeadlineSession
+                                "a closed window"
+                                basicTxId
+                                (SlotNo 100)
+                    objects <- logObjects path
+                    let polls = awaitPolls objects
+                    length polls `shouldSatisfy` (>= 1)
+                    map (numberField "answer_size") polls
+                        `shouldBe` map (const (Just 0)) polls
+            it "an output already indexed is one poll that answers it" $
+                withFollowedIndexer $ \idx -> withLogFile $ \path -> do
+                    applyOutputZero idx
+                    confirmWithin
+                        10
+                        stubSession
+                        "an indexed output"
+                        basicTxId
+                        (SlotNo 100)
+                    objects <- logObjects path
+                    map (numberField "answer_size") (awaitPolls objects)
+                        `shouldBe` [Just 1]
+
         describe "the production bounds" $ do
             it
                 "keeps the submission bound inside the confirmation \
@@ -482,6 +522,15 @@ the value branch is what keeps a stalled submission from reading as a
 verdict. The guard sits inside the catch so that its own expiry is
 never mistaken for the action's failure.
 -}
+
+-- | The indexer polls a confirmation wait made, as the log has them.
+awaitPolls :: [Aeson.Object] -> [Aeson.Object]
+awaitPolls objects =
+    [ o
+    | o <- phaseLines "query" objects
+    , textField "query" o == Just "awaitTxIn"
+    ]
+
 theWaitFailure
     :: (Show a)
     => Int

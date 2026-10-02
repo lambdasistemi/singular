@@ -129,6 +129,7 @@ import Singular.Registry.Node.IndexerView
     , requireCovered
     )
 import Singular.Registry.Node.Options (NodeMode (..), die)
+import Singular.Registry.Node.PhaseLog (phaseLogFromEnv, queryPhase)
 import Singular.Registry.Node.View (nodeProvider)
 import Singular.Registry.Node.Wait
     ( WaitStage (..)
@@ -272,12 +273,14 @@ awaitIndexedWithin window tx = do
             \the index; a runner must confirm after the view has closed"
     let idx = followingIndexer following
         tid@(TxId h) = txIdTx tx
+    lg <- phaseLogFromEnv
     boundWaitSince clock IndexedConfirmationWait tid window $
         void $
-            awaitTxIn
-                idx
-                (Indexer.TxIn (hashToBytes (extractHash h)) 0)
-                Nothing
+            queryPhase lg "awaitTxIn" (maybe 0 (const 1)) $
+                awaitTxIn
+                    idx
+                    (Indexer.TxIn (hashToBytes (extractHash h)) 0)
+                    Nothing
 
 {- | 'awaitIndexedWithin' the production confirmation window: five
 minutes, which covers a public test network's block time with room for
