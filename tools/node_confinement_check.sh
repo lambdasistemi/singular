@@ -20,11 +20,26 @@
 #     nothing needs is a hole waiting for a use.
 #
 # Usage: tools/node_confinement_check.sh [repo-root]
+#        tools/node_confinement_check.sh --roots   (print the scanned roots)
 set -euo pipefail
+
+# Every consumer of the capabilities: the singular commands and the
+# library, the runners (journeys, deployment, insert-active,
+# update-terminal, the devnet tool), the end-to-end suite and the
+# conformance harness.
+scanned=(
+  offchain/cli offchain/lib
+  offchain/journey offchain/deployment offchain/insert-active
+  offchain/update-terminal offchain/devnet offchain/e2e-test
+  conformance/app conformance/app-cli conformance/app-default conformance/lib
+)
+if [ "${1:-}" = --roots ]; then
+  printf '%s\n' "${scanned[@]}"
+  exit 0
+fi
 
 root=${1:-.}
 allow="$root/tools/node-confinement.allow"
-scanned=(offchain/cli offchain/lib)
 
 # The backend's vocabulary: session and mode with their fields, socket clients, the
 # process-wide follower and open session, the raw submitter, and the

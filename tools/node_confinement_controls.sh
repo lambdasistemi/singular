@@ -3,9 +3,10 @@
 # fails, with its named diagnostic, on each defect it exists to refuse.
 #
 # Every control runs on a scratch copy of the scanned roots and the
-# allowlist; the tree itself is never touched. The planted module is
-# discovered — the first scanned source the allowlist does not exempt —
-# so the control does not go stale when modules move.
+# allowlist; the tree itself is never touched. The scanned roots are the
+# check's own (--roots), and a backend name is planted in every one of
+# them as a new nested module, so the controls cover a root added to the
+# check without being edited.
 set -euo pipefail
 
 repo=${1:-.}
@@ -13,10 +14,19 @@ check="$repo/tools/node_confinement_check.sh"
 scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
 
+mapfile -t roots < <(bash "$check" --roots)
+[ ${#roots[@]} -gt 0 ] || {
+  echo "SETUP-FAIL: the check names no scanned root" >&2
+  exit 2
+}
+
 fresh() {
   rm -rf "$scratch/t"
-  mkdir -p "$scratch/t/offchain" "$scratch/t/tools"
-  cp -r "$repo/offchain/cli" "$repo/offchain/lib" "$scratch/t/offchain/"
+  mkdir -p "$scratch/t/tools"
+  for r in "${roots[@]}"; do
+    mkdir -p "$scratch/t/$(dirname "$r")"
+    cp -r "$repo/$r" "$scratch/t/$r"
+  done
   find "$scratch/t" -name dist-newstyle -prune -exec rm -rf {} +
   cp "$repo/tools/node-confinement.allow" "$scratch/t/tools/"
 }
@@ -37,34 +47,27 @@ expect() {
 fresh
 expect clean-tree 0 '^PASS node-confinement'
 
-# The planted module: the first scanned source no allowlist line names.
-mapfile -t exempt < <(grep -vE '^(#|$)' "$scratch/t/tools/node-confinement.allow" | cut -d: -f1)
-target=""
-while IFS= read -r f; do
-  rel=${f#"$scratch/t/"}
-  skip=""
-  for e in "${exempt[@]}"; do [ "$e" = "$rel" ] && skip=1; done
-  [ -z "$skip" ] && {
-    target="$rel"
-    break
+# The plant is a new module, nested one directory down in each root: the
+# check must discover it, whatever the root's allowlisted modules are.
+planted=0
+for root in "${roots[@]}"; do
+  target="$root/Planted/Consumer.hs"
+  [ ! -e "$scratch/t/$target" ] || {
+    echo "SETUP-FAIL: $target already exists" >&2
+    exit 2
   }
-done < <(find "$scratch/t/offchain/cli" -name '*.hs' | sort)
-[ -n "$target" ] || {
-  echo "SETUP-FAIL: no non-allowlisted module to plant into" >&2
-  exit 2
-}
 
-fresh
-sed -i '0,/^import /s//import Singular.Registry.Node (NodeMode (..))\nimport /' "$scratch/t/$target"
-grep -q 'NodeMode (..)' "$scratch/t/$target" || {
-  echo "SETUP-FAIL: the plant did not apply to $target" >&2
-  exit 2
-}
-expect planted-mode 1 "^$target:[0-9]+:import Singular.Registry.Node \\(NodeMode"
+  fresh
+  mkdir -p "$scratch/t/$root/Planted"
+  printf 'module Planted.Consumer where\n\nimport Data.List (sort)\nimport Singular.Registry.Node (NodeMode (..))\n' >"$scratch/t/$target"
+  expect "planted-mode $root" 1 "^$target:[0-9]+:import Singular.Registry.Node \\(NodeMode"
 
-fresh
-printf '\nrawSend = submitTx\n' >>"$scratch/t/$target"
-expect planted-raw-submit 1 "^$target:[0-9]+:rawSend = submitTx"
+  fresh
+  mkdir -p "$scratch/t/$root/Planted"
+  printf 'module Planted.Consumer where\n\nrawSend = submitTx\n' >"$scratch/t/$target"
+  expect "planted-raw-submit $root" 1 "^$target:[0-9]+:rawSend = submitTx"
+  planted=$((planted + 1))
+done
 
 fresh
 printf 'offchain/cli/Main.hs:\n' >>"$scratch/t/tools/node-confinement.allow"
@@ -78,9 +81,11 @@ fresh
 printf 'offchain/cli/Main.hs: names nothing confined\n' >>"$scratch/t/tools/node-confinement.allow"
 expect unneeded-entry 1 "'offchain/cli/Main.hs' names no confined identifier"
 
-fresh
-rm -rf "$scratch/t/offchain/lib"
-mkdir -p "$scratch/t/offchain/lib"
-expect empty-extent 2 '^EMPTY EXTENT'
+for root in "${roots[@]}"; do
+  fresh
+  rm -rf "${scratch:?}/t/$root"
+  mkdir -p "$scratch/t/$root"
+  expect "empty-extent $root" 2 "^EMPTY EXTENT: no Haskell sources under .*/$root\$"
+done
 
-echo "PASS node-confinement-controls: 7 controls, plant in $target"
+echo "PASS node-confinement-controls: $((2 * planted + 4 + ${#roots[@]})) controls over ${#roots[@]} scanned roots, a backend name planted in each"
