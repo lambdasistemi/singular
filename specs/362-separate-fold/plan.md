@@ -40,10 +40,13 @@ Each slice is one change, reviewed at each step by an independent auditor, and p
 
 ## Verification
 
-These are the continuous-integration jobs, run on the exact head of each pull request:
+These continuous-integration jobs run on the exact head of each pull request. Each slice adds its own evidence to them. A slice claims only what its own pull request runs.
 
-- `cd offchain && nix run --quiet .#cage-tests`: the parser rows and the pure decisions (deadline margin, built-bound check, bound search, preimage, fold target, reject and reclaim windows, refund shape).
-- `nix run --quiet .#demo1-cli-check`: the Demo 1 journey from the release archive. It runs booking, then a fold by another wallet, then inspection, for insertion and termination; an update; the fast guard's refusal; reject; and reclaim.
-- `nix run --quiet .#demo1-cli-controls`, `nix run --quiet .#demo1-cli-attach`, `nix run --quiet .#cli-recovery-controls`: the controls through the combined form.
-- `nix run --quiet .#cli-flags-check`: documented flags equal `--help`.
-- `nix develop --quiet -c just ci`: lint, format and the documentation checks.
+| Slice | What its pull request adds to the jobs |
+|---|---|
+| Booking and fold (#367, merged) | `cd offchain && nix run --quiet .#cage-tests`: the parser rows and the pure decisions (deadline margin, built-bound check, bound search, preimage, fold target). `nix run --quiet .#demo1-cli-check`: the Demo 1 journey from the release archive. It runs a booking, then a fold by another wallet, then an inspection, for insertion and termination, plus an update and the fast guard's refusal. `nix run --quiet .#demo1-cli-controls`, `nix run --quiet .#demo1-cli-attach`, `nix run --quiet .#cli-recovery-controls`: the controls, through the combined form. |
+| Reject (#374) | `cage-tests`: the reject window over the tip slot and the converted deadline, and the refund shape. The journey: an early reject refused, a reject of a request past both windows, the receipt's money bound to node reads, then a new fold. |
+| Reclaim | `cage-tests`: the reclaim window. The journey: an early reclaim refused, another wallet's reclaim refused, the owner's reclaim with its return bound to node reads, then a new fold. |
+| Cross-wallet recovery | `nix run --quiet .#cli-recovery-controls`: a fold by another wallet, interrupted, then reconciled by the requester's next write. |
+
+Every slice also runs `nix run --quiet .#cli-flags-check` (documented flags equal `--help`) and `nix develop --quiet -c just ci` (lint, format and the documentation checks).

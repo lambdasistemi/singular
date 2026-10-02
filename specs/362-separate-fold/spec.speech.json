@@ -25,12 +25,12 @@
   ],
   "limits": [
     {
-      "text": "One request per fold. The folder must share the registry directory. On the development network the built-bound check is proved by unit tests, and the converted-slot equality waits for preprod. Preparation speed is not solved here. Refunds take one shape, an early reject is refused only by the client, and an interrupted reject is not yet covered.",
+      "text": "One request per fold. The folder must share the registry directory. On the development network the built-bound check is proved by unit tests, and the converted-slot equality is still to be shown on the authorized preprod run. Preparation speed is not solved here. Refunds take one shape, an early reject is refused only by the client, and an interrupted reject is not yet covered.",
       "pause": 350
     }
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "ece17eb6e31b0a69d69364f328433dec0a598893033d8cfd60249ff274d1dc04"
+    "sha256": "2a0bfcbca3021599630b2646a16324151b16503c3d5965553900de08873607ab"
   }
 }
