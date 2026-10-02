@@ -384,11 +384,15 @@ cageUtxos env =
 
 {- | Everything a fold of tree edges needs in hand: the three token
 policies this registry pins, the cage script custody spends run, the cage's
-own UTxOs, and the one destination datum the harness books against.
+own UTxOs read from the view the fold itself is built in, the one
+destination datum the harness books against, and the session's reference
+outputs ('sessionRefUtxos', which may publish them, so it is taken before
+the view).
 -}
-registryContext :: Env -> IO RegistryContext
-registryContext env = do
-    refs <- sessionRefUtxos env
+registryContext
+    :: Env -> [(TxIn, TxOut ConwayEra)] -> Cage.View IO -> IO RegistryContext
+registryContext env0 refs v = do
+    let env = pinnedTo v env0
     let cfg = envCfg env
         (_, _, codes) = envCodes env
         registryId =
@@ -592,10 +596,13 @@ publishRefScriptWith prov submit script = do
 
 {- | The duties context for a row cage: its own three token policies, the
 cage script its custody spends run, its UTxOs, the one destination datum
-the harness books against, and the reference outputs published at its boot.
+the harness books against, and the reference outputs published at its boot —
+read from the view the fold itself is built in.
 -}
-rowRegistryContext :: Env -> RowCage -> TokenId -> IO RegistryContext
-rowRegistryContext env cage tid = do
+rowRegistryContext
+    :: Env -> Cage.View IO -> RowCage -> TokenId -> IO RegistryContext
+rowRegistryContext env0 v cage tid = do
+    let env = pinnedTo v env0
     let cfg = rcCfg cage
         (_, _, codes) = envCodes env
         registryId =

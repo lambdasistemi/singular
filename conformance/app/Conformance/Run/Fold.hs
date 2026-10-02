@@ -256,7 +256,7 @@ assembleFoldSpec env0 fs = Cage.withView (envProv env0) $ \held -> do
     -- went up at its boot: a fold that attached the state validator
     -- instead would be refused for size before any script could speak.
     let refs = fsRefs fs
-    ctx <- foldSpecContext env fs
+    ctx <- foldSpecContext env held fs
     let prov = envProv env
 
     pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
@@ -691,11 +691,10 @@ rowRequestAndFold env cage label key _val _op = do
             dest
             []
             (defaultTipCoin cfg + cgDeposit)
-    ctx <- rowRegistryContext env cage tid
     unsignedFold <-
-        Cage.withView
-            prov
-            (\v -> updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx)
+        Cage.withView prov $ \v -> do
+            ctx <- rowRegistryContext env v cage tid
+            updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx
     state@(stateIn, _) <- cageStateUtxo env cage
     reqUtxos <- pendingRequests env cage
     (handProofs, handRoot) <- speculativeApplyAll env cage tid reqUtxos
@@ -886,32 +885,35 @@ assembleFold
     -> Integer
     -> IO ConwayTx
 assembleFold env (stateIn, stateOut) reqUtxos proofLists newRoot units fee = do
-    let prov = envProv env
-    pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
-    funder <- largestWalletUtxo prov
-    require "hand-build: funder carries tokens" (adaOnly (snd funder))
-    -- #157: a booked request carries its approval, so it is no longer
-    -- ADA-only; the fold checks the binding, not the emptiness.
-    oldState <- extractState stateOut
-    upperSlot <- foldUpperSlot prov oldState (map snd reqUtxos)
-    -- #157 C5/C6/T1-T6: the same obligations the library fold
-    -- discharges. The derivation is shared because the duties are a
-    -- protocol fact, not a builder opinion; what CL01 compares is the
-    -- two assemblies of them.
-    ctx0 <- registryContext env
-    let ctx = ctx0{rcAllowInadmissible = True}
-    duties <- case registryDuties
-        (envCfg env)
-        pp
-        oldState
-        ctx
-        reqUtxos
-        (map (const True) reqUtxos) of
-        Right d -> pure d
-        Left err -> failWith ("hand-build: " <> err)
-    -- #157 C10: there is no pinned consumer and no mandatory
-    -- withdrawal left to attach.
-    assembleBody pp funder oldState upperSlot fee duties (rcRefUtxos ctx)
+    refs <- sessionRefUtxos env
+    Cage.withView (envProv env) $ \held -> do
+        let envV = pinnedTo held env
+            prov = envProv envV
+        pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
+        funder <- largestWalletUtxo prov
+        require "hand-build: funder carries tokens" (adaOnly (snd funder))
+        -- #157: a booked request carries its approval, so it is no longer
+        -- ADA-only; the fold checks the binding, not the emptiness.
+        oldState <- extractState stateOut
+        upperSlot <- foldUpperSlot prov oldState (map snd reqUtxos)
+        -- #157 C5/C6/T1-T6: the same obligations the library fold
+        -- discharges. The derivation is shared because the duties are a
+        -- protocol fact, not a builder opinion; what CL01 compares is the
+        -- two assemblies of them.
+        ctx0 <- registryContext envV refs held
+        let ctx = ctx0{rcAllowInadmissible = True}
+        duties <- case registryDuties
+            (envCfg envV)
+            pp
+            oldState
+            ctx
+            reqUtxos
+            (map (const True) reqUtxos) of
+            Right d -> pure d
+            Left err -> failWith ("hand-build: " <> err)
+        -- #157 C10: there is no pinned consumer and no mandatory
+        -- withdrawal left to attach.
+        assembleBody pp funder oldState upperSlot fee duties (rcRefUtxos ctx)
   where
     assembleBody pp funder oldState upperSlot feeAmt duties refs = do
         newStateOut <- makeStateOut oldState newRoot
@@ -1179,11 +1181,11 @@ requestAndFoldKey env label key op = do
             dest
             refIns
             (tipVal + cgDeposit)
-    ctx <- registryContext env
+    refs <- sessionRefUtxos env
     unsignedFold <-
-        Cage.withView
-            prov
-            (\v -> updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx)
+        Cage.withView prov $ \v -> do
+            ctx <- registryContext env refs v
+            updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx
     (stateIn, handFold) <- buildValidFold env
     calibrateFold stateIn handFold unsignedFold
     emit "calibration" (label <> ": hand model matches the library fold")
@@ -1195,10 +1197,13 @@ requestAndFoldKey env label key op = do
     pure (signed, mem, cpu, size)
 
 {- | The duties context for a fold spec, from its own cage configuration
-and the reference outputs it carries.
+and the reference outputs it carries, read from the view the fold is
+built in.
 -}
-foldSpecContext :: Env -> FoldSpec -> IO RegistryContext
-foldSpecContext env fs = do
+foldSpecContext
+    :: Env -> Cage.View IO -> FoldSpec -> IO RegistryContext
+foldSpecContext env0 v fs = do
+    let env = pinnedTo v env0
     let cfg = fsCfg fs
         (_, _, codes) = envCodes env
         registryId =

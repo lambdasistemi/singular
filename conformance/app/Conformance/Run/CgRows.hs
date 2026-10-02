@@ -398,32 +398,30 @@ controlFreshCage env = do
             dest
             []
             (defaultTipCoin cfg + cgDeposit)
-    utxos <- cageUtxosOf env cfg
-    let registryId =
-            scriptHashBytes (cfgScriptHash cfg)
-                <> SBS.fromShort (assetNameBytes (unTokenId tid))
-        witnessAt kind =
-            scriptFromBytes
-                ("witness-" <> show kind)
-                ( applyBytesParam
-                    registryId
-                    (applyDataParam (PLC.I kind) (ncWitness codes))
-                )
-        ctx =
-            RegistryContext
-                { rcWitnessScripts = Map.fromList [(k, witnessAt k) | k <- [0, 1, 2]]
-                , rcCageScript = Just (mkCageScript cfg)
-                , rcCageUtxos = utxos
-                , rcDatums = [(recordDatumHash, recordDatum)]
-                , rcAllowInadmissible = False
-                , rcHolderUtxos = []
-                , rcHolderReleases = Map.empty
-                , rcRefUtxos = refs
-                }
-    foldTx <-
-        Cage.withView
-            prov
-            (\v -> updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx)
+    foldTx <- Cage.withView prov $ \v -> do
+        utxos <- cageUtxosOf (pinnedTo v env) cfg
+        let registryId =
+                scriptHashBytes (cfgScriptHash cfg)
+                    <> SBS.fromShort (assetNameBytes (unTokenId tid))
+            witnessAt kind =
+                scriptFromBytes
+                    ("witness-" <> show kind)
+                    ( applyBytesParam
+                        registryId
+                        (applyDataParam (PLC.I kind) (ncWitness codes))
+                    )
+            ctx =
+                RegistryContext
+                    { rcWitnessScripts = Map.fromList [(k, witnessAt k) | k <- [0, 1, 2]]
+                    , rcCageScript = Just (mkCageScript cfg)
+                    , rcCageUtxos = utxos
+                    , rcDatums = [(recordDatumHash, recordDatum)]
+                    , rcAllowInadmissible = False
+                    , rcHolderUtxos = []
+                    , rcHolderReleases = Map.empty
+                    , rcRefUtxos = refs
+                    }
+        updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx
     _ <- submitWithGenesis (envCaps env) foldTx
     mirror <- newMirror
     verifyPresentValue
@@ -685,9 +683,9 @@ runCG10 env = do
         staleTx
     -- Control: the same request folded against the live root, the
     -- hand shape calibrated against the library fold.
-    ctxLive <- rowRegistryContext env cage tid
     libFold <-
-        Cage.withView (envProv env) $ \v ->
+        Cage.withView (envProv env) $ \v -> do
+            ctxLive <- rowRegistryContext env v cage tid
             updateTokenWithDuties
                 cfg
                 v
@@ -997,11 +995,10 @@ runCG14 env = do
         prov = envProv env
     tid <- cageTid cage
     _ <- rowRequestInsert env cage "cg14-key" "cg14-value"
-    ctx <- rowRegistryContext env cage tid
     unsigned <-
-        Cage.withView
-            prov
-            (\v -> updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx)
+        Cage.withView prov $ \v -> do
+            ctx <- rowRegistryContext env v cage tid
+            updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx
     evalMap <-
         Cage.withView (envProv env) (`Cage.viewEvaluateTx` unsigned)
     mapM_
@@ -1126,11 +1123,10 @@ runCG15 env = do
         hand
     -- Control: the library fold carries the withdrawal; it consumes
     -- this request and CG14's parked control request together.
-    ctx <- rowRegistryContext env cage tid
     libFold <-
-        Cage.withView
-            prov
-            (\v -> updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx)
+        Cage.withView prov $ \v -> do
+            ctx <- rowRegistryContext env v cage tid
+            updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx
     (mem, cpu) <- measureUnits env libFold
     signed <- submitExpectAccepted env (signTx genesisSignKey libFold)
     let size = txSizeBytes signed
