@@ -61,10 +61,14 @@ def toRequest (j : Json) : Except String Request := do
   -- says nothing describes a booking naming an empty datum hash, which names none.
   let namesDatum ← optionalBool j "namesDatum"
   -- The mint a request claims, which only a batch's mint guard reads: a caller
-  -- that names none claims nothing.
+  -- that names none claims nothing. "canonical" asks for the claim an honest
+  -- folder makes for this very request, the delta of its own edge, read off the
+  -- model's `Singular.delta`, so the caller neither computes nor invents it.
+  let edgeValue : Edge := edge
   let claimed ← match j.getObjVal? "claimed" with
     | .error _ => pure []
     | .ok Json.null => pure []
+    | .ok (Json.str "canonical") => pure (delta edgeValue)
     | .ok (Json.arr entries) =>
       entries.toList.mapM fun entry => do
         let kind : TokenKind ← (entry.getObjVal? "kind") >>= fromJson?

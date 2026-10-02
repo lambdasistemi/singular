@@ -838,8 +838,9 @@ submitEdge env state cage exit alteration placement request = do
 transaction — folded, each on its own edge, or rejected in the window the
 placement names — submit it, and ask the model the matching batch question
 through the transport. The requests are spent, and asked, in the transaction's
-input order, which is the order the registry folds them in. Each request's claim
-is what the transaction mints at its key, read off the transaction as built. The
+input order, which is the order the registry folds them in. Each folded request
+claims what an honest folder claims for it, the delta of its own edge, which the
+model reads off its own table rather than off the transaction built. The
 record says what the chain did, what the model answered and whether their
 outcomes agree; comparing the batch's observations is left to the row that
 submits it.
@@ -970,27 +971,17 @@ submitBatch env state cage exit placement requests = do
             checkPlacement env (liveRow state) placed reqOut before unsigned
     let signedWitnessed = signTx genesisSignKey unsigned
         signed = signedTx signedWitnessed
-        MultiAsset minted = signed ^. bodyTxL . mintTxBodyL
-        claimedAt request =
-            [ object ["kind" .= kind, "quantity" .= quantity]
-            | (pin, kind) <-
-                [ (cfgActivePolicy cfg, "active" :: T.Text)
-                , (cfgAbsentPolicy cfg, "absent")
-                , (cfgTerminalPolicy cfg, "terminal")
-                ]
-            , (policy, names) <- Map.toList minted
-            , cg21PolicyBytes policy == SBS.fromShort pin
-            , (AssetName name, quantity) <- Map.toList names
-            , SBS.fromShort name == TE.encodeUtf8 (T.pack (Live.requestKey request))
-            , quantity /= 0
-            ]
+        -- An honest folder claims, for each request, the delta of its own edge;
+        -- the model reads that claim off its own table ("canonical"), never off
+        -- the transaction the builder made, so a builder minting otherwise is
+        -- refused by the chain while the model accepts the lawful batch.
         asked =
             [ case (exit, modelRequest) of
                 (Live.Fold, Object fields) ->
-                    Object (KM.insert "claimed" (toJSON (claimedAt request)) fields)
+                    Object (KM.insert "claimed" (String "canonical") fields)
                 (Live.Fold, other) -> other
                 _ -> object ["exit" .= String "reject", "request" .= modelRequest]
-            | ((request, _), modelRequest) <- zip booked modelRequests
+            | modelRequest <- modelRequests
             ]
     result <- submitTxResilient (envSubmit env) signedWitnessed
     (chainOutcome, chain) <- case result of

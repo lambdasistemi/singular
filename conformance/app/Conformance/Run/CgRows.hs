@@ -1902,8 +1902,9 @@ runSequence env = do
 executed on the devnet — a fold of two registrations in one transaction, then a
 reject of two more in one transaction while they can still be folded — and each
 asked of the model's matching batch question through the transport. It belongs
-to no requirement and its receipt is read by no row; it requires that both
-batches ran and that the chain and the model agree on each one's outcome.
+to no requirement and its receipt is read by no row. Both batches are lawful, so
+it requires that both ran and that the chain and the model each accepted each
+one.
 -}
 runBatchHarness :: Env -> IO ()
 runBatchHarness env = do
@@ -1918,6 +1919,14 @@ runBatchHarness env = do
     require
         "batch harness did not run both batch instructions"
         (map (field "batch") records == [Just "foldBatch", Just "rejectBatch"])
+    -- The story is lawful, so each side must accept each batch on its own:
+    -- agreement alone would pass a lawful batch both sides refused.
+    require
+        "batch harness: the chain refused a lawful batch"
+        (all ((== Just "accepted") . outcome "chain") records)
+    require
+        "batch harness: the model refused a lawful batch"
+        (all ((== Just "accepted") . outcome "model") records)
     require
         "batch harness: the chain and the model disagree on a batch's outcome"
         (all ((== Just "agrees") . field "comparison") records)
@@ -1941,6 +1950,8 @@ runBatchHarness env = do
         Just (String text) -> Just text
         _ -> Nothing
     field _ _ = Nothing
+    outcome side (Object fields) = KM.lookup side fields >>= field "outcome"
+    outcome _ _ = Nothing
 
 {- | CG05 needs its key OCCUPIED, whatever leaf it holds: the row is about
 inserting on a key the trie already has, and the seven edges admit an

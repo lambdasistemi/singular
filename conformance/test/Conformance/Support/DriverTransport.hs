@@ -97,6 +97,26 @@ batchQuestion row =
 computed :: [Key.Key] -> Value -> [(Key.Key, Maybe Value)]
 computed names row = [(name, field name row) | name <- names]
 
+-- | A fold batch the driver accepted: every claim in it is its edge's delta.
+acceptedFold :: Value -> Bool
+acceptedFold row =
+    field "question" row == Just (String "foldBatch")
+        && field "outcome" row == Just (String "accepted")
+
+{- | The same question, each request asking for the claim an honest folder
+makes for it instead of spelling one out.
+-}
+canonicalClaims :: Value -> Value
+canonicalClaims (Object fields) = case KM.lookup "requests" fields of
+    Just (Array items) ->
+        Object (KM.insert "requests" (Array (V.map canonical items)) fields)
+    _ -> Object fields
+  where
+    canonical (Object request) =
+        Object (KM.insert "claimed" (String "canonical") request)
+    canonical other = other
+canonicalClaims other = other
+
 answered :: [Key.Key]
 answered = ["outcome", "reason", "premise", "observations", "setup"]
 
@@ -122,6 +142,18 @@ spec = describe "Appendix — the transport answers as the driver did" $ do
                 expectedObservation evaluator [] (scenarioQuestion row)
                     >>= either error pure
             computed answered answer `shouldBe` computed answered row
+    forM_ (filter acceptedFold batches) $ \row ->
+        it
+            ( "answers the accepted fold batch "
+                <> show (field "id" row)
+                <> " the same when each request claims canonically"
+            )
+            $ do
+                answer <-
+                    expectedObservation evaluator [] (canonicalClaims (batchQuestion row))
+                        >>= either error pure
+                computed (answered <> ["requests", "folded"]) answer
+                    `shouldBe` computed (answered <> ["requests", "folded"]) row
     forM_ batches $ \row ->
         it ("answers the batch row " <> show (field "id" row)) $ do
             answer <-
