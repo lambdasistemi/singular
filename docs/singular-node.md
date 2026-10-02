@@ -21,7 +21,11 @@ command refuses before it reads or submits anything.
 | `--backend node` or `--backend indexer` | all five | Where the command reads addresses from: the node itself (`node`, the default) or an index the command builds by following the node's chain from its first block (`indexer`). Any other value is refused before anything runs. See [Reading through an index](#reading-through-an-index). |
 | `--registry DIR` | all five | The directory that holds one registry: its identity, its mirror of the chain and its journal. `create` makes it; every later command reads it. |
 | `--blueprint PLUTUS_JSON` | all five | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. |
+| `--wallet-address ADDR` | `create`, `insert`, `update`, `terminate` | Your wallet's public address, in place of the signing key on a preview: the command reads that wallet and prints what it would submit, and signs, submits and journals nothing. |
 | `--seed TXID#IX` or `--preview` | `create` | The output of your wallet the new registry is booted from, which fixes its identity; or, with `--preview`, the identity a seed from your wallet would give, without submitting anything. |
+| `--preview` | `insert`, `update`, `terminate` | Build and measure what the command would submit — fee, measured units, stated collateral, outlay — from the wallet a public address names, and print it; nothing is signed, submitted or journalled. |
+| `--fund-input TXID#IX` | `insert`, `update`, `terminate` | The wallet output that funds and collateralises the write. `create` and `inspect` refuse it rather than ignore it. |
+| `--max-outlay LOVELACE` | `insert`, `update`, `terminate` | The most the write may put out of your wallet. A booking or update past it is not signed; an insert or terminate whose fold, built after its booking confirms, costs more than the booking left of it stops partial, its request pending and the fold unsigned. `create` and `inspect` refuse it. |
 | `--key HEX` | `insert`, `update`, `terminate`, `inspect` | The registry key the command acts on, as hex bytes. |
 | `--envelope ENVELOPE_JSON` | `insert` | The key's first value: the open-datum envelope, its protected control and its payload. |
 | `--payload DATUM_JSON` | `update` | The key's new payload; the protected control stays as it was. |
