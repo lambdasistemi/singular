@@ -1158,7 +1158,10 @@ findRequestTxIn prov cfg tid key = do
                     <> show (length matching)
                 )
 
--- | CS04: wrong constructor index refused, attributed to the script.
+{- | CS04: wrong constructor index refused, attributed to the script. The
+model has no vocabulary for decoding a redeemer, so there is no model reason
+to compare: the model comparison is unmet (#347).
+-}
 runCS04
     :: ReplayIndex
     -> Cage.Provider IO

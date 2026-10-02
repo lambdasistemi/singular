@@ -12,6 +12,9 @@ module Conformance.Run.Live
     , runLive
     , runLiveWithRequests
     , runLiveNamed
+    , newLiveState
+    , compareHandBatch
+    , mintOnFirstKey
     , submitEdge
     , storyReferences
     , storyWitness
@@ -134,7 +137,7 @@ import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Data.Vector qualified as Vector
 import Data.Word (Word8)
-import Lens.Micro ((&), (.~), (^.))
+import Lens.Micro ((%~), (&), (.~), (^.))
 import System.Environment (lookupEnv)
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
@@ -167,6 +170,7 @@ import Cardano.Ledger.Api.Tx.Out
     , datumTxOutL
     , getMinCoinTxOut
     , referenceScriptTxOutL
+    , valueTxOutL
     )
 import Cardano.Ledger.Api.Tx.Wits
     ( Redeemers (..)
@@ -179,7 +183,7 @@ import Cardano.Ledger.Core (KeyHash, hashScript)
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Hashes (KeyHash (..))
 import Cardano.Ledger.Keys (KeyRole (..))
-import Cardano.Ledger.Mary.Value (MultiAsset (..))
+import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.Plutus.Data (Data (..), binaryDataToData)
 import Cardano.Ledger.TxIn (TxIn (..), txInToText)
 import Cardano.Tx.Balance (BalanceResult (..), balanceTx)
@@ -328,6 +332,91 @@ runLive
     :: Env -> Live.Story RowCage Addr LiveStep Value Value res -> IO res
 runLive env = runLiveWithRequests env []
 
+-- | The interpreter's state for one row, before it acts on any registry.
+newLiveState :: String -> IO LiveState
+newLiveState row =
+    LiveState
+        <$> newLiveIdentities
+        <*> newIORef 0
+        <*> newIORef Map.empty
+        <*> newIORef Map.empty
+        <*> newIORef Map.empty
+        <*> newIORef Map.empty
+        <*> newIORef Map.empty
+        <*> newIORef Map.empty
+        <*> pure row
+
+{- | A batch a row assembled and submitted itself, asked of the model's matching
+batch question and compared as a story's batch is ('batchRecord'), the refusal
+reason included. Each request is named beside the wallet that booked it, its
+owner, and its booked output; they are asked in the transaction's input order,
+each folded request claiming what the transaction mints at its key. The
+registry must be one the row's interpreter state first saw empty: every
+question starts from there.
+-}
+compareHandBatch
+    :: Env
+    -> LiveState
+    -> RowCage
+    -> Live.Exit
+    -> [(Live.EdgeRequest Addr, Addr, (TxIn, TxOut ConwayEra))]
+    -> ConwayTx
+    -> SubmitResult
+    -> IO Value
+compareHandBatch env state cage exit requests signed result = do
+    let cfg = rcCfg cage
+        ids = liveIds state
+    (tid, before) <- enterRegistry env state cage
+    let registry = show tid
+    mapM_ (noteRequest state cage registry . (\(r, _, _) -> r)) requests
+    let booked = sortOn (\(_, _, (reqIn, _)) -> reqIn) requests
+    asked <- forM booked $ \(request, owner, (reqIn, reqOut)) -> do
+        require
+            "a compared batch request's owner is the wallet it names"
+            (Live.requestWallet request == owner)
+        let Coin bond = reqOut ^. coinTxOutL
+            deposit = bond - stateMaxFee before
+        require
+            "booked request holds less than the on-chain processing tip"
+            (deposit >= 0)
+        reference <-
+            allocateIdentity
+                (liveReferences ids)
+                (ReferenceIdentity (txInReference reqIn))
+        modelRequest <-
+            storyModelRequestBy
+                owner
+                ids
+                cfg
+                exit
+                request
+                deposit
+                (stateMaxFee before)
+                (Just reference)
+                (Right reqOut)
+        bindBookedApproval ids cfg reqOut modelRequest
+        pure $ case (exit, modelRequest) of
+            (Live.Fold, Object fields) ->
+                Object
+                    ( KM.insert
+                        "claimed"
+                        (toJSON (claimedAt cfg signed (Live.requestKey request)))
+                        fields
+                    )
+            (Live.Fold, other) -> other
+            _ -> object ["exit" .= String "reject", "request" .= modelRequest]
+    batchRecord
+        env
+        state
+        cage
+        exit
+        Nothing
+        [booking | (_, _, booking) <- booked]
+        asked
+        signed
+        result
+        (Map.empty, Map.empty)
+
 {- | Book a cohort before running its exits, retaining each request under its
 registry, key, edge and owner. Timing stories need both requests pending
 before the first window opens; ordinary stories still book as they act.
@@ -349,14 +438,7 @@ runLiveNamed
     -> Live.Story RowCage Addr LiveStep Value Value res
     -> IO res
 runLiveNamed env row prepared program = do
-    identities <- newLiveIdentities
-    pending <- newIORef 0
-    starts <- newIORef Map.empty
-    traces <- newIORef Map.empty
-    keys <- newIORef Map.empty
-    wallets <- newIORef Map.empty
-    registryIds <- newIORef Map.empty
-    pendingRequestsRef <- newIORef Map.empty
+    state <- newLiveState row
     forM_ prepared $ \(cage, request) -> do
         tid <- cageTid cage
         named <- bookStoryRequest env cage request
@@ -366,22 +448,9 @@ runLiveNamed env row prepared program = do
                 , fromEnum (Live.requestEdge request)
                 , serialiseAddr (Live.requestWallet request)
                 )
-        modifyIORef' pendingRequestsRef (Map.insert pendingKey named)
-    result <-
-        go
-            ( LiveState
-                identities
-                pending
-                starts
-                traces
-                keys
-                wallets
-                registryIds
-                pendingRequestsRef
-                row
-            )
-            program
-    remaining <- readIORef pending
+        modifyIORef' (livePendingRequests state) (Map.insert pendingKey named)
+    result <- go state program
+    remaining <- readIORef (livePendingComparisons state)
     require
         "live story submitted a request without comparing it"
         (remaining == 0)
@@ -454,10 +523,17 @@ runLiveNamed env row prepared program = do
                     request
             modifyIORef' (livePendingComparisons state) (+ 1)
             pure step
-        Live.FoldBatch registry requests ->
-            submitBatch env state registry Live.Fold Nothing requests
+        Live.FoldBatch alteration registry requests ->
+            submitBatch env state registry Live.Fold Nothing alteration requests
         Live.RejectBatchWithin placement registry requests ->
-            submitBatch env state registry Live.Reject (Just placement) requests
+            submitBatch
+                env
+                state
+                registry
+                Live.Reject
+                (Just placement)
+                Nothing
+                requests
         Live.Observe step -> observeStep env state step
         Live.Compare step observation -> do
             result <- compareStep env state step observation
@@ -863,9 +939,10 @@ submitBatch
     -> RowCage
     -> Live.Exit
     -> Maybe Live.Placement
+    -> Maybe Live.BatchTamper
     -> [Live.EdgeRequest Addr]
     -> IO Value
-submitBatch env state cage exit placement requests = do
+submitBatch env state cage exit placement alteration requests = do
     let cfg = rcCfg cage
         ids = liveIds state
     (tid, before) <- enterRegistry env state cage
@@ -981,22 +1058,37 @@ submitBatch env state cage exit placement requests = do
     forM_ placement $ \placed ->
         forM_ booked $ \(_, (_, reqOut)) ->
             checkPlacement env (liveRow state) placed reqOut before unsigned
-    let signedWitnessed = signTx genesisSignKey unsigned
+    let tampered = case alteration of
+            Nothing -> unsigned
+            Just Live.MintOnFirstKey -> case booked of
+                (first, _) : _ ->
+                    mintOnFirstKey
+                        (pinnedPolicies cfg)
+                        (TE.encodeUtf8 (T.pack (Live.requestKey first)))
+                        [TE.encodeUtf8 (T.pack (Live.requestKey r)) | (r, _) <- booked]
+                        unsigned
+                [] -> unsigned
+        signedWitnessed = signTx genesisSignKey tampered
         signed = signedTx signedWitnessed
         -- An honest folder claims, for each request, the delta of its own edge;
         -- the model reads that claim off its own table ("canonical"), never off
         -- the transaction the builder made, so a builder minting otherwise is
-        -- refused by the chain while the model accepts the lawful batch.
+        -- refused by the chain while the model accepts the lawful batch. A
+        -- tampered batch claims what its transaction mints at each key, read
+        -- off the transaction as submitted.
+        claimOf request = case alteration of
+            Nothing -> String "canonical"
+            Just _ -> toJSON (claimedAt cfg signed (Live.requestKey request))
         asked =
             [ case (exit, modelRequest) of
                 (Live.Fold, Object fields) ->
-                    Object (KM.insert "claimed" (String "canonical") fields)
+                    Object (KM.insert "claimed" (claimOf request) fields)
                 (Live.Fold, other) -> other
                 _ -> object ["exit" .= String "reject", "request" .= modelRequest]
-            | modelRequest <- modelRequests
+            | ((request, _), modelRequest) <- zip booked modelRequests
             ]
     result <- submitTxResilient (envSubmit env) signedWitnessed
-    (chainOutcome, chain) <- case result of
+    case result of
         Submitted _ -> do
             confirmTx env signed
             -- Only a fold moves the trie; a reject leaves it.
@@ -1007,33 +1099,100 @@ submitBatch env state cage exit placement requests = do
                         cage
                         (TE.encodeUtf8 (T.pack (Live.requestKey request)))
                         (fromIntegral (fromEnum (Live.requestEdge request)))
-            pure
-                ( String "accepted"
-                , object ["outcome" .= String "accepted", "txid" .= txIdHex signed]
-                )
+        Rejected _ -> pure ()
+    batchRecord
+        env
+        state
+        cage
+        exit
+        alteration
+        (map snd booked)
+        asked
+        signed
+        result
+        (measurements, declaredPairs)
+
+{- | Ask the model the batch a submitted transaction took, and compare. The
+question is the model's matching batch question from where the registry's
+compared trace leaves it; a reject batch also carries the outputs through which
+the chain settles what the batch owes its owners, so the model's verdict is the
+law's, then @settle@'s. When both refuse, the reason the traced replay of the
+refused transaction admitted for the state script, which judges every batch,
+meets the model's: written to the rejection's index entry first, then, when it
+differs, failing the row naming both. The record says what the chain did, what
+the model answered and whether they agree, and is added to the row's records.
+-}
+batchRecord
+    :: Env
+    -> LiveState
+    -> RowCage
+    -> Live.Exit
+    -> Maybe Live.BatchTamper
+    -> [(TxIn, TxOut ConwayEra)]
+    -> [Value]
+    -> ConwayTx
+    -> SubmitResult
+    -> (PurposeMeasurements, PurposeUnits)
+    -> IO Value
+batchRecord env state cage exit alteration booked asked signed result (measured, declared) = do
+    let cfg = rcCfg cage
+        ids = liveIds state
+        txid = T.pack (txIdHex signed)
+    tid <- cageTid cage
+    let registry = show tid
+        stateMarker = stateMarkerOf cfg
+        attributed hashes =
+            [ name :: T.Text
+            | (name, marker) <-
+                [ ("state", stateMarker)
+                , ("request", requestMarkerOf cfg tid)
+                ]
+            , T.pack marker `elem` hashes
+            ]
+    chainSide <- case result of
+        Submitted _ -> pure (Right ())
         Rejected reason ->
-            pure
-                ( String "refused"
-                , object
-                    [ "outcome" .= String "refused"
-                    , "txid" .= txIdHex signed
-                    , "refusal"
-                        .= rejectionJson
-                            Nothing
-                            []
-                            StepRejection
-                                { srText = TE.decodeUtf8Lenient reason
-                                , srMeasured = measurements
-                                , srDeclared = declaredPairs
-                                , srBudgetExceeded = []
-                                }
-                    ]
-                )
+            pure . Left $
+                refusedOutcome
+                    stateMarker
+                    signed
+                    StepRejection
+                        { srText = TE.decodeUtf8Lenient reason
+                        , srMeasured = measured
+                        , srDeclared = declared
+                        , srBudgetExceeded = []
+                        }
+    -- A reject batch is judged on the outputs crediting each owner it owes.
+    judged <- case exit of
+        Live.Reject -> do
+            wallets <-
+                maybe (failWith "registry has no allocated wallets") pure
+                    . Map.lookup registry
+                    =<< readIORef (liveRegistryWallets state)
+            owners <- nub <$> mapM (requestOwnerKey . snd) booked
+            Just . concat
+                <$> mapM
+                    ( \owner -> do
+                        address <- ownerIdentity ids wallets owner
+                        pure
+                            [ object
+                                [ "role" .= ("owner" :: T.Text)
+                                , "address" .= address
+                                , "lovelace" .= Payments.outputLovelace out
+                                , "datum" .= Payments.outputDatum out
+                                , "reference" .= (Nothing :: Maybe Integer)
+                                ]
+                            | (_, out) <- foldOutputsOf cfg signed
+                            , Payments.creditsOwner owner out
+                            ]
+                    )
+                    owners
+        _ -> pure Nothing
     (_, startValue, setup) <- modelStart state cage
-    let question =
-            object
-                [ "question"
-                    .= String (if exit == Live.Fold then "foldBatch" else "rejectBatch")
+    let batchName = if exit == Live.Fold then "foldBatch" else "rejectBatch" :: T.Text
+        question =
+            object $
+                [ "question" .= batchName
                 , "id" .= String "live-batch"
                 , "theorem" .= String "Singular.Driver.runSurface"
                 , "statementSha256" .= String "4242624938955313763"
@@ -1041,12 +1200,71 @@ submitBatch env state cage exit placement requests = do
                 , "setup" .= setup
                 , "requests" .= asked
                 ]
+                    <> ["outputs" .= outputs | Just outputs <- [judged]]
     evaluator <- requireEnv "CONFORMANCE_MODEL_EVALUATOR"
     row <-
         LeanOracle.expectedObservation evaluator [] question
             >>= either failWith pure
-    modelOutcome <- storyField "outcome" row
-    modelReason <- storyField "reason" row
+    (modelOutcome, modelReason) <-
+        either
+            failWith
+            pure
+            (LeanOracle.modelVerdict row (row <$ judged))
+    -- Both refuse: the reason the replay admitted for the state script meets
+    -- Lean's, recorded on the rejection's entry before anything acts on it.
+    reasonCheck <- case (chainSide, modelOutcome, modelReason) of
+        (Left (StepRefused{}), String "refused", String lean) -> do
+            control <-
+                lookupEnv "CONFORMANCE_REASON_CONTROL"
+                    >>= traverse (either failWith pure . parseReasonControl)
+            rowName <- readIORef (riRow (envReplay env))
+            compared <- length <$> readIORef (envLiveRecords env)
+            let lean' = controlledReason control rowName compared lean
+            purposes <- purposesOf (envReplay env) txid
+            let comparison = stepComparison (T.pack stateMarker) lean' purposes
+            recordComparison (envReplay env) txid lean' comparison
+            pure (Just (lean', comparison))
+        _ -> pure Nothing
+    evidence <- case chainSide of
+        Left (StepRefused{}) -> replayEvidenceOf (envReplay env) txid
+        _ -> pure []
+    let chainReason = case reasonCheck of
+            Just (lean, Agrees) -> Just lean
+            _ -> Nothing
+        (chainOutcome, chain) = case chainSide of
+            Right () ->
+                ( String "accepted"
+                , object ["outcome" .= String "accepted", "txid" .= txid]
+                )
+            Left (StepRefused _ hashes rejection) ->
+                ( String "refused"
+                , object
+                    [ "outcome" .= String "refused"
+                    , "txid" .= txid
+                    , "refusal"
+                        .= stepReplay
+                            evidence
+                            ( withScripts
+                                (attributed hashes)
+                                (rejectionJson chainReason hashes rejection)
+                            )
+                    ]
+                )
+            Left other ->
+                ( String "unsupported"
+                , object
+                    [ "outcome" .= String "unsupported"
+                    , "txid" .= txid
+                    , "reason" .= case other of
+                        StepUnsupported _ why _ ->
+                            boundedNodeReason maxLiveStepReasonChars why
+                        _ -> "the refusal names no registry script"
+                    ]
+                )
+        comparison
+            | Just (_, Differs{}) <- reasonCheck = "disagrees"
+            | modelOutcome == chainOutcome = "agrees"
+            | otherwise = "disagrees" :: T.Text
     -- A batch the chain folded moves the registry the next question starts from.
     when (exit == Live.Fold && chainOutcome == String "accepted") $
         modifyIORef'
@@ -1056,24 +1274,24 @@ submitBatch env state cage exit placement requests = do
         maybe (failWith "batch registry was not allocated") pure
             . Map.lookup registry
             =<< readIORef (liveRegistryIds state)
-    let batchName = if exit == Live.Fold then "foldBatch" else "rejectBatch" :: T.Text
-        agrees = modelOutcome == chainOutcome
-        record =
-            object
+    let record =
+            object $
                 [ "registry" .= registryId
                 , "batch" .= batchName
+                , "tamper" .= fmap Live.batchTamperName alteration
                 , "requests" .= asked
                 , "model" .= object ["outcome" .= modelOutcome, "reason" .= modelReason]
                 , "chain" .= chain
-                , "comparison" .= String (if agrees then "agrees" else "disagrees")
+                , "comparison" .= comparison
                 , "compared" .= ["outcome" :: T.Text]
                 ]
+                    <> ["outputs" .= outputs | Just outputs <- [judged]]
     modifyIORef' (envLiveRecords env) (<> [record])
     emit
         "batch"
         ( T.unpack batchName
-            <> " keys="
-            <> show (map (Live.requestKey . fst) booked)
+            <> " tamper="
+            <> maybe "none" Live.batchTamperName alteration
             <> " model="
             <> show modelOutcome
             <> " modelReason="
@@ -1081,9 +1299,81 @@ submitBatch env state cage exit placement requests = do
             <> " chain="
             <> show chainOutcome
             <> " txid="
-            <> txIdHex signed
+            <> T.unpack txid
         )
+    case reasonCheck of
+        Just
+            (_, Differs{chainReason = chainSideReason, leanReason = leanSide}) ->
+                failWith
+                    ( "model and chain refuse for different reasons for "
+                        <> T.unpack batchName
+                        <> " of "
+                        <> show (length booked)
+                        <> " requests: chain="
+                        <> T.unpack chainSideReason
+                        <> " lean="
+                        <> T.unpack leanSide
+                    )
+        _ -> pure ()
     pure record
+
+{- | What a transaction mints at a key under the registry's three pinned token
+policies, by kind, read off the transaction as submitted.
+-}
+claimedAt :: CageConfig -> ConwayTx -> String -> [Value]
+claimedAt cfg signed key =
+    [ object ["kind" .= kind, "quantity" .= quantity]
+    | (pin, kind) <-
+        [ (cfgActivePolicy cfg, "active" :: T.Text)
+        , (cfgAbsentPolicy cfg, "absent")
+        , (cfgTerminalPolicy cfg, "terminal")
+        ]
+    , (policy, names) <- Map.toList minted
+    , cg21PolicyBytes policy == SBS.fromShort pin
+    , (AssetName name, quantity) <- Map.toList names
+    , SBS.fromShort name == TE.encodeUtf8 (T.pack key)
+    , quantity /= 0
+    ]
+  where
+    MultiAsset minted = signed ^. bodyTxL . mintTxBodyL
+
+-- | The registry's three pinned token policies, as raw script hash bytes.
+pinnedPolicies :: CageConfig -> [ByteString]
+pinnedPolicies cfg =
+    map
+        SBS.fromShort
+        [cfgActivePolicy cfg, cfgAbsentPolicy cfg, cfgTerminalPolicy cfg]
+
+{- | The 'Live.MintOnFirstKey' tamper: under the given policies, every quantity
+the transaction mints, and every quantity its outputs carry, at one of the batch's
+keys moves to the first key — the same quantity of each kind, at the wrong keys.
+Nothing else of the transaction changes.
+-}
+mintOnFirstKey
+    :: [ByteString] -> ByteString -> [ByteString] -> ConwayTx -> ConwayTx
+mintOnFirstKey policies first keys tx =
+    tx
+        & bodyTxL . mintTxBodyL %~ moved
+        & bodyTxL . outputsTxBodyL %~ fmap (valueTxOutL %~ movedValue)
+  where
+    movedValue (MaryValue coin assets) = MaryValue coin (moved assets)
+    moved (MultiAsset byPolicy) = MultiAsset (Map.mapWithKey movePolicy byPolicy)
+    movePolicy policy names
+        | cg21PolicyBytes policy `elem` policies =
+            let atKeys =
+                    sum
+                        [ q
+                        | (AssetName n, q) <- Map.toList names
+                        , SBS.fromShort n `elem` keys
+                        ]
+                others =
+                    Map.filterWithKey
+                        (\(AssetName n) _ -> SBS.fromShort n `notElem` keys)
+                        names
+            in  if atKeys == 0
+                    then names
+                    else Map.insert (AssetName (SBS.toShort first)) atKeys others
+        | otherwise = names
 
 {- | Enter the registry a story acts on: allocate its identity the first time,
 and require it freshly booted then, so every model question starts from the
@@ -1094,6 +1384,14 @@ enterRegistry
 enterRegistry env state cage = do
     tid <- cageTid cage
     let registry = show tid
+    -- Acting on a registry establishes its pinned policies, so a question
+    -- about it can name them even when no request has yet.
+    mapM_
+        ( allocateIdentity (livePolicies (liveIds state))
+            . PolicyIdentity
+            . SBS.fromShort
+        )
+        (registryPins (rcCfg cage))
     knownRegistries <- readIORef (liveRegistryIds state)
     when (Map.notMember registry knownRegistries) $
         modifyIORef'
@@ -1755,14 +2053,28 @@ storyModelRequest
     -> Maybe Integer
     -> Either (Maybe RegistryEdges.BookingApproval) (TxOut ConwayEra)
     -> IO Value
-storyModelRequest ids cfg exit request deposit tip reference requestOut = do
+storyModelRequest = storyModelRequestBy genesisAddr
+
+-- | 'storyModelRequest' for a request booked by the given wallet, its owner.
+storyModelRequestBy
+    :: Addr
+    -> LiveIdentities
+    -> CageConfig
+    -> Live.Exit
+    -> Live.EdgeRequest Addr
+    -> Integer
+    -> Integer
+    -> Maybe Integer
+    -> Either (Maybe RegistryEdges.BookingApproval) (TxOut ConwayEra)
+    -> IO Value
+storyModelRequestBy booker ids cfg exit request deposit tip reference requestOut = do
     let wallet = Live.requestWallet request
         key = TE.encodeUtf8 (T.pack (Live.requestKey request))
     modelKey <- observeIdentity (liveKeys ids) (KeyIdentity key)
     owner <-
         observeIdentity
             (liveWallets ids)
-            (WalletIdentity (serialiseAddr genesisAddr))
+            (WalletIdentity (serialiseAddr booker))
     destination <-
         observeIdentity
             (liveWallets ids)
@@ -2412,7 +2724,7 @@ observeOwnerOutputs ids wallets cfg tid step transaction payments =
                 require
                     "an output crediting the owner carries a registry state or custody datum"
                     (all (isNothing . extractCageDatum) credited)
-                let registryPins =
+                let tokenPins =
                         [ SBS.fromShort (cfgActivePolicy cfg)
                         , SBS.fromShort (cfgAbsentPolicy cfg)
                         , SBS.fromShort (cfgTerminalPolicy cfg)
@@ -2424,7 +2736,7 @@ observeOwnerOutputs ids wallets cfg tid step transaction payments =
                         [ (policy, name, quantity)
                         | out <- credited
                         , (policy, names) <- Map.toList (outAssets out)
-                        , policy `elem` registryPins
+                        , policy `elem` tokenPins
                         , (name, quantity) <- Map.toList names
                         ]
                 let statePolicy = cg21PolicyBytes (cagePolicyIdFromCfg cfg)
@@ -3387,11 +3699,16 @@ prepareRegistrationIdentities ids cage key recipient = do
     _ <- allocateIdentity (liveKeys ids) (KeyIdentity key)
     mapM_
         (allocateIdentity (livePolicies ids) . PolicyIdentity . SBS.fromShort)
-        [ cfgApplicationPolicy cfg
-        , cfgActivePolicy cfg
-        , cfgAbsentPolicy cfg
-        , cfgTerminalPolicy cfg
-        ]
+        (registryPins cfg)
+
+-- | A registry's four pinned policies, in the order the model names them.
+registryPins :: CageConfig -> [SBS.ShortByteString]
+registryPins cfg =
+    [ cfgApplicationPolicy cfg
+    , cfgActivePolicy cfg
+    , cfgAbsentPolicy cfg
+    , cfgTerminalPolicy cfg
+    ]
 
 {- | Bind the approval a booked request carries to its model name, while
 acting: the model names it by the request's edge, key, owner and

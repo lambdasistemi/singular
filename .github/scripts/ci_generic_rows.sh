@@ -240,7 +240,11 @@ nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
 #    t6_carrier_at_another_address_refuses (destination) and
 #    t6_underfunded_destination_refuses (deposit-returned); the same
 #    request untampered is accepted by both. The ledger's own reason
-#    is not observed: the validators are compiled without traces (#287).
+#    comes from the traced replay of each refused transaction (#287).
+#    Last, two registrations folded in one transaction whose mint
+#    moves both tokens onto the first key are refused by the state
+#    script and by the model's fold batch for net-mint-mismatch, the
+#    reason the traced replay admits.
 open_params="$(nix run --quiet nixpkgs#jq -- -er '[.validators[] | select(.title == "open.open.mint") | (.parameters // []) | length] | first' "$blueprint")"
 [ "$open_params" -eq 0 ] || {
   echo "FAIL: open.open.mint declares $open_params parameters; CG21 reports a parameterless open application"
@@ -256,8 +260,14 @@ nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
   ([.steps[] | select(.tamper == "other-address") | .request][0]) as $tampered |
   .row == "CG21" and .outcome == "accepted"
   and .verdict == "agrees-with-model" and .venue == "node-submit"
-  and (.steps | length) == 7
-  and ([.steps[].tamper] == [null,null,null,"other-address","short-by-one",null,"extra-signer"])
+  and (.steps | length) == 8
+  and ([.steps[].tamper] == [null,null,null,"other-address","short-by-one",null,"extra-signer","mint-on-first-key"])
+  and (.steps[7] | .batch == "foldBatch" and (.requests | length) == 2
+    and .model == {"outcome": "refused", "reason": "net-mint-mismatch"}
+    and .chain.outcome == "refused" and (.chain.txid | txid)
+    and (.chain.refusal.hashes | index($state) != null)
+    and .chain.refusal.trace == "net-mint-mismatch"
+    and .comparison == "agrees")
   and all(.steps[]; .comparison == "agrees")
   and all(.steps[] | select(.tamper == null and .model.outcome == "accepted"
           and .chain.outcome == "accepted");
@@ -314,12 +324,58 @@ grep -q '^control: CG09 control: REFUSED at submit, attributed to state (phase-2
   echo 'FAIL: CG09 refused control not attributed to the state script'
   exit 1
 }
-# 11. #287: every refusal of the session carries the traced replay
+# 11. #287: the empty fold and the crossed refunds are compared with
+#     the model's batch questions: CG11's receipt carries the fold
+#     batch over no request, refused by both for empty-fold, CG19's the
+#     reject batch of its two requests judged on the crossed refunds,
+#     refused by both for deposit-returned, each with the reason the
+#     traced replay admits for the state script.
+for row in CG11 CG19; do
+  case "$row" in
+    CG11) batch=foldBatch requests=0 reason=empty-fold ;;
+    CG19) batch=rejectBatch requests=2 reason=deposit-returned ;;
+  esac
+  # shellcheck disable=SC2016
+  nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" --arg batch "$batch" \
+    --argjson requests "$requests" --arg reason "$reason" '
+    .rejected as $rejected
+    | (.steps | length) == 1
+    and (.steps[0] | .batch == $batch and (.requests | length) == $requests
+      and .model == {"outcome": "refused", "reason": $reason}
+      and .chain.outcome == "refused" and .chain.txid == $rejected
+      and (.chain.refusal.hashes | index($state) != null)
+      and .chain.refusal.trace == $reason
+      and .comparison == "agrees")
+  ' "${CONFORMANCE_RECEIPTS}/receipt-$row.json" >/dev/null || {
+    echo "FAIL: $row batch comparison with the model moved"
+    exit 1
+  }
+done
+# 12. #287: the controls of CG09 and CG19 that refuse a reject paying its
+#     owner short are compared with the model's reject batch too; their
+#     comparisons are in the session's replay index, not in a row receipt.
+#     CG09's control: one entry, deposit-returned, agreeing. CG19: its
+#     crossed refunds and its rejected-floor control, two entries.
+for pair in CG09:1 CG19:2; do
+  row="${pair%%:*}"
+  want="${pair##*:}"
+  # shellcheck disable=SC2016
+  got="$(nix run --quiet nixpkgs#jq -- -r --arg row "$row" '
+    [.[] | select(.kind == "refusal" and .row == $row
+      and .extentClass == "A" and .modelReason == "deposit-returned"
+      and .comparison == "agrees")] | length
+  ' "${CONFORMANCE_RECEIPTS}/replay/index.json")"
+  [ "$got" = "$want" ] || {
+    echo "FAIL: $row reject comparisons in the replay index: $got, expected $want"
+    exit 1
+  }
+done
+# 13. #287: every refusal of the session carries the traced replay
 #     of its transaction (test/ci/replay-evidence.sh): the story
-#     rows' refused steps meet the model's reason, and each
-#     attribution row names, per failing purpose, the reason the
-#     replay admitted or the cause it admits none.
-for row in CG05 CG21; do
+#     rows' and the batches' refused steps meet the model's reason,
+#     and each attribution row names, per failing purpose, the reason
+#     the replay admitted or the cause it admits none.
+for row in CG05 CG11 CG19 CG21; do
   bash test/ci/replay-evidence.sh steps "${CONFORMANCE_RECEIPTS}/receipt-$row.json" || {
     echo "FAIL: $row refused steps lack the traced replay of their reason"
     exit 1
@@ -331,5 +387,5 @@ for row in CG10 CG11 CG12 CG19; do
     exit 1
   }
 done
-echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and the tampered-payment controls are recorded, with held debt exactly CG11 CG12 CG19 and CG09 unmet by ruling.'
+echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and the tampered-payment controls are recorded, with held debt exactly CG11 CG12 CG19 and CG09 unmet by ruling. The empty fold, the crossed refunds, the two short reject controls and the registration batch are each refused by the chain and by the model for the reason the traced replay admits.'
 echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused, R9_reject_needs_rejectable and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'

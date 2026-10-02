@@ -6,7 +6,8 @@ import Conformance.Lean.Registration
     , modelComparison
     )
 import Conformance.Story.Live
-    ( Context (Context)
+    ( BatchTamper (..)
+    , Context (Context)
     , Edge (..)
     , EdgeRequest (..)
     , Story
@@ -15,6 +16,7 @@ import Conformance.Story.Live
     , observe
     , submit
     , tamper
+    , tamperFoldBatch
     )
 import Conformance.Story.Specification (clause, theorem)
 
@@ -37,6 +39,16 @@ story (Context registry recipient) = do
         registry
         (EdgeRequest InsertActive "cosigned" recipient)
         >>= compared
+    -- Two registrations folded in one transaction that mints both tokens at the
+    -- first key: the same quantity of the kind, at the wrong keys.
+    _ <-
+        tamperFoldBatch
+            MintOnFirstKey
+            registry
+            [ EdgeRequest InsertActive "minted-a" recipient
+            , EdgeRequest InsertActive "minted-b" recipient
+            ]
+    pure ()
   where
     checked request = submit registry request >>= compared
     compared step = do

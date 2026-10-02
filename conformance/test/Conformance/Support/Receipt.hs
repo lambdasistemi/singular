@@ -73,6 +73,7 @@ spec = describe "Appendix: deciding whether a run report counts as evidence" $ d
     stepRoundTrip
     liveStepChecks
     replayChecks
+    batchChecks
     it "Preserves every result category when saving and reading it back" $
         forM_ [minBound :: Verdict .. maxBound] $ \v ->
             case eitherDecode (encode v) :: Either String Verdict of
@@ -1659,3 +1660,158 @@ untamperedOccupied =
     )
         { receiptRow = "CG05"
         }
+
+-- | A fold batch, tampered, refused by both sides for @net-mint-mismatch@.
+refusedBatchRecord :: Value
+refusedBatchRecord =
+    object
+        [ "registry" .= (1 :: Int)
+        , "batch" .= ("foldBatch" :: String)
+        , "tamper" .= ("mint-on-first-key" :: String)
+        , "requests" .= [object [], object []]
+        , "model"
+            .= object
+                [ "outcome" .= ("refused" :: String)
+                , "reason" .= ("net-mint-mismatch" :: String)
+                ]
+        , "chain"
+            .= object
+                [ "outcome" .= ("refused" :: String)
+                , "txid" .= ("batch123" :: String)
+                , "refusal"
+                    .= object
+                        [ "hashes" .= (["abcdef"] :: [String])
+                        , "trace" .= ("net-mint-mismatch" :: String)
+                        , "replay"
+                            .= [admittedEntry{replayReason = Just "net-mint-mismatch"}]
+                        ]
+                ]
+        , "comparison" .= ("agrees" :: String)
+        , "compared" .= (["outcome"] :: [String])
+        ]
+
+-- | A receipt with one more step: the given batch record.
+withBatch :: Value -> Receipt -> Receipt
+withBatch record receipt =
+    receipt{receiptSteps = fmap (<> [record]) (receiptSteps receipt)}
+
+-- | The same row's attribution receipt for CG11, carrying the given steps.
+emptyFoldWith :: [Value] -> Receipt
+emptyFoldWith steps =
+    (attributionOf refusedLiveWithoutDetails)
+        { receiptRow = "CG11"
+        , receiptVerdict = HeldQ002
+        , receiptSteps = Just steps
+        , receiptReplayCorrespondence = Just fixtureCorrespondence
+        }
+  where
+    attributionOf r = r{receiptSteps = Nothing}
+
+-- | Load one receipt under the file name its row gives it.
+loadRow :: Receipt -> IO (Either String Int)
+loadRow receipt = withSystemTempDirectory "conformance-row-receipt" $ \dir -> do
+    BSL.writeFile
+        (dir </> ("receipt-" <> T.unpack (receiptRow receipt) <> ".json"))
+        (encode receipt)
+    fmap length <$> loadReceipts dir
+
+batchChecks :: Spec
+batchChecks = describe "Checking a batch the model's batch questions compared" $ do
+    let story = tracedPaymentLive [admittedEntry] (Just "destination")
+    it
+        "accepts a story receipt with a refused, tampered batch both sides refuse"
+        $ loadLive (withBatch refusedBatchRecord story) `shouldReturn` Right 1
+    it "rejects a batch tamper no story names" $
+        loadLive
+            ( withBatch
+                (setField "tamper" ("mint-twice" :: String) refusedBatchRecord)
+                story
+            )
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a tampered batch agreeing by acceptance" $
+        loadLive
+            ( withBatch
+                ( setField
+                    "chain"
+                    ( object
+                        [ "outcome" .= ("accepted" :: String)
+                        , "txid" .= ("batch123" :: String)
+                        ]
+                    )
+                    ( setField
+                        "model"
+                        (object ["outcome" .= ("accepted" :: String), "reason" .= Null])
+                        refusedBatchRecord
+                    )
+                )
+                story
+            )
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a batch agreement that changes the outcome" $
+        loadLive
+            ( withBatch
+                ( setField
+                    "model"
+                    (object ["outcome" .= ("accepted" :: String), "reason" .= Null])
+                    refusedBatchRecord
+                )
+                story
+            )
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a refused batch naming no refusing script" $
+        loadLive
+            ( withBatch
+                ( setField
+                    "chain"
+                    ( setRefusalField
+                        "hashes"
+                        ([] :: [String])
+                        (batchChain refusedBatchRecord)
+                    )
+                    refusedBatchRecord
+                )
+                story
+            )
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a batch whose trace its replay did not admit" $
+        loadLive
+            ( withBatch
+                ( setField
+                    "chain"
+                    ( setRefusalField
+                        "trace"
+                        ("destination" :: String)
+                        (batchChain refusedBatchRecord)
+                    )
+                    refusedBatchRecord
+                )
+                story
+            )
+            >>= (`shouldSatisfy` isLeft)
+    it
+        "accepts the empty fold's attribution receipt with its compared batch"
+        $ loadRow (emptyFoldWith [refusedBatchRecord]) `shouldReturn` Right 1
+    it
+        "rejects an attribution receipt carrying a step that is not a batch"
+        $ loadRow (emptyFoldWith (concat (receiptSteps story)))
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a batch step on a row no batch question compares" $
+        loadRow ((emptyFoldWith [refusedBatchRecord]){receiptRow = "CG10"})
+            >>= (`shouldSatisfy` isLeft)
+    it
+        "renders a refused batch with the model's reason and its traced replay"
+        $ renderBook
+            []
+            [(withBatch refusedBatchRecord story){receiptRow = "CG21"}]
+            `shouldSatisfy` isInfixOf
+                "The fold of 2 requests in one transaction, tampered mint-on-first-key, was refused on chain (transaction `batch123`); the model's `foldBatch` refused it for `net-mint-mismatch`. The traced replay of the deployed script `abcdef` (traced build `traced-abcdef`) failed with `net-mint-mismatch`."
+    it "counts a batch apart from the requests" $
+        renderBook
+            []
+            [(withBatch refusedBatchRecord story){receiptRow = "CG21"}]
+            `shouldSatisfy` isInfixOf
+                "Batches submitted in one transaction: 1, 0 accepted and 1 refused on chain."
+
+-- | A record's chain object.
+batchChain :: Value -> Value
+batchChain record = fromMaybe Null (field "chain" record)

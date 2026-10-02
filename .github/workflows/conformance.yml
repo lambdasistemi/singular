@@ -179,8 +179,8 @@ jobs:
       # the shape: onchain/validators/deposit_exits.tests.ak
       # e5_deposit_one_lovelace_short_refuses and
       # e5_deposit_diverted_to_another_address_refuses (deposit-returned).
-      # The ledger's own reason is not observed: the deployed validators are
-      # compiled without traces (#287).
+      # The ledger's own reason comes from the traced replay of each refused
+      # transaction (#287) and must equal the model's.
       - name: Run the dedicated CG22 retirement row as a packaged app
         run: |
           set -e
@@ -260,8 +260,8 @@ jobs:
       # is accepted by both. An unsigned insertion and an update retraction
       # are also refused at admission, compared with the model. Timing refusals
       # run in the separate finite-window chapter below.
-      # The ledger's own reason is not observed: the
-      # deployed validators are compiled without traces (#287).
+      # The ledger's own reason comes from the traced replay of each refused
+      # transaction (#287) and must equal the model's.
       - name: Run the dedicated CG23 exit row as a packaged app
         run: |
           set -e
@@ -336,26 +336,29 @@ jobs:
       # another key are refused by the chain and by the model, and the
       # untampered reject is accepted by both, refunding the owner the deposit
       # and leaving the registry state as it was. Each refusal is attributed by
-      # the state script's hash; the ledger surfaces no trace, so the model
-      # reason `deposit-returned` is the name the compiled Aiken suite asserts
-      # for the same refunds in the same windows
-      # (onchain/validators/deposit_exits.tests.ak
+      # the state script's hash, and the reason the traced replay of the
+      # refused transaction admits must be the model's `deposit-returned`
+      # (#287), the name the compiled Aiken suite also asserts for the same
+      # refunds in the same windows (onchain/validators/deposit_exits.tests.ak
       # early_reject_refund_one_lovelace_short_in_the_processing_window_refuses_by_name,
       # early_reject_refund_to_another_key_in_the_processing_window_refuses_by_name
-      # and their retraction-window twins). Those tests do not establish a
-      # deployed Plutus trace.
+      # and their retraction-window twins).
       - name: Run the dedicated CG24 early rejection row as a packaged app
         run: |
           set -eo pipefail
           cd conformance
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          receipts="$(mktemp -d "$RUNNER_TEMP/cg24-receipts.XXXXXX")"
+          # The row runs through the wrapper the retention control executes.
+          CONFORMANCE_DEDICATED_RECEIPTS="${CONFORMANCE_DEDICATED_RECEIPTS:-$(mktemp -d "$RUNNER_TEMP/conformance-dedicated.XXXXXX")}"
+          export CONFORMANCE_DEDICATED_RECEIPTS
+          receipts="$CONFORMANCE_DEDICATED_RECEIPTS/CG24"
           log="$RUNNER_TEMP/cg24.log"
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG24 --receipts-dir "$receipts" 2>&1 | tee "$log"
+          bash test/ci/dedicated-row.sh CG24 -- env REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG24 2>&1 | tee "$log"
           head_sha="$(git rev-parse HEAD)"
           f="$receipts/receipt-CG24.json"
           test -f "$f" || { echo 'FAIL: missing CG24 receipt'; exit 1; }
-          test "$(wc -c < "$f")" -le 14745 || { echo "FAIL: CG24 receipt exceeds its margin"; exit 1; }
+          # Nine tenths of the receipt bound (18 432 bytes), as for CG23.
+          test "$(wc -c < "$f")" -le 16588 || { echo "FAIL: CG24 receipt exceeds its margin"; exit 1; }
           state_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "state.state.spend" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
           # jq expands its own --arg variables inside this program.
           # shellcheck disable=SC2016
@@ -395,6 +398,7 @@ jobs:
             echo "FAIL: CG24 placements moved: processing=$p1 retraction=$p2, expected 3 and 3"
             exit 1
           fi
+          bash test/ci/replay-evidence.sh steps "$f" || { echo 'FAIL: CG24 refused steps lack the traced replay of their reason'; exit 1; }
           cp "$f" "$STORY_RECEIPTS/"
           echo 'GREEN = early rejection held: inside the processing window and inside the retraction window, the untampered reject is accepted by the chain and the model, refunding the owner and leaving the state as it was; the short and misdirected refunds are refused by both for deposit-returned. The consumer R9_reject_needs_rejectable stays unmet (CG09, unmet-by-ruling).'
       # The timing refusals are compared in their own finite-window story.
@@ -646,6 +650,7 @@ jobs:
             "$CONFORMANCE_RECEIPTS" \
             "$CONFORMANCE_DEDICATED_RECEIPTS/CG22" \
             "$CONFORMANCE_DEDICATED_RECEIPTS/CG23" \
+            "$CONFORMANCE_DEDICATED_RECEIPTS/CG24" \
             "$CONFORMANCE_DEDICATED_RECEIPTS/CG07"
       # CS04, CS07 and CS08 are back in the run list above, re-cut on
       # the final request wire (#183). CS03 and CS05 still travel with

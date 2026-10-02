@@ -7,6 +7,7 @@ module Conformance.Run.Receipts
     ( writeCL01Receipt
     , writeCaCL01
     , writeStoryReceipt
+    , addReceiptSteps
     , writeRowReceipt
     , recordHold
     , recordUnmet
@@ -315,3 +316,27 @@ writeCL01Issue70 env rows
     getMem r = fromMaybe 0 (receiptMem r)
     getCpu r = fromMaybe 0 (receiptCpu r)
     getSize r = fromMaybe 0 (receiptTxSize r)
+
+{- | Add the batch records a row compared to the receipt it already wrote: the
+model's batch question beside the chain's outcome, the refusal's traced replay
+included, and the traced build those replays rely on when the receipt does not
+yet name it.
+-}
+addReceiptSteps :: Env -> String -> [Value] -> IO ()
+addReceiptSteps env row records = do
+    let path = envReceiptsDir env </> ("receipt-" <> row <> ".json")
+    written <- BSL.readFile path
+    receipt <-
+        either
+            (\problem -> failWith (row <> ": unreadable receipt: " <> problem))
+            pure
+            (eitherDecode written)
+    correspondence <- sessionCorrespondence (envReplay env)
+    writeReceiptFile (envReceiptsDir env) $
+        receipt
+            { receiptSteps = Just records
+            , receiptReplayCorrespondence =
+                case receiptReplayCorrespondence receipt of
+                    Just named -> Just named
+                    Nothing -> storyCorrespondence correspondence records
+            }

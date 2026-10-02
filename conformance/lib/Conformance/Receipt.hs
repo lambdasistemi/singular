@@ -63,8 +63,10 @@ import Conformance.Replay
     , causeName
     )
 import Conformance.Story.Live
-    ( Edge (..)
+    ( BatchTamper (..)
+    , Edge (..)
     , Tamper (..)
+    , batchTamperName
     , edgeName
     , tamperName
     )
@@ -709,7 +711,10 @@ stepsComplete path receipt steps
     at name (Object fields) = KM.lookup name fields
     at _ _ = Nothing
     failure reason = Left (path <> ": invalid live step: " <> reason)
-    checkStep step = do
+    checkStep step = case at "batch" step of
+        Just _ -> batchRecordProblem path step
+        Nothing -> checkEdgeStep step
+    checkEdgeStep step = do
         edge <- case (at "registry" step, at "edge" step, at "request" step) of
             (Just (Number _), Just (String edge), Just (Object _))
                 | edge `elem` map (T.pack . edgeName) [minBound .. maxBound] ->
@@ -1097,6 +1102,10 @@ loadReceipts dir = do
                         (path <> ": retraction window requires before, accepted control, after")
         ("CG23", Just steps) -> stepsComplete path r steps
         ("CG24", Just steps) -> stepsComplete path r steps
+        -- #287: the empty fold and the crossed refunds are compared with the
+        -- model's batch questions beside their attributed refusals.
+        ("CG11", Just steps) -> batchSteps path r steps
+        ("CG19", Just steps) -> batchSteps path r steps
         ("sequence", Just steps) -> stepsComplete path r steps
         ("CG21", Nothing) -> Left (path <> ": registration names no live steps")
         ("CG22", Nothing) -> Left (path <> ": retirement names no live steps")
@@ -1382,3 +1391,66 @@ currentBase = do
                 "conformance list: git base unknown; \
                 \printing the declared plan"
             pure Nothing
+
+{- | A batch record, as the runner writes one for a batch submitted in one
+transaction and asked of the model's matching batch question: its registry, the
+question and the requests asked, a known tamper or none, the model's and the
+chain's outcomes and their comparison. A refusal names the scripts its hashes
+are; an agreement has one outcome on both sides, and a tampered batch agrees
+only by both refusing.
+-}
+batchRecordProblem :: FilePath -> Value -> Either String ()
+batchRecordProblem path step = do
+    case (at "registry", at "batch", at "requests") of
+        (Just (Number _), Just (String name), Just (Array _))
+            | name `elem` ["foldBatch", "rejectBatch"] -> Right ()
+        _ -> failure "missing registry, batch question or requests"
+    case at "tamper" of
+        Nothing -> Right ()
+        Just Null -> Right ()
+        Just (String name)
+            | name
+                `elem` map (T.pack . batchTamperName) [minBound .. maxBound :: BatchTamper] ->
+                Right ()
+        _ -> failure "unknown batch tamper"
+    let model = within "model" "outcome"
+        chain = within "chain" "outcome"
+    case (model, chain, at "comparison") of
+        (Just (String m), Just (String c), Just (String verdict))
+            | m `elem` ["accepted", "refused", "unsupported"]
+            , c `elem` ["accepted", "refused", "unsupported"]
+            , verdict `elem` ["agrees", "disagrees"] ->
+                Right ()
+        _ -> failure "missing or unknown model, chain or comparison outcome"
+    case chain of
+        Just (String "accepted") -> case within "chain" "txid" of
+            Just (String _) -> Right ()
+            _ -> failure "accepted batch names no transaction"
+        Just (String "refused") -> case at "chain" >>= field "refusal" of
+            Just (Object refusal)
+                | Just (Array hashes) <- KM.lookup "hashes" refusal
+                , not (Vector.null hashes) ->
+                    Right ()
+            _ -> failure "refused batch names no refusing script"
+        _ -> Right ()
+    case at "comparison" of
+        Just (String "agrees")
+            | model /= chain -> failure "batch agreement changes the outcome"
+            | at "tamper" `notElem` [Nothing, Just Null]
+            , chain /= Just (String "refused") ->
+                failure
+                    "tampered batch agreement does not have model and chain refusal"
+        _ -> Right ()
+  where
+    at name = field name step
+    within outer inner = at outer >>= field inner
+    field name = \case
+        Object fields -> KM.lookup name fields
+        _ -> Nothing
+    failure reason = Left (path <> ": invalid batch record: " <> reason)
+
+-- | A row's batch records beside its attributed refusal: every one valid.
+batchSteps :: FilePath -> Receipt -> [Value] -> Either String Receipt
+batchSteps path receipt steps
+    | null steps = Left (path <> ": batch steps name no batch")
+    | otherwise = receipt <$ mapM_ (batchRecordProblem path) steps

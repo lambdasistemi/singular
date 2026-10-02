@@ -16,7 +16,14 @@ import Conformance.Story.Specification qualified as Specification
 import Control.Monad.Operational (ProgramViewT (Return, (:>>=)), view)
 import Data.Either (isLeft)
 import Data.Foldable (forM_)
-import Data.List (isInfixOf, isPrefixOf, nub, tails)
+import Data.List
+    ( inits
+    , isInfixOf
+    , isPrefixOf
+    , isSuffixOf
+    , nub
+    , tails
+    )
 import Test.Hspec (Spec, it, shouldBe, shouldSatisfy)
 
 spec :: Spec
@@ -124,7 +131,7 @@ spec = do
             rendered `shouldSatisfy` isInfixOf "after phase 2"
             Live.validateLive (dropFirstCompare program) `shouldSatisfy` isLeft
     it
-        "The registration chapter pays its delivery elsewhere and one lovelace short beside its untampered control"
+        "The registration chapter pays its delivery elsewhere and one lovelace short beside its untampered control, then folds two registrations minting both at the first key"
         $ do
             let rendered =
                     Live.renderLive (Register.story (Live.Context "registry" "recipient"))
@@ -133,7 +140,11 @@ spec = do
             rendered
                 `shouldSatisfy` isInfixOf "payment it owes one lovelace short"
             rendered `shouldSatisfy` isInfixOf "untampered is its control"
-            rendered `shouldSatisfy` (not . isInfixOf "batch")
+            occurrences "in one transaction" rendered `shouldBe` 1
+            occurrences
+                "Fold, in one transaction with every token the transaction mints moved onto the first request's key, **insertActive** for **minted-a**, **insertActive** for **minted-b**"
+                rendered
+                `shouldBe` 1
     it
         "The book names the extra required signer only where the registration story submits it"
         $ do
@@ -187,15 +198,17 @@ spec = do
                 , "The deployed validators are compiled without traces"
                 , "evaluated again on the arguments the ledger built for it: once with the deployed bytes, and once with a build of the same source, compiler and parameters that keeps only the validators' own traces"
                 , "The receipt names both script hashes"
-                , "CS04, a redeemer at a wrong constructor index: live refusal reason not observed for the state and request scripts"
-                , "CG09, a reject while the request is still in phase 1"
-                , "CG10, a fold against a superseded root"
-                , "CG11, an empty fold: the model refuses it for `empty-fold` as the consumer requires, but the driver has no batch question, so it is not compared."
-                , "CG12, surplus actions and a missing action: not compared, actions are not an input of the model, so it has no counterpart."
-                , "CG19, a crossed refund allocation and a two-request reject: not compared, the driver has no batch question."
+                , "Three have no counterpart in the model, so their model comparison is unmet"
+                , "CS04, a fold redeemer at a wrong constructor index"
+                , "so their live refusal reason is not observed (lambdasistemi/singular#347)"
+                , "CG10, a fold whose proof was built against a root the registry has since superseded"
+                , "so nothing compares with the chain's reason (lambdasistemi/singular#346)"
+                , "CG12, a fold carrying an action beyond its requests, and one missing an action: the model takes no action list (lambdasistemi/singular#345)"
+                , "CG11, an empty fold, with the fold batch over no request"
+                , "CG19, two rejects whose refunds are crossed and two whose first refund is short, with the reject batch judged on the refunds the transaction pays"
+                , "CG09's control, a reject refunding its owner one lovelace short, with the reject batch of that one request"
+                , "that requirement stays unmet by ruling"
                 , "Whether CG11, CG12 and CG19 meet the consuming project's requirements remains unresolved; the three rows stay held."
-                , "the validator is to be repaired so it admits the reject, a repair not yet landed, and the consuming project's requirement that a reject before the retraction window be refused is unmet"
-                , "not run; live refusal reason not observed and not compared"
                 ]
                 $ \phrase -> book `shouldSatisfy` isInfixOf phrase
             book
@@ -205,6 +218,8 @@ spec = do
                                 )
             book
                 `shouldSatisfy` (not . isInfixOf "every refusal reason is observed")
+            book `shouldSatisfy` (not . isInfixOf "agrees with the model")
+            book `shouldSatisfy` (not . isInfixOf "driver has no batch question")
             book `shouldSatisfy` (not . isInfixOf "not rendered here")
             book
                 `shouldSatisfy` ( not
@@ -212,7 +227,7 @@ spec = do
                                         "not compared while the recorded consumer-model conflict holds them"
                                 )
     it
-        "The book's public limits use no internal class letter, question or issue number"
+        "The book's public limits use no internal class letter or question, and name only public issues"
         $ do
             let limits =
                     [ line
@@ -224,6 +239,10 @@ spec = do
             length limits `shouldBe` 2
             forM_ ["(class", "Q-002", "#320", "R9"] $ \token ->
                 filter (token `isInfixOf`) limits `shouldBe` []
+            -- An issue is named only as a public repository issue.
+            forM_ limits $ \line ->
+                [prefix | (prefix, '#' : _) <- zip (inits line) (tails line)]
+                    `shouldSatisfy` all ("lambdasistemi/singular" `isSuffixOf`)
     it
         "The retirement chapter describes registration and retirement as model edge requests"
         $ do

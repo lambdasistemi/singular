@@ -80,7 +80,7 @@ renderBook requirements receipts =
         <> "This program uses the same live interpreter for each listed request. Each step records its own model and chain outcome; any unsupported result carries the reason observed at the booking or fold boundary.\n\n"
         <> renderLive (Sequence.story (Context "sequence" "holder wallet"))
         <> "## What these runs do not establish\n\n"
-        <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none for a fold and the owner for a retraction, and the comparison reads them from the submitted transaction. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. The model admits a retraction only when the pending request inserts a key or reads a terminal one, its owner is among the transaction's required signers, and its validity interval lies inside phase 2. The interval starts no earlier than submission plus the processing time; its excluded upper bound may reach, but not pass, the end of the retraction time that follows. The model represents only finite validity bounds. Open validity intervals remain a named gap: the Aiken tests establish their not-phase2 refusal, but no live model comparison can represent them. The early rejections are compared in the processing window and the retraction window of one registry; a fold of an update in the retraction window is not compared there, because the validator refuses it while the model admits it, a separate tracked discrepancy. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
+        <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none for a fold and the owner for a retraction, and the comparison reads them from the submitted transaction. The registration chapter folds two registrations in one transaction that mints both tokens at the first request's key; it is compared on its outcome and, both refusing, on the reason. The model builds no transaction for a batch, so no other observation of a batch is compared. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. The model admits a retraction only when the pending request inserts a key or reads a terminal one, its owner is among the transaction's required signers, and its validity interval lies inside phase 2. The interval starts no earlier than submission plus the processing time; its excluded upper bound may reach, but not pass, the end of the retraction time that follows. The model represents only finite validity bounds. Open validity intervals remain a named gap: the Aiken tests establish their not-phase2 refusal, but no live model comparison can represent them. The early rejections are compared in the processing window and the retraction window of one registry; a fold of an update in the retraction window is not compared there, because the validator refuses it while the model admits it, a separate tracked discrepancy. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
         <> refusalLimits
         <> "## Requirements inventory\n\n"
         <> "The descriptions and planned statuses below are preserved from the committed inventory. The transaction evidence above belongs to this particular run; it does not rewrite planned statuses or discharge unrelated requirements.\n\n"
@@ -117,6 +117,7 @@ renderBook requirements receipts =
                             <> outcomeCounts steps
                             <> concatMap detection steps
                             <> concatMap refusedStep steps
+                            <> concatMap refusedBatch steps
                     "CG22" ->
                         "Retirement compared "
                             <> outcomeCounts steps
@@ -164,16 +165,71 @@ renderBook requirements receipts =
             Just (Object chain) -> KM.lookup "outcome" chain == Just (String expected)
             _ -> False
         _ -> False
-    outcomeCounts steps =
-        show (length steps)
-            <> " requests: "
-            <> show (length (filter (hasOutcome "accepted") steps))
-            <> " accepted and "
-            <> show (length (filter (hasOutcome "refused") steps))
-            <> " refused on chain.\n\n"
-            <> "Unsupported chain folds: "
-            <> show (length (filter (hasOutcome "unsupported") steps))
-            <> ".\n\n"
+    outcomeCounts allSteps =
+        let steps = filter (not . isBatch) allSteps
+            batches = filter isBatch allSteps
+        in  show (length steps)
+                <> " requests: "
+                <> show (length (filter (hasOutcome "accepted") steps))
+                <> " accepted and "
+                <> show (length (filter (hasOutcome "refused") steps))
+                <> " refused on chain.\n\n"
+                <> "Unsupported chain folds: "
+                <> show (length (filter (hasOutcome "unsupported") steps))
+                <> ".\n\n"
+                <> ( if null batches
+                        then ""
+                        else
+                            "Batches submitted in one transaction: "
+                                <> show (length batches)
+                                <> ", "
+                                <> show (length (filter (hasOutcome "accepted") batches))
+                                <> " accepted and "
+                                <> show (length (filter (hasOutcome "refused") batches))
+                                <> " refused on chain.\n\n"
+                   )
+    isBatch value = case value of
+        Object fields -> KM.member "batch" fields
+        _ -> False
+    -- A batch the chain refused, the model's reason for its batch question,
+    -- and what the traced replay of its transaction recorded: all read from the
+    -- record, never typed here.
+    refusedBatch value = case value of
+        Object fields -> case ( KM.lookup "batch" fields
+                              , KM.lookup "requests" fields
+                              , KM.lookup "chain" fields
+                              ) of
+            (Just (String question), Just (Array asked), Just (Object chain))
+                | Just (String "refused") <- KM.lookup "outcome" chain
+                , Just (String txid) <- KM.lookup "txid" chain ->
+                    "The "
+                        <> ( if question == "foldBatch"
+                                then "fold of "
+                                else "reject of "
+                           )
+                        <> show (length asked)
+                        <> " requests in one transaction"
+                        <> ( case KM.lookup "tamper" fields of
+                                Just (String name) -> ", tampered " <> T.unpack name <> ","
+                                _ -> ""
+                           )
+                        <> " was refused on chain (transaction `"
+                        <> T.unpack txid
+                        <> "`)"
+                        <> ( case at ["model", "reason"] value of
+                                Just (String reason) ->
+                                    "; the model's `"
+                                        <> T.unpack question
+                                        <> "` refused it for `"
+                                        <> T.unpack reason
+                                        <> "`."
+                                _ -> "."
+                           )
+                        <> " "
+                        <> tracedReplay chain
+                        <> "\n\n"
+            _ -> ""
+        _ -> ""
     -- A tamper the ledger accepted, and the difference the comparison detected
     -- in the transaction it built: read from the step, never typed here.
     detection value = case value of
@@ -297,7 +353,7 @@ renderBook requirements receipts =
             <> " replay admits none, and "
             <> counted (recorded null) "records" "record"
             <> " no traced replay.\n\n"
-            <> "Refusals outside these chapters, by row. CS04, a redeemer at a wrong constructor index: live refusal reason not observed for the state and request scripts, whose failing path carries no user-defined trace; not compared, the behavior lies below what the model describes. CG09, a reject while the request is still in phase 1: the model admits it and the chain refuses it; the validator is to be repaired so it admits the reject, a repair not yet landed, and the consuming project's requirement that a reject before the retraction window be refused is unmet. CG10, a fold against a superseded root: not compared, a stale proof is not an input of the model, and the validator's name for the refusal is imprecise. CG11, an empty fold: the model refuses it for `empty-fold` as the consumer requires, but the driver has no batch question, so it is not compared. CG12, surplus actions and a missing action: not compared, actions are not an input of the model, so it has no counterpart. CG19, a crossed refund allocation and a two-request reject: not compared, the driver has no batch question. Whether CG11, CG12 and CG19 meet the consuming project's requirements remains unresolved; the three rows stay held. The two-key batch whose claimed mint disagrees per key: not run; live refusal reason not observed and not compared.\n\n"
+            <> "Refusals outside these chapters, by row, recorded in the receipts of the conformance session rather than in this book. Three have no counterpart in the model, so their model comparison is unmet; each receipt shows what the traced replay of the refusal recorded. CS04, a fold redeemer at a wrong constructor index: the model has no vocabulary for decoding a redeemer; the witness script names its refusal, while the state and request scripts fail on a path that carries no user-defined trace, so their live refusal reason is not observed (lambdasistemi/singular#347). CG10, a fold whose proof was built against a root the registry has since superseded: the model takes no proof and no authenticated root and admits the insertion on that unoccupied key, so nothing compares with the chain's reason (lambdasistemi/singular#346). CG12, a fold carrying an action beyond its requests, and one missing an action: the model takes no action list (lambdasistemi/singular#345). The other refusals are compared with the model's batch questions, each against the reason the traced replay admits for the state script: CG11, an empty fold, with the fold batch over no request; CG19, two rejects whose refunds are crossed and two whose first refund is short, with the reject batch judged on the refunds the transaction pays; and CG09's control, a reject refunding its owner one lovelace short, with the reject batch of that one request. CG09 itself, a reject while the request can still be folded, is accepted by the chain and by the model, while the consuming project requires it refused: that requirement stays unmet by ruling. Whether CG11, CG12 and CG19 meet the consuming project's requirements remains unresolved; the three rows stay held.\n\n"
     -- A count with the words that agree with it.
     counted n one many = show n <> " " <> (if n == 1 then one else many)
     -- The capture each refused request's replay was evaluated from: harness

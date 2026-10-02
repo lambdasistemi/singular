@@ -6,6 +6,7 @@ License     : Apache-2.0
 module Conformance.Run.Wallet
     ( largestWalletUtxo
     , secondWallet
+    , ownerWallet
     , fundWallet
     , collateralPot
     , collateralPotWithChange
@@ -114,6 +115,19 @@ secondWallet env = do
             fundWallet env addr 12_000_000
             writeIORef (envKey2 env) (Just (sk, addr))
             pure (sk, addr)
+
+{- | A wallet that books requests a row compares with the model: a key derived
+from a fixed seed, funded with the given amount by a plain split of the largest
+genesis UTxO on every call. Its requests' refunds are never mixed with the
+change a fold returns to the genesis wallet, so the outputs crediting their
+owner are exactly what the fold pays them.
+-}
+ownerWallet :: Env -> Integer -> IO (SignKeyDSIGN Ed25519DSIGN, Addr)
+ownerWallet env amount = do
+    let sk = mkSignKey "conformance-owner-key-seed-0000001"
+        addr = enterpriseAddr (keyHashFromSignKey sk)
+    fundWallet env addr amount
+    pure (sk, addr)
 
 fundWallet :: Env -> Addr -> Integer -> IO ()
 fundWallet env addr amount = do

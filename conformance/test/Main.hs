@@ -58,6 +58,7 @@ suite = do
         RegistrationComparison.spec
         Payments.spec
         ObservedTx.spec
+        ObservedTx.mintTamperSpec
         Oracle.spec
         DriverTransport.spec
         Step.spec
