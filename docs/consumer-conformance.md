@@ -304,7 +304,7 @@ refusal to the script that failed and retain their accepting controls.
 | CG17 sweep by a non-owner | **refuse** — superseded claim | the sweep is refused, attributed to the request script (`7f32c3e7…`); the same sweep signed as the owner is accepted in-run (control). SUPERSEDED: it asserted registry-owner authority, which does not exist — observation preserved, conformance claim withdrawn |
 | CG19 crossed refunds | accept — **held-q002** | bonds of 5 and 3 ada refunded crossed (4 and 2 ada, aggregate exactly the validator's ceiling), accepted (tx `566ddc80…`); refunds totalling below the aggregate floor are refused in-run (control) — the range is real, and it is still not the requirement |
 | CG20 permissionless fold | accept | after the #79 repair the fold with NO owner signer is accepted (tx `4142f7d6…`, mem 717070 / cpu 231585673 / size 11442); the same fold WITH the owner signer is accepted in-run (control) — see F-002 below |
-| CG14 / CG15 stake_script hook | **could-not-execute — superseded** | the pinned staking credential cannot register: `MissingScriptWitnessesUTXOW` without the witness, cert-purpose `CekError` with it — the staking validator has only a withdraw handler. Superseded inherited-hook expectations, not pending work (below) |
+| CG14 / CG15 stake_script hook | **retired** | nothing runs them: the registry interface (registry mode) has no stake_script hook and the model has no withdrawal. History: the pinned staking credential could not register (`MissingScriptWitnessesUTXOW` without the witness, cert-purpose `CekError` with it), so the hook never reached a ledger |
 
 The retraction story gives the registry thirty seconds for processing and thirty
 more for retraction. Its waits follow the submission times read from the booked
@@ -338,9 +338,11 @@ required implementation and execution evidence is accepted.
 **Resolved-by-ruling** (CG13): a ruling settled the row's question;
 the observation is retained as defect evidence of the outstanding
 owner gate — never a pass, never an owner-semantics claim.
-**Superseded** (CG14, CG15, CG16, CG17): the expectation asserted
-authority or a schema that does not exist at this commit; observations
+**Superseded** (CG16, CG17, CG18): the expectation asserted authority,
+a sweep or a termination that does not exist at this commit; observations
 are preserved, claims are withdrawn, and no execution credit attaches.
+**Retired** (CG14, CG15): the registry interface has no stake_script
+hook, so nothing runs them.
 
 **Evidence provenance.** The receipts cited in this section are the
 generic session's ship run, taken fresh at clean tip `1d98d51` after
@@ -444,22 +446,21 @@ control (previous-owner `End` refused, new-owner accepted) tested
 behaviour that must not exist — it was never landed. CG17's refusal
 and its owner-signed control stay in the record with the conformance
 claim withdrawn: a gate that tests authority that does not exist
-discriminates nothing Singular owes. CG16 (`bound-elsewhere`) is
-superseded the same way, its epic-16 observation preserved as history;
-`list` prints it `bound-elsewhere`, and only a receipt bound to the
-current base can print `executed`, so no release path can credit it as
-current conformance. **CG14/CG15 are superseded inherited-hook
-expectations with could-not-execute history — not pending work.** The
+discriminates nothing Singular owes. CG16 and CG18 are
+superseded the same way: the registry has no sweep and no termination,
+the end-to-end examples they cited were removed on 2026-09-12
+(`f3a68b1b`), nothing runs either row, and `list` prints both
+`uncovered`. **CG14/CG15 are retired: the registry interface has no
+stake_script hook, so nothing runs them.** The
 imported partition's `State.stake_script` hook supplies registry-owner
 authority by another name, which is exactly why epic 17 removes the
 field; the pinned staking credential cannot register anyway (the
 cause above), so the hook never reached a ledger. Preserved history
 stays unchanged, and changing applicability earns no execution credit.
 
-**No CL01 for this session**: the issue-#70 accepting-fold CL01
-requires a receipt for every accepting row of its partition (CG11,
-CG12, CG13, CG14, CG19), and the superseded CG14 will never carry one.
-The session's worst cases live in the row receipts below.
+**CL01 for this session** is written from the accepting folds of CG02,
+CG03 and CG04, each read off the step that folded it in its row's
+receipt; the other rows' worst cases live in their own receipts.
 
 ### The canonical identity rows
 
@@ -572,22 +573,22 @@ reports zeros honestly: no script purpose exists to evaluate).
 Serialized size is the tight dimension at ~71% of `maxTxSize` for
 folds and ~52% for boots; larger batches (CL02) may press against it
 first. The canonical session's worst case is recorded in its CL01
-receipt; the issue-#70 session's CL01 cannot close while the
-superseded CG14 carries no receipt, so its worst cases live in the row
-receipts; the CS rows carry theirs in the row receipts, and no CS CL01
+receipt; the registry session's CL01 reads the worst accepting folds of
+CG02, CG03 and CG04 off their receipts' steps, and its other rows'
+worst cases live in their own receipts; the CS rows carry theirs in the row receipts, and no CS CL01
 is claimed yet. Refusal reasons keep every failing script hash in ledger
 order — a tampered fold can fail two scripts, and trimming volume
 never trims identities — under the same run-enforced 16KB bound.
 
 ## Historical limits
 
-- **Bound, not re-executed**: CG01, CG06, CG08 and CG18 rest on
-  epic 16's `CageSpec` runs, cited per row. CG16 sits there too
-  (`bound-elsewhere`) and is **superseded**: its owner-signed sweep
-  asserted registry-owner authority, which the 2026-09-12 ruling
-  removes entirely — the epic-16 observation is preserved as history
-  and earns no conformance credit. Nothing else in the inventory has
-  ledger evidence without a receipt.
+- **Programs with end-to-end references**: CG01, CG06 and CG08 run as
+  programs in the registry session, their state computed from those
+  receipts; the epic-16 `CageSpec` examples they cite remain supporting
+  references. CG16 and CG18 cite none: the examples they cited were
+  removed on 2026-09-12 (`f3a68b1b`), nothing runs either row, and both
+  are **superseded** by the ownerless-registry ruling (no sweep, no
+  termination) — history earns no conformance credit.
 - **Executed, unmet by ruling, not a pass**: CG09 records the early
   rejection the consumer forbids and the chain accepts, kept unmet by
   operator ruling 2026-10-01 (`unmet-by-ruling`). CG10, CG12 and CS04: the
@@ -608,13 +609,13 @@ never trims identities — under the same run-enforced 16KB bound.
   never a pass, and the verdicts move only by execution. CG13's owner
   change is retained as **defect evidence** of the outstanding owner
   gate, resolved-by-ruling, with its defect owned by epic 17.
-- **Superseded, never pending**: CG16 and CG17 asserted registry-owner
-  authority that does not exist — observations preserved, claims
-  withdrawn, no execution credit for changed applicability. CG14/CG15
-  are superseded inherited-hook expectations with could-not-execute
-  history; epic 17 removing `stake_script` creates no work behind them.
+- **Superseded, never pending**: CG16, CG17 and CG18 asserted
+  registry-owner authority, a sweep or a termination that does not
+  exist — observations preserved, claims withdrawn, no execution credit
+  for changed applicability. CG14/CG15 are **retired**: the registry
+  interface has no stake_script hook, so nothing runs them.
 - **Uncovered**: CS07, CK(01–05) and CL02–CL03 print `uncovered` (as
-  do CG14/CG15 — superseded expectations, no receipts). CS07 is not
+  do CG14/CG15, retired, and CG16/CG18, superseded — no receipts). CS07 is not
   merely uncovered: its `Fork` finding is filed for a user story and
   the row stays unmarked until that story resolves — an unmarked row
   with a finding, never a gap and never a pass. CS05's `Migrating` gap

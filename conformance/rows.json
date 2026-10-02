@@ -152,32 +152,31 @@
       "state": "bound-elsewhere"
     },
     {
-      "expected": "could-not-execute — superseded imported-partition material",
+      "expected": "retired — the registry interface has no stake_script hook, so nothing runs this row",
       "group": "CG",
       "id": "CG14",
-      "note": "Authority hook of the imported partition (shared.ak validateOwnership Some branch: owner signatory + withdrawal under stake_script credential). Never executed on a ledger: credential registration is blocked (pinned staking validator fails its cert purpose) and the underlying stake_script owner authority is being REMOVED by issue #17 — proving it is not a Singular promise. Changing applicability earns no execution credit; preserved could-not-execute history: registration refused (MissingScriptWitnessesUTXOW without witness; cert-purpose CekError with it).",
+      "note": "Retired against the settled registry interface (registry mode, no hook): the registry has no stake_script hook and the model no withdrawal, so this authority hook of the imported partition (shared.ak validateOwnership Some branch: owner signatory + withdrawal under stake_script credential) is not a Singular promise and no session runs it. History, unchanged: it never executed on a ledger; credential registration was refused (MissingScriptWitnessesUTXOW without witness; cert-purpose CekError with it).",
       "requirement": "stake_script hook set: a fold carrying the matching withdrawal.",
       "source": "imported partition shared.ak, types.ak",
       "state": "uncovered"
     },
     {
-      "expected": "could-not-execute — superseded imported-partition material",
+      "expected": "retired — the registry interface has no stake_script hook, so nothing runs this row",
       "group": "CG",
       "id": "CG15",
-      "note": "Authority hook of the imported partition (withdrawal absent leg of the same shared.ak validateOwnership check). Never executed on a ledger; same registration blocker and same issue #17 removal of stake_script authority. Preserved could-not-execute history unchanged.",
+      "note": "Retired against the settled registry interface (registry mode, no hook): the withdrawal-absent leg of the same imported-partition hook (shared.ak validateOwnership) is not a Singular promise and no session runs it. History, unchanged: it never executed on a ledger, for the same credential-registration blocker as CG14.",
       "requirement": "stake_script hook set, withdrawal absent.",
       "source": "imported partition shared.ak, types.ak",
       "state": "uncovered"
     },
     {
-      "evidence": "offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs: sweeps malformed request-address UTxOs",
       "expected": "superseded — observation preserved, conformance claim withdrawn (registry has no owner role; owner-signed sweep asserted authority that does not exist)",
       "group": "CG",
       "id": "CG16",
       "requirement": "Sweep of a non-legitimate UTxO, owner-signed.",
       "source": "cage custody",
-      "state": "bound-elsewhere",
-      "note": "SUPERSEDED by the 2026-09-12 no-owner operator ruling. Original observation preserved (issue #16 CageSpec sweep of a malformed request-address UTxO, owner-signed, accepted): valid as history, superseded as expectation — the sweep custody gate tests authority that does not exist. issue #17 owns the validator repair; re-execute against the repaired blueprint only if the repaired design reinstates a sweep authorization path."
+      "state": "uncovered",
+      "note": "SUPERSEDED by the 2026-09-12 no-owner operator ruling (commit f3a68b1b): the registry has no owner role and no sweep, and its scripts refuse a sweep for every party. The original observation (an owner-signed sweep of a malformed request-address UTxO, accepted under issue #16) is history, not coverage: the end-to-end example it cited was removed in f3a68b1b and nothing runs this row."
     },
     {
       "expected": "SUPERSEDED by operator ruling (registry has no owner role): observation preserved, claim withdrawn",
@@ -189,19 +188,19 @@
       "note": "Superseded 2026-09-12: Sweep-by-non-owner asserted registry-owner authority, which per the operator ruling does not exist. The observation (hand sweep with a non-owner required signer refused; owner-signed sweep accepted) is preserved as defect evidence of the outstanding owner gate in the request validator — issue #17 owns the repair."
     },
     {
-      "evidence": "offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs: ends a cage by burning the state token",
-      "expected": "accept",
+      "expected": "superseded — claim withdrawn (the registry has no termination: End is refused for every party)",
       "group": "CG",
       "id": "CG18",
       "requirement": "End burns the state token and closes the cage.",
       "source": "cage custody",
-      "state": "bound-elsewhere"
+      "state": "uncovered",
+      "note": "SUPERSEDED by the 2026-09-12 no-owner operator ruling (commit f3a68b1b, ownerless registry per NOTE-028/A-003): the state script refuses End for every party, and the model has no termination exit. The end-to-end example this row cited was removed in that commit and nothing runs this row; no live End run exists. The compiled Aiken suite asserts the refusal (cage_end.tests.ak end_owner_signed_refuses), which is narrower evidence than a ledger run and is not counted as coverage."
     },
     {
-      "expected": "observe and report — refused, with the consumer-model conflict unresolved (crossed allocation enforced by the state script); rejected-action refund-floor control separate",
+      "expected": "observe and report — refused, with the consumer-model conflict unresolved (crossed allocation enforced by the state script); the rejected-action refund-floor control runs in the same program",
       "group": "CG",
       "id": "CG19",
-      "note": "Revised in #157 for registry-mode custody: the old oracle routed processed Update value to the checkpoint/consumer hook, a routing target removed by the registry-mode design. Under the registry-mode cage the fold routes each token to where the request names and refunds to the address custody records, so a crossed allocation is REFUSED at the state script (phase-2). Observed on the candidate: outcome refused, 0 transactions, attributed to state. Consumer-model conflict retained — the consumer's value-routing theorem still routes to a checkpoint, and the chain now sides with the canonical interface. The rejected-action refund-floor control (CG19-rejected-floor) tests Rejected-owner floors separately.",
+      "note": "Revised in #157 for registry-mode custody: the old oracle routed processed Update value to the checkpoint/consumer hook, a routing target removed by the registry-mode design. Under the registry-mode cage the fold routes each token to where the request names and refunds to the address custody records, so a crossed allocation is REFUSED at the state script (phase-2). Consumer-model conflict retained — the consumer's value-routing theorem still routes to a checkpoint, and the chain now sides with the canonical interface. Two requests owned by two wallets with unequal deposits are rejected together after the windows: refunded crossed, then as owed; two more, the first refunded a thousand lovelace short of its floor, then as owed. Every batch is compared with the model's reject batch.",
       "requirement": "Refund routing follows the request: processed value routes to the request's destination minus the folder's tip; refunds go to the refund address recorded in custody; a crossed allocation is refused by the state script (interface, registry mode: no hook). Rejected produces refund owners at the recorded floor.",
       "source": "cardano-keri R11_contribute_value, R11_retract_value; interface gist 2fb03c2e (registry mode)",
       "state": "uncovered"

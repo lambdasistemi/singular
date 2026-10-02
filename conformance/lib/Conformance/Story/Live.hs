@@ -14,6 +14,10 @@ module Conformance.Story.Live
     , tamperName
     , BatchTamper (..)
     , batchTamperName
+    , RefundTamper (..)
+    , refundTamperName
+    , refundShortfall
+    , Booking (..)
     , Placement (..)
     , placementName
     , placementReading
@@ -30,10 +34,15 @@ module Conformance.Story.Live
     , foldBatch
     , tamperFoldBatch
     , rejectBatchWithin
+    , rejectBookedBatchWithin
+    , tamperRejectBookedBatchWithin
     , observe
     , compareWithModel
     , renderLive
     , validateLive
+    , Instruction (..)
+    , InstructionKind (..)
+    , liveInstructions
     ) where
 
 import Conformance.Story.Binding (Binding, BoundObligation (..))
@@ -138,6 +147,51 @@ batchTamperReading :: BatchTamper -> String
 batchTamperReading MintOnFirstKey =
     "every token the transaction mints moved onto the first request's key"
 
+{- | A change to the refunds of a reject batch, in the transaction's input
+order. 'CrossedRefunds' pays each request's owner, at its refund's position,
+what the next request's owner is owed. 'ShortFirstRefund' pays the first
+request's owner the given lovelace short, the rest going to the transaction's
+change. 'SplitFirstRefund' pays it short at its refund's position too, with two
+ada more in another output at the same owner's key.
+-}
+data RefundTamper
+    = CrossedRefunds
+    | ShortFirstRefund Integer
+    | SplitFirstRefund Integer
+    deriving stock (Eq, Show)
+
+refundTamperName :: RefundTamper -> String
+refundTamperName CrossedRefunds = "crossed-refunds"
+refundTamperName (ShortFirstRefund _) = "short-first-refund"
+refundTamperName (SplitFirstRefund _) = "split-first-refund"
+
+-- | The lovelace a refund tamper takes from the first refund, if any.
+refundShortfall :: RefundTamper -> Maybe Integer
+refundShortfall CrossedRefunds = Nothing
+refundShortfall (ShortFirstRefund lovelace) = Just lovelace
+refundShortfall (SplitFirstRefund lovelace) = Just lovelace
+
+-- | The refund tamper as the book reads it.
+refundTamperReading :: RefundTamper -> String
+refundTamperReading CrossedRefunds =
+    "each owner refunded, in its refund's position, what the next request's owner is owed"
+refundTamperReading (ShortFirstRefund lovelace) =
+    "the first request's refund " <> show lovelace <> " lovelace short"
+refundTamperReading (SplitFirstRefund lovelace) =
+    "the first request's refund "
+        <> show lovelace
+        <> " lovelace short in its own position and two ada more in another output at the same owner's key"
+
+{- | Who books a request and what it holds beyond the processing tip. A request
+without a booking is booked by the runner's own wallet with the default
+deposit.
+-}
+data Booking wal = Booking
+    { bookingOwner :: wal
+    , bookingDeposit :: Integer
+    }
+    deriving stock (Eq, Show)
+
 {- | Where a reject is placed: a fact about the submitted transaction, not a
 tamper. The model gives a reject no admission, so its answer does not depend
 on it; the chain is asked in the window the story names.
@@ -201,8 +255,9 @@ data LiveI reg wal step obs cmp result where
         -> LiveI reg wal step obs cmp cmp
     RejectBatchWithin
         :: Placement
+        -> Maybe RefundTamper
         -> reg
-        -> [EdgeRequest wal]
+        -> [(EdgeRequest wal, Maybe (Booking wal))]
         -> LiveI reg wal step obs cmp cmp
 
 submit :: reg -> EdgeRequest wal -> Story reg wal step obs cmp step
@@ -271,7 +326,50 @@ rejectBatchWithin
     -> [EdgeRequest wal]
     -> Story reg wal step obs cmp cmp
 rejectBatchWithin placement registry requests =
-    action (RejectBatchWithin placement registry requests)
+    action
+        ( RejectBatchWithin
+            placement
+            Nothing
+            registry
+            [(r, Nothing) | r <- requests]
+        )
+
+{- | A folder rejects these requests in one transaction, in the window the
+placement names, each booked by the owner and with the deposit its booking
+names, and the model is asked the same batch.
+-}
+rejectBookedBatchWithin
+    :: Placement
+    -> reg
+    -> [(EdgeRequest wal, Booking wal)]
+    -> Story reg wal step obs cmp cmp
+rejectBookedBatchWithin placement registry requests =
+    action
+        ( RejectBatchWithin
+            placement
+            Nothing
+            registry
+            [(r, Just booking) | (r, booking) <- requests]
+        )
+
+{- | A folder rejects these booked requests in one transaction changed by the
+refund tamper, and the model is asked the same batch, judged on the refunds
+that transaction pays.
+-}
+tamperRejectBookedBatchWithin
+    :: RefundTamper
+    -> Placement
+    -> reg
+    -> [(EdgeRequest wal, Booking wal)]
+    -> Story reg wal step obs cmp cmp
+tamperRejectBookedBatchWithin alteration placement registry requests =
+    action
+        ( RejectBatchWithin
+            placement
+            (Just alteration)
+            registry
+            [(r, Just booking) | (r, booking) <- requests]
+        )
 
 observe :: step -> Story reg wal step obs cmp obs
 observe = action . Observe
@@ -305,7 +403,10 @@ validateLive program = do
             Observe _ -> advance NeedObserve NeedCompare "preflight observation"
             Compare _ _ -> advance NeedCompare Ready "preflight comparison"
             FoldBatch{} -> batch "preflight batch"
-            RejectBatchWithin{} -> batch "preflight batch"
+            RejectBatchWithin _ alteration _ requests ->
+                case refundProblem alteration requests of
+                    Just problem -> Left problem
+                    Nothing -> batch "preflight batch"
           where
             advance expected nextPhase value
                 | phase == expected = walk nextPhase (rest value)
@@ -338,6 +439,29 @@ validateLive program = do
 
 data PreflightPhase = Ready | NeedObserve | NeedCompare
     deriving stock (Eq)
+
+{- | Why a reject batch's bookings or refund tamper cannot be built, if they
+cannot: a deposit must be positive, a shortfall positive, a crossed allocation
+needs two requests to cross, and a tampered first refund needs a first request.
+-}
+refundProblem
+    :: Maybe RefundTamper
+    -> [(EdgeRequest wal, Maybe (Booking wal))]
+    -> Maybe String
+refundProblem alteration requests
+    | any ((<= 0) . bookingDeposit) [b | (_, Just b) <- requests] =
+        Just "a booked request's deposit must be positive"
+    | otherwise = case alteration of
+        Nothing -> Nothing
+        Just CrossedRefunds
+            | length requests < 2 ->
+                Just "crossed refunds need two requests to cross"
+        Just changed
+            | Just lovelace <- refundShortfall changed
+            , lovelace <= 0 ->
+                Just "a refund's shortfall must be positive"
+            | null requests -> Just "a tampered refund needs a request to refund"
+        _ -> Nothing
 
 renderLive :: Story String String String String String res -> String
 renderLive = fst . renderWithResult
@@ -425,12 +549,17 @@ renderAction instruction rest = case instruction of
                 <> ", and ask the executable registry model the same batch."
             )
             (rest ("batch in " <> registry))
-    RejectBatchWithin placement registry requests ->
+    RejectBatchWithin placement alteration registry requests ->
         step
             ( "Reject, in one transaction "
                 <> placementReading placement
+                <> maybe
+                    ""
+                    (\changed -> " with " <> refundTamperReading changed)
+                    alteration
                 <> ", "
-                <> batched requests registry
+                <> batched (map fst requests) registry
+                <> booked requests
                 <> ", and ask the executable registry model the same batch."
             )
             (rest ("batch in " <> registry))
@@ -460,6 +589,18 @@ renderAction instruction rest = case instruction of
             <> registry
             <> "**, using "
             <> intercalate ", " (map (("the " <>) . requestWallet) requests)
+    -- Who booked each request and what it holds, when the story names it.
+    booked requests = case [ "**"
+                                <> requestKey request
+                                <> "** by the "
+                                <> bookingOwner booking
+                                <> " with a deposit of "
+                                <> show (bookingDeposit booking)
+                                <> " lovelace"
+                           | (request, Just booking) <- requests
+                           ] of
+        [] -> ""
+        bookings -> ", booked " <> intercalate ", " bookings
     subject Fold registry request = "Submit " <> named request registry
     subject Reject registry request =
         "Reject the "
@@ -482,6 +623,81 @@ renderAction instruction rest = case instruction of
         " with a finite validity interval after phase 2; the ledger and the model must refuse it, with the earlier in-window retraction of its owner's other request as its control."
     altered ExtraSigner =
         " with one required signer the model does not require. The ledger accepts it; the comparison must report the difference in the transaction's signers."
+
+-- | What one instruction of a program is.
+data InstructionKind
+    = StepInstruction
+    | ObserveInstruction
+    | CompareInstruction
+    | BatchInstruction
+    deriving stock (Eq, Show)
+
+-- | One instruction of a program, with the tamper it carries, if any.
+data Instruction = Instruction
+    { instructionKind :: InstructionKind
+    , instructionTamper :: Maybe String
+    -- ^ the name of the tamper, batch tamper or refund tamper
+    }
+    deriving stock (Eq, Show)
+
+{- | Every instruction of a program over display handles, in order, theorem
+clauses included. The walk feeds each instruction the result the book's
+renderer feeds it, so it meets the instructions the book prints.
+-}
+liveInstructions
+    :: Story String String String String String res -> [Instruction]
+liveInstructions = fst . instructionsWithResult
+
+instructionsWithResult
+    :: Story String String String String String res -> ([Instruction], res)
+instructionsWithResult program = case view program of
+    Return result -> ([], result)
+    Action instruction :>>= rest -> case instruction of
+        Submit _ _ request ->
+            one StepInstruction Nothing (rest (requestKey request))
+        Tamper alteration _ _ request ->
+            one
+                StepInstruction
+                (Just (tamperName alteration))
+                (rest (requestKey request))
+        RejectWithin _ alteration _ request ->
+            one
+                StepInstruction
+                (tamperName <$> alteration)
+                (rest (requestKey request))
+        Observe handle ->
+            one ObserveInstruction Nothing (rest ("observations for " <> handle))
+        Compare handle _ ->
+            one CompareInstruction Nothing (rest ("comparison for " <> handle))
+        FoldBatch alteration registry _ ->
+            one
+                BatchInstruction
+                (batchTamperName <$> alteration)
+                (rest ("batch in " <> registry))
+        RejectBatchWithin _ alteration registry _ ->
+            one
+                BatchInstruction
+                (refundTamperName <$> alteration)
+                (rest ("batch in " <> registry))
+    Theorem _ body :>>= rest ->
+        let (inner, result) = clauseInstructions (clauses body)
+            (after, final) = instructionsWithResult (rest result)
+        in  (inner <> after, final)
+  where
+    one kind alteration next =
+        let (after, result) = instructionsWithResult next
+        in  (Instruction kind alteration : after, result)
+
+clauseInstructions
+    :: Program (Clause thm (LiveI String String String String String)) res
+    -> ([Instruction], res)
+clauseInstructions program = case view program of
+    Return result -> ([], result)
+    Clause _ check body :>>= rest ->
+        let (inBody, result) = instructionsWithResult body
+            (inCheck, ()) = instructionsWithResult (checkAction check result)
+            (after, final) = clauseInstructions (rest result)
+        in  (inBody <> inCheck <> after, final)
 
 prepend :: String -> (String, res) -> (String, res)
 prepend prefix (text, result) = (prefix <> text, result)

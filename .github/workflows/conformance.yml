@@ -105,28 +105,26 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # Issue #63: the four generic registry operations the naming
-      # demonstration can never exercise — Update, Delete,
-      # re-Insert after Delete, and the refusal of Insert on an
-      # occupied key — executed against a real devnet, each with its
-      # executing negative control and its measurements against the
-      # devnet's Conway protocol maxima. Issue #70 then extends the
-      # same session with its active rows: CG09 unmet by ruling (#320),
-      # CG10 and CG12 unmet by ruling (no model counterpart, #346, #345)
-      # and the held rows CG11/CG19. CG13, CG17
-      # and CG20 are NOT run: retired superseded history per E18
-      # (NOTE-046, CG16 template) — the owner-pinning transfer, the
-      # custody sweep and the removed-signer regression tested an
-      # owner role the registry does not have; their observations
-      # live in rows.json, never as coverage. CG14/CG15 are NOT run:
-      # superseded inherited-hook expectations with could-not-execute
-      # history — no work waits behind them.
+      # The registry rows as programs over the registry's operations
+      # (#232), each in registries of its own on a real devnet, every
+      # request and batch compared with the model: insert, update,
+      # delete, re-insert after delete, the insert on an occupied key,
+      # a retraction in phase 2, a reject after the windows (CG01-CG06,
+      # CG08), CG09 unmet by ruling (#320) with its recorded
+      # refund-position divergence (#361), the held rows CG11/CG19, and
+      # the registration chapter CG21. CG10 and CG12, which the model
+      # cannot express (#346, #345), run their own refusals and stay
+      # unmet by ruling. CG13, CG16, CG17, CG18 and CG20 are NOT run:
+      # the registry has no owner role, no sweep and no termination
+      # (ownerless-registry ruling, f3a68b1b); CG14/CG15 are retired:
+      # the registry interface has no stake_script hook. Each is
+      # published outside the model's vocabulary with its reason.
       #
       # A session containing held or unmet rows ends NON-ZERO by design
       # (neither may ever read as a pass). Per the A-001 ruling this step
       # never treats that exit — or any error label — as success: the
       # expected-debt assertion below reads the session's ACTUAL
-      # results and demands exactly the ten rows, exactly the
+      # results and demands exactly the thirteen rows, exactly the
       # expected verdict per row (receipts), no divergence, and a
       # non-zero exit accounted for by exactly the held rows CG11
       # CG19 and the unmet rows CG09 CG10 CG12, and nothing else. A GREEN STEP IS NOT A FULFILLED

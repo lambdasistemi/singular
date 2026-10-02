@@ -11,14 +11,8 @@ module Conformance.Run.Fold
     , declaredSpec
     , rowRequestAndFold
     , declaredUnits
-    , buildValidFold
-    , foldUtxos
     , validProofs
-    , assembleFold
-    , foldUpperSlot
     , calibrateFold
-    , requestAndFold
-    , requestAndFoldKey
     , foldSpecContext
     , foldSpecProcessed
     , heldInput
@@ -33,23 +27,16 @@ import Conformance.Run.Submit
 import Conformance.Run.Units
 import Conformance.Run.Wallet
 
-import Control.Exception
-    ( SomeException
-    , try
-    )
 import Control.Monad (unless)
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.IORef (readIORef, writeIORef)
-import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text qualified as T
-import Data.Time (getCurrentTime)
-import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Ledger.Address
@@ -137,17 +124,13 @@ import Singular.Registry.TxBuilder.Internal
     , addrKeyHashBytes
     , addrWitnessKeyHash
     , cageAddrFromCfg
-    , cagePolicyIdFromCfg
     , computeScriptIntegrity
     , currentPosixMs
     , extractCageDatum
     , extractOwnerBytes
-    , findRequestUtxos
-    , findStateUtxo
     , mkCageScript
     , mkInlineDatum
     , mkRequestScript
-    , requestAddrFromCfg
     , scriptFromBytes
     , scriptHashBytes
     , spendingIndex
@@ -806,60 +789,6 @@ declaredUnits :: (Integer, Integer) -> ExUnits
 declaredUnits (mem, cpu) =
     ExUnits (fromIntegral (mem * 2)) (fromIntegral (cpu * 2))
 
-{- | The hand-built valid fold for calibration: same assembly as the
-poisoned fold but over the valid pending requests, with maximal
-declared units (it is never submitted, so its fee is irrelevant).
-Compared field-by-field against the library fold it parallels.
--}
-buildValidFold :: Env -> IO (TxIn, ConwayTx)
-buildValidFold env0 = do
-    _ <- sessionRefUtxos env0
-    withHeldView env0 $ \env -> buildValidFoldIn env
-
-buildValidFoldIn :: Env -> IO (TxIn, ConwayTx)
-buildValidFoldIn env = do
-    pp <- Cage.withView (envProv env) (pure . Cage.viewProtocolParams)
-    let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
-    (stateUtxo@(stateIn, _), reqUtxos) <- foldUtxos env
-    (proofLists, newRoot) <- validProofs env reqUtxos
-    -- Calibration builds never submit: any fee keeping the outputs
-    -- above min-ADA serves; fee-dependent fields are uncompared.
-    hand <-
-        assembleFold
-            env
-            stateUtxo
-            reqUtxos
-            proofLists
-            newRoot
-            (ExUnits maxMem maxSteps)
-            700_000
-    pure (stateIn, hand)
-
-{- | The fold's inputs as the library discovers them: the state UTxO
-by policy token, the pending requests sorted. Shared by the
-calibration build so both builders consume the same UTxOs.
--}
-foldUtxos
-    :: Env -> IO ((TxIn, TxOut ConwayEra), [(TxIn, TxOut ConwayEra)])
-foldUtxos env = do
-    let cfg = envCfg env
-        prov = envProv env
-        tid = envTid env
-    stateUtxos <-
-        Cage.withView
-            prov
-            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
-    stateUtxo <- case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
-        Nothing -> failWith "hand-build: no state UTxO"
-        Just u -> pure u
-    reqUtxos <-
-        Cage.withView
-            prov
-            (`Cage.viewUTxOsAt` requestAddrFromCfg cfg tid (network cfg))
-    let reqs = sortOn fst (findRequestUtxos tid reqUtxos)
-    require "hand-build: no pending requests" (not (null reqs))
-    pure (stateUtxo, reqs)
-
 {- | Proofs and root for valid folds, replicating the library's
 per-request processing through the same speculative trie.
 -}
@@ -880,220 +809,6 @@ validProofs env reqUtxos =
         (key, edge) = case extractCageDatum txOut of
             Just (RequestDatum rq) -> (requestKey rq, requestEdge rq)
             _ -> error "hand-build: pending UTxO has no request datum"
-
-{- | Assemble a fold transaction by hand: the library fold's shape
-with hand-computed fee, change and declared units. Two-pass fee
-sizing against the devnet minima plus a flat margin; the refund and
-change are asserted above min-ADA, never defaulted.
--}
-
-{- | Assemble a fold transaction by hand: the library fold's shape
-with caller-computed fee, change and declared units. The refund and
-change are asserted above min-ADA, never defaulted.
--}
-assembleFold
-    :: Env
-    -> (TxIn, TxOut ConwayEra)
-    -> [(TxIn, TxOut ConwayEra)]
-    -> [[ProofStep]]
-    -> Root
-    -> ExUnits
-    -> Integer
-    -> IO ConwayTx
-assembleFold env (stateIn, stateOut) reqUtxos proofLists newRoot units fee = do
-    refs <- sessionRefUtxos env
-    Cage.withView (envProv env) $ \held -> do
-        let envV = pinnedTo held env
-            prov = envProv envV
-        pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
-        funder <- largestWalletUtxo prov
-        require "hand-build: funder carries tokens" (adaOnly (snd funder))
-        -- #157: a booked request carries its approval, so it is no longer
-        -- ADA-only; the fold checks the binding, not the emptiness.
-        oldState <- extractState stateOut
-        upperSlot <- foldUpperSlot prov oldState (map snd reqUtxos)
-        -- #157 C5/C6/T1-T6: the same obligations the library fold
-        -- discharges. The derivation is shared because the duties are a
-        -- protocol fact, not a builder opinion; what CL01 compares is the
-        -- two assemblies of them.
-        ctx0 <- registryContext envV refs held
-        let ctx = ctx0{rcAllowInadmissible = True}
-        duties <- case registryDuties
-            (envCfg envV)
-            pp
-            oldState
-            ctx
-            reqUtxos
-            (map (const True) reqUtxos) of
-            Right d -> pure d
-            Left err -> failWith ("hand-build: " <> err)
-        -- #157 C10: there is no pinned consumer and no mandatory
-        -- withdrawal left to attach.
-        assembleBody pp funder oldState upperSlot fee duties (rcRefUtxos ctx)
-  where
-    assembleBody pp funder oldState upperSlot feeAmt duties refs = do
-        newStateOut <- makeStateOut oldState newRoot
-        let dutyOuts = rdOutputs duties
-            custodyIns = map (fst . csUtxo) (rdSpends duties)
-            mintValue =
-                foldr
-                    ( \m acc -> Map.insertWith (Map.unionWith (+)) (cmPolicy m) (cmAssets m) acc
-                    )
-                    Map.empty
-                    (rdMints duties)
-            inputs =
-                Set.fromList
-                    (stateIn : fst funder : map fst reqUtxos <> custodyIns)
-        changeOut <-
-            makeChange pp funder feeAmt (newStateOut : dutyOuts) (rdSpends duties)
-        redeemers <-
-            makeRedeemers
-                stateIn
-                funder
-                reqUtxos
-                proofLists
-                units
-                duties
-                inputs
-                mintValue
-        scripts <- makeScripts duties refs
-        -- Harness-key signer (NOTE-046): see harnessSigners above.
-        let ownerKh = addrWitnessKeyHash (addrKeyHashBytes genesisAddr)
-            integrity = computeScriptIntegrity pp redeemers
-            body =
-                mkBasicTxBody
-                    & inputsTxBodyL .~ inputs
-                    & outputsTxBodyL
-                        .~ StrictSeq.fromList
-                            ([newStateOut] <> dutyOuts <> [changeOut])
-                    & feeTxBodyL .~ Coin feeAmt
-                    & mintTxBodyL .~ MultiAsset mintValue
-                    & collateralInputsTxBodyL
-                        .~ Set.singleton (fst funder)
-                    & reqSignerHashesTxBodyL
-                        .~ Set.fromList (ownerKh : rdSigners duties)
-                    & referenceInputsTxBodyL
-                        .~ Set.fromList (map fst refs)
-                    & scriptIntegrityHashTxBodyL .~ integrity
-                    & vldtTxBodyL
-                        .~ ValidityInterval SNothing (SJust upperSlot)
-        pure $
-            mkBasicTx body
-                & witsTxL . scriptTxWitsL .~ scripts
-                & witsTxL . rdmrsTxWitsL .~ redeemers
-    makeStateOut oldState newRoot' = do
-        let scriptAddr = cageAddrFromCfg (envCfg env) (network (envCfg env))
-            newDatum =
-                StateDatum
-                    oldState{stateRoot = OnChainRoot (unRoot newRoot')}
-        pure $
-            mkBasicTxOut
-                scriptAddr
-                (stateOut ^. valueTxOutL)
-                & datumTxOutL .~ mkInlineDatum (toPlcData newDatum)
-    {- The fold's change: everything its inputs bring, less everything its
-    outputs take and the fee. The state UTxO and any custody it spends are
-    inputs too — the earlier shape counted only the requests, and the
-    lovelace the state carries went missing from the balance. -}
-    makeChange pp funder' feeAmt outs spends = do
-        let inCoins =
-                outCoin (snd funder')
-                    : outCoin stateOut
-                    : [outCoin o | (_, o) <- reqUtxos]
-                        <> [outCoin o | sp <- spends, let (_, o) = csUtxo sp]
-            change = sum inCoins - sum (map outCoin outs) - feeAmt
-            out =
-                mkBasicTxOut
-                    genesisAddr
-                    (MaryValue (Coin change) mempty)
-            Coin minAda = getMinCoinTxOut @ConwayEra pp out
-        require
-            ("hand-build: change under min-ADA: " <> show change)
-            (change >= minAda)
-        pure out
-    makeRedeemers stateIn' _funder' reqUtxos' proofLists' units' duties inputs mintValue = do
-        let statePurpose =
-                ConwaySpending (AsIx (spendingIndex stateIn' inputs))
-            stateRef = txInToRef stateIn'
-            actions =
-                zipWith (\_ proofs -> Update proofs) reqUtxos' proofLists'
-            modRedeemer = Modify actions
-            -- #157: minting purposes are indexed by the policy's position
-            -- in the transaction's own sorted mint map.
-            mintIndex policy =
-                AsIx
-                    (fromIntegral (length (takeWhile (/= policy) (Map.keys mintValue))))
-            pairs =
-                ( statePurpose
-                , (toLedgerData modRedeemer, units')
-                )
-                    : [ ( ConwaySpending (AsIx (spendingIndex reqIn inputs))
-                        , (toLedgerData (Contribute stateRef), units')
-                        )
-                      | (reqIn, _) <- reqUtxos'
-                      ]
-                        <> [ ( ConwaySpending (AsIx (spendingIndex (fst (csUtxo sp)) inputs))
-                             , (toLedgerData (csRedeemer sp), units')
-                             )
-                           | sp <- rdSpends duties
-                           ]
-                        <> [ ( ConwayMinting (mintIndex (cmPolicy m))
-                             , (toLedgerData (cmRedeemer m), units')
-                             )
-                           | m <- rdMints duties
-                           ]
-        pure (Redeemers (Map.fromList pairs))
-    -- The state validator alone is fifteen kilobytes: with the session.s
-    -- reference outputs in view every purpose resolves through them, and
-    -- the hand model attaches nothing. Without them it attaches all three.
-    makeScripts duties refs
-        | not (null refs) = pure Map.empty
-        | otherwise = do
-            let stateScript = mkCageScript (envCfg env)
-                reqScript = mkRequestScript (envCfg env) (envTid env)
-            pure
-                ( Map.fromList
-                    ( [ (hashScript stateScript, stateScript)
-                      , (hashScript reqScript, reqScript)
-                      ]
-                        <> [ (hashScript (cmScript m), cmScript m)
-                           | m <- rdMints duties
-                           ]
-                    )
-                )
-    adaOnly out = case out ^. valueTxOutL of
-        MaryValue _ (MultiAsset ma) -> Map.null ma
-
-{- | The fold's validity upper slot, replicating the library's
-deadline: the earliest request deadline mapped to a slot, with the
-library's own fallbacks.
--}
-foldUpperSlot
-    :: Cage.Provider IO
-    -> OnChainTokenState
-    -> [TxOut ConwayEra]
-    -> IO SlotNo
-foldUpperSlot prov oldState reqOuts = do
-    deadlines <- mapM submittedAt reqOuts
-    let earliest = minimum deadlines + stateProcessTime oldState
-    r <-
-        try @SomeException
-            (Cage.withView prov (`Cage.viewPosixMsToSlot` earliest))
-    case r of
-        Right s -> pure s
-        Left _ -> do
-            nowUtc <- getCurrentTime
-            let posixSec = utcTimeToPOSIXSeconds nowUtc
-            Cage.withView prov $ \v ->
-                trySlots
-                    v
-                    [ round ((posixSec + d) * 1000)
-                    | d <- [30, 5, 2]
-                    ]
-  where
-    submittedAt out = case extractCageDatum out of
-        Just (RequestDatum rq) -> pure (requestSubmittedAt rq)
-        _ -> failWith "hand-build: pending UTxO has no request datum"
 
 {- | The calibration: the hand-built valid fold must match the
 library fold on everything the validator rules on — same inputs,
@@ -1148,72 +863,6 @@ calibrateFold stateIn hand dsl = do
     redeemerKeys tx =
         let Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
         in  Map.keys m
-
--- ---------------------------------------------------------
--- Fold plumbing (the E2E code path)
--- ---------------------------------------------------------
-
-{- | Submit one request of the given op and fold it. Units are
-measured on the unsigned fold while its inputs are still unspent
-(the node cannot evaluate spent inputs); the size is taken from
-the signed transaction that lands on chain. Every valid fold is
-calibrated: the hand-built parallel must match the library fold on
-inputs, state output, refund destinations and Modify proofs, or
-the hand model drifted and the run fails before reading verdicts.
--}
-requestAndFold
-    :: Env -> String -> Edge -> IO (ConwayTx, Integer, Integer, Integer)
-requestAndFold env label = requestAndFoldKey env label cgKey
-
-{- | `requestAndFold` on a named key: the delete and re-insert rows own
-their own, because their edges need a witnessed absence to act on.
--}
-requestAndFoldKey
-    :: Env
-    -> String
-    -> ByteString
-    -> Edge
-    -> IO (ConwayTx, Integer, Integer, Integer)
-requestAndFoldKey env label key op = do
-    let cfg = envCfg env
-        tid = envTid env
-        Coin tipVal = defaultTip cfg
-    -- #157: a tree edge is booked, not merely requested. The approval the
-    -- naming application mints certifies which edge this is, for whom, and
-    -- where it delivers; the request carries it to the fold.
-    _ <- sessionRefUtxos env
-    dest <- edgeDestination env op
-    refIns <- edgeReferences env key op
-    _ <-
-        bookEdge
-            env
-            cfg
-            tid
-            genesisAddr
-            genesisSignKey
-            key
-            op
-            dest
-            refIns
-            (tipVal + cgDeposit)
-    refs <- sessionRefUtxos env
-    -- The library fold and the hand model it is calibrated against are
-    -- assembled from one view.
-    (unsignedFold, (stateIn, handFold)) <-
-        withHeldView env $ \held -> do
-            lib <- Cage.withView (envProv held) $ \v -> do
-                ctx <- registryContext held refs v
-                updateTokenWithDuties cfg v (envTm held) tid genesisAddr ctx
-            hand <- buildValidFold held
-            pure (lib, hand)
-    calibrateFold stateIn handFold unsignedFold
-    emit "calibration" (label <> ": hand model matches the library fold")
-    (mem, cpu) <- measureUnits env unsignedFold
-    writeIORef (envValidUnits env) (mem, cpu)
-    signed <- submitWithGenesis (envCaps env) unsignedFold
-    let size = txSizeBytes signed
-    emitMeasure env label mem cpu size
-    pure (signed, mem, cpu, size)
 
 {- | The duties context for a fold spec, from its own cage configuration
 and the reference outputs it carries, read from the view the fold is

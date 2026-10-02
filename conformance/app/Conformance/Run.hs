@@ -1,15 +1,10 @@
-{-# LANGUAGE GADTs #-}
-
 {- |
 Module      : Conformance.Run
-Description : CA01-CA05, CG02-CG05 and the ten generic rows (issue #70) devnet sessions
+Description : The conformance sessions: canonical identity, registry rows and serialization
 License     : Apache-2.0
 
-One @run@ boots a cage on an isolated devnet and executes the
-requested generic rows in canonical order, each with its executing
-negative control and its measurements. Every result is read back
-from the chain; the mirror ("Conformance.Mirror") builds the proofs
-and the chain-read root is the only comparison target.
+One @run@ boots an isolated devnet per session and executes the requested
+rows in canonical order. Every result is read back from the chain.
 
 The CA rows (issue #69) run as their own session: a designation
 split publishes a canonical seed, CA01 boots the canonical registry
@@ -30,49 +25,18 @@ token: creating an output does not execute the receiving script, and
 the run must show no script executed — not merely that nothing bad
 happened.
 
-The issue #70 rows (CG09, CG10, CG11, CG12, CG14, CG15,
-CG19) run as their own CG session in canonical order, each
-against its own freshly booted cage so a row's odd state (a
-parked request) cannot poison its neighbours.
-CG10 and CG15 are refusal rows: the refusing
-transaction is hand-built, phase-1 valid, and the node's phase-2
-refusal is attributed to the state script that produced it. CG09
-submits the early reject the consumer requires refused; the chain
-accepts it and the row is recorded unmet by ruling (#320). CG11, CG12 and CG19 are the expected consumer
-gaps (the 2026-09-03 cardano-keri audit; upstream
-cardano-mpfs-onchain #100 and #101): the run submits what the
-consumer's theorems require the partition to refuse and records the
-chain's acceptance with the transaction that proves it — a gap is
-observed, never relabelled as a pass or a refusal, and a refusal
-where the audit expected acceptance would be reported equally. CG14
-and CG15 carry the blueprint's staking validator for the
-withdrawal leg: the credential is registered and a fold carrying
-the matching withdraw-zero is accepted. CG13, CG17 and CG20 are
-retired superseded history (NOTE-046, CG16 template): the
-owner-pinning transfer, the custody sweep and the removed-signer
-regression tested an owner role the registry does not have —
-their observations live in rows.json, and no code path here
-asserts that authority.
-
-Row shapes (key @cg-row-key@, values @cg-v1@/@cg-v2@/@cg-v3@):
-
-* CG02: Update v1->v2 folds; inclusion proof for v2 implies the
-  chain root; a forged-value proof must not (control).
-* CG03: Delete folds; the key proves absent from the chain root; a
-  deleted-value claim must not verify (control).
-* CG04: re-Insert v3 folds; inclusion proof for v3 implies the
-  chain root; an exclusion proof must not verify (control).
-* CG05: in a registry of its own, an insertAbsent and an updateActive
-  make a key active, each accepted and compared with the model; the
-  same insertAbsent on that key must be refused by the ledger and the
-  model (a story through the generic interpreter).
+The registry rows run as their own session. A row with a program
+("Conformance.Edge.Programs") runs it through the generic interpreter, in
+registries of its own, so a row's odd state (a parked request) cannot poison
+its neighbours; CG10 and CG12, which the model cannot express, run their own
+refusals and accepting controls. A held, unmet or failing row ends the
+session non-zero, naming every such row.
 
 @CONFORMANCE_CONTROL=wrong-reason@ arms the CS refusal matcher against
-an impossible marker (the run must fail naming what came back; a CG
-session refuses it, no CG row matching a refusal against a marker);
-@CONFORMANCE_CONTROL=false-claim@ binds forged values to the
-chain-read verifications, and in a CA session binds the fabricated
-wrong-seed derivation to CA01's name match (both must fail).
+an impossible marker (the run must fail naming what came back; a registry
+session refuses it, no registry row matching a refusal against a marker);
+@CONFORMANCE_CONTROL=false-claim@, in a CA session, binds the fabricated
+wrong-seed derivation to CA01's name match (it must fail).
 @CONFORMANCE_CONTROL=naive-authenticator@ makes CA03 require the
 policy+address-only authenticator to reject the rival, which it
 cannot (the run must fail naming the accepted rival);
@@ -85,6 +49,7 @@ module Conformance.Run (runForkProbe, runRows) where
 
 import Conformance.FoldFixture qualified as FoldFixture
 
+import Conformance.Edge.Programs (programFor)
 import Conformance.Run.CaRows
 import Conformance.Run.Cage
 import Conformance.Run.CgRows
@@ -95,7 +60,6 @@ import Conformance.Run.ForkProbe
 import Conformance.Run.Node (checkHarnessGenesis, withReplayingNode)
 import Conformance.Run.Receipts
 import Conformance.Run.Replay (ReplayIndex (..))
-import Conformance.Run.Submit
 import Conformance.Run.Wallet
 
 import Control.Exception
@@ -110,6 +74,7 @@ import Data.Text qualified as T
 import System.Directory (createDirectoryIfMissing)
 
 import Singular.Registry.Blueprint (NamingCodes (..))
+import Singular.Registry.Config (CageConfig)
 import Singular.Registry.Ledger
     ( AssetName (..)
     , TokenId (..)
@@ -121,9 +86,7 @@ import Singular.Registry.Node
     , funderAddr
     )
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
-import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Internal
     ( txInToRef
     )
@@ -134,8 +97,6 @@ import Conformance.Mirror
     ( emit
     , failWith
     , newMirror
-    , require
-    , txIdHex
     )
 
 -- ---------------------------------------------------------
@@ -148,21 +109,7 @@ runRows rawRows receiptsDir = do
     control <- readControl
     emit "control" (show control)
     let caRequested = any (`elem` caRows) rows
-        cgRequested =
-            any
-                ( `elem`
-                    ( cgRows
-                        <> issue70Rows
-                        <> issue173Rows
-                        <> issue177Rows
-                        <> issue258Rows
-                        <> issue205Rows
-                        <> issue320Rows
-                        <> sequenceRows
-                        <> harnessRows
-                    )
-                )
-                rows
+        cgRequested = any (`elem` cgSessionRows) rows
     -- Armed controls must never pass vacuously: each mode belongs to
     -- one session, and a session it cannot fire in is refused here.
     when (caRequested && control == WrongReason) $
@@ -178,12 +125,11 @@ runRows rawRows receiptsDir = do
             \by CONFORMANCE_REASON_CONTROL"
     when
         ( cgRequested
-            && control `elem` [NaiveAuthenticator, UnappliedAddress]
+            && control `elem` [NaiveAuthenticator, UnappliedAddress, FalseClaim]
         )
         $ failWith
-            "naive-authenticator and unapplied-address are CA \
-            \controls; the CG rows they cannot arm would pass \
-            \vacuously"
+            "naive-authenticator, unapplied-address and false-claim are CA \
+            \controls; the CG rows they cannot arm would pass vacuously"
     blueprintPath <- requireEnv "REGISTRY_BLUEPRINT"
     -- Observe tree identity before any side effect: creating the
     -- receipts directory first would always report dirty.
@@ -194,39 +140,13 @@ runRows rawRows receiptsDir = do
     createDirectoryIfMissing True receiptsDir
     let localRows = [r | r <- rows, r `elem` ["CS01", "CS06"]]
         devnetRows = [r | r <- rows, r `notElem` ["CS01", "CS06"]]
-        cgDevnet =
-            [ r
-            | r <- devnetRows
-            , r
-                `elem` ( cgRows
-                            <> issue70Rows
-                            <> issue173Rows
-                            <> issue177Rows
-                            <> issue258Rows
-                            <> issue205Rows
-                            <> issue320Rows
-                            <> sequenceRows
-                            <> harnessRows
-                       )
-            ]
+        cgDevnet = [r | r <- devnetRows, r `elem` cgSessionRows]
         caDevnet = [r | r <- devnetRows, r `elem` caRows]
         csDevnet = [r | r <- devnetRows, r `elem` csRows]
         unpartitioned =
             [ r
             | r <- devnetRows
-            , r
-                `notElem` ( caRows
-                                <> cgRows
-                                <> csRows
-                                <> issue70Rows
-                                <> issue173Rows
-                                <> issue177Rows
-                                <> issue258Rows
-                                <> issue205Rows
-                                <> issue320Rows
-                                <> sequenceRows
-                                <> harnessRows
-                          )
+            , r `notElem` (caRows <> csRows <> cgSessionRows)
             ]
     unless (null unpartitioned) $
         failWith
@@ -237,37 +157,23 @@ runRows rawRows receiptsDir = do
         checkHarnessGenesis
         nodeVer <- readNodeVersion
         emit "node" nodeVer
-        require
-            "forged control value collides with a row value"
-            (forgedValue `notElem` [cgV1, cgV2, cgV3])
-        unless (null caDevnet) $
-            bracketTmpDir $ do
-                withReplayingNode blueprintPath receiptsDir (T.pack nodeVer) $ \caps replayIndex ->
-                    runSession
-                        caDevnet
-                        control
-                        (stateBytes, requestBytes, namingCodes)
-                        blueprintPath
-                        nodeVer
-                        base
-                        dirty
-                        receiptsDir
-                        caps
-                        replayIndex
-        unless (null cgDevnet) $
-            bracketTmpDir $ do
-                withReplayingNode blueprintPath receiptsDir (T.pack nodeVer) $ \caps replayIndex ->
-                    runSession
-                        cgDevnet
-                        control
-                        (stateBytes, requestBytes, namingCodes)
-                        blueprintPath
-                        nodeVer
-                        base
-                        dirty
-                        receiptsDir
-                        caps
-                        replayIndex
+        let session sessionRows =
+                unless (null sessionRows) $
+                    bracketTmpDir $
+                        withReplayingNode blueprintPath receiptsDir (T.pack nodeVer) $ \caps replayIndex ->
+                            runSession
+                                sessionRows
+                                control
+                                (stateBytes, requestBytes, namingCodes)
+                                blueprintPath
+                                nodeVer
+                                base
+                                dirty
+                                receiptsDir
+                                caps
+                                replayIndex
+        session caDevnet
+        session cgDevnet
         unless (null csDevnet) $
             bracketTmpDir $ do
                 withReplayingNode blueprintPath receiptsDir (T.pack nodeVer) $ \caps replayIndex ->
@@ -298,32 +204,16 @@ runLocalRow blueprintPath receiptsDir base dirty row = case row of
 validateRows :: [String] -> IO [String]
 validateRows [] =
     failWith
-        "run needs at least one row: run CA01..CA05, CG02..CG05, CS \
-        \families, or the issue #70 rows CG09 CG10 CG11 CG12 \
-        \CG14 CG15 CG19"
+        "run needs at least one row: run CA01..CA05, the CS families, or \
+        \the registry rows"
 validateRows raw = do
     let bad = [r | r <- raw, r `notElem` canonicalRows]
     unless (null bad) $
         failWith ("run cannot execute rows: " <> unwords bad)
     let requested = [r | r <- canonicalRows, r `elem` raw]
-        hasCa = any (`elem` caRows) requested
-        hasCg =
-            any
-                ( `elem`
-                    ( cgRows
-                        <> issue70Rows
-                        <> issue173Rows
-                        <> issue177Rows
-                        <> issue258Rows
-                        <> issue205Rows
-                        <> issue320Rows
-                        <> sequenceRows
-                        <> harnessRows
-                    )
-                )
-                requested
-    when (hasCa && hasCg) $
-        failWith
+    when
+        (any (`elem` caRows) requested && any (`elem` cgSessionRows) requested)
+        $ failWith
             "CA and CG rows run as separate sessions, one devnet \
             \each: run CA01..CA05, then the CG rows"
     pure requested
@@ -357,24 +247,54 @@ runSession
     replayIndex = do
         let prov = capReads caps
         checkFunding prov funderAddr defaultFundingFloor
-        tm <- mkPureTrieManager
-        mirror <- newMirror
         _ <- Cage.withView prov (pure . Cage.viewProtocolParams)
         let caMode = any (`elem` caRows) rows
-            legacyCg = any (`elem` cgRows) rows
-        keys <- newIORef (False, "")
-        deleteKeys <- newIORef (False, "")
-        refsRef <- newIORef Nothing
-        validUnits <- newIORef (0, 0)
-        worlds <- newIORef Map.empty
-        stakeRef <- newIORef Nothing
-        key2Ref <- newIORef Nothing
-        heldRef <- newIORef []
-        unmetRef <- newIORef []
-        failedRef <- newIORef []
-        liveRecordsRef <- newIORef []
-        liveMeasurementsRef <- newIORef []
-        foldFixture <- FoldFixture.newFixture
+            environment cfg world = do
+                tm <- mkPureTrieManager
+                mirror <- newMirror
+                foldFixture <- FoldFixture.newFixture
+                refsRef <- newIORef Nothing
+                validUnits <- newIORef (0, 0)
+                worlds <- newIORef Map.empty
+                key2Ref <- newIORef Nothing
+                heldRef <- newIORef []
+                unmetRef <- newIORef []
+                failedRef <- newIORef []
+                liveRecordsRef <- newIORef []
+                liveMeasurementsRef <- newIORef []
+                pure
+                    Env
+                        { envCfg = cfg
+                        , envProv = prov
+                        , envSubmit = capSubmit caps
+                        , envConfirm = capConfirm caps
+                        , envTm = tm
+                        , -- never read: every registry row boots its own
+                          -- registries, and the row validator keeps them out
+                          -- of a CA session
+                          envTid = TokenId (AssetName (SBS.toShort ""))
+                        , envMirror = mirror
+                        , envControl = control
+                        , envBase = base
+                        , envDirty = dirty
+                        , envFoldFixture = foldFixture
+                        , envNode = nodeVer
+                        , envBlueprint = blueprintId cfg requestBytes
+                        , envReceiptsDir = receiptsDir
+                        , envCodes = codes
+                        , envBlueprintPath = blueprintPath
+                        , envRefs = refsRef
+                        , envValidUnits = validUnits
+                        , envCa = world
+                        , envWorlds = worlds
+                        , envKey2 = key2Ref
+                        , envHeld = heldRef
+                        , envUnmet = unmetRef
+                        , envFailed = failedRef
+                        , envLiveRecords = liveRecordsRef
+                        , envLiveMeasurements = liveMeasurementsRef
+                        , envReplay = replayIndex
+                        }
         (env, bootLine) <-
             if caMode
                 then do
@@ -389,162 +309,35 @@ runSession
                     (seedTxIn, _) <- designateSplit prov caps "canonical"
                     let seedRef = txInToRef seedTxIn
                         cfg = cageCfg stateBytes requestBytes namingCodes seedRef
-                    caTid <- newIORef Nothing
-                    caSnap <- newIORef Nothing
-                    caBootTx <- newIORef Nothing
-                    caBootM <- newIORef Nothing
-                    caRivalTid <- newIORef Nothing
-                    caRivalM <- newIORef Nothing
-                    let world =
-                            CaWorld
-                                { caCfg = cfg
-                                , caSeedRef = seedRef
-                                , caRawState = stateBytes
-                                , caTidRef = caTid
-                                , caSnapRef = caSnap
-                                , caBootTxRef = caBootTx
-                                , caBootMeasureRef = caBootM
-                                , caRivalTidRef = caRivalTid
-                                , caRivalMeasure = caRivalM
-                                }
+                    world <-
+                        CaWorld cfg seedRef stateBytes
+                            <$> newIORef Nothing
+                            <*> newIORef Nothing
+                            <*> newIORef Nothing
+                            <*> newIORef Nothing
+                            <*> newIORef Nothing
+                            <*> newIORef Nothing
+                    env <- environment cfg (Just world)
                     pure
-                        ( Env
-                            { envCfg = cfg
-                            , envProv = prov
-                            , envSubmit = capSubmit caps
-                            , envConfirm = capConfirm caps
-                            , envTm = tm
-                            , -- never read in a CA session: the row
-                              -- validator keeps CG rows out of it
-                              envTid = TokenId (AssetName (SBS.toShort ""))
-                            , envMirror = mirror
-                            , envControl = control
-                            , envBase = base
-                            , envDirty = dirty
-                            , envFoldFixture = foldFixture
-                            , envNode = nodeVer
-                            , envBlueprint = blueprintId cfg requestBytes
-                            , envReceiptsDir = receiptsDir
-                            , envCodes = codes
-                            , envBlueprintPath = blueprintPath
-                            , envKeys = keys
-                            , envDeleteKey = deleteKeys
-                            , envRefs = refsRef
-                            , envValidUnits = validUnits
-                            , envCa = Just world
-                            , envWorlds = worlds
-                            , envStake = stakeRef
-                            , envKey2 = key2Ref
-                            , envHeld = heldRef
-                            , envUnmet = unmetRef
-                            , envFailed = failedRef
-                            , envLiveRecords = liveRecordsRef
-                            , envLiveMeasurements = liveMeasurementsRef
-                            , envReplay = replayIndex
-                            }
+                        ( env
                         , "CA session: canonical seed published at outRef "
                             <> show seedRef
                             <> " — the consumer derives the canonical \
                                \name as SHA-256 of this outRef"
                         )
-                else
-                    -- The CG02-CG05 session cage boots only when one
-                    -- of those rows is requested; the issue #70 rows
-                    -- boot their own cages per row group instead.
-                    if not legacyCg
-                        then do
-                            -- No CG02-CG05 row is requested, so those
-                            -- row bodies never run; the config below
-                            -- is an unbooted placeholder (the seed
-                            -- query only names a real UTxO) kept for
-                            -- the record's shape.
-                            (seedTxIn, _) <- largestWalletUtxo prov
-                            let placeholderCfg =
-                                    cageCfg stateBytes requestBytes namingCodes (txInToRef seedTxIn)
-                            pure
-                                ( Env
-                                    { envCfg = placeholderCfg
-                                    , envProv = prov
-                                    , envSubmit = capSubmit caps
-                                    , envConfirm = capConfirm caps
-                                    , envTm = tm
-                                    , envTid = TokenId (AssetName (SBS.toShort ""))
-                                    , envMirror = mirror
-                                    , envControl = control
-                                    , envBase = base
-                                    , envDirty = dirty
-                                    , envFoldFixture = foldFixture
-                                    , envNode = nodeVer
-                                    , envBlueprint = blueprintId placeholderCfg requestBytes
-                                    , envBlueprintPath = blueprintPath
-                                    , envReceiptsDir = receiptsDir
-                                    , envCodes = codes
-                                    , envKeys = keys
-                                    , envDeleteKey = deleteKeys
-                                    , envRefs = refsRef
-                                    , envValidUnits = validUnits
-                                    , envCa = Nothing
-                                    , envWorlds = worlds
-                                    , envStake = stakeRef
-                                    , envKey2 = key2Ref
-                                    , envHeld = heldRef
-                                    , envUnmet = unmetRef
-                                    , envFailed = failedRef
-                                    , envLiveRecords = liveRecordsRef
-                                    , envLiveMeasurements = liveMeasurementsRef
-                                    , envReplay = replayIndex
-                                    }
-                                , "no session cage: the issue #70 rows boot \
-                                  \their own"
-                                )
-                        else do
-                            -- The session cage boots by reference: the
-                            -- state validator is published before the
-                            -- seed is chosen, so the publication cannot
-                            -- spend the seed.
-                            ensureStateRefWith prov caps stateBytes
-                            (seedTxIn, _) <- largestWalletUtxo prov
-                            let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seedTxIn)
-                            unsignedBoot <-
-                                Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
-                            signedBoot <- submitWithGenesis caps unsignedBoot
-                            tid <- extractTokenId cfg signedBoot
-                            createTrie tm tid
-                            pure
-                                ( Env
-                                    { envCfg = cfg
-                                    , envProv = prov
-                                    , envSubmit = capSubmit caps
-                                    , envConfirm = capConfirm caps
-                                    , envTm = tm
-                                    , envTid = tid
-                                    , envMirror = mirror
-                                    , envControl = control
-                                    , envBase = base
-                                    , envDirty = dirty
-                                    , envFoldFixture = foldFixture
-                                    , envNode = nodeVer
-                                    , envBlueprint = blueprintId cfg requestBytes
-                                    , envBlueprintPath = blueprintPath
-                                    , envReceiptsDir = receiptsDir
-                                    , envCodes = codes
-                                    , envKeys = keys
-                                    , envDeleteKey = deleteKeys
-                                    , envRefs = refsRef
-                                    , envValidUnits = validUnits
-                                    , envCa = Nothing
-                                    , envWorlds = worlds
-                                    , envStake = stakeRef
-                                    , envKey2 = key2Ref
-                                    , envHeld = heldRef
-                                    , envUnmet = unmetRef
-                                    , envFailed = failedRef
-                                    , envLiveRecords = liveRecordsRef
-                                    , envLiveMeasurements = liveMeasurementsRef
-                                    , envReplay = replayIndex
-                                    }
-                                , "cage booted bootTx=" <> txIdHex signedBoot
-                                )
+                else do
+                    -- Every registry row boots its own registries; the
+                    -- session's config is an unbooted placeholder (the seed
+                    -- query only names a real UTxO) kept for the record's
+                    -- shape.
+                    (seedTxIn, _) <- largestWalletUtxo prov
+                    env <-
+                        environment
+                            ( cageCfg stateBytes requestBytes namingCodes (txInToRef seedTxIn)
+                                :: CageConfig
+                            )
+                            Nothing
+                    pure (env, "no session cage: every registry row boots its own")
         emit "boot" bootLine
         mapM_
             ( \row ->
@@ -554,10 +347,7 @@ runSession
             rows
         if caMode
             then writeCaCL01 env rows
-            else
-                if all (`elem` issue70Rows) rows
-                    then writeCL01Issue70 env rows
-                    else writeCL01Receipt env rows
+            else writeCL01Receipt env rows
         emit
             "complete"
             (show (length rows) <> "/" <> show (length rows) <> " rows ok")
@@ -590,29 +380,16 @@ runRow env row = do
     ensureStateRef env
     runRowIn env row
 
+-- | One row by what runs it: the CA runners, a program, or its own runner.
 runRowIn :: Env -> String -> IO ()
-runRowIn env row = case row of
-    "CA01" -> withCa env row runCA01
-    "CA02" -> withCa env row runCA02
-    "CA03" -> withCa env row runCA03
-    "CA04" -> withCa env row runCA04
-    "CA05" -> withCa env row runCA05
-    "CG02" -> runCG02 env
-    "CG03" -> runCG03 env
-    "CG04" -> runCG04 env
-    "CG05" -> runCG05 env
-    "CG07" -> runCG07 env
-    "CG09" -> runCG09 env
-    "CG10" -> runCG10 env
-    "CG11" -> runCG11 env
-    "CG12" -> runCG12 env
-    "CG14" -> runCG14 env
-    "CG15" -> runCG15 env
-    "CG19" -> runCG19 env
-    "CG21" -> runCG21 env
-    "CG22" -> runCG22 env
-    "CG23" -> runCG23 env
-    "CG24" -> runCG24 env
-    "sequence" -> runSequence env
-    "batch" -> runBatchHarness env
+runRowIn env row = case (row, programFor row) of
+    ("CA01", _) -> withCa env row runCA01
+    ("CA02", _) -> withCa env row runCA02
+    ("CA03", _) -> withCa env row runCA03
+    ("CA04", _) -> withCa env row runCA04
+    ("CA05", _) -> withCa env row runCA05
+    ("CG10", _) -> runCG10 env
+    ("CG12", _) -> runCG12 env
+    ("batch", _) -> runBatchHarness env
+    (_, Just program) -> runProgram env program
     _ -> failWith ("run cannot execute row: " <> row)

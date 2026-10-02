@@ -14,7 +14,6 @@ module Conformance.Run.Observe
     , storyField
     , extractState
     , outCoin
-    , submittedAtDatum
     , redeemerPlutusDatas
     , spendingConstrs
     , mintConstrs
@@ -174,12 +173,6 @@ extractState out = case extractCageDatum out of
 -- | Lovelace in an output, era-pinned for the polymorphic lenses.
 outCoin :: TxOut ConwayEra -> Integer
 outCoin o = let Coin c = o ^. coinTxOutL in c
-
--- | A request output's submitted-at (ms), from its live datum.
-submittedAtDatum :: TxOut ConwayEra -> IO Integer
-submittedAtDatum out = case extractCageDatum out of
-    Just (RequestDatum rq) -> pure (requestSubmittedAt rq)
-    _ -> failWith "deadline: request output has no RequestDatum"
 
 -- ---------------------------------------------------------
 -- CS03-CS07: redeemer inspection + remaining rows

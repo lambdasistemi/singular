@@ -35,7 +35,7 @@
       "pause": 400
     },
     {
-      "text": "Eleven rows, four dispositions that must never be mistaken for one another. Unmet by ruling: the early rejection, CG zero nine. The consumer requires that a folder must not reject a request during its processing window, while Singular's model lets a folder reject a request with no timing admission, and the chain accepts that reject. By operator ruling of the first of October 2026 the consumer requirement is kept unmet, and alignment is tracked in cardano-keri issue four sixty-eight. The same verdict also keeps unmet three rows where the chain refuses and Lean has no counterpart to compare with: the stale-proof fold, the surplus action and the wrong constructor, by operator ruling of the second of October, each with its follow-up, issues three forty-six, three forty-five and three forty-seven. Held: executed, and the consumer requirement is unmet — the empty fold and the crossed refunds. Resolved by ruling: defect evidence of the outstanding owner gate. Superseded: observations kept, claims withdrawn, no execution credit. The run ends non-zero while anything is held or unmet — never a pass.",
+      "text": "Eleven rows, four dispositions that must never be mistaken for one another. Unmet by ruling: the early rejection, CG zero nine. The consumer requires that a folder must not reject a request during its processing window, while Singular's model lets a folder reject a request with no timing admission, and the chain accepts that reject. By operator ruling of the first of October 2026 the consumer requirement is kept unmet, and alignment is tracked in cardano-keri issue four sixty-eight. The same verdict also keeps unmet three rows where the chain refuses and Lean has no counterpart to compare with: the stale-proof fold, the surplus action and the wrong constructor, by operator ruling of the second of October, each with its follow-up, issues three forty-six, three forty-five and three forty-seven. Held: executed, and the consumer requirement is unmet — the empty fold and the crossed refunds. Resolved by ruling: defect evidence of the outstanding owner gate. Superseded: observations kept, claims withdrawn, no execution credit. Retired: the two stake script hook rows, which the registry interface does not have. The run ends non-zero while anything is held or unmet — never a pass.",
       "pause": 400
     },
     {
@@ -43,7 +43,7 @@
       "pause": 400
     },
     {
-      "text": "The retraction window now has its own story. Two requests from the same owner are booked together. The first is refused before phase two, then accepted inside it. The second is refused after its window, beside the first request as its accepting control. The model refuses both timing alterations as not phase two; the chain attributes both to the request script. The generic session now runs ten rows. Open validity intervals remain outside the finite model, with their refusal checked at the Aiken layer.",
+      "text": "The retraction window now has its own story. Two requests from the same owner are booked together. The first is refused before phase two, then accepted inside it. The second is refused after its window, beside the first request as its accepting control. The model refuses both timing alterations as not phase two; the chain attributes both to the request script. The registry session now runs thirteen rows. Open validity intervals remain outside the finite model, with their refusal checked at the Aiken layer.",
       "pause": 400
     }
   ],
@@ -113,7 +113,7 @@
       "pause": 400
     },
     {
-      "text": "Serialized size is the tight dimension: about seventy percent of the transaction maximum for folds, about half for boots. The canonical session records its worst case in its CL zero one receipt; the issue seventy session's CL zero one cannot close while a superseded row carries no receipt, so its worst cases live in the row receipts.",
+      "text": "Serialized size is the tight dimension: about seventy percent of the transaction maximum for folds, about half for boots. The canonical session records its worst case in its CL zero one receipt; the registry session reads the worst accepting folds of the update, delete and re-insert rows off their receipts, and its other rows keep their worst cases in their own receipts.",
       "pause": 400
     },
     {
@@ -123,7 +123,7 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "d9d9ca2fc68ec159cce55c9140d8f42fae525e291c8b67019c2fefdc714ecc30"
+    "sha256": "b67e882ed185a85239385f9a712fd8a71eec625c30fe5948e37502c8aecaf0fd"
   },
   "historical-execution-reports": [
     {
@@ -141,7 +141,7 @@
       "pause": 400
     },
     {
-      "text": "Four rows rest on predecessor runs and are cited, not re-executed, and a fifth is superseded with its observation preserved and no credit. The consumer-gap rows are executed holds now, apart from the surplus action, which is unmet by ruling: the requirement stays unmet, and a held or unmet row is never a pass. The serialization schema rows await the ownerless repair before fresh execution, because coverage is not inherited across a wire-format change.",
+      "text": "The insert, the phase-two retraction and the late reject now run as programs, their earlier end-to-end runs kept as supporting references. The sweep and the termination rows cite nothing any more: the examples they cited were removed with the owner role, nothing runs them, and they are superseded with no credit. The consumer-gap rows are executed holds now, apart from the surplus action, which is unmet by ruling: the requirement stays unmet, and a held or unmet row is never a pass. The serialization schema rows await the ownerless repair before fresh execution, because coverage is not inherited across a wire-format change.",
       "pause": 400
     },
     {

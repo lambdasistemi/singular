@@ -5,43 +5,25 @@ License     : Apache-2.0
 -}
 module Conformance.Run.Control
     ( caRows
-    , cgRows
     , csRows
-    , issue70Rows
-    , issue70AcceptingRows
-    , issue173Rows
-    , issue177Rows
-    , issue258Rows
-    , issue205Rows
-    , issue320Rows
-    , sequenceRows
+    , programRows
+    , outsideRows
     , harnessRows
+    , cgSessionRows
     , canonicalRows
     , Control (..)
     , readControl
     , ReasonControl (..)
     , parseReasonControl
     , controlledReason
-    , cgKey
-    , cgDeleteKey
-    , cgV1
-    , cgV2
-    , cgV3
-    , forgedValue
     , cgDeposit
     ) where
 
-import Data.ByteString (ByteString)
 import Data.Text (Text)
 import Data.Text qualified as T
 import System.Environment (lookupEnv)
 
-import Singular.Registry.TxBuilder.Internal
-    ( leafAbsent
-    , leafActive
-    , leafTerminal
-    )
-
+import Conformance.Edge.Programs (Program (..), programs)
 import Conformance.Mirror (failWith)
 
 -- ---------------------------------------------------------
@@ -53,57 +35,19 @@ these lists, never by exclusion: a catch-all partition silently absorbs
 the next family of rows (CA01-CA05 were once routed into the CS
 session by a notElem-CG catch-all). A row in no family fails loudly.
 -}
-caRows
-    , cgRows
-    , csRows
-    , issue70Rows
-    , issue70AcceptingRows
-    , issue173Rows
-    , issue177Rows
-    , issue258Rows
-    , issue205Rows
-    , issue320Rows
-    , sequenceRows
-        :: [String]
+caRows, csRows :: [String]
 caRows = ["CA01", "CA02", "CA03", "CA04", "CA05"]
-cgRows = ["CG02", "CG03", "CG04", "CG05"]
 csRows = ["CS01", "CS02", "CS03", "CS04", "CS05", "CS06", "CS07", "CS08"]
--- The issue #70 rows, listed by membership — never by exclusion or
--- position: a partition defined by what it is not silently absorbs
--- whatever the next slice adds.
-issue70Rows =
-    [ "CG09"
-    , "CG10"
-    , "CG11"
-    , "CG12"
-    , "CG14"
-    , "CG15"
-    , "CG19"
-    ]
--- The issue #70 rows that close a CL01 receipt when the full session
--- ran: every accepting fold in the session.
-issue70AcceptingRows = ["CG11", "CG12", "CG14", "CG19"]
--- The registration chapter: five generic model edge steps, including an
--- occupied-key refusal and a redirected-delivery attempt with its control.
-issue173Rows = ["CG21"]
--- The issue #177 row, listed by membership like every other family:
--- CG22 is the updateTerminal retirement — insertActive then
--- updateTerminal at the SAME key in one session — together with its two
--- DISTINCT refusal fixtures, an Unknown key (`key-unknown`) and an
--- Absent key (`not-booked`), each with its own accepting control. It
--- shares no fixture, receipt or assertion with CG21.
-issue177Rows = ["CG22"]
--- The issue #258 row: CG23 is the reject and the retract, each refused when
--- its refund or return is tampered with beside its untampered control. It
--- runs apart from CG22 so that each receipt stays under the size bound.
-issue258Rows = ["CG23"]
--- The finite retraction window, compared through its own story.
-issue205Rows = ["CG07"]
--- The issue #320 row: CG24 is the early rejection, a reject while the request
--- can still be folded and one while its owner can still retract it, each beside
--- its refused tampered refunds.
-issue320Rows = ["CG24"]
-sequenceRows = ["sequence"]
+
+-- | Every row a program runs, read off the programs themselves.
+programRows :: [String]
+programRows = map programRow programs
+
+{- | The registry rows the model cannot express that a session still runs for
+their chain evidence, each through its own runner.
+-}
+outsideRows :: [String]
+outsideRows = ["CG10", "CG12"]
 
 {- | Harness runs a session executes beside the rows: no row in @rows.json@,
 no chapter of the book and no receipt anything reads. @batch@ executes the story
@@ -112,19 +56,12 @@ language's batch instructions on the devnet (#344).
 harnessRows :: [String]
 harnessRows = ["batch"]
 
+-- | The rows one registry session runs: programs, outside rows and the harness.
+cgSessionRows :: [String]
+cgSessionRows = programRows <> outsideRows <> harnessRows
+
 canonicalRows :: [String]
-canonicalRows =
-    caRows
-        <> cgRows
-        <> csRows
-        <> issue70Rows
-        <> issue173Rows
-        <> issue177Rows
-        <> issue258Rows
-        <> issue205Rows
-        <> issue320Rows
-        <> sequenceRows
-        <> harnessRows
+canonicalRows = caRows <> csRows <> cgSessionRows
 
 data Control
     = Normal
@@ -180,29 +117,6 @@ readControl = do
 -- ---------------------------------------------------------
 -- Keys and values
 -- ---------------------------------------------------------
-
-{- | The generic rows' keys, and the leaf states they move between.
-
-#157 admits three leaf values and nothing else, so the rows say what they
-always said — insert, update, delete, re-insert — in the only vocabulary
-the registry has. `cgKey` runs the insert and update rows; `cgDeleteKey` runs the delete and the re-insert,
-because deleting an ACTIVE leaf is the one edge naming never certifies
-(N5) and a delete that can fold is a delete of a witnessed absence.
--}
-cgKey, cgDeleteKey, cgV1, cgV2, cgV3 :: ByteString
-cgKey = "cg-row-key"
-cgDeleteKey = "cg-delete-key"
-cgV1 = leafAbsent
-cgV2 = leafActive
-cgV3 = leafAbsent
-
-{- | The control values. A forged claim names a leaf the key does not
-hold; there is no byte outside the codec that would reach the comparison
-at all, so the forgery is a wrong LEAF, which is what a false claim about
-a registry actually looks like.
--}
-forgedValue :: ByteString
-forgedValue = leafTerminal
 
 {- | The deposit a booking rides with, over and above the tip. The fold
 returns it to the destination the request named, or locks it in the

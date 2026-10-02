@@ -26,8 +26,9 @@ themselves at the revision you are viewing.
 
 The module extent is the public library of the Conformance Cabal file —
 every exposed module and the one package-internal owner. That complete
-extent is 30 modules. The 29 exposed modules are what a caller imports:
-the story programs and their binding and identity, the ordinary CLI's
+extent is 31 modules. The 30 exposed modules are what a caller imports:
+the story programs, the registry rows as programs with their
+classification, the stories' binding and identity, the ordinary CLI's
 refusal controls and their receipt-computed verdicts, the model transport
 and the Lean oracle, the registration and perturbation comparisons, the
 receipt record and its validation, the refusal attribution, the row
@@ -50,6 +51,7 @@ the site check fails until it and this list agree.
 - <a href="../conformance/lib/Conformance/Edge/EarlyReject.hs" data-api="module">Conformance.Edge.EarlyReject</a> — <a href="../conformance/lib/Conformance/Edge/EarlyReject.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Exit.hs" data-api="module">Conformance.Edge.Exit</a> — <a href="../conformance/lib/Conformance/Edge/Exit.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Occupied.hs" data-api="module">Conformance.Edge.Occupied</a> — <a href="../conformance/lib/Conformance/Edge/Occupied.hs" data-api="source">source</a>
+- <a href="../conformance/lib/Conformance/Edge/Programs.hs" data-api="module">Conformance.Edge.Programs</a> — <a href="../conformance/lib/Conformance/Edge/Programs.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Register.hs" data-api="module">Conformance.Edge.Register</a> — <a href="../conformance/lib/Conformance/Edge/Register.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Retire.hs" data-api="module">Conformance.Edge.Retire</a> — <a href="../conformance/lib/Conformance/Edge/Retire.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/RetractionWindow.hs" data-api="module">Conformance.Edge.RetractionWindow</a> — <a href="../conformance/lib/Conformance/Edge/RetractionWindow.hs" data-api="source">source</a>

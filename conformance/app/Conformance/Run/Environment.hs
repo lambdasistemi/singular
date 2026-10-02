@@ -10,7 +10,6 @@ module Conformance.Run.Environment
     , withHeldView
     , pinnedProvider
     , RowCage (..)
-    , StakeKit (..)
     , CaWorld (..)
     , CaSnap (..)
     , requireEnv
@@ -42,7 +41,6 @@ import Control.Exception
     , try
     )
 import Data.Aeson (Value (..))
-import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (IORef)
 import Data.Map.Strict qualified as Map
@@ -72,7 +70,6 @@ import Cardano.Ledger.Api.Tx (bodyTxL)
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
 import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Ledger.Core (extractHash)
-import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
@@ -148,14 +145,7 @@ data Env = Env
     consumer bytes) from the session's blueprint: the row cages
     boot from these.
     -}
-    , envKeys :: IORef (Bool, ByteString)
-    , envDeleteKey :: IORef (Bool, ByteString)
     , envRefs :: IORef (Maybe [(TxIn, TxOut ConwayEra)])
-    {- ^ CG03/CG04 own their own key (D-001): the delete row acts on a
-    witnessed absence, which the shared key is not once CG02 has
-    activated it.
-    ^ (present, current value) for cgKey
-    -}
     , envValidUnits :: IORef (Integer, Integer)
     {- ^ last valid fold's measured units: the hand-built fold
     declares twice these, so the budget covers the error path
@@ -166,13 +156,8 @@ data Env = Env
     (the row validator keeps the two sessions apart).
     -}
     , envWorlds :: IORef (Map.Map String RowCage)
-    {- ^ the issue #70 rows' cages, booted on first use per row group
-    so one row's odd state cannot poison another's
-    -}
-    , envStake :: IORef (Maybe StakeKit)
-    {- ^ the stake_script hook's world (CG14/CG15): the blueprint's
-    staking validator, its registered credential, the cage booted
-    with the hook set
+    {- ^ the registry rows' registries, booted on first use by name so
+    one row's odd state cannot poison another's
     -}
     , envKey2 :: IORef (Maybe (SignKeyDSIGN Ed25519DSIGN, Addr))
     {- ^ a second funded wallet (CG19's second request owner),
@@ -215,21 +200,6 @@ data RowCage = RowCage
     submissions — far too many to spend inside a request's phase-1
     window, so it happens before any request of this cage exists.
     -}
-    }
-
-{- | The staking validator's kit (CG14/CG15): the blueprint's
-staking validator bytes and hash (cross-checked against the pinned
-manifest), and the cage it is registered for. The credential is
-registered on the devnet (a withdrawal from an unregistered account
-is a phase-1 error, not a verdict on the leg); the bytes and hash
-build the withdrawal credential the folds carry. NOTE-046: no
-datum hook remains — the former @cfgStakeScript@ pin died with the
-owner role, so the kit's cage boots like every other cage.
--}
-data StakeKit = StakeKit
-    { skBytes :: SBS.ShortByteString
-    , skHash :: ScriptHash
-    , skCage :: RowCage
     }
 
 {- | The CA session's world (issue #69). The canonical seed's outRef
