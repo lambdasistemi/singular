@@ -145,15 +145,11 @@ import Cardano.Ledger.Credential
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
-import Cardano.Node.Client.E2E.Setup (addKeyWitness)
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
-    )
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
 import Data.Void (Void)
 
+import Conformance.Cli.Node (NodeCaps (..), withBackendNode)
 import Singular.Application.OpenDatum.Book
     ( insertApproval
     , insertDestination
@@ -208,13 +204,12 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.Node
-    ( ExternalNode (..)
-    , NodeMode (..)
-    , NodeSession (..)
+    ( SubmitResult (..)
     , Wallet (..)
-    , awaitTxWindow
     , loadWallet
-    , withNodeMode
+    , signTx
+    , signedTx
+    , submitSigned
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
@@ -549,21 +544,17 @@ runWith chooseStory args = do
     let strict = isJust (optRegistry o)
     stopped <-
         try
-            ( withNodeMode
-                ( External
-                    ( ExternalNode
-                        (optSocket o)
-                        (fromIntegral (optMagic o))
-                        (optWalletKey o)
-                    )
-                )
-                $ \sess -> do
+            ( withBackendNode
+                (optSocket o)
+                (fromIntegral (optMagic o))
+                (optWalletKey o)
+                $ \caps -> do
                     -- Before anything is written the wallet must be able to
                     -- fund every action the take will ask of it.
                     when strict $ do
                         -- The wallet and the parameters, from one view.
                         (utxos, pp) <-
-                            Cage.withView (nsProvider sess) $ \v ->
+                            Cage.withView (ncReads caps) $ \v ->
                                 (,)
                                     <$> Cage.viewUTxOsAt v (walletAddr wallet)
                                     <*> pure (Cage.viewProtocolParams v)
@@ -600,7 +591,7 @@ runWith chooseStory args = do
                             receipts
                             evidence
                             step
-                            (Just (sess, wallet))
+                            (Just (caps, wallet))
                             strict
                         )
                         story
@@ -619,8 +610,8 @@ data Env = Env
     , envReceipts :: FilePath
     , envEvidence :: FilePath
     , envStep :: IORef Int
-    , envSession :: Maybe (NodeSession, Wallet)
-    -- ^ The one node session every backend action shares
+    , envSession :: Maybe (NodeCaps, Wallet)
+    -- ^ The capabilities of the one node session every backend action shares
     , envStrict :: Bool
     {- ^ A take on an existing registry: it stops on an uncertain outcome
     and on any requirement of the story that does not hold, before the
@@ -932,19 +923,15 @@ envelopeFor r controller key =
 -- The node
 -- ---------------------------------------------------------
 
-withNode :: Env -> (NodeSession -> Wallet -> IO a) -> IO a
-withNode Env{envSession = Just (sess, wallet)} body = body sess wallet
-withNode env body = do
+withSession :: Env -> (NodeCaps -> Wallet -> IO a) -> IO a
+withSession Env{envSession = Just (caps, wallet)} body = body caps wallet
+withSession env body = do
     let o = envOptions env
     wallet <- loadWallet (fromIntegral (optMagic o)) (optWalletKey o)
-    withNodeMode
-        ( External
-            ( ExternalNode
-                (optSocket o)
-                (fromIntegral (optMagic o))
-                (optWalletKey o)
-            )
-        )
+    withBackendNode
+        (optSocket o)
+        (fromIntegral (optMagic o))
+        (optWalletKey o)
         (`body` wallet)
 
 txIdHex :: ConwayTx -> Text
@@ -963,8 +950,8 @@ reclaim
     :: Env -> Target -> String -> Receipt -> Receipt -> Receipt -> IO Receipt
 reclaim env target key partial seen r = do
     reg <- openRegistry env target
-    withNode env $ \sess wallet -> do
-        let prov = nsProvider sess
+    withSession env $ \caps wallet -> do
+        let prov = ncReads caps
             cfg = regCfg reg
             mine = addrKeyHashBytes (walletAddr wallet)
             -- The registry as one view holds it, and the one request this take
@@ -1037,7 +1024,7 @@ reclaim env target key partial seen r = do
         fst
             <$> submitAndConfirm
                 env
-                sess
+                caps
                 wallet
                 r{rcPendingRequest = Just (renderOutRef reqIn)}
                 unsigned
@@ -1165,12 +1152,12 @@ receipt records which of those the transaction reached.
 -}
 submitAndConfirm
     :: Env
-    -> NodeSession
+    -> NodeCaps
     -> Wallet
     -> Receipt
     -> ConwayTx
     -> IO (Receipt, ConwayTx)
-submitAndConfirm env sess wallet r unsigned
+submitAndConfirm env caps wallet r unsigned
     | Just why <-
         submissionProblem
             (envStrict env)
@@ -1178,17 +1165,18 @@ submitAndConfirm env sess wallet r unsigned
             unsigned =
         -- Nothing is signed or sent: a setup refusal, never the node's verdict.
         pure (r{rcOutcome = "client-error", rcReason = Just why}, unsigned)
-    | otherwise = submitBounded env sess wallet r unsigned
+    | otherwise = submitBounded env caps wallet r unsigned
 
 submitBounded
     :: Env
-    -> NodeSession
+    -> NodeCaps
     -> Wallet
     -> Receipt
     -> ConwayTx
     -> IO (Receipt, ConwayTx)
-submitBounded env sess wallet r unsigned = do
-    let signed = addKeyWitness (walletSignKey wallet) unsigned
+submitBounded env caps wallet r unsigned = do
+    let witnessed = signTx (walletSignKey wallet) unsigned
+        signed = signedTx witnessed
         txid = txIdHex signed
     (body, bodyDigest) <- keepBody env (rcStep r) signed
     let r0 =
@@ -1198,7 +1186,7 @@ submitBounded env sess wallet r unsigned = do
                 , rcBodyFile = Just body
                 , rcBodySha256 = Just bodyDigest
                 }
-    answer <- try (submitTx (nsSubmitter sess) signed)
+    answer <- try (submitSigned (ncSubmit caps) witnessed)
     case answer of
         Left (e :: SomeException) ->
             pure
@@ -1226,7 +1214,7 @@ submitBounded env sess wallet r unsigned = do
                 , signed
                 )
         Right (Submitted _) -> do
-            waiter <- async (awaitTxWindow signed (T.unpack txid))
+            waiter <- async (ncConfirm caps signed (T.unpack txid))
             seen <- timeout 120_000_000 (waitCatch waiter)
             case seen of
                 Just (Right ()) -> pure (r0{rcOutcome = "accepted"}, signed)
@@ -1746,12 +1734,12 @@ exitNumber status = case status of
 transaction: a killed command's accepted submission, on the chain.
 -}
 awaitOnChain :: Env -> Text -> IO ()
-awaitOnChain env txid = withNode env $ \sess wallet -> do
+awaitOnChain env txid = withSession env $ \caps wallet -> do
     let go (0 :: Int) = pure ()
         go n = do
             utxos <-
                 Cage.withView
-                    (nsProvider sess)
+                    (ncReads caps)
                     (`Cage.viewUTxOsAt` walletAddr wallet)
             unless
                 (any ((== txid) . T.takeWhile (/= '#') . renderOutRef . fst) utxos)
@@ -1798,8 +1786,8 @@ applicationReference reg att =
 book :: Env -> Target -> String -> Receipt -> IO Receipt
 book env target key r = do
     reg <- openRegistry env target
-    withNode env $ \sess wallet -> do
-        let prov = nsProvider sess
+    withSession env $ \caps wallet -> do
+        let prov = ncReads caps
             cfg = regCfg reg
         att <-
             Cage.withView prov (\v -> attach v (regDeployment reg) (partsOf cfg))
@@ -1812,7 +1800,7 @@ book env target key r = do
             dest = insertDestination Testnet (applied reg) e
         result <- newIORef Nothing
         let submit unsigned = do
-                (r', signed) <- submitAndConfirm env sess wallet r unsigned
+                (r', signed) <- submitAndConfirm env caps wallet r unsigned
                 modifyIORef' result (const (Just r'))
                 unless (rcOutcome r' == "accepted") $
                     fail ("the booking was not accepted: " <> T.unpack (rcOutcome r'))
@@ -1890,9 +1878,9 @@ foldWith env target selection tweak byStranger r = do
     reg <- openRegistry env target
     stranger <-
         loadWallet (fromIntegral (optMagic opts)) (optStranger opts)
-    withNode env $ \sess wallet -> do
+    withSession env $ \caps wallet -> do
         let folder = if byStranger then stranger else wallet
-        let prov = nsProvider sess
+        let prov = ncReads caps
             cfg = regCfg reg
             tok = regToken reg
             home = walletAddr wallet
@@ -2076,7 +2064,7 @@ foldWith env target selection tweak byStranger r = do
                         , cfaAdjustRoot = id
                         }
         void (evaluate unsigned)
-        result <- fst <$> submitAndConfirm env sess folder r0 unsigned
+        result <- fst <$> submitAndConfirm env caps folder r0 unsigned
         -- The chain took the edge: the backend's mirror takes it too.
         when (rcOutcome result == "accepted") $ do
             withTrie tm tok $ \t ->
@@ -2092,8 +2080,8 @@ backendDir env (Target t) = optWork (envOptions env) </> "backend" </> t
 observe :: Env -> Target -> String -> Receipt -> IO Receipt
 observe env target key r = do
     reg <- openRegistry env target
-    withNode env $ \sess wallet -> do
-        let prov = nsProvider sess
+    withSession env $ \caps wallet -> do
+        let prov = ncReads caps
             cfg = regCfg reg
             identity = scriptHashBytes (cfgScriptHash cfg) <> tokenBytes reg
         att <-
@@ -2229,8 +2217,8 @@ craftHolding env c target key r = do
     let o = envOptions env
     reg <- openRegistry env target
     stranger <- loadWallet (fromIntegral (optMagic o)) (optStranger o)
-    withNode env $ \sess wallet -> do
-        let prov = nsProvider sess
+    withSession env $ \caps wallet -> do
+        let prov = ncReads caps
             appHash = hex (scriptHashBytes (computeScriptHash (applied reg)))
             r0 = r{rcEvaluation = Just "skipped", rcApplication = Just appHash}
             mine = addrKeyHashBytes (walletAddr wallet)
@@ -2355,9 +2343,9 @@ craftHolding env c target key r = do
                 built
         let witnessed =
                 if c == UpdateByStranger
-                    then addKeyWitness (walletSignKey stranger) unsigned
+                    then signedTx (signTx (walletSignKey stranger) unsigned)
                     else unsigned
-        fst <$> submitAndConfirm env sess wallet r0 witnessed
+        fst <$> submitAndConfirm env caps wallet r0 witnessed
 
 -- | The last byte of a name or hash, changed: the same length, another value.
 flipLast :: ByteString -> ByteString
@@ -2371,15 +2359,15 @@ approval carries stated budgets, so the node judges every one.
 -}
 bookedBy
     :: Env
-    -> NodeSession
+    -> NodeCaps
     -> Wallet
     -> Receipt
     -> ((ConwayTx -> IO ConwayTx) -> IO ConwayTx)
     -> IO Receipt
-bookedBy env sess payer r building = do
+bookedBy env caps payer r building = do
     result <- newIORef Nothing
     let submit unsigned = do
-            (r', signed) <- submitAndConfirm env sess payer r unsigned
+            (r', signed) <- submitAndConfirm env caps payer r unsigned
             modifyIORef' result (const (Just r'))
             unless (rcOutcome r' == "accepted") $
                 fail ("the booking was not accepted: " <> T.unpack (rcOutcome r'))
@@ -2406,8 +2394,8 @@ craftBooking env c target key r = do
     let o = envOptions env
     reg <- openRegistry env target
     stranger <- loadWallet (fromIntegral (optMagic o)) (optStranger o)
-    withNode env $ \sess wallet -> do
-        let prov = nsProvider sess
+    withSession env $ \caps wallet -> do
+        let prov = ncReads caps
             cfg = regCfg reg
             appHash = hex (scriptHashBytes (computeScriptHash (applied reg)))
             r0 = r{rcEvaluation = Just "skipped", rcApplication = Just appHash}
@@ -2437,7 +2425,7 @@ craftBooking env c target key r = do
             deposit =
                 ctlDeposit (envControl e)
                     - (if c == BookingShortDeposit then 1 else 0)
-        bookedBy env sess payer r0 $ \submit ->
+        bookedBy env caps payer r0 $ \submit ->
             bookEdgeWith
                 cfg
                 prov
@@ -2459,8 +2447,8 @@ craftTermination env byStranger target key r = do
     let o = envOptions env
     reg <- openRegistry env target
     stranger <- loadWallet (fromIntegral (optMagic o)) (optStranger o)
-    withNode env $ \sess wallet -> do
-        let prov = nsProvider sess
+    withSession env $ \caps wallet -> do
+        let prov = ncReads caps
             cfg = regCfg reg
             appHash = hex (scriptHashBytes (computeScriptHash (applied reg)))
             r0 = r{rcEvaluation = Just "skipped", rcApplication = Just appHash}
@@ -2486,7 +2474,7 @@ craftTermination env byStranger target key r = do
                 )
                     { baScriptReference = Just appRef
                     }
-        bookedBy env sess payer r0 $ \submit ->
+        bookedBy env caps payer r0 $ \submit ->
             bookEdgeWith
                 cfg
                 prov

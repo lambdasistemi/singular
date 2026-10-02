@@ -7,25 +7,31 @@ Description : #323 — the read interface acquires one chain view per operation
 License     : Apache-2.0
 
 The read interface has one entry: acquire a view, read through it, and
-let it go. These rows hold both adapters to that contract.
+let it go. The contract every adapter meets is the shared suite in
+"Singular.Registry.ContractSuite" (#326); these rows keep what is
+specific to one adapter.
 
-The in-memory adapter is the deterministic chain the interleaving rows
-need: a change made after a view is acquired never reaches that view,
-and a fresh acquisition does see it. Each row compares against the
-chain value the row itself built, never against a literal the adapter
-produced.
+The in-memory adapter advances its point by one slot per mutation.
 
 The node adapter is held at its own boundary: the upstream node client
 is replaced by one whose acquired session serves a chain value and
 counts its acquisitions, and whose one-shot queries fail the row the
 moment anything calls them. A view must be one acquisition, every read
-through it must be served by that acquisition, the chain origin must be
-refused, and a lost connection must surface as its own failure.
+through it must be served by that acquisition, and a connection lost
+while acquiring must surface as its own failure.
+
+The session's connection guard (#326) is held on the same fake: a
+one-shot query, a second acquisition or a submission issued from inside
+a view fails by name, the same call outside the view answers, and a read
+waiting on a connection that has ended fails rather than waits.
 -}
 module Singular.Registry.ProviderSpec (spec) where
 
 import Control.Concurrent (forkIO, threadDelay)
+import Control.Concurrent.Async (async)
+import Control.Concurrent.MVar (newEmptyMVar, putMVar, takeMVar)
 import Control.Exception (ErrorCall (..), throwIO, try)
+import Control.Monad (forever)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
@@ -39,7 +45,7 @@ import Test.Hspec
 
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.PParams (emptyPParams, ppTxFeeFixedL)
-import Cardano.Ledger.Api.Tx (mkBasicTx)
+import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (mkBasicTxBody)
 import Cardano.Ledger.Api.Tx.Out (TxOut, mkBasicTxOut)
 import Cardano.Ledger.BaseTypes (Network (Testnet))
@@ -48,6 +54,10 @@ import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Node.Client.N2C.Types (ConnectionLost (..))
 import Cardano.Node.Client.Provider qualified as N2C
+import Cardano.Node.Client.Submitter
+    ( SubmitResult (..)
+    , Submitter (..)
+    )
 import Ouroboros.Consensus.HardFork.Combinator.AcrossEras
     ( OneEraHash (..)
     )
@@ -58,12 +68,15 @@ import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra, PParams)
 import Singular.Registry.Node.Memory
     ( ChainState (..)
-    , loseConnection
     , memoryProvider
     , mutate
     , newMemoryChain
     )
-import Singular.Registry.Node.Session (firstViewWithin)
+import Singular.Registry.Node.Session
+    ( NodeCallInView (..)
+    , firstViewWithin
+    , guardConnection
+    )
 import Singular.Registry.Node.View (nodeProvider)
 import Singular.Registry.Provider
     ( ChainPoint (..)
@@ -81,6 +94,7 @@ spec :: Spec
 spec = describe "the read interface acquires one chain view (#323)" $ do
     memorySpec
     nodeSpec
+    guardSpec
     originSpec
 
 -- ---------------------------------------------------------
@@ -89,36 +103,6 @@ spec = describe "the read interface acquires one chain view (#323)" $ do
 
 memorySpec :: Spec
 memorySpec = describe "in-memory adapter" $ do
-    it
-        "a view names the network, era, slot and block hash it was acquired at"
-        $ do
-            chain <- newMemoryChain genesis
-            mutate chain id
-            point <- withView (memoryProvider chain) (pure . viewPoint)
-            cpNetwork point `shouldBe` csNetwork genesis
-            cpEra point `shouldBe` csEra genesis
-            cpSlot point `shouldBe` SlotNo 1
-            BS.length (cpBlockHash point) `shouldBe` 32
-    it
-        "acquiring at the chain origin fails as AcquiredAtOrigin, never as an empty view"
-        $ do
-            chain <- newMemoryChain genesis
-            r <- try (withView (memoryProvider chain) (`viewUTxOsAt` payer))
-            r `shouldBe` Left AcquiredAtOrigin
-    it
-        "a change after acquisition never reaches the view; a fresh view sees it"
-        $ do
-            chain <- newMemoryChain genesis
-            mutate chain id
-            let prov = memoryProvider chain
-            (inside, fresh) <- withView prov $ \v -> do
-                mutate chain changed
-                inside <- observe v
-                fresh <- withView prov observe
-                pure (inside, fresh)
-            inside `shouldBe` observeState genesis
-            fresh `shouldBe` observeState (changed genesis)
-            fst3 fresh `shouldNotBe` fst3 inside
     it "each mutation advances the chain point" $ do
         chain <- newMemoryChain genesis
         mutate chain id
@@ -127,44 +111,6 @@ memorySpec = describe "in-memory adapter" $ do
         p2 <- withView (memoryProvider chain) (pure . viewPoint)
         cpSlot p2 `shouldBe` succ (cpSlot p1)
         cpBlockHash p2 `shouldNotBe` cpBlockHash p1
-    it
-        "a view used after its scope fails as ViewOutOfScope, never as empty"
-        $ do
-            chain <- newMemoryChain genesis
-            mutate chain id
-            escaped <- withView (memoryProvider chain) pure
-            r <- try (viewUTxOsAt escaped payer)
-            r `shouldBe` Left ViewOutOfScope
-            s <- try (viewScriptRegistered escaped credential)
-            s `shouldBe` Left ViewOutOfScope
-    it
-        "a lost connection fails the acquisition and every read as ViewConnectionLost"
-        $ do
-            chain <- newMemoryChain genesis
-            mutate chain id
-            let prov = memoryProvider chain
-            inside <- withView prov $ \v -> do
-                loseConnection chain
-                try (viewUTxOsAt v payer)
-            inside `shouldBe` Left ViewConnectionLost
-            r <- try (withView prov (`viewUTxOsAt` payer))
-            r `shouldBe` Left ViewConnectionLost
-  where
-    fst3 (a, _, _) = a
-    observeState c =
-        ( csPParams c
-        , Map.toList (csUTxO c)
-        , credential `Set.member` csRegistered c
-        )
-
--- | What a row reads through a view: parameters, the wallet, registration.
-observe
-    :: View IO -> IO (PParams ConwayEra, [(TxIn, TxOut ConwayEra)], Bool)
-observe v = do
-    utxos <- viewUTxOsAt v payer
-    registered <- viewScriptRegistered v credential
-    pure (viewProtocolParams v, utxos, registered)
-
 genesis :: ChainState
 genesis =
     ChainState
@@ -216,12 +162,6 @@ nodeSpec = describe "node adapter over withAcquired" $ do
                 }
         utxos `shouldBe` [(outRef '3', ada 100_000_000)]
         registered `shouldBe` True
-    it "the chain origin is refused as AcquiredAtOrigin" $ do
-        (fake, _) <- fakeNode Nothing Nothing
-        r <-
-            try
-                (withView (nodeProvider (NetworkMagic 42) fake) (pure . viewPoint))
-        r `shouldBe` Left AcquiredAtOrigin
     it "a connection lost during the acquisition is ViewConnectionLost" $ do
         (fake, _) <-
             fakeNode (Just (7, BS.replicate 32 0xab)) (Just ConnectionLost)
@@ -229,11 +169,6 @@ nodeSpec = describe "node adapter over withAcquired" $ do
             try
                 (withView (nodeProvider (NetworkMagic 42) fake) (pure . viewPoint))
         r `shouldBe` Left ViewConnectionLost
-    it "a node view used after its scope is ViewOutOfScope" $ do
-        (fake, _) <- fakeNode (Just (7, BS.replicate 32 0xab)) Nothing
-        escaped <- withView (nodeProvider (NetworkMagic 42) fake) pure
-        r <- try (viewUTxOsAt escaped payer)
-        r `shouldBe` Left ViewOutOfScope
 
 {- | An upstream provider whose acquired session serves a fixed chain
 and counts acquisitions. Its one-shot fields fail: nothing may read
@@ -350,3 +285,127 @@ originSpec = describe "waiting for a fresh chain's first block" $ do
             _ <- forkIO (threadDelay 150_000 >> mutate chain id)
             point <- firstViewWithin 20 "node.socket" (memoryProvider chain)
             cpSlot point `shouldBe` SlotNo 1
+
+-- ---------------------------------------------------------
+-- No node call inside a view (#326 I3)
+-- ---------------------------------------------------------
+
+{- | The session's connection guard over an upstream whose one-shot
+queries and submitter answer: an unguarded call made inside a view
+returns, so only the guard can make these rows refuse. Each refusal is
+paired with the same call outside the view, which must answer.
+-}
+guardSpec :: Spec
+guardSpec = describe "no node call inside a view by another route (#326)" $ do
+    it
+        "a one-shot query issued inside a view fails as NodeCallInView; \
+        \outside the view it answers"
+        $ do
+            (n2c, _, _) <- guarded
+            let prov = nodeProvider (NetworkMagic 42) n2c
+            inside <- withView prov $ \_ -> try (N2C.queryLedgerSnapshot n2c)
+            either
+                (\e -> e `shouldBe` NodeCallInView "queryLedgerSnapshot")
+                (const (expectationFailure "the one-shot answered inside the view"))
+                inside
+            outside <- N2C.ledgerTipSlot <$> N2C.queryLedgerSnapshot n2c
+            outside `shouldBe` SlotNo 7
+    it
+        "a second acquisition inside a view fails as NodeCallInView; after \
+        \the view it is acquired"
+        $ do
+            (n2c, _, _) <- guarded
+            let prov = nodeProvider (NetworkMagic 42) n2c
+            inside <- withView prov $ \_ -> try (withView prov (pure . viewPoint))
+            either
+                (\e -> e `shouldBe` NodeCallInView "withAcquired")
+                (const (expectationFailure "a nested view was acquired"))
+                inside
+            released <- withView prov (pure . cpSlot . viewPoint)
+            released `shouldBe` SlotNo 7
+    it
+        "a submission inside a view fails as NodeCallInView and never \
+        \reaches the node; outside the view it does"
+        $ do
+            (n2c, submitter, sent) <- guarded
+            let prov = nodeProvider (NetworkMagic 42) n2c
+                tx = mkBasicTx mkBasicTxBody
+            inside <- withView prov $ \_ -> try (submitTx submitter tx)
+            either
+                (\e -> e `shouldBe` NodeCallInView "submitTx")
+                (const (expectationFailure "the submission went out inside the view"))
+                inside
+            readIORef sent `shouldReturn` 0
+            _ <- submitTx submitter tx
+            readIORef sent `shouldReturn` 1
+    it
+        "a query another thread issues while a view is held is not refused"
+        $ do
+            (n2c, _, _) <- guarded
+            let prov = nodeProvider (NetworkMagic 42) n2c
+            answered <- newEmptyMVar
+            withView prov $ \_ -> do
+                _ <- forkIO (try (N2C.queryLedgerSnapshot n2c) >>= putMVar answered)
+                threadDelay 50_000
+            r <- timeout 2_000_000 (takeMVar answered)
+            fmap (fmap N2C.ledgerTipSlot) r
+                `shouldBe` Just (Right (SlotNo 7) :: Either NodeCallInView SlotNo)
+    it
+        "a read inside a view whose connection has ended fails as \
+        \ViewConnectionLost instead of waiting for an answer"
+        $ do
+            (fake, _) <- fakeNode (Just (7, BS.replicate 32 0xab)) Nothing
+            stop <- newEmptyMVar
+            client <- async (takeMVar stop)
+            (n2c, _) <-
+                guardConnection
+                    client
+                    (silent fake)
+                    (Submitter (const (fail "unused")))
+            let readAfterEnd v = putMVar stop () >> viewUTxOsAt v payer
+            r <-
+                timeout 5_000_000 . try $
+                    withView (nodeProvider (NetworkMagic 42) n2c) readAfterEnd
+            r `shouldBe` Just (Left ViewConnectionLost)
+  where
+    guarded = do
+        (fake, _) <- fakeNode (Just (7, BS.replicate 32 0xab)) Nothing
+        sent <- newIORef (0 :: Int)
+        let answering =
+                fake
+                    { N2C.queryLedgerSnapshot =
+                        N2C.withAcquired fake N2C.queryLedgerSnapshotH
+                    }
+            submitter = Submitter $ \tx -> do
+                modifyIORef' sent (+ 1)
+                pure (Submitted (txIdTx tx))
+        client <- async (forever (threadDelay 1_000_000))
+        (n2c, s) <- guardConnection client answering submitter
+        pure (n2c, s, sent)
+
+{- | The fake node with an acquired state whose reads never answer, as a
+node's do once the connection to it has ended.
+-}
+silent :: N2C.Provider IO -> N2C.Provider IO
+silent fake =
+    fake
+        { N2C.withAcquired = \k -> N2C.withAcquired fake $ \h ->
+            k
+                ( N2C.mkQueryHandle
+                    N2C.QueryHandleBackend
+                        { N2C.backendQueryUTxOs = \_ -> forever (threadDelay 1_000_000)
+                        , N2C.backendQueryUTxOsAt = N2C.queryUTxOsAtH h
+                        , N2C.backendQueryUTxOByTxIn = N2C.queryUTxOByTxInH h
+                        , N2C.backendQueryProtocolParams = N2C.queryProtocolParamsH h
+                        , N2C.backendQueryLedgerSnapshot = N2C.queryLedgerSnapshotH h
+                        , N2C.backendQueryStakeRewards = N2C.queryStakeRewardsH h
+                        , N2C.backendQueryRewardAccounts = N2C.queryRewardAccountsH h
+                        , N2C.backendQueryVoteDelegatees = N2C.queryVoteDelegateesH h
+                        , N2C.backendQueryTreasury = N2C.queryTreasuryH h
+                        , N2C.backendQueryGovernanceState = N2C.queryGovernanceStateH h
+                        , N2C.backendEvaluateTx = N2C.evaluateTxH h
+                        , N2C.backendPosixMsToSlot = N2C.posixMsToSlotH h
+                        , N2C.backendPosixMsCeilSlot = N2C.posixMsCeilSlotH h
+                        }
+                )
+        }

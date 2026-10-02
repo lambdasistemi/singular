@@ -72,9 +72,7 @@ import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Node.Client.E2E.Setup
     ( Ed25519DSIGN
     , SignKeyDSIGN
-    , addKeyWitness
     )
-import Cardano.Node.Client.Submitter (SubmitResult (..))
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
@@ -84,6 +82,11 @@ import Singular.Registry.Ledger
     , Root (..)
     , TokenId (..)
     , TxOut
+    )
+import Singular.Registry.Node
+    ( SubmitResult (..)
+    , signTx
+    , signedTx
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
@@ -309,8 +312,9 @@ bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
                 <> show key
                 <> " is not one of the seven admissible edges"
             )
-    pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
-    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` payerAddr)
+    -- One transaction, one view: parameters and the payer's outputs.
+    (pp, utxos) <- Cage.withView prov $ \v ->
+        (,) (Cage.viewProtocolParams v) <$> Cage.viewUTxOsAt v payerAddr
     (feeIn, feeOut) <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
         [] -> failWith "bookEdge: payer wallet has no UTxOs"
         (u : _) -> pure u
@@ -368,10 +372,11 @@ bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
                     .~ Set.singleton (addrWitnessKeyHash owner)
         unsigned =
             RegistryEdges.certifyBooking pp collateralIn approval (mkBasicTx body)
-        signed = addKeyWitness payerSk unsigned
-    result <- submitTxResilient (envSubmit env) signed
+        signedWitnessed = signTx payerSk unsigned
+        signed = signedTx signedWitnessed
+    result <- submitTxResilient (envSubmit env) signedWitnessed
     case result of
-        Submitted _ -> awaitTx signed
+        Submitted _ -> confirmTx env signed
         Rejected reason ->
             failWith
                 ( "bookEdge refused (edge "

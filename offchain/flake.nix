@@ -99,6 +99,7 @@
           inherit pkgs components;
           inherit (project.project) shell;
           inherit cardanoNode;
+          ghc = project.project.pkg-set.config.ghc.package;
         };
 
         # #278 S2: the pinned house formatter. Fourmolu is resolved by the
@@ -328,6 +329,36 @@
                 --prefix PATH : ${cardanoNode}/bin
             '';
 
+        # #326: the backend contract suite over every adapter, wrapped so it
+        # brings the locked cardano-node for the devnet nodes it generates.
+        contract-tests =
+          pkgs.runCommand "contract-tests"
+            {
+              buildInputs = [ pkgs.makeWrapper ];
+              meta = (components.tests.contract-tests.meta or { }) // {
+                mainProgram = "contract-tests";
+              };
+            }
+            ''
+              mkdir -p $out/bin
+              makeWrapper ${pkgs.lib.getExe components.tests.contract-tests} $out/bin/contract-tests \
+                --prefix PATH : ${cardanoNode}/bin
+            '';
+
+        # #326 R5: the external leg. A devnet started as a process of its own
+        # funds a fresh key; the contract suite then reaches that node only
+        # by the socket the devnet printed, the network magic and the key
+        # file, through the constructor a singular write uses.
+        contract-external = pkgs.writeShellApplication {
+          name = "contract-external";
+          runtimeInputs = [
+            pkgs.coreutils
+            devnet
+            contract-tests
+          ];
+          text = builtins.readFile ./contract-test/external.sh;
+        };
+
         # The connected verifier (issue #77, S3): recomputes verdicts from
         # raw run evidence. Pure offline tool: no node on PATH needed, but
         # wrapped like the runners for uniformity. Blueprints come from the
@@ -459,6 +490,8 @@
           # Issue #102: the deployment tool and the devnet a deployment can
           # outlive, both exposed so the attach check can reach them.
           inherit deployment devnet;
+          # #326: the contract suite and its external leg.
+          inherit contract-tests contract-external;
           # #173 A173-COMMAND: the packaged verb, exposed so the release
           # archive's documented invocation resolves without a checkout.
           inherit insert-active update-terminal;
@@ -466,6 +499,8 @@
           # node through the socket its caller names and spawns none, so it
           # needs no cardano-node on its PATH.
           inherit (components.exes) singular;
+          # #326 R4: a SignedTx is constructible only through signTx.
+          inherit (haskellChecks) signed-tx-control;
           # #278 S2: the pinned house formatter, for the root format
           # recipes and controls (same locked tool as the lint check).
           fourmolu = fourmoluTool;
@@ -481,6 +516,15 @@
         checks = haskellChecks;
 
         apps = haskellApps // {
+          # #326.
+          contract-tests = {
+            type = "app";
+            program = pkgs.lib.getExe contract-tests;
+          };
+          contract-external = {
+            type = "app";
+            program = pkgs.lib.getExe contract-external;
+          };
           # #299.
           singular = {
             type = "app";

@@ -17,7 +17,7 @@ import Deployment.Narration (emit)
 import Deployment.Node (verifyRegisteredDeployment)
 import Deployment.Options (verifyManifest)
 import Singular.Registry.Deployment (readDeployment)
-import Singular.Registry.Node (withNode)
+import Singular.Registry.Node (Capabilities (..), withCapabilities)
 
 -- | Verify the manifest these arguments name against the node.
 verify :: [String] -> IO ()
@@ -25,8 +25,8 @@ verify args = do
     path <- verifyManifest args
     dep <- readDeployment path
     compiled <- loadCompiled >>= (`bindDeployment` dep)
-    withNode $ \sess -> do
-        claims <- verifyRegisteredDeployment sess dep compiled
+    withCapabilities $ \caps -> do
+        claims <- verifyRegisteredDeployment (capReads caps) dep compiled
         mapM_ (emit "verified") claims
         emit
             "complete"

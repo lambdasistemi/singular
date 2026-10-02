@@ -131,6 +131,9 @@ def assemble(
     # without either stays honest instead of inventing a commit.
     release_commit = os.environ.get("RELEASE_COMMIT", "").strip() or "unknown-dirty"
     (farm / "RELEASE-COMMIT").write_text(release_commit + "\n", encoding="utf-8")
+    # #326: the application model revision the release maps to, from the one
+    # file the conformance evidence is compiled against.
+    shutil.copyfile(root / "conformance" / "model-revision", farm / "MODEL-REVISION")
 
     staging = work / "staging"
     stage_release(farm, staging)

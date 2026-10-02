@@ -13,6 +13,8 @@ author:        Paolo Veronelli
 maintainer:    paolo.veronelli@gmail.com
 category:      Cardano
 build-type:    Simple
+extra-source-files:
+  model-revision
 extra-doc-files:
   README.md
 data-files:
@@ -79,6 +81,7 @@ library
     Conformance.NodeRejection
     Conformance.PurposeUnits
     Conformance.Refusal
+    Conformance.EvidencePage
     Conformance.Rows
     Conformance.Story.Binding
     Conformance.Story.Live
@@ -107,6 +110,7 @@ library
     , operational >=0.2.4.2 && <0.3
     , process >=1.6 && <1.7
     , scientific >=0.3 && <0.4
+    , template-haskell >=2.18 && <2.25
     , text >=2.0 && <2.2
     , vector >=0.13 && <0.14
 
@@ -133,6 +137,7 @@ common live-runner
     Conformance.Run.Cage
     Conformance.Run.Wallet
     Conformance.Run.Submit
+    Conformance.Run.Node
     Conformance.Run.Environment
     Conformance.Run.Observe
     Conformance.Run.Manifest
@@ -188,6 +193,7 @@ executable cli-controls
     Conformance.Cli.Admission
     Conformance.Cli.Attach
     Conformance.Cli.Backend
+    Conformance.Cli.Node
     Conformance.Cli.Proof
   build-depends:
     , aeson >=2.1 && <2.3
@@ -201,8 +207,6 @@ executable cli-controls
     , cardano-ledger-binary
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-node-clients
-    , cardano-node-clients:devnet
     , cardano-tx-tools:tx-build
     , conformance
     , containers >=0.6 && <0.8
@@ -253,6 +257,7 @@ test-suite conformance-tests
     Conformance.Story.Usage
     Conformance.Support.Authenticate
     Conformance.Support.Fixture
+    Conformance.Support.HeldView
     Conformance.Support.RegistrationComparison
     Conformance.Support.Payments
     Conformance.Support.Oracle
@@ -268,6 +273,7 @@ test-suite conformance-tests
     Conformance.Support.Receipt
     Conformance.Support.ReceiptBound
     Conformance.Support.Refusal
+    Conformance.Support.EvidencePage
     Conformance.Support.Rows
     Conformance.Support.Identity
     Conformance.Support.Specification
@@ -280,7 +286,6 @@ test-suite conformance-tests
     , bytestring >=0.11 && <0.13
     , cardano-crypto-class
     , cardano-ledger-binary
-    , cardano-node-clients
     , cardano-node-clients:devnet
     , conformance
     , mts:mpf-write

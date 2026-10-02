@@ -34,9 +34,7 @@ import Control.Concurrent.MVar
     , tryReadMVar
     )
 import Control.Concurrent.STM
-    ( TVar
-    , atomically
-    , newTVarIO
+    ( atomically
     , readTVar
     , writeTVar
     )
@@ -54,22 +52,17 @@ import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
 import Data.Text qualified as T
-import Data.Time.Clock (getCurrentTime)
 import System.Timeout (timeout)
 import Test.Hspec
 
-import Cardano.Crypto.Hash (hashToBytes)
 import Cardano.Ledger.Address (Addr, serialiseAddr)
 import Cardano.Ledger.Api.PParams (emptyPParams)
 import Cardano.Ledger.Api.Tx (mkBasicTx)
 import Cardano.Ledger.Api.Tx.Body (mkBasicTxBody)
-import Cardano.Ledger.Api.Tx.Out (TxOut, addrTxOutL, mkBasicTxOut)
-import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
-import Cardano.Ledger.Binary (serialize')
-import Cardano.Ledger.Core (eraProtVerLow)
-import Cardano.Ledger.Hashes (extractHash)
+import Cardano.Ledger.Api.Tx.Out (TxOut, mkBasicTxOut)
+import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.Mary.Value (MaryValue (..))
-import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
+import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Node.Client.N2C.Reconnect
     ( DisconnectInfo (..)
     , UpstreamStatus (..)
@@ -82,21 +75,18 @@ import Cardano.Node.Client.UTxOIndexer.Indexer
     ( IndexerHandle (..)
     , withInMemoryIndexer
     )
-import Cardano.Node.Client.UTxOIndexer.IndexerOp (UtxoOp (..))
 import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
-import Lens.Micro ((^.))
 
 import Singular.Registry.Deployment (parseOutRef)
+import Singular.Registry.IndexerRig
 import Singular.Registry.Ledger (Coin (..), ConwayEra, PParams)
 import Singular.Registry.Node (bech32Address)
 import Singular.Registry.Node.IndexGate
     ( Coverage (..)
-    , IndexGate
     , IndexedPoint (..)
     , gateServed
     , gatedHandle
     , indexedPoint
-    , newIndexGate
     , withHeldIndex
     )
 import Singular.Registry.Node.Indexer
@@ -113,10 +103,7 @@ import Singular.Registry.Node.IndexerView
     )
 import Singular.Registry.Node.Memory
     ( ChainState (..)
-    , MemoryChain
     , memoryProvider
-    , mutate
-    , newMemoryChain
     )
 import Singular.Registry.Provider
     ( ChainPoint (..)
@@ -790,58 +777,11 @@ genesisOutputs =
 -- Rig
 -- ---------------------------------------------------------
 
--- | A node (an in-memory chain) and an index the rows write as a follower would.
-data Rig = Rig
-    { rigChain :: MemoryChain
-    , rigGate :: IndexGate
-    , rigFollower :: IndexerHandle
-    -- ^ The handle a follower writes through
-    , rigReadiness :: TVar Readiness
-    }
-
 withRig :: Coverage -> (Rig -> IO a) -> IO a
 withRig = withRigOn genesis
 
 withRigOn :: ChainState -> Coverage -> (Rig -> IO a) -> IO a
-withRigOn start coverage k = withInMemoryIndexer $ \idx -> do
-    rigChain <- newMemoryChain start
-    rigGate <- newIndexGate (csNetwork genesis) coverage idx
-    now <- getCurrentTime
-    rigReadiness <-
-        newTVarIO
-            Readiness
-                { rProcessedSlot = Just (Indexer.SlotNo 0)
-                , rTipSlot = Just (Indexer.SlotNo 0)
-                , rUpstream = UpstreamConnected
-                , rUpdatedAt = now
-                }
-    k Rig{rigFollower = gatedHandle rigGate, ..}
-
-adapter :: Rig -> Int -> Provider IO
-adapter rig bound =
-    indexerProvider
-        (rigGate rig)
-        (readinessOf rig)
-        bound
-        (memoryProvider (rigChain rig))
-
-readinessOf :: Rig -> IndexerReadiness
-readinessOf rig =
-    IndexerReadiness
-        { irReadiness = readTVar (rigReadiness rig)
-        , irThresholdSlots = 60
-        }
-
--- | Agreement bound for rows that expect a refusal: a quarter second.
-shortBound :: Int
-shortBound = 250_000
-
--- | Agreement bound for rows that expect an answer: five seconds.
-longBound :: Int
-longBound = 5_000_000
-
-fullCoverage :: Coverage
-fullCoverage = Coverage{coverageStart = Nothing, coverageInterest = IndexAll}
+withRigOn = withRigAt (csNetwork genesis)
 
 -- | The adapter refuses the view, never answering an address read.
 refusedAs :: Rig -> (IndexerViewFailure -> Bool) -> Expectation
@@ -856,57 +796,6 @@ refusedAs rig expected = do
 -- ---------------------------------------------------------
 -- Blocks
 -- ---------------------------------------------------------
-
--- | Outputs a block spends and outputs it creates.
-data Block = Block
-    { spends :: [TxIn]
-    , creates :: [(TxIn, TxOut ConwayEra)]
-    }
-
-{- | Add a block to the node and return its point with the action that
-applies the same block to the index through the follower's handle.
--}
-produce :: Rig -> Block -> IO (ChainPoint, IO ())
-produce rig blk = do
-    mutate (rigChain rig) $ \s ->
-        s
-            { csUTxO =
-                Map.union
-                    (Map.fromList (creates blk))
-                    (foldr Map.delete (csUTxO s) (spends blk))
-            }
-    p <- withView (memoryProvider (rigChain rig)) (pure . viewPoint)
-    pure
-        ( p
-        , applyAtSlot
-            (rigFollower rig)
-            (toIndexerSlot (cpSlot p))
-            (Indexer.BlockHash (cpBlockHash p))
-            (opsOf blk)
-        )
-
-indexed :: Rig -> (ChainPoint, IO ()) -> IO ChainPoint
-indexed _ (p, applyBlock) = applyBlock >> pure p
-
-opsOf :: Block -> [UtxoOp]
-opsOf blk =
-    map (UtxoSpend . indexerTxIn) (spends blk)
-        <> [ UtxoCreate
-                (indexerTxIn i)
-                (Indexer.Address (serialiseAddr (o ^. addrTxOutL)))
-                (Indexer.TxOut (serialize' (eraProtVerLow @ConwayEra) o))
-           | (i, o) <- creates blk
-           ]
-
-indexerTxIn :: TxIn -> Indexer.TxIn
-indexerTxIn (TxIn (TxId h) (TxIx ix)) =
-    Indexer.TxIn (hashToBytes (extractHash h)) (fromIntegral ix)
-
-toIndexerSlot :: SlotNo -> Indexer.SlotNo
-toIndexerSlot (SlotNo s) = Indexer.SlotNo s
-
-pointOf :: ChainPoint -> IndexedPoint
-pointOf p = IndexedPoint (cpSlot p) (cpBlockHash p)
 
 -- | Two outputs at the payer and one at a bystander.
 firstBlock :: Block
@@ -1001,8 +890,3 @@ payer = addrFromKeyHashBytes Testnet (BS.replicate 28 0x5a)
 
 bystander :: Addr
 bystander = addrFromKeyHashBytes Testnet (BS.replicate 28 0x6b)
-
-setReadiness :: Rig -> (Readiness -> Readiness) -> IO ()
-setReadiness rig f = atomically $ do
-    r <- readTVar (rigReadiness rig)
-    writeTVar (rigReadiness rig) (f r)

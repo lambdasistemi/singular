@@ -21,7 +21,7 @@ import Data.Text qualified as T
 
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (Root (..))
-import Singular.Registry.Node (withNode)
+import Singular.Registry.Node (withCapabilities)
 import Singular.Registry.Types (OnChainTokenState (..))
 import UpdateTerminal.Controls (absentRefusal, unknownRefusal)
 import UpdateTerminal.Narration (die, hex, say)
@@ -48,8 +48,8 @@ import UpdateTerminal.Steps
 updateTerminal :: Maybe FilePath -> IO ()
 updateTerminal observedPath = do
     inputs <- readStoryInputs
-    withNode $ \sess -> do
-        session <- openSession sess inputs
+    withCapabilities $ \caps -> do
+        session <- openSession caps inputs
         story <- bootRegistry session "story"
         unknownReg <- bootRegistry session "unknown-leg"
         let cfg = regCfg story

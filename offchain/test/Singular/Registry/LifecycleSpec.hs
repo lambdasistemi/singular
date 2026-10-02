@@ -10,14 +10,30 @@ import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.Lifecycle
     ( checkExecutionLimit
     , fundingView
+    , lifecycleRequested
     )
 import Singular.Registry.Node (funderAddr)
-import Singular.Registry.Provider (View (..))
+import Singular.Registry.Provider (ChainPoint (..), View (..))
 import Singular.Registry.StubView (stubView)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 spec :: Spec
-spec = describe "live aggregate transaction execution limit" $ do
+spec = do
+    lifecycleSelection
+    executionLimit
+
+lifecycleSelection :: Spec
+lifecycleSelection = describe "lifecycle selection from the chain point" $ do
+    let at magic = (viewPoint stubView){cpNetwork = magic}
+    it "stays off on the factory devnet unless asked" $ do
+        lifecycleRequested (at 42) [] `shouldBe` False
+        lifecycleRequested (at 42) ["--lifecycle"] `shouldBe` True
+    it "turns on for any other network, asked or not" $ do
+        lifecycleRequested (at 1) [] `shouldBe` True
+        lifecycleRequested (at 764824073) ["--lifecycle"] `shouldBe` True
+
+executionLimit :: Spec
+executionLimit = describe "live aggregate transaction execution limit" $ do
     it "accepts the exact boundary across multiple purposes" $
         checkExecutionLimit
             (ExUnits 17500000 10000000000)

@@ -91,11 +91,11 @@ import Conformance.Run.Control
 import Conformance.Run.CsRows
 import Conformance.Run.Environment
 import Conformance.Run.ForkProbe
+import Conformance.Run.Node (checkHarnessGenesis, withHarnessNode)
 import Conformance.Run.Receipts
 import Conformance.Run.Submit
 import Conformance.Run.Wallet
 
-import Control.Concurrent.Async (async, cancel)
 import Control.Exception
     ( ErrorCall (..)
     , throwIO
@@ -106,13 +106,6 @@ import Data.IORef (newIORef, readIORef)
 import Data.Map.Strict qualified as Map
 import System.Directory (createDirectoryIfMissing)
 
-import Cardano.Node.Client.N2C.Connection
-    ( newLSQChannel
-    , newLTxSChannel
-    , runNodeClient
-    )
-import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
-import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
@@ -120,17 +113,10 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.Node
-    ( adaptProvider
-    , awaitConnection
-    , boundedSubmitter
+    ( Capabilities (..)
     , checkFunding
     , defaultFundingFloor
-    , devnetGenesis
-    , followedProvider
     , funderAddr
-    , sessionMagic
-    , submissionBound
-    , withNodeSocket
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
@@ -241,7 +227,7 @@ runRows rawRows receiptsDir = do
     mapM_ (runLocalRow blueprintPath receiptsDir base dirty) localRows
     unless (null devnetRows) $ do
         (stateBytes, requestBytes, namingCodes) <- loadCodes blueprintPath
-        devnetGenesis >>= mapM_ checkGenesis
+        checkHarnessGenesis
         nodeVer <- readNodeVersion
         emit "node" nodeVer
         require
@@ -249,7 +235,7 @@ runRows rawRows receiptsDir = do
             (forgedValue `notElem` [cgV1, cgV2, cgV3, cgV4, controlVal])
         unless (null caDevnet) $
             bracketTmpDir $ do
-                withNodeSocket $ \sock ->
+                withHarnessNode $ \caps ->
                     runSession
                         caDevnet
                         control
@@ -259,10 +245,10 @@ runRows rawRows receiptsDir = do
                         base
                         dirty
                         receiptsDir
-                        sock
+                        caps
         unless (null cgDevnet) $
             bracketTmpDir $ do
-                withNodeSocket $ \sock ->
+                withHarnessNode $ \caps ->
                     runSession
                         cgDevnet
                         control
@@ -272,10 +258,10 @@ runRows rawRows receiptsDir = do
                         base
                         dirty
                         receiptsDir
-                        sock
+                        caps
         unless (null csDevnet) $
             bracketTmpDir $ do
-                withNodeSocket $ \sock ->
+                withHarnessNode $ \caps ->
                     runCSSession
                         csDevnet
                         control
@@ -286,7 +272,7 @@ runRows rawRows receiptsDir = do
                         base
                         dirty
                         receiptsDir
-                        sock
+                        caps
     when (null devnetRows) $
         emit
             "complete"
@@ -344,7 +330,7 @@ runSession
     -> String
     -> Bool
     -> FilePath
-    -> FilePath
+    -> Capabilities
     -> IO ()
 runSession
     rows
@@ -355,20 +341,8 @@ runSession
     base
     dirty
     receiptsDir
-    sock = do
-        lsqCh <- newLSQChannel 16
-        ltxsCh <- newLTxSChannel 16
-        nodeThread <-
-            async $
-                runNodeClient
-                    sessionMagic
-                    sock
-                    lsqCh
-                    ltxsCh
-        let nodeProv = adaptProvider sessionMagic (mkN2CProvider lsqCh)
-        awaitConnection sessionMagic sock nodeThread nodeProv
-        let submit = boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
-        prov <- followedProvider nodeProv submit
+    caps = do
+        let prov = capReads caps
         checkFunding prov funderAddr defaultFundingFloor
         tm <- mkPureTrieManager
         mirror <- newMirror
@@ -398,8 +372,8 @@ runSession
                     -- The wallet is swept BEFORE the designation. After it,
                     -- the canonical seed is an ordinary ada-only output and
                     -- a sweep would spend the very one the config pins.
-                    consolidateWallet prov submit
-                    (seedTxIn, _) <- designateSplit prov submit "canonical"
+                    consolidateWallet prov caps
+                    (seedTxIn, _) <- designateSplit prov caps "canonical"
                     let seedRef = txInToRef seedTxIn
                         cfg = cageCfg stateBytes requestBytes namingCodes seedRef
                     caTid <- newIORef Nothing
@@ -424,7 +398,8 @@ runSession
                         ( Env
                             { envCfg = cfg
                             , envProv = prov
-                            , envSubmit = submit
+                            , envSubmit = capSubmit caps
+                            , envConfirm = capConfirm caps
                             , envTm = tm
                             , -- never read in a CA session: the row
                               -- validator keeps CG rows out of it
@@ -477,7 +452,8 @@ runSession
                                 ( Env
                                     { envCfg = placeholderCfg
                                     , envProv = prov
-                                    , envSubmit = submit
+                                    , envSubmit = capSubmit caps
+                                    , envConfirm = capConfirm caps
                                     , envTm = tm
                                     , envTid = TokenId (AssetName (SBS.toShort ""))
                                     , envMirror = mirror
@@ -513,7 +489,7 @@ runSession
                             -- state validator is published before the
                             -- seed is chosen, so the publication cannot
                             -- spend the seed.
-                            ensureStateRefWith prov submit stateBytes
+                            ensureStateRefWith prov caps stateBytes
                             (seedTxIn, _) <- largestWalletUtxo prov
                             let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seedTxIn)
                                 marker' = case control of
@@ -521,14 +497,15 @@ runSession
                                     _ -> hex (scriptHashBytes (cfgScriptHash cfg))
                             unsignedBoot <-
                                 Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
-                            signedBoot <- submitWithGenesis submit unsignedBoot
+                            signedBoot <- submitWithGenesis caps unsignedBoot
                             tid <- extractTokenId cfg signedBoot
                             createTrie tm tid
                             pure
                                 ( Env
                                     { envCfg = cfg
                                     , envProv = prov
-                                    , envSubmit = submit
+                                    , envSubmit = capSubmit caps
+                                    , envConfirm = capConfirm caps
                                     , envTm = tm
                                     , envTid = tid
                                     , envMirror = mirror
@@ -560,7 +537,6 @@ runSession
                                 )
         emit "boot" bootLine
         mapM_ (runRow env marker) rows
-        cancel nodeThread
         if caMode
             then writeCaCL01 env rows
             else

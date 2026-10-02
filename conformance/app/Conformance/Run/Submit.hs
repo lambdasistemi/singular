@@ -11,7 +11,7 @@ module Conformance.Run.Submit
     , submitExpectAccepted
     , submitExpectRefused
     , submitWithGenesis
-    , awaitTx
+    , confirmTx
     , millis
     ) where
 
@@ -29,15 +29,14 @@ import GHC.Clock (getMonotonicTime)
 
 import Cardano.Tx.Ledger (ConwayTx)
 
-import Cardano.Node.Client.E2E.Setup (addKeyWitness)
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
-    )
 import Singular.Registry.Node
-    ( NodeMode (..)
-    , awaitIndexed
-    , runMode
+    ( Capabilities (..)
+    , SignedSubmitter
+    , SignedTx
+    , SubmitResult (..)
+    , signTx
+    , signedTx
+    , submitSigned
     , tryOutcome
     )
 
@@ -105,7 +104,7 @@ does not attribute fails the run naming the mismatch.
 submitExpectRefusedControl
     :: Env -> String -> Verdict -> String -> ConwayTx -> IO ()
 submitExpectRefusedControl env row verdict marker tx = do
-    let signed = addKeyWitness genesisSignKey tx
+    let signed = signTx genesisSignKey tx
     result <- submitTxResilient (envSubmit env) signed
     case result of
         Rejected reason ->
@@ -115,7 +114,7 @@ submitExpectRefusedControl env row verdict marker tx = do
                 verdict
                 marker
                 (T.unpack (TE.decodeUtf8Lenient reason))
-                (txIdHex signed)
+                (txIdHex (signedTx signed))
         Submitted txid ->
             failWith
                 ( row
@@ -182,8 +181,8 @@ yields the same verdict (a phase-2 failure is not a chain effect:
 a locally rejected transaction never entered the ledger, and no
 collateral moves).
 -}
-submitTxResilient :: Submitter IO -> ConwayTx -> IO SubmitResult
-submitTxResilient submit tx = do
+submitTxResilient :: SignedSubmitter -> SignedTx -> IO SubmitResult
+submitTxResilient submit signed = do
     start <- getMonotonicTime
     result <- go (4 :: Int)
     end <- getMonotonicTime
@@ -192,12 +191,17 @@ submitTxResilient submit tx = do
             Rejected _ -> "refused"
     emit
         "submit"
-        (txIdHex tx <> " " <> answer <> " after " <> millis (end - start))
+        ( txIdHex (signedTx signed)
+            <> " "
+            <> answer
+            <> " after "
+            <> millis (end - start)
+        )
     pure result
   where
-    go 0 = submitTx submit tx
+    go 0 = submitSigned submit signed
     go n = do
-        r <- tryOutcome (submitTx submit tx)
+        r <- tryOutcome (submitSigned submit signed)
         case r of
             Right res -> pure res
             Left e
@@ -211,11 +215,12 @@ submitTxResilient submit tx = do
 signer); a refusal is a loud failure naming the reason.
 }
 -}
-submitExpectAccepted :: Env -> ConwayTx -> IO ConwayTx
-submitExpectAccepted env tx = do
-    result <- submitTxResilient (envSubmit env) tx
+submitExpectAccepted :: Env -> SignedTx -> IO ConwayTx
+submitExpectAccepted env signed = do
+    result <- submitTxResilient (envSubmit env) signed
+    let tx = signedTx signed
     case result of
-        Submitted _ -> awaitTx tx >> pure tx
+        Submitted _ -> confirmTx env tx >> pure tx
         Rejected reason ->
             failWith
                 ( "expected acceptance, the node refused: "
@@ -233,7 +238,7 @@ reported, never relabelled.
 submitExpectRefused
     :: Env -> String -> Verdict -> String -> ConwayTx -> IO ()
 submitExpectRefused env row verdict marker tx = do
-    let signed = addKeyWitness genesisSignKey tx
+    let signed = signTx genesisSignKey tx
     result <- submitTxResilient (envSubmit env) signed
     case result of
         Rejected reason ->
@@ -243,7 +248,7 @@ submitExpectRefused env row verdict marker tx = do
                 verdict
                 marker
                 (T.unpack (TE.decodeUtf8Lenient reason))
-                (txIdHex signed)
+                (txIdHex (signedTx signed))
         Submitted txid ->
             failWith
                 ( row
@@ -253,33 +258,22 @@ submitExpectRefused env row verdict marker tx = do
                     <> ") — reported, not relabelled"
                 )
 
-submitWithGenesis :: Submitter IO -> ConwayTx -> IO ConwayTx
-submitWithGenesis submit unsignedTx = do
-    let signedTx = addKeyWitness genesisSignKey unsignedTx
-    result <- submitTxResilient submit signedTx
+submitWithGenesis :: Capabilities -> ConwayTx -> IO ConwayTx
+submitWithGenesis caps unsignedTx = do
+    let signed = signTx genesisSignKey unsignedTx
+        tx = signedTx signed
+    result <- submitTxResilient (capSubmit caps) signed
     case result of
-        Submitted _ -> awaitTx signedTx >> pure signedTx
+        Submitted _ -> capConfirm caps tx >> pure tx
         Rejected reason ->
             failWith
                 ( "transaction rejected: "
                     <> T.unpack (TE.decodeUtf8Lenient reason)
                 )
 
-{- | Wait until a submitted transaction is on chain, and log how long
-that took. On the factory devnet the chain-sync indexer reports the
-block that carries it; against an external node the historical fixed
-five-second wait is unchanged.
--}
-awaitTx :: ConwayTx -> IO ()
-awaitTx tx = case runMode of
-    Devnet -> do
-        start <- getMonotonicTime
-        awaitIndexed tx
-        end <- getMonotonicTime
-        emit
-            "confirm"
-            (txIdHex tx <> " indexed after " <> millis (end - start))
-    External _ -> threadDelay 5_000_000
+-- | Wait until a submitted transaction is on chain (the session's confirmation).
+confirmTx :: Env -> ConwayTx -> IO ()
+confirmTx = envConfirm
 
 -- | A monotonic-clock duration in whole milliseconds, for the run log.
 millis :: Double -> String

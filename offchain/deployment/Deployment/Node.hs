@@ -58,11 +58,6 @@ import Cardano.Ledger.Api.Tx.Out
 import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (..))
 import Cardano.Ledger.Core (Script, hashScript)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
-import Cardano.Node.Client.E2E.Setup (addKeyWitness)
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
-    )
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Deployment.Compiled (Compiled (..), bindSeed, partsOf)
@@ -82,11 +77,14 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.Node
-    ( NodeSession (..)
-    , awaitTx
+    ( Capabilities (..)
+    , SubmitResult (..)
     , bech32Address
     , funderAddr
     , funderSignKey
+    , signTx
+    , signedTx
+    , submitSigned
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
@@ -105,9 +103,9 @@ import Singular.Registry.TxBuilder.Register (registerScriptImpl)
 credentials a run withdraws from.
 -}
 verifyRegisteredDeployment
-    :: NodeSession -> Deployment -> Compiled -> IO [String]
-verifyRegisteredDeployment sess dep compiled =
-    Cage.withView (nsProvider sess) $ \v -> do
+    :: Cage.Provider IO -> Deployment -> Compiled -> IO [String]
+verifyRegisteredDeployment prov dep compiled =
+    Cage.withView prov $ \v -> do
         claims <- verifyDeployment v dep (partsOf compiled)
         credentials <-
             mapM
@@ -127,7 +125,7 @@ verifyRegisteredDeployment sess dep compiled =
 -- | Boot one registry from the funding wallet's largest output.
 bootRegistry
     :: Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> Compiled
     -> IORef [Text]
     -> Integer
@@ -135,7 +133,7 @@ bootRegistry
     -- ^ Process window (ms), from @--process-time@.
     -> IO (CageConfig, TokenId, ConwayTx, TxIn, Compiled)
     -- ^ Retract window (ms), from @--retract-time@.
-bootRegistry prov submit unbound txs processTime retractTime = do
+bootRegistry prov caps unbound txs processTime retractTime = do
     -- The seed and the boot that spends it are read from one view.
     (seedIn, cfg, compiled, unsigned) <- Cage.withView prov $ \v -> do
         utxos <- Cage.viewUTxOsAt v funderAddr
@@ -170,7 +168,7 @@ bootRegistry prov submit unbound txs processTime retractTime = do
                     }
         unsigned <- bootTokenImpl cfg v funderAddr
         pure (seedIn, cfg, compiled, unsigned)
-    signed <- submitted submit txs "boot" unsigned
+    signed <- submitted caps txs "boot" unsigned
     let MultiAsset ma = signed ^. bodyTxL . mintTxBodyL
     tok <- case Map.toList (ma Map.! cagePolicyIdFromCfg cfg) of
         [(an, _)] -> pure (TokenId an)
@@ -198,11 +196,11 @@ one turns that runner's row into a refusal with no evidence behind it.
 -}
 registerCredentials
     :: Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> Compiled
     -> IORef [Text]
     -> IO ()
-registerCredentials prov submit compiled txs = do
+registerCredentials prov caps compiled txs = do
     let named name bytes = (name, scriptFromBytes name bytes)
     mapM_
         registerOne
@@ -224,7 +222,7 @@ registerCredentials prov submit compiled txs = do
                     "credential"
                     (name <> " stake credential already registered; reused")
             Just unsigned -> do
-                _ <- submitted submit txs (name <> "-registration") unsigned
+                _ <- submitted caps txs (name <> "-registration") unsigned
                 emit "credential" (name <> " stake credential registered")
 
 {- | The five reference scripts every runner reads: the registry's state
@@ -240,7 +238,7 @@ one needs its output.
 -}
 publishAll
     :: Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> CageConfig
     -> TokenId
     -> Compiled
@@ -248,11 +246,11 @@ publishAll
     -- ^ The state validator's publication, made before the boot.
     -> IORef [Text]
     -> IO [ReferenceScript]
-publishAll prov submit cfg tok compiled stateIn txs = do
+publishAll prov caps cfg tok compiled stateIn txs = do
     state <- record ("state", mkCageScript cfg) stateIn
     rest <-
         mapM
-            (\p@(_, script) -> publishOne prov submit txs script >>= record p . fst)
+            (\p@(_, script) -> publishOne prov caps txs script >>= record p . fst)
             [ ("request", mkRequestScript cfg tok)
             ,
                 ( "application"
@@ -281,11 +279,11 @@ publishAll prov submit cfg tok compiled stateIn txs = do
 
 publishOne
     :: Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> IORef [Text]
     -> Script ConwayEra
     -> IO (TxIn, TxOut ConwayEra)
-publishOne prov submit txs script = do
+publishOne prov caps txs script = do
     -- The funding output, the parameters and the body: one view.
     unsigned <- Cage.withView prov $ \v -> do
         let pp = Cage.viewProtocolParams v
@@ -322,7 +320,7 @@ publishOne prov submit txs script = do
                             ]
                     & feeTxBodyL .~ Coin 1_000_000
         pure (mkBasicTx body)
-    signed <- submitted submit txs "publish" unsigned
+    signed <- submitted caps txs "publish" unsigned
     let published = txIdTx signed
     after <- Cage.withView prov (`Cage.viewUTxOsAt` funderAddr)
     -- The output this transaction created, identified by the
@@ -348,14 +346,15 @@ publishOne prov submit txs script = do
 
 -- | Sign with the funding wallet, submit, wait for the chain, record.
 submitted
-    :: Submitter IO -> IORef [Text] -> String -> ConwayTx -> IO ConwayTx
-submitted submit txs label unsigned = do
-    let signed = addKeyWitness funderSignKey unsigned
-    result <- submitTx submit signed
+    :: Capabilities -> IORef [Text] -> String -> ConwayTx -> IO ConwayTx
+submitted caps txs label unsigned = do
+    let signed = signTx funderSignKey unsigned
+        tx = signedTx signed
+    result <- submitSigned (capSubmit caps) signed
     case result of
         Submitted _ -> pure ()
         Rejected reason -> failWith (label <> ": rejected: " <> show reason)
-    awaitTx signed
+    capConfirm caps tx
     old <- readIORef txs
-    writeIORef txs (txText signed : old)
-    pure signed
+    writeIORef txs (txText tx : old)
+    pure tx
