@@ -6,7 +6,8 @@
 //// `mkAction` is the step `foldl` runs over the transaction's inputs, in
 //// order. For each request of this registry it pops the next action, checks
 //// the request's carriage (`tip-coverage`, `deposit-mismatch`), then either
-//// books a rejected row's refund or admits an update: the phase, the edge tag
+//// books a rejected row's refund, in any window, or admits an update: the
+//// processing window (`not-phase1`), the edge tag
 //// (`edge-inadmissible`), the approval (`admitted`) and the trie move with
 //// its mint delta and duties (`applyEdge`). The `Fold` accumulator carries
 //// the trie, the remaining actions, the consumed count, the minted delta, the
@@ -56,7 +57,7 @@ use lib.{
 }
 use registry/duty.{Duty, ReturnDeposit, dutiesOf, pushDuties, pushDuty}
 use registry/trie.{readFault, terminalEdgeRefusal, terminalFault}
-use shared.{in_phase1, is_rejectable}
+use shared.{in_phase1}
 use types.{
   CageDatum, Rejected, Request, RequestAction, RequestDatum, State, TokenId,
   UpdateAction,
@@ -185,30 +186,25 @@ fn stepRequest(
       [action, ..tail] -> {
         let popped = Fold { ..acc, actions: tail, consumed: acc.consumed + 1 }
         when action is {
+          // A reject carries no admission, in any window (Lean
+          // `exitAdmission .reject = none`, #320): it reads no time.
+          // Refund rows (NOTE-014 item A2 as corrected by NOTE-017): only
+          // REJECTED rows are owed refunds, at `input − tip`. Each is owed
+          // twice over: positionally (`refundFault`), and with every other
+          // obligation to the owner's key (`payeeFault`), so a refund output
+          // cannot also pay a deposit or a custody refund of the same payee
+          // (#253).
           Rejected ->
-            if !is_rejectable(
-              validity_range,
-              submitted_at,
-              pins.process_time,
-              pins.retract_time,
-            ) {
-              halt(popped, @"not-rejectable")
-            } else {
-              // Refund rows (NOTE-014 item A2 as corrected by NOTE-017):
-              // only REJECTED rows are owed refunds, at `input − tip`.
-              // Each is owed twice over: positionally (`refundFault`),
-              // and with every other obligation to the owner's key
-              // (`payeeFault`), so a refund output cannot also pay a
-              // deposit or a custody refund of the same payee (#253).
-              Fold {
-                ..popped,
-                refunds: [Pair(requestOwner, held - pins.tip), ..popped.refunds],
-                duties: pushDuty(
-                  popped.duties,
-                  ReturnDeposit { owner: requestOwner, floor: held - pins.tip },
-                ),
-              }
+            Fold {
+              ..popped,
+              refunds: [Pair(requestOwner, held - pins.tip), ..popped.refunds],
+              duties: pushDuty(
+                popped.duties,
+                ReturnDeposit { owner: requestOwner, floor: held - pins.tip },
+              ),
             }
+          // An update is folded in the processing window only: current
+          // validator behaviour, with no counterpart in Lean.
           UpdateAction(proof) ->
             if !in_phase1(validity_range, submitted_at, pins.process_time) {
               halt(popped, @"not-phase1")

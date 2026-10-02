@@ -59,6 +59,7 @@ ELSEWHERE = {
 SHFMT = ["shfmt", "-i", "2", "-ci", "-bn"]
 
 ACTIONLINT_CONFIG = "self-hosted-runner:\n  labels: [nixos]\n"
+F_GETPIPE_SZ = 1032  # linux/fcntl.h: F_LINUX_SPECIFIC_BASE + 8
 
 
 def discover() -> dict[str, list[dict]]:
@@ -170,9 +171,78 @@ def just(paths: list[str], fix: bool) -> bool:
     return all([run(base + ["--justfile", p]) for p in paths])
 
 
+def pipe_buffer_bytes() -> int:
+    """Capacity of a pipe this process creates now.
+
+    Linux shrinks every new pipe of a user who holds more than
+    fs.pipe-user-pages-soft pages of pipe buffers to a single page, so
+    the figure depends on what else the user is running.
+    """
+    import fcntl
+
+    read_end, write_end = os.pipe()
+    try:
+        return fcntl.fcntl(read_end, F_GETPIPE_SZ)
+    finally:
+        os.close(read_end)
+        os.close(write_end)
+
+
+def largest_run_script(paths: list[str]) -> tuple[int, str]:
+    """Longest ``run:`` block script, in bytes, and the file carrying it."""
+    largest, where = 0, ""
+    for path in paths:
+        indent = -1
+        size = 0
+        for line in Path(ROOT, path).read_text().splitlines(keepends=True):
+            if indent >= 0:
+                lead = len(line) - len(line.lstrip(" "))
+                if line.strip() and lead <= indent:
+                    indent = -1
+                else:
+                    size += len(line.encode())
+                    continue
+            if size > largest:
+                largest, where = size, path
+            size = 0
+            stripped = line.lstrip(" ")
+            if stripped.startswith("run:") and stripped[4:].strip() in (
+                "|",
+                "|-",
+                ">",
+                ">-",
+            ):
+                indent = len(line) - len(stripped)
+        if size > largest:
+            largest, where = size, path
+    return largest, where
+
+
+def actionlint_preflight(paths: list[str], buffer: int) -> bool:
+    """Refuse to start actionlint when it would deadlock instead of finishing.
+
+    actionlint hands every ``run:`` script to shellcheck through a pipe it
+    fills before starting the reader, so a script longer than the pipe
+    buffer blocks forever (#248). Fail by name instead.
+    """
+    size, where = largest_run_script(paths)
+    if size <= buffer:
+        return True
+    print(
+        f"actionlint preflight: {where} carries a {size}-byte run: script but a new "
+        f"pipe holds {buffer} bytes; actionlint would deadlock handing it to "
+        "shellcheck (#248). This user is over fs.pipe-user-pages-soft: raise it "
+        "(sysctl fs.pipe-user-pages-soft=0) or close pipes, then rerun.",
+        file=sys.stderr,
+    )
+    return False
+
+
 def workflows(paths: list[str], fix: bool) -> bool:
     if fix:
         return run(["yamlfmt", *paths])
+    if not actionlint_preflight(paths, pipe_buffer_bytes()):
+        return False
     with tempfile.TemporaryDirectory() as tmp:
         config = Path(tmp) / "actionlint.yaml"
         config.write_text(ACTIONLINT_CONFIG)

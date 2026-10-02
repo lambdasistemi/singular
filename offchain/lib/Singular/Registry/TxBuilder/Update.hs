@@ -48,7 +48,7 @@ import Singular.Registry.Ledger
     ( TokenId
     )
 import Singular.Registry.Provider
-    ( Provider (..)
+    ( View (..)
     )
 import Singular.Registry.Trie
     ( TrieManager (..)
@@ -80,28 +80,28 @@ import Singular.Registry.TxBuilder.Update.Duties
 -- | Build an update-token transaction (fair fee).
 updateTokenImpl
     :: CageConfig
-    -> Provider IO
+    -> View IO
     -> TrieManager IO
     -> TokenId
     -> Addr
     -> IO ConwayTx
-updateTokenImpl cfg prov tm tid addr =
-    updateTokenWithDuties cfg prov tm tid addr emptyRegistryContext
+updateTokenImpl cfg view tm tid addr =
+    updateTokenWithDuties cfg view tm tid addr emptyRegistryContext
 
 {- | Fold the pending requests, discharging every obligation the edges
 they take create (#157 C5, C6, T1-T6).
 -}
 updateTokenWithDuties
     :: CageConfig
-    -> Provider IO
+    -> View IO
     -> TrieManager IO
     -> TokenId
     -> Addr
     -> RegistryContext
     -> IO ConwayTx
-updateTokenWithDuties cfg prov tm tid addr ctx0 = do
+updateTokenWithDuties cfg view tm tid addr ctx0 = do
     (stateUtxo, reqUtxos, feeUtxo, pp) <-
-        queryContext cfg prov tid addr
+        queryContext cfg view tid addr
     let (stateIn, stateOut) = stateUtxo
     (proofs, newRoot) <-
         computeProofs tm tid reqUtxos
@@ -112,7 +112,7 @@ updateTokenWithDuties cfg prov tm tid addr ctx0 = do
                 newRoot
         requestScript = mkRequestScript cfg tid
     ctx <-
-        completeContext cfg prov addr script ctx0
+        completeContext cfg view addr script ctx0
     duties <- case registryDuties
         cfg
         pp
@@ -123,8 +123,8 @@ updateTokenWithDuties cfg prov tm tid addr ctx0 = do
         Right d -> pure d
         Left err -> error ("updateToken: " <> err)
     upperSlot <-
-        computeUpperSlot prov oldState reqUtxos
-    let evalTx = mkEvalTx prov
+        computeUpperSlot view oldState reqUtxos
+    let evalTx = mkEvalTx view
         prog =
             buildProgram
                 cfg

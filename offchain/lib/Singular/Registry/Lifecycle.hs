@@ -15,7 +15,7 @@ module Singular.Registry.Lifecycle
     , verifyLifecycleBudget
     , fundingRequirement
     , fundLifecycle
-    , fundingProvider
+    , fundingView
     , checkExecutionLimit
     , prepareLifecycleTx
     ) where
@@ -69,10 +69,6 @@ import Cardano.Ledger.Compactible (fromCompact)
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
-    )
 import Cardano.Tx.Balance
     ( BalanceResult (..)
     , balanceFeeLoop
@@ -82,7 +78,6 @@ import Cardano.Tx.Balance
 import Cardano.Tx.Ledger (ConwayTx)
 import PlutusLedgerApi.V3 qualified as PLC
 
-import Cardano.Node.Client.E2E.Setup (addKeyWitness)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
     ( Coin (..)
@@ -91,14 +86,19 @@ import Singular.Registry.Ledger
     , TokenId
     )
 import Singular.Registry.Node
-    ( ExternalNode (..)
-    , NodeMode (..)
-    , NodeSession (..)
-    , awaitTx
+    ( Capabilities (..)
+    , SubmitResult (..)
     , funderAddr
     , funderSignKey
+    , signTx
+    , signedTx
+    , submitSigned
     )
-import Singular.Registry.Provider (Provider (..))
+import Singular.Registry.Provider
+    ( ChainPoint (..)
+    , Provider (..)
+    , View (..)
+    )
 import Singular.Registry.TxBuilder.Internal.Identity
     ( mkInlineDatum
     , mkRequestDatum
@@ -110,14 +110,13 @@ import Singular.Registry.TxBuilder.Internal.Lookup
 import Singular.Registry.TxBuilder.Request (requestLockedAda)
 import Singular.Registry.Types (Edge)
 
-{- | Public external nodes use the lifecycle automatically. The explicit flag
-also exercises that path on the factory devnet (network magic 42).
+{- | Public external nodes use the lifecycle automatically: a chain point
+on a network other than the factory devnet (network magic 42). The
+explicit flag also exercises that path on the devnet.
 -}
-lifecycleRequested :: NodeSession -> [String] -> Bool
-lifecycleRequested sess args =
-    "--lifecycle" `elem` args || case nsMode sess of
-        External e -> extMagic e /= 42
-        Devnet -> False
+lifecycleRequested :: ChainPoint -> [String] -> Bool
+lifecycleRequested point args =
+    "--lifecycle" `elem` args || cpNetwork point /= 42
 
 {- | A funding allowance, not the fee charged: one maximum-size transaction,
 the live aggregate execution limit, and the actual reference scripts.
@@ -248,10 +247,10 @@ fundingRequirement pp outs =
             (sum [c | o <- outs, let { Coin c = o ^. coinTxOutL }] + fees + change)
 
 -- | Keep request funding away from references and inputs reserved for later steps.
-fundingProvider :: [TxIn] -> Provider IO -> Provider IO
-fundingProvider reserved prov =
-    prov
-        { queryUTxOs = fmap (filter available) . queryUTxOs prov
+fundingView :: [TxIn] -> View IO -> View IO
+fundingView reserved v =
+    v
+        { viewUTxOsAt = fmap (filter available) . viewUTxOsAt v
         }
   where
     available (i, out) =
@@ -263,13 +262,28 @@ fundingProvider reserved prov =
 
 -- | Fund exactly the requested actors, then return the confirmed output references.
 fundLifecycle
-    :: Provider IO
-    -> Submitter IO
-    -> PParams ConwayEra
+    :: Capabilities
     -> [TxOut ConwayEra]
     -> IO [(TxIn, TxOut ConwayEra)]
-fundLifecycle prov submit pp outs = do
-    wallet <- queryUTxOs (fundingProvider [] prov) funderAddr
+fundLifecycle caps outs = do
+    unsigned <- withView (capReads caps) $ \v -> fundingTx v outs
+    let signed = signTx funderSignKey unsigned
+        tx = signedTx signed
+    submitSigned (capSubmit caps) signed >>= \case
+        Submitted _ -> pure ()
+        Rejected reason -> fail ("lifecycle funding rejected: " <> show reason)
+    capConfirm caps tx
+    putStrLn ("lifecycle funding confirmed: " <> show (txIdTx tx))
+    pure
+        [ (TxIn (txIdTx tx) (TxIx (fromIntegral i)), o)
+        | (i, o) <- zip [(0 :: Int) ..] outs
+        ]
+
+-- | The unsigned funding of the requested outputs, built from one view.
+fundingTx :: View IO -> [TxOut ConwayEra] -> IO ConwayTx
+fundingTx v outs = do
+    let pp = viewProtocolParams v
+    wallet <- viewUTxOsAt (fundingView [] v) funderAddr
     let ordinary = sortOn (Down . (^. coinTxOutL) . snd) wallet
         Coin available = foldMap ((^. coinTxOutL) . snd) ordinary
         Coin need = fundingRequirement pp outs
@@ -297,21 +311,10 @@ fundLifecycle prov submit pp outs = do
     let inputs = pick need ordinary
         draft =
             mkBasicTx (mkBasicTxBody & outputsTxBodyL .~ StrictSeq.fromList outs)
-    unsigned <-
-        either
-            (fail . show)
-            (pure . balancedTx)
-            (balanceTx pp inputs [] funderAddr draft)
-    let signed = addKeyWitness funderSignKey unsigned
-    submitTx submit signed >>= \case
-        Submitted _ -> pure ()
-        Rejected reason -> fail ("lifecycle funding rejected: " <> show reason)
-    awaitTx signed
-    putStrLn ("lifecycle funding confirmed: " <> show (txIdTx signed))
-    pure
-        [ (TxIn (txIdTx signed) (TxIx (fromIntegral i)), o)
-        | (i, o) <- zip [(0 :: Int) ..] outs
-        ]
+    either
+        (fail . show)
+        (pure . balancedTx)
+        (balanceTx pp inputs [] funderAddr draft)
 
 checkExecutionLimit :: ExUnits -> [ExUnits] -> Either String ExUnits
 checkExecutionLimit (ExUnits maxMem maxSteps) costs =
@@ -337,18 +340,18 @@ Re-evaluate the final fee/body until both budgets and fee are stable.
 -}
 prepareLifecycleTx
     :: Bool
-    -> Provider IO
-    -> PParams ConwayEra
+    -> View IO
     -> [(TxIn, TxOut ConwayEra)]
     -> Int
     -> ConwayTx
     -> IO ConwayTx
-prepareLifecycleTx False _ _ _ _ tx = pure tx
-prepareLifecycleTx True prov pp refs witnesses initial = go (4 :: Int) initial
+prepareLifecycleTx False _ _ _ tx = pure tx
+prepareLifecycleTx True v refs witnesses initial = go (4 :: Int) initial
   where
+    pp = viewProtocolParams v
     go 0 _ = fail "lifecycle evaluation and fee did not converge"
     go rounds tx = do
-        measured <- evaluateTx prov tx
+        measured <- viewEvaluateTx v tx
         let Redeemers original = tx ^. witsTxL . rdmrsTxWitsL
         unless (Map.keysSet measured == Map.keysSet original) $
             fail "lifecycle evaluation did not cover every redeemer"

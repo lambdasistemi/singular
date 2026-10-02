@@ -42,10 +42,15 @@ PRIVATE_OWNER_GUIDE_ANCHORS = {
     "Singular.Registry.Node.Options": "options-owner",
     "Singular.Registry.Node.Wallet": "wallet-owner",
     "Singular.Registry.Node.Indexer": "indexer-owner",
+    "Singular.Registry.Node.IndexGate": "index-gate-owner",
+    "Singular.Registry.Node.IndexerView": "indexer-view-owner",
     "Singular.Registry.Node.Session": "session-owner",
     "Singular.Registry.Node.Confirmation": "confirmation-owner",
     "Singular.Registry.Node.Funding": "funding-owner",
     "Singular.Registry.Node.Wait": "wait-owner",
+    "Singular.Registry.Node.View": "view-owner",
+    "Singular.Registry.Node.Memory": "memory-owner",
+    "Singular.Registry.Node.Submit": "submit-owner",
 }
 # The guide's owner source links name the default branch, like every other
 # repository source link on the site: the documentation check resolves a

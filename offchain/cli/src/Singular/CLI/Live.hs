@@ -11,7 +11,9 @@ derive every pin again from this release and the recorded seed
 pins differ, and — with a node in hand — resolve the recorded reference
 outputs and the registry's current state output, and compare the local
 mirror's root with the root the ledger holds. A command never repairs a
-stale or altered mirror; it refuses and says so.
+stale or altered mirror; it refuses and says so. Applying a journalled
+edge the chain evidences is reconciliation ("Singular.CLI.Reconcile"),
+not repair.
 -}
 module Singular.CLI.Live
     ( -- * The saved registry
@@ -194,10 +196,10 @@ data Live = Live
     }
 
 -- | Resolve the recorded references and the current state output.
-attachLive :: Cage.Provider IO -> Saved -> IO Live
-attachLive prov s = do
+attachLive :: Cage.View IO -> Saved -> IO Live
+attachLive view s = do
     att <-
-        attach prov (confDeployment (savedConfig s)) (partsOf (savedCfg s))
+        attach view (confDeployment (savedConfig s)) (partsOf (savedCfg s))
     pure
         Live
             { liveSaved = s
@@ -221,8 +223,8 @@ applicationAddr s =
 
 -- | Every output at the application's address.
 liveOutputs
-    :: Cage.Provider IO -> Saved -> IO [(TxIn, TxOut ConwayEra)]
-liveOutputs prov s = Cage.queryUTxOs prov (applicationAddr s)
+    :: Cage.View IO -> Saved -> IO [(TxIn, TxOut ConwayEra)]
+liveOutputs view s = Cage.viewUTxOsAt view (applicationAddr s)
 
 {- | The outputs at the application that are this registry's holding of
 @key@: an envelope of version 1 naming this registry's full state asset,

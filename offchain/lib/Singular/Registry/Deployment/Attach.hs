@@ -190,15 +190,15 @@ token under the recorded policy. The first claim that fails is raised
 by name.
 -}
 verifyDeployment
-    :: Cage.Provider IO
+    :: Cage.View IO
     -> Deployment
     -> CageParts
     -> IO [String]
-verifyDeployment prov dep parts = do
+verifyDeployment view dep parts = do
     cfg <- either die pure (cageConfigFor dep parts)
     tok <- either die pure (tokenFor dep)
-    refs <- resolveReferenceScripts prov dep
-    (stateIn, stateOut) <- resolveStateUtxo prov cfg tok
+    refs <- resolveReferenceScripts view dep
+    (stateIn, stateOut) <- resolveStateUtxo view cfg tok
     stateLive <- case extractCageDatum stateOut of
         Just (StateDatum st)
             | stateActivePolicyBytes st == SBS.fromShort (partsActivePolicy parts) ->
@@ -251,16 +251,16 @@ verifyDeployment prov dep parts = do
 one by one against the hash the manifest pins.
 -}
 resolveReferenceScripts
-    :: Cage.Provider IO
+    :: Cage.View IO
     -> Deployment
     -> IO [(ReferenceScript, (TxIn, TxOut ConwayEra))]
-resolveReferenceScripts prov dep =
+resolveReferenceScripts view dep =
     mapM one (depReferenceScripts dep)
   where
     one r = do
         wanted <- either die pure (parseOutRef (refOutRef r))
         addr <- addrOf r
-        utxos <- Cage.queryUTxOs prov addr
+        utxos <- Cage.viewUTxOsAt view addr
         case [u | u@(i, _) <- utxos, i == wanted] of
             [] ->
                 die
@@ -309,13 +309,13 @@ resolveReferenceScripts prov dep =
 
 -- | The registry's state output, by the token it must carry.
 resolveStateUtxo
-    :: Cage.Provider IO
+    :: Cage.View IO
     -> CageConfig
     -> TokenId
     -> IO (TxIn, TxOut ConwayEra)
-resolveStateUtxo prov cfg tok = do
+resolveStateUtxo view cfg tok = do
     let stateAddr = cageAddrFromCfg cfg Testnet
-    utxos <- Cage.queryUTxOs prov stateAddr
+    utxos <- Cage.viewUTxOsAt view stateAddr
     case findStateUtxo (cagePolicyIdFromCfg cfg) tok utxos of
         Just u -> pure u
         Nothing ->
@@ -347,15 +347,15 @@ and windows are not checked here; verification is the operation that
 reads them.
 -}
 attach
-    :: Cage.Provider IO
+    :: Cage.View IO
     -> Deployment
     -> CageParts
     -> IO Attached
-attach prov dep parts = do
+attach view dep parts = do
     cfg <- either die pure (cageConfigFor dep parts)
     tok <- either die pure (tokenFor dep)
-    refs <- resolveReferenceScripts prov dep
-    state <- resolveStateUtxo prov cfg tok
+    refs <- resolveReferenceScripts view dep
+    state <- resolveStateUtxo view cfg tok
     pure
         Attached
             { attCfg = cfg

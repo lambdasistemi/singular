@@ -25,7 +25,7 @@ saved deployment record, and its pins compared with the ones the command
 saved, so a disagreement between this reader and the command is a
 refusal rather than a silent choice.
 -}
-module Conformance.Cli.Backend (runControls) where
+module Conformance.Cli.Backend (runControls, runAttach) where
 
 import Control.Applicative ((<|>))
 import Control.Concurrent (threadDelay)
@@ -49,6 +49,7 @@ import Control.Monad.Operational
 import Data.Aeson (Value (..))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
+import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Bits (xor)
 import Data.ByteString (ByteString)
@@ -57,10 +58,11 @@ import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
+import Data.Foldable (toList)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (isNothing)
+import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
 import Data.Ord (Down (..))
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -73,6 +75,8 @@ import System.Directory
     , createDirectoryIfMissing
     , doesFileExist
     , doesPathExist
+    , getPermissions
+    , readable
     , renameFile
     )
 import System.Environment (getEnvironment)
@@ -141,15 +145,11 @@ import Cardano.Ledger.Credential
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
-import Cardano.Node.Client.E2E.Setup (addKeyWitness)
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
-    )
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
 import Data.Void (Void)
 
+import Conformance.Cli.Node (NodeCaps (..), withBackendNode)
 import Singular.Application.OpenDatum.Book
     ( insertApproval
     , insertDestination
@@ -160,6 +160,7 @@ import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
     , StateAsset (..)
+    , dataToJson
     , envelopeToJson
     , envelopeVersion
     , registryBytes
@@ -203,13 +204,12 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.Node
-    ( ExternalNode (..)
-    , NodeMode (..)
-    , NodeSession (..)
+    ( SubmitResult (..)
     , Wallet (..)
-    , awaitTxWindow
     , loadWallet
-    , withNodeMode
+    , signTx
+    , signedTx
+    , submitSigned
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
@@ -232,13 +232,16 @@ import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
     , addrWitnessKeyHash
     , computeScriptHash
+    , currentPosixMs
     , extractCageDatum
+    , extractOwnerBytes
     , requestAddrFromCfg
     , scriptFromBytes
     , scriptHashBytes
     , txInToRef
     , walkEdge
     )
+import Singular.Registry.TxBuilder.Retract (retractRequestAtTipImpl)
 import Singular.Registry.TxBuilder.Update
     ( RegistryContext (..)
     , RegistryDuties (..)
@@ -254,30 +257,46 @@ import Singular.Registry.Types
     )
 
 import Conformance.Cli.Admission
-    ( lastEventOf
+    ( admit
+    , lastEventOf
     , lastMaybe
     , sha256Hex
     , submittedIn
+    )
+import Conformance.Cli.Attach
+    ( LiveRequest (..)
+    , TakeStopped (..)
+    , continues
+    , fundingProblem
+    , reclaimTarget
+    , submissionProblem
     )
 import Conformance.Cli.Controls
     ( CliI (..)
     , Command (..)
     , Crafted (..)
+    , Indexer (..)
     , JournalSpan (..)
     , Observation (..)
     , ProcessEvidence (..)
     , Provocation (..)
     , Receipt (..)
+    , Requirement
     , Resolved (..)
     , Story
     , Submission (..)
     , Target (..)
+    , actionsOf
+    , check
     , cliSpecification
     , commandName
     , controlsStory
     , craftedName
     , emptyReceipt
+    , forbiddenInPermanent
+    , indexerName
     , obligationBindings
+    , permanentStory
     , provocationName
     , rejectionEvidence
     , resolveObligation
@@ -312,10 +331,55 @@ data Options = Options
     {- ^ The CLI's specification, whose rows the client obligations bind;
     by default the one in the repository holding the statement ledger
     -}
+    , optRegistry :: Maybe FilePath
+    {- ^ A take on this existing registry directory, not on registries the run
+    creates
+    -}
+    , optKey :: String
+    -- ^ The key a take on an existing registry uses, as the text the story names it by
+    , optAllowance :: Maybe Integer
+    {- ^ The most collateral a node-judged transaction of the run may state;
+    none when the run sets no bound
+    -}
+    , optMaxOutlay :: Maybe Integer
+    -- ^ The outlay each ordinary write may put out, passed to the command
+    , optReadback :: FilePath
+    {- ^ The readback script a take asks the public indexers through; none for
+    a run that asks none
+    -}
+    , optKoiosUrl :: Maybe String
+    , optBlockfrostUrl :: Maybe String
+    , optBlockfrostCredential :: FilePath
+    {- ^ A reference to the file holding Blockfrost's project key; the take
+    never opens it, the readback script does
+    -}
+    , optMaxLag :: Maybe Integer
+    -- ^ The slots an indexer may lag the node by
     }
 
 parseOptions :: [String] -> Either String Options
-parseOptions = go (Options "" "" "" "" 0 "" "" "" "")
+parseOptions =
+    go
+        ( Options
+            ""
+            ""
+            ""
+            ""
+            0
+            ""
+            ""
+            ""
+            ""
+            Nothing
+            ""
+            Nothing
+            Nothing
+            ""
+            Nothing
+            Nothing
+            ""
+            Nothing
+        )
   where
     go o [] = do
         forM_
@@ -342,6 +406,23 @@ parseOptions = go (Options "" "" "" "" 0 "" "" "" "")
         "--work" -> go o{optWork = v} rest
         "--stranger-skey" -> go o{optStranger = v} rest
         "--specification" -> go o{optSpecification = v} rest
+        "--registry" -> go o{optRegistry = Just v} rest
+        "--key" -> go o{optKey = v} rest
+        "--collateral-allowance" -> case reads v of
+            [(n, "")] | n > 0 -> go o{optAllowance = Just n} rest
+            _ ->
+                Left
+                    ("--collateral-allowance is not a positive number of lovelace: " <> v)
+        "--max-outlay" -> case reads v of
+            [(n, "")] | n > 0 -> go o{optMaxOutlay = Just n} rest
+            _ -> Left ("--max-outlay is not a positive number of lovelace: " <> v)
+        "--readback" -> go o{optReadback = v} rest
+        "--koios-base-url" -> go o{optKoiosUrl = Just v} rest
+        "--blockfrost-base-url" -> go o{optBlockfrostUrl = Just v} rest
+        "--blockfrost-credential-file" -> go o{optBlockfrostCredential = v} rest
+        "--max-lag" -> case reads v of
+            [(n, "")] | n >= 0 -> go o{optMaxLag = Just n} rest
+            _ -> Left ("--max-lag is not a number of slots: " <> v)
         _ -> Left ("unknown option " <> flag)
     go _ [flag] = Left (flag <> " needs a value")
 
@@ -353,8 +434,84 @@ parseOptions = go (Options "" "" "" "" 0 "" "" "" "")
 leaving one receipt per action. Returns the receipts' directory.
 -}
 runControls :: [String] -> IO FilePath
-runControls args = do
+runControls args = fst <$> runWith (const (Right controlsStory)) args
+
+{- | One take on a registry that already exists, through a node someone else
+runs: the story is refused unless it contains no action that creates a
+registry or provokes a command, the operator has stated an explicit
+collateral allowance, and the registry's own files are there, all before
+anything runs. The take stops at its first uncertain outcome or unmet
+requirement and says so. Returns the receipts' directory and, when the take
+stopped, why.
+-}
+runAttach :: [String] -> IO (FilePath, Maybe Text)
+runAttach = runWith attachStory
+
+attachStory :: Options -> Either String (Story ())
+attachStory o = do
+    when (isNothing (optRegistry o)) (Left "--registry is required")
+    when (null (optKey o)) (Left "--key is required")
+    case optAllowance o of
+        Just n | n > 0 -> Right ()
+        _ ->
+            Left
+                "--collateral-allowance is required: each deliberate refusal of a take puts collateral at risk, and nothing is written before its bound is stated"
+    when (null (optReadback o)) $
+        Left
+            "--readback is required: the take reads its Active key from two public indexers before it terminates it, and nothing is written before the means to do so are named"
+    when (null (optBlockfrostCredential o)) $
+        Left
+            "--blockfrost-credential-file is required: a reference to the file holding Blockfrost's project key, which the take never opens"
+    let story = permanentStory (optKey o)
+        forbidden = filter (`elem` forbiddenInPermanent) (actionsOf story)
+    unless (null forbidden) $
+        Left
+            ( "the take contains actions a take on an existing registry never runs: "
+                <> show forbidden
+            )
+    Right story
+
+runWith
+    :: (Options -> Either String (Story ()))
+    -> [String]
+    -> IO (FilePath, Maybe Text)
+runWith chooseStory args = do
     o <- either (fail . ("cli-controls: " <>)) pure (parseOptions args)
+    story <-
+        either
+            (fail . ("cli-controls: story refused: " <>))
+            pure
+            (chooseStory o)
+    -- What the take reads its indexers through is checked before anything is
+    -- written: the script is there and the credential file is readable. Its
+    -- bytes are not read here.
+    when (isJust (optRegistry o)) $ do
+        script <- doesFileExist (optReadback o)
+        unless script $
+            fail
+                ( "cli-controls: the readback script "
+                    <> optReadback o
+                    <> " does not exist"
+                )
+        credential <- doesFileExist (optBlockfrostCredential o)
+        readable <-
+            if credential
+                then readable <$> getPermissions (optBlockfrostCredential o)
+                else pure False
+        unless readable $
+            fail
+                ( "cli-controls: the Blockfrost credential file "
+                    <> optBlockfrostCredential o
+                    <> " is not a readable file"
+                )
+    forM_ (optRegistry o) $ \dir -> do
+        there <- doesFileExist (dir </> "registry.json")
+        unless there $
+            fail
+                ( "cli-controls: "
+                    <> dir
+                    <> " holds no registry; a take runs on an existing one and never creates it"
+                )
     ledger <-
         Aeson.eitherDecodeFileStrict' (optLedger o)
             >>= either (fail . ("statement ledger: " <>)) pure
@@ -374,7 +531,7 @@ runControls args = do
     either
         (fail . ("cli-controls: story refused: " <>))
         pure
-        (validateControls controlsStory)
+        (validateControls story)
     let receipts = optWork o </> "receipts"
         evidence = optWork o </> "evidence"
     mapM_
@@ -384,27 +541,82 @@ runControls args = do
     wallet <- loadWallet (fromIntegral (optMagic o)) (optWalletKey o)
     -- One session for every backend action: opening one per action spends
     -- the requests' processing window before their folds are built.
-    withNodeMode
-        ( External
-            ( ExternalNode
+    let strict = isJust (optRegistry o)
+    stopped <-
+        try
+            ( withBackendNode
                 (optSocket o)
                 (fromIntegral (optMagic o))
                 (optWalletKey o)
+                $ \caps -> do
+                    -- Before anything is written the wallet must be able to
+                    -- fund every action the take will ask of it.
+                    when strict $ do
+                        -- The wallet and the parameters, from one view.
+                        (utxos, pp) <-
+                            Cage.withView (ncReads caps) $ \v ->
+                                (,)
+                                    <$> Cage.viewUTxOsAt v (walletAddr wallet)
+                                    <*> pure (Cage.viewProtocolParams v)
+                        let returning =
+                                length
+                                    [ a
+                                    | a <- actionsOf story
+                                    , a `elem` ["run insert", "run terminate", "reclaim"]
+                                    ]
+                            -- The most an output may be asked for, and the least the
+                            -- ledger lets a change or a collateral return be.
+                            minOutput =
+                                let probe c =
+                                        getMinCoinTxOut
+                                            pp
+                                            (mkBasicTxOut (walletAddr wallet) (MaryValue (Coin c) mempty))
+                                    Coin first' = probe 0
+                                    Coin settled = probe first'
+                                in  settled
+                            floorSize =
+                                max (fromMaybe 0 (optAllowance o)) (fromMaybe 0 (optMaxOutlay o))
+                                    + minOutput
+                            coinOf out = let Coin c = out ^. coinTxOutL in c
+                        forM_
+                            ( fundingProblem
+                                returning
+                                floorSize
+                                [(adaOnlyOut out, coinOf out) | (_, out) <- utxos]
+                            )
+                            $ \why -> fail ("cli-controls: " <> T.unpack why)
+                    executeStory
+                        ( Env
+                            o
+                            receipts
+                            evidence
+                            step
+                            (Just (caps, wallet))
+                            strict
+                        )
+                        story
             )
-        )
-        $ \sess ->
-            executeStory
-                (Env o receipts evidence step (Just (sess, wallet)))
-                controlsStory
-    pure receipts
+    case stopped of
+        Right () -> pure (receipts, Nothing)
+        Left (TakeStopped why) -> do
+            BS.writeFile
+                (optWork o </> "stopped.txt")
+                (TE.encodeUtf8 (why <> "\n"))
+            hPutStrLn stderr ("cli-controls: the take stopped: " <> T.unpack why)
+            pure (receipts, Just why)
 
 data Env = Env
     { envOptions :: Options
     , envReceipts :: FilePath
     , envEvidence :: FilePath
     , envStep :: IORef Int
-    , envSession :: Maybe (NodeSession, Wallet)
-    -- ^ The one node session every backend action shares
+    , envSession :: Maybe (NodeCaps, Wallet)
+    -- ^ The capabilities of the one node session every backend action shares
+    , envStrict :: Bool
+    {- ^ A take on an existing registry: it stops on an uncertain outcome
+    and on any requirement of the story that does not hold, before the
+    next action
+    -}
     }
 
 -- | Walk the story in order: every action, inside clauses and checks too.
@@ -428,7 +640,7 @@ type ClauseProgram thm = Program (Clause thm CliI)
 
 perform :: Env -> CliI a -> IO a
 perform env i = case i of
-    Require _ _ -> pure ()
+    Require req rs -> when (envStrict env) (holds env req rs)
     Run c t k ->
         recorded
             env
@@ -436,9 +648,12 @@ perform env i = case i of
             t
             k
             (runCommand env c t k)
-    Book t k -> recorded env "book" t k (book env t k)
-    FoldUnevaluated t k -> recorded env "fold-unevaluated" t k (foldUnevaluated env t k)
-    Observe t k -> recorded env "observe" t k (observe env t k)
+            >>= answered env
+    Book t k -> recorded env "book" t k (book env t k) >>= answered env
+    FoldUnevaluated t k ->
+        recorded env "fold-unevaluated" t k (foldUnevaluated env t k)
+            >>= answered env
+    Observe t k -> recorded env "observe" t k (observe env t k) >>= answered env
     Craft c t k ->
         recorded
             env
@@ -446,6 +661,7 @@ perform env i = case i of
             t
             k
             (craft env c t k)
+            >>= answered env
     Provoke p t k ->
         recorded
             env
@@ -453,6 +669,58 @@ perform env i = case i of
             t
             k
             (provoke env p t k)
+            >>= answered env
+    Reclaim t k partial seen ->
+        recorded env "reclaim" t k (reclaim env t k partial seen)
+            >>= answered env
+    ReadIndexer ix t k inspected ->
+        recorded
+            env
+            ("read-indexer " <> T.pack (indexerName ix))
+            t
+            k
+            (readIndexer env ix inspected)
+            >>= answered env
+
+{- | A take on an existing registry goes on only from an outcome the story can
+judge. A client error, an unknown or unconfirmed submission, a timeout, a lost
+node or a concurrent writer is uncertainty, and the take stops there with its
+receipts kept and nothing further written.
+-}
+answered :: Env -> Receipt -> IO Receipt
+answered env r
+    | envStrict env && not (continues (rcOutcome r)) =
+        throwIO
+            ( TakeStopped
+                ( "step "
+                    <> T.pack (show (rcStep r))
+                    <> " "
+                    <> rcAction r
+                    <> " ended "
+                    <> rcOutcome r
+                    <> maybe "" (": " <>) (rcReason r)
+                )
+            )
+    | otherwise = pure r
+
+{- | A requirement of the story, judged as the verdict will judge it, from the
+receipts admitted the way the verdict admits them. One that does not hold
+stops a take on an existing registry before the next action, so no later
+write rests on a premise or an expected refusal that did not happen.
+-}
+holds :: Env -> Requirement -> [Receipt] -> IO ()
+holds env req rs = do
+    admitted <- mapM (admit (optWork (envOptions env))) rs
+    case check req admitted of
+        [] -> pure ()
+        problems ->
+            throwIO
+                ( TakeStopped
+                    ( T.pack (show req)
+                        <> " does not hold: "
+                        <> T.intercalate "; " (map T.pack problems)
+                    )
+                )
 
 {- | Number the action, run it, and write its receipt. An exception is the
 action's own outcome, @client-error@, never a stop of the story.
@@ -467,7 +735,10 @@ recorded
 recorded env name (Target t) k body = do
     n <- readIORef (envStep env)
     modifyIORef' (envStep env) (+ 1)
-    let blank = emptyReceipt n name (T.pack t) (T.pack k)
+    let blank =
+            (emptyReceipt n name (T.pack t) (T.pack k))
+                { rcAllowance = optAllowance (envOptions env)
+                }
     outcome <- try (body blank)
     r <- case outcome of
         Right r -> pure r
@@ -501,7 +772,17 @@ recorded env name (Target t) k body = do
 -- ---------------------------------------------------------
 
 targetDir :: Env -> Target -> FilePath
-targetDir env (Target t) = optWork (envOptions env) </> "targets" </> t
+targetDir env (Target t) = case optRegistry (envOptions env) of
+    Just existing -> existing
+    Nothing -> optWork (envOptions env) </> "targets" </> t
+
+-- | Whether the run takes one existing registry rather than creating its own.
+attached :: Env -> Bool
+attached = isJust . optRegistry . envOptions
+
+-- | The explicit payload a take writes for its key: a constructor over the key and a number.
+attachedPayload :: String -> Int -> PLC.Data
+attachedPayload key n = PLC.Constr 0 [PLC.B (keyBytes key), PLC.I (toInteger n)]
 
 -- | A key label as the bytes the registry names it by.
 keyBytes :: String -> ByteString
@@ -607,6 +888,16 @@ applicationAddr r =
         (ScriptHashObj (computeScriptHash (applied r)))
         StakeRefNull
 
+{- | The envelope the ordinary insert of @key@ carries in this run: the story's,
+or, in a take on an existing registry, the one whose payload is the explicit
+constructor over the key and the number one.
+-}
+envelopeOfRun :: Env -> Registry -> ByteString -> String -> Envelope
+envelopeOfRun env r controller key
+    | attached env =
+        (envelopeFor r controller key){envPayload = attachedPayload key 1}
+    | otherwise = envelopeFor r controller key
+
 {- | The envelope every insertion of @key@ in this story carries: this
 registry, its active policy, the key, the wallet as controller, and a
 fixed payload. The command and the booking are handed the same one.
@@ -632,23 +923,221 @@ envelopeFor r controller key =
 -- The node
 -- ---------------------------------------------------------
 
-withNode :: Env -> (NodeSession -> Wallet -> IO a) -> IO a
-withNode Env{envSession = Just (sess, wallet)} body = body sess wallet
-withNode env body = do
+withSession :: Env -> (NodeCaps -> Wallet -> IO a) -> IO a
+withSession Env{envSession = Just (caps, wallet)} body = body caps wallet
+withSession env body = do
     let o = envOptions env
     wallet <- loadWallet (fromIntegral (optMagic o)) (optWalletKey o)
-    withNodeMode
-        ( External
-            ( ExternalNode
-                (optSocket o)
-                (fromIntegral (optMagic o))
-                (optWalletKey o)
-            )
-        )
+    withBackendNode
+        (optSocket o)
+        (fromIntegral (optMagic o))
+        (optWalletKey o)
         (`body` wallet)
 
 txIdHex :: ConwayTx -> Text
 txIdHex tx = let TxId h = txIdTx tx in hex (hashToBytes (extractHash h))
+
+{- | Retract, as its owner and inside the request's own retract window, the one
+request this take's own insertion left pending, through the production
+builder. The request is the one that insertion's receipt names, and it is
+spent only while the registry is as the readback that saw it pending read it:
+the same root, the same pending requests, that request still pending for this
+key and owned by this wallet. A request that is missing, replaced or another's
+is refused, and no other is substituted. The wait for the window to open is the
+builder's own rule: a retraction outside it is refused by the request script.
+-}
+reclaim
+    :: Env -> Target -> String -> Receipt -> Receipt -> Receipt -> IO Receipt
+reclaim env target key partial seen r = do
+    reg <- openRegistry env target
+    withSession env $ \caps wallet -> do
+        let prov = ncReads caps
+            cfg = regCfg reg
+            mine = addrKeyHashBytes (walletAddr wallet)
+            -- The registry as one view holds it, and the one request this take
+            -- may spend in it, or the reason it may spend none.
+            verifiedIn v = do
+                att <- attach v (regDeployment reg) (partsOf cfg)
+                (state, root) <- case extractCageDatum (snd (attStateUtxo att)) of
+                    Just (StateDatum st) ->
+                        let OnChainRoot b = stateRoot st in pure (st, b)
+                    _ -> fail "the registry's state output carries no state datum"
+                pending <-
+                    Cage.viewUTxOsAt
+                        v
+                        (requestAddrFromCfg cfg (regToken reg) Testnet)
+                let live =
+                        [ LiveRequest
+                            (renderOutRef i)
+                            (requestKey q)
+                            (extractOwnerBytes o)
+                        | (i, o) <- pending
+                        , Just (RequestDatum q) <- [extractCageDatum o]
+                        ]
+                named <-
+                    either
+                        (fail . ("the retraction is refused: " <>) . T.unpack)
+                        pure
+                        ( reclaimTarget
+                            (keyBytes key)
+                            mine
+                            partial
+                            seen
+                            (hex root)
+                            (map (renderOutRef . fst) pending)
+                            live
+                        )
+                case [ (i, q)
+                     | (i, o) <- pending
+                     , renderOutRef i == named
+                     , Just (RequestDatum q) <- [extractCageDatum o]
+                     ] of
+                    [(i, q)] -> pure (state, i, q)
+                    _ -> fail (T.unpack named <> " does not read as one request")
+        (state, firstIn, q) <- Cage.withView prov verifiedIn
+        let opens = requestSubmittedAt q + stateProcessTime state
+            closes = opens + stateRetractTime state
+        now <- currentPosixMs
+        when (now + 3_000 > closes) $
+            fail
+                "the request's retract window has passed: the request stays pending"
+        -- The window is waited for, and the registry read again afterwards:
+        -- what is spent is what was verified last, not what was verified
+        -- before the wait.
+        when (now < opens + 2_000) $
+            threadDelay (fromIntegral (opens + 2_000 - now) * 1_000)
+        -- Verified again and built in one view, at that view's tip: the
+        -- request spent is the one this view verified.
+        (reqIn, unsigned) <- Cage.withView prov $ \v -> do
+            (_, i, _) <- verifiedIn v
+            when (i /= firstIn) $
+                fail "the request changed while the retract window opened"
+            tx <-
+                retractRequestAtTipImpl
+                    (Cage.cpSlot (Cage.viewPoint v))
+                    cfg
+                    v
+                    (regToken reg)
+                    i
+                    (walletAddr wallet)
+            pure (i, tx)
+        fst
+            <$> submitAndConfirm
+                env
+                caps
+                wallet
+                r{rcPendingRequest = Just (renderOutRef reqIn)}
+                unsigned
+
+{- | One public indexer's read of the Active key's token, made by the readback
+script the operator named, from the policy and asset name the fresh inspect
+receipt names and compared with that receipt's own output, datum and chain
+point. The inspect receipt's printed record is handed to the script as a file
+beside the evidence; the script's record is kept whole with its digest. The
+outcome is the script's own verdict, never a guess: @success@ only when every
+comparison held; @provider-mismatch@ when the indexer answered and something
+differs; @provider-unavailable@ when it could not be asked; anything else is a
+client error. Nothing is written to a chain and the credential file is the
+script's to read, never this process's.
+-}
+readIndexer :: Env -> Indexer -> Receipt -> Receipt -> IO Receipt
+readIndexer env ix inspected r = do
+    let o = envOptions env
+        n = rcStep r
+        evidence :: String -> FilePath
+        evidence name = envEvidence env </> printf "step-%03d-%s" n name
+        relative :: String -> FilePath
+        relative name = "evidence" </> printf "step-%03d-%s" n name
+        -- The maximum lag is always named, so the receipt can bind the record to it;
+        -- the readback script's own default is 600 slots.
+        maxLag = fromMaybe 600 (optMaxLag o)
+    inspectJson <-
+        maybe
+            (fail "the fresh inspect carries no printed record")
+            pure
+            (rcCommand inspected)
+    policy <-
+        maybe
+            (fail "the inspect names no active policy")
+            pure
+            (textAt activePolicyPath inspectJson)
+    name <-
+        maybe
+            (fail "the inspect names no key")
+            pure
+            (textAt ["key"] inspectJson)
+    BL.writeFile
+        (evidence "inspect.json")
+        (encodePretty inspectJson <> "\n")
+    let url = case ix of
+            Koios -> optKoiosUrl o
+            Blockfrost -> optBlockfrostUrl o
+        args =
+            [ optReadback o
+            , "--provider"
+            , indexerName ix
+            , "--policy"
+            , T.unpack policy
+            , "--name"
+            , T.unpack name
+            , "--inspect"
+            , evidence "inspect.json"
+            , "--out"
+            , evidence "readback.json"
+            ]
+                <> maybe [] (\u -> ["--base-url", u]) url
+                <> ["--max-lag", show maxLag]
+                <> [ a
+                   | ix == Blockfrost
+                   , a <- ["--credential-file", optBlockfrostCredential o]
+                   ]
+    (code, out, err) <- readProcessWithExitCode "bash" args ""
+    BS.writeFile (evidence "stdout.txt") (BC.pack out)
+    BS.writeFile (evidence "stderr.txt") (BC.pack err)
+    recordKept <- doesFileExist (evidence "readback.json")
+    kept <-
+        if recordKept
+            then do
+                bytes <- BS.readFile (evidence "readback.json")
+                pure (Just (T.pack (relative "readback.json"), sha256Hex bytes))
+            else pure Nothing
+    let files =
+            map (T.pack . relative) ["inspect.json", "stdout.txt", "stderr.txt"]
+        outcome = case code of
+            ExitSuccess -> "success"
+            ExitFailure 1 -> "provider-mismatch"
+            ExitFailure 3 -> "provider-unavailable"
+            ExitFailure _ -> "client-error"
+    pure
+        r
+            { rcOutcome = outcome
+            , rcMaxLag = Just maxLag
+            , rcReadbackFile = fst <$> kept
+            , rcReadbackSha256 = snd <$> kept
+            , rcEvidence = rcEvidence r <> files <> maybe [] (pure . fst) kept
+            , rcReason =
+                if code == ExitSuccess
+                    then Nothing
+                    else Just (boundedNodeReason 600 (T.pack err))
+            }
+  where
+    activePolicyPath =
+        [ "applicationOutput"
+        , "envelope"
+        , "fields"
+        , "0"
+        , "fields"
+        , "2"
+        , "bytes"
+        ]
+    textAt path v = case foldl step (Just v) path of
+        Just (Aeson.String s) -> Just s
+        _ -> Nothing
+      where
+        step (Just (Aeson.Object m)) k = KeyMap.lookup (Key.fromString k) m
+        step (Just (Aeson.Array a)) k
+            | [(i, "")] <- reads k = listToMaybe (drop i (toList a))
+        step _ _ = Nothing
 
 -- | Keep a transaction's body beside the receipts.
 keepBody :: Env -> Int -> ConwayTx -> IO (Text, Text)
@@ -663,13 +1152,31 @@ receipt records which of those the transaction reached.
 -}
 submitAndConfirm
     :: Env
-    -> NodeSession
+    -> NodeCaps
     -> Wallet
     -> Receipt
     -> ConwayTx
     -> IO (Receipt, ConwayTx)
-submitAndConfirm env sess wallet r unsigned = do
-    let signed = addKeyWitness (walletSignKey wallet) unsigned
+submitAndConfirm env caps wallet r unsigned
+    | Just why <-
+        submissionProblem
+            (envStrict env)
+            (optAllowance (envOptions env))
+            unsigned =
+        -- Nothing is signed or sent: a setup refusal, never the node's verdict.
+        pure (r{rcOutcome = "client-error", rcReason = Just why}, unsigned)
+    | otherwise = submitBounded env caps wallet r unsigned
+
+submitBounded
+    :: Env
+    -> NodeCaps
+    -> Wallet
+    -> Receipt
+    -> ConwayTx
+    -> IO (Receipt, ConwayTx)
+submitBounded env caps wallet r unsigned = do
+    let witnessed = signTx (walletSignKey wallet) unsigned
+        signed = signedTx witnessed
         txid = txIdHex signed
     (body, bodyDigest) <- keepBody env (rcStep r) signed
     let r0 =
@@ -679,7 +1186,7 @@ submitAndConfirm env sess wallet r unsigned = do
                 , rcBodyFile = Just body
                 , rcBodySha256 = Just bodyDigest
                 }
-    answer <- try (submitTx (nsSubmitter sess) signed)
+    answer <- try (submitSigned (ncSubmit caps) witnessed)
     case answer of
         Left (e :: SomeException) ->
             pure
@@ -707,7 +1214,7 @@ submitAndConfirm env sess wallet r unsigned = do
                 , signed
                 )
         Right (Submitted _) -> do
-            waiter <- async (awaitTxWindow signed (T.unpack txid))
+            waiter <- async (ncConfirm caps signed (T.unpack txid))
             seen <- timeout 120_000_000 (waitCatch waiter)
             case seen of
                 Just (Right ()) -> pure (r0{rcOutcome = "accepted"}, signed)
@@ -766,6 +1273,7 @@ commandArgs env c target key r = do
         node =
             ["--node-socket", optSocket o, "--network-magic", show (optMagic o)]
         wallet = ["--wallet-skey", optWalletKey o, "--confirm-timeout", "120"]
+        outlay = maybe [] (\n -> ["--max-outlay", show n]) (optMaxOutlay o)
         common = ["--registry", dir, "--blueprint", optBlueprint o]
         keyArg = ["--key", T.unpack (hex (keyBytes key))]
     case c of
@@ -776,7 +1284,7 @@ commandArgs env c target key r = do
         Insert -> do
             reg <- openRegistry env target
             w <- loadWallet (fromIntegral (optMagic o)) (optWalletKey o)
-            let e = envelopeFor reg (addrKeyHashBytes (walletAddr w)) key
+            let e = envelopeOfRun env reg (addrKeyHashBytes (walletAddr w)) key
                 path = envEvidence env </> printf "step-%03d-envelope.json" (rcStep r)
             BL.writeFile path (encodePretty (envelopeToJson e))
             pure
@@ -786,12 +1294,27 @@ commandArgs env c target key r = do
                     <> ["--envelope", path]
                     <> node
                     <> wallet
+                    <> outlay
                 )
         Terminate ->
-            pure (["registry", "terminate"] <> common <> keyArg <> node <> wallet)
+            pure
+                ( ["registry", "terminate"]
+                    <> common
+                    <> keyArg
+                    <> node
+                    <> wallet
+                    <> outlay
+                )
         Update n -> do
             let path = envEvidence env </> printf "step-%03d-payload.json" (rcStep r)
-            BL.writeFile path (encodePretty (payloadOf n))
+            BL.writeFile
+                path
+                ( encodePretty
+                    ( if attached env
+                        then dataToJson (attachedPayload key n)
+                        else payloadOf n
+                    )
+                )
             pure
                 ( ["registry", "update"]
                     <> common
@@ -799,6 +1322,7 @@ commandArgs env c target key r = do
                     <> ["--payload", path]
                     <> node
                     <> wallet
+                    <> outlay
                 )
         Inspect -> pure (["registry", "inspect"] <> common <> keyArg <> node)
 
@@ -959,7 +1483,7 @@ provoke env p target key r = do
             (status, printed, file) <- killedAt env r label hold "fold" args
             awaitKilled
             finish status printed file id
-        UpdateWhileUnresolved -> commandArgs env (Update 3) target key r >>= plain
+        UpdateAfterKill -> commandArgs env (Update 3) target key r >>= plain
         CreateKilled -> do
             seed <-
                 previewSeed env r "preview" (optWalletKey o) dir Nothing
@@ -1210,10 +1734,13 @@ exitNumber status = case status of
 transaction: a killed command's accepted submission, on the chain.
 -}
 awaitOnChain :: Env -> Text -> IO ()
-awaitOnChain env txid = withNode env $ \sess wallet -> do
+awaitOnChain env txid = withSession env $ \caps wallet -> do
     let go (0 :: Int) = pure ()
         go n = do
-            utxos <- Cage.queryUTxOs (nsProvider sess) (walletAddr wallet)
+            utxos <-
+                Cage.withView
+                    (ncReads caps)
+                    (`Cage.viewUTxOsAt` walletAddr wallet)
             unless
                 (any ((== txid) . T.takeWhile (/= '#') . renderOutRef . fst) utxos)
                 (threadDelay 200_000 >> go (n - 1))
@@ -1259,10 +1786,11 @@ applicationReference reg att =
 book :: Env -> Target -> String -> Receipt -> IO Receipt
 book env target key r = do
     reg <- openRegistry env target
-    withNode env $ \sess wallet -> do
-        let prov = nsProvider sess
+    withSession env $ \caps wallet -> do
+        let prov = ncReads caps
             cfg = regCfg reg
-        att <- attach prov (regDeployment reg) (partsOf cfg)
+        att <-
+            Cage.withView prov (\v -> attach v (regDeployment reg) (partsOf cfg))
         (appRef, _) <- applicationReference reg att
         let e = envelopeFor reg (addrKeyHashBytes (walletAddr wallet)) key
             approval =
@@ -1272,7 +1800,7 @@ book env target key r = do
             dest = insertDestination Testnet (applied reg) e
         result <- newIORef Nothing
         let submit unsigned = do
-                (r', signed) <- submitAndConfirm env sess wallet r unsigned
+                (r', signed) <- submitAndConfirm env caps wallet r unsigned
                 modifyIORef' result (const (Just r'))
                 unless (rcOutcome r' == "accepted") $
                     fail ("the booking was not accepted: " <> T.unpack (rcOutcome r'))
@@ -1350,9 +1878,9 @@ foldWith env target selection tweak byStranger r = do
     reg <- openRegistry env target
     stranger <-
         loadWallet (fromIntegral (optMagic opts)) (optStranger opts)
-    withNode env $ \sess wallet -> do
+    withSession env $ \caps wallet -> do
         let folder = if byStranger then stranger else wallet
-        let prov = nsProvider sess
+        let prov = ncReads caps
             cfg = regCfg reg
             tok = regToken reg
             home = walletAddr wallet
@@ -1364,12 +1892,16 @@ foldWith env target selection tweak byStranger r = do
                     , rcStateValidator = Just stateHash
                     , rcApplication = Just appHash
                     }
-        att <- attach prov (regDeployment reg) (partsOf cfg)
+        att <-
+            Cage.withView prov (\v -> attach v (regDeployment reg) (partsOf cfg))
         let (stateIn, stateOut) = attStateUtxo att
         oldState <- case extractCageDatum stateOut of
             Just (StateDatum st) -> pure st
             _ -> fail "the registry's state output carries no state datum"
-        pending <- Cage.queryUTxOs prov (requestAddrFromCfg cfg tok Testnet)
+        pending <-
+            Cage.withView
+                prov
+                (`Cage.viewUTxOsAt` requestAddrFromCfg cfg tok Testnet)
         let selects q = case selection of
                 ForKey k -> requestKey q == keyBytes k
                 _ -> True
@@ -1408,18 +1940,25 @@ foldWith env target selection tweak byStranger r = do
                     ( "no saved mirror commits to the chain's root 0x"
                         <> T.unpack (hex chain)
                     )
-        live <- Cage.queryUTxOs prov (applicationAddr reg)
+        live <- Cage.withView prov (`Cage.viewUTxOsAt` applicationAddr reg)
         let envelopes =
-                [ envelopeFor reg (addrKeyHashBytes home) (BC.unpack (requestKey q))
+                [ envelopeOfRun
+                    env
+                    reg
+                    (addrKeyHashBytes home)
+                    (BC.unpack (requestKey q))
                 | (_, q) <- chosen
                 ]
-        ctx0 <- registryContextFor cfg (regCodes reg) prov (attRefUtxos att)
+        ctx0 <-
+            Cage.withView
+                prov
+                (\v -> registryContextFor cfg (regCodes reg) v (attRefUtxos att))
         ctx <-
             either
                 fail
                 pure
                 (withApplication (applied reg) Nothing envelopes live ctx0)
-        pp <- Cage.queryProtocolParams prov
+        pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
         owedDuties <-
             either
                 fail
@@ -1489,7 +2028,7 @@ foldWith env target selection tweak byStranger r = do
                         ( show (length hs)
                             <> " live holdings for the released key; it needs one"
                         )
-        wallets <- Cage.queryUTxOs prov (walletAddr folder)
+        wallets <- Cage.withView prov (`Cage.viewUTxOsAt` walletAddr folder)
         feeUtxo <-
             case sortOn
                 (Down . (^. coinTxOutL) . snd)
@@ -1504,28 +2043,28 @@ foldWith env target selection tweak byStranger r = do
             owed :: [Script ConwayEra]
             owed = map csScript (rdSpends duties) <> map cmScript (rdMints duties)
         (unsigned, _) <-
-            connectedFoldTx
-                ConnectedFoldArgs
-                    { cfaCfg = cfg
-                    , cfaProvider = prov
-                    , cfaTrie = tm
-                    , cfaToken = tok
-                    , cfaFeeAddr = walletAddr folder
-                    , cfaStateUtxo = (stateIn, stateOut)
-                    , cfaReqUtxos = map fst chosen
-                    , cfaFeeUtxo = feeUtxo
-                    , cfaPp = pp
-                    , cfaSpends = rdSpends duties
-                    , cfaMints = rdMints duties
-                    , cfaOutputs = rdOutputs duties
-                    , cfaSigners = rdSigners duties
-                    , cfaRefUtxos = rcRefUtxos ctx
-                    , cfaAttachScripts = filter ((`notElem` carried) . hashScript) owed
-                    , cfaSkipEval = True
-                    , cfaAdjustRoot = id
-                    }
+            Cage.withView prov $ \v ->
+                connectedFoldTx
+                    ConnectedFoldArgs
+                        { cfaCfg = cfg
+                        , cfaView = v
+                        , cfaTrie = tm
+                        , cfaToken = tok
+                        , cfaFeeAddr = walletAddr folder
+                        , cfaStateUtxo = (stateIn, stateOut)
+                        , cfaReqUtxos = map fst chosen
+                        , cfaFeeUtxo = feeUtxo
+                        , cfaSpends = rdSpends duties
+                        , cfaMints = rdMints duties
+                        , cfaOutputs = rdOutputs duties
+                        , cfaSigners = rdSigners duties
+                        , cfaRefUtxos = rcRefUtxos ctx
+                        , cfaAttachScripts = filter ((`notElem` carried) . hashScript) owed
+                        , cfaSkipEval = True
+                        , cfaAdjustRoot = id
+                        }
         void (evaluate unsigned)
-        result <- fst <$> submitAndConfirm env sess folder r0 unsigned
+        result <- fst <$> submitAndConfirm env caps folder r0 unsigned
         -- The chain took the edge: the backend's mirror takes it too.
         when (rcOutcome result == "accepted") $ do
             withTrie tm tok $ \t ->
@@ -1541,15 +2080,16 @@ backendDir env (Target t) = optWork (envOptions env) </> "backend" </> t
 observe :: Env -> Target -> String -> Receipt -> IO Receipt
 observe env target key r = do
     reg <- openRegistry env target
-    withNode env $ \sess wallet -> do
-        let prov = nsProvider sess
+    withSession env $ \caps wallet -> do
+        let prov = ncReads caps
             cfg = regCfg reg
             identity = scriptHashBytes (cfgScriptHash cfg) <> tokenBytes reg
-        att <- attach prov (regDeployment reg) (partsOf cfg)
+        att <-
+            Cage.withView prov (\v -> attach v (regDeployment reg) (partsOf cfg))
         root <- case extractCageDatum (snd (attStateUtxo att)) of
             Just (StateDatum st) -> let OnChainRoot b = stateRoot st in pure b
             _ -> fail "the registry's state output carries no state datum"
-        live <- Cage.queryUTxOs prov (applicationAddr reg)
+        live <- Cage.withView prov (`Cage.viewUTxOsAt` applicationAddr reg)
         let holdings =
                 [ (i, o)
                 | (i, o) <- live
@@ -1566,8 +2106,10 @@ observe env target key r = do
             [u] -> pure (Just u)
             _ -> fail "more than one live output claims the key"
         pending <-
-            Cage.queryUTxOs prov (requestAddrFromCfg cfg (regToken reg) Testnet)
-        wallets <- Cage.queryUTxOs prov (walletAddr wallet)
+            Cage.withView
+                prov
+                (`Cage.viewUTxOsAt` requestAddrFromCfg cfg (regToken reg) Testnet)
+        wallets <- Cage.withView prov (`Cage.viewUTxOsAt` walletAddr wallet)
         leaf <- authenticatedLeaf env target reg root key
         let lovelace o = let Coin c = o ^. coinTxOutL in c
         pure
@@ -1675,15 +2217,18 @@ craftHolding env c target key r = do
     let o = envOptions env
     reg <- openRegistry env target
     stranger <- loadWallet (fromIntegral (optMagic o)) (optStranger o)
-    withNode env $ \sess wallet -> do
-        let prov = nsProvider sess
+    withSession env $ \caps wallet -> do
+        let prov = ncReads caps
             appHash = hex (scriptHashBytes (computeScriptHash (applied reg)))
             r0 = r{rcEvaluation = Just "skipped", rcApplication = Just appHash}
             mine = addrKeyHashBytes (walletAddr wallet)
             theirs = addrKeyHashBytes (walletAddr stranger)
-        att <- attach prov (regDeployment reg) (partsOf (regCfg reg))
+        att <-
+            Cage.withView
+                prov
+                (\v -> attach v (regDeployment reg) (partsOf (regCfg reg)))
         appRef <- applicationReference reg att
-        live <- Cage.queryUTxOs prov (applicationAddr reg)
+        live <- Cage.withView prov (`Cage.viewUTxOsAt` applicationAddr reg)
         holding@(hIn, hOut) <- case holdingsOf reg key live of
             [u] -> pure u
             us ->
@@ -1695,8 +2240,8 @@ craftHolding env c target key r = do
         let ctl = envControl e
         unless (ctlController ctl == mine) $
             fail "the holding's controller is not this story's wallet"
-        pp <- Cage.queryProtocolParams prov
-        wallets <- Cage.queryUTxOs prov (walletAddr wallet)
+        pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
+        wallets <- Cage.withView prov (`Cage.viewUTxOsAt` walletAddr wallet)
         feeUtxo <-
             case sortOn
                 (Down . (^. coinTxOutL) . snd)
@@ -1798,9 +2343,9 @@ craftHolding env c target key r = do
                 built
         let witnessed =
                 if c == UpdateByStranger
-                    then addKeyWitness (walletSignKey stranger) unsigned
+                    then signedTx (signTx (walletSignKey stranger) unsigned)
                     else unsigned
-        fst <$> submitAndConfirm env sess wallet r0 witnessed
+        fst <$> submitAndConfirm env caps wallet r0 witnessed
 
 -- | The last byte of a name or hash, changed: the same length, another value.
 flipLast :: ByteString -> ByteString
@@ -1814,15 +2359,15 @@ approval carries stated budgets, so the node judges every one.
 -}
 bookedBy
     :: Env
-    -> NodeSession
+    -> NodeCaps
     -> Wallet
     -> Receipt
     -> ((ConwayTx -> IO ConwayTx) -> IO ConwayTx)
     -> IO Receipt
-bookedBy env sess payer r building = do
+bookedBy env caps payer r building = do
     result <- newIORef Nothing
     let submit unsigned = do
-            (r', signed) <- submitAndConfirm env sess payer r unsigned
+            (r', signed) <- submitAndConfirm env caps payer r unsigned
             modifyIORef' result (const (Just r'))
             unless (rcOutcome r' == "accepted") $
                 fail ("the booking was not accepted: " <> T.unpack (rcOutcome r'))
@@ -1849,8 +2394,8 @@ craftBooking env c target key r = do
     let o = envOptions env
     reg <- openRegistry env target
     stranger <- loadWallet (fromIntegral (optMagic o)) (optStranger o)
-    withNode env $ \sess wallet -> do
-        let prov = nsProvider sess
+    withSession env $ \caps wallet -> do
+        let prov = ncReads caps
             cfg = regCfg reg
             appHash = hex (scriptHashBytes (computeScriptHash (applied reg)))
             r0 = r{rcEvaluation = Just "skipped", rcApplication = Just appHash}
@@ -1865,7 +2410,8 @@ craftBooking env c target key r = do
                     named (StateAsset (flipLast statePolicy) (flipLast stateName))
                 _ -> honest
             payer = if c == BookingByStranger then stranger else wallet
-        att <- attach prov (regDeployment reg) (partsOf cfg)
+        att <-
+            Cage.withView prov (\v -> attach v (regDeployment reg) (partsOf cfg))
         (appRef, _) <- applicationReference reg att
         let approval =
                 (insertApproval Testnet (applied reg) (fst (attStateUtxo att)) e)
@@ -1879,7 +2425,7 @@ craftBooking env c target key r = do
             deposit =
                 ctlDeposit (envControl e)
                     - (if c == BookingShortDeposit then 1 else 0)
-        bookedBy env sess payer r0 $ \submit ->
+        bookedBy env caps payer r0 $ \submit ->
             bookEdgeWith
                 cfg
                 prov
@@ -1901,15 +2447,16 @@ craftTermination env byStranger target key r = do
     let o = envOptions env
     reg <- openRegistry env target
     stranger <- loadWallet (fromIntegral (optMagic o)) (optStranger o)
-    withNode env $ \sess wallet -> do
-        let prov = nsProvider sess
+    withSession env $ \caps wallet -> do
+        let prov = ncReads caps
             cfg = regCfg reg
             appHash = hex (scriptHashBytes (computeScriptHash (applied reg)))
             r0 = r{rcEvaluation = Just "skipped", rcApplication = Just appHash}
             payer = if byStranger then stranger else wallet
-        att <- attach prov (regDeployment reg) (partsOf cfg)
+        att <-
+            Cage.withView prov (\v -> attach v (regDeployment reg) (partsOf cfg))
         (appRef, _) <- applicationReference reg att
-        live <- Cage.queryUTxOs prov (applicationAddr reg)
+        live <- Cage.withView prov (`Cage.viewUTxOsAt` applicationAddr reg)
         (liveIn, _) <- case holdingsOf reg key live of
             [u] -> pure u
             us ->
@@ -1927,7 +2474,7 @@ craftTermination env byStranger target key r = do
                 )
                     { baScriptReference = Just appRef
                     }
-        bookedBy env sess payer r0 $ \submit ->
+        bookedBy env caps payer r0 $ \submit ->
             bookEdgeWith
                 cfg
                 prov

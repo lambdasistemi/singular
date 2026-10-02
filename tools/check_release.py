@@ -154,6 +154,8 @@ if onchain_present:
             "README.md",
             "RELEASE.md",
             "RELEASE-COMMIT",
+            # #326: the application model revision the release maps to.
+            "MODEL-REVISION",
             "SHA256SUMS",
             "verify-identities.sh",
             # #173 A173-COMMAND: the packaged verb's run page. Required, so
@@ -170,6 +172,19 @@ if onchain_present:
             # without the page that documents it.
             "DEMO1.md",
             "offchain/cli/Main.hs",
+            # #300: the refusal controls and the indexer readback replay from
+            # the archive: the runner, its take, the readback, the statement
+            # ledger and specification it binds, and the flake inputs it reads.
+            "conformance/app-cli/Main.hs",
+            "conformance/flake.nix",
+            "tools/demo1_cli_attach.sh",
+            "tools/demo1_readback.sh",
+            "tools/demo1_mock_indexer.py",
+            "tools/demo1_readback_tamper.sh",
+            "applications/open-datum/ledgers.json",
+            "specs/299-singular-cli/spec.md",
+            "lean-toolchain",
+            "flake.lock",
             "onchain/plutus.json",
             "onchain/script-identity.json",
             "onchain/aiken.toml",
@@ -223,6 +238,17 @@ if onchain_present:
             ).items()
         }
         assert covered == expected, "on-chain archive internal checksum manifest drift"
+        # #326: the model revision the archive states is the one the
+        # conformance evidence is compiled against: one file, read by both.
+        stated = bundle.extractfile(members["MODEL-REVISION"]).read().decode()
+        named = (root / "conformance/model-revision").read_text()
+        assert re.fullmatch(r"[0-9a-f]{40}\n", stated), (
+            f"archive model revision is not one commit: {stated!r}"
+        )
+        assert stated == named, (
+            f"archive model revision {stated.strip()} differs from the "
+            f"conformance evidence's {named.strip()}"
+        )
         release_text = bundle.extractfile(members["RELEASE.md"]).read().decode()
         assert release_text == (root / "onchain-release/RELEASE.md").read_text(), (
             "archive release instructions differ from source"

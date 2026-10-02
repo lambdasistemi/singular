@@ -9,14 +9,31 @@ import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.Lifecycle
     ( checkExecutionLimit
-    , fundingProvider
+    , fundingView
+    , lifecycleRequested
     )
 import Singular.Registry.Node (funderAddr)
-import Singular.Registry.Provider (Provider (..))
+import Singular.Registry.Provider (ChainPoint (..), View (..))
+import Singular.Registry.StubView (stubView)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 spec :: Spec
-spec = describe "live aggregate transaction execution limit" $ do
+spec = do
+    lifecycleSelection
+    executionLimit
+
+lifecycleSelection :: Spec
+lifecycleSelection = describe "lifecycle selection from the chain point" $ do
+    let at magic = (viewPoint stubView){cpNetwork = magic}
+    it "stays off on the factory devnet unless asked" $ do
+        lifecycleRequested (at 42) [] `shouldBe` False
+        lifecycleRequested (at 42) ["--lifecycle"] `shouldBe` True
+    it "turns on for any other network, asked or not" $ do
+        lifecycleRequested (at 1) [] `shouldBe` True
+        lifecycleRequested (at 764824073) ["--lifecycle"] `shouldBe` True
+
+executionLimit :: Spec
+executionLimit = describe "live aggregate transaction execution limit" $ do
     it "accepts the exact boundary across multiple purposes" $
         checkExecutionLimit
             (ExUnits 17500000 10000000000)
@@ -47,12 +64,11 @@ spec = describe "live aggregate transaction execution limit" $ do
             let output :: Integer -> TxOut ConwayEra
                 output amount = mkBasicTxOut funderAddr (inject (Coin amount))
                 prov =
-                    Provider
-                        { queryUTxOs = \_ -> pure [(reserved, output 100000000), (free, output 5000000)]
-                        , queryProtocolParams = fail "unused protocol query"
-                        , evaluateTx = \_ -> fail "unused evaluation"
-                        , posixMsToSlot = \_ -> fail "unused slot query"
-                        , posixMsCeilSlot = \_ -> fail "unused slot query"
+                    stubView
+                        { viewUTxOsAt = \_ -> pure [(reserved, output 100000000), (free, output 5000000)]
+                        , viewEvaluateTx = \_ -> fail "unused evaluation"
+                        , viewPosixMsToSlot = \_ -> fail "unused slot query"
+                        , viewPosixMsCeilSlot = \_ -> fail "unused slot query"
                         }
-            selected <- queryUTxOs (fundingProvider [reserved] prov) funderAddr
+            selected <- viewUTxOsAt (fundingView [reserved] prov) funderAddr
             map fst selected `shouldBe` [free]

@@ -1,0 +1,12 @@
+{
+  "interface-contract": [
+    {
+      "text": "The driver gains one entry point per batch question and two preservation theorems. Every existing driver and model signature stays as it is.",
+      "pause": 350
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "5e3a72cb47e567a158cf01e5d0eb25ee80f567c50b5b4078a8c1a86b250b9182"
+  }
+}

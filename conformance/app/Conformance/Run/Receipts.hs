@@ -9,6 +9,7 @@ module Conformance.Run.Receipts
     , writeStoryReceipt
     , writeRowReceipt
     , recordHold
+    , recordUnmet
     , writeCL01Issue70
     ) where
 
@@ -249,6 +250,27 @@ recordHold env row holdId leanSays consumerSays = do
             <> "; which model is the behavioral authority is the \
                \user's ruling, not ours — the run cannot exit 0 \
                \while this row is held"
+        )
+
+{- | Record an unmet consumer requirement kept by operator ruling: the
+chain's outcome is the registry's ruled behaviour and the consumer's
+theorem requires otherwise. The row is visible here, in its receipt
+(@unmet-by-ruling@), and in the run's exit — the session ends
+non-zero while any requirement is unmet.
+-}
+recordUnmet :: Env -> String -> String -> String -> String -> IO ()
+recordUnmet env row ruling registrySays consumerSays = do
+    modifyIORef' (envUnmet env) (row :)
+    emit
+        "unmet"
+        ( row
+            <> " UNMET BY RULING: "
+            <> ruling
+            <> "; "
+            <> registrySays
+            <> "; the consumer's theorem says "
+            <> consumerSays
+            <> " — the run cannot exit 0 while this requirement is unmet"
         )
 
 writeCL01Issue70 :: Env -> [String] -> IO ()

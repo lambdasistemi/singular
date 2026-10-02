@@ -1,0 +1,21 @@
+# #324 Indexer-backed coherent reads through the acquired interface
+
+Parent epic #322. Stacked on #323 (`refactor/323-acquired-node-interface`, base `7ca7fceb409c65c186713743889d29aa229b3aec`), whose read interface `Singular.Registry.Provider` (`withView`, `View`, `ChainPoint`) this ticket implements a second adapter for. Application model pin `de34300540223ccedf1ca85216b131fd09a148b4`. Node-clients pin `0e73121dc1df516b69d69bdd554b12bebd28d072`, unchanged by this ticket.
+
+**Story.** As a CLI user, I run the same ordinary `singular-cli` commands against an indexer-backed backend and get the same answers as against the node, or an explicit failure when the index cannot supply a coherent view.
+
+**Requirements.**
+
+- R1 An indexer adapter implements the #323 read interface. Address reads come from the in-process UTxO indexer; protocol parameters, script registration, time conversion and evaluation come from a node view. Every read of one view is answered at one chain point (network, slot, block hash).
+- R2 Node and indexer data are combined only at the same chain point. The indexer's applied point, its readiness and coverage, and the UTxO bytes it returns are read from one indexer state that does not change while the view is held. A point mismatch is rejected, never averaged or mixed.
+- R3 Explicit failures, each a named outcome class carrying the points involved: indexer lag behind the node view beyond a bound; a same-slot different-block fork; an index that started at a tip or filters addresses (incomplete coverage); restoration or catch-up in progress; upstream disconnection; a capability the adapter cannot serve. An empty answer from an incomplete index is never reported as absence.
+- R4 Selection by configuration at startup: the backend (node or indexer) is chosen once in composition; no command or builder takes a mode flag or names the indexer.
+- R5 Every ordinary command (`create`, `insert`, `update`, `terminate`, `inspect`) runs end-to-end on a generated DevNet with the indexer adapter; `docs/` describes the indexer backend configuration and its failure messages.
+- R6 A missing upstream primitive in `cardano-node-clients` is recorded as a tracked dependency with an issue link in the PR, not reimplemented in Singular.
+- R7 Lean-governed behaviour is unchanged; existing conformance, CLI, journey and e2e suites stay green.
+
+**Rejection behaviour.** R3's classes, plus the #323 classes (origin, out-of-scope view, lost node connection) unchanged.
+
+**Non-goals.** Registry membership or Terminal proofs from a generic asset index; asset queries (upstream #200 unmerged); a persistent proof service; public indexer deployment; recovery semantics (#325); the node-clients pin bump (no needed primitive is missing at the pin; deferred until upstream #200 merges).
+
+**Observable success.** `nix develop --quiet -c just ci` and every CI job green on the PR head; the indexer-adapter contract spec named in the PR with positive and content-dependent negative controls for mixed checkpoints; the DevNet CLI journey green through the indexer adapter.

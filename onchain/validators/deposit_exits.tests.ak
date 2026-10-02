@@ -1,3 +1,4 @@
+use aiken/interval.{Interval}
 use cardano/assets.{Value, from_lovelace, merge, zero}
 use cardano/transaction.{InlineDatum, Input, NoDatum, Output, Transaction}
 use registry_fixtures as fx
@@ -64,15 +65,17 @@ fn refusalOf(s: Scenario) -> Option<String> {
   state.modifyRefusal(s.pins, s.actions, s.input, s.tx)
 }
 
-/// The cage folds it: no reason, and the handler accepts.
+/// The cage folds it: the handler accepts, and no reason. The handler runs
+/// first, so a refusal prints the reason it traces.
 fn accepts(s: Scenario) -> Bool {
-  refusalOf(s) == None && spend(s)
+  spend(s) && refusalOf(s) == None
 }
 
 /// The cage refuses it for `deposit-returned` and for nothing else, and
-/// the handler returns False rather than crashing.
+/// the handler returns False rather than crashing. The handler runs first,
+/// so the reason it traces is printed when the name differs.
 fn refusesDepositReturned(s: Scenario) -> Bool {
-  refusalOf(s) == Some(@"deposit-returned") && !spend(s)
+  !spend(s) && refusalOf(s) == Some(@"deposit-returned")
 }
 
 /// A request of `owner` for `key` on a non-delivering edge, with its
@@ -214,6 +217,52 @@ test e5_deposit_one_lovelace_short_refuses() {
 }
 
 // ----------------------------------------------------------------------------
+// An update is folded in the processing window only (spec KR-01)
+//
+// Current validator behaviour, with no counterpart in Lean: Lean admits a
+// fold in every window, and this rule stays under the fold-correspondence
+// hold. The e5 fold above is valid in every other respect, so outside the
+// processing window the first reason the cage gives is `not-phase1`, the
+// fold's first check on an update; a carriage, action, edge, approval or
+// trie refusal would name itself instead.
+// ----------------------------------------------------------------------------
+
+/// The e5 fold, paying its owner the deposit, valid over `range`.
+fn deleteActiveIn(range: Interval<Int>) -> Scenario {
+  let s = deleteActive([paid(fx.bookerAddress, fx.deposit)])
+  Scenario { ..s, tx: Transaction { ..s.tx, validity_range: range } }
+}
+
+/// The cage refuses it for `not-phase1` as its first reason, and the handler
+/// returns False rather than crashing. The handler runs first, so a different
+/// reason is printed.
+fn refusesNotPhase1(s: Scenario) -> Bool {
+  !spend(s) && refusalOf(s) == Some(@"not-phase1")
+}
+
+/// The control the four refusals below share: the same fold inside the
+/// processing window.
+test update_in_the_processing_window_accepts() {
+  accepts(deleteActiveIn(fx.phase1()))
+}
+
+test update_in_the_retraction_window_refuses_not_phase1() {
+  refusesNotPhase1(deleteActiveIn(fx.phase2()))
+}
+
+test update_after_the_windows_refuses_not_phase1() {
+  refusesNotPhase1(deleteActiveIn(fx.phase3()))
+}
+
+test update_across_the_processing_deadline_refuses_not_phase1() {
+  refusesNotPhase1(deleteActiveIn(interval.between(5_000, 15_000)))
+}
+
+test update_with_no_validity_bounds_refuses_not_phase1() {
+  refusesNotPhase1(deleteActiveIn(interval.everything))
+}
+
+// ----------------------------------------------------------------------------
 // Two deposits of one owner in one fold are owed as their sum
 // ----------------------------------------------------------------------------
 
@@ -311,9 +360,9 @@ test carrier_holding_both_deposits_refuses() {
 // A deposit and a reject refund of one owner are two payments
 // ----------------------------------------------------------------------------
 
-/// A request dated in the future is rejectable inside a phase-1 range
-/// (`shared.is_rejectable`), so one fold can delete `keyA` for the booker
-/// and reject another request of the booker's.
+/// A request dated in the future, rejected inside a phase-1 range: one
+/// fold deletes `keyA` for the booker
+/// and rejects another request of the booker's.
 fn futureRequest(index: Int) -> Input {
   Input {
     output_reference: fx.requestRef(index),
@@ -372,9 +421,10 @@ test refund_output_offered_for_the_deposit_too_refuses() {
 // Reject — the refund is refused by name
 // ----------------------------------------------------------------------------
 
-/// A phase-3 reject of the booker's request: the root stays, and the
-/// refund is owed positionally from the first output after the state.
-fn reject(outputs: List<Output>) -> Scenario {
+/// A reject of the booker's request, valid over `range`: the root stays,
+/// and the refund is owed positionally from the first output after the
+/// state.
+fn rejectIn(range: Interval<Int>, outputs: List<Output>) -> Scenario {
   let root = fx.emptyRoot()
   let s =
     scenario(
@@ -386,7 +436,12 @@ fn reject(outputs: List<Output>) -> Scenario {
       zero,
       [Rejected],
     )
-  Scenario { ..s, tx: Transaction { ..s.tx, validity_range: fx.phase3() } }
+  Scenario { ..s, tx: Transaction { ..s.tx, validity_range: range } }
+}
+
+/// The same reject after the windows.
+fn reject(outputs: List<Output>) -> Scenario {
+  rejectIn(fx.phase3(), outputs)
 }
 
 test reject_refund_paid_to_the_owner_accepts() {
@@ -407,6 +462,63 @@ test reject_refund_to_a_script_refuses_by_name() {
 
 test reject_refund_missing_refuses_by_name() {
   refusesDepositReturned(reject([]))
+}
+
+// ----------------------------------------------------------------------------
+// An early reject owes the same refund (#320): the refund floor holds in the
+// processing window and in the retraction window, refused by the same name
+// ----------------------------------------------------------------------------
+
+test early_reject_refund_paid_to_the_owner_in_the_processing_window_accepts() {
+  accepts(rejectIn(fx.phase1(), [paid(fx.bookerAddress, fx.deposit)]))
+}
+
+test early_reject_refund_one_lovelace_short_in_the_processing_window_refuses_by_name() {
+  refusesDepositReturned(
+    rejectIn(fx.phase1(), [paid(fx.bookerAddress, fx.deposit - 1)]),
+  )
+}
+
+test early_reject_refund_to_another_key_in_the_processing_window_refuses_by_name() {
+  refusesDepositReturned(
+    rejectIn(fx.phase1(), [paid(fx.strangerAddress, fx.deposit)]),
+  )
+}
+
+test early_reject_refund_to_a_script_in_the_processing_window_refuses_by_name() {
+  refusesDepositReturned(
+    rejectIn(fx.phase1(), [paid(fx.recordAddress, fx.deposit)]),
+  )
+}
+
+test early_reject_refund_missing_in_the_processing_window_refuses_by_name() {
+  refusesDepositReturned(rejectIn(fx.phase1(), []))
+}
+
+test early_reject_refund_paid_to_the_owner_in_the_retraction_window_accepts() {
+  accepts(rejectIn(fx.phase2(), [paid(fx.bookerAddress, fx.deposit)]))
+}
+
+test early_reject_refund_one_lovelace_short_in_the_retraction_window_refuses_by_name() {
+  refusesDepositReturned(
+    rejectIn(fx.phase2(), [paid(fx.bookerAddress, fx.deposit - 1)]),
+  )
+}
+
+test early_reject_refund_to_another_key_in_the_retraction_window_refuses_by_name() {
+  refusesDepositReturned(
+    rejectIn(fx.phase2(), [paid(fx.strangerAddress, fx.deposit)]),
+  )
+}
+
+test early_reject_refund_to_a_script_in_the_retraction_window_refuses_by_name() {
+  refusesDepositReturned(
+    rejectIn(fx.phase2(), [paid(fx.recordAddress, fx.deposit)]),
+  )
+}
+
+test early_reject_refund_missing_in_the_retraction_window_refuses_by_name() {
+  refusesDepositReturned(rejectIn(fx.phase2(), []))
 }
 
 // ----------------------------------------------------------------------------

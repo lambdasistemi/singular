@@ -13,14 +13,13 @@ module Singular.Registry.E2E.CageSpec
     , submitInsertRequest
     , submitWithGenesis
     , publishCageRefs
-    , registryContextFor
+    , foldUnsigned
     , bookEdge
     , foldEdge
     ) where
 
 import Control.Concurrent (threadDelay)
-import Control.Concurrent.Async (async, cancel)
-import Control.Monad (forM_, unless)
+import Control.Monad (forM_, unless, when)
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
@@ -41,9 +40,11 @@ import Cardano.Ledger.Api.Tx
     , txIdTx
     )
 import Cardano.Ledger.Api.Tx.Body
-    ( inputsTxBodyL
+    ( ValidityInterval (..)
+    , inputsTxBodyL
     , mintTxBodyL
     , outputsTxBodyL
+    , vldtTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
@@ -55,7 +56,8 @@ import Cardano.Ledger.Api.Tx.Out
     )
 import Cardano.Ledger.BaseTypes
     ( Network (..)
-    , StrictMaybe (SNothing)
+    , SlotNo (..)
+    , StrictMaybe (SJust, SNothing)
     , TxIx (..)
     )
 import Cardano.Ledger.Mary.Value
@@ -65,32 +67,11 @@ import Cardano.Ledger.Mary.Value
     )
 import Cardano.Ledger.TxIn (TxIn (..))
 
-import Cardano.Node.Client.E2E.Devnet
-    ( withCardanoNode
-    )
 import Cardano.Node.Client.E2E.Setup
-    ( addKeyWitness
-    , genesisAddr
-    , genesisDir
+    ( genesisAddr
     , genesisSignKey
     )
-import Cardano.Node.Client.N2C.Connection
-    ( newLSQChannel
-    , newLTxSChannel
-    , runNodeClient
-    )
-import Cardano.Node.Client.N2C.Provider
-    ( mkN2CProvider
-    )
-import Cardano.Node.Client.N2C.Submitter
-    ( mkN2CSubmitter
-    )
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
-    )
 import Cardano.Tx.Ledger (ConwayTx)
-import Ouroboros.Network.Magic (NetworkMagic (..))
 import PlutusTx.Builtins (fromBuiltin)
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint
@@ -103,19 +84,18 @@ import Singular.Registry.Config
     ( CageConfig (..)
     )
 import Singular.Registry.Driver qualified as Driver
+import Singular.Registry.E2E.Fixture (withDevnetCapabilities)
 import Singular.Registry.Ledger
     ( Coin (..)
     , ConwayEra
     , TokenId (..)
     )
 import Singular.Registry.Node
-    ( adaptProvider
-    , awaitConnection
-    , awaitIndexed
-    , boundedSubmitter
-    , followedProvider
-    , submissionBound
-    , withDevnetIndexer
+    ( Capabilities (..)
+    , SubmitResult (..)
+    , signTx
+    , signedTx
+    , submitSigned
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
@@ -129,6 +109,7 @@ import Singular.Registry.TxBuilder.Internal
     , cageAddrFromCfg
     , cagePolicyIdFromCfg
     , computeScriptHash
+    , currentPosixMs
     , extractCageDatum
     , findUtxoByTxIn
     , mkInlineDatum
@@ -148,10 +129,7 @@ import Singular.Registry.TxBuilder.Request
 import Singular.Registry.TxBuilder.Retract
     ( retractRequestImpl
     )
-import Singular.Registry.TxBuilder.Update
-    ( RegistryContext
-    , updateTokenWithDuties
-    )
+import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
 import Singular.Registry.Types
     ( CageDatum (..)
     , Edge
@@ -222,7 +200,7 @@ cageFlowSpec stateBytes requestBytes = do
                     "hello"
                     edgeInsertAbsent
             reqUtxosBefore <-
-                Cage.queryUTxOs prov requestAddr
+                Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
             length reqUtxosBefore
                 `shouldSatisfy` (> 0)
 
@@ -230,15 +208,7 @@ cageFlowSpec stateBytes requestBytes = do
             stateBefore <- currentState cfg prov tokenId
             oldState <- observedState (snd stateBefore)
 
-            ctx <- registryContextFor cfg prov tokenId refs
-            unsignedUpdate <-
-                updateTokenWithDuties
-                    cfg
-                    prov
-                    tm
-                    tokenId
-                    genesisAddr
-                    ctx
+            unsignedUpdate <- foldUnsigned cfg prov tm tokenId refs
             assertConsumedRequest reqTxIn reqUtxosBefore unsignedUpdate
             let updateBody = unsignedUpdate ^. bodyTxL
                 updateOutputs = toList (updateBody ^. outputsTxBodyL)
@@ -295,7 +265,7 @@ cageFlowSpec stateBytes requestBytes = do
             signedUpdate <- submitWithGenesis submit unsignedUpdate
 
             reqUtxosAfter <-
-                Cage.queryUTxOs prov requestAddr
+                Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
             length reqUtxosAfter
                 `shouldSatisfy` (< length reqUtxosBefore)
             -- Singular.txOfExit / txCageOutputs, observed after inclusion.
@@ -329,25 +299,29 @@ cageFlowSpec stateBytes requestBytes = do
                     "bye"
                     edgeInsertActive
             reqUtxosBefore <-
-                Cage.queryUTxOs prov requestAddr
+                Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
             length reqUtxosBefore
                 `shouldSatisfy` (> 0)
 
             request <- observedRequest reqTxIn reqUtxosBefore
             stateBefore <- currentState cfg prov tokenId
             oldState <- observedState (snd stateBefore)
-            stateUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
-            walletUtxos <- Cage.queryUTxOs prov genesisAddr
+            stateUtxos <-
+                Cage.withView
+                    prov
+                    (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
+            walletUtxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
 
             threadDelay 3_000_000
 
             unsignedRetract <-
-                retractRequestImpl
-                    cfg
-                    prov
-                    tokenId
-                    reqTxIn
-                    genesisAddr
+                Cage.withView prov $ \v ->
+                    retractRequestImpl
+                        cfg
+                        v
+                        tokenId
+                        reqTxIn
+                        genesisAddr
             assertConsumedRequest reqTxIn reqUtxosBefore unsignedRetract
             let retractBody = unsignedRetract ^. bodyTxL
                 retractInputs = retractBody ^. inputsTxBodyL
@@ -386,7 +360,7 @@ cageFlowSpec stateBytes requestBytes = do
             _ <- submitWithGenesis submit unsignedRetract
 
             reqUtxosAfter <-
-                Cage.queryUTxOs prov requestAddr
+                Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
             length reqUtxosAfter
                 `shouldSatisfy` (< length reqUtxosBefore)
 
@@ -419,7 +393,7 @@ cageFlowSpec stateBytes requestBytes = do
                     "stale"
                     edgeInsertActive
             reqUtxosBefore <-
-                Cage.queryUTxOs prov requestAddr
+                Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
             length reqUtxosBefore
                 `shouldSatisfy` (> 0)
 
@@ -435,12 +409,13 @@ cageFlowSpec stateBytes requestBytes = do
             -- references carry both instead.
             refs <- publishCageRefs cfg prov submit tokenId
             unsignedReject <-
-                rejectRequestsWithRefs
-                    cfg
-                    prov
-                    tokenId
-                    genesisAddr
-                    refs
+                Cage.withView prov $ \v ->
+                    rejectRequestsWithRefs
+                        cfg
+                        v
+                        tokenId
+                        genesisAddr
+                        refs
             assertConsumedRequest reqTxIn reqUtxosBefore unsignedReject
             let rejectBody = unsignedReject ^. bodyTxL
                 rejectOutputs = toList (rejectBody ^. outputsTxBodyL)
@@ -474,7 +449,7 @@ cageFlowSpec stateBytes requestBytes = do
             signedReject <- submitWithGenesis submit unsignedReject
 
             reqUtxosAfter <-
-                Cage.queryUTxOs prov requestAddr
+                Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
             length reqUtxosAfter
                 `shouldSatisfy` (< length reqUtxosBefore)
 
@@ -486,6 +461,22 @@ cageFlowSpec stateBytes requestBytes = do
             stateAfter <- currentState cfg prov tokenId
             assertEqual "rejection observed state" newStateOut (snd stateAfter)
             assertLandedOutput prov signedReject newStateOut
+
+    -- #320: a reject carries no admission (Lean exitAdmission .reject =
+    -- none), so the product builder rejects a request inside its windows.
+    it "rejects a request in its processing window"
+        $ withBootedCageTimed
+            processingRejectCfg
+            stateBytes
+            requestBytes
+        $ rejectsWithin ProcessingWindow
+
+    it "rejects a request in its retraction window"
+        $ withBootedCageTimed
+            retractionRejectCfg
+            stateBytes
+            requestBytes
+        $ rejectsWithin RetractionWindow
 
 -- No End / Sweep / staking cases: termination, migration and seizure
 -- refuse for every party under the ownerless ruling (NOTE-028/A-003).
@@ -505,15 +496,34 @@ withBootedCage
     -> SBS.ShortByteString
     -> ( CageConfig
          -> Cage.Provider IO
-         -> Submitter IO
+         -> Capabilities
          -> TrieManager IO
          -> Driver.Registry
          -> IO a
        )
     -> IO a
 withBootedCage adjustCfg stateBytes requestBytes action =
-    withE2E stateBytes requestBytes $
-        \cfg0 prov submit tm -> do
+    withBootedCageTimed adjustCfg stateBytes requestBytes (const action)
+
+{- | 'withBootedCage', also handing the caller the devnet's system start
+(POSIX ms), from which a slot's time is read.
+-}
+withBootedCageTimed
+    :: (CageConfig -> CageConfig)
+    -> SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> ( Integer
+         -> CageConfig
+         -> Cage.Provider IO
+         -> Capabilities
+         -> TrieManager IO
+         -> Driver.Registry
+         -> IO a
+       )
+    -> IO a
+withBootedCageTimed adjustCfg stateBytes requestBytes action =
+    withE2ETimed stateBytes requestBytes $
+        \startMs cfg0 prov submit tm -> do
             let cfg = adjustCfg cfg0
             codes <- loadRegistryCodesFromEnv
             reg <-
@@ -524,26 +534,27 @@ withBootedCage adjustCfg stateBytes requestBytes action =
                     (submitWithGenesis submit)
                     genesisAddr
                     tm
-            action cfg prov submit tm reg
+            action startMs cfg prov submit tm reg
 
 submitInsertRequest
     :: CageConfig
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TokenId
     -> ByteString
     -> Edge
     -> IO TxIn
 submitInsertRequest cfg prov submit tokenId key edge = do
     unsignedReq <-
-        requestEdgeImpl
-            cfg
-            prov
-            (Coin 1_000_000)
-            tokenId
-            key
-            edge
-            genesisAddr
+        Cage.withView prov $ \v ->
+            requestEdgeImpl
+                cfg
+                v
+                (Coin 1_000_000)
+                tokenId
+                key
+                edge
+                genesisAddr
     signedReq <- submitWithGenesis submit unsignedReq
     pure $
         TxIn
@@ -551,19 +562,15 @@ submitInsertRequest cfg prov submit tokenId key edge = do
             (TxIx 0)
 
 submitWithGenesis
-    :: Submitter IO
+    :: Capabilities
     -> ConwayTx
     -> IO ConwayTx
-submitWithGenesis submit unsignedTx = do
-    let signedTx =
-            addKeyWitness
-                genesisSignKey
-                unsignedTx
-    result <-
-        submitTx submit signedTx
+submitWithGenesis caps unsignedTx = do
+    let signed = signTx genesisSignKey unsignedTx
+    result <- submitSigned (capSubmit caps) signed
     assertSubmitted result
-    awaitIndexed signedTx
-    pure signedTx
+    capConfirm caps (signedTx signed)
+    pure (signedTx signed)
 
 fastRetractCfg :: CageConfig -> CageConfig
 fastRetractCfg cfg =
@@ -579,12 +586,178 @@ fastRejectCfg cfg =
         , defaultRetractTime = 1_000
         }
 
+-- | A processing window long enough to build and land a reject inside it.
+processingRejectCfg :: CageConfig -> CageConfig
+processingRejectCfg cfg =
+    cfg
+        { defaultProcessTime = 300_000
+        , defaultRetractTime = 1_000
+        }
+
+{- | A short processing window, then a retraction window long enough to
+build and land a reject inside it.
+-}
+retractionRejectCfg :: CageConfig -> CageConfig
+retractionRejectCfg cfg =
+    cfg
+        { defaultProcessTime = 2_000
+        , defaultRetractTime = 300_000
+        }
+
+-- | The window a reject is placed in.
+data RejectWindow = ProcessingWindow | RetractionWindow
+    deriving stock (Show)
+
+{- | Book one request, wait until the named window has opened, and reject
+it through the product builder. The built validity interval must lie
+wholly inside that window, computed from the request's datum and the
+state. After inclusion the request is gone, its owner's refund (at least
+the deposit) is read back from the ledger, and so are the state's datum,
+root and value, unchanged.
+-}
+rejectsWithin
+    :: RejectWindow
+    -> Integer
+    -> CageConfig
+    -> Cage.Provider IO
+    -> Capabilities
+    -> TrieManager IO
+    -> Driver.Registry
+    -> IO ()
+rejectsWithin window startMs cfg prov submit _tm reg = do
+    let tokenId = Driver.registryTokenId reg
+        requestAddr = requestAddrFromCfg cfg tokenId Testnet
+    reqTxIn <-
+        submitInsertRequest
+            cfg
+            prov
+            submit
+            tokenId
+            "early"
+            edgeInsertActive
+    reqUtxosBefore <- Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
+    request <- observedRequest reqTxIn reqUtxosBefore
+    stateBefore <- currentState cfg prov tokenId
+    oldState <- observedState (snd stateBefore)
+    let submittedAt = requestSubmittedAt request
+        processDeadline = submittedAt + stateProcessTime oldState
+        retractDeadline = processDeadline + stateRetractTime oldState
+        (windowStart, windowEnd) = case window of
+            ProcessingWindow -> (submittedAt, processDeadline)
+            RetractionWindow -> (processDeadline, retractDeadline)
+    waitUntilMs (windowStart + 1_000)
+    refs <- publishCageRefs cfg prov submit tokenId
+    unsignedReject <-
+        Cage.withView prov $ \v ->
+            rejectRequestsWithRefs
+                cfg
+                v
+                tokenId
+                genesisAddr
+                refs
+    assertConsumedRequest reqTxIn reqUtxosBefore unsignedReject
+    (lowerMs, upperMs) <- builtIntervalMs prov startMs unsignedReject
+    assertEffect
+        ( "reject validity ["
+            <> show lowerMs
+            <> ", "
+            <> show upperMs
+            <> ") lies wholly inside the "
+            <> show window
+            <> " ["
+            <> show windowStart
+            <> ", "
+            <> show windowEnd
+            <> ")"
+        )
+        (windowStart <= lowerMs && upperMs <= windowEnd)
+    let rejectBody = unsignedReject ^. bodyTxL
+        rejectOutputs = toList (rejectBody ^. outputsTxBodyL)
+        ownerOutputs = filter (paysOwner request) rejectOutputs
+    assertEqual
+        "rejection spent state"
+        True
+        (Set.member (fst stateBefore) (rejectBody ^. inputsTxBodyL))
+    assertEqual "rejection mint" mempty (rejectBody ^. mintTxBodyL)
+    assertEffect
+        "rejection refund recipient missing"
+        (not (null ownerOutputs))
+    assertAtLeast
+        "rejection owner refund"
+        (Coin (requestDeposit request))
+        ( Coin
+            ( sum
+                [amount | out <- ownerOutputs, let Coin amount = out ^. coinTxOutL]
+            )
+        )
+    signedReject <- submitWithGenesis submit unsignedReject
+    putStrLn
+        ( "    "
+            <> show window
+            <> ": validity ["
+            <> show lowerMs
+            <> ", "
+            <> show upperMs
+            <> ") inside ["
+            <> show windowStart
+            <> ", "
+            <> show windowEnd
+            <> "), tx "
+            <> show (txIdTx signedReject)
+        )
+    -- Read back from the ledger after inclusion.
+    reqUtxosAfter <- Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
+    assertEqual
+        "rejection request remains after submission"
+        Nothing
+        (findUtxoByTxIn reqTxIn reqUtxosAfter)
+    forM_ ownerOutputs (assertLandedOutput prov signedReject)
+    stateAfter <- currentState cfg prov tokenId
+    stateAfterDatum <- observedState (snd stateAfter)
+    assertEqual
+        "rejection observed state datum and root"
+        oldState
+        stateAfterDatum
+    assertEqual
+        "rejection observed state value"
+        (snd stateBefore ^. valueTxOutL)
+        (snd stateAfter ^. valueTxOutL)
+
+{- | The built transaction's validity interval in POSIX ms. The devnet
+runs every era from slot 0 with 100 ms slots, so a slot starts at the
+system start plus 100 ms a slot; the node's own conversion of the lower
+bound checks that reading.
+-}
+builtIntervalMs
+    :: Cage.Provider IO -> Integer -> ConwayTx -> IO (Integer, Integer)
+builtIntervalMs prov startMs tx =
+    case tx ^. bodyTxL . vldtTxBodyL of
+        ValidityInterval (SJust lower) (SJust upper) -> do
+            let posixOf (SlotNo slot) = startMs + 100 * toInteger slot
+            nodeLower <-
+                Cage.withView prov (\v -> Cage.viewPosixMsToSlot v (posixOf lower))
+            assertEqual "validity lower bound read by the node" lower nodeLower
+            pure (posixOf lower, posixOf upper)
+        other -> do
+            expectationFailure
+                ( "wrong effect: reject validity is not a finite interval: "
+                    <> show other
+                )
+            fail "reject validity"
+
+-- | Sleep until a POSIX time (ms) has passed.
+waitUntilMs :: Integer -> IO ()
+waitUntilMs target = do
+    now <- currentPosixMs
+    when (target > now) $
+        threadDelay (fromInteger ((target - now) * 1_000))
+
 -- ---------------------------------------------------------
 -- Bracket
 -- ---------------------------------------------------------
 
-{- | Start a devnet node, connect via N2C,
-build Provider and Submitter, then run.
+{- | Take the devnet fixture's capabilities, publish the state validator,
+pick a seed and run the body on the configured cage.
 -}
 withE2E
     :: SBS.ShortByteString
@@ -593,32 +766,37 @@ withE2E
     -- ^ Unparameterized request compiled-code bytes
     -> ( CageConfig
          -> Cage.Provider IO
-         -> Submitter IO
+         -> Capabilities
          -> TrieManager IO
          -> IO a
        )
     -> IO a
-withE2E stateBytes requestBytes action = do
-    gDir <- genesisDir
-    withCardanoNode gDir $ \sock _startMs -> withDevnetIndexer sock $ do
-        lsqCh <- newLSQChannel 16
-        ltxsCh <- newLTxSChannel 16
-        nodeThread <-
-            async $
-                runNodeClient
-                    (NetworkMagic 42)
-                    sock
-                    lsqCh
-                    ltxsCh
-        let nodeProv = adaptProvider (mkN2CProvider lsqCh)
-        awaitConnection (NetworkMagic 42) sock nodeThread nodeProv
-        let submit = boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
-        -- Address reads from here on are the indexer's.
-        prov <- followedProvider nodeProv submit
+withE2E stateBytes requestBytes action =
+    withE2ETimed stateBytes requestBytes (const action)
+
+{- | 'withE2E', also handing the caller the system start (POSIX ms) the
+devnet's genesis was written with.
+-}
+withE2ETimed
+    :: SBS.ShortByteString
+    -- ^ Unparameterized state compiled-code bytes
+    -> SBS.ShortByteString
+    -- ^ Unparameterized request compiled-code bytes
+    -> ( Integer
+         -> CageConfig
+         -> Cage.Provider IO
+         -> Capabilities
+         -> TrieManager IO
+         -> IO a
+       )
+    -> IO a
+withE2ETimed stateBytes requestBytes action =
+    withDevnetCapabilities $ \startMs caps -> do
+        let prov = capReads caps
         -- Build TrieManager
         tm <- mkPureTrieManager
         -- Verify connection works
-        _ <- Cage.queryProtocolParams prov
+        _ <- Cage.withView prov (pure . Cage.viewProtocolParams)
         -- #177 A-003: publish the state validator as a reference output
         -- BEFORE the seed is chosen. The publication spends the
         -- wallet's largest ada-only output, which is exactly the one a
@@ -627,13 +805,13 @@ withE2E stateBytes requestBytes action = do
         _ <-
             Edges.publishRefScript
                 prov
-                (submitWithGenesis submit)
+                (submitWithGenesis caps)
                 genesisAddr
                 (scriptFromBytes "state" stateBytes)
         -- Pick the seed from the genesis wallet. The state script
         -- is unparameterized; boot carries the seed in the mint
         -- redeemer.
-        utxos <- Cage.queryUTxOs prov genesisAddr
+        utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
         -- #177 A-003: never seed from the reference publication. Boot
         -- REFERENCES that output, and a transaction may not both spend
         -- and reference the same one — the ledger calls it
@@ -651,9 +829,7 @@ withE2E stateBytes requestBytes action = do
                     requestBytes
                     codes
                     seedRef
-        result <- action cfg prov submit tm
-        cancel nodeThread
-        pure result
+        action startMs cfg prov caps tm
 
 -- ---------------------------------------------------------
 -- Helpers
@@ -757,7 +933,10 @@ currentState
     -> TokenId
     -> IO (TxIn, TxOut ConwayEra)
 currentState cfg prov tokenId = do
-    utxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
+    utxos <-
+        Cage.withView
+            prov
+            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
     exactlyOne
         "observed registry state"
         (filter (holdsState cfg tokenId . snd) utxos)
@@ -779,7 +958,8 @@ assertLandedOutput prov tx expected = do
             | (ix, out) <- zip [0 ..] (toList (tx ^. bodyTxL . outputsTxBodyL))
             , out == expected
             ]
-    observed <- Cage.queryUTxOs prov (expected ^. addrTxOutL)
+    observed <-
+        Cage.withView prov (`Cage.viewUTxOsAt` (expected ^. addrTxOutL))
     -- Singular.txOfExit / txCageOutputs: value and datum agree after inclusion.
     assertEqual
         "output after submission"
@@ -844,7 +1024,7 @@ cageCfg stateBytes requestBytes codes seed =
 {- | Sign with the genesis key, submit and wait: the submission
 discipline every transaction of this suite uses.
 -}
-genesisSubmit :: Submitter IO -> SubmitSigned
+genesisSubmit :: Capabilities -> SubmitSigned
 genesisSubmit = submitWithGenesis
 
 {- | Publish this cage's scripts as reference outputs. The state
@@ -855,7 +1035,7 @@ references every purpose resolves through them instead.
 publishCageRefs
     :: CageConfig
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TokenId
     -> IO [(TxIn, TxOut ConwayEra)]
 publishCageRefs cfg prov submit tokenId = do
@@ -868,16 +1048,19 @@ publishCageRefs cfg prov submit tokenId = do
         genesisAddr
         tokenId
 
--- | The duties context a fold of tree edges discharges its obligations from.
-registryContextFor
+-- | The unsigned fold of every pending request, built from one view.
+foldUnsigned
     :: CageConfig
     -> Cage.Provider IO
+    -> TrieManager IO
     -> TokenId
     -> [(TxIn, TxOut ConwayEra)]
-    -> IO RegistryContext
-registryContextFor cfg prov _tokenId refs = do
+    -> IO ConwayTx
+foldUnsigned cfg prov tm tokenId refs = do
     codes <- loadRegistryCodesFromEnv
-    Edges.registryContextFor cfg codes prov refs
+    Cage.withView prov $ \v -> do
+        ctx <- Edges.registryContextFor cfg codes v refs
+        updateTokenWithDuties cfg v tm tokenId genesisAddr ctx
 
 {- | Book one tree edge: the approval the naming application mints
 certifies the edge, and the request carries it to the fold.
@@ -885,7 +1068,7 @@ certifies the edge, and the request carries it to the fold.
 bookEdge
     :: CageConfig
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TokenId
     -> ByteString
     -> Edge
@@ -906,7 +1089,7 @@ bookEdge cfg prov submit tokenId key op = do
 foldEdge
     :: CageConfig
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TrieManager IO
     -> TokenId
     -> [(TxIn, TxOut ConwayEra)]
@@ -915,6 +1098,5 @@ foldEdge
     -> IO ConwayTx
 foldEdge cfg prov submit tm tokenId refs key op = do
     _ <- bookEdge cfg prov submit tokenId key op
-    ctx <- registryContextFor cfg prov tokenId refs
-    unsigned <- updateTokenWithDuties cfg prov tm tokenId genesisAddr ctx
+    unsigned <- foldUnsigned cfg prov tm tokenId refs
     submitWithGenesis submit unsigned

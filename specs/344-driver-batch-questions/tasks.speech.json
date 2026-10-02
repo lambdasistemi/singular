@@ -1,0 +1,18 @@
+{
+  "implementation": [
+    {
+      "text": "Task one makes the driver answer both questions. Task two lets the story language say both batches.",
+      "pause": 350
+    }
+  ],
+  "acceptance": [
+    {
+      "text": "Each requirement needs approved checkpoints and green continuous integration on the exact pushed head.",
+      "pause": 350
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "8292e86b7c28cef5e0839125d571ec2fa8f0c3b8a41f5385cd519146067a2fae"
+  }
+}

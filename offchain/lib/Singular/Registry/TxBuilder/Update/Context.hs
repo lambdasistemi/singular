@@ -64,7 +64,7 @@ import Singular.Registry.Ledger
     , TxIn
     )
 import Singular.Registry.Provider
-    ( Provider (..)
+    ( View (..)
     )
 import Singular.Registry.Trie
     ( Trie (..)
@@ -169,17 +169,17 @@ verbatim from the facade's inline completion).
 -}
 completeContext
     :: CageConfig
-    -> Provider IO
+    -> View IO
     -> Addr
     -> Script ConwayEra
     -> RegistryContext
     -> IO RegistryContext
-completeContext cfg prov addr script ctx0 = do
+completeContext cfg view addr script ctx0 = do
     -- The cage's own UTxOs are where custody sits; the caller need not
     -- have queried them, and the cage script is this build's own.
     cageUtxos <-
         if null (rcCageUtxos ctx0)
-            then queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
+            then viewUTxOsAt view (cageAddrFromCfg cfg (network cfg))
             else pure (rcCageUtxos ctx0)
     -- #177 I177-BUILDER: the candidate burn sources. A retirement or a
     -- deletion of an active key destroys an asset it does not create,
@@ -188,7 +188,7 @@ completeContext cfg prov addr script ctx0 = do
     -- `insertActive` delivered it.
     holderUtxos <-
         if null (rcHolderUtxos ctx0)
-            then queryUTxOs prov addr
+            then viewUTxOsAt view addr
             else pure (rcHolderUtxos ctx0)
     pure
         ctx0
@@ -204,7 +204,7 @@ UTxOs, pick a fee-paying wallet UTxO.
 -}
 queryContext
     :: CageConfig
-    -> Provider IO
+    -> View IO
     -> TokenId
     -> Addr
     -> IO
@@ -213,13 +213,13 @@ queryContext
         , (TxIn, TxOut ConwayEra)
         , PParams ConwayEra
         )
-queryContext cfg prov tid addr = do
+queryContext cfg view tid addr = do
     let stateAddr =
             cageAddrFromCfg cfg (network cfg)
         reqAddr =
             requestAddrFromCfg cfg tid (network cfg)
-    stateUtxos <- queryUTxOs prov stateAddr
-    requestUtxos <- queryUTxOs prov reqAddr
+    stateUtxos <- viewUTxOsAt view stateAddr
+    requestUtxos <- viewUTxOsAt view reqAddr
     let policyId = cagePolicyIdFromCfg cfg
     stateUtxo <- case findStateUtxo
         policyId
@@ -235,8 +235,8 @@ queryContext cfg prov tid addr = do
                 findRequestUtxos tid requestUtxos
     when (null reqUtxos) $
         error "updateToken: no pending requests"
-    pp <- queryProtocolParams prov
-    walletUtxos <- queryUTxOs prov addr
+    let pp = viewProtocolParams view
+    walletUtxos <- viewUTxOsAt view addr
     -- #157: an approval is not burned at the fold, so it returns to the
     -- funder and rides in the wallet from then on. The fee input doubles
     -- as collateral, and collateral must be ada-only.
@@ -298,11 +298,11 @@ prepareState cfg stateOut newRoot =
 
 -- | Compute the validity upper slot.
 computeUpperSlot
-    :: Provider IO
+    :: View IO
     -> OnChainTokenState
     -> [(TxIn, TxOut ConwayEra)]
     -> IO SlotNo
-computeUpperSlot prov oldState reqUtxos = do
+computeUpperSlot view oldState reqUtxos = do
     let extractSubmittedAt (_, rOut) =
             case extractCageDatum rOut of
                 Just (RequestDatum r) ->
@@ -317,14 +317,14 @@ computeUpperSlot prov oldState reqUtxos = do
                                 oldState
                     )
                     reqUtxos
-    mUpperSlot <- trySync (posixMsToSlot prov earliestDeadline)
+    mUpperSlot <- trySync (viewPosixMsToSlot view earliestDeadline)
     case mUpperSlot of
         Right s -> pure s
         Left _ -> do
             nowUtc <- getCurrentTime
             let posixSec =
                     utcTimeToPOSIXSeconds nowUtc
-            tryUpperSlots prov $
+            tryUpperSlots view $
                 map
                     ( \d ->
                         round

@@ -11,8 +11,9 @@ keeps, and what the checks establish about the split.
 
 ## One owner per runtime concern
 
-The seven owners and the two chain-facing types they read live in one
-package-private internal library. The public module
+The ten owners and the two chain-facing types they read live in one
+package-private internal library: seven for the runner's session, and three
+for reading and writing the chain through one interface. The public module
 <a href="../offchain/lib/Singular/Registry/Node.hs" data-api="module">Singular.Registry.Node</a>
 is a facade: it owns nothing, keeps the export list the library had
 before the split, adds only the five wait names, and every original caller — the focused node tests, the
@@ -61,11 +62,33 @@ imported `Singular.Registry.Ledger` before the split still does.
 | --- | --- |
 | `Node.Options` | Parsing mode flags and environment into the process mode, the external-node shape, the external-mode echo diagnostic (a preprod Koios query; a no-op on the devnet), and the shared named-diagnostic helper. No dependency on any runtime module. |
 | `Node.Wallet` | Loading and deriving the process wallet: signing keys, addresses, the funder identity the run pays from, network magic, and bech32 rendering. Key bytes are never logged. |
-| `Node.Indexer` | The chain follower a session reads through: installing it for an action, sweeping the devnet's genesis funding into a block-carried output, answering address reads from the index, refusing node address reads once the funding sweep is done, and counting the node's address queries. Waiting for a submitted transaction's output to be indexed, under the wait bound. |
+| `Node.Indexer` | The chain follower a session reads through: installing it for an action, sweeping the devnet's genesis funding into a block-carried output, handing address reads to the indexer adapter, refusing node address reads once the funding sweep is done, and counting the node's address queries. Waiting for a submitted transaction's output to be indexed, under the wait bound. |
 | `Node.Funding` | The pre-run funding floor: what the funding wallet must hold before the first transaction, the address-naming diagnostic when it does not, and lovelace rendering. |
 | `Node.Session` | The runner's connection lifecycle: connecting to the node socket, the bracketed session a body runs inside, announcing and awaiting the connection, and the session readers (tip, stake registration). |
 | `Node.Confirmation` | Waiting for the chain to carry what a run submitted, under the wait bound: transaction and window waits, the node reads that derive a window, deadlines, upper-bound slots, chain waits, and the confirmation delay the mode selects. |
 | `Node.Wait` | What a bounded wait is: the wait stages, the named wait failure a bound raises, the whole-wait bound, the bounded submitter every runner submits through, and the wait-aware catch that keeps that failure out of refusal classifiers. It depends on no other node module. |
+| `Node.View` | The node adapter: the read interface over a node, where one view is one acquired LocalStateQuery state carrying its network, era, slot and block hash; acquiring at the origin and a lost connection fail by name. |
+| `Node.Memory` | A deterministic in-memory chain behind the same read interface, snapshotted at each acquisition, for interleaving controls and contract suites. |
+| `Node.Submit` | The write capability: signed transactions only, the node's answer returned unchanged. |
+
+The three chain owners sit behind one read interface and one write
+capability, and the `singular` command line reaches them through a single
+composition module of its own. Its commands are handed the read interface,
+the signed-only write and the confirmation wait; only the composition
+module, the public facade and the journey's lifecycle funding may name the
+node backend, which a source check over the off-chain command and library
+sources enforces in CI.
+
+```mermaid
+flowchart TD
+    CMD[singular commands: create, insert, update, terminate, inspect] -->|read, signed write, confirmation| COMP[Singular.CLI.Node — the CLI's composition]
+    COMP -->|opens the session| S[Node.Session]
+    COMP -->|wraps the session submitter| SU[Node.Submit — signed transactions only]
+    S -->|builds the read interface| V[Node.View — one view per acquired state]
+    P[Singular.Registry.Provider — read interface] -->|implemented by| V
+    P -->|implemented by| M[Node.Memory — in-memory chain]
+    B[Transaction builders] -->|take one view| P
+```
 
 Each owner is package-private — not importable from the public library —
 so it has no page in the generated API reference: the reference documents
@@ -81,9 +104,17 @@ names link to its entry here:
   funding identity —
   <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Wallet.hs">source</a>.
 - <span id="indexer-owner"></span>**Indexer** — the chain follower, the
-  funding sweep, indexed reads, the node-read guard and the address-read
+  funding sweep, the indexer adapter on a followed devnet, the node-read guard and the address-read
   counter —
   <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Indexer.hs">source</a>.
+- <span id="index-gate-owner"></span>**IndexGate** — the gate the follower
+  writes the index through, the index's applied point, and holding the
+  index for one view —
+  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/IndexGate.hs">source</a>.
+- <span id="indexer-view-owner"></span>**IndexerView** — the indexer adapter:
+  address reads from the index and node reads at one chain point, and its
+  named refusals —
+  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/IndexerView.hs">source</a>.
 - <span id="funding-owner"></span>**Funding** — the pre-run funding floor
   and its refusal diagnostic —
   <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Funding.hs">source</a>.
@@ -97,6 +128,15 @@ names link to its entry here:
   failure, the whole-wait bound, the bounded submitter and the
   wait-aware catch —
   <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Wait.hs">source</a>.
+- <span id="view-owner"></span>**View** — the node adapter: one read view per
+  acquired LocalStateQuery state —
+  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/View.hs">source</a>.
+- <span id="memory-owner"></span>**Memory** — the deterministic in-memory chain
+  behind the same read interface —
+  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Memory.hs">source</a>.
+- <span id="submit-owner"></span>**Submit** — the write capability, which takes
+  signed transactions only —
+  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Submit.hs">source</a>.
 
 ## Where common changes land
 
@@ -115,6 +155,14 @@ names link to its entry here:
 - What a bounded wait is, how its failure reads, the submission bound, or
   which failures a classifier must let through: `Node.Wait`. No other
   module adds a timeout of its own.
+- How a view is acquired from a node, its chain point, or the origin
+  and lost-connection refusals: `Node.View`; the same behaviour over the
+  in-memory chain: `Node.Memory`.
+- What may be sent to the node: `Node.Submit`.
+- How the `singular` commands reach a node, or which settings they read:
+  `Singular.CLI.Node`, the one command-line module allowed to name the
+  backend; a new module that needs to name it is added to
+  `tools/node-confinement.allow` with its reason, or the check fails.
 - A shared named failure the runner prints: the diagnostic helper in
   `Node.Options`, the one cross-owner utility, at the graph's root.
 
@@ -209,7 +257,7 @@ bounded waits then added five names, which the facade re-exports from
 `boundedSubmitter` and `tryOutcome`. Modules that
 imported `Singular.Registry.Ledger` or `Singular.Registry.Provider`
 keep their import paths through the public library's re-exports. The
-seven owners themselves are not importable from the public library: they
+ten owners themselves are not importable from the public library: they
 live in the package's private internal library. By Cabal's own rule a
 named library without public visibility can be depended on only by
 components of this same package. Two of them do: the public library,

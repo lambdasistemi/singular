@@ -4,14 +4,18 @@ module Main (main) where
 import Conformance.Story.Usage qualified as Usage
 import Conformance.Support.Binding qualified as Binding
 import Conformance.Support.CliAdmission qualified as CliAdmission
+import Conformance.Support.CliAttach qualified as CliAttach
 import Conformance.Support.CliControls qualified as CliControls
 import Conformance.Support.CliProof qualified as CliProof
+import Conformance.Support.DriverTransport qualified as DriverTransport
+import Conformance.Support.EvidencePage qualified as EvidencePage
 import Conformance.Support.Extent qualified as Extent
 import Conformance.Support.Fixture qualified as Fixture
 import Conformance.Support.FixtureChild
     ( childModeVariable
     , holdScopedDirectories
     )
+import Conformance.Support.HeldView qualified as HeldView
 import Conformance.Support.Identity qualified as Identity
 import Conformance.Support.ObservedTx qualified as ObservedTx
 import Conformance.Support.Oracle qualified as Oracle
@@ -48,21 +52,25 @@ suite = do
         ReceiptBound.spec
         Refusal.spec
         Rows.spec
+        EvidencePage.spec
         Identity.spec
         Fixture.spec
         RegistrationComparison.spec
         Payments.spec
         ObservedTx.spec
         Oracle.spec
+        DriverTransport.spec
         Step.spec
         Retraction.spec
         Specification.spec
+        HeldView.spec
         PurposeUnits.spec
         Usage.spec
         Binding.spec
         CliControls.spec
         CliProof.spec
         CliAdmission.spec
+        CliAttach.spec
         Replay.spec
         RunReplay.spec
         Extent.spec

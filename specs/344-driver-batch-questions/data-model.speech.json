@@ -1,0 +1,18 @@
+{
+  "questions": [
+    {
+      "text": "A fold batch question carries a setup trace and ordered fold requests and answers with every fold observation except a transaction. A reject batch question carries requests with exits and optional outputs, and answers with an unchanged state, nothing minted and one settle judgement, or unsupported.",
+      "pause": 350
+    }
+  ],
+  "invariants": [
+    {
+      "text": "Each question declares its own observation extent, refusals come only from the model's vocabulary, and the setup premise is checked first.",
+      "pause": 350
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "d846008412caad313a097998fd736a9bc2665fcb0513a7529a3e19713b23c010"
+  }
+}

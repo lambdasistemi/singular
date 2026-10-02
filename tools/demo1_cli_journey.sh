@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Alice's open-datum story through the packaged `singular` commands (#299).
+# Alice's open-datum story through the packaged `singular` commands (#299),
+# under each read backend (#324).
 #
-# usage: demo1_cli_journey.sh SINGULAR DEVNET BLUEPRINT WORKDIR
+# usage: demo1_cli_journey.sh SINGULAR DEVNET BLUEPRINT WORKDIR [BACKEND]
 #
 # SINGULAR and DEVNET are executables; BLUEPRINT is the registry
 # partition's plutus.json. ONE development node is started once, funding
@@ -15,16 +16,32 @@
 # refusal control names the outcome class it expects and requires the
 # target's journal to be exactly as it was: nothing submitted. Setup
 # failures (no node, no socket) are reported as setup, never as a result.
+#
+# BACKEND is `node` or `indexer`. Without it the journey runs under the
+# node backend and then again, on a fresh development node in
+# WORKDIR-indexer, under the indexer backend. There every process runs
+# with `--backend indexer`, each successful one must report the address
+# reads the in-process index answered (a line the node backend never
+# prints, shown absent on a node-backend control), and a wallet whose
+# only output is in the genesis ledger state is refused by name.
 set -euo pipefail
 
-[ "$#" -eq 4 ] || {
-  echo "usage: $0 SINGULAR DEVNET BLUEPRINT WORKDIR" >&2
+[ "$#" -eq 4 ] || [ "$#" -eq 5 ] || {
+  echo "usage: $0 SINGULAR DEVNET BLUEPRINT WORKDIR [BACKEND]" >&2
   exit 2
 }
 singular="$1"
 devnet="$2"
 blueprint="$3"
 work="$4"
+backend="${5:-}"
+case "$backend" in
+  "" | node | indexer) ;;
+  *)
+    echo "usage: BACKEND is node or indexer, not $backend" >&2
+    exit 2
+    ;;
+esac
 rm -rf "$work"
 mkdir -p "$work"
 receipts="$work/receipts"
@@ -41,15 +58,99 @@ setup_fail() {
 }
 say() { echo "journey: $*"; }
 
+# Under the indexer backend every process, the create race's included,
+# names it; `node_singular` is the same executable at its default.
+node_singular="$singular"
+if [ "$backend" = indexer ]; then
+  printf '#!/usr/bin/env bash\nexec %q "$@" --backend indexer\n' "$singular" >"$work/singular"
+  chmod +x "$work/singular"
+  singular="$work/singular"
+fi
+
+# served ERR: the process whose standard error is ERR read through the
+# index: it names at least one address read the index answered, and at
+# most one node address read (a write's wallet coverage check).
+served() {
+  grep -Eq '^node: indexer backend: [1-9][0-9]* address reads answered by the index, [01] by the node$' "$1"
+}
+
 hexkey() { od -An -tx1 -N32 /dev/urandom | tr -d ' \n'; }
 hexkey >"$work/alice.skey"
 hexkey >"$work/bob.skey"
 hexkey >"$work/carol.skey" # never funded
 
+export TMPDIR="$work"
+
+# ------------------------------------------------------------------
+# 0. coverage (indexer backend): a genesis-only wallet is refused
+# ------------------------------------------------------------------
+# On a development node nobody has paid from yet, the genesis key holds
+# its one output in the ledger's initial state, carried by no block. The
+# node backend reads it (a preview seeds from it, naming the refusal a
+# create from that one-output wallet meets, and such a create is refused
+# before it writes anything); the indexer backend, following blocks from
+# the origin, refuses the wallet by name and submits nothing, rather than
+# reading it as empty.
+if [ "$backend" = indexer ]; then
+  "$devnet" >"$work/bare.out" 2>"$work/bare.err" &
+  bare_pid=$!
+  trap 'kill "$bare_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT
+  bare=""
+  for _ in $(seq 1 900); do
+    bare="$(head -n1 "$work/bare.out" 2>/dev/null || true)"
+    [ -n "$bare" ] && [ -S "$bare" ] && break
+    kill -0 "$bare_pid" 2>/dev/null || break
+    sleep 1
+  done
+  [ -n "$bare" ] && [ -S "$bare" ] || setup_fail "the unfunded development node never printed a usable socket"
+  # The genesis UTxO key of the development network (cardano-node-clients'
+  # genesisSignKey): its 32 seed bytes are the raw signing key.
+  printf '%s' e2e-genesis-utxo-key-seed-000001 | od -An -tx1 | tr -d ' \n' >"$work/genesis.skey"
+  genesis=(--wallet-skey "$work/genesis.skey")
+  bare_node=(--node-socket "$bare" --network-magic 42)
+  status=0
+  "$node_singular" registry create --preview --registry "$work/genesis-node" --blueprint "$blueprint" \
+    "${bare_node[@]}" "${genesis[@]}" >"$receipts/genesis-node.json" 2>"$receipts/genesis-node.err" || status=$?
+  [ "$status" -eq 0 ] && [ "$(jq -r .outcome "$receipts/genesis-node.json")" = success ] \
+    || fail "the node backend did not preview the genesis key's output (exit $status): $(jq -r .reason "$receipts/genesis-node.json" 2>/dev/null)"
+  ! served "$receipts/genesis-node.err" || fail "a node-backend process reported reads the index answered"
+  # That output is the wallet's only one, so the preview names the refusal a
+  # create would meet, and a create is refused before it writes anything.
+  jq -e '.seed as $s | .createRefusal | type == "string" and contains($s) and contains("only ada-only output")' \
+    "$receipts/genesis-node.json" >/dev/null \
+    || fail "the preview of a one-output wallet does not report the refusal its create meets: $(jq -c .createRefusal "$receipts/genesis-node.json")"
+  status=0
+  "$node_singular" registry create --seed "$(jq -r .seed "$receipts/genesis-node.json")" --registry "$work/genesis-create" \
+    --blueprint "$blueprint" "${bare_node[@]}" "${genesis[@]}" >"$receipts/genesis-create.json" 2>"$receipts/genesis-create.err" || status=$?
+  [ "$(jq -r .outcome "$receipts/genesis-create.json")" = client-refusal ] && [ "$status" -ne 0 ] \
+    || fail "a create from the one-output wallet: outcome $(jq -r .outcome "$receipts/genesis-create.json") (exit $status), expected client-refusal"
+  jq -e --arg s "$(jq -r .seed "$receipts/genesis-node.json")" '.reason | contains($s) and contains("only ada-only output")' \
+    "$receipts/genesis-create.json" >/dev/null || fail "the create's refusal does not name the missing funding: $(jq -r .reason "$receipts/genesis-create.json")"
+  [ -z "$(find "$work/genesis-create" -mindepth 1 ! -name .lock 2>/dev/null)" ] \
+    || fail "the refused create wrote more than its lock: $(find "$work/genesis-create" -mindepth 1 ! -name .lock)"
+  status=0
+  "$singular" registry create --preview --registry "$work/genesis-indexer" --blueprint "$blueprint" \
+    "${bare_node[@]}" "${genesis[@]}" >"$receipts/genesis-indexer.json" 2>"$receipts/genesis-indexer.err" || status=$?
+  [ "$(jq -r .outcome "$receipts/genesis-indexer.json")" = node-unavailable ] && [ "$status" -eq 12 ] \
+    || fail "the genesis-only wallet under the indexer backend: outcome $(jq -r .outcome "$receipts/genesis-indexer.json") (exit $status), expected node-unavailable"
+  jq -e --arg seed "$(jq -r .seed "$receipts/genesis-node.json")" \
+    '.reason | contains("(coverage-incomplete)") and contains("genesis") and contains($seed)' \
+    "$receipts/genesis-indexer.json" >/dev/null \
+    || fail "the genesis-only wallet was not refused by the coverage diagnostic naming its output: $(jq -r .reason "$receipts/genesis-indexer.json")"
+  [ ! -e "$work/genesis-indexer" ] || fail "the refused preview created its target"
+  kill "$bare_pid" 2>/dev/null || true
+  pkill -f "cardano-node run --config $work/" 2>/dev/null || true
+  for _ in $(seq 1 300); do
+    pgrep -f "cardano-node run --config $work/" >/dev/null || break
+    sleep 0.1
+  done
+  wait "$bare_pid" 2>/dev/null || true
+  say "a genesis-only wallet: previewed by the node backend (its create refused for want of a second output), refused by the indexer backend as coverage-incomplete"
+fi
+
 # ------------------------------------------------------------------
 # One persistent development node
 # ------------------------------------------------------------------
-export TMPDIR="$work"
 "$devnet" --fund-skey "$work/alice.skey" --fund-skey "$work/bob.skey" \
   --fund-outputs 4 --fund-lovelace 2000000000 \
   >"$work/devnet.out" 2>"$work/devnet.err" &
@@ -84,7 +185,8 @@ exit_of() {
   esac
 }
 # run NAME CLASS -- ARGS: one singular process; its receipt must name CLASS
-# and its exit status must be that class's.
+# and its exit status must be that class's. Under the indexer backend a
+# successful process must also have read through the index.
 run() {
   local name="$1" class="$2"
   shift 3
@@ -96,6 +198,10 @@ run() {
     cat "$receipts/$name.json" >&2 || true
     tail -20 "$receipts/$name.err" >&2 || true
     fail "$name: outcome $got (exit $status), expected $class"
+  fi
+  if [ "$backend" = indexer ] && [ "$class" = success ] && ! served "$receipts/$name.err"; then
+    tail -20 "$receipts/$name.err" >&2 || true
+    fail "$name: no address read was answered by the index"
   fi
   say "$name: $class"
 }
@@ -112,6 +218,17 @@ refused() {
     || fail "$name: the target's journal moved; a refusal submitted something"
 }
 field() { jq -r "$2" "$receipts/$1.json"; }
+# prepared_points DIR: the view point of each prepared line of DIR's
+# journal, one JSON object each; a line missing any of the four fields
+# fails the journey.
+prepared_points() {
+  jq -c 'select(.journalEvent == "prepared")
+      | if (.journalNetwork == 42) and (.journalEra | type == "string" and length > 0)
+          and (.journalChainPoint // "" | test("^[0-9]+\\.[0-9a-f]{64}$"))
+        then {slot: (.journalChainPoint | split(".")[0] | tonumber)}
+        else error("prepared \(.journalTxId) lacks its view point: network \(.journalNetwork), era \(.journalEra), point \(.journalChainPoint)")
+        end' "$1/journal.jsonl" || fail "$1: a write did not journal its view point"
+}
 
 # envelope FILE CONTROLLER KEY [REGISTRY_NAME] [ACTIVE]: an envelope with
 # a nested payload, naming this registry unless told otherwise.
@@ -146,6 +263,20 @@ run bob-preview success -- registry create --preview --registry "$work/bob-previ
   --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
 [ ! -e "$work/bob-preview" ] || fail "bob's preview created its target"
 bobkey="$(field bob-preview .walletKeyHash)"
+alice_addr="$(field preview .wallet)"
+bob_addr="$(field bob-preview .wallet)"
+
+# The same preview for a public address alone: no key, no write, and the
+# identity it names is the one the key-holding preview named.
+run preview-public success -- registry create --preview --registry "$work/public-preview" \
+  --blueprint "$blueprint" "${node[@]}" --wallet-address "$alice_addr"
+[ ! -e "$work/public-preview" ] || fail "a public preview created its target"
+jq -e --slurpfile k "$receipts/preview.json" '.seed == $k[0].seed and .pins == $k[0].pins and .walletKeyHash == $k[0].walletKeyHash' \
+  "$receipts/preview-public.json" >/dev/null || fail "the public preview names another identity than the key preview"
+status=0
+"$singular" registry create --preview --registry "$work/public-preview" --blueprint "$blueprint" \
+  "${node[@]}" --wallet-address "$alice_addr" "${alice[@]}" >/dev/null 2>&1 || status=$?
+[ "$status" -eq 2 ] || fail "a preview accepted a signing key beside a public address (exit $status)"
 
 run create-seed-not-owned client-refusal -- registry create --seed "$seed" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
@@ -177,6 +308,43 @@ refused insert-other-registry client-refusal -- registry insert --key "$key" \
 refused insert-not-controller client-refusal -- registry insert --key 6b657942 \
   --envelope "$work/alice-by-bob.json" "${common[@]}" "${node[@]}" "${bob[@]}"
 
+# A preview builds and measures what the insert would submit, for the public
+# address alone, and leaves the registry directory byte-for-byte as it was.
+tree_hash() { (cd "$reg" && find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1); }
+preview_ok() {
+  jq -e --arg s "$2" '
+    .preview == true
+    and .[$s].fee > 0
+    and .[$s].fee != 2000000
+    and (.[$s].purposes | length) == 1
+    and .[$s].purposes[0].memory != 14000000
+    and .[$s].collateral.total == ((.[$s].fee * 150 + 99) / 100 | floor)
+    and .[$s].collateral.return != null
+    and .[$s].collateral.exposure == .[$s].collateral.total
+    and .outlay.total == (.outlay.fee + .outlay.lockedBond + .outlay.foldFeeBound)
+    and .outlay.withinAllowance == true
+  ' "$receipts/$1.json" >/dev/null || fail "$1: the preview does not state measured bodies"
+}
+tree_before="$(tree_hash)"
+run insert-preview success -- registry insert --preview --key "$key" --envelope "$work/alice.json" \
+  "${common[@]}" "${node[@]}" --wallet-address "$alice_addr"
+preview_ok insert-preview booking
+[ "$(tree_hash)" = "$tree_before" ] || fail "a preview changed the registry directory"
+jq -e '.fold.feeBound > .booking.fee' "$receipts/insert-preview.json" >/dev/null \
+  || fail "the fold bound does not exceed a booking fee"
+status=0
+"$singular" registry insert --preview --key "$key" --envelope "$work/alice.json" "${common[@]}" \
+  "${node[@]}" --wallet-address "$alice_addr" "${alice[@]}" >/dev/null 2>&1 || status=$?
+[ "$status" -eq 2 ] || fail "an insert preview accepted a signing key (exit $status)"
+refused insert-preview-not-controller client-refusal -- registry insert --preview --key 6b657942 \
+  --envelope "$work/alice-by-bob.json" "${common[@]}" "${node[@]}" --wallet-address "$bob_addr"
+# An allowance below the measured outlay stops the insert before it signs or
+# sends anything.
+refused insert-over-allowance client-refusal -- registry insert --key "$key" \
+  --envelope "$work/alice.json" --max-outlay 1000000 "${common[@]}" "${node[@]}" "${alice[@]}"
+jq -e '.outlay.withinAllowance == false and .outlay.allowance == 1000000' \
+  "$receipts/insert-over-allowance.json" >/dev/null || fail "the refusal does not state the outlay and the allowance"
+
 run insert success -- registry insert --key "$key" --envelope "$work/alice.json" \
   "${common[@]}" "${node[@]}" "${alice[@]}"
 run inspect-1 success -- registry inspect --key "$key" "${common[@]}" "${node[@]}"
@@ -184,6 +352,19 @@ run inspect-1 success -- registry inspect --key "$key" "${common[@]}" "${node[@]
 [ "$(field inspect-1 .root)" = "$(field insert .root)" ] || fail "inspect root differs from insert"
 jq -e --slurpfile e "$work/alice.json" '.applicationOutput.envelope == $e[0]' \
   "$receipts/inspect-1.json" >/dev/null || fail "the holding's envelope is not the one inserted"
+# The index-read report is the indexer backend's own: the same inspect at
+# the node backend reads the same leaf and reports no read the index
+# answered.
+if [ "$backend" = indexer ]; then
+  status=0
+  "$node_singular" registry inspect --key "$key" "${common[@]}" "${node[@]}" \
+    >"$receipts/inspect-1-node.json" 2>"$receipts/inspect-1-node.err" || status=$?
+  [ "$status" -eq 0 ] && [ "$(field inspect-1-node .leaf)" = active ] \
+    || fail "inspect-1 at the node backend did not read the active leaf (exit $status)"
+  ! served "$receipts/inspect-1-node.err" \
+    || fail "a node-backend inspect reported reads the index answered"
+  say "the node backend reads the same leaf and reports no index read"
+fi
 
 # bob, a wallet that did not create the registry, inserts his own key.
 bkey=6b657942
@@ -199,6 +380,13 @@ run inspect-bob success -- registry inspect --key "$bkey" "${common[@]}" "${node
 jq -n '{constructor:3, fields:[{bytes:"626f62"},{int:123456789012345678901234567890}]}' >"$work/payload.json"
 refused update-not-controller client-refusal -- registry update --key "$key" \
   --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${bob[@]}"
+tree_before="$(tree_hash)"
+run update-preview success -- registry update --preview --key "$key" --payload "$work/payload.json" \
+  "${common[@]}" "${node[@]}" --wallet-address "$alice_addr"
+preview_ok update-preview update
+[ "$(tree_hash)" = "$tree_before" ] || fail "an update preview changed the registry directory"
+refused update-preview-not-controller client-refusal -- registry update --preview --key "$key" \
+  --payload "$work/payload.json" "${common[@]}" "${node[@]}" --wallet-address "$bob_addr"
 run update success -- registry update --key "$key" --payload "$work/payload.json" \
   "${common[@]}" "${node[@]}" "${alice[@]}"
 run inspect-2 success -- registry inspect --key "$key" "${common[@]}" "${node[@]}"
@@ -257,6 +445,11 @@ run insert-after-release success -- registry insert --key 6b657943 \
 # ------------------------------------------------------------------
 refused terminate-not-controller client-refusal -- registry terminate --key "$key" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
+tree_before="$(tree_hash)"
+run terminate-preview success -- registry terminate --preview --key "$key" \
+  "${common[@]}" "${node[@]}" --wallet-address "$alice_addr"
+preview_ok terminate-preview booking
+[ "$(tree_hash)" = "$tree_before" ] || fail "a terminate preview changed the registry directory"
 # The process is held by the marked harness point right after the node's
 # acceptance of its fold is journalled, and killed there.
 before="$(journal_lines "$reg")"
@@ -276,35 +469,45 @@ wait "$victim" 2>/dev/null || true
 [ "$(tail -n 1 "$reg/journal.jsonl" | jq -r '.journalStep + "/" + .journalEvent')" = fold/submitted ] \
   || fail "the killed process did not stop at its accepted fold"
 say "terminate killed after the node accepted its fold"
-# A write now refuses: the fold is unresolved.
-refused write-while-unresolved partial -- registry update --key "$bkey" \
-  --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${bob[@]}"
-# Inspecting an unrelated key never observes alice's fold.
-sleep 5
-run inspect-unrelated partial -- registry inspect --key "$bkey" "${common[@]}" "${node[@]}"
-[ "$(field inspect-unrelated .leaf)" = null ] || fail "a leaf was printed while unresolved"
-jq -e '.observed == []' "$receipts/inspect-unrelated.json" >/dev/null \
-  || fail "inspecting another key observed the killed fold"
-# The relevant readback: alice's key, once the fold is on chain.
+fold_tx="$(tail -n 1 "$reg/journal.jsonl" | jq -r .journalTxId)"
+# The next ordinary write — bob's update of his own key — reconciles the
+# killed fold from chain evidence and proceeds. While the fold is not yet
+# on chain it is refused before submitting anything, naming the fold and
+# its case; it is then run again.
 for _ in $(seq 1 60); do
+  before="$(journal_lines "$reg")"
   status=0
-  "$singular" registry inspect --key "$key" "${common[@]}" "${node[@]}" \
-    >"$receipts/inspect-3.json" 2>"$receipts/inspect-3.err" || status=$?
-  [ "$(jq -r .outcome "$receipts/inspect-3.json")" = success ] && break
+  "$singular" registry update --key "$bkey" --payload "$work/payload.json" \
+    "${common[@]}" "${node[@]}" "${bob[@]}" \
+    >"$receipts/write-after-kill.json" 2>"$receipts/write-after-kill.err" || status=$?
+  got="$(jq -r .outcome "$receipts/write-after-kill.json")"
+  [ "$got/$status" = success/0 ] && break
+  [ "$got/$status" = partial/15 ] || fail "write-after-kill: outcome $got (exit $status)"
+  [ "$(journal_lines "$reg")" = "$before" ] || fail "write-after-kill: a refused write moved the journal"
+  [ "$(field write-after-kill .unresolved.tx)" = "$fold_tx" ] \
+    || fail "write-after-kill: the refusal does not name the killed fold"
+  [ "$(field write-after-kill .unresolved.case)" = acknowledged ] \
+    || fail "write-after-kill: the refusal does not name the fold's case acknowledged"
   sleep 2
 done
-[ "$(field inspect-3 .outcome)" = success ] || fail "inspect never resolved the killed fold"
+[ "$(field write-after-kill .outcome)" = success ] || fail "the write after the kill never reconciled the fold"
+jq -e --arg t "$fold_tx" '.reconciled.observed | index($t)' "$receipts/write-after-kill.json" >/dev/null \
+  || fail "the write after the kill did not observe the killed fold"
+say "write-after-kill: success, reconciling the killed fold"
+# Alice's key reads Terminal: the killed terminate's fold is on chain.
+run inspect-3 success -- registry inspect --key "$key" "${common[@]}" "${node[@]}"
 [ "$(field inspect-3 .leaf)" = terminal ] || fail "the killed fold did not leave the key terminal"
 jq -e '.applicationOutput.absent' "$receipts/inspect-3.json" >/dev/null || fail "the holding is still live"
-# The fold was advanced into the mirror exactly once, by whichever inspect
-# first saw it included (root-authenticated), and observed only by the
-# inspect of its own key.
-fold_tx="$(jq -r '.observed[0]' "$receipts/inspect-3.json")"
-[ -n "$fold_tx" ] && [ "$fold_tx" != null ] || fail "the relevant inspect observed nothing"
-jq -s -e --arg t "$fold_tx" '[.[].mirrorAdvanced[]] == [$t]' \
-  "$receipts/inspect-unrelated.json" "$receipts/inspect-3.json" >/dev/null \
+# The fold was applied to the mirror exactly once and observed exactly
+# once, across every receipt, and never sent again.
+jq -s -e --arg t "$fold_tx" '[.[0].reconciled.applied[], .[1].mirrorAdvanced[]] == [$t]' \
+  "$receipts/write-after-kill.json" "$receipts/inspect-3.json" >/dev/null \
   || fail "the mirror was not advanced exactly once by the journalled fold"
-say "inspect resolved the killed fold from the chain: terminal, holding released"
+[ "$(jq -s --arg t "$fold_tx" '[.[] | select(.journalTxId == $t and .journalEvent == "observed")] | length' "$reg/journal.jsonl")" = 1 ] \
+  || fail "the killed fold was not observed exactly once"
+[ "$(jq -s --arg t "$fold_tx" '[.[] | select(.journalTxId == $t and .journalEvent == "prepared")] | length' "$reg/journal.jsonl")" = 1 ] \
+  || fail "the killed fold was prepared more than once"
+say "the next write reconciled the killed fold from the chain once; inspect reads it terminal"
 
 # ------------------------------------------------------------------
 # 6. terminate bob normally; a write works again
@@ -312,6 +515,15 @@ say "inspect resolved the killed fold from the chain: terminal, holding released
 run bob-terminate success -- registry terminate --key "$bkey" "${common[@]}" "${node[@]}" "${bob[@]}"
 run inspect-4 success -- registry inspect --key "$bkey" "${common[@]}" "${node[@]}"
 [ "$(field inspect-4 .leaf)" = terminal ] || fail "bob's key is not terminal"
+
+# Every write so far journalled, at prepared, the point of the view its
+# body was built from: this network, an era, a slot and a block hash — a
+# point no later than the one inspect-4 read afterwards.
+read_slot="$(field inspect-4 .chainPoint | cut -d. -f1)"
+prepared_points "$reg" | jq -e -s --argjson s "$read_slot" \
+  'length > 0 and all(.slot <= $s)' >/dev/null \
+  || fail "a write's journalled view point is missing or later than inspect-4's ($read_slot)"
+say "every write journalled its build view's point, no later than slot $read_slot"
 
 # ------------------------------------------------------------------
 # 7. create races and interruptions, on their own targets
@@ -349,7 +561,8 @@ done
 kill -9 "$victim" 2>/dev/null || true
 wait "$victim" 2>/dev/null || true
 [ ! -e "$inter/registry.json" ] || setup_fail "the create finished before it was killed"
-first_tx="$(jq -r 'select(.journalEvent == "submitted") | .journalTxId' "$inter/journal.jsonl" | head -n1)"
+first_tx="$(jq -r 'select(.journalEvent == "submitted") | .journalTxId' "$inter/journal.jsonl")"
+first_tx="${first_tx%%$'\n'*}"
 inter_lines="$(journal_lines "$inter")"
 run create-after-kill client-refusal -- registry create --seed "$seed_i" --registry "$inter" \
   --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
@@ -383,7 +596,8 @@ for _ in $(seq 1 1200); do
   sleep 0.1
 done
 [ -e "$work/update.go.waiting" ] || setup_fail "the update never reached an accepted submission"
-lost_tx="$(tail -n +"$((before + 1))" "$reg/journal.jsonl" | jq -r 'select(.journalEvent == "submitted") | .journalTxId' | head -n1)"
+lost_tx="$(tail -n +"$((before + 1))" "$reg/journal.jsonl" | jq -r 'select(.journalEvent == "submitted") | .journalTxId')"
+lost_tx="${lost_tx%%$'\n'*}"
 kill "$devnet_pid" 2>/dev/null || true
 pkill -f "cardano-node run --config $work/" 2>/dev/null || true
 for _ in $(seq 1 100); do
@@ -412,4 +626,23 @@ jq -e --arg t "$lost_tx" '.reason | contains($t)' "$receipts/update-node-lost.js
 say "node lost after an accepted submission: $outcome after ${waited}s, naming $lost_tx, journal unresolved"
 
 jq -r '.journalEvent' "$reg/journal.jsonl" | sort | uniq -c
-say "JOURNEY-OK"
+
+# Every journal the journey's writes left, wherever they wrote: each
+# prepared line names its view point.
+mapfile -t journals < <(find "$work" -name journal.jsonl | sort)
+[ "${#journals[@]}" -ge 2 ] || fail "found ${#journals[@]} journals; the extent is not the journey's"
+written=0
+for j in "${journals[@]}"; do
+  n="$(prepared_points "$(dirname "$j")" | wc -l)"
+  written=$((written + n))
+done
+[ "$written" -gt 0 ] || fail "no prepared line in ${#journals[@]} journals"
+say "$written prepared submissions in ${#journals[@]} journals each name their view point"
+say "JOURNEY-OK (${backend:-node} backend)"
+
+# Without a named backend the same journey runs again under the indexer
+# backend, on its own development node; this pass's node is gone.
+if [ -z "$backend" ]; then
+  trap - EXIT
+  exec bash "$0" "$node_singular" "$devnet" "$blueprint" "$work-indexer" indexer
+fi

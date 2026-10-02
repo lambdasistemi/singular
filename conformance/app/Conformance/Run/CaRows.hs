@@ -63,11 +63,6 @@ import Cardano.Ledger.Credential
 import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 
-import Cardano.Node.Client.E2E.Setup (addKeyWitness)
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
-    )
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (applyPreviousPolicies)
 import Singular.Registry.Config (CageConfig (..))
@@ -78,6 +73,13 @@ import Singular.Registry.Ledger
     , PolicyID (..)
     , TokenId (..)
     , TxOut
+    )
+import Singular.Registry.Node
+    ( Capabilities (..)
+    , SubmitResult (..)
+    , signTx
+    , signedTx
+    , submitSigned
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
@@ -136,7 +138,7 @@ boot can ever consume the wrong UTxO as its funder, and the seed's
 outRef is published by the split transaction itself.
 -}
 designateSplit
-    :: Cage.Provider IO -> Submitter IO -> String -> IO (TxIn, TxIn)
+    :: Cage.Provider IO -> Capabilities -> String -> IO (TxIn, TxIn)
 designateSplit prov submit label = do
     (gIn, gOut) <- largestWalletUtxo prov
     let Coin total = gOut ^. coinTxOutL
@@ -156,7 +158,7 @@ designateSplit prov submit label = do
     require
         ("designation: wallet too small for the " <> label <> " split")
         (rest > seedCoin)
-    result <- submitTx submit (addKeyWitness genesisSignKey tx)
+    result <- submitSigned (capSubmit submit) (signTx genesisSignKey tx)
     case result of
         Submitted _ -> pure ()
         Rejected reason ->
@@ -164,8 +166,8 @@ designateSplit prov submit label = do
                 ( "designation split refused: "
                     <> T.unpack (TE.decodeUtf8Lenient reason)
                 )
-    awaitTx tx
-    after <- Cage.queryUTxOs prov genesisAddr
+    capConfirm submit tx
+    after <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
     let txid = txIdHex tx
         mine =
             sortOn
@@ -193,10 +195,12 @@ runCA01 :: Env -> CaWorld -> IO ()
 runCA01 env w = do
     let cfg = caCfg w
         prov = envProv env
-    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+    unsignedBoot <-
+        Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
     (mem, cpu) <- measureUnits env unsignedBoot
-    let signedBoot = addKeyWitness genesisSignKey unsignedBoot
-    result <- submitTxResilient (envSubmit env) signedBoot
+    let signedBootWitnessed = signTx genesisSignKey unsignedBoot
+        signedBoot = signedTx signedBootWitnessed
+    result <- submitTxResilient (envSubmit env) signedBootWitnessed
     case result of
         Submitted _ -> pure ()
         Rejected reason ->
@@ -204,7 +208,7 @@ runCA01 env w = do
                 ( "CA01: the node refused the canonical boot: "
                     <> T.unpack (TE.decodeUtf8Lenient reason)
                 )
-    awaitTx signedBoot
+    confirmTx env signedBoot
     let size = txSizeBytes signedBoot
     emitMeasure env "CA01-boot" mem cpu size
     tid <- extractTokenId cfg signedBoot
@@ -301,14 +305,16 @@ runCA02 env w = do
         "CA02 needs CA01's canonical registry; run CA01 first"
         (isJust tidC)
     -- the second designation split: output 0 is the rival seed
-    (rivalIn, _) <- designateSplit (envProv env) (envSubmit env) "rival"
+    (rivalIn, _) <- designateSplit (envProv env) (envCaps env) "rival"
     let rivalRef = txInToRef rivalIn
         cfgR = (caCfg w){cageSeed = rivalRef}
         prov = envProv env
-    unsignedRival <- bootTokenImpl cfgR prov genesisAddr
+    unsignedRival <-
+        Cage.withView prov (\v -> bootTokenImpl cfgR v genesisAddr)
     (mem, cpu) <- measureUnits env unsignedRival
-    let signedRival = addKeyWitness genesisSignKey unsignedRival
-    result <- submitTxResilient (envSubmit env) signedRival
+    let signedRivalWitnessed = signTx genesisSignKey unsignedRival
+        signedRival = signedTx signedRivalWitnessed
+    result <- submitTxResilient (envSubmit env) signedRivalWitnessed
     case result of
         Rejected reason ->
             failWith
@@ -320,7 +326,7 @@ runCA02 env w = do
                        \reported, not relabelled"
                 )
         Submitted _ -> pure ()
-    awaitTx signedRival
+    confirmTx env signedRival
     let size = txSizeBytes signedRival
     emitMeasure env "CA02-rival-boot" mem cpu size
     tidR <- extractTokenId cfgR signedRival
@@ -734,15 +740,16 @@ runCA05 env w = do
     require
         "CA05: the forged tx unexpectedly carries script witnesses"
         (null (txScriptWitnesses unsigned))
-    evalMap <- Cage.evaluateTx prov unsigned
+    evalMap <- Cage.withView prov (`Cage.viewEvaluateTx` unsigned)
     require
         ( "CA05: the node evaluated "
             <> show (Map.size evalMap)
             <> " script purposes on a plain payment"
         )
         (Map.null evalMap)
-    let signed = addKeyWitness genesisSignKey unsigned
-    result <- submitTxResilient (envSubmit env) signed
+    let signedWitnessed = signTx genesisSignKey unsigned
+        signed = signedTx signedWitnessed
+    result <- submitTxResilient (envSubmit env) signedWitnessed
     case result of
         Rejected reason ->
             failWith
@@ -752,11 +759,11 @@ runCA05 env w = do
                        \nobody's permission"
                 )
         Submitted _ -> pure ()
-    awaitTx signed
+    confirmTx env signed
     let size = txSizeBytes signed
     emitMeasure env "CA05-forged" 0 0 size
     -- read the forgery back from the chain
-    utxos <- Cage.queryUTxOs prov scriptAddr
+    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` scriptAddr)
     forgedLive <- case [o | (i, o) <- utxos, txInTxIdHex i == txIdHex signed] of
         [o] -> pure o
         other ->
@@ -837,9 +844,9 @@ stateUtxoByToken
 stateUtxoByToken env w tid = do
     let cfg = caCfg w
     utxos <-
-        Cage.queryUTxOs
+        Cage.withView
             (envProv env)
-            (cageAddrFromCfg cfg (network cfg))
+            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) tid utxos of
         Just u -> pure u
         Nothing ->

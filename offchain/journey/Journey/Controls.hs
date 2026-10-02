@@ -43,11 +43,6 @@ import Cardano.Ledger.Api.Tx.Body (outputsTxBodyL)
 import Cardano.Ledger.Api.Tx.Out (TxOut)
 import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Ledger.Credential (Credential (..))
-import Cardano.Node.Client.E2E.Setup (addKeyWitness)
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
-    )
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Journey.Chain
@@ -71,6 +66,12 @@ import Singular.Registry.Ledger
     , Root (..)
     , TokenId (..)
     , TxIn
+    )
+import Singular.Registry.Node
+    ( Capabilities (..)
+    , SubmitResult (..)
+    , signTx
+    , submitSigned
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
@@ -126,18 +127,18 @@ stepReject
     :: CageConfig
     -> NamingCodes
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TrieManager IO
     -> TokenId
     -> [(TxIn, TxOut ConwayEra)]
     -> OnChainTokenState
     -> IO ()
-stepReject cfg codes prov submit tm tid refs stateBeforeRejects = do
+stepReject cfg codes prov caps tm tid refs stateBeforeRejects = do
     -- A second, unapplied insert request: the payload the
     -- mutated updates below pretend to process. It stays at
     -- the request address throughout.
     let reqAddr = requestAddrFromCfg cfg tid Testnet
-    before <- Cage.queryUTxOs prov reqAddr
+    before <- Cage.withView prov (`Cage.viewUTxOsAt` reqAddr)
     require "reject: request address empty before the second request" $
         null before
     _ <-
@@ -145,12 +146,12 @@ stepReject cfg codes prov submit tm tid refs stateBeforeRejects = do
             cfg
             codes
             prov
-            (submitWithGenesis submit)
+            (submitWithGenesis caps)
             genesisAddr
             tid
             negativeKey
             edgeInsertAbsent
-    reqUtxos <- Cage.queryUTxOs prov reqAddr
+    reqUtxos <- Cage.withView prov (`Cage.viewUTxOsAt` reqAddr)
     require "reject: exactly one request UTxO after the second request" $
         length reqUtxos == 1
     forgedRef <- case reqUtxos of
@@ -185,10 +186,11 @@ stepReject cfg codes prov submit tm tid refs stateBeforeRejects = do
     -- well-formed for ledger phase 1 (the case descriptions
     -- say how), so only the on-chain validator stands between
     -- each transaction and the ledger.
-    rejectCtx <- Edges.registryContextFor cfg codes prov refs
-    baseTx <- updateTokenWithDuties cfg prov tm tid genesisAddr rejectCtx
+    (baseTx, pp) <- Cage.withView prov $ \v -> do
+        rejectCtx <- Edges.registryContextFor cfg codes v refs
+        tx <- updateTokenWithDuties cfg v tm tid genesisAddr rejectCtx
+        pure (tx, Cage.viewProtocolParams v)
     newRoot <- baseTxStateRoot baseTx
-    pp <- Cage.queryProtocolParams prov
     -- The validators the three cases require to refuse, by
     -- their script hashes as the node names them in a phase-2
     -- failure.
@@ -204,7 +206,7 @@ stepReject cfg codes prov submit tm tid refs stateBeforeRejects = do
         "reject-forged-identity"
         "request.request.spend validateContribute: the claimed state UTxO carries no state token"
         requestScriptHash
-        submit
+        caps
         (forgeContributeStateRef pp forgedRef baseTx)
     -- Case 2: tampered certified output. The new state output
     -- keeps the exact StateDatum shape but its root is the
@@ -214,7 +216,7 @@ stepReject cfg codes prov submit tm tid refs stateBeforeRejects = do
         "reject-tampered-output"
         "state.state.spend validModify: output datum root must equal the proof-recomputed root"
         stateScriptHash
-        submit
+        caps
         (tamperStateOutputRoot newRoot tamperedRoot baseTx)
     -- Case 3, re-cut under issue #79 (was: missing required
     -- witness). The old case dropped the owner from the required
@@ -235,7 +237,7 @@ stepReject cfg codes prov submit tm tid refs stateBeforeRejects = do
         "reject-missing-proof"
         "state.state.spend validModify: a Modify with no Merkle proof witness is refused"
         stateScriptHash
-        submit
+        caps
         (dropModifyProof pp baseTx)
     -- No Case 4: the old owner-authorization negative control (`End`
     -- without owner signature) is gone with the owner role itself.
@@ -248,7 +250,7 @@ stepReject cfg codes prov submit tm tid refs stateBeforeRejects = do
     require
         "reject-control: authenticated state datum unchanged"
         (stateAfter == stateBeforeRejects)
-    reqAfter <- Cage.queryUTxOs prov reqAddr
+    reqAfter <- Cage.withView prov (`Cage.viewUTxOsAt` reqAddr)
     require
         "reject-control: the pending request is still unapplied"
         (length reqAfter == 1)
@@ -271,11 +273,11 @@ expectRejected
     :: String
     -> String
     -> String
-    -> Submitter IO
+    -> Capabilities
     -> ConwayTx
     -> IO ()
-expectRejected caseName guard expectedScript submit tx = do
-    result <- submitTx submit (addKeyWitness genesisSignKey tx)
+expectRejected caseName guard expectedScript caps tx = do
+    result <- submitSigned (capSubmit caps) (signTx genesisSignKey tx)
     case result of
         Submitted _ ->
             failWith $

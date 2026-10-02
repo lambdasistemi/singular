@@ -57,7 +57,7 @@ import Singular.Registry.Ledger
     , PParams
     , TokenId
     )
-import Singular.Registry.Provider (Provider (..))
+import Singular.Registry.Provider (View (..))
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
 import Singular.Registry.Types
@@ -73,7 +73,7 @@ the deposit is itself a datum field.
 -}
 requestEdgeImpl
     :: CageConfig
-    -> Provider IO
+    -> View IO
     -> Coin
     -- ^ Token tip (lovelace)
     -> TokenId
@@ -83,9 +83,9 @@ requestEdgeImpl
     -- ^ The C2 row index (0-6)
     -> Addr
     -> IO ConwayTx
-requestEdgeImpl cfg prov (Coin mf) tid key edge addr = do
-    pp <- queryProtocolParams prov
-    utxos <- queryUTxOs prov addr
+requestEdgeImpl cfg view (Coin mf) tid key edge addr = do
+    let pp = viewProtocolParams view
+    utxos <- viewUTxOsAt view addr
     feeUtxo <- case sortOn
         (Down . (^. coinTxOutL) . snd)
         utxos of

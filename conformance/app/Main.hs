@@ -25,6 +25,7 @@ import System.Exit (ExitCode (..), exitFailure, exitWith)
 import System.IO (hPutStrLn, stderr)
 
 import Conformance.Book (bookReceipts, bookStories, renderBook)
+import Conformance.EvidencePage (runEvidencePage)
 import Conformance.ForkKeys
     ( runCheckForkExclusion
     , runFindForkKeys
@@ -86,6 +87,10 @@ main = do
                 runReplayCapsule args capsule deployed traced (Just diagnostic)
         ["example", "retirement", "--receipts-dir", dir] -> runGuarded ["CG22"] dir
         ["example", "registration", "--receipts-dir", dir] -> runGuarded ["CG21"] dir
+        ["evidence-page"] -> runEvidencePage "." False
+        ["evidence-page", "--write"] -> runEvidencePage "." True
+        ["evidence-page", "--root", root] -> runEvidencePage root False
+        ["evidence-page", "--root", root, "--write"] -> runEvidencePage root True
         ["book", "--receipts-dir", dir] -> runBook dir Nothing
         ["book", "--receipts-dir", dir, "--output", output] -> runBook dir (Just output)
         _ -> usage
@@ -106,6 +111,9 @@ usage = do
     hPutStrLn
         stderr
         "       conformance -- replay-capsule --capsule DIR --deployed BLUEPRINT --traced BLUEPRINT [--diagnostic BLUEPRINT]"
+    hPutStrLn
+        stderr
+        "       conformance -- evidence-page [--root DIR] [--write]"
     hPutStrLn
         stderr
         "env:   CONFORMANCE_RECEIPTS=DIR (list, when --receipts is absent)"

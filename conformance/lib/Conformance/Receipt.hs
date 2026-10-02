@@ -192,6 +192,16 @@ data Verdict
       CG13 is resolved-by-ruling, not a fourth unresolved hold)
       -}
       ResolvedByRuling
+    | {- | an unmet consumer requirement, kept by operator ruling
+      2026-10-01 ("Keep as unmet requirement"): the consumer's
+      theorem (cardano-keri @R9_reject_needs_rejectable@ at
+      @0e638fad@, @RegistryGoals.lean@ blob @d38e81c0@) requires
+      what the registry deliberately does not do
+      (lambdasistemi/singular#320); alignment is
+      lambdasistemi/cardano-keri#468. Recorded, published, never read
+      as a pass: the run exits non-zero while any row is unmet.
+      -}
+      UnmetByRuling
     | {- | the row executed its available legs but named constructors
       stay unexercised, enumerated in 'receiptPartial' (E18 §3:
       explicit named residual, never green). A partial row is not
@@ -207,6 +217,7 @@ instance FromJSON Verdict where
         "held-q002" -> pure HeldQ002
         "diverges-from-lean" -> pure DivergesFromLean
         "resolved-by-ruling" -> pure ResolvedByRuling
+        "unmet-by-ruling" -> pure UnmetByRuling
         "partial" -> pure Partial
         _ -> fail ("unknown receipt verdict: " <> T.unpack t)
 
@@ -215,6 +226,7 @@ instance ToJSON Verdict where
     toJSON HeldQ002 = toJSON ("held-q002" :: Text)
     toJSON DivergesFromLean = toJSON ("diverges-from-lean" :: Text)
     toJSON ResolvedByRuling = toJSON ("resolved-by-ruling" :: Text)
+    toJSON UnmetByRuling = toJSON ("unmet-by-ruling" :: Text)
     toJSON Partial = toJSON ("partial" :: Text)
 
 {- | Per-constructor standing inside a partial row's receipt (E18
@@ -1084,11 +1096,13 @@ loadReceipts dir = do
                     Left
                         (path <> ": retraction window requires before, accepted control, after")
         ("CG23", Just steps) -> stepsComplete path r steps
+        ("CG24", Just steps) -> stepsComplete path r steps
         ("sequence", Just steps) -> stepsComplete path r steps
         ("CG21", Nothing) -> Left (path <> ": registration names no live steps")
         ("CG22", Nothing) -> Left (path <> ": retirement names no live steps")
         ("CG07", Nothing) -> Left (path <> ": retraction window names no live steps")
         ("CG23", Nothing) -> Left (path <> ": exit chapter names no live steps")
+        ("CG24", Nothing) -> Left (path <> ": early rejection names no live steps")
         ("sequence", Nothing) -> Left (path <> ": sequence names no live steps")
         (_, Nothing) -> Right r
         (_, Just _) -> Left (path <> ": only live stories carry steps")

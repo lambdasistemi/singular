@@ -46,7 +46,7 @@ import Singular.Registry.Blueprint
     , loadBlueprint
     , loadRegistryCodesFromEnv
     )
-import Singular.Registry.Node (NodeSession (..), withNode)
+import Singular.Registry.Node (Capabilities (..), withCapabilities)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Edges qualified as Edges
@@ -85,9 +85,8 @@ runJourney
     -> SBS.ShortByteString
     -> IO ()
 runJourney si stateBytes requestBytes stakingBytes = do
-    withNode $ \sess -> do
-        let prov = nsProvider sess
-            submit = nsSubmitter sess
+    withCapabilities $ \caps -> do
+        let prov = capReads caps
         tm <- mkPureTrieManager
         -- The proof mirror: an in-memory trie kept in step with
         -- the operations the journey applies on chain. It builds
@@ -96,7 +95,7 @@ runJourney si stateBytes requestBytes stakingBytes = do
         -- (D-013), never from this trie.
         mirrorRef <- newIORef emptyMPFInMemoryDB
         -- Verify the connection carries queries before building on it.
-        _ <- Cage.queryProtocolParams prov
+        _ <- Cage.withView prov (pure . Cage.viewProtocolParams)
         -- #177 A-003: publish the state validator as a reference output
         -- BEFORE the seed is chosen, so the publication cannot spend
         -- the very output the seed pins. Boot then references the
@@ -104,13 +103,13 @@ runJourney si stateBytes requestBytes stakingBytes = do
         stateRef <-
             Edges.publishRefScript
                 prov
-                (submitWithGenesis submit)
+                (submitWithGenesis caps)
                 genesisAddr
                 (scriptFromBytes "state" stateBytes)
         -- Pick the boot seed from the genesis wallet. The state
         -- script is unparameterized; boot carries the seed in the
         -- mint redeemer.
-        utxos <- Cage.queryUTxOs prov genesisAddr
+        utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
         -- #177 A-003: never seed from the reference publication; boot
         -- references that output and cannot also spend it.
         seedRef <- case filter (\(_, o) -> o ^. referenceScriptTxOutL == SNothing) utxos of
@@ -120,7 +119,7 @@ runJourney si stateBytes requestBytes stakingBytes = do
             (txIn, _) : _ -> pure (txInToRef txIn)
         codes <- loadRegistryCodesFromEnv
         let cfg = cageCfg stateBytes requestBytes codes seedRef
-        (tokenId, bootRoot, bootTx) <- stepBoot cfg prov submit tm
+        (tokenId, bootRoot, bootTx) <- stepBoot cfg prov caps tm
         -- The state validator alone is fifteen kilobytes: a fold that
         -- attaches it, the request validator and a token policy does not
         -- fit in a transaction. Published once, every purpose resolves
@@ -130,7 +129,7 @@ runJourney si stateBytes requestBytes stakingBytes = do
                 cfg
                 codes
                 prov
-                (submitWithGenesis submit)
+                (submitWithGenesis caps)
                 genesisAddr
                 tokenId
         emit
@@ -138,9 +137,9 @@ runJourney si stateBytes requestBytes stakingBytes = do
             ( show (length refs)
                 <> " scripts published as reference outputs"
             )
-        reqCount <- stepRequest cfg codes prov submit tokenId
+        reqCount <- stepRequest cfg codes prov caps tokenId
         stepVerifyAbsent cfg prov mirrorRef tokenId
-        appliedTx <- stepApply cfg codes prov submit tm tokenId refs reqCount
+        appliedTx <- stepApply cfg codes prov caps tm tokenId refs reqCount
         stepDerivedIdentity
             si
             cfg
@@ -153,5 +152,5 @@ runJourney si stateBytes requestBytes stakingBytes = do
             (stateRef : refs)
         stepVerifyPresent cfg prov mirrorRef tokenId
         appliedState <- stepReadBack cfg prov tokenId bootRoot
-        stepReject cfg codes prov submit tm tokenId refs appliedState
+        stepReject cfg codes prov caps tm tokenId refs appliedState
         emit "complete" "11/11 journey steps ok"

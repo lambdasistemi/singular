@@ -35,15 +35,15 @@ import InsertActive.Steps
     , txIdOf
     )
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Node (withNode)
+import Singular.Registry.Node (withCapabilities)
 import Singular.Registry.Types (OnChainTokenState (..))
 
 -- | Run the story; write the observation to the path when one is given.
 insertActive :: Maybe FilePath -> IO ()
 insertActive observedPath = do
     inputs <- readStoryInputs
-    withNode $ \sess -> do
-        story <- bootStory sess inputs
+    withCapabilities $ \caps -> do
+        story <- bootStory caps inputs
         let cfg = storyConfig story
 
         book story storyKey

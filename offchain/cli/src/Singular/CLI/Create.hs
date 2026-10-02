@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 
 {- |
 Module      : Singular.CLI.Create
@@ -39,18 +40,18 @@ import Lens.Micro ((^.))
 import System.Directory (createDirectoryIfMissing)
 
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.Tx (bodyTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , coinTxOutL
     , referenceScriptTxOutL
     )
-import Cardano.Ledger.BaseTypes (StrictMaybe (..))
+import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (Script, hashScript)
 import Cardano.Ledger.Mary.Value (MultiAsset (..))
-import Cardano.Ledger.TxIn (TxIn)
+import Cardano.Ledger.TxIn (TxIn (..))
 import Data.Word (Word32)
 
 import MPF.Backend.Pure (emptyMPFInMemoryDB)
@@ -61,23 +62,27 @@ import Singular.Application.OpenDatum.Script
     )
 import Singular.CLI.Command
     ( CreateArgs (..)
+    , EntryMode (..)
     , NodeSettings (..)
     , WriteSettings (..)
     )
 import Singular.CLI.Live (receipt, txInText)
+import Singular.CLI.Node (Capabilities (..), withReads)
 import Singular.CLI.Receipt (OutcomeClass (..), durableWrite)
 import Singular.CLI.Registry
     ( LocalState (..)
-    , checkSeed
+    , Release
     , configPath
     , hexT
     , loadRelease
     , mkRegistryConfig
+    , parseEnterpriseAddress
     , pendingPath
     , pinsOf
     , refuseExisting
     , registryConfigFor
     , renderIdentityError
+    , seedChecks
     , writeConfig
     , writeLocalState
     )
@@ -87,7 +92,7 @@ import Singular.CLI.Session
     , failWith
     , journalObserved
     , journalObservedId
-    , journalledSubmit
+    , submitBuilt
     , txIdHex
     , withSession
     , withWrite
@@ -106,17 +111,13 @@ import Singular.Registry.Ledger
     , ConwayEra
     , TokenId (..)
     )
-import Singular.Registry.Node
-    ( NodeSession (..)
-    , Wallet (..)
-    , bech32Address
-    )
+import Singular.Registry.Node (Wallet (..), bech32Address)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Edges
     ( adaOnlyOut
-    , publishRefScript
-    , publishStateRefReserving
+    , publishRefScriptTx
+    , stateRefIn
     , witnessScriptOf
     )
 import Singular.Registry.TxBuilder.Internal
@@ -139,36 +140,31 @@ runCreate a = do
     rel <-
         loadRelease (createBlueprint a)
             >>= either (failWith ClientRefusal) pure
+    case createMode a of
+        Preview (NodeSettings sock magic) addrText -> do
+            -- A preview for a public address reads the node and holds no key.
+            addr <-
+                either
+                    (failWith ClientRefusal)
+                    pure
+                    (parseEnterpriseAddress magic addrText)
+            withReads magic sock $ \prov -> do
+                utxos <- Cage.withView prov (`Cage.viewUTxOsAt` addr)
+                (_, identity) <- previewIdentity False a rel addr utxos
+                pure (receipt "create" Success (("preview", toJSON True) : identity))
+        Submit ws -> createWith a rel ws
+
+createWith :: CreateArgs -> Release -> WriteSettings -> IO Value
+createWith a rel ws = do
+    let dir = createRegistry a
     -- A preview writes nothing: no lock, no directory, no journal.
     let session = if createPreview a then withSession else withWrite
-    session dir "create" (createWrite a) $ \wc -> do
-        let sess = wcSession wc
-            prov = nsProvider sess
-            addr = walletAddr (wcWallet wc)
-        utxos <- Cage.queryUTxOs prov addr
-        seedIn <- case createSeed a of
-            Just s -> either (failWith ClientRefusal) pure (parseOutRef (T.pack s))
-            Nothing -> case sortOn
-                (Down . (^. coinTxOutL) . snd)
-                (filter (adaOnlyOut . snd) utxos) of
-                ((i, _) : _) -> pure i
-                [] ->
-                    failWith
-                        ClientRefusal
-                        "the wallet holds no ada-only output to preview a seed with"
-        _ <-
-            either
-                (failWith ClientRefusal . renderIdentityError)
-                pure
-                (checkSeed seedIn utxos)
-        let (cfg, pinned) = registryConfigFor rel (txInToRef seedIn)
-            identity =
-                [ ("application", toJSON (applicationTitle OpenDatumApplication))
-                , ("seed", toJSON (txInText seedIn))
-                , ("wallet", toJSON (T.pack (bech32Address addr)))
-                , ("walletKeyHash", toJSON (hexT (addrKeyHashBytes addr)))
-                , ("pins", toJSON (pinsOf cfg))
-                ]
+    session dir "create" ws $ \wc -> do
+        let addr = walletAddr (wcWallet wc)
+        utxos <-
+            Cage.withView (capReads (wcCapabilities wc)) (`Cage.viewUTxOsAt` addr)
+        ((seedIn, cfg, pinned), identity) <-
+            previewIdentity (not (createPreview a)) a rel addr utxos
         if createPreview a
             then
                 pure (receipt "create" Success (("preview", toJSON True) : identity))
@@ -182,7 +178,7 @@ runCreate a = do
                 -- The public identity, durable before the first submission:
                 -- an interrupted create stays inspectable and is refused a
                 -- second boot.
-                let NodeSettings _ magicNow = writeNode (createWrite a)
+                let NodeSettings _ magicNow = writeNode ws
                 durableWrite
                     (pendingPath dir)
                     ( BL.toStrict
@@ -195,9 +191,8 @@ runCreate a = do
                         )
                     )
                 booted <- boot wc cfg pinned seedIn
-                let NodeSettings _ magic = writeNode (createWrite a)
+                let NodeSettings _ magic = writeNode ws
                     dep = deploymentOf magic cfg seedIn booted
-                writeConfig dir (mkRegistryConfig magic addr (pinsOf cfg) dep)
                 saveMirror
                     (configPath dir)
                     (Map.singleton (bootedToken booted) emptyMPFInMemoryDB)
@@ -210,6 +205,9 @@ runCreate a = do
                         , localLastTx = Just (bootedBoot booted)
                         , localLastSlot = Nothing
                         }
+                -- The saved identity last: its presence marks a create
+                -- that finished, with its mirror and commitment in place.
+                writeConfig dir (mkRegistryConfig magic addr (pinsOf cfg) dep)
                 pure
                     ( receipt
                         "create"
@@ -249,28 +247,32 @@ tokenHex (TokenId (AssetName n)) = hexT (SBS.fromShort n)
 
 boot :: WriteContext -> CageConfig -> NamingCodes -> TxIn -> IO Booted
 boot wc cfg pinned seedIn = do
-    let sess = wcSession wc
-        prov = nsProvider sess
+    let prov = capReads (wcCapabilities wc)
         addr = walletAddr (wcWallet wc)
-        submit = journalledSubmit wc
-    -- The state validator, published from outside the seed.
-    stateRef@(stateIn, _) <-
-        publishStateRefReserving
-            (Set.singleton seedIn)
-            cfg
-            prov
-            ( submit
-                "publish-state"
-                ( expecting
-                    ( "reference:"
-                        <> hexT
-                            ( scriptHashBytes
-                                (hashScript (scriptFromBytes "state" (cageScriptBytes cfg)))
-                            )
+        -- One transaction, built from one view, journalled with its point.
+        publish step reserved script = do
+            (signed, refOut) <-
+                submitBuilt
+                    wc
+                    step
+                    ( const
+                        (expecting ("reference:" <> hexT (scriptHashBytes (hashScript script))))
                     )
-                )
+                    (\v -> publishRefScriptTx reserved v addr script)
+            pure (TxIn (txIdTx signed) (TxIx 0), refOut)
+    -- The state validator, published from outside the seed, unless the
+    -- wallet already publishes it.
+    existing <-
+        Cage.withView prov (\v -> stateRefIn cfg <$> Cage.viewUTxOsAt v addr)
+    stateRef@(stateIn, _) <-
+        maybe
+            ( publish
+                "publish-state"
+                (Set.singleton seedIn)
+                (scriptFromBytes "state" (cageScriptBytes cfg))
             )
-            addr
+            pure
+            existing
     observeReference
         wc
         "publish-state"
@@ -278,13 +280,20 @@ boot wc cfg pinned seedIn = do
         (scriptFromBytes "state" (cageScriptBytes cfg))
         stateRef
     -- The boot, consuming the seed.
-    signedBoot <-
-        bootTokenImpl cfg prov addr >>= submit "boot" (expecting "state")
+    (signedBoot, ()) <-
+        submitBuilt
+            wc
+            "boot"
+            (const (expecting "state"))
+            (\v -> (,()) <$> bootTokenImpl cfg v addr)
     tid <- case signedBoot ^. bodyTxL . mintTxBodyL of
         MultiAsset m -> case Map.lookup (cagePolicyIdFromCfg cfg) m of
             Just names | [(name, 1)] <- Map.toList names -> pure (TokenId name)
             _ -> failWith LedgerRefusal "the boot minted no single registry token"
-    stateUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
+    stateUtxos <-
+        Cage.withView
+            prov
+            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
         Nothing ->
             failWith Partial "the boot confirmed but its state output is not live"
@@ -305,15 +314,7 @@ boot wc cfg pinned seedIn = do
     published <-
         mapM
             ( \(role, script) -> do
-                ref <-
-                    publishRefScript
-                        prov
-                        ( submit
-                            ("publish-" <> role)
-                            (expecting ("reference:" <> hexT (scriptHashBytes (hashScript script))))
-                        )
-                        addr
-                        script
+                ref <- publish ("publish-" <> role) Set.empty script
                 observeReference wc ("publish-" <> role) addr script ref
                 pure (reference role addr script ref)
             )
@@ -344,7 +345,8 @@ observeReference
     -> (TxIn, TxOut ConwayEra)
     -> IO ()
 observeReference wc step addr script (i, _) = do
-    utxos <- Cage.queryUTxOs (nsProvider (wcSession wc)) addr
+    utxos <-
+        Cage.withView (capReads (wcCapabilities wc)) (`Cage.viewUTxOsAt` addr)
     let wanted = hashScript script
     case [o | (j, o) <- utxos, j == i] of
         [o]
@@ -413,3 +415,48 @@ deploymentOf magic cfg seedIn b =
         , depReferenceScripts = bootedRefs b
         , depBootstrapTxs = bootedTxs b
         }
+
+{- | The registry identity a seed would give: the chosen or the largest
+ada-only output of the caller, checked to be held and ada only, the
+configuration and pins every later command derives again, and the receipt
+fields that name them. Nothing is written or submitted.
+
+A create must also find another ada-only output beside the seed
+('checkSeed'): it refuses without one. A preview computes the identity
+regardless and reports, as @createRefusal@, the refusal a create from this
+wallet would meet now, or null.
+-}
+previewIdentity
+    :: Bool
+    -- ^ whether the identity is for a create about to submit
+    -> CreateArgs
+    -> Release
+    -> Addr
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO ((TxIn, CageConfig, NamingCodes), [(Text, Value)])
+previewIdentity submitting a rel addr utxos = do
+    seedIn <- case createSeed a of
+        Just s -> either (failWith ClientRefusal) pure (parseOutRef (T.pack s))
+        Nothing -> case sortOn
+            (Down . (^. coinTxOutL) . snd)
+            (filter (adaOnlyOut . snd) utxos) of
+            ((i, _) : _) -> pure i
+            [] ->
+                failWith
+                    ClientRefusal
+                    "the wallet holds no ada-only output to preview a seed with"
+    funding <-
+        either
+            (failWith ClientRefusal . renderIdentityError)
+            pure
+            (seedChecks submitting seedIn utxos)
+    let (cfg, pinned) = registryConfigFor rel (txInToRef seedIn)
+        identity =
+            [ ("application", toJSON (applicationTitle OpenDatumApplication))
+            , ("seed", toJSON (txInText seedIn))
+            , ("wallet", toJSON (T.pack (bech32Address addr)))
+            , ("walletKeyHash", toJSON (hexT (addrKeyHashBytes addr)))
+            , ("pins", toJSON (pinsOf cfg))
+            ]
+                <> funding
+    pure ((seedIn, cfg, pinned), identity)

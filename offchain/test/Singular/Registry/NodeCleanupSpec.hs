@@ -47,16 +47,25 @@ import Cardano.Ledger.Credential
     , StakeReference (..)
     )
 import Cardano.Ledger.Keys (KeyHash (..))
-import Cardano.Node.Client.Provider (Provider (..))
+import Cardano.Node.Client.Provider
+    ( EpochNo (..)
+    , LedgerSnapshot (..)
+    , Provider (..)
+    , singleShotQueryHandle
+    )
 import Cardano.Node.Client.Submitter
     ( SubmitResult (..)
     , Submitter (..)
     )
 import Cardano.Node.Client.UTxOIndexer.Indexer
-    ( IndexerHandle
-    , withInMemoryIndexer
+    ( withInMemoryIndexer
     )
 import Cardano.Tx.Ledger (ConwayTx)
+import Data.ByteString.Short qualified as SBS
+import Ouroboros.Consensus.HardFork.Combinator.AcrossEras
+    ( OneEraHash (..)
+    )
+import Ouroboros.Network.Block qualified as Chain
 import Singular.Registry.Node
     ( NodeMode (..)
     , NodeSession (..)
@@ -66,13 +75,12 @@ import Singular.Registry.Node
     , nodeAddressReads
     )
 import Singular.Registry.Node.Indexer
-    ( Following (..)
-    , currentFollower
+    ( currentFollower
     , markFundingIndexed
-    , withFollowing
     )
 import Singular.Registry.Node.Session (withOpenSession)
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.StubFollowing (withStubFollowing)
 
 spec :: Spec
 spec = describe "what a runner leaves behind when its body ends" $ do
@@ -93,38 +101,42 @@ spec = describe "what a runner leaves behind when its body ends" $ do
     describe "the follower a session installs" $ do
         it "is installed for the body" $
             withInMemoryIndexer $ \idx ->
-                withFollowing (stubFollowing idx) $
+                withStubFollowing idx $
                     isJust <$> currentFollower
                         `shouldReturn` True
 
         it "is removed when the body fails" $
             withInMemoryIndexer $ \idx -> do
-                leaveBehind . withFollowing (stubFollowing idx) . throwIO $
+                leaveBehind . withStubFollowing idx . throwIO $
                     userError "the runner body failed"
                 isJust <$> currentFollower `shouldReturn` False
                 awaitIndexed basicTx `shouldThrow` outsideFollowChain
 
         it "is removed when the body returns" $
             withInMemoryIndexer $ \idx -> do
-                _ <- withFollowing (stubFollowing idx) (pure ())
+                _ <- withStubFollowing idx (pure ())
                 isJust <$> currentFollower `shouldReturn` False
                 awaitIndexed basicTx `shouldThrow` outsideFollowChain
 
     describe "the funding-read guard" $ do
         it "refuses node address reads once the funding read is done" $
             withInMemoryIndexer $ \idx ->
-                withFollowing (stubFollowing idx) $ do
+                withStubFollowing idx $ do
                     markFundingIndexed
-                    Cage.queryUTxOs (adaptProvider unusedNode) zeroHashAddr
+                    Cage.withView
+                        (adaptProvider (NetworkMagic 42) unusedNode)
+                        (`Cage.viewUTxOsAt` zeroHashAddr)
                         `shouldThrow` guardRefuses
 
         it "lets node address reads through again once the body has failed" $
             withInMemoryIndexer $ \idx -> do
-                leaveBehind . withFollowing (stubFollowing idx) $ do
+                leaveBehind . withStubFollowing idx $ do
                     markFundingIndexed
                     throwIO (userError "the runner body failed")
                 before <- nodeAddressReads
-                Cage.queryUTxOs (adaptProvider unusedNode) zeroHashAddr
+                Cage.withView
+                    (adaptProvider (NetworkMagic 42) unusedNode)
+                    (`Cage.viewUTxOsAt` zeroHashAddr)
                     `shouldReturn` []
                 after <- nodeAddressReads
                 (after - before) `shouldBe` 1
@@ -159,30 +171,32 @@ stubSession =
         , nsSubmitter = Submitter (\_ -> pure (Rejected "unused submitter"))
         , nsMagic = NetworkMagic 42
         , nsNetwork = Testnet
-        , nsPParams = emptyPParams
-        , nsScriptRegistered = pure . const False
         , nsTipSlot = pure (SlotNo 7)
-        , nsChainPoint = pure Nothing
         , nsMode = Devnet
         }
 
--- | A follower around a real in-memory indexer; no chain is followed.
-stubFollowing :: IndexerHandle -> Following
-stubFollowing idx = Following{followingIndexer = idx, followingFromOrigin = True}
-
-{- | The node side of 'adaptProvider': only its address reads are ever
+{- | The node side of 'adaptProvider': an acquired view at one block,
+served by its own one-shot fields; only its address reads are ever
 exercised here, and they answer nothing.
 -}
 unusedNode :: Provider IO
 unusedNode =
     Provider
-        { withAcquired = \k -> k (error "the cleanup spec never acquires a query handle")
+        { withAcquired = \k -> k (singleShotQueryHandle unusedNode)
         , queryUTxOs = \_ -> pure []
         , queryUTxOByTxIn = \_ -> error "the cleanup spec never queries by input"
-        , queryProtocolParams =
-            pure (error "the cleanup spec never reads parameters")
+        , queryProtocolParams = pure emptyPParams
         , queryLedgerSnapshot =
-            pure (error "the cleanup spec never reads a snapshot")
+            pure
+                LedgerSnapshot
+                    { ledgerCurrentEra = "Conway"
+                    , ledgerChainPoint =
+                        Chain.BlockPoint
+                            (SlotNo 1)
+                            (OneEraHash (SBS.toShort (BS.replicate 32 0)))
+                    , ledgerTipSlot = SlotNo 1
+                    , ledgerEpoch = EpochNo 0
+                    }
         , queryStakeRewards = \_ -> pure (error "the cleanup spec never reads rewards")
         , queryRewardAccounts = \_ -> pure (error "the cleanup spec never reads accounts")
         , queryVoteDelegatees = \_ -> pure (error "the cleanup spec never reads delegates")
@@ -198,15 +212,7 @@ unusedNode =
 
 -- | The provider of the stub session, never queried.
 neverQueried :: Cage.Provider IO
-neverQueried =
-    Cage.Provider
-        { Cage.queryUTxOs = \_ -> error "the stub session is never queried"
-        , Cage.queryProtocolParams =
-            pure (error "the stub session is never queried")
-        , Cage.evaluateTx = \_ -> pure (error "the stub session is never queried")
-        , Cage.posixMsToSlot = \_ -> pure (error "the stub session is never queried")
-        , Cage.posixMsCeilSlot = \_ -> pure (error "the stub session is never queried")
-        }
+neverQueried = Cage.Provider (\_ -> error "the stub session is never queried")
 
 -- | A transaction that creates nothing; only its identity is read.
 basicTx :: ConwayTx

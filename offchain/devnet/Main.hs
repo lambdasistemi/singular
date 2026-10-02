@@ -23,6 +23,14 @@ chain. A caller wallet generated for a test then holds several ordinary
 outputs, as a real wallet does, so a seed it chooses is one of them
 rather than the genesis output itself. The key file is read, never
 printed; only its public address is reported, on standard error.
+
+@devnet probe --node-socket PATH [--network-magic N] [--tx-in TXID#IX]...@
+(#325) spawns nothing: it asks the node at @PATH@, from one acquired
+ledger state, for its chain tip and which of the named outputs are
+unspent, and prints one JSON object,
+@{"tip":{"slot":N,"hash":HEX},"live":[...],"spent":[...]}@. A control
+that rolls a development node back reads the node's own answer through
+it, never the answer of the command under test.
 -}
 module Main (main) where
 
@@ -33,9 +41,11 @@ import Data.Maybe (fromMaybe)
 import Data.Ord (Down (..))
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
+import Data.Text qualified as T
 import Lens.Micro ((&), (.~), (^.))
 import System.Directory (getTemporaryDirectory)
 import System.Environment (getArgs)
+import System.Exit (die)
 import System.FilePath ((</>))
 import System.IO
     ( BufferMode (..)
@@ -57,29 +67,27 @@ import Cardano.Ledger.Api.Tx.Out (coinTxOutL, mkBasicTxOut)
 import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup
-    ( addKeyWitness
-    , genesisAddr
+    ( genesisAddr
     , genesisDir
     , genesisSignKey
     , rawSerialiseSignKeyDSIGN
     )
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
-    )
+import Devnet.Probe qualified as Probe
 
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
+import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (Coin (..))
 import Singular.Registry.Node
-    ( ExternalNode (..)
-    , NodeMode (..)
-    , NodeSession (..)
+    ( Capabilities (..)
+    , SubmitResult (..)
     , Wallet (..)
-    , awaitTx
     , bech32Address
     , loadWallet
-    , withNodeMode
+    , signTx
+    , signedTx
+    , submitSigned
+    , withExternalCapabilities
     )
 import Singular.Registry.Provider qualified as Cage
 
@@ -93,10 +101,17 @@ data Funding = Funding
 main :: IO ()
 main = do
     hSetBuffering stdout LineBuffering
-    funding <- fundingFrom <$> getArgs
+    args <- getArgs
+    case args of
+        ("probe" : rest) -> probe rest
+        _ -> spawn args
+
+-- | Spawn the chain, fund what was asked, print the socket, wait.
+spawn :: [String] -> IO ()
+spawn args = do
     gDir <- genesisDir
     withCardanoNode gDir $ \sock _startMs -> do
-        mapM_ (fund sock) funding
+        mapM_ (fund sock) (fundingFrom args)
         putStrLn sock
         forever (threadDelay 3_600_000_000)
 
@@ -106,26 +121,44 @@ None when any of the three is absent.
 -}
 fundingFrom :: [String] -> [Funding]
 fundingFrom args = fromMaybe [] $ do
-    outputs <- flag "--fund-outputs" >>= readMaybe
-    lovelace <- flag "--fund-lovelace" >>= readMaybe
+    outputs <- flag "--fund-outputs" args >>= readMaybe
+    lovelace <- flag "--fund-lovelace" args >>= readMaybe
     pure [Funding key outputs lovelace | key <- every "--fund-skey" args]
-  where
-    every name = \case
-        (a : v : rest) | a == name -> v : every name rest
-        (a : rest)
-            | (name <> "=") `isPrefixOf` a ->
-                drop (length name + 1) a : every name rest
-            | otherwise -> every name rest
-        [] -> []
-    flag name = go args
-      where
-        go (a : rest)
-            | a == name = case rest of
-                (v : _) -> Just v
-                [] -> Nothing
-            | (name <> "=") `isPrefixOf` a = Just (drop (length name + 1) a)
-            | otherwise = go rest
-        go [] = Nothing
+
+-- | Every value a repeatable flag was given.
+every :: String -> [String] -> [String]
+every name = \case
+    (a : v : rest) | a == name -> v : every name rest
+    (a : rest)
+        | (name <> "=") `isPrefixOf` a ->
+            drop (length name + 1) a : every name rest
+        | otherwise -> every name rest
+    [] -> []
+
+-- | The first value a flag was given.
+flag :: String -> [String] -> Maybe String
+flag name = \case
+    (a : rest)
+        | a == name -> case rest of
+            (v : _) -> Just v
+            [] -> Nothing
+        | (name <> "=") `isPrefixOf` a -> Just (drop (length name + 1) a)
+        | otherwise -> flag name rest
+    [] -> Nothing
+
+-- | Read the probe's flags and ask the node ("Devnet.Probe").
+probe :: [String] -> IO ()
+probe args = do
+    sock <-
+        maybe (die "devnet probe: --node-socket is required") pure $
+            flag "--node-socket" args
+    magicWord <-
+        maybe (die "devnet probe: --network-magic is not a number") pure $
+            readMaybe (fromMaybe "42" (flag "--network-magic" args))
+    txIns <-
+        either (die . ("devnet probe: " <>)) pure $
+            traverse (parseOutRef . T.pack) (every "--tx-in" args)
+    Probe.probe sock magicWord txIns
 
 {- | Pay the requested outputs from the genesis key and wait for them,
 through the same external-node session a joiner's node is reached by.
@@ -138,8 +171,9 @@ fund sock f = do
         genesisKey
         (B16.encode (rawSerialiseSignKeyDSIGN genesisSignKey))
     target <- walletAddr <$> loadWallet 42 (fundKey f)
-    withNodeMode (External (ExternalNode sock 42 genesisKey)) $ \sess -> do
-        utxos <- Cage.queryUTxOs (nsProvider sess) genesisAddr
+    withExternalCapabilities sock 42 genesisKey $ \caps -> do
+        utxos <-
+            Cage.withView (capReads caps) (`Cage.viewUTxOsAt` genesisAddr)
         (txIn, out) <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
             (u : _) -> pure u
             [] -> fail "devnet: the genesis address holds nothing to fund from"
@@ -159,12 +193,12 @@ fund sock f = do
                                 <> [mkBasicTxOut genesisAddr (MaryValue (Coin change) mempty)]
                             )
                     & feeTxBodyL .~ Coin fee
-            signed = addKeyWitness genesisSignKey (mkBasicTx body)
-        result <- submitTx (nsSubmitter sess) signed
+            signed = signTx genesisSignKey (mkBasicTx body)
+        result <- submitSigned (capSubmit caps) signed
         case result of
             Submitted _ -> pure ()
             Rejected reason -> fail ("devnet: funding rejected: " <> show reason)
-        awaitTx signed
+        capConfirm caps (signedTx signed)
         hPutStrLn stderr $
             "devnet: funded "
                 <> bech32Address target

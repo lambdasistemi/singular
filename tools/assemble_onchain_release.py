@@ -73,7 +73,30 @@ def assemble(
     work = Path(tempfile.mkdtemp(prefix="onchain-release-"))
     farm = work / "farm"
     farm.mkdir()
-    copy_tracked_partitions(root, farm, ("onchain", "naming-onchain", "offchain"))
+    copy_tracked_partitions(
+        root,
+        farm,
+        (
+            "onchain",
+            "naming-onchain",
+            "offchain",
+            # #300: the demonstration's refusal controls and indexer readback
+            # replay from the archive alone. The controls runner is a flake that
+            # reads the model, the tools and the root lock beside it, and binds
+            # the application's statement ledger and the command-line
+            # specification, so those ship too.
+            "conformance",
+            "lean",
+            "tools",
+            "lakefile.toml",
+            "lake-manifest.json",
+            "lean-toolchain",
+            "flake.lock",
+            "fourmolu.yaml",
+            "applications/open-datum/ledgers.json",
+            "specs/299-singular-cli/spec.md",
+        ),
+    )
     # #173 A173-COMMAND / #177 I177-COMMAND: each packaged verb has its
     # own page — the authority a reviewer with no checkout reads before
     # running it. They ship beside README and RELEASE.
@@ -108,6 +131,9 @@ def assemble(
     # without either stays honest instead of inventing a commit.
     release_commit = os.environ.get("RELEASE_COMMIT", "").strip() or "unknown-dirty"
     (farm / "RELEASE-COMMIT").write_text(release_commit + "\n", encoding="utf-8")
+    # #326: the application model revision the release maps to, from the one
+    # file the conformance evidence is compiled against.
+    shutil.copyfile(root / "conformance" / "model-revision", farm / "MODEL-REVISION")
 
     staging = work / "staging"
     stage_release(farm, staging)

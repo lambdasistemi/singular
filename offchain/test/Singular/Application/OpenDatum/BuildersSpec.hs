@@ -30,7 +30,6 @@ import Lens.Micro ((&), (.~))
 import Test.Hspec
 
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.PParams (emptyPParams)
 import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL, mkBasicTxOut)
 import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.Mary.Value
@@ -59,7 +58,7 @@ import Singular.Registry.Deployment
     , renderOutRef
     )
 import Singular.Registry.Ledger (Coin (..), ConwayEra, TxIn)
-import Singular.Registry.Provider (Provider (..))
+import Singular.Registry.StubView (stubView)
 import Singular.Registry.TxBuilder.Edges (BookingApproval (..))
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
@@ -217,16 +216,6 @@ bookings = describe "bookings" $ do
 -- Update
 -- ---------------------------------------------------------
 
-stub :: Provider IO
-stub =
-    Provider
-        { queryUTxOs = \_ -> fail "an update reads no address"
-        , queryProtocolParams = pure emptyPParams
-        , evaluateTx = \_ -> fail "a refused update evaluates nothing"
-        , posixMsToSlot = \_ -> fail "an update reads no slot"
-        , posixMsCeilSlot = \_ -> fail "an update reads no slot"
-        }
-
 liveWith :: Integer -> Maybe PLC.Data -> TxOut ConwayEra
 liveWith quantity datum =
     let out =
@@ -247,8 +236,7 @@ updates :: Spec
 updates = describe "a payload update" $ do
     let args holding =
             UpdateArgs
-                { uaProvider = stub
-                , uaPParams = emptyPParams
+                { uaView = stubView
                 , uaApplied = applied
                 , uaHolding = (ref '4' 1, holding)
                 , uaPayload = PLC.I 7

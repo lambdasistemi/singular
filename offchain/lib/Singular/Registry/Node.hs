@@ -53,8 +53,23 @@ Key material is read from the joiner's file and never printed; only the
 derived (public) address is reported.
 -}
 module Singular.Registry.Node
-    ( -- * Mode
-      NodeMode (..)
+    ( -- * Capabilities
+      Capabilities (..)
+    , withCapabilities
+    , withExternalCapabilities
+    , capabilitiesOf
+    , signedSubmitter
+
+      -- * Signed writes
+    , SignedTx
+    , signTx
+    , signedTx
+    , SignedSubmitter
+    , submitSigned
+    , SubmitResult (..)
+
+      -- * Mode
+    , NodeMode (..)
     , ExternalNode (..)
     , nodeModeFromArgs
     , nodeModeFromEnvironment
@@ -73,7 +88,6 @@ module Singular.Registry.Node
     , NodeSession (..)
     , awaitChain
     , currentTipSlot
-    , scriptStakeRegistered
     , awaitTx
     , awaitTxId
     , awaitTxWindow
@@ -108,6 +122,10 @@ module Singular.Registry.Node
     , defaultFundingFloor
     , checkFunding
     ) where
+
+import Data.Word (Word32)
+
+import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.Node.Confirmation
     ( awaitChain
@@ -145,12 +163,20 @@ import Singular.Registry.Node.Session
     , awaitConnection
     , currentTipSlot
     , devnetGenesis
-    , scriptStakeRegistered
     , withNode
     , withNodeForPlannedFunding
     , withNodeMode
     , withNodeReads
     , withNodeSocket
+    )
+import Singular.Registry.Node.Submit
+    ( SignedSubmitter
+    , SignedTx
+    , SubmitResult (..)
+    , signTx
+    , signedSubmitter
+    , signedTx
+    , submitSigned
     )
 import Singular.Registry.Node.Wait
     ( WaitFailure (..)
@@ -168,3 +194,45 @@ import Singular.Registry.Node.Wallet
     , sessionMagic
     , walletForMode
     )
+import Singular.Registry.Provider (Provider)
+
+{- | What a runner is handed: the read interface, the signed-only write
+and the confirmation. A runner never sees the session, the mode or the
+raw submitter behind them.
+-}
+data Capabilities = Capabilities
+    { capReads :: Provider IO
+    -- ^ One acquired view per operation
+    , capSubmit :: SignedSubmitter
+    -- ^ Sends signed transactions; the node's answer, unchanged
+    , capConfirm :: ConwayTx -> IO ()
+    {- ^ Wait until a submitted transaction's first output is on chain,
+    failing by name at the session's confirmation deadline
+    -}
+    }
+
+{- | Open the session the process's mode names ('withNode') and run the
+body with its capabilities. Runner startup only: the body must not use
+them after it returns.
+-}
+withCapabilities :: (Capabilities -> IO a) -> IO a
+withCapabilities k = withNode (k . capabilitiesOf)
+
+{- | Open an external node at a socket and magic, funded by the key in the
+named file, and run the body with its capabilities. Runner startup only.
+-}
+withExternalCapabilities
+    :: FilePath -> Word32 -> FilePath -> (Capabilities -> IO a) -> IO a
+withExternalCapabilities sock magic skey k =
+    withNodeMode
+        (External (ExternalNode sock magic skey))
+        (k . capabilitiesOf)
+
+-- | The capabilities of an open session.
+capabilitiesOf :: NodeSession -> Capabilities
+capabilitiesOf sess =
+    Capabilities
+        { capReads = nsProvider sess
+        , capSubmit = signedSubmitter (nsSubmitter sess)
+        , capConfirm = awaitTx
+        }

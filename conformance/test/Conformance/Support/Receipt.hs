@@ -1485,7 +1485,7 @@ replayChecks = describe "Checking the traced replay a refused request carries" $
         "requires a receipt for every story the book runs, the occupied-key story among them"
         $ do
             let receiptsFor rows = [acceptedLive{receiptRow = T.pack row} | row <- rows]
-                others = ["CG21", "CG22", "CG23", "CG07", "sequence"]
+                others = ["CG21", "CG22", "CG23", "CG24", "CG07", "sequence"]
             bookReceipts (receiptsFor others)
                 `shouldSatisfy` either ("CG05" `isInfixOf`) (const False)
             fmap (map receiptRow) (bookReceipts (receiptsFor ("CG05" : others)))

@@ -60,11 +60,7 @@ import Cardano.Ledger.BaseTypes
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.Mary.Value (MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId (..), TxIn)
-import Cardano.Node.Client.E2E.Setup (addKeyWitness, genesisAddr)
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
-    )
+import Cardano.Node.Client.E2E.Setup (genesisAddr)
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.AssetName (deriveAssetName)
@@ -81,9 +77,12 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.Node
-    ( NodeSession (..)
-    , awaitTx
+    ( Capabilities (..)
+    , SubmitResult (..)
     , funderSignKey
+    , signTx
+    , signedTx
+    , submitSigned
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
@@ -122,7 +121,8 @@ import UpdateTerminal.Options (StoryInputs (..))
 -- | The node session every registry of one run shares, and one wallet.
 data Session = Session
     { sessProvider :: Cage.Provider IO
-    , sessSubmitter :: Submitter IO
+    , sessWrites :: Capabilities
+    -- ^ The signed-only write and the confirmation
     , sessTries :: TrieManager IO
     , sessCodes :: NamingCodes
     , sessInputs :: StoryInputs
@@ -155,13 +155,12 @@ retired.
 walletDestination :: (ByteString, ByteString)
 walletDestination = (serialiseAddr genesisAddr, "")
 
--- | Start the run's shared state in this node session.
-openSession :: NodeSession -> StoryInputs -> IO Session
-openSession sess inputs = do
-    let prov = nsProvider sess
-        submit = nsSubmitter sess
+-- | Start the run's shared state over these capabilities.
+openSession :: Capabilities -> StoryInputs -> IO Session
+openSession caps inputs = do
+    let prov = capReads caps
     tm <- mkPureTrieManager
-    _ <- Cage.queryProtocolParams prov
+    _ <- Cage.withView prov (pure . Cage.viewProtocolParams)
     -- #177 A-003: publish the state validator as a reference output
     -- BEFORE any seed is chosen. The publication spends the wallet's
     -- largest ada-only output, which a seed picked first could be, and
@@ -169,14 +168,14 @@ openSession sess inputs = do
     _ <-
         Edges.publishRefScript
             prov
-            (submitWithGenesis submit)
+            (submitWithGenesis caps)
             genesisAddr
             (scriptFromBytes "state" (inputStateBytes inputs))
     codes <- loadRegistryCodesFromEnv
     pure
         Session
             { sessProvider = prov
-            , sessSubmitter = submit
+            , sessWrites = caps
             , sessTries = tm
             , sessCodes = codes
             , sessInputs = inputs
@@ -186,9 +185,9 @@ openSession sess inputs = do
 bootRegistry :: Session -> String -> IO Registry
 bootRegistry s label = do
     let prov = sessProvider s
-        submit = sessSubmitter s
+        submit = sessWrites s
         inputs = sessInputs s
-    utxos <- Cage.queryUTxOs prov genesisAddr
+    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
     -- Never seed from the reference publication: boot REFERENCES
     -- that output and may not also spend it.
     seedRef <- case filter (\(_, o) -> o ^. referenceScriptTxOutL == SNothing) utxos of
@@ -201,7 +200,8 @@ bootRegistry s label = do
                 (inputRequestBytes inputs)
                 (sessCodes s)
                 seedRef
-    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+    unsignedBoot <-
+        Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
     signedBoot <- submitWithGenesis submit unsignedBoot
     (tid, tidBytes) <- extractTokenId cfg signedBoot
     createTrie (sessTries s) tid
@@ -224,7 +224,7 @@ book reg key op =
             (regCfg reg)
             (sessCodes (regSession reg))
             (sessProvider (regSession reg))
-            (submitWithGenesis (sessSubmitter (regSession reg)))
+            (submitWithGenesis (sessWrites (regSession reg)))
             genesisAddr
             (regTid reg)
             key
@@ -262,22 +262,22 @@ foldInadmissible reg = foldWith reg True
 foldWith :: Registry -> Bool -> IO ConwayTx
 foldWith reg inadmissible = do
     let s = regSession reg
-    ctx0 <-
-        Edges.registryContextFor
-            (regCfg reg)
-            (sessCodes s)
-            (sessProvider s)
-            (regRefs reg)
-    let ctx = ctx0{rcAllowInadmissible = inadmissible}
-    tx <-
+    tx <- Cage.withView (sessProvider s) $ \v -> do
+        ctx0 <-
+            Edges.registryContextFor
+                (regCfg reg)
+                (sessCodes s)
+                v
+                (regRefs reg)
+        let ctx = ctx0{rcAllowInadmissible = inadmissible}
         updateTokenWithDuties
             (regCfg reg)
-            (sessProvider s)
+            v
             (sessTries s)
             (regTid reg)
             genesisAddr
             ctx
-    submitWithGenesis (sessSubmitter s) tx
+    submitWithGenesis (sessWrites s) tx
 
 -- | The local mirror's root for this registry.
 rootNow :: Registry -> IO Root
@@ -308,9 +308,9 @@ readState :: Registry -> String -> String -> IO OnChainTokenState
 readState reg notState missing = do
     let cfg = regCfg reg
     utxos <-
-        Cage.queryUTxOs
+        Cage.withView
             (sessProvider (regSession reg))
-            (cageAddrFromCfg cfg Testnet)
+            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg Testnet)
     case findStateUtxo (cagePolicyIdFromCfg cfg) (regTid reg) utxos of
         Just (_, out) -> case extractCageDatum out of
             Just (StateDatum st) -> pure st
@@ -318,15 +318,15 @@ readState reg notState missing = do
         Nothing -> die missing
 
 -- | Sign with the devnet genesis key, submit, wait.
-submitWithGenesis :: Submitter IO -> ConwayTx -> IO ConwayTx
-submitWithGenesis submit unsigned = do
-    let signed = addKeyWitness funderSignKey unsigned
-    result <- submitTx submit signed
+submitWithGenesis :: Capabilities -> ConwayTx -> IO ConwayTx
+submitWithGenesis caps unsigned = do
+    let signed = signTx funderSignKey unsigned
+    result <- submitSigned (capSubmit caps) signed
     case result of
         Submitted _ -> pure ()
         Rejected reason -> die ("tx rejected: " <> show reason)
-    awaitTx signed
-    pure signed
+    capConfirm caps (signedTx signed)
+    pure (signedTx signed)
 
 {- | The registry token this boot minted, and its raw name bytes for
 narration.

@@ -22,8 +22,10 @@ module Singular.Registry.Deployment.Mirror
     , MirrorTrie (..)
     , loadMirror
     , saveMirror
+    , replaceDurably
     ) where
 
+import Control.Exception (bracket)
 import Data.Aeson
     ( FromJSON (..)
     , ToJSON (..)
@@ -31,6 +33,7 @@ import Data.Aeson
     )
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
+import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
@@ -40,6 +43,17 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import GHC.Generics (Generic)
 import System.Directory (doesFileExist)
+import System.FilePath (takeDirectory)
+import System.Posix.Files (rename)
+import System.Posix.IO
+    ( OpenFileFlags (..)
+    , OpenMode (..)
+    , closeFd
+    , defaultFileFlags
+    , openFd
+    )
+import System.Posix.IO.ByteString (fdWrite)
+import System.Posix.Unistd (fileSynchronise)
 
 import MPF.Backend.Pure (MPFInMemoryDB (..))
 
@@ -112,12 +126,16 @@ loadMirror manifest = do
         Right b -> pure b
         Left _ -> die ("proof mirror: not hex: " <> T.unpack t)
 
--- | Write the mirror beside a manifest, replacing what was there.
+{- | Write the mirror beside a manifest, replacing what was there whole
+or not at all ('replaceDurably').
+-}
 saveMirror :: FilePath -> Map.Map TokenId MPFInMemoryDB -> IO ()
 saveMirror manifest tries =
-    BL.writeFile
+    replaceDurably
         (mirrorPathFor manifest)
-        (encodePretty (Mirror (map one (Map.toList tries))) <> "\n")
+        ( BL.toStrict
+            (encodePretty (Mirror (map one (Map.toList tries))) <> "\n")
+        )
   where
     one (TokenId (AssetName n), db) =
         MirrorTrie
@@ -129,3 +147,33 @@ saveMirror manifest tries =
             }
     pairs =
         map (\(k, v) -> (T.pack (hex k), T.pack (hex v))) . Map.toList
+
+{- | Replace a file whole, durably: the bytes go to a sibling
+@PATH.partial@, synchronised to disk, which is then renamed over @PATH@,
+and the directory is synchronised. A process killed at any point leaves
+@PATH@ holding either its previous bytes or the new ones, never a
+prefix; a killed replacement may leave the @.partial@ sibling, which the
+next replacement overwrites.
+-}
+replaceDurably :: FilePath -> BS.ByteString -> IO ()
+replaceDurably path bytes = do
+    let partial = path <> ".partial"
+    bracket
+        ( openFd
+            partial
+            WriteOnly
+            defaultFileFlags{trunc = True, creat = Just 0o644}
+        )
+        closeFd
+        (\fd -> writeAll fd bytes >> fileSynchronise fd)
+    rename partial path
+    bracket
+        (openFd (takeDirectory path) ReadOnly defaultFileFlags)
+        closeFd
+        fileSynchronise
+  where
+    writeAll fd b
+        | BS.null b = pure ()
+        | otherwise = do
+            n <- fdWrite fd b
+            writeAll fd (BS.drop (fromIntegral n) b)

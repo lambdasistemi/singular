@@ -1,7 +1,7 @@
 {
   "_source": {
     "file": "conformance-api-reference.md",
-    "sha256": "dd7cdaf226c1088a89b5d3ee756d1ef34dfcaf524b72405b65dc071e81619c09"
+    "sha256": "eeebdfc41bb943b3ea1ab24142f4ddd89756eac9f27a5dae04860e15cfabc633"
   },
   "what-this-reference-contains": [
     {
@@ -13,11 +13,11 @@
       "pause": 400
     },
     {
-      "text": "The module extent is the public library of the Conformance Cabal file: every exposed module and the one package-internal owner. That complete extent is twenty-five modules.",
+      "text": "The module extent is the public library of the Conformance Cabal file: every exposed module and the one package-internal owner. That complete extent is twenty-six modules.",
       "pause": 300
     },
     {
-      "text": "The twenty-four exposed modules are what a caller imports: the story programs and their binding and identity, the ordinary CLI's refusal controls and their receipt-computed verdicts, the model transport and the Lean oracle, the registration and perturbation comparisons, the receipt record and its validation, the refusal attribution, the row inventory, the purpose-unit arithmetic, the node-refusal rendering and the payment observation. A list of twenty-five module names follows, each with its source link.",
+      "text": "The twenty-five exposed modules are what a caller imports: the story programs and their binding and identity, the ordinary CLI's refusal controls and their receipt-computed verdicts, the model transport and the Lean oracle, the registration and perturbation comparisons, the receipt record and its validation, the refusal attribution, the row inventory, the purpose-unit arithmetic, the node-refusal rendering and the payment observation. A list of twenty-six module names follows, each with its source link.",
       "pause": 500
     },
     {

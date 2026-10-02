@@ -62,7 +62,6 @@ import Cardano.Ledger.Mary.Value
     , MultiAsset (..)
     )
 import Cardano.Node.Client.E2E.Setup (genesisAddr)
-import Cardano.Node.Client.Submitter (Submitter)
 import Cardano.Tx.Ledger (ConwayTx)
 import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Short qualified as SBS
@@ -79,7 +78,7 @@ import Singular.Registry.Blueprint
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Driver qualified as Driver
 import Singular.Registry.Ledger (ConwayEra, Root (..), TokenId, TxIn)
-import Singular.Registry.Node (tryOutcome)
+import Singular.Registry.Node (Capabilities, tryOutcome)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.TxBuilder.Edges qualified as Edges
@@ -91,7 +90,6 @@ import Singular.Registry.TxBuilder.Internal
     , policyIdFromPin
     , walkEdge
     )
-import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
 import Singular.Registry.Types
     ( CageDatum (..)
     , Edge
@@ -103,8 +101,8 @@ import Singular.Registry.Types
     )
 
 import Singular.Registry.E2E.CageSpec
-    ( publishCageRefs
-    , registryContextFor
+    ( foldUnsigned
+    , publishCageRefs
     , submitWithGenesis
     , withBootedCage
     )
@@ -308,7 +306,7 @@ book
     :: CageConfig
     -> NamingCodes
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TokenId
     -> ByteString
     -> Edge
@@ -329,14 +327,13 @@ committed trie.
 foldOnce
     :: CageConfig
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TrieManager IO
     -> TokenId
     -> [(TxIn, TxOut ConwayEra)]
     -> IO ConwayTx
 foldOnce cfg prov submit tm tokenId refs = do
-    ctx <- registryContextFor cfg prov tokenId refs
-    unsigned <- updateTokenWithDuties cfg prov tm tokenId genesisAddr ctx
+    unsigned <- foldUnsigned cfg prov tm tokenId refs
     submitWithGenesis submit unsigned
 
 {- | Fold, submit, and MIRROR the landed fold into the committed trie.
@@ -349,7 +346,7 @@ The root is read on either side and must move.
 foldAndMirror
     :: CageConfig
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TrieManager IO
     -> TokenId
     -> [(TxIn, TxOut ConwayEra)]
@@ -381,7 +378,7 @@ foldAndMirror cfg prov submit tm tokenId refs key edge = do
 activeHeldAt
     :: Cage.Provider IO -> CageConfig -> ByteString -> IO Integer
 activeHeldAt prov cfg key = do
-    walletUtxos <- Cage.queryUTxOs prov genesisAddr
+    walletUtxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
     let policy = policyIdFromPin (cfgActivePolicy cfg)
     pure $
         sum
@@ -425,7 +422,10 @@ is a statement about the leaf and not about either implementation.
 committedRoot
     :: Cage.Provider IO -> CageConfig -> TokenId -> IO ByteString
 committedRoot prov cfg tokenId = do
-    utxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
+    utxos <-
+        Cage.withView
+            prov
+            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId utxos of
         Just (_, out) -> case extractCageDatum out of
             Just (StateDatum s) -> pure (unOnChainRoot (stateRoot s))

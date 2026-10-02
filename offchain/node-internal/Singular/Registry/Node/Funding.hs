@@ -52,7 +52,7 @@ address, what is required, what is there, and the faucet step.
 -}
 checkFunding :: Cage.Provider IO -> Addr -> FundingFloor -> IO ()
 checkFunding prov addr fl = do
-    utxos <- Cage.queryUTxOs prov addr
+    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` addr)
     let values = map (\(_, out) -> out ^. valueTxOutL) utxos
         total = sum [c | MaryValue (Coin c) _ <- values]
         adaOnly = [c | MaryValue (Coin c) (MultiAsset m) <- values, Map.null m]

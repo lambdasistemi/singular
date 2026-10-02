@@ -1,6 +1,7 @@
 -- | A book rendered from the same programs the live backend executes.
 module Conformance.Book (renderBook, bookStories, bookReceipts) where
 
+import Conformance.Edge.EarlyReject qualified as EarlyReject
 import Conformance.Edge.Exit qualified as Exit
 import Conformance.Edge.Occupied qualified as Occupied
 import Conformance.Edge.Register qualified as Register
@@ -18,7 +19,7 @@ import Data.Text qualified as T
 
 -- | The stories a book run executes, renders and requires, in book order.
 bookStories :: [String]
-bookStories = ["CG21", "CG05", "CG22", "CG23", "CG07", "sequence"]
+bookStories = ["CG21", "CG05", "CG22", "CG23", "CG24", "CG07", "sequence"]
 
 {- | The receipts a book renders: one per story of the book, each agreeing
 with the model, in book order; a missing or disagreeing story is refused,
@@ -61,12 +62,16 @@ renderBook requirements receipts =
                 (Context "comparison" "holder wallet")
             )
         <> "## A request that is never folded\n\n"
-        <> "A request can leave the queue without a fold. Once it may no longer be folded, a folder rejects it and must refund its owner the deposit, keeping the tip; while it is still retractable, its owner retracts it and must get back everything it held, deposit and tip, through an output whose inline datum is the retracted request's own output reference. Each refund paid one lovelace short or to another address, a return bound to another request, and a retraction spending the registry's state beside it must be refused, each beside the untampered exit of the same request.\n\n"
+        <> "A request can leave the queue without a fold. After its owner's retraction window has closed, a folder rejects it and must refund its owner the deposit, keeping the tip; while it is still retractable, its owner retracts it and must get back everything it held, deposit and tip, through an output whose inline datum is the retracted request's own output reference. Each refund paid one lovelace short or to another address, a return bound to another request, and a retraction spending the registry's state beside it must be refused, each beside the untampered exit of the same request.\n\n"
         <> renderLive
             ( Exit.story
                 (Context "rejection" "holder wallet")
                 (Context "retraction" "holder wallet")
             )
+        <> "## A folder rejects a request before its retraction deadline\n\n"
+        <> "A reject carries no admission: the model accepts it in every window, and the chain does too. Two insertion requests from the same owner are booked together in a registry of their own. The first is rejected while it can still be folded, the second while its owner can still retract it. In each window a reject refunding the owner one lovelace short, and one refunding another key, must be refused by both, leaving the request pending; the untampered reject of the same request must be accepted by both, refund the owner the deposit and leave the registry state as it was. Each reject's validity interval is checked to lie inside the window its step names before it is submitted.\n\n"
+        <> renderLive
+            (EarlyReject.story (Context "early rejection" "holder wallet"))
         <> "## Retract only inside phase 2\n\n"
         <> "Two insertion requests from the same owner are booked in one registry before either exits. The first is retracted before phase 2, then inside it; the second is retracted after its window closes. Both outside-window retractions must be refused, and the in-window retraction must be accepted. The second request shares the first's accepting control: once its own window is over it cannot have an in-window retry. The registry allows thirty seconds for processing and thirty more for retraction; waits follow each request's recorded submission time.\n\n"
         <> renderLive
@@ -75,7 +80,7 @@ renderBook requirements receipts =
         <> "This program uses the same live interpreter for each listed request. Each step records its own model and chain outcome; any unsupported result carries the reason observed at the booking or fold boundary.\n\n"
         <> renderLive (Sequence.story (Context "sequence" "holder wallet"))
         <> "## What these runs do not establish\n\n"
-        <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none for a fold and the owner for a retraction, and the comparison reads them from the submitted transaction. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. The model admits a retraction only when the pending request inserts a key or reads a terminal one, its owner is among the transaction's required signers, and its validity interval lies inside phase 2. The interval starts no earlier than submission plus the processing time; its excluded upper bound may reach, but not pass, the end of the retraction time that follows. The model represents only finite validity bounds. Open validity intervals remain a named gap: the Aiken tests establish their not-phase2 refusal, but no live model comparison can represent them. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
+        <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none for a fold and the owner for a retraction, and the comparison reads them from the submitted transaction. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. The model admits a retraction only when the pending request inserts a key or reads a terminal one, its owner is among the transaction's required signers, and its validity interval lies inside phase 2. The interval starts no earlier than submission plus the processing time; its excluded upper bound may reach, but not pass, the end of the retraction time that follows. The model represents only finite validity bounds. Open validity intervals remain a named gap: the Aiken tests establish their not-phase2 refusal, but no live model comparison can represent them. The early rejections are compared in the processing window and the retraction window of one registry; a fold of an update in the retraction window is not compared there, because the validator refuses it while the model admits it, a separate tracked discrepancy. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
         <> refusalLimits
         <> "## Requirements inventory\n\n"
         <> "The descriptions and planned statuses below are preserved from the committed inventory. The transaction evidence above belongs to this particular run; it does not rewrite planned statuses or discharge unrelated requirements.\n\n"
@@ -121,6 +126,10 @@ renderBook requirements receipts =
                             <> outcomeCounts steps
                             <> concatMap refusedStep steps
                             <> admissionEvidence steps
+                    "CG24" ->
+                        "Early rejection compared "
+                            <> outcomeCounts steps
+                            <> concatMap refusedStep steps
                     "CG07" ->
                         "Retraction window compared "
                             <> outcomeCounts steps

@@ -31,7 +31,7 @@ no fold requires a signer, and that promise is about the SUBMITTED
 transaction's required-signer field — so the row reads that field of the
 built body, not only the duties the fold accumulated.
 -}
-module Singular.Registry.TxBuilder.BurnSourceSpec (spec) where
+module Singular.Registry.TxBuilder.BurnSourceSpec (spec, builtFoldUnder) where
 
 import Data.Bifunctor (second)
 import Data.ByteString (ByteString)
@@ -44,7 +44,7 @@ import Test.Hspec
 
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Alonzo.TxBody (reqSignerHashesTxBodyL)
-import Cardano.Ledger.Api.PParams (emptyPParams)
+import Cardano.Ledger.Api.PParams (PParams, emptyPParams)
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( inputsTxBodyL
@@ -110,7 +110,8 @@ import UntypedPlutusCore.DeBruijn ()
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId (..))
-import Singular.Registry.Provider (Provider (..))
+import Singular.Registry.Provider (View (..))
+import Singular.Registry.StubView (stubView)
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.ConnectedFold
@@ -1031,14 +1032,13 @@ anywhere else. Evaluation is stubbed to succeed with no budgets and
 slot conversion to a constant — the row reads the BODY the builder
 assembled, which never depends on either stub's value.
 -}
-foldProvider :: Provider IO
+foldProvider :: View IO
 foldProvider =
-    Provider
-        { queryUTxOs = pure . utxosAt
-        , queryProtocolParams = pure emptyPParams
-        , evaluateTx = \_ -> pure Map.empty
-        , posixMsToSlot = \_ -> pure (SlotNo 100)
-        , posixMsCeilSlot = \_ -> pure (SlotNo 100)
+    stubView
+        { viewUTxOsAt = pure . utxosAt
+        , viewEvaluateTx = \_ -> pure Map.empty
+        , viewPosixMsToSlot = \_ -> pure (SlotNo 100)
+        , viewPosixMsCeilSlot = \_ -> pure (SlotNo 100)
         }
 
 -- | What the fold's own queries see at each address.
@@ -1049,6 +1049,23 @@ utxosAt a
         [requestFor edgeInsertAbsent]
     | otherwise =
         [(feeIn, mkBasicTxOut a (MaryValue (Coin 100000000) mempty))]
+
+{- | The fold this stub registry builds through the public
+`updateTokenWithDuties` when its view holds these protocol parameters: the
+fold a command builds under its own view, after its booking confirmed (#300's
+outlay across the booking and the fold).
+-}
+builtFoldUnder :: PParams ConwayEra -> IO ConwayTx
+builtFoldUnder pp = do
+    tm <- mkPureTrieManager
+    createTrie tm foldTokenId
+    updateTokenWithDuties
+        builtCfg
+        foldProvider{viewProtocolParams = pp}
+        tm
+        foldTokenId
+        payer
+        witnessScripts
 
 {- | The fold's promise that no signer is required is a promise about
 the transaction a caller SUBMITS, so the row drives the public
@@ -1224,11 +1241,11 @@ liveOutput =
         & datumTxOutL .~ mkInlineDatum (envelopeToData openEnvelope)
     )
 
--- | A stub provider whose one pending request is `request`.
-providerWith :: (TxIn, TxOut ConwayEra) -> Provider IO
+-- | A stub view whose one pending request is `request`.
+providerWith :: (TxIn, TxOut ConwayEra) -> View IO
 providerWith request =
     foldProvider
-        { queryUTxOs = \a ->
+        { viewUTxOsAt = \a ->
             pure $
                 if a == requestAddrFromCfg builtCfg foldTokenId Testnet
                     then [request]

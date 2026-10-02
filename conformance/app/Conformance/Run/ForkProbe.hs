@@ -7,12 +7,12 @@ module Conformance.Run.ForkProbe (runForkProbe, runForkProbeSession) where
 
 import Conformance.Run.Cage (ensureStateRefWith)
 import Conformance.Run.Environment
+import Conformance.Run.Node (checkHarnessGenesis, withHarnessNode)
 import Conformance.Run.Observe
 import Conformance.Run.Submit
 import Conformance.Run.Wallet
 import Control.Monad (void)
 
-import Control.Concurrent.Async (async, cancel)
 import Control.Exception
     ( SomeException
     , displayException
@@ -22,27 +22,14 @@ import Data.ByteString.Short qualified as SBS
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 
-import Cardano.Node.Client.N2C.Connection
-    ( newLSQChannel
-    , newLTxSChannel
-    , runNodeClient
-    )
-import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
-import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Node
-    ( adaptProvider
-    , awaitConnection
-    , boundedSubmitter
+    ( Capabilities (..)
     , checkFunding
     , defaultFundingFloor
-    , devnetGenesis
-    , followedProvider
     , funderAddr
-    , sessionMagic
-    , submissionBound
-    , withNodeSocket
     )
+import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
@@ -77,35 +64,24 @@ runForkProbe :: IO ()
 runForkProbe = do
     blueprintPath <- requireEnv "REGISTRY_BLUEPRINT"
     (stateBytes, requestBytes, namingCodes) <- loadCodes blueprintPath
-    devnetGenesis >>= mapM_ checkGenesis
+    checkHarnessGenesis
     nodeVer <- readNodeVersion
     emit "node" nodeVer
     base <- requireBase
     emit "base" base
     bracketTmpDir $ do
-        withNodeSocket $ \sock ->
-            runForkProbeSession stateBytes requestBytes namingCodes sock
+        withHarnessNode $
+            runForkProbeSession stateBytes requestBytes namingCodes
 
 runForkProbeSession
     :: SBS.ShortByteString
     -> SBS.ShortByteString
     -> NamingCodes
-    -> FilePath
+    -> Capabilities
     -> IO ()
-runForkProbeSession stateBytes requestBytes namingCodes sock = do
-    lsqCh <- newLSQChannel 16
-    ltxsCh <- newLTxSChannel 16
-    nodeThread <-
-        async $
-            runNodeClient
-                sessionMagic
-                sock
-                lsqCh
-                ltxsCh
-    let nodeProv = adaptProvider (mkN2CProvider lsqCh)
-    awaitConnection sessionMagic sock nodeThread nodeProv
-    let submit = boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
-    prov <- followedProvider nodeProv submit
+runForkProbeSession stateBytes requestBytes namingCodes caps = do
+    let prov = capReads caps
+        submit = caps
     checkFunding prov funderAddr defaultFundingFloor
     tm <- mkPureTrieManager
     -- Boots by reference: publish the state validator before the seed
@@ -113,7 +89,8 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
     ensureStateRefWith prov submit stateBytes
     (seed, _) <- largestWalletUtxo prov
     let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seed)
-    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+    unsignedBoot <-
+        Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
     signedBoot <- submitWithGenesis submit unsignedBoot
     tid <- extractTokenId cfg signedBoot
     createTrie tm tid
@@ -156,10 +133,11 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
             tid
             keyK
             edgeUpdateActive
-    ctx <- RegistryEdges.registryContextFor cfg namingCodes prov refs
     probeResult <-
-        try @SomeException
-            (updateTokenWithDuties cfg prov tm tid genesisAddr ctx)
+        try @SomeException $
+            Cage.withView prov $ \v -> do
+                ctx <- RegistryEdges.registryContextFor cfg namingCodes v refs
+                updateTokenWithDuties cfg v tm tid genesisAddr ctx
     case probeResult of
         Left err -> do
             emit "verdict" "REFUSED as predicted"
@@ -178,7 +156,6 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
             emit
                 "complete"
                 "probe done: inclusion-path Fork ACCEPTED (falsification)"
-    cancel nodeThread
   where
     insertProbe tmInner cfgInner provInner submitInner tidInner refs key = do
         _ <-
@@ -191,16 +168,9 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
                 tidInner
                 key
                 edgeInsertAbsent
-        ctx <-
-            RegistryEdges.registryContextFor cfgInner namingCodes provInner refs
-        unsignedFold <-
-            updateTokenWithDuties
-                cfgInner
-                provInner
-                tmInner
-                tidInner
-                genesisAddr
-                ctx
+        unsignedFold <- Cage.withView provInner $ \v -> do
+            ctx <- RegistryEdges.registryContextFor cfgInner namingCodes v refs
+            updateTokenWithDuties cfgInner v tmInner tidInner genesisAddr ctx
         signedFold <- submitWithGenesis submitInner unsignedFold
         _ <- withTrie tmInner tidInner $ \t ->
             void (walkEdge t key edgeInsertAbsent)

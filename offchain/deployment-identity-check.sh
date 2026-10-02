@@ -17,6 +17,51 @@ trap cleanup EXIT
 registry="$(nix build --quiet --no-link --print-out-paths "$repo/onchain#plutus-blueprint")"
 naming="$(nix build --quiet --no-link --print-out-paths "$repo/naming-onchain#plutus-blueprint")"
 export REGISTRY_BLUEPRINT="$registry" NAMING_BLUEPRINT="$naming"
+
+# The naming scripts pin two hashes in their source: the registry's state
+# script (naming.ak `mpfs_state_hash`, used by the application and the
+# retirement custody) and the retirement custody's (application.ak
+# `retirement_custody_hash`). The naming manifest check compares each script
+# with its own build only, so a pin left behind by a registry change still
+# builds and still matches. Read both hashes from the blueprints just built
+# and require each, byte-aligned, in the compiled code that pins it, before
+# any devnet starts.
+naming_identity_problems() {
+  jq -r -n --slurpfile reg "$1" --slurpfile nam "$2" '
+    def hash($bp; $t): [$bp.validators[] | select(.title == $t) | .hash] | first;
+    def code($bp; $t): [$bp.validators[] | select(.title == $t) | .compiledCode] | first;
+    def carries($c; $h):
+      $c != null and $h != null
+      and ([$c | indices($h)[] | select(. % 2 == 0)] | length > 0);
+    hash($reg[0]; "state.state.spend") as $state
+    | hash($nam[0]; "retirement_custody.retirement_custody.spend") as $custody
+    | code($nam[0]; "application.application.spend") as $app
+    | code($nam[0]; "retirement_custody.retirement_custody.spend") as $held
+    | (if $state == null then "the registry blueprint has no state.state.spend" else empty end),
+      (if $custody == null then "the naming blueprint has no retirement_custody.retirement_custody.spend" else empty end),
+      (if carries($app; $state) then empty else "application.application.spend does not carry the registry state hash \($state)" end),
+      (if carries($held; $state) then empty else "retirement_custody.retirement_custody.spend does not carry the registry state hash \($state)" end),
+      (if carries($app; $custody) then empty else "application.application.spend does not carry the retirement custody hash \($custody)" end)
+  '
+}
+# Control: against a registry whose state hash is another, the comparison
+# must refuse, or it guards nothing.
+jq '.validators |= map(if .title == "state.state.spend" then .hash = ("00" * 28) else . end)' \
+  "$registry" >"$work/other-registry.json"
+if [ -z "$(naming_identity_problems "$work/other-registry.json" "$naming")" ]; then
+  echo 'FAIL: naming identity: the comparison accepted a registry with another state hash' >&2
+  exit 1
+fi
+if ! problems="$(naming_identity_problems "$registry" "$naming")"; then
+  echo 'FAIL: naming identity: the blueprints could not be read' >&2
+  exit 1
+fi
+if [ -n "$problems" ]; then
+  while IFS= read -r p; do echo "FAIL: naming identity: $p" >&2; done <<<"$problems"
+  exit 1
+fi
+echo "naming identity: OK — the application and the retirement custody carry state $(jq -r '.validators[] | select(.title == "state.state.spend") | .hash' "$registry"); the application carries retirement custody $(jq -r '.validators[] | select(.title == "retirement_custody.retirement_custody.spend") | .hash' "$naming")"
+
 built="$(nix build --quiet --no-link --print-out-paths "$offchain#devnet" "$offchain#deployment")"
 # The same wrapped command `nix run .#deployment` launches, invoked directly
 # for the checks below so they add no Nix start.

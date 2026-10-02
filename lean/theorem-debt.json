@@ -250,5 +250,17 @@
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "c7ed5cabec1c955cf43772cdabcb547307d9c7023fc45dac90d347f45b61bcc7"
+  },
+  {
+    "name": "Singular.Statements.fold_batch_of_one_is_step",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "09dc61dcbe8e7a4a68b170944bb42cdcf6ece9af9fc006af96135cfab1185f87"
+  },
+  {
+    "name": "Singular.Statements.reject_batch_of_one_is_reject",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "9f0e815f13a2ce1e41ecd3d19792aa741ade3187fb951fbce6b3fa4b87b1f42c"
   }
 ]

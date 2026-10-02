@@ -40,6 +40,7 @@ module Singular.CLI.Registry
     , pinsOf
     , partsOf
     , hexT
+    , parseEnterpriseAddress
 
       -- * Files
     , configPath
@@ -57,6 +58,8 @@ module Singular.CLI.Registry
     , checkWallet
     , checkPins
     , checkSeed
+    , seedHeld
+    , seedChecks
     , refuseExisting
     ) where
 
@@ -76,10 +79,16 @@ import GHC.Generics (Generic)
 import System.Directory (doesFileExist)
 import System.FilePath ((</>))
 
-import Cardano.Ledger.Address (Addr)
+import Cardano.Ledger.Address (Addr (..), decodeAddrEither)
 import Cardano.Ledger.Api.Tx.Out (TxOut)
-import Cardano.Ledger.BaseTypes (Network (Testnet))
+import Cardano.Ledger.BaseTypes (Network (..))
+import Cardano.Ledger.Credential
+    ( Credential (..)
+    , StakeReference (..)
+    )
 import Cardano.Ledger.TxIn (TxIn)
+import Codec.Binary.Bech32 qualified as Bech32
+import Control.Monad (when)
 
 import Singular.Application.OpenDatum.Script
     ( Application (..)
@@ -102,6 +111,7 @@ import Singular.Registry.Deployment
     , mirrorPathFor
     , renderAddrBytes
     , renderOutRef
+    , replaceDurably
     )
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.Node (bech32Address)
@@ -302,7 +312,11 @@ readLocalState :: FilePath -> IO LocalState
 readLocalState dir = readJsonFile "registry state" (statePath dir)
 
 writeLocalState :: FilePath -> LocalState -> IO ()
-writeLocalState dir = writeJsonFile (statePath dir)
+writeLocalState dir =
+    replaceDurably (statePath dir)
+        . BL.toStrict
+        . (<> "\n")
+        . encodePretty
 
 -- ---------------------------------------------------------
 -- Identity checks
@@ -315,6 +329,7 @@ data IdentityError
     | PinMismatch String Text Text
     | SeedNotInWallet Text
     | SeedNotAdaOnly Text
+    | NoFundingBesideSeed Text
     | RegistryExists FilePath
     | UnsupportedVersion Int
     deriving stock (Eq, Show)
@@ -346,6 +361,10 @@ renderIdentityError = \case
         "the seed "
             <> T.unpack seed
             <> " carries a token or a reference script; a seed must hold ada only"
+    NoFundingBesideSeed seed ->
+        "the seed "
+            <> T.unpack seed
+            <> " is the only ada-only output the wallet holds; the registry's first publication is paid from another one while the seed stays unspent, so fund the wallet with a second ada-only output first"
     RegistryExists dir ->
         dir
             <> " already holds a registry or its journal; create never \
@@ -384,16 +403,58 @@ checkPins conf given = mapM_ one fields
         , ("terminal", pinTerminal)
         ]
 
--- | The seed, as this wallet holds it: unspent, ada only.
-checkSeed
+{- | The seed, as this wallet holds it: unspent and ada only. This is all a
+registry's identity needs; creating it needs 'checkSeed'.
+-}
+seedHeld
     :: TxIn
     -> [(TxIn, TxOut ConwayEra)]
     -> Either IdentityError (TxIn, TxOut ConwayEra)
-checkSeed seed utxos = case [u | u@(i, _) <- utxos, i == seed] of
+seedHeld seed utxos = case [u | u@(i, _) <- utxos, i == seed] of
     [] -> Left (SeedNotInWallet (renderOutRef seed))
     (u@(_, out) : _)
         | adaOnlyOut out -> Right u
         | otherwise -> Left (SeedNotAdaOnly (renderOutRef seed))
+
+{- | The seed, as a create needs it: held ('seedHeld'), with another ada-only
+output beside it to pay the first publication from while the seed stays
+unspent.
+-}
+checkSeed
+    :: TxIn
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Either IdentityError (TxIn, TxOut ConwayEra)
+checkSeed seed utxos = do
+    u <- seedHeld seed utxos
+    if null [() | (i, o) <- utxos, i /= seed, adaOnlyOut o]
+        then Left (NoFundingBesideSeed (renderOutRef seed))
+        else Right u
+
+{- | The seed checks a create applies, and the receipt fields they add. A
+create about to submit needs the seed held with another ada-only output
+beside it ('checkSeed') and adds nothing. A preview needs only the seed held
+('seedHeld') and adds @createRefusal@: the refusal a create from this wallet
+would meet now, or null.
+-}
+seedChecks
+    :: Bool
+    -- ^ whether the create is about to submit
+    -> TxIn
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Either IdentityError [(Text, Aeson.Value)]
+seedChecks submitting seedIn utxos
+    | submitting = [] <$ checkSeed seedIn utxos
+    | otherwise = do
+        _ <- seedHeld seedIn utxos
+        pure
+            [
+                ( "createRefusal"
+                , toJSON
+                    ( either (Just . T.pack . renderIdentityError) (const Nothing) $
+                        checkSeed seedIn utxos
+                    )
+                )
+            ]
 
 -- | Refuse a directory that already holds any file of a registry.
 refuseExisting :: FilePath -> IO (Either IdentityError ())
@@ -409,3 +470,36 @@ refuseExisting dir = do
                 , dir </> "journal.jsonl"
                 ]
     pure (if present then Left (RegistryExists dir) else Right ())
+
+{- | A caller's enterprise address from its bech32 text: a payment key hash
+and no stake part, for the network the magic names. The address is public;
+nothing in it can sign.
+-}
+parseEnterpriseAddress :: Word32 -> String -> Either String Addr
+parseEnterpriseAddress magic text = do
+    (hrp, dat) <-
+        either
+            (\e -> Left ("--wallet-address is not bech32: " <> show e))
+            Right
+            (Bech32.decodeLenient (T.pack text))
+    let expected = if magic == 764_824_073 then "addr" else "addr_test"
+    when (Bech32.humanReadablePartToText hrp /= expected) $
+        Left
+            ( "--wallet-address is for another network: expected "
+                <> T.unpack expected
+                <> ", found "
+                <> T.unpack (Bech32.humanReadablePartToText hrp)
+            )
+    raw <-
+        maybe
+            (Left "--wallet-address carries no address bytes")
+            Right
+            (Bech32.dataPartToBytes dat)
+    addr <- decodeAddrEither raw
+    case addr of
+        Addr net (KeyHashObj _) StakeRefNull
+            | net == (if magic == 764_824_073 then Mainnet else Testnet) ->
+                Right addr
+        _ ->
+            Left
+                "--wallet-address must be an enterprise address: a payment key hash and no stake part"

@@ -29,7 +29,6 @@ import Data.Text qualified as T
 import System.Directory (doesFileExist)
 
 import Cardano.Ledger.Core (hashScript)
-import Ouroboros.Network.Magic (NetworkMagic (..))
 
 import Deployment.Compiled
     ( Compiled (..)
@@ -56,11 +55,12 @@ import Singular.Registry.Deployment
     )
 import Singular.Registry.Ledger (Coin (..))
 import Singular.Registry.Node
-    ( NodeSession (..)
+    ( Capabilities (..)
     , bech32Address
     , funderAddr
-    , withNode
+    , withCapabilities
     )
+import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , mkRequestScript
@@ -80,31 +80,29 @@ deploy args = do
         } <-
         deployOptions args
     unbound <- loadCompiled
-    withNode $ \sess -> do
-        refuseIfAlreadyDeployed sess out unbound
-        let prov = nsProvider sess
-            submit = nsSubmitter sess
-            pp = nsPParams sess
+    withCapabilities $ \caps -> do
+        let prov = capReads caps
+        refuseIfAlreadyDeployed prov out unbound
         txs <- newIORef []
         -- A registry boots only by reference: the state validator is
         -- published before the boot, which resolves it from there.
         (stateIn, _) <-
             publishOne
                 prov
-                submit
-                pp
+                caps
                 txs
                 (scriptFromBytes "state" (cStateBytes unbound))
         (cfg, tok, bootTx, seedIn, compiled) <-
-            bootRegistry prov submit unbound txs processTime retractTime
-        registerCredentials sess prov submit compiled txs
-        refs <- publishAll prov submit pp cfg tok compiled stateIn txs
+            bootRegistry prov caps unbound txs processTime retractTime
+        registerCredentials prov caps compiled txs
+        refs <- publishAll prov caps cfg tok compiled stateIn txs
         bootstrap <- reverse <$> readIORef txs
+        magic <- Cage.withView prov (pure . Cage.cpNetwork . Cage.viewPoint)
         let dep =
                 Deployment
                     { depRelease = release
                     , depLeanRevision = leanRev
-                    , depNetworkMagic = let NetworkMagic m = nsMagic sess in m
+                    , depNetworkMagic = magic
                     , depSeedOutRef = renderOutRef seedIn
                     , depCageToken = tokenText tok
                     , depStatePolicy =
@@ -123,7 +121,7 @@ deploy args = do
                     }
         writeDeployment out dep
         emit "manifest" ("wrote " <> out)
-        claims <- verifyRegisteredDeployment sess dep compiled
+        claims <- verifyRegisteredDeployment prov dep compiled
         mapM_ (emit "verified") claims
         emit
             "complete"
@@ -142,14 +140,18 @@ with, say so and stop, rather than booting a second registry that
 nothing recorded will ever point at.
 -}
 refuseIfAlreadyDeployed
-    :: NodeSession -> FilePath -> Compiled -> IO ()
-refuseIfAlreadyDeployed sess out unbound = do
+    :: Cage.Provider IO -> FilePath -> Compiled -> IO ()
+refuseIfAlreadyDeployed prov out unbound = do
     there <- doesFileExist out
     when there $ do
         dep <- readDeployment out
         compiled <- bindDeployment unbound dep
         live <-
-            (True <$ verifyDeployment (nsProvider sess) dep (partsOf compiled))
+            ( True
+                <$ Cage.withView
+                    prov
+                    (\v -> verifyDeployment v dep (partsOf compiled))
+            )
                 `catch` \(_ :: SomeException) -> pure False
         if live
             then

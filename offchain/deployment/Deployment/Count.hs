@@ -35,7 +35,11 @@ import Deployment.Compiled (bindDeployment, loadCompiled, partsOf)
 import Deployment.Narration (failWith)
 import Deployment.Options (CountOptions (..), countOptions)
 import Singular.Registry.Deployment (cageConfigFor, readDeployment)
-import Singular.Registry.Node (NodeSession (..), funderAddr, withNode)
+import Singular.Registry.Node
+    ( Capabilities (..)
+    , funderAddr
+    , withCapabilities
+    )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
@@ -49,11 +53,12 @@ count args = do
     dep <- readDeployment (countManifest opts)
     compiled <- loadCompiled >>= (`bindDeployment` dep)
     cfg <- either failWith pure (cageConfigFor dep (partsOf compiled))
-    withNode $ \sess -> do
-        let prov = nsProvider sess
+    withCapabilities $ \caps -> do
+        let prov = capReads caps
         case countWhat opts of
             "state" -> do
-                utxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
+                utxos <-
+                    Cage.withView prov (`Cage.viewUTxOsAt` cageAddrFromCfg cfg Testnet)
                 print (length [() | (_, o) <- utxos, carriesPolicy cfg o])
             "reference" -> do
                 addresses <- case countReferenceAddress opts of
@@ -62,7 +67,10 @@ count args = do
                         raw <- either failWith pure (B16.decode (BC.pack encoded))
                         addr <- either (failWith . show) pure (decodeAddrEither raw)
                         pure (Set.toList (Set.fromList [funderAddr, addr]))
-                utxos <- concat <$> mapM (Cage.queryUTxOs prov) addresses
+                utxos <-
+                    Cage.withView
+                        prov
+                        (\v -> concat <$> mapM (Cage.viewUTxOsAt v) addresses)
                 print (length [() | (_, o) <- utxos, hasReferenceScript o])
             what ->
                 failWith ("count: --what must be state or reference, not " <> what)

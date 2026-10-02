@@ -58,19 +58,20 @@ import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Node.Client.E2E.Setup
     ( Ed25519DSIGN
     , SignKeyDSIGN
-    , addKeyWitness
     , enterpriseAddr
     , keyHashFromSignKey
     , mkSignKey
-    )
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
     )
 import Singular.Registry.Ledger
     ( Coin (..)
     , ConwayEra
     , TxOut
+    )
+import Singular.Registry.Node
+    ( Capabilities (..)
+    , SubmitResult (..)
+    , signTx
+    , signedTx
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Internal (addrFromKeyHashBytes)
@@ -87,7 +88,7 @@ dust after a session of folds.
 -}
 largestWalletUtxo :: Cage.Provider IO -> IO (TxIn, TxOut ConwayEra)
 largestWalletUtxo prov = do
-    utxos <- Cage.queryUTxOs prov genesisAddr
+    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
     -- #157: a spent approval is not burned at the fold, so it returns to
     -- the funder and rides in the wallet. Fee and collateral inputs are
     -- taken from an ada-only output, which is what the ledger requires of
@@ -135,7 +136,7 @@ fundWallet env addr amount = do
                             (MaryValue (Coin change) mempty)
                         ]
                 & feeTxBodyL .~ Coin fee
-    _ <- submitWithGenesis (envSubmit env) (mkBasicTx body)
+    _ <- submitWithGenesis (envCaps env) (mkBasicTx body)
     pure ()
 
 {- | A small dedicated collateral pot for one refusing transaction:
@@ -168,7 +169,7 @@ collateralPotWithChange env = do
                             (MaryValue (Coin change) mempty)
                         ]
                 & feeTxBodyL .~ Coin fee
-    tx <- submitWithGenesis (envSubmit env) (mkBasicTx body)
+    tx <- submitWithGenesis (envCaps env) (mkBasicTx body)
     -- The fresh change output is the next fold's exact ada-only funder.
     -- Carry its outref directly: a node query immediately after the split
     -- can still expose the consumed predecessor.
@@ -176,7 +177,7 @@ collateralPotWithChange env = do
         changeIn = TxIn (txIdTx tx) (TxIx 1)
     let awaitVisible 0 = failWith "collateral split is not yet visible in wallet UTxOs"
         awaitVisible n = do
-            utxos <- Cage.queryUTxOs prov genesisAddr
+            utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
             if all (`elem` map fst utxos) [potIn, changeIn]
                 then pure ()
                 else threadDelay 1_000_000 >> awaitVisible (n - 1)
@@ -192,22 +193,23 @@ collateralPotWithChange env = do
         )
 
 consolidateFunding :: Env -> IO ()
-consolidateFunding env = consolidateWallet (envProv env) (envSubmit env)
+consolidateFunding env = consolidateWallet (envProv env) (envCaps env)
 
 {- | The sweep, before there is an `Env` to carry: a CA session designates
 its canonical seed during construction, and a sweep after that would
 spend the very output CA01 boots from.
 -}
-consolidateWallet :: Cage.Provider IO -> Submitter IO -> IO ()
+consolidateWallet :: Cage.Provider IO -> Capabilities -> IO ()
 consolidateWallet prov submit = do
-    utxos <- Cage.queryUTxOs prov genesisAddr
+    -- One transaction, one view: the wallet's outputs and the parameters.
+    (utxos, pp) <- Cage.withView prov $ \v ->
+        (,Cage.viewProtocolParams v) <$> Cage.viewUTxOsAt v genesisAddr
     let spendable = filter (not . carriesRefScript . snd) utxos
         dirty = filter (not . adaOnlyOut . snd) spendable
         clean = filter (adaOnlyOut . snd) spendable
     if length spendable < 2 && null dirty
         then pure ()
         else do
-            pp <- Cage.queryProtocolParams prov
             let total = sum [outCoin o | (_, o) <- spendable]
                 assets =
                     foldr
@@ -233,14 +235,15 @@ consolidateWallet prov submit = do
                         & inputsTxBodyL .~ Set.fromList (map fst spendable)
                         & outputsTxBodyL .~ StrictSeq.fromList outs
                         & feeTxBodyL .~ Coin fee
-                signed = addKeyWitness genesisSignKey (mkBasicTx body)
+                signedWitnessed = signTx genesisSignKey (mkBasicTx body)
+                signed = signedTx signedWitnessed
             require
                 ("consolidateFunding: wallet too small: " <> show fundingAda)
                 (fundingAda > 5_000_000)
-            result <- submitTxResilient submit signed
+            result <- submitTxResilient (capSubmit submit) signedWitnessed
             case result of
                 Submitted _ -> do
-                    awaitTx signed
+                    capConfirm submit signed
                     emit
                         "funding"
                         ( show (length clean)
@@ -295,10 +298,11 @@ carveSeed env = do
                         , mkBasicTxOut genesisAddr (MaryValue (Coin change) mempty)
                         ]
                 & feeTxBodyL .~ Coin fee
-        signed = addKeyWitness genesisSignKey (mkBasicTx body)
-    result <- submitTxResilient (envSubmit env) signed
+        signedWitnessed = signTx genesisSignKey (mkBasicTx body)
+        signed = signedTx signedWitnessed
+    result <- submitTxResilient (envSubmit env) signedWitnessed
     case result of
-        Submitted _ -> awaitTx signed
+        Submitted _ -> confirmTx env signed
         Rejected reason ->
             failWith
                 ( "carveSeed refused: "

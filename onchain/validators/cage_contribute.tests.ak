@@ -1,6 +1,6 @@
 use aiken/builtin
 use aiken/fuzz
-use aiken/interval
+use aiken/interval.{Interval}
 use aiken/merkle_patricia_forestry.{empty, root}
 use aiken/merkle_patricia_forestry as mpf
 use cage_fixtures.{
@@ -138,23 +138,147 @@ test contribute_rejects_foreign_policy_state_same_asset() fail {
   )
 }
 
-/// Contribute is forbidden in Phase 2 (the retract window).
-/// During Phase 2, only the requester can act on their request (via Retract).
-test contribute_in_phase2() fail {
+// ----------------------------------------------------------------------------
+// The request's matching action (#320, data model D-02)
+//
+// A request spent by `Contribute` is admitted inside the processing window,
+// or in any window when the state's fold pairs it with `Rejected`: the fold
+// pairs actions with the transaction's requests of this registry in input
+// order. Each refusal below has an accepting twin that differs only in the
+// validity range or in the order of the same actions.
+// ----------------------------------------------------------------------------
+
+/// Spend `self` by `Contribute` beside a `Modify` of the state carrying
+/// `actions`, over `inputs`, valid over `range`.
+fn contribute(
+  self: OutputReference,
+  inputs: List<Input>,
+  actions: List<Data>,
+  range: Interval<Int>,
+) -> Bool {
   spend(
     Some(aRequest),
     Contribute(testStateRef),
-    testRequestRef,
+    self,
     Transaction {
       ..transaction.placeholder,
-      validity_range: phase2Range,
-      inputs: [update, request],
+      validity_range: range,
+      inputs,
+      redeemers: [stateSpendRedeemerData(modifyRedeemerData(actions))],
     },
   )
 }
 
-/// Contribute IS allowed in Phase 3 (rejectable window).
-/// This lets the oracle process late requests alongside a Reject operation.
+const secondRequestRef =
+  OutputReference { transaction_id: "3234567890abcdef", output_index: 0 }
+
+/// The state, then two requests of this registry in input order.
+fn twoRequests() -> List<Input> {
+  [update, request, Input { ..request, output_reference: secondRequestRef }]
+}
+
+test contribute_rejected_in_the_processing_window_accepts() {
+  contribute(
+    testRequestRef,
+    [update, request],
+    [rejectedActionData()],
+    phase1Range,
+  )
+}
+
+test contribute_rejected_in_the_retraction_window_accepts() {
+  contribute(
+    testRequestRef,
+    [update, request],
+    [rejectedActionData()],
+    phase2Range,
+  )
+}
+
+test contribute_rejected_with_no_validity_bounds_accepts() {
+  contribute(
+    testRequestRef,
+    [update, request],
+    [rejectedActionData()],
+    interval.everything,
+  )
+}
+
+/// The twin of the two refusals below.
+test contribute_update_in_the_processing_window_accepts() {
+  contribute(
+    testRequestRef,
+    [update, request],
+    [updateActionData()],
+    phase1Range,
+  )
+}
+
+/// An update is folded in the processing window only: current validator
+/// behaviour, outside Lean (spec KR-01).
+test contribute_update_in_the_retraction_window_refuses() fail {
+  contribute(
+    testRequestRef,
+    [update, request],
+    [updateActionData()],
+    phase2Range,
+  )
+}
+
+test contribute_update_after_the_windows_refuses() fail {
+  contribute(
+    testRequestRef,
+    [update, request],
+    [updateActionData()],
+    phase3Range,
+  )
+}
+
+/// A request the fold pairs with no action is not admitted outside the
+/// processing window.
+test contribute_with_no_matching_action_refuses() fail {
+  contribute(testRequestRef, [update, request], [], phase2Range)
+}
+
+/// Two requests, an update then a reject: the second is the rejected one.
+test contribute_second_request_rejected_after_an_update_accepts() {
+  contribute(
+    secondRequestRef,
+    twoRequests(),
+    [updateActionData(), rejectedActionData()],
+    phase2Range,
+  )
+}
+
+test contribute_first_request_updated_before_a_reject_refuses() fail {
+  contribute(
+    testRequestRef,
+    twoRequests(),
+    [updateActionData(), rejectedActionData()],
+    phase2Range,
+  )
+}
+
+/// The same two actions in the other order: now the first is the rejected one.
+test contribute_first_request_rejected_before_an_update_accepts() {
+  contribute(
+    testRequestRef,
+    twoRequests(),
+    [rejectedActionData(), updateActionData()],
+    phase2Range,
+  )
+}
+
+test contribute_second_request_updated_after_a_reject_refuses() fail {
+  contribute(
+    secondRequestRef,
+    twoRequests(),
+    [rejectedActionData(), updateActionData()],
+    phase2Range,
+  )
+}
+
+/// A request rejected after the windows, as before the repair.
 test contribute_in_phase3() {
   spend(
     Some(aRequest),

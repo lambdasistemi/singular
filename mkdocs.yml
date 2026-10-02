@@ -21,7 +21,11 @@ nav:
   - Recovery and retirement: docs/recovery-retirement.md
   - Record value and recovery: docs/record-value.md
   - Run against your own preprod node: docs/consumer-onboarding.md
+  - Connecting singular to a node: docs/singular-node.md
+  - Download and verify a release: docs/verify-release.md
+  - Conformance evidence: docs/conformance-evidence.md
   - The preprod record: docs/preprod.md
+  - Demo 1 on preprod, what a reviewer checks: docs/demo1-preprod.md
   - Executable candidate:
       - Review guide: docs/design.md
       - Play the simulation: docs/simulation.md
@@ -41,6 +45,7 @@ nav:
   - Node module ownership: docs/offchain-node-ownership.md
   - Deployment record ownership: docs/offchain-deployment-owners.md
   - Registry command owners: docs/offchain-command-entrypoints.md
+  - Recovering a registry command: docs/cli-recovery.md
   - State validator owners: docs/onchain-validator-owners.md
   - Validator API reference: docs/onchain-api-reference.md
   - Off-chain API reference: docs/offchain-api-reference.md

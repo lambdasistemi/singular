@@ -131,7 +131,9 @@ retireStoryKey story = do
 activeHeldAt :: Registry -> CageConfig -> ByteString -> IO Integer
 activeHeldAt reg cfg key = do
     walletUtxos <-
-        Cage.queryUTxOs (sessProvider (regSession reg)) genesisAddr
+        Cage.withView
+            (sessProvider (regSession reg))
+            (`Cage.viewUTxOsAt` genesisAddr)
     let policy = policyIdFromPin (cfgActivePolicy cfg)
     pure $
         sum
@@ -150,7 +152,9 @@ quantity, read off the chain before the retirement spends it.
 activeSourceOf :: Registry -> CageConfig -> ByteString -> IO Value
 activeSourceOf reg cfg key = do
     walletUtxos <-
-        Cage.queryUTxOs (sessProvider (regSession reg)) genesisAddr
+        Cage.withView
+            (sessProvider (regSession reg))
+            (`Cage.viewUTxOsAt` genesisAddr)
     let policy = policyIdFromPin (cfgActivePolicy cfg)
         carriers =
             [ (txIn, q)

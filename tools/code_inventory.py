@@ -612,6 +612,32 @@ NONCODE_CLASSES: list[dict] = [
         "note": "release-please configuration",
     },
     {
+        "id": "node-confinement-allowlist",
+        "pattern": "tools/node-confinement.allow",
+        "note": "the modules allowed to name the node backend, one reason "
+        "each; read by tools/node_confinement_check.sh (issue #323)",
+    },
+    {
+        "id": "signed-tx-exports-allowlist",
+        "pattern": "tools/signed-tx-exports.allow",
+        "note": "the names Singular.Registry.Node.Submit may export; read by "
+        "tools/signed_tx_control.sh (issue #326)",
+    },
+    {
+        "id": "model-revision",
+        "pattern": "conformance/model-revision",
+        "note": "the application model commit the conformance bindings are "
+        "compiled against and the release archive states as MODEL-REVISION "
+        "(issue #326)",
+    },
+    {
+        "id": "contract-results",
+        "pattern": "conformance/evidence/page/contract/*.jsonl",
+        "note": "the backend contract suite's per-case results copied from "
+        "the CI contract-results artifact; the evidence page is computed "
+        "from them (issue #326)",
+    },
+    {
         "id": "formatter-config",
         "pattern": "fourmolu.yaml",
         "note": "the one house Fourmolu configuration (issue #278 S2), read "
@@ -934,7 +960,13 @@ def parse_manifests(root: Path) -> Manifests:
             raise InventoryError(
                 f"manifest failure: no hs-source-dirs parsed from {rel}"
             )
-    m.haskell_dirs |= {"offchain/naming/test", "offchain/naming/drift"}
+    m.haskell_dirs |= {
+        "offchain/naming/test",
+        "offchain/naming/drift",
+        # #326: the SignedTx forgery fixtures, type-checked by
+        # tools/signed_tx_control.sh outside any Cabal stanza.
+        "offchain/signed-tx-control",
+    }
     for d in sorted(m.haskell_dirs):
         if not (root / d).is_dir():
             raise InventoryError(

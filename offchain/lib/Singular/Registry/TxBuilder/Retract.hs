@@ -1,3 +1,5 @@
+{-# LANGUAGE NumericUnderscores #-}
+
 {- |
 Module      : Singular.Registry.TxBuilder.Retract
 Description : Retract request transaction
@@ -13,9 +15,8 @@ module Singular.Registry.TxBuilder.Retract
     , retractRequestAtTipImpl
     ) where
 
-import Data.List (sortOn)
+import Data.List (nub)
 import Data.Map.Strict qualified as Map
-import Data.Ord (Down (..))
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Lens.Micro ((&), (.~), (^.))
@@ -72,7 +73,8 @@ import Singular.Registry.Ledger
     ( ConwayTxBody
     , TokenId
     )
-import Singular.Registry.Provider (Provider (..))
+import Singular.Registry.Provider (View (..))
+import Singular.Registry.TxBuilder.Edges (selectFunding)
 import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Types
     ( CageDatum (..)
@@ -90,7 +92,7 @@ Wallet funding pays fees separately. Requires Phase 2 validity.
 -}
 retractRequestImpl
     :: CageConfig
-    -> Provider IO
+    -> View IO
     -> TokenId
     -- ^ Token the request belongs to
     -> TxIn
@@ -106,18 +108,18 @@ staying inside the request's unchanged phase-2 window.
 retractRequestAtTipImpl
     :: SlotNo
     -> CageConfig
-    -> Provider IO
+    -> View IO
     -> TokenId
     -> TxIn
     -> Addr
     -> IO ConwayTx
-retractRequestAtTipImpl tip cfg prov tid reqTxIn addr = do
+retractRequestAtTipImpl tip cfg view tid reqTxIn addr = do
     let reqAddr =
             requestAddrFromCfg cfg tid (network cfg)
         stateAddr =
             cageAddrFromCfg cfg (network cfg)
-    requestUtxos <- queryUTxOs prov reqAddr
-    stateUtxos <- queryUTxOs prov stateAddr
+    requestUtxos <- viewUTxOsAt view reqAddr
+    stateUtxos <- viewUTxOsAt view stateAddr
     let reqUtxo =
             findUtxoByTxIn reqTxIn requestUtxos
     reqUtxoPair <- case reqUtxo of
@@ -139,13 +141,13 @@ retractRequestAtTipImpl tip cfg prov tid reqTxIn addr = do
                     \not found"
             Just x -> pure x
     let (stateIn, stateOut) = stateUtxo
-    pp <- queryProtocolParams prov
-    walletUtxos <- queryUTxOs prov addr
-    feeUtxo <- case sortOn
-        (Down . (^. coinTxOutL) . snd)
-        walletUtxos of
-        [] -> error "retractRequest: no UTxOs"
-        (u : _) -> pure u
+    let pp = viewProtocolParams view
+    walletUtxos <- viewUTxOsAt view addr
+    -- The funding output is also the collateral, so it must hold ada and
+    -- nothing else, and must not be a published reference script.
+    feeUtxo <- case selectFunding Nothing walletUtxos of
+        Left why -> error ("retractRequest: " <> why)
+        Right u -> pure u
     let reqDatum = case extractCageDatum reqOut of
             Just (RequestDatum r) -> r
             _ ->
@@ -172,9 +174,22 @@ retractRequestAtTipImpl tip cfg prov tid reqTxIn addr = do
     let phase2Start = submAt + procTime
         phase2End = submAt + procTime + retrTime
     phase2Slot <-
-        posixMsCeilSlot prov phase2Start
+        viewPosixMsCeilSlot view phase2Start
+    -- The window's end may lie past what the node can translate to a slot
+    -- (its horizon). A validity upper bound anywhere inside the window is as
+    -- correct as its end, so a nearer bound stands in: the window's end first,
+    -- then thirty, ten and three seconds from now, never past the end.
+    nowMs <- currentPosixMs
     SlotNo s <-
-        posixMsToSlot prov phase2End
+        tryUpperSlots
+            view
+            ( nub
+                [ phase2End
+                , min phase2End (nowMs + 30_000)
+                , min phase2End (nowMs + 10_000)
+                , min phase2End (nowMs + 3_000)
+                ]
+            )
     let lowerSlot = max tip phase2Slot
         upperSlot = SlotNo (max 0 (s - 1))
         script = mkRequestScript cfg tid
@@ -233,7 +248,7 @@ retractRequestAtTipImpl tip cfg prov tid reqTxIn addr = do
                 & witsTxL . rdmrsTxWitsL
                     .~ redeemers
     evaluateAndBalance
-        prov
+        view
         pp
         [feeUtxo, reqUtxoPair]
         addr

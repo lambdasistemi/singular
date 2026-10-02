@@ -30,6 +30,7 @@ module Singular.Registry.Node.Indexer
 
       -- * Provider adaptation
     , followedProvider
+    , originProvider
     , adaptProvider
 
       -- * Funding-read guard
@@ -47,9 +48,9 @@ import Control.Concurrent.Async (link)
 import Control.Exception (bracket_)
 import Control.Monad (unless, void, when)
 import Control.Tracer (nullTracer)
-import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Short qualified as SBS
+import Data.Foldable (for_)
 import Data.IORef
     ( IORef
     , atomicModifyIORef'
@@ -57,7 +58,6 @@ import Data.IORef
     , readIORef
     , writeIORef
     )
-import Data.Map.Strict qualified as Map
 import Data.Maybe (isNothing)
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
@@ -70,10 +70,10 @@ import Ouroboros.Consensus.HardFork.Combinator.AcrossEras
     ( OneEraHash (..)
     )
 import Ouroboros.Network.Block qualified as Chain
-import Ouroboros.Network.Magic (NetworkMagic)
+import Ouroboros.Network.Magic (NetworkMagic (..))
 
-import Cardano.Crypto.Hash (hashFromBytes, hashToBytes)
-import Cardano.Ledger.Address (Addr, serialiseAddr)
+import Cardano.Crypto.Hash (hashToBytes)
+import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx)
 import Cardano.Ledger.Api.Tx.Body
     ( feeTxBodyL
@@ -81,12 +81,10 @@ import Cardano.Ledger.Api.Tx.Body
     , mkBasicTxBody
     , outputsTxBodyL
     )
-import Cardano.Ledger.Api.Tx.Out (TxOut, mkBasicTxOut, valueTxOutL)
-import Cardano.Ledger.BaseTypes (SlotNo (..), TxIx (..))
-import Cardano.Ledger.Binary (decodeFull')
-import Cardano.Ledger.Core (eraProtVerLow)
-import Cardano.Ledger.Hashes (extractHash, unsafeMakeSafeHash)
-import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
+import Cardano.Ledger.Api.Tx.Out (mkBasicTxOut, valueTxOutL)
+import Cardano.Ledger.BaseTypes (SlotNo (..))
+import Cardano.Ledger.Hashes (extractHash)
+import Cardano.Ledger.TxIn (TxId (..))
 import Cardano.Ledger.Val (inject, (<->))
 import Cardano.Node.Client.E2E.Setup
     ( addKeyWitness
@@ -113,8 +111,25 @@ import Cardano.Node.Client.UTxOIndexer.Indexer
     )
 import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
 import Cardano.Tx.Ledger (ConwayTx)
-import Singular.Registry.Ledger (Coin (..), ConwayEra)
+import Singular.Registry.Ledger (Coin (..))
+import Singular.Registry.Node.IndexGate
+    ( Coverage (..)
+    , IndexGate
+    , IndexedPoint (..)
+    , gateCoverage
+    , gatedHandle
+    , holdsIndex
+    , newIndexGate
+    )
+import Singular.Registry.Node.IndexerView
+    ( IndexerReadiness (..)
+    , awaitIndexerReady
+    , indexedUTxOs
+    , indexerProvider
+    , requireCovered
+    )
 import Singular.Registry.Node.Options (NodeMode (..), die)
+import Singular.Registry.Node.View (nodeProvider)
 import Singular.Registry.Node.Wait
     ( WaitStage (..)
     , boundWaitSince
@@ -137,13 +152,14 @@ chainFollower :: IORef (Maybe Following)
 chainFollower = unsafePerformIO (newIORef Nothing)
 {-# NOINLINE chainFollower #-}
 
--- | An indexer following a chain, and where it started.
+{- | An indexer following a chain: the index its confirmations read,
+the gate its follower writes it through — which carries where the
+follower started — and the follower's readiness.
+-}
 data Following = Following
     { followingIndexer :: IndexerHandle
-    , followingFromOrigin :: Bool
-    {- ^ Whether every block of the chain went through the indexer, so
-    that its view of an address lacks only the genesis outputs
-    -}
+    , followingGate :: IndexGate
+    , followingReadiness :: IndexerReadiness
     }
 
 {- | Install a follower for an action and remove it afterwards, on
@@ -175,8 +191,9 @@ withDevnetIndexer = followChain devnetMagic 42 Nothing
 indexer for the duration of an action, from a named block or, given
 none, from the chain's origin. A public network's origin is its whole
 history, so a session there starts at the node's tip: every
-transaction it submits lands in a later block. A follower failure is
-re-thrown in the calling thread.
+transaction it submits lands in a later block. The follower writes the
+index only through an 'IndexGate', so a view can hold the index at its
+point. A follower failure is re-thrown in the calling thread.
 -}
 followChain
     :: NetworkMagic
@@ -186,13 +203,26 @@ followChain
     -> IO a
     -> IO a
 followChain magic byronEpochSlots start sock action =
-    withInMemoryIndexer $ \idx ->
-        withChainSyncFollower nullTracer follow idx $ \follower -> do
+    withInMemoryIndexer $ \idx -> do
+        gate <-
+            newIndexGate
+                (unNetworkMagic magic)
+                Coverage
+                    { coverageStart = fmap startPoint start
+                    , coverageInterest = csInterestSet follow
+                    }
+                idx
+        withChainSyncFollower nullTracer follow (gatedHandle gate) $ \follower -> do
             link (fhAsync follower)
             withFollowing
                 Following
                     { followingIndexer = idx
-                    , followingFromOrigin = isNothing start
+                    , followingGate = gate
+                    , followingReadiness =
+                        IndexerReadiness
+                            { irReadiness = fhReadiness follower
+                            , irThresholdSlots = csReadyThresholdSlots follow
+                            }
                     }
                 action
   where
@@ -208,6 +238,8 @@ followChain magic byronEpochSlots start sock action =
             , csProbeConfig = defaultProbeConfig
             , csInterestSet = IndexAll
             }
+    startPoint (Indexer.SlotNo s, Indexer.BlockHash h) =
+        IndexedPoint (SlotNo s) h
 
 -- | The block a follower starting at a chain point names; none at origin.
 startingAt :: BlockPoint -> Maybe (Indexer.SlotNo, Indexer.BlockHash)
@@ -219,20 +251,27 @@ startingAt = \case
 {- | Wait until the followed chain's indexer has applied the block
 carrying a submitted transaction, observed as the transaction's first
 output; name the transaction when it is not indexed within the
-window (in seconds).
+window (in seconds). A wait inside a view that holds the index could
+never see the block, so it is refused at once.
 -}
 awaitIndexedWithin :: Int -> ConwayTx -> IO ()
 awaitIndexedWithin window tx = do
     clock <- startWaitClock
-    idx <-
+    following <-
         readIORef chainFollower
             >>= maybe
                 ( die
                     "awaitIndexed was called outside followChain; \
                     \a runner must confirm inside the chain it follows"
                 )
-                (pure . followingIndexer)
-    let tid@(TxId h) = txIdTx tx
+                pure
+    held <- holdsIndex (followingGate following)
+    when held $
+        die
+            "awaitIndexed was called inside an indexer view, which holds \
+            \the index; a runner must confirm after the view has closed"
+    let idx = followingIndexer following
+        tid@(TxId h) = txIdTx tx
     boundWaitSince clock IndexedConfirmationWait tid window $
         void $
             awaitTxIn
@@ -264,43 +303,69 @@ node address read — and spends every output the indexer does not know
 into one output a block carries. From then on the node and the indexer
 agree on that address, and 'adaptProvider' refuses any further node
 address read for as long as the indexer runs.
+
+On the devnet each view of this provider is the indexer adapter's
+("Singular.Registry.Node.IndexerView"): its address reads and its node
+reads are of the one block the node view was acquired at, or the view
+is refused by name within 'agreementBound'.
 -}
 followedProvider
     :: Cage.Provider IO -> Submitter IO -> IO (Cage.Provider IO)
 followedProvider node submit =
     currentFollower >>= \case
-        Just Following{followingIndexer = idx, followingFromOrigin = True} -> do
-            indexFunding idx node submit
-            markFundingIndexed
-            pure node{Cage.queryUTxOs = indexedUTxOs idx}
+        Just
+            Following
+                { followingIndexer = idx
+                , followingGate = gate
+                , followingReadiness = readiness
+                }
+                | isNothing (coverageStart (gateCoverage gate)) -> do
+                    indexFunding idx node submit
+                    markFundingIndexed
+                    pure (indexerProvider gate readiness agreementBound node)
         _ -> pure node
 
--- | Every output at an address as the indexer holds it, in the node's order.
-indexedUTxOs :: IndexerHandle -> Addr -> IO [(TxIn, TxOut ConwayEra)]
-indexedUTxOs idx addr = do
-    rows <- snapshotAt idx (Indexer.Address (serialiseAddr addr))
-    Map.toList . Map.fromList <$> traverse decodeRow rows
-  where
-    decodeRow (Indexer.TxIn tid ix, Indexer.TxOut bytes) = do
-        h <-
-            maybe
-                (bad tid "the transaction id is not 32 bytes")
-                pure
-                (hashFromBytes tid)
-        out <-
-            either
-                (bad tid . show)
-                pure
-                (decodeFull' (eraProtVerLow @ConwayEra) bytes)
-        pure
-            (TxIn (TxId (unsafeMakeSafeHash h)) (TxIx (fromIntegral ix)), out)
-    bad tid why =
-        die
-            ( "an indexed output of transaction "
-                <> BC.unpack (B16.encode tid)
-                <> " does not decode: "
-                <> why
-            )
+{- | The indexer backend's provider over a node followed from its origin
+by the follower this process installed: each view's address reads are
+the index's at the node view's point. The follower is first waited for
+until it has caught up with the node, within 'readinessBound', and a
+funding wallet, when named, must be covered: an output the node holds
+there and the index does not — one only the genesis state carries — is
+refused by name rather than read as absent.
+-}
+originProvider
+    :: Cage.Provider IO -> Maybe Addr -> IO (Cage.Provider IO)
+originProvider node wallet =
+    currentFollower >>= \case
+        Just
+            Following
+                { followingGate = gate
+                , followingReadiness = readiness
+                }
+                | isNothing (coverageStart (gateCoverage gate)) -> do
+                    awaitIndexerReady readiness readinessBound
+                    for_ wallet (requireCovered gate readiness agreementBound node)
+                    pure (indexerProvider gate readiness agreementBound node)
+        _ ->
+            die
+                "the indexer backend reads through an index following the \
+                \node's chain from its origin, and none is installed"
+
+{- | How long a session waits for its follower to catch up with the node,
+in microseconds: two minutes. A development network's whole chain is
+followed in seconds; a public network followed from its origin takes far
+longer, and its session is refused as restoring.
+-}
+readinessBound :: Int
+readinessBound = 120_000_000
+
+{- | How long a view waits for the index to reach the node view's point,
+in microseconds: ten seconds. On the devnet the index trails the node by
+a block or two, applied within milliseconds; a view still unagreed after
+the bound is refused rather than answered.
+-}
+agreementBound :: Int
+agreementBound = 10_000_000
 
 {- | Read the devnet's genesis wallet — the one that funds a devnet run —
 from the node and spend the outputs the indexer has not seen into one
@@ -313,7 +378,7 @@ indexFunding idx node submit = do
     wallet <- walletForMode Devnet
     let addr = walletAddr wallet
         key = walletSignKey wallet
-    held <- Cage.queryUTxOs node addr
+    held <- Cage.withView node (`Cage.viewUTxOsAt` addr)
     known <- map fst <$> indexedUTxOs idx addr
     let unseen = filter ((`notElem` known) . fst) held
         value = foldMap ((^. valueTxOutL) . snd) unseen
@@ -363,29 +428,28 @@ addressReads :: IORef Int
 addressReads = unsafePerformIO (newIORef 0)
 {-# NOINLINE addressReads #-}
 
-{- | The cage provider over an N2C provider. Its address reads are the
-node's @GetUTxOByAddress@, refused once 'followedProvider' has handed
-the reads of a followed devnet to its indexer.
+{- | The node adapter over an N2C provider ("Singular.Registry.Node.View"),
+its address reads being the node's @GetUTxOByAddress@ in the acquired
+state, refused once 'followedProvider' has handed the reads of a
+followed devnet to its indexer.
 -}
-adaptProvider :: N2C.Provider IO -> Cage.Provider IO
-adaptProvider p =
-    Cage.Provider
-        { Cage.queryUTxOs = \addr -> do
-            followed <- readIORef fundingIndexed
-            when followed $
-                die
-                    ( "GetUTxOByAddress for "
-                        <> bech32Address addr
-                        <> " sent to the node of a followed devnet after its \
-                           \funding read: read through followedProvider"
-                    )
-            atomicModifyIORef' addressReads (\n -> (n + 1, ()))
-            N2C.queryUTxOs p addr
-        , Cage.queryProtocolParams = N2C.queryProtocolParams p
-        , Cage.evaluateTx = N2C.evaluateTx p
-        , Cage.posixMsToSlot = N2C.posixMsToSlot p
-        , Cage.posixMsCeilSlot = N2C.posixMsCeilSlot p
-        }
+adaptProvider :: NetworkMagic -> N2C.Provider IO -> Cage.Provider IO
+adaptProvider magic p =
+    Cage.Provider $ \action -> Cage.withView (nodeProvider magic p) $ \v ->
+        action
+            v
+                { Cage.viewUTxOsAt = \addr -> do
+                    followed <- readIORef fundingIndexed
+                    when followed $
+                        die
+                            ( "GetUTxOByAddress for "
+                                <> bech32Address addr
+                                <> " sent to the node of a followed devnet after its \
+                                   \funding read: read through followedProvider"
+                            )
+                    atomicModifyIORef' addressReads (\n -> (n + 1, ()))
+                    Cage.viewUTxOsAt v addr
+                }
 
 -- | Seconds between confirmation polls.
 confirmationPollSeconds :: Int

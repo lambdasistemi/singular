@@ -4,6 +4,7 @@
 module Conformance.Story.Usage (spec) where
 
 import Conformance.Book (renderBook)
+import Conformance.Edge.EarlyReject qualified as EarlyReject
 import Conformance.Edge.Exit qualified as Exit
 import Conformance.Edge.Occupied qualified as Occupied
 import Conformance.Edge.Register qualified as Register
@@ -15,11 +16,101 @@ import Conformance.Story.Specification qualified as Specification
 import Control.Monad.Operational (ProgramViewT (Return, (:>>=)), view)
 import Data.Either (isLeft)
 import Data.Foldable (forM_)
-import Data.List (isInfixOf, isPrefixOf, tails)
+import Data.List (isInfixOf, isPrefixOf, nub, tails)
 import Test.Hspec (Spec, it, shouldBe, shouldSatisfy)
 
 spec :: Spec
 spec = do
+    it
+        "Every reject placement validates, renders its book reading and names a window from its opening"
+        $ forM_ [minBound .. maxBound :: Live.Placement]
+        $ \placement -> forM_ [Nothing, Just Live.ShortByOne, Just Live.OtherAddress] $ \alteration -> do
+            let program = placedReject placement alteration
+                rendered = Live.renderLive program
+                (opens, closes) = Live.placementWindow placement 1_000 10_000 20_000
+            Live.validateLive program `shouldBe` Right ()
+            rendered `shouldSatisfy` isInfixOf (Live.placementReading placement)
+            opens `shouldSatisfy` (>= 1_000)
+            closes `shouldSatisfy` maybe True (> opens)
+    it
+        "Every reject placement is told apart in the book and in the run log"
+        $ do
+            let placements = [minBound .. maxBound :: Live.Placement]
+            length (nub (map Live.placementReading placements))
+                `shouldBe` length placements
+            length (nub (map Live.placementName placements))
+                `shouldBe` length placements
+            length
+                ( nub
+                    (map (\p -> Live.placementWindow p 1_000 10_000 20_000) placements)
+                )
+                `shouldBe` length placements
+    it
+        "A fold batch and a reject batch in every window validate and render every request they name, in order"
+        $ forM_ [minBound .. maxBound :: Live.Placement]
+        $ \placement -> forM_ [[], batchOf ["first"], batchOf ["first", "second", "third"]] $ \requests -> do
+            let program = batches placement requests
+                rendered = Live.renderLive program
+                named =
+                    [ "**insertActive** for **" <> Live.requestKey request <> "**"
+                    | request <- requests
+                    ]
+            Live.validateLive program `shouldBe` Right ()
+            occurrences "in one transaction" rendered `shouldBe` 2
+            occurrences
+                "ask the executable registry model the same batch"
+                rendered
+                `shouldBe` 2
+            rendered `shouldSatisfy` isInfixOf (Live.placementReading placement)
+            forM_ named $ \phrase -> occurrences phrase rendered `shouldBe` 2
+            orderOf named rendered `shouldSatisfy` ascending
+            if null requests
+                then occurrences "no request in **registry**" rendered `shouldBe` 2
+                else occurrences "no request" rendered `shouldBe` 0
+    it
+        "Story validation refuses a batch placed inside another request's step"
+        $ do
+            let request = Live.EdgeRequest Live.InsertActive "inside" "holder"
+                inside = do
+                    step <- Live.submit "registry" request
+                    _ <- Live.foldBatch "registry" (batchOf ["first", "second"])
+                    observation <- Live.observe step
+                    _ <- Live.compareWithModel step observation
+                    pure ()
+            Live.validateLive
+                (batches Live.InProcessingWindow (batchOf ["a", "b"]))
+                `shouldBe` Right ()
+            Live.validateLive inside `shouldSatisfy` isLeft
+    it
+        "Story validation refuses a reject that names no window before anything runs"
+        $ do
+            Live.validateLive unplacedSubmit `shouldSatisfy` isLeft
+            Live.validateLive unplacedTamper `shouldSatisfy` isLeft
+    it
+        "The early rejection chapter rejects three times in each window and compares all six"
+        $ do
+            let program =
+                    EarlyReject.story (Live.Context "early rejection" "holder wallet")
+                rendered = Live.renderLive program
+            Live.validateLive program `shouldBe` Right ()
+            occurrences "Compare **" rendered `shouldBe` 6
+            occurrences (Live.placementReading Live.InProcessingWindow) rendered
+                `shouldBe` 3
+            occurrences (Live.placementReading Live.InRetractionWindow) rendered
+                `shouldBe` 3
+            occurrences (Live.placementReading Live.AfterTheWindows) rendered
+                `shouldBe` 0
+            renderBook [] [] `shouldSatisfy` isInfixOf rendered
+    it "The exit chapter places its rejects after the windows" $ do
+        let rendered =
+                Live.renderLive
+                    ( Exit.story
+                        (Live.Context "rejection" "holder wallet")
+                        (Live.Context "retraction" "holder wallet")
+                    )
+        occurrences (Live.placementReading Live.AfterTheWindows) rendered
+            `shouldBe` 3
+        rendered `shouldSatisfy` (not . isInfixOf "no longer be folded")
     it
         "The finite window story compares all three retractions and refuses a dropped comparison"
         $ do
@@ -218,3 +309,60 @@ dropFirstCompare = go False
             Live.Compare _ _ | not removed -> go True (next "dropped")
             _ -> Specification.action instruction >>= go removed . next
         Specification.Theorem _ _ :>>= _ -> error "unnamed sequence unexpectedly gained a theorem wrapper"
+
+-- | Requests for these keys, each an active registration.
+batchOf :: [String] -> [Live.EdgeRequest String]
+batchOf keys = [Live.EdgeRequest Live.InsertActive key "holder" | key <- keys]
+
+-- | A fold of these requests, then a reject of them in the given window.
+batches
+    :: Live.Placement
+    -> [Live.EdgeRequest String]
+    -> Live.Story String String String String String ()
+batches placement requests = do
+    _ <- Live.foldBatch "registry" requests
+    _ <- Live.rejectBatchWithin placement "registry" requests
+    pure ()
+
+-- | Where each phrase first appears in the text.
+orderOf :: [String] -> String -> [Int]
+orderOf phrases text =
+    [ length (takeWhile (not . (phrase `isPrefixOf`)) (tails text))
+    | phrase <- phrases
+    ]
+
+ascending :: [Int] -> Bool
+ascending positions = and (zipWith (<) positions (drop 1 positions))
+
+-- | One reject in the given window, observed and compared.
+placedReject
+    :: Live.Placement
+    -> Maybe Live.Tamper
+    -> Live.Story String String String String String ()
+placedReject placement alteration = do
+    let request = Live.EdgeRequest Live.InsertActive "placed" "holder"
+    step <- case alteration of
+        Nothing -> Live.rejectWithin placement "registry" request
+        Just tampered -> Live.tamperRejectWithin tampered placement "registry" request
+    observation <- Live.observe step
+    _ <- Live.compareWithModel step observation
+    pure ()
+
+-- | A reject submitted without a placement, which validation must refuse.
+unplacedSubmit :: Live.Story String String String String String ()
+unplacedSubmit = do
+    let request = Live.EdgeRequest Live.InsertActive "unplaced" "holder"
+    step <-
+        Specification.action (Live.Submit Live.Reject "registry" request)
+    observation <- Live.observe step
+    _ <- Live.compareWithModel step observation
+    pure ()
+
+-- | A tampered reject without a placement, which validation must refuse.
+unplacedTamper :: Live.Story String String String String String ()
+unplacedTamper = do
+    let request = Live.EdgeRequest Live.InsertActive "unplaced" "holder"
+    step <- Live.tamperExit Live.ShortByOne Live.Reject "registry" request
+    observation <- Live.observe step
+    _ <- Live.compareWithModel step observation
+    pure ()

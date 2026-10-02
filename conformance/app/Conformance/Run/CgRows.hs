@@ -23,7 +23,10 @@ module Conformance.Run.CgRows
     , runCG21
     , runCG22
     , runCG23
+    , runCG24
     , runSequence
+    , runBatchHarness
+    , ensurePresentV3
     , setupDelete
     , capturePreProofKey
     , waitPhase3
@@ -44,6 +47,7 @@ import Conformance.Run.Submit
 import Conformance.Run.Units
 import Conformance.Run.Wallet
 
+import Conformance.Edge.EarlyReject qualified as EarlyRejectStory
 import Conformance.Edge.Exit qualified as ExitStory
 import Conformance.Edge.Occupied qualified as OccupiedStory
 import Conformance.Edge.Register qualified as RegistrationStory
@@ -88,8 +92,6 @@ import Cardano.Ledger.Credential (Credential (..))
 import MPF.Hashes (MPFHash)
 import MPF.Proof.Insertion (MPFProof (..))
 
-import Cardano.Node.Client.E2E.Setup (addKeyWitness)
-import Cardano.Node.Client.Submitter (SubmitResult (..))
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
@@ -98,6 +100,11 @@ import Singular.Registry.Ledger
     , ExUnits (..)
     , Root (..)
     , TokenId (..)
+    )
+import Singular.Registry.Node
+    ( SubmitResult (..)
+    , signTx
+    , signedTx
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Internal
@@ -299,11 +306,15 @@ runCG07 env = do
     writeStoryReceipt env "CG07" records
 
 {- | CG09: @Rejected@ when not rejectable (R9_reject_needs_rejectable).
-Inside the process window the request still contributes (phase 1),
-but the fold's Rejected action fails @is_rejectable@ in the state
-script: a request is only rejectable once its retract window has
-passed. The control folds the same request in phase 3, where the
-library's reject is accepted.
+The consumer requires a reject inside the request's process window to be
+refused. Singular's Lean gives a reject no admission
+(@exitAdmission .reject = none@) and the chain accepts it (#320). By
+operator ruling 2026-10-01 the consumer requirement is kept unmet: the row
+is recorded @unmet-by-ruling@, never as agreement and never as a pass.
+Its control comes first, on the same request: the same
+processing-window reject refunding the owner one lovelace short, which
+the state script must refuse. Both carry the units of a full fold, so a
+budget failure cannot pass for a refusal by rule.
 -}
 runCG09 :: Env -> IO ()
 runCG09 env = do
@@ -313,17 +324,18 @@ runCG09 env = do
     tid <- cageTid cage
     (reqIn, reqOut) <- rowRequestInsert env cage "cg09-key" "cg09-value"
     let (_, submittedAt) = requestDatumOf reqOut
-    -- The refused fold declares the units its phase-3 control declares: the
-    -- state script spends about 256M steps on this purpose, so 100M ran it
-    -- out of budget before it could decide, and the ledger's refusal was for
-    -- budget rather than for the reject (#287).
-    let units = ExUnits 2_000_000 600_000_000
-    pot <- collateralPot env
+        processDeadline = submittedAt + 30_000
     state <- cageStateUtxo env cage
     oldState <- extractState (snd state)
-    nowMs <- currentPosixMs
-    upper <- trySlots prov [nowMs + 2_000, nowMs + 1_500, nowMs + 1_000]
-    let spec =
+    let Coin reqVal = reqOut ^. coinTxOutL
+        -- A rejection owes the owner input minus the tip, with no share
+        -- of the fee: the folder funds that separately.
+        owed = reqVal - stateMaxFee oldState
+        -- The full fold of one rejected request, measured at
+        -- (572573, 193235963): a refusal-sized budget would exhaust, and
+        -- the ledger would report a script failure for the budget.
+        units = ExUnits 2_000_000 600_000_000
+        rejectWithin upper refund collateral =
             ( rowSpec
                 cage
                 tid
@@ -334,76 +346,101 @@ runCG09 env = do
                 units
             )
                 { fsUpper = Just upper
-                , fsCollateral = Just pot
+                , fsRefunds = [refund]
+                , fsCollateral = collateral
                 }
-    hand <- assembleFoldWithFee env spec
+        insideProcessWindow = do
+            now <- currentPosixMs
+            require
+                "CG09: the request's process window closed before its \
+                \reject was built"
+                (now + 2_000 < processDeadline)
+            Cage.withView prov $ \v ->
+                trySlots v [now + 2_000, now + 1_500, now + 1_000]
+    pot <- collateralPot env
+    shortUpper <- insideProcessWindow
+    short <-
+        assembleFoldWithFee
+            env
+            (rejectWithin shortUpper (owed - 1) (Just pot))
     emit
         "row"
-        ( "CG09: Rejected action while the request is still inside its \
-          \process window; the state script must refuse "
-            <> "(R9_reject_needs_rejectable)"
-        )
-    submitExpectRefused
+        "CG09 control: the request's processing-window reject refunding \
+        \its owner one lovelace short; the state script must refuse it"
+    submitExpectRefusedControl
         env
         "CG09"
         AgreesWithModel
         (stateMarkerOf cfg)
-        hand
-    -- Control: the SAME request and the SAME Rejected action, rebuilt
-    -- with phase-3 bounds once the retract window has passed. The hand
-    -- model is used rather than the library reject for the reason CG07
-    -- already uses it: the library attaches the state validator, and
-    -- fifteen kilobytes of it does not fit in a transaction.
-    sleepUntilMs env (submittedAt + 30_000 + 5_000 + 500)
-    nowCtrl <- currentPosixMs
-    -- The lower bound must fall AFTER the retract window closes, or the
-    -- request script reads the fold as neither phase 1 nor rejectable.
-    lower <-
-        trySlots
-            prov
-            [ submittedAt + 30_000 + 5_000 + 400
-            , submittedAt + 30_000 + 5_000 + 200
-            , submittedAt + 30_000 + 5_000 + 100
-            ]
-    upperCtrl <-
-        trySlots prov [nowCtrl + 2_000, nowCtrl + 1_500, nowCtrl + 1_000]
-    let Coin reqVal = reqOut ^. coinTxOutL
-        ctrlSpec =
-            spec
-                { fsLower = Just lower
-                , fsUpper = Just upperCtrl
-                , fsCollateral = Nothing
-                , -- A rejection owes the owner input minus the tip, with no
-                  -- share of the fee: the folder funds that separately.
-                  fsRefunds = [reqVal - stateMaxFee oldState]
-                , -- The refusal row only has to reach its refusal; the
-                  -- control runs the fold to the end. Measured at
-                  -- (572573, 193235963), so the row's 100M cpu budget
-                  -- exhausts and the ledger reports a script failure the
-                  -- local evaluation never sees.
-                  fsUnits = ExUnits 2_000_000 600_000_000
-                }
-    ctrl <- assembleFoldWithFee env ctrlSpec
-    -- Measure the control before submitting it: every purpose, with its
-    -- units or the error the ledger evaluates it to, so a refusal is read
-    -- rather than guessed at.
-    ctrlEval <- Cage.evaluateTx (envProv env) ctrl
+        short
+    upper <- insideProcessWindow
+    hand <- assembleFoldWithFee env (rejectWithin upper owed Nothing)
+    -- Every purpose's units as the node evaluates them, before submitting.
+    handEval <- Cage.withView (envProv env) (`Cage.viewEvaluateTx` hand)
     mapM_
         ( \(p, r) ->
             emit
                 "diag"
-                ( "CG09 control "
+                ( "CG09 "
                     <> show p
                     <> " => "
                     <> either show (\(ExUnits m c) -> show (m, c)) r
                 )
         )
-        (Map.toList ctrlEval)
-    _ <- submitExpectAccepted env (addKeyWitness genesisSignKey ctrl)
+        (Map.toList handEval)
     emit
-        "control"
-        "CG09 control: the same request rejected in phase 3 is \
-        \accepted — the refusal discriminates"
+        "row"
+        ( "CG09: Rejected action while the request is still inside its \
+          \process window; the consumer requires a refusal "
+            <> "(R9_reject_needs_rejectable), Singular's Lean admits it"
+        )
+    let signedWitnessed = signTx genesisSignKey hand
+        signed = signedTx signedWitnessed
+    result <- submitTxResilient (envSubmit env) signedWitnessed
+    case result of
+        Submitted txid -> do
+            (mem, cpu) <- measureUnits env hand
+            let size = txSizeBytes signed
+            emitMeasure env "CG09" mem cpu size
+            writeRowReceipt
+                env
+                "CG09"
+                Accepted
+                UnmetByRuling
+                [txInHex txid]
+                Nothing
+                Nothing
+                (Just mem)
+                (Just cpu)
+                (Just size)
+                "node-submit"
+                Nothing
+            recordUnmet
+                env
+                "CG09"
+                "kept unmet by operator ruling 2026-10-01 (singular#320; \
+                \alignment: cardano-keri#468)"
+                ( "Singular's Lean gives a reject no admission "
+                    <> "(Model.lean exitAdmission .reject = none): a folder "
+                    <> "may reject a request inside its process window"
+                )
+                "R9_reject_needs_rejectable — a reject is refused until the request's retract window has passed"
+            emit
+                "row"
+                ( "CG09: the chain ACCEPTED the processing-window reject "
+                    <> "(tx="
+                    <> txInHex txid
+                    <> "), refunding its owner "
+                    <> show owed
+                    <> " lovelace; unmet by ruling, never read as a pass: the "
+                    <> "consumer requirement stays unmet"
+                )
+        Rejected reason ->
+            failWith
+                ( "CG09 FINDING: the node REFUSED the processing-window "
+                    <> "reject Singular's Lean admits: "
+                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                )
 
 {- | CG10: Stale fold against a superseded root
 (R7_stale_fold_refused). The stale claims are captured against the
@@ -463,15 +500,16 @@ runCG10 env = do
         staleTx
     -- Control: the same request folded against the live root, the
     -- hand shape calibrated against the library fold.
-    ctxLive <- rowRegistryContext env cage tid
     libFold <-
-        updateTokenWithDuties
-            cfg
-            (envProv env)
-            (envTm env)
-            tid
-            genesisAddr
-            ctxLive
+        Cage.withView (envProv env) $ \v -> do
+            ctxLive <- rowRegistryContext env v cage tid
+            updateTokenWithDuties
+                cfg
+                v
+                (envTm env)
+                tid
+                genesisAddr
+                ctxLive
     (freshSteps, freshRoot) <-
         speculativeInsert env cage tid "cg10-key-c" leafAbsent
     let freshSpec =
@@ -491,7 +529,7 @@ runCG10 env = do
     emit "calibration" "CG10 control: hand model matches the library fold"
     (mem, cpu) <- measureUnits env handFresh
     signed <-
-        submitExpectAccepted env (addKeyWitness genesisSignKey handFresh)
+        submitExpectAccepted env (signTx genesisSignKey handFresh)
     let size = txSizeBytes signed
     emitMeasure env "CG10-control" mem cpu size
     rowCommit env cage "cg10-key-c" edgeInsertAbsent
@@ -584,7 +622,7 @@ runCG11 env = do
     ctrlTx <- assembleFoldWithFee env ctrlSpec
     (memC, cpuC) <- measureUnits env ctrlTx
     signedC <-
-        submitExpectAccepted env (addKeyWitness genesisSignKey ctrlTx)
+        submitExpectAccepted env (signTx genesisSignKey ctrlTx)
     let sizeC = txSizeBytes signedC
     emitMeasure env "CG11-control" memC cpuC sizeC
     rowCommit env cage "cg11-key" edgeInsertAbsent
@@ -732,7 +770,7 @@ runCG12 env = do
     exactTx <- assembleFoldWithFee env exactSpec
     (memD, cpuD) <- measureUnits env exactTx
     signedD <-
-        submitExpectAccepted env (addKeyWitness genesisSignKey exactTx)
+        submitExpectAccepted env (signTx genesisSignKey exactTx)
     let sizeD = txSizeBytes signedD
     emitMeasure env "CG12-exact" memD cpuD sizeD
     rowCommit env cage "cg12-key-d" edgeInsertAbsent
@@ -774,10 +812,12 @@ runCG14 env = do
         prov = envProv env
     tid <- cageTid cage
     _ <- rowRequestInsert env cage "cg14-key" "cg14-value"
-    ctx <- rowRegistryContext env cage tid
     unsigned <-
-        updateTokenWithDuties cfg prov (envTm env) tid genesisAddr ctx
-    evalMap <- Cage.evaluateTx (envProv env) unsigned
+        Cage.withView prov $ \v -> do
+            ctx <- rowRegistryContext env v cage tid
+            updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx
+    evalMap <-
+        Cage.withView (envProv env) (`Cage.viewEvaluateTx` unsigned)
     mapM_
         ( \(p, r) ->
             emit
@@ -787,7 +827,7 @@ runCG14 env = do
         (Map.toList evalMap)
     (mem, cpu) <- measureUnits env unsigned
     writeIORef (rcUnits cage) (mem, cpu)
-    signed <- submitExpectAccepted env unsigned
+    signed <- submitExpectAccepted env (signTx genesisSignKey unsigned)
     let size = txSizeBytes signed
     emitMeasure env "CG14-hook-fold" mem cpu size
     writeRowReceipt
@@ -900,11 +940,12 @@ runCG15 env = do
         hand
     -- Control: the library fold carries the withdrawal; it consumes
     -- this request and CG14's parked control request together.
-    ctx <- rowRegistryContext env cage tid
     libFold <-
-        updateTokenWithDuties cfg prov (envTm env) tid genesisAddr ctx
+        Cage.withView prov $ \v -> do
+            ctx <- rowRegistryContext env v cage tid
+            updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx
     (mem, cpu) <- measureUnits env libFold
-    signed <- submitExpectAccepted env libFold
+    signed <- submitExpectAccepted env (signTx genesisSignKey libFold)
     let size = txSizeBytes signed
     emitMeasure env "CG15-control" mem cpu size
     emit
@@ -972,9 +1013,9 @@ runCG19 env = do
     state <- cageStateUtxo env cage
     liveState <- extractState (snd state)
     let newRoot = Root (unOnChainRoot (stateRoot liveState))
-    -- A rejection is only rejectable once every request's retract window
-    -- has closed, so the fold waits for the last of them and declares a
-    -- lower bound past it.
+    -- The fold is placed after every request's retract window has closed,
+    -- where this row has always rejected: it waits for the last of them and
+    -- declares a lower bound past it.
     let submittedAts =
             [ submitted
             | (_, o) <- sorted
@@ -994,7 +1035,10 @@ runCG19 env = do
             [x, y] -> (x, y)
             _ -> error "CG19: two requests yield two crossed refunds"
     waitPhase3 deadline
-    lowerSlot <- Cage.posixMsCeilSlot (envProv env) (deadline + 1000)
+    lowerSlot <-
+        Cage.withView
+            (envProv env)
+            (`Cage.viewPosixMsCeilSlot` (deadline + 1000))
     pot <- collateralPot env
     units <- declaredSpec env cage
     let crossedSpec =
@@ -1019,8 +1063,10 @@ runCG19 env = do
     emit
         "row"
         "CG19: submitting the crossed-refund fold for its candidate-bound observation"
-    let signedCrossed = addKeyWitness genesisSignKey hand
-    crossResult <- submitTxResilient (envSubmit env) signedCrossed
+    let signedCrossedWitnessed = signTx genesisSignKey hand
+        signedCrossed = signedTx signedCrossedWitnessed
+    crossResult <-
+        submitTxResilient (envSubmit env) signedCrossedWitnessed
     case crossResult of
         Submitted txid -> do
             (mem, cpu) <- measureUnits env hand
@@ -1108,7 +1154,7 @@ runCG19 env = do
             acceptTx <- assembleFoldWithFee env acceptSpec
             (memA, cpuA) <- measureUnits env acceptTx
             signedA <-
-                submitExpectAccepted env (addKeyWitness genesisSignKey acceptTx)
+                submitExpectAccepted env (signTx genesisSignKey acceptTx)
             let sizeA = txSizeBytes signedA
             emitMeasure env "CG19-routed" memA cpuA sizeA
             emit
@@ -1208,7 +1254,8 @@ runCG19RejectedFloor env cage tid = do
                 + stateProcessTime oldState
                 + stateRetractTime oldState
     waitPhase3 deadline
-    lowerSlot <- Cage.posixMsCeilSlot prov (deadline + 1000)
+    lowerSlot <-
+        Cage.withView prov (`Cage.viewPosixMsCeilSlot` (deadline + 1000))
     nowAfter <- currentPosixMs
     require
         "CG19-rejected-floor: wait did not reach the lower bound"
@@ -1229,13 +1276,16 @@ runCG19RejectedFloor env cage tid = do
     -- uppers fail at the horizon).
     nowMsU <- currentPosixMs
     upperU <-
-        trySlots prov [nowMsU + 2_000, nowMsU + 1_500, nowMsU + 1_000]
+        Cage.withView
+            prov
+            (\v -> trySlots v [nowMsU + 2_000, nowMsU + 1_500, nowMsU + 1_000])
     underTx <-
         assembleFoldWithFee
             env
             (baseSpec state matchedReqs [owed1 - 1000, owed2] pot lowerSlot upperU)
-    let signedUnder = addKeyWitness genesisSignKey underTx
-    underResult <- submitTxResilient (envSubmit env) signedUnder
+    let signedUnderWitnessed = signTx genesisSignKey underTx
+        signedUnder = signedTx signedUnderWitnessed
+    underResult <- submitTxResilient (envSubmit env) signedUnderWitnessed
     underReason <- case underResult of
         Rejected reason -> pure (T.unpack (TE.decodeUtf8Lenient reason))
         Submitted txid ->
@@ -1282,14 +1332,16 @@ runCG19RejectedFloor env cage tid = do
         (fst state2 == fst state)
     nowMsO <- currentPosixMs
     upperO <-
-        trySlots prov [nowMsO + 2_000, nowMsO + 1_500, nowMsO + 1_000]
+        Cage.withView
+            prov
+            (\v -> trySlots v [nowMsO + 2_000, nowMsO + 1_500, nowMsO + 1_000])
     overTx <-
         assembleFoldWithFee
             env
             (baseSpec state2 matchedReqs [owed1, owed2] pot2 lowerSlot upperO)
     (memO, cpuO) <- measureUnits env overTx
     signedO <-
-        submitExpectAccepted env (addKeyWitness genesisSignKey overTx)
+        submitExpectAccepted env (signTx genesisSignKey overTx)
     let sizeO = txSizeBytes signedO
     emitMeasure env "CG19-rejected-floor-funded" memO cpuO sizeO
     -- Root unchanged (Rejected Inserts were never in the trie):
@@ -1520,7 +1572,8 @@ runCG22 env = do
 -- ---------------------------------------------------------
 
 {- | CG23: a request that is never folded, in two registries of its own: one
-whose requests become rejectable a second after their retract window opens,
+whose rejects are placed after their owner's retraction window, which closes a
+second after it opens,
 where a reject refunding the owner one lovelace short and to another address is
 refused before the untampered reject; and one whose requests stay retractable
 for thirty seconds, where the owner's return one lovelace short, to another
@@ -1560,8 +1613,10 @@ runCG23 env = do
     retraction <- ensureRowCage env "story-retraction" 1_000 30_000
     _ <- largestWalletUtxo (envProv env)
     _ <-
-        runLive
+        runLiveNamed
             env
+            "CG23"
+            []
             ( ExitStory.story
                 (Live.Context rejection genesisAddr)
                 (Live.Context retraction genesisAddr)
@@ -1613,6 +1668,47 @@ runCG05 env = do
         )
     writeStoryReceipt env "CG05" records
 
+{- | CG24 (#320): a folder rejects a pending request before its owner's
+retraction deadline. Two insertion requests are booked together in a registry
+of their own. The first is rejected while it can still be folded, the second
+while its owner can still retract it; in each window a reject refunding the
+owner one lovelace short and one refunding another key are refused before the
+untampered reject of the same request. A processing and a retraction window of
+two minutes each leave time for three rejects inside each.
+-}
+runCG24 :: Env -> IO ()
+runCG24 env = do
+    either
+        failWith
+        pure
+        ( Live.validateLive
+            ( EarlyRejectStory.story
+                (Live.Context "early rejection" "holder wallet")
+            )
+        )
+    writeIORef (envLiveRecords env) []
+    writeIORef (envLiveMeasurements env) []
+    cage <- ensureRowCage env "story-early-rejection" 120_000 120_000
+    let (first, second) = EarlyRejectStory.requests genesisAddr
+    _ <-
+        runLiveNamed
+            env
+            "CG24"
+            [(cage, first), (cage, second)]
+            (EarlyRejectStory.story (Live.Context cage genesisAddr))
+    records <- readIORef (envLiveRecords env)
+    require "CG24 did not compare its six requests" (length records == 6)
+    require
+        "early rejection chapter has a disagreement or unsupported step"
+        ( all
+            ( \case
+                Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
+                _ -> False
+            )
+            records
+        )
+    writeStoryReceipt env "CG24" records
+
 {- | An unnamed seven-edge program using exactly the chapter interpreter.
 The receipt is required by the running book before it renders success.
 -}
@@ -1655,6 +1751,87 @@ runSequence env = do
             _ -> False
     expectedSequenceOutcome _ = False
 
+{- | The batch harness (#344): the story language's two batch instructions,
+executed on the devnet — a fold of two registrations in one transaction, then a
+reject of two more in one transaction while they can still be folded — and each
+asked of the model's matching batch question through the transport. It belongs
+to no requirement and its receipt is read by no row. Both batches are lawful, so
+it requires that both ran and that the chain and the model each accepted each
+one.
+-}
+runBatchHarness :: Env -> IO ()
+runBatchHarness env = do
+    either
+        failWith
+        pure
+        (Live.validateLive (batchStory (Live.Context "batch" "holder wallet")))
+    writeIORef (envLiveRecords env) []
+    registry <- ensureRowCage env "batch-harness" 30_000 30_000
+    _ <- runLive env (batchStory (Live.Context registry genesisAddr))
+    records <- readIORef (envLiveRecords env)
+    require
+        "batch harness did not run both batch instructions"
+        (map (field "batch") records == [Just "foldBatch", Just "rejectBatch"])
+    -- The story is lawful, so each side must accept each batch on its own:
+    -- agreement alone would pass a lawful batch both sides refused.
+    require
+        "batch harness: the chain refused a lawful batch"
+        (all ((== Just "accepted") . outcome "chain") records)
+    require
+        "batch harness: the model refused a lawful batch"
+        (all ((== Just "accepted") . outcome "model") records)
+    require
+        "batch harness: the chain and the model disagree on a batch's outcome"
+        (all ((== Just "agrees") . field "comparison") records)
+  where
+    batchStory (Live.Context registry holder) = do
+        _ <-
+            Live.foldBatch
+                registry
+                [ Live.EdgeRequest Live.InsertActive "batch-folded-one" holder
+                , Live.EdgeRequest Live.InsertActive "batch-folded-two" holder
+                ]
+        _ <-
+            Live.rejectBatchWithin
+                Live.InProcessingWindow
+                registry
+                [ Live.EdgeRequest Live.InsertActive "batch-rejected-one" holder
+                , Live.EdgeRequest Live.InsertActive "batch-rejected-two" holder
+                ]
+        pure ()
+    field name (Object fields) = case KM.lookup name fields of
+        Just (String text) -> Just text
+        _ -> Nothing
+    field _ _ = Nothing
+    outcome side (Object fields) = KM.lookup side fields >>= field "outcome"
+    outcome _ _ = Nothing
+
+{- | CG05 needs its key OCCUPIED, whatever leaf it holds: the row is about
+inserting on a key the trie already has, and the seven edges admit an
+insert only against a key that is absent from the trie entirely. CG02
+leaves the shared key active; a session that runs CG05 alone witnesses an
+absence first.
+-}
+ensurePresentV3 :: Env -> IO ()
+ensurePresentV3 env = do
+    (present, _) <- readIORef (envKeys env)
+    if present
+        then pure ()
+        else do
+            emit "setup" "key absent; witnessing its absence as setup"
+            (_, _, _, _) <-
+                requestAndFold env "CG05-setup" edgeInsertAbsent
+            commitTm env edgeInsertAbsent
+            verifyPresentValue
+                (envCfg env)
+                (envProv env)
+                (envMirror env)
+                (envTid env)
+                cgKey
+                (claimValue env cgV1)
+                forgedValue
+            writeIORef (envKeys env) (True, cgV1)
+
 setupDelete :: Env -> IO ()
 setupDelete env = do
     (present, cur) <- readIORef (envDeleteKey env)
@@ -1695,10 +1872,10 @@ capturePreProofKey env cgKey' = do
             failWith
                 "setup: key has no inclusion proof before delete"
 
-{- | Wait until two seconds past the given deadline ms (phase-3 entry
-for Rejected folds), sleeping exactly the remaining time. A deadline
-more than a hundred seconds away fails closed rather than submitting
-a wrong-phase transaction.
+{- | Wait until two seconds past the given deadline ms (after the windows,
+where these rows place their Rejected folds), sleeping exactly the
+remaining time. A deadline more than a hundred seconds away fails closed
+rather than submitting a transaction outside that placement.
 -}
 waitPhase3 :: Integer -> IO ()
 waitPhase3 deadline = do

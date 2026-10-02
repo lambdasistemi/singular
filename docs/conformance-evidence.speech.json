@@ -1,0 +1,104 @@
+{
+  "appendix-how-this-page-was-produced": [
+    {
+      "pause": 400,
+      "text": "This appendix names the CI runs and artifacts the snapshot was copied from, and how many receipts and contract results it holds."
+    }
+  ],
+  "backend-contract-across-adapters": [
+    {
+      "pause": 400,
+      "text": "6 adapters ran the contract suite. The table counts, per adapter, the cases passed, failed and not supported."
+    }
+  ],
+  "bound-to-evidence-elsewhere": [
+    {
+      "pause": 400,
+      "text": "7 requirements are evidenced by another suite, named in each row."
+    }
+  ],
+  "in-memory-adapter": [
+    {
+      "pause": 400,
+      "text": "The in-memory adapter, evidence class test-adapter: 7 cases passed, 0 failed and 4 are not supported."
+    }
+  ],
+  "indexer-external-devnet-adapter": [
+    {
+      "pause": 400,
+      "text": "The indexer (external devnet) adapter, evidence class devnet: 5 cases passed, 0 failed and 6 are not supported."
+    }
+  ],
+  "indexer-generated-devnet-adapter": [
+    {
+      "pause": 400,
+      "text": "The indexer (generated devnet) adapter, evidence class devnet: 6 cases passed, 0 failed and 5 are not supported."
+    }
+  ],
+  "indexer-in-memory-node-adapter": [
+    {
+      "pause": 400,
+      "text": "The indexer (in-memory node) adapter, evidence class test-adapter: 11 cases passed, 0 failed and 0 are not supported."
+    }
+  ],
+  "node-external-devnet-adapter": [
+    {
+      "pause": 400,
+      "text": "The node (external devnet) adapter, evidence class devnet: 5 cases passed, 0 failed and 6 are not supported."
+    }
+  ],
+  "node-generated-devnet-adapter": [
+    {
+      "pause": 400,
+      "text": "The node (generated devnet) adapter, evidence class devnet: 7 cases passed, 0 failed and 4 are not supported."
+    }
+  ],
+  "out-of-scope": [
+    {
+      "pause": 400,
+      "text": "1 requirements belong to the consumer, are recorded here and never claimed."
+    }
+  ],
+  "requirements-a-run-demonstrated": [
+    {
+      "pause": 400,
+      "text": "22 requirements were demonstrated and 0 partly demonstrated by a receipt for this code revision. Each row gives the requirement and the outcome it expects."
+    }
+  ],
+  "requirements-a-run-did-not-pass": [
+    {
+      "pause": 400,
+      "text": "4 requirements ran on this code revision with a result that is not a pass. They are listed with the reason the run recorded."
+    }
+  ],
+  "requirements-not-demonstrated": [
+    {
+      "pause": 400,
+      "text": "Every requirement without a receipt for this code revision is listed below, under the plan the inventory declares."
+    }
+  ],
+  "uncovered": [
+    {
+      "pause": 400,
+      "text": "12 requirements have no evidence yet."
+    }
+  ],
+  "what-this-evidence-is-bound-to": [
+    {
+      "pause": 400,
+      "text": "The runs behind this page checked out code revision c17309ee6073, and the application model revision is de3430054022."
+    },
+    {
+      "pause": 400,
+      "text": "46 requirements are in the inventory. 22 were demonstrated by a run, 0 partly, 4 ran without a pass, 7 are bound to evidence elsewhere, 12 are uncovered and 1 are out of scope."
+    },
+    {
+      "pause": 400,
+      "text": "The diagram shows the page computed from the inventory, the receipts, the contract results and the model revision, and the documentation check recomputing it and comparing."
+    }
+  ],
+  "_source": {
+    "file": "conformance-evidence.md",
+    "sha256": "2cbfdc8a15e893138e725ad292af49e1e39a97ad2eda532772570fb3f7b7903b"
+  }
+}

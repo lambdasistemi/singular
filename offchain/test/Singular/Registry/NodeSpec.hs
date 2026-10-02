@@ -33,7 +33,9 @@ import Singular.Registry.Node
     , nodeModeFromArgs
     , txUpperBoundSlot
     )
+import Singular.Registry.Node.Options (Backend (..), backendFromArgs)
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.StubView (servingView, stubView)
 
 external :: FilePath -> Word -> FilePath -> NodeMode
 external sock magic skey =
@@ -146,18 +148,36 @@ spec = describe "the chain a runner selects" $ do
             deadline
                 `shouldBe` SlotNo (fromIntegral (nowMs `div` 1000 + 300))
 
+    describe "the read backend a command line names (#324)" $ do
+        it "is the node when the command line names none" $
+            backendFromArgs (["registry", "inspect"] <> full)
+                `shouldBe` Right NodeBackend
+
+        it "is the index when it names indexer, in either spelling" $ do
+            backendFromArgs (full <> ["--backend", "indexer"])
+                `shouldBe` Right IndexerBackend
+            backendFromArgs ("--backend=indexer" : full)
+                `shouldBe` Right IndexerBackend
+
+        it "is the node when it names node" $
+            backendFromArgs ["--backend", "node"] `shouldBe` Right NodeBackend
+
+        it "refuses a value it does not name, and a missing one" $ do
+            backendFromArgs ["--backend", "nodes"]
+                `shouldBe` Left "names node or indexer, not nodes"
+            backendFromArgs ["--backend"]
+                `shouldBe` Left "names node or indexer, and needs one of them"
+
 -- A provider whose chain numbers one slot per second. Only the
 -- time-to-slot conversion is ever called.
 slotProv :: Cage.Provider IO
 slotProv =
-    Cage.Provider
-        { Cage.queryUTxOs = \_ -> pure []
-        , Cage.queryProtocolParams = pure (error "unused")
-        , Cage.evaluateTx = \_ -> pure (error "unused")
-        , Cage.posixMsToSlot = pure . SlotNo . fromIntegral . (`div` 1000)
-        , Cage.posixMsCeilSlot =
-            pure . SlotNo . fromIntegral . (\ms -> (ms + 999) `div` 1000)
-        }
+    servingView
+        stubView
+            { Cage.viewPosixMsToSlot = pure . SlotNo . fromIntegral . (`div` 1000)
+            , Cage.viewPosixMsCeilSlot =
+                pure . SlotNo . fromIntegral . (\ms -> (ms + 999) `div` 1000)
+            }
 
 txPinningBound :: Tx TopTx ConwayEra
 txPinningBound =

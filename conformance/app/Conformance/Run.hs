@@ -34,9 +34,11 @@ The issue #70 rows (CG09, CG10, CG11, CG12, CG14, CG15,
 CG19) run as their own CG session in canonical order, each
 against its own freshly booted cage so a row's odd state (a
 parked request) cannot poison its neighbours.
-CG09, CG10 and CG15 are refusal rows: the refusing
+CG10 and CG15 are refusal rows: the refusing
 transaction is hand-built, phase-1 valid, and the node's phase-2
-refusal is attributed to the state script that produced it. CG11, CG12 and CG19 are the expected consumer
+refusal is attributed to the state script that produced it. CG09
+submits the early reject the consumer requires refused; the chain
+accepts it and the row is recorded unmet by ruling (#320). CG11, CG12 and CG19 are the expected consumer
 gaps (the 2026-09-03 cardano-keri audit; upstream
 cardano-mpfs-onchain #100 and #101): the run submits what the
 consumer's theorems require the partition to refuse and records the
@@ -90,17 +92,12 @@ import Conformance.Run.Control
 import Conformance.Run.CsRows
 import Conformance.Run.Environment
 import Conformance.Run.ForkProbe
+import Conformance.Run.Node (checkHarnessGenesis, withReplayingNode)
 import Conformance.Run.Receipts
-import Conformance.Run.Replay
-    ( ReplayEnv (..)
-    , ReplayIndex (..)
-    , capturingSubmitter
-    , newReplayEnv
-    )
+import Conformance.Run.Replay (ReplayIndex (..))
 import Conformance.Run.Submit
 import Conformance.Run.Wallet
 
-import Control.Concurrent.Async (async, cancel)
 import Control.Exception
     ( ErrorCall (..)
     , throwIO
@@ -112,30 +109,16 @@ import Data.Map.Strict qualified as Map
 import Data.Text qualified as T
 import System.Directory (createDirectoryIfMissing)
 
-import Cardano.Node.Client.N2C.Connection
-    ( newLSQChannel
-    , newLTxSChannel
-    , runNodeClient
-    )
-import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
-import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Ledger
     ( AssetName (..)
     , TokenId (..)
     )
 import Singular.Registry.Node
-    ( adaptProvider
-    , awaitConnection
-    , boundedSubmitter
+    ( Capabilities (..)
     , checkFunding
     , defaultFundingFloor
-    , devnetGenesis
-    , followedProvider
     , funderAddr
-    , sessionMagic
-    , submissionBound
-    , withNodeSocket
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
@@ -174,7 +157,9 @@ runRows rawRows receiptsDir = do
                         <> issue177Rows
                         <> issue258Rows
                         <> issue205Rows
+                        <> issue320Rows
                         <> sequenceRows
+                        <> harnessRows
                     )
                 )
                 rows
@@ -219,7 +204,9 @@ runRows rawRows receiptsDir = do
                             <> issue177Rows
                             <> issue258Rows
                             <> issue205Rows
+                            <> issue320Rows
                             <> sequenceRows
+                            <> harnessRows
                        )
             ]
         caDevnet = [r | r <- devnetRows, r `elem` caRows]
@@ -236,7 +223,9 @@ runRows rawRows receiptsDir = do
                                 <> issue177Rows
                                 <> issue258Rows
                                 <> issue205Rows
+                                <> issue320Rows
                                 <> sequenceRows
+                                <> harnessRows
                           )
             ]
     unless (null unpartitioned) $
@@ -245,7 +234,7 @@ runRows rawRows receiptsDir = do
     mapM_ (runLocalRow blueprintPath receiptsDir base dirty) localRows
     unless (null devnetRows) $ do
         (stateBytes, requestBytes, namingCodes) <- loadCodes blueprintPath
-        devnetGenesis >>= mapM_ checkGenesis
+        checkHarnessGenesis
         nodeVer <- readNodeVersion
         emit "node" nodeVer
         require
@@ -253,7 +242,7 @@ runRows rawRows receiptsDir = do
             (forgedValue `notElem` [cgV1, cgV2, cgV3])
         unless (null caDevnet) $
             bracketTmpDir $ do
-                withNodeSocket $ \sock ->
+                withReplayingNode blueprintPath receiptsDir (T.pack nodeVer) $ \caps replayIndex ->
                     runSession
                         caDevnet
                         control
@@ -263,10 +252,11 @@ runRows rawRows receiptsDir = do
                         base
                         dirty
                         receiptsDir
-                        sock
+                        caps
+                        replayIndex
         unless (null cgDevnet) $
             bracketTmpDir $ do
-                withNodeSocket $ \sock ->
+                withReplayingNode blueprintPath receiptsDir (T.pack nodeVer) $ \caps replayIndex ->
                     runSession
                         cgDevnet
                         control
@@ -276,10 +266,11 @@ runRows rawRows receiptsDir = do
                         base
                         dirty
                         receiptsDir
-                        sock
+                        caps
+                        replayIndex
         unless (null csDevnet) $
             bracketTmpDir $ do
-                withNodeSocket $ \sock ->
+                withReplayingNode blueprintPath receiptsDir (T.pack nodeVer) $ \caps replayIndex ->
                     runCSSession
                         csDevnet
                         control
@@ -290,7 +281,8 @@ runRows rawRows receiptsDir = do
                         base
                         dirty
                         receiptsDir
-                        sock
+                        caps
+                        replayIndex
     when (null devnetRows) $
         emit
             "complete"
@@ -324,7 +316,9 @@ validateRows raw = do
                         <> issue177Rows
                         <> issue258Rows
                         <> issue205Rows
+                        <> issue320Rows
                         <> sequenceRows
+                        <> harnessRows
                     )
                 )
                 requested
@@ -347,7 +341,8 @@ runSession
     -> String
     -> Bool
     -> FilePath
-    -> FilePath
+    -> Capabilities
+    -> ReplayIndex
     -> IO ()
 runSession
     rows
@@ -358,31 +353,13 @@ runSession
     base
     dirty
     receiptsDir
-    sock = do
-        lsqCh <- newLSQChannel 16
-        ltxsCh <- newLTxSChannel 16
-        nodeThread <-
-            async $
-                runNodeClient
-                    sessionMagic
-                    sock
-                    lsqCh
-                    ltxsCh
-        let n2c = mkN2CProvider lsqCh
-            nodeProv = adaptProvider n2c
-        awaitConnection sessionMagic sock nodeThread nodeProv
-        -- #287: every rejection is captured and replayed before the next
-        -- submission, beside the receipts.
-        replay <-
-            newReplayEnv n2c lsqCh blueprintPath receiptsDir (T.pack nodeVer)
-        let submit =
-                capturingSubmitter replay $
-                    boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
-        prov <- followedProvider nodeProv submit
+    caps
+    replayIndex = do
+        let prov = capReads caps
         checkFunding prov funderAddr defaultFundingFloor
         tm <- mkPureTrieManager
         mirror <- newMirror
-        _ <- Cage.queryProtocolParams prov
+        _ <- Cage.withView prov (pure . Cage.viewProtocolParams)
         let caMode = any (`elem` caRows) rows
             legacyCg = any (`elem` cgRows) rows
         keys <- newIORef (False, "")
@@ -393,6 +370,7 @@ runSession
         stakeRef <- newIORef Nothing
         key2Ref <- newIORef Nothing
         heldRef <- newIORef []
+        unmetRef <- newIORef []
         failedRef <- newIORef []
         liveRecordsRef <- newIORef []
         liveMeasurementsRef <- newIORef []
@@ -407,8 +385,8 @@ runSession
                     -- The wallet is swept BEFORE the designation. After it,
                     -- the canonical seed is an ordinary ada-only output and
                     -- a sweep would spend the very one the config pins.
-                    consolidateWallet prov submit
-                    (seedTxIn, _) <- designateSplit prov submit "canonical"
+                    consolidateWallet prov caps
+                    (seedTxIn, _) <- designateSplit prov caps "canonical"
                     let seedRef = txInToRef seedTxIn
                         cfg = cageCfg stateBytes requestBytes namingCodes seedRef
                     caTid <- newIORef Nothing
@@ -433,7 +411,8 @@ runSession
                         ( Env
                             { envCfg = cfg
                             , envProv = prov
-                            , envSubmit = submit
+                            , envSubmit = capSubmit caps
+                            , envConfirm = capConfirm caps
                             , envTm = tm
                             , -- never read in a CA session: the row
                               -- validator keeps CG rows out of it
@@ -457,10 +436,11 @@ runSession
                             , envStake = stakeRef
                             , envKey2 = key2Ref
                             , envHeld = heldRef
+                            , envUnmet = unmetRef
                             , envFailed = failedRef
                             , envLiveRecords = liveRecordsRef
                             , envLiveMeasurements = liveMeasurementsRef
-                            , envReplay = reIndex replay
+                            , envReplay = replayIndex
                             }
                         , "CA session: canonical seed published at outRef "
                             <> show seedRef
@@ -485,7 +465,8 @@ runSession
                                 ( Env
                                     { envCfg = placeholderCfg
                                     , envProv = prov
-                                    , envSubmit = submit
+                                    , envSubmit = capSubmit caps
+                                    , envConfirm = capConfirm caps
                                     , envTm = tm
                                     , envTid = TokenId (AssetName (SBS.toShort ""))
                                     , envMirror = mirror
@@ -507,10 +488,11 @@ runSession
                                     , envStake = stakeRef
                                     , envKey2 = key2Ref
                                     , envHeld = heldRef
+                                    , envUnmet = unmetRef
                                     , envFailed = failedRef
                                     , envLiveRecords = liveRecordsRef
                                     , envLiveMeasurements = liveMeasurementsRef
-                                    , envReplay = reIndex replay
+                                    , envReplay = replayIndex
                                     }
                                 , "no session cage: the issue #70 rows boot \
                                   \their own"
@@ -520,18 +502,20 @@ runSession
                             -- state validator is published before the
                             -- seed is chosen, so the publication cannot
                             -- spend the seed.
-                            ensureStateRefWith prov submit stateBytes
+                            ensureStateRefWith prov caps stateBytes
                             (seedTxIn, _) <- largestWalletUtxo prov
                             let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seedTxIn)
-                            unsignedBoot <- bootTokenImpl cfg prov genesisAddr
-                            signedBoot <- submitWithGenesis submit unsignedBoot
+                            unsignedBoot <-
+                                Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
+                            signedBoot <- submitWithGenesis caps unsignedBoot
                             tid <- extractTokenId cfg signedBoot
                             createTrie tm tid
                             pure
                                 ( Env
                                     { envCfg = cfg
                                     , envProv = prov
-                                    , envSubmit = submit
+                                    , envSubmit = capSubmit caps
+                                    , envConfirm = capConfirm caps
                                     , envTm = tm
                                     , envTid = tid
                                     , envMirror = mirror
@@ -553,21 +537,21 @@ runSession
                                     , envStake = stakeRef
                                     , envKey2 = key2Ref
                                     , envHeld = heldRef
+                                    , envUnmet = unmetRef
                                     , envFailed = failedRef
                                     , envLiveRecords = liveRecordsRef
                                     , envLiveMeasurements = liveMeasurementsRef
-                                    , envReplay = reIndex replay
+                                    , envReplay = replayIndex
                                     }
                                 , "cage booted bootTx=" <> txIdHex signedBoot
                                 )
         emit "boot" bootLine
         mapM_
             ( \row ->
-                writeIORef (riRow (reIndex replay)) (T.pack row)
+                writeIORef (riRow replayIndex) (T.pack row)
                     >> runRow env row
             )
             rows
-        cancel nodeThread
         if caMode
             then writeCaCL01 env rows
             else
@@ -577,12 +561,13 @@ runSession
         emit
             "complete"
             (show (length rows) <> "/" <> show (length rows) <> " rows ok")
-        -- A held or failing row must never read as a pass: the
-        -- session ends non-zero naming every such row.
+        -- A held, unmet or failing row must never read as a pass:
+        -- the session ends non-zero naming every such row.
         held <- readIORef (envHeld env)
+        unmet <- readIORef (envUnmet env)
         failed <- readIORef (envFailed env)
-        case (held, failed) of
-            ([], []) -> pure ()
+        case (held, unmet, failed) of
+            ([], [], []) -> pure ()
             _ ->
                 throwIO
                     ( ErrorCall
@@ -594,6 +579,15 @@ runSession
                             <> ( if null held
                                     then "none"
                                     else unwords (reverse held)
+                               )
+                            <> "\n- Unmet by ruling (a consumer \
+                               \requirement the registry deliberately \
+                               \does not meet, kept unmet by operator \
+                               \ruling; receipts carry verdict \
+                               \unmet-by-ruling): "
+                            <> ( if null unmet
+                                    then "none"
+                                    else unwords (reverse unmet)
                                )
                             <> "\n- Failing against this candidate \
                                \(verdict diverges-from-lean — the chain \
@@ -646,5 +640,7 @@ runRowIn env row = case row of
     "CG21" -> runCG21 env
     "CG22" -> runCG22 env
     "CG23" -> runCG23 env
+    "CG24" -> runCG24 env
     "sequence" -> runSequence env
+    "batch" -> runBatchHarness env
     _ -> failWith ("run cannot execute row: " <> row)

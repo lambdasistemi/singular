@@ -26,6 +26,11 @@
 #      variant proves the release-text consistency assertion can fail; it
 #      is NOT evidence about the forbidden-stale-scope wording rule, which
 #      the equality check shadows.
+#   D. model-revision-removed: deletes the MODEL-REVISION member. The
+#      checker must refuse naming the missing member.
+#   E. model-revision-altered: states another commit in MODEL-REVISION.
+#      The checker must refuse naming the revision the conformance
+#      evidence is compiled against.
 #
 # Each variant rebuilds BOTH manifests in the assembler's exact bytes —
 # the archive-internal `HASH␣␣path` SHA256SUMS (proven by recomputation
@@ -137,6 +142,17 @@ Recovery and retirement belong to epic 17 as future work with their own evidence
 EOF
 }
 
+# Variant D: the archive states no model revision.
+mutate_model_revision_removed() {
+  rm "$1/MODEL-REVISION"
+}
+
+# Variant E: the archive states a model revision other than the one the
+# conformance evidence is compiled against.
+mutate_model_revision_altered() {
+  printf '%040d\n' 0 >"$1/MODEL-REVISION"
+}
+
 run_variant() { # $1 = name, $2 = mutator, $3 = expected reason fragment
   local name="$1" work vdir
   work="$(mktemp -d)"
@@ -185,4 +201,8 @@ run_variant "status-flip" mutate_status_flip \
   "contradicts the retained status"
 run_variant "release-text-tamper" mutate_release_text_tamper \
   "differ from source"
-echo "CONTROL-PASS: ordinary archive passes; the verified-command promise, the retained-command disclosure, the per-row retained status and the release-text consistency each refuse specifically"
+run_variant "model-revision-removed" mutate_model_revision_removed \
+  "misses MODEL-REVISION"
+run_variant "model-revision-altered" mutate_model_revision_altered \
+  "differs from the conformance evidence's"
+echo "CONTROL-PASS: ordinary archive passes; the verified-command promise, the retained-command disclosure, the per-row retained status, the release-text consistency and the stated model revision each refuse specifically"

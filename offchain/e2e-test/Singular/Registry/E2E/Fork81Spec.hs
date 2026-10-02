@@ -140,7 +140,7 @@ fork81Spec stateBytes requestBytes = do
             -- insertion created (#157 C6), so the state UTxO is the
             -- one carrying the registry policy token, not the only one.
             let stateAddr = cageAddrFromCfg cfg Testnet
-            stateUtxos <- Cage.queryUTxOs prov stateAddr
+            stateUtxos <- Cage.withView prov (`Cage.viewUTxOsAt` stateAddr)
             chainRoot <-
                 case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId stateUtxos of
                     Just (_, out) -> case extractCageDatum out of

@@ -101,9 +101,6 @@ import PlutusTx.IsData.Class (FromData (..))
 import Cardano.Node.Client.E2E.Setup
     ( genesisAddr
     )
-import Cardano.Node.Client.Submitter
-    ( Submitter
-    )
 import Singular.Registry.Blueprint
     ( Blueprint
     , NamingCodes
@@ -124,9 +121,7 @@ import Singular.Registry.Ledger
     , Root (..)
     , TokenId
     )
-import Singular.Registry.Provider
-    ( Provider (..)
-    )
+import Singular.Registry.Node (Capabilities)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie
     ( Trie (getRoot)
@@ -336,7 +331,7 @@ orderingStage
     :: CageConfig
     -> NamingCodes
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TrieManager IO
     -> TokenId
     -> Addr
@@ -374,7 +369,7 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
     -- a future reordering of the calls must edit this list to match.
     let bookingSequence = [(keyB, refB), (keyA, refA)]
     -- The real provider's own observations, before anything is wrapped.
-    pending <- Cage.queryUTxOs prov requestAddr
+    pending <- Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
     unless
         (length pending == 2 && sort (map fst pending) == sort [refA, refB])
         $ fail
@@ -406,12 +401,12 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
     -- The test-local provider override: the request address's REAL
     -- outputs, returned descending; every other address and provider
     -- function forwards to the real provider unchanged.
-    let wrapped =
-            prov
-                { queryUTxOs = \addr ->
+    let wrapped v =
+            v
+                { Cage.viewUTxOsAt = \addr ->
                     if addr == requestAddr
                         then pure descending
-                        else Cage.queryUTxOs prov addr
+                        else Cage.viewUTxOsAt v addr
                 }
     -- Expected association: observed datums, ascending order, fresh
     -- speculative session of the committed trie.
@@ -426,9 +421,9 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
         _ ->
             fail
                 "ORDER-WITNESS-NONDISCRIMINATING: the two requests do not produce distinguishable proofs"
-    ctx <- contextFor cfg codes prov refs
-    unsigned <-
-        updateTokenWithDuties cfg wrapped tm tokenId genesisAddr ctx
+    unsigned <- Cage.withView prov $ \v -> do
+        ctx <- contextFor cfg codes v refs
+        updateTokenWithDuties cfg (wrapped v) tm tokenId genesisAddr ctx
     decoded <- modifyActionsOf unsigned
     let orderObs = OrderObservation{ooActions = decoded, ooExpected = expectedActions}
     livePass "ordering: request association" (cmpOrder orderObs)
@@ -474,7 +469,7 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
             <> " mirror-root-after="
             <> show (unRoot rootAfter)
     -- Receipts through the REAL provider: both requests consumed.
-    after <- Cage.queryUTxOs prov requestAddr
+    after <- Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
     forM_ sortedRefs $ \ref ->
         when (isJust (lookup ref after)) $
             expectationFailure
@@ -499,7 +494,7 @@ connectedStages
     :: CageConfig
     -> NamingCodes
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TrieManager IO
     -> TokenId
     -> Addr
@@ -555,7 +550,7 @@ bookFoldObserve
     :: CageConfig
     -> NamingCodes
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TrieManager IO
     -> TokenId
     -> Addr
@@ -576,13 +571,17 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
             key
             edge
             dest
-    pending <- Cage.queryUTxOs prov requestAddr
+    pending <- Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
     (reqOut, req) <- observedRequestAt requestTxIn pending
-    cageUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
-    walletUtxos <- Cage.queryUTxOs prov genesisAddr
+    cageUtxos <-
+        Cage.withView
+            prov
+            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
+    walletUtxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
     rootBefore <- withTrie tm tokenId getRoot
-    ctx <- contextFor cfg codes prov refs
-    unsigned <- updateTokenWithDuties cfg prov tm tokenId genesisAddr ctx
+    unsigned <- Cage.withView prov $ \v -> do
+        ctx <- contextFor cfg codes v refs
+        updateTokenWithDuties cfg v tm tokenId genesisAddr ctx
     let body = unsigned ^. bodyTxL
         requests = [req]
         outputs = toList (body ^. outputsTxBodyL)
@@ -744,7 +743,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                  , inlineDatumData out == dsDatum
                  ] of
                 [(ix, built)] -> do
-                    landed <- Cage.queryUTxOs prov dsAddress
+                    landed <- Cage.withView prov (`Cage.viewUTxOsAt` dsAddress)
                     case lookup (TxIn (txIdTx signed) (TxIx (fromIntegral ix))) landed of
                         Just observed ->
                             unless (observed `sameOutputAs` built) $
@@ -777,7 +776,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                      , not (any (`carriesPolicyAsset` out) (witnessPolicies cfg))
                      ] of
                     [(ix, built)] -> do
-                        landed <- Cage.queryUTxOs prov refundAddr
+                        landed <- Cage.withView prov (`Cage.viewUTxOsAt` refundAddr)
                         case lookup (TxIn (txIdTx signed) (TxIx (fromIntegral ix))) landed of
                             Just observed ->
                                 unless (observed `sameOutputAs` built) $
@@ -793,7 +792,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                             )
             Nothing -> pure ()
     -- The request is spent; a burned asset is gone.
-    after <- Cage.queryUTxOs prov requestAddr
+    after <- Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
     when (isJust (lookup requestTxIn after)) $
         expectationFailure
             ( "wrong effect: request "
@@ -801,7 +800,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                 <> " still pending after fold"
             )
     when (edge == edgeUpdateTerminal || edge == edgeDeleteActive) $ do
-        walletAfter <- Cage.queryUTxOs prov genesisAddr
+        walletAfter <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
         let remaining =
                 length
                     [ ()
@@ -1028,7 +1027,10 @@ assertChainRootMatches
     -> String
     -> IO ()
 assertChainRootMatches cfg prov tokenId mirrorRoot what = do
-    cageUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
+    cageUtxos <-
+        Cage.withView
+            prov
+            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId cageUtxos of
         Just (_, stateOut) -> case extractCageDatum stateOut of
             Just (StateDatum st)
@@ -1207,11 +1209,11 @@ distinct destination-datum preimages.
 contextFor
     :: CageConfig
     -> NamingCodes
-    -> Cage.Provider IO
+    -> Cage.View IO
     -> [(TxIn, TxOut ConwayEra)]
     -> IO RegistryContext
-contextFor cfg codes prov refs = do
-    base <- Edges.registryContextFor cfg codes prov refs
+contextFor cfg codes v refs = do
+    base <- Edges.registryContextFor cfg codes v refs
     pure
         base
             { rcDatums =

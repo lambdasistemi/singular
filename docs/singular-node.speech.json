@@ -1,0 +1,118 @@
+{
+  "the-settings-you-give": [
+    {
+      "text": "You run the singular registry commands against a cardano node you already run, a public test network's node or a development network you started yourself. Each command reads the chain through it, signs with your key, submits, waits for the chain to carry what it submitted, and journals which chain state each transaction was built from. A missing, contradictory or wrong-network setting is refused before anything is read or submitted.",
+      "pause": 500
+    },
+    {
+      "text": "The table lists the settings. The node socket and the network magic go to all five commands: magic 1 is preprod, 2 is preview, 42 the factory development network, and mainnet's magic is refused for writes. The wallet signing key goes to the four writes only; it funds and signs, is never printed, and inspect refuses it. On a preview a public wallet address takes the key's place for create, insert, update and terminate, and the command prints what it would submit without signing anything. The confirm timeout bounds how long each submission may take to appear on chain, ten minutes by default; past it the submission stays journalled as unconfirmed and is never resubmitted. The backend setting, node by default or indexer, decides where every command reads addresses from: the node itself, or an index the command builds by following the node's chain from its first block. Any other value is refused before anything runs. The registry directory and the compiled blueprint go to all five commands. Create takes either a seed, the output of your wallet that fixes the new registry's identity, or the preview switch, which shows that identity without submitting. Insert, update and terminate also take the preview switch, which builds and measures what they would submit and prints it; a funding input, the wallet output that funds and collateralises the write; and a maximum outlay, past which a booking or update is not signed, and past which a fold costing more than the booking left of it stops the command partial, its request pending. Create and inspect refuse both of those. The key, as hex bytes, names what the other four act on; insert takes the key's envelope, update its new payload. Every command can also write the receipt it prints to a file.",
+      "pause": 500
+    },
+    {
+      "text": "The three node settings travel together on a write. One or two of them is refused as partially configured, and none at all is refused too, because singular never starts a node of its own: a registry on a chain that dies with the process could not be attached to again. Settings come from the command line only. The one exception is the test-harness hooks, described last on this page, which operators never set.",
+      "pause": 400
+    },
+    {
+      "text": "An example follows: an insert against a preprod node, naming its socket, magic one, and the payment key.",
+      "pause": 400
+    }
+  ],
+  "one-path-to-every-node": [
+    {
+      "text": "A development network and a public node are reached the same way. One composition step turns your settings into a connection and hands the command three things: a way to read the chain, a way to submit signed transactions, and a way to wait for a confirmation. Nothing else in the command knows which node it talks to, and a source check in CI refuses any other module that names the node backend.",
+      "pause": 500
+    },
+    {
+      "text": "The diagram reads left to right. Your socket, magic and key are parsed once by the composition step, which opens one node connection. It hands the registry command the read interface, one view per transaction; the write, which takes signed transactions only; and the bounded confirmation wait. The command acquires and reads from your node and submits signed transactions to it. Development network and public test network both reach that node through the same socket and magic path.",
+      "pause": 500
+    },
+    {
+      "text": "Inspect takes only the socket and the magic: it gets the read interface and nothing that can sign or send.",
+      "pause": 400
+    }
+  ],
+  "what-a-write-does-with-the-node": [
+    {
+      "text": "Each transaction a write submits is built from one view of the chain, one acquired ledger state with its network, era, slot and block hash, and the view is closed before the transaction is signed and sent. The journal line written before the send names that view's point, so a later reader knows which chain state the inputs, fees and validity were decided against.",
+      "pause": 500
+    },
+    {
+      "text": "The sequence diagram has three participants: the write, the node, and the journal in the registry directory. The write acquires one view; the node answers with network, era, slot, block hash, parameters and outputs. The write builds the transaction from that view only and releases it. It journals prepared, with the inputs, the body hash and the view's point. It submits the signed transaction; the node accepts or refuses it with its reason, journalled as submitted or rejected. Then the write waits for the transaction's first output within its validity window, and journals confirmed or unconfirmed.",
+      "pause": 500
+    }
+  ],
+  "when-the-node-cannot-be-used": [
+    {
+      "text": "The last table pairs each failure with what you see.",
+      "pause": 300
+    },
+    {
+      "text": "One or two of the three write settings: refused before anything runs, naming the missing one. No node settings on a write: refused, singular never starts a node. Mainnet's magic on a write: refused, the commands are for test networks only.",
+      "pause": 400
+    },
+    {
+      "text": "No node at the socket, or a node on another network: node unavailable, naming the magic it was asked for. A chain that has not made its first block: the command waits up to two minutes, then refuses, since no view of a chain at its origin can be acquired.",
+      "pause": 400
+    },
+    {
+      "text": "A signing key passed to inspect: refused, inspect only reads. A node lost after it accepted a submission: the command ends within the confirm timeout with the submission journalled as unresolved, and nothing is resubmitted.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "singular-node.md",
+    "sha256": "40581a08fdeeede434fc68dcd5a8a8aa4aa9746eade82f37eabfd362453ce5b0"
+  },
+  "reading-through-an-index": [
+    {
+      "text": "With the indexer backend a command still connects to the node you name and still submits through it, but every address read, your wallet, the registry state and its holdings, is answered from an index the command keeps in memory while it runs. The index follows the node's chain from its first block, so it holds every output a block ever carried. Protocol parameters, script registration, time and evaluation still come from the node.",
+      "pause": 500
+    },
+    {
+      "text": "Each read is answered at one chain point. The command acquires a view of the node, lets the index advance exactly to that block and holds it there until the view closes, so the index and the node describe the same block. If the index cannot be brought there, the command refuses rather than mix two chain states.",
+      "pause": 500
+    },
+    {
+      "text": "The diagram shows the follower inside the command applying the node's blocks to the in-memory index, the command reading addresses from the index at its view's block, and parameters, time, evaluation and submission going to the node.",
+      "pause": 400
+    }
+  ],
+  "what-the-index-covers": [
+    {
+      "text": "The index holds every output a transaction in a block created. Outputs that exist only in the genesis ledger state were never in a block, so the index does not hold them. When a write starts, the command compares, at one chain point, what the node and the index hold at your wallet's address; if the node holds outputs the index does not, it refuses with the coverage incomplete diagnostic, naming each of them, instead of reading the wallet as empty. Pay them into a block first, for example to yourself through the node backend, or keep the node backend for that wallet.",
+      "pause": 500
+    },
+    {
+      "text": "A development network is followed in seconds. A public test network's index also starts from its first block, which takes far longer than the two minutes a command waits for its index to catch up, so there the command refuses as restoring and the node backend is the one to use.",
+      "pause": 500
+    },
+    {
+      "text": "When it ends, each command under the indexer backend reports on standard error how many address reads the index answered and how many went to the node: at most one, a write's wallet check.",
+      "pause": 400
+    }
+  ],
+  "when-the-index-cannot-answer": [
+    {
+      "text": "Every refusal is one line, indexer backend refused the read, with its class in brackets and the chain points or setting involved, and nothing is submitted after it. A refusal while the command opens its connection is reported as node unavailable. Later in a write it is a client refusal while the write has sent nothing, and partial, naming every transaction it sent, once it has: a write that already submitted never reports that nothing was submitted.",
+      "pause": 500
+    },
+    {
+      "text": "The table lists the classes. Coverage incomplete: your wallet holds outputs only the genesis state carries, named with the address, the chain point and each output. Restoring: the index has not caught up with the node within two minutes, with the processed and tip slots. Disconnected: the index lost its connection to the node. Lag: the index did not reach the view's block within ten seconds. Fork: the index holds another block at the view's slot. Unsupported: another network, or an era whose outputs the index cannot decode.",
+      "pause": 500
+    }
+  ],
+  "test-harness-hooks": [
+    {
+      "text": "You never set these. The released singular reads eleven environment variables whose only purpose is to let the project's own tests stop a command at an exact point, to inspect it, kill it, or make it meet no answer from the node. When none is set, as every operator runs it, they do nothing. The release verification checks this on every run.",
+      "pause": 500
+    },
+    {
+      "text": "A diagram shows a command reaching a hook point. With the variable unset it continues and nothing happens. With a hold variable naming a path, it writes that path with a waiting suffix and waits until the path exists. With a drop variable naming the step, it meets no answer from the node.",
+      "pause": 400
+    },
+    {
+      "text": "A table lists the variables. The hold points are: before a write takes the registry lock; after a submission is sent; after the node's acceptance is journalled; before a fold's local commit; after its mirror is saved; before its observation is journalled; and, in a rollback, before the mirror is rebuilt and before the saved state follows. The hold step variable names the one submission step the two submission holds stop at, and with it unset they stop nowhere. The two drop variables name a step whose send does not happen, or whose answer is discarded.",
+      "pause": 500
+    }
+  ]
+}

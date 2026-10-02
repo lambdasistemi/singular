@@ -5,6 +5,10 @@ License     : Apache-2.0
 -}
 module Conformance.Run.Environment
     ( Env (..)
+    , envCaps
+    , pinnedTo
+    , withHeldView
+    , pinnedProvider
     , RowCage (..)
     , StakeKit (..)
     , CaWorld (..)
@@ -77,7 +81,6 @@ import Cardano.Node.Client.E2E.Setup
     ( Ed25519DSIGN
     , SignKeyDSIGN
     )
-import Cardano.Node.Client.Submitter (Submitter (..))
 import PlutusCore.Data qualified as PLC
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint
@@ -96,7 +99,9 @@ import Singular.Registry.Ledger
     , TxOut
     )
 import Singular.Registry.Node
-    ( funderAddr
+    ( Capabilities (..)
+    , SignedSubmitter
+    , funderAddr
     , funderSignKey
     )
 import Singular.Registry.Provider qualified as Cage
@@ -123,7 +128,10 @@ import Conformance.Mirror
 data Env = Env
     { envCfg :: CageConfig
     , envProv :: Cage.Provider IO
-    , envSubmit :: Submitter IO
+    , envSubmit :: SignedSubmitter
+    -- ^ The session's signed-only write
+    , envConfirm :: ConwayTx -> IO ()
+    -- ^ The session's confirmation of a submitted transaction
     , envTm :: TrieManager IO
     , envTid :: TokenId
     , envMirror :: Mirror
@@ -175,6 +183,12 @@ data Env = Env
     and the consumer's theorem disagree and the chain sided with
     Singular's Lean. The session ends non-zero while this is
     non-empty — a hold must never read as a pass.
+    -}
+    , envUnmet :: IORef [String]
+    {- ^ rows recorded as @unmet-by-ruling@ this session: a consumer
+    requirement the registry deliberately does not meet, kept unmet by
+    operator ruling. The session ends non-zero while this is
+    non-empty — an unmet requirement must never read as a pass.
     -}
     , envFailed :: IORef [String]
     {- ^ rows recorded as @diverges-from-lean@ this session: the
@@ -502,3 +516,37 @@ extractTokenId cfg tx =
 txInHex :: TxId -> String
 txInHex (TxId h) =
     hex (hashToBytes (extractHash h))
+
+{- | The session's capabilities as one record, reading through the
+environment's provider — so a pinned environment's reads stay on its
+held view.
+-}
+envCaps :: Env -> Capabilities
+envCaps env =
+    Capabilities
+        { capReads = envProv env
+        , capSubmit = envSubmit env
+        , capConfirm = envConfirm env
+        }
+
+{- | The environment with every read served by one held view. A fold is
+one transaction built from one acquired chain state, and so is its
+context; holding the view also spares the acquisitions that would
+otherwise spend a near-now validity window between assembly and
+submission. The view stays valid only inside the scope that acquired it.
+-}
+pinnedTo :: Cage.View IO -> Env -> Env
+pinnedTo v env = env{envProv = pinnedProvider v}
+
+-- | A provider whose every acquisition hands back one held view.
+pinnedProvider :: Cage.View IO -> Cage.Provider IO
+pinnedProvider v = Cage.Provider (\k -> k v)
+
+{- | Run one operation — one transaction's assembly — with every chain
+read it makes served by one view acquired here: the environment it is
+handed is pinned to that view. A read that may submit (publishing the
+reference outputs) must be taken before, never inside. Holding an
+already pinned environment hands back its view.
+-}
+withHeldView :: Env -> (Env -> IO a) -> IO a
+withHeldView env k = Cage.withView (envProv env) (\v -> k (pinnedTo v env))
