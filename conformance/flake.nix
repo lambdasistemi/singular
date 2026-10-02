@@ -319,7 +319,8 @@
             ''
               mkdir -p $out/bin
               makeWrapper ${pkgs.lib.getExe components.tests.conformance-tests} $out/bin/conformance-tests \
-                --set CONFORMANCE_DRIVER_CORPUS ${../lean/driver-corpus.json}
+                --set CONFORMANCE_DRIVER_CORPUS ${../lean/driver-corpus.json} \
+                --set CONFORMANCE_MODEL_EVALUATOR ${pkgs.lib.getExe driverTransport}
             '';
 
         # The public test command executes the book, including fresh devnet

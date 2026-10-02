@@ -17,6 +17,7 @@ extent and replayed by the public simulator adapter.
 """
 
 import argparse
+import copy
 import hashlib
 import json
 from pathlib import Path
@@ -746,6 +747,438 @@ def check_derived(corpus, leaf_bytes, deltas, transitions):
     return derived
 
 
+# ---------------------------------------------------------------------------
+# The driver's batch questions (#344).
+#
+# Lean states two batch laws the single-request scenarios never reach:
+# `Singular.foldBatch`, which folds several requests atomically, and the
+# judgement of several rejects as `Singular.settle` over their concatenated
+# obligations. The driver answers each as a declared question with its own
+# observation extent. These checks hold the batch rows to the same standard as
+# the scenarios and re-derive, from the model's own tables, what each batch must
+# have answered, so a row with a wrong expected refusal fails here rather than
+# being exported.
+# ---------------------------------------------------------------------------
+
+BATCH_QUESTIONS = {"foldBatch", "rejectBatch"}
+
+
+def model_batch_refusals(root):
+    """What a fold batch may be refused for, read off the model: every reason
+    `Singular.refusal` gives a request, and `Singular.foldBatch`'s own two — the
+    one on its `isEmpty` line and the one its mint guard throws."""
+    source = (root / "lean/Singular/Model.lean").read_text(encoding="utf-8")
+    body = source.split("\ndef foldBatch ", 1)[1].split("\n/--", 1)[0]
+
+    def reason_on(keyword):
+        found = [
+            r
+            for line in body.splitlines()
+            if keyword in line
+            for r in REFUSAL_LITERAL.findall(line)
+        ]
+        assert len(found) == 1, (
+            f"Singular.foldBatch names {found} on its {keyword} line, not one reason"
+        )
+        return found[0]
+
+    step = source.split("\ndef refusal ", 1)[1].split("\n/--", 1)[0]
+    vocabulary = set(REFUSAL_LITERAL.findall(step))
+    assert vocabulary, "EMPTY EXTENT: no refusal reasons discovered in Singular.refusal"
+    return {
+        "empty": reason_on("isEmpty"),
+        "mismatch": reason_on("assetSame"),
+        "step": vocabulary,
+    }
+
+
+def model_unpaid_reasons(root):
+    """Every reason `Singular.unpaidReason` gives a recipient left unpaid."""
+    source = (root / "lean/Singular/Model.lean").read_text(encoding="utf-8")
+    body = source.split("\ndef unpaidReason ", 1)[1].split("\n/--", 1)[0]
+    reasons = set(REFUSAL_LITERAL.findall(body))
+    assert reasons, "EMPTY EXTENT: no reasons discovered in Singular.unpaidReason"
+    return reasons
+
+
+def batch_surface(surface):
+    """The declared batch questions, each with its own observation extent.
+
+    A batch question reports a subset of the single-request boundary and never a
+    transaction: the model builds none for a batch, so a `tx` in a batch extent
+    would be an observation nothing produces.
+    """
+    batches = surface.get("batchQuestions")
+    assert isinstance(batches, dict) and batches, (
+        "driver surface declares no batch questions (#344)"
+    )
+    assert set(batches) == BATCH_QUESTIONS, (
+        f"driver batch questions {sorted(batches)} are not {sorted(BATCH_QUESTIONS)}"
+    )
+    declared = set(surface["observations"])
+    for name, extent in batches.items():
+        assert extent, f"EMPTY EXTENT: batch question {name} declares no observation"
+        assert len(set(extent)) == len(extent), (
+            f"batch question {name} declares an observation twice: {extent}"
+        )
+        assert "tx" not in extent, (
+            f"batch question {name} declares a transaction observation; the model builds "
+            "no transaction for a batch"
+        )
+        assert set(extent) <= declared, (
+            f"batch question {name} declares observations the driver does not: "
+            f"{sorted(set(extent) - declared)}"
+        )
+    return batches
+
+
+def leaf_at(state, key):
+    return next((e["leaf"] for e in state["trie"] if e["key"] == key), None)
+
+
+def distinct_keys(requests):
+    keys = []
+    for r in requests:
+        if r["key"] not in keys:
+            keys.append(r["key"])
+    return keys
+
+
+def asset_sums(entries):
+    """Per-asset sums of a keyed delta list, zero sums dropped: `assetSame`
+    compares `assetKind` at every asset, where a zero sum and an absent one
+    agree."""
+    sums = {}
+    for kind, key, qty in entries:
+        sums[(kind, key)] = sums.get((kind, key), 0) + qty
+    return {asset: qty for asset, qty in sums.items() if qty != 0}
+
+
+def fold_batch_expectation(row, refusals, transitions, deltas):
+    """What `Singular.foldBatch` must answer for this row, re-derived from the
+    model's tables and the step trace the row carries: `(outcome, reason)`."""
+    requests = row["requests"]
+    if not requests:
+        assert row["folded"] == [], f"{row['id']}: an empty batch folds nothing"
+        return "refused", refusals["empty"]
+    folded = row["folded"]
+    assert folded, f"{row['id']}: a non-empty batch carries no step trace"
+    assert len(folded) <= len(requests), f"{row['id']}: more steps than requests"
+    before = row["setup"][-1]["state"] if row["setup"] else row["start"]
+    for i, (request, stp) in enumerate(zip(requests, folded)):
+        assert stp["request"] == request, (
+            f"{row['id']}: step {i} folds another request than the batch names"
+        )
+        edge, key = request["edge"], request["key"]
+        before_leaf = leaf_at(before, key)
+        if not stp["accepted"]:
+            assert i == len(folded) - 1, (
+                f"{row['id']}: the trace continues past the refused step {i}"
+            )
+            assert stp["reason"] in refusals["step"], (
+                f"{row['id']}: step {i} is refused {stp['reason']!r}, which "
+                "Singular.refusal cannot say"
+            )
+            return "refused", stp["reason"]
+        assert (edge, before_leaf) in transitions, (
+            f"{row['id']}: step {i} accepts {edge} on a {before_leaf!r} leaf, which "
+            "the R2 table refuses"
+        )
+        assert leaf_at(stp["state"], key) == transitions[(edge, before_leaf)], (
+            f"{row['id']}: step {i} {edge} on a {before_leaf!r} leaf leaves "
+            f"{leaf_at(stp['state'], key)!r}"
+        )
+        before = stp["state"]
+    assert len(folded) == len(requests), (
+        f"{row['id']}: every step accepted, yet the trace stops early"
+    )
+    claimed = asset_sums(
+        (c["kind"], r["key"], c["quantity"]) for r in requests for c in r["claimed"]
+    )
+    actual = asset_sums(
+        (kind, r["key"], qty) for r in requests for kind, qty in deltas[r["edge"]]
+    )
+    if claimed != actual:
+        return "refused", refusals["mismatch"]
+    return "accepted", None
+
+
+def check_batch_rows(corpus, generic_names, statement_digests, refusals, unpaid,
+                     transitions, deltas, leaf_bytes):
+    """Every batch row the driver answered, held to its declared question.
+
+    The expected outcome and reason of every fold batch are re-derived here, not
+    read back off the row: a row whose refusal differs from what the model's
+    tables and its own step trace imply fails, whatever the driver printed.
+    """
+    surface = driver_surface(corpus)
+    batches = batch_surface(surface)
+    rows = corpus.get("batches")
+    assert isinstance(rows, list) and rows, "EMPTY EXTENT: driver corpus carries no batch rows"
+    ids = [r["id"] for r in rows] + [s["id"] for s in corpus["scenarios"]]
+    assert len(set(ids)) == len(ids), "duplicate driver row identity"
+    exits = set(surface["operations"])
+    derived = 0
+    for row in rows:
+        rid = row["id"]
+        question = row["question"]
+        assert question in batches, f"{rid}: question {question!r} is not declared"
+        theorem = row["theorem"]
+        assert theorem in generic_names, f"{rid}: unknown theorem binding {theorem}"
+        assert row["statementSha256"] == statement_digests[theorem], (
+            f"{rid}: stale theorem binding — {theorem} statement digest moved"
+        )
+        for i, stp in enumerate(row["setup"]):
+            assert stp["accepted"] is True, (
+                f"{rid}: setup step {i} was not an accepted transition"
+            )
+        if row["requiresReachableState"]:
+            assert row["setup"], f"{rid}: claims a reachable state with an empty setup trace"
+        assert "witness" not in row, f"{rid}: a batch row carries a retraction witness"
+
+        outcome = row["outcome"]
+        assert outcome in DRIVER_OUTCOMES, f"{rid}: unknown outcome class {outcome!r}"
+        observations = row["observations"]
+        if outcome == "accepted":
+            assert row["premise"]["checked"] is True, (
+                f"{rid}: accepted without checking its law premise"
+            )
+            assert "tx" not in observations, (
+                f"{rid}: a batch row observes a transaction; the model builds none for a batch"
+            )
+            assert set(observations) == set(batches[question]), (
+                f"{rid}: observations are not the {question} extent; missing "
+                f"{sorted(set(batches[question]) - set(observations))}, undeclared "
+                f"{sorted(set(observations) - set(batches[question]))}"
+            )
+            assert row["reason"] is None, f"{rid}: accepted rows carry no refusal reason"
+        else:
+            assert row["reason"], f"{rid}: {outcome} rows must name a reason"
+            assert observations is None, f"{rid}: {outcome} rows observe nothing"
+            if outcome == "refused":
+                assert row["premise"]["checked"] is True, (
+                    f"{rid}: refused without establishing the premise"
+                )
+
+        before = row["setup"][-1]["state"] if row["setup"] else row["start"]
+        states = [row["start"]] + [stp["state"] for stp in row["setup"]]
+        if question == "foldBatch":
+            assert all(isinstance(r, dict) and "edge" in r for r in row["requests"]), (
+                f"{rid}: a fold batch names requests, each folded on its own edge"
+            )
+            if outcome != "unsupported":
+                expected = fold_batch_expectation(row, refusals, transitions, deltas)
+                assert (outcome, row["reason"]) == expected, (
+                    f"{rid}: Singular.foldBatch answers {expected}, the row reports "
+                    f"{(outcome, row['reason'])} — a wrong expected batch refusal"
+                )
+                derived += 1
+                states += [stp["state"] for stp in row["folded"] if stp["accepted"]]
+            if outcome == "accepted":
+                obs = observations
+                states.append(obs["state"])
+                assert obs["state"] == row["folded"][-1]["state"], (
+                    f"{rid}: the batch reports another state than its last step produced"
+                )
+                keys = distinct_keys(row["requests"])
+                assert [e["key"] for e in obs["leaf"]] == keys, (
+                    f"{rid}: leaves are not reported for every request key, in order"
+                )
+                for entry in obs["leaf"]:
+                    assert entry["leaf"] == leaf_at(obs["state"], entry["key"]), (
+                        f"{rid}: leaf at {entry['key']} differs from the produced trie"
+                    )
+                assert obs["root"] == obs["config"]["root"], (
+                    f"{rid}: the reported root and the config root disagree"
+                )
+                policies = {
+                    "active": obs["config"]["activePolicy"],
+                    "absent": obs["config"]["absentPolicy"],
+                    "terminal": obs["config"]["terminalPolicy"],
+                }
+                for m in obs["mint"]:
+                    assert m["policy"] == policies[m["kind"]] and m["assetName"] == m["key"], (
+                        f"{rid}: mint entry {m} is not named by the pinned policy and key"
+                    )
+                reported = asset_sums((m["kind"], m["key"], m["quantity"]) for m in obs["mint"])
+                summed = asset_sums(
+                    (kind, r["key"], qty)
+                    for r in row["requests"]
+                    for kind, qty in deltas[r["edge"]]
+                )
+                assert reported == summed, (
+                    f"{rid}: the batch mints {reported}, the summed R2 deltas are {summed}"
+                )
+                derived += 3
+        else:
+            items = row["requests"]
+            assert all(set(i) == {"exit", "request"} for i in items), (
+                f"{rid}: a reject batch names each request with its exit"
+            )
+            for i in items:
+                assert i["exit"] in exits, f"{rid}: undeclared exit {i['exit']!r}"
+            supported = bool(items) and all(i["exit"] == "reject" for i in items)
+            assert outcome != "refused", (
+                f"{rid}: a reject batch is never refused; a reject carries no admission"
+            )
+            assert (outcome == "accepted") == supported, (
+                f"{rid}: a reject batch of {[i['exit'] for i in items]} is {outcome}; "
+                "only a non-empty batch of rejects is answered, every other is unsupported"
+            )
+            derived += 1
+            if outcome == "accepted":
+                obs = observations
+                states.append(obs["state"])
+                assert obs["state"] == before, (
+                    f"{rid}: a reject batch changes the state it was taken from"
+                )
+                assert obs["mint"] == [], f"{rid}: a reject batch mints {obs['mint']}"
+                assert [e["key"] for e in obs["leaf"]] == distinct_keys(
+                    [i["request"] for i in items]
+                ), f"{rid}: leaves are not reported for every request key, in order"
+                derived += 2
+            if "outputs" in row:
+                assert outcome == "accepted", f"{rid}: only an answered batch is judged"
+                assert "settle" in row, f"{rid}: judged outputs carry no settle judgement"
+                assert row["settle"] is None or row["settle"] in unpaid, (
+                    f"{rid}: settle {row['settle']!r} is not a reason Singular.settle gives"
+                )
+            else:
+                assert "settle" not in row, f"{rid}: a settle judgement with no outputs"
+        for state in states:
+            assert state["config"]["root"] == root_of(state["trie"], leaf_bytes), (
+                f"{rid}: a reported state carries a root the model does not commit to"
+            )
+            derived += 1
+
+    witnesses = {r["id"] for r in rows if r["kind"] == "witness"}
+    for row in rows:
+        if row["kind"] == "mutant":
+            assert row["mutates"] in witnesses and row["mutates"] != row["id"], (
+                f"{row['id']}: mutant of unknown batch witness {row['mutates']!r}"
+            )
+
+    check_batch_controls(corpus, refusals)
+    return len(rows), derived
+
+
+def check_batch_controls(corpus, refusals):
+    """The controls each batch question must exhibit, found by what the rows
+    do rather than by their names."""
+    rows = corpus["batches"]
+    folds = [r for r in rows if r["question"] == "foldBatch"]
+    rejects = [r for r in rows if r["question"] == "rejectBatch"]
+
+    def some(rows, why, predicate):
+        assert any(predicate(r) for r in rows), f"no batch row exhibits {why}"
+
+    some(folds, "a lawful multi-request fold",
+         lambda r: r["outcome"] == "accepted" and len(r["requests"]) >= 2)
+    some(folds, "a batch refused for its claimed mint",
+         lambda r: r["outcome"] == "refused" and r["reason"] == refusals["mismatch"]
+         and len(r["requests"]) >= 2)
+    some(folds, "an empty batch refused",
+         lambda r: r["outcome"] == "refused" and r["reason"] == refusals["empty"])
+    some(folds, "a batch whose later request fails its step",
+         lambda r: r["outcome"] == "refused" and len(r["folded"]) >= 2
+         and not r["folded"][-1]["accepted"])
+    some(rejects, "a multi-request reject judged paid",
+         lambda r: r["outcome"] == "accepted" and len(r["requests"]) >= 2
+         and "outputs" in r and r["settle"] is None)
+    some(rejects, "a multi-request reject judged short",
+         lambda r: r["outcome"] == "accepted" and len(r["requests"]) >= 2
+         and "outputs" in r and r["settle"] is not None)
+    some(rejects, "a mixed batch answered unsupported",
+         lambda r: r["outcome"] == "unsupported"
+         and len({i["exit"] for i in r["requests"]}) >= 2)
+
+    # Preservation, exhibited: a one-request batch beside the single-request
+    # scenario taking the same request from the same state answers the same.
+    def twin(row, operation):
+        request = row["requests"][0]
+        request = request["request"] if operation == "reject" else request
+        return [
+            s for s in corpus["scenarios"]
+            if s["operation"] == operation
+            and s["request"] == request
+            and s["start"] == row["start"]
+            and [x["request"] for x in s["setup"]] == [x["request"] for x in row["setup"]]
+        ]
+
+    shared = ("config", "custody", "held", "mint", "root", "state")
+    pairs = 0
+    for row in rows:
+        if len(row["requests"]) != 1 or row["outcome"] == "unsupported":
+            continue
+        if row["question"] == "foldBatch":
+            operation = row["requests"][0]["edge"]
+        else:
+            operation = "reject"
+        for s in twin(row, operation):
+            assert (row["outcome"], row["reason"]) == (s["outcome"], s["reason"]), (
+                f"{row['id']}: a one-request batch answers {(row['outcome'], row['reason'])}, "
+                f"the single {operation} of {s['id']} {(s['outcome'], s['reason'])}"
+            )
+            if row["outcome"] == "accepted":
+                for name in shared:
+                    assert row["observations"][name] == s["observations"][name], (
+                        f"{row['id']}: a one-request batch observes another {name} than "
+                        f"the single {operation} of {s['id']}"
+                    )
+                assert row["observations"]["leaf"] == [
+                    {"key": s["request"]["key"], "leaf": s["observations"]["leaf"]}
+                ], f"{row['id']}: a one-request batch reads another leaf than {s['id']}"
+                if operation == "reject":
+                    assert row["observations"]["paid"] == s["observations"]["paid"], (
+                        f"{row['id']}: a one-request reject batch pays otherwise than {s['id']}"
+                    )
+            pairs += 1
+    for question, operation_of in (("foldBatch", "a fold"), ("rejectBatch", "a reject")):
+        assert any(
+            r["question"] == question and len(r["requests"]) == 1
+            and r["outcome"] == "accepted" and twin(
+                r, r["requests"][0]["edge"] if question == "foldBatch" else "reject"
+            )
+            for r in rows
+        ), f"no one-request {question} row stands beside {operation_of} scenario it preserves"
+    return pairs
+
+
+def must_refuse(label, check, *args):
+    """A control: the check must fail on the mutated input, or it is not a check."""
+    try:
+        check(*args)
+    except AssertionError:
+        return
+    raise AssertionError(f"control did not fire: {label}")
+
+
+def batch_controls(corpus, refusals, run):
+    """Falsify the batch checks on mutants of the corpus they just passed."""
+    rows = corpus["batches"]
+    refused = next(
+        r for r in rows if r["question"] == "foldBatch" and r["outcome"] == "refused"
+    )
+    for wrong in sorted({refusals["empty"], refusals["mismatch"]} | refusals["step"]):
+        if wrong == refused["reason"]:
+            continue
+        mutant = copy.deepcopy(corpus)
+        next(r for r in mutant["batches"] if r["id"] == refused["id"])["reason"] = wrong
+        must_refuse(f"{refused['id']} expected refused {wrong!r}", run, mutant)
+    accepted = next(r for r in rows if r["outcome"] == "accepted")
+    mutant = copy.deepcopy(corpus)
+    row = next(r for r in mutant["batches"] if r["id"] == accepted["id"])
+    row["observations"]["tx"] = {}
+    must_refuse(f"{accepted['id']} observing a transaction", run, mutant)
+    for question in BATCH_QUESTIONS:
+        mutant = copy.deepcopy(corpus)
+        mutant["surface"]["batchQuestions"][question] = (
+            mutant["surface"]["batchQuestions"][question] + ["tx"]
+        )
+        must_refuse(f"{question} declaring a transaction observation", run, mutant)
+    return 3 + len(refusals["step"])
+
+
 TRANSLATION_HEADING = "## The model driver translation"
 TRANSLATION_ROW = re.compile(
     r"^\| `?([^|`]+?)`? \| (realization|identity|unobservable) \| (.+?) \|$", re.M
@@ -775,6 +1208,7 @@ def check_translation(root, surface):
         set(surface["operations"])
         | set(surface["observations"])
         | set(surface["judgements"])
+        | set(batch_surface(surface))
     )
     stated = set(rows.get("realization", {}))
     assert stated == declared, (
@@ -1022,7 +1456,19 @@ def main():
         model_retraction(root),
     )
     leaf_bytes, deltas = model_constants(root)
-    derived = check_derived(driver_corpus, leaf_bytes, deltas, model_transitions(root))
+    transitions = model_transitions(root)
+    derived = check_derived(driver_corpus, leaf_bytes, deltas, transitions)
+    refusals = model_batch_refusals(root)
+    unpaid = model_unpaid_reasons(root)
+
+    def run_batches(corpus):
+        return check_batch_rows(
+            corpus, generic_names, statement_digests, refusals, unpaid,
+            transitions, deltas, leaf_bytes,
+        )
+
+    batch_rows, batch_derived = run_batches(driver_corpus)
+    batch_fired = batch_controls(driver_corpus, refusals, run_batches)
     check_or_compare(
         root / "lean/driver-corpus.json",
         json.dumps(driver_corpus, indent=2, sort_keys=True) + "\n",
@@ -1038,6 +1484,11 @@ def main():
     print(
         f"derived: {derived} observations re-derived from the model rather than trusted "
         f"(roots, leaves and R2 mints)"
+    )
+    print(
+        f"batches: {batch_rows} batch rows over "
+        f"{len(driver_corpus['surface']['batchQuestions'])} declared questions, "
+        f"{batch_derived} answers re-derived, {batch_fired} mutant controls refused"
     )
     print(
         f"translation: {mapped} declarations realized in the constitution, "
