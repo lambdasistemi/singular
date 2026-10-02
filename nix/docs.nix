@@ -82,9 +82,23 @@ let
     };
     inherit src docs;
   };
+  # The published conformance evidence page is recomputed from its committed
+  # inputs by the conformance command itself; its controls tamper scratch
+  # copies and require each tampering refused.
+  evidencePage = conformance.packages.${pkgs.system}.conformance;
   checker = pkgs.writeShellApplication {
     name = "docs-check";
-    runtimeInputs = [ pkgs.python3 ];
+    runtimeInputs = [
+      pkgs.python3
+      pkgs.bash
+      evidencePage
+      pkgs.jq
+      pkgs.coreutils
+      pkgs.diffutils
+      pkgs.findutils
+      pkgs.gnugrep
+      pkgs.gnused
+    ];
     text = ''
       cd ${src}
       ${pkgs.lib.optionalString (
@@ -95,6 +109,8 @@ let
       python3 tools/check_site.py "''${SINGULAR_API_SITE_OVERRIDE:-${docs}}"
       python3 tools/aiken_reference.py controls "''${SINGULAR_API_SITE_OVERRIDE:-${docs}}" onchain "''${SINGULAR_CANDIDATE_REF:-}"
       python3 tools/check_presentation_repo.py
+      conformance evidence-page --root .
+      bash tools/evidence_page_controls.sh .
     '';
   };
   # The staged docs archive must carry the candidate site's generated API

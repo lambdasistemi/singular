@@ -559,7 +559,7 @@ layout model rows snap =
                         <> [ ""
                            , "The committed snapshot is `conformance/evidence/page/`: "
                                 <> count (snapReceiptFiles snap)
-                                <> " files of the receipt artifact under `receipts/`, of which "
+                                <> " files of the receipt artifacts under `receipts/`, of which "
                                 <> count (snapReceipts snap)
                                 <> " are receipts, and "
                                 <> count (snapContractFiles snap)

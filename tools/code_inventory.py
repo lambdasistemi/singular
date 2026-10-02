@@ -631,6 +631,13 @@ NONCODE_CLASSES: list[dict] = [
         "(issue #326)",
     },
     {
+        "id": "contract-results",
+        "pattern": "conformance/evidence/page/contract/*.jsonl",
+        "note": "the backend contract suite's per-case results copied from "
+        "the CI contract-results artifact; the evidence page is computed "
+        "from them (issue #326)",
+    },
+    {
         "id": "formatter-config",
         "pattern": "fourmolu.yaml",
         "note": "the one house Fourmolu configuration (issue #278 S2), read "
