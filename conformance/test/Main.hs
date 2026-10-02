@@ -20,6 +20,7 @@ import Conformance.Support.Identity qualified as Identity
 import Conformance.Support.ObservedTx qualified as ObservedTx
 import Conformance.Support.Oracle qualified as Oracle
 import Conformance.Support.Payments qualified as Payments
+import Conformance.Support.Programs qualified as Programs
 import Conformance.Support.PurposeUnits qualified as PurposeUnits
 import Conformance.Support.Receipt qualified as Receipt
 import Conformance.Support.ReceiptBound qualified as ReceiptBound
@@ -52,6 +53,7 @@ suite = do
         ReceiptBound.spec
         Refusal.spec
         Rows.spec
+        Programs.spec
         EvidencePage.spec
         Identity.spec
         Fixture.spec
