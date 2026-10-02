@@ -1,4 +1,5 @@
 import Singular.Lemmas
+import Singular.Driver
 
 /-! The public statement surface of the registry-mode model. The eleven
 promises of the interface — P1, L1, S1, S2, S3, O1, T1, W1–W4 — and the seven
@@ -1893,6 +1894,44 @@ theorem admission_refuses_first (s : RegistryState) (exit : Exit) (r : Request)
       | fold e => rfl
       | reject => rfl
     simp [exitRefusal, none]
+
+/-- **#344, a batch of one folds as its step** — for one request whose claimed
+mint is the delta of its own edge, the batch fold is exactly the single step:
+refused for the same reason, or accepted with the same state, mint and payments. -/
+theorem fold_batch_of_one_is_step (s : RegistryState) (r : Request)
+    (hclaim : assetSame (requestClaim r) (assetDelta r) = true) :
+    foldBatch s [r] = step s r := by
+  have hsame : assetSame (claimedMint [r]) (actualMint [r]) = true := by
+    rw [assetSame_iff] at hclaim ⊢
+    intro x
+    simp only [claimedMint, actualMint, List.foldl, assetKind_plus, hclaim x]
+  have hnil : assetPlus (assetDelta r) [] = assetDelta r := by
+    rcases r with ⟨edge, key⟩
+    cases edge <;> simp [assetPlus, assetDelta, delta, assetKind, List.eraseDups_cons]
+  unfold foldBatch
+  cases hs : step s r with
+  | error why => simp [foldActions, hs]; rfl
+  | ok t =>
+    have hmint : t.mint = assetDelta r := by
+      unfold step at hs
+      split at hs
+      · cases hs
+      · cases hs; rfl
+    cases t
+    simp_all [foldActions, combineResults, emptyResult, bind, Except.bind, Functor.map,
+      Except.map, pure, Except.pure]
+
+/-- **#344, a batch of one reject judges as the reject** — for every scenario
+taking a request by the reject exit, the driver's judgement of the one-request
+batch of rejects over any observed outputs is exactly its judgement of that
+scenario's transaction, whatever inputs it spends. -/
+theorem reject_batch_of_one_is_reject (r : Request) (sc : Driver.Scenario)
+    (inputs : List TxInput) (outputs : List TxOutput)
+    (hexit : sc.exit = .reject) (hrequest : sc.request = r) :
+    Driver.judgeRejectBatch [r] outputs = Driver.judgeSurface sc inputs outputs := by
+  subst hrequest
+  simp [Driver.judgeRejectBatch, Driver.rejectBatchPayments, Driver.judgeSurface, hexit,
+    spendRefusal]
 
 end Statements
 end Singular
