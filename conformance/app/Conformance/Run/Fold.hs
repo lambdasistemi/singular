@@ -23,6 +23,7 @@ module Conformance.Run.Fold
     , requestAndFoldKey
     , foldSpecContext
     , foldSpecProcessed
+    , heldInput
     ) where
 
 import Conformance.Run.Book
@@ -86,6 +87,7 @@ import Cardano.Ledger.Api.Tx.Out
     , datumTxOutL
     , getMinCoinTxOut
     , mkBasicTxOut
+    , referenceScriptTxOutL
     , valueTxOutL
     )
 import Cardano.Ledger.Api.Tx.Wits
@@ -247,11 +249,13 @@ data FoldSpec = FoldSpec
     }
 
 {- | Assemble one fold from one view of the chain: every read the
-assembly makes is served by the same acquired state.
+assembly makes is served by the same acquired state, and the chain
+inputs the spec names are checked against it ('heldInputs').
 -}
 assembleFoldSpec :: Env -> FoldSpec -> IO ConwayTx
 assembleFoldSpec env0 fs = Cage.withView (envProv env0) $ \held -> do
     let env = pinnedTo held env0
+    heldInputs held fs
     -- Every purpose resolves through the cage's reference outputs, which
     -- went up at its boot: a fold that attached the state validator
     -- instead would be refused for size before any script could speak.
@@ -598,6 +602,54 @@ assembleFoldWithFee env0 fs =
             then pure tx
             else go env (n + 1) needed
 
+{- | The spec's chain inputs as the held view has them. A row reads its
+state, requests, funder and holders before it assembles, and computes
+refunds and roots from them; the assembly finds each again in its own view
+and refuses, by name, an input that is gone there or holds something
+else — so every chain value the transaction carries is the held view's.
+-}
+heldInputs :: Cage.View IO -> FoldSpec -> IO ()
+heldInputs v fs = do
+    heldInput v "state" (fsState fs)
+    mapM_ (heldInput v "request") (fsReqs fs)
+    mapM_ (heldInput v "holder") (fsHolderUtxos fs)
+    mapM_ (heldInput v "funder") (fsFunder fs)
+
+{- | One input the assembly spends, found in the held view at its address
+with the address, value, datum and reference script the row read;
+refused by name when it is not unspent there or holds something else.
+-}
+heldInput
+    :: Cage.View IO -> String -> (TxIn, TxOut ConwayEra) -> IO ()
+heldInput v what (i, o) = do
+    here <- Cage.viewUTxOsAt v (o ^. addrTxOutL)
+    case lookup i here of
+        Nothing ->
+            failWith
+                ( "hand-build: the "
+                    <> what
+                    <> " input "
+                    <> show i
+                    <> " is not unspent at the assembly's chain point"
+                )
+        Just o'
+            | carried o' /= carried o ->
+                failWith
+                    ( "hand-build: the "
+                        <> what
+                        <> " input "
+                        <> show i
+                        <> " changed between the row's read and the assembly's view"
+                    )
+            | otherwise -> pure ()
+  where
+    carried out =
+        ( out ^. addrTxOutL
+        , out ^. valueTxOutL
+        , out ^. datumTxOutL
+        , out ^. referenceScriptTxOutL
+        )
+
 {- | A FoldSpec with this cage's defaults: derive refunds and
 signers, no withdrawal, no state override, deadline validity.
 -}
@@ -673,7 +725,6 @@ rowRequestAndFold
     -> IO (ConwayTx, Integer, Integer, Integer)
 rowRequestAndFold env cage label key _val _op = do
     let cfg = rcCfg cage
-        prov = envProv env
     tid <- cageTid cage
     -- #157 A-009: the row books an edge. The absence witness is the one
     -- edge that needs no signature, and it is what every issue-70 row
@@ -691,28 +742,31 @@ rowRequestAndFold env cage label key _val _op = do
             dest
             []
             (defaultTipCoin cfg + cgDeposit)
-    unsignedFold <-
-        Cage.withView prov $ \v -> do
-            ctx <- rowRegistryContext env v cage tid
-            updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx
-    state@(stateIn, _) <- cageStateUtxo env cage
-    reqUtxos <- pendingRequests env cage
-    (handProofs, handRoot) <- speculativeApplyAll env cage tid reqUtxos
-    pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
-    let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
-        calibSpec =
-            ( rowSpec
-                cage
-                tid
-                state
-                reqUtxos
-                (map Update handProofs)
-                handRoot
-                (ExUnits maxMem maxSteps)
-            )
-                { fsFee = Just 700_000
-                }
-    handFold <- assembleFoldSpec env calibSpec
+    -- The library fold and the hand model it is calibrated against are
+    -- assembled from one view.
+    (unsignedFold, stateIn, handFold) <- withHeldView env $ \held -> do
+        lib <- Cage.withView (envProv held) $ \v -> do
+            ctx <- rowRegistryContext held v cage tid
+            updateTokenWithDuties cfg v (envTm held) tid genesisAddr ctx
+        state@(stateIn, _) <- cageStateUtxo held cage
+        reqUtxos <- pendingRequests held cage
+        (handProofs, handRoot) <- speculativeApplyAll held cage tid reqUtxos
+        pp <- Cage.withView (envProv held) (pure . Cage.viewProtocolParams)
+        let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
+            calibSpec =
+                ( rowSpec
+                    cage
+                    tid
+                    state
+                    reqUtxos
+                    (map Update handProofs)
+                    handRoot
+                    (ExUnits maxMem maxSteps)
+                )
+                    { fsFee = Just 700_000
+                    }
+        hand <- assembleFoldSpec held calibSpec
+        pure (lib, stateIn, hand)
     calibrateFold stateIn handFold unsignedFold
     emit "calibration" (label <> ": hand model matches the library fold")
     (mem, cpu) <- measureUnits env unsignedFold
@@ -750,7 +804,12 @@ would declare, but balanced by hand so the unevaluatable scripts
 never gate emission. The node rules on it at submit.
 -}
 buildRefusedFold :: Env -> IO ConwayTx
-buildRefusedFold env = do
+buildRefusedFold env0 = do
+    _ <- sessionRefUtxos env0
+    withHeldView env0 $ \env -> buildRefusedFoldIn env
+
+buildRefusedFoldIn :: Env -> IO ConwayTx
+buildRefusedFoldIn env = do
     (stateUtxo, reqUtxos) <- foldUtxos env
     reqUtxo <- case reqUtxos of
         [u] -> pure u
@@ -788,7 +847,12 @@ declared units (it is never submitted, so its fee is irrelevant).
 Compared field-by-field against the library fold it parallels.
 -}
 buildValidFold :: Env -> IO (TxIn, ConwayTx)
-buildValidFold env = do
+buildValidFold env0 = do
+    _ <- sessionRefUtxos env0
+    withHeldView env0 $ \env -> buildValidFoldIn env
+
+buildValidFoldIn :: Env -> IO (TxIn, ConwayTx)
+buildValidFoldIn env = do
     pp <- Cage.withView (envProv env) (pure . Cage.viewProtocolParams)
     let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
     (stateUtxo@(stateIn, _), reqUtxos) <- foldUtxos env
@@ -1160,7 +1224,6 @@ requestAndFoldKey
     -> IO (ConwayTx, Integer, Integer, Integer)
 requestAndFoldKey env label key op = do
     let cfg = envCfg env
-        prov = envProv env
         tid = envTid env
         Coin tipVal = defaultTip cfg
     -- #157: a tree edge is booked, not merely requested. The approval the
@@ -1182,11 +1245,15 @@ requestAndFoldKey env label key op = do
             refIns
             (tipVal + cgDeposit)
     refs <- sessionRefUtxos env
-    unsignedFold <-
-        Cage.withView prov $ \v -> do
-            ctx <- registryContext env refs v
-            updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx
-    (stateIn, handFold) <- buildValidFold env
+    -- The library fold and the hand model it is calibrated against are
+    -- assembled from one view.
+    (unsignedFold, (stateIn, handFold)) <-
+        withHeldView env $ \held -> do
+            lib <- Cage.withView (envProv held) $ \v -> do
+                ctx <- registryContext held refs v
+                updateTokenWithDuties cfg v (envTm held) tid genesisAddr ctx
+            hand <- buildValidFold held
+            pure (lib, hand)
     calibrateFold stateIn handFold unsignedFold
     emit "calibration" (label <> ": hand model matches the library fold")
     (mem, cpu) <- measureUnits env unsignedFold

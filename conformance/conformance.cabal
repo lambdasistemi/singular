@@ -255,6 +255,7 @@ test-suite conformance-tests
     Conformance.Story.Usage
     Conformance.Support.Authenticate
     Conformance.Support.Fixture
+    Conformance.Support.HeldView
     Conformance.Support.RegistrationComparison
     Conformance.Support.Payments
     Conformance.Support.Oracle

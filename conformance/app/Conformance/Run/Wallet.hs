@@ -202,14 +202,15 @@ spend the very output CA01 boots from.
 -}
 consolidateWallet :: Cage.Provider IO -> Capabilities -> IO ()
 consolidateWallet prov submit = do
-    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
+    -- One transaction, one view: the wallet's outputs and the parameters.
+    (utxos, pp) <- Cage.withView prov $ \v ->
+        (,Cage.viewProtocolParams v) <$> Cage.viewUTxOsAt v genesisAddr
     let spendable = filter (not . carriesRefScript . snd) utxos
         dirty = filter (not . adaOnlyOut . snd) spendable
         clean = filter (adaOnlyOut . snd) spendable
     if length spendable < 2 && null dirty
         then pure ()
         else do
-            pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
             let total = sum [outCoin o | (_, o) <- spendable]
                 assets =
                     foldr

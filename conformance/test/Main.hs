@@ -12,6 +12,7 @@ import Conformance.Support.FixtureChild
     ( childModeVariable
     , holdScopedDirectories
     )
+import Conformance.Support.HeldView qualified as HeldView
 import Conformance.Support.Identity qualified as Identity
 import Conformance.Support.ObservedTx qualified as ObservedTx
 import Conformance.Support.Oracle qualified as Oracle
@@ -56,6 +57,7 @@ suite = do
         Step.spec
         Retraction.spec
         Specification.spec
+        HeldView.spec
         PurposeUnits.spec
         Usage.spec
         Binding.spec

@@ -7,6 +7,8 @@ module Conformance.Run.Environment
     ( Env (..)
     , envCaps
     , pinnedTo
+    , withHeldView
+    , pinnedProvider
     , RowCage (..)
     , StakeKit (..)
     , CaWorld (..)
@@ -531,4 +533,17 @@ otherwise spend a near-now validity window between assembly and
 submission. The view stays valid only inside the scope that acquired it.
 -}
 pinnedTo :: Cage.View IO -> Env -> Env
-pinnedTo v env = env{envProv = Cage.Provider (\k -> k v)}
+pinnedTo v env = env{envProv = pinnedProvider v}
+
+-- | A provider whose every acquisition hands back one held view.
+pinnedProvider :: Cage.View IO -> Cage.Provider IO
+pinnedProvider v = Cage.Provider (\k -> k v)
+
+{- | Run one operation — one transaction's assembly — with every chain
+read it makes served by one view acquired here: the environment it is
+handed is pinned to that view. A read that may submit (publishing the
+reference outputs) must be taken before, never inside. Holding an
+already pinned environment hands back its view.
+-}
+withHeldView :: Env -> (Env -> IO a) -> IO a
+withHeldView env k = Cage.withView (envProv env) (\v -> k (pinnedTo v env))

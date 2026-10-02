@@ -291,8 +291,10 @@ registerStakeCredential
 registerStakeCredential env _bytes h = do
     let prov = envProv env
         cred = ScriptHashObj h
-    pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
-    (funderIn, funderOut) <- largestWalletUtxo prov
+    -- One transaction, one view: parameters and the funder.
+    (pp, (funderIn, funderOut)) <- Cage.withView prov $ \v ->
+        (,) (Cage.viewProtocolParams v)
+            <$> largestWalletUtxo (pinnedProvider v)
     let Coin avail = funderOut ^. coinTxOutL
         depositCoin = pp ^. ppKeyDepositL
         Coin deposit = depositCoin
@@ -549,8 +551,9 @@ publishRefScriptWith
     -> Script ConwayEra
     -> IO (TxIn, TxOut ConwayEra)
 publishRefScriptWith prov submit script = do
-    pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
-    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
+    -- One transaction, one view: parameters and the funding outputs.
+    (pp, utxos) <- Cage.withView prov $ \v ->
+        (,) (Cage.viewProtocolParams v) <$> Cage.viewUTxOsAt v genesisAddr
     fund <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
         [] -> failWith "publishRefScript: the funding wallet has no output"
         (u : _) -> pure u

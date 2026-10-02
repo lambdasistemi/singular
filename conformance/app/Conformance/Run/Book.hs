@@ -312,8 +312,9 @@ bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
                 <> show key
                 <> " is not one of the seven admissible edges"
             )
-    pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
-    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` payerAddr)
+    -- One transaction, one view: parameters and the payer's outputs.
+    (pp, utxos) <- Cage.withView prov $ \v ->
+        (,) (Cage.viewProtocolParams v) <$> Cage.viewUTxOsAt v payerAddr
     (feeIn, feeOut) <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
         [] -> failWith "bookEdge: payer wallet has no UTxOs"
         (u : _) -> pure u
