@@ -43,6 +43,12 @@ exit 7
 STUB
 chmod +x "$stub"
 
+# Whether two files hold the same text, with bash alone: the CI runner's PATH
+# carries no diffutils or gawk.
+same() {
+  [ "$(<"$1")" = "$(<"$2")" ]
+}
+
 # check CANDIDATE: succeeds only when the candidate keeps the row's exit,
 # published the root before the row, and the index survives under it.
 check() {
@@ -82,7 +88,7 @@ echo "retention: exit 7 kept, root published before the row, replay index retain
 # Mutant 1: the publication removed. The edit must apply, or it tests nothing.
 unpublished="$work/unpublished.sh"
 grep -v 'GITHUB_ENV' "$script" >"$unpublished"
-if cmp -s "$script" "$unpublished"; then
+if same "$script" "$unpublished"; then
   echo "FAIL: the publication mutant did not change the script"
   exit 1
 fi
@@ -94,9 +100,9 @@ echo "control: refused the unpublished copy ($reason)"
 
 # Mutant 2: the receipts discarded when the script exits.
 discarding="$work/discarding.sh"
-awk 'NR == 2 { print "trap '\''rm -rf \"${CONFORMANCE_DEDICATED_RECEIPTS:?}\"'\'' EXIT" } { print }' \
+sed "1a trap 'rm -rf \"\${CONFORMANCE_DEDICATED_RECEIPTS:?}\"' EXIT" \
   "$script" >"$discarding"
-if cmp -s "$script" "$discarding"; then
+if same "$script" "$discarding"; then
   echo "FAIL: the retention mutant did not change the script"
   exit 1
 fi
