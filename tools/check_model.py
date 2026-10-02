@@ -1681,6 +1681,29 @@ def main():
         f"total derived)"
     )
 
+    # X3 — the README states the same counts in prose, so it drifts whenever a
+    # manifest grows unless it is held to the manifests the way the theorem page
+    # is. It stated 42 as 24 + 7 + 6 + 5 while the manifests held 63.
+    readme = (root / "README.md").read_text()
+    m = re.search(
+        r"\*\*(\d+)\*\* proved declarations — (\d+) for the registry, (\d+) for the "
+        r"naming instance, (\d+) for its lifecycle and (\d+) for its wire encoding",
+        readme,
+    )
+    assert m, "README states no declaration counts in the checked form"
+    stated = tuple(int(g) for g in m.groups())
+    expected = (
+        len(generic_names) + len(naming_names) + len(lifecycle_names) + len(wire_names),
+        len(generic_names),
+        len(naming_names),
+        len(lifecycle_names),
+        len(wire_names),
+    )
+    assert stated == expected, (
+        f"README declaration counts {stated} != manifests {expected}"
+    )
+    print(f"X3: README declaration counts == manifests {expected}")
+
     print(
         f"model-check: {len(ids)} executable corpus rows; {len(naming_ids)} naming rows; "
         f"{len(lifecycle_ids)} lifecycle rows; "

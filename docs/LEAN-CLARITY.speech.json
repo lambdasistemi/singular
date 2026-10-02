@@ -1,13 +1,17 @@
 {
   "who-this-is-for": [
     {
-      "text": "A reviewer deciding whether the model is the right model. The build already answers whether these are proved — all forty-two are, from the standard axioms and nothing else. It cannot answer whether they say what the interface promised, and that is the question this page exists to make answerable.",
+      "text": "A reviewer deciding whether the model is the right model. The build already answers whether these are proved — every one is, from the standard axioms and nothing else. It cannot answer whether they say what the interface promised, and that is the question this page exists to make answerable.",
       "pause": 400
     }
   ],
   "what-is-bound": [
     {
-      "text": "Six artifacts, each with its hash: the model, its lemmas, the statements, the audit module, the corpus generator and the corpus itself. Every one ships beside the page, and a mirror check fails if the shipped copy and the built copy differ in either direction. Changing any bound input invalidates this record.",
+      "text": "Six artifacts, each with its hash: the model, its lemmas, the statements, the audit module, the corpus generator and the corpus itself. The model hash now begins five three eight b, the lemmas c eight a a, the statements one nine seven five; the audit module hash is unchanged. Every one ships beside the page, and a mirror check fails if the shipped copy and the built copy differ in either direction. Changing any bound input invalidates this record.",
+      "pause": 400
+    },
+    {
+      "text": "The readback below covers the eleven promises, the seven inversions, the deposit, the read and the fold. The bound registry module also carries fifteen later statements, about when a pending request may be retracted and what a refused retraction is told, what every exit pays and to whom, which datum a delivered or spent witness carries, and how a batch of one folds. Those are listed in the theorem manifest and not yet read back here.",
       "pause": 400
     }
   ],
@@ -61,6 +65,6 @@
   ],
   "_source": {
     "file": "LEAN-CLARITY.md",
-    "sha256": "2b7661b116c43141e40ae15de1c4f0c53c91c71763931884473e018c288e825c"
+    "sha256": "50dde123e3374ae385e6677be363e9e708b0badbceabb25d39211e8c091e882d"
   }
 }

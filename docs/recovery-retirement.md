@@ -8,57 +8,17 @@ It is also for a holder who wants to end a name permanently, and for the quorum 
 
 ## How a name moves in the registry
 
-Naming is an instance of the registry, not a layer bolted beside it. A name is
-one key in the registry's authenticated map, and the value of that key is a
-single byte:
+Naming is an instance of the registry, not a layer bolted beside it: a name is
+one key whose value is a single byte — Absent, Active or Terminal — and seven
+requests move a key, each one moving a witness token. The naming walkthrough
+states [the state table, the seven requests and the four witness
+laws](naming-demo.md#how-a-name-moves-in-the-registry) once; this page shows
+two of those edges, recovery and retirement, executed on a real ledger.
 
-| state | byte | what it says |
-| --- | --- | --- |
-| Absent | `0x00` | somebody has witnessed that this name is free, and put up a deposit to say so |
-| Active | `0x01` | the name is booked and live |
-| Terminal | `0x02` | the name is over, forever |
-
-Seven requests move a key, and nothing else does. Each one moves a witness
-token, and the witness is what a reader looks at — never the root:
-
-| request | before | after | witness moved |
-| --- | --- | --- | --- |
-| insert absent | no key | Absent | one absent witness minted into the cage's own custody |
-| insert active | no key | Active | one active witness minted to the booker |
-| update absent to active | Absent | Active | the absent witness burned, an active witness minted |
-| update active to terminal | Active | Terminal | the active witness burned |
-| delete absent | Absent | no key | the absent witness burned, the deposit returned |
-| delete active | Active | no key | the active witness burned |
-| read terminal | Terminal | Terminal | one terminal witness minted, the key untouched |
-
-Every other shape is refused before any proof is checked, and each refusal
-carries one trace label naming its own reason.
-
-The witnesses obey four laws:
-
-1. **A witness moves only inside a fold.** A mint or a burn under the absent,
-   active or terminal policy is accepted only in a transaction that spends the
-   registry's state token and folds it.
-2. **The fold decides how many, and where.** It sums the witness column of the
-   requests it consumed, and the transaction's mint under the three policies
-   must equal that sum exactly — asset by asset, quantity by quantity. Nothing
-   else may move under them.
-3. **A terminal witness is its holder's to destroy.** It says a name is over,
-   forever; burning your own copy costs the registry nothing, so that burn
-   alone needs no fold.
-4. **The asset name is the registry key.** Identity is the pair of policy and
-   key, so a name recreated after a delete carries the same identity again.
-
-One edge carries a rule of its own: ending a name needs the committed recovery key or the retirement quorum, and never the current control key alone.
-
-**No application script at fold time.** The naming validator is not
-executed by a fold at all. What it does instead is certify an edge in advance:
-it mints one approval whose asset name binds the edge, the key, the owner and
-the destination, the requester attaches that approval to their request, and the
-cage recomputes the name from the request itself and refuses anything that does
-not match. A folder is permissionless and can therefore be anyone, which is
-exactly why the destination is bound: without it a folder could route your name
-to itself.
+The rule this page is about is naming's own: ending a name needs the committed
+recovery key or the retirement quorum, and never the current control key alone.
+The naming validator enforces it before the request reaches the fold, by
+certifying the edge in advance; the fold itself asks no application to sign.
 
 ## What you can do
 

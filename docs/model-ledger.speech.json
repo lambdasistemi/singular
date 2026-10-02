@@ -18,11 +18,11 @@
     },
     {
       "pause": 400,
-      "text": "Not covered, and named rather than left to be discovered: on-chain conformance; plurality constructed from genesis; and any quantitative mutation coverage. The simulator replays thirty-eight registry rows, twenty-four naming rows and twenty-one lifecycle rows and reproduces each verdict, with a mirror check binding the Lean it ships to the Lean it was built from — but that is agreement on the exported inputs, not equivalence, and the transcriber is the model's author, so it is not an independent measurement either."
+      "text": "Not covered, and named rather than left to be discovered: on-chain conformance, since nothing here says the cage validator implements this model, and whether the deployed validators do is the subject of the conformance evidence page, not of this ledger; plurality constructed from genesis; and any quantitative mutation coverage. The simulator replays thirty-eight registry rows, twenty-four naming rows and twenty-one lifecycle rows and reproduces each verdict, with a mirror check binding the Lean it ships to the Lean it was built from — but that is agreement on the exported inputs, not equivalence, and the transcriber is the model's author, so it is not an independent measurement either."
     }
   ],
   "_source": {
     "file": "model-ledger.md",
-    "sha256": "2e5fd81a2c8a310524b7c7ac38adade24f6f03e7e4b10ec71295796da294b69d"
+    "sha256": "48cfa9a966e40768a4118ad47e7328871d3828e6fff1dc565c2c21fe8c8d6ad9"
   }
 }

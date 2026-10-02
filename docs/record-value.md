@@ -3,7 +3,7 @@
 ## For a name's controller
 
 An unrelated token in wallet change must not disable recovery or retirement.
-Naming records created by an insert fold now contain exactly ADA and their
+Naming records created by an insert fold contain exactly ADA and their
 representative. Maintain and recover require identical non-ADA policies, asset
 names and quantities in the continuation. ADA can increase, but cannot decrease.
 
@@ -26,21 +26,22 @@ validator traces. The recovery and retirement runners also inspect all asset
 policies when reading a record, so they cannot hide an unrelated token.
 
 An already polluted record can still be maintained if its entire non-ADA value
-is preserved. It cannot be repaired, recovered or retired by this change.
+is preserved. It cannot be repaired, recovered or retired under this rule.
 An arbitrary transfer to the script address is not a genuine naming registration.
 
 ## Deployment compatibility
 
-The application validator hash changes from
-`89409890d5a89debf410d6d31695fc9030fcf2b754b06206d7291370` to
-`1239f396899f80b7ec377fe181e2014b7bc54da0a4c4ab0d9df3fdc5`.
-Its spend and mint purposes share that identity. The committed
+With this rule the application validator hash is
+`1239f396899f80b7ec377fe181e2014b7bc54da0a4c4ab0d9df3fdc5`. Before it, the hash
+was `89409890d5a89debf410d6d31695fc9030fcf2b754b06206d7291370`, which is the
+one [the preprod record](preprod.md) carries, because that deployment predates
+the rule. Its spend and mint purposes share that identity. The committed
 `naming-onchain/script-identity.json` is regenerated from the pinned Aiken build,
 which retains user-defined traces. Other unapplied validator hashes stay the same.
 
 The next deployment must derive its addresses and applied policies from the new
 blueprint. The representative policy's application-hash parameter changes with
-that deployment. This repair does not migrate records at an old script address,
+that deployment. The rule does not migrate records at an old script address,
 change an existing deployment manifest, or deploy to preprod.
 
 ## Checks and model boundary

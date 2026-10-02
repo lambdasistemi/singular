@@ -59,16 +59,16 @@
   ],
   "documentation-releases": [
     {
-      "text": "Documentation version zero point one point zero is prepared consistently in the version file, release manifest, and changelog. That does not establish a tag or published archive. Release-please proposes later version changes in a pull request. An operator-authorized version tag on its merged commit publishes the Nix-built archive and checksum, verifies uploaded bytes, then updates bookkeeping labels without comments.",
+      "text": "The documentation version is whichever one the version file, the release manifest and the changelog agree on; a prepared version does not establish a tag or a published archive. Release-please proposes later version changes in a pull request. An operator-authorized version tag on its merged commit publishes the Nix-built archive and checksum, verifies uploaded bytes, then updates bookkeeping labels without comments.",
       "pause": 400
     },
     {
-      "text": "The archive is also a runnable review workspace. Under artifacts review it carries model and theorem sources, corpora, scenarios, simulator and replay sources, checkers, and a minimal flake with its exact lock. After extracting the actual archive into a fresh directory, verify the internal checksum manifest and run the review flake's check app. Nix may acquire only the exact locked toolchain; all model and replay inputs come from the archive. A checkout pass or presence check does not establish archive reproduction, and no release tag is authorized by this candidate.",
+      "text": "The archive is also a runnable review workspace. Under artifacts review it carries model and theorem sources, corpora, scenarios, simulator and replay sources, checkers, and a minimal flake with its exact lock. After extracting the actual archive into a fresh directory, verify the internal checksum manifest and run the review flake's check app. Nix may acquire only the exact locked toolchain; all model and replay inputs come from the archive. A checkout pass or presence check does not establish archive reproduction. Published releases, each produced by this workflow from a tag on main, are listed on the repository's GitHub releases page.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "building.md",
-    "sha256": "b6922872e29009d1e11ca3ad04e5e9e4015ef3285d182e6be64ed8787ca8de07"
+    "sha256": "c51e6ecc920b9ecaab29c1793ed8d25b0d15c189b508fbbd86ca60794755cc4e"
   }
 }

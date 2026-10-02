@@ -5,7 +5,7 @@
       "pause": 400
     },
     {
-      "text": "A user asks the application to register a key and waits with no NFT and no reservation. The request stores its refund address. Before folding, a separately authorized cancellation copies that address and leaves the name free; redirecting it, relying only on Insert certification, cancelling after fold, or replaying cancellation is refused. No economic schedule is inferred.",
+      "text": "A user asks the application to register a key and waits with no NFT and no reservation. The request stores its refund address. Before folding, a separately authorized cancellation copies that address and leaves the name free; redirecting it, relying only on Insert certification, cancelling after fold, or replaying cancellation is refused. The registry fixes where a deposit returns, never its amount: no fee, price or bond rule is part of it.",
       "pause": 400
     },
     {
@@ -27,38 +27,38 @@
   ],
   "how-the-parts-fit": [
     {
-      "text": "The diagram shows the application on one side, with its policy, its UTxO holding the representative NFT, and its spending script; and Singular on the other, with request UTxOs and the registry UTxO carrying the authenticated map.",
+      "text": "A note first: the diagram and table here record the original three-operation design — Insert, Update and Delete requests, an application-minted Withdraw, and the states Absent, Active and Over. The registry-mode model that the Lean proves, the simulator replays and the conformance suite compares against the deployed validators moves a key through seven edges and calls the terminal state Terminal. Where the two differ, registry mode is current; the naming walkthrough shows the seven edges and the model ledger records what replaced each part of the original design.",
       "pause": 400
     },
     {
-      "text": "A user proposes a registration; the application policy mints an Insert action token certifying it. A folder folds requests with proofs; the registry mints the representative into the certified output. The application script releases the NFT into an exact Update or Delete request; folding burns it. A resolver authenticates the entry, the NFT and the current output.",
+      "text": "The diagram shows the application on one side, with its policy, its UTxO holding the representative NFT, and its spending script; and Singular on the other, with request UTxOs and the registry UTxO carrying the authenticated map. A user proposes a registration; the application policy mints an Insert action token certifying it. A folder folds requests with proofs; the registry mints the representative into the certified output. The application script releases the NFT into an exact Update or Delete request; folding burns it. A resolver authenticates the entry, the NFT and the current output.",
       "pause": 400
     },
     {
-      "text": "The table lists the three registry requests: Insert from absent to Active with a mint, Update from Active to Over with a burn that permanently reserves the key, and Delete from Active to absent with a burn that frees it.",
+      "text": "The table lists the three original registry requests: Insert from absent to Active with a mint, Update from Active to Over with a burn that permanently reserves the key, and Delete from Active to absent with a burn that frees it.",
       "pause": 400
     },
     {
-      "text": "The reading order that follows ends with the runbook for running every journey against your own preprod node.",
+      "text": "The reading order that follows runs ten steps. The first three pages and the protocol specification record the original design; the naming pages, the retirement and recovery pages and the simulation describe the registry-mode model that supersedes it where they differ. It ends with the runbook for your own preprod node and the preprod record.",
       "pause": 400
     }
   ],
   "design-status": [
     {
-      "text": "The link at the top opens the simulator. Book a name, witness an absence and book it, retire a name and attest it, or drive the seven edges by hand and watch each refusal arrive by name. The candidate has forty-two proved declarations: twenty-four for the registry, seven for the naming instance, six for its lifecycle and five for its wire encoding.",
+      "text": "The link at the top opens the simulator. Book a name, witness an absence and book it, retire a name and attest it, or drive the seven edges by hand and watch each refusal arrive by name. The candidate has sixty-five proved declarations: forty-four for the registry, seven for the naming instance, nine for its lifecycle and five for its wire encoding, counts that the model check derives from the theorem manifests rather than stating by hand.",
       "pause": 400
     },
     {
-      "text": "Its focused checks replay thirty-eight registry rows, twenty-four naming rows and twenty-one lifecycle rows. That is finite correspondence evidence on those inputs, not independent acceptance, a compiled Cardano validator, or ledger execution. The clarity record states plainly how much independence that evidence has, given that the model and its transcription share an author.",
+      "text": "Its focused checks replay thirty-eight registry rows, twenty-four naming rows and twenty-one lifecycle rows. That is finite correspondence evidence on those inputs, not independent audit acceptance. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The clarity record states plainly how much independence that evidence has, given that the model and its transcription share an author.",
       "pause": 400
     },
     {
-      "text": "The Nix-built documentation archive is a review bundle, not a released protocol artifact. It includes the rendered site and a runnable locked workspace with model and corpus files, the naming contract, scenarios, simulator and replay sources, checkers, and exact identities. Reproduction begins from a fresh extraction, verifies the internal checksum manifest, and runs the archive's own flake. A checkout pass does not substitute, and no tag or publication is authorized.",
+      "text": "The Nix-built documentation archive is a review bundle, not a released protocol artifact. It includes the rendered site and a runnable locked workspace with model and corpus files, the naming contract, scenarios, simulator and replay sources, checkers, and exact identities. Reproduction begins from a fresh extraction, verifies the internal checksum manifest, and runs the archive's own flake; a checkout pass does not substitute. The build page gives the exact commands and describes the release pipeline that publishes the archive from a tag on main.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "6ffea58e34a7e05813f7c2a6d9e6af0adb9983be4390cfac2f50851df95b2a5b"
+    "sha256": "2c9189caf866d07cabfa17eaf683047b7e6acb62f8f46d83f553440f0ff65c27"
   }
 }

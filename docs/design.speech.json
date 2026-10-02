@@ -29,7 +29,7 @@
       "pause": 400
     },
     {
-      "text": "Witnesses remain required when mint and burn for the same asset net to zero. Different asset identities cannot cancel each other. The model ledger, the theorem inventory with its proofs, and the mutation proposals retain the exact evidence and its limits.",
+      "text": "Witnesses remain required when mint and burn for the same asset net to zero. Different asset identities cannot cancel each other. The model ledger, the theorem inventory with its proofs, and the mutation ledger retain the exact evidence and its limits: the mutation ledger records four executed mutants, each killed at a named obligation, and claims no survivor census or independent audit result.",
       "pause": 400
     }
   ],
@@ -59,6 +59,6 @@
   ],
   "_source": {
     "file": "design.md",
-    "sha256": "5be93ff4f2c4ab83d7258583a17e60eae4f136dfad56f26dd9e9dfaef5dc2b0a"
+    "sha256": "f52092cb39ce49ebe8e2389ec7a9332b6a667b59cd34d874a7d5154321935999"
   }
 }

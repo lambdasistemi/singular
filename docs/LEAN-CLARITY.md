@@ -11,7 +11,7 @@ The statements themselves, with their digests, are in the
 ## Who this is for
 
 A reviewer deciding whether the model is the right model. The build already
-answers *are these proved* — all forty-two are, from the standard axioms and
+answers *are these proved* — every one is, from the standard axioms and
 nothing else. It cannot answer *do these say what the interface promised*, and
 that is the question this page exists to make answerable.
 
@@ -19,16 +19,23 @@ that is the question this page exists to make answerable.
 
 | Artifact | SHA-256 |
 | --- | --- |
-| `Model.lean` | `c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8` |
-| `Lemmas.lean` | `140304f12064d8865a2e4552f5fb1cb644774671783476a889daf52894505209` |
-| `Statements.lean` | `f9a539ef56e9157f2fe6594b9e308eba3548fac2f42896eee6ea4a97f00761bb` |
+| `Model.lean` | `538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d` |
+| `Lemmas.lean` | `7ac8c9b77c8b894a119595a79a51494de57c323f36a3705c3a949ef08d8b9948` |
+| `Statements.lean` | `6db05532db8e26f9102106f5a05540b1bb0b5dec4624b0d49e57f8f16b69ce00` |
 | `Audit.lean` | `2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b` |
-| `Main.lean` (corpus generator) | `a4ede59c77e07fb0c1e0e6d341f3bd3b230a35b39bb5220035d88d787b89d567` |
-| `corpus.json` | `3e973e08e159cf9d1158a98f473ce27d788285255723f67368f370b3f3e9d073` |
+| `Main.lean` (corpus generator) | `1b5b4526acd54eb8ab6d233dad20a44e178272d60d9f30776155c787d4d6717b` |
+| `corpus.json` | `c07e5fdade5a52868ee0f94200b4589af30ea66807d54622a2e1dbdff172ceff` |
 
 Every one of these ships beside the page under `simulator/formal/`, and
 `node simulator/mirror-check.mjs` fails if the shipped copy and the built copy
 differ, in either direction. Changing any bound input invalidates this record.
+
+The readback below covers the eleven promises, the seven inversions, the
+deposit, the read and the fold. The registry module bound above also carries
+fifteen later statements — about when a pending request may be retracted and
+what a refused retraction is told, what every exit pays and to whom, and which
+datum a delivered or spent witness carries, and how a batch of one folds — that are listed in the
+[theorem manifest](theorems.md) and not yet read back here.
 
 ## The shape the promises are made over
 

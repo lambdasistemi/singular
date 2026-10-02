@@ -1,5 +1,7 @@
 # Requests, folding and NFT custody
 
+**Status.** This page records the original three-operation design: Insert, Update and Delete requests, an application-minted Withdraw, and the states Absent, `Active` and `Over`. The registry-mode model that the Lean proves, the simulator replays and the conformance suite compares against the deployed validators moves a key through seven edges and calls the terminal state `Terminal`; where the two differ, registry mode is current. [How a name moves in the registry](naming-demo.md#how-a-name-moves-in-the-registry) shows the seven edges, and the [model ledger](model-ledger.md#the-retirement-map) records what replaced each part of this design.
+
 Request creation and folding are separate transactions. Each has its own atomic effects; there is an explicit pending interval between them. Creating a valid request does not guarantee that someone will fold it.
 
 ## Where the representative is at every moment

@@ -7,8 +7,10 @@ that says so, and now you want it over — permanently, publicly, and in a
 way nobody can undo, including you.
 
 This page is about that one move: **retirement**. It is the edge the
-registry calls `updateTerminal`, and it is the only one that destroys a
-token instead of creating one.
+registry calls `updateTerminal`: it burns the active witness and leaves
+the key where no edge can move it again. This is the registry edge on its
+own; the naming instance puts a rule of its own in front of it, stated
+below.
 
 ## What you can do
 
@@ -37,11 +39,18 @@ What comes out:
 - exactly one token destroyed, the one named by your key, and no output
   anywhere carries it afterwards;
 - the entry reads `Terminal`;
-- no refund, no new token, and no signature from any application.
+- no refund, no new token, and no signature from any application at the
+  fold.
 
-The last point is worth stating plainly: **no application can veto a
-retirement and none is asked to sign one.** The registry decides, from
-the entry and the token, and nothing else.
+The last point is worth stating plainly: **the fold asks no application
+to sign a retirement.** The registry decides, from the entry and the
+token, and nothing else. What an application can do is decide who may
+build the request in the first place. The naming instance does exactly
+that: ending a name needs the committed recovery key or the retirement
+quorum, never the current control key alone, and the naming validator
+refuses any other request before it exists to be folded.
+[Recover control and retire names on a real
+ledger](recovery-retirement.md) shows that rule enforced on chain.
 
 ## Why it cannot be undone
 

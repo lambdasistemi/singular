@@ -20,7 +20,7 @@ single byte:
 | --- | --- | --- |
 | Absent | `0x00` | somebody has witnessed that this name is free, and put up a deposit to say so |
 | Active | `0x01` | the name is booked and live |
-| Terminal | `0x02` | the name is over, forever |
+| Terminal | `0x02` | the name is over, forever — the state the original design and the simulator's profile name call `Over` |
 
 Seven requests move a key, and nothing else does. Each one moves a witness
 token, and the witness is what a reader looks at — never the root:
@@ -83,9 +83,9 @@ to itself.
 
 **Read the replay below it.** Twenty-four naming rows across six sections —
 spellings, queues, folds, transitions, resolutions and replays — each one a
-verdict the Lean computed, recomputed in your browser. The two that carry the
-amended retirement rule are `NS04-control-key-alone-never-retires` and
-`NS05-quorum-retires`; `NF06-retirement-by-recovery-key` is the other route.
+verdict the Lean computed, recomputed in your browser. Two of them carry the
+amended retirement rule — the control key alone never retires, and the quorum
+does — and a third shows the other route, retirement by the recovery key.
 
 **Then the lifecycle.** Twenty-one more rows: seeding the consumer with its
 pinned policies, moving a payment destination while the registry root stays put,
@@ -102,6 +102,13 @@ controller, no registry token, no prefix and no incarnation enters it:
 printf %s alice | xxd -p
 # 616c696365
 ```
+
+That is the naming partition's convention, where the witness policies are the
+absent, active and terminal policies. The registry partition deployed on
+preprod names its representative differently: by the BLAKE2b-256 digest of the
+spelling under the representative policy, as [the preprod
+record](preprod.md#finding-alice) shows. The two queries are not
+interchangeable; each finds a token only under its own partition's policies.
 
 The following Koios queries are a historical diagnostic for the earlier
 preprod naming walkthrough. The [dated naming and escrow plays](demos/index.md)
@@ -171,8 +178,8 @@ route is a different failure that must not wear delete's name.
 
 ```mermaid
 flowchart TB
-  Generic["The registry model<br/>24 proved statements"] --> NamingLayer["The naming instance<br/>7 proved statements"]
-  NamingLayer --> Lifecycle["Its lifecycle<br/>6 proved statements"]
+  Generic["The registry model<br/>44 proved statements"] --> NamingLayer["The naming instance<br/>7 proved statements"]
+  NamingLayer --> Lifecycle["Its lifecycle<br/>9 proved statements"]
   NamingLayer --> Wire["Its wire datum<br/>5 proved statements"]
   Generic --> Corpus["corpus.json"]
   NamingLayer --> NamingCorpus["naming-corpus.json"]
@@ -191,10 +198,11 @@ re-checks it in front of you.
 
 ## What is proved and what is checked here
 
-The naming instance carries seven theorem declarations, its lifecycle six and its
-wire encoding five — eighteen in all, each **PROVED** in Lean from the standard
-axioms alone and each in its own manifest with its own compiled gate, separate
-from the registry's twenty-four. The naming statements are stated as
+The naming instance carries seven theorem declarations, its lifecycle nine and
+its wire encoding five — twenty-one in all, each **PROVED** in Lean from the
+standard axioms alone and each in its own manifest with its own compiled gate,
+separate from the registry's forty-four. The [theorem manifest](theorems.md)
+derives these counts from the manifests rather than stating them by hand. The naming statements are stated as
 characterisations rather than one-way implications: the retirement rule says
 exactly when retirement is certified, so a model that certified *more* than the
 rule allows fails them as surely as one that certified less.
@@ -213,7 +221,7 @@ Finite checks are finite: the corpus replays measure the transcription on its ro
 | Next-control commitment | 32-byte domain-separated BLAKE2b digest — the commitment, not a revealed next address |
 | Retirement quorum | payment-key-hash members and a threshold, present as structure |
 
-Values are finite-model fixtures, not product or economic policy, and no fee, bond, price, expiry, deposit, or refund-value rule is invented anywhere in the profile. `alice` maps to one frozen demo key. The request stores a refund address inside its Insert commitment, and cancellation can only copy that address. Continue to the [lifecycle page](naming-lifecycle.md) for destination maintenance, committed-controller recovery, and split retirement through either the controller or published quorum. Retirement-request withdrawal is a distinct refusal case. The naming proposal's generic output payload stays the generic demo constants; fixtures are first-class fields beside it, never packed into it.
+Values are finite-model fixtures, not product or economic policy: the profile fixes where a deposit returns and invents no fee, bond, price, expiry, deposit-amount or refund-value rule. `alice` maps to one frozen demo key. The request stores a refund address inside its Insert commitment, and cancellation can only copy that address. Continue to the [lifecycle page](naming-lifecycle.md) for destination maintenance, committed-controller recovery, and split retirement through either the controller or published quorum. Retirement-request withdrawal is a distinct refusal case. The naming proposal's generic output payload stays the generic demo constants; fixtures are first-class fields beside it, never packed into it.
 
 ## Status of this candidate
 

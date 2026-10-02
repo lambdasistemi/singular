@@ -1,5 +1,7 @@
 # Singular protocol specification — draft
 
+**Status.** This page records the original three-operation design: Insert, Update and Delete requests, an application-minted Withdraw, and the states Absent, `Active` and `Over`. The registry-mode model that the Lean proves, the simulator replays and the conformance suite compares against the deployed validators moves a key through seven edges and calls the terminal state `Terminal`; where the two differ, registry mode is current. [How a name moves in the registry](../../docs/naming-demo.md#how-a-name-moves-in-the-registry) shows the seven edges, and the [model ledger](../../docs/model-ledger.md#the-retirement-map) records what replaced each part of this design.
+
 This specification derives from the [overview](../../docs/overview.md), [lifecycle](../../docs/lifecycle.md) and [certification design](../../docs/certification.md), with a bounded [prior-art comparison](../../docs/prior-art.md) and an illustrative [naming walkthrough](../../docs/naming-demo.md). It records required behavior, not an implemented wire protocol. **MUST** and **MUST NOT** express requirements of the intended protocol. The open decisions at the end prevent treating this as a complete implementation contract.
 
 ## Purpose and scope

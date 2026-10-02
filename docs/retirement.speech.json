@@ -1,7 +1,7 @@
 {
   "who-this-is-for": [
     {
-      "text": "You hold a Singular name and you want it over, permanently and publicly. This page covers one move: retirement, the edge the registry calls update terminal. It is the only edge that destroys a token instead of creating one.",
+      "text": "You hold a Singular name and you want it over, permanently and publicly. This page covers one move: retirement, the edge the registry calls update terminal. It burns the active witness and leaves the key where no edge can move it again. That is the registry edge on its own; the naming instance puts a rule of its own in front of it, stated below.",
       "pause": 400
     }
   ],
@@ -11,7 +11,7 @@
       "pause": 400
     },
     {
-      "text": "Afterwards exactly one token is destroyed, named by your key, and no output anywhere carries it. The entry reads Terminal. There is no refund, no new token, and no application signature. No application can veto a retirement and none is asked to sign one: the registry decides from the entry and the token, and nothing else.",
+      "text": "Afterwards exactly one token is destroyed, named by your key, and no output anywhere carries it. The entry reads Terminal. There is no refund, no new token, and no application signature at the fold. The fold asks no application to sign a retirement: the registry decides from the entry and the token, and nothing else. What an application can do is decide who may build the request in the first place. The naming instance does exactly that: ending a name needs the committed recovery key or the retirement quorum, never the current control key alone, and the naming validator refuses any other request before it exists to be folded. The recovery and retirement walkthrough shows that rule enforced on a real ledger.",
       "pause": 400
     }
   ],
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "retirement.md",
-    "sha256": "675140729740b60bc33ee48e0d9c330d5db85e2592c077111e8a2dc48e5f156f"
+    "sha256": "9d701d0823291791ab050bdb64ee5741c46ef437871481ca408b0c73ee356e8b"
   }
 }

@@ -1,10 +1,12 @@
 # Executable design candidate
 
+**Status.** This page records the original three-operation design: Insert, Update and Delete requests, an application-minted Withdraw, and the states Absent, `Active` and `Over`. The registry-mode model that the Lean proves, the simulator replays and the conformance suite compares against the deployed validators moves a key through seven edges and calls the terminal state `Terminal`; where the two differ, registry mode is current. [How a name moves in the registry](naming-demo.md#how-a-name-moves-in-the-registry) shows the seven edges, and the [model ledger](model-ledger.md#the-retirement-map) records what replaced each part of this design.
+
 As an application designer, follow a registration from an approved request into a live application output, then explore address changes, retirement and deletion. The simulator shows successful transitions and exact refusals so you can inspect the proposed behavior before choosing a ledger construction.
 
 <a href="https://lambdasistemi.github.io/singular/simulator/">Open the playable Singular simulator</a> — the live generic-registry simulator, where Delete is allowed — or follow the [simulation walkthrough](simulation.md).
 
-This is a **creation candidate**: the logical Lean model and separately authored browser simulation make the design executable. All 42 theorem and inversion declarations — 24 for the registry, 7 for the naming instance, 6 for its lifecycle and 5 for its wire encoding — are **PROVED** from the standard axioms, and the build refuses any statement that is admitted again. Proofs establish properties of the model; they do not by themselves accept the design.
+This is a **creation candidate**: the logical Lean model and separately authored browser simulation make the design executable. All 65 theorem and inversion declarations — 44 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts the model check derives from the manifests — are **PROVED** from the standard axioms, and the build refuses any statement that is admitted again. Proofs establish properties of the model; they do not by themselves accept the design.
 
 ## Story: register and use an application output
 
@@ -49,7 +51,7 @@ These are executable behaviors and proved obligations. A general whole-transitio
 
 Any submitter can select an ordered batch. Each item sees the registry produced by the previous item; a failure refuses the selected batch atomically. There is no native privileged folder gate, automatic skipping, capacity guarantee or fairness claim. Executing witnesses remain required even when mint and burn quantities for the same asset net to zero; distinct identities do not cancel each other.
 
-The [model ledger](model-ledger.md) maps requirements and finite scenarios to modeled behavior, conditions, abstractions and omissions. The [theorem inventory](theorems.md) records the exact statements, each proved. The [mutation proposals](mutants.md) describe candidate fault coverage; no mutation campaign or independent audit result is claimed.
+The [model ledger](model-ledger.md) maps requirements and finite scenarios to modeled behavior, conditions, abstractions and omissions. The [theorem inventory](theorems.md) records the exact statements, each proved. The [mutation ledger](mutants.md) records four executed mutants, each killed at a named obligation; no survivor census or independent audit result is claimed.
 
 ## Reading the application trust boundary
 
