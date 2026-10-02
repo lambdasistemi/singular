@@ -1,7 +1,8 @@
 {-# LANGUAGE GADTs #-}
 
 {- | Programs over the nine exits of the model: seven folds, a reject and a
-retract. Handles remain opaque to stories.
+retract, and over the model's two batch questions: several requests folded in one
+transaction, and several rejected in one. Handles remain opaque to stories.
 -}
 module Conformance.Story.Live
     ( Edge (..)
@@ -24,6 +25,8 @@ module Conformance.Story.Live
     , tamperRejectWithin
     , retract
     , tamperExit
+    , foldBatch
+    , rejectBatchWithin
     , observe
     , compareWithModel
     , renderLive
@@ -46,6 +49,7 @@ import Control.Monad.Operational
     , ProgramViewT (Return, (:>>=))
     , view
     )
+import Data.List (intercalate)
 
 data Edge
     = InsertAbsent
@@ -172,6 +176,13 @@ data LiveI reg wal step obs cmp result where
         -> LiveI reg wal step obs cmp step
     Observe :: step -> LiveI reg wal step obs cmp obs
     Compare :: step -> obs -> LiveI reg wal step obs cmp cmp
+    FoldBatch
+        :: reg -> [EdgeRequest wal] -> LiveI reg wal step obs cmp cmp
+    RejectBatchWithin
+        :: Placement
+        -> reg
+        -> [EdgeRequest wal]
+        -> LiveI reg wal step obs cmp cmp
 
 submit :: reg -> EdgeRequest wal -> Story reg wal step obs cmp step
 submit registry request = action (Submit Fold registry request)
@@ -209,6 +220,26 @@ tamperExit
     -> Story reg wal step obs cmp step
 tamperExit alteration exit registry request = action (Tamper alteration exit registry request)
 
+{- | Fold these requests in one transaction, each on its own edge, and ask the
+model the same batch: its @foldBatch@ question. The batch is submitted and asked
+as one instruction; its answer is what the model and the chain each said.
+-}
+foldBatch
+    :: reg -> [EdgeRequest wal] -> Story reg wal step obs cmp cmp
+foldBatch registry requests = action (FoldBatch registry requests)
+
+{- | A folder rejects these requests in one transaction, in the window the
+placement names, and the model is asked the same batch: its @rejectBatch@
+question.
+-}
+rejectBatchWithin
+    :: Placement
+    -> reg
+    -> [EdgeRequest wal]
+    -> Story reg wal step obs cmp cmp
+rejectBatchWithin placement registry requests =
+    action (RejectBatchWithin placement registry requests)
+
 observe :: step -> Story reg wal step obs cmp obs
 observe = action . Observe
 
@@ -240,6 +271,8 @@ validateLive program = do
             RejectWithin{} -> advance Ready NeedObserve "preflight step"
             Observe _ -> advance NeedObserve NeedCompare "preflight observation"
             Compare _ _ -> advance NeedCompare Ready "preflight comparison"
+            FoldBatch{} -> batch "preflight batch"
+            RejectBatchWithin{} -> batch "preflight batch"
           where
             advance expected nextPhase value
                 | phase == expected = walk nextPhase (rest value)
@@ -247,6 +280,13 @@ validateLive program = do
                     Left "live story must Submit or Tamper, Observe, then Compare"
             unplaced =
                 "a live story's reject must name the window it is placed in"
+            -- A batch is submitted and asked as one instruction, so it stands
+            -- between complete steps, never inside one.
+            batch value
+                | phase == Ready = walk Ready (rest value)
+                | otherwise =
+                    Left
+                        "a live story's batch stands between complete steps, not inside one"
         Theorem _ body' :>>= rest -> do
             (afterClauses, result) <-
                 walkClauses phase (Specification.clauses body')
@@ -340,6 +380,22 @@ renderAction instruction rest = case instruction of
                 <> "** and its observation with the executable registry model."
             )
             (rest ("comparison for " <> handle))
+    FoldBatch registry requests ->
+        step
+            ( "Fold, in one transaction, "
+                <> batched requests registry
+                <> ", and ask the executable registry model the same batch."
+            )
+            (rest ("batch in " <> registry))
+    RejectBatchWithin placement registry requests ->
+        step
+            ( "Reject, in one transaction "
+                <> placementReading placement
+                <> ", "
+                <> batched requests registry
+                <> ", and ask the executable registry model the same batch."
+            )
+            (rest ("batch in " <> registry))
   where
     step sentence next = prepend ("- " <> sentence <> "\n\n") (renderWithResult next)
     named request registry =
@@ -350,6 +406,22 @@ renderAction instruction rest = case instruction of
             <> "** in **"
             <> registry
             <> "**"
+    -- Every request of a batch is named, in order; an empty batch says so.
+    batched [] registry = "no request in **" <> registry <> "**"
+    batched requests registry =
+        intercalate
+            ", "
+            [ "**"
+                <> edgeName (requestEdge request)
+                <> "** for **"
+                <> requestKey request
+                <> "**"
+            | request <- requests
+            ]
+            <> " in **"
+            <> registry
+            <> "**, using "
+            <> intercalate ", " (map (("the " <>) . requestWallet) requests)
     subject Fold registry request = "Submit " <> named request registry
     subject Reject registry request =
         "Reject the "

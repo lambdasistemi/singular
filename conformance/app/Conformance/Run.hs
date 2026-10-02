@@ -160,6 +160,7 @@ runRows rawRows receiptsDir = do
                         <> issue205Rows
                         <> issue320Rows
                         <> sequenceRows
+                        <> harnessRows
                     )
                 )
                 rows
@@ -201,6 +202,7 @@ runRows rawRows receiptsDir = do
                             <> issue205Rows
                             <> issue320Rows
                             <> sequenceRows
+                            <> harnessRows
                        )
             ]
         caDevnet = [r | r <- devnetRows, r `elem` caRows]
@@ -219,6 +221,7 @@ runRows rawRows receiptsDir = do
                                 <> issue205Rows
                                 <> issue320Rows
                                 <> sequenceRows
+                                <> harnessRows
                           )
             ]
     unless (null unpartitioned) $
@@ -308,6 +311,7 @@ validateRows raw = do
                         <> issue205Rows
                         <> issue320Rows
                         <> sequenceRows
+                        <> harnessRows
                     )
                 )
                 requested
@@ -627,4 +631,5 @@ runRowIn env marker row = case row of
     "CG23" -> runCG23 env
     "CG24" -> runCG24 env
     "sequence" -> runSequence env
+    "batch" -> runBatchHarness env
     _ -> failWith ("run cannot execute row: " <> row)

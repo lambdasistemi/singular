@@ -91,7 +91,7 @@ import Control.Exception
     , throwIO
     , try
     )
-import Control.Monad (forM_, replicateM, unless, void, when)
+import Control.Monad (forM, forM_, replicateM, unless, void, when)
 import Control.Monad.Operational qualified as Operational
 import Data.Aeson
     ( Value (..)
@@ -117,7 +117,13 @@ import Data.IORef
     )
 import Data.List (nub, sort, sortOn, stripPrefix)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
+import Data.Maybe
+    ( catMaybes
+    , fromMaybe
+    , isJust
+    , isNothing
+    , listToMaybe
+    )
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -436,6 +442,10 @@ runLiveNamed env row prepared program = do
                     request
             modifyIORef' (livePendingComparisons state) (+ 1)
             pure step
+        Live.FoldBatch registry requests ->
+            submitBatch env state registry Live.Fold Nothing requests
+        Live.RejectBatchWithin placement registry requests ->
+            submitBatch env state registry Live.Reject (Just placement) requests
         Live.Observe step -> observeStep env state step
         Live.Compare step observation -> do
             result <- compareStep env state step observation
@@ -501,52 +511,9 @@ submitEdge env state cage exit alteration placement request = do
         edge = fromIntegral (fromEnum (Live.requestEdge request))
         wallet = Live.requestWallet request
         ids = liveIds state
-    tid <- cageTid cage
+    (tid, before) <- enterRegistry env state cage
     let registry = show tid
-    knownRegistries <- readIORef (liveRegistryIds state)
-    when (Map.notMember registry knownRegistries) $
-        modifyIORef'
-            (liveRegistryIds state)
-            (Map.insert registry (fromIntegral (Map.size knownRegistries) + 1))
-    before <- readRegistryState env cage
-    starts <- readIORef (liveStarts state)
-    case Map.lookup registry starts of
-        Nothing -> do
-            require
-                "generic story requires a freshly booted empty registry"
-                (unOnChainRoot (stateRoot before) == emptyRoot)
-            modifyIORef' (liveStarts state) (Map.insert registry before)
-        Just _ -> pure ()
-    prepareRegistrationIdentities ids cage key wallet
-    modifyIORef'
-        (liveRegistryKeys state)
-        ( Map.alter
-            ( \known ->
-                Just
-                    ( case known of
-                        Nothing -> [key]
-                        Just keys
-                            | key `elem` keys -> keys
-                            | otherwise -> key : keys
-                    )
-            )
-            registry
-        )
-    modifyIORef'
-        (liveRegistryWallets state)
-        ( Map.alter
-            ( \known ->
-                Just
-                    ( foldr
-                        ( \address addresses ->
-                            if address `elem` addresses then addresses else address : addresses
-                        )
-                        (fromMaybe [] known)
-                        [wallet, genesisAddr]
-                    )
-            )
-            registry
-        )
+    noteRequest state cage registry request
     refs <- storyReferences env cage key edge
     let pendingKey =
             ( registry
@@ -697,46 +664,7 @@ submitEdge env state cage exit alteration placement request = do
                         before
                         elsewhere
                         editsOf
-            pp <- Cage.withView (envProv env) (pure . Cage.viewProtocolParams)
-            let maxUnits = pp ^. ppMaxTxExUnitsL
-                blockUnits = pp ^. ppMaxBlockExUnitsL
-            template <- build Map.empty
-            let purposes = redeemerPurposeNames template
-            require "honest fold has no redeemer purposes" (not (null purposes))
-            probePairs <-
-                either
-                    (failWith . T.unpack)
-                    pure
-                    (protocolProbePurposeUnits maxUnits blockUnits purposes)
-            let probePurposeUnits =
-                    Map.map
-                        (\(mem, cpu) -> ExUnits (fromIntegral mem) (fromIntegral cpu))
-                        probePairs
-            trial <- build probePurposeUnits
-            measurements <- measurePurposeUnits env trial
-            require
-                "node evaluation did not return every redeemer purpose"
-                (sort (Map.keys measurements) == sort (redeemerPurposeNames trial))
-            declaredPairs <-
-                either
-                    (failWith . T.unpack)
-                    pure
-                    (declaredPurposeUnits maxUnits blockUnits measurements)
-            let declared =
-                    Map.map
-                        (\(mem, cpu) -> ExUnits (fromIntegral mem) (fromIntegral cpu))
-                        declaredPairs
-                missingDeclarations =
-                    missingPurposeBudgets
-                        (successfulPurposeUnits measurements)
-                        declaredPairs
-            require
-                "measured script purpose has no purpose-specific declaration"
-                (null missingDeclarations)
-            -- Evaluation can consume the entire short validity interval on a busy
-            -- node. Assemble the same one-request shape again immediately before
-            -- submission; its fresh upper bound cannot age during measurement.
-            unsigned <- build declared
+            (unsigned, measurements, declaredPairs) <- declareUnits env build
             -- A placed reject must lie inside the window its step names before
             -- it is submitted; the placement is logged with the interval.
             forM_ placement $ \placed ->
@@ -905,6 +833,363 @@ submitEdge env state cage exit alteration placement request = do
     -- A fold spends the custody its edge consumes; a reject and a retraction
     -- consume none.
     custodyOf refs = if exit == Live.Fold then listToMaybe refs else Nothing
+
+{- | One batch instruction: book every request, take them all by one exit in one
+transaction — folded, each on its own edge, or rejected in the window the
+placement names — submit it, and ask the model the matching batch question
+through the transport. The requests are spent, and asked, in the transaction's
+input order, which is the order the registry folds them in. Each request's claim
+is what the transaction mints at its key, read off the transaction as built. The
+record says what the chain did, what the model answered and whether their
+outcomes agree; comparing the batch's observations is left to the row that
+submits it.
+-}
+submitBatch
+    :: Env
+    -> LiveState
+    -> RowCage
+    -> Live.Exit
+    -> Maybe Live.Placement
+    -> [Live.EdgeRequest Addr]
+    -> IO Value
+submitBatch env state cage exit placement requests = do
+    let cfg = rcCfg cage
+        ids = liveIds state
+    (tid, before) <- enterRegistry env state cage
+    let registry = show tid
+    mapM_ (noteRequest state cage registry) requests
+    booked <-
+        sortOn (fst . snd)
+            <$> mapM
+                (\request -> (,) request <$> bookStoryRequest env cage request)
+                requests
+    modelRequests <- forM booked $ \(request, (reqIn, reqOut)) -> do
+        let Coin bond = reqOut ^. coinTxOutL
+            deposit = bond - stateMaxFee before
+        require
+            "booked request holds less than the on-chain processing tip"
+            (deposit >= 0)
+        reference <-
+            allocateIdentity
+                (liveReferences ids)
+                (ReferenceIdentity (txInReference reqIn))
+        modelRequest <-
+            storyModelRequest
+                ids
+                cfg
+                exit
+                request
+                deposit
+                (stateMaxFee before)
+                (Just reference)
+                (Right reqOut)
+        bindBookedApproval ids cfg reqOut modelRequest
+        pure modelRequest
+    witnesses <-
+        if exit == Live.Fold
+            then
+                catMaybes
+                    <$> mapM
+                        ( \(request, _) ->
+                            storyWitness
+                                env
+                                cfg
+                                (TE.encodeUtf8 (T.pack (Live.requestKey request)))
+                                (Live.requestWallet request)
+                        )
+                        booked
+            else pure []
+    (actions, root, lower, reach) <- case exit of
+        Live.Reject -> do
+            placed <-
+                maybe
+                    ( failWith
+                        "setup: a batch reject reached the builder without a placement"
+                    )
+                    pure
+                    placement
+            -- Every request's window: the batch is placed where all of them are.
+            let windows =
+                    [ Live.placementWindow
+                        placed
+                        (snd (requestDatumOf out))
+                        (stateProcessTime before)
+                        (stateRetractTime before)
+                    | (_, (_, out)) <- booked
+                    ]
+                opens = maximum (0 : map fst windows)
+                closes = case [c | (_, Just c) <- windows] of
+                    [] -> Nothing
+                    cs -> Just (minimum cs)
+            lower <-
+                if null windows
+                    then pure Nothing
+                    else do
+                        sleepUntil (opens + 500)
+                        Just
+                            <$> Cage.withView
+                                (envProv env)
+                                (\v -> trySlots v [opens + 400, opens + 200, opens + 100])
+            pure
+                ( map (const Types.Rejected) booked
+                , Root (unOnChainRoot (stateRoot before))
+                , lower
+                , \now ->
+                    map
+                        (maybe id (\c -> min (c - 1_000)) closes . (now +))
+                        [30_000, 20_000, 15_000, 8_000]
+                )
+        Live.Fold -> do
+            (proofs, root) <- storyProofs env cage tid (map snd booked)
+            pure
+                ( map Update proofs
+                , root
+                , Nothing
+                , \now -> [now + 8_000, now + 7_500, now + 7_000]
+                )
+        Live.Retract -> failWith "setup: a batch takes no retraction"
+    stateUtxo <- cageStateUtxo env cage
+    (pot, funder) <- collateralPotWithChange env
+    let spec =
+            (rowSpec cage tid stateUtxo (map snd booked) actions root (ExUnits 0 0))
+                { fsCollateral = Just pot
+                , fsSigners = Just []
+                , fsHolderUtxos = witnesses
+                , fsFunder = Just funder
+                , fsLower = lower
+                }
+        build units = do
+            now <- currentPosixMs
+            upper <- Cage.withView (envProv env) (`trySlots` reach now)
+            assembleFoldWithFee
+                env
+                spec{fsPurposeUnits = units, fsUpper = Just upper}
+    (unsigned, measurements, declaredPairs) <- declareUnits env build
+    forM_ placement $ \placed ->
+        forM_ booked $ \(_, (_, reqOut)) ->
+            checkPlacement env (liveRow state) placed reqOut before unsigned
+    let signedWitnessed = signTx genesisSignKey unsigned
+        signed = signedTx signedWitnessed
+        MultiAsset minted = signed ^. bodyTxL . mintTxBodyL
+        claimedAt request =
+            [ object ["kind" .= kind, "quantity" .= quantity]
+            | (pin, kind) <-
+                [ (cfgActivePolicy cfg, "active" :: T.Text)
+                , (cfgAbsentPolicy cfg, "absent")
+                , (cfgTerminalPolicy cfg, "terminal")
+                ]
+            , (policy, names) <- Map.toList minted
+            , cg21PolicyBytes policy == SBS.fromShort pin
+            , (AssetName name, quantity) <- Map.toList names
+            , SBS.fromShort name == TE.encodeUtf8 (T.pack (Live.requestKey request))
+            , quantity /= 0
+            ]
+        asked =
+            [ case (exit, modelRequest) of
+                (Live.Fold, Object fields) ->
+                    Object (KM.insert "claimed" (toJSON (claimedAt request)) fields)
+                (Live.Fold, other) -> other
+                _ -> object ["exit" .= String "reject", "request" .= modelRequest]
+            | ((request, _), modelRequest) <- zip booked modelRequests
+            ]
+    result <- submitTxResilient (envSubmit env) signedWitnessed
+    (chainOutcome, chain) <- case result of
+        Submitted _ -> do
+            confirmTx env signed
+            -- Only a fold moves the trie; a reject leaves it.
+            when (exit == Live.Fold) $
+                forM_ booked $ \(request, _) ->
+                    rowCommit
+                        env
+                        cage
+                        (TE.encodeUtf8 (T.pack (Live.requestKey request)))
+                        (fromIntegral (fromEnum (Live.requestEdge request)))
+            pure
+                ( String "accepted"
+                , object ["outcome" .= String "accepted", "txid" .= txIdHex signed]
+                )
+        Rejected reason ->
+            pure
+                ( String "refused"
+                , object
+                    [ "outcome" .= String "refused"
+                    , "txid" .= txIdHex signed
+                    , "refusal"
+                        .= rejectionJson
+                            Nothing
+                            []
+                            StepRejection
+                                { srText = TE.decodeUtf8Lenient reason
+                                , srMeasured = measurements
+                                , srDeclared = declaredPairs
+                                , srBudgetExceeded = []
+                                }
+                    ]
+                )
+    (_, startValue, setup) <- modelStart state cage
+    let question =
+            object
+                [ "question"
+                    .= String (if exit == Live.Fold then "foldBatch" else "rejectBatch")
+                , "id" .= String "live-batch"
+                , "theorem" .= String "Singular.Driver.runSurface"
+                , "statementSha256" .= String "4242624938955313763"
+                , "start" .= startValue
+                , "setup" .= setup
+                , "requests" .= asked
+                ]
+    evaluator <- requireEnv "CONFORMANCE_MODEL_EVALUATOR"
+    row <-
+        LeanOracle.expectedObservation evaluator [] question
+            >>= either failWith pure
+    modelOutcome <- storyField "outcome" row
+    modelReason <- storyField "reason" row
+    -- A batch the chain folded moves the registry the next question starts from.
+    when (exit == Live.Fold && chainOutcome == String "accepted") $
+        modifyIORef'
+            (liveTraces state)
+            (Map.insertWith (flip (<>)) registry asked)
+    registryId <-
+        maybe (failWith "batch registry was not allocated") pure
+            . Map.lookup registry
+            =<< readIORef (liveRegistryIds state)
+    let batchName = if exit == Live.Fold then "foldBatch" else "rejectBatch" :: T.Text
+        agrees = modelOutcome == chainOutcome
+        record =
+            object
+                [ "registry" .= registryId
+                , "batch" .= batchName
+                , "requests" .= asked
+                , "model" .= object ["outcome" .= modelOutcome, "reason" .= modelReason]
+                , "chain" .= chain
+                , "comparison" .= String (if agrees then "agrees" else "disagrees")
+                , "compared" .= ["outcome" :: T.Text]
+                ]
+    modifyIORef' (envLiveRecords env) (<> [record])
+    emit
+        "batch"
+        ( T.unpack batchName
+            <> " keys="
+            <> show (map (Live.requestKey . fst) booked)
+            <> " model="
+            <> show modelOutcome
+            <> " modelReason="
+            <> show modelReason
+            <> " chain="
+            <> show chainOutcome
+            <> " txid="
+            <> txIdHex signed
+        )
+    pure record
+
+{- | Enter the registry a story acts on: allocate its identity the first time,
+and require it freshly booted then, so every model question starts from the
+empty registry the chain held. Returns its present chain state.
+-}
+enterRegistry
+    :: Env -> LiveState -> RowCage -> IO (TokenId, OnChainTokenState)
+enterRegistry env state cage = do
+    tid <- cageTid cage
+    let registry = show tid
+    knownRegistries <- readIORef (liveRegistryIds state)
+    when (Map.notMember registry knownRegistries) $
+        modifyIORef'
+            (liveRegistryIds state)
+            (Map.insert registry (fromIntegral (Map.size knownRegistries) + 1))
+    before <- readRegistryState env cage
+    starts <- readIORef (liveStarts state)
+    case Map.lookup registry starts of
+        Nothing -> do
+            require
+                "generic story requires a freshly booted empty registry"
+                (unOnChainRoot (stateRoot before) == emptyRoot)
+            modifyIORef' (liveStarts state) (Map.insert registry before)
+        Just _ -> pure ()
+    pure (tid, before)
+
+{- | Note a request a story acts on: the identities it is named by, and its key
+and wallet under its registry.
+-}
+noteRequest
+    :: LiveState -> RowCage -> String -> Live.EdgeRequest Addr -> IO ()
+noteRequest state cage registry request = do
+    let key = TE.encodeUtf8 (T.pack (Live.requestKey request))
+        wallet = Live.requestWallet request
+    prepareRegistrationIdentities (liveIds state) cage key wallet
+    modifyIORef'
+        (liveRegistryKeys state)
+        ( Map.alter
+            ( \known ->
+                Just
+                    ( case known of
+                        Nothing -> [key]
+                        Just keys
+                            | key `elem` keys -> keys
+                            | otherwise -> key : keys
+                    )
+            )
+            registry
+        )
+    modifyIORef'
+        (liveRegistryWallets state)
+        ( Map.alter
+            ( \known ->
+                Just
+                    ( foldr
+                        ( \address addresses ->
+                            if address `elem` addresses then addresses else address : addresses
+                        )
+                        (fromMaybe [] known)
+                        [wallet, genesisAddr]
+                    )
+            )
+            registry
+        )
+
+{- | Measure a transaction's script purposes on the node and declare each its
+own units, then assemble it again with them. Evaluation can consume the entire
+short validity interval on a busy node, so the declared shape is assembled
+immediately before submission; its fresh upper bound cannot age during
+measurement.
+-}
+declareUnits
+    :: Env
+    -> (Map.Map T.Text ExUnits -> IO ConwayTx)
+    -> IO (ConwayTx, PurposeMeasurements, PurposeUnits)
+declareUnits env build = do
+    pp <- Cage.withView (envProv env) (pure . Cage.viewProtocolParams)
+    let maxUnits = pp ^. ppMaxTxExUnitsL
+        blockUnits = pp ^. ppMaxBlockExUnitsL
+    template <- build Map.empty
+    let purposes = redeemerPurposeNames template
+    require "honest fold has no redeemer purposes" (not (null purposes))
+    probePairs <-
+        either
+            (failWith . T.unpack)
+            pure
+            (protocolProbePurposeUnits maxUnits blockUnits purposes)
+    trial <- build (Map.map exUnits probePairs)
+    measurements <- measurePurposeUnits env trial
+    require
+        "node evaluation did not return every redeemer purpose"
+        (sort (Map.keys measurements) == sort (redeemerPurposeNames trial))
+    declaredPairs <-
+        either
+            (failWith . T.unpack)
+            pure
+            (declaredPurposeUnits maxUnits blockUnits measurements)
+    require
+        "measured script purpose has no purpose-specific declaration"
+        ( null
+            ( missingPurposeBudgets
+                (successfulPurposeUnits measurements)
+                declaredPairs
+            )
+        )
+    unsigned <- build (Map.map exUnits declaredPairs)
+    pure (unsigned, measurements, declaredPairs)
+  where
+    exUnits (mem, cpu) = ExUnits (fromIntegral mem) (fromIntegral cpu)
 
 {- | A fold or a reject of the booked request, through the harness's own fold
 assembly: a fold carries the request's proof, a reject the @Rejected@ action
@@ -2505,32 +2790,8 @@ under the witness read off it as built, so the model admits it first.
 askModel
     :: Env -> LiveState -> LiveStep -> Maybe ([Value], [Value]) -> IO Value
 askModel _env state step judged = do
-    tid <- cageTid (lsCage step)
-    let registry = show tid
-        ids = liveIds state
-    start <-
-        maybe (failWith "model question has no chain-read start") pure
-            . Map.lookup registry
-            =<< readIORef (liveStarts state)
-    setup <-
-        Map.findWithDefault [] registry <$> readIORef (liveTraces state)
-    (application, active, absent, terminal) <-
-        observePins ids (rcCfg (lsCage step))
-    let startValue =
-            object
-                [ "config"
-                    .= abstractConfig
-                        start
-                        application
-                        active
-                        absent
-                        terminal
-                        (Compare.rootOf [])
-                , "trie" .= ([] :: [Value])
-                , "custody" .= ([] :: [Value])
-                , "held" .= ([] :: [Value])
-                ]
-        question =
+    (start, startValue, setup) <- modelStart state (lsCage step)
+    let question =
             object $
                 [ "id" .= String "live-edge"
                 , "theorem" .= String "Singular.Driver.runSurface"
@@ -2586,6 +2847,41 @@ askModel _env state step judged = do
     evaluator <- requireEnv "CONFORMANCE_MODEL_EVALUATOR"
     LeanOracle.expectedObservation evaluator [] asked
         >>= either failWith pure
+
+{- | Where every model question about a registry starts: the empty registry the
+chain held when the story first acted on it, under its pins, and the setup trace
+of the folds since compared or submitted in a batch the chain accepted.
+-}
+modelStart
+    :: LiveState -> RowCage -> IO (OnChainTokenState, Value, [Value])
+modelStart state cage = do
+    tid <- cageTid cage
+    let registry = show tid
+    start <-
+        maybe (failWith "model question has no chain-read start") pure
+            . Map.lookup registry
+            =<< readIORef (liveStarts state)
+    setup <-
+        Map.findWithDefault [] registry <$> readIORef (liveTraces state)
+    (application, active, absent, terminal) <-
+        observePins (liveIds state) (rcCfg cage)
+    pure
+        ( start
+        , object
+            [ "config"
+                .= abstractConfig
+                    start
+                    application
+                    active
+                    absent
+                    terminal
+                    (Compare.rootOf [])
+            , "trie" .= ([] :: [Value])
+            , "custody" .= ([] :: [Value])
+            , "held" .= ([] :: [Value])
+            ]
+        , setup
+        )
 
 compareStep :: Env -> LiveState -> LiveStep -> Value -> IO Value
 compareStep env state step observation = do
