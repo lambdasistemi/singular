@@ -596,12 +596,13 @@ outsideReason row = lookup row outsideReasons
 outsideReasons :: [(String, String)]
 outsideReasons = reasons
   where
-    noBytes = "the model has no byte representation"
+    noBytes =
+        "nothing on the registry model driver's declared surface carries a Cardano encoding"
     reasons =
         [
             ( "blueprint-encoding-round-trip"
             , noBytes
-                <> " and no blueprint; the encodings are checked off chain against the compiled blueprint."
+                <> ", and it declares no blueprint; the encodings are checked off chain against the compiled blueprint."
             )
         ,
             ( "submitted-datum-byte-round-trip"
@@ -610,15 +611,15 @@ outsideReasons = reasons
             )
         ,
             ( "update-redeemer-constructor-witnesses"
-            , "the model has no redeemer (lambdasistemi/singular#347): its operations here are a fold and a retraction, but the claim is the constructor each transaction carries on the wire."
+            , "the registry model has no redeemer (lambdasistemi/singular#347): its operations here are a fold and a retraction, but the claim is the constructor each transaction carries on the wire."
             )
         ,
             ( "wrong-redeemer-constructor-index"
-            , "a fold whose redeemer is retargeted to an index the validator does not name; the model has no vocabulary for decoding a redeemer, so it gives no reason to compare with the chain's refusal (lambdasistemi/singular#347)."
+            , "a fold whose redeemer is retargeted to an index the validator does not name; the registry model has no vocabulary for decoding a redeemer, so it gives no reason to compare with the chain's refusal (lambdasistemi/singular#347)."
             )
         ,
             ( "request-and-mint-constructor-witnesses"
-            , "the model has no redeemer (lambdasistemi/singular#347): its operations here are a boot, a fold and a rejection, but the claim is the constructor each transaction carries on the wire."
+            , "the registry model has no redeemer (lambdasistemi/singular#347): its operations here are a boot, a fold and a rejection, but the claim is the constructor each transaction carries on the wire."
             )
         ,
             ( "script-parameter-application"
@@ -627,11 +628,11 @@ outsideReasons = reasons
             )
         ,
             ( "proof-step-constructor-witnesses"
-            , "the model takes no proof and no authenticated root (lambdasistemi/singular#346)."
+            , "the registry model takes no proof and no authenticated root (lambdasistemi/singular#346)."
             )
         ,
             ( "state-fields-chain-round-trip"
-            , "the model states the eight state fields abstractly as its configuration observation, compared on every step of the registry programs; the byte round trip of the encoded state with one policy varied is below it."
+            , "the registry model states the eight state fields abstractly as its configuration observation, compared on every step of the registry programs; the byte round trip of the encoded state with one policy varied is below it."
             )
         ]
 

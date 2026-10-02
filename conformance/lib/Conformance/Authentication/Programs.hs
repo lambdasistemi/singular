@@ -195,7 +195,7 @@ outsideReasons :: [(String, String)]
 outsideReasons = reasons
   where
     noIdentity =
-        "the model has no seed, token name or registry address: the registry's address is a named unobservable and the model has no byte representation. "
+        "the registry model's driver declares no seed, token name or registry address: the registry's address is a named unobservable, and nothing on its declared surface carries a Cardano encoding. "
     reasons =
         [
             ( "canonical-seed-identity"
@@ -205,22 +205,22 @@ outsideReasons = reasons
         ,
             ( "rival-seed-authentication"
             , noIdentity
-                <> "Booting a registry is not one of the model's exits, and authentication reads a token name the model does not have."
+                <> "Booting a registry is not one of the driver's exits, and authentication reads a token name the driver does not declare."
             )
         ,
             ( "policy-address-only-authentication-control"
             , noIdentity
-                <> "This row is a control over the authenticator itself; the model has no counterpart."
+                <> "This row is a control over the authenticator itself; the driver has no counterpart."
             )
         ,
             ( "applied-validator-identity"
             , noIdentity
-                <> "Script hashes, parameter application and addresses are below the model; the derivation is checked off chain against the address the chain reports."
+                <> "Script hashes, parameter application and addresses are below the driver's surface; the derivation is checked off chain against the address the chain reports."
             )
         ,
             ( "tokenless-output-authentication"
             , noIdentity
-                <> "Creating an output is not an operation of the model."
+                <> "Creating an output is not an operation of the driver."
             )
         ]
 
