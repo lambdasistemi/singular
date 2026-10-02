@@ -6,11 +6,13 @@ import Conformance.Support.Binding qualified as Binding
 import Conformance.Support.CliAdmission qualified as CliAdmission
 import Conformance.Support.CliControls qualified as CliControls
 import Conformance.Support.CliProof qualified as CliProof
+import Conformance.Support.EvidencePage qualified as EvidencePage
 import Conformance.Support.Fixture qualified as Fixture
 import Conformance.Support.FixtureChild
     ( childModeVariable
     , holdScopedDirectories
     )
+import Conformance.Support.HeldView qualified as HeldView
 import Conformance.Support.Identity qualified as Identity
 import Conformance.Support.ObservedTx qualified as ObservedTx
 import Conformance.Support.Oracle qualified as Oracle
@@ -45,6 +47,7 @@ suite = do
         ReceiptBound.spec
         Refusal.spec
         Rows.spec
+        EvidencePage.spec
         Identity.spec
         Fixture.spec
         RegistrationComparison.spec
@@ -54,6 +57,7 @@ suite = do
         Step.spec
         Retraction.spec
         Specification.spec
+        HeldView.spec
         PurposeUnits.spec
         Usage.spec
         Binding.spec

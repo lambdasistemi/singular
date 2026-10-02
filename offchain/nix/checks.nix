@@ -3,6 +3,7 @@
   components,
   shell,
   cardanoNode,
+  ghc,
 }:
 let
   # The devnet E2E spawns cardano-node as a subprocess via
@@ -24,9 +25,54 @@ let
         makeWrapper ${pkgs.lib.getExe e2eTestsRaw} $out/bin/cage-tests-e2e \
           --prefix PATH : ${cardanoNode}/bin
       '';
+  # #326 R4: a SignedTx is constructible only by signing. The project's
+  # GHC type-checks the fixtures under signed-tx-control against the
+  # Submit module's source, with the package databases of node-internal's
+  # compiled dependencies: no cabal, no package index (D-011).
+  signedTxControl =
+    pkgs.runCommand "signed-tx-control"
+      {
+        nativeBuildInputs = [ ghc ];
+        src = pkgs.lib.fileset.toSource {
+          root = ../..;
+          fileset = pkgs.lib.fileset.unions [
+            ../../tools/signed_tx_control.sh
+            ../../tools/signed-tx-exports.allow
+            ../signed-tx-control
+            ../node-internal/Singular/Registry/Node/Submit.hs
+          ];
+        };
+      }
+      ''
+        # Every library node-internal was built against: its propagated
+        # build inputs, followed transitively.
+        dbs=()
+        declare -A seen=()
+        queue=(${components.sublibs.node-internal})
+        while [ ''${#queue[@]} -gt 0 ]; do
+          p=''${queue[0]}
+          queue=("''${queue[@]:1}")
+          [ -n "''${seen[$p]:-}" ] && continue
+          seen[$p]=1
+          [ -d "$p/package.conf.d" ] && dbs+=(-package-db "$p/package.conf.d")
+          if [ -f "$p/nix-support/propagated-build-inputs" ]; then
+            read -r -a next < "$p/nix-support/propagated-build-inputs" || true
+            queue+=("''${next[@]}")
+          fi
+        done
+        # Expose exactly node-internal's own dependencies, as Cabal does
+        # when it compiles Submit.hs.
+        for id in $(sed -n '/^depends:/,/^[a-z-]*:/p' \
+            ${components.sublibs.node-internal}/package.conf.d/*-node-internal.conf \
+            | grep -v '^[a-z-]*:' ); do
+          dbs+=(-package-id "$id")
+        done
+        bash $src/tools/signed_tx_control.sh "$src" -- -hide-all-packages "''${dbs[@]}" | tee $out
+      '';
 in
 {
   inherit (components) library;
+  signed-tx-control = signedTxControl;
   inherit (components.tests) cage-tests;
   inherit (components.tests) record-value-tests;
   cage-tests-e2e = e2eTestsWrapped;
@@ -76,7 +122,7 @@ in
       ) || { echo "lint: source discovery failed: cannot read singular-registry.cabal (awk exit $?)" >&2; exit 1; }
       [ -n "$cabal_dirs" ] || { echo "lint: source discovery found no hs-source-dirs in singular-registry.cabal" >&2; exit 1; }
       dirs=$(
-        printf '%s\n' "$cabal_dirs" naming/test naming/drift
+        printf '%s\n' "$cabal_dirs" naming/test naming/drift signed-tx-control
       )
       # Deduplicate nested declarations (journey contains journey/li01 and
       # friends, so every file must be listed once), then fail closed: a

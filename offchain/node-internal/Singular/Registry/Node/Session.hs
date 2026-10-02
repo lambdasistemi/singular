@@ -42,19 +42,45 @@ module Singular.Registry.Node.Session
     , withOpenSession
     , sessionFor
     , currentTipSlot
+
+      -- * No node call inside a view (#326)
+    , NodeCallInView (..)
+    , guardConnection
     ) where
 
-import Control.Concurrent (threadDelay)
+import Control.Concurrent (ThreadId, myThreadId, threadDelay)
 import Control.Concurrent.Async
     ( Async
     , async
     , cancel
     , race
     , waitCatch
+    , withAsync
     )
-import Control.Exception (bracket, bracket_, throwIO, try)
+import Control.Concurrent.MVar
+    ( newEmptyMVar
+    , putMVar
+    , takeMVar
+    , tryPutMVar
+    )
+import Control.Exception
+    ( Exception
+    , SomeException
+    , bracket
+    , bracket_
+    , throwIO
+    , try
+    )
 import Data.Foldable (for_)
-import Data.IORef (IORef, newIORef, readIORef, writeIORef)
+import Data.IORef
+    ( IORef
+    , atomicModifyIORef'
+    , newIORef
+    , readIORef
+    , writeIORef
+    )
+import Data.Set (Set)
+import Data.Set qualified as Set
 import System.IO (hPutStrLn, stderr)
 import System.IO.Unsafe (unsafePerformIO)
 
@@ -71,8 +97,9 @@ import Cardano.Node.Client.N2C.Connection
     )
 import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
+import Cardano.Node.Client.N2C.Types (ConnectionLost (..))
 import Cardano.Node.Client.Provider qualified as N2C
-import Cardano.Node.Client.Submitter (Submitter)
+import Cardano.Node.Client.Submitter (Submitter (..))
 import Data.Word (Word32, Word64)
 import Singular.Registry.Node.Funding
     ( FundingFloor
@@ -149,7 +176,12 @@ withNodeReadsOn backend magicWord sock k = do
     lsqCh <- newLSQChannel 16
     ltxsCh <- newLTxSChannel 16
     bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $ \nodeThread -> do
-        let prov = adaptProvider magic (mkN2CProvider lsqCh)
+        (n2c, _) <-
+            guardConnection
+                nodeThread
+                (mkN2CProvider lsqCh)
+                (mkN2CSubmitter ltxsCh)
+        let prov = adaptProvider magic n2c
         awaitConnection magic sock nodeThread prov
         case backend of
             NodeBackend -> k NodeReads{nrProvider = prov}
@@ -225,10 +257,15 @@ withNodeModeAndFunding fundingFloor backend mode k = case mode of
         ltxsCh <- newLTxSChannel 16
         bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $
             \nodeThread -> do
-                let n2c = mkN2CProvider lsqCh
+                connection <-
+                    guardConnection
+                        nodeThread
+                        (mkN2CProvider lsqCh)
+                        (boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh))
+                let n2c = fst connection
                 awaitConnection magic sock nodeThread (adaptProvider magic n2c)
                 case mode of
-                    Devnet -> session magic sock n2c ltxsCh
+                    Devnet -> session magic sock connection
                     External _ -> do
                         start <- case backend of
                             NodeBackend ->
@@ -236,12 +273,10 @@ withNodeModeAndFunding fundingFloor backend mode k = case mode of
                                     <$> N2C.queryLedgerSnapshot n2c
                             IndexerBackend -> pure Nothing
                         followChain magic publicByronEpochSlots start sock $
-                            session magic sock n2c ltxsCh
-    session magic sock n2c ltxsCh = do
+                            session magic sock connection
+    session magic sock (n2c, submitter) = do
         wallet <- walletForMode mode
         let nodeProv = adaptProvider magic n2c
-            submitter =
-                boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
         -- A devnet session reads addresses through its indexer; an external
         -- node through the node adapter, or through the indexer backend
         -- when that is the backend asked for.
@@ -389,3 +424,149 @@ firstViewWithin polls sock prov =
                         <> " is still at its origin: no block has been made, so \
                            \no view of it can be acquired (AcquiredAtOrigin)"
         Left other -> throwIO other
+
+-- ---------------------------------------------------------
+-- No node call inside a view (#326)
+-- ---------------------------------------------------------
+
+{- | A node call issued by a thread that holds an acquired view on the same
+connection, by a route other than that view: a one-shot query, a second
+acquisition or a submission. The connection serves only the acquired
+state until the view is released, so the call would otherwise wait for
+a release that waits for it. Names the call.
+-}
+newtype NodeCallInView = NodeCallInView String
+    deriving stock (Eq, Show)
+
+instance Exception NodeCallInView
+
+{- | A node connection — its LocalStateQuery provider and its submitter —
+that refuses, as 'NodeCallInView', every call a thread issues while it
+holds an acquired view of that connection, other than the view's own
+reads; calls from threads holding no view pass through.
+
+Every call, the view's own reads included, also ends with the client
+thread: once the connection to the node has ended, a call waiting on it
+fails as @ConnectionLost@ (which the node adapter names
+'Cage.ViewConnectionLost') instead of waiting for an answer that cannot
+come. The upstream client raises it only when the runtime finds the
+waiting thread deadlocked, which it never does while another thread
+holds that thread's id.
+-}
+guardConnection
+    :: Async b
+    -> N2C.Provider IO
+    -> Submitter IO
+    -> IO (N2C.Provider IO, Submitter IO)
+guardConnection client p0 s = do
+    let p = whileConnected client p0
+    holders <- newIORef (Set.empty :: Set ThreadId)
+    let outside :: String -> IO a -> IO a
+        outside call act = do
+            me <- myThreadId
+            held <- Set.member me <$> readIORef holders
+            if held then throwIO (NodeCallInView call) else act
+        holding me =
+            bracket_
+                (atomicModifyIORef' holders (\h -> (Set.insert me h, ())))
+                (atomicModifyIORef' holders (\h -> (Set.delete me h, ())))
+    pure
+        ( p
+            { N2C.withAcquired = \k -> outside "withAcquired" $ do
+                me <- myThreadId
+                N2C.withAcquired p (holding me . k)
+            , N2C.queryUTxOs = outside "queryUTxOs" . N2C.queryUTxOs p
+            , N2C.queryUTxOByTxIn =
+                outside "queryUTxOByTxIn" . N2C.queryUTxOByTxIn p
+            , N2C.queryProtocolParams =
+                outside "queryProtocolParams" (N2C.queryProtocolParams p)
+            , N2C.queryLedgerSnapshot =
+                outside "queryLedgerSnapshot" (N2C.queryLedgerSnapshot p)
+            , N2C.queryStakeRewards =
+                outside "queryStakeRewards" . N2C.queryStakeRewards p
+            , N2C.queryRewardAccounts =
+                outside "queryRewardAccounts" . N2C.queryRewardAccounts p
+            , N2C.queryVoteDelegatees =
+                outside "queryVoteDelegatees" . N2C.queryVoteDelegatees p
+            , N2C.queryTreasury = outside "queryTreasury" (N2C.queryTreasury p)
+            , N2C.queryGovernanceState =
+                outside "queryGovernanceState" (N2C.queryGovernanceState p)
+            , N2C.evaluateTx = outside "evaluateTx" . N2C.evaluateTx p
+            , N2C.posixMsToSlot = outside "posixMsToSlot" . N2C.posixMsToSlot p
+            , N2C.posixMsCeilSlot =
+                outside "posixMsCeilSlot" . N2C.posixMsCeilSlot p
+            , N2C.queryUpperBoundSlot =
+                outside "queryUpperBoundSlot" . N2C.queryUpperBoundSlot p
+            }
+        , Submitter (outside "submitTx" . connected client . submitTx s)
+        )
+
+{- | Each call of the provider, and each read of every view it acquires,
+ends with the client.
+-}
+whileConnected :: Async b -> N2C.Provider IO -> N2C.Provider IO
+whileConnected client p =
+    N2C.Provider
+        { N2C.withAcquired = \k -> acquiredWhileConnected client p (k . handleOf)
+        , N2C.queryUTxOs = live . N2C.queryUTxOs p
+        , N2C.queryUTxOByTxIn = live . N2C.queryUTxOByTxIn p
+        , N2C.queryProtocolParams = live (N2C.queryProtocolParams p)
+        , N2C.queryLedgerSnapshot = live (N2C.queryLedgerSnapshot p)
+        , N2C.queryStakeRewards = live . N2C.queryStakeRewards p
+        , N2C.queryRewardAccounts = live . N2C.queryRewardAccounts p
+        , N2C.queryVoteDelegatees = live . N2C.queryVoteDelegatees p
+        , N2C.queryTreasury = live (N2C.queryTreasury p)
+        , N2C.queryGovernanceState = live (N2C.queryGovernanceState p)
+        , N2C.evaluateTx = live . N2C.evaluateTx p
+        , N2C.posixMsToSlot = live . N2C.posixMsToSlot p
+        , N2C.posixMsCeilSlot = live . N2C.posixMsCeilSlot p
+        , N2C.queryUpperBoundSlot = live . N2C.queryUpperBoundSlot p
+        }
+  where
+    live :: IO a -> IO a
+    live = connected client
+    handleOf h =
+        N2C.mkQueryHandle
+            N2C.QueryHandleBackend
+                { N2C.backendQueryUTxOs = live . N2C.queryUTxOsH h
+                , N2C.backendQueryUTxOsAt = live . N2C.queryUTxOsAtH h
+                , N2C.backendQueryUTxOByTxIn = live . N2C.queryUTxOByTxInH h
+                , N2C.backendQueryProtocolParams = live (N2C.queryProtocolParamsH h)
+                , N2C.backendQueryLedgerSnapshot = live (N2C.queryLedgerSnapshotH h)
+                , N2C.backendQueryStakeRewards = live . N2C.queryStakeRewardsH h
+                , N2C.backendQueryRewardAccounts = live . N2C.queryRewardAccountsH h
+                , N2C.backendQueryVoteDelegatees = live . N2C.queryVoteDelegateesH h
+                , N2C.backendQueryTreasury = live (N2C.queryTreasuryH h)
+                , N2C.backendQueryGovernanceState = live (N2C.queryGovernanceStateH h)
+                , N2C.backendEvaluateTx = live . N2C.evaluateTxH h
+                , N2C.backendPosixMsToSlot = live . N2C.posixMsToSlotH h
+                , N2C.backendPosixMsCeilSlot = live . N2C.posixMsCeilSlotH h
+                }
+
+-- | Run a call, or fail it as @ConnectionLost@ once the client has ended.
+connected :: Async b -> IO a -> IO a
+connected client call =
+    race (waitCatch client) call
+        >>= either (const (throwIO ConnectionLost)) pure
+
+{- | One acquisition whose body runs on the caller's thread while a helper
+thread holds the acquired state: the acquisition and the release are each
+waited for only while the client lives, so neither waits forever on a
+connection that has ended.
+-}
+acquiredWhileConnected
+    :: Async b -> N2C.Provider IO -> (N2C.QueryHandle IO -> IO a) -> IO a
+acquiredWhileConnected client p body = do
+    acquired <- newEmptyMVar
+    done <- newEmptyMVar
+    let holding = N2C.withAcquired p (\h -> putMVar acquired h >> takeMVar done)
+    withAsync holding $ \holder -> do
+        h <-
+            connected client (race (waitCatch holder) (takeMVar acquired))
+                >>= either (either throwIO (const (throwIO ConnectionLost))) pure
+        result <- try @SomeException (body h)
+        _ <- tryPutMVar done ()
+        -- An ended connection has nothing left to release: the body's own
+        -- outcome stands.
+        _ <- race (waitCatch client) (waitCatch holder)
+        either throwIO pure result

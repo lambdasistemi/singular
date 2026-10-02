@@ -69,10 +69,6 @@ import Cardano.Ledger.Compactible (fromCompact)
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
-    )
 import Cardano.Tx.Balance
     ( BalanceResult (..)
     , balanceFeeLoop
@@ -82,7 +78,6 @@ import Cardano.Tx.Balance
 import Cardano.Tx.Ledger (ConwayTx)
 import PlutusLedgerApi.V3 qualified as PLC
 
-import Cardano.Node.Client.E2E.Setup (addKeyWitness)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
     ( Coin (..)
@@ -91,14 +86,19 @@ import Singular.Registry.Ledger
     , TokenId
     )
 import Singular.Registry.Node
-    ( ExternalNode (..)
-    , NodeMode (..)
-    , NodeSession (..)
-    , awaitTx
+    ( Capabilities (..)
+    , SubmitResult (..)
     , funderAddr
     , funderSignKey
+    , signTx
+    , signedTx
+    , submitSigned
     )
-import Singular.Registry.Provider (Provider (..), View (..))
+import Singular.Registry.Provider
+    ( ChainPoint (..)
+    , Provider (..)
+    , View (..)
+    )
 import Singular.Registry.TxBuilder.Internal.Identity
     ( mkInlineDatum
     , mkRequestDatum
@@ -110,14 +110,13 @@ import Singular.Registry.TxBuilder.Internal.Lookup
 import Singular.Registry.TxBuilder.Request (requestLockedAda)
 import Singular.Registry.Types (Edge)
 
-{- | Public external nodes use the lifecycle automatically. The explicit flag
-also exercises that path on the factory devnet (network magic 42).
+{- | Public external nodes use the lifecycle automatically: a chain point
+on a network other than the factory devnet (network magic 42). The
+explicit flag also exercises that path on the devnet.
 -}
-lifecycleRequested :: NodeSession -> [String] -> Bool
-lifecycleRequested sess args =
-    "--lifecycle" `elem` args || case nsMode sess of
-        External e -> extMagic e /= 42
-        Devnet -> False
+lifecycleRequested :: ChainPoint -> [String] -> Bool
+lifecycleRequested point args =
+    "--lifecycle" `elem` args || cpNetwork point /= 42
 
 {- | A funding allowance, not the fee charged: one maximum-size transaction,
 the live aggregate execution limit, and the actual reference scripts.
@@ -263,20 +262,20 @@ fundingView reserved v =
 
 -- | Fund exactly the requested actors, then return the confirmed output references.
 fundLifecycle
-    :: Provider IO
-    -> Submitter IO
+    :: Capabilities
     -> [TxOut ConwayEra]
     -> IO [(TxIn, TxOut ConwayEra)]
-fundLifecycle prov submit outs = do
-    unsigned <- withView prov $ \v -> fundingTx v outs
-    let signed = addKeyWitness funderSignKey unsigned
-    submitTx submit signed >>= \case
+fundLifecycle caps outs = do
+    unsigned <- withView (capReads caps) $ \v -> fundingTx v outs
+    let signed = signTx funderSignKey unsigned
+        tx = signedTx signed
+    submitSigned (capSubmit caps) signed >>= \case
         Submitted _ -> pure ()
         Rejected reason -> fail ("lifecycle funding rejected: " <> show reason)
-    awaitTx signed
-    putStrLn ("lifecycle funding confirmed: " <> show (txIdTx signed))
+    capConfirm caps tx
+    putStrLn ("lifecycle funding confirmed: " <> show (txIdTx tx))
     pure
-        [ (TxIn (txIdTx signed) (TxIx (fromIntegral i)), o)
+        [ (TxIn (txIdTx tx) (TxIx (fromIntegral i)), o)
         | (i, o) <- zip [(0 :: Int) ..] outs
         ]
 

@@ -19,7 +19,6 @@ module Singular.Registry.E2E.CageSpec
     ) where
 
 import Control.Concurrent (threadDelay)
-import Control.Concurrent.Async (async, cancel)
 import Control.Monad (forM_, unless, when)
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
@@ -68,32 +67,11 @@ import Cardano.Ledger.Mary.Value
     )
 import Cardano.Ledger.TxIn (TxIn (..))
 
-import Cardano.Node.Client.E2E.Devnet
-    ( withCardanoNode
-    )
 import Cardano.Node.Client.E2E.Setup
-    ( addKeyWitness
-    , genesisAddr
-    , genesisDir
+    ( genesisAddr
     , genesisSignKey
     )
-import Cardano.Node.Client.N2C.Connection
-    ( newLSQChannel
-    , newLTxSChannel
-    , runNodeClient
-    )
-import Cardano.Node.Client.N2C.Provider
-    ( mkN2CProvider
-    )
-import Cardano.Node.Client.N2C.Submitter
-    ( mkN2CSubmitter
-    )
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
-    )
 import Cardano.Tx.Ledger (ConwayTx)
-import Ouroboros.Network.Magic (NetworkMagic (..))
 import PlutusTx.Builtins (fromBuiltin)
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint
@@ -106,19 +84,18 @@ import Singular.Registry.Config
     ( CageConfig (..)
     )
 import Singular.Registry.Driver qualified as Driver
+import Singular.Registry.E2E.Fixture (withDevnetCapabilities)
 import Singular.Registry.Ledger
     ( Coin (..)
     , ConwayEra
     , TokenId (..)
     )
 import Singular.Registry.Node
-    ( adaptProvider
-    , awaitConnection
-    , awaitIndexed
-    , boundedSubmitter
-    , followedProvider
-    , submissionBound
-    , withDevnetIndexer
+    ( Capabilities (..)
+    , SubmitResult (..)
+    , signTx
+    , signedTx
+    , submitSigned
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
@@ -519,7 +496,7 @@ withBootedCage
     -> SBS.ShortByteString
     -> ( CageConfig
          -> Cage.Provider IO
-         -> Submitter IO
+         -> Capabilities
          -> TrieManager IO
          -> Driver.Registry
          -> IO a
@@ -538,7 +515,7 @@ withBootedCageTimed
     -> ( Integer
          -> CageConfig
          -> Cage.Provider IO
-         -> Submitter IO
+         -> Capabilities
          -> TrieManager IO
          -> Driver.Registry
          -> IO a
@@ -562,7 +539,7 @@ withBootedCageTimed adjustCfg stateBytes requestBytes action =
 submitInsertRequest
     :: CageConfig
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TokenId
     -> ByteString
     -> Edge
@@ -585,19 +562,15 @@ submitInsertRequest cfg prov submit tokenId key edge = do
             (TxIx 0)
 
 submitWithGenesis
-    :: Submitter IO
+    :: Capabilities
     -> ConwayTx
     -> IO ConwayTx
-submitWithGenesis submit unsignedTx = do
-    let signedTx =
-            addKeyWitness
-                genesisSignKey
-                unsignedTx
-    result <-
-        submitTx submit signedTx
+submitWithGenesis caps unsignedTx = do
+    let signed = signTx genesisSignKey unsignedTx
+    result <- submitSigned (capSubmit caps) signed
     assertSubmitted result
-    awaitIndexed signedTx
-    pure signedTx
+    capConfirm caps (signedTx signed)
+    pure (signedTx signed)
 
 fastRetractCfg :: CageConfig -> CageConfig
 fastRetractCfg cfg =
@@ -647,7 +620,7 @@ rejectsWithin
     -> Integer
     -> CageConfig
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TrieManager IO
     -> Driver.Registry
     -> IO ()
@@ -783,8 +756,8 @@ waitUntilMs target = do
 -- Bracket
 -- ---------------------------------------------------------
 
-{- | Start a devnet node, connect via N2C,
-build Provider and Submitter, then run.
+{- | Take the devnet fixture's capabilities, publish the state validator,
+pick a seed and run the body on the configured cage.
 -}
 withE2E
     :: SBS.ShortByteString
@@ -793,7 +766,7 @@ withE2E
     -- ^ Unparameterized request compiled-code bytes
     -> ( CageConfig
          -> Cage.Provider IO
-         -> Submitter IO
+         -> Capabilities
          -> TrieManager IO
          -> IO a
        )
@@ -812,28 +785,14 @@ withE2ETimed
     -> ( Integer
          -> CageConfig
          -> Cage.Provider IO
-         -> Submitter IO
+         -> Capabilities
          -> TrieManager IO
          -> IO a
        )
     -> IO a
-withE2ETimed stateBytes requestBytes action = do
-    gDir <- genesisDir
-    withCardanoNode gDir $ \sock startMs -> withDevnetIndexer sock $ do
-        lsqCh <- newLSQChannel 16
-        ltxsCh <- newLTxSChannel 16
-        nodeThread <-
-            async $
-                runNodeClient
-                    (NetworkMagic 42)
-                    sock
-                    lsqCh
-                    ltxsCh
-        let nodeProv = adaptProvider (NetworkMagic 42) (mkN2CProvider lsqCh)
-        awaitConnection (NetworkMagic 42) sock nodeThread nodeProv
-        let submit = boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
-        -- Address reads from here on are the indexer's.
-        prov <- followedProvider nodeProv submit
+withE2ETimed stateBytes requestBytes action =
+    withDevnetCapabilities $ \startMs caps -> do
+        let prov = capReads caps
         -- Build TrieManager
         tm <- mkPureTrieManager
         -- Verify connection works
@@ -846,7 +805,7 @@ withE2ETimed stateBytes requestBytes action = do
         _ <-
             Edges.publishRefScript
                 prov
-                (submitWithGenesis submit)
+                (submitWithGenesis caps)
                 genesisAddr
                 (scriptFromBytes "state" stateBytes)
         -- Pick the seed from the genesis wallet. The state script
@@ -870,9 +829,7 @@ withE2ETimed stateBytes requestBytes action = do
                     requestBytes
                     codes
                     seedRef
-        result <- action startMs cfg prov submit tm
-        cancel nodeThread
-        pure result
+        action startMs cfg prov caps tm
 
 -- ---------------------------------------------------------
 -- Helpers
@@ -1067,7 +1024,7 @@ cageCfg stateBytes requestBytes codes seed =
 {- | Sign with the genesis key, submit and wait: the submission
 discipline every transaction of this suite uses.
 -}
-genesisSubmit :: Submitter IO -> SubmitSigned
+genesisSubmit :: Capabilities -> SubmitSigned
 genesisSubmit = submitWithGenesis
 
 {- | Publish this cage's scripts as reference outputs. The state
@@ -1078,7 +1035,7 @@ references every purpose resolves through them instead.
 publishCageRefs
     :: CageConfig
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TokenId
     -> IO [(TxIn, TxOut ConwayEra)]
 publishCageRefs cfg prov submit tokenId = do
@@ -1111,7 +1068,7 @@ certifies the edge, and the request carries it to the fold.
 bookEdge
     :: CageConfig
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TokenId
     -> ByteString
     -> Edge
@@ -1132,7 +1089,7 @@ bookEdge cfg prov submit tokenId key op = do
 foldEdge
     :: CageConfig
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TrieManager IO
     -> TokenId
     -> [(TxIn, TxOut ConwayEra)]

@@ -1,0 +1,20 @@
+{
+  "base": "c17309ee607368615b96f23ea4f96401467195f5",
+  "sources": [
+    {
+      "workflow": "Conformance",
+      "run": "https://github.com/lambdasistemi/singular/actions/runs/36943937230",
+      "artifact": "conformance-receipts"
+    },
+    {
+      "workflow": "Conformance",
+      "run": "https://github.com/lambdasistemi/singular/actions/runs/36943937230",
+      "artifact": "conformance-story-receipts"
+    },
+    {
+      "workflow": "Registry",
+      "run": "https://github.com/lambdasistemi/singular/actions/runs/36943937231",
+      "artifact": "contract-results"
+    }
+  ]
+}

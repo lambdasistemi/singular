@@ -209,6 +209,11 @@ jobs:
             and .steps[0].registry != .steps[4].registry
             and (.transactions | length) == 7
           ' "$f" > /dev/null || { echo 'FAIL: CG22 retirement evidence moved'; exit 1; }
+          # #326 R9: the dedicated rows' receipts are kept together as the
+          # conformance-story-receipts artifact, beside the generic session's.
+          STORY_RECEIPTS="$(mktemp -d "$RUNNER_TEMP/story-receipts.XXXXXX")"
+          printf 'STORY_RECEIPTS=%s\n' "$STORY_RECEIPTS" >> "$GITHUB_ENV"
+          cp "$f" "$STORY_RECEIPTS/"
       # Read the eight step records the exit controls write as a row of
       # their own, apart from the retirement so that each receipt is
       # written under the size bound. Requests leave the queue unfolded,
@@ -291,6 +296,7 @@ jobs:
             and (.steps[9] | .request.owner as $owner | .witness.signatories | index($owner) != null)
             and (.transactions | length) == 2
           ' "$f" > /dev/null || { echo 'FAIL: CG23 exit evidence moved'; exit 1; }
+          cp "$f" "$STORY_RECEIPTS/"
       # CG24 (#320): a folder rejects a pending request before its owner's
       # retraction deadline. Two insertion requests are booked together in a
       # registry of their own; the first is rejected inside its processing
@@ -358,6 +364,7 @@ jobs:
             echo "FAIL: CG24 placements moved: processing=$p1 retraction=$p2, expected 3 and 3"
             exit 1
           fi
+          cp "$f" "$STORY_RECEIPTS/"
           echo 'GREEN = early rejection held: inside the processing window and inside the retraction window, the untampered reject is accepted by the chain and the model, refunding the owner and leaving the state as it was; the short and misdirected refunds are refused by both for deposit-returned. The consumer R9_reject_needs_rejectable stays unmet (CG09, unmet-by-ruling).'
       # The timing refusals are compared in their own finite-window story.
       # The exit chapter above compares the other retraction admission refusals.
@@ -402,6 +409,7 @@ jobs:
             and .steps[1].perturbation.refused > 0
             and .transactions == [.steps[1].chain.txid]
           ' "$f" > /dev/null || { echo 'FAIL: retraction window evidence moved'; exit 1; }
+          cp "$f" "$STORY_RECEIPTS/"
       - name: Run the generic rows as a packaged app without a dev shell
         working-directory: conformance
         run: |
@@ -787,6 +795,13 @@ jobs:
         with:
           name: conformance-receipts
           path: ${{ env.CONFORMANCE_RECEIPTS }}
+          if-no-files-found: error
+      - name: Preserve the dedicated rows' candidate-bound receipts
+        if: always() && env.STORY_RECEIPTS != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-story-receipts
+          path: ${{ env.STORY_RECEIPTS }}
           if-no-files-found: error
   # Issue #80: the theorem-coverage gate. The ratchet (per-obligation,
   # no offsetting) and the full-completion gate (strict, all axes zero) are

@@ -176,8 +176,6 @@ import Cardano.Ledger.TxIn (TxIn (..), txInToText)
 import Cardano.Tx.Balance (BalanceResult (..), balanceTx)
 import Cardano.Tx.Ledger (ConwayTx)
 
-import Cardano.Node.Client.E2E.Setup (addKeyWitness)
-import Cardano.Node.Client.Submitter (SubmitResult (..))
 import PlutusTx (fromBuiltinData)
 import PlutusTx.Builtins.Internal
     ( BuiltinByteString (..)
@@ -193,6 +191,11 @@ import Singular.Registry.Ledger
     , Root (..)
     , TokenId (..)
     , TxOut
+    )
+import Singular.Registry.Node
+    ( SubmitResult (..)
+    , signTx
+    , signedTx
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
@@ -769,7 +772,8 @@ submitEdge env state cage exit alteration placement request = do
             require
                 "generic fold has an input missing from the chain snapshot"
                 (all (`Map.member` visible) (Set.toList wanted))
-            let signed = addKeyWitness genesisSignKey unsigned
+            let signedWitnessed = signTx genesisSignKey unsigned
+                signed = signedTx signedWitnessed
                 submittedBudgets = transactionPurposeUnits signed
                 -- What each spent input holds of the state policy, which every
                 -- registry's state token is minted under.
@@ -806,7 +810,7 @@ submitEdge env state cage exit alteration placement request = do
                     <> " declared="
                     <> compactJson (purposeDeclarationsJson measurements submittedBudgets)
                 )
-            result <- submitTxResilient (envSubmit env) signed
+            result <- submitTxResilient (envSubmit env) signedWitnessed
             -- What the model's admission reads of a retraction is read off the
             -- retraction as built, after it has been submitted.
             retraction <-
@@ -830,7 +834,7 @@ submitEdge env state cage exit alteration placement request = do
                                         <> ")"
                                     )
                         _ -> pure ()
-                    awaitTx signed
+                    confirmTx env signed
                     -- Only a fold moves the trie; a reject and a retraction leave it.
                     when (exit == Live.Fold) $ rowCommit env cage key edge
                     after <- readRegistryState env cage
@@ -996,7 +1000,7 @@ foldingBuilder env cage tid exit alteration placement request named before elsew
             (envFoldFixture env)
             (envProv env)
             (\budget -> assembleFoldWithFee env initialSpec{fsUnits = budget})
-            (submitTxResilient (envSubmit env) . addKeyWitness genesisSignKey)
+            (submitTxResilient (envSubmit env) . signTx genesisSignKey)
             initialUnits
     let spec = initialSpec{fsUnits = fixtureUnits}
         build units = do

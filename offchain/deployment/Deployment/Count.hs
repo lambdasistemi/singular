@@ -35,7 +35,11 @@ import Deployment.Compiled (bindDeployment, loadCompiled, partsOf)
 import Deployment.Narration (failWith)
 import Deployment.Options (CountOptions (..), countOptions)
 import Singular.Registry.Deployment (cageConfigFor, readDeployment)
-import Singular.Registry.Node (NodeSession (..), funderAddr, withNode)
+import Singular.Registry.Node
+    ( Capabilities (..)
+    , funderAddr
+    , withCapabilities
+    )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
@@ -49,8 +53,8 @@ count args = do
     dep <- readDeployment (countManifest opts)
     compiled <- loadCompiled >>= (`bindDeployment` dep)
     cfg <- either failWith pure (cageConfigFor dep (partsOf compiled))
-    withNode $ \sess -> do
-        let prov = nsProvider sess
+    withCapabilities $ \caps -> do
+        let prov = capReads caps
         case countWhat opts of
             "state" -> do
                 utxos <-

@@ -53,11 +53,7 @@ import Cardano.Ledger.Core (valueTxOutL)
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId (..), TxIn)
-import Cardano.Node.Client.E2E.Setup (addKeyWitness, genesisAddr)
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
-    )
+import Cardano.Node.Client.E2E.Setup (genesisAddr)
 import Cardano.Tx.Ledger (ConwayTx)
 
 import InsertActive.Narration (die, hex, say)
@@ -75,9 +71,12 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.Node
-    ( NodeSession (..)
-    , awaitTx
+    ( Capabilities (..)
+    , SubmitResult (..)
     , funderSignKey
+    , signTx
+    , signedTx
+    , submitSigned
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
@@ -107,7 +106,8 @@ import Singular.Registry.Types
 -- | One booted registry and everything a fold in it needs.
 data Story = Story
     { storyProvider :: Cage.Provider IO
-    , storySubmitter :: Submitter IO
+    , storyWrites :: Capabilities
+    -- ^ The signed-only write and the confirmation
     , storyTries :: TrieManager IO
     , storyCodes :: NamingCodes
     , storyConfig :: CageConfig
@@ -135,10 +135,9 @@ walletDestination = (serialiseAddr genesisAddr, "")
 {- | Boot the open registry in this node session and narrate its two
 policies and its token.
 -}
-bootStory :: NodeSession -> StoryInputs -> IO Story
-bootStory sess inputs = do
-    let prov = nsProvider sess
-        submit = nsSubmitter sess
+bootStory :: Capabilities -> StoryInputs -> IO Story
+bootStory caps inputs = do
+    let prov = capReads caps
         stateBytes = inputStateBytes inputs
     tm <- mkPureTrieManager
     _ <- Cage.withView prov (pure . Cage.viewProtocolParams)
@@ -149,7 +148,7 @@ bootStory sess inputs = do
     _ <-
         Edges.publishRefScript
             prov
-            (submitWithGenesis submit)
+            (submitWithGenesis caps)
             genesisAddr
             (scriptFromBytes "state" stateBytes)
     utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
@@ -178,7 +177,7 @@ bootStory sess inputs = do
 
     unsignedBoot <-
         Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
-    signedBoot <- submitWithGenesis submit unsignedBoot
+    signedBoot <- submitWithGenesis caps unsignedBoot
     (tid, tidBytes) <- extractTokenId cfg signedBoot
     createTrie tm tid
     stateUtxos <-
@@ -195,13 +194,13 @@ bootStory sess inputs = do
             cfg
             codes
             prov
-            (submitWithGenesis submit)
+            (submitWithGenesis caps)
             genesisAddr
             tid
     pure
         Story
             { storyProvider = prov
-            , storySubmitter = submit
+            , storyWrites = caps
             , storyTries = tm
             , storyCodes = codes
             , storyConfig = cfg
@@ -219,7 +218,7 @@ book story key =
             (storyConfig story)
             (storyCodes story)
             (storyProvider story)
-            (submitWithGenesis (storySubmitter story))
+            (submitWithGenesis (storyWrites story))
             genesisAddr
             (storyToken story)
             key
@@ -252,7 +251,7 @@ foldOnce story key = do
             tid
             genesisAddr
             ctx
-    signed <- submitWithGenesis (storySubmitter story) tx
+    signed <- submitWithGenesis (storyWrites story) tx
     withTrie tm tid $ \t -> do
         _ <- insert t key leafActive
         pure ()
@@ -276,15 +275,15 @@ activeHeldAt story key = do
             ]
 
 -- | Sign with the devnet genesis key, submit, wait.
-submitWithGenesis :: Submitter IO -> ConwayTx -> IO ConwayTx
-submitWithGenesis submit unsigned = do
-    let signed = addKeyWitness funderSignKey unsigned
-    result <- submitTx submit signed
+submitWithGenesis :: Capabilities -> ConwayTx -> IO ConwayTx
+submitWithGenesis caps unsigned = do
+    let signed = signTx funderSignKey unsigned
+    result <- submitSigned (capSubmit caps) signed
     case result of
         Submitted _ -> pure ()
         Rejected reason -> die ("tx rejected: " <> show reason)
-    awaitTx signed
-    pure signed
+    capConfirm caps (signedTx signed)
+    pure (signedTx signed)
 
 {- | The registry token this boot minted, and its raw name bytes for
 narration.

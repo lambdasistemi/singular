@@ -101,9 +101,6 @@ import PlutusTx.IsData.Class (FromData (..))
 import Cardano.Node.Client.E2E.Setup
     ( genesisAddr
     )
-import Cardano.Node.Client.Submitter
-    ( Submitter
-    )
 import Singular.Registry.Blueprint
     ( Blueprint
     , NamingCodes
@@ -124,6 +121,7 @@ import Singular.Registry.Ledger
     , Root (..)
     , TokenId
     )
+import Singular.Registry.Node (Capabilities)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie
     ( Trie (getRoot)
@@ -333,7 +331,7 @@ orderingStage
     :: CageConfig
     -> NamingCodes
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TrieManager IO
     -> TokenId
     -> Addr
@@ -496,7 +494,7 @@ connectedStages
     :: CageConfig
     -> NamingCodes
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TrieManager IO
     -> TokenId
     -> Addr
@@ -552,7 +550,7 @@ bookFoldObserve
     :: CageConfig
     -> NamingCodes
     -> Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> TrieManager IO
     -> TokenId
     -> Addr

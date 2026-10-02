@@ -151,15 +151,18 @@ lint-controls:
 
 # #323: the node backend is named only by the composition and fixture
 # modules tools/node-confinement.allow lists, each with its reason, over
-# every Haskell source under offchain/cli and offchain/lib.
+# every Haskell source under the roots the check names (`--roots`): the
+# commands, the library, the runners, the end-to-end suite and the
+# conformance harness.
 
 # Check that only allowlisted modules name the node backend.
 node-confinement:
     bash tools/node_confinement_check.sh
 
 # Its controls, on scratch copies: a planted backend import and a raw
-# submit in a non-allowlisted module, reasonless, stale and unneeded
-# allowlist entries, and an empty extent each fail with their diagnostic.
+# submit in a new module under each scanned root, reasonless, stale and
+# unneeded allowlist entries, and each root emptied fail with their
+# diagnostic.
 # The working tree is never touched.
 
 # Run the node confinement check's negative and positive controls.

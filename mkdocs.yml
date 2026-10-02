@@ -22,6 +22,8 @@ nav:
   - Record value and recovery: docs/record-value.md
   - Run against your own preprod node: docs/consumer-onboarding.md
   - Connecting singular to a node: docs/singular-node.md
+  - Download and verify a release: docs/verify-release.md
+  - Conformance evidence: docs/conformance-evidence.md
   - The preprod record: docs/preprod.md
   - Executable candidate:
       - Review guide: docs/design.md

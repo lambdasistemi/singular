@@ -45,7 +45,6 @@ import Conformance.Run.Units
 import Conformance.Run.Wallet
 
 import Control.Concurrent (threadDelay)
-import Control.Concurrent.Async (async, cancel)
 import Control.Exception
     ( ErrorCall (..)
     , throwIO
@@ -91,18 +90,6 @@ import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
-import Cardano.Node.Client.E2E.Setup (addKeyWitness)
-import Cardano.Node.Client.N2C.Connection
-    ( newLSQChannel
-    , newLTxSChannel
-    , runNodeClient
-    )
-import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
-import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
-    )
 import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.Registry.Blueprint
@@ -118,15 +105,14 @@ import Singular.Registry.Ledger
     , TxOut
     )
 import Singular.Registry.Node
-    ( adaptProvider
-    , awaitConnection
-    , boundedSubmitter
+    ( Capabilities (..)
+    , SubmitResult (..)
     , checkFunding
     , defaultFundingFloor
-    , followedProvider
     , funderAddr
-    , sessionMagic
-    , submissionBound
+    , signTx
+    , signedTx
+    , submitSigned
     )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
@@ -207,22 +193,11 @@ runCSSession
     -> String
     -> Bool
     -> FilePath
-    -> FilePath
+    -> Capabilities
     -> IO ()
-runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir sock = do
-    lsqCh <- newLSQChannel 16
-    ltxsCh <- newLTxSChannel 16
-    nodeThread <-
-        async $
-            runNodeClient
-                sessionMagic
-                sock
-                lsqCh
-                ltxsCh
-    let nodeProv = adaptProvider sessionMagic (mkN2CProvider lsqCh)
-    awaitConnection sessionMagic sock nodeThread nodeProv
-    let submit = boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
-    prov <- followedProvider nodeProv submit
+runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir caps = do
+    let prov = capReads caps
+        submit = caps
     let stateMarker = hex (scriptHashBytes (computeScriptHash stateBytes))
         blueprintIdStr =
             "state:"
@@ -250,7 +225,6 @@ runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty
             blueprintIdStr
         )
         rows
-    cancel nodeThread
     emit
         "complete"
         (show (length rows) <> "/" <> show (length rows) <> " rows ok")
@@ -292,7 +266,7 @@ reportCSPartials receiptsDir rows = do
 
 runCSRow
     :: Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> SBS.ShortByteString
     -> SBS.ShortByteString
     -> NamingCodes
@@ -390,7 +364,7 @@ back identical (byte-compare submitted vs chain-observed).
 -}
 runCS02
     :: Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> SBS.ShortByteString
     -> SBS.ShortByteString
     -> NamingCodes
@@ -635,7 +609,7 @@ this row is also what says the derivation reaches the chain intact.
 -}
 runCS08
     :: Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> SBS.ShortByteString
     -> SBS.ShortByteString
     -> NamingCodes
@@ -827,7 +801,7 @@ widen the trie until a Branch is witnessed by another accepted fold.
 -}
 runCS07
     :: Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> SBS.ShortByteString
     -> SBS.ShortByteString
     -> NamingCodes
@@ -959,7 +933,7 @@ fastRejectCfgLocal cfg =
 
 runCS03
     :: Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> SBS.ShortByteString
     -> SBS.ShortByteString
     -> NamingCodes
@@ -1147,7 +1121,7 @@ findRequestTxIn prov cfg tid key = do
 -- | CS04: wrong constructor index refused, attributed to the script.
 runCS04
     :: Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> SBS.ShortByteString
     -> SBS.ShortByteString
     -> NamingCodes
@@ -1189,8 +1163,9 @@ runCS04 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
         ctx <- RegistryEdges.registryContextFor cfg namingCodes v refs
         updateTokenWithDuties cfg v tm tid genesisAddr ctx
     badTx <- tamperModifyToBadIndex prov unsignedFold
-    let signedBad = addKeyWitness genesisSignKey badTx
-    result <- submitTx submit signedBad
+    let badSigned = signTx genesisSignKey badTx
+        signedBad = signedTx badSigned
+    result <- submitSigned (capSubmit submit) badSigned
     let deployedState = computeScriptHash stateBytes
         stateMarker = hex (scriptHashBytes deployedState)
         requestMarker =
@@ -1370,7 +1345,7 @@ attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker stateM
 -- | CS05: RequestAction + MintRedeemer coverage, Migrating as gap.
 runCS05
     :: Cage.Provider IO
-    -> Submitter IO
+    -> Capabilities
     -> SBS.ShortByteString
     -> SBS.ShortByteString
     -> NamingCodes

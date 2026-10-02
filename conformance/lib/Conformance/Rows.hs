@@ -155,13 +155,16 @@ validateInventory rows
             (filter ((/= OutOfScope) . rowState) rows)
 
 {- | What @list@ prints for a row: executed iff a receipt for it
-exists and matches the current base, else the declared plan.
+exists, matches the current base and agrees with the model; partial for
+a partial receipt; the verdict a receipt recorded when it is neither (a
+held, divergent or ruled-on run is never a pass); else the declared plan.
 -}
 data ShownState
     = ShownExecuted
     | ShownPartial
+    | ShownRecorded Verdict
     | ShownPlanned RowState
-    deriving stock (Show, Eq, Ord)
+    deriving stock (Show, Eq)
 
 effectiveState :: Text -> [Receipt] -> Row -> ShownState
 effectiveState base receipts row =
@@ -170,8 +173,10 @@ effectiveState base receipts row =
          , receiptRow r == rowId row
          , receiptBase r == base
          ] of
-        (r : _) | receiptVerdict r == Partial -> ShownPartial
-        (_ : _) -> ShownExecuted
+        (r : _) -> case receiptVerdict r of
+            AgreesWithModel -> ShownExecuted
+            Partial -> ShownPartial
+            other -> ShownRecorded other
         [] -> ShownPlanned (rowState row)
 
 {- | Render the full inventory table plus the state summary. The
@@ -193,6 +198,10 @@ renderInventory base receipts rows =
     states =
         [ ShownExecuted
         , ShownPartial
+        , ShownRecorded HeldQ002
+        , ShownRecorded DivergesFromLean
+        , ShownRecorded ResolvedByRuling
+        , ShownRecorded UnmetByRuling
         , ShownPlanned BoundElsewhere
         , ShownPlanned Uncovered
         , ShownPlanned OutOfScope
@@ -239,6 +248,12 @@ renderRow (r, s) =
 shownName :: ShownState -> Text
 shownName ShownExecuted = "executed"
 shownName ShownPartial = "partial"
+shownName (ShownRecorded HeldQ002) = "held"
+shownName (ShownRecorded DivergesFromLean) = "diverges"
+shownName (ShownRecorded ResolvedByRuling) = "resolved-by-ruling"
+shownName (ShownRecorded UnmetByRuling) = "unmet-by-ruling"
+shownName (ShownRecorded AgreesWithModel) = "executed"
+shownName (ShownRecorded Partial) = "partial"
 shownName (ShownPlanned Uncovered) = "uncovered"
 shownName (ShownPlanned BoundElsewhere) = "bound-elsewhere"
 shownName (ShownPlanned OutOfScope) = "out-of-scope"

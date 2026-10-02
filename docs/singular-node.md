@@ -19,12 +19,20 @@ command refuses before it reads or submits anything.
 | `--wallet-skey FILE` | `create`, `insert`, `update`, `terminate` | Your payment signing key: a `cardano-cli` text envelope, its `cborHex` value or the 32 key bytes as bare hex, or the 32 raw key bytes. The key funds and signs every write; it is read and never printed — only the address derived from it appears. `inspect` refuses it. |
 | `--confirm-timeout SECONDS` | the four writes | How long each submission may take to appear on chain; ten minutes when not given. Past it the command stops with the submission journalled as unconfirmed and never resubmits it. |
 | `--backend node` or `--backend indexer` | all five | Where the command reads addresses from: the node itself (`node`, the default) or an index the command builds by following the node's chain from its first block (`indexer`). Any other value is refused before anything runs. See [Reading through an index](#reading-through-an-index). |
+| `--registry DIR` | all five | The directory that holds one registry: its identity, its mirror of the chain and its journal. `create` makes it; every later command reads it. |
+| `--blueprint PLUTUS_JSON` | all five | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. |
+| `--seed TXID#IX` or `--preview` | `create` | The output of your wallet the new registry is booted from, which fixes its identity; or, with `--preview`, the identity a seed from your wallet would give, without submitting anything. |
+| `--key HEX` | `insert`, `update`, `terminate`, `inspect` | The registry key the command acts on, as hex bytes. |
+| `--envelope ENVELOPE_JSON` | `insert` | The key's first value: the open-datum envelope, its protected control and its payload. |
+| `--payload DATUM_JSON` | `update` | The key's new payload; the protected control stays as it was. |
+| `--receipt FILE` | all five | Also write the JSON receipt the command prints on standard output to this file. |
 
 The three node settings travel together on a write: naming one or two of
 them is refused as partially configured, and so is a write that names none,
 because `singular` never starts a node of its own — a registry booted on a
 chain that dies with the process could not be attached to again. The
-settings are read from the command line only.
+settings are read from the command line only; the one exception is the
+[test-harness hooks](#test-harness-hooks), which operators never set.
 
 ```sh
 singular registry insert --registry ./reg --blueprint plutus.json \
@@ -165,3 +173,39 @@ submitted.
 | `lag` | the index did not reach the node view's block within ten seconds | the view's slot and block hash, the block the index holds |
 | `fork` | the index holds another block at the view's slot | the slot and both block hashes |
 | `unsupported` | the view is on another network or in an era whose outputs the index cannot decode | the network or era |
+
+## Test-harness hooks
+
+You never set these. The released `singular` reads eleven environment
+variables whose only purpose is to let the project's own tests stop a
+command at an exact point — to inspect it there, kill it there, or make it
+meet no answer from the node — and check what it leaves behind. When none
+is set, which is how every operator runs it, they do nothing: no hold, no
+dropped send. The release verification checks this on every run: the
+processes it starts with no variable set, and the holds that fire only
+where a test asked for one.
+
+A hold variable names a path. When the command reaches its point it writes
+`PATH.waiting` and waits until `PATH` exists.
+
+```mermaid
+flowchart LR
+    C[Command reaches a hook point] -->|variable unset| N[Continues: nothing happens]
+    C -->|hold variable names PATH| W[Writes PATH.waiting]
+    W -->|waits until PATH exists| N
+    C -->|drop variable names this step| D[Meets no answer from the node]
+```
+
+| Variable | Where the command stops or what it changes |
+| --- | --- |
+| `SINGULAR_HARNESS_HOLD_BEFORE_LOCK` | a write, after its checks and before it takes the registry directory's lock |
+| `SINGULAR_HARNESS_HOLD_AFTER_SEND` | a submission sent, its answer not yet journalled |
+| `SINGULAR_HARNESS_HOLD_AFTER_SUBMIT` | the node's acceptance of a submission journalled |
+| `SINGULAR_HARNESS_HOLD_STEP` | names the submission step (for example `boot`, `fold`, `update`) at which the two holds above stop; they stop at no other step, and at none when it is unset |
+| `SINGULAR_HARNESS_HOLD_BEFORE_COMMIT` | a fold's local commit about to start |
+| `SINGULAR_HARNESS_HOLD_AFTER_MIRROR` | a fold's mirror saved, the rest of its local commit not yet |
+| `SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED` | a fold committed locally, its observation not yet journalled |
+| `SINGULAR_HARNESS_HOLD_BEFORE_REWIND` | a rollback journalled, the mirror not yet rebuilt |
+| `SINGULAR_HARNESS_HOLD_BEFORE_REWIND_STATE` | the mirror rebuilt by a rollback, the saved state not yet following |
+| `SINGULAR_HARNESS_DROP_SEND` | names a step whose send does not happen |
+| `SINGULAR_HARNESS_DROP_ANSWER` | names a step whose node answer is discarded after the send |
