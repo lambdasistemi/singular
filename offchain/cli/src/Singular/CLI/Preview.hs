@@ -88,6 +88,7 @@ import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry
     ( checkNetwork
     , hexT
+    , keyFields
     , parseEnterpriseAddress
     , renderIdentityError
     )
@@ -167,14 +168,14 @@ runPreview kind a (NodeSettings sock magic) addrText = do
             receipt
                 (kindName kind)
                 Success
-                ( [ ("preview", toJSON True)
-                  , ("key", toJSON (hexT key))
-                  , ("networkMagic", toJSON magic)
-                  , ("caller", callerReport addrText caller)
-                  , ("stateRoot", toJSON (hexT observed))
-                  , ("chainPoint", toJSON (pointText point))
-                  , ("protocolParameters", parametersDigest pp)
-                  ]
+                ( [("preview", toJSON True)]
+                    <> keyFields key
+                    <> [ ("networkMagic", toJSON magic)
+                       , ("caller", callerReport addrText caller)
+                       , ("stateRoot", toJSON (hexT observed))
+                       , ("chainPoint", toJSON (pointText point))
+                       , ("protocolParameters", parametersDigest pp)
+                       ]
                     <> prepared
                 )
   where

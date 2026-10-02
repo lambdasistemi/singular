@@ -92,7 +92,7 @@ import Singular.CLI.Plan
 import Singular.CLI.Preimage (storePreimage)
 import Singular.CLI.Preview (Kind (..), runPreview)
 import Singular.CLI.Receipt (OutcomeClass (..))
-import Singular.CLI.Registry (hexT)
+import Singular.CLI.Registry (hexT, keyFields)
 import Singular.CLI.Session
 import Singular.Registry.Node (Wallet (..))
 import Singular.Registry.Provider qualified as Cage
@@ -249,21 +249,22 @@ runInsert a = case entryMode a of
                             receipt
                                 "insert"
                                 Success
-                                [ ("key", toJSON (hexT key))
-                                , ("booking", toJSON (txIdHex booking))
+                                ( keyFields key
+                                    <> [ ("booking", toJSON (txIdHex booking))
                                 , ("fold", toJSON (txIdHex (fdTx folded)))
                                 , ("liveOutput", toJSON (txInText liveIn))
                                 , ("envelope", envelopeToJson seen)
                                 , ("root", toJSON (hexT (fdRoot folded)))
-                                ]
+                                    ]
+                                )
                         Released{} -> receipt "insert" Success []
                 else
                     pure $
                         receipt
                             "insert"
                             Success
-                            ( ("key", toJSON (hexT key))
-                                : pendingFields (callerKey at) booking deadline
+                            ( keyFields key
+                                    <> pendingFields (callerKey at) booking deadline
                                     <> [ ("envelope", envelopeToJson envelope)
                                        , ("envelopeHash", toJSON (hexT (envelopeHash envelope)))
                                        ]
@@ -336,12 +337,13 @@ runUpdate a = case entryMode a of
                 receipt
                     "update"
                     Success
-                    [ ("key", toJSON (hexT key))
-                    , ("update", toJSON (txIdHex signed))
+                    ( keyFields key
+                        <> [ ("update", toJSON (txIdHex signed))
                     , ("liveOutput", toJSON (txInText liveIn))
                     , ("payload", dataToJson (envPayload seen))
                     , ("root", toJSON (hexT rootAfter))
-                    ]
+                        ]
+                    )
 
 -- ---------------------------------------------------------
 -- terminate
@@ -370,21 +372,22 @@ runTerminate a = case entryMode a of
                             receipt
                                 "terminate"
                                 Success
-                                [ ("key", toJSON (hexT key))
-                                , ("booking", toJSON (txIdHex booking))
+                                ( keyFields key
+                                    <> [ ("booking", toJSON (txIdHex booking))
                                 , ("fold", toJSON (txIdHex (fdTx folded)))
                                 , ("released", toJSON (txInText released))
                                 , ("deposit", toJSON deposit)
                                 , ("root", toJSON (hexT (fdRoot folded)))
-                                ]
+                                    ]
+                                )
                         Delivered{} -> receipt "terminate" Success []
                 else
                     pure $
                         receipt
                             "terminate"
                             Success
-                            ( ("key", toJSON (hexT key))
-                                : pendingFields (callerKey at) booking deadline
+                            ( keyFields key
+                                    <> pendingFields (callerKey at) booking deadline
                                     <> [ ("released", toJSON (txInText liveIn))
                                        , ("deposit", toJSON (ctlDeposit c))
                                        ]
