@@ -356,6 +356,10 @@ done
 #     comparisons are in the session's replay index, not in a row receipt.
 #     CG09's control: one entry, deposit-returned, agreeing. CG19: its
 #     crossed refunds and its rejected-floor control, two entries.
+#     The agreement holds for the fixtures' shape only: every output at an
+#     owner's key is its refund. The chain judges refunds by position, the
+#     model by the owner's summed outputs; that conflict is recorded in
+#     specs/287-traced-refusal-reasons/extent.md and escalated.
 for pair in CG09:1 CG19:2; do
   row="${pair%%:*}"
   want="${pair##*:}"

@@ -19,6 +19,12 @@
   ],
   "_source": {
     "file": "extent.md",
-    "sha256": "140b847710f31521da4a019736f6f26e433ca171f9a4531e72e54dc0240c7baa"
-  }
+    "sha256": "254cabb515ce8d68f71d729096b61d1a42f1a2793c83a06265ae1041b64bcc77"
+  },
+  "a-conflict-the-compared-rejects-avoid": [
+    {
+      "text": "The reject comparisons agree only for the shape their fixtures give the transaction: every output at an owner's key is that owner's refund. The chain checks each refund by its position and refuses a short one; the model adds up every output at the owner's key. So a reject that pays its owner short in the refund's place and the rest elsewhere at the same key is refused by the chain and accepted by the model. No live row submits it, and the decision is with the user. Main's earlier phase-one reject control had exactly that shape, which is why the compared rows now book their owners from wallets that receive no change.",
+      "pause": 500
+    }
+  ]
 }

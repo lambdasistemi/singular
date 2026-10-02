@@ -150,6 +150,9 @@ own altered leg; G8 by a mismatched build input in a unit or flake test.
 
 ## Risks
 
+- A reject's refund: the chain judges it by position, the model by the owner's
+  summed outputs; the compared rejects agree for their fixtures' shape only, and
+  the conflict is escalated (extent.md, spec.md limit).
 - Seam unverified at the cardano-node-clients pin (T001); a missing seam is a
   placement challenge, not a license to re-derive the context.
 - CG23 receipt margin (14745 bytes) with new fields — Q-001.

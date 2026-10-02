@@ -61,6 +61,13 @@ validators, #344's batch questions):
   every claimed refusal has a traced replay receipt; CS04's state and request
   scripts keep it.
 - A wrong-reason control that fails stays in CI.
+- Limit: the chain settles a reject's refunds by position (`refundFault`), the
+  model by the sum of every output at the owner's key (`settle`). A reject paying
+  its owner short in the refund's position and the rest in another output at the
+  same key is refused by the chain and accepted by the model. The compared
+  rejects keep every other output away from their owners' keys, so their
+  agreement holds for that shape only; the conflict is escalated to the user
+  (extent.md, "A conflict the compared rejects avoid").
 
 ## Requirements
 

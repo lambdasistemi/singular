@@ -208,6 +208,8 @@ spec = do
                 , "CG19, two rejects whose refunds are crossed and two whose first refund is short, with the reject batch judged on the refunds the transaction pays"
                 , "CG09's control, a reject refunding its owner one lovelace short, with the reject batch of that one request"
                 , "that requirement stays unmet by ruling"
+                , "A reject paying its owner short in the refund's position and the rest in another output at the same key is refused by the chain and accepted by the model."
+                , "so their agreement holds for that shape only, and the decision is with the user"
                 , "Whether CG11, CG12 and CG19 meet the consuming project's requirements remains unresolved; the three rows stay held."
                 ]
                 $ \phrase -> book `shouldSatisfy` isInfixOf phrase

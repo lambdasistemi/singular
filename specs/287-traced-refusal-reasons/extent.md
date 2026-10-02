@@ -81,3 +81,23 @@ question separate from the model comparison.
 Gaps C stay in the denominator and in the book's limits. A reason comparison
 over class A is never called completion of the issue's every-row claim while a
 C row remains.
+
+## A conflict the compared rejects avoid
+
+The reject comparisons (CG09's control, CG19's crossed refunds and its
+rejected-floor control, and the story chapters' one-lovelace-short rejects)
+agree only for the shape their fixtures give the transaction: every output at a
+request owner's key is that owner's refund. The chain and the model read an
+owner's payment differently, and a transaction of another shape separates them.
+No live row submits one; the decision is with the user.
+
+| Case | Chain | Lean | Class |
+|---|---|---|---|
+| a reject paying its owner short in the refund's position and the remainder in another output at the owner's key | refused `deposit-returned`: `refundFault` (onchain/validators/registry/settlement.ak) requires the output in each consumed row's position to pay that row's owner at least what is owed | accepted: `settle` (lean/Singular/Model.lean) credits an owner the sum of every output at its key, and `rejectBatch` settles through it | D — escalated, not run |
+
+Main's CG09 control before this delivery had that shape: its request was owned
+by the genesis wallet, refunding one lovelace short, while the fold returned its
+change to the same wallet. The chain refused it; the model, asked on those
+outputs, would have accepted. The compared rows now book their owners from
+wallets that receive no change, and the story tampers move every other output
+at the owner's key elsewhere.

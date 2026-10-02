@@ -31,11 +31,11 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "71c71985eaf902d059b81688ddd442616354f85283e6c6c9de8190b6e3771a80"
+    "sha256": "c1da42b35a02b4dd18262a05dfa10ccc9e282a1f2d0b818aa455d527e0e0d179"
   },
   "narrowed-acceptance-operator-rulings-2026-10-02": [
     {
-      "text": "The final delivery joins the latest main, with the repaired validators and the driver's two batch questions, and the operator narrowed what it must show. Every refusal the model describes is compared on its reason. The empty fold, the crossed refunds with their short-reject control, and the two-key batch whose mint lands on the wrong key are compared through the fold and reject batch questions, and so is the phase-one reject's short control. The stale-root fold, the surplus actions and the wrong constructor have nothing in the model to compare with, so each is published as unmet, with what its traced replay recorded and the issue that would add it. The phase-one reject stays unmet by ruling. The not-observed limit goes only where every refusal has its traced replay, and the failing wrong-reason control stays in CI.",
+      "text": "The final delivery joins the latest main, with the repaired validators and the driver's two batch questions, and the operator narrowed what it must show. Every refusal the model describes is compared on its reason. The empty fold, the crossed refunds with their short-reject control, and the two-key batch whose mint lands on the wrong key are compared through the fold and reject batch questions, and so is the phase-one reject's short control. The stale-root fold, the surplus actions and the wrong constructor have nothing in the model to compare with, so each is published as unmet, with what its traced replay recorded and the issue that would add it. The phase-one reject stays unmet by ruling. The not-observed limit goes only where every refusal has its traced replay, and the failing wrong-reason control stays in CI. One limit is recorded: the chain checks a reject's refund by position and the model by the owner's summed outputs, so the compared rejects agree for their fixtures' shape only, and that conflict is escalated.",
       "pause": 500
     }
   ]
