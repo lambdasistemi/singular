@@ -69,6 +69,65 @@ if [ ! -f "$allow" ]; then
   exit 2
 fi
 
+status=0
+
+# Retired components are not scanned: the rows the component inventory
+# classifies `unverified` (built nowhere, no workflow runs them), each
+# resolved to its source directories through the Cabal file. A retired
+# directory may not hold a built component's sources.
+inventory="$root/offchain/nix/component-inventory.nix"
+cabal="$root/offchain/singular-registry.cabal"
+for f in "$inventory" "$cabal"; do
+  [ -f "$f" ] || {
+    echo "SETUP-FAIL: no $f" >&2
+    exit 2
+  }
+done
+mapfile -t retired < <(awk '
+  /^  unverified = \[/ { u = 1 }
+  u && /name = "/ { match($0, /name = "[^"]+"/); n = substr($0, RSTART + 8, RLENGTH - 9) }
+  u && /issue = "/ { match($0, /issue = "[^"]+"/); print n, substr($0, RSTART + 9, RLENGTH - 10) }
+  u && /^  \];/ { u = 0 }
+' "$inventory")
+# Component name and source directories, one component per line.
+mapfile -t components < <(awk '
+  /^(library|executable|test-suite)( |$)/ { name = ($2 == "" ? "singular-registry" : $2) }
+  $1 == "hs-source-dirs:" { $1 = ""; print name $0 }
+' "$cabal")
+excluded=()
+declare -A retiredName=()
+for row in "${retired[@]}"; do
+  read -r name issue <<<"$row"
+  retiredName[$name]=1
+  dirs=""
+  for c in "${components[@]}"; do
+    read -r cname cdirs <<<"$c"
+    [ "$cname" = "$name" ] && dirs="$cdirs"
+  done
+  if [ -z "$dirs" ]; then
+    echo "retired: inventory row '$name' names no Cabal component" >&2
+    status=1
+    continue
+  fi
+  for d in $dirs; do
+    excluded+=("offchain/$d")
+    echo "excluded offchain/$d: $name, retired ($issue)"
+  done
+done
+for c in "${components[@]}"; do
+  read -r cname cdirs <<<"$c"
+  [ -n "${retiredName[$cname]:-}" ] && continue
+  for d in $cdirs; do
+    for e in "${excluded[@]}"; do
+      case "offchain/$d/" in "$e"/*)
+        echo "retired: $e holds the sources of built component '$cname'" >&2
+        status=1
+        ;;
+      esac
+    done
+  done
+done
+
 sources=()
 for dir in "${scanned[@]}"; do
   mapfile -t found < <(find "$root/$dir" -name '*.hs' -not -path '*/dist-newstyle/*' 2>/dev/null | sort)
@@ -76,11 +135,17 @@ for dir in "${scanned[@]}"; do
     echo "EMPTY EXTENT: no Haskell sources under $root/$dir" >&2
     exit 2
   fi
-  sources+=("${found[@]}")
+  for file in "${found[@]}"; do
+    rel=${file#"$root"/}
+    keep=1
+    for e in "${excluded[@]}"; do
+      case "$rel" in "$e"/*) keep="" ;; esac
+    done
+    [ -n "$keep" ] && sources+=("$file")
+  done
 done
 
 declare -A allowed=()
-status=0
 while IFS= read -r line; do
   case "$line" in '' | '#'*) continue ;; esac
   path=${line%%:*}
@@ -113,4 +178,4 @@ if [ $status -ne 0 ]; then
   exit 1
 fi
 
-echo "PASS node-confinement: ${#sources[@]} Haskell sources under ${scanned[*]}; the backend is named only in ${#allowed[@]} allowlisted modules"
+echo "PASS node-confinement: ${#sources[@]} Haskell sources under ${scanned[*]} (${#excluded[@]} retired directories excluded); the backend is named only in ${#allowed[@]} allowlisted modules"

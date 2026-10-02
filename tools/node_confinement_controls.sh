@@ -29,6 +29,22 @@ fresh() {
   done
   find "$scratch/t" -name dist-newstyle -prune -exec rm -rf {} +
   cp "$repo/tools/node-confinement.allow" "$scratch/t/tools/"
+  mkdir -p "$scratch/t/offchain/nix"
+  cp "$repo/offchain/nix/component-inventory.nix" "$scratch/t/offchain/nix/"
+  cp "$repo/offchain/singular-registry.cabal" "$scratch/t/offchain/"
+}
+
+# retire NAME DIR: declare a component with sources under offchain/DIR in
+# the scratch Cabal file and classify it `unverified` in the inventory.
+retire() {
+  printf '\nexecutable %s\n  hs-source-dirs:   %s\n  main-is:          Main.hs\n' "$1" "$2" \
+    >>"$scratch/t/offchain/singular-registry.cabal"
+  sed -i "0,/^  unverified = \\[/s//  unverified = [\\n    { kind = \"exe\"; name = \"$1\"; issue = \"#0\"; reason = \"control\"; }/" \
+    "$scratch/t/offchain/nix/component-inventory.nix"
+  grep -q "name = \"$1\"; issue" "$scratch/t/offchain/nix/component-inventory.nix" || {
+    echo "SETUP-FAIL: the inventory row for $1 did not apply" >&2
+    exit 2
+  }
 }
 
 # expect NAME STATUS PATTERN: the check on the scratch tree exits STATUS
@@ -69,6 +85,24 @@ for root in "${roots[@]}"; do
   planted=$((planted + 1))
 done
 
+# A retired component's sources drop out of the scan, and only through
+# its inventory row: the same planted journey fails without the row.
+fresh
+mkdir -p "$scratch/t/offchain/journey/planted-retired"
+printf 'module Main where\n\nrawSend = submitTx\n' >"$scratch/t/offchain/journey/planted-retired/Main.hs"
+expect unretired-journey 1 '^offchain/journey/planted-retired/Main.hs:[0-9]+:rawSend = submitTx'
+retire planted-retired journey/planted-retired
+expect retired-journey 0 '^excluded offchain/journey/planted-retired: planted-retired, retired \(#0\)'
+
+fresh
+retire planted-built journey
+expect retired-holds-built 1 "^retired: offchain/journey holds the sources of built component 'journey'"
+
+fresh
+sed -i "0,/^  unverified = \\[/s//  unverified = [\\n    { kind = \"exe\"; name = \"no-such-component\"; issue = \"#0\"; reason = \"control\"; }/" \
+  "$scratch/t/offchain/nix/component-inventory.nix"
+expect retired-unknown 1 "^retired: inventory row 'no-such-component' names no Cabal component"
+
 fresh
 printf 'offchain/cli/Main.hs:\n' >>"$scratch/t/tools/node-confinement.allow"
 expect reasonless-entry 1 "'offchain/cli/Main.hs' carries no reason"
@@ -88,4 +122,4 @@ for root in "${roots[@]}"; do
   expect "empty-extent $root" 2 "^EMPTY EXTENT: no Haskell sources under .*/$root\$"
 done
 
-echo "PASS node-confinement-controls: $((2 * planted + 4 + ${#roots[@]})) controls over ${#roots[@]} scanned roots, a backend name planted in each"
+echo "PASS node-confinement-controls: $((2 * planted + 8 + ${#roots[@]})) controls over ${#roots[@]} scanned roots, a backend name planted in each"
