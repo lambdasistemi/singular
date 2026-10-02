@@ -963,10 +963,13 @@ def allExits : List Exit := exitEdges.map .fold ++ [.reject, .retract]
 
 -- The driver's operations are the nine exits: the seven edges by their own
 -- names, then reject and retract. It judges what a transaction spends, then what
--- it pays; the surface's protocol moved for each.
+-- it pays, and answers two batch questions, neither observing a transaction;
+-- the surface's protocol moved for each.
 #guard declaredOperations == exitEdges.map edgeName ++ ["reject", "retract"]
-#guard surface.protocolVersion == 4
+#guard surface.protocolVersion == 5
 #guard surface.judgements == ["spend", "settle"]
+#guard surface.batchQuestions.map (·.1) == ["foldBatch", "rejectBatch"]
+#guard surface.batchQuestions.all fun q => !q.2.contains "tx"
 
 /-- The scenario a caller asks the driver to judge a settle case's outputs for:
 the case's own exit and request, from the empty registry. -/

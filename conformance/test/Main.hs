@@ -7,6 +7,7 @@ import Conformance.Support.CliAdmission qualified as CliAdmission
 import Conformance.Support.CliAttach qualified as CliAttach
 import Conformance.Support.CliControls qualified as CliControls
 import Conformance.Support.CliProof qualified as CliProof
+import Conformance.Support.DriverTransport qualified as DriverTransport
 import Conformance.Support.EvidencePage qualified as EvidencePage
 import Conformance.Support.Fixture qualified as Fixture
 import Conformance.Support.FixtureChild
@@ -55,6 +56,7 @@ suite = do
         Payments.spec
         ObservedTx.spec
         Oracle.spec
+        DriverTransport.spec
         Step.spec
         Retraction.spec
         Specification.spec

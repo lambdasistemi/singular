@@ -1,0 +1,36 @@
+{
+  "delivery": [
+    {
+      "text": "Model laws are executed verbatim by the driver, declared and checked, carried by the transport, and asked by the story executor. One coder delivers two slices, reviewed at each checkpoint.",
+      "pause": 350
+    }
+  ],
+  "slice-s1-the-driver-answers-both-questions": [
+    {
+      "text": "The first slice makes the driver, its proofs, transport, corpus, model check and translation table answer both batch questions.",
+      "pause": 350
+    }
+  ],
+  "slice-s2-the-story-language-says-a-batch": [
+    {
+      "text": "The second slice lets a story submit a multi-request fold and a multi-request reject and ask the model, without moving any conformance row.",
+      "pause": 350
+    }
+  ],
+  "boundary": [
+    {
+      "text": "The model file stays byte-identical. A false preservation statement is returned with its counterexample. Offchain, onchain and conformance rows stay out of scope.",
+      "pause": 350
+    }
+  ],
+  "verification-limits": [
+    {
+      "text": "The model check shows what Lean answers, not what a chain does. Story execution shows a batch is submitted and asked, not that the comparison holds.",
+      "pause": 350
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "a5bf1d71435376ed6e221e888dc1178cd6ee74abcb88eaabe0566512ef8afe63"
+  }
+}

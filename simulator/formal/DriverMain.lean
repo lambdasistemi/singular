@@ -6,7 +6,9 @@ Executes every scenario through `Singular.Driver.runSurface` and prints the
 corpus the model check replays. The scenarios are the registration-to-retirement
 lifecycle the registry implements today, each bound to the theorem it is about,
 with the mutant beside each witness, and the two exits that fold nothing: a
-reject of a registration the law refuses, and a retract.
+reject of a registration the law refuses, and a retract. Beside them stand the
+batch questions: folds of several requests at once and rejects of several, each
+batch of one beside the single request it must answer as.
 
 A retraction is admitted before it is paid, so every retraction row carries the
 witness its admission reads, under a registry whose processing and retraction
@@ -92,6 +94,24 @@ def retractAdmittedIffDigest : String :=
 def retractRefusalFirstFailing : String := "Singular.Statements.retract_refusal_first_failing"
 def retractRefusalFirstFailingDigest : String :=
   "506966483299dfa897bb988c179646373d3dfcf7a1a20728fdf0cae217197ffc"
+def bookedAtMostOnce : String := "Singular.Statements.booked_at_most_once"
+def bookedAtMostOnceDigest : String :=
+  "1c8b3268586a2ca2aaf930c3a45b0f8fde24c061f0ff63bf8962afbb42eb1ec2"
+def claimedMintByKindKey : String := "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
+def claimedMintByKindKeyDigest : String :=
+  "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988"
+def emptyFoldError : String := "Singular.Statements.empty_fold_error"
+def emptyFoldErrorDigest : String :=
+  "8bd6ec570fbda5220c7d841d4396605cf637e094bdeb275d7495f7169a4a1f06"
+def foldBatchCons : String := "Singular.Statements.fold_batch_cons"
+def foldBatchConsDigest : String :=
+  "9e8c6a06d60361ae94b24f50f014c7830bfdd5d22aa8b7a62a8ca9230f689153"
+def foldBatchOfOne : String := "Singular.Statements.fold_batch_of_one_is_step"
+def foldBatchOfOneDigest : String :=
+  "09dc61dcbe8e7a4a68b170944bb42cdcf6ece9af9fc006af96135cfab1185f87"
+def rejectBatchOfOne : String := "Singular.Statements.reject_batch_of_one_is_reject"
+def rejectBatchOfOneDigest : String :=
+  "9f0e815f13a2ce1e41ecd3d19792aa741ade3187fb951fbce6b3fa4b87b1f42c"
 
 /-- The active registration this corpus retires: key 42, owner 42, routed to
 output 555 with deposit 55, which goes there with the token. One request, reused
@@ -120,6 +140,26 @@ def retractionWitness : RetractWitness :=
 /-- An update of key 7 by owner 77: pending like the registration, and not one its
 owner can take back. -/
 def updateRetracted : Request := { request .updateActive 7 77 777 0 55 with tip := 7 }
+
+/-- A request claiming exactly the mint its own edge makes: the lawful claim a
+batch's mint guard compares with what the batch folds. -/
+def claiming (r : Request) : Request := { r with claimed := delta r.edge }
+
+/-- The active registration of key 42, claiming its token. -/
+def registerActiveClaimed : Request := claiming registerActive
+
+/-- A second owner, 44, also asking for key 42 with deposit 40 and tip 3: once 42
+is registered the law refuses it too, so a folder rejects it beside owner 43's. -/
+def registerTakenAgain : Request := { request .insertActive 42 44 557 0 40 with tip := 3 }
+
+/-- Owner 43 asking for key 42 a second time, with deposit 40: two requests of one
+owner, owed back together. -/
+def registerTakenTwice : Request := { request .insertActive 42 43 558 0 40 with tip := 3 }
+
+/-- An owner output paying `lovelace` to `owner`'s key, as a caller observes it. -/
+def ownerPaid (owner lovelace : Nat) : TxOutput :=
+  { role := .owner, datum := .none, address := some owner, stateTokens := 0, config := none
+  , commitment := none, assets := [], lovelace := lovelace }
 
 def scenarios : List Scenario :=
   [ { id := "DR01-register-absent"
@@ -203,18 +243,108 @@ def scenarios : List Scenario :=
     , requiresReachableState := true, start := sTimed, setup := [registerActive]
     , exit := .retract, request := registerRetracted, lovelace := lovelace
     , witness := some { retractionWitness with validTo := 11501 } }
+    -- DR02's registration claiming the token its edge mints: the single step a
+    -- one-request batch must fold exactly as.
+  , { id := "DR14-register-active-claimed"
+    , theoremName := insertActiveTheorem, statementSha256 := insertActiveDigest
+    , kind := "witness", mutates := none, requiresReachableState := false
+    , start := s0, setup := [], exit := .fold .insertActive
+    , request := registerActiveClaimed, lovelace := lovelace }
+  ]
+
+/-- The batch questions: a lawful two-request fold and its refused mutants — a
+crossed claim, an empty batch, a later request the law refuses — a batch of one
+beside the single step it preserves; two rejects judged paid, short, and short in
+sum for one owner, a reject of one beside the single reject, and the batches the
+driver does not answer. -/
+def batchScenarios : List BatchScenario :=
+  [ { id := "BR01-fold-two-registrations"
+    , theoremName := bookedAtMostOnce, statementSha256 := bookedAtMostOnceDigest
+    , kind := "witness", mutates := none, requiresReachableState := false
+    , start := s0, setup := []
+    , question := .foldBatch
+        [registerActiveClaimed, claiming (request .insertAbsent 5 91 0 91 55)] }
+    -- Two registrations whose claims balance per kind and cross per key: key 42
+    -- claims both active tokens, key 43 none.
+  , { id := "BR02-fold-crossed-claim"
+    , theoremName := claimedMintByKindKey, statementSha256 := claimedMintByKindKeyDigest
+    , kind := "mutant", mutates := some "BR01-fold-two-registrations"
+    , requiresReachableState := false, start := s0, setup := []
+    , question := .foldBatch
+        [ { registerActive with claimed := [(.active, 2)] }
+        , request .insertActive 43 43 556 0 55 ] }
+  , { id := "BR03-fold-empty"
+    , theoremName := emptyFoldError, statementSha256 := emptyFoldErrorDigest
+    , kind := "mutant", mutates := some "BR01-fold-two-registrations"
+    , requiresReachableState := false, start := s0, setup := []
+    , question := .foldBatch [] }
+    -- The registration of key 42 twice in one batch: the first folds, the law
+    -- refuses the second, and the whole batch is refused for it.
+  , { id := "BR04-fold-later-request-refused"
+    , theoremName := foldBatchCons, statementSha256 := foldBatchConsDigest
+    , kind := "mutant", mutates := some "BR01-fold-two-registrations"
+    , requiresReachableState := false, start := s0, setup := []
+    , question := .foldBatch [registerActiveClaimed, registerActiveClaimed] }
+  , { id := "BR05-fold-one-registration"
+    , theoremName := foldBatchOfOne, statementSha256 := foldBatchOfOneDigest
+    , kind := "witness", mutates := none, requiresReachableState := false
+    , start := s0, setup := []
+    , question := .foldBatch [registerActiveClaimed] }
+  , { id := "BR06-reject-two-paid"
+    , theoremName := noExitStrandsTheDeposit, statementSha256 := noExitStrandsTheDepositDigest
+    , kind := "witness", mutates := none, requiresReachableState := true
+    , start := s0, setup := [registerActive]
+    , question := .rejectBatch [(.reject, registerTaken), (.reject, registerTakenAgain)]
+    , outputs := some [ownerPaid 43 55, ownerPaid 44 40] }
+  , { id := "BR07-reject-two-short"
+    , theoremName := noExitStrandsTheDeposit, statementSha256 := noExitStrandsTheDepositDigest
+    , kind := "mutant", mutates := some "BR06-reject-two-paid"
+    , requiresReachableState := true, start := s0, setup := [registerActive]
+    , question := .rejectBatch [(.reject, registerTaken), (.reject, registerTakenAgain)]
+    , outputs := some [ownerPaid 43 55, ownerPaid 44 39] }
+    -- Two rejects owed to owner 43, 55 and 40, paid by one output of 55: each
+    -- deposit alone is covered, their sum is not.
+  , { id := "BR08-reject-one-owner-short-in-sum"
+    , theoremName := noExitStrandsTheDeposit, statementSha256 := noExitStrandsTheDepositDigest
+    , kind := "mutant", mutates := some "BR06-reject-two-paid"
+    , requiresReachableState := true, start := s0, setup := [registerActive]
+    , question := .rejectBatch [(.reject, registerTaken), (.reject, registerTakenTwice)]
+    , outputs := some [ownerPaid 43 55] }
+  , { id := "BR09-reject-one"
+    , theoremName := rejectBatchOfOne, statementSha256 := rejectBatchOfOneDigest
+    , kind := "witness", mutates := none, requiresReachableState := true
+    , start := s0, setup := [registerActive]
+    , question := .rejectBatch [(.reject, registerTaken)]
+    , outputs := some [ownerPaid 43 55] }
+  , { id := "BR10-reject-mixed-with-fold"
+    , theoremName := noExitStrandsTheDeposit, statementSha256 := noExitStrandsTheDepositDigest
+    , kind := "mutant", mutates := some "BR06-reject-two-paid"
+    , requiresReachableState := true, start := s0, setup := [registerActive]
+    , question := .rejectBatch [(.reject, registerTaken), (.fold .insertActive, registerTakenAgain)] }
+  , { id := "BR11-reject-empty"
+    , theoremName := noExitStrandsTheDeposit, statementSha256 := noExitStrandsTheDepositDigest
+    , kind := "mutant", mutates := some "BR06-reject-two-paid"
+    , requiresReachableState := true, start := s0, setup := [registerActive]
+    , question := .rejectBatch [] }
+  , { id := "BR12-reject-retract"
+    , theoremName := noExitStrandsTheDeposit, statementSha256 := noExitStrandsTheDepositDigest
+    , kind := "mutant", mutates := some "BR06-reject-two-paid"
+    , requiresReachableState := true, start := s0, setup := [registerActive]
+    , question := .rejectBatch [(.retract, registerTaken)] }
   ]
 
 /-- The digest the surface carries is over the declared names themselves, so a
 silently widened or narrowed surface changes it. -/
 def surfaceDefinition : String :=
   String.intercalate "|"
-    (declaredOperations ++ declaredObservations ++ declaredUnobservable ++ declaredJudgements)
+    (declaredOperations ++ declaredObservations ++ declaredUnobservable ++ declaredJudgements
+      ++ declaredBatchQuestions.flatMap fun q => q.1 :: q.2)
 
 def corpus : Json :=
   Json.mkObj
     [ ("schema", toJson "singular-driver-corpus-v1")
     , ("surface", surfaceJson surface (toString (hash surfaceDefinition)))
-    , ("scenarios", Json.arr ((scenarios.map scenarioJson).toArray)) ]
+    , ("scenarios", Json.arr ((scenarios.map scenarioJson).toArray))
+    , ("batches", Json.arr ((batchScenarios.map batchScenarioJson).toArray)) ]
 
 def main : IO Unit := IO.println corpus.pretty

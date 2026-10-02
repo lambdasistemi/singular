@@ -1,0 +1,18 @@
+{
+  "required-behavior": [
+    {
+      "text": "The driver answers a fold of several requests and a reject of several requests with Lean's existing laws, proves one-request preservation, keeps every single-request answer, moves its declared surface with the checks and the constitution table, carries meaningful controls, lets a story say a batch, and changes no law.",
+      "pause": 350
+    }
+  ],
+  "model-and-evidence": [
+    {
+      "text": "The current main and the model file are bound exactly. This is a representation of existing laws; any needed law change stops the ticket. The three batch comparisons remain unverified until the traced replay supplies them.",
+      "pause": 350
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "9e654f4aaf57220ab50eb8932755304e186589963f79b377382c4a5726521c1f"
+  }
+}

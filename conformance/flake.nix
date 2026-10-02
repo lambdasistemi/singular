@@ -319,7 +319,8 @@
             ''
               mkdir -p $out/bin
               makeWrapper ${pkgs.lib.getExe components.tests.conformance-tests} $out/bin/conformance-tests \
-                --set CONFORMANCE_DRIVER_CORPUS ${../lean/driver-corpus.json}
+                --set CONFORMANCE_DRIVER_CORPUS ${../lean/driver-corpus.json} \
+                --set CONFORMANCE_MODEL_EVALUATOR ${pkgs.lib.getExe driverTransport}
             '';
 
         # The public test command executes the book, including fresh devnet
@@ -353,6 +354,13 @@
             echo 'Harness appendix: honest fold budget regression'
             budget_receipts="$(mktemp -d -t singular-budget-regression.XXXXXX)"
             ${pkgs.lib.getExe foldBudgetRegression} --receipts-dir "$budget_receipts"
+            # #344: the story language's batch instructions, executed: a fold of
+            # two requests and a reject of two, each submitted on the devnet and
+            # asked of the model's batch questions through the transport. Its
+            # receipts stay in a scratch directory; no row reads them.
+            echo 'Harness appendix: batch instructions submitted and asked of the model'
+            batch_receipts="$(mktemp -d -t singular-batch-harness.XXXXXX)"
+            ${pkgs.lib.getExe conformance} run batch --receipts-dir "$batch_receipts"
             receipts="$(mktemp -d -t singular-running-book.XXXXXX)"
             ${pkgs.lib.getExe conformance} book --receipts-dir "$receipts" "''${book_args[@]}"
           '';

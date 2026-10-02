@@ -15,6 +15,7 @@ module Conformance.Run.Control
     , issue205Rows
     , issue320Rows
     , sequenceRows
+    , harnessRows
     , canonicalRows
     , Control (..)
     , readControl
@@ -102,6 +103,13 @@ issue205Rows = ["CG07"]
 issue320Rows = ["CG24"]
 sequenceRows = ["sequence"]
 
+{- | Harness runs a session executes beside the rows: no row in @rows.json@,
+no chapter of the book and no receipt anything reads. @batch@ executes the story
+language's batch instructions on the devnet (#344).
+-}
+harnessRows :: [String]
+harnessRows = ["batch"]
+
 canonicalRows :: [String]
 canonicalRows =
     caRows
@@ -114,6 +122,7 @@ canonicalRows =
         <> issue205Rows
         <> issue320Rows
         <> sequenceRows
+        <> harnessRows
 
 data Control
     = Normal

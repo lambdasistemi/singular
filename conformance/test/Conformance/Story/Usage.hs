@@ -45,6 +45,42 @@ spec = do
                 )
                 `shouldBe` length placements
     it
+        "A fold batch and a reject batch in every window validate and render every request they name, in order"
+        $ forM_ [minBound .. maxBound :: Live.Placement]
+        $ \placement -> forM_ [[], batchOf ["first"], batchOf ["first", "second", "third"]] $ \requests -> do
+            let program = batches placement requests
+                rendered = Live.renderLive program
+                named =
+                    [ "**insertActive** for **" <> Live.requestKey request <> "**"
+                    | request <- requests
+                    ]
+            Live.validateLive program `shouldBe` Right ()
+            occurrences "in one transaction" rendered `shouldBe` 2
+            occurrences
+                "ask the executable registry model the same batch"
+                rendered
+                `shouldBe` 2
+            rendered `shouldSatisfy` isInfixOf (Live.placementReading placement)
+            forM_ named $ \phrase -> occurrences phrase rendered `shouldBe` 2
+            orderOf named rendered `shouldSatisfy` ascending
+            if null requests
+                then occurrences "no request in **registry**" rendered `shouldBe` 2
+                else occurrences "no request" rendered `shouldBe` 0
+    it
+        "Story validation refuses a batch placed inside another request's step"
+        $ do
+            let request = Live.EdgeRequest Live.InsertActive "inside" "holder"
+                inside = do
+                    step <- Live.submit "registry" request
+                    _ <- Live.foldBatch "registry" (batchOf ["first", "second"])
+                    observation <- Live.observe step
+                    _ <- Live.compareWithModel step observation
+                    pure ()
+            Live.validateLive
+                (batches Live.InProcessingWindow (batchOf ["a", "b"]))
+                `shouldBe` Right ()
+            Live.validateLive inside `shouldSatisfy` isLeft
+    it
         "Story validation refuses a reject that names no window before anything runs"
         $ do
             Live.validateLive unplacedSubmit `shouldSatisfy` isLeft
@@ -212,6 +248,30 @@ dropFirstCompare = go False
             Live.Compare _ _ | not removed -> go True (next "dropped")
             _ -> Specification.action instruction >>= go removed . next
         Specification.Theorem _ _ :>>= _ -> error "unnamed sequence unexpectedly gained a theorem wrapper"
+
+-- | Requests for these keys, each an active registration.
+batchOf :: [String] -> [Live.EdgeRequest String]
+batchOf keys = [Live.EdgeRequest Live.InsertActive key "holder" | key <- keys]
+
+-- | A fold of these requests, then a reject of them in the given window.
+batches
+    :: Live.Placement
+    -> [Live.EdgeRequest String]
+    -> Live.Story String String String String String ()
+batches placement requests = do
+    _ <- Live.foldBatch "registry" requests
+    _ <- Live.rejectBatchWithin placement "registry" requests
+    pure ()
+
+-- | Where each phrase first appears in the text.
+orderOf :: [String] -> String -> [Int]
+orderOf phrases text =
+    [ length (takeWhile (not . (phrase `isPrefixOf`)) (tails text))
+    | phrase <- phrases
+    ]
+
+ascending :: [Int] -> Bool
+ascending positions = and (zipWith (<) positions (drop 1 positions))
 
 -- | One reject in the given window, observed and compared.
 placedReject

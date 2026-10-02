@@ -26,6 +26,7 @@ module Conformance.Run.CgRows
     , runCG23
     , runCG24
     , runSequence
+    , runBatchHarness
     , ensurePresentV3
     , setupDelete
     , capturePreProofKey
@@ -1896,6 +1897,61 @@ runSequence env = do
                            ]
             _ -> False
     expectedSequenceOutcome _ = False
+
+{- | The batch harness (#344): the story language's two batch instructions,
+executed on the devnet — a fold of two registrations in one transaction, then a
+reject of two more in one transaction while they can still be folded — and each
+asked of the model's matching batch question through the transport. It belongs
+to no requirement and its receipt is read by no row. Both batches are lawful, so
+it requires that both ran and that the chain and the model each accepted each
+one.
+-}
+runBatchHarness :: Env -> IO ()
+runBatchHarness env = do
+    either
+        failWith
+        pure
+        (Live.validateLive (batchStory (Live.Context "batch" "holder wallet")))
+    writeIORef (envLiveRecords env) []
+    registry <- ensureRowCage env "batch-harness" 30_000 30_000
+    _ <- runLive env (batchStory (Live.Context registry genesisAddr))
+    records <- readIORef (envLiveRecords env)
+    require
+        "batch harness did not run both batch instructions"
+        (map (field "batch") records == [Just "foldBatch", Just "rejectBatch"])
+    -- The story is lawful, so each side must accept each batch on its own:
+    -- agreement alone would pass a lawful batch both sides refused.
+    require
+        "batch harness: the chain refused a lawful batch"
+        (all ((== Just "accepted") . outcome "chain") records)
+    require
+        "batch harness: the model refused a lawful batch"
+        (all ((== Just "accepted") . outcome "model") records)
+    require
+        "batch harness: the chain and the model disagree on a batch's outcome"
+        (all ((== Just "agrees") . field "comparison") records)
+  where
+    batchStory (Live.Context registry holder) = do
+        _ <-
+            Live.foldBatch
+                registry
+                [ Live.EdgeRequest Live.InsertActive "batch-folded-one" holder
+                , Live.EdgeRequest Live.InsertActive "batch-folded-two" holder
+                ]
+        _ <-
+            Live.rejectBatchWithin
+                Live.InProcessingWindow
+                registry
+                [ Live.EdgeRequest Live.InsertActive "batch-rejected-one" holder
+                , Live.EdgeRequest Live.InsertActive "batch-rejected-two" holder
+                ]
+        pure ()
+    field name (Object fields) = case KM.lookup name fields of
+        Just (String text) -> Just text
+        _ -> Nothing
+    field _ _ = Nothing
+    outcome side (Object fields) = KM.lookup side fields >>= field "outcome"
+    outcome _ _ = Nothing
 
 {- | CG05 needs its key OCCUPIED, whatever leaf it holds: the row is about
 inserting on a key the trie already has, and the seven edges admit an

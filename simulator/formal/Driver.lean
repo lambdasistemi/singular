@@ -136,6 +136,18 @@ caller observed, beside the boundary it reports, in the order it asks them.
 `Singular.settle`. -/
 def declaredJudgements : List String := ["spend", "settle"]
 
+/-- What a batch answer reports: the single-request boundary without its
+transaction, since the model builds none for a batch, and with `leaf` read at
+every distinct request key. -/
+def batchObservations : List String :=
+  ["config", "custody", "held", "leaf", "mint", "paid", "root", "state"]
+
+/-- The declared batch questions, each named with its own observation extent:
+`foldBatch`, answered by `Singular.foldBatch`, and `rejectBatch`, a batch of
+rejects judged by `Singular.settle` over their concatenated obligations. -/
+def declaredBatchQuestions : List (String × List String) :=
+  [("foldBatch", batchObservations), ("rejectBatch", batchObservations)]
+
 /-- D01: the surface identity a scenario is executed against. -/
 structure SurfaceIdentity where
   declaration : String
@@ -144,14 +156,16 @@ structure SurfaceIdentity where
   observations : List String
   unobservable : List String
   judgements : List String
+  batchQuestions : List (String × List String)
 
 def surface : SurfaceIdentity :=
   { declaration := "Singular.Driver.runSurface"
-  , protocolVersion := 4
+  , protocolVersion := 5
   , operations := declaredOperations
   , observations := declaredObservations
   , unobservable := declaredUnobservable
-  , judgements := declaredJudgements }
+  , judgements := declaredJudgements
+  , batchQuestions := declaredBatchQuestions }
 
 def surfaceJson (s : SurfaceIdentity) (definitionDigest : String) : Json :=
   Json.mkObj
@@ -161,7 +175,8 @@ def surfaceJson (s : SurfaceIdentity) (definitionDigest : String) : Json :=
     , ("operations", toJson s.operations)
     , ("observations", toJson s.observations)
     , ("unobservable", toJson s.unobservable)
-    , ("judgements", toJson s.judgements) ]
+    , ("judgements", toJson s.judgements)
+    , ("batchQuestions", Json.mkObj (s.batchQuestions.map fun q => (q.1, toJson q.2))) ]
 
 /-! ## The law premise -/
 
@@ -251,21 +266,26 @@ def runSetup : RegistryState → List Request → (List SetupStep × RegistrySta
       let (steps, final, ok) := runSetup res.state rest
       ({ request := r, accepted := true, reason := none, state := res.state } :: steps, final, ok)
 
+/-- What an executed result reports of itself, for a single request and a batch
+alike: the state it produced, read back field by field, and its own mint and
+payments. -/
+def resultObservations (c : Config) (res : Result) : List (String × Json) :=
+  [ ("config", toJson res.state.config)
+  , ("custody", toJson res.state.custody)
+  , ("held", Json.arr (res.state.held.map heldObservationJson).toArray)
+  , ("mint", assetsJson c res.mint)
+  , ("paid", Json.arr ((res.paid.map fun p =>
+      Json.mkObj [("address", toJson p.1), ("value", toJson p.2)]).toArray))
+  , ("root", toJson res.state.config.root)
+  , ("state", toJson res.state) ]
+
 /-- The declared boundary of one accepted transition. Each field delegates: the
 leaf and root are read back off the state the law produced, the mint and the
 payments are the executed result's own, and the transaction is the one
 `Singular.admittedTxOfExit` built from that exit. -/
 def observationsJson (c : Config) (r : Request) (res : Result) (tx : Tx) : Json :=
-  Json.mkObj
-    [ ("config", toJson res.state.config)
-    , ("custody", toJson res.state.custody)
-    , ("held", Json.arr (res.state.held.map heldObservationJson).toArray)
-    , ("leaf", leafJson (trieGet res.state.trie r.key))
-    , ("mint", assetsJson c res.mint)
-    , ("paid", Json.arr ((res.paid.map fun p =>
-        Json.mkObj [("address", toJson p.1), ("value", toJson p.2)]).toArray))
-    , ("root", toJson res.state.config.root)
-    , ("state", toJson res.state)
+  Json.mkObj <| resultObservations c res ++
+    [ ("leaf", leafJson (trieGet res.state.trie r.key))
     , ("tx", txJson c tx) ]
 
 /-- The witness a scenario's exit is admitted under. A retraction is admitted
@@ -355,6 +375,199 @@ def scenarioJson (sc : Scenario) : Json :=
     ++
     [ ("setup", Json.arr ((steps.map setupStepJson).toArray))
     , ("outcome", toJson (outcomeName result.outcome))
+    , ("reason", match result.reason with | none => Json.null | some why => toJson why)
+    , ("premise", Json.mkObj
+        [ ("declaration", toJson premiseDeclaration)
+        , ("checked", toJson result.premiseChecked) ])
+    , ("observations", match result.observations with | none => Json.null | some o => o) ]
+
+/-! ## The batch questions
+
+Two laws a single-request scenario never reaches. `Singular.foldBatch` folds
+several requests atomically: `empty-fold` for none, the first failing request's
+`step` reason, then `net-mint-mismatch` when what the batch claims differs from
+what its edges mint. A batch of rejects leaves the registry as it was and is
+judged as `Singular.settle` over the concatenated obligations of its requests,
+which is how `settle` states a batch. The driver answers each as a declared
+question: it reaches the starting state and checks the premise exactly as
+`runSurface` does, then reports what the law did. The model builds no
+transaction for a batch, so no batch answer observes one. -/
+
+/-- One batch question: requests each folded on its own edge, or requests each
+taken by the exit it names, of which only a non-empty batch of rejects is
+answered. -/
+inductive BatchQuestion where
+  | foldBatch (requests : List Request)
+  | rejectBatch (requests : List (Exit × Request))
+
+def batchQuestionName : BatchQuestion → String
+  | .foldBatch _ => "foldBatch"
+  | .rejectBatch _ => "rejectBatch"
+
+/-- The distinct keys of a batch, in the order its requests first name them. -/
+def batchKeys (requests : List Request) : List Key :=
+  requests.foldl (fun acc r => if acc.contains r.key then acc else acc ++ [r.key]) []
+
+/-- The declared boundary of an answered batch: what its result reports of
+itself, and the leaf at every key the batch names, read off the state it
+produced. -/
+def batchObservationsJson (c : Config) (keys : List Key) (res : Result) : Json :=
+  Json.mkObj <| resultObservations c res ++
+    [ ("leaf", Json.arr (keys.map fun k =>
+        Json.mkObj [("key", toJson k), ("leaf", leafJson (trieGet res.state.trie k))]).toArray) ]
+
+/-- The requests of a batch of rejects: `none` for an empty batch and for one
+naming any other exit, which the driver does not answer. -/
+def batchRejects (batch : List (Exit × Request)) : Option (List Request) :=
+  if batch.isEmpty then none
+  else batch.mapM fun (exit, request) => if exit == .reject then some request else none
+
+/-- A batch of rejects as the model steps it: each request through
+`Singular.exitStep` with `Exit.reject`, from the state the previous left, the
+results combined as `Singular.foldActions` combines a batch's. -/
+def rejectBatchStep (s : RegistryState) (requests : List Request) : Except String Result :=
+  requests.foldlM
+    (fun acc request => do
+      let t ← exitStep acc.state .reject request
+      pure (combineResults acc t))
+    (emptyResult s)
+
+/-- What a batch of rejects owes: the concatenated obligations of its requests. -/
+def rejectBatchPayments (requests : List Request) : List Payment :=
+  requests.flatMap (obligations .reject)
+
+/-- The judgement of a batch of rejects over the outputs of a transaction a caller
+observed: `Singular.settle` over what the batch owes. -/
+def judgeRejectBatch (requests : List Request) (outputs : List TxOutput) : Option String :=
+  settle (rejectBatchPayments requests) outputs
+
+/-- Reach a batch's starting state as `runSurface` reaches a scenario's: run the
+setup trace through the law, then check the premise on the state it reached. -/
+def reachBatchStart (start : RegistryState) (setup : List Request) :
+    List SetupStep × Except DriverResult RegistryState :=
+  let (steps, s, reached) := runSetup start setup
+  if !reached then
+    (steps, .error { outcome := .unsupported, reason := some "setup-refused"
+                   , premiseChecked := false, observations := none })
+  else if !consistentB s then
+    (steps, .error { outcome := .unsupported, reason := some "premise-does-not-hold"
+                   , premiseChecked := false, observations := none })
+  else (steps, .ok s)
+
+/-- F04 `runFoldBatch`: the `foldBatch` question. From the state the setup trace
+reaches, with the premise checked, the batch is `Singular.foldBatch` verbatim:
+refused for its reason, or accepted with the declared batch boundary. Beside the
+answer it returns the batch's step trace, each request through `Singular.step`
+from the state the previous left until the first one the law refuses, so a
+reader can see which request a refusal came from. -/
+def runFoldBatch (start : RegistryState) (setup batch : List Request) :
+    List SetupStep × List SetupStep × DriverResult :=
+  match reachBatchStart start setup with
+  | (steps, .error result) => (steps, [], result)
+  | (steps, .ok s) =>
+    let (folded, _, _) := runSetup s batch
+    match foldBatch s batch with
+    | .error why =>
+      (steps, folded, { outcome := .refused, reason := some why
+                      , premiseChecked := true, observations := none })
+    | .ok res =>
+      (steps, folded, { outcome := .accepted, reason := none, premiseChecked := true
+                      , observations := some (batchObservationsJson s.config (batchKeys batch) res) })
+
+/-- F05 `runRejectBatch`: the `rejectBatch` question. From the state the setup
+trace reaches, with the premise checked, a non-empty batch of rejects is stepped
+by `rejectBatchStep` and answered with the declared batch boundary; an empty
+batch, and one naming a fold or a retract, is `unsupported`. -/
+def runRejectBatch (start : RegistryState) (setup : List Request) (batch : List (Exit × Request)) :
+    List SetupStep × DriverResult :=
+  match reachBatchStart start setup with
+  | (steps, .error result) => (steps, result)
+  | (steps, .ok s) =>
+    match batchRejects batch with
+    | none =>
+      (steps, { outcome := .unsupported
+              , reason := some (if batch.isEmpty then "empty-reject-batch"
+                                else "reject-batch-names-another-exit")
+              , premiseChecked := true, observations := none })
+    | some requests =>
+      match rejectBatchStep s requests with
+      | .error why =>
+        (steps, { outcome := .refused, reason := some why
+                , premiseChecked := true, observations := none })
+      | .ok res =>
+        (steps, { outcome := .accepted, reason := none, premiseChecked := true
+                , observations := some (batchObservationsJson s.config (batchKeys requests) res) })
+
+/-- D04: one batch scenario. Like a scenario it is bound to a theorem, reaches its
+starting state by a setup trace, and, for a batch of rejects, may carry the
+outputs of a transaction a caller observed, to be judged. -/
+structure BatchScenario where
+  id : String
+  theoremName : String
+  statementSha256 : String
+  kind : String
+  mutates : Option String
+  requiresReachableState : Bool
+  start : RegistryState
+  setup : List Request
+  question : BatchQuestion
+  outputs : Option (List TxOutput) := none
+
+/-- One judged output in the spelling a caller gives it: its role, the identity of
+its address, its lovelace, the form of its datum and the reference its inline datum
+presents. `settle` reads nothing else of an output. -/
+def judgedOutputJson (o : TxOutput) : Json :=
+  Json.mkObj
+    [ ("role", toJson (txRoleName o.role))
+    , ("address", match o.address with | none => Json.null | some a => toJson a)
+    , ("lovelace", toJson o.lovelace)
+    , ("datum", toJson (datumFormName o.datum))
+    , ("reference", match o.reference with | none => Json.null | some x => toJson x) ]
+
+/-- One executed batch scenario, serialized as the corpus row the checker reads.
+A fold batch row carries its step trace (`folded`); a batch of rejects carries
+each request with its exit, and, when it was given outputs, `settle`'s judgement
+of them for an answered batch. -/
+def batchScenarioJson (sc : BatchScenario) : Json :=
+  let (steps, folded, result, requests, settled) :
+      List SetupStep × Option (List SetupStep) × DriverResult × Json × Option Json :=
+    match sc.question with
+    | .foldBatch batch =>
+      let (steps, folded, result) := runFoldBatch sc.start sc.setup batch
+      (steps, some folded, result, Json.arr (batch.map toJson).toArray, none)
+    | .rejectBatch batch =>
+      let (steps, result) := runRejectBatch sc.start sc.setup batch
+      let settled : Option Json :=
+        match sc.outputs, result.outcome, batchRejects batch with
+        | some outputs, .accepted, some rejects =>
+          some (match judgeRejectBatch rejects outputs with
+                | none => Json.null
+                | some why => toJson why)
+        | _, _, _ => none
+      (steps, none, result,
+        Json.arr (batch.map fun (p : Exit × Request) =>
+          Json.mkObj [("exit", toJson (exitName p.1)), ("request", toJson p.2)]).toArray,
+        settled)
+  Json.mkObj <|
+    [ ("id", toJson sc.id)
+    , ("theorem", toJson sc.theoremName)
+    , ("statementSha256", toJson sc.statementSha256)
+    , ("kind", toJson sc.kind)
+    , ("mutates", match sc.mutates with | none => Json.null | some m => toJson m)
+    , ("question", toJson (batchQuestionName sc.question))
+    , ("requiresReachableState", toJson sc.requiresReachableState)
+    , ("start", toJson sc.start)
+    , ("requests", requests)
+    , ("setup", Json.arr ((steps.map setupStepJson).toArray)) ]
+    ++ (match folded with
+        | none => []
+        | some f => [("folded", Json.arr ((f.map setupStepJson).toArray))])
+    ++ (match sc.outputs with
+        | none => []
+        | some outputs => [("outputs", Json.arr ((outputs.map judgedOutputJson).toArray))])
+    ++ (match settled with | none => [] | some j => [("settle", j)])
+    ++
+    [ ("outcome", toJson (outcomeName result.outcome))
     , ("reason", match result.reason with | none => Json.null | some why => toJson why)
     , ("premise", Json.mkObj
         [ ("declaration", toJson premiseDeclaration)
