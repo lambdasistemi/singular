@@ -9,6 +9,7 @@ import Conformance.Support.CliControls qualified as CliControls
 import Conformance.Support.CliProof qualified as CliProof
 import Conformance.Support.DriverTransport qualified as DriverTransport
 import Conformance.Support.EvidencePage qualified as EvidencePage
+import Conformance.Support.Extent qualified as Extent
 import Conformance.Support.Fixture qualified as Fixture
 import Conformance.Support.FixtureChild
     ( childModeVariable
@@ -24,8 +25,10 @@ import Conformance.Support.Receipt qualified as Receipt
 import Conformance.Support.ReceiptBound qualified as ReceiptBound
 import Conformance.Support.Refusal qualified as Refusal
 import Conformance.Support.RegistrationComparison qualified as RegistrationComparison
+import Conformance.Support.Replay qualified as Replay
 import Conformance.Support.Retraction qualified as Retraction
 import Conformance.Support.Rows qualified as Rows
+import Conformance.Support.RunReplay qualified as RunReplay
 import Conformance.Support.Specification qualified as Specification
 import Conformance.Support.Step qualified as Step
 import System.Environment (lookupEnv)
@@ -55,6 +58,7 @@ suite = do
         RegistrationComparison.spec
         Payments.spec
         ObservedTx.spec
+        ObservedTx.mintTamperSpec
         Oracle.spec
         DriverTransport.spec
         Step.spec
@@ -68,3 +72,6 @@ suite = do
         CliProof.spec
         CliAdmission.spec
         CliAttach.spec
+        Replay.spec
+        RunReplay.spec
+        Extent.spec

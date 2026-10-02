@@ -13,6 +13,7 @@ module Conformance.Support.Refusal (spec) where
 
 import Data.Either (isLeft)
 import Data.List (isInfixOf, isPrefixOf)
+import Data.Maybe (isJust)
 import Data.Text qualified as T
 import System.Directory
     ( createDirectoryIfMissing
@@ -33,6 +34,8 @@ import Conformance.Receipt
     ( Outcome (..)
     , Receipt (..)
     , RefusalInfo (..)
+    , ReplayCorrespondence (..)
+    , ReplayEvidence (..)
     , Verdict (..)
     , loadReceipts
     , writeReceiptFile
@@ -40,9 +43,11 @@ import Conformance.Receipt
 import Conformance.Refusal
     ( RefusalMismatch (..)
     , RefusalRole (..)
+    , TracedRefusal (..)
     , attributeRefusalReceipt
     , matchRefusal
     , trimRefusal
+    , untraced
     , wrongReasonMarker
     )
 
@@ -218,6 +223,7 @@ heldRowReceipt =
         , receiptPartial = Nothing
         , receiptDerivation = Nothing
         , receiptSteps = Nothing
+        , receiptReplayCorrespondence = Nothing
         }
 
 -- | A phase-2 node refusal naming the expected script.
@@ -259,6 +265,7 @@ receiptPolicySpec = describe
                         False
                         "node"
                         "blueprint"
+                        untraced
                 r `shouldBe` Right ()
                 rs <- loadReceipts dir
                 case rs of
@@ -286,6 +293,7 @@ receiptPolicySpec = describe
                         False
                         "node"
                         "blueprint"
+                        untraced
                 r `shouldBe` Right ()
                 rs <- loadReceipts dir
                 case rs of
@@ -315,7 +323,90 @@ receiptPolicySpec = describe
                         False
                         "node"
                         "blueprint"
+                        untraced
                 r `shouldBe` Right ()
+        it
+            "A rejection whose traced replay admitted a reason records it as the validator branch"
+            $ do
+                dir <- freshReceiptsDir
+                r <-
+                    attributeRefusalReceipt
+                        RefusalRow
+                        dir
+                        "CG05"
+                        AgreesWithModel
+                        "state"
+                        policyMarker
+                        policyReason
+                        "rejectedtxid"
+                        "base"
+                        False
+                        "node"
+                        "blueprint"
+                        tracedKeyExists
+                r `shouldBe` Right ()
+                rs <- loadReceipts dir
+                case rs of
+                    Right [r0] -> do
+                        fmap refusalBranch (receiptRefusal r0)
+                            `shouldBe` Just (Just (T.pack "key-exists"))
+                        fmap refusalLimit (receiptRefusal r0) `shouldBe` Just Nothing
+                        fmap refusalReplay (receiptRefusal r0)
+                            `shouldBe` Just (Just (tracedReplay tracedKeyExists))
+                        receiptReplayCorrespondence r0
+                            `shouldBe` tracedCorrespondence tracedKeyExists
+                    other -> fail ("expected the row's refused receipt, got " <> show other)
+        it
+            "A validator branch the replay did not admit is not evidence"
+            $ do
+                dir <- freshReceiptsDir
+                _ <-
+                    attributeRefusalReceipt
+                        RefusalRow
+                        dir
+                        "CG05"
+                        AgreesWithModel
+                        "state"
+                        policyMarker
+                        policyReason
+                        "rejectedtxid"
+                        "base"
+                        False
+                        "node"
+                        "blueprint"
+                        tracedKeyExists
+                            { tracedReplay =
+                                map
+                                    (\e -> e{replayReason = Just (T.pack "not-booked")})
+                                    (tracedReplay tracedKeyExists)
+                            }
+                loadReceipts dir >>= (`shouldSatisfy` isLeft)
+        it
+            "A rejection whose replay admitted no reason keeps the attribution limit"
+            $ do
+                dir <- freshReceiptsDir
+                _ <-
+                    attributeRefusalReceipt
+                        RefusalRow
+                        dir
+                        "CG05"
+                        AgreesWithModel
+                        "state"
+                        policyMarker
+                        policyReason
+                        "rejectedtxid"
+                        "base"
+                        False
+                        "node"
+                        "blueprint"
+                        untraced
+                rs <- loadReceipts dir
+                case rs of
+                    Right [r0] -> do
+                        fmap refusalBranch (receiptRefusal r0) `shouldBe` Just Nothing
+                        fmap refusalLimit (receiptRefusal r0)
+                            `shouldSatisfy` maybe False isJust
+                    other -> fail ("expected the row's refused receipt, got " <> show other)
         it
             "An unexplained rejection saves no evidence and reports the problem"
             $ do
@@ -334,6 +425,31 @@ receiptPolicySpec = describe
                         False
                         "node"
                         "blueprint"
+                        untraced
                 r `shouldSatisfy` isLeft
                 exists <- doesFileExist (dir </> "receipt-CG05.json")
                 exists `shouldBe` False
+
+-- | A rejection whose traced replay admitted @key-exists@ for the state script.
+tracedKeyExists :: TracedRefusal
+tracedKeyExists =
+    TracedRefusal
+        { tracedAdmitted = Just (T.pack "key-exists")
+        , tracedReplay =
+            [ ReplayEvidence
+                { replayDeployedHash = T.pack policyMarker
+                , replayTracedHash = Just (T.pack "traced-hash")
+                , replayReason = Just (T.pack "key-exists")
+                , replayCause = Nothing
+                , replayCaptureId = Just (T.pack "capture-id")
+                }
+            ]
+        , tracedCorrespondence =
+            Just
+                ReplayCorrespondence
+                    { correspondenceSource = T.pack "source"
+                    , correspondenceCompiler = T.pack "compiler"
+                    , correspondenceFlags = T.pack "flags"
+                    , correspondenceDigest = T.pack "digest"
+                    }
+        }

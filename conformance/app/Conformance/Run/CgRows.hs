@@ -10,7 +10,6 @@ module Conformance.Run.CgRows
     , runCG03
     , runCG04
     , runCG05
-    , controlFreshCage
     , sleepUntilMs
     , runCG07
     , runCG09
@@ -36,6 +35,7 @@ module Conformance.Run.CgRows
     , ensurePresentV1
     ) where
 
+import Conformance.Replay (admittedFor)
 import Conformance.Run.Book
 import Conformance.Run.Cage
 import Conformance.Run.Control
@@ -44,23 +44,20 @@ import Conformance.Run.Fold
 import Conformance.Run.Live
 import Conformance.Run.Observe
 import Conformance.Run.Receipts
+import Conformance.Run.Replay (purposesOf)
 import Conformance.Run.Submit
 import Conformance.Run.Units
 import Conformance.Run.Wallet
 
 import Conformance.Edge.EarlyReject qualified as EarlyRejectStory
 import Conformance.Edge.Exit qualified as ExitStory
+import Conformance.Edge.Occupied qualified as OccupiedStory
 import Conformance.Edge.Register qualified as RegistrationStory
 import Conformance.Edge.Retire qualified as RetirementStory
 import Conformance.Edge.RetractionWindow qualified as WindowStory
 import Conformance.Edge.Sequence qualified as SequenceStory
 import Conformance.Story.Live qualified as Live
 import Control.Concurrent (threadDelay)
-import Control.Exception
-    ( SomeException
-    , displayException
-    , try
-    )
 import Control.Monad (when)
 import Data.Aeson
     ( Value (..)
@@ -72,7 +69,7 @@ import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
-import Data.IORef (newIORef, readIORef, writeIORef)
+import Data.IORef (readIORef, writeIORef)
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
@@ -85,25 +82,23 @@ import System.FilePath ((</>))
 import Cardano.Ledger.Address
     ( AccountAddress (..)
     , AccountId (..)
+    , Addr
     )
 
 import Cardano.Ledger.Api.Tx.Out
     ( coinTxOutL
+    , mkBasicTxOut
     )
 import Cardano.Ledger.BaseTypes
     ( Network (..)
     )
 import Cardano.Ledger.Credential (Credential (..))
+import Cardano.Ledger.Mary.Value (MaryValue (..))
+import Cardano.Node.Client.E2E.Setup (Ed25519DSIGN, SignKeyDSIGN)
 import MPF.Hashes (MPFHash)
 import MPF.Proof.Insertion (MPFProof (..))
 
-import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
-import Singular.Registry.Blueprint
-    ( NamingCodes (..)
-    , applyBytesParam
-    , applyDataParam
-    )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
     ( AssetName (..)
@@ -118,23 +113,17 @@ import Singular.Registry.Node
     , signedTx
     )
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Trie (TrieManager (..))
-import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Internal
     ( currentPosixMs
     , extractCageDatum
     , extractOwnerBytes
     , leafAbsent
-    , mkCageScript
     , scriptFromBytes
     , scriptHashBytes
     , trySlots
-    , txInToRef
     )
 import Singular.Registry.TxBuilder.Update
-    ( RegistryContext (..)
-    , updateTokenImpl
-    , updateTokenWithDuties
+    ( updateTokenWithDuties
     )
 import Singular.Registry.Types
     ( CageDatum (..)
@@ -153,7 +142,6 @@ import Conformance.Mirror
     , failWith
     , hex
     , inclusionProofFrom
-    , newMirror
     , readChainState
     , require
     , txIdHex
@@ -272,172 +260,6 @@ runCG04 env = do
     writeIORef (envDeleteKey env) (True, cgV3)
     emit "row" "CG04: ACCEPTED re-Insert, v3 reads back from chain"
 
-{- | CG05: Insert on the occupied key must be refused, attributed to
-the state script in phase 2 — a node verdict on a submitted
-transaction, the li-refusals bar. The fold is hand-built (the
-library builder cannot emit a transaction whose scripts do not
-evaluate) and calibrated against the library builder on every valid
-fold, so the refused shape differs from a library fold only in the
-operation under test. The executing control is a fresh cage that
-accepts a valid insert: a cage that refuses everything would pass
-the refusal vacuously.
--}
-runCG05 :: Env -> String -> IO ()
-runCG05 env marker = do
-    ensurePresentV3 env
-    let cfg = envCfg env
-        prov = envProv env
-        tid = envTid env
-    -- CG05: padded 5M bond (hook-era fold fees exceed the library
-    -- default bond's refund headroom; bond size is irrelevant to
-    -- the occupied-key property).
-    tidRef05 <- newIORef (Just tid)
-    unitsRef05 <- newIORef (0, 0)
-    sessionRefs <- sessionRefUtxos env
-    let cage05 = RowCage cfg tidRef05 unitsRef05 sessionRefs
-    _ <-
-        paddedRequest
-            env
-            cage05
-            genesisAddr
-            genesisSignKey
-            cgKey
-            cgV4
-            5_000_000
-    emit "row" "CG05: occupied insert requested; folding must refuse"
-    -- The eval-time observation: genuine evidence about the same
-    -- rules, kept as a line, never as the verdict.
-    evalNote <-
-        try @SomeException
-            ( Cage.withView
-                prov
-                (\v -> updateTokenImpl cfg v (envTm env) tid genesisAddr)
-            )
-    case evalNote of
-        Left err ->
-            -- Genuine evidence about the same rules, whether it comes from
-            -- the ledger evaluating the fold or from the builder refusing
-            -- to derive duties for an edge that is not one of the seven.
-            emit
-                "eval-observation"
-                (trimRefusal (displayException err))
-        Right _ ->
-            emit
-                "eval-observation"
-                "unexpected: the poisoned fold evaluated; submitting anyway"
-    handTx <- buildRefusedFold env
-    let signedWitnessed = signTx genesisSignKey handTx
-        signed = signedTx signedWitnessed
-    result <- submitTxResilient (envSubmit env) signedWitnessed
-    case result of
-        Rejected reason ->
-            attributeSubmitRefusal
-                env
-                "CG05"
-                AgreesWithModel
-                marker
-                (T.unpack (TE.decodeUtf8Lenient reason))
-                (txIdHex signed)
-        Submitted txid ->
-            failWith
-                ( "CG05 FINDING: the fold accepted an Insert on an \
-                  \occupied key (txid "
-                    <> txInHex txid
-                    <> ") — the contract claims the fold MUST NOT; \
-                       \reported, not relabelled"
-                )
-    controlFreshCage env
-
--- | The live-cage control: a fresh cage accepts a valid insert.
-controlFreshCage :: Env -> IO ()
-controlFreshCage env = do
-    let cfg0 = envCfg env
-        prov = envProv env
-    -- Sweep first: carving splits only the largest output, so any small
-    -- one left over from the row survives, sits first in the set, and is
-    -- what the boot builder picks to fund and collateralise with. After
-    -- a sweep the wallet is exactly the carved seed and the funding.
-    consolidateFunding env
-    seedTxIn <- carveSeed env
-    -- #157 D-BOOT: a fresh cage is a fresh registry identity, so its four
-    -- pins are derived for ITS seed. Patching only the seed onto the
-    -- session.s config would pin the session.s token policies and every
-    -- fold of this cage would refuse on the delta.
-    let (stateBytes, requestBytes, codes) = envCodes env
-        cfg =
-            cageCfgWith
-                stateBytes
-                requestBytes
-                codes
-                (txInToRef seedTxIn)
-                (defaultProcessTime cfg0)
-                (defaultRetractTime cfg0)
-    unsignedBoot <-
-        Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
-    signedBoot <- submitWithGenesis (envCaps env) unsignedBoot
-    tid <- extractTokenId cfg signedBoot
-    createTrie (envTm env) tid
-    -- #157: a valid insert is a booked edge. The control cage is its own
-    -- registry — its own token, its own request script and its own three
-    -- token policies — so it gets its own reference outputs and its own
-    -- approval, and the fold discharges the duties the edge creates.
-    --
-    -- The references go up FIRST. Publishing five scripts is five awaited
-    -- submissions, and a request booked before them would spend its
-    -- phase-1 window waiting for them.
-    refs <- cageRefUtxos env cfg tid
-    dest <- edgeDestination env edgeInsertAbsent
-    _ <-
-        bookEdge
-            env
-            cfg
-            tid
-            genesisAddr
-            genesisSignKey
-            controlKey
-            edgeInsertAbsent
-            dest
-            []
-            (defaultTipCoin cfg + cgDeposit)
-    foldTx <- Cage.withView prov $ \v -> do
-        utxos <- cageUtxosOf (pinnedTo v env) cfg
-        let registryId =
-                scriptHashBytes (cfgScriptHash cfg)
-                    <> SBS.fromShort (assetNameBytes (unTokenId tid))
-            witnessAt kind =
-                scriptFromBytes
-                    ("witness-" <> show kind)
-                    ( applyBytesParam
-                        registryId
-                        (applyDataParam (PLC.I kind) (ncWitness codes))
-                    )
-            ctx =
-                RegistryContext
-                    { rcWitnessScripts = Map.fromList [(k, witnessAt k) | k <- [0, 1, 2]]
-                    , rcCageScript = Just (mkCageScript cfg)
-                    , rcCageUtxos = utxos
-                    , rcDatums = [(recordDatumHash, recordDatum)]
-                    , rcAllowInadmissible = False
-                    , rcHolderUtxos = []
-                    , rcHolderReleases = Map.empty
-                    , rcRefUtxos = refs
-                    }
-        updateTokenWithDuties cfg v (envTm env) tid genesisAddr ctx
-    _ <- submitWithGenesis (envCaps env) foldTx
-    mirror <- newMirror
-    verifyPresentValue
-        cfg
-        prov
-        mirror
-        tid
-        controlKey
-        controlVal
-        forgedValue
-    emit
-        "control"
-        "CG05 control: fresh cage accepted a valid insert — \
-        \the refusal discriminates"
-
 -- | Sleep until the devnet's POSIX-ms clock reaches @targetMs@.
 sleepUntilMs :: Env -> Integer -> IO ()
 sleepUntilMs _env targetMs = do
@@ -502,11 +324,24 @@ budget failure cannot pass for a refusal by rule.
 -}
 runCG09 :: Env -> IO ()
 runCG09 env = do
+    writeIORef (envLiveRecords env) []
+    live <- newLiveState "CG09"
     cage <- ensureRowCage env "cg09" 30_000 5_000
     let cfg = rcCfg cage
         prov = envProv env
     tid <- cageTid cage
-    (reqIn, reqOut) <- rowRequestInsert env cage "cg09-key" "cg09-value"
+    -- The request's owner is not the genesis wallet a fold returns its change
+    -- to, so the outputs crediting the owner are exactly its refund.
+    (ownerSk, owner) <- ownerWallet env 10_000_000
+    (reqIn, reqOut) <-
+        paddedRequest
+            env
+            cage
+            owner
+            ownerSk
+            "cg09-key"
+            "cg09-value"
+            (defaultTipCoin cfg + cgDeposit)
     let (_, submittedAt) = requestDatumOf reqOut
         processDeadline = submittedAt + 30_000
     state <- cageStateUtxo env cage
@@ -551,12 +386,97 @@ runCG09 env = do
         "row"
         "CG09 control: the request's processing-window reject refunding \
         \its owner one lovelace short; the state script must refuse it"
-    submitExpectRefusedControl
-        env
-        "CG09"
-        AgreesWithModel
-        (stateMarkerOf cfg)
-        short
+    let shortWitnessed = signTx genesisSignKey short
+        shortSigned = signedTx shortWitnessed
+    shortResult <- submitTxResilient (envSubmit env) shortWitnessed
+    -- The model's reject batch of this one request, judged on the refund the
+    -- control pays: refused for the reason the traced replay must admit.
+    shortCompared <-
+        compareHandBatch
+            env
+            live
+            cage
+            Live.Reject
+            [
+                ( Live.EdgeRequest Live.InsertAbsent "cg09-key" owner
+                , owner
+                , (reqIn, reqOut)
+                )
+            ]
+            shortSigned
+            shortResult
+    case shortResult of
+        Rejected reason ->
+            attributeControlRefusal
+                env
+                "CG09"
+                AgreesWithModel
+                (stateMarkerOf cfg)
+                (T.unpack (TE.decodeUtf8Lenient reason))
+                (txIdHex shortSigned)
+        Submitted txid ->
+            failWith
+                ( "CG09 FINDING: the node ACCEPTED the control transaction "
+                    <> "expected to refuse (txid "
+                    <> txInHex txid
+                    <> ") — reported, not relabelled"
+                )
+    require
+        "CG09: the model and the chain do not agree on the short reject"
+        (agreed shortCompared)
+    -- A known divergence, recorded and never a pass
+    -- (lambdasistemi/singular#361): the same reject paying its owner one
+    -- lovelace short at the refund's position, and the remainder to the owner
+    -- in another output. The chain judges the refund by its position and must
+    -- refuse it for deposit-returned; the model credits the owner the sum of
+    -- both and accepts it. The row records exactly that disagreement.
+    divergenceUpper <- insideProcessWindow
+    divergencePot <- collateralPot env
+    divergent <-
+        assembleFoldWithFee
+            env
+            (rejectWithin divergenceUpper (owed - 1) (Just divergencePot))
+                { fsExtraOutputs =
+                    [mkBasicTxOut owner (MaryValue (Coin 2_000_000) mempty)]
+                }
+    let divergentWitnessed = signTx genesisSignKey divergent
+        divergentSigned = signedTx divergentWitnessed
+    divergentResult <-
+        submitTxResilient (envSubmit env) divergentWitnessed
+    divergence <-
+        compareHandBatch
+            env
+            live
+            cage
+            Live.Reject
+            [
+                ( Live.EdgeRequest Live.InsertAbsent "cg09-key" owner
+                , owner
+                , (reqIn, reqOut)
+                )
+            ]
+            divergentSigned
+            divergentResult
+    divergentPurposes <-
+        purposesOf (envReplay env) (T.pack (txIdHex divergentSigned))
+    require
+        "CG09: the refund-position divergence did not come out as recorded \
+        \(chain refuses deposit-returned, the model accepts)"
+        ( outcomeOf "chain" divergence == Just "refused"
+            && outcomeOf "model" divergence == Just "accepted"
+            && admittedFor (T.pack (stateMarkerOf cfg)) divergentPurposes
+                == Just "deposit-returned"
+        )
+    emit
+        "divergence"
+        ( "CG09 KNOWN DIVERGENCE (lambdasistemi/singular#361): a reject paying "
+            <> "its owner one lovelace short at the refund's position and the "
+            <> "remainder in another output at the owner's key is refused by the "
+            <> "chain for deposit-returned (tx="
+            <> txIdHex divergentSigned
+            <> ") and accepted by the model, which sums the owner's outputs; "
+            <> "recorded, never a pass"
+        )
     upper <- insideProcessWindow
     hand <- assembleFoldWithFee env (rejectWithin upper owed Nothing)
     -- Every purpose's units as the node evaluates them, before submitting.
@@ -578,12 +498,17 @@ runCG09 env = do
           \process window; the consumer requires a refusal "
             <> "(R9_reject_needs_rejectable), Singular's Lean admits it"
         )
+    -- Measured before it is submitted: once the reject lands, its request is
+    -- spent and the node can no longer evaluate it.
+    (mem, cpu) <- measureUnits env hand
     let signedWitnessed = signTx genesisSignKey hand
         signed = signedTx signedWitnessed
     result <- submitTxResilient (envSubmit env) signedWitnessed
     case result of
         Submitted txid -> do
-            (mem, cpu) <- measureUnits env hand
+            -- The next row reads the wallet this reject spent from: wait until the
+            -- reject is on chain, or it may spend the same output again.
+            confirmTx env signed
             let size = txSizeBytes signed
             emitMeasure env "CG09" mem cpu size
             writeRowReceipt
@@ -599,6 +524,9 @@ runCG09 env = do
                 (Just size)
                 "node-submit"
                 Nothing
+            -- The known divergence travels in the row's receipt, beside its
+            -- unmet verdict: a disagreement, never a pass.
+            addReceiptSteps env "CG09" [divergence]
             recordUnmet
                 env
                 "CG09"
@@ -635,6 +563,9 @@ against a root the chain has since superseded. The state script's
 proof check refuses it. The control re-folds the same request
 against the live root, the hand shape calibrated against the
 library fold.
+The model takes no proof and no authenticated root, and admits the
+insertion on that unoccupied key, so there is no model reason to compare:
+the model comparison is unmet (#346).
 -}
 runCG10 :: Env -> IO ()
 runCG10 env = do
@@ -679,9 +610,18 @@ runCG10 env = do
     submitExpectRefused
         env
         "CG10"
-        AgreesWithModel
+        UnmetByRuling
         (stateMarkerOf cfg)
         staleTx
+    recordUnmet
+        env
+        "CG10"
+        "kept unmet by operator ruling 2026-10-02 (narrowed #287; model follow-up lambdasistemi/singular#346)"
+        ( "Singular's Lean takes no proof and no authenticated root and "
+            <> "admits the insertion on that unoccupied key, so it gives no "
+            <> "reason to compare with the chain's"
+        )
+        "R7_stale_fold_refused — a fold against a superseded root is refused; the chain refuses it, the model comparison stays unmet"
     -- Control: the same request folded against the live root, the
     -- hand shape calibrated against the library fold.
     libFold <-
@@ -724,17 +664,20 @@ runCG10 env = do
 
 {- | CG11: Empty fold (R8_empty_fold_refused; expected consumer gap,
 cardano-mpfs-onchain#100). A Modify over no requests, no actions,
-unchanged root — the accepted candidate REFUSES it (state.ak
-validModify `expect consumed > 0`; protected 196 empty_fold_error /
-empty_fold_never_ok). The held observation is the attributed refusal
-with its transaction shape; the control is a nonempty fold on the
-same path that accepts, proving the refusal is specific to the
-empty batch. Row contract is observe-and-report; recorded held
-pending Q-002, never a pass.
+unchanged root, in a registry of its own — the accepted candidate REFUSES
+it (registry/modify.ak `empty-fold`). The refusal is compared with the
+model's @foldBatch@ question over no request, which refuses it for
+@empty-fold@, and the reason the traced replay admits for the state script
+must be that same reason; the comparison joins the row's receipt. The
+control is a nonempty fold on the same path that accepts, proving the
+refusal is specific to the empty batch. The consumer's requirement stays
+held pending Q-002, never a pass.
 -}
 runCG11 :: Env -> IO ()
 runCG11 env = do
-    cage <- ensureRowCage env "cg-main" 30_000 30_000
+    writeIORef (envLiveRecords env) []
+    live <- newLiveState "CG11"
+    cage <- ensureRowCage env "cg11" 30_000 30_000
     let cfg = rcCfg cage
     tid <- cageTid cage
     state <- cageStateUtxo env cage
@@ -764,14 +707,37 @@ runCG11 env = do
     emit
         "row"
         "CG11: submitting the empty fold for its candidate-bound observation"
-    submitExpectRefused env "CG11" HeldQ002 (stateMarkerOf cfg) hand
+    let signedWitnessed = signTx genesisSignKey hand
+        signed = signedTx signedWitnessed
+    result <- submitTxResilient (envSubmit env) signedWitnessed
+    compared <- compareHandBatch env live cage Live.Fold [] signed result
+    case result of
+        Rejected reason ->
+            attributeSubmitRefusal
+                env
+                "CG11"
+                HeldQ002
+                (stateMarkerOf cfg)
+                (T.unpack (TE.decodeUtf8Lenient reason))
+                (txIdHex signed)
+        Submitted txid ->
+            failWith
+                ( "CG11 FINDING: the node ACCEPTED the empty fold the model "
+                    <> "refuses (txid "
+                    <> txInHex txid
+                    <> ") — reported, not relabelled"
+                )
+    addReceiptSteps env "CG11" [compared]
+    require
+        "CG11: the model and the chain do not agree on the empty fold"
+        (agreed compared)
     recordHold
         env
         "CG11"
         "Q-002 (story 2)"
-        ( "Singular's Lean refuses the empty fold (consumed>0 guard; "
-            <> "protected empty_fold_error/empty_fold_never_ok) — the "
-            <> "refusal agrees with Singular's model"
+        ( "Singular's Lean refuses the empty fold for empty-fold "
+            <> "(foldBatch over no request), the reason the traced replay "
+            <> "admits for the state script"
         )
         ( "R8_empty_fold_refused — the empty batch must be refused "
             <> "(consumer-side; upstream cardano-mpfs-onchain#100 is the "
@@ -825,8 +791,10 @@ matching request. The held observation is the attributed refusal.
 The controls: one action FEWER than there are requests is refused
 (the deficit), and an exact 1:1 fold on the same path accepts —
 proving exact pairing is enforced both directions and the refusals
-are specific. Row contract is observe-and-report; recorded held
-pending Q-002, never a pass.
+are specific. Row contract is observe-and-report; recorded unmet
+by ruling (2026-10-02), never a pass.
+The model takes no action list, so neither refusal has a model reason to
+compare: the model comparison is unmet (#345).
 -}
 runCG12 :: Env -> IO ()
 runCG12 env = do
@@ -861,14 +829,14 @@ runCG12 env = do
     emit
         "row"
         "CG12: submitting the surplus fold for its candidate-bound observation"
-    submitExpectRefused env "CG12" HeldQ002 (stateMarkerOf cfg) hand
-    recordHold
+    submitExpectRefused env "CG12" UnmetByRuling (stateMarkerOf cfg) hand
+    recordUnmet
         env
         "CG12"
-        "Q-002 (story 2)"
-        ( "Singular's Lean pairs each request with its action 1:1 in "
-            <> "its FoldItem and refuses the surplus tail — the refusal "
-            <> "agrees with Singular's model"
+        "kept unmet by operator ruling 2026-10-02 (narrowed #287; model follow-up lambdasistemi/singular#345)"
+        ( "Singular's Lean takes no action list (its step and foldBatch "
+            <> "consume requests only), so it gives no reason to compare; the "
+            <> "chain's reason is the traced replay's"
         )
         ( "one action per request, no surplus — the consumer audit's "
             <> "finding (upstream cardano-mpfs-onchain#100 is the "
@@ -877,7 +845,7 @@ runCG12 env = do
     emit
         "row"
         ( "CG12: the chain REFUSED a fold with a surplus action (one "
-            <> "request, two actions) — recorded, held pending Q-002, "
+            <> "request, two actions) — recorded, unmet by ruling (#345), "
             <> "never read as a pass"
         )
     -- Control: two fresh requests, one action — the deficit.
@@ -1156,22 +1124,27 @@ a pass.
 -}
 runCG19 :: Env -> IO ()
 runCG19 env = do
+    writeIORef (envLiveRecords env) []
+    live <- newLiveState "CG19"
     cage <- ensureRowCage env "cg19" 30_000 30_000
     let cfg = rcCfg cage
     tid <- cageTid cage
     (sk2, addr2) <- secondWallet env
+    -- The first owner is not the genesis wallet a fold returns its change
+    -- to, so the outputs crediting each owner are exactly its refunds.
+    (sk3, addr3) <- ownerWallet env 25_000_000
     let Coin tip = defaultTip cfg
     -- #157 A-009: both bookings are edges, each binding the address its
     -- own payer gets the deposit back at, and the bonds stay unequal so
     -- the row still has two different amounts to cross.
-    destA <- edgeDestinationFor env genesisAddr edgeInsertAbsent
+    destA <- edgeDestinationFor env addr3 edgeInsertAbsent
     reqA <-
         bookEdge
             env
             cfg
             tid
-            genesisAddr
-            genesisSignKey
+            addr3
+            sk3
             "cg19-key-a"
             edgeInsertAbsent
             destA
@@ -1251,44 +1224,31 @@ runCG19 env = do
         signedCrossed = signedTx signedCrossedWitnessed
     crossResult <-
         submitTxResilient (envSubmit env) signedCrossedWitnessed
+    let owned =
+            [ (Live.EdgeRequest Live.InsertAbsent "cg19-key-a" addr3, addr3, reqA)
+            , (Live.EdgeRequest Live.InsertAbsent "cg19-key-b" addr2, addr2, reqB)
+            ]
+    crossed <-
+        compareHandBatch
+            env
+            live
+            cage
+            Live.Reject
+            owned
+            signedCrossed
+            crossResult
     case crossResult of
-        Submitted txid -> do
-            (mem, cpu) <- measureUnits env hand
-            let size = txSizeBytes signedCrossed
-            emitMeasure env "CG19-crossed" mem cpu size
-            writeRowReceipt
-                env
-                "CG19"
-                Accepted
-                HeldQ002
-                [txInHex txid]
-                Nothing
-                Nothing
-                (Just mem)
-                (Just cpu)
-                (Just size)
-                "node-submit"
-                Nothing
-            recordHold
-                env
-                "CG19"
-                "Q-002 (story 2)"
-                ( "Singular's Lean's fold action carries no refund routing at "
-                    <> "all (Model.lean, Action.fold) — the model constrains "
-                    <> "nothing here"
-                )
-                "R11 — action-dependent routing (E18 disposition): processed Update value routes to the checkpoint/consumer hook (Update contributes no Rejected-owner obligations); Rejected owes input-tip per owner under a no-underpayment floor (upstream cardano-mpfs-onchain#101 is the partition fix)"
-            emit
-                "row"
-                ( "CG19: the chain ACCEPTED crossed refunds (bonds 5 ada and "
-                    <> "3 ada refunded "
+        Submitted txid ->
+            failWith
+                ( "CG19 FINDING: the chain ACCEPTED crossed refunds (bonds 5 ada "
+                    <> "and 3 ada refunded "
                     <> show c1
                     <> " and "
                     <> show c2
                     <> " lovelace; tx="
                     <> txInHex txid
-                    <> ") — processed Update value routes to the checkpoint/consumer hook, not to request owners (no owner floor applies); "
-                    <> "recorded, held pending Q-002, never read as a pass"
+                    <> ") that the model's reject batch refuses — reported, "
+                    <> "not relabelled"
                 )
         Rejected reason -> do
             attributeSubmitRefusal
@@ -1298,13 +1258,18 @@ runCG19 env = do
                 (stateMarkerOf cfg)
                 (T.unpack (TE.decodeUtf8Lenient reason))
                 (txIdHex signedCrossed)
+            addReceiptSteps env "CG19" [crossed]
+            require
+                "CG19: the model and the chain do not agree on the crossed refunds"
+                (agreed crossed)
             recordHold
                 env
                 "CG19"
                 "Q-002 (story 2)"
-                ( "Singular's Lean's fold action carries no refund routing at "
-                    <> "all (Model.lean, Action.fold) — the model constrains "
-                    <> "nothing here"
+                ( "Singular's Lean refuses the crossed refunds: its reject "
+                    <> "batch owes each owner its deposit back and the first "
+                    <> "is paid short, deposit-returned, the reason the traced "
+                    <> "replay admits for the state script"
                 )
                 "R11 — action-dependent routing (E18 disposition): processed Update value routes to the checkpoint/consumer hook (Update contributes no Rejected-owner obligations); Rejected owes input-tip per owner under a no-underpayment floor (upstream cardano-mpfs-onchain#101 is the partition fix)"
             emit
@@ -1352,7 +1317,7 @@ runCG19 env = do
     -- each other, which says nothing about whether either clears the
     -- floor it is owed. This control arms an underpayment directly — one
     -- owner a thousand lovelace short — beside a funded counterpart.
-    runCG19RejectedFloor env cage tid
+    runCG19RejectedFloor env live cage tid (sk2, addr2) (sk3, addr3)
 
 {- | CG19-rejected-floor control (NOTE-073/074/077/080/181, E18 disposition):
 the Rejected-action refund floor as a separately named
@@ -1368,17 +1333,23 @@ freshness necessarily differs and is recorded as such. Evidence
 travels in control-CG19-rejected-floor.json (not a row receipt).
 Must not imply processed value returns to owners.
 -}
-runCG19RejectedFloor :: Env -> RowCage -> TokenId -> IO ()
-runCG19RejectedFloor env cage tid = do
+runCG19RejectedFloor
+    :: Env
+    -> LiveState
+    -> RowCage
+    -> TokenId
+    -> (SignKeyDSIGN Ed25519DSIGN, Addr)
+    -> (SignKeyDSIGN Ed25519DSIGN, Addr)
+    -> IO ()
+runCG19RejectedFloor env live cage tid (skR2, addrR2) (skR3, addrR3) = do
     let cfg = rcCfg cage
         prov = envProv env
-    (skR2, addrR2) <- secondWallet env
     (reqRa, outRa) <-
         paddedRequest
             env
             cage
-            genesisAddr
-            genesisSignKey
+            addrR3
+            skR3
             "cg19-rej-a"
             "cg19-rej-va"
             5_000_000
@@ -1470,6 +1441,28 @@ runCG19RejectedFloor env cage tid = do
     let signedUnderWitnessed = signTx genesisSignKey underTx
         signedUnder = signedTx signedUnderWitnessed
     underResult <- submitTxResilient (envSubmit env) signedUnderWitnessed
+    underCompared <-
+        compareHandBatch
+            env
+            live
+            cage
+            Live.Reject
+            [
+                ( Live.EdgeRequest Live.InsertAbsent "cg19-rej-a" addrR3
+                , addrR3
+                , (reqRa, outRa)
+                )
+            ,
+                ( Live.EdgeRequest Live.InsertAbsent "cg19-rej-b" addrR2
+                , addrR2
+                , (reqRb, outRb)
+                )
+            ]
+            signedUnder
+            underResult
+    require
+        "CG19-rejected-floor: the model and the chain do not agree on the underpaid reject"
+        (agreed underCompared)
     underReason <- case underResult of
         Rejected reason -> pure (T.unpack (TE.decodeUtf8Lenient reason))
         Submitted txid ->
@@ -1478,6 +1471,8 @@ runCG19RejectedFloor env cage tid = do
                     <> txInHex txid
                     <> ") — reported, not relabelled"
                 )
+    traced <-
+        tracedRefusal env (stateMarkerOf cfg) (txIdHex signedUnder)
     underAttr <-
         attributeRefusalReceipt
             RefusalControl
@@ -1492,6 +1487,7 @@ runCG19RejectedFloor env cage tid = do
             (envDirty env)
             (envNode env)
             (envBlueprint env)
+            traced
     case underAttr of
         Right () -> pure ()
         Left mismatch ->
@@ -1620,9 +1616,11 @@ runCG19RejectedFloor env cage tid = do
 a duplicate-key request, a registration whose delivery is sent to another
 address and one paying it one lovelace short beside their untampered control,
 and a registration carrying one required signer the model does not require.
-Each request runs through the same builder and driver comparison. The receipt
-records all seven steps and their chain outcomes. A two-request batch is outside
-this program and remains a published gap.
+Each request runs through the same builder and driver comparison. Last, two
+registrations are folded in one transaction that mints both tokens at the first
+key, asked of the model's fold batch question; the chain and the model must each
+refuse it, for the same reason. The receipt records the seven steps and the
+batch, with their chain outcomes.
 -}
 runCG21 :: Env -> IO ()
 runCG21 env = do
@@ -1657,8 +1655,8 @@ runCG21 env = do
     -- emitted only after all seven outcomes and comparisons have completed.
     records <- readIORef (envLiveRecords env)
     require
-        "CG21 did not compare its seven requests"
-        (length records == 7)
+        "CG21 did not compare its seven requests and its batch"
+        (length records == 8)
     require
         "registration chapter has a disagreement or unsupported step"
         ( all
@@ -1814,6 +1812,40 @@ runCG23 env = do
             records
         )
     writeStoryReceipt env "CG23" records
+
+{- | CG05: an insertion on a key the registry already holds, in a registry of
+its own. Two accepted requests make the key active — the state the shared
+session key is in when this row follows CG02 — and are compared with the
+model; the same insertion on that key is then submitted, and the ledger and
+the model must both refuse it. The receipt records the three steps.
+-}
+runCG05 :: Env -> IO ()
+runCG05 env = do
+    either
+        failWith
+        pure
+        ( Live.validateLive
+            (OccupiedStory.story (Live.Context "occupied insert" "holder wallet"))
+        )
+    writeIORef (envLiveRecords env) []
+    writeIORef (envLiveMeasurements env) []
+    registry <- ensureRowCage env "occupied-insert" 30_000 30_000
+    _ <-
+        runLive env (OccupiedStory.story (Live.Context registry genesisAddr))
+    records <- readIORef (envLiveRecords env)
+    require
+        "CG05 did not compare its three requests"
+        (length records == 3)
+    require
+        "occupied-key insertion has a disagreement or unsupported step"
+        ( all
+            ( \case
+                Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
+                _ -> False
+            )
+            records
+        )
+    writeStoryReceipt env "CG05" records
 
 {- | CG24 (#320): a folder rejects a pending request before its owner's
 retraction deadline. Two insertion requests are booked together in a registry
@@ -2092,3 +2124,18 @@ ensurePresentV1 env = do
                 (claimValue env cgV1)
                 forgedValue
             writeIORef (envKeys env) (True, cgV1)
+
+-- | Whether a compared record found the model and the chain to agree.
+agreed :: Value -> Bool
+agreed = \case
+    Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
+    _ -> False
+
+-- | A compared record's outcome on one side, @model@ or @chain@.
+outcomeOf :: KM.Key -> Value -> Maybe Text
+outcomeOf side = \case
+    Object fields
+        | Just (Object answer) <- KM.lookup side fields
+        , Just (String outcome) <- KM.lookup "outcome" answer ->
+            Just outcome
+    _ -> Nothing

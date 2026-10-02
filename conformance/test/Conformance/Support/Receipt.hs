@@ -23,7 +23,8 @@ import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString.Lazy qualified as BSL
 import Data.Either (isLeft, isRight)
 import Data.Foldable (forM_)
-import Data.List (isInfixOf)
+import Data.List (isInfixOf, isPrefixOf, tails)
+import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import System.Environment (lookupEnv)
 import System.FilePath ((</>))
@@ -37,18 +38,22 @@ import Test.Hspec
     , shouldSatisfy
     )
 
-import Conformance.Book (renderBook)
+import Conformance.Book (bookReceipts, bookStories, renderBook)
 import Conformance.Fixture.NodeRejection (scriptRejection)
 import Conformance.NodeRejection (boundedNodeReason)
 import Conformance.Receipt
     ( Outcome (..)
     , Receipt (..)
     , RefusalInfo (..)
+    , ReplayCorrespondence (..)
+    , ReplayEvidence (..)
     , Verdict (..)
     , checkReceiptSize
     , derivationMatches
     , loadReceipts
     , maxReceiptBytes
+    , stepReplay
+    , storyCorrespondence
     , writeReceiptFile
     )
 import Conformance.Rows
@@ -67,6 +72,8 @@ spec :: Spec
 spec = describe "Appendix: deciding whether a run report counts as evidence" $ do
     stepRoundTrip
     liveStepChecks
+    replayChecks
+    batchChecks
     it "Preserves every result category when saving and reading it back" $
         forM_ [minBound :: Verdict .. maxBound] $ \v ->
             case eitherDecode (encode v) :: Either String Verdict of
@@ -218,6 +225,21 @@ spec = describe "Appendix: deciding whether a run report counts as evidence" $ d
             Left err ->
                 err `shouldSatisfy` ("CG05" `isInfixOf`)
             Right () -> fail "a 20KB receipt passed the bound"
+
+    it "Accepts a report of exactly the bound and rejects one byte more" $ do
+        let padded n =
+                oversizedReceipt
+                    { receiptRefusal =
+                        fmap
+                            (\info -> info{refusalReason = T.pack (replicate n 'x')})
+                            (receiptRefusal oversizedReceipt)
+                    }
+            base = fromIntegral (BSL.length (encode (padded 0)))
+            exact = padded (maxReceiptBytes - base)
+        BSL.length (encode exact) `shouldBe` fromIntegral maxReceiptBytes
+        checkReceiptSize exact `shouldBe` Right ()
+        checkReceiptSize (padded (maxReceiptBytes - base + 1))
+            `shouldSatisfy` isLeft
 
     it "bounds an over-long live node rejection before saving the receipt" $
         withSystemTempDirectory "long-live-refusal" $ \dir -> do
@@ -481,6 +503,7 @@ smallReceipt =
         , receiptPartial = Nothing
         , receiptDerivation = Nothing
         , receiptSteps = Nothing
+        , receiptReplayCorrespondence = Nothing
         }
 
 oversizedReceipt :: Receipt
@@ -498,6 +521,7 @@ oversizedReceipt =
                     , refusalPhase = "phase-2"
                     , refusalHashes = ["abc123"]
                     , refusalBranch = Nothing
+                    , refusalReplay = Nothing
                     , refusalLimit = Just "test limit"
                     }
                 )
@@ -556,6 +580,9 @@ liveStepChecks = describe "Checking compared requests in live receipts" $ do
         "Rejects registration evidence submitted under a different requirement"
         $ loadLive acceptedLive{receiptRow = "CG02"}
             >>= (`shouldSatisfy` isLeft)
+    it
+        "accepts the occupied-key insertion's compared requests under its own requirement"
+        $ loadLive acceptedLive{receiptRow = "CG05"} `shouldReturn` Right 1
     it "rejects a live chapter with no step records" $
         loadLive acceptedLive{receiptSteps = Nothing}
             >>= (`shouldSatisfy` isLeft)
@@ -919,6 +946,7 @@ assertRecordedCause raw causes = withSystemTempDirectory "node-cause-receipt" $ 
     let receipt =
             smallReceipt
                 { receiptRow = "CG21"
+                , receiptReplayCorrespondence = Nothing
                 , receiptSteps =
                     Just
                         [ object
@@ -946,6 +974,7 @@ overlongLiveRefusal :: Receipt
 overlongLiveRefusal =
     smallReceipt
         { receiptRow = "CG21"
+        , receiptReplayCorrespondence = Nothing
         , receiptSteps =
             Just
                 [ object
@@ -1003,6 +1032,7 @@ refusedLiveWithoutDetails =
                     , refusalPhase = "phase-2"
                     , refusalHashes = ["abcdef"]
                     , refusalBranch = Nothing
+                    , refusalReplay = Nothing
                     , refusalLimit = Just "live request was refused"
                     }
         , receiptRejected = Just "abc123"
@@ -1089,6 +1119,7 @@ acceptedLive :: Receipt
 acceptedLive =
     smallReceipt
         { receiptRow = "CG21"
+        , receiptReplayCorrespondence = Nothing
         , receiptSteps =
             Just
                 [ object
@@ -1232,6 +1263,7 @@ admissionBookFixture :: Receipt
 admissionBookFixture =
     acceptedLive
         { receiptRow = "CG23"
+        , receiptReplayCorrespondence = Nothing
         , receiptSteps =
             Just $
                 concatMap
@@ -1276,6 +1308,7 @@ exitControlsLive =
     acceptedLive
         { receiptRow = "CG23"
         , receiptTransactions = ["abc123", "def456"]
+        , receiptReplayCorrespondence = Nothing
         , receiptSteps =
             Just $
                 concatMap
@@ -1309,3 +1342,512 @@ setRefusalField name value chain = case chain of
 -- | A receipt the loader refused, naming this reason.
 refusedFor :: String -> Either String Int -> Bool
 refusedFor reason = either (reason `isInfixOf`) (const False)
+
+-- A refused step's replay is a claim about the chain-side reason: the loader
+-- refuses one that is incomplete or that contradicts the step's trace, and the
+-- book reads what it carries.
+replayChecks :: Spec
+replayChecks = describe "Checking the traced replay a refused request carries" $ do
+    it
+        "accepts a refused step whose replay admitted the reason its trace names"
+        $ loadLive (tracedPaymentLive [admittedEntry] (Just "destination"))
+            `shouldReturn` Right 1
+    it
+        "accepts a refused step whose replay names the cause it admits no reason"
+        $ loadLive (tracedPaymentLive [causeEntry] Nothing)
+            `shouldReturn` Right 1
+    it "accepts a refused step written before the replay object" $
+        loadLive (paymentTamperLive "other-address" "destination")
+            `shouldReturn` Right 1
+    it "rejects a replay reason without its traced hash" $
+        loadLive
+            ( tracedPaymentLive
+                [admittedEntry{replayTracedHash = Nothing}]
+                (Just "destination")
+            )
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a replay naming both a reason and a cause" $
+        loadLive
+            ( tracedPaymentLive
+                [admittedEntry{replayCause = Just "no-user-trace"}]
+                (Just "destination")
+            )
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a replay naming neither a reason nor a cause" $
+        loadLive
+            (tracedPaymentLive [causeEntry{replayCause = Nothing}] Nothing)
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a replay cause that names no unobserved cause" $
+        loadLive
+            (tracedPaymentLive [causeEntry{replayCause = Just "guessed"}] Nothing)
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a replay reason without the capture it was replayed from" $
+        loadLive
+            ( tracedPaymentLive
+                [admittedEntry{replayCaptureId = Nothing}]
+                (Just "destination")
+            )
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a trace that disagrees with the replay's reason" $
+        loadLive (tracedPaymentLive [admittedEntry] (Just "deposit-returned"))
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a trace with no replay that admitted it" $
+        loadLive
+            ( changeStep
+                ( \step ->
+                    setField
+                        "chain"
+                        (setRefusalField "trace" ("destination" :: String) (chainOf step))
+                        step
+                )
+                (paymentTamperLive "other-address" "destination")
+            )
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects replay reasons without the traced build they rely on" $
+        loadLive
+            (tracedPaymentLive [admittedEntry] (Just "destination"))
+                { receiptReplayCorrespondence = Nothing
+                }
+            >>= (`shouldSatisfy` isLeft)
+    it
+        "puts the replay on a refused step's chain refusal, and nothing when there is none"
+        $ do
+            let refusal = object ["trace" .= Null]
+            field "replay" (stepReplay [admittedEntry] refusal)
+                `shouldBe` Just (toJSON [admittedEntry])
+            stepReplay [] refusal `shouldBe` refusal
+    it
+        "states the traced build on a story receipt exactly when a step carries a replay"
+        $ do
+            let traced = tracedPaymentLive [admittedEntry] (Just "destination")
+                steps = concat (receiptSteps traced)
+            storyCorrespondence (Just fixtureCorrespondence) steps
+                `shouldBe` Just fixtureCorrespondence
+            storyCorrespondence
+                (Just fixtureCorrespondence)
+                ( concat
+                    (receiptSteps (paymentTamperLive "other-address" "destination"))
+                )
+                `shouldBe` Nothing
+            storyCorrespondence Nothing steps `shouldBe` Nothing
+    it
+        "publishes the reason the traced replay admitted beside the model's, with both hashes"
+        $ do
+            let book =
+                    renderBook
+                        []
+                        [ (tracedPaymentLive [admittedEntry] (Just "destination"))
+                            { receiptRow = "CG21"
+                            }
+                        ]
+            book
+                `shouldSatisfy` isInfixOf
+                    "The traced replay of the deployed script `abcdef` (traced build `traced-abcdef`) failed with `destination`."
+    it
+        "renders an untampered refused request with the reason its traced replay admitted"
+        $ renderBook [] [untamperedRefusal "CG22"]
+            `shouldSatisfy` isInfixOf
+                "was refused on chain (transaction `abc123`); the model refused it for `not-booked`. The traced replay of the deployed script `abcdef` (traced build `traced-abcdef`) failed with `not-booked`."
+    it "names the cause when the traced replay admitted no reason" $
+        renderBook
+            []
+            [(tracedPaymentLive [causeEntry] Nothing){receiptRow = "CG21"}]
+            `shouldSatisfy` isInfixOf
+                "The traced replay of the deployed script `abcdef` admits no reason: `no-user-trace`."
+    it "says so when a refused request carries no traced replay" $
+        renderBook
+            []
+            [ (paymentTamperLive "other-address" "destination"){receiptRow = "CG21"}
+            ]
+            `shouldSatisfy` isInfixOf
+                "the model refused it for `destination`. No traced replay of this refusal is recorded."
+    it
+        "keeps the replay's capture out of the chapters and in the appendix"
+        $ do
+            let book =
+                    renderBook
+                        []
+                        [ (tracedPaymentLive [admittedEntry] (Just "destination"))
+                            { receiptRow = "CG21"
+                            }
+                        ]
+                (chapters, appendix) = breakOn "## Appendix" book
+            chapters `shouldSatisfy` (not . isInfixOf "capture-1")
+            appendix
+                `shouldSatisfy` isInfixOf
+                    "Transaction `abc123`: capture `capture-1` of the deployed script `abcdef`."
+    it
+        "renders each refused request of the window chapter with its traced reason"
+        $ occurrences
+            "failed with `not-phase2`."
+            (renderBook [] [replayOnRefused "not-phase2" windowReceipt])
+            `shouldBe` 2
+    it
+        "requires a receipt for every story the book runs, the occupied-key story among them"
+        $ do
+            let receiptsFor rows = [acceptedLive{receiptRow = T.pack row} | row <- rows]
+                others = ["CG21", "CG22", "CG23", "CG24", "CG07", "sequence"]
+            bookReceipts (receiptsFor others)
+                `shouldSatisfy` either ("CG05" `isInfixOf`) (const False)
+            fmap (map receiptRow) (bookReceipts (receiptsFor ("CG05" : others)))
+                `shouldBe` Right (map T.pack bookStories)
+            bookReceipts
+                ( receiptsFor others
+                    <> [acceptedLive{receiptRow = "CG05", receiptVerdict = HeldQ002}]
+                )
+                `shouldSatisfy` either ("CG05" `isInfixOf`) (const False)
+    it
+        "renders the occupied-key story and the refusal its receipt records"
+        $ do
+            let book = renderBook [] [untamperedOccupied]
+            book
+                `shouldSatisfy` isInfixOf "## Insert on a key the registry already holds"
+            occurrences
+                "Submit **insertAbsent** for **occupied** in **occupied insert**"
+                book
+                `shouldBe` 2
+            book
+                `shouldSatisfy` isInfixOf "Occupied-key insertion compared 1 requests"
+            book
+                `shouldSatisfy` isInfixOf
+                    "the model refused it for `key-exists`. The traced replay of the deployed script `abcdef` (traced build `traced-abcdef`) failed with `key-exists`."
+    it "counts the refused requests by what their traced replay recorded" $
+        renderBook
+            []
+            [ (tracedPaymentLive [admittedEntry] (Just "destination"))
+                { receiptRow = "CG21"
+                }
+            , (tracedPaymentLive [causeEntry] Nothing){receiptRow = "CG22"}
+            , (paymentTamperLive "short-by-one" "deposit-returned")
+                { receiptRow = "CG23"
+                }
+            ]
+            `shouldSatisfy` isInfixOf
+                "Of the 3 refused requests in this run's chapters, 1 carries a reason its traced replay admitted, 1 names the cause its replay admits none, and 1 records no traced replay."
+    it "counts in the number its counts name" $ do
+        let admitted =
+                (tracedPaymentLive [admittedEntry] (Just "destination"))
+                    { receiptRow = "CG21"
+                    }
+        renderBook [] [admitted, admitted{receiptRow = "CG22"}]
+            `shouldSatisfy` isInfixOf
+                "Of the 2 refused requests in this run's chapters, 2 carry a reason their traced replay admitted, 0 name the cause their replay admits none, and 0 record no traced replay."
+        renderBook [] [admitted]
+            `shouldSatisfy` isInfixOf
+                "Of the 1 refused request in this run's chapters, 1 carries a reason its traced replay admitted, 0 name the cause their replay admits none, and 0 record no traced replay."
+  where
+    chainOf step = fromMaybe Null (field "chain" step)
+
+-- | The replay of the payment tamper's one failing purpose, admitting its reason.
+admittedEntry :: ReplayEvidence
+admittedEntry =
+    ReplayEvidence
+        { replayDeployedHash = "abcdef"
+        , replayTracedHash = Just "traced-abcdef"
+        , replayReason = Just "destination"
+        , replayCause = Nothing
+        , replayCaptureId = Just "capture-1"
+        }
+
+-- | The same purpose, with a replay that admitted no reason.
+causeEntry :: ReplayEvidence
+causeEntry =
+    admittedEntry
+        { replayReason = Nothing
+        , replayCause = Just "no-user-trace"
+        }
+
+fixtureCorrespondence :: ReplayCorrespondence
+fixtureCorrespondence =
+    ReplayCorrespondence
+        { correspondenceSource = "/nix/store/source"
+        , correspondenceCompiler = "v1.1.21"
+        , correspondenceFlags =
+            "--trace-filter user-defined --trace-level verbose"
+        , correspondenceDigest = "digest"
+        }
+
+{- | The payment tamper refused on chain for @destination@, its refusal carrying
+the given replay and trace, in a receipt stating the traced build.
+-}
+tracedPaymentLive :: [ReplayEvidence] -> Maybe String -> Receipt
+tracedPaymentLive replay trace =
+    ( changeStep
+        ( \step -> case field "chain" step of
+            Just chain ->
+                setField
+                    "chain"
+                    ( setRefusalField "trace" trace $
+                        setRefusalField "replay" replay chain
+                    )
+                    step
+            Nothing -> step
+        )
+        (paymentTamperLive "other-address" "destination")
+    )
+        { receiptReplayCorrespondence = Just fixtureCorrespondence
+        }
+
+-- | An untampered refused request whose traced replay admitted @not-booked@.
+untamperedRefusal :: T.Text -> Receipt
+untamperedRefusal row =
+    ( changeStep
+        ( setField "tamper" Null
+            . setField
+                "model"
+                ( object
+                    [ "outcome" .= ("refused" :: String)
+                    , "reason" .= ("not-booked" :: String)
+                    ]
+                )
+        )
+        ( tracedPaymentLive
+            [admittedEntry{replayReason = Just "not-booked"}]
+            (Just "not-booked")
+        )
+    )
+        { receiptRow = row
+        }
+
+-- | Every refused step of a receipt carrying a traced replay admitting the reason.
+replayOnRefused :: T.Text -> Receipt -> Receipt
+replayOnRefused reason =
+    changeStep
+        ( \step -> case field "chain" step of
+            Just chain
+                | field "outcome" chain == Just (String "refused") ->
+                    setField
+                        "chain"
+                        ( setRefusalField "trace" reason $
+                            setRefusalField
+                                "replay"
+                                [admittedEntry{replayReason = Just reason}]
+                                chain
+                        )
+                        step
+            _ -> step
+        )
+
+-- | The text before the first occurrence of a marker, and the rest.
+breakOn :: String -> String -> (String, String)
+breakOn marker = go ""
+  where
+    go seen rest = case rest of
+        c : more
+            | not (marker `isPrefixOf` rest) -> go (c : seen) more
+        _ -> (reverse seen, rest)
+
+occurrences :: String -> String -> Int
+occurrences needle = length . filter (needle `isPrefixOf`) . tails
+
+-- | The occupied-key story's refused insertion, whose traced replay admitted @key-exists@.
+untamperedOccupied :: Receipt
+untamperedOccupied =
+    ( changeStep
+        ( setField "tamper" Null
+            . setField
+                "model"
+                ( object
+                    [ "outcome" .= ("refused" :: String)
+                    , "reason" .= ("key-exists" :: String)
+                    ]
+                )
+        )
+        ( tracedPaymentLive
+            [admittedEntry{replayReason = Just "key-exists"}]
+            (Just "key-exists")
+        )
+    )
+        { receiptRow = "CG05"
+        }
+
+-- | A fold batch, tampered, refused by both sides for @net-mint-mismatch@.
+refusedBatchRecord :: Value
+refusedBatchRecord =
+    object
+        [ "registry" .= (1 :: Int)
+        , "batch" .= ("foldBatch" :: String)
+        , "tamper" .= ("mint-on-first-key" :: String)
+        , "requests" .= [object [], object []]
+        , "model"
+            .= object
+                [ "outcome" .= ("refused" :: String)
+                , "reason" .= ("net-mint-mismatch" :: String)
+                ]
+        , "chain"
+            .= object
+                [ "outcome" .= ("refused" :: String)
+                , "txid" .= ("batch123" :: String)
+                , "refusal"
+                    .= object
+                        [ "hashes" .= (["abcdef"] :: [String])
+                        , "trace" .= ("net-mint-mismatch" :: String)
+                        , "replay"
+                            .= [admittedEntry{replayReason = Just "net-mint-mismatch"}]
+                        ]
+                ]
+        , "comparison" .= ("agrees" :: String)
+        , "compared" .= (["outcome"] :: [String])
+        ]
+
+-- | A receipt with one more step: the given batch record.
+withBatch :: Value -> Receipt -> Receipt
+withBatch record receipt =
+    receipt{receiptSteps = fmap (<> [record]) (receiptSteps receipt)}
+
+-- | The same row's attribution receipt for CG11, carrying the given steps.
+emptyFoldWith :: [Value] -> Receipt
+emptyFoldWith steps =
+    (attributionOf refusedLiveWithoutDetails)
+        { receiptRow = "CG11"
+        , receiptVerdict = HeldQ002
+        , receiptSteps = Just steps
+        , receiptReplayCorrespondence = Just fixtureCorrespondence
+        }
+  where
+    attributionOf r = r{receiptSteps = Nothing}
+
+-- | Load one receipt under the file name its row gives it.
+loadRow :: Receipt -> IO (Either String Int)
+loadRow receipt = withSystemTempDirectory "conformance-row-receipt" $ \dir -> do
+    BSL.writeFile
+        (dir </> ("receipt-" <> T.unpack (receiptRow receipt) <> ".json"))
+        (encode receipt)
+    fmap length <$> loadReceipts dir
+
+batchChecks :: Spec
+batchChecks = describe "Checking a batch the model's batch questions compared" $ do
+    let story = tracedPaymentLive [admittedEntry] (Just "destination")
+    it
+        "accepts a story receipt with a refused, tampered batch both sides refuse"
+        $ loadLive (withBatch refusedBatchRecord story) `shouldReturn` Right 1
+    it "rejects a batch tamper no story names" $
+        loadLive
+            ( withBatch
+                (setField "tamper" ("mint-twice" :: String) refusedBatchRecord)
+                story
+            )
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a tampered batch agreeing by acceptance" $
+        loadLive
+            ( withBatch
+                ( setField
+                    "chain"
+                    ( object
+                        [ "outcome" .= ("accepted" :: String)
+                        , "txid" .= ("batch123" :: String)
+                        ]
+                    )
+                    ( setField
+                        "model"
+                        (object ["outcome" .= ("accepted" :: String), "reason" .= Null])
+                        refusedBatchRecord
+                    )
+                )
+                story
+            )
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a batch agreement that changes the outcome" $
+        loadLive
+            ( withBatch
+                ( setField
+                    "model"
+                    (object ["outcome" .= ("accepted" :: String), "reason" .= Null])
+                    refusedBatchRecord
+                )
+                story
+            )
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a refused batch naming no refusing script" $
+        loadLive
+            ( withBatch
+                ( setField
+                    "chain"
+                    ( setRefusalField
+                        "hashes"
+                        ([] :: [String])
+                        (batchChain refusedBatchRecord)
+                    )
+                    refusedBatchRecord
+                )
+                story
+            )
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a batch whose trace its replay did not admit" $
+        loadLive
+            ( withBatch
+                ( setField
+                    "chain"
+                    ( setRefusalField
+                        "trace"
+                        ("destination" :: String)
+                        (batchChain refusedBatchRecord)
+                    )
+                    refusedBatchRecord
+                )
+                story
+            )
+            >>= (`shouldSatisfy` isLeft)
+    it
+        "accepts the empty fold's attribution receipt with its compared batch"
+        $ loadRow (emptyFoldWith [refusedBatchRecord]) `shouldReturn` Right 1
+    it
+        "rejects an attribution receipt carrying a step that is not a batch"
+        $ loadRow (emptyFoldWith (concat (receiptSteps story)))
+            >>= (`shouldSatisfy` isLeft)
+    it
+        "accepts CG09's unmet receipt carrying its recorded refund-position divergence"
+        $ loadRow
+            ( (emptyFoldWith [divergenceRecord])
+                { receiptRow = "CG09"
+                , receiptVerdict = UnmetByRuling
+                }
+            )
+            `shouldReturn` Right 1
+    it "rejects a batch step on a row no batch question compares" $
+        loadRow ((emptyFoldWith [refusedBatchRecord]){receiptRow = "CG10"})
+            >>= (`shouldSatisfy` isLeft)
+    it
+        "renders a refused batch with the model's reason and its traced replay"
+        $ renderBook
+            []
+            [(withBatch refusedBatchRecord story){receiptRow = "CG21"}]
+            `shouldSatisfy` isInfixOf
+                "The fold of 2 requests in one transaction, tampered mint-on-first-key, was refused on chain (transaction `batch123`); the model's `foldBatch` refused it for `net-mint-mismatch`. The traced replay of the deployed script `abcdef` (traced build `traced-abcdef`) failed with `net-mint-mismatch`."
+    it "counts a batch apart from the requests" $
+        renderBook
+            []
+            [(withBatch refusedBatchRecord story){receiptRow = "CG21"}]
+            `shouldSatisfy` isInfixOf
+                "Batches submitted in one transaction: 1, 0 accepted and 1 refused on chain."
+
+-- | A record's chain object.
+batchChain :: Value -> Value
+batchChain record = fromMaybe Null (field "chain" record)
+
+{- | A reject batch the chain refused and the model accepted: the recorded
+refund-position divergence, its replay admitting @deposit-returned@ and no
+trace claimed.
+-}
+divergenceRecord :: Value
+divergenceRecord =
+    setField
+        "comparison"
+        ("disagrees" :: String)
+        ( setField
+            "tamper"
+            Null
+            ( setField
+                "model"
+                (object ["outcome" .= ("accepted" :: String), "reason" .= Null])
+                ( setField
+                    "chain"
+                    ( setRefusalField
+                        "replay"
+                        [admittedEntry{replayReason = Just "deposit-returned"}]
+                        (setRefusalField "trace" Null (batchChain refusedBatchRecord))
+                    )
+                    (setField "batch" ("rejectBatch" :: String) refusedBatchRecord)
+                )
+            )
+        )

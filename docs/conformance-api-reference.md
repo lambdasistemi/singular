@@ -26,13 +26,14 @@ themselves at the revision you are viewing.
 
 The module extent is the public library of the Conformance Cabal file —
 every exposed module and the one package-internal owner. That complete
-extent is 26 modules. The 25 exposed modules are what a caller imports:
+extent is 30 modules. The 29 exposed modules are what a caller imports:
 the story programs and their binding and identity, the ordinary CLI's
 refusal controls and their receipt-computed verdicts, the model transport
 and the Lean oracle, the registration and perturbation comparisons, the
 receipt record and its validation, the refusal attribution, the row
-inventory, the purpose-unit arithmetic, the node-refusal rendering and
-the payment observation. The one package-internal module,
+inventory, the purpose-unit arithmetic, the node-refusal rendering, the payment
+observation, the traced replay's classification of a live refusal and the
+extent of a run's refusals against the model. The one package-internal module,
 `Conformance.Evidence.Asset`, owns the asset-movement shape of edge
 evidence — one movement named by its policy, asset name and quantity,
 with the JSON encoding that carries those three fields. It is documented
@@ -48,12 +49,14 @@ the site check fails until it and this list agree.
 - <a href="../conformance/lib/Conformance/Compare/Registration.hs" data-api="module">Conformance.Compare.Registration</a> — <a href="../conformance/lib/Conformance/Compare/Registration.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/EarlyReject.hs" data-api="module">Conformance.Edge.EarlyReject</a> — <a href="../conformance/lib/Conformance/Edge/EarlyReject.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Exit.hs" data-api="module">Conformance.Edge.Exit</a> — <a href="../conformance/lib/Conformance/Edge/Exit.hs" data-api="source">source</a>
+- <a href="../conformance/lib/Conformance/Edge/Occupied.hs" data-api="module">Conformance.Edge.Occupied</a> — <a href="../conformance/lib/Conformance/Edge/Occupied.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Register.hs" data-api="module">Conformance.Edge.Register</a> — <a href="../conformance/lib/Conformance/Edge/Register.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Retire.hs" data-api="module">Conformance.Edge.Retire</a> — <a href="../conformance/lib/Conformance/Edge/Retire.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/RetractionWindow.hs" data-api="module">Conformance.Edge.RetractionWindow</a> — <a href="../conformance/lib/Conformance/Edge/RetractionWindow.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Sequence.hs" data-api="module">Conformance.Edge.Sequence</a> — <a href="../conformance/lib/Conformance/Edge/Sequence.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Evidence/Asset.hs" data-api="module">Conformance.Evidence.Asset</a> — <a href="../conformance/lib/Conformance/Evidence/Asset.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/EvidencePage.hs" data-api="module">Conformance.EvidencePage</a> — <a href="../conformance/lib/Conformance/EvidencePage.hs" data-api="source">source</a>
+- <a href="../conformance/lib/Conformance/Extent.hs" data-api="module">Conformance.Extent</a> — <a href="../conformance/lib/Conformance/Extent.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Fold/KeyedMint.hs" data-api="module">Conformance.Fold.KeyedMint</a> — <a href="../conformance/lib/Conformance/Fold/KeyedMint.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Lean/Oracle.hs" data-api="module">Conformance.Lean.Oracle</a> — <a href="../conformance/lib/Conformance/Lean/Oracle.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Lean/Registration.hs" data-api="module">Conformance.Lean.Registration</a> — <a href="../conformance/lib/Conformance/Lean/Registration.hs" data-api="source">source</a>
@@ -63,6 +66,7 @@ the site check fails until it and this list agree.
 - <a href="../conformance/lib/Conformance/PurposeUnits.hs" data-api="module">Conformance.PurposeUnits</a> — <a href="../conformance/lib/Conformance/PurposeUnits.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Receipt.hs" data-api="module">Conformance.Receipt</a> — <a href="../conformance/lib/Conformance/Receipt.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Refusal.hs" data-api="module">Conformance.Refusal</a> — <a href="../conformance/lib/Conformance/Refusal.hs" data-api="source">source</a>
+- <a href="../conformance/lib/Conformance/Replay.hs" data-api="module">Conformance.Replay</a> — <a href="../conformance/lib/Conformance/Replay.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Rows.hs" data-api="module">Conformance.Rows</a> — <a href="../conformance/lib/Conformance/Rows.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Story/Binding.hs" data-api="module">Conformance.Story.Binding</a> — <a href="../conformance/lib/Conformance/Story/Binding.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Story/Identity.hs" data-api="module">Conformance.Story.Identity</a> — <a href="../conformance/lib/Conformance/Story/Identity.hs" data-api="source">source</a>
