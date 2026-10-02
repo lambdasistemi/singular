@@ -41,6 +41,7 @@ module Singular.CLI.Fold
     , Delivery (..)
     , foldPending
     , foldedFields
+    , slotAt
 
       -- * The processing deadline
     , Deadline (..)

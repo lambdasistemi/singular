@@ -32,6 +32,7 @@ import Singular.CLI.Command
     , EntryArgs (..)
     , FoldArgs (..)
     , InspectArgs (..)
+    , RejectArgs (..)
     , usage
     )
 import Singular.CLI.Create (runCreate)
@@ -44,6 +45,7 @@ import Singular.CLI.Receipt
     , exitCodeOf
     , outcomeName
     )
+import Singular.CLI.Reject (runReject)
 import Singular.CLI.Session (CommandFailure (..))
 
 -- | Run one command; the exit status names its outcome class.
@@ -55,6 +57,7 @@ runCommand = \case
     Update a -> finish "update" (entryReceipt a) (runUpdate a)
     Terminate a -> finish "terminate" (entryReceipt a) (runTerminate a)
     Fold a -> finish "fold" (foldReceipt a) (runFold a)
+    Reject a -> finish "reject" (rejectReceipt a) (runReject a)
     Inspect a -> finish "inspect" (inspectReceipt a) (runInspect a)
 
 {- | Print the receipt, write it where asked, and exit with the class of
