@@ -179,8 +179,8 @@ for path in "${!ownTest[@]}"; do
   subject=${ownTest[$path]}
   module=""
   case "$subject" in offchain/node-internal/*)
-    [ -f "$root/$subject" ] &&
-      module=$(sed -nE 's/^module[[:space:]]+([A-Z][A-Za-z0-9_.]*)([[:space:]]|\(|$).*/\1/p' "$root/$subject" | head -1)
+    [ -f "$root/$subject" ] \
+      && module=$(sed -nE 's/^module[[:space:]]+([A-Z][A-Za-z0-9_.]*)([[:space:]]|\(|$).*/\1/p' "$root/$subject" | head -1)
     ;;
   esac
   if [ -z "$module" ] || ! grep -qE "^($modules)\$" <<<"$module"; then
@@ -190,8 +190,8 @@ for path in "${!ownTest[@]}"; do
   fi
   linked=""
   for id in "${identifiers[@]}"; do
-    if grep -qE "^(data |newtype |type )?$id\\b" "$root/$subject" &&
-      grep -qwE "$id" "$root/$path"; then
+    if grep -qE "^(data |newtype |type )?$id\\b" "$root/$subject" \
+      && grep -qwE "$id" "$root/$path"; then
       linked=1
       break
     fi

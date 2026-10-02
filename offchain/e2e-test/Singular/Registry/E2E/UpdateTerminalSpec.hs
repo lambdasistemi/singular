@@ -68,7 +68,6 @@ import Data.ByteString.Short qualified as SBS
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Lens.Micro ((^.))
-import Singular.Registry.Node (Capabilities)
 
 import Singular.Registry.Blueprint
     ( Blueprint
@@ -79,7 +78,7 @@ import Singular.Registry.Blueprint
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Driver qualified as Driver
 import Singular.Registry.Ledger (ConwayEra, Root (..), TokenId, TxIn)
-import Singular.Registry.Node (tryOutcome)
+import Singular.Registry.Node (Capabilities, tryOutcome)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.TxBuilder.Edges qualified as Edges
