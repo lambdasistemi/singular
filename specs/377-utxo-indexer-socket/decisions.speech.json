@@ -1,0 +1,30 @@
+{
+  "recorded-operator-rulings": [
+    {
+      "text": "The recorded rulings replace the old backend, make the socket default, accept different indexer and node moments for now, keep specs in the first push and permit public reads only. The decision table explains why aliases, pinning, local-only plans and public writes are excluded.",
+      "pause": 450
+    }
+  ],
+  "proposal-for-snapshot-scope-across-a-command": [
+    {
+      "text": "The sequence diagram shows a booking snapshot, booking confirmation, request readback and a later fold snapshot. A snapshot frozen before booking cannot contain the request it creates. The epic owner permits per-acquired-view atomicity as the intake scope, with one composed request per view and later views advancing after confirmation. The parent and child use different wording; the operator ruling remains pending above the epic. Implementation stays parked until that ruling is forwarded. No command-wide alternative is designed here.",
+      "pause": 450
+    }
+  ],
+  "proposal-for-the-node-address-read-exception": [
+    {
+      "text": "Development-network funding first spends genesis through the node and creates ordinary wallet outputs by transaction. A block-replay index cannot see the original genesis output. The epic owner accepts retaining node bootstrap reads and an explicit create-preview diagnostic for intake, with no silent fallback. The epic owner will check the justification at intake acceptance. No upstream genesis mechanism is requested.",
+      "pause": 450
+    }
+  ],
+  "socket-protocol-and-pending-choices": [
+    {
+      "text": "The operator has settled one composed request per view using the existing readView mechanism. No held session or lazy address call is proposed. The socket wire and release revision, default socket-path resolution, distinguishable source points and confirmed-request readiness still need their bound contract. Intake launches no workers.",
+      "pause": 450
+    }
+  ],
+  "_source": {
+    "file": "decisions.md",
+    "sha256": "6efe6a12e6bc860f81a922a520c4dcde8fc7ca447852c2129f0c5a4f81d58330"
+  }
+}
