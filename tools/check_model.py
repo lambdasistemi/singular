@@ -801,6 +801,71 @@ def model_unpaid_reasons(root):
     return reasons
 
 
+OBLIGATION = re.compile(
+    r"recipient := \.(\w+) request\.(\w+), atLeast := ([^}]+?) \}"
+)
+
+
+def model_reject_settlement(root):
+    """How a batch of rejects is settled, read off the model: the recipient and
+    floor `Singular.obligations` gives a reject, the role `Singular.paysRecipient`
+    reads for that recipient, and the reason `Singular.unpaidReason` gives it
+    unpaid. Nothing here is typed from the model's words."""
+    source = (root / "lean/Singular/Model.lean").read_text(encoding="utf-8")
+    body = source.split("\ndef obligations ", 1)[1].split("\n/--", 1)[0]
+    arms = re.split(r"\n  \| ", body)
+    arm = next(a for a in arms if re.search(r"(^|\| )\.reject\b", a))
+    owed = OBLIGATION.search(arm)
+    assert owed, f"Singular.obligations states no reject payment: {arm!r}"
+    recipient, key_field, floor = owed.group(1), owed.group(2), owed.group(3)
+    floor_fields = re.findall(r"request\.(\w+)", floor)
+    assert floor_fields, f"a reject's floor names no request field: {floor!r}"
+    pays = source.split("\ndef paysRecipient ", 1)[1].split("\n/--", 1)[0]
+    pays_arm = next(
+        (line for line in pays.splitlines() if line.strip().startswith(f"| .{recipient} ")),
+        None,
+    )
+    assert pays_arm, f"Singular.paysRecipient reads no {recipient} recipient"
+    role = re.search(r"output\.role == \.(\w+)", pays_arm)
+    assert role and "output.address == some" in pays_arm, (
+        f"Singular.paysRecipient reads a {recipient} otherwise than by role and address"
+    )
+    unpaid = source.split("\ndef unpaidReason ", 1)[1].split("\n/--", 1)[0]
+    reason_arm = next(
+        line for line in unpaid.splitlines() if f".{recipient} " in line
+    )
+    reasons = REFUSAL_LITERAL.findall(reason_arm)
+    assert len(reasons) == 1, (
+        f"Singular.unpaidReason gives an unpaid {recipient} {reasons}, not one reason"
+    )
+    return {
+        "key": key_field,
+        "floor": floor_fields,
+        "role": role.group(1),
+        "reason": reasons[0],
+    }
+
+
+def reject_batch_settle(settlement, requests, outputs):
+    """`Singular.settle` over the concatenated reject obligations of `requests`:
+    each recipient, in the order first owed, owed its summed floors and receiving
+    the summed lovelace of the outputs paying it; the first short one names the
+    model's reason."""
+    owed = {}
+    for r in requests:
+        key = r[settlement["key"]]
+        owed[key] = owed.get(key, 0) + sum(r[f] for f in settlement["floor"])
+    for key, floor in owed.items():
+        received = sum(
+            o["lovelace"]
+            for o in outputs
+            if o["role"] == settlement["role"] and o["address"] == key
+        )
+        if received < floor:
+            return settlement["reason"]
+    return None
+
+
 def batch_surface(surface):
     """The declared batch questions, each with its own observation extent.
 
@@ -904,7 +969,7 @@ def fold_batch_expectation(row, refusals, transitions, deltas):
 
 
 def check_batch_rows(corpus, generic_names, statement_digests, refusals, unpaid,
-                     transitions, deltas, leaf_bytes):
+                     transitions, deltas, leaf_bytes, settlement):
     """Every batch row the driver answered, held to its declared question.
 
     The expected outcome and reason of every fold batch are re-derived here, not
@@ -1043,6 +1108,14 @@ def check_batch_rows(corpus, generic_names, statement_digests, refusals, unpaid,
                 assert row["settle"] is None or row["settle"] in unpaid, (
                     f"{rid}: settle {row['settle']!r} is not a reason Singular.settle gives"
                 )
+                expected = reject_batch_settle(
+                    settlement, [i["request"] for i in items], row["outputs"]
+                )
+                assert row["settle"] == expected, (
+                    f"{rid}: Singular.settle over the batch's concatenated obligations "
+                    f"answers {expected!r}, the row reports {row['settle']!r}"
+                )
+                derived += 1
             else:
                 assert "settle" not in row, f"{rid}: a settle judgement with no outputs"
         for state in states:
@@ -1088,6 +1161,23 @@ def check_batch_controls(corpus, refusals):
     some(rejects, "a multi-request reject judged short",
          lambda r: r["outcome"] == "accepted" and len(r["requests"]) >= 2
          and "outputs" in r and r["settle"] is not None)
+    def short_in_sum(r):
+        if r["outcome"] != "accepted" or "outputs" not in r or r["settle"] is None:
+            return False
+        owners = [i["request"]["owner"] for i in r["requests"]]
+        return any(
+            owners.count(o) >= 2
+            and all(
+                i["request"]["deposit"] <= sum(
+                    x["lovelace"] for x in r["outputs"] if x["address"] == o
+                )
+                for i in r["requests"] if i["request"]["owner"] == o
+            )
+            for o in owners
+        )
+
+    some(rejects, "one owner owed by two rejects, each covered alone, short in sum",
+         short_in_sum)
     some(rejects, "a mixed batch answered unsupported",
          lambda r: r["outcome"] == "unsupported"
          and len({i["exit"] for i in r["requests"]}) >= 2)
@@ -1153,7 +1243,7 @@ def must_refuse(label, check, *args):
     raise AssertionError(f"control did not fire: {label}")
 
 
-def batch_controls(corpus, refusals, run):
+def batch_controls(corpus, refusals, run, settlement):
     """Falsify the batch checks on mutants of the corpus they just passed."""
     rows = corpus["batches"]
     refused = next(
@@ -1170,13 +1260,20 @@ def batch_controls(corpus, refusals, run):
     row = next(r for r in mutant["batches"] if r["id"] == accepted["id"])
     row["observations"]["tx"] = {}
     must_refuse(f"{accepted['id']} observing a transaction", run, mutant)
+    judged = [r for r in rows if "settle" in r]
+    for row in judged:
+        wrong = settlement["reason"] if row["settle"] is None else None
+        mutant = copy.deepcopy(corpus)
+        next(r for r in mutant["batches"] if r["id"] == row["id"])["settle"] = wrong
+        must_refuse(f"{row['id']} judged {wrong!r}", run, mutant)
     for question in BATCH_QUESTIONS:
         mutant = copy.deepcopy(corpus)
         mutant["surface"]["batchQuestions"][question] = (
             mutant["surface"]["batchQuestions"][question] + ["tx"]
         )
         must_refuse(f"{question} declaring a transaction observation", run, mutant)
-    return 3 + len(refusals["step"])
+    return 3 + len(refusals["step"]) + len(judged)
+
 
 
 TRANSLATION_HEADING = "## The model driver translation"
@@ -1460,15 +1557,16 @@ def main():
     derived = check_derived(driver_corpus, leaf_bytes, deltas, transitions)
     refusals = model_batch_refusals(root)
     unpaid = model_unpaid_reasons(root)
+    settlement = model_reject_settlement(root)
 
     def run_batches(corpus):
         return check_batch_rows(
             corpus, generic_names, statement_digests, refusals, unpaid,
-            transitions, deltas, leaf_bytes,
+            transitions, deltas, leaf_bytes, settlement,
         )
 
     batch_rows, batch_derived = run_batches(driver_corpus)
-    batch_fired = batch_controls(driver_corpus, refusals, run_batches)
+    batch_fired = batch_controls(driver_corpus, refusals, run_batches, settlement)
     check_or_compare(
         root / "lean/driver-corpus.json",
         json.dumps(driver_corpus, indent=2, sort_keys=True) + "\n",
