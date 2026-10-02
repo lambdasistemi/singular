@@ -1,4 +1,4 @@
-{- | Unit tests for the completion-binding predicates (NOTE-028/029).
+{- | Unit tests for the completion-binding predicates.
 
 Same trust split as `RetireVerifySpec`: what is pinned here is every
 predicate the independent reader applies to a completion — co-created
@@ -6,7 +6,7 @@ pair, exact burn, singleton-`Modify`, genuine root change, and
 permissionless authorization (empty required signers, fee-owner-only
 witness outside every route). Resolution (finding the custody, the
 request, the state transition in retained CBOR) lives in the reader
-executable and is proved by the VERIFIED-COMPLETE run, not here.
+executable and is exercised by the verified-completion run.
 -}
 module Naming.CompleteVerifySpec (spec) where
 

@@ -41,7 +41,7 @@ owner. A green build is a compile claim, not transaction correspondence. The
 live workflow observations and independent expected behavior keep their own
 evidence limits.
 
-Epic answers operator answer (A-001) and operator answer (A-002) authorize a bounded documentation build extension in this
+Operator answers (A-001 and A-002) authorize a bounded documentation build extension in this
 child so the generated Haddock reference appears beside the contributor guide.
 They allow one local off-chain root flake input and root lock entries, with
 every existing upstream pin and the off-chain lockfile unchanged. They do not

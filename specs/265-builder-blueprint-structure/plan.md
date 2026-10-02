@@ -28,14 +28,14 @@ flowchart LR
 5. Publish contributor architecture/module documentation and speech; compare
    declaration map, run source/format checks, component build, focused suite,
    fresh blueprint end-to-end, journey and archive workflow rows.
-6. Under epic answer operator answer (A-001), generate Haddock for the affected off-chain
+6. Under operator answer (A-001), generate Haddock for the affected off-chain
    library from the same candidate revision, include it in the built site,
    derive all library modules from Cabal (`exposed-modules` and
    `other-modules`) and make the existing `docs-check` job reject a missing
    module/source reference or content that differs from the candidate source.
    Run one disposable content-mismatch negative control at that exact command
    boundary.
-7. Under epic answer operator answer (A-002), wire one local off-chain input into the root
+7. Under operator answer (A-002), wire one local off-chain input into the root
    docs build with existing upstream pins unchanged, check the generated
    reference against this candidate's off-chain source content, and make the
    existing `release-check` verify that the future documentation archive

@@ -7,12 +7,12 @@
   ],
   "acceptance-boundary": [
     {
-      "text": "Epic answers operator answer (A-001) and operator answer (A-002) authorize the candidate library reference and a local off-chain lock input with existing pins fixed. The future documentation archive carries the same pages; Conformance and all-library coverage remain later work.",
+      "text": "Operator answers (A-001 and A-002) authorize the candidate library reference and a local off-chain lock input with existing pins fixed. The future documentation archive carries the same pages; Conformance and all-library coverage remain later work.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "b8ddf2ea0cce79807ad30aae8dc2cd3c717eb57c381484e8e7bb48222a4a2aef"
+    "sha256": "77fae516f2111302e016c1c02b33de952f5558c65996aa7cb420a16ea95630a6"
   }
 }

@@ -24,7 +24,7 @@ flowchart LR
 
 The implementation owner may change `offchain/singular-registry.cabal`,
 `offchain/nix/checks.nix`, `offchain/flake.nix` and `.github/workflows/ci.yml`
-under epic answer operator answer (A-001). The initial all-component carrier was superseded by
+under operator answer (A-001). The initial all-component carrier was superseded by
 operator answer (A-005) after a direct `connected-verifier` RED. The classified
 `component-build` carrier must close the supported set derived from live
 required workflows and current supported command dependencies, with an
