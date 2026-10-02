@@ -18,6 +18,7 @@ Pure: the index entries, the receipts and the document arrive as data.
 -}
 module Conformance.Extent
     ( ExtentClass (..)
+    , Listed (..)
     , committedClasses
     , ExtentCount (..)
     , extentProblems
@@ -26,11 +27,12 @@ module Conformance.Extent
 
 import Conformance.Receipt (Outcome (..), Receipt (..))
 import Conformance.Replay (acceptingControlGaps)
+import Control.Applicative ((<|>))
 import Control.Monad (foldM)
 import Data.Aeson (Value (..))
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KM
-import Data.Foldable (find)
+import Data.Foldable (find, toList)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isJust, isNothing, mapMaybe)
@@ -47,11 +49,22 @@ data ExtentClass
       ClassD
     deriving stock (Show, Eq, Ord)
 
-{- | The committed table of the extent document — the section headed
-@Discovered table@ — as the class of each row it lists. A class cell must
-start with B, C or D; a row listed twice must keep its class.
+{- | What the committed table says of one row: its class, and the traced
+reasons and unobserved causes its refusals may carry, the backquoted names of
+its traced-reason cell. A refusal of a listed row whose replay records any
+other reason or cause is not the refusal the table classified.
 -}
-committedClasses :: Text -> Either String (Map Text ExtentClass)
+data Listed = Listed
+    { listedClass :: ExtentClass
+    , listedTraces :: [Text]
+    }
+    deriving stock (Show, Eq)
+
+{- | The committed table of the extent document — the section headed
+@Discovered table@ — as what it lists of each row. A class cell must start with
+B, C or D; a row listed twice must keep its class, and its traces accumulate.
+-}
+committedClasses :: Text -> Either String (Map Text Listed)
 committedClasses document = case break discovered (T.lines document) of
     (_, []) -> Left "the document has no discovered table"
     (_, _ : section) -> do
@@ -77,9 +90,9 @@ committedClasses document = case break discovered (T.lines document) of
             . T.strip
     classOf row = case (row, reverse row) of
         (name : _, cell : _) -> case T.uncons cell of
-            Just ('B', _) -> Right (name, ClassB)
-            Just ('C', _) -> Right (name, ClassC)
-            Just ('D', _) -> Right (name, ClassD)
+            Just ('B', _) -> Right (name, Listed ClassB (traces row))
+            Just ('C', _) -> Right (name, Listed ClassC (traces row))
+            Just ('D', _) -> Right (name, Listed ClassD (traces row))
             _ ->
                 Left
                     ( "row "
@@ -89,11 +102,23 @@ committedClasses document = case break discovered (T.lines document) of
                         <> " is not B, C or D"
                     )
         _ -> Left "a table row with no cells"
-    insertOnce acc (name, cls) = case Map.lookup name acc of
+    -- The backquoted names of the traced-reason cell, the third.
+    traces = \case
+        _ : _ : cell : _ ->
+            [name | (i, name) <- zip [0 :: Int ..] (T.splitOn "`" cell), odd i]
+        _ -> []
+    insertOnce acc (name, listed) = case Map.lookup name acc of
         Just other
-            | other /= cls ->
+            | listedClass other /= listedClass listed ->
                 Left ("row " <> T.unpack name <> " is listed with two classes")
-        _ -> Right (Map.insert name cls acc)
+            | otherwise ->
+                Right
+                    ( Map.insert
+                        name
+                        other{listedTraces = listedTraces other <> listedTraces listed}
+                        acc
+                    )
+        Nothing -> Right (Map.insert name listed acc)
 
 -- | How many refusals of a run fall in each class.
 data ExtentCount = ExtentCount
@@ -103,7 +128,7 @@ data ExtentCount = ExtentCount
     deriving stock (Show, Eq)
 
 -- | The refusals of a run, by class: A by fact, the others by the table.
-extentCount :: Map Text ExtentClass -> [Value] -> ExtentCount
+extentCount :: Map Text Listed -> [Value] -> ExtentCount
 extentCount table entries =
     ExtentCount
         { countA = length [() | e <- refusals entries, isJust (modelReasonOf e)]
@@ -113,7 +138,8 @@ extentCount table entries =
                 [ (cls, 1)
                 | e <- refusals entries
                 , isNothing (modelReasonOf e)
-                , Just cls <- [flip Map.lookup table =<< textOf "row" e]
+                , Just cls <-
+                    [listedClass <$> (flip Map.lookup table =<< textOf "row" e)]
                 ]
         }
 
@@ -121,7 +147,7 @@ extentCount table entries =
 problem, none when every refusal is accounted for.
 -}
 extentProblems
-    :: Map Text ExtentClass -> [Value] -> [Receipt] -> [Text]
+    :: Map Text Listed -> [Value] -> [Receipt] -> [Text]
 extentProblems table entries receipts =
     [ "no refusal in the replay index: the run proves nothing"
     | null indexed
@@ -214,13 +240,30 @@ extentProblems table entries receipts =
                 Nothing
                     | label == Just "A" ->
                         [name <> " is labelled A without an executed model reason"]
-                    | Map.member row table -> []
+                    | Just listed <- Map.lookup row table ->
+                        [ name
+                            <> " records "
+                            <> trace
+                            <> ", which the committed table does not list for "
+                            <> row
+                        | trace <- recordedTraces e
+                        , trace `notElem` listedTraces listed
+                        ]
                     | otherwise ->
                         [ name
                             <> " is unclassified: "
                             <> row
                             <> " is not in the committed table"
                         ]
+    -- What a refusal's replay recorded, purpose by purpose: the reason it
+    -- admitted or the cause it admits none.
+    recordedTraces e = case jsonField "classes" e of
+        Just (Array classes) ->
+            [ t
+            | c <- toList classes
+            , Just t <- [jsonText "admitted" c <|> jsonText "unobserved" c]
+            ]
+        _ -> ["no replay"]
     namesCause e = case jsonField "classes" e of
         Just (Array classes) ->
             any (isJust . jsonText "unobserved") classes

@@ -52,27 +52,32 @@ check as unclassified.
 
 ## Discovered table (T028)
 
-From executed receipts and replay indexes (coder-1 EXTENT-R2.md sha256
-3029f2b6…, runs D-001..D-009 and the in-gate book runs, Lean blob
-`9c75b37380d5`). Class A is not listed: it is every refusal whose step carries
-an executed model reason, recorded by the runner (17 steps in CG07, CG21,
-CG22, CG23; all admit Lean's reason). Every other discovered refusal:
+Rebound 2026-10-02 to main `13f2b2e` (#320's validators, #344's batch
+questions) under the operator's narrowed acceptance. Class A is not listed: it
+is every refusal whose step or batch carries an executed model reason, recorded
+by the runner — the story rows' refused steps (CG05, CG07, CG21, CG22, CG23,
+CG24), the fold batches (CG11's empty fold, CG21's two-key batch whose mint is
+moved onto its first key) and the reject batches (CG19's crossed refunds and its
+rejected-floor control, CG09's short reject control), each compared with the
+reason the traced replay admits for the state script. CG09's row transaction is
+accepted by the chain and by the model, so it is no refusal; its consumer
+requirement stays unmet by ruling (operator 2026-10-01).
+
+Every other discovered refusal has no counterpart in the model. Its model
+comparison is published as unmet, beside the traced chain evidence or its
+absence, and tracked by the issue that would give the model the vocabulary:
 
 | Row | Refusal | Traced reason | Lean | Class |
 |---|---|---|---|---|
-| CG05 | insert on a present key | `key-exists` | `key-exists` (Model.lean:553); executing consumer commissioned (A-011, T036a) — class A once its story runs live | B until then |
-| CG11 | empty fold | `empty-fold` | `foldBatch` refuses `empty-fold` (Model.lean:665); row held by the recorded consumer-model conflict (Q-002) | D (existing) |
-| CG12 | surplus actions; missing-action control | `surplus-actions`, `missing-action` | actions are not a model input; row held (Q-002) | D (existing) |
-| CG19 | crossed refund allocation; rejected-floor control | `deposit-returned` | consumer-model conflict recorded unresolved (Q-002) | D (existing) |
-| CG19 rejected-floor (two requests rejected in one transaction) | | `deposit-returned` | no model law for several rejects in one transaction; missing generic `rejectBatch` consumer (batch foundation) | D (existing) |
-| CG10 | fold with claims against a superseded root | `key-exists` | a stale proof is not an input of `step` | C |
-| CS04 | redeemer at a wrong constructor index | witness `no-fold` (offline replay); state and request `no-user-trace`; an offline compiler diagnostic (T036b) may add evidence, never a reason | serialization below the model's vocabulary | C |
-| CG09 | reject in phase 1 | `not-rejectable` (D-006) | `exitStep .reject` has no admission (Model.lean:1060-1072) | D — ruled 2026-10-01: Lean kept, validator to be repaired in a predecessor; unmet until it lands |
+| CG10 | fold whose proof was built against a superseded root | `key-exists` | the model takes no proof and no authenticated root, and admits the insertion on that unoccupied key | C — model comparison unmet, lambdasistemi/singular#346 |
+| CG12 | surplus action; missing-action control | `surplus-actions`, `missing-action` | the model takes no action list | C — model comparison unmet, lambdasistemi/singular#345 |
+| CS04 | fold redeemer at a wrong constructor index | witness `no-fold`; state and request `no-user-trace`, a failure with no user-defined trace | the model has no redeemer decoding vocabulary | C — model comparison unmet, lambdasistemi/singular#347 |
 
-The lead "CG21 two-key batch `net-mint-mismatch`" was not found in any
-executed receipt: no CI-run row submits it today, so it is neither compared
-nor observed — a published gap, not a class.
+The earlier leads "CG21 two-key batch `net-mint-mismatch`" and "CG11, CG19 held
+by Q-002 with no batch question" are now compared (class A); whether CG11, CG12
+and CG19 meet the consuming project's requirements stays held, a consumer
+question separate from the model comparison.
 
-Gaps B, C and D stay in the denominator and in the book's limits. A partial
-reason comparison over class A is never called completion of the issue's
-every-row claim.
+Gaps C stay in the denominator and in the book's limits. A reason comparison
+over class A is never called completion of the issue's every-row claim while a
+C row remains.

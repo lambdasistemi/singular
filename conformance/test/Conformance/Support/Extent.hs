@@ -30,10 +30,10 @@ spec = describe "the extent of a run's refusals" $ do
             committedClasses document
                 `shouldBe` Right
                     ( Map.fromList
-                        [ ("CG10", ClassC)
-                        , ("CG11", ClassD)
-                        , ("CS04", ClassC)
-                        , ("CG05", ClassB)
+                        [ ("CG10", Listed ClassC ["key-exists"])
+                        , ("CG11", Listed ClassD ["empty-fold"])
+                        , ("CS04", Listed ClassC ["no-user-trace"])
+                        , ("CG05", Listed ClassB ["key-exists"])
                         ]
                     )
         it "refuses a table that gives a row a class it cannot have" $
@@ -115,6 +115,28 @@ spec = describe "the extent of a run's refusals" $ do
                 (completeIndex <> [attributionEntry "CG77" "tx-x"])
                 completeReceipts
                 `shouldSatisfy` mentions "CG77"
+        it
+            "refuses a listed row's refusal whose replay records what the table does not list" $
+            extentProblems
+                table
+                ( replaceEntry
+                    ( withClasses
+                        [object ["admitted" .= ("surplus-actions" :: Text)]]
+                        (attributionEntry "CG10" "tx-c")
+                    )
+                    completeIndex
+                )
+                completeReceipts
+                `shouldSatisfy` mentions "surplus-actions"
+        it "refuses a listed row's refusal with no replay at all" $
+            extentProblems
+                table
+                ( replaceEntry
+                    (setKey "classes" Null (attributionEntry "CG10" "tx-c"))
+                    completeIndex
+                )
+                completeReceipts
+                `shouldSatisfy` mentions "no replay"
         it "refuses a refusing script role without an accepting control" $
             extentProblems
                 table
@@ -124,8 +146,12 @@ spec = describe "the extent of a run's refusals" $ do
   where
     mentions needle = any (needle `T.isInfixOf`)
 
-table :: Map.Map Text ExtentClass
-table = Map.fromList [("CG10", ClassC), ("CS04", ClassC)]
+table :: Map.Map Text Listed
+table =
+    Map.fromList
+        [ ("CG10", Listed ClassC ["key-exists"])
+        , ("CS04", Listed ClassC ["no-user-trace"])
+        ]
 
 -- | The extent document's shape: a leads table first, then the discovered one.
 document :: Text
