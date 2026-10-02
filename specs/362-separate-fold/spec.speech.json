@@ -1,0 +1,36 @@
+{
+  "why-one-command-was-not-enough": [
+    {
+      "text": "Insert and terminate used to book and fold in one process. A failed fold left the requester's command partial, holding a fold they never meant to run, and on preprod that fold expired before it reached the node.",
+      "pause": 350
+    }
+  ],
+  "what-the-commands-do": [
+    {
+      "text": "Insert and terminate now only book. Fold folds the one pending request with the folder's own wallet. The fold flag keeps the combined form on request. Reclaim returns a requester's own request inside its retract window, and reject clears requests past both windows.",
+      "pause": 350
+    }
+  ],
+  "refusals-before-anything-is-signed": [
+    {
+      "text": "Each command refuses by name before signing: nothing pending, the wrong request, several pending, a missing or altered envelope, too little of the window left, a built bound that could land after the deadline, someone else's request, or a window not yet open or already closed.",
+      "pause": 350
+    }
+  ],
+  "guarantees": [
+    {
+      "text": "A booking moves nothing. There is one fold routine. The delivered envelope is the one the request names. No fold is signed that could land at or after its deadline, checked again on the built transaction. Every command signs with its own wallet, and the reject's money matches what the node reads.",
+      "pause": 350
+    }
+  ],
+  "limits": [
+    {
+      "text": "One request per fold. The folder must share the registry directory. On the development network the built-bound check is proved by unit tests, and the converted-slot equality waits for preprod. Preparation speed is not solved here. Refunds take one shape, an early reject is refused only by the client, and an interrupted reject is not yet covered.",
+      "pause": 350
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "ece17eb6e31b0a69d69364f328433dec0a598893033d8cfd60249ff274d1dc04"
+  }
+}

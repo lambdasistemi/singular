@@ -684,10 +684,13 @@ test-suite cage-tests
     Singular.CLI.InsertEnvelopeSpec
     Singular.CLISpec
     Singular.CLI.Command
+    Singular.CLI.FoldRules
+    Singular.CLI.FoldSpec
     Singular.CLI.InsertEnvelope
     Singular.CLI.OutlaySpec
     Singular.CLI.Outlay
     Singular.CLI.Node
+    Singular.CLI.Preimage
     Singular.CLI.Proof
     Singular.CLI.Receipt
     Singular.CLI.Recovery
@@ -950,14 +953,18 @@ executable singular
   main-is:          Main.hs
   other-modules:
     Singular.CLI
+    Singular.CLI.Attached
     Singular.CLI.Command
     Singular.CLI.Create
     Singular.CLI.Entry
+    Singular.CLI.Fold
+    Singular.CLI.FoldRules
     Singular.CLI.InsertEnvelope
     Singular.CLI.Inspect
     Singular.CLI.Live
     Singular.CLI.Outlay
     Singular.CLI.Plan
+    Singular.CLI.Preimage
     Singular.CLI.Preview
     Singular.CLI.Node
     Singular.CLI.Proof

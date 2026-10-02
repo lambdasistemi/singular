@@ -7,6 +7,7 @@ import Naming.RetireVerifySpec qualified
 import Singular.Application.OpenDatum.BuildSpec qualified
 import Singular.Application.OpenDatum.BuildersSpec qualified
 import Singular.Application.OpenDatum.EnvelopeSpec qualified
+import Singular.CLI.FoldSpec qualified
 import Singular.CLI.InsertEnvelopeSpec qualified
 import Singular.CLI.OutlaySpec qualified
 import Singular.CLI.WriteSpec qualified
@@ -65,4 +66,5 @@ main = hspec $ do
     Singular.CLI.InsertEnvelopeSpec.spec
     Singular.CLISpec.spec
     Singular.CLI.OutlaySpec.spec
+    Singular.CLI.FoldSpec.spec
     Singular.CLI.WriteSpec.spec

@@ -5,14 +5,18 @@ Module      : Singular.CLI.Command
 Description : What a @singular@ command line asks for, parsed without effects
 License     : Apache-2.0
 
-The four registry commands and help, read from the command line alone:
+The registry commands and help, read from the command line alone:
 no file, node, key or environment is touched here, so every refusal
 below happens before anything is read or submitted.
 
 * @registry create@ boots one registry from a seed the caller chose in
   their own wallet, or previews its identity with @--preview@;
-* @registry insert@ books and folds one @insertActive@ at a key;
-* @registry terminate@ books and folds one @updateTerminal@ at a key;
+* @registry insert@ books one @insertActive@ at a key and
+* @registry terminate@ books one @updateTerminal@ at a key, each leaving
+  its request pending for the registry's fold; with @--fold@ either
+  also folds it in the same command;
+* @registry fold@ folds the one pending request, signed and funded by
+  the wallet that runs it;
 * @registry inspect@ reads the registry and one key back, and accepts
   no signing key at all.
 
@@ -29,6 +33,7 @@ module Singular.CLI.Command
     , CreateArgs (..)
     , EntryArgs (..)
     , EntryMode (..)
+    , FoldArgs (..)
     , InspectArgs (..)
     , NodeSettings (..)
     , WriteSettings (..)
@@ -40,9 +45,10 @@ module Singular.CLI.Command
     , renderCLIError
     , usage
     , maxKeyBytes
+    , keyFlags
     ) where
 
-import Control.Monad (forM_, when)
+import Control.Monad (forM_, unless, when)
 import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
 import Data.Char (GeneralCategory (Surrogate), generalCategory)
@@ -136,6 +142,28 @@ data EntryArgs = EntryArgs
     submitted
     -}
     , entryReceipt :: Maybe FilePath
+    , entryFold :: Bool
+    {- ^ @--fold@: after the booking confirms, run the fold the way
+    @registry fold@ does. @insert@ and @terminate@ only, never with
+    @--preview@
+    -}
+    }
+    deriving stock (Eq, Show)
+
+-- | @registry fold@: the registry's pending request, folded by this wallet.
+data FoldArgs = FoldArgs
+    { foldRegistry :: FilePath
+    , foldBlueprint :: FilePath
+    , foldWrite :: WriteSettings
+    , foldRequest :: Maybe TxIn
+    {- ^ @--request@: the pending request the caller expects to fold; the
+    fold is refused when it is not the one pending
+    -}
+    , foldFund :: Maybe TxIn
+    -- ^ @--fund-input@: the wallet output that funds and collateralises the fold
+    , foldMaxOutlay :: Maybe Integer
+    -- ^ @--max-outlay@: lovelace the fold may put out; past it nothing is signed
+    , foldReceipt :: Maybe FilePath
     }
     deriving stock (Eq, Show)
 
@@ -156,6 +184,7 @@ data Command
     | Insert EntryArgs
     | Update EntryArgs
     | Terminate EntryArgs
+    | Fold FoldArgs
     | Inspect InspectArgs
     deriving stock (Eq, Show)
 
@@ -177,6 +206,12 @@ data CLIError
       UnsupportedFlag String String
     deriving stock (Eq, Show)
 
+{- | The flags that spell a registry key, each with how it spells it: the one set
+the key reader and every command that refuses a key are derived from.
+-}
+keyFlags :: [(String, KeyEncoding)]
+keyFlags = [("--key", KeyText), ("--key-hex", KeyHex)]
+
 -- | Parse a command line.
 parseCommand :: [String] -> Either CLIError Command
 parseCommand args = do
@@ -188,14 +223,26 @@ parseCommand args = do
             [] -> Right Help
             ["registry"] -> Right Help
             ["registry", "create"] ->
-                refuseSpendingFlags "create" flags >> (Create <$> createArgs flags)
-            ["registry", "insert"] -> Insert <$> insertArgs flags
+                refuseSpendingFlags "create" flags
+                    >> refuseRequest flags
+                    >> refuseFold flags
+                    >> (Create <$> createArgs flags)
+            ["registry", "insert"] ->
+                refuseRequest flags >> (Insert <$> insertArgs flags)
             ["registry", "update"] ->
-                refuseDeposit flags >> (Update <$> entryArgs (Just "--payload") flags)
+                refuseRequest flags
+                    >> refuseDeposit flags
+                    >> (Update <$> entryArgs False (Just "--payload") flags)
             ["registry", "terminate"] ->
-                refuseDeposit flags >> (Terminate <$> entryArgs Nothing flags)
+                refuseRequest flags
+                    >> refuseDeposit flags
+                    >> (Terminate <$> entryArgs True Nothing flags)
+            ["registry", "fold"] -> Fold <$> foldArgs flags
             ["registry", "inspect"] ->
-                refuseSpendingFlags "inspect" flags >> (Inspect <$> inspectArgs flags)
+                refuseSpendingFlags "inspect" flags
+                    >> refuseRequest flags
+                    >> refuseFold flags
+                    >> (Inspect <$> inspectArgs flags)
             _ -> Left (UnknownCommand words')
   where
     -- The constraints on a write's spending belong to insert, update and
@@ -205,6 +252,22 @@ parseCommand args = do
         forM_ ["--fund-input", "--max-outlay"] $ \flag ->
             when (isJust (lookup flag flags)) $
                 Left (UnsupportedFlag flag command)
+    -- @--request@ names what @registry fold@ folds; @--fold@ belongs to the
+    -- two commands that book. Any other command refuses either by name.
+    refuseRequest flags =
+        when (isJust (lookup "--request" flags)) $
+            Left
+                ( BadValue
+                    "--request"
+                    "names the pending request @registry fold@ folds; this command takes none"
+                )
+    refuseFold flags =
+        when (isJust (lookup "--fold" flags)) $
+            Left
+                ( BadValue
+                    "--fold"
+                    "is taken by insert and terminate only: they book, and with it also fold"
+                )
     createArgs flags = do
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
@@ -235,7 +298,7 @@ parseCommand args = do
     -- An insert is an entry command that also names the deposit its envelope
     -- protects: --deposit LOVELACE, else the minimum, read by the library.
     insertArgs flags = do
-        parsed <- entryArgs (Just "--payload") flags
+        parsed <- entryArgs True (Just "--payload") flags
         deposit <-
             first
                 DepositRefused
@@ -248,10 +311,18 @@ parseCommand args = do
                     "--deposit"
                     "is a registry insert flag: only insert sets a deposit"
                 )
-    entryArgs document flags = do
+    entryArgs books document flags = do
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
         key <- keyFrom flags
+        unless books (refuseFold flags)
+        when
+            (isJust (lookup "--fold" flags) && isJust (lookup "--preview" flags))
+            $ Left
+                ( BadValue
+                    "--fold"
+                    "is not accepted with --preview: a preview measures the booking and never folds"
+                )
         when
             ( isNothing (lookup "--preview" flags)
                 && isJust (lookup "--wallet-address" flags)
@@ -262,18 +333,8 @@ parseCommand args = do
                 then previewMode flags
                 else Submit <$> writeSettings flags
         doc <- traverse (`required` flags) document
-        fund <- case optional "--fund-input" flags of
-            Nothing -> Right Nothing
-            Just s -> case parseOutRef (T.pack s) of
-                Right i -> Right (Just i)
-                Left err -> Left (BadValue "--fund-input" err)
-        outlay <- case optional "--max-outlay" flags of
-            Nothing -> Right Nothing
-            Just s -> case readMaybe s of
-                Just n | n > 0 -> Right (Just n)
-                _ ->
-                    Left
-                        (BadValue "--max-outlay" "is not a positive number of lovelace")
+        fund <- fundFrom flags
+        outlay <- outlayFrom flags
         pure
             EntryArgs
                 { entryRegistry = dir
@@ -285,7 +346,52 @@ parseCommand args = do
                 , entryFund = fund
                 , entryMaxOutlay = outlay
                 , entryReceipt = optional "--receipt" flags
+                , entryFold = isJust (lookup "--fold" flags)
                 }
+    foldArgs flags = do
+        dir <- required "--registry" flags
+        bp <- required "--blueprint" flags
+        forM_
+            (map fst keyFlags <> ["--deposit", "--payload", "--preview", "--fold"])
+            $ \flag ->
+                when (isJust (lookup flag flags)) $
+                    Left
+                        ( BadValue
+                            flag
+                            "is not accepted by registry fold: it folds the pending request, whose key and edge the request names"
+                        )
+        when (isJust (lookup "--wallet-address" flags)) $
+            Left addressNeedsPreview
+        settings <- writeSettings flags
+        request <- case optional "--request" flags of
+            Nothing -> Right Nothing
+            Just s -> case parseOutRef (T.pack s) of
+                Right i -> Right (Just i)
+                Left err -> Left (BadValue "--request" err)
+        fund <- fundFrom flags
+        outlay <- outlayFrom flags
+        pure
+            FoldArgs
+                { foldRegistry = dir
+                , foldBlueprint = bp
+                , foldWrite = settings
+                , foldRequest = request
+                , foldFund = fund
+                , foldMaxOutlay = outlay
+                , foldReceipt = optional "--receipt" flags
+                }
+    fundFrom flags = case optional "--fund-input" flags of
+        Nothing -> Right Nothing
+        Just s -> case parseOutRef (T.pack s) of
+            Right i -> Right (Just i)
+            Left err -> Left (BadValue "--fund-input" err)
+    outlayFrom flags = case optional "--max-outlay" flags of
+        Nothing -> Right Nothing
+        Just s -> case readMaybe s of
+            Just n | n > 0 -> Right (Just n)
+            _ ->
+                Left
+                    (BadValue "--max-outlay" "is not a positive number of lovelace")
     inspectArgs flags = do
         when (isJust (lookup "--wallet-skey" flags)) $
             Left SigningKeyNotAccepted
@@ -352,10 +458,11 @@ parseCommand args = do
                     }
     -- --key is the text of the key and --key-hex its base16: one of the two,
     -- read by the library, so no command keeps a decoder of its own.
-    keyFrom flags = case (optional "--key" flags, optional "--key-hex" flags) of
-        (Just _, Just _) ->
-            Left (BadValue "--key-hex" "excludes --key: name the key once")
-        (Just argument, Nothing)
+    keyFrom flags = case [ (encoding, argument)
+                         | (flag, encoding) <- keyFlags
+                         , Just argument <- [optional flag flags]
+                         ] of
+        [(KeyText, argument)]
             | any isSurrogate argument ->
                 Left
                     ( BadValue
@@ -363,8 +470,9 @@ parseCommand args = do
                         "is not text in this locale's encoding: run under a UTF-8 locale, or spell the bytes with --key-hex"
                     )
             | otherwise -> readKeyAs KeyText argument
-        (Nothing, Just argument) -> readKeyAs KeyHex argument
-        (Nothing, Nothing) -> Left (MissingFlag "--key")
+        [(KeyHex, argument)] -> readKeyAs KeyHex argument
+        [] -> Left (MissingFlag "--key")
+        _ -> Left (BadValue "--key-hex" "excludes --key: name the key once")
     readKeyAs encoding argument =
         Key <$> first KeyRefused (readKey encoding (T.pack argument))
     isSurrogate c = generalCategory c == Surrogate
@@ -400,7 +508,7 @@ tokens = go [] []
     keep name v fs
         | isJust (lookup name fs) = fs
         | otherwise = (name, Just v) : fs
-    switches = ["--help", "-h", "--preview"]
+    switches = ["--help", "-h", "--preview", "--fold"]
     valued =
         [ "--registry"
         , "--blueprint"
@@ -417,6 +525,7 @@ tokens = go [] []
         , "--max-outlay"
         , "--deposit"
         , "--payload"
+        , "--request"
         , "--backend"
         ]
 
@@ -455,7 +564,7 @@ renderCLIError = \case
         flag
             <> " is not accepted by `registry "
             <> command
-            <> "`: only insert, update and terminate enforce it, and a constraint the command does not enforce is refused, never ignored"
+            <> "`: only insert, update, terminate and fold enforce it, and a constraint the command does not enforce is refused, never ignored"
 
 -- | The supported commands.
 usage :: String
@@ -470,7 +579,7 @@ usage =
         , "  singular registry insert --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --payload DATUM_JSON [--deposit LOVELACE]"
         , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
         , "  singular registry insert --preview --registry DIR --blueprint PLUTUS_JSON"
         , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON [--deposit LOVELACE]"
         , "      --node-socket PATH --network-magic N --wallet-address ADDR"
@@ -485,11 +594,14 @@ usage =
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry terminate --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
         , "  singular registry terminate --preview --registry DIR --blueprint PLUTUS_JSON"
         , "      (--key KEY | --key-hex HEX)"
         , "      --node-socket PATH --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "  singular registry fold --registry DIR --blueprint PLUTUS_JSON"
+        , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry inspect --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --node-socket PATH --network-magic N [--receipt FILE]"
         , ""
@@ -498,12 +610,16 @@ usage =
         , "Every command also takes --backend node|indexer (default node): where its"
         , "address reads come from, the node itself or an in-process index that"
         , "follows the node's chain from its origin."
-        , "insert, update and terminate fund and collateralise from the funding input"
-        , "named, and hold to the maximum outlay stated: a booking or update past it is"
-        , "not signed, and an insert or terminate whose fold, built after its booking"
-        , "confirms, costs more than the booking left of it stops partial, its request"
-        , "pending, with the fold unsigned. create and inspect refuse both settings:"
-        , "they enforce neither."
+        , "insert and terminate book the request and leave it pending: the registry's"
+        , "fold is its own command, registry fold, run by whichever wallet folds, before"
+        , "the processing deadline the booking's receipt names. Given the fold switch,"
+        , "either also folds, in the same command, once its booking confirms."
+        , "insert, update, terminate and fold fund and collateralise from the funding"
+        , "input named, and hold to the maximum outlay stated: a booking, an update or a"
+        , "fold past it is not signed, and a combined insert or terminate whose fold,"
+        , "built after its booking confirms, costs more than the booking left of it stops"
+        , "partial, its request pending, with the fold unsigned. create and inspect"
+        , "refuse both settings: they enforce neither."
         , "The preview forms name the caller by a public wallet address instead of a"
         , "signing key: they build and measure what they would submit, print it, and"
         , "sign, submit and journal nothing."
