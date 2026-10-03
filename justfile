@@ -6,7 +6,8 @@
 # Build the documentation site with the staged generated references.
 build-docs:
     python3 tools/prepare_docs.py --api-site "$(nix build --quiet --no-link --print-out-paths .#docs)"
-    mkdocs build --strict
+    mkdocs build --strict || { chmod -R u+w site; exit 1; }
+    chmod -R u+w site
 
 serve-docs:
     python3 tools/prepare_docs.py --api-site "$(nix build --quiet --no-link --print-out-paths .#docs)"
