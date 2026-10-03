@@ -49,11 +49,11 @@
   ],
   "publication-and-accessibility": [
     {
-      "text": "Pull requests have a live preview without comments. Main publishes through GitHub Pages. The site includes a theme toggle and section read-aloud controls using browser voices.",
+      "text": "Pull requests have a live preview without comments. Main publishes through GitHub Pages. The site includes a light and dark theme toggle that remembers the choice, and section read-aloud controls using browser voices.",
       "pause": 400
     },
     {
-      "text": "Diagrams are Mermaid, rendered by the copy the shared toolchain pins as a Nix input and served from the site itself. No page loads a script or stylesheet from outside the site, and the site check fails if one does.",
+      "text": "Diagrams are Mermaid, rendered by the copy the shared toolchain pins as a Nix input and served from the site itself, in the selected theme, with a full-size viewer. No page loads a script or stylesheet from outside the site, and the site check fails if one does.",
       "pause": 400
     }
   ],
@@ -69,6 +69,6 @@
   ],
   "_source": {
     "file": "building.md",
-    "sha256": "c51e6ecc920b9ecaab29c1793ed8d25b0d15c189b508fbbd86ca60794755cc4e"
+    "sha256": "5deb3ac9de21a2a8eda9184fbffacca91c3abeac887432ed51dc7a7e32ed3a33"
   }
 }
