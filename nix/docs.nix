@@ -9,12 +9,30 @@
   onchain,
 }:
 let
+  # The Terminal theme, pinned by wheel content hash (version 4.8.0).
+  terminal = pkgs.python3Packages.buildPythonPackage {
+    pname = "mkdocs-terminal";
+    version = "4.8.0";
+    format = "wheel";
+    src = pkgs.fetchurl {
+      url = "https://files.pythonhosted.org/packages/cd/21/7eb37356eeeaa87be873c806ea84794b3b81285e49a6c7c4a250c66729a6/mkdocs_terminal-4.8.0-py3-none-any.whl";
+      sha256 = "86af80cc7152aa61e9058db0a84eefae56e769222e81eb5291ad87e89d3f2922";
+    };
+    dependencies = with pkgs.python3Packages; [
+      jinja2
+      markdown
+      mkdocs
+      pygments
+      pymdown-extensions
+    ];
+  };
   tools =
     sharedShell.nativeBuildInputs
     ++ sharedShell.buildInputs
     ++ [
       pkgs.python3
       pkgs.just
+      terminal
     ];
   candidateRef = src.rev or (src.dirtyRev or "");
   # The generated off-chain API reference: Haddock runs on the off-chain
@@ -42,8 +60,7 @@ let
   # onchain/ tree. Its "view source" links are bound to the candidate
   # commit when the build has a clean one, and to main otherwise.
   aikenReference = onchain.packages.${pkgs.system}.aiken-reference;
-  # Material fetches Mermaid from unpkg at read time unless `mermaid` is already
-  # defined. The shared toolchain pins a copy; serving it from the site keeps
+  # The shared toolchain pins a copy of Mermaid; serving it from the site keeps
   # every diagram inside the checked, byte-verified build.
   docs = pkgs.stdenvNoCC.mkDerivation {
     pname = "singular-docs";
@@ -193,6 +210,7 @@ in
     packages = [
       pkgs.python3
       pkgs.just
+      terminal
     ];
     DOCS_SHARED_SOURCE = "${sharedSource}";
     MERMAID_JS = "${mermaidJs}";
