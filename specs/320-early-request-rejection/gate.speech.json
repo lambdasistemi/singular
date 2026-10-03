@@ -1,43 +1,105 @@
 {
+  "gate-the-commands-that-accept-the-repair": [
+    {
+      "text": "Gate: the commands that accept the repair.",
+      "pause": 500
+    },
+    {
+      "text": "Every row is the command of the CI job that checks it. Rows body-generic-rows-reject-before-deadline-consumer and body-reject-inside-processing-retraction-windows-early are CI changes in this ticket: their full step bodies are fixed here, and the candidate's .github/workflows/conformance.yml must carry them byte for byte. body-reject-retract-refund-controls-unchanged's body is fixed here as it stands at the base, and the candidate must leave it byte-identical.",
+      "pause": 400
+    }
+  ],
   "how-to-run-a-row-locally": [
     {
-      "text": "Run each row from a clean checkout of the candidate. Rows copied from the workflow get a fresh runner temporary directory and environment file, and run with bash in the step's directory. A short extraction function reads a step from the workflow so a reviewer can compare it with this page.",
+      "text": "How to run a row locally.",
+      "pause": 500
+    },
+    {
+      "text": "Run from a clean checkout of the candidate. A row whose body reads RUNNER_TEMP or GITHUB_ENV gets fresh ones:",
+      "pause": 400
+    },
+    {
+      "text": "A step body is run with bash -e from the repository root, after cd into the step's working-directory when it names one. The extraction below reads a step from the workflow, so a reviewer can compare it with this page:",
       "pause": 400
     }
   ],
   "rows": [
     {
-      "text": "Fourteen rows, each the command of the CI job that checks it: the path fence; the onchain, naming and deployed identity checks; off-chain lint, build, unit and vectors; the devnet run through the product builder; the running book; reject-and-retract-refund-controls unchanged; the generic rows with reject-before-deadline-consumer-requirement unmet by ruling; reject-inside-processing-and-retraction-windows; the release assembly; and root CI with standard input closed. Nix invocations are counted one by one, nested ones included, and devnet runs per command. One full run forecasts eighty three and six.",
+      "text": "Rows.",
+      "pause": 500
+    },
+    {
+      "text": "N counts every nix invocation, nested ones included: a nix run nixpkgs#jq inside a loop counts once per iteration. D counts every command invocation that boots one or more devnets. The run record counts actual invocations; this table is the forecast.",
+      "pause": 400
+    },
+    {
+      "text": "One complete run at the exact head forecasts N83 and D6.",
       "pause": 400
     }
   ],
   "falsification": [
     {
-      "text": "Each row's ability to fail is known from the base: the compiled suite fails on the new tests for rejects inside the windows, while rejects after them already pass and are preservation; the identity checks fail on any stale manifest and, through the new comparison, on a stale naming pin; the builder refuses an early reject; the generic rows fail on reject-before-deadline-consumer-requirement's verdict until its expectation moves; and the retained refused transaction is the live defect. No bespoke instrument is added.",
+      "text": "Falsification.",
+      "pause": 500
+    },
+    {
+      "text": "No bespoke instrument is added.",
       "pause": 400
     }
   ],
   "body-reject-retract-refund-controls-unchanged-body-reject-and-retract-refund-controls-unchanged": [
     {
-      "text": "The reject-and-retract-refund-controls step as it stands at the base, which the candidate must leave byte for byte.",
-      "pause": 400
+      "text": "body-reject-retract-refund-controls-unchanged body: reject-and-retract-refund-controls, unchanged.",
+      "pause": 500
     }
   ],
   "body-generic-rows-reject-before-deadline-consumer-body-generic-rows-reject-before-deadline-consumer-requirement-unmet-by-ruling": [
     {
-      "text": "The generic rows step after the change. reject-before-deadline-consumer-requirement moves to its own verdict, unmet by ruling: by operator ruling of the first of October 2026, the consumer requirement is kept unmet. The held set becomes empty-fold, surplus-fold-actions and request-value-and-refund-routing, the unmet set is reject-before-deadline-consumer-requirement, and a new assertion checks reject-before-deadline-consumer-requirement's accepted receipt, its recorded unmet requirement, that it is not recorded held, and the line the existing refused control helper logs only when the refusal is attributed to the state script. The closing lines name the consumer's forbids-early-rejection-singular-s-lean-allows as unmet.",
+      "text": "body-generic-rows-reject-before-deadline-consumer body: generic rows, reject-before-deadline-consumer-requirement unmet by ruling.",
+      "pause": 500
+    },
+    {
+      "text": "The changes from the base body are the reject-before-deadline-consumer-requirement verdict group (unmet-by-ruling, by operator ruling 2026-10-01), the held set empty-fold surplus-fold-actions request-value-and-refund-routing with the unmet set reject-before-deadline-consumer-requirement, assertion 10 and the two closing lines. Assertion 10 checks reject-before-deadline-consumer-requirement's accepted receipt, its recorded unmet requirement, that it is not recorded held, and its refused short-refund control. The control goes through the existing submitExpectRefusedControl, which fails the run unless the node's refusal is attributed to the state script; the line asserted here is the one that helper logs. Order and units follow: run after the accepted reject, the control's input would already be spent and its refusal could not be attributed to the state script; run with refusal-sized units, the accepted reject would not be accepted.",
       "pause": 400
     }
   ],
   "body-reject-inside-processing-retraction-windows-early-body-reject-inside-processing-and-retraction-windows-early-rejection": [
     {
-      "text": "The new reject-inside-processing-and-retraction-windows step. It runs the row, checks the receipt is bound to the candidate on a clean tree, that the six steps are two tampered rejects then an untampered one in each early window, that every comparison agrees, that refusals are attributed to the state script for deposit returned, and that the log states three placements in each window.",
+      "text": "body-reject-inside-processing-retraction-windows-early body: reject-inside-processing-and-retraction-windows early rejection.",
+      "pause": 500
+    },
+    {
+      "text": "It sits directly after body-reject-retract-refund-controls-unchanged in conformance.yml, under a comment stating what the row proves and which Aiken tests name the refusal reason.",
       "pause": 400
     }
   ],
   "the-rows-change-exact": [
     {
-      "text": "Only two rows change. reject-and-retract-refund-controls loses its two timing sentences and keeps everything else. reject-inside-processing-and-retraction-windows is appended, sourced from Singular's model, requiring that a folder may reject before the retraction deadline in both early windows with the owner refunded and the state unchanged, and that short or misdirected refunds are refused. Its published state is computed from its receipt.",
+      "text": "The rows change, exact.",
+      "pause": 500
+    },
+    {
+      "text": "Two rows of conformance/rows.json change. Every other row, reject-before-deadline-consumer-requirement included, stays byte-identical.",
+      "pause": 400
+    },
+    {
+      "text": "reject-and-retract-refund-controls, two text replacements, nothing else:",
+      "pause": 400
+    },
+    {
+      "text": "requirement: \"A reject once the request may no longer be folded must refund its owner the deposit;\" becomes \"A reject must refund its owner the deposit;\".",
+      "pause": 300
+    },
+    {
+      "text": "note: \"the rejection registry makes its requests rejectable a second after their retract window opens, the retraction registry keeps them retractable for thirty seconds.\" becomes \"the rejection registry places its rejects after their owner's retraction window, which closes a second after it opens, and the retraction registry keeps its requests retractable for thirty seconds; rejects inside the windows are reject-inside-processing-and-retraction-windows's.\"",
+      "pause": 300
+    },
+    {
+      "text": "reject-inside-processing-and-retraction-windows, appended after reject-and-retract-refund-controls, keys in the file's order:",
+      "pause": 400
+    },
+    {
+      "text": "The row's state stays uncovered in the file. Its published state is computed from its receipt, like every row's.",
       "pause": 400
     }
   ],

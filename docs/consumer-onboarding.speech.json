@@ -1,198 +1,224 @@
 {
-  "what-changes-when-you-bring-your-own-node": [
+  "run-singular-against-your-own-preprod-node": [
     {
-      "text": "The diagram shows the same runner reaching two different chains. On the left, the factory default: the runner spawns a private cardano node, funds itself from a genesis key carried in the archive, and talks to it on network magic forty-two. On the right, external mode: the same runner connects to the preprod node you already run, funds itself from your own signing key file, and talks to it on network magic one.",
+      "text": "Run Singular against your own preprod node.",
       "pause": 500
     },
     {
-      "text": "External mode is not a second implementation. It hands the shared entry point a socket path, a network magic and a signing key file instead of letting it spawn a devnet. Everything downstream — the transaction builders, the validators, the proofs, the read-backs — is the code the factory devnet exercises on every run.",
-      "pause": 450
-    },
-    {
-      "text": "The table lists the three things you supply: the node's node-to-client socket, the network magic, and the wallet signing key file. Each has a command-line flag and an environment variable, and flags win over environment variables.",
+      "text": "As a cardano-keri integrator, I want to take a published Singular release, point it at the preprod node I already run, fund it with a wallet whose key never leaves my machine, and watch a name be claimed, recovered, retired and completed to Over on a public test network — without reconstructing the factory's devnet, its genesis keys or its worktrees.",
       "pause": 400
     },
     {
-      "text": "Give none of the three and you get the factory devnet, exactly as before. Give one or two and the runner refuses, naming the one it is missing, because a half-configured run would otherwise submit devnet transactions to a public network.",
+      "text": "That is what this page walks through. Everything on it runs from a downloaded release archive; nothing needs a checkout of this repository.",
+      "pause": 400
+    }
+  ],
+  "what-changes-when-you-bring-your-own-node": [
+    {
+      "text": "What changes when you bring your own node.",
       "pause": 500
+    },
+    {
+      "text": "Every runner in the release can work two ways, and the difference is entirely configuration.",
+      "pause": 400
+    },
+    {
+      "text": "The runner is the same program on both sides. External mode is not a second implementation: it hands the shared entry point a socket path, a network magic and a signing key file instead of letting it spawn a devnet, and everything downstream — the transaction builders, the validators, the proofs, the read-backs — is the code the factory devnet exercises on every run.",
+      "pause": 400
+    },
+    {
+      "text": "Three things you supply, and nothing else:",
+      "pause": 400
+    },
+    {
+      "text": "Flags win over environment variables. Give none of the three and you get the factory devnet, exactly as before. Give one or two and the runner refuses, naming the one it is missing — a half-configured run would otherwise submit devnet transactions to a public network.",
+      "pause": 400
     }
   ],
   "step-1-download-the-release-and-check-it": [
     {
-      "text": "Take the archive and its checksum manifest from the release page, extract it, then check the bytes with sha two five six sum and the compiled validator identities with the archive's own verify script.",
+      "text": "Step 1 — download the release and check it.",
+      "pause": 500
+    },
+    {
+      "text": "Take the archive and its checksum manifest from the release page, extract it, and verify both the bytes and the compiled validator identities:",
       "pause": 400
     },
     {
-      "text": "The verify script re-derives every validator hash from the compiled blueprints the archive carries and compares them with the pinned manifest. It needs only bash and jq. If it exits non-zero, stop: the archive does not carry the validators the release claims, and nothing below is meaningful.",
-      "pause": 500
+      "text": "verify-identities.sh re-derives every validator hash from the compiled blueprints the archive carries and compares them with the pinned manifest. It needs only bash and jq. If it exits non-zero, stop: the archive does not carry the validators the release claims, and nothing below is meaningful.",
+      "pause": 400
+    },
+    {
+      "text": "The release archive guide describes what else the archive contains and how to replay evidence from it.",
+      "pause": 400
     }
   ],
   "step-2-point-at-your-preprod-node": [
     {
-      "text": "You need a cardano node synced to preprod and its node-to-client socket path — the one the node's own configuration names.",
+      "text": "Step 2 — point at your preprod node.",
+      "pause": 500
+    },
+    {
+      "text": "You need a cardano-node synced to preprod and its node-to-client socket path. The socket is the one the node's own configuration names — typically something like /run/cardano-node/node.socket or ~/cardano/preprod/node.socket.",
       "pause": 400
     },
     {
-      "text": "Two facts the runners check for you. First, the network magic must be the one the node runs; preprod is one. The handshake negotiates it, a node on another network refuses the connection, and the runner turns that refusal into a message naming the socket and the magic you asked for.",
-      "pause": 450
+      "text": "Two facts the runners check for you, so you do not have to:",
+      "pause": 400
     },
     {
-      "text": "Second, protocol parameters come from the node. Fees, execution unit prices and size limits are queried from the running node on every session, never taken from a devnet constant, so a preprod parameter change is picked up on the next run with no code change.",
-      "pause": 450
+      "text": "The network magic must be the one the node runs. Preprod is 1. The node-to-client handshake negotiates it, and a node on another network refuses the connection; the runner turns that refusal into a message naming the socket and the magic you asked for rather than a bare protocol error.",
+      "pause": 300
+    },
+    {
+      "text": "Protocol parameters come from the node. Fees, execution-unit prices and size limits are queried from the running node on every session, never taken from a devnet constant. A preprod parameter change is picked up on the next run with no code change.",
+      "pause": 300
     },
     {
       "text": "Mainnet's magic is refused outright. These runners submit live transactions to demonstrate a lifecycle; they are for test networks.",
-      "pause": 500
+      "pause": 400
     }
   ],
   "step-3-create-and-fund-a-wallet": [
     {
-      "text": "The wallet is yours. Its key is read from a file on your machine, used to sign, and never printed, logged or transmitted anywhere but into a transaction witness.",
-      "pause": 450
-    },
-    {
-      "text": "The commands shown generate a payment key pair with cardano cli and build the matching testnet address.",
-      "pause": 350
-    },
-    {
-      "text": "The runners accept the cardano cli signing key file as written — the JSON text envelope with its cborHex field. The same key as bare hex, or as thirty-two raw bytes, works too. The address the runner uses is derived from the key in that file, so the address you fund and the address that pays cannot disagree.",
-      "pause": 450
-    },
-    {
-      "text": "Fund the address from the preprod faucet, then send one self-payment of a few ada back to the same address. The faucet pays a single output; the second payment leaves the wallet holding a small ada-only output, which is what a Plutus transaction spends as collateral.",
+      "text": "Step 3 — create and fund a wallet.",
       "pause": 500
+    },
+    {
+      "text": "The wallet is yours. Its key is read from a file on your machine, used to sign, and never printed, logged or transmitted anywhere but into a transaction witness.",
+      "pause": 400
+    },
+    {
+      "text": "The runners accept the cardano-cli signing-key file as written — the JSON text envelope with its cborHex field. A file holding the same key as bare hex, or as the 32 raw bytes, works too. The address the runner uses is derived from the key in that file, so there is no way for the address you fund and the address that pays to disagree.",
+      "pause": 400
+    },
+    {
+      "text": "Fund the address from the preprod faucet at https://docs.cardano.org/cardano-testnets/tools/faucet — then send one self-payment of a few ada back to the same address. The faucet pays a single output; the second payment leaves the wallet holding a small ada-only output, which is what a Plutus transaction spends as collateral.",
+      "pause": 400
     }
   ],
   "step-4-run-a-journey": [
     {
-      "text": "Run the one lifecycle command the current release ships verified: the bounded registry journey, passing the socket, the magic and the key file. The release pipeline runs it on a real devnet on every candidate and asserts what it observes on chain.",
-      "pause": 400
-    },
-    {
-      "text": "It boots a registry on your chain, folds a request, applies it and reads the resulting state back, funded from your wallet.",
-      "pause": 400
-    },
-    {
-      "text": "The naming lifecycle runners an older release walked through here are retained legacy commands today: not currently buildable or verified against the released source, so the full naming lifecycle run waits on their re-cut in issues one seventy-two and two eighty-three.",
+      "text": "Step 4 — run a journey.",
       "pause": 500
+    },
+    {
+      "text": "Build the two compiled blueprints from the archive's own flakes and export them the way the release archive guide describes, then run the one lifecycle command the current release ships verified: the bounded registry journey. The release pipeline runs it on a real devnet on every candidate and asserts what it observes on chain, and the same binary takes the three external settings to run against your node instead:",
+      "pause": 400
+    },
+    {
+      "text": "It boots a registry on your chain, folds a request, applies it and reads the resulting state back — the registry protocol, end to end, funded from your wallet.",
+      "pause": 400
+    },
+    {
+      "text": "The naming-lifecycle runners an older release walked through here — the canonical initialization row and the register, recovery and retirement trios that claim a name, rotate its control and end it in Over — are retained legacy commands today: they stay declared in the archive, but they are not currently buildable or verified against the released source, so this runbook cannot carry you through the full naming lifecycle until their re-cut lands in #172 and #283. The recovery and retirement guide keeps their behaviour documented, and the preprod record shows the lifecycle as it was executed on chain when those commands were current.",
+      "pause": 400
     }
   ],
   "what-a-run-looks-like": [
     {
-      "text": "Each runner narrates what it did and what it then observed on chain. The first line names the chain and the wallet: the mode, the socket, the magic and the funding address.",
+      "text": "What a run looks like.",
+      "pause": 500
+    },
+    {
+      "text": "Each runner narrates what it did and what it then observed on chain. The first line names the chain and the wallet:",
       "pause": 400
     },
     {
       "text": "Then one line per step, each stating the observation rather than the intent — the transaction identifier, the datum read back, the hash that matched. A zero exit is the claim: every runner exits non-zero on any mismatch, and it checks by reading state back from the node, never by assuming its own submission worked.",
-      "pause": 450
-    },
-    {
-      "text": "The sequence diagram shows one run. You supply the socket, magic and key file. The runner performs the node-to-client handshake at that magic, which the node refuses if it is another network. It queries protocol parameters, queries the funding address, and refuses immediately if the wallet cannot pay. Then, for each step of the journey, it submits a transaction, polls until the output that transaction created is visible, and asserts what it read back. It ends with exit zero, or a named mismatch.",
-      "pause": 500
+      "pause": 400
     }
   ],
   "waiting-for-confirmations": [
     {
-      "text": "A public test network makes a block about every twenty seconds; the factory devnet makes one about every second. The runners do not assume either.",
-      "pause": 400
+      "text": "Waiting for confirmations.",
+      "pause": 500
     },
     {
-      "text": "After a submission they poll the node for an output the transaction actually created and continue the moment it appears, giving up after five minutes with a message naming the transaction that never landed.",
+      "text": "A public test network makes a block about every twenty seconds; the factory devnet makes one about every second. The runners do not assume either. After a submission they poll the node for an output the transaction actually created and continue the moment it appears, giving up after five minutes with a message naming the transaction that never landed.",
       "pause": 400
     },
     {
       "text": "So a preprod run is slower than a devnet run — minutes rather than seconds per journey — and it is slow in proportion to the network, not to a constant someone guessed.",
-      "pause": 500
+      "pause": 400
     }
   ],
   "when-the-wallet-cannot-pay": [
     {
-      "text": "The funding check runs before the first transaction is built, so a wallet problem is a message and not a balance exception in the middle of a lifecycle.",
+      "text": "When the wallet cannot pay.",
+      "pause": 500
+    },
+    {
+      "text": "The funding check runs before the first transaction is built, so a wallet problem is a message and not a balance exception in the middle of a lifecycle:",
       "pause": 400
     },
     {
-      "text": "The message shown names the address to fund, the lovelace held and across how many outputs, the lovelace required, the largest ada-only output and the collateral required, and then the faucet link and the self-payment step that fixes it.",
-      "pause": 450
-    },
-    {
-      "text": "The two numbers are a floor rather than a promise: they catch the empty and the nearly-empty wallet at the start of a run, and a journey that runs long can still exhaust a thinly funded wallet later.",
-      "pause": 500
+      "text": "It names the address to fund, what is required, what is there, and the step that fixes it. The two numbers are a floor rather than a promise: they catch the empty and the nearly-empty wallet at the start of a run, and a journey that runs long can still exhaust a thinly funded wallet later.",
+      "pause": 400
     }
   ],
   "other-refusals-you-may-see": [
     {
-      "text": "A table of five refusals and what each means.",
-      "pause": 300
-    },
-    {
-      "text": "A refused node-to-client connection for a network magic means the node runs a different network, or the socket path is not a node-to-client socket.",
-      "pause": 350
-    },
-    {
-      "text": "Partially configured external mode means one or two of the three settings were given; all three are required together.",
-      "pause": 350
-    },
-    {
-      "text": "A refused magic seven six four eight two four zero seven three is mainnet; these runners are for test networks.",
-      "pause": 350
-    },
-    {
-      "text": "A wallet key file that does not hold thirty-two key bytes is not a payment signing key — a verification key or a stake key produces this.",
-      "pause": 350
-    },
-    {
-      "text": "And a transaction accepted by the node but never carried by a block within five minutes means the node may not be synced, or the network is not producing blocks.",
+      "text": "Other refusals you may see.",
       "pause": 500
     }
   ],
   "running-it-again": [
     {
-      "text": "Without the deployment flag, each run boots its own registry from a seed selected from your wallet's outputs. A second run therefore uses a separate registry and does not depend on the first having finished.",
-      "pause": 450
+      "text": "Running it again.",
+      "pause": 500
     },
     {
-      "text": "In fresh-registry mode, failed runs leave outputs under their own registry identity. Attached mode reuses a persistent registry and its mirror, so its rerun behavior is different.",
-      "pause": 500
+      "text": "Without --deployment, each run boots its own registry from a seed it designates out of your wallet's own outputs, so a second run does not collide with the first and does not depend on it having finished. Nothing in the archive holds state between runs; what persists lives on chain, under identities each run derives and prints.",
+      "pause": 400
+    },
+    {
+      "text": "In this fresh-registry mode, if a run fails part way, rerun it. Its on-chain leftovers are inert: they belong to that run's own registry token and no later run reads them.",
+      "pause": 400
     }
   ],
   "attaching-to-a-deployment-and-what-has-to-travel-with-it": [
     {
-      "text": "Everything above stands up a registry of its own for the run. A deployment is the other way round: the registry and the reference scripts are created once, recorded in a manifest, and used by every run afterwards.",
-      "pause": 450
+      "text": "Attaching to a deployment, and what has to travel with it.",
+      "pause": 500
     },
     {
-      "text": "The commands shown deploy once with your node and wallet, writing the manifest, and then run a journey against it with the deployment flag. One availability note: the deployment tool builds from the current source but no required workflow exercises it today, and the attached claim command names register rows, a retained legacy command not currently buildable or verified, so treat this walkthrough as documentation of the design until its repair lands.",
+      "text": "Everything above stands up a registry of its own for the run. A deployment is the other way round: the registry and the reference scripts are created once, recorded in a manifest, and used by every run afterwards.",
       "pause": 400
     },
     {
-      "text": "The register runner accepts a spelling flag, defaulting to alice. It claims those exact UTF-8 bytes with no automatic suffix. When an attached rerun finds the spelling already held, it submits a duplicate, checks the state validator refuses and the registry root stays unchanged, reports the occupied spelling, and finishes without repeating the other fixture rows. Recovery and retirement retain their explicit fixture spellings.",
-      "pause": 500
+      "text": "An availability note before you rely on this section: the deployment tool itself builds from the current source, but no required workflow exercises it today — what it does on your chain is documented here and was exercised when the preprod record below was made, not on every candidate. The attached claim command shown names register-rows, which is a retained legacy command: not currently buildable or verified against the released source, repair owned by #283. Until that repair lands, treat the attached-claim walkthrough as documentation of the design rather than a runnable runbook.",
+      "pause": 400
     },
     {
-      "text": "Deploy runs once. Given a manifest the node still agrees with, it names the registry that already exists and stops, rather than making a second one nobody recorded. A verify command asks the node whether it still agrees, claim by claim.",
-      "pause": 450
+      "text": "The register runner claims the exact UTF-8 spelling supplied with --spelling, defaulting to alice. It never appends a run suffix. On an attached rerun where that spelling is already held, it submits the duplicate, checks the state-validator refusal and unchanged registry root, reports that the spelling is already held, and finishes without rerunning the other fixture rows. Recovery and retirement retain their explicit fixture spellings.",
+      "pause": 400
     },
     {
-      "text": "One thing has to travel with the manifest. Writing to a registry — folding a claim in — means proving the key against the registry's current trie, and that proof needs the whole trie, not the root the chain reports. Nothing on chain hands you the trie in one query, so this deployment carries it as a file beside the manifest. Copy the manifest to a second machine and you must copy that mirror file with it; without it, the machine can read the deployment but cannot fold into it.",
-      "pause": 500
+      "text": "deploy runs once. Given a manifest the node still agrees with it names the registry that already exists and stops, rather than making a second one nobody recorded. nix run .#deployment -- verify --deployment ./preprod.json asks the node whether it still agrees, claim by claim.",
+      "pause": 400
     },
     {
-      "text": "The runners do not guess about this. A run whose mirror root disagrees with the registry's root stops and says so, rather than building proofs against a history the chain does not have.",
-      "pause": 450
+      "text": "One thing has to travel with the manifest. Writing to a registry — folding a claim in — means proving the key against the registry's current trie, and that proof needs the whole trie, not the root the chain reports. Nothing on chain hands you the trie in one query, so this deployment carries it as a file beside the manifest: preprod.json is accompanied by preprod.mirror.json, which each run reads and writes. Copy the manifest to a second machine and you must copy the mirror with it; without it that machine can read the deployment but cannot fold into it. The runners do not guess about this — a run whose mirror root disagrees with the registry's root stops and says so, rather than building proofs against a history the chain does not have.",
+      "pause": 400
     },
     {
       "text": "Reading is unaffected. Proving a name is alive and finding where its application state lives needs the registry entry and the NFT, and no trie at all — a resolver needs nothing from the mirror.",
-      "pause": 450
+      "pause": 400
     },
     {
-      "text": "Rebuilding the trie from the chain instead of carrying it, by following the registry token from the bootstrap transaction and replaying each fold's request datums, is the next milestone's work, not this release's.",
-      "pause": 500
+      "text": "Rebuilding the trie from the chain instead of carrying it — following the registry token from the bootstrap transaction and replaying each fold's request datums — is the next milestone's work, not this release's.",
+      "pause": 400
     }
   ],
   "what-this-page-does-not-cover": [
     {
-      "text": "The canonical deployment on preprod — a published registry identity with its seed reference, applied script hashes, policy identifiers and bootstrap transactions — is recorded on the preprod record page with its verifier output, journey transactions and mirror, from real values. Nothing here publishes or claims a canonical identity; each run stands up its own.",
+      "text": "What this page does not cover.",
       "pause": 500
+    },
+    {
+      "text": "The canonical deployment on preprod — a published registry identity with its seed reference, applied script hashes, policy identifiers and bootstrap transactions — is recorded with its verifier output, journey transactions and mirror on the preprod record, from real values. Nothing here publishes or claims a canonical identity; each run stands up its own.",
+      "pause": 400
     }
   ],
   "_source": {

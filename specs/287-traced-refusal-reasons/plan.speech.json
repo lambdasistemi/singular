@@ -1,56 +1,182 @@
 {
   "status": [
     {
-      "text": "The final delivery joins main 13f2b2e without rewriting the branch, and follows the operator's narrowed acceptance. The traced build, capture and replay, comparison and book slices are done. The last slice compares the batch refusals through the fold and reject batch questions, publishes the stale-root fold, the surplus actions and the wrong constructor as unmet model comparisons with their issues, and puts the early-rejection row under the same replay and extent checks. The ticket owner's frozen gate is the CI on the pushed head. The earlier status follows as history.",
+      "text": "Status.",
       "pause": 500
+    },
+    {
+      "text": "Final delivery (2026-10-02): the branch merges main 13f2b2e (#320's validators and reject-before-deadline-consumer-requirement unmet-by-ruling, #344's batch questions, #326's node capabilities) without rewriting its history, and narrows acceptance by the operator's rulings of 2026-10-02 (spec.md, \"Narrowed acceptance\"). traced-build–book are done; the final slice (tasks merge-main-into-branch-as-merge-commit–re-render-conformance-book-md-its-generator) compares the batch refusals through foldBatch and rejectBatch, publishes fold-against-superseded-root, surplus-fold-actions and wrong-redeemer-constructor-index as unmet model comparisons (lambdasistemi/singular#346, #345, #347) and runs reject-inside-processing-and-retraction-windows under the same replay and extent checks. The gate is the ticket owner's frozen final gate; CI on the pushed head is its evidence.",
+      "pause": 300
+    },
+    {
+      "text": "Earlier status, kept as history:",
+      "pause": 400
+    },
+    {
+      "text": "Completed: team setup; root baseline nix develop --quiet -c just ci at 3f04e50 exit 0 (211 s, runtime receipts/baseline-001); research; this mandate.",
+      "pause": 300
+    },
+    {
+      "text": "Current (2026-10-01): traced-build and capture-replay closed as slices; R3a gate GREEN at 0287727 (review pending). Operator rulings: one self-contained receipt (self-contained-replay-receipt, R3b released on its sealed packet); reject-before-deadline-consumer-requirement keeps Lean and the validator is repaired in a separate predecessor, after which #287 rebinds its build correspondence. Spend by receipts: C47, N43, D14 of C150/N55/D18.",
+      "pause": 300
+    },
+    {
+      "text": "Blockers: operator question (Q-001) (receipt fit) at the operator holds comparison-receipt-controls-ci-done-released-by's receipt part (receipt-replay-object-data-model-written, extend-retire-active-key-reject-retract-refund-extent-over-receipt-non-empty-guard-refusal). operator question (Q-002) answered (operator answer (A-002)): fence holds, residual-after-evidence residual after evidence (prepare-residual-for-epic-from-evidence). operator question (Q-003) (reject-before-deadline-consumer-requirement phase-1 reject, Lean vs chain) holds only reject-before-deadline-consumer-requirement's classification; operator answer (A-003) records it as comparison-unmet, an epic-owned affected-acceptance hold (not a waiver), so the every-row comparison stays unmet while it stands. Denominator: every live refusal, classified in extent.md (epic operator note (NOTE-001)); a class-A comparison alone is not completion.",
+      "pause": 300
     }
   ],
   "binding": [
     {
-      "text": "The final delivery is joined with main 13f2b2e and constitution 1.12.0, and its build correspondence is checked against the repaired validators. The original binding follows: issue, branch, base, constitution and unchanged Lean and corpus, with three epic-held gates carried forward.",
+      "text": "Binding.",
       "pause": 500
+    },
+    {
+      "text": "Final delivery: integrated with main 13f2b2e, constitution 1.12.0; the traced/untraced correspondence (toolchain-correspondence) is checked against #320's onchain/script-identity.json at the head. The original binding follows.",
+      "pause": 400
+    },
+    {
+      "text": "Issue #287, epic #209, branch fix/287-traced-refusal-reasons, base 3f04e50d293b80360a3234ebf3114abc8172d851, constitution 1.11.0, Lean and lean/driver-corpus.json unchanged. Carried gates: independent #304 Lean readback, E301/root-model compatibility, #288 format-control review — held by the epic, not by this ticket.",
+      "pause": 400
     }
   ],
   "constitution-check": [
     {
-      "text": "Lean's names are the oracle and are never edited. The traced replay is a distinct evidence class, linked to the chain by a deployed replay. Unobserved reasons stay visible, the extent is counted, and harness evidence goes to the appendix.",
+      "text": "Constitution check.",
       "pause": 500
+    },
+    {
+      "text": "I/II: Lean's refusal names are the oracle; no model or expected-result edit. A traced reason that differs from Lean's fails its row; it is never relabelled.",
+      "pause": 300
+    },
+    {
+      "text": "III: the traced re-evaluation is script-execution evidence on captured ledger context, distinct from the chain's execution of the deployed bytes; the deployed replay (deployed-refusal-reproduction) links the two and the book names both hashes.",
+      "pause": 300
+    },
+    {
+      "text": "IV: unobserved reasons stay visible (compare-observed-refusal-reasons, book-states-observation-limits); the wrong-reason control (wrong-reason-control) shows the comparison can fail.",
+      "pause": 300
+    },
+    {
+      "text": "VI: state from receipts; the extent is counted, not listed (discovered-refusal-extent); harness evidence (capsules, controls) in the appendix.",
+      "pause": 300
+    },
+    {
+      "text": "Translation table rows retract, settle state \"not observed (#287)\"; a constitution edit is outside this ticket (operator question (Q-002)).",
+      "pause": 300
     }
   ],
   "strategy": [
     {
-      "text": "Build a traced blueprint with a correspondence check. Capture each rejection. Replay deployed then traced bytes on the ledger's own arguments and classify. Compare reasons. Publish through the receipt, CI and the book.",
+      "text": "Strategy.",
       "pause": 500
+    },
+    {
+      "text": "Build. A test-owned output in conformance/flake.nix builds the registry blueprint from ../onchain with the deployed recipe's staged packages and --trace-filter user-defined --trace-level verbose, plus a check that the same toolchain untraced reproduces onchain/script-identity.json and that both blueprints name the same validators and parameter schemas (traced-validator-build, toolchain-correspondence). The conformance app carries it to the runner by --set-default, as it carries the naming blueprint.",
+      "pause": 300
+    },
+    {
+      "text": "Capture. On each live phase-2 validator rejection the runner writes a replay capsule before its next submission (capture-refused-transaction; contracts/replay-evidence.md).",
+      "pause": 300
+    },
+    {
+      "text": "Replay. From the capsule, obtain the ledger's script arguments for each failing purpose; run the deployed applied bytes (must fail as a validator, deployed-refusal-reproduction), then the traced applied bytes with the same parameters (matching-script-parameters, matching-ledger-context) under the maximum per-transaction budget, and classify (single-observed-trace, separate-evidence-classes).",
+      "pause": 300
+    },
+    {
+      "text": "Compare. A refused-refused step agrees only on equal reasons (compare-observed-refusal-reasons); attribution rows fill their existing branch field (classify-refusal-comparison-extent).",
+      "pause": 300
+    },
+    {
+      "text": "Publish. Receipt fields per operator question (Q-001) (self-contained-replay-receipt); CI jq counts the extent (discovered-refusal-extent); the book generator restates the limit (book-states-observation-limits).",
+      "pause": 300
+    },
+    {
+      "text": "Model rows: modules-model.md, data-model.md, functions-model.md.",
+      "pause": 400
     }
   ],
   "slices-bisect-safe-each-ships-alone": [
     {
-      "text": "Four slices, each shippable: the traced build, the capture and replay, the comparison with receipt fields, controls and CI, and finally the book. A premise run stops the work if the deployed bytes already carry the trace.",
+      "text": "Slices (bisect-safe, each ships alone).",
       "pause": 500
+    },
+    {
+      "text": "read-pinned-cardano-node-clients-offchain (seam at the pin) precedes traced-build. premise-run-on-retract-outside-window, capture-replay's first devnet run, is the premise check: if the deployed bytes already emit the named trace, stop and escalate, since the traced build would be unnecessary.",
+      "pause": 400
     }
   ],
   "owned-paths-frozen-for-implementation": [
     {
-      "text": "Only the conformance flake, its Haskell sources and tests, its generated book and the conformance workflow may change. Everything else, including the off-chain library, on-chain code, Lean, docs and locks, is forbidden. The final delivery also changes the generic rows script main moved out of the workflow, the node-confinement allowlist for the replay module, and this ticket's own planning pages.",
+      "text": "Owned paths (frozen for implementation).",
       "pause": 500
+    },
+    {
+      "text": "conformance/flake.nix; conformance/conformance.cabal (module lists and dependencies already in the lock only); conformance/lib/Conformance/**; conformance/app/Conformance/**; conformance/test/**; conformance/BOOK.md (generator output only); .github/workflows/conformance.yml (steps and jq of the conformance job). Everything else is forbidden, including offchain/, onchain/, naming-onchain/, applications/, lean/, docs/, .specify/, all flake locks. A needed change elsewhere is a placement challenge to the ticket owner.",
+      "pause": 400
+    },
+    {
+      "text": "Final delivery adds, by the ticket owner's brief: .github/scripts/ci_generic_rows.sh (main moved the generic rows step there), tools/node-confinement.allow (the replay module reads the node beside the composition module that opens it,",
+      "pause": 400
+    }
+  ],
+  "326-and-this-directorys-specmd-planmd-tasksmd-extentmd": [
+    {
+      "text": "326), and this directory's spec.md, plan.md, tasks.md, extent.md.",
+      "pause": 500
+    },
+    {
+      "text": "with their speech companions.",
+      "pause": 400
     }
   ],
   "execution-schedule": [
     {
-      "text": "Every invocation writes a receipt and the tally is the count of receipts, checked before each run. Cheap in-shell builds have a ceiling of one hundred fifty, Nix builds thirty, devnet runs ten, with per-invocation time limits and no invented aggregate clock. Every failure is attributed to implementation, contract, environment or supervision.",
+      "text": "Execution schedule.",
       "pause": 500
+    },
+    {
+      "text": "Unit: one invocation of the named tool, one receipt written by gate-script/scripts/run-receipt under coder-1/receipts/<tier>-NNN.log; the tally is the file count, checked before each invocation.",
+      "pause": 400
+    },
+    {
+      "text": "Aggregate wall clock: none supplied by the operator; none invented. Order: C before N before D; a D run needs the latest N conformance-tests green. Premise and first capture use retract-outside-window (two refusals, one accepting control). Exhausting a tier stops that tier and journals BLOCKED with the tally; receipts carry exit, duration and hashes.",
+      "pause": 400
+    },
+    {
+      "text": "Failure attribution for every red: implementation (coder) / contract (ticket owner mandate or gate) / environment (Nix, devnet, host) / supervision. A setup failure is logged and not charged as a semantic RED.",
+      "pause": 400
     }
   ],
   "gate-verbatim-ci-commands-synthesized-by-the-ticket-owner-no-gate-author-seat-in-the-approved-team": [
     {
-      "text": "Ten rows, each a command from the workflows: root CI, the unit suite, format, lint, the deployment identity check, the dedicated and generic row steps with extended assertions, and three new steps for toolchain correspondence, the wrong-reason control and the counted, classified extent, where no label can exempt a compared refusal, with its accepting controls.",
+      "text": "Gate (verbatim CI commands; synthesized by the ticket owner — no gate-author seat in the approved team).",
       "pause": 500
+    },
+    {
+      "text": "Falsification: retirement-refund-window-reasons/registration-and-attribution-reasons/complete-refusal-extent by the current red (base has no reasons); wrong-reason-failing-control by its own altered leg; toolchain-correspondence-check by a mismatched build input in a unit or flake test.",
+      "pause": 400
     }
   ],
   "risks": [
     {
-      "text": "A reject's refund is judged by position on chain and by the owner's summed outputs in the model, so the compared rejects agree for their fixtures' shape only, and the phase-one reject row records the divergence, tracked in issue 361. The ledger seam is unverified at the pin, the exit row's receipt is close to its size margin, and traced code costs more than the declared budget.",
+      "text": "Risks.",
       "pause": 500
+    },
+    {
+      "text": "A reject's refund: the chain judges it by position, the model by the owner's summed outputs; the compared rejects agree for their fixtures' shape only, and reject-before-deadline-consumer-requirement records the divergence on the devnet, never as a pass (lambdasistemi/singular#361; extent.md, spec.md limit).",
+      "pause": 300
+    },
+    {
+      "text": "Seam unverified at the cardano-node-clients pin (read-pinned-cardano-node-clients-offchain); a missing seam is a placement challenge, not a license to re-derive the context.",
+      "pause": 300
+    },
+    {
+      "text": "reject-and-retract-refund-controls receipt margin (14745 bytes) with new fields — operator question (Q-001).",
+      "pause": 300
+    },
+    {
+      "text": "Traced cost exceeds declared units; replay uses the protocol maximum.",
+      "pause": 300
     }
   ],
   "_source": {

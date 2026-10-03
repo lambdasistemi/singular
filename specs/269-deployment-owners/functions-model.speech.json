@@ -1,8 +1,26 @@
 {
+  "deployment-function-surface": [
+    {
+      "text": "Deployment function surface.",
+      "pause": 500
+    },
+    {
+      "text": "As a caller, I need the same functions and signatures through Singular.Registry.Deployment after their owners move.",
+      "pause": 400
+    }
+  ],
   "ownership-and-signatures": [
     {
-      "text": "The table assigns every public function to Manifest, Mirror or Attach. Manifest owns the mirror path and shared byte and error rendering; Mirror imports that path and decodes the file. Attach owns address decoding, token derivation and reference and state resolution. Verification checks the live policy and windows after state resolution; attachment returns without those checks.",
+      "text": "Ownership and signatures.",
       "pause": 500
+    },
+    {
+      "text": "The original private helpers have one owner each: Manifest has die message :: String -> IO a and hex bytes :: ByteString -> String; Attach has decodeAddrText text :: Text -> Maybe Addr, tokenFor deployment :: Deployment -> Either String TokenId, resolveReferenceScripts provider deployment :: Provider IO -> Deployment -> IO [(ReferenceScript, (TxIn, TxOut ConwayEra))], and resolveStateUtxo provider config token :: Provider IO -> CageConfig -> TokenId -> IO (TxIn, TxOut ConwayEra). Manifest may expose die and hex to package-internal siblings; the facade keeps only its original export list. No new caller API is required.",
+      "pause": 400
+    },
+    {
+      "text": "verifyDeployment performs cageConfigFor, tokenFor, reference resolution, state resolution, then live datum active-policy and process/retract checks before returning claims. attach performs the first four and returns Attached. loadMirror only reads and decodes; retained callers perform the subsequent root comparison. Preserve those effects and refusal points independently.",
+      "pause": 400
     }
   ],
   "_source": {

@@ -1,12 +1,26 @@
 {
+  "wait-bound-module-owners": [
+    {
+      "text": "Wait bound module owners.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I need one module to own what a bounded wait is and how its failure reads, with every waiting site depending on it and nothing depending back.",
+      "pause": 400
+    }
+  ],
+  "dependency-direction": [
+    {
+      "text": "Dependency direction.",
+      "pause": 500
+    },
+    {
+      "text": "No other module gains a timeout of its own. A second bounding mechanism would be a defect.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "modules-model.md",
     "sha256": "c857deb42b3b699e5e68d959462dbdb80ce40f60a646733b65d0653d464b3212"
-  },
-  "dependency-direction": [
-    {
-      "text": "A new wait module in the node internal library owns the stages, the named failure, the whole-wait bound, the bounded submitter and a wait-aware catch. Indexed and session confirmation, the session submitter, the public facade, every runner that builds a submitter, and every refusal control or retry that reaches a submission depend on it, and it depends on none of them. No other module adds a timeout of its own.",
-      "pause": 500
-    }
-  ]
+  }
 }

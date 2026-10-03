@@ -1,12 +1,26 @@
 {
+  "active-command-module-owners": [
+    {
+      "text": "Active command module owners.",
+      "pause": 500
+    },
+    {
+      "text": "As a contributor, I need the command entry points to show which module owns an option, scenario, control and observation while keeping the existing executable boundary.",
+      "pause": 400
+    }
+  ],
+  "dependency-direction": [
+    {
+      "text": "Dependency direction.",
+      "pause": 500
+    },
+    {
+      "text": "Component-local code may share a helper only when both callers already use the same semantics and the dependency direction is one-way. No command imports a sibling command's scenario or control. The existing journey/verifier, journey/retire-verify and older naming journeys are independent evidence surfaces and are excluded.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "modules-model.md",
     "sha256": "7bce4aaf21372a60818212ad52e89eefb5965a2a8d5f6fab1cdc725d27ea6f9e"
-  },
-  "dependency-direction": [
-    {
-      "text": "Each command Main delegates to local options and orchestration, which use local steps and deliberate controls. Those modules depend on the registry library. Commands do not import another command scenario, and the older independent verifiers stay outside this extraction.",
-      "pause": 500
-    }
-  ]
+  }
 }

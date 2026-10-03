@@ -1,8 +1,34 @@
 {
+  "modules-model-traced-refusal-reasons": [
+    {
+      "text": "Modules model: traced refusal reasons.",
+      "pause": 500
+    },
+    {
+      "text": "New or changed components only. Fields live in data-model.md, signatures in functions-model.md.",
+      "pause": 400
+    }
+  ],
   "placement-decisions": [
     {
-      "text": "Admission and comparison are pure so every class is a table test. Nothing moves into the off-chain library. The traced build stays with the harness. The control alters only the model side of one comparison.",
+      "text": "Placement decisions.",
       "pause": 500
+    },
+    {
+      "text": "Admission and comparison are pure (conformance-replay) so every class in separate-evidence-classes is a table-driven unit case without a devnet; effects stay in conformance-run-replay.",
+      "pause": 300
+    },
+    {
+      "text": "Nothing is promoted into offchain/: the replay is a harness concern with one consumer. If conformance-run-replay cannot reach the ledger's script arguments without an offchain/ change, that is a placement challenge to the ticket owner.",
+      "pause": 300
+    },
+    {
+      "text": "The traced build lives with the harness (build-traced-registry-blueprint-from-onchain-build), beside the naming blueprint precedent; onchain/flake.nix stays the only deployed recipe.",
+      "pause": 300
+    },
+    {
+      "text": "The control (wrong-reason-control-one-row-one-step) alters only the model side of one comparison; it never edits a capsule, a trace or a receipt after the fact.",
+      "pause": 300
     }
   ],
   "_source": {

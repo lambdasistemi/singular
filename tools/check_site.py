@@ -270,7 +270,27 @@ assert (
     and 'id="singular-palette-toggle"' in home
 ), "palette stylesheet or toggle missing"
 assert any(s.endswith("assets/palette.js") for s in pages[site / "index.html"].scripts)
-assert "assets/read-aloud.js" in home and 'rel="speech"' in home
+# Recorded narration: the page player, the per-page clip index, and every clip
+# it names, byte for byte from the repository (tools/narrate.py --check proves
+# the clips say the page text).
+assert any(
+    s.endswith("assets/narration.js") for s in pages[site / "index.html"].scripts
+)
+assert "window.singular" in home, "narration page identity missing"
+narration_index = json.loads((site / "docs/audio/index.json").read_text())
+narration_clips = [
+    clip["name"]
+    for sections in narration_index.values()
+    for clips in sections.values()
+    for clip in clips
+]
+assert narration_clips, "narration index is empty"
+for name in narration_clips:
+    served = site / "docs/audio/clips" / (name + ".mp3")
+    assert served.is_file() and served.stat().st_size > 0, (
+        f"narration clip missing: {name}"
+    )
+assert not (site / "docs/audio/manifest.json").exists(), "manifest must not ship"
 
 
 # ---------------------------------------------------------------------------

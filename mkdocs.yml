@@ -4,6 +4,8 @@ site_url: https://lambdasistemi.github.io/singular/
 repo_url: https://github.com/lambdasistemi/singular
 repo_name: lambdasistemi/singular
 docs_dir: .docs-source
+exclude_docs: |
+  docs/audio/manifest.json
 site_dir: site
 nav:
   - Home: index.md
@@ -77,7 +79,6 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_code_format
 extra_javascript:
   - assets/mermaid.min.js
-  - assets/read-aloud.js
 validation:
   links:
     not_found: warn

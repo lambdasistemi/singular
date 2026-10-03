@@ -1,13 +1,35 @@
 {
+  "focus-the-registry-builder-and-blueprint-modules": [
+    {
+      "text": "Focus the registry builder and blueprint modules.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I want the existing registry transaction commands to keep their outcomes after shared builder and blueprint work is separated into coherent modules. A refusal must still identify the same failed witness or budget condition, and a built transaction must still carry the same scripts, data, payments and identities.",
+      "pause": 400
+    },
+    {
+      "text": "The accepted Lean source revision is 03fd9e0ec4777a39f40362a8025c48066b0cb597; intake base is 887cde00331dd21b0de18e68c62bdd5bfbef7ab0 (constitution 1.10.0). This is a representation change. Lean's exit, transaction, settlement and admission definitions remain the behavioral authority. No Lean, wire, validator, public export or Conformance expectation changes are authorized.",
+      "pause": 400
+    }
+  ],
   "requirements": [
     {
-      "text": "The extraction preserves one implementation behind existing exports and results. The affected offchain library also gets same-revision generated Haddock with Cabal-discovered modules and checked source links.",
-      "pause": 400
+      "text": "Requirements.",
+      "pause": 500
     }
   ],
   "acceptance-boundary": [
     {
-      "text": "Operator answers (A-001 and A-002) authorize the candidate library reference and a local off-chain lock input with existing pins fixed. The future documentation archive carries the same pages; Conformance and all-library coverage remain later work.",
+      "text": "Acceptance boundary.",
+      "pause": 500
+    },
+    {
+      "text": "#198 / draft PR #219 also edits Cabal declarations and tests. This ticket adds only declarations needed for extracted modules, leaves its assertions and TxBuilder/Retract.hs unchanged, and records any actual overlap for the epic owner. A green build is a compile claim, not transaction correspondence. The live workflow observations and independent expected behavior keep their own evidence limits.",
+      "pause": 400
+    },
+    {
+      "text": "Operator answers (A-001 and A-002) authorize a bounded documentation build extension in this child so the generated Haddock reference appears beside the contributor guide. They allow one local off-chain root flake input and root lock entries, with every existing upstream pin and the off-chain lockfile unchanged. They do not authorize release or publication. The Conformance library's generated reference remains #276's responsibility; #278 audits integrated documentation and all-library coverage. A local site build is not a served Pages claim. The generated site also feeds the existing root build gate and future documentation archive; this ticket changes no release or publication script and claims no released archive. The archive must contain the same generated API pages, while the existing release-check remains a real check.",
       "pause": 400
     }
   ],

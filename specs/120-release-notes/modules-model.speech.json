@@ -1,17 +1,35 @@
 {
+  "modules": [
+    {
+      "text": "Modules.",
+      "pause": 500
+    },
+    {
+      "text": "Retroactive record, written 2026-09-15 from PR #121 merged at 454aec3858f0aa029d93928f09b5c4447bf49894.",
+      "pause": 400
+    }
+  ],
   "new-and-changed-responsibilities": [
     {
-      "text": "The publisher composes, the stable text introduces, the publish checker doubles, the release checker compares, and the archive README describes. The flowchart shows changelog and stable text flowing into the publisher and both checkers observing.",
-      "pause": 400
+      "text": "New and changed responsibilities.",
+      "pause": 500
     }
   ],
   "dependency-direction": [
     {
-      "text": "Changelog and stable text flow into the publisher and then the release; both checkers observe the real scripts without replacing them.",
+      "text": "Dependency direction.",
+      "pause": 500
+    },
+    {
+      "text": "The changelog and stable text flow into the publisher; the publisher flows into the release; both checkers observe the real scripts without replacing them. Docs describe the archive; they do not define release identity.",
       "pause": 400
     }
   ],
   "promotion": [
+    {
+      "text": "Promotion.",
+      "pause": 500
+    },
     {
       "text": "No new modules. The existing shell stays the extractor; checks replace hand assertions with the composed-body identity.",
       "pause": 400

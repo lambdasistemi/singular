@@ -1,18 +1,36 @@
 {
-  "_source": {
-    "file": "spec.md",
-    "sha256": "99be5e65629b3fc4d08c534b18c2f1c8c6b0b7138a610b7b6ab6bddfd455d7e0"
-  },
+  "bounded-submission-and-confirmation": [
+    {
+      "text": "Bounded submission and confirmation.",
+      "pause": 500
+    },
+    {
+      "text": "As a conformance or end-to-end operator, I need any wait on a submitted transaction to end within a known time with a failure that names the transaction and the elapsed time. That covers a submission the node never decides, a transaction that never reaches a block, and a confirmation watching a chain that has stopped. A stalled node then costs minutes instead of a manual interrupt, and it is never mistaken for a ledger refusal or an acceptance.",
+      "pause": 400
+    }
+  ],
   "requirements": [
     {
-      "text": "A submission with no node verdict, an output that never reaches the indexer, and a session confirmation on a stopped chain or a stalled node read each end within a finite bound. That includes the reads that compute the confirmation window. The failure names the transaction and the elapsed time, and a closed confirmation window ends as the same failure. Prompt answers behave as before, and nothing is left running when a bound fires. No wait failure is ever published as a refusal, a control outcome, a row outcome or an acceptance, and no catch that classifies or retries failures swallows it.",
+      "text": "Requirements.",
       "pause": 500
     }
   ],
   "authority-and-evidence": [
     {
-      "text": "The Lean model and constitution are unchanged, because a bound on a wait is runner infrastructure, not a model outcome. The historical run stopped while waiting for the node's submission verdict, which the pinned client awaits without a limit. The session confirmation could wait forever on a stopped chain.",
+      "text": "Authority and evidence.",
       "pause": 500
+    },
+    {
+      "text": "Base a0770318f5037e79e815e7831cfa539213f2853e carries constitution 1.11.0 and the Lean model unchanged. A bound on a wait is runner infrastructure: no Lean definition, outcome class or judgement changes, and none is reported as refused, accepted or unsupported.",
+      "pause": 400
+    },
+    {
+      "text": "The historical run (issue #281) stopped after its unit report and printed no submission verdict. The harness was therefore waiting for the node's LocalTxSubmission answer, which the pinned client awaits without a bound. The indexed wait already had a 300 second window that no check had ever executed. The session confirmation ends only when the tip passes a deadline, which a stopped chain never reaches.",
+      "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "99be5e65629b3fc4d08c534b18c2f1c8c6b0b7138a610b7b6ab6bddfd455d7e0"
+  }
 }

@@ -1,14 +1,54 @@
 {
   "done": [
     {
-      "text": "Done so far: the operator's application scope is recorded in ticket 310 with its clean lane and baseline, the envelope, booking authorization, permissionless fold and additive settlement are proposed, and the executable law, driver, corpus, statements and ledgers exist. They were independently reviewed, and every accepted statement is proved with clean axiom evidence.",
-      "pause": 400
+      "text": "Done.",
+      "pause": 500
+    },
+    {
+      "text": "[x] Record the operator application scope in dedicated310 and reconcile301/299/300 allocation.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Create clean310 lane on accepted502; capture clean rootCI baseline038 before edits.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Propose protected envelope, booking authorization, permissionless fold and additive settlement; freeze model-only contract and remaining schedule.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Author executable application law/composition, driver/JSON surface and reproducible witness/mutant corpus.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Author exact statements, public inversions and finite theorem/semantic-atom ledgers; publish proof debt and abstraction limits.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Obtain independent SHA-bound model/statement review and disposition every required finding.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Prove unchanged accepted statements or return constructive refutations; capture clean qualified axiom evidence.",
+      "pause": 300
     }
   ],
   "still-open": [
     {
-      "text": "Still open: the application scripts, encoding and production builders; connected controls for custody, authorization, refunds, duplicates and permanent retirement; and the hand-off to tickets 299 and 300. Public-chain, release and merge steps stay separate.",
-      "pause": 400
+      "text": "Still open.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] Freeze application-code scope/gate and implement concrete scripts, encoding and production builders.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Execute compiled and connected controls for custody, authorization, additive refunds, duplicates and permanent retirement.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Hand exact accepted application interface to299 and artifact identity to300; public-chain/release/merge checkpoints remain separate.",
+      "pause": 300
     }
   ],
   "_source": {

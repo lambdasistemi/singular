@@ -1,19 +1,41 @@
 {
+  "functions": [
+    {
+      "text": "Functions.",
+      "pause": 500
+    },
+    {
+      "text": "Retroactive record, written 2026-09-15 from PR #109 merged at fc2ad9e5987b171ca33a430f5bbe170ab6423fd5.",
+      "pause": 400
+    }
+  ],
   "tool-behaviour": [
     {
-      "text": "Scan shells and Python, rewrite, grep residuals with the same grep, derive survival from citation lines, pass clean trees and name planted strays.",
+      "text": "Tool behaviour.",
+      "pause": 500
+    },
+    {
+      "text": "No bodies here.",
       "pause": 400
     }
   ],
   "test-behaviour": [
     {
-      "text": "Cut a throwaway worktree, snapshot index and bytes, compare two runs for the no-op, plant the stray, require the failure, clean up.",
+      "text": "Test behaviour.",
+      "pause": 500
+    },
+    {
+      "text": "Cut a throwaway detached worktree from main; snapshot index plus all tracked bytes; run twice and compare for the no-op; plant the stray and require the gate-only failure; clean the worktree up on exit. Materialize the origin/main ref when a depth-1 checkout does not have one.",
       "pause": 400
     }
   ],
   "test-surface": [
     {
-      "text": "Run-one pass, run-two no-op pass, planted-stray failure, pre-fix failure at run one, weakened derivation firing.",
+      "text": "Test surface.",
+      "pause": 500
+    },
+    {
+      "text": "Run-1 completion with gate pass; run-2 byte-identical no-op with gate pass; planted-stray gate-only failure naming the file; pre-fix script failing at run 1; weakened derivation firing the control.",
       "pause": 400
     }
   ],

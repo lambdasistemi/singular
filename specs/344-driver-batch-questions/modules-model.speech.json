@@ -1,8 +1,22 @@
 {
+  "keep-the-driver-the-only-translator": [
+    {
+      "text": "Keep the driver the only translator.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want the batch questions inside the existing driver, transport and story responsibilities.",
+      "pause": 400
+    }
+  ],
   "responsibilities": [
     {
-      "text": "The model keeps its laws. The driver alone turns them into batch answers. The transport carries questions, the story language owns instructions, and the executor submits and asks.",
-      "pause": 350
+      "text": "Responsibilities.",
+      "pause": 500
+    },
+    {
+      "text": "The model owns the laws and stays unchanged. The driver owns the batch questions, their outcomes and observation extents; nothing outside it composes foldBatch, obligations or settle into an answer. The transport only carries questions. The story language owns the instructions; the executor owns submission and the question it asks. Dependencies keep this direction.",
+      "pause": 400
     }
   ],
   "_source": {

@@ -1,44 +1,142 @@
 {
+  "work-ledger": [
+    {
+      "text": "Work ledger.",
+      "pause": 500
+    },
+    {
+      "text": "Unchecked means outstanding, not authorized completion. Candidate checkpoints are not acceptance stamps. Each completed task needs a candidate and receipt. Tasks are grouped by the child ticket that owns them; a task belongs to exactly one child and is fenced by that child's pull request.",
+      "pause": 400
+    }
+  ],
   "220-executable-book-story-language-and-resource-lifetime-pr-217": [
     {
-      "text": "Four tasks, unchecked meaning outstanding rather than authorized; each task belongs to exactly one child and is fenced by that child's pull request. The render and fold must be total over one instruction set, with the control quantified over the discovered constructor extent. Every product claim is said in the story language, harness evidence stays in the skippable appendix, and no row identifier is something a reader navigates by. The migrated case sweep must show a differing-predicate count of zero, with accepts no weaker than the strongest old expectation. Finally, each example owns an OS-unique scoped temporary directory, released on return and on exception, with no top-level mutable fixture state; cross-process and exception controls close it, not a source sweep alone.",
-      "pause": 400
+      "text": "#220 — executable book story language and resource lifetime (PR 217).",
+      "pause": 500
+    },
+    {
+      "text": "[ ] opus-render-fold-total-over-one-instruction Opus: render and fold total over one instruction set, with the control quantified over the discovered constructor extent.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] opus-product-claim-said-in-dsl-harness Opus: every product claim said in the story language; harness evidence kept to the skippable appendix; no row identifier a reader navigates by.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] opus-migrated-case-sweep-differing-predicate-count Opus: the migrated case sweep with a differing-predicate count of zero, and accepts no weaker than the strongest old expectation.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] opus-example-owns-os-unique-scoped-temporary Opus: each example owns an OS-unique scoped temporary directory, released on return and on exception, with no top-level mutable fixture state; cross-process and exception controls, not a source sweep alone.",
+      "pause": 300
     }
   ],
   "221-generic-model-driver-and-translation-pr-226": [
     {
-      "text": "Five tasks for the generic model driver and translation, delivered by pull request 226. Opus integrates the applicable main without losing published evidence, drafts the constitutional translation and the representative story while identifying any semantic decisions that need the operator, reuses the model codecs and corpus to supply one generic driver, and exposes bound witness and mutant scenarios with lawful setup traces for the initial implemented lifecycle, retaining unsupported cases as gaps. The driver, parity and failure controls are executed by CI, and Grok reviews each committed checkpoint and the representative contract.",
-      "pause": 400
+      "text": "#221 — generic model driver and translation (PR 226).",
+      "pause": 500
+    },
+    {
+      "text": "[ ] opus-integrate-applicable-main-without-losing-published Opus: integrate applicable main without losing published evidence.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] opus-draft-constitutional-translation-representative-story-identify Opus: draft the constitutional translation and representative story; identify any semantic decisions requiring the operator.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] opus-reuse-model-codecs-corpus-supply-one Opus: reuse model codecs/corpus and supply one generic driver.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] opus-expose-bound-witness-mutant-scenarios-lawful Opus: expose bound witness/mutant scenarios and lawful setup traces for the initial implemented lifecycle; retain unsupported cases as gaps.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] opus-driver-parity-failure-controls-executed-by Opus: driver/parity/failure controls are executed by CI; Grok reviews each committed checkpoint and the representative contract.",
+      "pause": 300
     }
   ],
   "222-registration-comparison": [
     {
-      "text": "Three tasks under this child: the shared observation abstraction with complete declared comparison, then real success alongside changed-field and unallocated-identity controls, then removal of the replaced delivery adapter while retaining the language's rendering parity.",
-      "pause": 400
+      "text": "#222 — registration comparison.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] opus-shared-observation-abstraction-complete-declared-comparison Opus: shared observation abstraction and complete declared comparison.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] opus-real-success-changed-field-unallocated-identity Opus: real success, changed-field and unallocated-identity controls.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] opus-remove-replaced-delivery-adapter-retain-dsl Opus: remove replaced delivery adapter and retain story language rendering parity.",
+      "pause": 300
     }
   ],
   "223-connected-retirement-and-refusals": [
     {
-      "text": "Three tasks under this child: replay connected registration and retirement through the same driver, run the refusal replay and the accepted-mutant control at the correct boundary, then remove the replaced retirement adapter while keeping the positive and failing evidence.",
-      "pause": 400
+      "text": "#223 — connected retirement and refusals.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] opus-replay-connected-registration-retirement-through-same Opus: replay connected registration/retirement through the same driver.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] opus-refusal-replay-accepted-mutant-control-at Opus: refusal replay and accepted-mutant control at the correct boundary.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] opus-remove-replaced-retirement-adapter-retain-positive Opus: remove replaced retirement adapter; retain positive/failing evidence.",
+      "pause": 300
     }
   ],
   "224-batch-and-shared-end-to-end-contexts": [
     {
-      "text": "Two tasks under this child: complete batch observations with allocation refusal controls, and end to end execution supplied its context through the shared scenario logic, with the product text anchors removed.",
-      "pause": 400
+      "text": "#224 — batch and shared end-to-end contexts.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] opus-complete-batch-observations-allocation-refusal-controls Opus: complete batch observations and allocation refusal controls.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] opus-e2e-supplies-context-shared-execution-remove Opus: end-to-end supplies context to shared execution; remove product anchors.",
+      "pause": 300
     }
   ],
   "225-theorem-consumers-receipts-and-the-book": [
     {
-      "text": "Three tasks under this child. Muse or GLM mechanically extracts the theorem, consumer and CI inventories, with no coverage judgments and no source changes in the inventory assignment. Opus reconciles consumers and implements the missing, skip and staleness controls, then wires actual execution and the receipt-derived book into CI, reconciling the publication scope and preserving uncovered rows.",
-      "pause": 400
+      "text": "#225 — theorem consumers, receipts and the book.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] muse-glm-mechanically-extract-theorem-consumer-ci Muse/GLM: mechanically extract theorem, consumer and CI inventories; no coverage judgments or source changes in the inventory assignment.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] opus-reconcile-consumers-implement-missing-skip-staleness Opus: reconcile consumers, implement missing/skip/staleness controls.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] opus-wire-actual-execution-receipt-derived-book Opus: wire actual execution and receipt-derived book into CI; reconcile #218 publication scope and preserve uncovered rows.",
+      "pause": 300
     }
   ],
   "across-the-epic": [
     {
-      "text": "Two epic-wide tasks. Grok gives independent checkpoint verdicts and limits for every child, and the ticket owner disposes, stamps accepted tasks, and verifies the push and the refreshed preview per child. The merge itself remains outside this execution order.",
-      "pause": 400
+      "text": "Across the epic.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] grok-independent-checkpoint-verdicts-limits-for-child Grok: independent checkpoint verdicts and limits for every child.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] ticket-owner-disposition-accepted-task-stamps-verified Ticket owner: disposition, accepted task stamps, verified push and refreshed preview per child; merge remains outside this execution order.",
+      "pause": 300
     }
   ],
   "_source": {

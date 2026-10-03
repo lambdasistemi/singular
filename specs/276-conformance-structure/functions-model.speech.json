@@ -1,4 +1,14 @@
 {
+  "declaration-compatibility": [
+    {
+      "text": "Declaration compatibility.",
+      "pause": 500
+    },
+    {
+      "text": "No changed function signature. Move exactly data AssetEntry, instance FromJSON AssetEntry, and instance ToJSON AssetEntry to one owner. Keep the old public import path through Conformance.Receipt. Other functions and instances stay at their existing owners.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "functions-model.md",
     "sha256": "b73414b90bab7b20c5a3eccf718ccc84911fc58c9ae0b731026fa4195c1def5a"

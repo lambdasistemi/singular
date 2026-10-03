@@ -1,14 +1,32 @@
 {
+  "ask-lean-about-a-batch": [
+    {
+      "text": "Ask Lean about a batch.",
+      "pause": 500
+    },
+    {
+      "text": "As someone reading the conformance book, I want a fold of several requests and a reject of several requests compared with what Lean decides for that batch, not left as unsupported. This ticket exposes the batch laws Lean already states; #287 then compares empty-fold, request-value-and-refund-routing and register-active-key with them.",
+      "pause": 400
+    }
+  ],
   "required-behavior": [
     {
-      "text": "The driver answers a fold of several requests and a reject of several requests with Lean's existing laws, proves one-request preservation, keeps every single-request answer, moves its declared surface with the checks and the constitution table, carries meaningful controls, lets a story say a batch, and changes no law.",
-      "pause": 350
+      "text": "Required behavior.",
+      "pause": 500
     }
   ],
   "model-and-evidence": [
     {
-      "text": "The current main and the model file are bound exactly. This is a representation of existing laws; any needed law change stops the ticket. The three batch comparisons remain unverified until the traced replay supplies them.",
-      "pause": 350
+      "text": "Model and evidence.",
+      "pause": 500
+    },
+    {
+      "text": "Bind main ffe68b6f7c10851bab3acfba58c633dfdc1eab6b, lean/Singular/Model.lean blob 9c75b37380d5e6f56691345bcc50b60d3faf184b, constitution 1.11.0. Authority: operator ruling 2026-10-02 \"Foundation ticket first\", and the placement answer recording this as a technical representation of existing laws under constitution principle II. A required change to a law, obligation or principle stops the ticket and returns the concrete wording upward.",
+      "pause": 400
+    },
+    {
+      "text": "The empty-fold, request-value-and-refund-routing and register-active-key comparisons stay unverified here; #287's traced replay supplies them.",
+      "pause": 400
     }
   ],
   "_source": {

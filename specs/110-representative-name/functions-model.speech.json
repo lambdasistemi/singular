@@ -1,25 +1,47 @@
 {
+  "functions": [
+    {
+      "text": "Functions.",
+      "pause": 500
+    },
+    {
+      "text": "Retroactive record, written 2026-09-15 from PR #112 merged at b4a36eaf72d8a355d9048a00081a8f999c195e27.",
+      "pause": 400
+    }
+  ],
   "validator-functions": [
     {
-      "text": "The name equation, fold binding to the processed Insert key, retire and burn bindings, registry-checked mint and burn, and the withdrawal witness path.",
+      "text": "Validator functions.",
+      "pause": 500
+    },
+    {
+      "text": "No bodies here.",
       "pause": 400
     }
   ],
   "offchain-mirror": [
     {
-      "text": "A byte-exact Haskell mirror, the consumer equation, seed-before-policy derivation shared by deployment and attached runners, and evidence verification over accepted records.",
-      "pause": 400
+      "text": "Offchain mirror.",
+      "pause": 500
     }
   ],
   "deployment-checks": [
     {
-      "text": "Compiled policy compared with manifest and live state, live credential registration with reuse, substituted policies rejected, counts unchanged, and a fresh foreign-registry control.",
+      "text": "Deployment checks.",
+      "pause": 500
+    },
+    {
+      "text": "Compiled policy compared with the manifest and live state; live registration queried for representative, consumer, custody and staking credentials with reuse of existing registrations; a substituted manifest policy rejected; attached counts unchanged; fresh control exercises the foreign-registry refusal.",
       "pause": 400
     }
   ],
   "test-surface": [
     {
-      "text": "Aiken suites with the hash accept, the killed newline mutant, spelling refusals, foreign-registry and missing-witness controls, plus Haskell specs pinning the digest.",
+      "text": "Test surface.",
+      "pause": 500
+    },
+    {
+      "text": "Aiken naming suite with the spelling-hash accept, the newline preimage mutant killed, the rejected-spelling and wrong-hash refusals, the foreign-registry reference refusal and the missing-witness control; Haskell register and retire-verify specs pinning the e11d8149… digest and its newline sensitivity.",
       "pause": 400
     }
   ],

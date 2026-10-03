@@ -1,14 +1,40 @@
 {
+  "keep-registry-wire-values-stable-while-giving-them-owners": [
+    {
+      "text": "Keep registry wire values stable while giving them owners.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry integrator, I want requests, state, proofs and redeemers to keep their current public constructors and encoded bytes when their Haskell definitions move beside their encoding instances, so existing transactions and callers continue to work.",
+      "pause": 400
+    },
+    {
+      "text": "Intake base: b77c5b9260531acb754611fce5e4b5975ef54f16. Its accepted lean/ tree is f1e6a0edcaf9edce7369fd42add8b3677ddabeb2. Relevant authority is Singular.Model and the Singular.Driver transaction and custody observations, including the refund-only absent custody record. This extraction changes representation only; it grants no new wire ruling.",
+      "pause": 400
+    }
+  ],
   "acceptance": [
     {
-      "text": "The acceptance table binds each compatibility requirement to an executing or inspected witness. Literal wire data, existing callers, generated reference links and independent evidence each have a separate check.",
-      "pause": 350
+      "text": "Acceptance.",
+      "pause": 500
     }
   ],
   "boundary": [
     {
-      "text": "This ticket moves the Haskell wire types and codecs behind the original Types facade. The accepted custody datum still carries only a refund address. Lean, Aiken and Conformance changes need separate authority.",
-      "pause": 350
+      "text": "Boundary.",
+      "pause": 500
+    },
+    {
+      "text": "Types.hs, focused Wire.Primitive, Request, State, Redeemer and Proof modules, the public library Cabal stanza, necessary callers/tests, and directly relevant contributor documentation are owned. The existing AbsentCustody !ByteString and Constr 2 [refund] are the accepted wire. Issue #178 remains open for its own coverage and publication obligations; this ticket does not migrate that wire or its Conformance rows.",
+      "pause": 400
+    },
+    {
+      "text": "Lean, Aiken, simulator, naming, Conformance source/DSL/receipts/books/workflow, unrelated dependencies, release and deployment are excluded. A required excluded edit becomes one question to the epic owner before any change. A clear code conflict with Lean is repaired inside scope; Lean ambiguity or a bound consumer conflict holds affected acceptance for a user ruling under the constitution.",
+      "pause": 400
+    },
+    {
+      "text": "Evidence claims remain layer specific: literal Haskell Data checks and vector comparison establish codec shape; fresh-blueprint execution establishes the exercised off-chain/on-chain path; neither substitutes for a general live-chain or conformance claim.",
+      "pause": 400
     }
   ],
   "_source": {

@@ -1,47 +1,125 @@
 {
-  "what-is-deployed": [
+  "the-preprod-record": [
     {
-      "text": "One registry on preprod, network magic one, booted from the joiner wallet with a ten-minute processing window and a five-minute retract window — sized for a network that makes a block about every twenty seconds, not the factory devnet's one second.",
+      "text": "The preprod record.",
+      "pause": 500
+    },
+    {
+      "text": "As a reviewer who will never hold this repository's keys, I want one page that names exactly what is deployed on the public preprod network, what a verifier observes about it, and which transactions the acceptance journeys submitted — so I can check every claim against the chain myself, and so the deployment's limits are stated where the values are.",
       "pause": 400
     },
     {
-      "text": "The registry token, the five applied script hashes, the five reference-script outputs and the seven boot transactions are all named here exactly as the manifest records them, so every identifier on this page can be checked against the chain.",
+      "text": "Everything on this page is read back from the live node or copied from the files it produced. The manifest this page records is docs/preprod.json; the proof mirror that travels with it is docs/preprod.mirror.json.",
+      "pause": 400
+    }
+  ],
+  "what-is-deployed": [
+    {
+      "text": "What is deployed.",
+      "pause": 500
+    },
+    {
+      "text": "One registry on the preprod network (network magic 1), booted from the joiner wallet by deployment deploy --process-time 600000 --retract-time 300000 — ten-minute processing and five-minute retract windows, sized for a network that makes a block about every twenty seconds. The registry token is 0xbb41081f54d9c2cad883dbefe690affb0db49cff800e7574822fd1f57d76e778, booted in transaction 6222eea4cbfc7b7a4882d13caba5d12a1963c32b08a2220b81526882ab1f1920.",
+      "pause": 400
+    },
+    {
+      "text": "Applied script hashes, as compiled from release main-c27c3dd8ba5aac84732067deb996abd633c88202 and pinned by the manifest:",
+      "pause": 400
+    },
+    {
+      "text": "Five reference scripts are published by the deployment and consumed by reference in every journey transaction:",
+      "pause": 400
+    },
+    {
+      "text": "The boot sequence paid seven transactions in order — the token boot above, then 97361e8c60a37465fc824c05742d4033e93e334b87b87b8eff49de40163ef6ae, d4deba068fcbbf62f63f9032650e8f5f8c70ea09b461d239531baf767a2c039d, 1e0b52844259025ea304daf3f0c784088ca67650acf42297cef78814be285a14, a3983772a65b3455166ec24442a99563cca081a2164b11d24ce555bdd6481a70, d604ab0b1d2daa0fabd403fb5e7b83307664dc952f36bc7c5273c3d230a6aa35 and 1fed8a48deafe88743c9cee64eb5e6b7ad6422a5b3a02dd132c1b6885a86377e (credential registrations and reference publications).",
       "pause": 400
     }
   ],
   "what-the-verifier-checks": [
     {
-      "text": "The verifier reconnects to the node and checks the manifest claim by claim: the compiled state validator, the seed that determines the registry token, the representative policy, the request windows read back from the live state datum, each reference output, the state output, and four stake registrations. Fourteen claims hold; the output is reproduced verbatim.",
+      "text": "What the verifier checks.",
+      "pause": 500
+    },
+    {
+      "text": "deployment verify reconnects to the node and checks the manifest claim by claim. On 2026-09-15 it printed, verbatim:",
+      "pause": 400
+    },
+    {
+      "text": "The window claim is the one that matters for the story below: the registry's process_time is 600000 ms and its retract_time 300000 ms, and the verifier reads both back from the live state datum rather than trusting the manifest.",
       "pause": 400
     }
   ],
   "the-three-journeys": [
     {
-      "text": "Three journeys attached to this deployment and completed on chain, in order. Register claimed alice and folded her to Active. Recovery rotated control through the committed successor and maintained under it. Retirement retired the recovered name into custody and completed it to Over, burning the representative. Every transaction identifier is listed under its journey.",
+      "text": "The three journeys.",
+      "pause": 500
+    },
+    {
+      "text": "Every acceptance journey attached to this manifest and completed on chain, in this order, with the journeys' own transaction identifiers:",
+      "pause": 400
+    },
+    {
+      "text": "register — claim alice, fold it to Active: 2ec051f001ccce7dc0204e1c92cb3a1633406c5ba77febdd6bdba9f221784f7f (funding), cf20e5bce5a994d92a1a3c66362117fe01653a56088381a3bf0bb4fc6869503a (insert request), 5b62a47fe8afab1e3b5e5c42f9e54f44fa5fadde304574c96c3424fad1713a4d (registry request), 03933597c0fd71f289af95320a0215e2594e12fc56223c1fde386749d39b8ecf (fold; alice Active, representative minted +1).",
+      "pause": 400
+    },
+    {
+      "text": "recovery — rotate control through the committed successor and maintain under it: b7c7e4cd9b0462013e436988bc97920a939876d73cf4023d9af5cb68a68d1809 (funding), f2864130aa7c42eaf777fc22ff112072df8775fa14862afcc1f8698d829ba250 (setup claim), c978a48652debfcf6de08739ba4beafae0bd979fa654d4f234e7cba3d67e459c, d0f6723f0fb85dc7770c79c5a64008d5699d876adcbf57a09be1aab944f10ab5, dde669805686ffd9d2d3c832f0320730edcff13b7ca77508bd372789a009cb0d (setup and recovery rows), 99afbefffb45499e07061b481a25486dad9373ad745e3ad9cb7fb52af982d909 (maintenance under the recovered controller).",
+      "pause": 400
+    },
+    {
+      "text": "retirement — retire the recovered name into custody and complete it to Over: 3034441fe32a07924c2b009317d1380d58663e2ce294423b8f97397843860976 (funding), a1f349ee77852ad5692edec1ee3cea93e9088bf90a61b63559329bf6c7b35a07, f2a9b8a5321b7dc2e47106ca2479144678cef36c8f2f39e9c9d945f390e1ffc8, 33279a6d1268819b20991e251de2733c64db7aa9664ae38aea4ef9558a3400ad, f843738ab5c6795f0d4a59eea429eef2deee0b71900b46432db7ba99d2b66289, f6deaaae1d0e2d6debff7adf21a54547b3ecf059b04a4582630cca1ac1504af7, 801a215bd2f86d8a87d73f3819ea848f3666739a57b13d3af9bf30c5164b72c7, c8c5be03023b828cffd1dc623b345c3ef061f73b0d7ddb1b8b4d924d2a1c57a3 (completion: representative burned, rt-over recorded as Over).",
       "pause": 400
     }
   ],
   "finding-alice": [
     {
-      "text": "Alice's token is the registry's representative policy plus blake two of the spelling bytes, no newline, no prefix. Hash the spelling, substitute the published policy, and Koios returns the UTxO that holds the live record.",
+      "text": "Finding alice.",
+      "pause": 500
+    },
+    {
+      "text": "Given the registry's representative policy id 64adbd9cd944738680f670cbd0456294951b20ac12eb1f3ebeb0dc88, alice's NFT is that policy plus blake2b_256(\"alice\"):",
+      "pause": 400
+    },
+    {
+      "text": "Find the live UTxO on preprod with the Koios Asset UTxOs query from the naming walkthrough:",
       "pause": 400
     }
   ],
   "reproduce-it-yourself": [
     {
-      "text": "The two commands that produced this record can still be pointed at the deployment: deployment verify against the manifest in this repository, and an attached register run with your own spelling. Two availability facts to read this with: the deployment tool builds from the current source but no required workflow exercises it on every candidate, so the verifier output here is a historical run, and register rows is a retained legacy command not currently buildable or verified, its repair owned by issue two eighty-three, so the attached claim is this record's history until that repair lands. Alice is already Active here, so a rerun asking for her is refused by design; the mirror file must travel with the manifest, and a run whose mirror disagrees with the chain stops and says so.",
+      "text": "Reproduce it yourself.",
+      "pause": 500
+    },
+    {
+      "text": "From the release archive (or this repository), with your own node socket and wallet as the onboarding page describes, you can point the two tools that produced this record at the deployment:",
+      "pause": 400
+    },
+    {
+      "text": "Two availability facts to read this reproduction with. The deployment tool builds from the current source, but no required workflow exercises it on every candidate — the verifier output above is a historical run of 2026-09-15 against release main-c27c3dd8…, and the manifest's own claims are what you would re-check. The attached claim command names register-rows, a retained legacy command that is not currently buildable or verified against the released source, with its repair owned by #283; until that repair lands the attached claim is this record's history, not a runnable instruction.",
+      "pause": 400
+    },
+    {
+      "text": "verify re-runs the fourteen checks above against whatever node you point it at. The attached run folds your own spelling instead of alice — alice is already Active here, and an attached rerun that asks for a held spelling is refused by design, naming the refusal. The mirror file travels with the manifest: a fold needs the trie it records, and a run whose mirror root disagrees with the chain stops and says so.",
       "pause": 400
     }
   ],
   "the-first-deployment-and-its-stranded-name": [
     {
-      "text": "This is the second deployment on preprod. The first used a 120-second processing window; its retirement fixture reached custody after the window closed, and the validator rejects an aged request instead of folding it, so that name is stranded at custody with no way to complete. The reproduction is recorded as issue one hundred thirty and is the evidence behind this deployment ten-minute windows; the first registry is left untouched as the evidence.",
+      "text": "The first deployment and its stranded name.",
+      "pause": 500
+    },
+    {
+      "text": "This is the second deployment on preprod. The first (registry 0xe82f5e34833d7a74ad0359788dfa31d7879d851d2af6c5d4f0f88518f11433b9, 120-second process window, manifest and mirror kept as history) stranded a name: its retirement fixture rt-over reached custody, but the completion fold was built after the 120-second request window had closed, and the validator rejects an aged request instead of folding it — so rt-over sits at custody with no way to complete. That reproduction is recorded as issue #130 and is the evidence behind the deployment window parameters this deployment boots with; the first registry is untouched and its remaining funds stay where they are.",
       "pause": 400
     }
   ],
   "what-this-record-does-not-cover": [
     {
-      "text": "This page is a photograph of one deployment, not a promise about the next one. Future deployments boot new registries with new tokens and policies. Refusal behaviour, the naming walkthrough and operator onboarding stay on their own pages, and the raw run logs live in the milestone acceptance evidence.",
+      "text": "What this record does not cover.",
+      "pause": 500
+    },
+    {
+      "text": "The record is a photograph of one deployment, not a promise about the next one: future deployments boot new registries with new tokens and policies, and this page names only what exists today. Refusal behaviour, the naming walkthrough and the operator onboarding stay on their own pages; the raw run logs behind the transaction lists above live in the milestone acceptance evidence, not in this repository.",
       "pause": 400
     }
   ],

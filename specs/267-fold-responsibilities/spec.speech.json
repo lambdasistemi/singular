@@ -1,33 +1,35 @@
 {
+  "give-registry-folds-coherent-owners": [
+    {
+      "text": "Give registry folds coherent owners.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry caller, I want a fold built through the existing Update API to keep its request order, token effects, custody refunds, destinations and signer requirements while its preparation, duty decisions and assembly gain clear owners. This is a representation change, not a new registry rule.",
+      "pause": 400
+    },
+    {
+      "text": "Intake base: 446617ab99b181bbcc0939728b3f77edf92e9a32. Accepted Lean at intake: that commit's lean/ tree f1e6a0edcaf9edce7369fd42add8b3677ddabeb2 (Model.lean blob 19806f297bf9a998e795747e0f1601b5376ebbe1; Statements.lean blob e40c40c0165fbf110902544126e7f76edef6c25e). The latest model-source commit is 5a6e307c1caf1b4cdd6b2fae082d4b0c33c338f4; the later Lean corpus commit 57e173d0e98869e491ea486c0e058c0b35d8c80e is included in the intake tree. foldActions, foldBatch, obligations, txOf, requiredSigners and Statements.fold_requires_no_signer bind this change.",
+      "pause": 400
+    }
+  ],
   "requirements": [
     {
-      "text": "Six requirements govern this change. Each original declaration gets exactly one owner, with all six public Update exports retained, including record selectors and instances, proven by a before-and-after declaration map, an unchanged export list, and compiled original callers.",
-      "pause": 450
-    },
-    {
-      "text": "Ordered request lookup, speculative proofs, state continuation, fee input and upper slot are kept. Focused controls are joined by a fresh-blueprint two-request fold that presents real request outputs in descending TxIn order, checks ascending input and proof association, then observes request consumption and the chain and mirror root. A swapped-association control must fail in the same run.",
-      "pause": 400
-    },
-    {
-      "text": "Duty results and refusals are kept: mint quantities, approval returns, holder selection, destination datums, custody spends and refunds, owner deposit settlement, and no required signer. Existing focused assertions are joined by a connected seven-edge fresh-blueprint scenario that compares observed pre-state and Lean-derived effects with the built body and landed outputs. Each live comparison must pass and its one-field mutant fail in the same run. Coverage is finite and representative.",
-      "pause": 450
-    },
-    {
-      "text": "Transaction assembly, balancing and script and reference use stay at the same public call path, shown by the component build, the focused cage suite, the fresh-blueprint journey and exact-head CI.",
-      "pause": 400
-    },
-    {
-      "text": "Contributor-facing ownership, dependency and fold-flow documentation is published with source and API links and speech, passing the presentation checks and source-derived review. And independent evidence derivation and Conformance state stay untouched: unchanged consumer compilation and listing, and no new coverage claim.",
-      "pause": 450
+      "text": "Requirements.",
+      "pause": 500
     }
   ],
   "boundary": [
     {
-      "text": "The boundary. The deposit and custody settlement code, the shared-custody case and the model exit obligations are intake facts, not rules to reinterpret. One set of tests is outside this scope. No Lean, on-chain, wire, validator, Conformance, workflow, executable-name, release or deployment edit belongs to this ticket. The epic owner made one narrow dependency exception: cardano-crypto-class may be added only to the e2e-tests component for the datum-hash witness. Any other excluded-surface change is a question before edit. A clear code-versus-Lean contradiction is repaired within scope with evidence, while ambiguity or a model conflict holds the affected acceptance.",
-      "pause": 550
+      "text": "Boundary.",
+      "pause": 500
     },
     {
-      "text": "Source inspection and a passing build alone do not establish transaction correspondence: the exact candidate, model, gate receipts, negative control, independent audit and uncovered behavior stay explicit in the pull-request record.",
+      "text": "The #253 deposit/custody settlement code, #254 shared-custody case and #258 model exit obligations are intake facts, not rules to reinterpret. #198 tests are outside this implementation scope. No Lean, on-chain, wire, validator, Conformance, workflow, executable-name, release or deployment edit belongs to this ticket. The sole dependency exception is the epic owner's operator answer (A-018) ruling: cardano-crypto-class may be added only to the e2e-tests Cabal component so the new datum-hash witness can compile. Any other excluded-surface change is a question to the epic owner before any edit. A clear code/Lean contradiction is repaired within scope with evidence; ambiguity or model conflict holds affected acceptance.",
+      "pause": 400
+    },
+    {
+      "text": "Source inspection and a passing build alone do not establish transaction correspondence. The exact candidate, model, gate receipts, negative control, independent audit and uncovered behavior remain explicit in the PR record.",
       "pause": 400
     }
   ],

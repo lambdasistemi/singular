@@ -1,30 +1,44 @@
 {
+  "functions": [
+    {
+      "text": "Functions.",
+      "pause": 500
+    },
+    {
+      "text": "New public functions. No bodies here.",
+      "pause": 400
+    }
+  ],
   "naming-lean": [
     {
-      "text": "wellFormedFixture, namingStep, namingResolve, and namingReplay. Delete is refused with naming-no-delete.",
-      "pause": 400
+      "text": "Naming Lean.",
+      "pause": 500
     }
   ],
   "simulator-naming-engine-simulatornamingmjs": [
     {
-      "text": "namingInitial, spellingKey, queueClaim, foldRequest, namingStep, and namingResolve. Two alice queues may both accept.",
-      "pause": 400
+      "text": "Simulator naming engine (simulator/naming.mjs).",
+      "pause": 500
     }
   ],
   "profile-selection": [
     {
-      "text": "selectProfile accepts only generic and the naming profile. No implicit fallback.",
-      "pause": 400
+      "text": "Profile selection.",
+      "pause": 500
     }
   ],
   "inventories": [
     {
-      "text": "Generic check_model still matches the frozen forty-one records. Naming statements use a separate inventory, all proved from standard axioms.",
+      "text": "Inventories.",
+      "pause": 500
+    },
+    {
+      "text": "Generic tools/check_model.py still inventories Statements.lean into lean/theorem-debt.json and must match the frozen forty-one records. A separate path inventories NamingStatements.lean into lean/naming-theorem-debt.json. Names in the naming inventory do not appear in the generic inventory. Every naming record is PROVED from the standard axioms only.",
       "pause": 400
     }
   ],
   "_source": {
-    "file": "specs/20-naming-claims/functions-model.md",
+    "file": "functions-model.md",
     "sha256": "6b61f1356c22d9cdd4d2a3754260f7f9fc771767917321270a0b3f3608c15b56"
   }
 }

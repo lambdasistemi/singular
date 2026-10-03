@@ -1,120 +1,74 @@
 {
-  "_source": {
-    "file": "offchain-deployment-owners.md",
-    "sha256": "e2ed4d1de449d49f086599d362daec30ff6c8c1da94228e0b0567f1563dd068d"
-  },
+  "who-owns-a-deployment-record": [
+    {
+      "text": "Who owns a deployment record.",
+      "pause": 500
+    },
+    {
+      "text": "A contributor changing what a deployment carries — a manifest field, a mirror entry, the checks a run makes before it attaches to a recorded registry — wants to edit one module beside the concern it owns, and have the review ask one question. Before the extraction, all of it lived in one 677-line Deployment module where a JSON key change, a mirror persistence change and a node query change were reviewed side by side with nothing between them. Now the record has three focused owners behind the same public facade, and this page tells a contributor which owner their change belongs to, which way the dependencies run, what the record may never do while it moves, and where the evidence boundary sits.",
+      "pause": 400
+    }
+  ],
   "the-story-this-serves": [
     {
-      "pause": 400,
-      "text": "An operator records one deployment and attaches later runs to it."
+      "text": "The story this serves.",
+      "pause": 500
     },
     {
-      "pause": 500,
-      "text": "The story demands the same manifest bytes, the same mirror path and contents, the same node checks and refusal messages after the code is divided into owners."
+      "text": "As a registry operator, I record one deployment and attach a later run to it; I want the same manifest bytes, the same mirror path and contents, the same node checks, refusal messages and transaction effects after the code is divided into owners, so the files I already carry between machines keep working and a wrong registry is still refused by name. A contributor refactoring the record's home owes me that.",
+      "pause": 400
     },
     {
-      "pause": 500,
-      "text": "The focused suite executes finite fixture cases: the manifest's keys, pretty bytes and newline, the output-reference spelling and four named refusals, the mirror's hex maps and replacement write, and the attachment path itself."
-    },
-    {
-      "pause": 500,
-      "text": "One row resolves two reference outputs and the state output in the recorded order, reading the provider's query record back."
-    },
-    {
-      "pause": 500,
-      "text": "Refusal rows observe the real named diagnostics for a differing script hash, a spent output, a scriptless output, an unreadable address, a contradicting seed, a different release, a missing state token, and the two live-state refusals only verification makes."
-    },
-    {
-      "pause": 500,
-      "text": "The mutation evidence is equally finite: before the move the six single-site mutants failed one, two, one, one, one and one rows; after the move a field swap failed eight of two hundred fifty rows, and a hash bypass failed the one named refusal."
-    },
-    {
-      "pause": 450,
-      "text": "Three branches have no focused row: the mirror's JSON parse refusal, a process-window-only mismatch, and the representative-policy pin through attach, which the devnet step exercises through verify. The out-of-range output index has no refusal row either, since this toolchain's read accepts it."
+      "text": "What the focused suite executes — finite fixture cases, named here with their counts and limits: the manifest's JSON keys, its pretty bytes and trailing newline, the strict read error that names the file, every --deployment spelling and the environment fallback, the txid#index round trip with four named refusals, the mirror's path beside the manifest, its hex maps, its replacement write and its absent-file empty map, and the attachment path itself — one row resolving two recorded reference outputs and the state output in the order the manifest records them, reading the provider's query record back, and refusal rows observing the real named diagnostics for a reference output whose live script hash differs from the pin, one that is no longer live, one that carries no script at all, an unreadable recorded address, a seed whose derived token contradicts the manifest, a release whose state validator hash differs, a registry address with no recorded token, and the two live-state refusals only verification makes — the active policy and the process and retract windows. The mutation evidence is equally finite: before the move, six single-site source mutations on the unsplit module failed these counts — a hash-acceptance bypass one row, a reference reorder two rows, the mirror path one row, the manifest newline one row, a process-window- only check one row, the mirror newline one row; after the move, a field swap between the manifest's two address spellings failed eight of two hundred fifty rows, and a hash-acceptance bypass failed the one named refusal. Three branches have no focused row: the mirror's JSON parse refusal, a process-window-only window mismatch, and the representative-policy pin through attach itself — the devnet identity step executes that pin through verify, not attach. The out-of-range output index has no refusal row either: this toolchain's fixed-width read accepts out-of-range and negative indices, so the suite pins the four refusals the parse genuinely makes.",
+      "pause": 400
     }
   ],
   "one-owner-per-record": [
     {
-      "pause": 400,
-      "text": "The deployment command is one of those callers: its flag reading, release loading, node operations and its deploy, verify and count verbs import the facade's names and nothing behind it, as the registry command page describes."
+      "text": "One owner per record.",
+      "pause": 500
     },
     {
-      "pause": 400,
-      "text": "Callers keep importing the facade, which re-exports exactly the surface they already used."
+      "text": "The deployment command is one of those callers: its command-local modules — flag reading in Deployment.Options, release loading in Deployment.Compiled, node operations in Deployment.Node and the deploy, verify and count verbs — import the facade's names and nothing behind it, as described in Who owns a registry command.",
+      "pause": 400
     },
     {
-      "pause": 500,
-      "text": "The manifest owner holds the values, their JSON, the paths and the output-reference spelling; the mirror owner holds persistence beside the manifest; the attach owner holds the release pins, verification and attachment."
-    },
-    {
-      "pause": 500,
-      "text": "The mirror reads its path and helpers from the manifest owner, so the mirror file's location has one definition."
-    },
-    {
-      "pause": 450,
-      "text": "Attachment reads the same manifest values plus the focused identity and lookup adapters the builders use, so a recorded address and a built address are derived the same way."
+      "text": "The facade re-exports exactly the surface callers already import; the three owners are package-internal modules of the same library, so the generated API reference documents them for the contributor while a caller keeps compiling against the facade. The mirror reads its path, its hex rendering and its error helper from the manifest owner, so .mirror.json has one definition; attachment reads manifest values and the output-reference parse from the same owner, plus the focused identity and lookup adapters the builders use, so a recorded address and a built address are derived the same way.",
+      "pause": 400
     }
   ],
   "what-each-owner-holds": [
     {
-      "pause": 350,
-      "text": "A table is shown here with three owners."
-    },
-    {
-      "pause": 500,
-      "text": "The manifest owner refuses an unreadable manifest naming the file, and a malformed output reference naming what was wrong."
-    },
-    {
-      "pause": 500,
-      "text": "The mirror owner refuses an unparsable mirror naming the file, and a value that is not hex."
-    },
-    {
-      "pause": 500,
-      "text": "The attach owner refuses a differently compiled release, a contradicting seed, a spent, scriptless or mismatched reference output, an unreadable address, a missing state token — and, for verification only, a live state whose active policy or windows disagree with the manifest."
+      "text": "What each owner holds.",
+      "pause": 500
     }
   ],
   "the-boundary-the-record-cannot-carry": [
     {
-      "pause": 400,
-      "text": "Folding means proving a key against the whole trie, so the deployment carries it as the mirror file beside the manifest."
+      "text": "The boundary the record cannot carry.",
+      "pause": 500
     },
     {
-      "pause": 500,
-      "text": "That file is checked rather than hoped away, and the check belongs to the caller that attaches, not to the attach operation itself."
+      "text": "Writing to a registry means proving a key against the registry's current trie, and that proof needs the whole trie, not the root the chain reports. The deployment carries it as the mirror file beside the manifest, written by each run and read by the next — the record's one non-chain dependency. That file is a hazard, so it is checked rather than hoped away, and the check belongs to the caller that attaches, not to the attach operation itself: after attaching, the retained journey callers load the mirror and compare its root with the chain's root, so a mirror that drifted — a run that died mid-fold, a copy belonging to another deployment — fails by that comparison instead of building proofs against a trie the chain does not have. The extraction does not move that comparison; moving it without a behavior and evidence contract would change the boundary.",
+      "pause": 400
     },
     {
-      "pause": 500,
-      "text": "After attaching, the retained journey callers load the mirror and compare its root with the chain's, so a drifted copy fails by that comparison."
-    },
-    {
-      "pause": 500,
-      "text": "Attachment and verification stay two operations: verification reads the live state datum and refuses a mismatched policy or windows; attachment returns the resolved outputs without those checks."
-    },
-    {
-      "pause": 450,
-      "text": "A run that attaches is not thereby verified."
+      "text": "Attachment and verification stay two operations, not one. Both resolve the release pins, the token, the recorded reference outputs and the state output; verification then reads the live state datum and refuses a mismatched active policy or process and retract windows before reporting its claims, while attachment returns the resolved outputs without those additional checks. A run that attaches is not thereby verified — the journey callers' mirror comparison and the deployment command's verification are separate acts.",
+      "pause": 400
     }
   ],
   "evidence-and-limits": [
     {
-      "pause": 400,
-      "text": "The focused suite runs over files and a provider stub serving finite outputs."
+      "text": "Evidence and limits.",
+      "pause": 500
     },
     {
-      "pause": 500,
-      "text": "The devnet identity step rides the required Build Gate status context — a normal, non-continue-on-error step on the open, synchronize and reopen pull-request runs of that job, so a refusal or a setup failure fails Build Gate itself — and deploys a registry, verifies the intact manifest end to end, and observes the real refusal when the recorded policy is changed."
-    },
-    {
-      "pause": 500,
-      "text": "The row stays open until the pushed PR head's Build Gate run shows the step executed and passed."
-    },
-    {
-      "pause": 500,
-      "text": "The focused rows are not a public journey and claim no mirror-root comparison; the retained journeys are covered by source-level mapping, not by the classified component build; and the identity step establishes same-release agreement, not cross-release stability."
-    },
-    {
-      "pause": 450,
-      "text": "The mirror-root comparison remains executable only in the retained journeys, so its status is a named limit rather than a green row."
+      "text": "The focused cage suite executes the rows above over files and a provider stub serving finite UTxOs; the devnet identity step rides the branch ruleset's required Build Gate status context — a normal, non-continue-on-error step on the open, synchronize and reopen pull-request runs of that job, so a refusal or a setup failure fails Build Gate itself — and boots a real devnet, deploys a registry, verifies the intact manifest end to end, and observes the real refusal and its diagnostic when the recorded representative policy is changed. The row stays open until the pushed PR head's Build Gate run shows the step executed and passed. Limits are named rather than implied: the focused rows exercise the library attachment path over a fixture, not a public journey, and no mirror-root comparison is claimed there; the retained register, recovery and retirement journeys are excluded from the classified component build and are covered by source-level caller mapping here, not by compilation in that carrier; the devnet identity step establishes same-release agreement between the manifest's pins and the release in hand, not cross-release stability of the identity producers; and the focused suite has no row for the mirror's JSON parse refusal, a process-window-only mismatch, or the representative-policy pin through attach. The mirror-root comparison itself remains executable only in the retained journeys, whose three-runner check cannot complete today, so its status is a named limit rather than a green row.",
+      "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "offchain-deployment-owners.md",
+    "sha256": "e2ed4d1de449d49f086599d362daec30ff6c8c1da94228e0b0567f1563dd068d"
+  }
 }

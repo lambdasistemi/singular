@@ -16,6 +16,20 @@ serve-docs:
 check-presentation:
     python3 tools/check_presentation_repo.py
 
+# Rewrite the speech companions from the pages, exactly as the pages read.
+
+# The extraction tool renders each page with this site's own Markdown settings.
+extract-speech:
+    mkdocs-speech --config mkdocs.yml docs
+    mkdocs-speech --config mkdocs.yml specs
+    dir="$(mktemp -d)" && cp README.md "$dir" && mkdocs-speech --config mkdocs.yml "$dir" && cp "$dir/README.speech.json" README.speech.json
+
+# Generate the narration clips the companions still lack (needs DEEPINFRA_API_KEY).
+
+# A segment that changed gets a new clip; the rest are kept.
+narrate:
+    python3 tools/narrate.py --generate
+
 # After editing PAGE.md and redoing PAGE.speech.json: just stamp-speech PAGE.md
 stamp-speech +pages:
     python3 tools/stamp_speech.py {{ pages }}

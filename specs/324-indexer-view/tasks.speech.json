@@ -1,4 +1,34 @@
 {
+  "324-tasks": [
+    {
+      "text": "#324 tasks.",
+      "pause": 500
+    },
+    {
+      "text": "The ticket owner stamps tasks at acceptance.",
+      "pause": 400
+    },
+    {
+      "text": "[x] gated-index-indexed-point-follower-writes-through (adapter-contract-spec-adapter-its-failure-classes) Gated index and indexed point; follower writes through it (indexed-point-slot-block-hash-last-block, gated-index-pinned-indexerhandle-whose-mutations-view, gated-index-construction) (node-indexer-data-combined-at-same-chain; immutable-index-during-view-apply-or-rollback, no-deadlock-confirmation-waits-awaitindexed-submissions-never, no-upstream-reimplementation-no-index-state-reconstruction).",
+      "pause": 300
+    },
+    {
+      "text": "[x] indexer-adapter-point-agreement-bounded-wait-named (adapter-contract-spec-adapter-its-failure-classes) Indexer adapter with point agreement, bounded wait and named failures; followedProvider on it (indexer-view-failure-one-named-class-per, indexer-provider, followed-provider) (indexer-adapter-implements-read-interface-address-reads, node-indexer-data-combined-at-same-chain, explicit-failures-named-outcome-class-carrying-points; one-point-view-read-one-indexer-adapter, named-refusal-lag-fork-tip-started-or, reachability-on-live-devnet-adapter-admits-views, model-preserved-conformance-cli-journey-e2e-verdicts).",
+      "pause": 300
+    },
+    {
+      "text": "[x] contract-spec-positive-reads-equal-in-memory (adapter-contract-spec-adapter-its-failure-classes) Contract spec: positive reads equal the in-memory adapter's at the same point; content-dependent negative controls for mixed checkpoints, fork, lag, coverage, restoration, disconnection and unsupported capability (explicit-failures-named-outcome-class-carrying-points; one-point-view-read-one-indexer-adapter–named-refusal-lag-fork-tip-started-or).",
+      "pause": 300
+    },
+    {
+      "text": "[x] backend-selected-by-configuration-at-cli-startup (cli-selection-devnet-journey-on-main-after) Backend selected by configuration at CLI startup; DevNet CLI journey through the indexer adapter (selection-by-configuration-at-startup-backend-node, ordinary-command-create-insert-update-terminate-inspect; selection-at-startup-singular-cli-reaches-indexer, model-preserved-conformance-cli-journey-e2e-verdicts).",
+      "pause": 300
+    },
+    {
+      "text": "[x] indexer-backend-configuration-failure-messages-tracked-dependency (cli-selection-devnet-journey-on-main-after) docs/ indexer backend configuration and failure messages; tracked-dependency links in the PR (ordinary-command-create-insert-update-terminate-inspect, missing-upstream-primitive-in-cardano-node-clients).",
+      "pause": 300
+    }
+  ],
   "_source": {
     "file": "tasks.md",
     "sha256": "7fd43d160b101eef345e4c35c96a5969b23c6feac66dd18423068bdb1d1b336e"

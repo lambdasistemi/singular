@@ -1,26 +1,76 @@
 {
+  "show-the-fold-budget-regression-can-fail-in-ci": [
+    {
+      "text": "Show the fold budget regression can fail in CI.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry integrator, I need evidence that the conformance job's own command fails when the runner stops declaring script budgets from node evaluation and falls back to a fixed guess that is too small. The same command must succeed once the evaluated declaration is restored. Then a green conformance job tells me honest folds are budgeted by measurement, not by luck.",
+      "pause": 400
+    }
+  ],
   "requirements": [
     {
-      "text": "A mutant of the candidate changes one thing: the runner's per-purpose declaration, which it assembles, checks and submits, becomes the fold's default units, the fixture's fixed fallback, instead of the evaluated allocation. Evaluation still runs and the runner's own consistency check stays. The conformance job's unit-suite command must then fail, with the appendix suite passing, the fixture's one-below submission refused, the runner's own submission refused by the node and attributed to execution budget, and the regression reporting failure before the book. On the clean candidate the same command, blueprint, genesis and node must pass. Every run record is written by the recorder and binds source, model, blueprint, genesis, node, command, times, exit and log. The patch, recorder, records and logs are retained in the repository, and nothing else changes. If the mutant passes, only the regression test target is repaired, and the pair runs again.",
+      "text": "Requirements.",
       "pause": 500
     }
   ],
   "acceptance": [
     {
-      "text": "The mutant run exits nonzero with all four witnesses in order; a compile, setup, network or differently attributed failure is recorded, and it is not a red. The restored run exits zero with its witnesses, and the two records agree on everything except the patch. Root local continuous integration exits zero, and so do the Conformance format and lint checks when Haskell changes.",
+      "text": "Acceptance.",
       "pause": 500
+    },
+    {
+      "text": "The mutant run's exit is nonzero and its log carries all four witnesses of fixed-fallback-mutant-candidate-exactly-one-committed in order. A compile, setup, network, devnet start or differently attributed refusal is recorded as such and is not a RED.",
+      "pause": 300
+    },
+    {
+      "text": "The restored run's exit is 0 with the same-command-on-clean-candidate-evaluated-declaration witnesses. The two records agree on blueprint digest, genesis digest, node version, command and environment, and differ in source commit only by the patch.",
+      "pause": 300
+    },
+    {
+      "text": "nix develop --quiet -c just ci at the repository root exits 0 on the candidate, and so do the Conformance Haskell format and lint checks when a Haskell file changes.",
+      "pause": 300
     }
   ],
   "clarifications": [
     {
-      "text": "The issue asked for a new CI step, but the conformance job already runs the regression through the packaged test app, so no step is added. The fixture's own refusal is expected inside a passing command and is not the red. The blueprint is built once and passed explicitly, which is what the app would compute. The control is a retained pair, not a permanent devnet step. Execution units are unobservable in the model, so no Lean statement changes. No question is open.",
+      "text": "Clarifications.",
       "pause": 500
+    },
+    {
+      "text": "The issue's premise is stale and is not re-opened. It asked for a CI step that runs fold-budget-regression, but the conformance job already runs it: its unit-suite step calls the packaged conformance-tests app, which runs the regression before the book. No duplicate step is added.",
+      "pause": 400
+    },
+    {
+      "text": "The fixture's own refused submission is expected behavior inside a passing command. It is not the RED this ticket needs. The RED is the whole command failing because the runner itself declared too little.",
+      "pause": 400
+    },
+    {
+      "text": "The blueprint is built once from the candidate and passed as REGISTRY_BLUEPRINT, which is exactly what the app computes when the variable is absent. This binds both runs to one validator build.",
+      "pause": 400
+    },
+    {
+      "text": "The control is a retained pair bound to one candidate, not a permanent CI step. A second devnet run in every job would duplicate the conformance job, which the ticket excludes.",
+      "pause": 400
+    },
+    {
+      "text": "Execution units are unobservable in the model (scriptExecutionUnits), so this is ledger and harness evidence. No Lean statement is added or changed.",
+      "pause": 400
+    },
+    {
+      "text": "No question is open.",
+      "pause": 400
     }
   ],
   "authority-and-evidence": [
     {
-      "text": "The base carries constitution 1.11.0, and the Lean model tree and driver corpus digest are named. The acceptance record of issue 273 is preserved, not relabelled. The CI run at pull request 316 shows the ordinary regression passing, which is not a control. The diagram shows the job step running the unit suite, the regression and the book, with the evaluated declaration accepted and the fixed fallback refused.",
+      "text": "Authority and evidence.",
       "pause": 500
+    },
+    {
+      "text": "Base 24ecba3f02840424c65b68bf391fccb61b43ea2f carries constitution 1.11.0. The Lean model tree is aa1cdec1a72f2a01597075862fc304aa389c4d52, and the driver corpus digest is 208fda7c277e5495f9cdc6efd50f320cc0c7323f315d4a1d5cb899fd149cb8ca. Issue #273 added the regression target, and its acceptance record is preserved, not relabelled. CI run 36622422829 at PR 316 shows the ordinary regression passing, which is not a control.",
+      "pause": 400
     }
   ],
   "_source": {

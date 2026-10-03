@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 {% block extrahead %}
   {{ super() }}
-  {% if page %}<link rel="speech" href="{{ (page.file.src_uri | replace('.md', '.speech.json')) | url }}">{% endif %}
+  {% if page and page.file %}<script>window.singular = { base: "{{ base_url }}/".replace(/\/+$/, "/"), source: "{{ 'README.md' if page.file.src_uri == 'index.md' else page.file.src_uri }}" };</script>{% endif %}
   <link id="singular-dark-palette" href="{{ 'css/palettes/dark.css' | url }}" rel="stylesheet" media="(prefers-color-scheme: dark)">
   <link href="{{ 'assets/singular.css' | url }}" rel="stylesheet">
   <script src="{{ 'assets/palette.js' | url }}"></script>
+  <script src="{{ 'assets/narration.js' | url }}" defer></script>
 {% endblock %}
 {% block side_panel %}
 <aside id="terminal-mkdocs-side-panel">

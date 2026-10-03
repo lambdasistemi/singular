@@ -1,43 +1,79 @@
 {
   "strategy": [
     {
-      "text": "Three slices on one branch. First the validators, their tests and identities, with reject-before-deadline-consumer-requirement's expectation moving in the same commit because the chain's answer to it changes there. Then the product builder with its devnet test. Then the story language placement, reject-and-retract-refund-controls made explicit, and the new early reject row reject-inside-processing-and-retraction-windows. Each commit keeps CI green.",
+      "text": "Strategy.",
+      "pause": 500
+    },
+    {
+      "text": "Three bisect-safe slices on one branch, one pull request. Each slice ships its own checks and documentation. The validator slice also moves reject-before-deadline-consumer-requirement's expectation, because the chain's answer to reject-before-deadline-consumer-requirement changes in that commit. The conformance session must stay green at every commit.",
       "pause": 400
     }
   ],
   "constitution-check": [
     {
-      "text": "Lean stays the authority and the code moves to it. The consumer conflict stays held and the fold timing gap is recorded, not resolved here. Each evidence class is named and never substituted. RED, GREEN, sizes, costs and limits are kept. Nothing historical is rewritten. The early reject claim is said in the suite's own language, and reject-before-deadline-consumer-requirement stays published as unmet.",
-      "pause": 400
+      "text": "Constitution check.",
+      "pause": 500
     }
   ],
   "slices": [
     {
-      "text": "The first slice delivers the validator repair and must show RED on the base through the new compiled tests, then green suites, identities and reject-before-deadline-consumer-requirement held. The second slice delivers the builder and a devnet run in both early windows. The third slice delivers reject-inside-processing-and-retraction-windows, compared with the model, keeps reject-and-retract-refund-controls's assertion unchanged, and grows the book to six chapters. The required behavioural RED is the compiled one; the live defect is the retained refused transaction.",
+      "text": "Slices.",
+      "pause": 500
+    },
+    {
+      "text": "The behavioural RED this ticket requires is validators-identities-reject-before-deadline-consumer-requirement's compiled one. Setup and decoding failures count as neither RED nor GREEN.",
       "pause": 400
     }
   ],
   "path-fence": [
     {
-      "text": "Each slice has an exact list of writable paths, including every file that enumerates rows for reject-inside-processing-and-retraction-windows. The first slice's fence includes the naming hash comparison in the deployed identity check and the speech companions of its two doc pages, and the third slice's includes the consumer page's companion. Manifests change only through their generators and pins only to regenerated values. The model, the constitution, the locks, any receipt encoding, every other row, the book and historical evidence are forbidden.",
+      "text": "Path fence.",
+      "pause": 500
+    },
+    {
+      "text": "Writable, by slice. Anything else is a placement challenge before editing.",
+      "pause": 400
+    },
+    {
+      "text": "Forbidden: lean/**, .specify/**, every flake.lock and aiken.lock, any receipt field, constructor or encoding, every rows.json row other than reject-and-retract-refund-controls's two sentences and the appended reject-inside-processing-and-retraction-windows, conformance/BOOK.md, conformance/review/**, historical fixtures, and any application behaviour.",
       "pause": 400
     }
   ],
   "gate": [
     {
-      "text": "The gate page holds the full command or step body of every row, how each is known to fail, and the nested accounting. Fourteen rows. One full run at the exact head forecasts eighty three nix invocations and six devnet runs; the generic rows step alone is forty five, because it runs the JSON tool through nix three times per row. The register journey is left to the pushed head's CI.",
+      "text": "Gate.",
+      "pause": 500
+    },
+    {
+      "text": "The full gate, with the verbatim command or step body for every row, its falsification and its nested accounting, is the gate page. It has fourteen rows: the path fence; the onchain, naming and deployed identity checks; the off-chain lint, build, unit and vector checks; the devnet e2e through the product builder; the running book; reject-and-retract-refund-controls unchanged; the generic rows with reject-before-deadline-consumer-requirement held; reject-inside-processing-and-retraction-windows; the release assembly; and root CI with stdin closed. One complete run at the exact head forecasts N83 and D6. The generic-rows step alone is N45, because it runs jq through nix run three times per row.",
+      "pause": 400
+    },
+    {
+      "text": "The register journey also calls the reject builder on resume. Its scenario only rejects requests already past their windows, so it is left to the pushed head's CI.",
       "pause": 400
     }
   ],
   "execution-schedule": [
     {
-      "text": "The implementation phase is not released by this plan. The forecast counts every invocation, including two mandatory mutation runs on the new pairing rule: about forty three cheap runs, one hundred forty three nix invocations and fourteen devnet runs including one bounded repair, or sixty three nix and eight devnet runs if the pushed head's CI is the gate. Nothing is repeated without a new change or failure.",
+      "text": "Execution schedule.",
+      "pause": 500
+    },
+    {
+      "text": "The implementation phase is not released by this plan. Forecast, per invocation:",
+      "pause": 400
+    },
+    {
+      "text": "If the pushed head's CI is the gate, the exact-head row becomes CI plus a local once and nix-develop-quiet-c-just-ci-standard (N3), and the forecast drops to C41/N63/D8. Nothing is repeated without a new change or failure.",
       "pause": 400
     }
   ],
   "team": [
     {
-      "text": "The operator approved team runs in sequence: the ticket owner holds the mandate, the gate and acceptance and writes no product code. One commit owner writes the tests, code and commits. One persistent independent auditor answers every checkpoint. No other seat.",
+      "text": "Team.",
+      "pause": 500
+    },
+    {
+      "text": "The operator-approved team runs in sequence. The ticket owner (Claude Opus 5.5, high) owns this mandate, the gate and acceptance and writes no product code. One commit owner (Claude Opus 5.5, high) writes the RED tests, the code and the commits. One persistent independent auditor (Grok 4.7, high) answers every checkpoint. No other seat.",
       "pause": 400
     }
   ],

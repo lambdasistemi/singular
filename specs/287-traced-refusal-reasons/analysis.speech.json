@@ -1,26 +1,48 @@
 {
+  "analysis-cross-artifact-consistency": [
+    {
+      "text": "Analysis: cross-artifact consistency.",
+      "pause": 500
+    },
+    {
+      "text": "Run after tasks.md, over spec, research, plan, the three models, contract, quickstart, checklist and tasks at this commit.",
+      "pause": 400
+    }
+  ],
   "coverage": [
     {
-      "text": "Every requirement maps to a model row, a task and a gate row.",
+      "text": "Coverage.",
       "pause": 500
+    },
+    {
+      "text": "Every requirement has a model row, a task and a gate row; no task lacks a requirement.",
+      "pause": 400
     }
   ],
   "findings": [
     {
-      "text": "The operator settled the receipt wording with one self-contained receipt, and the texts outside the fence stay for a follow-up. The ledger seam is verified first. The book's condition is enforced by CI until the book is derived. The deployed-trace premise is checked by the first devnet run. Reasons are compared verbatim with Lean's. The denominator now holds every live refusal, and the phase-one reject conflict is an epic-owned hold. Review one found that differing or unobserved reasons left no record and the accepting control had no failing check; both are repaired. Review two found that a label could exempt a compared refusal; class A is now a fact the runner records.",
+      "text": "Findings.",
       "pause": 500
     }
   ],
   "terminology": [
     {
-      "text": "Chain-side reason means the admitted traced reason only, unobserved always names its cause, and an attribution row says nothing about Lean.",
+      "text": "Terminology.",
       "pause": 500
+    },
+    {
+      "text": "\"Chain-side reason\" is the admitted traced reason only; \"unobserved\" always carries a replayclass cause; \"attribution row\" means a row whose runner only attributes its refusal, which says nothing about whether Lean gives a reason; the extent classes (extent.md) say that. Used identically across spec, models and tasks.",
+      "pause": 400
     }
   ],
   "size": [
     {
-      "text": "Artifact sizes are measured at commit; the plan stays under two hundred lines.",
+      "text": "Size.",
       "pause": 500
+    },
+    {
+      "text": "Artifact lines and bytes are measured at commit and reported in the ticket owner's journal; plan.md stays under 200 lines.",
+      "pause": 400
     }
   ],
   "_source": {

@@ -1,19 +1,37 @@
 {
+  "data": [
+    {
+      "text": "Data.",
+      "pause": 500
+    },
+    {
+      "text": "Retroactive record, written 2026-09-15 from PR #121 merged at 454aec3858f0aa029d93928f09b5c4447bf49894.",
+      "pause": 400
+    }
+  ],
   "release-body": [
     {
-      "text": "The manifest version selects the changelog section, which opens the body; the stable text follows. The entity diagram shows version to section to body. Empty sections stop publication.",
-      "pause": 400
+      "text": "Release body.",
+      "pause": 500
     }
   ],
   "archive-contents": [
     {
-      "text": "Both archives with checksums, identities verified, shipped instructions byte-equal to the source, and the README row describing the new purpose.",
+      "text": "Archive contents.",
+      "pause": 500
+    },
+    {
+      "text": "Both archives with checksums; validator identities verified from the assembled artifact; shipped RELEASE.md byte-equal to the source; archive README row describes the introduction-plus- instructions purpose.",
       "pause": 400
     }
   ],
   "check-cases": [
     {
-      "text": "Four wrong-input refusals, three missing-or-empty refusals with the loud message, three passing compositions with exact bodies, and one already-published pass without recreating.",
+      "text": "Check cases.",
+      "pause": 500
+    },
+    {
+      "text": "Wrong tag, wrong commit, wrong release PR, corrupt upload (all refuse without creating or uploading); missing section, empty section, missing changelog (refuse with the loud message); section at end of file, notes override, new release (pass with the exact composed body); already-published (pass without recreating).",
       "pause": 400
     }
   ],

@@ -1,12 +1,26 @@
 {
+  "wait-bound-data": [
+    {
+      "text": "Wait bound data.",
+      "pause": 500
+    },
+    {
+      "text": "As an operator reading a failed run, I need the failure to say which wait gave up, on which transaction, after how long and against which bound.",
+      "pause": 400
+    }
+  ],
+  "boundaries": [
+    {
+      "text": "Boundaries.",
+      "pause": 500
+    },
+    {
+      "text": "No serialized, ledger-facing or conformance-receipt representation changes. The wait failure is never written to a receipt.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "data-model.md",
     "sha256": "85636e26fd6986686714594f29535bdeed88f7548d3eebae11600df28eb193c2"
-  },
-  "boundaries": [
-    {
-      "text": "The named wait failure is the one way a wait on a submitted transaction gives up. That is when its bound fires, or when the chain passes the confirmation deadline first. It names the stage, the transaction, the elapsed seconds and the bound, and it is never an error a classifier could read as a refusal. The submission bound is a named finite constant no larger than the five-minute confirmation window. The indexed window stays five minutes, and the session limit is derived from the transaction's own confirmation window. Tests inject shorter values. Nothing is written to a receipt.",
-      "pause": 500
-    }
-  ]
+  }
 }

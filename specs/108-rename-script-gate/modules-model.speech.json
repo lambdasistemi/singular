@@ -1,19 +1,37 @@
 {
+  "modules": [
+    {
+      "text": "Modules.",
+      "pause": 500
+    },
+    {
+      "text": "Retroactive record, written 2026-09-15 from PR #109 merged at fc2ad9e5987b171ca33a430f5bbe170ab6423fd5.",
+      "pause": 400
+    }
+  ],
   "new-and-changed-responsibilities": [
     {
-      "text": "The tool rewrites and self-checks, the test proves it twice over with a planted stray, the recipe wires it into docs checks. The flowchart shows tool to tree to test to recipe to checks.",
-      "pause": 400
+      "text": "New and changed responsibilities.",
+      "pause": 500
     }
   ],
   "dependency-direction": [
     {
-      "text": "The tool rewrites the tree, the test drives the tool, the recipe wires the test. Nothing feeds back into product code.",
+      "text": "Dependency direction.",
+      "pause": 500
+    },
+    {
+      "text": "The tool rewrites the tree; the test drives the tool; the recipe wires the test into the docs gate. Nothing in this slice feeds back into product code.",
       "pause": 400
     }
   ],
   "promotion": [
     {
-      "text": "No new shared modules. The derived rule lives in the tool; the twice-run discipline lives in its test.",
+      "text": "Promotion.",
+      "pause": 500
+    },
+    {
+      "text": "No new shared modules. The derived-allowlist rule lives in the tool; the twice-run discipline lives in its test.",
       "pause": 400
     }
   ],

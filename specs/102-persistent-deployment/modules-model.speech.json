@@ -1,19 +1,37 @@
 {
+  "modules": [
+    {
+      "text": "Modules.",
+      "pause": 500
+    },
+    {
+      "text": "Retroactive record, written 2026-09-15 from PR #106 merged at f558d0e8fc916eef494fffcef09cfe2ac5582b8e.",
+      "pause": 400
+    }
+  ],
   "new-and-changed-responsibilities": [
     {
-      "text": "A new deployment command and identity library, three attaching runners, the gate check, the carried mirror, the tip-anchored retract builder, and the onboarding page, each with its must-not. The flowchart shows identity flowing from command to manifest to runners.",
-      "pause": 400
+      "text": "New and changed responsibilities.",
+      "pause": 500
     }
   ],
   "dependency-direction": [
     {
-      "text": "Identity flows from command into manifest and from manifest into every runner, which keep their existing builders. Docs describe the commands without defining identity.",
+      "text": "Dependency direction.",
+      "pause": 500
+    },
+    {
+      "text": "Identity flows from the deployment command into the manifest; the manifest flows into every runner; runners keep their existing connected transaction builders and authorization checks. Docs describe the commands; they do not define deployment identity.",
       "pause": 400
     }
   ],
   "promotion": [
     {
-      "text": "One new library module owned by deployment and the attached runners. No wider extraction and no changes to Lean, validators, workflow, or gates.",
+      "text": "Promotion.",
+      "pause": 500
+    },
+    {
+      "text": "One new library module owned by deployment and the attached runners. No shared extraction beyond it; no changes to Lean, validators, workflow or CI gates.",
       "pause": 400
     }
   ],

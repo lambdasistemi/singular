@@ -1,66 +1,140 @@
 {
+  "lean-clarity-record": [
+    {
+      "text": "Lean clarity record.",
+      "pause": 500
+    },
+    {
+      "text": "A proof is only worth what its statement says. This page reads the registry-mode model back in English — what each promise actually quantifies over, what it assumes, and where the reader should not take it further than it goes — so that \"proved\" can be checked against \"promised\" without reading Lean.",
+      "pause": 400
+    },
+    {
+      "text": "The statements themselves, with their digests, are in the theorem manifest. This page is about their meaning.",
+      "pause": 400
+    }
+  ],
   "who-this-is-for": [
     {
-      "text": "A reviewer deciding whether the model is the right model. The build already answers whether these are proved — every one is, from the standard axioms and nothing else. It cannot answer whether they say what the interface promised, and that is the question this page exists to make answerable.",
+      "text": "Who this is for.",
+      "pause": 500
+    },
+    {
+      "text": "A reviewer deciding whether the model is the right model. The build already answers are these proved — every one is, from the standard axioms and nothing else. It cannot answer do these say what the interface promised, and that is the question this page exists to make answerable.",
       "pause": 400
     }
   ],
   "what-is-bound": [
     {
-      "text": "Six artifacts, each with its hash: the model, its lemmas, the statements, the audit module, the corpus generator and the corpus itself. The model hash now begins five three eight b, the lemmas c eight a a, the statements one nine seven five; the audit module hash is unchanged. Every one ships beside the page, and a mirror check fails if the shipped copy and the built copy differ in either direction. Changing any bound input invalidates this record.",
+      "text": "What is bound.",
+      "pause": 500
+    },
+    {
+      "text": "Every one of these ships beside the page under simulator/formal/, and node simulator/mirror-check.mjs fails if the shipped copy and the built copy differ, in either direction. Changing any bound input invalidates this record.",
       "pause": 400
     },
     {
-      "text": "The readback below covers the eleven promises, the seven inversions, the deposit, the read and the fold. The bound registry module also carries fifteen later statements, about when a pending request may be retracted and what a refused retraction is told, what every exit pays and to whom, which datum a delivered or spent witness carries, and how a batch of one folds. Those are listed in the theorem manifest and not yet read back here.",
+      "text": "The readback below covers the eleven promises, the seven inversions, the deposit, the read and the fold. The registry module bound above also carries fifteen later statements — about when a pending request may be retracted and what a refused retraction is told, what every exit pays and to whom, and which datum a delivered or spent witness carries, and how a batch of one folds — that are listed in the theorem manifest and not yet read back here.",
       "pause": 400
     }
   ],
   "the-shape-the-promises-are-made-over": [
     {
-      "text": "Almost every promise is stated over reachable states — genesis, closed under accepted folds — and not over arbitrary values of the state type. This is not a weakening dressed up as a hypothesis: over an arbitrary state value the supply laws are false, because nothing stops you writing down a state with three active tokens for one key. Reachability is what makes them true, and it is exactly the property a chain enforces by only ever arriving at a state through a fold.",
+      "text": "The shape the promises are made over.",
       "pause": 500
     },
     {
-      "text": "Where a promise does not need reachability, it does not assume it. The seven inversions, the empty-batch refusal, the fold equation and the read-changes-nothing statement hold over any state at all, because they are statements about what an accepted edge did rather than about what the ledger holds.",
+      "text": "Almost every promise is stated over reachable states — genesis, closed under accepted folds — and not over arbitrary values of the state type. This is not a weakening dressed up as a hypothesis: over an arbitrary state value the supply laws are false, because nothing stops you writing down a state with three active tokens for one key. Reachability is what makes them true, and it is exactly the property a chain enforces by only ever arriving at a state through a fold.",
+      "pause": 400
+    },
+    {
+      "text": "Where a promise does not need reachability, it does not assume it. The seven inversions, the empty-batch refusal, the fold-cons equation and read_changes_nothing are proved over any state at all, because they are statements about what an accepted edge did, not about what the ledger holds.",
       "pause": 400
     }
   ],
   "reading-the-promises-back": [
     {
-      "text": "No tree change without approval. If a request is accepted and it is not the read, an approval was present, minted under the registry's own pinned policy, and its asset name is the hash of the edge, the key, the owner and the destination of this request. A correct policy is necessary and not sufficient: an approval for a different key, under the very same policy, does not admit the request.",
+      "text": "Reading the promises back.",
       "pause": 500
     },
     {
-      "text": "Soundness says a terminal attestation exists only for a leaf that really is terminal, and its companion supplies the provenance half — the only edge that can bring a terminal token into existence is the read. Permanence says what that attestation claims stays true through any later sequence of folds, which is what lets a holder keep the witness rather than re-reading the chain.",
-      "pause": 500
+      "text": "No tree change without approval (no_tree_change_without_approval). If a request is accepted and it is not the read, then an approval was present, it was minted under the registry's own pinned policy, its asset name is the hash of the edge, the key, the owner and the destination of this request, and the registry's own pins — its policy, its owner, its recovery commitment — are unchanged by the fold. The part worth dwelling on: a correct policy is necessary and not sufficient. An approval minted for a different key, or a different destination, under the very same policy, does not admit the request. A model that checked only the policy would be wrong in a way no amount of proving would reveal, which is why the tuple appears in the statement rather than in a comment.",
+      "pause": 400
     },
     {
-      "text": "The supply law is a biconditional over every key: the count of outstanding active tokens is one exactly when the leaf is active, and zero otherwise. Occupancy comes with its converse, which matters as much as the rule, because a registry that refused everything would satisfy the rule perfectly. Termination says that on a terminal key every leaf-moving edge is refused — the refusal is the complement of the edge table, so there is no unlisted case that quietly moves a retired name.",
-      "pause": 500
+      "text": "Booked at most once (booked_at_most_once). A batch is a fold, and the fold spends each request once, in order. The statement is about the step function, so a request cannot be applied twice within one batch, and a batch that fails anywhere produces no state at all rather than a partial one.",
+      "pause": 400
     },
     {
-      "text": "Of the four witness laws, the third is the one to read closely: terminal attestations are plural. Any number may exist, each is true, and minting another changes nothing — which is the consequence of the attestation being a read. And the two edges that consume an absent witness pay the deposit back to the refund address the original request named, not to the output of the consuming request and not to whoever folded it.",
-      "pause": 500
+      "text": "Soundness of attestation (terminal_attestation_sound). In a reachable state, a terminal attestation exists for a key only if that key's leaf really is terminal. Its companion (terminal_mint_only_by_read) supplies the provenance half: the only edge that can bring a terminal token into existence is the read. Together they say the witness cannot be forged and cannot be minted by a state change.",
+      "pause": 400
+    },
+    {
+      "text": "Permanence (terminal_attestation_permanent). What a terminal attestation says stays true through any later sequence of accepted folds. A terminal leaf has no outgoing edge, so nothing downstream can make an already-issued attestation false. This is the promise that lets a holder keep the witness rather than re-reading the chain.",
+      "pause": 400
+    },
+    {
+      "text": "The supply law (biconditional_supply_sync). For every key in a reachable state, the count of outstanding active tokens is one exactly when the leaf is active and zero otherwise — a biconditional, both directions, over all keys, not only the key in hand. The same shape holds for the absent witness. This is the statement that ties the token supply to the map and makes \"the token is the name\" more than a slogan.",
+      "pause": 400
+    },
+    {
+      "text": "Occupancy and its converse (occupancy, occupancy_free_key_succeeds). A booking edge succeeds only on a key that is not already taken; and on a key that is free, with a matching approval, it does succeed. The converse matters as much as the rule: a registry that refused everything would satisfy the first half perfectly.",
+      "pause": 400
+    },
+    {
+      "text": "Termination (termination). On a terminal key every leaf-moving edge is refused. Not \"should be\", not \"by convention\" — the refusal is the complement of the edge table, so there is no unlisted case that quietly moves a retired name.",
+      "pause": 400
+    },
+    {
+      "text": "The four witness laws (active_witness_unique, absent_witness_unique, terminal_witness_plural, witness_kinds_exclude). At most one active token per key, and exactly one when the leaf is active. The same for the absent witness. Terminal attestations, by contrast, are plural: any number may exist, each is true, and minting another changes nothing — which is the consequence of the attestation being a read. And the kinds exclude one another: a key cannot have an outstanding active token and an outstanding absent witness at the same time.",
+      "pause": 400
+    },
+    {
+      "text": "The seven inversions. For each edge, a single statement saying what an accepted application of it did: the leaf before, the leaf after, the new root, the token deltas, the custody movement, the deposit destination. These are the statements the simulator is really transcribing, and they are the ones to read first when asking whether the model matches the interface, because they contain no reachability hypothesis to hide behind.",
+      "pause": 400
+    },
+    {
+      "text": "The deposit (inside update_active_inversion and delete_absent_inversion). The two edges that consume an absent witness pay the deposit back to the refund address the original request named, not to the output of the consuming request and not to whoever folded it. Those two rejected destinations are the reason the statement pins the address rather than merely asserting that some payment occurred.",
+      "pause": 400
+    },
+    {
+      "text": "The read (read_changes_nothing, witness_terminal_inversion). An accepted read leaves the leaf, the root and custody exactly as they were and adds one terminal token. It needs no approval at all — and, symmetrically, a stray approval does not make it refuse.",
+      "pause": 400
+    },
+    {
+      "text": "The fold (empty_fold_error, fold_batch_cons). An empty batch is refused rather than accepted as a no-op. A non-empty batch succeeds exactly when its head applies and the rest applies to the result, which is what makes a batch mean the same thing as the sequence of its requests.",
+      "pause": 400
     }
   ],
   "what-the-model-does-not-say": [
     {
-      "text": "These are limits of the model, not gaps in the proofs. Keys and owners are integers. Approvals carry a policy and a tuple; no signature is checked. The deposit is a number that must arrive at a named address, not lovelace. Retirement is certified by the recovery commitment or a distinct-member quorum and never by the control key alone — the model says so, but it models no signature scheme.",
+      "text": "What the model does not say.",
+      "pause": 500
+    },
+    {
+      "text": "These are limits of the model, not gaps in the proofs. Each is a place where a reader could reasonably expect more than is there.",
       "pause": 400
     },
     {
-      "text": "The last row is the important one. Everything here is about a model. Whether the deployed validator implements it is a different question with a different kind of evidence behind it, and this page is not that evidence.",
+      "text": "The last row is the important one. Everything on this page is about a model. Whether the deployed validator implements it is a different question with a different kind of evidence behind it, and this page is not that evidence.",
       "pause": 400
     }
   ],
   "how-much-independence-this-record-has": [
     {
-      "text": "Stated plainly, because a reader cannot see it from the outside: the model, the corpus generator, the simulator transcription and this readback all have the same author. A misunderstanding of the interface made while writing the model will be made again while transcribing it and again while reading it back, and none of the three will catch it. They are not independent measurements; they are one measurement repeated.",
+      "text": "How much independence this record has.",
       "pause": 500
     },
     {
-      "text": "What the internal machinery does catch is real but narrower: transcription slips, statements that do not constrain what they appear to, unproved obligations, and drift between the shipped Lean and the built Lean. The check this record cannot perform on itself is the one that matters most — whether the statements say what the interface promised. That requires someone who did not write them.",
-      "pause": 500
+      "text": "Stated plainly, because a reader cannot see it from the outside: the model, the corpus generator, the simulator transcription and this readback all have the same author.",
+      "pause": 400
+    },
+    {
+      "text": "That has a concrete consequence. A misunderstanding of the interface made while writing the model will be made again while transcribing it and again while reading it back, and none of the three will catch it — they are not independent measurements, they are one measurement repeated. What the internal machinery does catch is real but narrower: transcription slips (the corpus replay), statements that do not constrain what they appear to (the mutation record), unproved obligations (the compiled axiom check), and drift between the shipped Lean and the built Lean (the mirror check).",
+      "pause": 400
+    },
+    {
+      "text": "The check this record cannot perform on itself is the one that matters most — whether the statements say what the interface promised. That requires someone who did not write them. Treat this page as the author's best account, written to be falsifiable, and not as an audit.",
+      "pause": 400
     }
   ],
   "_source": {

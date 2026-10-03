@@ -1,25 +1,45 @@
 {
   "register-active-key-receipt-relationship": [
     {
-      "text": "One register-active-key receipt binds one accepted fold and two distinct refusal legs, each with its own accepted control.",
+      "text": "register-active-key receipt relationship.",
+      "pause": 500
+    },
+    {
+      "text": "One register-active-key receipt has exactly one edge observation. That observation binds one accepted fold to one open policy, active policy, key and requested destination, plus two distinct refusal legs. Every refusal leg binds one rejected transaction to its failing script identities and one accepted control transaction.",
       "pause": 400
     }
   ],
   "fold-observation-fields": [
     {
-      "text": "The fold observation names policies, key, transaction, mint, destination, delivered asset and each fine transaction conjunct.",
+      "text": "Fold observation fields.",
+      "pause": 500
+    },
+    {
+      "text": "The edge observation carries: open policy identity and parameter count; active policy and key; fold transaction id; minted assets; requested and observed destination; delivered assets; empty refunds; empty signers; destination-datum byte binding; tip coverage; non-root configuration preservation; and committed root agreement.",
+      "pause": 400
+    },
+    {
+      "text": "Asset identity is (policy, name, quantity). Transaction ids and policy identities are nonempty chain observations. The delivered set contains exactly one active-policy asset at the inserted key with quantity one.",
       "pause": 400
     }
   ],
   "refusal-leg-fields": [
     {
-      "text": "Each refusal leg names its rejected transaction, failing hashes, optional trace, accepted control and distinguisher.",
+      "text": "Refusal-leg fields.",
+      "pause": 500
+    },
+    {
+      "text": "Each refusal leg carries rejected transaction id, attributed script hashes, optional surfaced trace, accepted control transaction id and a nonempty distinguisher. register-active-key has two required legs: same-key duplicate and wrong keyed mint distribution. Neither may be absent or reused as the other.",
       "pause": 400
     }
   ],
   "validation-invariants": [
     {
-      "text": "register-active-key fields are mandatory, keyed-mint keys are distinct, observations share the candidate-bound run and absent traces stay absent.",
+      "text": "Validation invariants.",
+      "pause": 500
+    },
+    {
+      "text": "For register-active-key the edge observation and every named field are mandatory. Both keys in the keyed-mint leg are distinct. Every accepted transaction is candidate bound and comes from the same invocation. An absent ledger trace stays absent; refusal names are established at the compiled-validator boundary.",
       "pause": 400
     }
   ],

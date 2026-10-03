@@ -1,12 +1,26 @@
 {
+  "delivery-ledger-for-bounded-waits": [
+    {
+      "text": "Delivery ledger for bounded waits.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I need each task stamp to name its commit and receipt rather than treat a build as behavior proof.",
+      "pause": 400
+    }
+  ],
+  "work-items": [
+    {
+      "text": "Work items.",
+      "pause": 500
+    },
+    {
+      "text": "Task stamps do not substitute for the invocation receipts, the audit record or remote CI evidence. No merge is authorized by this ticket's current grant.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "tasks.md",
     "sha256": "c979fc0bdca370decc5420ac7768ad288c018a8bb5b1105f0bbb83e8a318451e"
-  },
-  "work-items": [
-    {
-      "text": "Intake, the mandate, the failing specs, the fix, its repairs and the ticket owner's audit of the exact candidate are complete. The remaining task is the push with continuous integration green on the exact head. No merge is authorized yet.",
-      "pause": 500
-    }
-  ]
+  }
 }

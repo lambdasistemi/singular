@@ -1,69 +1,151 @@
 {
-  "what-singular-is-trying-to-be": [
+  "prior-art-and-reuse-candidates": [
     {
-      "text": "Singular is a component, not an application. A third party supplies one parameter, its application policy ID, and receives its own registry of unique keys with the representative NFT lifecycle managed end to end.",
+      "text": "Prior art and reuse candidates.",
+      "pause": 500
+    },
+    {
+      "text": "Comparison date: 2026-09-09. Implementation links pin revisions; website and whitepaper references record the material inspected on that date. Every source cited below was fetched at its pinned revision and read against the claim it supports.",
       "pause": 400
     },
     {
-      "text": "That is the axis on which the prior art has to be read. A registry welded to one application is not reusable by anyone else short of forking it. MPFS is the exception and the model: application-agnostic, created by anyone, blocked only by its owner gate.",
+      "text": "The inspected projects provide substantial precedent for Singular's architecture and mechanics. No ready-made implementation of its complete contract was established in this bounded comparison. This is not a novelty claim, security audit or exhaustive search. Source inspection does not establish deployed behavior.",
+      "pause": 400
+    }
+  ],
+  "what-singular-is-trying-to-be": [
+    {
+      "text": "What Singular is trying to be.",
+      "pause": 500
+    },
+    {
+      "text": "Singular is a component, not an application. A third party supplies one parameter — its application policy ID — and receives its own registry of unique keys with the representative NFT lifecycle managed end to end: minted into a certified application output on Insert, burned on retirement, burned and the key made available again on Delete. Nothing about the keys, the application's state or its business rules belongs to Singular.",
+      "pause": 400
+    },
+    {
+      "text": "That is the axis on which the prior art has to be read, and most of it fails before authorization is reached. A registry welded to one application is not reusable by anyone else at any price short of forking and rewriting it; the code inspected below is mostly of that kind, however good it is at its own job. MPFS is the exception and the model: it is application-agnostic, anyone may create a cage, and its single blocking difference from Singular is that every cage has an owner.",
+      "pause": 400
+    },
+    {
+      "text": "Two further layers are worth keeping apart. The authenticated-map layer — a key set whose whole state fits in one datum and whose changes are proved on-chain — has working implementations that Singular can adopt; an equivalent registry would not be disqualified merely because it uses a different authenticated-set representation. The registry contract layer — who may change the map, what an entry certifies about an application output, and what token custody is coupled to a transition — is where every inspected system diverges.",
       "pause": 400
     }
   ],
   "mpfs": [
     {
-      "text": "MPFS is the nearest system to Singular, and the one whose reuse has to be answered explicitly. Its cage is an owner-held Merkle Patricia Forestry root, changed by folding request UTxOs that carry insert, delete or update operations over opaque byte values.",
+      "text": "MPFS.",
+      "pause": 500
+    },
+    {
+      "text": "MPFS is the nearest system to Singular and the one whose reuse must be answered explicitly, because Singular's map layer is MPF and the protocol specification already records, among its open decisions on transaction shapes and libraries, that old MPFS proofs are not proof of Singular's protocol. It is also the one candidate built as a component rather than as somebody's application: a cage is created by whoever consumes the seed, carries no application-specific rule, and serves whatever that creator puts in it. That posture is the one Singular copies. The difference is a single design decision inside it.",
       "pause": 400
     },
     {
-      "text": "Four facts from the pinned source decide the comparison. Every state spend requires the owner's signature. Only one token exists, the cage state NFT. A request commits to no application policy or output. Requests are governed by time windows rather than application authorization.",
+      "text": "The inspected on-chain revision is cardano-mpfs-onchain at 34a5bfb. A cage is one NFT locked at the script address whose datum carries the MPF root. state.ak mints the cage token from a consumed seed, folds pending requests into a new root under Modify, and burns the cage under End. request.ak governs request UTxOs with Contribute, Retract and Sweep. shared.ak holds the authorization and phase predicates, and types.ak defines the request record and the map operations.",
       "pause": 400
+    },
+    {
+      "text": "Four facts from that source decide the comparison.",
+      "pause": 400
+    },
+    {
+      "text": "Every spend of the state UTxO runs validateOwnership before the redeemer is examined, and that function requires the datum's single owner verification key hash among the transaction's signatories. Both Modify and End sit behind it.",
+      "pause": 300
+    },
+    {
+      "text": "Map entries are Operation values over ByteArray: Insert(value), Delete(value), Update(old, new). The cage mints exactly one token — its own state NFT — and no token is minted, burned or moved per key.",
+      "pause": 300
+    },
+    {
+      "text": "A request carries requestToken, requestOwner, the key, the operation, a tip and submitted_at. It commits to no application policy, no output shape and no approval; the only requester-side authorization anywhere in the validators is the Retract signature.",
+      "pause": 300
+    },
+    {
+      "text": "Requests are governed by time. Contribute requires Phase 1 or rejectability, Retract requires the requester's signature inside Phase 2, and Sweep lets the owner clear any request that is not processable against the current state.",
+      "pause": 300
     }
   ],
   "why-singular-cannot-adopt-mpfs-unchanged": [
     {
-      "text": "The gap table sets each of Singular's requirements, named in words, against what MPFS supplies. No owner may gate a fold, but every state spend requires the owner's signature. Supply must be coupled to every transition, but only one cage NFT exists. Over must be terminal, but Update rewrites a value and Delete frees the key. A request must be certified by its application, but MPFS requests carry no policy, output or approval. Withdrawal must be application-authorized, but Retract is a timed requester right. A terminal request must keep its representative, but the owner may sweep. And End lets the owner destroy the whole map.",
-      "pause": 400
+      "text": "Why Singular cannot adopt MPFS unchanged.",
+      "pause": 500
     },
     {
-      "text": "MPFS resolves races between the oracle and requesters with exclusive time phases. Singular has no oracle, so it resolves them inside the fold, where an insert is checked against absence in the applicable successive registry state.",
+      "text": "The phase design is worth separating from the verdict. MPFS uses time windows to keep the oracle's fold and the requester's retraction from racing, which is a real solution to a problem Singular shares. It is unavailable here for the same reason the rest is: the windows are exclusive to a named oracle, and Singular has none. In its place, Singular resolves races inside the fold — an Insert is checked against absence in the applicable successive registry state, and admission of a request asserts nothing about the key.",
       "pause": 400
     }
   ],
   "what-remains-reusable-from-mpfs": [
     {
-      "text": "The map layer and its off-chain machinery transfer: the fold shape of one proof per request, the cage indexer, the proof-bearing API, client transaction builders and verifiers. The authorization model does not transfer, component reuse still needs its own evaluation, and the decision on transaction shapes and shared libraries remains open.",
+      "text": "What remains reusable from MPFS.",
+      "pause": 500
+    },
+    {
+      "text": "The map layer and its off-chain machinery transfer; the authorization model does not. The fold shape — one proof per request applied against successive roots — is the shape Singular's permissionless fold requires. Off-chain, cardano-mpfs-offchain at 0f82465 supplies a cage indexer, a proof-bearing REST API, client transaction builders and cross-target verifiers over the same trie. Component-level reuse still needs its own evaluation: none of it was written against Singular's request or custody rules, and the decision on transaction shapes and shared libraries remains open.",
       "pause": 400
     }
   ],
   "evidence-and-useful-boundaries": [
     {
-      "text": "The comparison acknowledges AdaDomains, DeMi, Distributed Set, CIP113, Masumi and CIP89. Their mechanisms are relevant precedents, but the bounded inspection established no complete ready-made Singular replacement.",
+      "text": "Evidence and useful boundaries.",
+      "pause": 500
+    },
+    {
+      "text": "AdaDomains. The whitepaper, sections 3–4 describes separate registry/domain state, pooled requests and address changes. Section 3.1 puts the list of minted domains in the datum of a one-shot registry token; section 3.3 records the two limits that follow — one minting transaction per registry per block, and roughly 1600 short domains before the 16kB transaction limit binds; section 4.1 answers them by hashing names and splitting registries dynamically, and section 4.2 by a pooling layer in which the user who triggers minting must mint every pooled request belonging to that registry. Project resolution documentation describes reading the domain datum. The inspected resolver SDK at 302235c supplies resolution code. These establish architectural precedent and a public resolver, not an inspected generic registry implementation. A root-hash map moves that size limit off the key set, but it does not decide Singular's batch policy, which remains an open decision. Historical throughput assertions are not adopted here.",
       "pause": 400
     },
     {
-      "text": "Each entry records what its pinned source actually checks: registry sharding and pooled minting for AdaDomains, minter-gated mints and burns for DeMi, membership preservation left to a configured hook for Distributed Set, insert-only nodes for CIP113, and identity derived from a spent output reference for Masumi.",
+      "text": "ADA Handle DeMi. At 1b5623c, mint/burn validation traverses MPF proofs and checks an allowed minter. The check is symmetric: can_mint_demi_handles requires the selected allowed_minter among the signatories, and can_burn_demi_handles requires any settings minter, so deletion from the root is gated exactly as issuance is. Order validation supplies execution, cancellation and refund conditions, including a distinct-output binding that prevents one owner output from satisfying several refunds. Mechanical overlap is useful; replacing application and governor rules is substantive work.",
+      "pause": 400
+    },
+    {
+      "text": "Distributed Set. The validator at 4b0547a and utilities authenticate set changes with current mint/withdrawal invocation. The set is a linked list of sorted-value nodes, each holding its own node NFT, rather than a hashed map: its state lives in as many UTxOs as it has nodes, and a node is split when it grows. Its plain spend branch checks sortedness, the head and tail anchors, the node NFT and the unchanged datum fields, and carries a TODO where a check that existing values survive would go — so membership preservation rests entirely on the configured mint or stake script, not on the set validator. The sources also target the pre-cardano/transaction Aiken standard library, which reuse would have to migrate. They do not supply Singular's prior-action receipt and NFT custody lifecycle.",
+      "pause": 400
+    },
+    {
+      "text": "CIP113. At 1e83ed9, the registry, issuance policy and programmable base provide relevant authentication and policy-binding techniques: a key must be the policy ID derived from the issuance template parameterised with its minting logic, registration requires that logic's withdraw-0, and custody is dispatched through a credential read live from the protocol-params datum. The registry's redeemers are RegistryInit and RegistryInsert, and its spend handler admits a node NFT mint only with a positive amount, otherwise requiring a continuing output — a registered key is never removed. Their live delegation and custody contract would require substantive adaptation.",
+      "pause": 400
+    },
+    {
+      "text": "Masumi. The registry-v2 mint policy at ce96026 addresses generated asset identities and versioning: an asset name is a nonce byte, the hash of a consumed output reference and a three-byte version, an update burns a token and mints its successor at version plus one, and a burn needs only possession. That is a different uniqueness problem from a registry of application-selected keys; no shared state records which keys are taken.",
+      "pause": 400
+    },
+    {
+      "text": "CIP89's beacon pattern is also relevant precedent for minting that certifies an application UTxO: a beacon is minted only into a valid application output, burned when that output is spent, and never circulates. Singular's representative is the opposite in one respect that matters — it is held, moved between an application's own successive outputs, and carried into a terminal request — so the beacon rule cannot be adopted as stated, only its minting-time certification. A complete uniqueness, request and retirement protocol remains additional work.",
       "pause": 400
     }
   ],
   "the-authenticated-map-layer": [
     {
-      "text": "This layer already has implementations: the Aiken Merkle Patricia Forestry library on-chain and haskell-mts off-chain. Choosing among them resolves none of the open decisions, which are about certification, custody and retirement rather than about how membership is proved.",
+      "text": "The authenticated map layer.",
+      "pause": 500
+    },
+    {
+      "text": "This layer is the one part of Singular with ready implementations. The Aiken merkle-patricia-forestry library supplies on-chain proof verification, and is what both DeMi and MPFS build on; haskell-mts supplies the matching off-chain trie, proof generation and persistent storage. Choosing among these, or a different authenticated-set representation, does not resolve any of the open decisions, which are about certification, custody and retirement, not about how membership is proved.",
       "pause": 400
     }
   ],
   "retirement-and-reuse-of-a-key": [
     {
-      "text": "Singular needs two ways for a registration to end. Delete burns the representative and returns the key to absence, so it can be registered again. Update burns the representative and writes Over, which is terminal.",
+      "text": "Retirement and reuse of a key.",
+      "pause": 500
+    },
+    {
+      "text": "Singular needs two ways for a registration to end, and the distinction is what makes the lifecycle worth managing centrally. Delete burns the representative and returns the key to absence, so a later approved Insert may register it again. Update burns the representative and writes Over, which is terminal: the key is retired permanently and no later Insert can revive it. Permanent retirement is the requirement that came from Singular's first consumer, where an identity must be able to end without its name being reissued to someone else.",
       "pause": 400
     },
     {
-      "text": "That requirement is not local to this project. CIP113 arrives at permanence from the other direction, since its nodes are never removed, and MPFS supplies deletion but no retirement. No inspected system offers both modes under one contract.",
+      "text": "That requirement is not local to this project. CIP113 arrives at the same permanence from the other direction: its registry nodes are inserted and updated but never removed, so every registration it accepts is permanent whether or not permanence was wanted. Distributed Set leaves removal to the configured hook and specifies neither mode. MPFS supplies Delete, which frees the key, and nothing that retires one. No inspected system offers both modes under one contract, chosen per transition by the application that owns the entry.",
       "pause": 400
     }
   ],
   "coverage-boundary": [
     {
-      "text": "Component-level evaluation, licensing, toolchain fit and correctness require their own checks, and reading a validator establishes what its source says rather than what a deployment does.",
+      "text": "Coverage boundary.",
+      "pause": 500
+    },
+    {
+      "text": "These candidates warrant component-level evaluation once a reuse target is concrete. License compatibility, toolchain fit and correctness require their own checks; this comparison grants none of them. Reading a validator establishes what its source says, not what a deployment does. Singular remains a design with unimplemented conformance obligations. Continue with the naming walkthrough or protocol specification.",
       "pause": 400
     }
   ],

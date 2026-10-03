@@ -1,24 +1,74 @@
 {
+  "model-ledger": [
+    {
+      "text": "Model ledger.",
+      "pause": 500
+    },
+    {
+      "text": "As a reviewer deciding how far to trust this model, use this page to see what it covers, what it deliberately abstracts, and — because this revision replaced the model wholesale — what happened to every guarantee the previous one made.",
+      "pause": 400
+    },
+    {
+      "text": "This is a candidate at model-and-proofs stage. The executable machine is Singular.step in the model source. Every declaration is proved from the standard axioms; there is no audit verdict and no acceptance claim here.",
+      "pause": 400
+    }
+  ],
   "what-the-model-is-and-what-it-abstracts": [
     {
-      "text": "The trie answers two questions and nothing else: is this key known, and where in its life is it. The abstractions are named alongside what they therefore cannot show — tagged commitments stand for collision-free commitments but say nothing about a real digest, and supplied contract evidence stands for a ledger that ran the application validators but says nothing about what those validators do.",
+      "text": "What the model is, and what it abstracts.",
+      "pause": 500
+    },
+    {
+      "text": "The trie answers two questions and nothing else: is this key known, and where in its life is it. Applications store nothing in the leaf. Seven edges move a leaf, each an MPFS primitive applied to a state, each a delta over three token kinds.",
+      "pause": 400
+    },
+    {
+      "text": "Deliberate abstractions, each of which a reader should hold against every claim below:",
       "pause": 400
     }
   ],
   "the-retirement-map": [
     {
-      "text": "The previous model had forty-four generic declarations, and registry mode replaced the alphabet, so most no longer have a subject. Every one is accounted for — one carried, three renamed, forty retired, each with its reason — because without this an auditor cannot tell a dropped guarantee from a rename, and a manifest that quietly lost rows would still satisfy every count.",
+      "text": "The retirement map.",
+      "pause": 500
+    },
+    {
+      "text": "The previous model had 44 generic declarations. Registry mode replaced the alphabet, so most of them no longer have a subject. Every one is accounted for here — 1 carried, 3 renamed, 40 retired — because without this an auditor cannot tell a dropped guarantee from a rename, and a manifest that quietly lost rows would still satisfy every count.",
+      "pause": 400
+    },
+    {
+      "text": "The registry-mode statements that replace them are listed in the theorem manifest.",
       "pause": 400
     }
   ],
   "what-is-covered-and-what-is-not": [
     {
-      "pause": 400,
-      "text": "Covered: the seven edges and their deltas, refusal as the complement of the edge table, admission scoped to the request tuple, the leaf codec both ways, the fold and its mint check, the custody census and the deposit destination, and the eleven promises over reachable states."
+      "text": "What is covered, and what is not.",
+      "pause": 500
     },
     {
-      "pause": 400,
-      "text": "Not covered, and named rather than left to be discovered: on-chain conformance, since nothing here says the cage validator implements this model, and whether the deployed validators do is the subject of the conformance evidence page, not of this ledger; plurality constructed from genesis; and any quantitative mutation coverage. The simulator replays thirty-eight registry rows, twenty-four naming rows and twenty-one lifecycle rows and reproduces each verdict, with a mirror check binding the Lean it ships to the Lean it was built from — but that is agreement on the exported inputs, not equivalence, and the transcriber is the model's author, so it is not an independent measurement either."
+      "text": "Covered: the seven edges and their deltas; the complement of the edge table as refusals with distinct reasons; admission by an approval scoped to the request's tuple; the leaf codec both ways; the fold's atomicity, zero-request refusal and mint check; the custody census and the deposit's destination; and the eleven promises over states reachable from genesis.",
+      "pause": 400
+    },
+    {
+      "text": "Not covered, and named rather than left to be discovered:",
+      "pause": 400
+    },
+    {
+      "text": "On-chain conformance. Nothing here says the cage validator implements this model. Whether the deployed validators do is the subject of the conformance evidence, not of this ledger.",
+      "pause": 300
+    },
+    {
+      "text": "The simulator. It replays 38 registry rows, 24 naming rows and 21 lifecycle rows and reproduces each verdict, and a mirror check binds the Lean it ships to the Lean it was built from. That is agreement on the exported inputs, not equivalence — and the transcriber is the model's author, so it is not an independent measurement either.",
+      "pause": 300
+    },
+    {
+      "text": "Plurality from genesis. terminal-witnesses-plural states that from any reachable terminal state arbitrarily many attestations can be minted. It does not construct a terminal key with zero attestations from genesis; that is a reachability claim about a fresh key and is not proved here.",
+      "pause": 300
+    },
+    {
+      "text": "Quantitative mutation coverage. Four mutants are executed (the mutation ledger); there is no survivor census.",
+      "pause": 300
     }
   ],
   "_source": {

@@ -1,19 +1,27 @@
 {
   "responsibilities-after-the-repair": [
     {
-      "text": "Eleven modules. The fold owns a reject's refund duties with no timing rule. The request script admits its spend in the processing window or when the state rejects that same request. The old predicate is removed. Tests and properties restate the model's rule. Identity files carry regenerated hashes. The builder drops its timing. The end to end test proves it. The story language names a reject's window, the interpreter realizes it, the rows own their verdicts, reject-inside-processing-and-retraction-windows joins the dispatcher, the book and the row count, and publication states the current behaviour.",
-      "pause": 400
+      "text": "Responsibilities after the repair.",
+      "pause": 500
     }
   ],
   "dependency-direction": [
     {
-      "text": "No dependency changes direction. The validators know nothing of the builder or the suite. The only new read is the request script reading the state's redeemer in the same transaction, which it already locates.",
+      "text": "Dependency direction.",
+      "pause": 500
+    },
+    {
+      "text": "Unchanged. The on-chain validators know nothing of the off-chain builder or the suite. The builder reads compiled scripts through the blueprint. The suite reads the blueprint and the model's driver. No new library edge is introduced. The request script newly reads the state redeemer of the same transaction, which it already locates to check Modify.",
       "pause": 400
     }
   ],
   "promotion": [
     {
-      "text": "Nothing is promoted to a shared library.",
+      "text": "Promotion.",
+      "pause": 500
+    },
+    {
+      "text": "Nothing is promoted to a shared library. The window predicates stay in shared.ak.",
       "pause": 400
     }
   ],

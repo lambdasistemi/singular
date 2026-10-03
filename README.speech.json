@@ -1,59 +1,137 @@
 {
+  "singular": [
+    {
+      "text": "Singular.",
+      "pause": 500
+    },
+    {
+      "text": "A permissionless registry on Cardano for unique identities and independent application state.",
+      "pause": 400
+    },
+    {
+      "text": "Try the simulation — book a name, witness an absence and book it, retire a name and attest it, or drive the seven edges by hand and watch each refusal arrive by name. Switch the profile picker to the naming instance for the Over witness and the lifecycle replay. The simulation guide says what the page establishes and what it does not.",
+      "pause": 400
+    }
+  ],
   "who-this-is-for": [
     {
-      "text": "Five readers. An application developer who wants unique keys without running a registrar: one policy ID in, a registry of NFT-backed keys out, with minting, burning and reinsertion handled.",
+      "text": "Who this is for.",
+      "pause": 500
+    },
+    {
+      "text": "An application developer wants keys that are unique across everyone using the application — names, identifiers, handles — without running a registrar. They supply one parameter, their application policy ID, and get a registry in which every active key is represented by exactly one NFT sitting in one of their own application outputs. Singular mints that NFT when a certified registration is folded in, burns it when the key is retired or released, and lets a released key be registered again.",
       "pause": 400
     },
     {
-      "text": "A user asks the application to register a key and waits with no NFT and no reservation. The request stores its refund address. Before folding, a separately authorized cancellation copies that address and leaves the name free; redirecting it, relying only on Insert certification, cancelling after fold, or replaying cancellation is refused. The registry fixes where a deposit returns, never its amount: no fee, price or bond rule is part of it.",
+      "text": "A user of that application asks it to register a key. The application approves the exact proposal — including the refund address stored in the request — and the request waits, holding no NFT, until someone folds it into the registry. Before folding, a separately authorized cancellation copies that stored refund address and leaves the name free; redirecting the refund, relying only on Insert certification, cancelling after fold, or replaying cancellation is refused. The registry fixes where a deposit returns, never its amount: no fee, price or bond rule is part of it.",
       "pause": 400
     },
     {
-      "text": "A holder of an active name wants to keep payment routing current, recover through a committed next controller, or retire the name permanently. Retirement is certified by the committed recovery key revealed and signing, or by a distinct-member quorum — never by the current control key alone. Twenty-one lifecycle rows are replayed in the simulator against the Lean that computed them. It remains an unaccepted design candidate, not an observed ledger execution.",
+      "text": "A holder of an active name wants to keep payment routing current, recover through a committed next controller, or retire the name permanently. The naming lifecycle covers destination maintenance, recovery through the committed key, and retirement by that key or by a distinct-member quorum — never by the current control key alone. Twenty-one lifecycle rows are replayed in the simulator against the Lean that computed them. It remains an unaccepted design candidate, not an observed ledger execution.",
       "pause": 400
     },
     {
-      "text": "A folder, which is anyone, who applies pending requests to the registry with no owner to sign.",
+      "text": "A folder — anyone at all — collects pending requests and applies them to the registry in one transaction. There is no owner to sign, no privileged actor, and no way to fold a request that does not satisfy the protocol.",
       "pause": 400
     },
     {
-      "text": "A resolver, who authenticates the registry entry, finds the NFT and reads the application's own output.",
+      "text": "A resolver wants to know whether a key is active and where its application state currently lives. It authenticates the registry entry, finds the NFT, and reads the application's own output. A key that is retired or in a pending terminal request yields no live state.",
       "pause": 400
     },
     {
-      "text": "And an integrator with their own node, who runs the whole thing on a public test network funded by a wallet whose key never leaves their machine. A separate runbook covers the release download, the node and wallet setup, the funding diagnostic and each journey.",
+      "text": "An integrator with their own node wants to run the whole thing on a public test network, funded by a wallet whose key never leaves their machine. Run against your own preprod node covers the release download, the node and wallet setup, the funding diagnostic and each journey end to end.",
       "pause": 400
     }
   ],
   "how-the-parts-fit": [
     {
-      "text": "A note first: the diagram and table here record the original three-operation design — Insert, Update and Delete requests, an application-minted Withdraw, and the states Absent, Active and Over. The registry-mode model that the Lean proves, the simulator replays and the conformance suite compares against the deployed validators moves a key through seven edges and calls the terminal state Terminal. Where the two differ, registry mode is current; the naming walkthrough shows the seven edges and the model ledger records what replaced each part of the original design.",
+      "text": "How the parts fit.",
+      "pause": 500
+    },
+    {
+      "text": "The diagram and table in this section record the original three-operation design: Insert, Update and Delete requests, an application-minted Withdraw, and the states Absent, Active and Over. The registry-mode model that the Lean proves, the simulator replays and the conformance suite compares against the deployed validators moves a key through seven edges and calls the terminal state Terminal. Where the two differ, registry mode is current: how a name moves in the registry shows the seven edges, and the model ledger records what replaced each part of the original design.",
       "pause": 400
     },
     {
-      "text": "The diagram shows the application on one side, with its policy, its UTxO holding the representative NFT, and its spending script; and Singular on the other, with request UTxOs and the registry UTxO carrying the authenticated map. A user proposes a registration; the application policy mints an Insert action token certifying it. A folder folds requests with proofs; the registry mints the representative into the certified output. The application script releases the NFT into an exact Update or Delete request; folding burns it. A resolver authenticates the entry, the NFT and the current output.",
+      "text": "The application keeps its state in the UTxO holding the NFT and controls its own local transitions; the registry never sees that state. Singular records only whether a key has an outstanding representative or has been permanently retired, and enforces the coupling between registry transitions and NFT supply.",
       "pause": 400
     },
     {
-      "text": "The table lists the three original registry requests: Insert from absent to Active with a mint, Update from Active to Over with a burn that permanently reserves the key, and Delete from Active to absent with a burn that frees it.",
+      "text": "Active and Over contain no application payload. Registry Update means retirement, not an application-state update. Over is terminal.",
       "pause": 400
     },
     {
-      "text": "The reading order that follows runs ten steps. The first three pages and the protocol specification record the original design; the naming pages, the retirement and recovery pages and the simulation describe the registry-mode model that supersedes it where they differ. It ends with the runbook for your own preprod node and the preprod record.",
+      "text": "The configured application policy ID is the authorization anchor. It mints action tokens whose asset names hash the action and its necessary parameters. Insert approval binds the registry/key, initial application datum and destination. Withdraw approval separately binds the exact pending Insert and its refund requirements; Insert approval alone cannot authorize cancellation.",
       "pause": 400
+    },
+    {
+      "text": "Insert carries no representative NFT, can fail at folding if its key is occupied, and can be withdrawn with the required authorization. Update/Delete carry the existing representative after the application authorizes its exact release, and retain it until completion. The concrete request-token arrangement for Update/Delete remains open.",
+      "pause": 400
+    },
+    {
+      "text": "Read the design in order. The first three pages and the protocol specification record the original design; the naming pages and the simulation describe the registry-mode model that supersedes it where they differ.",
+      "pause": 400
+    },
+    {
+      "text": "Responsibilities and terminology",
+      "pause": 300
+    },
+    {
+      "text": "Requests, folding and NFT custody",
+      "pause": 300
+    },
+    {
+      "text": "Certification and identity binding",
+      "pause": 300
+    },
+    {
+      "text": "Naming: book a name, retire it, attest it",
+      "pause": 300
+    },
+    {
+      "text": "Naming lifecycle: maintain, recover, retire",
+      "pause": 300
+    },
+    {
+      "text": "Ending a name and recovering control on a real ledger",
+      "pause": 300
+    },
+    {
+      "text": "Play and reproduce the simulation",
+      "pause": 300
+    },
+    {
+      "text": "Prior art and reuse candidates",
+      "pause": 300
+    },
+    {
+      "text": "Draft protocol specification and acceptance scenarios",
+      "pause": 300
+    },
+    {
+      "text": "Run against your own preprod node and the preprod record",
+      "pause": 300
     }
   ],
   "design-status": [
     {
-      "text": "The link at the top opens the simulator. Book a name, witness an absence and book it, retire a name and attest it, or drive the seven edges by hand and watch each refusal arrive by name. The candidate has sixty-five proved declarations: forty-four for the registry, seven for the naming instance, nine for its lifecycle and five for its wire encoding, counts that the model check derives from the theorem manifests rather than stating by hand.",
+      "text": "Design status.",
+      "pause": 500
+    },
+    {
+      "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 65 proved declarations — 44 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 38 registry rows, 24 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
       "pause": 400
     },
     {
-      "text": "Its focused checks replay thirty-eight registry rows, twenty-four naming rows and twenty-one lifecycle rows. That is finite correspondence evidence on those inputs, not independent audit acceptance. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The clarity record states plainly how much independence that evidence has, given that the model and its transcription share an author.",
+      "text": "The Nix-built documentation archive is a review bundle, not a released protocol artifact. It contains the rendered site and a runnable, locked workspace with raw model and corpus files, the naming contract, scenarios, simulator and replay sources, checkers, and exact identities. Reproduction starts from a fresh extraction, verifies artifacts/SHA256SUMS, and runs the archive's own flake; a checkout pass does not substitute. Build and release details give the exact commands and describe the release pipeline that publishes the archive from a tag on main.",
       "pause": 400
     },
     {
-      "text": "The Nix-built documentation archive is a review bundle, not a released protocol artifact. It includes the rendered site and a runnable locked workspace with model and corpus files, the naming contract, scenarios, simulator and replay sources, checkers, and exact identities. Reproduction begins from a fresh extraction, verifies the internal checksum manifest, and runs the archive's own flake; a checkout pass does not substitute. The build page gives the exact commands and describes the release pipeline that publishes the archive from a tag on main.",
+      "text": "Singular uses MPF as its authenticated registry data structure. The product it was imported from is a separate application with potentially reusable mechanics. The implementation stack and shared-library boundaries remain unselected; extracting a shared library is future work.",
+      "pause": 400
+    },
+    {
+      "text": "Build and serve the documentation with the pinned Nix toolchain.",
       "pause": 400
     }
   ],

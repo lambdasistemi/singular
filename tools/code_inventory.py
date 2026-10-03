@@ -680,6 +680,11 @@ NONCODE_CLASSES: list[dict] = [
         "note": "fixtures, receipts, planning records, preprod evidence and other data",
     },
     {
+        "id": "narration-clips",
+        "pattern": "docs/audio/clips/**/*.mp3",
+        "note": "recorded narration of the published pages, bound to the page text by docs/audio/manifest.json",
+    },
+    {
         "id": "site-icon",
         "pattern": "overrides/assets/*.svg",
         "note": "the documentation site's icon, referenced by the theme override",

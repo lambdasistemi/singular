@@ -1,8 +1,18 @@
 {
+  "delivery-tasks": [
+    {
+      "text": "Delivery tasks.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I expect a reviewable extraction whose old commands still work and whose evidence names what was actually checked.",
+      "pause": 400
+    }
+  ],
   "completion-sequence": [
     {
-      "text": "The work advances from intake through extraction, contributor documentation, generated Haddock, source-content negative control, future archive check and exact-head audit handback.",
-      "pause": 400
+      "text": "Completion sequence.",
+      "pause": 500
     }
   ],
   "_source": {

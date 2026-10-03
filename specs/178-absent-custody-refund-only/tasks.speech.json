@@ -1,17 +1,56 @@
 {
   "contract": [
     {
-      "text": "The wire delivery corrects the datum, derives identity from the complete asset set, preserves the custody and refund obligations, and documents every copy. Its frozen local gate, five reviews and exact-head continuous integration checks are complete. The epic owner split the conformance row, registration and unregistered-row control into a separate residual dependent on the description language. That obligation remains required and is not satisfied by this delivery. Reference selection remains uncovered, existing authority holds remain held, and the naming mirror is unchanged. Task checks record delivery and review readiness; acceptance and merge remain with the epic owner."
+      "text": "Contract.",
+      "pause": 500
+    },
+    {
+      "text": "Model base d92f35bf722120369c386ce09e6c7a40d321182f. refund-custody-wire-and-consumers delivery is verified at 88a7bceb3fc18115b7b1966401ae9f51cffd246e: the frozen local gate and exact-head CI, Registry and Conformance passed; all five implementation checkpoints are approved.",
+      "pause": 400
+    },
+    {
+      "text": "On 2026-09-22 the epic owner applied the operator's standing direction to integrate the green checkpoint and split the rest. refund-custody-wire-and-consumers is this ticket's delivery. refund-custody-conformance transfers undiminished to an epic-owned residual under #154, dependent on #209's story language; it is no longer an open slice of this ticket. These checks record refund-custody-wire-and-consumers delivery and review readiness. Acceptance and merge remain with the epic owner. No held or uncovered consumer is counted as passed.",
+      "pause": 400
+    },
+    {
+      "text": "[x] correct-refund-datum-owned-codecs-constructors Correct the refund-only datum and all owned codecs/constructors.",
+      "pause": 300
+    },
+    {
+      "text": "[x] derive-custody-identity-from-complete-asset-set Derive custody identity from the complete asset set and retain executable valid, zero-asset and two-asset evidence.",
+      "pause": 300
+    },
+    {
+      "text": "[x] preserve-affected-custody-refund-behavior-across-validator Preserve affected custody/refund behavior across validator and builder consumers with actual boundary observations.",
+      "pause": 300
+    },
+    {
+      "text": "[x] publish-complete-file-line-disposition-inventory-wire Publish the complete file/line/disposition inventory and wire compatibility limits.",
+      "pause": 300
+    },
+    {
+      "text": "[x] verify-root-ci-snapshot-approval-trail-exact Verify root CI, snapshot, approval trail and exact-head Registry/Conformance; deliver a ready-for-review PR.",
+      "pause": 300
     }
   ],
   "transferred-residual": [
     {
-      "text": "The new conformance row for the refund-only absent custody wire, its registration at the actual continuous integration judgment sites, and an executed unregistered-row control transfer undiminished to the epic owner. They remain required pending the description language landing and authorization for a separate issue. This delivery does not complete, waive, or satisfy that residual."
+      "text": "Transferred residual.",
+      "pause": 500
+    },
+    {
+      "text": "refund-custody-conformance-row is transferred, not completed or waived: the new conformance row for the refund-only absent custody wire; registration at the actual CI judgment sites; and an executed unregistered-row control. The epic owner retains this obligation pending the story language landing and authorization to file its separate issue. refund-custody-wire-and-consumers's gate does not satisfy it.",
+      "pause": 400
     }
   ],
   "evidence-limits": [
     {
-      "text": "The wrong-reference control reached edge four and still passed, so reference selection remains a named uncovered consumer. The bound Lean model constrains custody, token, and refund obligations but does not model booking reference-input identity. The existing authority holds remain held, naming stays excluded and unchanged, and the final task-stamp commit changes delivery metadata only."
+      "text": "Evidence limits.",
+      "pause": 500
+    },
+    {
+      "text": "The wrong-reference control reached edge 4 and still passed. Reference selection remains a named uncovered consumer. The bound Lean model constrains custody, token and refund obligations but does not model booking reference-input identity. The existing empty-fold/surplus-fold-actions/request-value-and-refund-routing authority holds remain held; naming is excluded and unchanged. The final task-stamp commit changes delivery metadata only.",
+      "pause": 400
     }
   ],
   "_source": {

@@ -1,37 +1,91 @@
 {
+  "rename-script-scans-shells-and-derives-its-gate": [
+    {
+      "text": "Rename script scans shells and derives its gate.",
+      "pause": 500
+    },
+    {
+      "text": "Retroactive record, written 2026-09-15 from PR #109 merged at fc2ad9e5987b171ca33a430f5bbe170ab6423fd5.",
+      "pause": 400
+    }
+  ],
   "who-this-is-for": [
     {
-      "text": "Anyone who runs the rename script on a pre-rename branch and expects every text kind scanned and a gate that passes a clean tree.",
+      "text": "Who this is for.",
+      "pause": 500
+    },
+    {
+      "text": "Anyone who runs tools/rename-registry.sh on a branch cut before the registry rename and expects two things: it scans every tracked text file kind, and its final gate passes on a tree with no product mentions left.",
       "pause": 400
     }
   ],
   "what-was-broken": [
     {
-      "text": "Two self-inflicted defects: the gate failed main itself over citation lines its hand allowlist missed, and shell scripts were never scanned, so one kept a product export past the rename.",
+      "text": "What was broken.",
+      "pause": 500
+    },
+    {
+      "text": "The first re-run on a branch found two defects in the tool itself:",
       "pause": 400
+    },
+    {
+      "text": "The final gate fails on main itself. The residual check reports product mentions remaining outside the citation files and lists the eight cardano-mpfs-onchain#100/#101 citation lines from a file its hand-written allowlist does not name. Every rename step completes; only the self-check is wrong, and it is wrong for everyone who runs the script.",
+      "pause": 300
+    },
+    {
+      "text": "Shell scripts are never scanned. The scan list names Haskell, Cabal, Nix, Markdown, JSON, Aiken, YAML, TOML and the justfile; a tracked *.sh kept export MPFS_BLUEPRINT past the rename and had to be fixed by hand.",
+      "pause": 300
     }
   ],
   "what-you-can-do": [
     {
-      "text": "Run the script twice on a scratch worktree: first run completes with the gate passing, second is a byte-for-byte no-op. The sequence diagram shows both runs plus the planted stray that must fail.",
+      "text": "What you can do.",
+      "pause": 500
+    },
+    {
+      "text": "Run the script twice on a scratch worktree of main: the first run completes with the gate passing, and the second run is a byte-for- byte no-op with the gate passing again. The scan now covers *.sh and *.py alongside the other text kinds, and the gate derives its allowed residuals from the same grep it runs — a file survives only if every one of its matches sits on an upstream citation line.",
       "pause": 400
     }
   ],
   "acceptance-from-the-shipped-issue-and-pr-body": [
     {
-      "text": "Docs checks green including the new test, which is why this slice is bound by just ci itself. Twice-run proof, planted-stray failure naming the file, both falsification directions observed, merge commit on green.",
-      "pause": 400
+      "text": "Acceptance (from the shipped issue and PR body).",
+      "pause": 500
+    },
+    {
+      "text": "nix develop --quiet -c just ci, which includes just rename-registry-test: green. Unlike the sibling slices, this change is bound by just ci itself because the new test runs inside it.",
+      "pause": 300
+    },
+    {
+      "text": "bash tools/rename-registry.test.sh: cuts a scratch worktree from main, drives the rename twice (second run byte-for-byte no-op, gate passes), then plants export MPFS_BLUEPRINT=/tmp/mpfs-blueprint.json in a tracked .sh and asserts rename-registry.sh --gate-only fails naming that file.",
+      "pause": 300
+    },
+    {
+      "text": "Falsified both ways: against the pre-fix script the test fails at run 1 (the reported gate failure), and with the derivation weakened to accept everything the control fires.",
+      "pause": 300
+    },
+    {
+      "text": "Merged with a merge commit when CI is green.",
+      "pause": 300
     }
   ],
   "deviations": [
     {
-      "text": "Every ticket item implemented, no departure found, no question raised.",
+      "text": "Deviations.",
+      "pause": 500
+    },
+    {
+      "text": "The mandate is issue #108 (outcome, two defects, three diff items, found-by line, refs #96). The diff implements every item: *.sh and *.py in the scan, the derived allowlist, and the twice-run test with the negative control. No departure found. No question raised.",
       "pause": 400
     }
   ],
   "limits-of-this-slice": [
     {
-      "text": "Underscored tokens stay invisible to the word grep, which is why scanning shells matters. Both citation spacings match. Tool and test are exempt. No product behaviour changes.",
+      "text": "Limits of this slice.",
+      "pause": 500
+    },
+    {
+      "text": "The gate still cannot see tokens shaped with underscores: _ is a word character, so a word-match grep never matches them, and scanning .sh/.py is what removes them — the negative control plants a line carrying a bare word for exactly that reason. Both citation forms on main (with and without a space before #100) are matched. The rename tool and its test are exempt from the scan and the gate because they must keep naming the product they rename. Governance-only for the rename machinery: no runtime product behaviour changes; Lean, proofs and simulator untouched.",
       "pause": 400
     }
   ],

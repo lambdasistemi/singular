@@ -1,4 +1,30 @@
 {
+  "324-functions-model": [
+    {
+      "text": "#324 functions model.",
+      "pause": 500
+    },
+    {
+      "text": "Shapes are binding; module placement and auxiliary names are the commit owner's within the modules model.",
+      "pause": 400
+    },
+    {
+      "text": "indexer-provider indexerProvider :: <gated index> -> <readiness source> -> <bound> -> Provider IO -> Provider IO — the node provider becomes an indexer-backed provider whose views satisfy one-point-view-read-one-indexer-adapter–named-refusal-lag-fork-tip-started-or.",
+      "pause": 300
+    },
+    {
+      "text": "gated-index-construction gated index construction from an IndexerHandle and its coverage (gated-index-pinned-indexerhandle-whose-mutations-view), and the handle the follower receives from it.",
+      "pause": 300
+    },
+    {
+      "text": "followed-provider followedProvider :: Provider IO -> Submitter IO -> IO (Provider IO) — signature unchanged; on a followed-from-origin devnet it returns indexer-provider's provider.",
+      "pause": 300
+    },
+    {
+      "text": "backend-selection (cli-selection-devnet-journey-on-main-after) backend selection at CLI startup (backend-selection-node-or-indexer-resolved-once) feeding the existing composition.",
+      "pause": 300
+    }
+  ],
   "_source": {
     "file": "functions-model.md",
     "sha256": "db6cafee20c251d8738f2cd0cca574f0632a88e0f2df1beded5fea0762926128"

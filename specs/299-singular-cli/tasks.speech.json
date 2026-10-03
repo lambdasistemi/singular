@@ -1,4 +1,38 @@
 {
+  "299-vertical-slice": [
+    {
+      "text": "#299 vertical slice.",
+      "pause": 500
+    },
+    {
+      "text": "All tasks are open at planning. Epic301 owns acceptance stamps; implementer cannot check them.",
+      "pause": 400
+    },
+    {
+      "text": "[ ] commands-help-public-configuration-key-settings-validation Commands/help/public configuration/key and settings validation (packaged-singular-registry-create-insert-terminate-inspect/02/03).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] caller-wallet-seed-safe-create-identity-preview Caller-wallet seed-safe create, identity preview and durable existing-registry attachment (public-saved-configuration-binds-network-registry-seed/03/04/05).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] connected-insert-terminate-via-production-builders-actual Connected insert/terminate via production builders with actual transaction/partial receipts (create-insert-terminate-use-accepted-production-builders/05; INSERT/TERMINATE).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] fresh-bound-key-proof-inspection-no-signing Fresh bound key/proof inspection with no signing/funding/submission (inspect-needs-no-signing-key-funding-or).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] packaged-classified-singular-separate-process-extracted-archive Packaged/classified singular, separate-process extracted-archive CI and relevant refusing/retained controls (packaged-singular-registry-create-insert-terminate-inspect/07).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] actual-first-demo-demo1-instructions-lean-correspondence Actual first-demo/DEMO1 instructions, Lean correspondence and honest evidence limits (first-demo-archive-demo1-instructions-show-supported).",
+      "pause": 300
+    }
+  ],
   "_source": {
     "file": "tasks.md",
     "sha256": "c019b1252c702a2f0e93e36ebfd290c62c58e0ee3dd80319699375c72a04f0a5"

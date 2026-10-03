@@ -1,18 +1,36 @@
 {
-  "_source": {
-    "file": "tasks.md",
-    "sha256": "4e3299cec5b32554b27cc2df60f434dc239ab4d1d69d5f40983c514bad38465e"
-  },
+  "deliver-honest-datum-observations": [
+    {
+      "text": "Deliver honest datum observations.",
+      "pause": 500
+    },
+    {
+      "text": "As a conformance reader, I want the reported datum form to reflect the ledger and the comparison to detect a difference.",
+      "pause": 400
+    }
+  ],
   "implementation": [
     {
-      "text": "Repair the affected datum observations and preserve executable failing and passing evidence without changing the model or refactor-owned files.",
-      "pause": 350
+      "text": "Implementation.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] repair-five-affected-roles-executable-observer-comparator: repair the five affected roles with executable observer/comparator discrimination, retain RED/GREEN evidence, and verify connected cases without changing model semantics or refactor-owned files.",
+      "pause": 300
     }
   ],
   "acceptance": [
     {
-      "text": "The parent checks all requirements, checkpoint approvals, final gates and continuous integration before recording acceptance.",
-      "pause": 350
+      "text": "Acceptance.",
+      "pause": 500
+    },
+    {
+      "text": "All four requirements in the specification need SHA-bound checkpoint approval, final gate receipts and exact-head CI. The parent owns this task stamp and the PR acceptance record. No generic inventory count discharges an untested role.",
+      "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "4e3299cec5b32554b27cc2df60f434dc239ab4d1d69d5f40983c514bad38465e"
+  }
 }

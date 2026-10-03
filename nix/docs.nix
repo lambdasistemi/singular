@@ -126,6 +126,7 @@ let
       python3 tools/check_site.py "''${SINGULAR_API_SITE_OVERRIDE:-${docs}}"
       python3 tools/aiken_reference.py controls "''${SINGULAR_API_SITE_OVERRIDE:-${docs}}" onchain "''${SINGULAR_CANDIDATE_REF:-}"
       python3 tools/check_presentation_repo.py
+      python3 tools/narrate.py --check
       conformance evidence-page --root .
       bash tools/evidence_page_controls.sh .
     '';

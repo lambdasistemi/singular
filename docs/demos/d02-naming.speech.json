@@ -1,20 +1,50 @@
 {
+  "maintain-and-recover-a-name-23-october-preprod-target": [
+    {
+      "text": "Maintain and recover a name — 23 October preprod target.",
+      "pause": 500
+    },
+    {
+      "text": "As a name holder, I want to keep the same name while changing its payment destination and recovering control with my precommitted key, so that a payer can use my current destination.",
+      "pause": 400
+    },
+    {
+      "text": "Planned release tag: Singular v2.0.0 (naming and escrow milestone). This is a milestone target; the tag waits for the 30 October release gate, a built archive and connected preprod receipts. Candidate plays do not publish it.",
+      "pause": 400
+    },
+    {
+      "text": "This is a Cardano preprod target, not a completed demonstration. The presenter will use keripy kli to create and rotate the controller's KERI identity and a released ckeri command to submit and read back each connected Cardano action. The Singular naming commands and preprod release needed to join that journey are still missing. The dated project card remains a review target.",
+      "pause": 400
+    }
+  ],
   "preprod-play-to-record": [
     {
-      "text": "The presenter will create and export a fresh identity with keripy, register and advance it with Cardano KERI on preprod, then maintain and recover a name through the released Singular interface. The connected naming release and mapping are still missing. Singular version two point zero point zero is a planned milestone tag, not an existing release. Identity readback uses the Cardano KERI follower store.",
+      "text": "Preprod play to record.",
       "pause": 500
+    },
+    {
+      "text": "The accepted naming lifecycle model at a6e5edbc2dafa82eb34116a1de2b6503f87c6692 defines maintenance, recovery and refusals. Its synthetic address bytes and key 42 are model fixtures. They are not preprod assets, keys or transactions. The Cardano KERI to Singular registry mapping remains open in KERI #435, so the preprod sequence above cannot yet be claimed as a connected implementation.",
+      "pause": 400
     }
   ],
   "presenter-path-1015-minutes-when-connected": [
     {
-      "text": "The presenter will show the identity event, registry and naming transactions, current destination readback, and two named refusals. Every observed result must be read from preprod.",
+      "text": "Presenter path: 10–15 minutes when connected.",
       "pause": 500
     }
   ],
   "recording-gate": [
     {
-      "text": "No naming cast is attached yet. The dated story needs a released interface, confirmed preprod transaction IDs and fresh identity and name readbacks before a recording is published.",
+      "text": "Recording gate.",
       "pause": 500
+    },
+    {
+      "text": "The asciicast must record the real kli, ckeri and Singular commands and their preprod readbacks. Invented identities may be generated for the demo, but their actual AID, asset IDs, transaction IDs and refusals must come from that run. No preprod cast is attached yet. The earlier Lean and Node recording is model evidence and does not demonstrate this user story.",
+      "pause": 400
+    },
+    {
+      "text": "The Singular naming epic must supply the released naming interface and transaction path. The Cardano KERI registry mapping must bind the two accepted models before connected acceptance. Until then, the page is a play plan, with no claim of naming preprod acceptance.",
+      "pause": 400
     }
   ],
   "_source": {

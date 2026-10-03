@@ -1,35 +1,67 @@
 {
   "alices-story-in-the-operators-words": [
     {
-      "text": "The operator's clarification: Alice uses an open policy, so the datum is open; the token does not go to her wallet. She interacts with a smart contract, can change the datum, cannot take the deposit, and the deposit stays until she terminates the token.",
+      "text": "Alice's story in the operator's words.",
+      "pause": 500
+    },
+    {
+      "text": "Authority: direct operator clarification in the first milestone's coordination conversation, 2026-09-28. Alice uses an open policy meaning the datum is open; the token does not go into Alice's wallet. Alice interacts with a smart contract, can change the datum, cannot consume the deposit, and the deposit stays until she terminates the token.",
       "pause": 400
     }
   ],
   "what-it-supersedes-and-keeps": [
     {
-      "text": "This replaces the earlier wallet delivery and unrestricted holder spend. Public findability, duplicate refusal, confirmed termination and no resurrection stay required, and nothing here claims the current minting policy already enforces it.",
+      "text": "What it supersedes and keeps.",
+      "pause": 500
+    },
+    {
+      "text": "This supersedes the holder-wallet destination and ordinary unrestricted holder-spend assumption in 2026-09-28-demo1-token-data-findability.md. Its public findability, same-registry/key duplicate refusal, confirmed termination and same-identity no-resurrection requirements remain required. This is required behavior, not a claim the current parameterless minting policy already enforces it.",
       "pause": 400
     }
   ],
   "required-application-behavior": [
     {
-      "text": "Insertion delivers token, datum and deposit to the application contract. Alice may change the datum while token, contract and deposit are preserved and cannot be pulled out early. Only a successful termination of the same registry and key burns the token, commits Terminal and releases the deposit, and the termination request's own deposit and tip are separate.",
-      "pause": 400
+      "text": "Required application behavior.",
+      "pause": 500
     },
     {
-      "text": "Required are one successful datum change and one refused early withdrawal with controls and fresh observations, and a payload that cannot rewrite authority, identity, amount or release, kept apart from protected control data by a proposed encoding.",
-      "pause": 400
+      "text": "Initial insertion delivers the token, caller-selected valid Plutus datum and request deposit to an application spending-contract output.",
+      "pause": 300
+    },
+    {
+      "text": "Alice can authorize datum changes. A continuing transition preserves the same token identity at the governing contract and the protected deposit amount. Alice cannot extract the protected deposit through an update, transfer, alternate output or ordinary spend.",
+      "pause": 300
+    },
+    {
+      "text": "Successful token termination burns the active token and commits Terminal in the same registry/key; only this authorized termination permits release of the protected application deposit to Alice. A termination request's own deposit and processing tip remain distinct from the original locked application deposit; transaction fees/minimum-output funding must be accounted for separately.",
+      "pause": 300
+    },
+    {
+      "text": "Demonstrate one successful datum change and one intended refused early-deposit-withdrawal attempt with positive/negative controls and fresh ledger observations. Setup/client failure is not validator refusal.",
+      "pause": 300
+    },
+    {
+      "text": "Preserve arbitrary payload freedom without allowing the payload to rewrite authority, token identity, protected amount or release conditions. Owner must propose a concrete encoding separating protected control data from arbitrary user data, or an equivalent binding, rather than silently imposing a business schema on the payload.",
+      "pause": 300
     }
   ],
   "minting-policy-and-spending-validator": [
     {
-      "text": "The open minting policy's approval-bound destination does not enforce continued deposit custody by itself. The work is to separate reusable primitives from the new validator, model and specification work, and never to claim custody just because the token sits at a script address.",
+      "text": "Minting policy and spending validator.",
+      "pause": 500
+    },
+    {
+      "text": "The minting policy and application spending validator have different duties. The existing open minting policy's approval-bound destination does not itself enforce continued deposit custody. Determine reusable existing application primitives versus the precise new validator/model/spec work needed. Do not claim this is achieved solely by placing the token at any script address.",
       "pause": 400
     }
   ],
   "reconciliation-and-limits": [
     {
-      "text": "The owner must reconcile gates, mandates, correspondence, controls, allocation and schedule before affected acceptance, keeping old evidence and spent budget. Issue 304 stays with its epic, and no seats, budget, live writes, publication or merge are granted.",
+      "text": "Reconciliation and limits.",
+      "pause": 500
+    },
+    {
+      "text": "Epic owner must reconcile the changed acceptance and implementation scope before affected implementation/audit acceptance: frozen gate/mandate revisions, model-to-implementation correspondence, custody/update/termination controls, #299/#300 allocation and bounded schedule. Preserve old evidence and spent budget. #304 remains owned by Epic #209; do not waive or silently resolve its termination correspondence hold. Existing roster retained; no additional seats, automatic budget replenishment, live writes, publication or merge authorization. Return concrete design/scope questions if necessary; unaffected work may continue.",
       "pause": 400
     }
   ],

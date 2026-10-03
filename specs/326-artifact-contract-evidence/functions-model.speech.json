@@ -1,4 +1,30 @@
 {
+  "326-functions-model": [
+    {
+      "text": "#326 functions model.",
+      "pause": 500
+    },
+    {
+      "text": "Signatures are binding in shape; auxiliary names and placement within the modules model are the commit owner's.",
+      "pause": 400
+    },
+    {
+      "text": "shared-adapter-contract-suite contractSuite :: AdapterHarness -> Spec — the shared case list over one adapter (contract-suite-module-under-offchain-test-owns, contract-case-name-kind-success-refusal-consistency). AdapterHarness carries the Provider IO, its evidence class and the chain controls the adapter supports.",
+      "pause": 300
+    },
+    {
+      "text": "consumer-composition-roots Composition roots of journeys-deployment-insert-active-update-terminal-runners construct Provider IO and SignedSubmitter once and pass them down; no consumer function takes NodeSession, NodeMode or Submitter (consumers-depend-on-provider-view-signedsubmitter-one).",
+      "pause": 300
+    },
+    {
+      "text": "verify-release verify-release <tag> (flake app) — exit 0 only when sums, archive members, separate-process journey and model revision agree (release-assembly-gains-model-revision-member-verification, v-release-publishes-singular-cli-archive-its).",
+      "pause": 300
+    },
+    {
+      "text": "evidence-page-rendering Evidence page rendering takes rows.json and a receipts directory and produces the page; the check recomputes and compares (conformance-evidence-page-rendered-from-receipts-by, conformance-states-on-published-evidence-page-computed).",
+      "pause": 300
+    }
+  ],
   "_source": {
     "file": "functions-model.md",
     "sha256": "b1e0495e23b4b6ec3e99fad384a91d6f805bc7fe5f959f577c9141a961729a0e"

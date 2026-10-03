@@ -1,7 +1,21 @@
 {
+  "module-ownership": [
+    {
+      "text": "Module ownership.",
+      "pause": 500
+    },
+    {
+      "text": "As a contributor, I expect the lint entry point to cover the source directories that own active Haskell components, while the Cabal package keeps the same library and commands.",
+      "pause": 400
+    }
+  ],
   "responsibilities": [
     {
-      "text": "Cabal declares the components and their source directories. The lint app discovers active Haskell sources, the off-chain flake builds the complete component set, and the CI workflow runs that build. Existing exported modules and command names stay in place.",
+      "text": "Responsibilities.",
+      "pause": 500
+    },
+    {
+      "text": "No new Haskell module, dependency direction, facade, or runtime owner is introduced by this slice.",
       "pause": 400
     }
   ],

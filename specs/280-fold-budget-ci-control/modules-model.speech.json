@@ -1,14 +1,32 @@
 {
+  "components-of-the-fold-budget-control": [
+    {
+      "text": "Components of the fold budget control.",
+      "pause": 500
+    },
+    {
+      "text": "As a reviewer, I want each new piece to have one job and depend only downward, so the control cannot leak into the product runner.",
+      "pause": 400
+    }
+  ],
   "components": [
     {
-      "text": "Five components: the fixed-fallback patch, the recorder script that runs the pair, the run records and raw logs it writes, a reader page that describes them, and, only if needed, a repair inside the regression test target.",
+      "text": "Components.",
       "pause": 500
     }
   ],
   "direction-and-placement": [
     {
-      "text": "Nothing in the product runner, the CI workflow or the Lean model depends on these components. The recorder depends on the patch and the packaged app, and nothing depends on the recorder. The records sit with the other retained runs outside the published site, and no abstraction is promoted.",
+      "text": "Direction and placement.",
       "pause": 500
+    },
+    {
+      "text": "The product runner, the CI workflow and the Lean model depend on none of these components. The recorder depends on the patch and on the repository's own packaged app; nothing depends on the recorder. The records sit beside the existing retained runs in conformance/review/, which is not part of the published docs site. No abstraction is promoted upstream: there is one consumer.",
+      "pause": 400
+    },
+    {
+      "text": "Field definitions are in the data model, and the recorder's call shape is in the functions model.",
+      "pause": 400
     }
   ],
   "_source": {

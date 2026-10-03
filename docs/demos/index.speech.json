@@ -1,18 +1,40 @@
 {
+  "dated-demo-plays": [
+    {
+      "text": "Dated demo plays.",
+      "pause": 500
+    },
+    {
+      "text": "As a presenter, I want each dated play to show a keripy kli identity and a ckeri transaction on Cardano preprod, so that the audience can inspect the identity event and ledger result together. A cast appears only after the connected preprod run has produced transaction IDs and fresh readbacks.",
+      "pause": 400
+    },
+    {
+      "text": "For Cardano KERI identity actions, the planned source is its local follower indexer: ckeri writes use --store PATH or CKERI_STORE, and reads use explicit --backend local --store PATH (or an indexer-backed endpoint where supported). Record the indexed chain point and freshness. Singular's session follower confirms new preprod transactions, but older address outputs still come from its node provider; #107 tracks a persistent registry follower. A Koios asset lookup alone does not close these demo stories. The Cardano KERI indexer contract tracks the identity side. The older V1 cast used Koios and remains historical evidence.",
+      "pause": 400
+    }
+  ],
   "choose-a-dated-play": [
     {
-      "text": "Choose a dated preprod play and check its evidence boundary. Cardano KERI uses its follower store for identity actions, while Singular needs a persistent registry read path. Each cast requires real keripy and Cardano KERI operations plus the released Singular transactions and readbacks.",
+      "text": "Choose a dated play.",
       "pause": 500
+    },
+    {
+      "text": "The Cardano KERI consumer mapping is separate from Singular naming. Naming is not a prerequisite for Cardano KERI's identity path.",
+      "pause": 400
+    }
+  ],
+  "planned-major-release-tags": [
+    {
+      "text": "Planned major release tags.",
+      "pause": 500
+    },
+    {
+      "text": "These tags are release targets, not published artifacts. Candidate demos cite their actual build and manifest until the relevant milestone release is cut.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "index.md",
     "sha256": "ffb82ca32aed55e48b77eb107d1623e620db036eb791ff5b994bdbe94385a619"
-  },
-  "planned-major-release-tags": [
-    {
-      "text": "The registry handoff targets Singular version one point zero point zero. Naming and escrow target version two point zero point zero after the connected escrow demonstration checks. These are planned tags, not published releases.",
-      "pause": 500
-    }
-  ]
+  }
 }

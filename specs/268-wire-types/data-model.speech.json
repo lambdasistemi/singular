@@ -1,12 +1,30 @@
 {
-  "declaration-and-instance-map": [
+  "wire-data-contracts": [
     {
-      "text": "The map names the sole future owner of every original type, alias, helper, explicit codec instance and stock derived instance. Fourteen data types each derive Show and Eq. Edge has no own instances; RequestPhase has no codec, and ConsumerRedeemer has only a ToData codec.",
-      "pause": 350
+      "text": "Wire data contracts.",
+      "pause": 500
     },
     {
-      "text": "The compatibility constraints retain strict fields, constructor indices and the refund-only custody payload. Reflection may report a new defining module, so actual consumers must be checked before calling identity preserved.",
-      "pause": 350
+      "text": "As an integrator, I need the same constructors, selectors, strictness and Data layout after the source moves. Each row is a before-to-after declaration and instance map, not a new wire specification.",
+      "pause": 400
+    }
+  ],
+  "declaration-and-instance-map": [
+    {
+      "text": "Declaration and instance map.",
+      "pause": 500
+    },
+    {
+      "text": "The 14 data and newtype declarations each derive stock (Show, Eq); the Edge type synonym has no own instance declaration. The explicit codec inventory is twelve triples plus the single ConsumerRedeemer encoder: 37 instances. No derived or explicit instance is added or dropped by the move.",
+      "pause": 400
+    },
+    {
+      "text": "Every original Types export remains a facade export with the same constructor and field visibility. The only intended change in type identity is the defining module reported by Haskell reflection; inspect actual consumers for reliance on that representation and record the result. Do not claim generic identity preservation from compiling alone.",
+      "pause": 400
+    },
+    {
+      "text": "The wire oracle is independent literal Data, Aiken's committed vector file and the current Aiken source, not a value created by the codec under test. The existing TypesSpec checks request edge/deposit positions, eight-field state order, refund-only custody, retired two-field refusal, unused constructor-five refusal and phase endpoints. Its roundtrips are supporting checks, not the sole wire oracle. Issue #178 separately owns the sole-asset cardinality and Conformance publication obligations; this ticket preserves their existing tests and state.",
+      "pause": 400
     }
   ],
   "_source": {

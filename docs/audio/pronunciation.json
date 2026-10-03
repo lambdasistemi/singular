@@ -1,0 +1,66 @@
+{
+  "rules": [
+    {
+      "pattern": "(?<![0-9A-Fa-f])(?=[0-9a-f]*[0-9])(?=[0-9a-f]*[a-f])[0-9a-f]{6,}(?![0-9A-Fa-f])",
+      "spell": true,
+      "ignore_case": true
+    },
+    {
+      "pattern": "->",
+      "spoken": " arrow "
+    },
+    {
+      "pattern": "=>",
+      "spoken": " double arrow "
+    },
+    {
+      "pattern": "::",
+      "spoken": " colon colon "
+    },
+    {
+      "pattern": "\\|\\|",
+      "spoken": " double bar "
+    },
+    {
+      "pattern": "<([A-Za-z][A-Za-z0-9_.-]*)>",
+      "spoken": " less than \\1 greater than "
+    },
+    {
+      "term": "KERI",
+      "phonemes": "kˈɛɹi"
+    },
+    {
+      "term": "KELs",
+      "phonemes": "kˈɛlz"
+    },
+    {
+      "term": "keripy",
+      "phonemes": "kˈɛɹipˈI",
+      "ignore_case": true
+    },
+    {
+      "term": "MiCA",
+      "phonemes": "mˈIkə"
+    },
+    {
+      "term": "MiFID",
+      "phonemes": "mˈɪfɪd"
+    },
+    {
+      "term": "SAID",
+      "phonemes": "sˈi ˈA ˈI dˈi"
+    },
+    {
+      "term": "SAIDs",
+      "phonemes": "sˈi ˈA ˈI dˈi ˈɛs"
+    },
+    {
+      "term": "eIDAS",
+      "phonemes": "ˈi ˈI dˈi ˈæz"
+    },
+    {
+      "term": "tADA",
+      "spoken": "tee ADA"
+    }
+  ]
+}

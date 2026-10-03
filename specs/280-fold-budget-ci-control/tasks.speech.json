@@ -1,8 +1,26 @@
 {
+  "delivery-ledger-for-the-fold-budget-control": [
+    {
+      "text": "Delivery ledger for the fold budget control.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I need each task stamp to name its commit and receipt rather than claim a result.",
+      "pause": 400
+    }
+  ],
   "work-items": [
     {
-      "text": "All ten tasks are stamped with the commits that complete them. Planning was revised four times after reviews and questions, the candidate twice after reviews, and the conditional repair was not needed because the mutant failed as required. The final gate runs on the stamped head, and its receipt lives in the handback, not in this file.",
+      "text": "Work items.",
       "pause": 500
+    },
+    {
+      "text": "Tasks run in this order; each depends on the one before it.",
+      "pause": 400
+    },
+    {
+      "text": "Task stamps do not substitute for the run records, the audit verdicts or CI on a published head. No push, pull request or merge is authorized by this ticket's current grant.",
+      "pause": 400
     }
   ],
   "_source": {

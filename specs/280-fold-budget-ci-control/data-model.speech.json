@@ -1,14 +1,32 @@
 {
+  "run-record-fields": [
+    {
+      "text": "Run record fields.",
+      "pause": 500
+    },
+    {
+      "text": "As a reviewer, I want each run record to carry every identity the two runs must share or differ on, so their comparison is mechanical.",
+      "pause": 400
+    }
+  ],
   "run-record": [
     {
-      "text": "Each run writes one record: its role, commit and tree, a clean state, the patch for the mutant, the Lean tree and corpus digest, the blueprint, the genesis digest, the node version, the command, directory and environment, the build paths, times, exit, the raw log digest, the matched witness lines and every invocation made.",
+      "text": "Run record.",
       "pause": 500
+    },
+    {
+      "text": "One JSON object per run, mutant.json and restored.json. Every field is read from the environment or the command's output, never typed.",
+      "pause": 400
     }
   ],
   "pair-invariants": [
     {
-      "text": "A pair counts only when both records share model, blueprint, genesis, node, command and environment, and each meets its exit and witness rule. Any other failure makes the pair inadmissible, and the record says so.",
+      "text": "Pair invariants.",
       "pause": 500
+    },
+    {
+      "text": "A pair is admissible only when both records exist, share lean, blueprint, genesis, node, command and env, and satisfy their own exit and witness rules. A missing witness, a setup failure or any other cause of a nonzero mutant exit makes the pair inadmissible, and the record says so.",
+      "pause": 400
     }
   ],
   "_source": {

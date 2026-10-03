@@ -1,57 +1,71 @@
 {
+  "reusable-singular-registry-commands": [
+    {
+      "text": "Reusable Singular registry commands.",
+      "pause": 500
+    },
+    {
+      "text": "Authority: issue #299, parent #301, operator Demo1 ruling and reusable-CLI correction dated 2026-09-28. Constitution 1.10.1 governs. Owner-defined scope is rung 0 with checks for the named invariants; this ticket does not assert full conformance completion. The proposed command surface is not working at the planning baseline.",
+      "pause": 400
+    },
+    {
+      "text": "As an operator, I create a registry, insert a selected key, inspect confirmed Active, terminate the same key and inspect confirmed Terminal through separate ordinary CLI processes, so I can continue after closing each process without booting another registry.",
+      "pause": 400
+    }
+  ],
   "requirements-and-acceptance-lines": [
     {
-      "text": "The packaged singular registry commands, create, insert, terminate and inspect, run from an extracted release archive outside the checkout, with no demo-only executable. The saved configuration binds the network, the registry and its seed, the application, the script and policy pins and the deployment references, and the local state is checked against a fresh ledger commitment before any write or any reported leaf.",
-      "pause": 400
-    },
-    {
-      "text": "Malformed keys, partial settings, mainnet, mismatched wallets, networks or scripts, and spent or foreign seeds are refused before anything is submitted, and an identity can be previewed without submitting. Writes use the production builders with the caller's own node, wallet, seed and key, and a process exit can never choose another identity or boot another registry.",
-      "pause": 400
-    },
-    {
-      "text": "Every submission and confirmation, partial ones included, survives in public receipts. A repeated create is refused; stale state, an unavailable node and a timeout stop with an attributable outcome, and nothing is repaired, overwritten or resubmitted on its own. Inspect needs no signing key, validates the key's proof against the observed commitment, and says how and when it looked.",
-      "pause": 400
-    },
-    {
-      "text": "Archive CI runs the commands as five separate processes against one development node, checking identity continuity and the actual observations, and each altered input must reach its intended refusal. The run pages show the supported commands, the limits of the open application, partial outcomes and recovery.",
-      "pause": 400
+      "text": "Requirements and acceptance lines.",
+      "pause": 500
     }
   ],
   "invariants": [
     {
-      "text": "Every invariant blocks unless it is marked advisory, and a client's safety refusal is never presented as a model or ledger refusal.",
-      "pause": 400
+      "text": "Invariants.",
+      "pause": 500
     },
     {
-      "text": "The saved identity binds every read and write. The local commitment must agree with the ledger's. The caller's wallet and exact unspent seed govern the builders. An insertion turns an unknown key Active with exactly its keyed holding, and a duplicate is refused; a termination burns that holding's token and returns the owner's deposit, and minting a terminal witness is never part of it.",
-      "pause": 400
-    },
-    {
-      "text": "An indexer's read of an Active key counts only when it finds exactly one output holding exactly one of the token and agrees with the node's fresh inspect; one that is missing, unreachable, stale or disagreeing is never a confirmation and ends a take before its next write. Inspect never signs, funds or submits, and a stale or unavailable read never prints a confirmed status. Interrupted work keeps its transaction ids and known partial state, and a create never overwrites. The archive journey keeps the same registry and key across processes, and any omitted command or altered receipt is detected. The documentation duty is advisory: it must describe the candidate accurately and claim nothing about preprod, release or full conformance.",
+      "text": "All rows below are BLOCKING unless marked ADVISORY. Client safety refusals are not claimed to be model or ledger refusal reasons.",
       "pause": 400
     }
   ],
   "model-binding-and-evidence-limits": [
     {
-      "text": "The plan is bound to an exact code revision and to the Lean model files and statement digests it names. The model's step, refusal and transaction-row definitions govern insertion and termination, with every hypothesis and conclusion unchanged, and funding signatures are not treated as fold authorization.",
+      "text": "Model binding and evidence limits.",
+      "pause": 500
+    },
+    {
+      "text": "Planning code revision 6b0feb5ca15d716982d1f31cbae4503a76223915; complete Lean tree f1e6a0edcaf9edce7369fd42add8b3677ddabeb2; Model.lean blob19806f297bf9a998e795747e0f1601b5376ebbe1, last-change commit5a6e307c1caf1b4cdd6b2fae082d4b0c33c338f4; Statements.lean blobe40c40c0165fbf110902544126e7f76edef6c25e. Freeze declaration/statement digests from lean/theorem-debt.json in receipt bindings.",
       "pause": 400
     },
     {
-      "text": "The chain's authenticated roots realise commitment checking; the model's abstract root is not compared to them byte for byte. The client's persistence, freshness and journal are safety obligations, not new model operations. Receipts show development-ledger behaviour only, and product claims use the suite's own description language.",
+      "text": "Singular.step, refusal, applyEdge, txOf and Statements.insert_active_transaction_row / update_terminal_transaction_row govern the two operations. Their full hypotheses/conclusions remain unchanged: reachable state, admitted application approval, adequate fee, keyed mint/holding effects, custody preservation, non-root config preservation, no fold-required signer, output/deposit obligations and relevant refusals. Wallet signatures for transaction funding are not invented fold authorization. terminal_mint_only_by_read excludes a termination witness mint. Open application demonstrates registry mechanics only.",
       "pause": 400
     },
     {
-      "text": "An unresolved ambiguity in the model or its consumers holds acceptance and goes to the operator as a concrete story. Validators, the model, new applications and later identity, naming and escrow work are out of scope, and live writes outside generated development wallets, publication and merge need separate authority.",
+      "text": "Concrete MPF authenticated roots realize commitment checking; rootOf is abstract FNV and is not compared byte-for-byte to chain roots. The client's persistence, freshness, network/input guards and partial journal are representation/safety obligations, not new Lean operations. Declare the exact concrete-to-model mapping and any extra assumptions proportionally. Existing control receipts support their exercised cases only; CLI receipts establish development-ledger behavior, not preprod, indexing service or full conformance. Product claims must use the suite's description language; report a concrete expressiveness gap rather than author raw product assertions or editing Conformance by default.",
       "pause": 400
     },
     {
-      "text": "On the thirtieth of September the operator ruled that the approved case of an update duplicating the token's carrier is not tested live and no longer holds the command-line acceptance, while the model's and the validator's own tests of it are kept. The conditional argument and its limits are on the ruling page.",
+      "text": "Unresolved affected Lean/consumer ambiguity is an acceptance hold and a concrete user story to the operator. No validator/model changes, new application, KERI/AID, Absent activation, witnesses, naming/escrow, full indexer or M4 scope. Live writes, signing-key reads outside generated development wallets, publication and merge need separate authority.",
+      "pause": 400
+    },
+    {
+      "text": "Operator ruling, 30 September 2026: the approved case of an update duplicating the token's carrier is not tested live and no longer holds the command-line acceptance; the model's and the validator's own tests of it are kept. The conditional argument and its limits are recorded in ruling-duplicate-carrier.md.",
       "pause": 400
     }
   ],
   "existing-decision-affecting-termination": [
     {
-      "text": "An open question also touches this journey: the termination row describes a destination output on a fold that delivers no token there, and whether that output is physical or logical is the operator's decision. Until it is decided, the termination output correspondence is held; other work continues, and no output, datum or model change is invented to fill the gap.",
+      "text": "Existing decision affecting termination.",
+      "pause": 500
+    },
+    {
+      "text": "Open issue #304 also affects this journey: txOfExit and update_terminal_transaction_row describe a destination output on a fold that delivers no token there. Whether that row is physical or logical remains the operator's decision. The termination transaction-output correspondence and affected acceptance are held pending that ruling; independent CLI/persistence/insert/packaging work may continue. Do not manufacture a ledger output or datum or alter the model. Existing deposit recipients and clear delivering-output inline-datum obligations remain binding.",
+      "pause": 400
+    },
+    {
+      "text": "Dispatch baseline is accepted #278 merge 09026002e78f5b1e4d09cbd93ca2e7e7e356e4f2, tree-identical to planning source 6b0feb5. No Lean source or statement binding changed.",
       "pause": 400
     }
   ],

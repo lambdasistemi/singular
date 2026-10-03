@@ -1,4 +1,18 @@
 {
+  "fold-module-ownership": [
+    {
+      "text": "Fold module ownership.",
+      "pause": 500
+    },
+    {
+      "text": "As a contributor, I need one directed path for a fold decision so a future change cannot create two algorithms that happen to agree today.",
+      "pause": 400
+    },
+    {
+      "text": "Original shipped commands, Driver, Edges, journey, cage end-to-end and burn-source test callers keep importing Update unless a compile dependency requires a narrow caller change. Cabal declares the children in the existing public library; no new package or component is introduced.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "modules-model.md",
     "sha256": "2e622722289f5fe175c18924d97b93133fa6f8ae47ea8ae039369752449e3c07"

@@ -1,11 +1,21 @@
 {
-  "responsibilities": [
+  "node-module-ownership": [
     {
-      "text": "The original Node module stays the public facade. Options, wallet, indexer, funding, session and confirmation each own a distinct concern, and dependencies flow in one direction.",
-      "pause": 400
+      "text": "Node module ownership.",
+      "pause": 500
     },
     {
-      "text": "The diagram shows every focused module below the facade. Confirmation reads session and indexer state through their owners; those owners do not import confirmation.",
+      "text": "As a contributor, I need a directed owner graph, so I can change shared node behavior without creating a second copy of state or a cycle.",
+      "pause": 400
+    }
+  ],
+  "responsibilities": [
+    {
+      "text": "Responsibilities.",
+      "pause": 500
+    },
+    {
+      "text": "The owner may choose a smaller acyclic graph when the actual type dependencies require it, but must version this plan before changing a listed owner or adding a module. Each moved declaration gets exactly one before and after entry.",
       "pause": 400
     }
   ],

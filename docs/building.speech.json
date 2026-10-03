@@ -1,74 +1,156 @@
 {
+  "building-the-documentation": [
+    {
+      "text": "Building the documentation.",
+      "pause": 500
+    },
+    {
+      "text": "The site renders the repository's canonical Markdown and specification. A generated staging directory preserves their relative paths; it is not a second editable documentation tree.",
+      "pause": 400
+    }
+  ],
   "build-and-check": [
     {
-      "text": "Build the documentation with Nix. The documentation check validates rendered links, anchors, speech and theme assets. Separate model and simulator checks exercise the proved Lean model and finite corpus, and the model check cross-checks the compiled axiom report against the theorem manifest; no application proof is claimed. The browser check launches pinned Chromium and executes actual simulator controls using a temporary local server. The build gate realizes packages, checks, and development shell inputs before downstream jobs.",
+      "text": "Build and check.",
+      "pause": 500
+    },
+    {
+      "text": "With Nix flakes enabled, run:",
+      "pause": 400
+    },
+    {
+      "text": "The documentation package and checks use the locked shared MkDocs toolchain. The documentation check inspects rendered internal links, section anchors, navigation, speech data and theme assets. Separate model and simulator checks exercise the proved Lean model and its finite corpus, and the model check cross-checks the compiled axiom report against the theorem manifest; none proves application behavior. See the model ledger and simulation for their exact scope.",
+      "pause": 400
+    },
+    {
+      "text": "The browser check launches the pinned Chromium build, serves the standalone simulator on a temporary loopback port, and executes its manual-control and story assertions. The canonical runner is tools/browser-check.mjs; the earlier callback under simulator/ is retained as historical browser evidence. Screenshots use a temporary writable directory; no browser download or external service is required during execution. Set KEEP_BROWSER_EVIDENCE=1 to retain successful browser evidence. CI's build gate realizes the packages, executing checks, and development-shell inputs before the downstream verification jobs.",
       "pause": 400
     }
   ],
   "generated-api-references": [
     {
-      "text": "The site ships a generated reference for each library a contributor calls into, built from the same revision as the pages that link it: Haddock for the off-chain library's public modules and for the Conformance library, and the pinned Aiken docs output for the registry validators.",
-      "pause": 450
+      "text": "Generated API references.",
+      "pause": 500
     },
     {
-      "text": "The six package-private node owners, the executables and test suites, and the separate naming validators have no generated reference by decision; their owner pages link each source file, and the private library's ledger and provider types are documented where the public library re-exports them.",
-      "pause": 450
+      "text": "The site ships a generated reference for each library a contributor calls into, built from the same revision as the pages that link it. Which code has one, and what stands in for it where there is none:",
+      "pause": 400
     },
     {
-      "text": "Each generated reference carries a manifest binding its pages to the digests of their source, and the documentation check fails when a page, its source or its link targets no longer agree.",
-      "pause": 450
+      "text": "Private owners and executables are not Haddock-documented on their own by decision: nothing imports them outside their package, and an owner page that names each module's responsibility and links its source serves a contributor better than a second, unlinked reference. Each generated reference carries a manifest binding its pages to the digests of the source it was generated from, and the documentation check fails when a page, its source or its link targets no longer agree.",
+      "pause": 400
     }
   ],
   "the-repository-code-inventory": [
     {
-      "text": "The repository code inventory command maps every file the tree holds to a lint policy and a format policy, or to a named non-code class, and fails on anything unmapped. Discovery walks the tree through extensions, shebangs, executable mode and component manifests, so a new source file in a covered directory is mapped automatically while a file nobody classified fails with a named diagnostic. The same inventory runs over the Nix flake source, where no Git directory exists, and pull request CI runs both forms so the contexts cannot drift. The inventory is a mapping, not enforcement: the report names the CI carrier that executes each policy, and every lint and format policy is enforced, with no code family left unchecked and no source directory excluded. A controls command injects synthetic orphans into scratch copies of the classified tree, each required to produce its intended failure, and never touches the working tree.",
+      "text": "The repository code inventory.",
+      "pause": 500
+    },
+    {
+      "text": "just inventory maps every file the tree actually holds to its lint policy and its format policy — or, for data and artifacts, to a named non-code class — and fails on anything unmapped. Discovery walks the tree itself (extensions, shebangs, executable mode and component manifests), so a new source file in a covered directory is mapped without editing anything, while a file nobody classified fails with a named diagnostic instead of passing silently. The same inventory runs over the Nix flake source, where no Git directory exists, through nix run .#inventory-check; pull-request CI runs both forms so the two contexts cannot drift. The checked registry lives in tools/code_inventory.py.",
+      "pause": 400
+    },
+    {
+      "text": "The inventory is a mapping, not enforcement: its report names the CI carrier that executes each policy, and every lint and format policy is enforced — no code family is left without a checker, and no source directory is excluded. just inventory-controls runs the negative and positive controls: synthetic orphans injected into scratch copies of the classified tree, each required to produce its intended failure. The controls never touch the working tree.",
       "pause": 400
     }
   ],
   "haskell-formatting": [
     {
-      "text": "The Haskell trees are formatted with Fourmolu under one house configuration, fourmolu yaml at the repository root. Every formatter entrypoint passes that file explicitly, so a missing configuration fails loudly instead of falling back to Fourmolu defaults, and there is no per-tree configuration to drift from it. Run just format to apply it to every discovered Haskell source and just format-check for the same check the CI carries; discovery covers both trees with no directory exclusions, the formerly fenced verifier sources and the evaluation spike included. The Conformance tree gets the same check in its own Nix source context through the format-check app. The format controls run over scratch copies: a source Fourmolu defaults accept but the house configuration rejects must fail the check, its formatter correction must pass it again, and a tree without the configuration must fail loudly. HLint runs over the same discovered extent with no exclusions and no ignore file, in the off-chain lint app and in the Conformance lint app beside its format check.",
+      "text": "Haskell formatting.",
+      "pause": 500
+    },
+    {
+      "text": "The repository's Haskell trees are formatted with Fourmolu under one house configuration, fourmolu.yaml at the repository root. Every formatter entrypoint — the off-chain lint check, the Conformance format check and the root recipes below — passes that file explicitly, so a missing configuration fails loudly instead of falling back to Fourmolu's defaults, and there is no per-tree configuration to drift from it.",
+      "pause": 400
+    },
+    {
+      "text": "Discovery is dynamic: every Haskell source under offchain/ and conformance/ — the formerly fenced verifier sources and the evaluation spike included — with no directory exclusions, so a new file or component directory is covered with nothing to edit. The Conformance tree gets the same check in its own Nix source context through nix run .#format-check from conformance/ (CI job 'Conformance Haskell format and lint check'). just format-controls runs the negative and positive controls: a source that Fourmolu's defaults accept but the house configuration rejects must fail the check — proving the configuration is read — and its formatter correction must pass it again; a tree without the configuration must fail loudly rather than format with defaults; a newly tracked component tree outside the old directories joins the check through the Git index, while ignored untracked build noise never enters it and a tracked file under an ignored path stays. The controls run over scratch copies and never touch the working tree.",
+      "pause": 400
+    },
+    {
+      "text": "HLint runs over the same discovered extent with no exclusions and no ignore file: nix run .#lint from offchain/ (CI job 'Off-chain lint') checks both formats and hints, and nix run .#hlint-check from conformance/ runs beside the Conformance format check.",
       "pause": 400
     }
   ],
   "other-languages": [
     {
-      "text": "Every other code family the inventory discovers is linted and format-checked by one command, just lint, over the inventory's own extent, with the tools the development shell pins: nixfmt, statix and deadnix for Nix; ruff for Python; shfmt and shellcheck for shell; Biome for JavaScript and CSS; the just formatter for justfiles; yamlfmt and actionlint for workflow YAML. Lean and HTML have no general formatter here, so explicit style rules are the policy: no tab, no carriage return, no trailing whitespace, and exactly one final newline. Aiken sources are checked by aiken fmt inside the two on-chain flake checks, and formatting leaves every compiled validator and its hash unchanged. Generated files are regenerated from their formatted sources. The lint controls plant one defect per family in scratch copies and require each check to fail, and a code family nobody checks fails the run instead of passing silently.",
+      "text": "Other languages.",
+      "pause": 500
+    },
+    {
+      "text": "Every other code family the inventory discovers is linted and format-checked by one command, over the inventory's own extent, with the tools the development shell pins:",
+      "pause": 400
+    },
+    {
+      "text": "Lean and HTML have no general formatter here, so the explicit style rules are the policy: no tab, no carriage return, no trailing whitespace, and exactly one final newline. Aiken sources are checked by aiken fmt --check inside the onchain/ and naming-onchain/ flake checks, with the Aiken each flake pins; formatting leaves every compiled validator and its hash unchanged. Generated files — the shipped simulator page, the Lean mirror and the cage vectors — are regenerated from their formatted sources, and their freshness checks stay the policy. A code family nobody checks fails just lint instead of passing silently.",
       "pause": 400
     }
   ],
   "edit-and-serve": [
     {
-      "text": "Use the Nix development shell for a strict MkDocs build or live local server. A separate CI build verifies that shell.",
+      "text": "Edit and serve.",
+      "pause": 500
+    },
+    {
+      "text": "The development shell has a separate CI build because packaged builds do not exercise it:",
       "pause": 400
     },
     {
-      "text": "The build and serve recipes stage the generated references from the packaged site build, so the local site links the same generated pages CI checks, while the Markdown pages still reload live.",
+      "text": "just build-docs and just serve-docs stage the generated API references from the packaged site build, nix build .#docs, so the local site links the same generated pages the packaged site and its checks carry; the Markdown pages still reload live as they are edited.",
+      "pause": 400
+    },
+    {
+      "text": "To serve the packaged output without a live-reload editor, run nix run .#docs-serve -- 8000 and open http://127.0.0.1:8000.",
       "pause": 400
     }
   ],
   "publication-and-accessibility": [
     {
-      "text": "Pull requests have a live preview without comments. Main publishes through GitHub Pages. The site includes a light and dark theme toggle that remembers the choice, and section read-aloud controls using browser voices.",
+      "text": "Publication and accessibility.",
+      "pause": 500
+    },
+    {
+      "text": "Pull requests publish to a live preview with the candidate revision recorded alongside the generated site. Preview publication does not post PR comments. The default branch publishes through workflow-mode GitHub Pages after merge; the same documentation build supplies both routes.",
       "pause": 400
     },
     {
-      "text": "Diagrams are Mermaid, rendered by the copy the shared toolchain pins as a Nix input and served from the site itself, in the selected theme, with a full-size viewer. No page loads a script or stylesheet from outside the site, and the site check fails if one does.",
+      "text": "The Terminal theme follows the system light/dark preference until a reader chooses with the toggle, and remembers that choice. Diagrams follow the same palette and open at full size in a viewer. Each section has a play button that speaks the recorded narration of its paragraphs in the Puck voice. The voice says the page text word for word: the speech companions are written by the extraction tool, which reads the prose of each rendered page, and tables, code blocks and diagrams are not spoken. The documentation check fails when a paragraph changed without its recording. just extract-speech rewrites the companions after a page edit and just narrate records the paragraphs that changed; recording needs a DeepInfra key. Diagrams are Mermaid, rendered by the copy the shared toolchain pins as a fixed-output Nix input and served from the site itself; no page loads a script or stylesheet from outside the site, and the site check fails if one does.",
       "pause": 400
     }
   ],
   "documentation-releases": [
     {
-      "text": "The documentation version is whichever one the version file, the release manifest and the changelog agree on; a prepared version does not establish a tag or a published archive. Release-please proposes later version changes in a pull request. An operator-authorized version tag on its merged commit publishes the Nix-built archive and checksum, verifies uploaded bytes, then updates bookkeeping labels without comments.",
+      "text": "Documentation releases.",
+      "pause": 500
+    },
+    {
+      "text": "The documentation version is the one version.txt, the release manifest and the changelog agree on; a prepared version is not evidence that an archive was tagged or published. Release-please's simple strategy updates those three surfaces together for later versions, and Nix requires the version and manifest to agree. These are documentation versions, not deployed protocol versions.",
       "pause": 400
     },
     {
-      "text": "The archive is also a runnable review workspace. Under artifacts review it carries model and theorem sources, corpora, scenarios, simulator and replay sources, checkers, and a minimal flake with its exact lock. After extracting the actual archive into a fresh directory, verify the internal checksum manifest and run the review flake's check app. Nix may acquire only the exact locked toolchain; all model and replay inputs come from the archive. A checkout pass or presence check does not establish archive reproduction. Published releases, each produced by this workflow from a tag on main, are listed on the repository's GitHub releases page.",
+      "text": "After a successful main-branch gate, repository-scoped App credentials let release-please prepare a release PR whose changes trigger normal CI. It plans PRs only: release creation is disabled because upstream release creation posts a PR comment. Merging the release PR prepares the version but does not tag or publish it. An operator-authorized v<version> tag on that merged release PR's exact commit triggers publication. The commit must belong to main, and tag, manifest and version must agree.",
+      "pause": 400
+    },
+    {
+      "text": "The tag workflow builds and checks a Nix-produced documentation archive and checksum, publishes them to the matching GitHub release, downloads and verifies the uploaded bytes, then changes the release PR's pending label to tagged. It accepts a pending or already-tagged matching PR so interrupted publication can be retried. It does not post PR comments. CI has a manual recovery trigger; no release workflow or tag is dispatched merely by adding this automation.",
+      "pause": 400
+    },
+    {
+      "text": "Build the documentation archive locally with nix build .#docs-release, and run version, workflow and artifact checks with nix run .#release-check. The archive contains the rendered site and speech data plus a complete review workspace under artifacts/review/: model and theorem sources, finite corpora, scenarios, simulator and replay sources, checkers, and a minimal flake with its exact lock. The inner artifacts/SHA256SUMS authenticates every review input plus the separately served corpus and identity files; the outer SHA256SUMS authenticates the archive.",
+      "pause": 400
+    },
+    {
+      "text": "Packaging checks alone do not establish reproduction. Extract the built singular-docs-<version>.tar.gz into a fresh directory, change to that directory, run sha256sum --check artifacts/SHA256SUMS, then run nix run --no-write-lock-file ./artifacts/review#check. Nix may acquire the exact locked toolchain when it is not cached; the model, scenario, simulator, replay, checker, and configuration inputs all come from the archive. Provenance comes from the validated tag and build binding. Published releases, each produced by this workflow from a tag on main, are listed at https://github.com/lambdasistemi/singular/releases.",
+      "pause": 400
+    },
+    {
+      "text": "The initial empty-manifest behavior and version override follow the release-please manifest documentation. Publishing remains a separate action from reviewing this documentation.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "building.md",
-    "sha256": "5deb3ac9de21a2a8eda9184fbffacca91c3abeac887432ed51dc7a7e32ed3a33"
+    "sha256": "8fe3af32ec727026245e09eefdbec260f52b9c5766c012efec703e710f1ac2e4"
   }
 }

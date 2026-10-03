@@ -1,59 +1,109 @@
 {
-  "story-register-and-use-an-application-output": [
+  "executable-design-candidate": [
     {
-      "text": "A requester stages an Insert certified for an exact initial application output. Staging reserves no key and creates no representative. Folding requires absence and matching output and scope; a competing Insert at an occupied key is refused.",
+      "text": "Executable design candidate.",
+      "pause": 500
+    },
+    {
+      "text": "Status. This page records the original three-operation design: Insert, Update and Delete requests, an application-minted Withdraw, and the states Absent, Active and Over. The registry-mode model that the Lean proves, the simulator replays and the conformance suite compares against the deployed validators moves a key through seven edges and calls the terminal state Terminal; where the two differ, registry mode is current. How a name moves in the registry shows the seven edges, and the model ledger records what replaced each part of this design.",
       "pause": 400
     },
     {
-      "text": "The state diagram starts at absence. Valid Insert creates a representative and makes the entry active. Application evolution and terminal release leave the entry active. Completing Update burns the representative and retires the entry permanently. Completing Delete burns it and returns the key to absence. A later Insert still needs valid certification for its incarnation.",
+      "text": "As an application designer, follow a registration from an approved request into a live application output, then explore address changes, retirement and deletion. The simulator shows successful transitions and exact refusals so you can inspect the proposed behavior before choosing a ledger construction.",
+      "pause": 400
+    },
+    {
+      "text": "Open the playable Singular simulator — the live generic-registry simulator, where Delete is allowed — or follow the simulation walkthrough.",
+      "pause": 400
+    },
+    {
+      "text": "This is a creation candidate: the logical Lean model and separately authored browser simulation make the design executable. All 65 theorem and inversion declarations — 44 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts the model check derives from the manifests — are PROVED from the standard axioms, and the build refuses any statement that is admitted again. Proofs establish properties of the model; they do not by themselves accept the design.",
+      "pause": 400
+    }
+  ],
+  "story-register-and-use-an-application-output": [
+    {
+      "text": "Story: register and use an application output.",
+      "pause": 500
+    },
+    {
+      "text": "A requester stages a certified Insert whose approval binds the initial application output. Staging reserves no key and creates no representative. At fold time, the key must be absent and the exact output and approval scope must match. A valid Insert creates the representative and makes the entry Active; a competing Insert at an occupied key is refused.",
+      "pause": 400
+    },
+    {
+      "text": "The diagram shows registry states. Staging a pending Insert does not change whether the key is absent. An application can evolve its own state while preserving its representative; changing an address is such an evolution. Registry Update means retirement, and Over has no outgoing transition. Delete makes the key absent again; any reinsert still needs a valid certified output and approval scope for its incarnation.",
       "pause": 400
     }
   ],
   "story-cancel-a-proposal-or-finish-a-terminal-request": [
     {
-      "text": "Cancelling a pending Insert requires separate Withdraw authorization for that exact request and declared refund. Original Insert approval is insufficient. The model commits to refund requirements without establishing payment.",
+      "text": "Story: cancel a proposal or finish a terminal request.",
+      "pause": 500
+    },
+    {
+      "text": "A requester can cancel a pending Insert only with a separately authorized Withdraw action bound to that exact request and declared refund requirements. The original Insert approval is insufficient. Withdrawal creates no representative and changes no registry entry; refund commitments do not establish a wallet payment.",
       "pause": 400
     },
     {
-      "text": "The sequence diagram follows terminal custody. The application authorizes an exact Update or Delete and transfers its representative into the request, consuming its application output. The registry stays active. Escape and terminal withdrawal are refused. Valid completion consumes the request and burns the representative; Update retires the key and Delete removes the entry.",
+      "text": "For retirement or deletion, the application validator authorizes the exact terminal request and releases its existing representative into request custody. The registry stays Active, but the representative is unavailable to the application. No ordinary cancellation or sweep releases it. Valid completion consumes the request, burns the representative and changes the map.",
       "pause": 400
     },
     {
-      "text": "A general whole-transition completion-only custody theorem is still missing. The proved escape refusal, supply statements and finite terminal withdrawal cases do not close that gap.",
+      "text": "These are executable behaviors and proved obligations. A general whole-transition theorem that terminal custody leaves only through completion is still missing. Escape-refusal and supply statements, or a finite terminal-Withdraw refusal, do not close that gap.",
       "pause": 400
     }
   ],
   "story-fold-a-selected-batch": [
     {
-      "text": "Any submitter can supply an ordered batch. Each item sees the previous registry result. A failed item refuses the selected batch atomically. There is no native privileged folder, automatic skipping, capacity or fairness claim.",
+      "text": "Story: fold a selected batch.",
+      "pause": 500
+    },
+    {
+      "text": "Any submitter can select an ordered batch. Each item sees the registry produced by the previous item; a failure refuses the selected batch atomically. There is no native privileged folder gate, automatic skipping, capacity guarantee or fairness claim. Executing witnesses remain required even when mint and burn quantities for the same asset net to zero; distinct identities do not cancel each other.",
       "pause": 400
     },
     {
-      "text": "Witnesses remain required when mint and burn for the same asset net to zero. Different asset identities cannot cancel each other. The model ledger, the theorem inventory with its proofs, and the mutation ledger retain the exact evidence and its limits: the mutation ledger records four executed mutants, each killed at a named obligation, and claims no survivor census or independent audit result.",
+      "text": "The model ledger maps requirements and finite scenarios to modeled behavior, conditions, abstractions and omissions. The theorem inventory records the exact statements, each proved. The mutation ledger records four executed mutants, each killed at a named obligation; no survivor census or independent audit result is claimed.",
       "pause": 400
     }
   ],
   "reading-the-application-trust-boundary": [
     {
-      "text": "The flowchart separates application authorization from native logical checks. The configured application policy supplies Insert and separate Withdraw approval. The application spending validator supplies exact release or local evolution evidence. Native binding and witness checks determine the modeled transition of registry and custody.",
+      "text": "Reading the application trust boundary.",
+      "pause": 500
+    },
+    {
+      "text": "The model uses logical identities and authenticated state instead of Cardano bytes and MPF proofs. Application authorization is an explicit contract boundary: recognizing the configured issuer does not establish that an arbitrary application's policy implements the semantics it claims.",
       "pause": 400
     },
     {
-      "text": "This evidence is supplied to the model, and the browser does not execute validators. Recognizing an issuer does not prove arbitrary application semantics. Logical maps, tagged commitments and explicit witnesses allow inspection while ledger construction stays open.",
+      "text": "The model supplies authenticated application evidence; the browser does not execute those validators. The decisions and executable abstractions distinguish adopted behavior from unresolved construction choices.",
       "pause": 400
     },
     {
-      "text": "The simulation is a separate transcription of the frozen Lean interface. Finite examples and interactive checks are bounded creator evidence, not universal correspondence, independent audit, completed proof or ledger deployment conformance.",
+      "text": "The simulation is a separate author's transcription of the frozen Lean interface. Its clarity record preserves what the formal artifacts did and did not communicate. Finite trace agreement and interactive checks provide bounded creator evidence. They cannot establish universal correspondence, an independent statement audit, proof completeness or ledger deployment conformance.",
       "pause": 400
     }
   ],
   "candidate-status": [
     {
-      "text": "The executable source, proved statements, supporting lemmas and exported corpus belong to this candidate. All forty-one declarations are proved from the standard axioms without changing any statement, and a compiled gate fails the build if one is admitted again. There is no deployed Singular validator, accepted statement audit or production release.",
+      "text": "Candidate status.",
+      "pause": 500
+    },
+    {
+      "text": "The same published candidate includes the executable Lean source, proved statements, their supporting lemmas and exported finite corpus. Their identity belongs to this candidate; the proofs were completed without changing any statement.",
       "pause": 400
     },
     {
-      "text": "Two blind source reviews recommended proceeding but did not execute an audit or prove the model. The general whole-transition terminal-custody theorem remains missing. The protocol specification remains the behavioral authority; the ledger records executable coverage.",
+      "text": "The repository carries no deployed Singular validator, accepted statement audit or production release. The proofs are complete and individually inventoried, with a compiled axiom gate on every build. The requested review surface is the draft PR and its exact candidate preview; independent audit stages remain separate work.",
+      "pause": 400
+    },
+    {
+      "text": "Two blind source reviews preceded simulator authoring and both recommended proceeding. Their source reasoning did not execute an audit or prove the model. The resulting corpus refinements preserve the reviewed model and statement definitions. The general whole-transition terminal-custody theorem remains an explicit statement-coverage gap in the model ledger.",
+      "pause": 400
+    },
+    {
+      "text": "The original protocol specification remains the behavioral authority. Its statements about unexecuted obligations describe the adopted specification baseline; executable coverage introduced in this candidate is tracked in the model ledger rather than inferred from a successful documentation build.",
       "pause": 400
     }
   ],

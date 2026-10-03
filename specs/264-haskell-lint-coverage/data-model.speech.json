@@ -1,7 +1,21 @@
 {
+  "data-and-state-model": [
+    {
+      "text": "Data and state model.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry user, I receive the same transaction and wire behavior after this maintenance change. No domain field, relationship, validation rule, state transition, or encoding is changed.",
+      "pause": 400
+    }
+  ],
   "preserved-state-and-evidence": [
     {
-      "text": "This ticket changes no domain data, validation rule, state transition, or encoding. The checks watch the exported module and command names, the effect of any layout-only edits, the lint rejection control, and the affected component build. These maintenance checks do not prove transaction behavior.",
+      "text": "Preserved state and evidence.",
+      "pause": 500
+    },
+    {
+      "text": "There is no new data abstraction or altered Lean obligation. Source and build checks support maintenance claims only; they do not establish transaction behavioral correspondence.",
       "pause": 400
     }
   ],
