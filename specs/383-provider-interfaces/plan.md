@@ -4,6 +4,10 @@ As a maintainer, I want a runnable first replacement that exercises the same
 registry journey through generic capabilities, so that deleting the node path
 does not leave the demonstration dependent on it. Read the [stories](spec.md)
 first, then the [decisions awaiting intake acceptance](decisions.md).
+The frozen base is `872c0ecf3c7cf1a10293793523c8521d5ef9aae9`, the recovery
+head of [PR #382](https://github.com/lambdasistemi/singular/pull/382).
+This is a stacked intake against feat/362-recovery. Only this ticket's planning
+commits sit above that base; after its merge, retarget to main and rebase.
 
 ## Proposed capability types
 
@@ -52,6 +56,25 @@ data HistoricalTransaction = HistoricalTransaction
     , spentOutputs :: ResolvedOutputs
     , referenceOutputs :: ResolvedOutputs
     }
+data RegistryIdentity = RegistryIdentity StatePolicyId AssetName
+data StatePoint = StatePoint SessionId SessionBinding TxIn
+data TrieSelection = TrieSelection RegistryIdentity StatePoint Root
+data TrieState m = TrieState
+    { withTrieState :: forall a. TrieSelection -> (TrieSnapshot m -> m a)
+        -> m (Either TrieFailure a)
+    , acceptObservedFold :: ObservedFold -> m (Either TrieFailure ())
+    }
+data TrieSnapshot m = TrieSnapshot
+    { trieIdentity :: RegistryIdentity
+    , triePoint :: StatePoint
+    , trieRoot :: Root
+    , trieCoverage :: CompleteFromCreate
+    , leafAt :: Key -> m (Either TrieFailure Leaf)
+    , membership :: Key -> Leaf -> m (Either TrieFailure MembershipProof)
+    , nonMembership :: Key -> m (Either TrieFailure NonMembershipProof)
+    , speculateEdges :: NonEmpty (Key, Edge)
+        -> m (Either TrieFailure SpeculativeWalk)
+    }
 ```
 
 The network is separate from ChainPoint, as Lockness specifies. Bound records
@@ -75,6 +98,25 @@ implementation in Demo 1. The optional witness attaches to facts, not history.
 Submission returns the adapter's accepted transaction id or refusal reason;
 acceptance for relay is separate from confirmation or settlement.
 
+TrieState has no witness parameter: these are application proofs, not ledger
+witnesses. Its immutable selection is the registry identity and state output/root
+consumed in the caller's session. Bound must match the acquired point; Unbound
+records an observation without inventing atomicity. CompleteFromCreate is
+constructed from checked backend coverage, never a caller-supplied Boolean.
+HistoryIncomplete, RootDoesNotChain and UndecodableRequest are named failures;
+wrong registry, stale root, missing proof and incomplete local coverage also refuse.
+
+The current-mirror adapter preserves its file format, authenticatedLeaf/root
+checks, speculative walkEdge order and durable accepted-fold updates. It derives
+local coverage from the saved create identity and existing accepted transition
+records; a root match alone cannot invent missing lineage evidence. This is
+local-mirror coverage, not independently reconstructed public history. Missing
+coverage refuses. The pure State adapter uses fixture trie nodes, not the current
+IORef-backed "Pure" wrapper. Both run membership, non-membership and ordered
+edge proofs. Speculation never commits; acceptObservedFold preserves current
+observation, root-continuity and exactly-once recovery rules. Commands receive
+this capability instead of opening a mirror or manipulating TrieManager directly.
+
 ## Component responsibilities and data flow
 
 As a command maintainer, I obtain ledger facts through one session and give
@@ -97,7 +139,8 @@ Those reviewed network files are separate inputs to the common service.
 Move shared Provider responsibilities out of the node-internal component.
 Use one ledger-provider capability module, one evidence/verdict module, one
 generic history representation, common local evaluator and time modules,
-the recorded Koios adapter, and a pure State fixture adapter. Replace CLI.Node
+the recorded Koios adapter, TrieState with mirror and pure instances, and a
+pure State provider fixture adapter. Replace CLI.Node
 composition with terminal composition. Keep generic wallet/signing, transaction
 builders, application proofs and receipt durability; move them to their stable
 owners rather than retaining a node namespace as a compatibility shim.
@@ -112,10 +155,11 @@ unknown registration refuses by name rather than returning False.
 
 As a reviewer, I want a complete discovery extent, so that an obsolete caller
 does not survive outside the obvious adapter files. The committed
-[deletion inventory](deletion-inventory.json) scans all 2,452 tracked paths at
-the frozen base. It finds 239 paths and 1,284 distinct matching lines:
-150 paths name node or indexer wiring, 171 name provider or derived calls, and
-24 name the journey or mock; these overlapping categories are not summed.
+[deletion inventory](deletion-inventory.json) scans all 2,459 tracked paths at
+the frozen recovery base. It finds 258 paths and 1,605 distinct matching lines:
+151 paths name node or indexer wiring, 172 name provider or derived calls, and
+25 name the journey or mock, and 51 name trie/proof paths. These overlapping
+categories are not summed; trie rows preserve the mirror behind the new interface.
 Each row binds its path, content hash, matching line numbers and proposed
 disposition. Lexical discovery establishes scope only, not successful deletion.
 
@@ -126,9 +170,10 @@ disposition. Lexical discovery establishes scope only, not successful deletion.
 | Provider's evaluation, registration and two time calls | Move evaluation and time to common local services; supply the generic registration fact. |
 | Node Session, Confirmation, Submit, Options, Funding, PhaseLog and Wait | Remove node connections and globals; preserve signed-only submission, bounded wait, loss handling and phase measurements through new capabilities. |
 | CLI Node, Command, Session, Attached, Live, Recovery and Reconcile | Replace capability composition and node settings; preserve journalling, identity checks, recovery and input visibility. |
-| CLI Create, Preview, Inspect, Entry, Fold and Reject | Move every command and preview path together; keep parser refusal before effects and keys out of read commands. |
+| CLI Create, Preview, Inspect, Entry, Fold, Reject and Reclaim | Move every command and preview path together; keep parser refusal before effects, reclaim owner/window/validity checks, and keys out of read commands. |
 | Deployment/Node and retained example executables | Migrate all ledger reads and evaluation; move private devnet orchestration into test-only components. No retained production node adapter. |
 | ContractSuite, ProviderSpec, OneViewSpec, IndexerViewSpec, StubView and builder tests | Preserve product obligations over the new pure and recorded adapters; delete indexer coverage mechanics and false snapshot assumptions for Unbound. |
+| Registry Trie/TrieManager, CLI Proof, Inspect, Fold, Attached and mirror callers | Route all reads, proofs, speculation and accepted folds through TrieState; retain the mirror and its proof/root/durability rules inside the first adapter. |
 | Cabal, component inventory, Nix, node-confinement checks and CI | Remove obsolete production modules/dependencies and test-only wiring; preserve test coverage and publish newly uncovered limits. |
 | Demo journey, attach/recovery/deployment controls, release archive and docs | Replace node/indexer flags and archive instructions in the same replacement; regenerate paired speech and preserve historical decision evidence. |
 
@@ -148,7 +193,7 @@ candidate with both provider and node command routes.
 
 | Slice | Runnable outcome | Required observations |
 | --- | --- | --- |
-| Replace commands and their old reads | Packaged create/preview, insert, inspect, update, terminate, fold, reject and recovery run on the pure and Koios-shaped devnet adapters; common evaluation/time, receipts and bounded confirmation are active; old node/indexer routes are deleted. | Actual ledger journey, no node socket passed to singular, exact output visibility after booking, all facts Unverified, failures and parser removal controls. |
+| Replace commands and their old reads | Packaged create/preview, insert, inspect, update, terminate, fold, reject, reclaim and recovery run on the pure and Koios-shaped devnet adapters; TrieState wraps the mirror with pure proof fixtures; common evaluation/time, receipts and bounded confirmation are active; old node/indexer routes are deleted. | Actual ledger journey, no node socket passed to singular, exact output visibility after booking, all facts Unverified, failures and parser removal controls. |
 | Demonstrate provider and local-computation preservation | Recorded read-only preprod and devnet responses run through the same adapter; generic history resolves bytes/dependencies; evaluation/time match recorded node results. | Fixture provenance, same-input differential results, pure effect trace, missing/malformed/history-pagination controls. |
 | Publish evidence and prepare handoff | Public suite and current docs describe receipt-computed guarantees and missing boundaries; exact-head local gate, CI journey and auditor checkpoint trail are bound to the candidate. | Immutable receipts, controlled-fault red/green, no stale narration, clean committed range and exact-head CI. |
 
@@ -200,6 +245,8 @@ running with a reachable fault, never a compiler or launcher failure.
 | Unbound really means no snapshot promise | Pure/recorded adapter permits changing tip between calls while retaining Unbound and honest receipts. | Turn the latest tip into Bound or claim all unbound reads share one ledger state. |
 | Every fact is explicitly unverified | Discover every consumed fact from a nonempty journey effect trace and reconcile it with receipt verdicts and inspect output. | Omit one fact, stamp one Verified, erase the extent, or omit inspect's verdict. |
 | Confirmation waits for the exact output | Publish status first and exact booking output later; next build starts only after visibility, with bounded clock receipts. | Treat status alone or another transaction's output as confirmed; bypass or remove the wait bound. |
+| The requester reclaims only its eligible pending request | Preserve ReclaimRules ownership, edge, opening/closing and built-validity checks; compare actual returned deposit and unchanged state with model retract admission. | Admit another owner or an unsupported edge, cross a window boundary, change the refund, or spend the registry state. |
+| A write recovers another wallet's interrupted fold once | Migrate PR #382's discovered fold hold points and lost-answer case; decode the saved signer and reconcile observed ledger, journal and mirror through the provider. | Substitute the requester as signer, omit a hold point, apply the edge twice, duplicate the observed event, resend the fold, or alter the ledger/mirror root. |
 | Provider facts do not override ledger validation | Real devnet rejects a transaction using a spent funding input or a changed application proof with a recorded ledger refusal. | Facade reports synthetic acceptance, ignores ledger rejection, or the test replaces the submitted body. |
 | Local evaluation has the same script context | Compare local units and script failures with recorded node answers on identical transaction/input/parameter bytes. | Corrupt a spent/reference output, cost model or transaction redeemer. |
 | Pinned time preserves validity bounds | Compare floor, ceiling and slot-start conversion at era/slot boundaries with recorded node answers; require named out-of-range refusal. | Use another network's genesis, shift era start or swap floor and ceiling. |
@@ -207,6 +254,8 @@ running with a reachable fault, never a compiler or launcher failure.
 | Composed queries preserve exact outputs | Pure adapter runs union/intersection over addresses, assets and txins, with exact identity, datum and reference-script bytes. | Drop one constituent, match asset name without policy, or merge conflicting references. |
 | Acquisition, registration and released reads refuse by name | Pure fixture exposes wrong-network, unsupported point, unknown registration and released-session paths without silently answering empty. | Convert a refusal into an empty success or allow a released read. |
 | Rebuilt root still matches the state output | Existing local replay/root comparison is exercised through provider facts, retaining its unverified verdict. | Change a replay edge or the returned state datum root; require registry-named refusal. Full history-based reconstruction remains outside this ticket. |
+| Every trie read and edge proof uses the selected registry state | Instrument nonempty command/proof traces through TrieState; mirror and pure fixtures cover every admitted edge, proven leaves, membership and non-membership with matching identity/point/root. | Bypass TrieState, use another registry or state root, alter proof bytes, skip an edge, or mutate the mirror during speculation. |
+| Missing trie coverage never becomes an empty registry | Derive local CompleteFromCreate from create and accepted transition records; preserve mirror bytes and named incomplete/root/request/proof failures. | Erase coverage, omit a transition, break a chained root, corrupt a request, or replace a refusal with an empty successful trie. |
 | No node instance or in-memory indexer survives | Run packaged commands with provider configuration and no socket; old flags refuse; compiler/package dependency closure contains no production node adapter. | Reintroduce a command socket route or package an obsolete adapter. Source sweep is discovery only. |
 | Pure monad can supply every capability | Execute acquisition, all query forms, parameters, tip, history, submit and bounded polling in State with no embedded effects. | Add an observable hidden external-effect requirement; shape compilation controls are reported separately from behavioral red. |
 | Only abstract verification ships | Build/API controls establish NoWitness has no constructor and only unverified is configured; runtime receipts cover all facts. | Configure a concrete verifier/decoder or manufacture a successful endorsement. Compilation controls are structural evidence only. |

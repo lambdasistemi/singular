@@ -9,7 +9,7 @@ It is an intake proposal. No implementation or behavioral acceptance is claimed.
 ## The user's stories
 
 As a requester or folder, I run create, insert, update, terminate, fold and
-reject with the same ledger-provider capabilities. Preview and inspect need
+reject and reclaim with the same ledger-provider capabilities. Preview and inspect need
 no signing key. An unverified fact may help build a transaction; the ledger
 still checks its inputs, signatures and application proof when it is submitted.
 Inspect displays the verdict of the facts it used.
@@ -51,6 +51,20 @@ It is reconstruction material, never Evidenced or Verified history. The
 existing local application-root check remains mandatory; agreement with a
 provider's state output does not authenticate either side against the ledger.
 
+As a command maintainer, I read leaves and build every edge's membership or
+non-membership proof through TrieState m. It reports the registry's state
+policy and token name from create, the selected state output and root, and
+explicit coverage from create or a named refusal. A missing mirror or incomplete
+history never stands for an empty registry. The first instance wraps the current
+mirror; a pure fixture trie exercises the same proof paths. The complete public
+lineage backend is the separate reconstruction ticket's implementation.
+
+TrieState is part of the built-in application service. Its proofs relate local
+computation to the selected state root, not ledger authentication. Selection
+uses the state output read in the command's session. An Unbound session still
+has no atomic ledger point; the interface must preserve that limit rather than
+claim a bound point for the mirror.
+
 ## What every implementation must preserve
 
 One built transaction consumes one session. Each fact used for input selection,
@@ -72,8 +86,9 @@ rate limits belong inside the adapter's effect, outside the capability types.
 
 ## Model authority and correspondence
 
-The frozen intake base is commit `19b970ca788aa319accb31baabc033b5476a2909`.
-The [constitution](https://github.com/lambdasistemi/singular/blob/19b970ca788aa319accb31baabc033b5476a2909/.specify/memory/constitution.md) is version 1.12.0.
+The frozen intake base is recovery commit `872c0ecf3c7cf1a10293793523c8521d5ef9aae9`
+from [PR #382](https://github.com/lambdasistemi/singular/pull/382).
+The [constitution](https://github.com/lambdasistemi/singular/blob/872c0ecf3c7cf1a10293793523c8521d5ef9aae9/.specify/memory/constitution.md) is version 1.12.0.
 Lean Model has blob `b548e3e93af7529a968e8cd1b46996d3157baf8b`, Statements
 has blob `dbc07cc222e121a9ba9d344c05c53d807b657da9`, and Driver has blob
 `fdabc45363b2ec1d693410598cd9cda24d2bcc51` at that commit.
@@ -95,6 +110,12 @@ Imported or dependency code carries the same correspondence obligation.
 Reject's provider migration preserves its current gate, refusals and receipts;
 the pre-existing admission discrepancy is escalated outside this ticket and
 no Lean-correspondence claim for reject is made here.
+
+The recovery base also supplies the requester's reclaim command and recovery
+of an interrupted fold signed by another wallet. Both must survive this
+replacement, including owner/window refusals, exactly-once application and
+no repeated submission. Reclaim corresponds to the model's retract admission;
+client recovery has no Lean counterpart and requires observed journal evidence.
 
 ## Acceptance and visible limits
 
@@ -118,8 +139,9 @@ remain visible; harness evidence belongs in its marked appendix.
 
 The live Koios client, retries, Blockfrost, a node instance, ledger verification,
 the parked persistent local index and registry reconstruction from history are
-outside this ticket. Generic history delivery and exercising the current
-replay boundary are inside it. Separate actor directories and reconstruction
+outside this ticket. Generic history delivery, TrieState's current-mirror and
+pure instances, and exercising the current replay boundary are inside it.
+Separate actor directories and reconstruction
 without the existing mirror remain the history-reconstruction ticket's work.
 The [decisions](decisions.md) record the four epic-owner answers. The existing
 reject admission discrepancy remains unresolved outside this migration;

@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "As a maintainer, I want a runnable first replacement that exercises the same registry journey through generic capabilities, so that deleting the node path does not leave the demonstration dependent on it. Read the stories first, then the decisions awaiting intake acceptance.",
+      "text": "As a maintainer, I want a runnable first replacement that exercises the same registry journey through generic capabilities, so that deleting the node path does not leave the demonstration dependent on it. Read the stories first, then the decisions awaiting intake acceptance. The frozen base is 872c0ecf3c7cf1a10293793523c8521d5ef9aae9, the recovery head of PR #382. This is a stacked intake against feat/362-recovery. Only this ticket's planning commits sit above that base; after its merge, retarget to main and rebase.",
       "pause": 400
     }
   ],
@@ -29,6 +29,14 @@
     {
       "text": "Endorsement is abstract terminal-side information, with no witness format or implementation in Demo 1. The optional witness attaches to facts, not history. Submission returns the adapter's accepted transaction id or refusal reason; acceptance for relay is separate from confirmation or settlement.",
       "pause": 400
+    },
+    {
+      "text": "TrieState has no witness parameter: these are application proofs, not ledger witnesses. Its immutable selection is the registry identity and state output/root consumed in the caller's session. Bound must match the acquired point; Unbound records an observation without inventing atomicity. CompleteFromCreate is constructed from checked backend coverage, never a caller-supplied Boolean. HistoryIncomplete, RootDoesNotChain and UndecodableRequest are named failures; wrong registry, stale root, missing proof and incomplete local coverage also refuse.",
+      "pause": 400
+    },
+    {
+      "text": "The current-mirror adapter preserves its file format, authenticatedLeaf/root checks, speculative walkEdge order and durable accepted-fold updates. It derives local coverage from the saved create identity and existing accepted transition records; a root match alone cannot invent missing lineage evidence. This is local-mirror coverage, not independently reconstructed public history. Missing coverage refuses. The pure State adapter uses fixture trie nodes, not the current IORef-backed \"Pure\" wrapper. Both run membership, non-membership and ordered edge proofs. Speculation never commits; acceptObservedFold preserves current observation, root-continuity and exactly-once recovery rules. Commands receive this capability instead of opening a mirror or manipulating TrieManager directly.",
+      "pause": 400
     }
   ],
   "component-responsibilities-and-data-flow": [
@@ -45,7 +53,7 @@
       "pause": 400
     },
     {
-      "text": "Move shared Provider responsibilities out of the node-internal component. Use one ledger-provider capability module, one evidence/verdict module, one generic history representation, common local evaluator and time modules, the recorded Koios adapter, and a pure State fixture adapter. Replace CLI.Node composition with terminal composition. Keep generic wallet/signing, transaction builders, application proofs and receipt durability; move them to their stable owners rather than retaining a node namespace as a compatibility shim.",
+      "text": "Move shared Provider responsibilities out of the node-internal component. Use one ledger-provider capability module, one evidence/verdict module, one generic history representation, common local evaluator and time modules, the recorded Koios adapter, TrieState with mirror and pure instances, and a pure State provider fixture adapter. Replace CLI.Node composition with terminal composition. Keep generic wallet/signing, transaction builders, application proofs and receipt durability; move them to their stable owners rather than retaining a node namespace as a compatibility shim.",
       "pause": 400
     },
     {
@@ -59,7 +67,7 @@
       "pause": 500
     },
     {
-      "text": "As a reviewer, I want a complete discovery extent, so that an obsolete caller does not survive outside the obvious adapter files. The committed deletion inventory scans all 2,452 tracked paths at the frozen base. It finds 239 paths and 1,284 distinct matching lines: 150 paths name node or indexer wiring, 171 name provider or derived calls, and 24 name the journey or mock; these overlapping categories are not summed. Each row binds its path, content hash, matching line numbers and proposed disposition. Lexical discovery establishes scope only, not successful deletion.",
+      "text": "As a reviewer, I want a complete discovery extent, so that an obsolete caller does not survive outside the obvious adapter files. The committed deletion inventory scans all 2,459 tracked paths at the frozen recovery base. It finds 258 paths and 1,605 distinct matching lines: 151 paths name node or indexer wiring, 172 name provider or derived calls, and 25 name the journey or mock, and 51 name trie/proof paths. These overlapping categories are not summed; trie rows preserve the mirror behind the new interface. Each row binds its path, content hash, matching line numbers and proposed disposition. Lexical discovery establishes scope only, not successful deletion.",
       "pause": 400
     },
     {
@@ -125,6 +133,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "fe82adf9660ac134e231ac3e9566b26aee472c2672997670b63ebf2f637514d6"
+    "sha256": "adcb2ac711af263294c3203cb9d4cd88ab8133277e88ab88ecac4838da4f0911"
   }
 }

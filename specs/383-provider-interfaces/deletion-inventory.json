@@ -1,17 +1,19 @@
 {
-  "baseCommit": "19b970ca788aa319accb31baabc033b5476a2909",
-  "trackedPathCount": 2452,
-  "matchedPathCount": 239,
-  "matchingLineCount": 1284,
+  "baseCommit": "872c0ecf3c7cf1a10293793523c8521d5ef9aae9",
+  "trackedPathCount": 2459,
+  "matchedPathCount": 258,
+  "matchingLineCount": 1605,
   "categoryCounts": {
-    "node-and-indexer-path": 150,
-    "provider-and-derived-calls": 171,
-    "journey-and-readback": 24
+    "node-and-indexer-path": 151,
+    "provider-and-derived-calls": 172,
+    "journey-and-readback": 25,
+    "trie-state-and-proof-path": 51
   },
   "patterns": {
     "node-and-indexer-path": "Singular\\.Registry\\.Node|Singular\\.CLI\\.Node|withNode|IndexerBackend|NodeBackend|--backend|--node-socket",
     "provider-and-derived-calls": "\\bProvider\\b|\\bView\\b|withReads|withWrites|viewEvaluateTx|viewPosixMs|viewScriptRegistered",
-    "journey-and-readback": "demo1_mock_indexer|demo1_cli_journey|demo1-cli-check|demo1-readback-check"
+    "journey-and-readback": "demo1_mock_indexer|demo1_cli_journey|demo1-cli-check|demo1-readback-check",
+    "trie-state-and-proof-path": "\\bTrieManager\\b|\\bwithTrie\\b|\\bwithSpeculativeTrie\\b|\\bauthenticatedLeaf\\b|\\bopenMirror\\b|\\bmirrorTries\\b|\\bwalkEdge\\b|\\bgetProofSteps\\b|\\bprovesMember\\b|\\bprovesAbsent\\b"
   },
   "paths": [
     {
@@ -65,6 +67,16 @@
         ],
         "provider-and-derived-calls": [
           213
+        ],
+        "trie-state-and-proof-path": [
+          214,
+          241,
+          1932,
+          2071,
+          2072,
+          2114,
+          2500,
+          2502
         ]
       },
       "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
@@ -82,6 +94,22 @@
         "provider-and-derived-calls": [
           30,
           34
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app-cli/Conformance/Cli/Proof.hs",
+      "sha256": "a64aa93cdc948604070157edaf2e51046c82d82ff318585eb3885f3b48b812b1",
+      "lines": 111,
+      "matches": {
+        "trie-state-and-proof-path": [
+          6,
+          41,
+          42,
+          79,
+          95,
+          99
         ]
       },
       "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
@@ -109,6 +137,30 @@
         "provider-and-derived-calls": [
           9,
           18
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app/Conformance/ForkKeys.hs",
+      "sha256": "d1402a0bcf68a872141bdd448d03611ccfc8ab21405628a060e52a24adade264",
+      "lines": 463,
+      "matches": {
+        "trie-state-and-proof-path": [
+          62,
+          200,
+          208,
+          221,
+          224,
+          244,
+          251,
+          284,
+          288,
+          326,
+          330,
+          352,
+          354,
+          415
         ]
       },
       "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
@@ -149,6 +201,19 @@
         ],
         "provider-and-derived-calls": [
           92
+        ],
+        "trie-state-and-proof-path": [
+          93,
+          109,
+          174,
+          176,
+          190,
+          213,
+          216,
+          230,
+          233,
+          238,
+          243
         ]
       },
       "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
@@ -182,6 +247,9 @@
           315,
           359,
           416
+        ],
+        "trie-state-and-proof-path": [
+          96
         ]
       },
       "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
@@ -224,6 +292,16 @@
           1207,
           1335,
           1459
+        ],
+        "trie-state-and-proof-path": [
+          128,
+          146,
+          972,
+          973,
+          1059,
+          1060,
+          1510,
+          1511
         ]
       },
       "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
@@ -243,6 +321,10 @@
           508,
           512,
           513
+        ],
+        "trie-state-and-proof-path": [
+          105,
+          132
         ]
       },
       "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
@@ -257,6 +339,13 @@
           603,
           615,
           872
+        ],
+        "trie-state-and-proof-path": [
+          116,
+          141,
+          798,
+          806,
+          807
         ]
       },
       "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
@@ -271,6 +360,12 @@
         ],
         "provider-and-derived-calls": [
           32
+        ],
+        "trie-state-and-proof-path": [
+          33,
+          39,
+          175,
+          176
         ]
       },
       "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
@@ -293,6 +388,12 @@
           1834,
           1953,
           1960
+        ],
+        "trie-state-and-proof-path": [
+          215,
+          2235,
+          3942,
+          3947
         ]
       },
       "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
@@ -368,6 +469,18 @@
       "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
     },
     {
+      "path": "conformance/test/Conformance/Support/CliProof.hs",
+      "sha256": "2471804a44a1e79d5d8a14e1d18b53048f9ed8383624c3179ff8a176445354e1",
+      "lines": 83,
+      "matches": {
+        "trie-state-and-proof-path": [
+          16,
+          29
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
       "path": "conformance/test/Conformance/Support/HeldView.hs",
       "sha256": "6f9d953cf24bf8868b295a6feda1bdb2e2b3e7897ea3965ef79d851d9b024d70",
       "lines": 82,
@@ -381,6 +494,26 @@
           53,
           54,
           55
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/test/Conformance/Support/RunReplay.hs",
+      "sha256": "26a07dc69b62ff9dd5b63cabaa92886e14edcd2df489eccde1998fb28dafd29f",
+      "lines": 717,
+      "matches": {
+        "trie-state-and-proof-path": [
+          79,
+          281,
+          287,
+          289,
+          293,
+          299,
+          301,
+          309,
+          311,
+          313
         ]
       },
       "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
@@ -400,8 +533,8 @@
     },
     {
       "path": "docs/audio/index.json",
-      "sha256": "37c4a410b0f1a2b7877ea56c3f5d65da51aa0219c6f083abf3561b6e6e37d686",
-      "lines": 8835,
+      "sha256": "d6e9880cddc799c75108b8241381ae2f740aca537ede0b598bb33a1b8a1fe523",
+      "lines": 8865,
       "matches": {
         "node-and-indexer-path": [
           3108,
@@ -423,8 +556,8 @@
     },
     {
       "path": "docs/audio/manifest.json",
-      "sha256": "bd99abef1a304b50d0462e4bf3d33f251e62938b970038669a957d67ba6dad05",
-      "lines": 287841,
+      "sha256": "bfbbbc1f8ee54fc5261be710027e82a6f9c3ba4f3e3e04d2f70cb13649bbd81f",
+      "lines": 288831,
       "matches": {
         "node-and-indexer-path": [
           103653,
@@ -592,6 +725,17 @@
       "disposition": "regenerate with paired current-page changes; preserve historical pages"
     },
     {
+      "path": "docs/preprod-history/preprod-1.mirror.json",
+      "sha256": "def25ac955618f9af3a82d3ecaaef42fb7a1eaf73d6abdf3a113d1046248f9e0",
+      "lines": 45,
+      "matches": {
+        "trie-state-and-proof-path": [
+          2
+        ]
+      },
+      "disposition": "rewrite current usage and unverified limits"
+    },
+    {
       "path": "docs/preprod.md",
       "sha256": "54a0d2a46a5a4f516eeb6e4c582425aa9984076fcb1922f2533eb6c64b3f1151",
       "lines": 210,
@@ -604,26 +748,38 @@
       "disposition": "rewrite current usage and unverified limits"
     },
     {
+      "path": "docs/preprod.mirror.json",
+      "sha256": "dc8006481c5bab3754e7ff8092f8de59a9e14f603c357fe2c640274ca65df25a",
+      "lines": 45,
+      "matches": {
+        "trie-state-and-proof-path": [
+          2
+        ]
+      },
+      "disposition": "rewrite current usage and unverified limits"
+    },
+    {
       "path": "docs/singular-node.md",
-      "sha256": "2b0c83f480fbfff607bf37191f70857f9b0e2df47f95a024733c367c6bea4658",
-      "lines": 314,
+      "sha256": "5984fa5311d55e6839a1a609fd5fde023a5f025110d073b204cd55498ab54372",
+      "lines": 351,
       "matches": {
         "node-and-indexer-path": [
           17,
           21,
           48,
-          211
+          113,
+          248
         ]
       },
       "disposition": "rewrite current usage and unverified limits"
     },
     {
       "path": "docs/singular-node.speech.json",
-      "sha256": "778afac9e33aa613bc6e16fd0c9fca77e5a43ae77388f13e75f439eb2c4f11ec",
-      "lines": 160,
+      "sha256": "079926925be9fe180062072fd280a050969405df2df4fe5355ed3a7510d87108",
+      "lines": 178,
       "matches": {
         "node-and-indexer-path": [
-          106
+          124
         ]
       },
       "disposition": "regenerate with paired current-page changes; preserve historical pages"
@@ -680,37 +836,41 @@
           64,
           128,
           132
+        ],
+        "trie-state-and-proof-path": [
+          103
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
     },
     {
       "path": "offchain/cli/src/Singular/CLI/Command.hs",
-      "sha256": "efaaf933e98f09a1ba59f41e1c294fcd391aefb34f5cb4df75b80e6bfc43d394",
-      "lines": 707,
+      "sha256": "cbc2766fba46ff27215ba1caca7bbed3d69152d7383bca7c9e40ca33bcc5a810",
+      "lines": 767,
       "matches": {
         "node-and-indexer-path": [
-          26,
-          27,
-          74,
-          240,
-          465,
-          490,
-          506,
-          580,
-          595,
-          642,
-          644,
-          647,
-          651,
-          655,
-          659,
-          662,
-          666,
-          669,
-          672,
-          675,
-          679
+          28,
+          29,
+          77,
+          260,
+          515,
+          540,
+          556,
+          630,
+          645,
+          692,
+          694,
+          697,
+          701,
+          705,
+          709,
+          712,
+          716,
+          719,
+          722,
+          725,
+          728,
+          732
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -761,6 +921,14 @@
           166,
           171,
           173
+        ],
+        "trie-state-and-proof-path": [
+          114,
+          120,
+          303,
+          410,
+          411,
+          536
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -791,6 +959,12 @@
           118,
           186,
           253
+        ],
+        "trie-state-and-proof-path": [
+          84,
+          251,
+          258,
+          265
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -804,6 +978,14 @@
           127,
           214,
           241
+        ],
+        "trie-state-and-proof-path": [
+          38,
+          128,
+          301,
+          309,
+          310,
+          331
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -874,6 +1056,29 @@
           97,
           132,
           201
+        ],
+        "trie-state-and-proof-path": [
+          139
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Proof.hs",
+      "sha256": "93151018f449a7ce2ed25174ec99c94c2a4ab12cca4641acf31d803628ab5742",
+      "lines": 123,
+      "matches": {
+        "trie-state-and-proof-path": [
+          14,
+          23,
+          40,
+          41,
+          87,
+          97,
+          102,
+          104,
+          114,
+          118
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -890,17 +1095,57 @@
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
     },
     {
+      "path": "offchain/cli/src/Singular/CLI/Reclaim.hs",
+      "sha256": "c33db1eb7073ed2ea561c8ffbc45a46cb2abdaef6b7e31e3151711d255eee272",
+      "lines": 248,
+      "matches": {
+        "node-and-indexer-path": [
+          53
+        ],
+        "provider-and-derived-calls": [
+          54,
+          138
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
       "path": "offchain/cli/src/Singular/CLI/Reconcile.hs",
-      "sha256": "b0bf0d091d99755f12da51f030cd93d46dd8e49f19742a5aeb0a8c4dda752831",
-      "lines": 791,
+      "sha256": "7cc0bdb70e5704dbc046b90ab4eb238ab040440c3014092ba35b4e1bd858e1ed",
+      "lines": 802,
       "matches": {
         "provider-and-derived-calls": [
-          166,
-          214,
-          256,
-          366,
-          437,
-          479
+          168,
+          219,
+          261,
+          371,
+          442,
+          484
+        ],
+        "trie-state-and-proof-path": [
+          126,
+          130,
+          169,
+          177,
+          227,
+          240,
+          601,
+          610,
+          614,
+          650,
+          651
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Recovery.hs",
+      "sha256": "9b5f41a6de5a85cbb138efc0d2d7df56cbfd9b8ab33df7de3500a210cd0275ea",
+      "lines": 225,
+      "matches": {
+        "trie-state-and-proof-path": [
+          71,
+          215
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -1145,6 +1390,17 @@
           1054,
           1070,
           1091
+        ],
+        "trie-state-and-proof-path": [
+          101,
+          500,
+          519,
+          624,
+          770,
+          789,
+          796,
+          1055,
+          1093
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -1164,6 +1420,19 @@
           552,
           1024,
           1212
+        ],
+        "trie-state-and-proof-path": [
+          128,
+          144,
+          335,
+          414,
+          416,
+          456,
+          459,
+          498,
+          554,
+          581,
+          702
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -1275,6 +1544,16 @@
           348,
           379,
           423
+        ],
+        "trie-state-and-proof-path": [
+          83,
+          91,
+          178,
+          331,
+          350,
+          357,
+          361,
+          362
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -1323,6 +1602,11 @@
         "provider-and-derived-calls": [
           81,
           108
+        ],
+        "trie-state-and-proof-path": [
+          82,
+          111,
+          255
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -1354,6 +1638,11 @@
         "provider-and-derived-calls": [
           76,
           129
+        ],
+        "trie-state-and-proof-path": [
+          77,
+          131,
+          176
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -1399,6 +1688,11 @@
           119,
           165,
           201
+        ],
+        "trie-state-and-proof-path": [
+          47,
+          82,
+          167
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -1482,6 +1776,20 @@
           1866,
           2188,
           2320
+        ],
+        "trie-state-and-proof-path": [
+          228,
+          537,
+          538,
+          557,
+          720,
+          839,
+          921,
+          925,
+          926,
+          932,
+          942,
+          1787
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -1508,6 +1816,25 @@
           4744,
           4764,
           4771
+        ],
+        "trie-state-and-proof-path": [
+          275,
+          689,
+          690,
+          729,
+          902,
+          956,
+          1020,
+          1021,
+          1326,
+          1459,
+          1463,
+          1464,
+          1470,
+          1480,
+          1512,
+          1514,
+          1756
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -1565,6 +1892,25 @@
           2212,
           2224,
           2238
+        ],
+        "trie-state-and-proof-path": [
+          151,
+          365,
+          447,
+          525,
+          879,
+          976,
+          978,
+          1249,
+          1338,
+          1411,
+          1581,
+          1676,
+          1704,
+          1728,
+          1803,
+          1808,
+          1816
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -1589,6 +1935,22 @@
           3388,
           3509,
           3717
+        ],
+        "trie-state-and-proof-path": [
+          242,
+          566,
+          567,
+          588,
+          795,
+          994,
+          1099,
+          1103,
+          1104,
+          1110,
+          1120,
+          1695,
+          1715,
+          3302
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -1624,6 +1986,17 @@
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
     },
     {
+      "path": "offchain/lib/Singular/Registry/Deployment/Mirror.hs",
+      "sha256": "38804b91a3a1b4e904328a0c602d78fdd1c710b6e13f917babafbc34805a37f8",
+      "lines": 179,
+      "matches": {
+        "trie-state-and-proof-path": [
+          71
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
       "path": "offchain/lib/Singular/Registry/Driver.hs",
       "sha256": "f266b1f3fdc7d57cee6680536a68391ad76c2bc8d1b9d9f62403911e4daf22c1",
       "lines": 404,
@@ -1632,6 +2005,14 @@
           96,
           125,
           164
+        ],
+        "trie-state-and-proof-path": [
+          97,
+          101,
+          128,
+          168,
+          331,
+          363
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -1702,6 +2083,61 @@
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
     },
     {
+      "path": "offchain/lib/Singular/Registry/Trie.hs",
+      "sha256": "9c0304a3963d9fd0a21c3d803160e841d2815429586a1776fcd92ce9db272d0b",
+      "lines": 71,
+      "matches": {
+        "trie-state-and-proof-path": [
+          10,
+          16,
+          28,
+          29,
+          35,
+          68
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/Trie/Pure.hs",
+      "sha256": "6cb2df80436879a06917a02790cf9661203feb5e0349c60d196bf38aabcde89d",
+      "lines": 272,
+      "matches": {
+        "trie-state-and-proof-path": [
+          19,
+          23,
+          24,
+          150,
+          152,
+          160,
+          162,
+          163,
+          186,
+          195
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/Trie/PureManager.hs",
+      "sha256": "a116f71533befe8d381754c423992ad7dad565de03c14054871fb9fdb43c06d0",
+      "lines": 180,
+      "matches": {
+        "trie-state-and-proof-path": [
+          5,
+          8,
+          41,
+          46,
+          49,
+          63,
+          70,
+          71,
+          73
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
       "path": "offchain/lib/Singular/Registry/TxBuilder/Boot.hs",
       "sha256": "6fe1c3b8a4069e4265cc61adbc4eda8d357f5ae347bc9a720f1f29b5e633b213",
       "lines": 371,
@@ -1724,6 +2160,15 @@
           170,
           293,
           307
+        ],
+        "trie-state-and-proof-path": [
+          77,
+          119,
+          247,
+          252,
+          264,
+          403,
+          408
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -1751,6 +2196,34 @@
           789,
           831,
           911
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/TxBuilder/Internal.hs",
+      "sha256": "f6dcc205c74167f9d3db4f0ce9ba32f4b358032a482ecf0668ae417586b9ad96",
+      "lines": 163,
+      "matches": {
+        "trie-state-and-proof-path": [
+          34,
+          122
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/TxBuilder/Internal/Edges.hs",
+      "sha256": "d1e54bbde96fea68dc9c479c5cb75ef40e0d9bb5c1e85ca6d1f125b934c1737b",
+      "lines": 319,
+      "matches": {
+        "trie-state-and-proof-path": [
+          10,
+          26,
+          93,
+          116,
+          117,
+          126
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -1843,6 +2316,11 @@
           51,
           83,
           96
+        ],
+        "trie-state-and-proof-path": [
+          54,
+          84,
+          97
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -1873,6 +2351,12 @@
           207,
           301,
           320
+        ],
+        "trie-state-and-proof-path": [
+          71,
+          254,
+          259,
+          342
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -2310,8 +2794,8 @@
     },
     {
       "path": "offchain/singular-registry.cabal",
-      "sha256": "7f1d4bf7587944cfda80dcf9bc91c2fbf641ad035835a2b984ae84b968f04eeb",
-      "lines": 1009,
+      "sha256": "ea03059b71ad2941858794152bdcdeae79dd2c6c352e83e800fc5078e9a40145",
+      "lines": 1013,
       "matches": {
         "node-and-indexer-path": [
           88,
@@ -2328,11 +2812,11 @@
           169,
           170,
           171,
-          695,
-          718,
-          719,
+          697,
           720,
-          972
+          721,
+          722,
+          974
         ],
         "provider-and-derived-calls": [
           143,
@@ -2346,16 +2830,16 @@
     },
     {
       "path": "offchain/test/Main.hs",
-      "sha256": "7c411ccb004434f245676d5033e731d9cb25e442cfb832b1bdaa5826da691efa",
-      "lines": 72,
+      "sha256": "ab752271c526b7e8551e9ba6db7d36915fcbf03ec2430d6b4cbc0f86bef400a3",
+      "lines": 74,
       "matches": {
         "node-and-indexer-path": [
-          22,
           23,
           24,
-          51,
+          25,
           52,
-          53
+          53,
+          54
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -2417,20 +2901,45 @@
     },
     {
       "path": "offchain/test/Singular/CLISpec.hs",
-      "sha256": "046300f4fc5d8fb1124c7d984297da357a066ac6ef190fd0dccd3fd7588f2ece",
-      "lines": 1755,
+      "sha256": "a3978fe7802f3fa55548585fdc769c7b9ed00b79bfb577a566d85f816bbc414e",
+      "lines": 1822,
       "matches": {
         "node-and-indexer-path": [
           98,
           99,
           129,
-          357,
-          388,
-          405,
-          412,
+          358,
+          390,
+          407,
           414,
-          1293,
-          1352
+          416,
+          1295,
+          1354
+        ],
+        "trie-state-and-proof-path": [
+          100,
+          101,
+          108,
+          778,
+          779,
+          790,
+          793,
+          798,
+          799,
+          804,
+          815,
+          816,
+          817,
+          821,
+          829,
+          830,
+          831,
+          832,
+          833,
+          834,
+          844,
+          922,
+          1216
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -2526,6 +3035,10 @@
         "provider-and-derived-calls": [
           80,
           557
+        ],
+        "trie-state-and-proof-path": [
+          203,
+          670
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -2841,6 +3354,11 @@
           1040,
           1041,
           1245
+        ],
+        "trie-state-and-proof-path": [
+          115,
+          1256,
+          1262
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -2918,6 +3436,14 @@
         "provider-and-derived-calls": [
           87,
           123
+        ],
+        "trie-state-and-proof-path": [
+          88,
+          102,
+          126,
+          247,
+          248,
+          284
         ]
       },
       "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
@@ -2946,18 +3472,18 @@
     },
     {
       "path": "onchain-release/DEMO1.md",
-      "sha256": "b79b63e074673c31aee98602d5bd90c59f570e5ed7fe42aa45a00f3befb2e007",
-      "lines": 381,
+      "sha256": "5f7b32a0f70718cc6eb81ace4324ba4344e2909a689b4b06fd56986cecd59bc2",
+      "lines": 417,
       "matches": {
         "node-and-indexer-path": [
-          63,
-          229,
-          231,
-          270,
-          349
+          66,
+          265,
+          267,
+          306,
+          385
         ],
         "journey-and-readback": [
-          316
+          352
         ]
       },
       "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
@@ -2969,6 +3495,36 @@
       "matches": {
         "node-and-indexer-path": [
           124
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "simulator/core.mjs",
+      "sha256": "ba06eb7b102f21f8375fb85d0514bce474a484b37b2896be9ba6fef29fcfad05",
+      "lines": 490,
+      "matches": {
+        "trie-state-and-proof-path": [
+          300,
+          306,
+          318,
+          333,
+          349
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "simulator/index.html",
+      "sha256": "bc55ab1fb6766307713df149665fe83b3e3dce0a96a973962ddb3f84da91f093",
+      "lines": 7292,
+      "matches": {
+        "trie-state-and-proof-path": [
+          978,
+          984,
+          996,
+          1011,
+          1027
         ]
       },
       "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
@@ -3066,6 +3622,17 @@
       "disposition": "preserve-historical-authority; review present-tense claims"
     },
     {
+      "path": "specs/265-builder-blueprint-structure/functions-model.md",
+      "sha256": "ee98917d76cbda542b8d06ee2b435c016f9e8a741bd53f26e1ce5de3b00607a7",
+      "lines": 21,
+      "matches": {
+        "trie-state-and-proof-path": [
+          18
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
       "path": "specs/266-node-responsibilities/functions-model.md",
       "sha256": "734dbaf4da2c70dc1361fde97c99d131521e00f6b33f98db13c840cb12969bb0",
       "lines": 24,
@@ -3107,6 +3674,21 @@
         "provider-and-derived-calls": [
           8,
           9
+        ],
+        "trie-state-and-proof-path": [
+          8,
+          9
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/269-deployment-owners/data-model.md",
+      "sha256": "ddf22705c4cef469533b9ecfd14eb4c88a01df3db9cc22f5fe78555558cad7be",
+      "lines": 17,
+      "matches": {
+        "trie-state-and-proof-path": [
+          13
         ]
       },
       "disposition": "preserve-historical-authority; review present-tense claims"
@@ -3745,12 +4327,15 @@
     },
     {
       "path": "tools/cli_recovery_controls.sh",
-      "sha256": "6275ea5cacf0d9ea84fbd285f92e8358becdba25786c32cd5ae84bff9f0bc9cc",
-      "lines": 761,
+      "sha256": "7201b8ccea1aa6101de0e2046170a3973409f6ccebb0058d9ba25d802a2eba05",
+      "lines": 984,
       "matches": {
         "node-and-indexer-path": [
-          121,
-          127
+          123,
+          129
+        ],
+        "journey-and-readback": [
+          279
         ]
       },
       "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
@@ -3793,15 +4378,15 @@
     },
     {
       "path": "tools/demo1_cli_check.sh",
-      "sha256": "d7e0dc1512bac71278c3fa5af14db97b85fe7d3bdcd5583970e36652a0cdc8cd",
-      "lines": 121,
+      "sha256": "76821d67dc9bc6fc00538f5f1ee44eb689720de54c89c49ff72c73b1e255e076",
+      "lines": 122,
       "matches": {
         "journey-and-readback": [
           2,
           12,
-          34,
-          36,
-          121
+          35,
+          37,
+          122
         ]
       },
       "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
@@ -3830,15 +4415,15 @@
     },
     {
       "path": "tools/demo1_cli_journey.sh",
-      "sha256": "62a000b0579dbe619a545dc9bd905dda24659834fa77d078c990ad93e334c04e",
-      "lines": 1115,
+      "sha256": "50346778e54704395dfe2b35faf75a494178ae3f8d2675446ef517aae034cf94",
+      "lines": 1221,
       "matches": {
         "node-and-indexer-path": [
-          33,
-          75,
-          120,
-          184,
-          616
+          37,
+          79,
+          124,
+          188,
+          632
         ],
         "journey-and-readback": [
           5

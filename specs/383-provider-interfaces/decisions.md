@@ -137,7 +137,7 @@ says reject waits for both windows. The early-rejection repair specification
 under specs/320-early-request-rejection already records this disagreement and
 the operator's ruling to repair code rather than change Lean.
 
-This is source evidence at commit 19b970ca, not a newly executed refusal.
+This is source evidence at recovery base 872c0ecf3c, not a newly executed refusal.
 The provider replacement cannot call that preserved behavior Lean-conformant.
 The bound consumer requirement that forbids early rejection remains visibly
 unmet under its existing ruling; no provider receipt closes it.
@@ -157,6 +157,33 @@ escalated under the constitution. This applies answer A-004 and resolves this
 lane's Q-004-reject-model-hold without deciding the client's semantic contract.
 
 ## Intake release and subsequent evidence
+
+The operator also adds TrieState m to this ticket. Every command's trie reads,
+leaf proofs and folds use that backend-neutral capability. Its identity comes
+from create; state selection/root and complete-or-refused coverage are explicit.
+The first adapter wraps the current local mirror, retaining its proof checks,
+file format, speculative behavior and accepted updates. A genuinely pure
+fixture trie exercises every edge's proof path. The name of the existing
+IORef-backed Trie.Pure module does not establish pure-monad execution.
+
+The mirror is not offloaded or replaced by an empty trie. Coverage cannot be
+invented from a matching root: absent create/transition coverage refuses by name.
+Local application proofs never upgrade provider facts to Verified. For Unbound
+sessions the selected state output is an observation, not an atomic snapshot.
+The full-public-lineage backend, applying accepted ordered actions and checking
+every fold root, belongs to #381. Caching, persistence, a follower and a shared
+service remain later backends of this same interface. This settles NOTE-003
+without implementing or claiming the lineage backend during intake.
+
+The operator's subsequent base instruction places this intake on
+[PR #382](https://github.com/lambdasistemi/singular/pull/382), recovery head
+`872c0ecf3c7cf1a10293793523c8521d5ef9aae9`, rather than main. Its reclaim
+command and independent-wallet interrupted-fold controls join the first slice.
+The constitution and Model, Statements and Driver blobs are unchanged between
+the original main base and this recovery head. Source citations and deletion
+discovery are rebound to the recovery head; this does not audit or accept #382.
+If the recovery branch advances, rebase and refresh the evidence. If rewritten
+or closed, hold and ask the epic owner. Never push to that branch.
 
 As the epic owner, I can accept a concrete intake head or return a consolidated
 decision batch. The ticket owner publishes the proposed spec, plan and
