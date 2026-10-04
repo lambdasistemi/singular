@@ -26,6 +26,8 @@ import Singular.Registry.NodeWaitSpec qualified
 import Singular.Registry.OneViewSpec qualified
 import Singular.Registry.PhaseLogSpec qualified
 import Singular.Registry.ProviderSpec qualified
+import Singular.Registry.TrieStateContractSpec qualified
+import Singular.Registry.TrieStateSpec qualified
 import Singular.Registry.TxBuilder.BookEdgeSpec qualified
 import Singular.Registry.TxBuilder.BootSpec qualified
 import Singular.Registry.TxBuilder.BurnSourceSpec qualified
@@ -58,6 +60,8 @@ main = hspec $ do
     Singular.Registry.IndexerViewSpec.spec
     Singular.Registry.LifecycleSpec.spec
     Singular.Registry.TypesSpec.spec
+    Singular.Registry.TrieStateSpec.spec
+    Singular.Registry.TrieStateContractSpec.spec
     Naming.CompleteVerifySpec.spec
     Naming.RegisterSpec.spec
     Naming.RetireVerifySpec.spec

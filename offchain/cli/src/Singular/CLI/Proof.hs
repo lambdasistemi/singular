@@ -28,7 +28,6 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.Map.Strict qualified as Map
-import Data.Text (Text)
 
 import MPF.Backend.Pure (MPFInMemoryDB)
 
@@ -40,28 +39,20 @@ import Singular.Registry.Ledger
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.Pure (provesAbsent, provesMember)
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
+import Singular.Registry.TrieState (Leaf (..), leafName)
+import Singular.Registry.TrieState qualified as TrieState
 import Singular.Registry.TxBuilder.Internal
     ( leafAbsent
     , leafActive
     , leafTerminal
     )
 
--- | The four answers a key has in the model's vocabulary.
-data Leaf = Unknown | Absent | Active | Terminal
-    deriving stock (Eq, Show, Enum, Bounded)
-
-leafName :: Leaf -> Text
-leafName = \case
-    Unknown -> "unknown"
-    Absent -> "absent"
-    Active -> "active"
-    Terminal -> "terminal"
-
 -- | Why no leaf can be reported.
 data AuthError
     = -- | Local root, observed root
       RootMismatch ByteString ByteString
     | ProofInconsistent ByteString
+    | TrieRefusal TrieState.TrieFailure
     deriving stock (Eq, Show)
 
 renderAuthError :: AuthError -> String
@@ -77,6 +68,7 @@ renderAuthError = \case
         "no leaf at 0x"
             <> hexS key
             <> " makes the saved trie commit to its own root"
+    TrieRefusal why -> "TrieState " <> show why
   where
     hexS = BC.unpack . B16.encode
 

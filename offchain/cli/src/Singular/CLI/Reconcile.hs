@@ -67,16 +67,13 @@ module Singular.CLI.Reconcile
     ) where
 
 import Control.Applicative ((<|>))
-import Control.Exception (IOException, SomeException, try)
-import Control.Monad (forM, forM_, void)
+import Control.Exception (SomeException, try)
+import Control.Monad (forM, forM_)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.ByteString (ByteString)
-import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
-import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
-import Data.Char (isSpace)
 import Data.Foldable (toList)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (nub)
@@ -88,8 +85,6 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((^.))
 
-import Cardano.Crypto.Hash.Blake2b (Blake2b_256)
-import Cardano.Crypto.Hash.Class (hashToBytes, hashWith)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body
     ( ValidityInterval (..)
@@ -104,31 +99,30 @@ import Cardano.Ledger.Api.Tx.Out
     , referenceScriptTxOutL
     )
 import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
-import Cardano.Ledger.Binary (decCBOR, decodeFullAnnotator)
-import Cardano.Ledger.Core (eraProtVerHigh, hashScript)
-import Cardano.Ledger.Hashes (extractHash)
-import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
+import Cardano.Ledger.Core (hashScript)
+import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
-import MPF.Backend.Pure (emptyMPFInMemoryDB)
 
 import Singular.Application.OpenDatum.Envelope
     ( Envelope (..)
     , envelopeHash
     )
 import Singular.CLI.Live
-    ( Mirror (..)
+    ( Mirror
     , Saved (..)
     , attachLive
     , liveOutputFor
     , liveOutputs
+    , mirrorLeaf
     , mirrorRoot
     , observedRoot
     , openMirror
-    , saveOpenMirror
+    , recoverMirrorFold
+    , rewindMirrorTo
+    , selectMirror
     , txInText
     )
-import Singular.CLI.Proof (AuthError, Leaf (..), authenticatedLeaf)
-import Singular.CLI.Proof qualified as Proof
+import Singular.CLI.Proof (AuthError, Leaf (..))
 import Singular.CLI.Receipt
     ( JournalEntry (..)
     , OutcomeClass (..)
@@ -139,6 +133,7 @@ import Singular.CLI.Receipt
     , submissionCase
     , unresolved
     )
+import Singular.CLI.ReceiptBody (boundBody)
 import Singular.CLI.Recovery
     ( Inclusion (..)
     , MirrorDecision (..)
@@ -146,7 +141,6 @@ import Singular.CLI.Recovery
     , excludedAt
     , inclusionOf
     , mirrorDecision
-    , replayFolds
     , rewindOf
     , rollbackEvidence
     )
@@ -166,15 +160,12 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Trie (TrieManager (..))
-import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TxBuilder.Internal
     ( extractCageDatum
     , mkInlineDatum
     , scriptHashBytes
     , toPlcData
     , txInToRef
-    , walkEdge
     )
 import Singular.Registry.Types (CageDatum (..))
 
@@ -209,6 +200,7 @@ data Recovery = Recovery
     , recNote :: Text
     , recPrepared :: Maybe JournalEntry
     , recFirstOutput :: Maybe (TxOut ConwayEra)
+    , recBody :: Maybe ConwayTx
     , recLast :: JournalEntry
     }
 
@@ -231,13 +223,10 @@ reconcile command dir saved view = do
         if local == root
             then followState dir saved local
             else pure False
-    tries <- mirrorDump mirror
+    _ <- selectMirror saved live mirror
     outs <- liveOutputs view saved
     let readKey key = do
-            leaf <- case Map.lookup (savedToken saved) tries of
-                Nothing ->
-                    pure (Left (Proof.ProofInconsistent "the mirror holds no trie"))
-                Just db -> authenticatedLeaf db key root
+            leaf <- mirrorLeaf mirror key root
             pure (leaf, liveOutputFor saved key outs)
     observedNow <- observe command dir (Just readKey) recovered
     remaining <- remainingOf <$> readJournal dir
@@ -381,46 +370,6 @@ liveReader view = do
                 modifyIORef' cache (Map.insert addr found)
                 pure found
 
-{- | A journalled transaction's saved body, bound to its @prepared@ line
-by byte hash and derived id, or why it is not.
--}
-boundBody
-    :: [JournalEntry]
-    -> Text
-    -> IO (Maybe JournalEntry, Either Text ConwayTx)
-boundBody entries txid = case prepared of
-    Just p
-        | Just path <- journalBody p
-        , Just wantHash <- journalBodyHash p -> do
-            stored <- try (BS.readFile path)
-            pure . (prepared,) $ case stored of
-                Left (_ :: IOException) -> Left "the saved body is missing"
-                Right hexBytes -> case B16.decode (BC.filter (not . isSpace) hexBytes) of
-                    Left _ -> Left "the saved body is not hex"
-                    Right raw
-                        | hexT (hashToBytes (hashWith @Blake2b_256 id raw)) /= wantHash ->
-                            Left "the saved body's hash differs from its prepared line"
-                        | otherwise ->
-                            case decodeFullAnnotator
-                                (eraProtVerHigh @ConwayEra)
-                                "transaction"
-                                decCBOR
-                                (BL.fromStrict raw) of
-                                Left _ -> Left "the saved body does not decode"
-                                Right (tx :: ConwayTx)
-                                    | txIdHexOf tx /= txid ->
-                                        Left "the saved body is another transaction"
-                                    | otherwise -> Right tx
-    _ -> pure (prepared, Left "no prepared line names a saved body")
-  where
-    prepared =
-        listToMaybe
-            [ p
-            | p <- entries
-            , journalTxId p == txid
-            , journalEvent p == "prepared"
-            ]
-
 {- | What the view shows about a body: its inclusion, read over every
 address its own outputs pay — the wallet's change and the registry's
 script, where the inputs it spends sit — and its first output.
@@ -503,6 +452,7 @@ recoverInclusion command dir view liveAt = do
                     , recNote = ""
                     , recPrepared = prepared
                     , recFirstOutput = Nothing
+                    , recBody = Nothing
                     , recLast = e
                     }
         case body of
@@ -527,6 +477,7 @@ recoverInclusion command dir view liveAt = do
                                 { recIncluded = True
                                 , recNote = "included: its first output is live"
                                 , recFirstOutput = out0
+                                , recBody = Just tx
                                 }
                     _
                         | excludedAt tip (upperOf tx) (submissionCase entries txid) inclusion
@@ -604,25 +555,9 @@ rewindMirror dir saved = do
                     then pure Nothing
                     else do
                         harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_REWIND" Nothing
-                        let token = savedToken saved
-                        (tm, dump) <-
-                            mkPureTrieManagerFrom (Map.singleton token emptyMPFInMemoryDB)
-                        replayed <- withTrie tm token (`replayFolds` rewindFolds rw)
-                        case replayed of
-                            Right reached
-                                | reached == target -> do
-                                    saveOpenMirror saved Mirror{mirrorTries = tm, mirrorDump = dump}
-                                    pure (Just (rewindRoot rw))
-                            Right _ ->
-                                failWith
-                                    StaleState
-                                    "the folds still on chain do not rebuild the root before the rollback"
-                            Left why ->
-                                failWith
-                                    StaleState
-                                    ( "the mirror cannot return to the root before the rollback: "
-                                        <> T.unpack why
-                                    )
+                        mirror <- openMirror saved
+                        rewindMirrorTo saved mirror target
+                        pure (Just (rewindRoot rw))
             harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_REWIND_STATE" Nothing
             _ <- followState dir saved target
             pure rewritten
@@ -647,17 +582,19 @@ advanceMirror saved mirror root recovered = fmap concat . forM recovered $ \r ->
                 local <- mirrorRoot saved mirror
                 case mirrorDecision (hexT local) (hexT root) p of
                     ApplyEdge -> do
-                        withTrie (mirrorTries mirror) (savedToken saved) $ \t ->
-                            void (walkEdge t key edge)
+                        tx <-
+                            maybe
+                                (failWith StaleState "the included fold has no bound signed body")
+                                pure
+                                (recBody r)
+                        recoverMirrorFold saved mirror key edge local root tx
                         now <- mirrorRoot saved mirror
                         if now /= root
                             then
                                 failWith
                                     StaleState
                                     "the journalled edge does not take the mirror to the ledger's root"
-                            else do
-                                saveOpenMirror saved mirror
-                                pure [recTx r]
+                            else pure [recTx r]
                     _ -> pure []
         _ -> pure []
 
@@ -797,6 +734,3 @@ recoveryLine command e event detail =
         , journalRootBefore = Nothing
         , journalRootAfter = Nothing
         }
-
-txIdHexOf :: ConwayTx -> Text
-txIdHexOf tx = let TxId h = txIdTx tx in hexT (hashToBytes (extractHash h))

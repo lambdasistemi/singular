@@ -1,0 +1,4508 @@
+{
+  "baseCommit": "872c0ecf3c7cf1a10293793523c8521d5ef9aae9",
+  "trackedPathCount": 2459,
+  "matchedPathCount": 258,
+  "matchingLineCount": 1605,
+  "categoryCounts": {
+    "node-and-indexer-path": 151,
+    "provider-and-derived-calls": 172,
+    "journey-and-readback": 25,
+    "trie-state-and-proof-path": 51
+  },
+  "patterns": {
+    "node-and-indexer-path": "Singular\\.Registry\\.Node|Singular\\.CLI\\.Node|withNode|IndexerBackend|NodeBackend|--backend|--node-socket",
+    "provider-and-derived-calls": "\\bProvider\\b|\\bView\\b|withReads|withWrites|viewEvaluateTx|viewPosixMs|viewScriptRegistered",
+    "journey-and-readback": "demo1_mock_indexer|demo1_cli_journey|demo1-cli-check|demo1-readback-check",
+    "trie-state-and-proof-path": "\\bTrieManager\\b|\\bwithTrie\\b|\\bwithSpeculativeTrie\\b|\\bauthenticatedLeaf\\b|\\bopenMirror\\b|\\bmirrorTries\\b|\\bwalkEdge\\b|\\bgetProofSteps\\b|\\bprovesMember\\b|\\bprovesAbsent\\b"
+  },
+  "paths": [
+    {
+      "path": ".github/workflows/registry.yml",
+      "sha256": "0517e68189f48f36b569f3a5882865938167e1c2032157562ff0a4538b631121",
+      "lines": 611,
+      "matches": {
+        "journey-and-readback": [
+          566,
+          589
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "74f67c228f1dcbd8ff52ba875506d55f4b48bb3b4424e120b006adde332ffb3f",
+      "lines": 671,
+      "matches": {
+        "journey-and-readback": [
+          84
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "PROVENANCE.md",
+      "sha256": "541b3d81cddfca5aa645ab1bac02228dc96f6cc055354b38ba22b6553d177607",
+      "lines": 277,
+      "matches": {
+        "provider-and-derived-calls": [
+          182
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "conformance/app-cli/Conformance/Cli/Backend.hs",
+      "sha256": "e2b053cd1a5760d0f80629abeaa64d1accce62afbf7d52d556cc0711e2b17a29",
+      "lines": 2573,
+      "matches": {
+        "node-and-indexer-path": [
+          205,
+          388,
+          400,
+          1273,
+          1354,
+          1443,
+          1558,
+          1606
+        ],
+        "provider-and-derived-calls": [
+          213
+        ],
+        "trie-state-and-proof-path": [
+          214,
+          241,
+          1932,
+          2071,
+          2072,
+          2114,
+          2500,
+          2502
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app-cli/Conformance/Cli/Node.hs",
+      "sha256": "666b62a68c30cf222c798d27941a893ce603864c3dc35f6317a6fed1664a6154",
+      "lines": 56,
+      "matches": {
+        "node-and-indexer-path": [
+          21,
+          28,
+          50
+        ],
+        "provider-and-derived-calls": [
+          30,
+          34
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app-cli/Conformance/Cli/Proof.hs",
+      "sha256": "a64aa93cdc948604070157edaf2e51046c82d82ff318585eb3885f3b48b812b1",
+      "lines": 111,
+      "matches": {
+        "trie-state-and-proof-path": [
+          6,
+          41,
+          42,
+          79,
+          95,
+          99
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app-cli/Main.hs",
+      "sha256": "1756611c7852264d221e882816fbdf285b419b0441df1bbaf47b98b9eb9a0b0e",
+      "lines": 101,
+      "matches": {
+        "node-and-indexer-path": [
+          70,
+          72
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app-default/Conformance/FoldFixture.hs",
+      "sha256": "dac7cc9043da3c35f483aa744f86bc33868edfb9627356a6ab6f77b192b31271",
+      "lines": 23,
+      "matches": {
+        "node-and-indexer-path": [
+          8
+        ],
+        "provider-and-derived-calls": [
+          9,
+          18
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app/Conformance/ForkKeys.hs",
+      "sha256": "d1402a0bcf68a872141bdd448d03611ccfc8ab21405628a060e52a24adade264",
+      "lines": 463,
+      "matches": {
+        "trie-state-and-proof-path": [
+          62,
+          200,
+          208,
+          221,
+          224,
+          244,
+          251,
+          284,
+          288,
+          326,
+          330,
+          352,
+          354,
+          415
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app/Conformance/Mirror.hs",
+      "sha256": "5f55cd1446c2d271cd51729b5a7f455f3453298ad249e8e549758e790b2fa45a",
+      "lines": 248,
+      "matches": {
+        "provider-and-derived-calls": [
+          81,
+          149
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app/Conformance/Run.hs",
+      "sha256": "2ccf4a316c4c7832639c27b55969533bb6af7c3bf2f9174678c58f73d55fb933",
+      "lines": 404,
+      "matches": {
+        "node-and-indexer-path": [
+          82
+        ],
+        "provider-and-derived-calls": [
+          88
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app/Conformance/Run/Book.hs",
+      "sha256": "873877faf7b10778daa5eb1e559bb8cf919fff3fe5562c47713b028481f24135",
+      "lines": 440,
+      "matches": {
+        "node-and-indexer-path": [
+          87
+        ],
+        "provider-and-derived-calls": [
+          92
+        ],
+        "trie-state-and-proof-path": [
+          93,
+          109,
+          174,
+          176,
+          190,
+          213,
+          216,
+          230,
+          233,
+          238,
+          243
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app/Conformance/Run/CaRows.hs",
+      "sha256": "a74c6ee35d17cee8f242e7d61400ed9e7ed50ebde56124680044ce12de01634d",
+      "lines": 879,
+      "matches": {
+        "node-and-indexer-path": [
+          77
+        ],
+        "provider-and-derived-calls": [
+          84,
+          141,
+          760
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app/Conformance/Run/Cage.hs",
+      "sha256": "05931eb7a1c6863e8713ee8e1b4395508cfdcd3956c0dd2ddacda207bf4e0257",
+      "lines": 442,
+      "matches": {
+        "node-and-indexer-path": [
+          88
+        ],
+        "provider-and-derived-calls": [
+          95,
+          315,
+          359,
+          416
+        ],
+        "trie-state-and-proof-path": [
+          96
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app/Conformance/Run/CgRows.hs",
+      "sha256": "19511b1a4f8cada30eeabbe0cbe3e1a1cea2b1f2b800f7d44e1917e585fe8db5",
+      "lines": 533,
+      "matches": {
+        "node-and-indexer-path": [
+          59
+        ],
+        "provider-and-derived-calls": [
+          60
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app/Conformance/Run/CsRows.hs",
+      "sha256": "5f1eb5ec15d99ee6e1f71a07a6924cb886da6602924725508a47cbd671b6f577",
+      "lines": 1645,
+      "matches": {
+        "node-and-indexer-path": [
+          117
+        ],
+        "provider-and-derived-calls": [
+          127,
+          305,
+          404,
+          529,
+          544,
+          570,
+          572,
+          583,
+          682,
+          876,
+          1008,
+          1185,
+          1207,
+          1335,
+          1459
+        ],
+        "trie-state-and-proof-path": [
+          128,
+          146,
+          972,
+          973,
+          1059,
+          1060,
+          1510,
+          1511
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app/Conformance/Run/Environment.hs",
+      "sha256": "e47810a8416d1a8994604b9fd720bb2df1a173f1ac9b63d483768f23fc266afb",
+      "lines": 522,
+      "matches": {
+        "node-and-indexer-path": [
+          98,
+          302
+        ],
+        "provider-and-derived-calls": [
+          104,
+          127,
+          508,
+          512,
+          513
+        ],
+        "trie-state-and-proof-path": [
+          105,
+          132
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app/Conformance/Run/Fold.hs",
+      "sha256": "932782621f0a966c3267d81d4116cceb486d2fc4b097218ce7395fedc6b368b2",
+      "lines": 909,
+      "matches": {
+        "provider-and-derived-calls": [
+          115,
+          603,
+          615,
+          872
+        ],
+        "trie-state-and-proof-path": [
+          116,
+          141,
+          798,
+          806,
+          807
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app/Conformance/Run/ForkProbe.hs",
+      "sha256": "8f2cba01065c97096aa3a236b96d8dbd569776260db6180cb54f11a5e3168013",
+      "lines": 180,
+      "matches": {
+        "node-and-indexer-path": [
+          26
+        ],
+        "provider-and-derived-calls": [
+          32
+        ],
+        "trie-state-and-proof-path": [
+          33,
+          39,
+          175,
+          176
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app/Conformance/Run/Live.hs",
+      "sha256": "9e2d5e742afec5e34a0e246e472bacaffc6b5674f5bf8651694b3d5710d8ee1c",
+      "lines": 4050,
+      "matches": {
+        "node-and-indexer-path": [
+          209
+        ],
+        "provider-and-derived-calls": [
+          214,
+          1752,
+          1753,
+          1759,
+          1761,
+          1830,
+          1834,
+          1953,
+          1960
+        ],
+        "trie-state-and-proof-path": [
+          215,
+          2235,
+          3942,
+          3947
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app/Conformance/Run/Node.hs",
+      "sha256": "d69c80cf1b2b5fbe263b78b805c50337a7ea27a534cd89d0e1bf1caaa47ee2d4",
+      "lines": 154,
+      "matches": {
+        "node-and-indexer-path": [
+          45,
+          58,
+          114
+        ],
+        "provider-and-derived-calls": [
+          39,
+          42,
+          107
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app/Conformance/Run/Replay.hs",
+      "sha256": "4ff7c010cc9526b8aa741d2d667fc7e170d7875e736729cc161a64270e14876c",
+      "lines": 1497,
+      "matches": {
+        "provider-and-derived-calls": [
+          197,
+          237,
+          374
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app/Conformance/Run/Submit.hs",
+      "sha256": "c2c6c30cfafd7172f49d5f2b883f0c7287ebe39243143a053d84595a0be83a42",
+      "lines": 306,
+      "matches": {
+        "node-and-indexer-path": [
+          33
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app/Conformance/Run/Units.hs",
+      "sha256": "4ee0758b2bddaa6ad0a42f00077b2df7f4b009edec6a01c25b6838f4734997cf",
+      "lines": 176,
+      "matches": {
+        "provider-and-derived-calls": [
+          42,
+          60
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/app/Conformance/Run/Wallet.hs",
+      "sha256": "dcc322aebdfc126eb69bbd5936b23621f5bf2e766c54b3f043885a5ac19efd33",
+      "lines": 325,
+      "matches": {
+        "node-and-indexer-path": [
+          71
+        ],
+        "provider-and-derived-calls": [
+          77,
+          90,
+          216
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/test/Conformance/Support/CliProof.hs",
+      "sha256": "2471804a44a1e79d5d8a14e1d18b53048f9ed8383624c3179ff8a176445354e1",
+      "lines": 83,
+      "matches": {
+        "trie-state-and-proof-path": [
+          16,
+          29
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/test/Conformance/Support/HeldView.hs",
+      "sha256": "6f9d953cf24bf8868b295a6feda1bdb2e2b3e7897ea3965ef79d851d9b024d70",
+      "lines": 82,
+      "matches": {
+        "provider-and-derived-calls": [
+          26,
+          29,
+          46,
+          48,
+          52,
+          53,
+          54,
+          55
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/test/Conformance/Support/RunReplay.hs",
+      "sha256": "26a07dc69b62ff9dd5b63cabaa92886e14edcd2df489eccde1998fb28dafd29f",
+      "lines": 717,
+      "matches": {
+        "trie-state-and-proof-path": [
+          79,
+          281,
+          287,
+          289,
+          293,
+          299,
+          301,
+          309,
+          311,
+          313
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "conformance/test/fold-budget/Conformance/FoldFixture.hs",
+      "sha256": "27343c513f5cda6b3400142ce784872c23891ed00d23c9c08410a38612ba9103",
+      "lines": 81,
+      "matches": {
+        "provider-and-derived-calls": [
+          20,
+          29,
+          47
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "docs/audio/index.json",
+      "sha256": "d6e9880cddc799c75108b8241381ae2f740aca537ede0b598bb33a1b8a1fe523",
+      "lines": 8865,
+      "matches": {
+        "node-and-indexer-path": [
+          3108,
+          3345,
+          4727,
+          5745,
+          5989,
+          7974
+        ],
+        "provider-and-derived-calls": [
+          4531,
+          4741,
+          5713,
+          5836,
+          5975
+        ]
+      },
+      "disposition": "rewrite current usage and unverified limits"
+    },
+    {
+      "path": "docs/audio/manifest.json",
+      "sha256": "bfbbbc1f8ee54fc5261be710027e82a6f9c3ba4f3e3e04d2f70cb13649bbd81f",
+      "lines": 288831,
+      "matches": {
+        "node-and-indexer-path": [
+          103653,
+          103654,
+          103794,
+          110558,
+          110559,
+          110679,
+          149373,
+          149374,
+          183153,
+          183154,
+          190173,
+          190174,
+          261853,
+          261854,
+          261864
+        ],
+        "provider-and-derived-calls": [
+          146563,
+          146564,
+          147424,
+          149473,
+          149474,
+          149499,
+          181578,
+          181579,
+          181889,
+          185993,
+          185994,
+          185999,
+          189903,
+          189904,
+          190019
+        ]
+      },
+      "disposition": "rewrite current usage and unverified limits"
+    },
+    {
+      "path": "docs/consumer-onboarding.md",
+      "sha256": "c9772701aa0025b14f7435d27ee17ae6f5e0281da53515042dfb52ad127455c8",
+      "lines": 314,
+      "matches": {
+        "node-and-indexer-path": [
+          41,
+          134,
+          257,
+          261
+        ]
+      },
+      "disposition": "rewrite current usage and unverified limits"
+    },
+    {
+      "path": "docs/demos/index.md",
+      "sha256": "ffb82ca32aed55e48b77eb107d1623e620db036eb791ff5b994bdbe94385a619",
+      "lines": 24,
+      "matches": {
+        "node-and-indexer-path": [
+          5
+        ]
+      },
+      "disposition": "rewrite current usage and unverified limits"
+    },
+    {
+      "path": "docs/demos/index.speech.json",
+      "sha256": "2604b86bef76269b345ec1454d7af10c3b788f7fcc2f2995fcccd3be55577d48",
+      "lines": 40,
+      "matches": {
+        "node-and-indexer-path": [
+          12
+        ]
+      },
+      "disposition": "regenerate with paired current-page changes; preserve historical pages"
+    },
+    {
+      "path": "docs/first-demo.md",
+      "sha256": "8e58a2f115c389712b5d7194f7758e1150e5df9fdd55ee18b4c7f702101d2fe3",
+      "lines": 43,
+      "matches": {
+        "node-and-indexer-path": [
+          9
+        ]
+      },
+      "disposition": "rewrite current usage and unverified limits"
+    },
+    {
+      "path": "docs/first-demo.speech.json",
+      "sha256": "0f03abef5b48699d3a429ff513609b17a1a6b9c2a92e32f3fa181d5027b0eb3f",
+      "lines": 48,
+      "matches": {
+        "node-and-indexer-path": [
+          20
+        ]
+      },
+      "disposition": "regenerate with paired current-page changes; preserve historical pages"
+    },
+    {
+      "path": "docs/offchain-api-reference.md",
+      "sha256": "a5c50eb33cd7b025dc84d853b2e76dc6fcfa282155668fed92bdabce85d60493",
+      "lines": 183,
+      "matches": {
+        "node-and-indexer-path": [
+          79
+        ],
+        "provider-and-derived-calls": [
+          40,
+          81
+        ]
+      },
+      "disposition": "rewrite current usage and unverified limits"
+    },
+    {
+      "path": "docs/offchain-api-reference.speech.json",
+      "sha256": "774e668eba2622bb1ead4f591ef1d5fbcadc2170bfab1fc34d6886213c5719b4",
+      "lines": 286,
+      "matches": {
+        "node-and-indexer-path": [
+          134
+        ],
+        "provider-and-derived-calls": [
+          22,
+          142
+        ]
+      },
+      "disposition": "regenerate with paired current-page changes; preserve historical pages"
+    },
+    {
+      "path": "docs/offchain-node-ownership.md",
+      "sha256": "157b0499b6011ced80c090ecb1f1ba783e660a6d160c6bea4d8c5e2d63a46328",
+      "lines": 298,
+      "matches": {
+        "node-and-indexer-path": [
+          17,
+          84,
+          167
+        ],
+        "provider-and-derived-calls": [
+          35,
+          70,
+          87,
+          88,
+          131,
+          133,
+          163,
+          262
+        ]
+      },
+      "disposition": "rewrite current usage and unverified limits"
+    },
+    {
+      "path": "docs/offchain-node-ownership.speech.json",
+      "sha256": "320b17fecbc7c02f0116ebcf117fa37b0a748594d1aff4c4c74562ad90855556",
+      "lines": 192,
+      "matches": {
+        "node-and-indexer-path": [
+          18,
+          128
+        ],
+        "provider-and-derived-calls": [
+          70,
+          120,
+          174
+        ]
+      },
+      "disposition": "regenerate with paired current-page changes; preserve historical pages"
+    },
+    {
+      "path": "docs/preprod-history/preprod-1.mirror.json",
+      "sha256": "def25ac955618f9af3a82d3ecaaef42fb7a1eaf73d6abdf3a113d1046248f9e0",
+      "lines": 45,
+      "matches": {
+        "trie-state-and-proof-path": [
+          2
+        ]
+      },
+      "disposition": "rewrite current usage and unverified limits"
+    },
+    {
+      "path": "docs/preprod.md",
+      "sha256": "54a0d2a46a5a4f516eeb6e4c582425aa9984076fcb1922f2533eb6c64b3f1151",
+      "lines": 210,
+      "matches": {
+        "node-and-indexer-path": [
+          160,
+          165
+        ]
+      },
+      "disposition": "rewrite current usage and unverified limits"
+    },
+    {
+      "path": "docs/preprod.mirror.json",
+      "sha256": "dc8006481c5bab3754e7ff8092f8de59a9e14f603c357fe2c640274ca65df25a",
+      "lines": 45,
+      "matches": {
+        "trie-state-and-proof-path": [
+          2
+        ]
+      },
+      "disposition": "rewrite current usage and unverified limits"
+    },
+    {
+      "path": "docs/singular-node.md",
+      "sha256": "5984fa5311d55e6839a1a609fd5fde023a5f025110d073b204cd55498ab54372",
+      "lines": 351,
+      "matches": {
+        "node-and-indexer-path": [
+          17,
+          21,
+          48,
+          113,
+          248
+        ]
+      },
+      "disposition": "rewrite current usage and unverified limits"
+    },
+    {
+      "path": "docs/singular-node.speech.json",
+      "sha256": "079926925be9fe180062072fd280a050969405df2df4fe5355ed3a7510d87108",
+      "lines": 178,
+      "matches": {
+        "node-and-indexer-path": [
+          124
+        ]
+      },
+      "disposition": "regenerate with paired current-page changes; preserve historical pages"
+    },
+    {
+      "path": "flake.nix",
+      "sha256": "53bad0bd71ef48e43121d24e5b296d9d7891972271b4598bae84ea28905330c2",
+      "lines": 372,
+      "matches": {
+        "journey-and-readback": [
+          108,
+          150,
+          182,
+          186,
+          249,
+          250,
+          254
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "nix/docs.nix",
+      "sha256": "3e7cc4450c6fad3020e9d10073a40426226beafd63eb0b4e26a8ac9002d06e6b",
+      "lines": 219,
+      "matches": {
+        "provider-and-derived-calls": [
+          45
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "offchain/LIFECYCLE.md",
+      "sha256": "ed4cf755f99bc4daa0da46ce1d52ea7b16c4bccaf01867347353592ef01a32a5",
+      "lines": 61,
+      "matches": {
+        "node-and-indexer-path": [
+          28
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Attached.hs",
+      "sha256": "b0e0d85c7bad7a09ed599a0057b378fc659f3a99b8171d122ccd9f5bde83cfc5",
+      "lines": 152,
+      "matches": {
+        "node-and-indexer-path": [
+          44,
+          63
+        ],
+        "provider-and-derived-calls": [
+          64,
+          128,
+          132
+        ],
+        "trie-state-and-proof-path": [
+          103
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Command.hs",
+      "sha256": "cbc2766fba46ff27215ba1caca7bbed3d69152d7383bca7c9e40ca33bcc5a810",
+      "lines": 767,
+      "matches": {
+        "node-and-indexer-path": [
+          28,
+          29,
+          77,
+          260,
+          515,
+          540,
+          556,
+          630,
+          645,
+          692,
+          694,
+          697,
+          701,
+          705,
+          709,
+          712,
+          716,
+          719,
+          722,
+          725,
+          728,
+          732
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Create.hs",
+      "sha256": "f0e916c3e44e835ca6d9cc50640cce029e102ed0af5b63f3dca398bc3032efcb",
+      "lines": 462,
+      "matches": {
+        "node-and-indexer-path": [
+          70,
+          114
+        ],
+        "provider-and-derived-calls": [
+          70,
+          115,
+          151
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Entry.hs",
+      "sha256": "4924ee77112655322e44f035b5923a327d39110c3ea339b845247c9a717f042a",
+      "lines": 388,
+      "matches": {
+        "node-and-indexer-path": [
+          96
+        ],
+        "provider-and-derived-calls": [
+          97,
+          111,
+          142
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Fold.hs",
+      "sha256": "d460da31f1bd6830a55084d119921c00379cd711332f1249665346a4f2848104",
+      "lines": 664,
+      "matches": {
+        "node-and-indexer-path": [
+          112
+        ],
+        "provider-and-derived-calls": [
+          113,
+          166,
+          171,
+          173
+        ],
+        "trie-state-and-proof-path": [
+          114,
+          120,
+          303,
+          410,
+          411,
+          536
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/FoldRules.hs",
+      "sha256": "37e542c89a2579e9ddccdf4e8276ac604550ae5d39eee341302df9d2f7fe8963",
+      "lines": 388,
+      "matches": {
+        "provider-and-derived-calls": [
+          51,
+          284,
+          285
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Inspect.hs",
+      "sha256": "53663b9881b018b3aad141411e8d7098a6e714de97bd137c432187ed8248e767",
+      "lines": 415,
+      "matches": {
+        "node-and-indexer-path": [
+          80
+        ],
+        "provider-and-derived-calls": [
+          80,
+          118,
+          186,
+          253
+        ],
+        "trie-state-and-proof-path": [
+          84,
+          251,
+          258,
+          265
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Live.hs",
+      "sha256": "4b46ab0801a13e54010774bdbca346c0c1eb4c2757fcbac164ee2c623a8b50c1",
+      "lines": 366,
+      "matches": {
+        "provider-and-derived-calls": [
+          127,
+          214,
+          241
+        ],
+        "trie-state-and-proof-path": [
+          38,
+          128,
+          301,
+          309,
+          310,
+          331
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Node.hs",
+      "sha256": "0e3235bbd5c0119be3a908faa98437f12955f2e1a4dd71cabd7a070494209112",
+      "lines": 179,
+      "matches": {
+        "node-and-indexer-path": [
+          4,
+          10,
+          11,
+          31,
+          51,
+          60,
+          61,
+          65,
+          66,
+          71,
+          72,
+          73,
+          75,
+          93,
+          120,
+          134,
+          150,
+          164,
+          165
+        ],
+        "provider-and-derived-calls": [
+          13,
+          39,
+          40,
+          79,
+          102,
+          117,
+          118,
+          129,
+          131
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Plan.hs",
+      "sha256": "e5b344be4a4edb401095e1c7236d27941e984524d532d21493b1dbcab7a9c1a6",
+      "lines": 292,
+      "matches": {
+        "provider-and-derived-calls": [
+          84,
+          228
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Preview.hs",
+      "sha256": "259e7d23f365fc23e90a7694859c25f92b08382752acd2d669503884a6fa61c4",
+      "lines": 315,
+      "matches": {
+        "node-and-indexer-path": [
+          78
+        ],
+        "provider-and-derived-calls": [
+          18,
+          78,
+          97,
+          132,
+          201
+        ],
+        "trie-state-and-proof-path": [
+          139
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Proof.hs",
+      "sha256": "93151018f449a7ce2ed25174ec99c94c2a4ab12cca4641acf31d803628ab5742",
+      "lines": 123,
+      "matches": {
+        "trie-state-and-proof-path": [
+          14,
+          23,
+          40,
+          41,
+          87,
+          97,
+          102,
+          104,
+          114,
+          118
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Receipt.hs",
+      "sha256": "404852fa21be5f78e8a4ab1292890ff0ed48dd516828247a5e2e056319443292",
+      "lines": 332,
+      "matches": {
+        "node-and-indexer-path": [
+          89
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Reclaim.hs",
+      "sha256": "c33db1eb7073ed2ea561c8ffbc45a46cb2abdaef6b7e31e3151711d255eee272",
+      "lines": 248,
+      "matches": {
+        "node-and-indexer-path": [
+          53
+        ],
+        "provider-and-derived-calls": [
+          54,
+          138
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Reconcile.hs",
+      "sha256": "7cc0bdb70e5704dbc046b90ab4eb238ab040440c3014092ba35b4e1bd858e1ed",
+      "lines": 802,
+      "matches": {
+        "provider-and-derived-calls": [
+          168,
+          219,
+          261,
+          371,
+          442,
+          484
+        ],
+        "trie-state-and-proof-path": [
+          126,
+          130,
+          169,
+          177,
+          227,
+          240,
+          601,
+          610,
+          614,
+          650,
+          651
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Recovery.hs",
+      "sha256": "9b5f41a6de5a85cbb138efc0d2d7df56cbfd9b8ab33df7de3500a210cd0275ea",
+      "lines": 225,
+      "matches": {
+        "trie-state-and-proof-path": [
+          71,
+          215
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Registry.hs",
+      "sha256": "4d8c57cecddffe45046748bd9a3328a325033e9b1f41e04a20d80a6bd30108f8",
+      "lines": 517,
+      "matches": {
+        "node-and-indexer-path": [
+          119
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Reject.hs",
+      "sha256": "b836e82e5998d85e1a4f9c9830e6fdcdb4b1515a22f5d62ffbaf4fa80812f55b",
+      "lines": 393,
+      "matches": {
+        "node-and-indexer-path": [
+          72
+        ],
+        "provider-and-derived-calls": [
+          73
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/cli/src/Singular/CLI/Session.hs",
+      "sha256": "9525edccc993a779d20c7af805e0951470bf1b5c95c4e66d351e377dfab80eb5",
+      "lines": 641,
+      "matches": {
+        "node-and-indexer-path": [
+          11,
+          117,
+          129,
+          130,
+          137
+        ],
+        "provider-and-derived-calls": [
+          117,
+          143,
+          221,
+          449
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/contract-test/Main.hs",
+      "sha256": "83512f2e12400079040a8d2ab27a0d21cf4aa7b2e1bc0fb9606fcdfab63f5532",
+      "lines": 75,
+      "matches": {
+        "node-and-indexer-path": [
+          11,
+          36,
+          45,
+          46,
+          51,
+          52,
+          61,
+          70
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/contract-test/external.sh",
+      "sha256": "50c22004b49921fb0ec00966560139874930a192c05cdb60c7b1e10a234ebbc0",
+      "lines": 51,
+      "matches": {
+        "node-and-indexer-path": [
+          51
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/deployment-attach-check.sh",
+      "sha256": "1eb740bea657f4ad3b09cd9655e6368af10f07fe0fde40669ffa2a8c8a85949f",
+      "lines": 145,
+      "matches": {
+        "node-and-indexer-path": [
+          69
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/deployment-identity-check.sh",
+      "sha256": "9ac853a2ec7811b9c060c04e23c363c0287e051352137cb777cd77c4e45bc322",
+      "lines": 168,
+      "matches": {
+        "node-and-indexer-path": [
+          123
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/deployment/Deployment/Count.hs",
+      "sha256": "81ef57ea38095b835e25dbb5218c1371f5105f71f3de79045108da35442290cc",
+      "lines": 83,
+      "matches": {
+        "node-and-indexer-path": [
+          38
+        ],
+        "provider-and-derived-calls": [
+          43
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/deployment/Deployment/Deploy.hs",
+      "sha256": "1fbfb6456a78b1ee48448d91397d58abfa0044e5d80680daf50a18caeab20569",
+      "lines": 174,
+      "matches": {
+        "node-and-indexer-path": [
+          57
+        ],
+        "provider-and-derived-calls": [
+          63,
+          143
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/deployment/Deployment/Node.hs",
+      "sha256": "74c6b1fce6abaaaa7000f2ab69dcbbf25bc3f30495e571e5bc28701054a191a5",
+      "lines": 360,
+      "matches": {
+        "node-and-indexer-path": [
+          79
+        ],
+        "provider-and-derived-calls": [
+          89,
+          106,
+          120,
+          127,
+          198,
+          215,
+          240,
+          281
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/deployment/Deployment/Options.hs",
+      "sha256": "994eb169a62d751b47063fe92eb90c24534ba679ff0d34e10a5cb815d72b47d2",
+      "lines": 129,
+      "matches": {
+        "node-and-indexer-path": [
+          12,
+          13,
+          42,
+          44
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/deployment/Deployment/Verify.hs",
+      "sha256": "afb80fd335c0c89d56b88c95da41703a4043902eba526d71120f13f3872d75aa",
+      "lines": 33,
+      "matches": {
+        "node-and-indexer-path": [
+          20
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/deployment/Main.hs",
+      "sha256": "7a86394bf8aa8e6b00362450340d531d202f8d32507885ec76c3bf45dd6b6eb3",
+      "lines": 74,
+      "matches": {
+        "node-and-indexer-path": [
+          30,
+          31
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/devnet/Devnet/Probe.hs",
+      "sha256": "0a7a9f8f440be6d24299b95b6eb0a68ea41d0c7fe8b6af2de752bfedb9015adf",
+      "lines": 77,
+      "matches": {
+        "node-and-indexer-path": [
+          45
+        ],
+        "provider-and-derived-calls": [
+          34,
+          35
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/devnet/Main.hs",
+      "sha256": "c0605b47b1dc39271cd30d24cd802a144eed95c867b9ef6ee12e7ad355ba991c",
+      "lines": 209,
+      "matches": {
+        "node-and-indexer-path": [
+          27,
+          81,
+          153,
+          154
+        ],
+        "provider-and-derived-calls": [
+          92
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs",
+      "sha256": "e574c14660f17ebdf4a04b1ff7864d212e3ffb821cc8818601ebb3ca1d2e7d9f",
+      "lines": 1102,
+      "matches": {
+        "node-and-indexer-path": [
+          93
+        ],
+        "provider-and-derived-calls": [
+          100,
+          498,
+          517,
+          541,
+          622,
+          732,
+          738,
+          768,
+          787,
+          932,
+          952,
+          1037,
+          1054,
+          1070,
+          1091
+        ],
+        "trie-state-and-proof-path": [
+          101,
+          500,
+          519,
+          624,
+          770,
+          789,
+          796,
+          1055,
+          1093
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/e2e-test/Singular/Registry/E2E/Criterion3Spec.hs",
+      "sha256": "df23043a4ff9c3f52c9599261e0a2fa38630b9b0b40d6b1b96d72ae6b877b255",
+      "lines": 1330,
+      "matches": {
+        "node-and-indexer-path": [
+          124
+        ],
+        "provider-and-derived-calls": [
+          125,
+          333,
+          496,
+          552,
+          1024,
+          1212
+        ],
+        "trie-state-and-proof-path": [
+          128,
+          144,
+          335,
+          414,
+          416,
+          456,
+          459,
+          498,
+          554,
+          581,
+          702
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/e2e-test/Singular/Registry/E2E/DriverSpec.hs",
+      "sha256": "ccc397899b8f942b026441681b4e3fa78fb092b75e712710a967d0a0c2126313",
+      "lines": 191,
+      "matches": {
+        "node-and-indexer-path": [
+          59
+        ],
+        "provider-and-derived-calls": [
+          60
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/e2e-test/Singular/Registry/E2E/Fixture.hs",
+      "sha256": "39e0a7a6192f446192df76ff443fd8175328b121feb3abf9a13b2899df674287",
+      "lines": 72,
+      "matches": {
+        "node-and-indexer-path": [
+          29
+        ],
+        "provider-and-derived-calls": [
+          25
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/e2e-test/Singular/Registry/E2E/Fork81Spec.hs",
+      "sha256": "65c8ddcbe29eb696655124a7032746b0ea2e2b1a320d40ed022b7eb0d27cf464",
+      "lines": 251,
+      "matches": {
+        "node-and-indexer-path": [
+          41
+        ],
+        "provider-and-derived-calls": [
+          42
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/e2e-test/Singular/Registry/E2E/InsertActiveSpec.hs",
+      "sha256": "14cb52850bb6296f2f2af927c5ce4042e517728f9804ea56bed57dfab208d04c",
+      "lines": 245,
+      "matches": {
+        "node-and-indexer-path": [
+          68
+        ],
+        "provider-and-derived-calls": [
+          69,
+          204
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/e2e-test/Singular/Registry/E2E/NodeSpec.hs",
+      "sha256": "0e52ae3a8839c4b1d184ed42b09a7c71c6f2d8b127fad29e9170ab73862eb3cb",
+      "lines": 328,
+      "matches": {
+        "node-and-indexer-path": [
+          12,
+          92,
+          103,
+          104,
+          118,
+          140,
+          163,
+          179,
+          198,
+          213,
+          248
+        ],
+        "provider-and-derived-calls": [
+          106
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/e2e-test/Singular/Registry/E2E/OpenBootSpec.hs",
+      "sha256": "9c85ee39172e2e3d76065e987beb6a9e45eb03e7e2021a7e38bfde26ea02adca",
+      "lines": 161,
+      "matches": {
+        "provider-and-derived-calls": [
+          58
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/e2e-test/Singular/Registry/E2E/UpdateTerminalSpec.hs",
+      "sha256": "37a6c030425d087bf3aad70731a6c5f2a685bde588da4f14a63128a263dc028c",
+      "lines": 461,
+      "matches": {
+        "node-and-indexer-path": [
+          81
+        ],
+        "provider-and-derived-calls": [
+          82,
+          308,
+          329,
+          348,
+          379,
+          423
+        ],
+        "trie-state-and-proof-path": [
+          83,
+          91,
+          178,
+          331,
+          350,
+          357,
+          361,
+          362
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/flake.nix",
+      "sha256": "2f785a4e5dbc3bbe84b510067c36cade9311bc411efe6219bb53a66ba1ca263f",
+      "lines": 589,
+      "matches": {
+        "provider-and-derived-calls": [
+          470
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/insert-active/InsertActive/Controls.hs",
+      "sha256": "d4f822b6471bc37005a27fa1ac83e535e9c88e654c4aa2aa1746f785c29316be",
+      "lines": 76,
+      "matches": {
+        "node-and-indexer-path": [
+          38
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/insert-active/InsertActive/Scenario.hs",
+      "sha256": "9cb7f3e95830b3ffcf33643478fc233f6abb1f99931bb84943287a383da4d449",
+      "lines": 81,
+      "matches": {
+        "node-and-indexer-path": [
+          38
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/insert-active/InsertActive/Steps.hs",
+      "sha256": "768832ab05b3cb84d276ca292aa9ff1286c12ad1193b3cc6dba4d54a44e56eff",
+      "lines": 330,
+      "matches": {
+        "node-and-indexer-path": [
+          73
+        ],
+        "provider-and-derived-calls": [
+          81,
+          108
+        ],
+        "trie-state-and-proof-path": [
+          82,
+          111,
+          255
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/journey/Journey/Chain.hs",
+      "sha256": "ed5f984b2f79e848463a823d260286ddddd91b45e5b0b71d4bf349ff5b672f08",
+      "lines": 175,
+      "matches": {
+        "node-and-indexer-path": [
+          47,
+          75
+        ],
+        "provider-and-derived-calls": [
+          56,
+          162
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/journey/Journey/Controls.hs",
+      "sha256": "a251af85103da32ab29d543c0088171758f1e7dc6fd1aab4ae35cbd0dff8d1dd",
+      "lines": 344,
+      "matches": {
+        "node-and-indexer-path": [
+          70
+        ],
+        "provider-and-derived-calls": [
+          76,
+          129
+        ],
+        "trie-state-and-proof-path": [
+          77,
+          131,
+          176
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/journey/Journey/Proofs.hs",
+      "sha256": "419c396a25e437b5e10b7138c63fa600cb36254125b21578e03c842a38a367a4",
+      "lines": 269,
+      "matches": {
+        "provider-and-derived-calls": [
+          71,
+          157,
+          200
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/journey/Journey/Scenario.hs",
+      "sha256": "dd9f9d4e44f3162c068c4d999d74c436ec9fa200e629990bc37a3719587193e1",
+      "lines": 156,
+      "matches": {
+        "node-and-indexer-path": [
+          49
+        ],
+        "provider-and-derived-calls": [
+          50
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/journey/Journey/Steps.hs",
+      "sha256": "9e43529d7300ab5e59dbe980bdfea46a1e91fd1d037e73f55420e6acdf0eccd6",
+      "lines": 232,
+      "matches": {
+        "node-and-indexer-path": [
+          45
+        ],
+        "provider-and-derived-calls": [
+          46,
+          80,
+          119,
+          165,
+          201
+        ],
+        "trie-state-and-proof-path": [
+          47,
+          82,
+          167
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/journey/li-refusals/Main.hs",
+      "sha256": "68ca228b98176c6a153ad838d0987d44ae5d80863162c231d148951229218ed3",
+      "lines": 2139,
+      "matches": {
+        "node-and-indexer-path": [
+          223
+        ],
+        "provider-and-derived-calls": [
+          192,
+          194,
+          224,
+          567,
+          605,
+          1750,
+          2070,
+          2072
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/journey/li01/Main.hs",
+      "sha256": "2e1a7d767cbf395ac7368cb3ec89d7a727edcb5073afddd718fb5bf60e38aded",
+      "lines": 1116,
+      "matches": {
+        "node-and-indexer-path": [
+          193,
+          198,
+          394,
+          411
+        ],
+        "provider-and-derived-calls": [
+          200,
+          602
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/journey/lmlc/Main.hs",
+      "sha256": "a9593eac5c81d8dc1dedfd63205772ee2d135d7fcbcde20c51821835efb93e69",
+      "lines": 1848,
+      "matches": {
+        "node-and-indexer-path": [
+          183,
+          190,
+          330,
+          521
+        ],
+        "provider-and-derived-calls": [
+          192,
+          443,
+          1490,
+          1599
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/journey/recovery/Main.hs",
+      "sha256": "d6489595fff92822b1a050167c8d2dc18a980d73c235f0383435465dea021541",
+      "lines": 2649,
+      "matches": {
+        "node-and-indexer-path": [
+          216,
+          225,
+          406,
+          853
+        ],
+        "provider-and-derived-calls": [
+          227,
+          813,
+          929,
+          1785,
+          1841,
+          1866,
+          2188,
+          2320
+        ],
+        "trie-state-and-proof-path": [
+          228,
+          537,
+          538,
+          557,
+          720,
+          839,
+          921,
+          925,
+          926,
+          932,
+          942,
+          1787
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/journey/register/Main.hs",
+      "sha256": "9bf9c83f44c08cef8ca0be5186d51f079233654bb9b316b1049fd4bfc2285e2c",
+      "lines": 5241,
+      "matches": {
+        "node-and-indexer-path": [
+          262,
+          272,
+          499,
+          557
+        ],
+        "provider-and-derived-calls": [
+          274,
+          1012,
+          1324,
+          1467,
+          4406,
+          4528,
+          4549,
+          4744,
+          4764,
+          4771
+        ],
+        "trie-state-and-proof-path": [
+          275,
+          689,
+          690,
+          729,
+          902,
+          956,
+          1020,
+          1021,
+          1326,
+          1459,
+          1463,
+          1464,
+          1470,
+          1480,
+          1512,
+          1514,
+          1756
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/journey/repair/Main.hs",
+      "sha256": "f8c2388fdbe507a3a68b4a8d8f3b275abd6b0e01b4f75c3f144ecbfa4e59f622",
+      "lines": 2294,
+      "matches": {
+        "node-and-indexer-path": [
+          149
+        ],
+        "provider-and-derived-calls": [
+          127,
+          129,
+          150,
+          328,
+          330,
+          338,
+          363,
+          445,
+          523,
+          578,
+          637,
+          681,
+          722,
+          784,
+          857,
+          877,
+          1003,
+          1027,
+          1067,
+          1117,
+          1190,
+          1247,
+          1336,
+          1409,
+          1459,
+          1476,
+          1527,
+          1579,
+          1644,
+          1675,
+          1703,
+          1727,
+          1772,
+          1793,
+          1840,
+          1901,
+          1942,
+          2010,
+          2052,
+          2090,
+          2139,
+          2212,
+          2224,
+          2238
+        ],
+        "trie-state-and-proof-path": [
+          151,
+          365,
+          447,
+          525,
+          879,
+          976,
+          978,
+          1249,
+          1338,
+          1411,
+          1581,
+          1676,
+          1704,
+          1728,
+          1803,
+          1808,
+          1816
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/journey/retirement/Main.hs",
+      "sha256": "031d6c554c29c5d4d1d12c88236c35fe4972ec1903c7247f73eb4c1eadea2ab2",
+      "lines": 4231,
+      "matches": {
+        "node-and-indexer-path": [
+          229,
+          239,
+          434,
+          1015
+        ],
+        "provider-and-derived-calls": [
+          241,
+          973,
+          1107,
+          3300,
+          3361,
+          3388,
+          3509,
+          3717
+        ],
+        "trie-state-and-proof-path": [
+          242,
+          566,
+          567,
+          588,
+          795,
+          994,
+          1099,
+          1103,
+          1104,
+          1110,
+          1120,
+          1695,
+          1715,
+          3302
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Application/OpenDatum/Update.hs",
+      "sha256": "d216d523f7b7bb3d10d110935e1b875eaa46171dfac7b92a70c50e8182e39cd9",
+      "lines": 145,
+      "matches": {
+        "node-and-indexer-path": [
+          45
+        ],
+        "provider-and-derived-calls": [
+          46,
+          65
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/Deployment/Attach.hs",
+      "sha256": "a6396723c757fdb1fa63a6632d39c07e90231871490d9f224d344e5873abf406",
+      "lines": 381,
+      "matches": {
+        "provider-and-derived-calls": [
+          67,
+          193,
+          254,
+          312,
+          350
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/Deployment/Mirror.hs",
+      "sha256": "38804b91a3a1b4e904328a0c602d78fdd1c710b6e13f917babafbc34805a37f8",
+      "lines": 179,
+      "matches": {
+        "trie-state-and-proof-path": [
+          71
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/Driver.hs",
+      "sha256": "f266b1f3fdc7d57cee6680536a68391ad76c2bc8d1b9d9f62403911e4daf22c1",
+      "lines": 404,
+      "matches": {
+        "provider-and-derived-calls": [
+          96,
+          125,
+          164
+        ],
+        "trie-state-and-proof-path": [
+          97,
+          101,
+          128,
+          168,
+          331,
+          363
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/Lifecycle.hs",
+      "sha256": "77a0426e4133b6da0393f40b9e7c4e616b7c13e2f14a8add28930fa9a4b0aab1",
+      "lines": 406,
+      "matches": {
+        "node-and-indexer-path": [
+          88
+        ],
+        "provider-and-derived-calls": [
+          97,
+          99,
+          100,
+          250,
+          283,
+          343,
+          354
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/Node.hs",
+      "sha256": "44c7144c84741cd6a6a98c0c3df2112ffce58c90a578bbe5aa0c42bf9ecc56b0",
+      "lines": 238,
+      "matches": {
+        "node-and-indexer-path": [
+          2,
+          11,
+          13,
+          15,
+          18,
+          20,
+          22,
+          31,
+          49,
+          55,
+          105,
+          106,
+          107,
+          108,
+          110,
+          130,
+          139,
+          144,
+          151,
+          160,
+          166,
+          167,
+          168,
+          169,
+          170,
+          172,
+          181,
+          188,
+          214,
+          219,
+          227
+        ],
+        "provider-and-derived-calls": [
+          197,
+          204
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/Trie.hs",
+      "sha256": "9c0304a3963d9fd0a21c3d803160e841d2815429586a1776fcd92ce9db272d0b",
+      "lines": 71,
+      "matches": {
+        "trie-state-and-proof-path": [
+          10,
+          16,
+          28,
+          29,
+          35,
+          68
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/Trie/Pure.hs",
+      "sha256": "6cb2df80436879a06917a02790cf9661203feb5e0349c60d196bf38aabcde89d",
+      "lines": 272,
+      "matches": {
+        "trie-state-and-proof-path": [
+          19,
+          23,
+          24,
+          150,
+          152,
+          160,
+          162,
+          163,
+          186,
+          195
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/Trie/PureManager.hs",
+      "sha256": "a116f71533befe8d381754c423992ad7dad565de03c14054871fb9fdb43c06d0",
+      "lines": 180,
+      "matches": {
+        "trie-state-and-proof-path": [
+          5,
+          8,
+          41,
+          46,
+          49,
+          63,
+          70,
+          71,
+          73
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/TxBuilder/Boot.hs",
+      "sha256": "6fe1c3b8a4069e4265cc61adbc4eda8d357f5ae347bc9a720f1f29b5e633b213",
+      "lines": 371,
+      "matches": {
+        "provider-and-derived-calls": [
+          87,
+          151
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/TxBuilder/ConnectedFold.hs",
+      "sha256": "9b2f7a6a1df45fed352c5b2d5c6f20fb6039d62dfced8eea24a079c88d8e0f96",
+      "lines": 408,
+      "matches": {
+        "provider-and-derived-calls": [
+          74,
+          117,
+          170,
+          293,
+          307
+        ],
+        "trie-state-and-proof-path": [
+          77,
+          119,
+          247,
+          252,
+          264,
+          403,
+          408
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/TxBuilder/Edges.hs",
+      "sha256": "52c9189bc81ae5044c1e09eb3e2a8c02277afbecc6b09b5cfebfe0162821a84b",
+      "lines": 924,
+      "matches": {
+        "node-and-indexer-path": [
+          135
+        ],
+        "provider-and-derived-calls": [
+          136,
+          266,
+          279,
+          296,
+          354,
+          367,
+          398,
+          576,
+          615,
+          647,
+          670,
+          789,
+          831,
+          911
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/TxBuilder/Internal.hs",
+      "sha256": "f6dcc205c74167f9d3db4f0ce9ba32f4b358032a482ecf0668ae417586b9ad96",
+      "lines": 163,
+      "matches": {
+        "trie-state-and-proof-path": [
+          34,
+          122
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/TxBuilder/Internal/Edges.hs",
+      "sha256": "d1e54bbde96fea68dc9c479c5cb75ef40e0d9bb5c1e85ca6d1f125b934c1737b",
+      "lines": 319,
+      "matches": {
+        "trie-state-and-proof-path": [
+          10,
+          26,
+          93,
+          116,
+          117,
+          126
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/TxBuilder/Internal/Lookup.hs",
+      "sha256": "4284cda2edbc3431793d237014c33593808c928d83dac7b801de82175f4cb42b",
+      "lines": 403,
+      "matches": {
+        "provider-and-derived-calls": [
+          121,
+          143,
+          161,
+          186,
+          327,
+          335,
+          382,
+          388
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/TxBuilder/Register.hs",
+      "sha256": "2309709d299c41981d76fa6f73a11cef7499f71f302cadf68b5c6a41baeecfe1",
+      "lines": 114,
+      "matches": {
+        "provider-and-derived-calls": [
+          43,
+          52,
+          63,
+          78
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/TxBuilder/Reject.hs",
+      "sha256": "6cc5ae9d27c801a9b71869445f4a5ae366e433be0a71a0338dd913693c356f98",
+      "lines": 337,
+      "matches": {
+        "provider-and-derived-calls": [
+          64,
+          65,
+          85,
+          105,
+          158,
+          239,
+          242,
+          250,
+          252,
+          260
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/TxBuilder/Request.hs",
+      "sha256": "ad6a9955a3b2e1358945a13af03fc72fea3030ddf786e391d55c8bcdd815f42f",
+      "lines": 185,
+      "matches": {
+        "provider-and-derived-calls": [
+          60,
+          76
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/TxBuilder/Retract.hs",
+      "sha256": "c9bd171e686ea0d3b9eb62f1a4f5aaf6f2726f551f24e0adaf77b9506f515578",
+      "lines": 255,
+      "matches": {
+        "provider-and-derived-calls": [
+          76,
+          95,
+          111,
+          177
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/TxBuilder/Update.hs",
+      "sha256": "b6e5164e287dffa462010b12a36890825abfde124bd76afeec8a68eec762c805",
+      "lines": 163,
+      "matches": {
+        "provider-and-derived-calls": [
+          50,
+          51,
+          83,
+          96
+        ],
+        "trie-state-and-proof-path": [
+          54,
+          84,
+          97
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/TxBuilder/Update/Build.hs",
+      "sha256": "dca70b8e4b9a8fca3326ce6b0620fcd04a633263e20a13da959b38a25e5af0c6",
+      "lines": 205,
+      "matches": {
+        "provider-and-derived-calls": [
+          67,
+          68,
+          90,
+          101
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/lib/Singular/Registry/TxBuilder/Update/Context.hs",
+      "sha256": "5ab2f375aa5682cace8dc1681b0bf7fd4b41a57f02a468a467cf510c2ecbef67",
+      "lines": 362,
+      "matches": {
+        "provider-and-derived-calls": [
+          66,
+          67,
+          172,
+          207,
+          301,
+          320
+        ],
+        "trie-state-and-proof-path": [
+          71,
+          254,
+          259,
+          342
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/nix/component-inventory.nix",
+      "sha256": "9c2ef96ffea37e609fae2fb133b1f30cfc513ce26668b48fe80ab6ddc80e817a",
+      "lines": 309,
+      "matches": {
+        "journey-and-readback": [
+          60
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/node-internal/Singular/Registry/Node/Confirmation.hs",
+      "sha256": "c3d4f40041aca999aa46a523773a01572f68e7b802c3d4fee3104738ee7b2351",
+      "lines": 386,
+      "matches": {
+        "node-and-indexer-path": [
+          2,
+          13,
+          14,
+          17,
+          54,
+          60,
+          61,
+          62,
+          66
+        ],
+        "provider-and-derived-calls": [
+          74,
+          283,
+          289,
+          290,
+          299,
+          317,
+          321,
+          326
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/node-internal/Singular/Registry/Node/Funding.hs",
+      "sha256": "ea9a98f93fdd10c22567270d0f510e680edaab104986e1d948262224d6b3dfe6",
+      "lines": 94,
+      "matches": {
+        "node-and-indexer-path": [
+          2,
+          11,
+          25,
+          26
+        ],
+        "provider-and-derived-calls": [
+          27,
+          53
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/node-internal/Singular/Registry/Node/IndexGate.hs",
+      "sha256": "36b799b764b2cfd16c31c4a58238c459044932ab21b37e92d4356e0e697be271",
+      "lines": 274,
+      "matches": {
+        "node-and-indexer-path": [
+          4,
+          28
+        ],
+        "provider-and-derived-calls": [
+          76
+        ]
+      },
+      "disposition": "delete obsolete adapters; replace Memory with pure provider fixture"
+    },
+    {
+      "path": "offchain/node-internal/Singular/Registry/Node/Indexer.hs",
+      "sha256": "b8162b19063b1939d0ae034361b498b1ec0322ce69dc5f4df6c78e9f62cbcb25",
+      "lines": 466,
+      "matches": {
+        "node-and-indexer-path": [
+          4,
+          16,
+          115,
+          124,
+          131,
+          132,
+          133,
+          134,
+          139,
+          311,
+          434
+        ],
+        "provider-and-derived-calls": [
+          31,
+          95,
+          133,
+          144,
+          316,
+          340,
+          379,
+          434,
+          439,
+          441
+        ]
+      },
+      "disposition": "delete obsolete adapters; replace Memory with pure provider fixture"
+    },
+    {
+      "path": "offchain/node-internal/Singular/Registry/Node/IndexerView.hs",
+      "sha256": "80e4cbe0671ab158f02ca01af53d6b9e5749a72714bcbccac10cb4558290f392",
+      "lines": 397,
+      "matches": {
+        "node-and-indexer-path": [
+          2,
+          38,
+          83,
+          93,
+          94,
+          100
+        ],
+        "provider-and-derived-calls": [
+          101,
+          103,
+          105,
+          157,
+          173,
+          174,
+          306
+        ]
+      },
+      "disposition": "delete obsolete adapters; replace Memory with pure provider fixture"
+    },
+    {
+      "path": "offchain/node-internal/Singular/Registry/Node/Memory.hs",
+      "sha256": "bf93d1218911623cb9a298e04a095f1579f1180a5b22bc3a4f582469a55c837e",
+      "lines": 172,
+      "matches": {
+        "node-and-indexer-path": [
+          2,
+          22
+        ],
+        "provider-and-derived-calls": [
+          7,
+          61,
+          63,
+          65,
+          114,
+          133,
+          145,
+          147,
+          160,
+          161
+        ]
+      },
+      "disposition": "delete obsolete adapters; replace Memory with pure provider fixture"
+    },
+    {
+      "path": "offchain/node-internal/Singular/Registry/Node/Options.hs",
+      "sha256": "b3d3617ebe5c5c5a39215514a45b3d82ac4a5637878ed8beb8e0b7d88fe245fe",
+      "lines": 239,
+      "matches": {
+        "node-and-indexer-path": [
+          4,
+          16,
+          25,
+          89,
+          91,
+          94,
+          95,
+          100,
+          101,
+          102,
+          108,
+          109,
+          132,
+          152,
+          162
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/node-internal/Singular/Registry/Node/PhaseLog.hs",
+      "sha256": "383eb1831884a544a2c938fcde68471adf180500ac7518431f9387c60cb17216",
+      "lines": 314,
+      "matches": {
+        "node-and-indexer-path": [
+          4,
+          28
+        ],
+        "provider-and-derived-calls": [
+          97,
+          99,
+          100,
+          245,
+          248,
+          286,
+          290,
+          291,
+          292,
+          293,
+          296,
+          297,
+          298,
+          299
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/node-internal/Singular/Registry/Node/Session.hs",
+      "sha256": "d38e16be78cf91f05e5f3c84786fc6c3f2165befb302ea21770d19ab04d02994",
+      "lines": 692,
+      "matches": {
+        "node-and-indexer-path": [
+          4,
+          24,
+          28,
+          29,
+          30,
+          31,
+          32,
+          38,
+          39,
+          110,
+          115,
+          123,
+          130,
+          138,
+          142,
+          176,
+          179,
+          180,
+          182,
+          183,
+          186,
+          188,
+          203,
+          206,
+          220,
+          224,
+          225,
+          233,
+          234,
+          235,
+          243,
+          244,
+          246,
+          247,
+          251,
+          252,
+          258,
+          259,
+          261,
+          267,
+          344,
+          345,
+          371,
+          374,
+          429,
+          462
+        ],
+        "provider-and-derived-calls": [
+          103,
+          106,
+          147,
+          151,
+          172,
+          333,
+          369,
+          380,
+          393,
+          395,
+          498,
+          533,
+          578,
+          580,
+          627,
+          629,
+          678
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/node-internal/Singular/Registry/Node/Submit.hs",
+      "sha256": "f9e513f8c8c5610d5096b1373b3f6f7b1d92e5c6f53c39e6b8cc892f79682567",
+      "lines": 54,
+      "matches": {
+        "node-and-indexer-path": [
+          2,
+          13
+        ],
+        "provider-and-derived-calls": [
+          6
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/node-internal/Singular/Registry/Node/View.hs",
+      "sha256": "8bba9df4a5dde6a0984bdb757ecd4bcfcba7a2f55521d0305dc090c2231485d7",
+      "lines": 95,
+      "matches": {
+        "node-and-indexer-path": [
+          2,
+          21,
+          40
+        ],
+        "provider-and-derived-calls": [
+          2,
+          21,
+          33,
+          41,
+          43,
+          44,
+          50,
+          64,
+          68,
+          72,
+          73,
+          74
+        ]
+      },
+      "disposition": "delete obsolete adapters; replace Memory with pure provider fixture"
+    },
+    {
+      "path": "offchain/node-internal/Singular/Registry/Node/Wait.hs",
+      "sha256": "5205a9f5e0fc11908a947c8a301279ffb2a1ee252cb7ae58e8e2babc267b2a5b",
+      "lines": 258,
+      "matches": {
+        "node-and-indexer-path": [
+          4,
+          18
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/node-internal/Singular/Registry/Node/Wallet.hs",
+      "sha256": "ff88f91a836e3f8e75d3baef18688954f1e26e75e908f6548994be73abe85180",
+      "lines": 184,
+      "matches": {
+        "node-and-indexer-path": [
+          2,
+          14,
+          55
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/node-internal/Singular/Registry/Provider.hs",
+      "sha256": "c45f561cbe9d4a8e210fcdb641c80c85a84cfc9c317312164eb3564704720cc0",
+      "lines": 173,
+      "matches": {
+        "node-and-indexer-path": [
+          17,
+          24,
+          25
+        ],
+        "provider-and-derived-calls": [
+          2,
+          6,
+          23,
+          24,
+          27,
+          29,
+          30,
+          100,
+          109,
+          115,
+          119,
+          123,
+          130,
+          131,
+          153,
+          154,
+          155,
+          159,
+          163,
+          164,
+          165,
+          166
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/signed-tx-control/ByCoercion.hs",
+      "sha256": "d9dc0e1952a2958853844905cf0dbf134dde2ad85c6d2d3312d4c9dc8a147860",
+      "lines": 12,
+      "matches": {
+        "node-and-indexer-path": [
+          9
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/signed-tx-control/ByConstructor.hs",
+      "sha256": "378b875421ad2224c9858a2478477bf0720bb80bca8ab18ea71335508e81b91b",
+      "lines": 8,
+      "matches": {
+        "node-and-indexer-path": [
+          5
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/signed-tx-control/ByRecord.hs",
+      "sha256": "6d037572979a677b8a8cd1af51c3561cd7a8bbd18e350faed5e386e8c057b19d",
+      "lines": 7,
+      "matches": {
+        "node-and-indexer-path": [
+          4
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/signed-tx-control/BySigning.hs",
+      "sha256": "e9ed92fc0b756d1fe348b6a97d6b899f0d0ede74ff97226c842f5092f29b820c",
+      "lines": 10,
+      "matches": {
+        "node-and-indexer-path": [
+          7
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/singular-registry.cabal",
+      "sha256": "ea03059b71ad2941858794152bdcdeae79dd2c6c352e83e800fc5078e9a40145",
+      "lines": 1013,
+      "matches": {
+        "node-and-indexer-path": [
+          88,
+          159,
+          160,
+          161,
+          162,
+          163,
+          164,
+          165,
+          166,
+          167,
+          168,
+          169,
+          170,
+          171,
+          697,
+          720,
+          721,
+          722,
+          974
+        ],
+        "provider-and-derived-calls": [
+          143,
+          146,
+          149,
+          158,
+          160
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Main.hs",
+      "sha256": "ab752271c526b7e8551e9ba6db7d36915fcbf03ec2430d6b4cbc0f86bef400a3",
+      "lines": 74,
+      "matches": {
+        "node-and-indexer-path": [
+          23,
+          24,
+          25,
+          52,
+          53,
+          54
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Application/OpenDatum/BuildSpec.hs",
+      "sha256": "1d3c0b72a496f2953ca763b8ccd9f9694b11891fe14839a92e094a7748ddae6b",
+      "lines": 376,
+      "matches": {
+        "journey-and-readback": [
+          10
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Application/OpenDatum/BuildersSpec.hs",
+      "sha256": "63dda0c332654046644b592ccfcb98984fdda08fedd66bb2b799858482680ad4",
+      "lines": 431,
+      "matches": {
+        "node-and-indexer-path": [
+          71
+        ],
+        "provider-and-derived-calls": [
+          72,
+          280
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/CLI/FoldSpec.hs",
+      "sha256": "606fa883340d83263c316a8cccb4097ef03657619593321fe737301168f9461a",
+      "lines": 606,
+      "matches": {
+        "provider-and-derived-calls": [
+          65
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/CLI/WriteSpec.hs",
+      "sha256": "1711695ba5c1e362aa2e84d6d3e5bb196c0fcea6b2473e84d4fbd9b9f01d60fc",
+      "lines": 693,
+      "matches": {
+        "node-and-indexer-path": [
+          110,
+          128,
+          129,
+          136,
+          141
+        ],
+        "provider-and-derived-calls": [
+          146
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/CLISpec.hs",
+      "sha256": "a3978fe7802f3fa55548585fdc769c7b9ed00b79bfb577a566d85f816bbc414e",
+      "lines": 1822,
+      "matches": {
+        "node-and-indexer-path": [
+          98,
+          99,
+          129,
+          358,
+          390,
+          407,
+          414,
+          416,
+          1295,
+          1354
+        ],
+        "trie-state-and-proof-path": [
+          100,
+          101,
+          108,
+          778,
+          779,
+          790,
+          793,
+          798,
+          799,
+          804,
+          815,
+          816,
+          817,
+          821,
+          829,
+          830,
+          831,
+          832,
+          833,
+          834,
+          844,
+          922,
+          1216
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/ContractMemory.hs",
+      "sha256": "35e16ca17a6d86e3df0a085fe4b8739c66b9342f28c3cb175378a1da03e16d50",
+      "lines": 217,
+      "matches": {
+        "node-and-indexer-path": [
+          69
+        ],
+        "provider-and-derived-calls": [
+          76
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/ContractNode.hs",
+      "sha256": "eccf707e44d1384edd1da0d807096fb5a66efa15a8a88fcef2145726b1324766",
+      "lines": 570,
+      "matches": {
+        "node-and-indexer-path": [
+          13,
+          14,
+          126,
+          133,
+          135,
+          136,
+          138,
+          140,
+          141,
+          170,
+          171,
+          176,
+          180,
+          197,
+          200,
+          213,
+          225,
+          242,
+          324,
+          482,
+          517,
+          540,
+          546,
+          559
+        ],
+        "provider-and-derived-calls": [
+          103,
+          141,
+          142,
+          264,
+          351,
+          548
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/ContractSuite.hs",
+      "sha256": "fc168a7c5fe0cc81056bd6a0c62a39805c116e70f8489e4cf2f249807faafa63",
+      "lines": 379,
+      "matches": {
+        "node-and-indexer-path": [
+          74
+        ],
+        "provider-and-derived-calls": [
+          75,
+          77,
+          79,
+          159,
+          173,
+          291,
+          293,
+          294,
+          315,
+          320,
+          346,
+          363,
+          367,
+          368
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/DeploymentSpec.hs",
+      "sha256": "06193b576e1d3581066cadcc413e14c560d2100450aaa223b356dde657fd963a",
+      "lines": 705,
+      "matches": {
+        "provider-and-derived-calls": [
+          80,
+          557
+        ],
+        "trie-state-and-proof-path": [
+          203,
+          670
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/IndexerRig.hs",
+      "sha256": "5be838f354b21fea95e1ac07c82ae5f135e015fd62de1e58000aeecd5f2f38da",
+      "lines": 207,
+      "matches": {
+        "node-and-indexer-path": [
+          70,
+          77,
+          81
+        ],
+        "provider-and-derived-calls": [
+          88,
+          90,
+          92,
+          122
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/IndexerViewSpec.hs",
+      "sha256": "139164f4b75a2ddb0689a50bd7d632517cdf1480dfa5a09159edb4ef22dfd5b6",
+      "lines": 954,
+      "matches": {
+        "node-and-indexer-path": [
+          92,
+          93,
+          101,
+          106,
+          113,
+          117
+        ],
+        "provider-and-derived-calls": [
+          118,
+          120,
+          122,
+          171,
+          345,
+          904
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/LifecycleSpec.hs",
+      "sha256": "047d7032a04d04a397772ecd14a35fbef738de97df52b6d20bd4ca936e355629",
+      "lines": 74,
+      "matches": {
+        "node-and-indexer-path": [
+          15
+        ],
+        "provider-and-derived-calls": [
+          16,
+          69,
+          70,
+          71
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/NodeCleanupSpec.hs",
+      "sha256": "edbc3dfd44b3e6d5b62e296de44d222c31a818c39f37c33e75f4c9c3c956f1d3",
+      "lines": 232,
+      "matches": {
+        "node-and-indexer-path": [
+          4,
+          22,
+          69,
+          77,
+          81
+        ],
+        "provider-and-derived-calls": [
+          50,
+          53,
+          82,
+          182,
+          184,
+          214,
+          215
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/NodeSpec.hs",
+      "sha256": "7a6dc3090ed27bd3051a32a1b489da3056b0eef84fe9d7d0ecee2787888e5254",
+      "lines": 195,
+      "matches": {
+        "node-and-indexer-path": [
+          4,
+          15,
+          29,
+          36,
+          51,
+          83,
+          105,
+          117,
+          121,
+          130,
+          158,
+          161,
+          162,
+          163,
+          164,
+          167,
+          170,
+          172
+        ],
+        "provider-and-derived-calls": [
+          37,
+          177,
+          181,
+          182
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/NodeWaitSpec.hs",
+      "sha256": "c7415183d2c0de2a216ff9928815fa88a8fbcef078a780b95ba88adbfd688777",
+      "lines": 805,
+      "matches": {
+        "node-and-indexer-path": [
+          4,
+          23,
+          102,
+          109,
+          114,
+          115,
+          119
+        ],
+        "provider-and-derived-calls": [
+          127,
+          677,
+          692,
+          706,
+          734,
+          737,
+          738,
+          743,
+          744
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/OneViewSpec.hs",
+      "sha256": "addad5b56980703880de68d8eea0687bae423681f1b544f01f62779c0b18d75f",
+      "lines": 250,
+      "matches": {
+        "node-and-indexer-path": [
+          71
+        ],
+        "provider-and-derived-calls": [
+          78,
+          127
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/PhaseLogSpec.hs",
+      "sha256": "74400664cca572ef8457dc6318effed5f9aad9e001fabd541a2c9b504f4fcb09",
+      "lines": 706,
+      "matches": {
+        "node-and-indexer-path": [
+          92,
+          93,
+          94,
+          100,
+          105,
+          111,
+          119,
+          375,
+          382,
+          398,
+          443
+        ],
+        "provider-and-derived-calls": [
+          19,
+          65,
+          119,
+          120,
+          226,
+          227,
+          236,
+          295,
+          307,
+          361,
+          514,
+          515,
+          522,
+          523,
+          524,
+          525,
+          531,
+          532,
+          533,
+          538,
+          539,
+          560,
+          569,
+          612
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/ProviderSpec.hs",
+      "sha256": "fd1ba630f7499781fc959fcd12a5b747d161057df965116807f63cf8683fe4e8",
+      "lines": 411,
+      "matches": {
+        "node-and-indexer-path": [
+          69,
+          75,
+          80
+        ],
+        "provider-and-derived-calls": [
+          56,
+          80,
+          81,
+          83,
+          85,
+          150,
+          151,
+          152,
+          153,
+          181,
+          216,
+          389
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/StubFollowing.hs",
+      "sha256": "f9bd9e8cde41d5b937759337b0808674a5e0840d7589014b9bac14f8519ec287",
+      "lines": 54,
+      "matches": {
+        "node-and-indexer-path": [
+          25,
+          26,
+          27
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/StubView.hs",
+      "sha256": "fe6fd5bbf9e153a516cdfb1f0c0b0d84b19fa28fea4560801533f714505096a3",
+      "lines": 50,
+      "matches": {
+        "provider-and-derived-calls": [
+          22,
+          24,
+          26,
+          30,
+          32,
+          42,
+          43,
+          44,
+          45,
+          49,
+          50
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/TxBuilder/BookEdgeSpec.hs",
+      "sha256": "56f1084f1913f124b5eb5023dfd5a370f0904602fff177af212216e788189263",
+      "lines": 272,
+      "matches": {
+        "provider-and-derived-calls": [
+          78,
+          99,
+          106,
+          107,
+          108
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/TxBuilder/BootSpec.hs",
+      "sha256": "ac6c83b626290fb71a0f4cb15e40c44a16007cf7ae05f9b31a1919cc478bc2fa",
+      "lines": 280,
+      "matches": {
+        "provider-and-derived-calls": [
+          65,
+          181,
+          208,
+          211,
+          212
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/TxBuilder/BurnSourceSpec.hs",
+      "sha256": "919eefccdcec214242ffc70243624463ee68fb758f6d4f218ac2fad4c8b47f63",
+      "lines": 1440,
+      "matches": {
+        "provider-and-derived-calls": [
+          113,
+          1035,
+          1039,
+          1040,
+          1041,
+          1245
+        ],
+        "trie-state-and-proof-path": [
+          115,
+          1256,
+          1262
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/TxBuilder/MeasuredBookingSpec.hs",
+      "sha256": "dad91462c453a7847c6c051c7b86c494d5a4b2875cab6d3f5ed10e864a570e01",
+      "lines": 642,
+      "matches": {
+        "node-and-indexer-path": [
+          101
+        ],
+        "provider-and-derived-calls": [
+          102,
+          256,
+          261,
+          267,
+          452,
+          454,
+          566
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/TxBuilder/RetractFundingSpec.hs",
+      "sha256": "efbac75aaafdd7c5f28ce8c3253702c31c8e6b7271839c3e546e2306fa0f68f6",
+      "lines": 274,
+      "matches": {
+        "provider-and-derived-calls": [
+          66,
+          193,
+          205,
+          208,
+          211
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/test/Singular/Registry/TxBuilder/UpperSlotSpec.hs",
+      "sha256": "7b42a4d4ea3fcd842d31f3562eb9613c2846e2cc6244d78c01eb446a0d2820e7",
+      "lines": 98,
+      "matches": {
+        "provider-and-derived-calls": [
+          24,
+          34,
+          37,
+          38,
+          79,
+          82
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/update-terminal/UpdateTerminal/Controls.hs",
+      "sha256": "839ec7bf93ba8ef80a57d3716f5bb21c94bf1b337ead9bffb34a086acd509850",
+      "lines": 123,
+      "matches": {
+        "node-and-indexer-path": [
+          43
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/update-terminal/UpdateTerminal/Registry.hs",
+      "sha256": "1e1a360b07649e9370a7be6cd4bb8330011836cfd2b95022ccbcf179323fd0e8",
+      "lines": 373,
+      "matches": {
+        "node-and-indexer-path": [
+          79
+        ],
+        "provider-and-derived-calls": [
+          87,
+          123
+        ],
+        "trie-state-and-proof-path": [
+          88,
+          102,
+          126,
+          247,
+          248,
+          284
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/update-terminal/UpdateTerminal/Scenario.hs",
+      "sha256": "95063e8b32db3aa608548f440b40ab3f6e7af3f72ecad6ccc151079b93620fd0",
+      "lines": 106,
+      "matches": {
+        "node-and-indexer-path": [
+          24
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "offchain/update-terminal/UpdateTerminal/Steps.hs",
+      "sha256": "24d63624c90684dfcc8174179055f01e939737d795d5ef989dc329d777025feb",
+      "lines": 229,
+      "matches": {
+        "provider-and-derived-calls": [
+          53
+        ]
+      },
+      "disposition": "migrate or remove caller; retain product obligation and devnet-only harness boundary"
+    },
+    {
+      "path": "onchain-release/DEMO1.md",
+      "sha256": "5f7b32a0f70718cc6eb81ace4324ba4344e2909a689b4b06fd56986cecd59bc2",
+      "lines": 417,
+      "matches": {
+        "node-and-indexer-path": [
+          66,
+          265,
+          267,
+          306,
+          385
+        ],
+        "journey-and-readback": [
+          352
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "onchain-release/README.md",
+      "sha256": "bfd614db23bcbb381552e9e8cff0e443c8b8e62522d8eae552eac5dcecf84fca",
+      "lines": 289,
+      "matches": {
+        "node-and-indexer-path": [
+          124
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "simulator/core.mjs",
+      "sha256": "ba06eb7b102f21f8375fb85d0514bce474a484b37b2896be9ba6fef29fcfad05",
+      "lines": 490,
+      "matches": {
+        "trie-state-and-proof-path": [
+          300,
+          306,
+          318,
+          333,
+          349
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "simulator/index.html",
+      "sha256": "bc55ab1fb6766307713df149665fe83b3e3dce0a96a973962ddb3f84da91f093",
+      "lines": 7292,
+      "matches": {
+        "trie-state-and-proof-path": [
+          978,
+          984,
+          996,
+          1011,
+          1027
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "specs/122-lifecycle-funding/data-model.md",
+      "sha256": "7feb1e1eb894594709884c7330ec533249a55e9c2c18889542422e7e08b655f8",
+      "lines": 51,
+      "matches": {
+        "provider-and-derived-calls": [
+          28
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/122-lifecycle-funding/data-model.speech.json",
+      "sha256": "8696492c5fe244173c8bf49c664d96aba163ec12880be05acd3e37825903f66d",
+      "lines": 56,
+      "matches": {
+        "provider-and-derived-calls": [
+          24
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/122-lifecycle-funding/functions-model.md",
+      "sha256": "bf1781898fb341a2a11e751d6cca62914ddc628e388eee85a8ee7d593118a313",
+      "lines": 40,
+      "matches": {
+        "node-and-indexer-path": [
+          32
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/122-lifecycle-funding/modules-model.md",
+      "sha256": "805c041d773b891d930713593a1d6f2a56d5695a13bbfc10a58724f42a187b9a",
+      "lines": 54,
+      "matches": {
+        "node-and-indexer-path": [
+          36
+        ],
+        "provider-and-derived-calls": [
+          35
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/122-lifecycle-funding/plan.md",
+      "sha256": "f5159cbc6c162cf1a88831deb9cd70f96dc46015ca4db4dfad26bf2986333144",
+      "lines": 77,
+      "matches": {
+        "node-and-indexer-path": [
+          25,
+          36
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/122-lifecycle-funding/plan.speech.json",
+      "sha256": "88676502b3bdb192f611180631bca81d402f7e96de2dac2ace87c655ea605e34",
+      "lines": 70,
+      "matches": {
+        "node-and-indexer-path": [
+          28
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/122-lifecycle-funding/tasks.md",
+      "sha256": "c115d5ebf1fb1c88b836dd05278d3bcc2a2e1f1df07154331e6734ff4fa2252d",
+      "lines": 23,
+      "matches": {
+        "node-and-indexer-path": [
+          10
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/122-lifecycle-funding/tasks.speech.json",
+      "sha256": "7a9880ea4198482c85e1131c2777ab861f9ceaf05694d5bd9e04ad8a6c2a16df",
+      "lines": 38,
+      "matches": {
+        "node-and-indexer-path": [
+          16
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/265-builder-blueprint-structure/functions-model.md",
+      "sha256": "ee98917d76cbda542b8d06ee2b435c016f9e8a741bd53f26e1ce5de3b00607a7",
+      "lines": 21,
+      "matches": {
+        "trie-state-and-proof-path": [
+          18
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/266-node-responsibilities/functions-model.md",
+      "sha256": "734dbaf4da2c70dc1361fde97c99d131521e00f6b33f98db13c840cb12969bb0",
+      "lines": 24,
+      "matches": {
+        "node-and-indexer-path": [
+          18
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/266-node-responsibilities/modules-model.md",
+      "sha256": "7ed77869294a88432c087f297c31649513094c9626adaa16f25c8b6b538ecacc",
+      "lines": 37,
+      "matches": {
+        "node-and-indexer-path": [
+          8,
+          33
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/266-node-responsibilities/spec.md",
+      "sha256": "99aff59d2ce508d2eb75926d5aaefcf5b0950932fdf3e8fbcedb037503f279a5",
+      "lines": 40,
+      "matches": {
+        "node-and-indexer-path": [
+          26
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/267-fold-responsibilities/functions-model.md",
+      "sha256": "4c3b32f25c0e952394989e909382f493927c7bffb7ac29ad46668cb9bb0926ae",
+      "lines": 14,
+      "matches": {
+        "provider-and-derived-calls": [
+          8,
+          9
+        ],
+        "trie-state-and-proof-path": [
+          8,
+          9
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/269-deployment-owners/data-model.md",
+      "sha256": "ddf22705c4cef469533b9ecfd14eb4c88a01df3db9cc22f5fe78555558cad7be",
+      "lines": 17,
+      "matches": {
+        "trie-state-and-proof-path": [
+          13
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/269-deployment-owners/functions-model.md",
+      "sha256": "810fef33482559b0e53050ea8f9ce980cdce137bab2daed19f80b1c62e8d264d",
+      "lines": 15,
+      "matches": {
+        "provider-and-derived-calls": [
+          11,
+          13
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/269-deployment-owners/functions-model.speech.json",
+      "sha256": "6a60c996c49daa27b80415751d8f543d88874b7ffe615dc8955d3a4241a6215d",
+      "lines": 30,
+      "matches": {
+        "provider-and-derived-calls": [
+          18
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/281-bounded-confirmation/modules-model.md",
+      "sha256": "c857deb42b3b699e5e68d959462dbdb80ce40f60a646733b65d0653d464b3212",
+      "lines": 29,
+      "matches": {
+        "node-and-indexer-path": [
+          13,
+          20,
+          21,
+          22,
+          23,
+          24
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/287-traced-refusal-reasons/research.md",
+      "sha256": "ffea59fdf8da075be8019f94d062cb9eb31f77e2e55bbe2b42afd20f7325bd9a",
+      "lines": 107,
+      "matches": {
+        "provider-and-derived-calls": [
+          84
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/287-traced-refusal-reasons/research.speech.json",
+      "sha256": "b0f96ae0141b32d0b97ff14e4b89da69578b38020cbde2274743541d6b4de5e1",
+      "lines": 138,
+      "matches": {
+        "provider-and-derived-calls": [
+          90
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/300-preprod-delivery/plan.md",
+      "sha256": "921567f3746f4600e3a562b58f91b60c6ac1536e6659372c5a324f0d996bccdf",
+      "lines": 60,
+      "matches": {
+        "journey-and-readback": [
+          54
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/300-preprod-delivery/plan.speech.json",
+      "sha256": "0edc6e4e14c74b0f6011dc2ee02803b0963d48f33c2b3242731575b47d82eed5",
+      "lines": 118,
+      "matches": {
+        "journey-and-readback": [
+          96
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/310-open-datum-application/ruling-token-data-findability.md",
+      "sha256": "0b07401b2b8e35cba3e3f4f354bfb6ab79ca7cf0db970db8eb4c1d60d4b0fae4",
+      "lines": 26,
+      "matches": {
+        "provider-and-derived-calls": [
+          26
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/310-open-datum-application/ruling-token-data-findability.speech.json",
+      "sha256": "180c965aad028a976d3ee83c0f37a2cf14d34d526d2367bfd51bb41234dd39f7",
+      "lines": 76,
+      "matches": {
+        "provider-and-derived-calls": [
+          68
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/320-early-request-rejection/functions-model.md",
+      "sha256": "789e116c5aff093990496fc04a6e328eac8901545e172b7430ccfeecec28c607",
+      "lines": 31,
+      "matches": {
+        "provider-and-derived-calls": [
+          19
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/323-acquired-node-interface/data-model.md",
+      "sha256": "c1d75a778a63e1e15ff9a71fdcd9dbea60b78d8a3ad47796ed1e3acf66ab870f",
+      "lines": 9,
+      "matches": {
+        "provider-and-derived-calls": [
+          4,
+          5,
+          9
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/323-acquired-node-interface/data-model.speech.json",
+      "sha256": "628c78e06791eb0515eb22042bde906b29f63947a1924336cc57ab37bc49b828",
+      "lines": 36,
+      "matches": {
+        "provider-and-derived-calls": [
+          12,
+          16,
+          28
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/323-acquired-node-interface/functions-model.md",
+      "sha256": "99b877f3dd9b517e2db9cd508b6fd78544024e82107fae799f1204b0593a3965",
+      "lines": 11,
+      "matches": {
+        "provider-and-derived-calls": [
+          5,
+          6,
+          7,
+          8,
+          9,
+          11
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/323-acquired-node-interface/functions-model.speech.json",
+      "sha256": "53f8d67994725329bb7da4a54fffee63e0f7e9c69f74a1776d332d4e1d38e9ed",
+      "lines": 44,
+      "matches": {
+        "provider-and-derived-calls": [
+          12,
+          16,
+          20,
+          24,
+          28,
+          36
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/323-acquired-node-interface/modules-model.md",
+      "sha256": "0399fec1ac4fef76d2b15c34e52e8d418fe16e746cafeb3de4faae9a6ac22963",
+      "lines": 12,
+      "matches": {
+        "provider-and-derived-calls": [
+          5
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/323-acquired-node-interface/modules-model.speech.json",
+      "sha256": "840b4d714d6dba8ac0b6182f2d4b3166a16f6ee2e4a7dfbc18ae62beba2dfaf9",
+      "lines": 44,
+      "matches": {
+        "provider-and-derived-calls": [
+          12
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/323-acquired-node-interface/plan.md",
+      "sha256": "3ea8399b5c44f363e7af147051cb3e74416d2410b21a13bd960341c8487b7e3b",
+      "lines": 26,
+      "matches": {
+        "node-and-indexer-path": [
+          26
+        ],
+        "provider-and-derived-calls": [
+          3
+        ],
+        "journey-and-readback": [
+          19
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/323-acquired-node-interface/plan.speech.json",
+      "sha256": "2bc412dfddcf3f3a2130c135c43fcd70470e5ad1e329c767670d9614e3bc32f1",
+      "lines": 80,
+      "matches": {
+        "node-and-indexer-path": [
+          72
+        ],
+        "provider-and-derived-calls": [
+          8
+        ],
+        "journey-and-readback": [
+          56
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/323-acquired-node-interface/spec.md",
+      "sha256": "0894525d33622abe6cc4fe580d525b850ed3851a578f20f0544f1fffcf9e4532",
+      "lines": 23,
+      "matches": {
+        "provider-and-derived-calls": [
+          3
+        ],
+        "journey-and-readback": [
+          23
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/323-acquired-node-interface/spec.speech.json",
+      "sha256": "3b371d23fe5148cecd3dec0ef4534f12a34ebc925258e0068112eca1e719c6ae",
+      "lines": 72,
+      "matches": {
+        "provider-and-derived-calls": [
+          8
+        ],
+        "journey-and-readback": [
+          64
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/323-acquired-node-interface/tasks.md",
+      "sha256": "1a340c7396978ca4541082fc7ed70da3087d391496dc69fee6912e7a164cb454",
+      "lines": 11,
+      "matches": {
+        "provider-and-derived-calls": [
+          5
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/323-acquired-node-interface/tasks.speech.json",
+      "sha256": "af05f05d4ac8b4dbfa1be6696e7ebd4afb6525a3eafbde3e26597ab881649142",
+      "lines": 44,
+      "matches": {
+        "provider-and-derived-calls": [
+          12
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/324-indexer-view/functions-model.md",
+      "sha256": "db6cafee20c251d8738f2cd0cca574f0632a88e0f2df1beded5fea0762926128",
+      "lines": 8,
+      "matches": {
+        "provider-and-derived-calls": [
+          5,
+          7
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/324-indexer-view/functions-model.speech.json",
+      "sha256": "b21b2499473c71c04d29a9cb3e946de4a42053510edfdb29244ecfd2b85278f0",
+      "lines": 32,
+      "matches": {
+        "provider-and-derived-calls": [
+          12,
+          20
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/324-indexer-view/modules-model.md",
+      "sha256": "e3f72212ba3ce974e45c175e2ee1b834236c412032c190d4d710a6450d4538dd",
+      "lines": 10,
+      "matches": {
+        "node-and-indexer-path": [
+          3,
+          5,
+          6
+        ],
+        "provider-and-derived-calls": [
+          3,
+          6
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/324-indexer-view/modules-model.speech.json",
+      "sha256": "bc069ff1f7ca84ed0bcecbf63e3a9932264e4ff3d721b3cd5970955f97830bd1",
+      "lines": 36,
+      "matches": {
+        "node-and-indexer-path": [
+          8,
+          12,
+          16
+        ],
+        "provider-and-derived-calls": [
+          8,
+          16
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/324-indexer-view/plan.md",
+      "sha256": "ed7b62c11fe99ed002d6bfc4d26de5ff2c2a42af9af113fe36a73b0a0e1cf6b6",
+      "lines": 36,
+      "matches": {
+        "node-and-indexer-path": [
+          3,
+          25
+        ],
+        "provider-and-derived-calls": [
+          36
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/324-indexer-view/plan.speech.json",
+      "sha256": "bf4a945abba88547282144f7a5e4289c954e9750513eb1a906a1a603ec531bd1",
+      "lines": 108,
+      "matches": {
+        "node-and-indexer-path": [
+          8,
+          68
+        ],
+        "provider-and-derived-calls": [
+          100
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/324-indexer-view/spec.md",
+      "sha256": "e5826ad9aa74f8ce6fb55e50a2d78ab1111765b66970244ace996306bd55dc50",
+      "lines": 21,
+      "matches": {
+        "provider-and-derived-calls": [
+          3
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/324-indexer-view/spec.speech.json",
+      "sha256": "d0a7e453c2a5324426c998227cc6c0095b33f40a1446d1ff62150348318f70b3",
+      "lines": 64,
+      "matches": {
+        "provider-and-derived-calls": [
+          8
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/325-cli-recovery/functions-model.md",
+      "sha256": "3f012459561bda43ed513eafa193df8f0eef3278abb53ea66fb743f87f175b35",
+      "lines": 7,
+      "matches": {
+        "provider-and-derived-calls": [
+          5
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/325-cli-recovery/functions-model.speech.json",
+      "sha256": "f83e5daf6c4050ffc33e16f52a6498d9f93150ccfc3df01b4b08c688ec040602",
+      "lines": 28,
+      "matches": {
+        "provider-and-derived-calls": [
+          12
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/325-cli-recovery/modules-model.md",
+      "sha256": "12cae7f9969e6e6b2837dd088c68cac3a142e4e2fb463ec12ce6cc464bc1eb49",
+      "lines": 8,
+      "matches": {
+        "provider-and-derived-calls": [
+          4
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/325-cli-recovery/modules-model.speech.json",
+      "sha256": "534e6f728c4df649a9062e804d53a8805134bd77cbd61911e6e15c173bae6976",
+      "lines": 32,
+      "matches": {
+        "provider-and-derived-calls": [
+          12
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/325-cli-recovery/plan.md",
+      "sha256": "4bcb673706fb5e7d7d4c657e9ea6a8026fcf13942395dd27ac3dbebc572384ae",
+      "lines": 29,
+      "matches": {
+        "provider-and-derived-calls": [
+          24
+        ],
+        "journey-and-readback": [
+          28
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/325-cli-recovery/plan.speech.json",
+      "sha256": "bc8f5f58b80e60c21e5f32338a68994d6ca00e5ce94a244dc58049fb33cd365b",
+      "lines": 84,
+      "matches": {
+        "provider-and-derived-calls": [
+          64
+        ],
+        "journey-and-readback": [
+          72
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/325-cli-recovery/spec.md",
+      "sha256": "ccadb8eae176a495ed1135441010c2b3f17f7b52e6e0226ce88b12489fd65ad6",
+      "lines": 25,
+      "matches": {
+        "provider-and-derived-calls": [
+          23
+        ],
+        "journey-and-readback": [
+          25
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/325-cli-recovery/spec.speech.json",
+      "sha256": "958ab2c76f5e9d4fc118c0dfc89eb9faf154717a766a7b0b8823421cde38b8de",
+      "lines": 76,
+      "matches": {
+        "provider-and-derived-calls": [
+          64
+        ],
+        "journey-and-readback": [
+          68
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/326-artifact-contract-evidence/functions-model.md",
+      "sha256": "b1e0495e23b4b6ec3e99fad384a91d6f805bc7fe5f959f577c9141a961729a0e",
+      "lines": 8,
+      "matches": {
+        "provider-and-derived-calls": [
+          5,
+          6
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/326-artifact-contract-evidence/functions-model.speech.json",
+      "sha256": "5c415a8a30005cee3ddfc2fe8ffa55585930e6c93db44e609c9821c03a64969b",
+      "lines": 32,
+      "matches": {
+        "provider-and-derived-calls": [
+          12,
+          16
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/326-artifact-contract-evidence/modules-model.md",
+      "sha256": "7147a6c573d7427fcace6acc8a98649c29057968321b86885c6e2c7b78b5d210",
+      "lines": 10,
+      "matches": {
+        "provider-and-derived-calls": [
+          3,
+          6
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/326-artifact-contract-evidence/modules-model.speech.json",
+      "sha256": "35d9ae2f6d68a84912294b172054a127efbada39a017a4b7e4a97a80879b4f4e",
+      "lines": 40,
+      "matches": {
+        "provider-and-derived-calls": [
+          8,
+          20
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/326-artifact-contract-evidence/plan.md",
+      "sha256": "88b4bc963b4a6c960bd2c08fbbefa891b0e785529a5381849d89ad3ae0e51432",
+      "lines": 37,
+      "matches": {
+        "provider-and-derived-calls": [
+          3,
+          28
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/326-artifact-contract-evidence/plan.speech.json",
+      "sha256": "efe309dd5147a1fa78d5430dbff7cdcc82b41b3efa81f29e22dedad358c32557",
+      "lines": 108,
+      "matches": {
+        "provider-and-derived-calls": [
+          8,
+          76
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/326-artifact-contract-evidence/spec.md",
+      "sha256": "2819f89c3b1d420475dfa90c6008b04e5e6a5fce5cc8ce8d20101440df66c14a",
+      "lines": 27,
+      "matches": {
+        "provider-and-derived-calls": [
+          7
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/326-artifact-contract-evidence/spec.speech.json",
+      "sha256": "14781890e14238e33fa6eef4ed942b62e426f20a9236b465f10f717a8cd67e9e",
+      "lines": 84,
+      "matches": {
+        "provider-and-derived-calls": [
+          16
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "specs/362-separate-fold/plan.md",
+      "sha256": "8272917ea5405e41ba7de3403405f0967ff91759dfe21f828d0a0633be67f0c0",
+      "lines": 52,
+      "matches": {
+        "journey-and-readback": [
+          47
+        ]
+      },
+      "disposition": "preserve-historical-authority; review present-tense claims"
+    },
+    {
+      "path": "tools/api_reference.py",
+      "sha256": "7d3af47f708caed5ec49df2676880e6543e6ffb0e70bf37778134ade45ac3b38",
+      "lines": 1049,
+      "matches": {
+        "node-and-indexer-path": [
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54
+        ],
+        "provider-and-derived-calls": [
+          51
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "tools/check_release.py",
+      "sha256": "8f97fd42f689ef4f505873f238c54490830403c45e82b2a478cf8fd6b3cdae1e",
+      "lines": 374,
+      "matches": {
+        "journey-and-readback": [
+          182
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "tools/cli_recovery_controls.sh",
+      "sha256": "7201b8ccea1aa6101de0e2046170a3973409f6ccebb0058d9ba25d802a2eba05",
+      "lines": 984,
+      "matches": {
+        "node-and-indexer-path": [
+          123,
+          129
+        ],
+        "journey-and-readback": [
+          279
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "tools/code_inventory.py",
+      "sha256": "a4bafbbe1cd41dc16e1ed65c4965326b4109f24c2a2a5b52dbcdbae604cacf12",
+      "lines": 1543,
+      "matches": {
+        "node-and-indexer-path": [
+          623
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "tools/demo1_cli_attach.sh",
+      "sha256": "1dd7475e073b01f992da9658424158e34baac8f3bd30dac6fd25fcc7c3c64bb7",
+      "lines": 343,
+      "matches": {
+        "node-and-indexer-path": [
+          83
+        ],
+        "journey-and-readback": [
+          59
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "tools/demo1_cli_attach_check.sh",
+      "sha256": "0fc1e389608c8c6d908c464041725f85386e8c5daa47a04bab1cc9291dce2ea7",
+      "lines": 67,
+      "matches": {
+        "journey-and-readback": [
+          42
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "tools/demo1_cli_check.sh",
+      "sha256": "76821d67dc9bc6fc00538f5f1ee44eb689720de54c89c49ff72c73b1e255e076",
+      "lines": 122,
+      "matches": {
+        "journey-and-readback": [
+          2,
+          12,
+          35,
+          37,
+          122
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "tools/demo1_cli_controls.sh",
+      "sha256": "8f26715175469b90147c64131888c57c112ea0a8248a768e5d0a3919d4a6adb2",
+      "lines": 248,
+      "matches": {
+        "node-and-indexer-path": [
+          88
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "tools/demo1_cli_create_race.sh",
+      "sha256": "3839ae06e57f36104eb5db961c7b6c26cf5c90c306b05a98b57c02ec2ee5a0f0",
+      "lines": 101,
+      "matches": {
+        "node-and-indexer-path": [
+          39
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "tools/demo1_cli_journey.sh",
+      "sha256": "50346778e54704395dfe2b35faf75a494178ae3f8d2675446ef517aae034cf94",
+      "lines": 1221,
+      "matches": {
+        "node-and-indexer-path": [
+          37,
+          79,
+          124,
+          188,
+          632
+        ],
+        "journey-and-readback": [
+          5
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "tools/demo1_mock_indexer.py",
+      "sha256": "bb72573314b24f7524d16b691045319c545bafbbeb813ee9da2f4809c7b73831",
+      "lines": 195,
+      "matches": {
+        "journey-and-readback": [
+          4
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "tools/node_confinement_check.sh",
+      "sha256": "537aaff2b6e9bad0fe24b24a89bbeb1ff7b030261d8e7f3e8a63715ac8b6c606",
+      "lines": 219,
+      "matches": {
+        "node-and-indexer-path": [
+          50
+        ],
+        "provider-and-derived-calls": [
+          59
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "tools/node_confinement_controls.sh",
+      "sha256": "d4f9b10c1f2d0f26f0a97c53706332f621dde751f43cca9f11289b6535966cce",
+      "lines": 150,
+      "matches": {
+        "node-and-indexer-path": [
+          79,
+          80,
+          129
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "tools/signed-tx-exports.allow",
+      "sha256": "f8366954b11ff257124c24937d0d5ae285519d89f35a5b2f3ac712d4678596b6",
+      "lines": 9,
+      "matches": {
+        "node-and-indexer-path": [
+          1
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "tools/signed_tx_control.sh",
+      "sha256": "639cfc762231ac5a48c45fbdd2412de9c2ac9ba81ec1ddc049e22c2066c67881",
+      "lines": 157,
+      "matches": {
+        "node-and-indexer-path": [
+          4,
+          95
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    },
+    {
+      "path": "tools/verify_release.sh",
+      "sha256": "0aeae0499fc0773b69aa9e7bac09165cb496c20fc2876ab949e49f9724151e43",
+      "lines": 190,
+      "matches": {
+        "journey-and-readback": [
+          24
+        ]
+      },
+      "disposition": "migrate packaging, gate or CI harness; retain independently executed product controls"
+    }
+  ],
+  "limit": "Lexical discovery for deletion planning, not executable evidence of removal or behavioral correspondence. Dispositions require caller review at implementation."
+}

@@ -44,7 +44,6 @@ import Data.Aeson (Value, object, toJSON, (.=))
 import Data.Aeson qualified as Aeson
 import Data.ByteString (ByteString)
 import Data.List (sortOn)
-import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Word (Word32)
@@ -81,7 +80,6 @@ import Singular.CLI.Node (withReads)
 import Singular.CLI.Proof
     ( AuthError (RootMismatch)
     , Leaf (..)
-    , authenticatedLeaf
     , leafName
     , renderAuthError
     )
@@ -256,13 +254,8 @@ inspectSaved dir key sock magic a = do
             live <- attachLive v saved
             root <- either (failWith Partial) pure (observedRoot live)
             mirror <- openMirror saved
-            tries <- mirrorDump mirror
-            db <-
-                maybe
-                    (failWith ProofMissing "the mirror holds no trie for this registry")
-                    pure
-                    (Map.lookup (savedToken saved) tries)
-            leaf <- authenticatedLeaf db key root
+            _ <- selectMirror saved live mirror
+            leaf <- mirrorLeaf mirror key root
             outs <- liveOutputs v saved
             requests <-
                 Cage.viewUTxOsAt
