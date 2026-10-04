@@ -231,12 +231,19 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
                             (fixtureStore [(chosen, c, es, db)])
             query (Just create) events nodes `shouldBe` Right 2
             query Nothing events nodes `shouldBe` Left HistoryIncomplete
+            query
+                (Just (CreateRecord otherIdentity (pointOutput (point 0))))
+                events
+                nodes
+                `shouldBe` Left WrongRegistry
             query (Just create) (init events) nodes
                 `shouldBe` Right 2
             query (Just create) (take 1 events) nodes
                 `shouldBe` Left HistoryIncomplete
-            query (Just create) (drop 1 events) nodes `shouldSatisfy` isLeft
-            query (Just create) events emptyMPFInMemoryDB `shouldSatisfy` isLeft
+            query (Just create) (drop 1 events) nodes
+                `shouldBe` Left RootDoesNotChain
+            query (Just create) events emptyMPFInMemoryDB
+                `shouldBe` Left RootDoesNotChain
             ObservedFold from to edges <- case events of
                 first : _ -> pure first
                 [] ->
@@ -249,6 +256,13 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
                         (to{trieSelectionRoot = Root (BS.replicate 32 9)})
                         edges
             query (Just create) (broken : drop 1 events) nodes
+                `shouldBe` Left RootDoesNotChain
+            let discontinuous =
+                    ObservedFold
+                        (from{trieSelectionRoot = trieSelectionRoot chosen})
+                        to
+                        edges
+            query (Just create) (discontinuous : drop 1 events) nodes
                 `shouldBe` Left RootDoesNotChain
             let undecodable = ObservedFold from to (("first", 99) :| [])
             query (Just create) (undecodable : drop 1 events) nodes
