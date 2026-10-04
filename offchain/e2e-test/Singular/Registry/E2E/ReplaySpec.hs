@@ -25,7 +25,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (IORef, newIORef, readIORef)
-import Data.List (nub)
+import Data.List (elemIndex, nub)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
@@ -43,7 +43,12 @@ import Cardano.Ledger.Api.Tx.Body
     , mintTxBodyL
     , referenceInputsTxBodyL
     )
-import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL, valueTxOutL)
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , coinTxOutL
+    , datumTxOutL
+    , valueTxOutL
+    )
 import Cardano.Ledger.Api.Tx.Wits (rdmrsTxWitsL)
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
@@ -53,6 +58,7 @@ import Cardano.Ledger.Mary.Value
     , MultiAsset (..)
     , PolicyID
     )
+import Cardano.Ledger.Plutus.ExUnits (ExUnits)
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import MPF.Backend.Pure (MPFInMemoryDB, emptyMPFInMemoryDB)
@@ -77,6 +83,7 @@ import Singular.Registry.Replay
     , RegistryToken (..)
     , ReplayFailure (..)
     , Replayed (..)
+    , Undecodable (..)
     , replayLineage
     )
 import Singular.Registry.Trie (Trie (..))
@@ -300,6 +307,31 @@ replaySpec = do
                                 (HistoryIncomplete (ForkedStateOutput (pointOutput spentFrom)))
                             )
 
+            it
+                "refuses a state output past the selection spent by two transactions"
+                $ \h -> do
+                    let selection = historyFolds h !! 2
+                        spentFrom = historyFolds h !! 3
+                        forkedFrom = historyFolds h !! 4
+                        fork = bumpFee (pointTx forkedFrom)
+                        -- Past the selection neither spender is on the
+                        -- lineage: the refusal names the larger identifier.
+                        named = max (txIdTx fork) (txIdTx (pointTx forkedFrom))
+                    (result, _) <-
+                        replayAt
+                            h
+                            (historyResolved h)
+                            (historyTxs h <> [fork])
+                            (historyToken h)
+                            selection
+                    result
+                        `shouldBe` Left
+                            ( ReplayFailure
+                                (historyToken h)
+                                named
+                                (HistoryIncomplete (ForkedStateOutput (pointOutput spentFrom)))
+                            )
+
             it "refuses a transaction that touches the token outside the lineage" $ \h -> do
                 let stray = bumpFee (pointTx (historyCreate h))
                 (result, _) <-
@@ -315,6 +347,162 @@ replaySpec = do
                             (historyToken h)
                             (txIdTx stray)
                             (HistoryIncomplete OutsideLineage)
+                        )
+
+    describe
+        "material the replay cannot read is refused by name, never guessed"
+        $ do
+            it
+                "refuses a fold whose request input is not resolved, naming the fold"
+                $ \h -> do
+                    let target = firstFold "insertActive" h
+                    reqIn <- case requestInputs h (pointTx target) of
+                        [(i, _)] -> pure i
+                        _ -> fail "the insertActive fold spends other than one request"
+                    (result, _) <-
+                        replayAt
+                            h
+                            (Map.delete reqIn (historyResolved h))
+                            (historyTxs h)
+                            (historyToken h)
+                            (lastPoint h)
+                    result
+                        `shouldBe` Left
+                            ( ReplayFailure
+                                (historyToken h)
+                                (txIdTx (pointTx target))
+                                (HistoryIncomplete (UnresolvedInput reqIn))
+                            )
+
+            it
+                "refuses a resolution that contradicts the transaction that made the output"
+                $ \h -> do
+                    let target = firstFold "insertActive" h
+                    stateIn <- stateInputOf h (pointTx target)
+                    let altered = Map.adjust (coinTxOutL .~ Coin 1) stateIn (historyResolved h)
+                    (result, _) <-
+                        replayAt h altered (historyTxs h) (historyToken h) (lastPoint h)
+                    result
+                        `shouldBe` Left
+                            ( ReplayFailure
+                                (historyToken h)
+                                (txIdTx (pointTx target))
+                                (HistoryIncomplete (ConflictingResolution stateIn))
+                            )
+
+            it "refuses two different transactions under one identifier" $ \h -> do
+                let create = pointTx (historyCreate h)
+                    copy = withMintRedeemer (Minting (txInToRef (historyStranger h))) create
+                (result, _) <-
+                    replayAt
+                        h
+                        (historyResolved h)
+                        (historyTxs h <> [copy])
+                        (historyToken h)
+                        (lastPoint h)
+                result
+                    `shouldBe` Left
+                        ( ReplayFailure
+                            (historyToken h)
+                            (txIdTx create)
+                            (HistoryIncomplete ConflictingCopies)
+                        )
+
+            it
+                "refuses a fold whose state spend is not Modify, or carries no redeemer"
+                $ \h -> do
+                    let target = firstFold "insertActive" h
+                        tid = txIdTx (pointTx target)
+                    purpose <- stateSpendPurpose h (pointTx target)
+                    let refusedWith edit expected = do
+                            let tx = withRedeemers edit (pointTx target)
+                            txIdTx tx `shouldBe` tid
+                            (result, _) <-
+                                replayAt
+                                    h
+                                    (historyResolved h)
+                                    (swapTx tx (historyTxs h))
+                                    (historyToken h)
+                                    (lastPoint h)
+                            result
+                                `shouldBe` Left
+                                    (ReplayFailure (historyToken h) tid (UndecodableRequest expected))
+                    refusedWith
+                        ( Map.adjust
+                            ( \(_, units) ->
+                                (Data (toPlcData (Contribute (txInToRef (historyStranger h)))), units)
+                            )
+                            purpose
+                        )
+                        NotModify
+                    refusedWith (Map.delete purpose) MissingRedeemer
+
+            it "refuses a fold with one action fewer than its requests" $ \h -> do
+                let target = firstFold "insertActive" h
+                    tid = txIdTx (pointTx target)
+                purpose <- stateSpendPurpose h (pointTx target)
+                let tx =
+                        withRedeemers
+                            ( Map.adjust
+                                (\(_, units) -> (Data (toPlcData (Modify [])), units))
+                                purpose
+                            )
+                            (pointTx target)
+                (result, _) <-
+                    replayAt
+                        h
+                        (historyResolved h)
+                        (swapTx tx (historyTxs h))
+                        (historyToken h)
+                        (lastPoint h)
+                result
+                    `shouldBe` Left
+                        ( ReplayFailure
+                            (historyToken h)
+                            tid
+                            (UndecodableRequest (ActionCount 0 1))
+                        )
+
+            it "refuses a create whose mint redeemer is not Minting" $ \h -> do
+                let create = pointTx (historyCreate h)
+                    burning =
+                        withMintRedeemer
+                            (Burning (OnChainTokenId (BuiltinByteString (tokenBytes h))))
+                            create
+                (result, _) <-
+                    replayAt
+                        h
+                        (historyResolved h)
+                        (swapTx burning (historyTxs h))
+                        (historyToken h)
+                        (lastPoint h)
+                result
+                    `shouldBe` Left
+                        ( ReplayFailure
+                            (historyToken h)
+                            (txIdTx create)
+                            (WrongRegistry CreateMint)
+                        )
+
+            it "refuses a trie that is not empty at create, naming create" $ \h -> do
+                ref <- newIORef emptyMPFInMemoryDB
+                let trie = mkPureTrieFromRef ref
+                _ <- insert trie "replay-not-empty" leafActive
+                stale <- getRoot trie
+                result <-
+                    replayLineage
+                        trie
+                        (historyToken h)
+                        (pointOutput (lastPoint h))
+                        (pointRoot (lastPoint h))
+                        (historyResolved h)
+                        (historyTxs h)
+                result
+                    `shouldBe` Left
+                        ( ReplayFailure
+                            (historyToken h)
+                            (txIdTx (pointTx (historyCreate h)))
+                            (RootDoesNotChain stale (pointRoot (historyCreate h)))
                         )
 
     describe
@@ -594,6 +782,41 @@ withMintRedeemer m tx =
     swap _ (d, units) = case fromBuiltinData (BuiltinData (getPlutusData d)) of
         Just (Minting _) -> (Data (toPlcData m), units)
         _ -> (d, units)
+
+-- | Edit a transaction's redeemers; the body, and so the identifier, is unchanged.
+withRedeemers
+    :: ( Map (ConwayPlutusPurpose AsIx ConwayEra) (Data ConwayEra, ExUnits)
+         -> Map (ConwayPlutusPurpose AsIx ConwayEra) (Data ConwayEra, ExUnits)
+       )
+    -> ConwayTx
+    -> ConwayTx
+withRedeemers edit tx = tx & witsTxL . rdmrsTxWitsL .~ Redeemers (edit rdmrs)
+  where
+    Redeemers rdmrs = tx ^. witsTxL . rdmrsTxWitsL
+
+-- | The history with one transaction replaced by another under the same identifier.
+swapTx :: ConwayTx -> [ConwayTx] -> [ConwayTx]
+swapTx tx = map (\t -> if txIdTx t == txIdTx tx then tx else t)
+
+-- | The input of a fold that holds the registry's token.
+stateInputOf :: History -> ConwayTx -> IO TxIn
+stateInputOf h tx =
+    case [ i
+         | i <- Set.toAscList (tx ^. bodyTxL . inputsTxBodyL)
+         , Just o <- [Map.lookup i (historyResolved h)]
+         , holdsToken h o
+         ] of
+        [i] -> pure i
+        _ -> fail "the fold spends other than one state input"
+
+-- | The redeemer purpose of a fold's state spend: its input's position among the inputs.
+stateSpendPurpose
+    :: History -> ConwayTx -> IO (ConwayPlutusPurpose AsIx ConwayEra)
+stateSpendPurpose h tx = do
+    stateIn <- stateInputOf h tx
+    case elemIndex stateIn (Set.toAscList (tx ^. bodyTxL . inputsTxBodyL)) of
+        Just ix -> pure (ConwaySpending (AsIx (fromIntegral ix)))
+        Nothing -> fail "the state input is not among the fold's inputs"
 
 rotate :: Int -> [a] -> [a]
 rotate n xs = let k = n `mod` max 1 (length xs) in drop k xs <> take k xs

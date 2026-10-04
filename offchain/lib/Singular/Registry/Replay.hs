@@ -339,7 +339,8 @@ distinct token = foldM add Map.empty
                 _ -> Right (Map.insert tid tx acc)
 
 {- | The transactions that continue the chain past the selected output: each
-spends the previous state output, one at a time.
+spends the previous state output, one at a time. Two spenders of one output
+there refuse, naming the larger identifier: neither is on the lineage.
 -}
 descendants
     :: (TxId -> Refusal -> Either ReplayFailure [TxId])
