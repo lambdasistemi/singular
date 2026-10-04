@@ -35,7 +35,7 @@
       "pause": 400
     },
     {
-      "text": "The current-mirror adapter preserves its file format, authenticatedLeaf/root checks, speculative walkEdge order and durable accepted-fold updates. It derives local coverage from the saved create identity and existing accepted transition records; a root match alone cannot invent missing lineage evidence. This is local-mirror coverage, not independently reconstructed public history. Missing coverage refuses. The pure State adapter uses fixture trie nodes, not the current IORef-backed \"Pure\" wrapper. Both run membership, non-membership and ordered edge proofs. Speculation never commits; acceptObservedFold preserves current observation, root-continuity and exactly-once recovery rules. Commands receive this capability instead of opening a mirror or manipulating TrieManager directly.",
+      "text": "The current-mirror adapter preserves its file format, authenticatedLeaf/root checks, speculative walkEdge order and durable accepted-fold updates. It derives local coverage from checked create at the empty root and recorded trie-changing steps whose before/after roots form an unbroken, reproduced chain to the observed root. A-005 excludes equal-root moves from required records and coverage evidence; state selection is observed separately. Root matching cannot replace the chain. Missing coverage refuses. The pure State adapter uses fixture trie nodes, not the current IORef-backed \"Pure\" wrapper. Both run membership, non-membership and ordered edge proofs. Speculation never commits; acceptObservedFold preserves current observation, root-continuity and exactly-once recovery rules. Commands receive this capability instead of opening a mirror or manipulating TrieManager directly.",
       "pause": 400
     }
   ],
@@ -133,6 +133,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "8bdd8ddf75fdaadf5003fb3372bf648e5b0548e3ccf459df3e23efe48a2f5d1a"
+    "sha256": "998568a3ad07c6b321a296998bd808e733e1f485a24292a59a48522a37218d68"
   }
 }

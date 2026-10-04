@@ -108,10 +108,11 @@ wrong registry, stale root, missing proof and incomplete local coverage also ref
 
 The current-mirror adapter preserves its file format, authenticatedLeaf/root
 checks, speculative walkEdge order and durable accepted-fold updates. It derives
-local coverage from the saved create identity and existing accepted transition
-records; a root match alone cannot invent missing lineage evidence. This is
-local-mirror coverage, not independently reconstructed public history. Missing
-coverage refuses. The pure State adapter uses fixture trie nodes, not the current
+local coverage from checked create at the empty root and recorded trie-changing
+steps whose before/after roots form an unbroken, reproduced chain to the observed
+root. A-005 excludes equal-root moves from required records and coverage evidence;
+state selection is observed separately. Root matching cannot replace the chain.
+Missing coverage refuses. The pure State adapter uses fixture trie nodes, not the current
 IORef-backed "Pure" wrapper. Both run membership, non-membership and ordered
 edge proofs. Speculation never commits; acceptObservedFold preserves current
 observation, root-continuity and exactly-once recovery rules. Commands receive
@@ -258,7 +259,7 @@ running with a reachable fault, never a compiler or launcher failure.
 | Acquisition, registration and released reads refuse by name | Pure fixture exposes wrong-network, unsupported point, unknown registration and released-session paths without silently answering empty. | Convert a refusal into an empty success or allow a released read. |
 | Rebuilt root still matches the state output | Existing local replay/root comparison is exercised through provider facts, retaining its unverified verdict. | Change a replay edge or the returned state datum root; require registry-named refusal. Full history-based reconstruction remains outside this ticket. |
 | Every trie read and edge proof uses the selected registry state | Instrument nonempty command/proof traces through TrieState; mirror and pure fixtures cover every admitted edge, proven leaves, membership and non-membership with matching identity/point/root. | Bypass TrieState, use another registry or state root, alter proof bytes, skip an edge, or mutate the mirror during speculation. |
-| Missing trie coverage never becomes an empty registry | Derive local CompleteFromCreate from create and accepted transition records; preserve mirror bytes and named incomplete/root/request/proof failures. | Erase coverage, omit a transition, break a chained root, corrupt a request, or replace a refusal with an empty successful trie. |
+| Missing trie coverage never becomes an empty registry | Derive CompleteFromCreate from checked create and reproduced trie-changing root steps; equal-root moves are excluded by A-005. Preserve mirror bytes and named failures. | Erase create/coverage, omit a required trie-changing step, break a root, corrupt a recorded step, or turn refusal into empty success. |
 | No node instance or in-memory indexer survives | Run packaged commands with provider configuration and no socket; old flags refuse; compiler/package dependency closure contains no production node adapter. | Reintroduce a command socket route or package an obsolete adapter. Source sweep is discovery only. |
 | Pure monad can supply every capability | Execute acquisition, all query forms, parameters, tip, history, submit and bounded polling in State with no embedded effects. | Add an observable hidden external-effect requirement; shape compilation controls are reported separately from behavioral red. |
 | Only abstract verification ships | Build/API controls establish NoWitness has no constructor and only unverified is configured; runtime receipts cover all facts. | Configure a concrete verifier/decoder or manufacture a successful endorsement. Compilation controls are structural evidence only. |

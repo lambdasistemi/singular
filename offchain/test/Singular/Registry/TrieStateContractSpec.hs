@@ -208,7 +208,7 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
                                     `shouldBe` False
                         fixtureNodes untouched `shouldBe` fixtureNodes (storeOf after)
     it
-        "requires create and every accepted transition even when the missing transition preserves the root"
+        "requires checked create and every trie-changing step, without requiring or counting equal-root records"
         $ do
             (chosen, create, events, nodes) <-
                 history identity [("first", 1), ("first", 3), ("first", 6)]
@@ -221,9 +221,11 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
                                 (\snap -> pure (coverageTransitions (trieCoverage snap)))
                             )
                             (fixtureStore [(chosen, c, es, db)])
-            query (Just create) events nodes `shouldBe` Right 3
+            query (Just create) events nodes `shouldBe` Right 2
             query Nothing events nodes `shouldBe` Left HistoryIncomplete
             query (Just create) (init events) nodes
+                `shouldBe` Right 2
+            query (Just create) (take 1 events) nodes
                 `shouldBe` Left HistoryIncomplete
             query (Just create) (tail events) nodes `shouldSatisfy` isLeft
             query (Just create) events emptyMPFInMemoryDB `shouldSatisfy` isLeft

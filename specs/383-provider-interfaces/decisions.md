@@ -156,6 +156,41 @@ escalation. Any new discrepancy introduced by this migration is held and
 escalated under the constitution. This applies answer A-004 and resolves this
 lane's Q-004-reject-model-hold without deciding the client's semantic contract.
 
+## Trie coverage when another holder moves the state output
+
+As Alice, I want to keep using my authenticated local registry after Bob
+rejects a request from a copy of its directory, so that an unchanged trie
+remains usable. Bob's reject moves the state output but preserves its root.
+Alice's directory has the checked create and its local trie-changing records,
+but no record of Bob's reject. This story is source-derived from the existing
+attach, inspect and reject paths; it is not a newly reproduced ledger result.
+
+On October 4 the epic owner ruled in answer A-005 that CompleteFromCreate
+certifies the trie's contents at the selected root. It requires the checked
+create identity and empty root, followed by an unbroken chain of recorded
+trie-changing transitions. Each step binds its before and after roots and
+reproduces its after-root. The chain ends at a root equal to the state output's
+root, observed independently in the caller's session.
+
+Equal-root moves are neither required records nor coverage evidence. This
+includes rejects, admitted witnessTerminal folds, reclaims and any other
+transition with equal before and after roots. Missing records of those moves
+do not invalidate the certificate. Alice's directory therefore remains
+complete after Bob's reject. All seven edges still require their own proof
+paths; this coverage extent does not remove the terminal witness's proof.
+
+A mismatched create identity, broken chain, step that fails to reproduce its
+after-root, or chain that does not reach the observed root refuses by name.
+The final root match completes the recorded chain from empty; it cannot
+replace that chain. State selection remains a separate session observation,
+and local application proofs do not authenticate ledger facts.
+
+The public-lineage backend in #381 certifies the same trie-content property
+while seeing every state-output transaction and checking root-preserving
+steps' equality during replay. This ruling releases the local coverage and
+mirror-adapter acceptance hold under the stated extent. It does not accept
+an implementation or settle the existing reject deadline discrepancy.
+
 ## Intake release and subsequent evidence
 
 The epic owner accepted intake head 34804370f8321f4a341a13e1a809ae1119f5aaa8
@@ -175,7 +210,7 @@ fixture trie exercises every edge's proof path. The name of the existing
 IORef-backed Trie.Pure module does not establish pure-monad execution.
 
 The mirror is not offloaded or replaced by an empty trie. Coverage cannot be
-invented from a matching root: absent create/transition coverage refuses by name.
+invented from a matching root: absent create/trie-changing coverage refuses by name.
 Local application proofs never upgrade provider facts to Verified. For Unbound
 sessions the selected state output is an observation, not an atomic snapshot.
 The full-public-lineage backend, applying accepted ordered actions and checking

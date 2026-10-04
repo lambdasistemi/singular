@@ -54,8 +54,10 @@ provider's state output does not authenticate either side against the ledger.
 As a command maintainer, I read leaves and build every edge's membership or
 non-membership proof through TrieState m. It reports the registry's state
 policy and token name from create, the selected state output and root, and
-explicit coverage from create or a named refusal. A missing mirror or incomplete
-history never stands for an empty registry. The first instance wraps the current
+explicit coverage from checked create and an unbroken reproduced trie-changing
+chain to the observed root, or a named refusal. Equal-root state moves are
+excluded from coverage records under the epic owner's ruling. A missing mirror
+or incomplete required chain never stands for an empty registry. The first instance wraps the current
 mirror; a pure fixture trie exercises the same proof paths. The complete public
 lineage backend is the separate reconstruction ticket's implementation.
 

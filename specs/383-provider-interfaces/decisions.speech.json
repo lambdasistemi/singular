@@ -103,6 +103,32 @@
       "pause": 400
     }
   ],
+  "trie-coverage-when-another-holder-moves-the-state-output": [
+    {
+      "text": "Trie coverage when another holder moves the state output.",
+      "pause": 500
+    },
+    {
+      "text": "As Alice, I want to keep using my authenticated local registry after Bob rejects a request from a copy of its directory, so that an unchanged trie remains usable. Bob's reject moves the state output but preserves its root. Alice's directory has the checked create and its local trie-changing records, but no record of Bob's reject. This story is source-derived from the existing attach, inspect and reject paths; it is not a newly reproduced ledger result.",
+      "pause": 400
+    },
+    {
+      "text": "On October 4 the epic owner ruled in answer A-005 that CompleteFromCreate certifies the trie's contents at the selected root. It requires the checked create identity and empty root, followed by an unbroken chain of recorded trie-changing transitions. Each step binds its before and after roots and reproduces its after-root. The chain ends at a root equal to the state output's root, observed independently in the caller's session.",
+      "pause": 400
+    },
+    {
+      "text": "Equal-root moves are neither required records nor coverage evidence. This includes rejects, admitted witnessTerminal folds, reclaims and any other transition with equal before and after roots. Missing records of those moves do not invalidate the certificate. Alice's directory therefore remains complete after Bob's reject. All seven edges still require their own proof paths; this coverage extent does not remove the terminal witness's proof.",
+      "pause": 400
+    },
+    {
+      "text": "A mismatched create identity, broken chain, step that fails to reproduce its after-root, or chain that does not reach the observed root refuses by name. The final root match completes the recorded chain from empty; it cannot replace that chain. State selection remains a separate session observation, and local application proofs do not authenticate ledger facts.",
+      "pause": 400
+    },
+    {
+      "text": "The public-lineage backend in #381 certifies the same trie-content property while seeing every state-output transaction and checking root-preserving steps' equality during replay. This ruling releases the local coverage and mirror-adapter acceptance hold under the stated extent. It does not accept an implementation or settle the existing reject deadline discrepancy.",
+      "pause": 400
+    }
+  ],
   "intake-release-and-subsequent-evidence": [
     {
       "text": "Intake release and subsequent evidence.",
@@ -117,7 +143,7 @@
       "pause": 400
     },
     {
-      "text": "The mirror is not offloaded or replaced by an empty trie. Coverage cannot be invented from a matching root: absent create/transition coverage refuses by name. Local application proofs never upgrade provider facts to Verified. For Unbound sessions the selected state output is an observation, not an atomic snapshot. The full-public-lineage backend, applying accepted ordered actions and checking every fold root, belongs to #381. Caching, persistence, a follower and a shared service remain later backends of this same interface. This settles NOTE-003 without implementing or claiming the lineage backend during intake.",
+      "text": "The mirror is not offloaded or replaced by an empty trie. Coverage cannot be invented from a matching root: absent create/trie-changing coverage refuses by name. Local application proofs never upgrade provider facts to Verified. For Unbound sessions the selected state output is an observation, not an atomic snapshot. The full-public-lineage backend, applying accepted ordered actions and checking every fold root, belongs to #381. Caching, persistence, a follower and a shared service remain later backends of this same interface. This settles NOTE-003 without implementing or claiming the lineage backend during intake.",
       "pause": 400
     },
     {
@@ -135,6 +161,6 @@
   ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "236bd7592642c3363c27badb824f8a8e32a4e7f5cf6d2fa85baa22fbb0625103"
+    "sha256": "0e7d75abf0d89a222279f78bc3390905b29b17419f10c1305eceea88c0b96371"
   }
 }
