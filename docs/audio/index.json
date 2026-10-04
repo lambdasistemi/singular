@@ -4528,8 +4528,8 @@
     "index": 2,
     "name": "docs-offchain-api-reference/what-this-reference-contains-02",
     "pause_ms": 400,
-    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 54 modules in three kinds: 41 explicitly exposed modules and two re-exported modules are what a caller imports; the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations moved into the package's private ownership core (offchain/node-internal/) and the public library re-exports them, so their import paths and their entries in this reference are unchanged. The six node runtime owners in that private core are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-    "v": "0b519f9ddbb6"
+    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 59 modules in three kinds: 44 explicitly exposed modules and two re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations moved into the package's private ownership core (offchain/node-internal/) and the public library re-exports them, so their import paths and their entries in this reference are unchanged. The six node runtime owners in that private core are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+    "v": "c3afc77c93c2"
    },
    {
     "index": 3,
@@ -4766,152 +4766,187 @@
     "index": 36,
     "name": "docs-offchain-api-reference/what-this-reference-contains-36",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Boot — source",
-    "v": "dbca322b05df"
+    "text": "Singular.Registry.TrieState — source",
+    "v": "68411ef68be3"
    },
    {
     "index": 37,
     "name": "docs-offchain-api-reference/what-this-reference-contains-37",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.ConnectedFold — source",
-    "v": "ba13b49c06ca"
+    "text": "Singular.Registry.TrieState.Core — source",
+    "v": "182de54e3d72"
    },
    {
     "index": 38,
     "name": "docs-offchain-api-reference/what-this-reference-contains-38",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Edges — source",
-    "v": "12f58baed189"
+    "text": "Singular.Registry.TrieState.Fixture — source",
+    "v": "0fe2f3353491"
    },
    {
     "index": 39,
     "name": "docs-offchain-api-reference/what-this-reference-contains-39",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Internal — source",
-    "v": "0b85f8debd2f"
+    "text": "Singular.Registry.TrieState.Mirror — source",
+    "v": "0abebecb59d4"
    },
    {
     "index": 40,
     "name": "docs-offchain-api-reference/what-this-reference-contains-40",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Internal.Edges — source",
-    "v": "d3ca165522a6"
+    "text": "Singular.Registry.TrieState.Types — source",
+    "v": "33adac3cc755"
    },
    {
     "index": 41,
     "name": "docs-offchain-api-reference/what-this-reference-contains-41",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Internal.Identity — source",
-    "v": "ac3e7735ff1e"
+    "text": "Singular.Registry.TxBuilder.Boot — source",
+    "v": "dbca322b05df"
    },
    {
     "index": 42,
     "name": "docs-offchain-api-reference/what-this-reference-contains-42",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Internal.Lookup — source",
-    "v": "1a44ff824df2"
+    "text": "Singular.Registry.TxBuilder.ConnectedFold — source",
+    "v": "ba13b49c06ca"
    },
    {
     "index": 43,
     "name": "docs-offchain-api-reference/what-this-reference-contains-43",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Register — source",
-    "v": "e4fbec8347a7"
+    "text": "Singular.Registry.TxBuilder.Edges — source",
+    "v": "12f58baed189"
    },
    {
     "index": 44,
     "name": "docs-offchain-api-reference/what-this-reference-contains-44",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Reject — source",
-    "v": "54dbb628e5e1"
+    "text": "Singular.Registry.TxBuilder.Internal — source",
+    "v": "0b85f8debd2f"
    },
    {
     "index": 45,
     "name": "docs-offchain-api-reference/what-this-reference-contains-45",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Request — source",
-    "v": "7e9a5d02c123"
+    "text": "Singular.Registry.TxBuilder.Internal.Edges — source",
+    "v": "d3ca165522a6"
    },
    {
     "index": 46,
     "name": "docs-offchain-api-reference/what-this-reference-contains-46",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Retract — source",
-    "v": "6b1af0e740c9"
+    "text": "Singular.Registry.TxBuilder.Internal.Identity — source",
+    "v": "ac3e7735ff1e"
    },
    {
     "index": 47,
     "name": "docs-offchain-api-reference/what-this-reference-contains-47",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Update — source",
-    "v": "45e32c9a423f"
+    "text": "Singular.Registry.TxBuilder.Internal.Lookup — source",
+    "v": "1a44ff824df2"
    },
    {
     "index": 48,
     "name": "docs-offchain-api-reference/what-this-reference-contains-48",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Update.Build — source",
-    "v": "74b858f8ebc5"
+    "text": "Singular.Registry.TxBuilder.Register — source",
+    "v": "e4fbec8347a7"
    },
    {
     "index": 49,
     "name": "docs-offchain-api-reference/what-this-reference-contains-49",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Update.Context — source",
-    "v": "bad93de5d147"
+    "text": "Singular.Registry.TxBuilder.Reject — source",
+    "v": "54dbb628e5e1"
    },
    {
     "index": 50,
     "name": "docs-offchain-api-reference/what-this-reference-contains-50",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Update.Duties — source",
-    "v": "eb9d21b2fd8d"
+    "text": "Singular.Registry.TxBuilder.Request — source",
+    "v": "7e9a5d02c123"
    },
    {
     "index": 51,
     "name": "docs-offchain-api-reference/what-this-reference-contains-51",
     "pause_ms": 300,
-    "text": "Singular.Registry.Types — source",
-    "v": "22154e905b3b"
+    "text": "Singular.Registry.TxBuilder.Retract — source",
+    "v": "6b1af0e740c9"
    },
    {
     "index": 52,
     "name": "docs-offchain-api-reference/what-this-reference-contains-52",
     "pause_ms": 300,
-    "text": "Singular.Registry.Wire.Primitive — source",
-    "v": "e28eac65d957"
+    "text": "Singular.Registry.TxBuilder.Update — source",
+    "v": "45e32c9a423f"
    },
    {
     "index": 53,
     "name": "docs-offchain-api-reference/what-this-reference-contains-53",
     "pause_ms": 300,
-    "text": "Singular.Registry.Wire.Proof — source",
-    "v": "6ac14715485e"
+    "text": "Singular.Registry.TxBuilder.Update.Build — source",
+    "v": "74b858f8ebc5"
    },
    {
     "index": 54,
     "name": "docs-offchain-api-reference/what-this-reference-contains-54",
     "pause_ms": 300,
-    "text": "Singular.Registry.Wire.Redeemer — source",
-    "v": "a9769e421c16"
+    "text": "Singular.Registry.TxBuilder.Update.Context — source",
+    "v": "bad93de5d147"
    },
    {
     "index": 55,
     "name": "docs-offchain-api-reference/what-this-reference-contains-55",
     "pause_ms": 300,
-    "text": "Singular.Registry.Wire.Request — source",
-    "v": "b1b93d5c6a89"
+    "text": "Singular.Registry.TxBuilder.Update.Duties — source",
+    "v": "eb9d21b2fd8d"
    },
    {
     "index": 56,
     "name": "docs-offchain-api-reference/what-this-reference-contains-56",
     "pause_ms": 300,
-    "text": "Singular.Registry.Wire.State — source",
-    "v": "0fe4f51e0003"
+    "text": "Singular.Registry.Types — source",
+    "v": "22154e905b3b"
    },
    {
     "index": 57,
     "name": "docs-offchain-api-reference/what-this-reference-contains-57",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Wire.Primitive — source",
+    "v": "e28eac65d957"
+   },
+   {
+    "index": 58,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-58",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Wire.Proof — source",
+    "v": "6ac14715485e"
+   },
+   {
+    "index": 59,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-59",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Wire.Redeemer — source",
+    "v": "a9769e421c16"
+   },
+   {
+    "index": 60,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-60",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Wire.Request — source",
+    "v": "b1b93d5c6a89"
+   },
+   {
+    "index": 61,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-61",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Wire.State — source",
+    "v": "0fe4f51e0003"
+   },
+   {
+    "index": 62,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-62",
     "pause_ms": 400,
     "text": "The facades and owners of the registry builder and blueprint extraction are described module by module in the builder and blueprint modules guide, and the registry wire's five owners behind the Types facade in Who owns the registry wire.",
     "v": "d30d0f9ba9c4"
