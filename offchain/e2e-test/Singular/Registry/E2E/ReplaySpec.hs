@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
@@ -6,8 +7,9 @@ Description : A registry's trie rebuilt from its public history, checked against
 License     : Apache-2.0
 
 One registry is made on a devnet ("Singular.Registry.E2E.ReplayHistory"):
-@create@, a fold of each of the seven edges, a fold that rejects its
-request and a fold that applies one request and rejects the others. Every
+@create@, an @insertActive@ and an @updateTerminal@ fold of one key, a fold
+that rejects its request and a fold that applies one request and rejects
+the others. Every
 expected value below comes from that chain: the roots are the state datums
 the chain holds after each fold, the transactions and their identifiers
 are the ones it accepted. Nothing is typed in.
@@ -24,15 +26,18 @@ import Control.Monad (forM, forM_, unless, when)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
+import Data.Foldable (toList)
 import Data.IORef (IORef, newIORef, readIORef)
 import Data.List (elemIndex, nub)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
+import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
-import Lens.Micro ((&), (.~), (^.))
+import Lens.Micro ((%~), (&), (.~), (^.))
 import Test.Hspec
 
+import Cardano.Ledger.Address (getNetwork)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Alonzo.TxWits (Redeemers (..))
 import Cardano.Ledger.Api.Scripts.Data (Data (..), getPlutusData)
@@ -41,15 +46,18 @@ import Cardano.Ledger.Api.Tx.Body
     ( feeTxBodyL
     , inputsTxBodyL
     , mintTxBodyL
+    , outputsTxBodyL
     , referenceInputsTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
+    , addrTxOutL
     , coinTxOutL
     , datumTxOutL
     , valueTxOutL
     )
 import Cardano.Ledger.Api.Tx.Wits (rdmrsTxWitsL)
+import Cardano.Ledger.BaseTypes (TxIx (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Mary.Value
@@ -89,7 +97,8 @@ import Singular.Registry.Replay
 import Singular.Registry.Trie (Trie (..))
 import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
 import Singular.Registry.TxBuilder.Internal
-    ( extractCageDatum
+    ( addrFromKeyHashBytes
+    , extractCageDatum
     , leafAbsent
     , leafActive
     , leafTerminal
@@ -107,13 +116,8 @@ import Singular.Registry.Types
     , ProofStep (..)
     , RequestAction (..)
     , UpdateRedeemer (..)
-    , edgeDeleteAbsent
-    , edgeDeleteActive
     , edgeInsertAbsent
     , edgeInsertActive
-    , edgeUpdateActive
-    , edgeUpdateTerminal
-    , edgeWitnessTerminal
     )
 
 import Singular.Registry.E2E.ReplayHistory
@@ -138,12 +142,8 @@ spec bp =
 replaySpec :: SpecWith History
 replaySpec = do
     describe "the rebuilt root is the chain's root" $ do
-        it "covers all seven edges, a rejecting fold and a mixed fold" $ \h -> do
-            let folds = map (decodeFold h . pointTx) (historyFolds h)
-                applied = [requestEdge r | (r, Update _) <- concat folds]
-            forM_ allEdges $ \e ->
-                unless (e `elem` applied) $
-                    expectationFailure ("no fold of the history applies edge " <> show e)
+        it "has a fold rejecting all its requests and one mixing both" $ \h -> do
+            folds <- mapM (foldPairs h . pointTx) (historyFolds h)
             unless (any (all (isRejected . snd)) folds) $
                 expectationFailure "no fold of the history rejects all its requests"
             unless
@@ -170,7 +170,8 @@ replaySpec = do
         it "refuses, naming the fold, a request served with an altered edge" $ \h -> do
             let target = firstFold "insertActive" h
                 fid = txIdTx (pointTx target)
-            (reqIn, req) <- case decodeFold h (pointTx target) of
+            pairs <- foldPairs h (pointTx target)
+            (reqIn, req) <- case pairs of
                 [(r, _)] -> case requestInputs h (pointTx target) of
                     [(i, _)] -> pure (i, r)
                     _ -> fail "the insertActive fold spends other than one request"
@@ -192,14 +193,14 @@ replaySpec = do
 
     describe "a mixed fold changes the trie by its applied requests only" $ do
         it "applies one request and rejects the others, all of this registry" $ \h -> do
-            let pairs = decodeFold h (pointTx (mixedPoint h))
+            pairs <- foldPairs h (pointTx (mixedPoint h))
             length pairs `shouldSatisfy` (> 1)
             [r | (r, Update _) <- pairs] `shouldSatisfy` ((== 1) . length)
             map fst (requestInputs h (pointTx (mixedPoint h)))
                 `shouldSatisfy` elem (mixedApplied (historyMixed h))
 
         it "differs from what applying every request would give" $ \h -> do
-            let pairs = decodeFold h (pointTx (mixedPoint h))
+            pairs <- foldPairs h (pointTx (mixedPoint h))
             root <- applyOnTop h (beforeMixed h) [r | (r, _) <- pairs]
             root `shouldNotBe` pointRoot (mixedPoint h)
 
@@ -215,8 +216,8 @@ replaySpec = do
 
             it "differs from what pairing in booking order would give" $ \h -> do
                 let tx = pointTx (mixedPoint h)
-                    actions = map snd (decodeFold h tx)
-                    requests = Map.fromList (requestInputs h tx)
+                actions <- map snd <$> foldPairs h tx
+                let requests = Map.fromList (requestInputs h tx)
                     byBooking =
                         [ r
                         | (b, a) <- zip (mixedBooked (historyMixed h)) actions
@@ -260,7 +261,7 @@ replaySpec = do
                     rootOf db >>= (`shouldBe` r0)
 
             it "refuses a history with one fold dropped, naming it" $ \h -> do
-                let dropped = historyFolds h !! 4
+                let dropped = foldAt 1 h
                     txs = filter ((/= txIdTx (pointTx dropped)) . txIdTx) (historyTxs h)
                 (result, _) <-
                     replayAt h (historyResolved h) txs (historyToken h) (lastPoint h)
@@ -288,8 +289,8 @@ replaySpec = do
             it
                 "refuses a state output spent by two transactions, naming the second"
                 $ \h -> do
-                    let spentFrom = historyFolds h !! 2
-                        forkedFrom = historyFolds h !! 3
+                    let spentFrom = foldAt 0 h
+                        forkedFrom = foldAt 1 h
                         fork = bumpFee (pointTx forkedFrom)
                     txIdTx fork `shouldNotBe` txIdTx (pointTx forkedFrom)
                     (result, _) <-
@@ -310,9 +311,9 @@ replaySpec = do
             it
                 "refuses a state output past the selection spent by two transactions"
                 $ \h -> do
-                    let selection = historyFolds h !! 2
-                        spentFrom = historyFolds h !! 3
-                        forkedFrom = historyFolds h !! 4
+                    let selection = foldAt 0 h
+                        spentFrom = foldAt 1 h
+                        forkedFrom = foldAt 2 h
                         fork = bumpFee (pointTx forkedFrom)
                         -- Past the selection neither spender is on the
                         -- lineage: the refusal names the larger identifier.
@@ -461,6 +462,98 @@ replaySpec = do
                             (historyToken h)
                             tid
                             (UndecodableRequest (ActionCount 0 1))
+                        )
+
+            it "refuses a fold with one action more than its requests" $ \h -> do
+                let target = firstFold "insertActive" h
+                    tid = txIdTx (pointTx target)
+                purpose <- stateSpendPurpose h (pointTx target)
+                actions <- map snd <$> foldPairs h (pointTx target)
+                let tx =
+                        withRedeemers
+                            ( Map.adjust
+                                ( \(_, units) ->
+                                    (Data (toPlcData (Modify (actions <> [Rejected]))), units)
+                                )
+                                purpose
+                            )
+                            (pointTx target)
+                (result, _) <-
+                    replayAt
+                        h
+                        (historyResolved h)
+                        (swapTx tx (historyTxs h))
+                        (historyToken h)
+                        (lastPoint h)
+                result
+                    `shouldBe` Left
+                        ( ReplayFailure
+                            (historyToken h)
+                            tid
+                            (UndecodableRequest (ActionCount 2 1))
+                        )
+
+            it "refuses a fold whose first output carries no state datum" $ \h -> do
+                let newest = pointTx (lastPoint h)
+                    edited =
+                        withOutputs
+                            (\case o : rest -> setRequest decoyRequest o : rest; [] -> [])
+                            newest
+                (result, _) <- replayEdited h newest edited
+                result
+                    `shouldBe` Left
+                        ( ReplayFailure
+                            (historyToken h)
+                            (txIdTx edited)
+                            (UndecodableRequest UndecodableStateOutput)
+                        )
+
+            it "refuses a fold that spends no state output" $ \h -> do
+                let newest = pointTx (lastPoint h)
+                stateIn <- stateInputOf h newest
+                let edited = newest & bodyTxL . inputsTxBodyL %~ Set.delete stateIn
+                (result, _) <- replayEdited h newest edited
+                result
+                    `shouldBe` Left
+                        ( ReplayFailure
+                            (historyToken h)
+                            (txIdTx edited)
+                            (HistoryIncomplete NoStateInput)
+                        )
+
+            it "refuses a create whose seed does not name the token" $ \h -> do
+                let create = pointTx (historyCreate h)
+                    stranger = historyStranger h
+                    edited =
+                        withMintRedeemer
+                            (Minting (txInToRef stranger))
+                            (create & bodyTxL . inputsTxBodyL %~ Set.insert stranger)
+                (result, _) <- replayCreate h edited
+                result
+                    `shouldBe` Left
+                        ( ReplayFailure
+                            (historyToken h)
+                            (txIdTx edited)
+                            (WrongRegistry SeedName)
+                        )
+
+            it "refuses a create whose first output is not the state address" $ \h -> do
+                let create = pointTx (historyCreate h)
+                    toKey o =
+                        o
+                            & addrTxOutL
+                                .~ addrFromKeyHashBytes
+                                    (getNetwork (o ^. addrTxOutL))
+                                    (BS.replicate 28 0xcd)
+                    edited =
+                        withOutputs (\case o : rest -> toKey o : rest; [] -> []) create
+                (result, _) <- replayCreate h edited
+                result
+                    `shouldBe` Left
+                        ( ReplayFailure
+                            (historyToken h)
+                            (txIdTx edited)
+                            (WrongRegistry CreateOutput)
                         )
 
             it "refuses a create whose mint redeemer is not Minting" $ \h -> do
@@ -652,6 +745,12 @@ mixedPoint = lastPoint
 beforeMixed :: History -> StatePoint
 beforeMixed = last . init . points
 
+-- | The fold at a position of the history, in the order it was submitted.
+foldAt :: Int -> History -> StatePoint
+foldAt i h = case drop i (historyFolds h) of
+    p : _ -> p
+    [] -> error ("the history has no fold at " <> show i)
+
 firstFold :: String -> History -> StatePoint
 firstFold label h = case filter ((== label) . pointLabel) (historyFolds h) of
     p : _ -> p
@@ -686,27 +785,30 @@ historyKeys h =
         , tokenOf r == tokenBytes h
         ]
 
-allEdges :: [Integer]
-allEdges =
-    [ edgeInsertAbsent
-    , edgeInsertActive
-    , edgeUpdateActive
-    , edgeUpdateTerminal
-    , edgeDeleteAbsent
-    , edgeDeleteActive
-    , edgeWitnessTerminal
-    ]
-
 -- ---------------------------------------------------------
 -- Reading a fold, independently of the replay
 -- ---------------------------------------------------------
 
 {- | A fold's own-token requests in ledger order, each with the action the
 fold's @Modify@ redeemer gives it. Read here from the transaction and the
-resolutions, so the coverage and the controls do not rest on the replay.
+resolutions, so the coverage and the controls do not rest on the replay; a
+missing or unreadable redeemer, or actions and requests in different
+numbers, fail the check rather than pair short.
 -}
-decodeFold :: History -> ConwayTx -> [(OnChainRequest, RequestAction)]
-decodeFold h tx = zip (map snd (requestInputs h tx)) (modifyActions h tx)
+foldPairs
+    :: History -> ConwayTx -> IO [(OnChainRequest, RequestAction)]
+foldPairs h tx = do
+    let requests = map snd (requestInputs h tx)
+    actions <- either fail pure (modifyActions h tx)
+    unless (length requests == length actions) $
+        fail
+            ( "the fold pairs "
+                <> show (length actions)
+                <> " actions with "
+                <> show (length requests)
+                <> " requests"
+            )
+    pure (zip requests actions)
 
 requestInputs :: History -> ConwayTx -> [(TxIn, OnChainRequest)]
 requestInputs h tx =
@@ -720,7 +822,7 @@ requestInputs h tx =
 {- | The actions of the state input's @Modify@ redeemer: the spend of the
 input holding the registry's token, at its position among the inputs.
 -}
-modifyActions :: History -> ConwayTx -> [RequestAction]
+modifyActions :: History -> ConwayTx -> Either String [RequestAction]
 modifyActions h tx =
     case [ ix
          | (ix, i) <- zip [0 ..] (Set.toAscList (tx ^. bodyTxL . inputsTxBodyL))
@@ -728,11 +830,11 @@ modifyActions h tx =
          , holdsToken h o
          ] of
         [ix] -> case Map.lookup (ConwaySpending (AsIx ix)) rdmrs of
-            Just (d, _)
-                | Just (Modify as) <- fromBuiltinData (BuiltinData (getPlutusData d)) ->
-                    as
-            _ -> []
-        _ -> []
+            Nothing -> Left "the state spend carries no redeemer"
+            Just (d, _) -> case fromBuiltinData (BuiltinData (getPlutusData d)) of
+                Just (Modify as) -> Right as
+                _ -> Left "the state spend's redeemer is not Modify"
+        _ -> Left "the fold spends other than one state input"
   where
     Redeemers rdmrs = tx ^. witsTxL . rdmrsTxWitsL
 
@@ -782,6 +884,62 @@ withMintRedeemer m tx =
     swap _ (d, units) = case fromBuiltinData (BuiltinData (getPlutusData d)) of
         Just (Minting _) -> (Data (toPlcData m), units)
         _ -> (d, units)
+
+-- | Edit a transaction's outputs; its identifier changes with its body.
+withOutputs
+    :: ([TxOut ConwayEra] -> [TxOut ConwayEra]) -> ConwayTx -> ConwayTx
+withOutputs edit tx =
+    tx
+        & bodyTxL . outputsTxBodyL
+            .~ StrictSeq.fromList (edit (toList (tx ^. bodyTxL . outputsTxBodyL)))
+
+{- | Replay to an edited copy of the newest fold, which replaces it in the
+history and is selected at its first output with the chain's root there.
+-}
+replayEdited
+    :: History
+    -> ConwayTx
+    -> ConwayTx
+    -> IO (Either ReplayFailure Replayed, IORef MPFInMemoryDB)
+replayEdited h original edited =
+    replayAt
+        h
+        (historyResolved h)
+        (edited : filter ((/= txIdTx original) . txIdTx) (historyTxs h))
+        (historyToken h)
+        (lastPoint h)
+            { pointTx = edited
+            , pointOutput = TxIn (txIdTx edited) (TxIx 0)
+            }
+
+-- | Replay a history of one edited create, selected at its first output.
+replayCreate
+    :: History
+    -> ConwayTx
+    -> IO (Either ReplayFailure Replayed, IORef MPFInMemoryDB)
+replayCreate h edited =
+    replayAt
+        h
+        (historyResolved h)
+        [edited]
+        (historyToken h)
+        (historyCreate h)
+            { pointTx = edited
+            , pointOutput = TxIn (txIdTx edited) (TxIx 0)
+            }
+
+-- | A request datum, for an output that must not carry one.
+decoyRequest :: OnChainRequest
+decoyRequest =
+    OnChainRequest
+        { requestToken = OnChainTokenId (BuiltinByteString BS.empty)
+        , requestOwner = BuiltinByteString (BS.replicate 28 0x11)
+        , requestKey = "replay-not-a-state"
+        , requestEdge = edgeInsertActive
+        , requestDeposit = 0
+        , requestSubmittedAt = 0
+        , requestDestination = (BS.empty, BS.empty)
+        }
 
 -- | Edit a transaction's redeemers; the body, and so the identifier, is unchanged.
 withRedeemers

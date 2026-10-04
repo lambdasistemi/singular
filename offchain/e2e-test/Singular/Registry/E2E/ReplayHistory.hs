@@ -7,9 +7,10 @@ License     : Apache-2.0
 
 The replay is checked against what the chain itself accepted, so its
 history is made here, on a real devnet, and nothing about it is typed in.
-One registry is created and folded through all seven edges with the
-library's own builders, then a fold that rejects a request, then a fold
-that applies one request and rejects the others.
+One registry is created and folded with the library's own builders
+through the two edges the command line books, @ then
+@updateTerminal@ on one key, then a fold that rejects a request, then a
+fold that applies one request and rejects the others.
 
 Every transaction goes through one recording submitter, which resolves
 each input the transaction spends or references from the outputs of the
@@ -99,7 +100,6 @@ import Singular.Registry.TxBuilder.Internal
     , txInToRef
     )
 import Singular.Registry.TxBuilder.Reject (rejectRequestsWithRefs)
-import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
 import Singular.Registry.Types
     ( CageDatum (..)
     , Edge
@@ -107,13 +107,8 @@ import Singular.Registry.Types
     , OnChainRoot (..)
     , OnChainTokenId (..)
     , OnChainTokenState (..)
-    , edgeDeleteAbsent
-    , edgeDeleteActive
-    , edgeInsertAbsent
     , edgeInsertActive
-    , edgeUpdateActive
     , edgeUpdateTerminal
-    , edgeWitnessTerminal
     )
 
 import Singular.Registry.E2E.CageSpec (submitWithGenesis, withE2E)
@@ -182,29 +177,12 @@ recordHistory stateBytes requestBytes =
         let single label key edge dest = do
                 outcome <- Driver.foldEdgeTo reg key edge dest
                 statePoint cfg prov tid (Driver.foFoldTx outcome) label
-            -- The driver refuses a fold whose root does not move, and a
-            -- read moves none: the witness is folded by the same builder
-            -- the driver calls, without its root-moved check.
-            readOnly label key edge dest = do
-                _ <- book cfg codes prov submit tid key edge dest
-                unsigned <- Cage.withView prov $ \v -> do
-                    ctx <- Edges.registryContextFor cfg codes v refs
-                    updateTokenWithDuties cfg v tm tid genesisAddr ctx
-                signed <- submit unsigned
-                statePoint cfg prov tid signed label
-            refund = (serialiseAddr (refundAddr cfg), BS.empty)
             wallet' = (serialiseAddr genesisAddr, BS.empty)
+        -- The two edges the command line books, on one key.
         edgeFolds <-
             sequence
-                [ single "insertAbsent" "replay-key-a" edgeInsertAbsent refund
-                , single "updateActive" "replay-key-a" edgeUpdateActive wallet'
-                , single "insertAbsent" "replay-key-b" edgeInsertAbsent refund
-                , single "deleteAbsent" "replay-key-b" edgeDeleteAbsent wallet'
-                , single "insertActive" "replay-key-c" edgeInsertActive wallet'
+                [ single "insertActive" "replay-key-c" edgeInsertActive wallet'
                 , single "updateTerminal" "replay-key-c" edgeUpdateTerminal wallet'
-                , readOnly "witnessTerminal" "replay-key-c" edgeWitnessTerminal wallet'
-                , single "insertActive" "replay-key-d" edgeInsertActive wallet'
-                , single "deleteActive" "replay-key-d" edgeDeleteActive wallet'
                 ]
         -- A fold that rejects its one request.
         _ <-
@@ -451,10 +429,6 @@ makeDecoys cfg prov submit tid = do
             && o ^. referenceScriptTxOutL == SNothing
             && o ^. datumTxOutL == mempty'
     mempty' = (mkBasicTxOut genesisAddr mempty :: TxOut ConwayEra) ^. datumTxOutL
-
--- | The refund address absent insertions book: a key address that is not the folder's.
-refundAddr :: CageConfig -> Addr
-refundAddr cfg = addrFromKeyHashBytes (network cfg) (BS.replicate 28 0xab)
 
 -- | An address no key here signs for, where the referenced decoy rests.
 lockedAddr :: CageConfig -> Addr
