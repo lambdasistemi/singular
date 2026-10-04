@@ -39,6 +39,7 @@ library
     , aeson-pretty
     , base                   >=4.14 && <5
     , base16-bytestring
+    , bech32
     , bytestring             >=0.11 && <0.13
     , cardano-crypto-class
     , cardano-ledger-allegra
@@ -62,6 +63,7 @@ library
     , plutus-ledger-api
     , plutus-tx
     , process
+    , scientific
     , singular-registry:node-internal
     , text                   >=2.0  && <2.2
     , time
@@ -206,6 +208,21 @@ library node-internal
     , time
     , unix
 
+-- #389: the read-only Koios probe and fixture recorder over koios-http.
+executable singular-koios
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   koios-http/app
+  main-is:          Main.hs
+  build-depends:
+    , base                 >=4.14 && <5
+    , optparse-applicative
+    , singular-registry
+    , singular-registry:koios-http
+    , text
+
+  ghc-options:      -threaded
+
 -- #389: the live Koios transport and the read-only fixture recorder.
 -- Public so the Koios ledger-provider instance and the commands that select
 -- Koios link it; the main library carries no HTTP dependency.
@@ -221,8 +238,22 @@ library koios-http
   build-depends:
     , base                 >=4.14 && <5
     , bytestring
+    , aeson
+    , case-insensitive
+    , directory
+    , filepath
+    , http-client
+    , http-client-tls
+    , http-types
+    , random
+    , base16-bytestring
+    , cardano-crypto-class
+    , cardano-ledger-api
+    , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
+    , cardano-slotting
+    , microlens
     , singular-registry
     , text
     , time
@@ -810,6 +841,9 @@ test-suite cage-tests
     , text
     , time
     , unix
+
+  -- #389: the loopback Koios server (warp) needs the threaded runtime.
+  ghc-options:      -threaded
 
 -- #326: the backend contract suite, one case list over every adapter —
 -- in-memory, indexer over the in-memory node, node and indexer on generated

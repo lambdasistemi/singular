@@ -1,5 +1,5 @@
 {-# LANGUAGE DataKinds #-}
-{-# OPTIONS_GHC -Wno-redundant-constraints #-}
+{-# LANGUAGE LambdaCase #-}
 
 {- |
 Module      : Singular.Provider.Koios.Client
@@ -13,16 +13,23 @@ A transport carries one request to one raw answer — status, headers and
 body — and nothing else. It does not page and it does not decode, so the
 recorded transport ("Singular.Provider.Koios.Recorded") and the live
 HTTP transport (@koios-http@) hand this module the same raw answers and
-every answer is paged and decoded here, once.
+every answer is paged and decoded here, once. The status is classified
+here too: 2xx is an answer, 429 is rate limited, 5xx is server failing,
+any other status is refused by the server — except a 400 at @submittx@,
+which is the server's refusal of the transaction.
 
 Every call ends in its decoded answer or in one 'ClientFailure' naming
 the call, the attempts the transport made and the evidence. An honestly
 empty answer, such as an address with no outputs, is a success with an
-empty list and is distinct from every failure.
+empty list and is distinct from every failure. A requested fact absent
+from an answer — a transaction, a registration, the tip — is an
+'UnknownFact', never a default.
 
-Paged calls ask for an exact row total and are read in a stable order
-until the total is reached. A page that is cut off, a page larger than
-the limit, a total that changes between pages, rows missing before the
+Paged calls ask for an exact row total (@Prefer: count=exact@) and are
+read in a stable order, page after page, until the total is reached or a
+page comes back shorter than the limit. A page that is cut off, a page
+larger than the limit, a range that does not match the page asked for, a
+total that is missing or changes between pages, rows missing before the
 total, or more pages than the configured ceiling each refuse the whole
 call: the client never returns a shorter answer as a whole one.
 -}
@@ -62,8 +69,14 @@ module Singular.Provider.Koios.Client
     , accountRegistered
     ) where
 
+import Data.Aeson (Value)
+import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
+import Data.List (find)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
+import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
 
 import Cardano.Ledger.Address (AccountAddress, Addr)
 import Cardano.Ledger.Api.Tx.Out (TxOut)
@@ -74,16 +87,40 @@ import Cardano.Ledger.Mary.Value (AssetName, PolicyID)
 import Cardano.Ledger.TxIn (TxId, TxIn)
 
 import Singular.Provider.Koios.Wire
-    ( AssetTx
-    , Body
-    , Call
+    ( AccountStatus (..)
+    , AssetTx
+    , Body (..)
+    , Call (..)
     , DecodeFailure
     , Method
-    , Request
+    , Request (..)
     , Tip
-    , TxCbor
-    , TxInfo
-    , TxStatus
+    , TxCbor (..)
+    , TxInfo (..)
+    , TxStatus (..)
+    , accountInfoRequest
+    , addressUtxosRequest
+    , assetTxsRequest
+    , assetUtxosRequest
+    , cliProtocolParamsRequest
+    , decodeAccountStatuses
+    , decodeAssetTxs
+    , decodeCliProtocolParams
+    , decodeEpochParams
+    , decodeSubmitted
+    , decodeTip
+    , decodeTxCbors
+    , decodeTxInfos
+    , decodeTxStatuses
+    , decodeUtxos
+    , epochParamsRequest
+    , parseBody
+    , renderRewardAccount
+    , submitTxRequest
+    , tipRequest
+    , txCborRequest
+    , txInfoRequest
+    , txStatusRequest
     )
 
 -- | How a transport may retry a request.
@@ -111,9 +148,28 @@ data RawRequest = RawRequest
     }
     deriving stock (Eq, Show)
 
--- | The raw request of an unpaged request.
+{- | The raw request of an unpaged request: its body's content type, and
+retries limited to unanswered requests for a submission.
+-}
 rawRequest :: Request a -> RawRequest
-rawRequest = notImplemented
+rawRequest r =
+    RawRequest
+        { rawCall = requestCall r
+        , rawMethod = requestMethod r
+        , rawPath = requestPath r
+        , rawQuery = requestQuery r
+        , rawHeaders = ("accept", "application/json") : contentType
+        , rawBody = requestBody r
+        , rawRetry =
+            if requestCall r == CallSubmitTx
+                then RetryUnanswered
+                else RetryTransient
+        }
+  where
+    contentType = case requestBody r of
+        NoBody -> []
+        JsonBody _ -> [("content-type", "application/json")]
+        CborBody _ -> [("content-type", "application/cbor")]
 
 -- | One raw answer: status, headers with lower-case names, and body.
 data Answer = Answer
@@ -181,7 +237,9 @@ data FailureReason
       Unreachable Text
     | -- | No complete answer within the timeout, past the retry bound
       TimedOut
-    | -- | 429 past the retry bound or beyond the wait ceiling; the last wait asked, in seconds
+    | {- | 429 past the retry bound or beyond the wait ceiling; the last
+      wait asked, in seconds
+      -}
       RateLimited (Maybe Int)
     | -- | 5xx past the retry bound: status and body
       ServerFailing Int Text
@@ -203,11 +261,11 @@ data FailureReason
 data PageRefusal
     = -- | The body at this offset is cut off or not one JSON document
       PageCutOff Int Text
-    | -- | The page at this offset has more rows than the limit
+    | -- | The page at this offset has more rows than the limit: rows, limit
       PageOverLimit Int Int Int
-    | -- | The total at this offset differs from the first page's
+    | -- | The total at this offset differs from the first page's: first, now
       TotalChanged Int Integer Integer
-    | -- | The answer at this offset states no exact total
+    | -- | The answer at this offset states no exact total: its range header
       TotalMissing Int (Maybe Text)
     | -- | The range header at this offset does not match the rows
       RangeMismatch Int Text
@@ -228,9 +286,198 @@ data UnknownFact
       UnknownRegistration Text (Maybe Text)
     deriving stock (Eq, Show)
 
+-- ---------------------------------------------------------------------------
+-- Exchanges
+-- ---------------------------------------------------------------------------
+
+-- | A failure of a call.
+type Fails = Int -> FailureReason -> ClientFailure
+
+failing :: Call -> Fails
+failing = ClientFailure
+
+-- | The answer of an exchange when its status is a success.
+answerOf :: Fails -> Int -> Exchange -> Either ClientFailure Answer
+answerOf failure offset ex = case exchangeResult ex of
+    Left none -> Left (failure attempts (noAnswer none))
+    Right a
+        | status >= 200 && status < 300 -> Right a
+        | otherwise -> Left (failure attempts (refusal a))
+      where
+        status = answerStatus a
+  where
+    attempts = exchangeAttempts ex
+    noAnswer = \case
+        NoConnection t -> Unreachable t
+        NoAnswerInTime -> TimedOut
+        BodyCutOff t -> IncompletePage (PageCutOff offset t)
+        NoRecording t -> NotRecorded t
+
+-- | The failure an unsuccessful status names.
+refusal :: Answer -> FailureReason
+refusal a
+    | status == 429 = RateLimited (header "retry-after" a >>= readInt)
+    | status >= 500 = ServerFailing status (bodyText a)
+    | otherwise = RefusedByServer status (bodyText a)
+  where
+    status = answerStatus a
+
+header :: Text -> Answer -> Maybe Text
+header name = lookup name . answerHeaders
+
+bodyText :: Answer -> Text
+bodyText = TE.decodeUtf8Lenient . answerBody
+
+readInt :: Text -> Maybe Int
+readInt t = case reads (T.unpack (T.strip t)) of
+    [(n, "")] -> Just n
+    _ -> Nothing
+
+-- | One unpaged request, decoded, with the attempts it took.
+single
+    :: (Monad m)
+    => Koios m
+    -> Request a
+    -> (Value -> Either DecodeFailure b)
+    -> m (Either ClientFailure (Int, b))
+single k req decode = do
+    ex <- exchange (koiosTransport k) (rawRequest req)
+    let failure = failing (requestCall req)
+        attempts = exchangeAttempts ex
+        undecodable = failure attempts . Undecodable
+    pure $ do
+        a <- answerOf failure 0 ex
+        v <- first undecodable (parseBody (answerBody a))
+        (,) attempts <$> first undecodable (decode v)
+
+-- | Every page of a paged request, decoded and checked whole.
+paged
+    :: (Monad m)
+    => Koios m
+    -> Request a
+    -> (Value -> Either DecodeFailure [b])
+    -> m (Either ClientFailure [b])
+paged k req decode = go 0 0 Nothing []
+  where
+    ClientConfig{pageSize = size, pageCeiling = ceiling'} = koiosConfig k
+    failure = failing (requestCall req)
+    order = maybe [] (\o -> [("order", o)]) (requestOrder req)
+    pageRequest offset =
+        let raw = rawRequest req
+        in  raw
+                { rawQuery =
+                    rawQuery raw
+                        <> order
+                        <> [ ("offset", T.pack (show offset))
+                           , ("limit", T.pack (show size))
+                           ]
+                , rawHeaders = ("prefer", "count=exact") : rawHeaders raw
+                }
+    go pages offset total acc
+        | pages >= ceiling' =
+            pure (Left (failure 0 (IncompletePage (PageCeilingReached ceiling'))))
+        | otherwise = do
+            ex <- exchange (koiosTransport k) (pageRequest offset)
+            let attempts = exchangeAttempts ex
+                refuse = Left . failure attempts . IncompletePage
+                page = do
+                    a <- answerOf failure offset ex
+                    v <-
+                        first
+                            (failure attempts . IncompletePage . PageCutOff offset . reasonOf)
+                            (parseBody (answerBody a))
+                    rows <- first (failure attempts . Undecodable) (decode v)
+                    pure (a, rows)
+            case page of
+                Left f -> pure (Left f)
+                Right (a, rows) ->
+                    let n = length rows
+                        here = toInteger offset + toInteger n
+                    in  case rangeOf a of
+                            _ | n > size -> pure (refuse (PageOverLimit offset n size))
+                            Nothing ->
+                                pure (refuse (TotalMissing offset (header "content-range" a)))
+                            Just (span', t)
+                                | not (spanMatches offset n span') || here > t ->
+                                    pure (refuse (RangeMismatch offset (rangeText a)))
+                                | Just t0 <- total
+                                , t0 /= t ->
+                                    pure (refuse (TotalChanged offset t0 t))
+                                | n < size || here == t ->
+                                    if here == t
+                                        then pure (Right (acc <> rows))
+                                        else pure (refuse (RowsMissing t here))
+                                | otherwise ->
+                                    go (pages + 1) (offset + size) (Just t) (acc <> rows)
+    reasonOf = T.pack . show
+    rangeText = fromMaybe "" . header "content-range"
+
+{- | The span and exact total of a @Content-Range@ header: @a-b/T@, or
+@*/T@ for an empty page. 'Nothing' when absent or when the total is not
+exact.
+-}
+rangeOf :: Answer -> Maybe (Maybe (Integer, Integer), Integer)
+rangeOf a = do
+    range <- header "content-range" a
+    let (span', rest) = T.breakOn "/" range
+    total <- readInteger (T.drop 1 rest)
+    case span' of
+        "*" -> Just (Nothing, total)
+        _ ->
+            let (from, to) = T.breakOn "-" span'
+            in  do
+                    f <- readInteger from
+                    t <- readInteger (T.drop 1 to)
+                    Just (Just (f, t), total)
+  where
+    readInteger t = case reads (T.unpack t) of
+        [(n, "")] -> Just n
+        _ -> Nothing
+
+-- | Whether a range span names exactly the rows at an offset.
+spanMatches :: Int -> Int -> Maybe (Integer, Integer) -> Bool
+spanMatches offset n = \case
+    Nothing -> n == 0
+    Just (from, to) ->
+        n > 0
+            && from == toInteger offset
+            && to == toInteger offset + toInteger n - 1
+
+-- | The first row, or the unknown fact.
+firstOr
+    :: Fails
+    -> UnknownFact
+    -> Either ClientFailure (Int, [a])
+    -> Either ClientFailure a
+firstOr failure unknown = \case
+    Left f -> Left f
+    Right (_, x : _) -> Right x
+    Right (attempts, []) -> Left (failure attempts (UnknownFact unknown))
+
+-- | Each asked transaction's row, in the order asked.
+eachAsked
+    :: Fails
+    -> (a -> TxId)
+    -> [TxId]
+    -> Either ClientFailure (Int, [a])
+    -> Either ClientFailure [a]
+eachAsked failure key ids result = do
+    (attempts, found) <- result
+    traverse
+        ( \i -> case find ((== i) . key) found of
+            Just row -> Right row
+            Nothing -> Left (failure attempts (UnknownFact (UnknownTransaction i)))
+        )
+        ids
+
+-- ---------------------------------------------------------------------------
+-- Calls
+-- ---------------------------------------------------------------------------
+
 -- | The chain tip.
 tip :: (Monad m) => Koios m -> m (Either ClientFailure Tip)
-tip = notImplemented
+tip k =
+    firstOr (failing CallTip) UnknownTip <$> single k tipRequest decodeTip
 
 -- | Every output at the addresses, read page by page.
 addressUtxos
@@ -238,7 +485,7 @@ addressUtxos
     => Koios m
     -> [Addr]
     -> m (Either ClientFailure [(TxIn, TxOut ConwayEra)])
-addressUtxos = notImplemented
+addressUtxos k addrs = paged k (addressUtxosRequest addrs) decodeUtxos
 
 -- | Every output holding the assets, read page by page.
 assetUtxos
@@ -246,26 +493,33 @@ assetUtxos
     => Koios m
     -> [(PolicyID, AssetName)]
     -> m (Either ClientFailure [(TxIn, TxOut ConwayEra)])
-assetUtxos = notImplemented
+assetUtxos k assets = paged k (assetUtxosRequest assets) decodeUtxos
 
--- | Every transaction that moved the asset, read page by page.
+{- | Every transaction that included the asset, read page by page, in
+block height then transaction id order. That order makes pages stable;
+it is not the order in which the asset was passed on.
+-}
 assetTxs
     :: (Monad m)
     => Koios m
     -> PolicyID
     -> AssetName
     -> m (Either ClientFailure [AssetTx])
-assetTxs = notImplemented
+assetTxs k p n = paged k (assetTxsRequest p n) decodeAssetTxs
 
 -- | The named transactions, in the order asked.
 txInfo
     :: (Monad m) => Koios m -> [TxId] -> m (Either ClientFailure [TxInfo])
-txInfo = notImplemented
+txInfo k ids =
+    eachAsked (failing CallTxInfo) txInfoId ids
+        <$> single k (txInfoRequest ids) decodeTxInfos
 
 -- | The named transactions' bytes, in the order asked.
 txCbor
     :: (Monad m) => Koios m -> [TxId] -> m (Either ClientFailure [TxCbor])
-txCbor = notImplemented
+txCbor k ids =
+    eachAsked (failing CallTxCbor) txCborId ids
+        <$> single k (txCborRequest ids) decodeTxCbors
 
 -- | The protocol parameters of an epoch.
 epochParams
@@ -273,14 +527,17 @@ epochParams
     => Koios m
     -> EpochNo
     -> m (Either ClientFailure (PParams ConwayEra))
-epochParams = notImplemented
+epochParams k e =
+    firstOr (failing CallEpochParams) (UnknownEpoch e)
+        <$> single k (epochParamsRequest e) decodeEpochParams
 
 -- | The current protocol parameters in the node's own JSON form.
 cliProtocolParams
     :: (Monad m)
     => Koios m
     -> m (Either ClientFailure (PParams ConwayEra))
-cliProtocolParams = notImplemented
+cliProtocolParams k =
+    fmap snd <$> single k cliProtocolParamsRequest decodeCliProtocolParams
 
 -- | What the server did with a submitted transaction.
 data SubmitOutcome
@@ -290,31 +547,67 @@ data SubmitOutcome
       SubmitRefused Text
     deriving stock (Eq, Show)
 
--- | Submit a signed transaction's CBOR.
+{- | Submit a signed transaction's CBOR. A 400 is the server's refusal of
+the transaction and is returned as its text; the transport retries the
+submission only when no answer arrived.
+-}
 submitTx
     :: (Monad m)
     => Koios m
     -> ByteString
     -> m (Either ClientFailure SubmitOutcome)
-submitTx = notImplemented
+submitTx k bytes = do
+    ex <- exchange (koiosTransport k) (rawRequest (submitTxRequest bytes))
+    let failure = failing CallSubmitTx
+        attempts = exchangeAttempts ex
+    pure $ case exchangeResult ex of
+        Right a
+            | answerStatus a == 400 -> Right (SubmitRefused (bodyText a))
+        _ -> do
+            a <- answerOf failure 0 ex
+            first
+                (failure attempts . Undecodable)
+                (SubmitAccepted <$> decodeSubmitted (answerBody a))
 
--- | Confirmations of the named transactions, in the order asked.
+{- | Confirmations of the named transactions, in the order asked. A
+transaction absent from the answer is not yet seen.
+-}
 txStatus
     :: (Monad m)
     => Koios m
     -> [TxId]
     -> m (Either ClientFailure [TxStatus])
-txStatus = notImplemented
+txStatus k ids =
+    fmap (complete . snd)
+        <$> single k (txStatusRequest ids) decodeTxStatuses
+  where
+    complete found =
+        [ fromMaybe (TxStatus i Nothing) (find ((== i) . txStatusId) found)
+        | i <- ids
+        ]
 
 {- | Whether the reward account is registered: 'True' or 'False' only
-when Koios says registered or not registered.
+when Koios says registered or not registered; no row, or any other
+status, is an 'UnknownRegistration'.
 -}
 accountRegistered
     :: (Monad m)
     => Koios m
     -> AccountAddress
     -> m (Either ClientFailure Bool)
-accountRegistered = notImplemented
-
-notImplemented :: a
-notImplemented = error "Singular.Provider.Koios.Client: not implemented"
+accountRegistered k account = do
+    result <- single k (accountInfoRequest account) decodeAccountStatuses
+    let stake = renderRewardAccount account
+    pure $ do
+        (attempts, statuses) <- result
+        let unknown =
+                Left
+                    . failing CallAccountInfo attempts
+                    . UnknownFact
+                    . UnknownRegistration stake
+        case find ((== stake) . accountStakeAddress) statuses of
+            Nothing -> unknown Nothing
+            Just AccountStatus{accountStatus = s}
+                | s == "registered" -> Right True
+                | s == "not registered" -> Right False
+                | otherwise -> unknown (Just s)

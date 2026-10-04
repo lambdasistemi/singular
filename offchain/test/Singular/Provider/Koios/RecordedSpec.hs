@@ -22,7 +22,14 @@ ledger from its recorded @tx_cbor@. The protocol parameters decoded from
 module Singular.Provider.Koios.RecordedSpec (spec) where
 
 import Control.Monad (forM_, unless, (>=>))
-import Data.Aeson (Value (..), decodeStrict')
+import Data.Aeson
+    ( Value (..)
+    , decodeStrict'
+    , encode
+    , object
+    , toJSON
+    , (.=)
+    )
 import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as Base16
@@ -34,7 +41,7 @@ import Data.Maybe (mapMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
-import Lens.Micro ((^.))
+import Lens.Micro ((&), (.~), (^.))
 import System.Directory (copyFile, listDirectory)
 import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
@@ -42,7 +49,8 @@ import Test.Hspec
 
 import Cardano.Crypto.Hash.Class (hashFromBytes)
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.Tx (bodyTxL)
+import Cardano.Ledger.Alonzo.Tx (IsValid (..))
+import Cardano.Ledger.Api.Tx (bodyTxL, isValidTxL)
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL, outputsTxBodyL)
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
@@ -51,7 +59,9 @@ import Cardano.Ledger.Api.Tx.Out
     , valueTxOutL
     )
 import Cardano.Ledger.BaseTypes (TxIx (..))
+import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Conway (ConwayEra)
+import Cardano.Ledger.Core (eraProtVerHigh)
 import Cardano.Ledger.Hashes (ScriptHash (..), unsafeMakeSafeHash)
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
@@ -76,6 +86,11 @@ import Singular.Provider.Koios.Http
     , newHttpTransport
     )
 import Singular.Provider.Koios.Recorded
+import Singular.Provider.Koios.Scripted
+    ( koiosWith
+    , okJson
+    , scriptedTransport
+    )
 import Singular.Provider.Koios.Wire
 
 -- | Where the preprod set lives, relative to the off-chain tree.
@@ -127,12 +142,12 @@ unknownPolicy =
 -- | A registry fold: inline datums, five reference inputs with scripts.
 foldTx :: TxId
 foldTx =
-    txIdHex
+    txIdFromHex
         "c8c5be03023b828cffd1dc623b345c3ef061f73b0d7ddb1b8b4d924d2a1c57a3"
 
 -- | A transaction id no chain holds.
 absentTx :: TxId
-absentTx = txIdHex (T.replicate 64 "0")
+absentTx = txIdFromHex (T.replicate 64 "0")
 
 registeredAccount, notRegisteredAccount, absentAccount :: Text
 registeredAccount = "stake_test17zy7ujlley7twgsnlqmpkue5338vgkqucz2uky864020czgktxcpl"
@@ -143,6 +158,7 @@ spec :: Spec
 spec = describe "recorded preprod Koios answers" $ do
     setSpec
     decodeSpec
+    validitySpec
     seamSpec
 
 -- ---------------------------------------------------------------------------
@@ -344,7 +360,8 @@ decodeSpec = describe "decoded answers" $ do
     it "names a request with no recording" $ do
         k <- recorded
         unrecorded <-
-            failureReason <$> errorOf (txCbor k [txIdHex (T.replicate 64 "1")])
+            failureReason
+                <$> errorOf (txCbor k [txIdFromHex (T.replicate 64 "1")])
         unrecorded `shouldSatisfy` (\case NotRecorded _ -> True; _ -> False)
   where
     account t = either (error . T.unpack) id (parseRewardAccount t)
@@ -420,6 +437,96 @@ statusesIn a =
         _ -> []
 
 -- ---------------------------------------------------------------------------
+-- Transaction validity
+-- ---------------------------------------------------------------------------
+
+{- | A client over a transport that answers every request with this body.
+Preprod holds no transaction recorded as a phase-2 failure that a bounded
+search found, so the invalid transaction here is a recorded one with its
+validity flag cleared: its id hashes the body alone and is unchanged.
+-}
+serving :: BS.ByteString -> IO (Koios IO)
+serving body = do
+    (transport, _) <- scriptedTransport (\_ _ -> pure (okJson [] body))
+    pure (koiosWith 20 10 transport)
+
+cborAnswer :: TxId -> BS.ByteString -> Maybe Bool -> BS.ByteString
+cborAnswer txId bytes stated =
+    BSL.toStrict . encode $
+        [ object $
+            [ "tx_hash" .= txIdHex txId
+            , "cbor" .= TE.decodeUtf8 (Base16.encode bytes)
+            ]
+                <> maybe [] (\v -> ["valid_contract" .= v]) stated
+        ]
+
+cleared :: ConwayTx -> BS.ByteString
+cleared tx =
+    serialize'
+        (eraProtVerHigh @ConwayEra)
+        (tx & isValidTxL .~ IsValid False)
+
+validityBody :: FixtureSet -> Maybe BS.ByteString
+validityBody set =
+    case [ answerBody (fixtureAnswer f)
+         | f <- setFixtures set
+         , fixtureRequest f
+            == fixtureRequestOf (rawRequest (txInfoRequest [foldTx]))
+         ] of
+        b : _ -> Just b
+        [] -> Nothing
+
+validitySpec :: Spec
+validitySpec = describe "transaction validity" $ do
+    it
+        "returns a transaction whose own flag says invalid, as invalid, without dropping it" $ do
+        k <- recorded
+        [c] <- ok (txCbor k [foldTx])
+        txCborValid c `shouldBe` True
+        k' <- serving (cborAnswer foldTx (cleared (txCborTx c)) Nothing)
+        [c'] <- ok (txCbor k' [foldTx])
+        txCborId c' `shouldBe` foldTx
+        txCborValid c' `shouldBe` False
+
+    it
+        "refuses a valid_contract that disagrees with the transaction's own flag" $ do
+        k <- recorded
+        [c] <- ok (txCbor k [foldTx])
+        k' <- serving (cborAnswer foldTx (cleared (txCborTx c)) (Just True))
+        failure <- failureReason <$> errorOf (txCbor k' [foldTx])
+        case failure of
+            Undecodable f -> T.unpack (decodePosition f) `shouldContain` "valid_contract"
+            other -> expectationFailure (show other)
+
+    it
+        "reads tx_info validity from its scripts when no top-level flag is given" $ do
+        set <- loadSet
+        body <- maybe (fail "no recorded tx_info") pure (validityBody set)
+        k <- serving body
+        map txInfoValid <$> ok (txInfo k [foldTx]) `shouldReturn` [True]
+        k' <- serving (invalidateFirstContract body)
+        map txInfoValid <$> ok (txInfo k' [foldTx]) `shouldReturn` [False]
+
+-- | The body with its first script marked as a failed contract.
+invalidateFirstContract :: BS.ByteString -> BS.ByteString
+invalidateFirstContract body =
+    case decodeStrict' body of
+        Just (Array txs) ->
+            BSL.toStrict . encode $ map invalidate (toList txs)
+        _ -> body
+  where
+    invalidate = \case
+        Object o
+            | Just (Array contracts) <- KM.lookup "plutus_contracts" o
+            , Object c : rest <- toList contracts ->
+                Object $
+                    KM.insert
+                        "plutus_contracts"
+                        (toJSON (Object (KM.insert "valid_contract" (Bool False) c) : rest))
+                        o
+        other -> other
+
+-- ---------------------------------------------------------------------------
 -- One decoder for recorded and live answers
 -- ---------------------------------------------------------------------------
 
@@ -475,8 +582,8 @@ hexBytes t = either error id (Base16.decode (TE.encodeUtf8 t))
 scriptHashHex :: Text -> ScriptHash
 scriptHashHex t = maybe (error "script hash") ScriptHash (hashFromBytes (hexBytes t))
 
-txIdHex :: Text -> TxId
-txIdHex t =
+txIdFromHex :: Text -> TxId
+txIdFromHex t =
     maybe
         (error "tx id")
         (TxId . unsafeMakeSafeHash)

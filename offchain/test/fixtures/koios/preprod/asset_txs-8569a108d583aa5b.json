@@ -1,0 +1,87 @@
+{
+    "answer": {
+        "body": "[{\"tx_hash\":\"6222eea4cbfc7b7a4882d13caba5d12a1963c32b08a2220b81526882ab1f1920\",\"epoch_no\":313,\"block_height\":5179801,\"block_time\":1789475060}, \n {\"tx_hash\":\"03933597c0fd71f289af95320a0215e2594e12fc56223c1fde386749d39b8ecf\",\"epoch_no\":313,\"block_height\":5179881,\"block_time\":1789476758}, \n {\"tx_hash\":\"c978a48652debfcf6de08739ba4beafae0bd979fa654d4f234e7cba3d67e459c\",\"epoch_no\":313,\"block_height\":5179908,\"block_time\":1789477616}, \n {\"tx_hash\":\"33279a6d1268819b20991e251de2733c64db7aa9664ae38aea4ef9558a3400ad\",\"epoch_no\":313,\"block_height\":5179941,\"block_time\":1789478419}, \n {\"tx_hash\":\"c8c5be03023b828cffd1dc623b345c3ef061f73b0d7ddb1b8b4d924d2a1c57a3\",\"epoch_no\":313,\"block_height\":5179950,\"block_time\":1789478771}]",
+        "headers": [
+            [
+                "date",
+                "Sun, 04 Oct 2026 16:42:41 GMT"
+            ],
+            [
+                "content-range",
+                "0-4/5"
+            ],
+            [
+                "preference-applied",
+                "count=exact"
+            ],
+            [
+                "content-type",
+                "application/json; charset=utf-8"
+            ],
+            [
+                "transfer-encoding",
+                "chunked"
+            ],
+            [
+                "content-encoding",
+                "gzip"
+            ],
+            [
+                "vary",
+                "Origin"
+            ],
+            [
+                "access-control-allow-headers",
+                "Content-Type, Accept, Authorization"
+            ],
+            [
+                "access-control-allow-methods",
+                "GET, HEAD, OPTIONS, POST, PATCH"
+            ],
+            [
+                "access-control-max-age",
+                "600"
+            ],
+            [
+                "x-frame-options",
+                "DENY"
+            ]
+        ],
+        "status": 200
+    },
+    "recorded_at": "2026-10-04T16:42:42.880670703Z",
+    "request": {
+        "body": null,
+        "call": "asset_txs",
+        "method": "GET",
+        "path": "/asset_txs",
+        "query": [
+            [
+                "_asset_name",
+                "bb41081f54d9c2cad883dbefe690affb0db49cff800e7574822fd1f57d76e778"
+            ],
+            [
+                "_asset_policy",
+                "8ac9562f5fb6be9b9b913ae2ad2cc1d9e038f7f7039256f1ac9f7a62"
+            ],
+            [
+                "_history",
+                "true"
+            ],
+            [
+                "limit",
+                "20"
+            ],
+            [
+                "offset",
+                "0"
+            ],
+            [
+                "order",
+                "block_height.asc,tx_hash.asc"
+            ]
+        ]
+    },
+    "schema_revision": "v1.4.2",
+    "sha256": "ea6b7f7ee23fb4b662c5dd9338afcbf9ba9abde535c2a98aff79823d2bd1bdd5"
+}

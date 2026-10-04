@@ -1,0 +1,64 @@
+{
+    "answer": {
+        "body": "[{\"tx_hash\":\"f6deaaae1d0e2d6debff7adf21a54547b3ecf059b04a4582630cca1ac1504af7\",\"block_hash\":\"b97e5e18f16ed8d9f30fe9ceaff5446372d1a1ec9d1a751f34b3fe7ac85c629c\",\"block_height\":5179945,\"epoch_no\":313,\"absolute_slot\":133795335,\"tx_timestamp\":1789478535,\"cbor\":\"84a800d90102828258203034441fe32a07924c2b009317d1380d58663e2ce294423b8f9739784386097605825820f843738ab5c6795f0d4a59eea429eef2deee0b71900b46432db7ba99d2b66289000dd90102818258203034441fe32a07924c2b009317d1380d58663e2ce294423b8f973978438609760612d90102868258201e0b52844259025ea304daf3f0c784088ca67650acf42297cef78814be285a14008258201fed8a48deafe88743c9cee64eb5e6b7ad6422a5b3a02dd132c1b6885a86377e0082582033279a6d1268819b20991e251de2733c64db7aa9664ae38aea4ef9558a3400ad00825820a3983772a65b3455166ec24442a99563cca081a2164b11d24ce555bdd6481a7000825820d4deba068fcbbf62f63f9032650e8f5f8c70ea09b461d239531baf767a2c039d00825820d604ab0b1d2daa0fabd403fb5e7b83307664dc952f36bc7c5273c3d230a6aa3500018382581d7089ee4bffc93cb72213f8361b73348c4ec4581cc095cb10faabd4fc09821a00206c6ea1581c64adbd9cd944738680f670cbd0456294951b20ac12eb1f3ebeb0dc88a15820de7e424a988efea4c02a178947ced9dc6215a05a4bb31a93b5dcb476b65c3a7c01a300581d7067f907d5323b46eae9a6ee799bb0539ac482c869f957d046ff0cd7e6011a002b35d6028201d81858aed8799fd8799fd8799f5820bb41081f54d9c2cad883dbefe690affb0db49cff800e7574822fd1f57d76e778ff581c4b3248cda851ae53798ce3e29394b009e5479ca22932eb2d59f7ad714772742d6f766572d87b9f5820de7e424a988efea4c02a178947ced9dc6215a05a4bb31a93b5dcb476b65c3a7c58246f766572de7e424a988efea4c02a178947ced9dc6215a05a4bb31a93b5dcb476b65c3a7cff1a000f42401b000001a0a53a771dffff82581d604b3248cda851ae53798ce3e29394b009e5479ca22932eb2d59f7ad711a00409f3f021a0008ea8c05a1581df064adbd9cd944738680f670cbd0456294951b20ac12eb1f3ebeb0dc88000ed9010281581c02d9fc41005743a35748c58afcd038909b17fd4ac701fdaeed78df480b5820f08dcca55cd423c837624aefb089a5d109a62057cf9599f35b0106d0c5a41843a200d9010282825820942be04bfa2e76e6c3b39b57cf06a1834626c6e6db509862f35959c1e391f01258405c754c7e63dadfdf4da3139335eb9ec6c3058858e497d16e55d0019026a94f9a5874b76922f8d567f39237de4287ec14c33c9569ed63c22fc6be5503357ee00d8258202758c4adbf8fb7c532dc6db4ecd2a208f7e7e5cb97c0944639e8ae137d147bab5840903b02e3045c61dcbc2c4153015c2d7e84ab5a809797801e149985670ff71c4402c628e1d0586d32291ef5fe855f9d2ad861e28cee4e1783ef436aa23dfe600905a282000182d87c9f9f5820de7e424a988efea4c02a178947ced9dc6215a05a4bb31a93b5dcb476b65c3a7cff4772742d6f766572ff821a0006d1b71a08cc5e9e82030082d87980821a0001ecc11a02803d98f5f6\"}]",
+        "headers": [
+            [
+                "date",
+                "Sun, 04 Oct 2026 16:42:58 GMT"
+            ],
+            [
+                "content-range",
+                "0-0/*"
+            ],
+            [
+                "content-type",
+                "application/json; charset=utf-8"
+            ],
+            [
+                "transfer-encoding",
+                "chunked"
+            ],
+            [
+                "content-encoding",
+                "gzip"
+            ],
+            [
+                "vary",
+                "Origin"
+            ],
+            [
+                "access-control-allow-headers",
+                "Content-Type, Accept, Authorization"
+            ],
+            [
+                "access-control-allow-methods",
+                "GET, HEAD, OPTIONS, POST, PATCH"
+            ],
+            [
+                "access-control-max-age",
+                "600"
+            ],
+            [
+                "x-frame-options",
+                "DENY"
+            ]
+        ],
+        "status": 200
+    },
+    "recorded_at": "2026-10-04T16:42:58.608064561Z",
+    "request": {
+        "body": {
+            "json": {
+                "_tx_hashes": [
+                    "f6deaaae1d0e2d6debff7adf21a54547b3ecf059b04a4582630cca1ac1504af7"
+                ]
+            }
+        },
+        "call": "tx_cbor",
+        "method": "POST",
+        "path": "/tx_cbor",
+        "query": []
+    },
+    "schema_revision": "v1.4.2",
+    "sha256": "139f007cd8affaa756fd4a8be7aaf8518723e49ad10a0520dee667651f1545c2"
+}
