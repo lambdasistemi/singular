@@ -15,6 +15,13 @@ author:        Paolo Veronelli
 maintainer:    paolo.veronelli@gmail.com
 category:      Cardano
 build-type:    Simple
+data-files:
+  data/network/preprod/*.json
+  data/network/preprod/*.cbor
+  data/network/preprod/evaluation/*.json
+  data/network/preprod/evaluation/*.cbor
+  data/network/devnet/*.json
+  data/network/devnet/*.cbor
 
 common warnings
   ghc-options:
@@ -148,6 +155,35 @@ library
     , Singular.Registry.Ledger
     , Singular.Registry.Provider
 
+-- Common derived services are public and independent of node transport.
+library local-services
+  import:           warnings
+  visibility:       public
+  default-language: GHC2021
+  hs-source-dirs:   local-services
+  exposed-modules:
+    Singular.Registry.NetworkTime
+    Singular.Registry.LocalEvaluation
+  build-depends:
+    , aeson
+    , base >=4.14 && <5
+    , bytestring
+    , cardano-slotting
+    , cardano-ledger-alonzo
+    , cardano-ledger-api
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-tx-tools:tx-build
+    , containers
+    , crypton
+    , memory
+    , microlens
+    , ouroboros-consensus
+    , serialise
+    , text
+    , time
+    , transformers
+
 -- The private Node ownership core (issue #266, A-003): the six focused
 -- Node children plus the two modules they read (Ledger, Provider) live in
 -- one package-private internal library so the public facade and the cage
@@ -164,6 +200,7 @@ library node-internal
     Singular.Registry.Provider
     Singular.Registry.Node.Memory
     Singular.Registry.Node.View
+    Singular.Registry.Node.RawView
     Singular.Registry.Node.Submit
     Singular.Registry.Node.Options
     Singular.Registry.Node.Wallet
@@ -202,12 +239,54 @@ library node-internal
     , filepath
     , microlens
     , ouroboros-consensus
+    , ouroboros-consensus:cardano
     , ouroboros-network:api
     , process
     , stm
+    , serialise
     , text
     , time
     , unix
+
+-- Read-only fixture capture for common local services. It has no submitter.
+executable local-services-record
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   test/local-services-record
+  main-is:          Main.hs
+  other-modules:    EvaluationFixture
+  build-depends:
+    , aeson
+    , async
+    , base >=4.14 && <5
+    , base16-bytestring
+    , bech32
+    , bytestring
+    , cardano-ledger-binary
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-alonzo
+    , cardano-ledger-api
+    , cardano-ledger-mary
+    , cardano-strict-containers
+    , cardano-tx-tools:tx-build
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-slotting
+    , directory
+    , containers
+    , filepath
+    , ouroboros-consensus
+    , ouroboros-consensus:cardano
+    , ouroboros-network:api
+    , serialise
+    , microlens
+    , plutus-core
+    , plutus-ledger-api
+    , process
+    , singular-registry
+    , text
+    , time
 
 executable cage-test-vectors
   import:           warnings
@@ -683,7 +762,9 @@ test-suite cage-tests
   default-language: GHC2021
   hs-source-dirs:   test cli/src
   main-is:          Main.hs
+  autogen-modules:  Paths_singular_registry
   other-modules:
+    Paths_singular_registry
     Singular.Application.OpenDatum.BuildersSpec
     Singular.Application.OpenDatum.BuildSpec
     Singular.Application.OpenDatum.EnvelopeSpec
@@ -732,6 +813,9 @@ test-suite cage-tests
     Singular.Registry.IndexerViewSpec
     Singular.Registry.IndexerRig
     Singular.Registry.NodeCleanupSpec
+    Singular.Registry.NetworkTimeSpec
+    Singular.Registry.LocalEvaluationSpec
+    Singular.Registry.LocalServicesCallerSpec
     Singular.Registry.NodeSpec
     Singular.Registry.NodeWaitSpec
     Singular.Registry.OneViewSpec
@@ -768,10 +852,14 @@ test-suite cage-tests
     , cardano-strict-containers
     , cardano-tx-tools:tx-build
     , containers
+    , crypton
+    , memory
+    , serialise
     , base16-bytestring
     , bech32
     , bytestring
     , singular-registry
+    , singular-registry:local-services
     , singular-registry:node-internal
     , directory
     , filepath
@@ -788,6 +876,7 @@ test-suite cage-tests
     , QuickCheck
     , stm
     , temporary
+    , prettyprinter
     , text
     , time
     , unix

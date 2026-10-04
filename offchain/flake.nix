@@ -429,6 +429,16 @@
       in
       {
         packages = {
+          # The fixture recorder may spawn the pinned private node, but never
+          # sends a transaction. Its external socket mode is read-only too.
+          local-services-record = pkgs.runCommand "local-services-record" {
+            nativeBuildInputs = [ pkgs.makeWrapper ];
+            meta.mainProgram = "local-services-record";
+          } ''
+            mkdir -p $out/bin
+            makeWrapper ${pkgs.lib.getExe components.exes.local-services-record} $out/bin/local-services-record \
+              --prefix PATH : ${cardanoNode}/bin
+          '';
           # #264 T264-05: the classified supported off-chain component build
           # carrier (epic answer A-005; classification and inventory gate in
           # ./nix/component-inventory.nix). CI builds it with

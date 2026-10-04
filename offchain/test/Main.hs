@@ -20,6 +20,9 @@ import Singular.Registry.DeploymentSpec qualified
 import Singular.Registry.FailureMatchSpec qualified
 import Singular.Registry.IndexerViewSpec qualified
 import Singular.Registry.LifecycleSpec qualified
+import Singular.Registry.LocalEvaluationSpec qualified
+import Singular.Registry.LocalServicesCallerSpec qualified
+import Singular.Registry.NetworkTimeSpec qualified
 import Singular.Registry.NodeCleanupSpec qualified
 import Singular.Registry.NodeSpec qualified
 import Singular.Registry.NodeWaitSpec qualified
@@ -52,6 +55,9 @@ main = hspec $ do
     Singular.Registry.DeploymentSpec.spec
     Singular.Registry.FailureMatchSpec.spec
     Singular.Registry.NodeCleanupSpec.spec
+    Singular.Registry.NetworkTimeSpec.spec
+    Singular.Registry.LocalEvaluationSpec.spec
+    Singular.Registry.LocalServicesCallerSpec.spec
     Singular.Registry.NodeSpec.spec
     Singular.Registry.NodeWaitSpec.spec
     Singular.Registry.OneViewSpec.spec

@@ -1,0 +1,1 @@
+{"id": "network-genesis", "jsonrpc": "2.0", "method": "queryNetwork/genesisConfiguration", "params": {"era": "shelley"}}

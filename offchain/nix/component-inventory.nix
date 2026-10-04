@@ -50,6 +50,7 @@ let
   builtHere = {
     library = [ "singular-registry" ];
     exes = [
+      "local-services-record"
       "cage-test-vectors"
       "journey"
       "insert-active"
@@ -73,7 +74,7 @@ let
     # library. Built here because the public library itself links it;
     # this is the compiled state-identity carrier for the facade, the
     # cleanup brackets and the cage test observers.
-    sublibs = [ "node-internal" ];
+    sublibs = [ "node-internal" "local-services" ];
   };
 
   # Each entry carries its own kind and names the job and its verbatim

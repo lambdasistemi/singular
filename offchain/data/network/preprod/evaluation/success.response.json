@@ -1,0 +1,1 @@
+{"jsonrpc":"2.0","method":"evaluateTransaction","result":[{"validator":{"index":0,"purpose":"mint"},"budget":{"memory":5824,"cpu":82339564}}],"id":"success"}
