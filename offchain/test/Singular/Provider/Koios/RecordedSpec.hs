@@ -323,7 +323,7 @@ decodeSpec = describe "decoded answers" $ do
             -- reference inputs, and an output reference per output it creates
             [c] <- ok (txCbor k [foldTx])
             let body = txCborTx c ^. bodyTxL
-                created = length (toList (body ^. outputsTxBodyL))
+                created = length (body ^. outputsTxBodyL)
                 refsOf = map fst
             Set.toList (body ^. inputsTxBodyL) `shouldSatisfy` (not . null)
             Set.toList (body ^. referenceInputsTxBodyL)
