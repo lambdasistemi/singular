@@ -1253,25 +1253,30 @@ for fault in missing-create missing-change broken-before wrong-after undecodable
   case "$fault" in
     missing-create)
       jq -c --arg tx "$boot_tx" 'select(.journalTxId != $tx)' "$reg/journal.jsonl" >"$copy/journal.jsonl"
-      expected=HistoryIncomplete ;;
+      expected=HistoryIncomplete
+      ;;
     missing-change)
       jq -c --arg tx "$changing_tx" 'select(.journalTxId != $tx)' "$reg/journal.jsonl" >"$copy/journal.jsonl"
-      expected=HistoryIncomplete ;;
+      expected=HistoryIncomplete
+      ;;
     broken-before)
       jq -c --arg tx "$changing_tx" 'if .journalEvent == "prepared" and .journalTxId == $tx then .journalRootBefore = .journalRootAfter else . end' \
         "$reg/journal.jsonl" >"$copy/journal.jsonl"
       # Making the last change appear equal-root cannot establish the selected
       # root; it is ignored as required by the content-coverage ruling.
-      expected=HistoryIncomplete ;;
+      expected=HistoryIncomplete
+      ;;
     wrong-after)
       jq -c --arg tx "$changing_tx" --arg root "$(field create .root)" \
         'if .journalEvent == "prepared" and .journalTxId == $tx then .journalRootAfter = $root else . end' \
         "$reg/journal.jsonl" >"$copy/journal.jsonl"
-      expected=RootDoesNotChain ;;
+      expected=RootDoesNotChain
+      ;;
     undecodable-edge)
       jq -c --arg tx "$changing_tx" 'if .journalEvent == "prepared" and .journalTxId == $tx then .journalEdge = 99 else . end' \
         "$reg/journal.jsonl" >"$copy/journal.jsonl"
-      expected=UndecodableRequest ;;
+      expected=UndecodableRequest
+      ;;
   esac
   coverage_refused "trie-$fault" "$expected" "$copy"
 done
@@ -1322,7 +1327,7 @@ if [ -n "${SINGULAR_TRIESTATE_BYPASS_BIN:-}" ]; then
   bypass_status=0
   SINGULAR_HARNESS_TRIE_TRACE="$receipts/trie-bypass.trie.jsonl" \
     "$SINGULAR_TRIESTATE_BYPASS_BIN" registry inspect --key keyG "${common[@]}" "${node[@]}" \
-      >"$receipts/trie-bypass.json" 2>"$receipts/trie-bypass.err" || bypass_status=$?
+    >"$receipts/trie-bypass.json" 2>"$receipts/trie-bypass.err" || bypass_status=$?
   [ "$bypass_status" -eq 0 ] || fail "the real trie bypass caller did not reach a successful inspect"
   jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
     '.outcome == "success" and .key == $correct[0].key and .leaf == $correct[0].leaf and .root == $correct[0].root' \
