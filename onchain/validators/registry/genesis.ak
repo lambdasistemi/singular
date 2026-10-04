@@ -1,4 +1,4 @@
-//// Genesis: minting a registry's state token (#157 C7).
+//// Genesis: minting a registry's state token (#157 state-datum-fields).
 ////
 //// ## Responsibility
 ////
@@ -39,7 +39,7 @@ use cardano/transaction.{InlineDatum, OutputReference, Transaction, find_input}
 use lib.{assetName, exactQuantity}
 use types.{State, StateDatum, TokenId}
 
-/// Genesis (#157 C7): the four policies are set here and preserved by
+/// Genesis (#157 state-datum-fields): the four policies are set here and preserved by
 /// every fold. Boot is permissionless — there is no owner — so the mint
 /// authorizes no particular choice of them; preservation is what gives
 /// them their force, not mint-time approval. The consumer pin and its

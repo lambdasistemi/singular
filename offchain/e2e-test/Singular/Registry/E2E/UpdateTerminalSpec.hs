@@ -2,7 +2,7 @@
 
 {- |
 Module      : Singular.Registry.E2E.UpdateTerminalSpec
-Description : #177 I177-E2E — the open registry's updateTerminal edge on a real devnet
+Description : #177 I177-end-to-end — the open registry's updateTerminal edge on a real devnet
 License     : Apache-2.0
 
 The retirement, end to end, through the same public builder every other
@@ -210,7 +210,7 @@ updateTerminalSpec stateBytes requestBytes = do
             case control of
                 Left e ->
                     expectationFailure
-                        ( "I177-E2E control: a key that IS Active was refused \
+                        ( "I177-end-to-end control: a key that IS Active was refused \
                           \retirement, so the unknown-key refusal below would \
                           \prove nothing about the leaf: "
                             <> show e
@@ -227,7 +227,7 @@ updateTerminalSpec stateBytes requestBytes = do
             case outcome of
                 Right _ ->
                     expectationFailure
-                        "I177-E2E: the chain ACCEPTED updateTerminal on a key \
+                        "I177-end-to-end: the chain ACCEPTED updateTerminal on a key \
                         \the trie does not bind — reported, not relabelled"
                 Left _ -> pure ()
 
@@ -259,7 +259,7 @@ updateTerminalSpec stateBytes requestBytes = do
             case control of
                 Left e ->
                     expectationFailure
-                        ( "I177-E2E control: a key that IS Active was refused \
+                        ( "I177-end-to-end control: a key that IS Active was refused \
                           \retirement, so the not-booked refusal below would \
                           \prove nothing about the leaf: "
                             <> show e
@@ -288,7 +288,7 @@ updateTerminalSpec stateBytes requestBytes = do
             case outcome of
                 Right _ ->
                     expectationFailure
-                        "I177-E2E: the chain ACCEPTED updateTerminal on a key \
+                        "I177-end-to-end: the chain ACCEPTED updateTerminal on a key \
                         \witnessed Absent — reported, not relabelled"
                 Left _ -> pure ()
 
@@ -370,7 +370,7 @@ foldAndMirror cfg prov submit tm tokenId refs key edge = do
         )
     when (unRoot rootBefore == unRoot rootAfter) $
         expectationFailure
-            "I177-E2E: the committed mirror root did not move across a \
+            "I177-end-to-end: the committed mirror root did not move across a \
             \landed fold — the next fold would re-prove against a stale root"
     pure signed
 

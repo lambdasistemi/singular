@@ -550,7 +550,7 @@
         modelPkgs = import (builtins.fetchTree modelLock.nodes.nixpkgs.locked) {
           inherit system;
         };
-        # The generic evaluator: the DSL's abstract scenario and the context
+        # The generic evaluator: the story language's abstract scenario and the context
         # the caller established, through the model's own driver. Edge-agnostic
         # on purpose, so #223's connected retirement is the same call with a
         # setup trace rather than a second adapter.
@@ -693,7 +693,7 @@
           '';
         };
 
-        # #278 S2: the pinned house formatter, extracted from this tree's
+        # #278 terminal-attestation-permanent: the pinned house formatter, extracted from this tree's
         # locked dev-shell tool set — the same Fourmolu version the
         # off-chain lint resolves (the two locks are byte-identical), so
         # the two format checks cannot drift. Fail-closed on anything but
@@ -708,11 +708,11 @@
           assert builtins.length matches == 1;
           builtins.head matches;
         fourmoluTool = shellTool "fourmolu-exe-fourmolu-.*";
-        # #278 S3: HLint from the same locked dev-shell tool set, so the
+        # #278 supply-matches-leaf-state: HLint from the same locked dev-shell tool set, so the
         # Conformance lint resolves the HLint the off-chain lint runs.
         hlintTool = shellTool "hlint-exe-hlint-.*";
 
-        # #278 S2: the Conformance Haskell format check. Discovery mirrors
+        # #278 terminal-attestation-permanent: the Conformance Haskell format check. Discovery mirrors
         # the off-chain lint: every hs-source-dirs the Cabal manifests
         # declare (conformance.cabal and the #80 evaluation spike's
         # spike.cabal), visited recursively, so a new component or source
@@ -772,7 +772,7 @@
           '';
         };
 
-        # #278 S3: HLint over exactly the extent the format check visits
+        # #278 supply-matches-leaf-state: HLint over exactly the extent the format check visits
         # (the Conformance Cabal stanzas plus the #80 evaluation spike),
         # discovered at check time, with no exclusions and no ignore file.
         hlintCheck = pkgs.writeShellApplication {
@@ -798,7 +798,7 @@
           touch "$out"
         '';
 
-        # #278 S2, audit F003: the flake check EXECUTES the same app over
+        # #278 terminal-attestation-permanent, audit F003: the flake check EXECUTES the same app over
         # the flake source it was built from — `nix build`/`nix flake
         # check` on this attribute runs Fourmolu over the store copy, it
         # does not merely build and shellcheck a wrapper. The app stays

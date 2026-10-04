@@ -1,12 +1,38 @@
 {
+  "tasks": [
+    {
+      "text": "Tasks.",
+      "pause": 500
+    },
+    {
+      "text": "Retroactive record, written 2026-09-15 from PR #122 merged at 6ab1093367e00290a4b74638f03f5ef44b3137e6.",
+      "pause": 400
+    },
+    {
+      "text": "The tasks are the PR's commits in order, each done with its sha.",
+      "pause": 400
+    },
+    {
+      "text": "[x] fund-public-naming-lifecycles-from-live-protocol 345658df4231bc2623e77c11ba50d86add03359c fix: fund public naming lifecycles from live protocol parameters — new Singular.Registry.Lifecycle layer, withNodeForPlannedFunding, public-path wiring in the three runners, --lifecycle attach check, LIFECYCLE.md, aggregate-limit spec.",
+      "pause": 300
+    },
+    {
+      "text": "[x] preserve-reserved-lifecycle-inputs-during-request-funding e4ae94111e02e87f766b75a220c1bad97a76c2ba fix: preserve reserved lifecycle inputs during request funding — fundingProvider reserved-input filter, wrapped around requestInsertImpl in recovery and retirement, with its regression test.",
+      "pause": 300
+    }
+  ],
   "slice": [
     {
-      "text": "Two fix commits in order, both done: live-parameter lifecycle funding, then the reserved-input funding filter with its regression test.",
+      "text": "Slice.",
+      "pause": 500
+    },
+    {
+      "text": "Public lifecycle funding and evaluation. Gate as shipped: just ci green, cage-tests 109/0, --lifecycle attach check green, full suite retained without the flag.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "6b962f38ff52c93caba6be77b196484bdddea3cad9453a0778658511ef16e5ce"
+    "sha256": "c115d5ebf1fb1c88b836dd05278d3bcc2a2e1f1df07154331e6734ff4fa2252d"
   }
 }

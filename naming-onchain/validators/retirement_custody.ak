@@ -125,7 +125,7 @@ fn request_binds_burn(claim: Input, stateIn: Input, requestIn: Input) -> Bool {
   expect InlineDatum(stateDatum) = stateIn.output.datum
   let expectedPolicy = mpfs_state_policy(stateDatum)
   // The asset this custody holds is the ACTIVE token of exactly this
-  // key, under the registry's own configured active policy (D-ASSET;
+  // key, under the registry's own configured active policy (token-name-is-registry-key;
   // NOTE-032: the policy is load-bearing — a same-name token under a
   // foreign policy is a lookalike whose burn the fold never entails).
   expect burned_of(claim, req.requestKey, expectedPolicy) == req.requestKey

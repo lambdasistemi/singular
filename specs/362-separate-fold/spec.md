@@ -52,7 +52,7 @@ Every refusal names its reason. The node is never asked to judge something the c
 - A fold spends exactly the request it names, or the single pending one. Any other request input is refused before signing.
 - **Deadline guard.** A fold is never signed if it could land at or after the request's deadline, which is the request's submission time plus the registry's processing time.
   - A fast guard refuses when less than thirty seconds remain on the host clock.
-  - After the transaction is built and before it is signed, its validity upper bound is read from the body and checked again. The bound is exclusive. When the node converts the deadline to slot S, the bound must be at most S. Otherwise the bound's own time must be at or before the deadline.
+  - After the transaction is built and before it is signed, its validity upper bound is read from the body and checked again. The bound is exclusive. When the node converts the deadline to a slot, the bound must be at or before that slot. Otherwise the bound's own time must be at or before the deadline.
   - A bound that cannot be converted is refused unsigned.
 - Booking, fold, reclaim and reject each sign with the wallet given to that command.
 - **Reject:**

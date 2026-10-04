@@ -10,12 +10,12 @@ authority.
 
 | Ticket | PR | Deliverable | Requirements | Exit evidence |
 |---|---|---|---|---|
-| #220 | 217 | Executable book DSL and stakeholder stories, on a test-owned exception-safe resource lifetime. | R08 | Total render/fold over one instruction set; the migrated case sweep; no hidden global fixture state. |
-| #221 | 226 | Constitutional translation, generic model driver and replayable registration/retirement protocol. | R01–R04 | Existing model/corpus parity; driver success/refusal/error controls; one complete field mapping and readable story for review. |
-| #222 | — | Registration uses the shared concrete abstraction and complete declared model observations. | R03–R06, R08 | Real positive run; changed-field and unknown-identity controls; old delivery adapter retired. |
-| #223 | — | Connected retirement and applicable refusals use the same driver and abstraction. | R02–R09 | Registration-to-retirement trace; burn/leaf controls; refusal disagreement control; old retirement adapter retired. |
-| #224 | — | Keyed-mint batch migration and context sharing with E2E. | R05–R09, R11 | Correct batch and wrong allocation; same scenario under supplied contexts; no product text anchors remain. |
-| #225 | — | Whole-project consumer inventory, ratchet, CI execution and reader-facing artifact integration. | R08, R10, R12 | Removed consumer, skipped run and stale definition fail; actual CI receipts drive the book; publication boundary reported. |
+| #220 | 217 | Executable book story language and stakeholder stories, on a test-owned exception-safe resource lifetime. | product-claims-use-typed-theorem-clause-dsl | Total render/fold over one instruction set; the migrated case sweep; no hidden global fixture state. |
+| #221 | 226 | Constitutional translation, generic model driver and replayable registration/retirement protocol. | one-model-owned-driver-exposes-executable-law–constitution-states-concrete-realization-law-observation-identity | Existing model/corpus parity; driver success/refusal/error controls; one complete field mapping and readable story for review. |
+| #222 | — | Registration uses the shared concrete abstraction and complete declared model observations. | acceptance-domain-refusal-distinguished-from-parse-process–identities-allocated-during-context-actions-looked-up, product-claims-use-typed-theorem-clause-dsl | Real positive run; changed-field and unknown-identity controls; old delivery adapter retired. |
+| #223 | — | Connected retirement and applicable refusals use the same driver and abstraction. | model-owned-scenarios-carry-theorem-bindings-parameters–refusal-replay-fails-model-implementation-disagree | Registration-to-retirement trace; burn/leaf controls; refusal disagreement control; old retirement adapter retired. |
+| #224 | — | Keyed-mint batch migration and context sharing with E2E. | one-haskell-abstraction-compares-declared-observable-fields–refusal-replay-fails-model-implementation-disagree, reuse-scenario-translation-and-comparison | Correct batch and wrong allocation; same scenario under supplied contexts; no product text anchors remain. |
+| #225 | — | Whole-project consumer inventory, ratchet, CI execution and reader-facing artifact integration. | product-claims-use-typed-theorem-clause-dsl, project-theorem-has-executable-consumers-or-named, ci-runs-suite-produces-readable-receipt-derived | Removed consumer, skipped run and stale definition fail; actual CI receipts drive the book; publication boundary reported. |
 
 #220 and #221 do not wait on each other: their owned surfaces do not intersect,
 #221 adds no Haskell, and #220 touches neither the Lean sources nor the model

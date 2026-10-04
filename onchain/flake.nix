@@ -25,7 +25,7 @@
       url = "github:intersectmbo/cardano-haskell-packages/8479db771a3186eb326e42d8480eddc20a208275";
       flake = false;
     };
-    # Pinned cardano-node, used as a subprocess by the devnet E2E
+    # Pinned cardano-node, used as a subprocess by the devnet end-to-end
     # tests. Version tracks the upstream cardano-node-clients
     # devnet Dockerfile.
     cardano-node = {

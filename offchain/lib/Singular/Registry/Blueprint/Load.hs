@@ -147,7 +147,7 @@ application whose mint arm certifies an edge, and the witness policy the
 three token kinds are derived from.
 
 The four policy pins of a registry are derived from these two, so every
-consumer of the application — the conformance rows, the devnet E2E and the
+consumer of the application — the conformance rows, the devnet end-to-end and the
 bounded journey — binds to one source and moves together.
 
 #173 I2: for the OPEN registry both now come from the registry

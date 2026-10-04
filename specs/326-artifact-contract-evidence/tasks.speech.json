@@ -1,6 +1,56 @@
 {
+  "326-tasks": [
+    {
+      "text": "#326 tasks.",
+      "pause": 500
+    },
+    {
+      "text": "The ticket owner stamps tasks at acceptance.",
+      "pause": 400
+    },
+    {
+      "text": "[x] shared-contract-suite-over-in-memory-node (contract-suite-interface-controls-node-in-memory) Shared contract suite over in-memory and node adapters, evidence class in its output (contract-suite-module-under-offchain-test-owns, contract-case-name-kind-success-refusal-consistency, shared-adapter-contract-suite) (one-shared-contract-suite-success-refusal-consistency, suite-s-consistency-cases-cover-read-inside; one-suite-adapter-same-case-list-runs, one-view-one-point-read-operation-makes).",
+      "pause": 300
+    },
+    {
+      "text": "[x] indexer-instance-suite-after-on-main (contract-suite-interface-controls-node-in-memory) Indexer instance of the suite after #324 is on main (one-shared-contract-suite-success-refusal-consistency; one-suite-adapter-same-case-list-runs).",
+      "pause": 300
+    },
+    {
+      "text": "[x] ci-run-controls-no-node-call-inside (contract-suite-interface-controls-node-in-memory) CI-run controls: no node call inside a view, SignedTx must-not-compile (compile-failure-controls-control-live-in-ci) (no-node-call-happens-inside-view-except, signedtx-can-be-obtained-by-signing-ci; no-node-call-inside-view-by-another, signing-constructor-signedtx).",
+      "pause": 300
+    },
+    {
+      "text": "[x] external-node-leg-in-ci (contract-suite-interface-controls-node-in-memory) External-node leg in CI (external-node-leg-test-entry-or-flake) (node-adapter-s-external-leg-already-running; one-suite-adapter-same-case-list-runs).",
+      "pause": 300
+    },
+    {
+      "text": "[x] journeys-deployment-insert-active-update-terminal-runners (consumer-migration-confinement) Journeys, deployment, insert-active, update-terminal, runners and conformance harness on the capabilities; harness context and fold in one view (consumers-depend-on-provider-view-signedsubmitter-one, consumer-composition-roots) (journeys-deployment-insert-active-update-terminal-runners; one-view-one-point-read-operation-makes, backend-mode-selection-confined-adapter-construction-fixture, model-effects-unchanged).",
+      "pause": 300
+    },
+    {
+      "text": "[x] confinement-check-widened-runner-allowlist-entry-removed (consumer-migration-confinement) Confinement check widened, runner allowlist entry removed (confinement-allowlist-entry-file-reason-it-composition) (journeys-deployment-insert-active-update-terminal-runners; backend-mode-selection-confined-adapter-construction-fixture).",
+      "pause": 300
+    },
+    {
+      "text": "[x] documented-flags-equal-help-ci-checked (consumer-migration-confinement) Documented flags equal --help, CI-checked (flags-documented-for-singular-equal-flags-its; documented-surface-equals-binary-s-surface).",
+      "pause": 300
+    },
+    {
+      "text": "[x] release-archive-states-its-model-revision-post (artifact-evidence-that-describe-them) Release archive states its model revision; post-publish verification app and release job (release-assembly-gains-model-revision-member-verification, release-model-revision-application-model-commit-release, verify-release) (v-release-publishes-singular-cli-archive-its; evidence-computed-never-typed-published-verdict-state).",
+      "pause": 300
+    },
+    {
+      "text": "[x] evidence-page-computed-from-receipts-uncovered-requirements (artifact-evidence-that-describe-them) Evidence page computed from receipts with uncovered requirements by name and per-adapter contract results (conformance-evidence-page-rendered-from-receipts-by, evidence-state-per-requirement-executed-or-partial, evidence-page-rendering) (conformance-states-on-published-evidence-page-computed; evidence-computed-never-typed-published-verdict-state).",
+      "pause": 300
+    },
+    {
+      "text": "[x] no-epic-surface-describe-download-verification-evidence (artifact-evidence-that-describe-them) No epic-only surface; docs describe download, verification and evidence (no-epic-flag-executable-or-output-remains; documented-surface-equals-binary-s-surface).",
+      "pause": 300
+    }
+  ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "fdc62bd627458b8d5d552c704c4c087875e18ac96762e2ded53e709eaa130fcf"
+    "sha256": "8db99bbc9705fd62a3e327d5cc0dbea5305707135bd2c21a885cecd80bc2a9b2"
   }
 }

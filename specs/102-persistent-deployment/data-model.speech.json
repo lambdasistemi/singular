@@ -1,25 +1,47 @@
 {
+  "data": [
+    {
+      "text": "Data.",
+      "pause": 500
+    },
+    {
+      "text": "Retroactive record, written 2026-09-15 from PR #106 merged at f558d0e8fc916eef494fffcef09cfe2ac5582b8e.",
+      "pause": 400
+    }
+  ],
   "manifest": [
     {
-      "text": "One JSON file: release tag, Lean revision, network magic, seed reference, cage token, script hashes, policy ids, reference outputs, and bootstrap transactions. The entity diagram shows state, references, mirror, and policies. The verifier confirms a node agrees.",
+      "text": "Manifest.",
+      "pause": 500
+    },
+    {
+      "text": "One JSON file. The verifier confirms a node agrees with it.",
       "pause": 400
     }
   ],
   "mirror": [
     {
-      "text": "The writer's trie travels beside the manifest. Every attached runner compares its root with live state before funding. A mismatch is an error; the mirror never rewrites the root.",
+      "text": "Mirror.",
+      "pause": 500
+    },
+    {
+      "text": "<manifest>.mirror.json carries the writer's current trie. Each attached runner compares its root with the actual state output before using it; a mismatch is an error. The mirror is a witness source, not an authority to change the root.",
       "pause": 400
     }
   ],
   "run-modes": [
     {
-      "text": "Devnet boots and publishes with full rows. Attached runs reuse everything with exact spellings. Fresh negative rows boot where they say so but still use recorded scripts.",
-      "pause": 400
+      "text": "Run modes.",
+      "pause": 500
     }
   ],
   "counts": [
     {
-      "text": "State and reference outputs are counted before and after. Attached journeys leave both unchanged; a fresh bootstrap increases both; every publisher address is observed.",
+      "text": "Counts.",
+      "pause": 500
+    },
+    {
+      "text": "State outputs and reference-script outputs are counted before and after every gate run. Attached journeys plus the duplicate leave both unchanged; a fresh bootstrap increases both. The counter observes every journey publisher address.",
       "pause": 400
     }
   ],

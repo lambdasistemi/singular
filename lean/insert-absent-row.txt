@@ -118,7 +118,7 @@ removed. `lean/insert-absent-mutations.json` records the executed results.
 | Custody assets `[]` | 0 | 1 | 1 |
 
 Each mutant produced an unsolved custody-output equation in the new theorem
-and `T1 insertAbsent constructed transaction violates refund-only custody row`
+and the recorded diagnostic `T1 insertAbsent constructed transaction violates refund-only custody row`
 from the executing binary. These are definition defects detected at the model
 boundary, not ledger validator refusals or setup failures.
 
@@ -164,14 +164,14 @@ executes it.
 | Aiken fixtures and controls | `onchain/validators/t157_fixtures.ak:456`, `:580`, `onchain/validators/t157_rows.tests.ak:1420`, `:1630`, `:1655` | Deferred to #178 |
 | Haskell datum/codec and generator | `offchain/lib/Singular/Registry/Types.hs:269`, `:623`, `:636`, `:647`, `offchain/test/Singular/Registry/TypesSpec.hs:122` | Deferred to #178 |
 | Haskell builder and custody lookup | `offchain/lib/Singular/Registry/TxBuilder/Update.hs:741`, `:807` | Deferred to #178 |
-| Conformance codec/schema and lookup | `conformance/app/Conformance/CS01.hs:368`, `:536`, `conformance/app/Conformance/Run.hs:7823` | Deferred to #178; no implementation conformance claimed |
+| Conformance codec/schema and lookup | `conformance/app/Conformance/BlueprintEncoding.hs:368`, `:536`, `conformance/app/Conformance/Run.hs:7823` | Deferred to #178; no implementation conformance claimed |
 | Shipped wire documentation | `docs/consumer-conformance.md:156` | Describes the current two-field wire; update with #178's migration |
 | Earlier wire specification | `specs/157-cage-registry-mode/spec.md:123`, `:314`, `data-model.md:59`, `plan.md:105`, `:106`, `:131`, `functions-model.md:22` (same directory) | Historical key-bearing contract superseded by this refund-only design; #178 must align its implementation story |
 | Earlier refund semantics | `specs/156-registry-mode-model/data-model.md:72`, `functions-model.md:33`, `plan.md:99` (same directory) | Refund destination semantics retained; no wire shape proved by those logical rows |
 
 ## Named limits for #178
 
-**SIMULATOR-TRANSACTION-REPLAY:** the simulator gate executes logical cases,
+**Simulator transaction replay:** the simulator gate executes logical cases,
 codec rows and refund observations, but has no transaction builder/replay for
 `corpus.transactions`. Regenerating the mirrored Lean and embedded corpus
 establishes byte parity only. #178 must implement the mirror and falsify its
@@ -179,12 +179,12 @@ transaction checks with a deliberately corrupted custody row. This design-only
 slice defers that work to the implementation edge under the brief's explicit
 option; a green simulator check is not custody transaction execution evidence.
 
-**IMPLEMENTATION-CUSTODY-WIRE:** the Aiken/Haskell two-field custody wire still
+**Custody wire implementation:** the Aiken/Haskell two-field custody wire still
 differs from the new refund-only transaction authority. #178 must migrate it,
 recover identity from the sole absent-policy asset, and supply actual boundary
 controls. The legacy wire's existing green tests do not discharge this limit.
 
-**IMPLEMENTATION-COVERAGE:** the additional theorem increases total mapping and
+**Implementation coverage:** the additional theorem increases total mapping and
 implementation-layer debt from 85 to 86. Coverage-check is expected to exit zero
 while reporting `INCOMPLETE`; neither that exit code nor the 49 manifest-bound
 proofs establish implementation acceptance. No conformance row is added here.

@@ -6,7 +6,7 @@
   ghc,
 }:
 let
-  # The devnet E2E spawns cardano-node as a subprocess via
+  # The devnet end-to-end spawns cardano-node as a subprocess via
   # System.Process.proc, which looks the binary up on PATH.
   # Wrap the test binary so it brings its own cardano-node —
   # pinned in the top-level flake.nix to match the devnet
@@ -135,19 +135,19 @@ in
       done
       files=$(find $dirs -name '*.hs' | sort -u)
       [ -n "$files" ] || { echo "lint: no Haskell sources in the discovered extent" >&2; exit 1; }
-      # #278 S2: Fourmolu covers the WHOLE discovered extent under the
+      # #278 terminal-attestation-permanent: Fourmolu covers the WHOLE discovered extent under the
       # house configuration — the committed fourmolu.yaml at the
       # repository root, passed explicitly so a missing configuration
       # fails loudly instead of silently falling back to Fourmolu
       # defaults. The #264 A-003 source fence (journey/verifier and
       # journey/retire-verify kept at their intake bytes) is removed by
-      # #278 S2: every discovered Haskell source is formatted and checked,
+      # #278 terminal-attestation-permanent: every discovered Haskell source is formatted and checked,
       # with no directory exclusions.
       # The GHC option only lets fourmolu parse the postpositive-qualified
       # imports of the two direct-GHC naming sources; sources without that
       # syntax format exactly as before (ruling A-002, configuration only).
       fourmolu --config ${../../fourmolu.yaml} --ghc-opt=-XImportQualifiedPost -m check $files
-      # #278 S3: HLint runs over the SAME discovered extent as Fourmolu,
+      # #278 supply-matches-leaf-state: HLint runs over the SAME discovered extent as Fourmolu,
       # with no directory exclusions: the #264 baseline hint debt in the
       # journey, naming/test, naming/drift and update-terminal trees is
       # resolved at the source. A newly added directory joins HLint

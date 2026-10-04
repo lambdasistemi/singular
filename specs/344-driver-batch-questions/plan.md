@@ -14,13 +14,13 @@ flowchart LR
 
 Two slices, in order, by one coder, with RED, each acceptance line GREEN and pre-push checkpoints reviewed by the persistent auditor.
 
-### Slice S1: the driver answers both questions
+### Slice driver-answers-both-questions: the driver answers both questions
 
-Driver, statements, transport, corpus, `tools/check_model.py`, translation table and every consumer of the moved surface digest, theorem manifest and Lean mirror. Delivers INV-344-FOLD, REJECT, PRESERVE, SURFACE and CONTROLS.
+Driver, statements, transport, corpus, `tools/check_model.py`, translation table and every consumer of the moved surface digest, theorem manifest and Lean mirror. Delivers driver-answers-foldbatch-question-list-fold-requests, REJECT, PRESERVE, SURFACE and CONTROLS.
 
-### Slice S2: the story language says a batch
+### Slice story-language-says-batch: the story language says a batch
 
-Story instructions, their validation, rendering and execution, and the model question the executor asks. Delivers INV-344-STORY. No conformance row changes state; the CG11, CG19 and CG21 comparisons and receipts belong to #287.
+Story instructions, their validation, rendering and execution, and the model question the executor asks. Delivers story-language-can-say-multi-request-fold. No conformance row changes state; the empty-fold, request-value-and-refund-routing and register-active-key comparisons and receipts belong to #287.
 
 ## Boundary
 

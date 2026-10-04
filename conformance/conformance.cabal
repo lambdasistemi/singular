@@ -83,6 +83,7 @@ library
     Conformance.Refusal
     Conformance.EvidencePage
     Conformance.Rows
+    Conformance.RowNames
     Conformance.Story.Binding
     Conformance.Story.Live
     Conformance.Story.Specification
@@ -122,8 +123,8 @@ library
 common live-runner
   hs-source-dirs:   app
   other-modules:
-    Conformance.CS01
-    Conformance.CS06
+    Conformance.BlueprintEncoding
+    Conformance.ScriptParameters
     Conformance.ForkKeys
     Conformance.Mirror
     Conformance.Run

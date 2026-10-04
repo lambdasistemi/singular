@@ -1,8 +1,8 @@
 # #184 — data model
 
-## CG21 receipt relationship
+## register-active-key receipt relationship
 
-One CG21 receipt has exactly one edge observation. That observation binds one
+One register-active-key receipt has exactly one edge observation. That observation binds one
 accepted fold to one open policy, active policy, key and requested destination,
 plus two distinct refusal legs. Every refusal leg binds one rejected
 transaction to its failing script identities and one accepted control
@@ -24,12 +24,12 @@ one active-policy asset at the inserted key with quantity one.
 
 Each refusal leg carries rejected transaction id, attributed script hashes,
 optional surfaced trace, accepted control transaction id and a nonempty
-distinguisher. CG21 has two required legs: same-key duplicate and wrong keyed
+distinguisher. register-active-key has two required legs: same-key duplicate and wrong keyed
 mint distribution. Neither may be absent or reused as the other.
 
 ## Validation invariants
 
-For CG21 the edge observation and every named field are mandatory. Both keys
+For register-active-key the edge observation and every named field are mandatory. Both keys
 in the keyed-mint leg are distinct. Every accepted transaction is candidate
 bound and comes from the same invocation. An absent ledger trace stays absent;
 refusal names are established at the compiled-validator boundary.

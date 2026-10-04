@@ -1,6 +1,32 @@
 {
+  "325-modules-model": [
+    {
+      "text": "#325 modules model.",
+      "pause": 500
+    },
+    {
+      "text": "singular-cli-receipt-stays-one-owner-journal Singular.CLI.Receipt stays the one owner of journal events and outcome classes; it gains the rollback and exclusion events and the receipt's naming of a submission's case (journal-events-existing-prepared-submitted-acknowledged-rejected, recovery-line-names-its-evidence-chain-point).",
+      "pause": 300
+    },
+    {
+      "text": "reconciliation-module-under-offchain-cli-name-commit A reconciliation module under offchain/cli (name is the commit owner's) owns inclusion, rollback and exclusion evidence and the mirror/state/observation repair. It is extracted from Singular.CLI.Inspect's resolver, which then calls it; every write's attach calls it before the unresolved refusal (reconcile-registry). It depends on the read interface (View) only; it has no submission capability.",
+      "pause": 300
+    },
+    {
+      "text": "crash-atomic-replacement-mirror-state-json-lives Crash-atomic replacement of the mirror and state.json lives with their existing writers (Singular.CLI.Registry, Singular.Registry.Deployment.Mirror); no second writer of either file exists (durable-file-replacement).",
+      "pause": 300
+    },
+    {
+      "text": "devnet-recovery-controls-live-beside-existing-cli DevNet recovery controls live beside the existing CLI controls under tools/, exposed as a flake app and run by a CI step (generated-devnet-controls-separate-singular-process-sequence).",
+      "pause": 300
+    },
+    {
+      "text": "Dependency direction is unchanged: offchain/cli → read/write capabilities (#323) → node adapter. Nothing here reaches NodeSession or NodeMode.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "modules-model.md",
-    "sha256": "e7b5f7b7592ab55da14d2e406dd49bf5a0c1f13b0f4879e7c7ce690e4ef62a33"
+    "sha256": "12cae7f9969e6e6b2837dd088c68cac3a142e4e2fb463ec12ce6cc464bc1eb49"
   }
 }

@@ -349,7 +349,7 @@ datumEncodingVectors =
                 , requestEdge = edgeInsertActive
                 , requestDeposit = 1000000
                 , requestSubmittedAt = 1700000000000
-                , -- #157 D-DEST: the appended destination — where the minted
+                , -- #157 request-destination-binding: the appended destination — where the minted
                   -- token goes, and the inline datum the receiving output
                   -- must carry.
                   requestDestination =
@@ -467,7 +467,7 @@ allJsonVectors =
         ++ datumEncodingVectors
 
 -- -----------------------------------------------------------
--- Aiken rendering (via aiken-codegen DSL)
+-- Aiken rendering (via aiken-codegen story language)
 -- -----------------------------------------------------------
 
 -- | Sanitize description to Aiken test name.

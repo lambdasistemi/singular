@@ -107,7 +107,7 @@ attributeSubmitRefusal env row verdict marker text rejectedTxid = do
 
 {- | A refused CONTROL: submitted and attributed like a refusal row,
 but its outcome is run-log evidence under its own identity and never
-writes the row's receipt (A-002 — CG11/CG12/CG19's held receipts were
+writes the row's receipt (A-002 — empty-fold/surplus-fold-actions/request-value-and-refund-routing's held receipts were
 being replaced by their controls' refusals). It cannot silently pass:
 an accepted control fails the run as a FINDING, and a refusal that
 does not attribute fails the run naming the mismatch.

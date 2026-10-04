@@ -25,12 +25,12 @@ flowchart LR
 
 | ID | Requirement | Observable result |
 | --- | --- | --- |
-| R265-1 | Every declaration moved from either source module has one implementation; preserve type and body except import or qualification mechanics. | A before and after declaration map accounts for the complete moved set, with no duplicate implementation. |
-| R265-2 | The existing public modules retain exports and signatures while implementation modules depend on focused owners. | Old callers, including unchanged Conformance consumers, compile through the same imports; dependencies remain acyclic. |
-| R265-3 | Script identity, conversion, lookup, balancing and integrity, time, failure attribution, consumer binding and edge decisions have distinct owners where useful. Blueprint schema, parameter and loading work is similarly separated. | Review can identify one coherent owner per concern and a contributor can find where to change it. |
-| R265-4 | Builder and blueprint results, including failures, stay equivalent. | Existing parameter, failure attribution, builder, fresh blueprint E2E, journey and archive commands pass at the exact candidate with meaningful negative controls. |
-| R265-5 | Contributor architecture and module documentation follows the actual dependency and execution paths. | The site navigation, source/API links, diagram and speech companion pass the existing presentation and docs checks. |
-| R265-6 | The affected off-chain library has a generated API reference from the candidate revision, with every Cabal-declared library module and its source discoverable in the built site and future docs archive. | The existing `docs-check` job compares the reference's module and source content with this candidate's Cabal library stanza, including `exposed-modules` and `other-modules`, and fails on a missing or stale page, candidate binding or local link; a disposable content-mismatch control demonstrates that failure. The existing `release-check` job verifies that the staged archive carries the same reference. |
+| declaration-moved-from-either-source-module-has | Every declaration moved from either source module has one implementation; preserve type and body except import or qualification mechanics. | A before and after declaration map accounts for the complete moved set, with no duplicate implementation. |
+| existing-public-modules-retain-exports-signatures-while | The existing public modules retain exports and signatures while implementation modules depend on focused owners. | Old callers, including unchanged Conformance consumers, compile through the same imports; dependencies remain acyclic. |
+| script-identity-conversion-lookup-balancing-integrity-time | Script identity, conversion, lookup, balancing and integrity, time, failure attribution, consumer binding and edge decisions have distinct owners where useful. Blueprint schema, parameter and loading work is similarly separated. | Review can identify one coherent owner per concern and a contributor can find where to change it. |
+| builder-blueprint-results-including-failures-stay-equivalent | Builder and blueprint results, including failures, stay equivalent. | Existing parameter, failure attribution, builder, fresh blueprint end-to-end, journey and archive commands pass at the exact candidate with meaningful negative controls. |
+| contributor-architecture-module-documentation-follows-actual-dependency | Contributor architecture and module documentation follows the actual dependency and execution paths. | The site navigation, source/API links, diagram and speech companion pass the existing presentation and docs checks. |
+| affected-off-chain-library-has-generated-api | The affected off-chain library has a generated API reference from the candidate revision, with every Cabal-declared library module and its source discoverable in the built site and future docs archive. | The existing `docs-check` job compares the reference's module and source content with this candidate's Cabal library stanza, including `exposed-modules` and `other-modules`, and fails on a missing or stale page, candidate binding or local link; a disposable content-mismatch control demonstrates that failure. The existing `release-check` job verifies that the staged archive carries the same reference. |
 
 ## Acceptance boundary
 
@@ -41,7 +41,7 @@ owner. A green build is a compile claim, not transaction correspondence. The
 live workflow observations and independent expected behavior keep their own
 evidence limits.
 
-Epic answers A-001 and A-002 authorize a bounded documentation build extension in this
+Operator answers (A-001 and A-002) authorize a bounded documentation build extension in this
 child so the generated Haddock reference appears beside the contributor guide.
 They allow one local off-chain root flake input and root lock entries, with
 every existing upstream pin and the off-chain lockfile unchanged. They do not

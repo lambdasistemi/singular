@@ -1,25 +1,47 @@
 {
+  "data": [
+    {
+      "text": "Data.",
+      "pause": 500
+    },
+    {
+      "text": "Retroactive record, written 2026-09-15 from PR #112 merged at b4a36eaf72d8a355d9048a00081a8f999c195e27.",
+      "pause": 400
+    }
+  ],
   "asset-name": [
     {
-      "text": "The asset name is exactly the 32-byte hash of the spelling bytes. The entity diagram shows spelling to digest to live NFT under the scoping policy. Alice and its newline variant are pinned.",
-      "pause": 400
+      "text": "Asset name.",
+      "pause": 500
     }
   ],
   "policy-parameters": [
     {
-      "text": "The representative policy takes the application hash and the registry asset identity. The application validator itself takes no parameters.",
+      "text": "Policy parameters.",
+      "pause": 500
+    },
+    {
+      "text": "The application validator itself takes no parameters. Every application site passes the registry identity, including the deployment command.",
       "pause": 400
     }
   ],
   "registry-binding": [
     {
-      "text": "Mint and burn enforce the exact registry credential and token. Maintenance and recovery preserve the token; completion spends the registry state; retirement goes through a withdrawal witness.",
+      "text": "Registry binding.",
+      "pause": 500
+    },
+    {
+      "text": "Mint and burn enforce the exact registry state credential and token at quantity one. Maintenance and recovery authorize against the spent record and preserve its token without reading referenced registry state; completion spends the registry state and executes the registry-bound burn policy; retirement executes the representative validator through a withdrawal witness at the credential read from the referenced state.",
       "pause": 400
     }
   ],
   "lifecycle-values": [
     {
-      "text": "Permanent Over and incarnation zero. Over was minted then burned; unclaimed was never minted. The abstract model keeps naming scope zero.",
+      "text": "Lifecycle values.",
+      "pause": 500
+    },
+    {
+      "text": "Naming has permanent Over and incarnation zero. Over means the name was minted and then burned; unclaimed means it was never minted. The two are told apart through asset history for the same policy and name. The abstract model keeps naming scope zero.",
       "pause": 400
     }
   ],

@@ -1,18 +1,64 @@
 {
+  "repair-tasks": [
+    {
+      "text": "Repair tasks.",
+      "pause": 500
+    },
+    {
+      "text": "The controller story in the specification is delivered in one slice. Execute sequentially with one worker; external audit follows submission.",
+      "pause": 400
+    }
+  ],
   "prevent-new-pollution-and-diagnose-old-pollution": [
     {
-      "text": "The specification, tests, validator repair, Haskell readback, compiled checks, identity and documentation are complete for submission. Local checks pass. Independent audit, remote checks and merge remain pending.",
-      "pause": 400
+      "text": "Prevent new pollution and diagnose old pollution.",
+      "pause": 500
+    },
+    {
+      "text": "[x] read-constitution-bind-frozen-behavior-in-spec Read the constitution and bind the frozen behavior in spec.md and plan.md.",
+      "pause": 300
+    },
+    {
+      "text": "[x] add-three-reproduction-tests-discriminating-value-controls Add the three reproduction tests and discriminating value controls in naming-onchain/validators/application.tests.ak; record behavioral RED.",
+      "pause": 300
+    },
+    {
+      "text": "[x] repair-value-equality-named-shape-refusal-insert Repair value equality, named shape refusal and insert-fold shape in naming-onchain/validators/application.ak; record GREEN.",
+      "pause": 300
+    },
+    {
+      "text": "[x] add-named-extra-token-maintenance-check-in Add a named extra-token maintenance check in offchain/ and update affected Haskell mirrors or verifiers; run its positive control and refusal.",
+      "pause": 300
+    },
+    {
+      "text": "[x] regenerate-naming-onchain-script-identity-json-verify Regenerate naming-onchain/script-identity.json and verify the Aiken suite and identity gate.",
+      "pause": 300
+    },
+    {
+      "text": "[x] add-implementation-invariant-offchain-naming-correspondence-md Add the implementation invariant to offchain/naming-correspondence.md, document compatibility in docs/, and curate speech companions.",
+      "pause": 300
+    },
+    {
+      "text": "[x] run-root-just-ci-relevant-presentation-checks Run root just ci and relevant presentation checks; submit a draft PR and journal READY-FOR-AUDIT.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] after-external-audit-pass-green-remote-checks After external audit PASS and green remote checks, merge with a merge commit and journal the merge SHA and completion.",
+      "pause": 300
     }
   ],
   "dependency-order": [
     {
-      "text": "Specification precedes tests, tests precede repair, and code precedes regenerated identity and verification. The frozen candidate precedes the external audit. PASS and finished remote checks precede merge. No parallel agents.",
+      "text": "Dependency order.",
+      "pause": 500
+    },
+    {
+      "text": "Specification precedes tests; tests precede code; code precedes regenerated identity and verification; the frozen candidate precedes independent audit; audit PASS and completed remote checks precede merge. No parallel agents.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "8d4f90f3bf15ff315107670b4e5caa026e9faa59733644c0cb093a6073199b09"
+    "sha256": "f7b81e010dad24f6e1968cdcf603f829cf6ba314eca6b3c797210fd7c11e2293"
   }
 }

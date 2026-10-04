@@ -1,24 +1,50 @@
 {
+  "recorder-call-shape": [
+    {
+      "text": "Recorder call shape.",
+      "pause": 500
+    },
+    {
+      "text": "As the coder, I want the recorder's interface fixed before I write it, so the retained evidence has one reproducible entry point.",
+      "pause": 400
+    }
+  ],
   "recorder": [
     {
-      "text": "The recorder takes a candidate commit and an output directory that must not exist yet. It creates and removes only its own detached worktrees, reports a failed removal in its exit status, and creates one local mutant commit that is never pushed. Every git and nix command it runs is journalled with its arguments, directory, times, exit and output digest. It exits zero only when the pair is admissible.",
+      "text": "Recorder.",
       "pause": 500
+    },
+    {
+      "text": "conformance/review/fold-budget-control/record.sh --candidate CANDIDATE --out OUT",
+      "pause": 400
+    },
+    {
+      "text": "OUT must not exist yet; the recorder creates it before its first command, so every captured output survives an early refusal. Effects: it creates and removes only its own detached worktrees outside the issue worktree, reports any failure to remove them in its exit status, and creates one local mutant commit that is never pushed. Every git and nix command it runs is journalled with argument vector, directory, times, exit and an output digest; build stages inside one nix run belong to that invocation. It runs nix builds and two devnet runs. It exits 0 only when the pair is admissible under the data model, and nonzero otherwise, with the reason in its own output.",
+      "pause": 400
     }
   ],
   "runner-unchanged": [
     {
-      "text": "The patch changes no signature. It only swaps the argument passed to the existing fold assembly.",
+      "text": "Runner, unchanged.",
       "pause": 500
+    },
+    {
+      "text": "The patch changes no signature. It replaces the value bound as the per-purpose declaration in the generic fold step of Conformance.Run.Live. No check is removed or weakened.",
+      "pause": 400
     }
   ],
   "regression-target-conditional": [
     {
-      "text": "Only if the mutant passes, the regression target keeps its command line and exits nonzero when the CG21 session ends without its expected verdict.",
+      "text": "Regression target, conditional.",
       "pause": 500
+    },
+    {
+      "text": "Only under if-mutant-command-exits-regression-cannot-fail: main :: IO () in BudgetMain keeps its command line, --receipts-dir DIR. It exits nonzero when the register-active-key session ends without the row's expected verdict, including when the runner's own honest fold is refused.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "6015f63f33163a1901b6e64cec8265f82960bac5913c6fb98b5970bb0e2320e0"
+    "sha256": "1ee757582c80835b7a6b83e1161ac8da0aa3caa3faff54475559261a39628bcd"
   }
 }

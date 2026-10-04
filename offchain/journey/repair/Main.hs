@@ -779,7 +779,7 @@ checkSweepRefused prov submit cfg tok record creatorSigned = do
         | creatorSigned = addKeyWitness genesisSignKey
         | otherwise = addKeyWitness (mkSignKey folderSeed)
 
--- | Submit an expected-refusal transaction and record its S2 row.
+-- | Submit an expected-refusal transaction and record its terminal-attestation-permanent row.
 submitRefusal
     :: Cage.Provider IO
     -> Submitter IO
@@ -1448,7 +1448,7 @@ wrongDepositRefused prov submit tm cfg tok = do
                         "WRONG-DEPOSIT FAILURE: a mismatched-deposit fold was ACCEPTED"
                         >> pure False
 
-{- | Submit one request at a C2 edge (#183), from the given address.
+{- | Submit one request at a seven-admitted-edges edge (#183), from the given address.
 
 The three shapes this journey used to need — insert, update, delete —
 differ only in the edge now, so they are one function. The datum's
@@ -2172,7 +2172,7 @@ parkGarbage prov submit feeAddr reqAddr = do
         [] -> failWith "parkGarbage: garbage output not found"
 
 -- ---------------------------------------------------------
--- Receipt helpers (S2 supplement contract)
+-- Receipt helpers (terminal-attestation-permanent supplement contract)
 -- ---------------------------------------------------------
 
 txIdHex :: ConwayTx -> String

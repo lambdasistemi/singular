@@ -1,6 +1,44 @@
 {
+  "323-functions-model": [
+    {
+      "text": "#323 functions model.",
+      "pause": 500
+    },
+    {
+      "text": "Signatures are binding in shape; exact module placement and auxiliary names are the commit owner's within the modules model.",
+      "pause": 400
+    },
+    {
+      "text": "acquire-view withView :: Provider m -> (View m -> m a) -> m a — the only way to read (provider-read-interface-exactly-one-acquire-operation). Fails explicitly at origin and on lost connection (point-identity-view-carries-network-era-slot, scope-closed-view-used-after-its-scope).",
+      "pause": 300
+    },
+    {
+      "text": "captured-point-and-protocol-parameters viewPoint :: View m -> ChainPoint; viewProtocolParams :: View m -> PParams ConwayEra (pure: captured at acquire, one-view-per-operation-operation-s-preview).",
+      "pause": 300
+    },
+    {
+      "text": "view-bound-read-and-evaluation viewUTxOsAt :: View m -> Addr -> m [(TxIn, TxOut ConwayEra)]; viewScriptRegistered :: View m -> ScriptHash -> m Bool; viewEvaluateTx :: View m -> ConwayTx -> m (EvaluateTxResult ConwayEra); viewPosixMsToSlot, viewPosixMsCeilSlot :: View m -> Integer -> m SlotNo; viewUTxOsByTxIn :: View m -> Set TxIn -> m (Map TxIn (TxOut ConwayEra)) only if a builder needs it.",
+      "pause": 300
+    },
+    {
+      "text": "node-provider nodeProvider :: NetworkMagic -> N2C.Provider IO -> Provider IO (node-adapter-offchain-node-internal-new-module).",
+      "pause": 300
+    },
+    {
+      "text": "memory-provider memoryProvider :: MemoryChain-handle -> Provider IO plus the mutations the interleaving control needs (in-memory-adapter-offchain-node-internal-or, memory-chain-in-memory-adapter-state-chainpoint).",
+      "pause": 300
+    },
+    {
+      "text": "sign-and-submit signTx :: signing key(s) -> ConwayTx -> SignedTx; submitSigned :: Submitter -> SignedTx -> IO submit-result (signed-transaction-submitter-signed-transaction-type-constructible).",
+      "pause": 300
+    },
+    {
+      "text": "builders-consume-view Builders: every exported builder that took Provider IO takes View IO instead; signatures otherwise unchanged.",
+      "pause": 300
+    }
+  ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "32a9393c2fa0cdce32cca6be4848592d6e46e8d6c3d64a01ce378500c06ab145"
+    "sha256": "99b877f3dd9b517e2db9cd508b6fd78544024e82107fae799f1204b0593a3965"
   }
 }

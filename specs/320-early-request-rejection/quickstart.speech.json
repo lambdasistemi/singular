@@ -1,30 +1,46 @@
 {
   "on-the-compiled-validators": [
     {
-      "text": "Run the onchain flake check. The Aiken suite includes accepted early rejections for both purposes, and refused bad refunds and late updates.",
+      "text": "On the compiled validators.",
+      "pause": 500
+    },
+    {
+      "text": "The Aiken suite includes accepting rejections in the processing and retraction windows, for both the state and the request purpose. It also includes refused short, misdirected, script and missing refunds in those windows, and refused updates outside the processing window.",
       "pause": 400
     }
   ],
   "on-a-devnet-through-the-products-builder": [
     {
-      "text": "Build the registry blueprint and run the devnet end to end suite. The rejection cases named by their window submit the builder's transaction and read back the refund and the unchanged state from the ledger.",
+      "text": "On a devnet, through the product's builder.",
+      "pause": 500
+    },
+    {
+      "text": "Look for the rejection cases named by their window. Each one submits the builder's transaction, then reads back from the ledger that the request is gone, the owner received at least the deposit, and the registry state is unchanged.",
       "pause": 400
     }
   ],
   "compared-with-the-model": [
     {
-      "text": "Run CG09 through the conformance app. Its receipt shows the chain accepting with the verdict unmet by ruling, and its consumer requirement still says refuse. CG24 runs the same way, compares every step with the model, and its log states each reject's window.",
+      "text": "Compared with the model.",
+      "pause": 500
+    },
+    {
+      "text": "reject-before-deadline-consumer-requirement's receipt shows the chain accepting a processing-window rejection, with the verdict unmet-by-ruling. Its consumer requirement still says refuse and, by operator ruling 2026-10-01, remains unmet. reject-inside-processing-and-retraction-windows is run the same way. Each of its steps is compared with the model, and the log states the window each reject was placed in.",
       "pause": 400
     }
   ],
   "identities": [
     {
-      "text": "Run the deployment identity check. It compares manifests and deployed scripts with freshly built blueprints in both directions.",
+      "text": "Identities.",
+      "pause": 500
+    },
+    {
+      "text": "It checks the committed manifests and the deployed scripts against freshly built blueprints, in both directions.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "quickstart.md",
-    "sha256": "ae4196056d7f604c5cb9e4a4b215866c3e53d8ca54b70a34e245aed8b71b249e"
+    "sha256": "c7beb3d04b158e904385bd41b099abe4f60c37d0b10437476c01c66fa60829fc"
   }
 }

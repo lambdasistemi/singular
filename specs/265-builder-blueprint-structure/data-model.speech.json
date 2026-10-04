@@ -1,12 +1,26 @@
 {
+  "data-and-identity-boundary": [
+    {
+      "text": "Data and identity boundary.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I want the same compiled script and ledger data to reach the same transaction and refusal paths after the modules move.",
+      "pause": 400
+    }
+  ],
   "identity-contracts": [
     {
-      "text": "Blueprint, consumer and ledger identities keep their fields and encodings. The generated API artifact binds candidate source content and all Cabal library modules, and the future archive carries the same pages.",
+      "text": "Identity contracts.",
+      "pause": 500
+    },
+    {
+      "text": "No schema or wire migration is authorized. The declaration map records any type and instance move together.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "2800dd1ebf26dae7f767210c82cddafde9d9494a189320aa99d27c92bd536a65"
+    "sha256": "005bd5b8284fa66652528c4a38fc6c7766425e604a7019381773ce7a3dc93869"
   }
 }

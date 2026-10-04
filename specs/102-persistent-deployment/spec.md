@@ -112,7 +112,7 @@ order after #78 as the last code ticket before the preprod close).
   against a closed 30-second window. Same lane, stated reason. No
   question raised.
 - The ticket's manifest format is implemented with the mirror
-  beside it per the operator's M1 ruling; devnet mode is unchanged
+  beside it per the operator's first milestone ruling; devnet mode is unchanged
   throughout.
 
 ## Limits of this slice

@@ -1,8 +1,26 @@
 {
+  "declare-the-batch-questions": [
+    {
+      "text": "Declare the batch questions.",
+      "pause": 500
+    },
+    {
+      "text": "As a caller, I want two new driver entry points and unchanged existing ones.",
+      "pause": 400
+    }
+  ],
   "interface-contract": [
     {
-      "text": "The driver gains one entry point per batch question and two preservation theorems. Every existing driver and model signature stays as it is.",
-      "pause": 350
+      "text": "Interface contract.",
+      "pause": 500
+    },
+    {
+      "text": "The driver gains one entry point per question, each taking the starting state, the setup trace and the request list, returning the driver's existing result shape; the reject question's judgement takes the observed outputs. Names are the coder's choice in the driver's vocabulary, recorded in the PR. The two preservation statements are theorems: one over foldBatch and step with the lawful-claim hypothesis, one over the reject batch judgement and the single reject judgement.",
+      "pause": 400
+    },
+    {
+      "text": "runSurface, judgeSurface, admittedExitStep, every Singular.Model definition and the single-request transport question keep their signatures and answers.",
+      "pause": 400
     }
   ],
   "_source": {

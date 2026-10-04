@@ -115,7 +115,7 @@ outAssets o = case o ^. valueTxOutL of
             ]
 
 {- | The no-script-execution detector: the parts of a transaction
-that can only exist because a script executed. CA05's forged payment
+that can only exist because a script executed. tokenless-output-authentication's forged payment
 must be empty under it, and the boot tx — which carried the state
 script — must not be, proving the detector can fire.
 -}
@@ -175,7 +175,7 @@ outCoin :: TxOut ConwayEra -> Integer
 outCoin o = let Coin c = o ^. coinTxOutL in c
 
 -- ---------------------------------------------------------
--- CS03-CS07: redeemer inspection + remaining rows
+-- update-redeemer-constructor-witnesses-proof-step-constructor-witnesses: redeemer inspection + remaining rows
 -- ---------------------------------------------------------
 
 redeemerPlutusDatas :: ConwayTx -> [PLC.Data]

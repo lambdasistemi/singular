@@ -88,6 +88,18 @@ spec = describe "Appendix: deciding whether a run report counts as evidence" $ d
             Left err -> fail err
 
     it
+        "Rejects a historical receipt and a newly named receipt for the same requirement"
+        $ do
+            path <- getDataFileName "test/fixtures/receipts/receipt-CG02.json"
+            original <- BSL.readFile path
+            case eitherDecode original of
+                Left err -> fail err
+                Right receipt -> withSystemTempDirectory "receipt-name-association" $ \dir -> do
+                    BSL.writeFile (dir </> "receipt-historical.json") original
+                    writeReceiptFile dir receipt
+                    loadReceipts dir >>= (`shouldSatisfy` isLeft)
+
+    it
         "Marks a requirement as tested only when its report matches the code revision being assessed"
         $ do
             dir <- getDataFileName "test/fixtures/receipts"
@@ -96,7 +108,7 @@ spec = describe "Appendix: deciding whether a run report counts as evidence" $ d
                 Left err -> fail err
                 Right rs -> do
                     rows <- loadCommitted
-                    case filter ((== "CG02") . rowId) rows of
+                    case filter ((== "update-existing-key") . rowId) rows of
                         [cg02] -> do
                             effectiveState "fixture-base" rs cg02
                                 `shouldBe` ShownExecuted
@@ -116,7 +128,7 @@ spec = describe "Appendix: deciding whether a run report counts as evidence" $ d
                 Left err -> fail err
                 Right rs -> do
                     rows <- loadCommitted
-                    case filter ((== "CG05") . rowId) rows of
+                    case filter ((== "insert-occupied-key") . rowId) rows of
                         [cg05] ->
                             effectiveState "fixture-base" rs cg05
                                 `shouldBe` ShownExecuted
@@ -223,7 +235,7 @@ spec = describe "Appendix: deciding whether a run report counts as evidence" $ d
         "Rejects an oversized report and identifies the affected requirement"
         $ case checkReceiptSize oversizedReceipt of
             Left err ->
-                err `shouldSatisfy` ("CG05" `isInfixOf`)
+                err `shouldSatisfy` ("insert-occupied-key" `isInfixOf`)
             Right () -> fail "a 20KB receipt passed the bound"
 
     it "Accepts a report of exactly the bound and rejects one byte more" $ do
@@ -244,7 +256,7 @@ spec = describe "Appendix: deciding whether a run report counts as evidence" $ d
     it "bounds an over-long live node rejection before saving the receipt" $
         withSystemTempDirectory "long-live-refusal" $ \dir -> do
             writeReceiptFile dir overlongLiveRefusal
-            bytes <- BSL.readFile (dir </> "receipt-CG21.json")
+            bytes <- BSL.readFile (dir </> "receipt-register-active-key.json")
             BSL.length bytes `shouldSatisfy` (<= fromIntegral maxReceiptBytes)
             case eitherDecode bytes of
                 Left err -> fail ("saved receipt does not parse: " <> err)
@@ -301,11 +313,13 @@ spec = describe "Appendix: deciding whether a run report counts as evidence" $ d
                 Left err -> fail err
                 Right rs -> do
                     rows <- loadCommitted
-                    case filter ((== "CS03") . rowId) rows of
+                    case filter ((== "update-redeemer-constructor-witnesses") . rowId) rows of
                         [cs03] ->
                             effectiveState "fixture-base" rs cs03
                                 `shouldBe` ShownPartial
-                        _ -> fail "fixture inventory has no single CS03"
+                        _ ->
+                            fail
+                                "fixture inventory has no single update-redeemer-constructor-witnesses"
 
     it
         "Shows partial coverage in the published status column and uncovered when no report exists"
@@ -320,20 +334,24 @@ spec = describe "Appendix: deciding whether a run report counts as evidence" $ d
                         cs03line =
                             [ l
                             | l <- rendered
-                            , "CS03\t" `T.isPrefixOf` l
+                            , "update-redeemer-constructor-witnesses\t" `T.isPrefixOf` l
                             ]
                     case cs03line of
                         [l] -> T.splitOn "\t" l !! 3 `shouldBe` "partial"
-                        _ -> fail "inventory has no single CS03 line"
+                        _ ->
+                            fail
+                                "inventory has no single update-redeemer-constructor-witnesses line"
                     let bare = T.lines (renderInventory "fixture-base" [] rows)
                         cs03bare =
                             [ l
                             | l <- bare
-                            , "CS03\t" `T.isPrefixOf` l
+                            , "update-redeemer-constructor-witnesses\t" `T.isPrefixOf` l
                             ]
                     case cs03bare of
                         [l] -> T.splitOn "\t" l !! 3 `shouldBe` "uncovered"
-                        _ -> fail "bare inventory has no single CS03 line"
+                        _ ->
+                            fail
+                                "bare inventory has no single update-redeemer-constructor-witnesses line"
 
     it
         "Rejects a success claim when the report says some operation variants remain untested"
@@ -462,8 +480,9 @@ spec = describe "Appendix: deciding whether a run report counts as evidence" $ d
             result `shouldSatisfy` isLeft
             case result of
                 Left err ->
-                    err `shouldSatisfy` ("CA04 venue must be" `isInfixOf`)
-                Right _ -> fail "a legacy-venue CA04 receipt loaded"
+                    err
+                        `shouldSatisfy` ("applied-validator-identity venue must be" `isInfixOf`)
+                Right _ -> fail "a legacy-venue applied-validator-identity receipt loaded"
 
     it
         "Reports an identity match only when the calculated and reference values are equal"
@@ -486,7 +505,7 @@ spec = describe "Appendix: deciding whether a run report counts as evidence" $ d
 smallReceipt :: Receipt
 smallReceipt =
     Receipt
-        { receiptRow = "CG02"
+        { receiptRow = "update-existing-key"
         , receiptOutcome = Accepted
         , receiptVerdict = AgreesWithModel
         , receiptTransactions = ["abc123"]
@@ -509,7 +528,7 @@ smallReceipt =
 oversizedReceipt :: Receipt
 oversizedReceipt =
     smallReceipt
-        { receiptRow = "CG05"
+        { receiptRow = "insert-occupied-key"
         , receiptOutcome = Refused
         , receiptTransactions = []
         , receiptRefusal =
@@ -562,7 +581,11 @@ stepRoundTrip = describe "Saving compared live requests" $
                     , "unobserved" .= ([] :: [String])
                     , "perturbation" .= (Nothing :: Maybe Value)
                     ]
-            receipt = smallReceipt{receiptRow = "CG22", receiptSteps = Just [step]}
+            receipt =
+                smallReceipt
+                    { receiptRow = "retire-active-key"
+                    , receiptSteps = Just [step]
+                    }
         case eitherDecode (encode receipt) :: Either String Receipt of
             Left err -> fail ("compared request receipt does not parse: " <> err)
             Right decoded -> receiptSteps decoded `shouldBe` Just [step]
@@ -578,11 +601,12 @@ liveStepChecks = describe "Checking compared requests in live receipts" $ do
         loadLive acceptedLive `shouldReturn` Right 1
     it
         "Rejects registration evidence submitted under a requirement no program runs"
-        $ loadLive acceptedLive{receiptRow = "CG10"}
+        $ loadLive acceptedLive{receiptRow = "fold-against-superseded-root"}
             >>= (`shouldSatisfy` isLeft)
     it
         "accepts the occupied-key insertion's compared requests under its own requirement"
-        $ loadLive acceptedLive{receiptRow = "CG05"} `shouldReturn` Right 1
+        $ loadLive acceptedLive{receiptRow = "insert-occupied-key"}
+            `shouldReturn` Right 1
     it "rejects a live chapter with no step records" $
         loadLive acceptedLive{receiptSteps = Nothing}
             >>= (`shouldSatisfy` isLeft)
@@ -878,14 +902,14 @@ liveStepChecks = describe "Checking compared requests in live receipts" $ do
         $ do
             renderBook [] [exitControlsLive]
                 `shouldSatisfy` isInfixOf "Rejection and retraction compared"
-            renderBook [] [acceptedLive{receiptRow = "CG22"}]
+            renderBook [] [acceptedLive{receiptRow = "retire-active-key"}]
                 `shouldSatisfy` isInfixOf "Retirement compared"
     it
         "publishes a refused retraction with the exit and the reason the model gave"
         $ renderBook
             []
             [ (retractTamperLive "other-reference" "deposit-returned")
-                { receiptRow = "CG23"
+                { receiptRow = "reject-and-retract-refund-controls"
                 }
             ]
             `shouldSatisfy` isInfixOf
@@ -945,7 +969,7 @@ assertRecordedCause raw causes = withSystemTempDirectory "node-cause-receipt" $ 
         ("recorded node cause: " <> T.unpack (boundedNodeReason 300 raw))
     let receipt =
             smallReceipt
-                { receiptRow = "CG21"
+                { receiptRow = "register-active-key"
                 , receiptReplayCorrespondence = Nothing
                 , receiptSteps =
                     Just
@@ -959,7 +983,7 @@ assertRecordedCause raw causes = withSystemTempDirectory "node-cause-receipt" $ 
                         ]
                 }
     writeReceiptFile dir receipt
-    bytes <- BSL.readFile (dir </> "receipt-CG21.json")
+    bytes <- BSL.readFile (dir </> "receipt-register-active-key.json")
     BSL.length bytes `shouldSatisfy` (<= fromIntegral maxReceiptBytes)
     saved <- either fail pure (eitherDecode bytes)
     case receiptSteps (saved :: Receipt) of
@@ -973,7 +997,7 @@ assertRecordedCause raw causes = withSystemTempDirectory "node-cause-receipt" $ 
 overlongLiveRefusal :: Receipt
 overlongLiveRefusal =
     smallReceipt
-        { receiptRow = "CG21"
+        { receiptRow = "register-active-key"
         , receiptReplayCorrespondence = Nothing
         , receiptSteps =
             Just
@@ -1118,7 +1142,7 @@ budgetRefusalChain purposes =
 acceptedLive :: Receipt
 acceptedLive =
     smallReceipt
-        { receiptRow = "CG21"
+        { receiptRow = "register-active-key"
         , receiptReplayCorrespondence = Nothing
         , receiptSteps =
             Just
@@ -1182,7 +1206,9 @@ changeStep f receipt = receipt{receiptSteps = fmap (map f) (receiptSteps receipt
 
 loadLive :: Receipt -> IO (Either String Int)
 loadLive receipt = withSystemTempDirectory "conformance-live-receipt" $ \dir -> do
-    BSL.writeFile (dir </> "receipt-CG21.json") (encode receipt)
+    BSL.writeFile
+        (dir </> "receipt-register-active-key.json")
+        (encode receipt)
     fmap length <$> loadReceipts dir
 
 {- | A payment tamper both sides refused: the ledger with its node refusal and
@@ -1224,7 +1250,11 @@ admissionRefusalLive edge alteration reason =
 
 -- | Loader fixture, not evidence of a chain run.
 windowReceipt :: Receipt
-windowReceipt = acceptedLive{receiptRow = "CG07", receiptSteps = Just windowSteps}
+windowReceipt =
+    acceptedLive
+        { receiptRow = "retract-outside-window"
+        , receiptSteps = Just windowSteps
+        }
 
 windowSteps :: [Value]
 windowSteps =
@@ -1262,7 +1292,7 @@ windowSteps =
 admissionBookFixture :: Receipt
 admissionBookFixture =
     acceptedLive
-        { receiptRow = "CG23"
+        { receiptRow = "reject-and-retract-refund-controls"
         , receiptReplayCorrespondence = Nothing
         , receiptSteps =
             Just $
@@ -1306,7 +1336,7 @@ beside a spent state, and the untampered retraction.
 exitControlsLive :: Receipt
 exitControlsLive =
     acceptedLive
-        { receiptRow = "CG23"
+        { receiptRow = "reject-and-retract-refund-controls"
         , receiptTransactions = ["abc123", "def456"]
         , receiptReplayCorrespondence = Nothing
         , receiptSteps =
@@ -1437,7 +1467,7 @@ replayChecks = describe "Checking the traced replay a refused request carries" $
                     renderBook
                         []
                         [ (tracedPaymentLive [admittedEntry] (Just "destination"))
-                            { receiptRow = "CG21"
+                            { receiptRow = "register-active-key"
                             }
                         ]
             book
@@ -1445,19 +1475,24 @@ replayChecks = describe "Checking the traced replay a refused request carries" $
                     "The traced replay of the deployed script `abcdef` (traced build `traced-abcdef`) failed with `destination`."
     it
         "renders an untampered refused request with the reason its traced replay admitted"
-        $ renderBook [] [untamperedRefusal "CG22"]
+        $ renderBook [] [untamperedRefusal "retire-active-key"]
             `shouldSatisfy` isInfixOf
                 "was refused on chain (transaction `abc123`); the model refused it for `not-booked`. The traced replay of the deployed script `abcdef` (traced build `traced-abcdef`) failed with `not-booked`."
     it "names the cause when the traced replay admitted no reason" $
         renderBook
             []
-            [(tracedPaymentLive [causeEntry] Nothing){receiptRow = "CG21"}]
+            [ (tracedPaymentLive [causeEntry] Nothing)
+                { receiptRow = "register-active-key"
+                }
+            ]
             `shouldSatisfy` isInfixOf
                 "The traced replay of the deployed script `abcdef` admits no reason: `no-user-trace`."
     it "says so when a refused request carries no traced replay" $
         renderBook
             []
-            [ (paymentTamperLive "other-address" "destination"){receiptRow = "CG21"}
+            [ (paymentTamperLive "other-address" "destination")
+                { receiptRow = "register-active-key"
+                }
             ]
             `shouldSatisfy` isInfixOf
                 "the model refused it for `destination`. No traced replay of this refusal is recorded."
@@ -1468,7 +1503,7 @@ replayChecks = describe "Checking the traced replay a refused request carries" $
                     renderBook
                         []
                         [ (tracedPaymentLive [admittedEntry] (Just "destination"))
-                            { receiptRow = "CG21"
+                            { receiptRow = "register-active-key"
                             }
                         ]
                 (chapters, appendix) = breakOn "## Appendix" book
@@ -1486,16 +1521,29 @@ replayChecks = describe "Checking the traced replay a refused request carries" $
         "requires a receipt for every story the book runs, the occupied-key story among them"
         $ do
             let receiptsFor rows = [acceptedLive{receiptRow = T.pack row} | row <- rows]
-                others = ["CG21", "CG22", "CG23", "CG24", "CG07", "sequence"]
+                others =
+                    [ "register-active-key"
+                    , "retire-active-key"
+                    , "reject-and-retract-refund-controls"
+                    , "reject-inside-processing-and-retraction-windows"
+                    , "retract-outside-window"
+                    , "sequence"
+                    ]
             bookReceipts (receiptsFor others)
-                `shouldSatisfy` either ("CG05" `isInfixOf`) (const False)
-            fmap (map receiptRow) (bookReceipts (receiptsFor ("CG05" : others)))
+                `shouldSatisfy` either ("insert-occupied-key" `isInfixOf`) (const False)
+            fmap
+                (map receiptRow)
+                (bookReceipts (receiptsFor ("insert-occupied-key" : others)))
                 `shouldBe` Right (map T.pack bookStories)
             bookReceipts
                 ( receiptsFor others
-                    <> [acceptedLive{receiptRow = "CG05", receiptVerdict = HeldQ002}]
+                    <> [ acceptedLive
+                            { receiptRow = "insert-occupied-key"
+                            , receiptVerdict = HeldQ002
+                            }
+                       ]
                 )
-                `shouldSatisfy` either ("CG05" `isInfixOf`) (const False)
+                `shouldSatisfy` either ("insert-occupied-key" `isInfixOf`) (const False)
     it
         "renders the occupied-key story and the refusal its receipt records"
         $ do
@@ -1515,11 +1563,13 @@ replayChecks = describe "Checking the traced replay a refused request carries" $
         renderBook
             []
             [ (tracedPaymentLive [admittedEntry] (Just "destination"))
-                { receiptRow = "CG21"
+                { receiptRow = "register-active-key"
                 }
-            , (tracedPaymentLive [causeEntry] Nothing){receiptRow = "CG22"}
+            , (tracedPaymentLive [causeEntry] Nothing)
+                { receiptRow = "retire-active-key"
+                }
             , (paymentTamperLive "short-by-one" "deposit-returned")
-                { receiptRow = "CG23"
+                { receiptRow = "reject-and-retract-refund-controls"
                 }
             ]
             `shouldSatisfy` isInfixOf
@@ -1527,9 +1577,9 @@ replayChecks = describe "Checking the traced replay a refused request carries" $
     it "counts in the number its counts name" $ do
         let admitted =
                 (tracedPaymentLive [admittedEntry] (Just "destination"))
-                    { receiptRow = "CG21"
+                    { receiptRow = "register-active-key"
                     }
-        renderBook [] [admitted, admitted{receiptRow = "CG22"}]
+        renderBook [] [admitted, admitted{receiptRow = "retire-active-key"}]
             `shouldSatisfy` isInfixOf
                 "Of the 2 refused requests in this run's chapters, 2 carry a reason their traced replay admitted, 0 name the cause their replay admits none, and 0 record no traced replay."
         renderBook [] [admitted]
@@ -1658,7 +1708,7 @@ untamperedOccupied =
             (Just "key-exists")
         )
     )
-        { receiptRow = "CG05"
+        { receiptRow = "insert-occupied-key"
         }
 
 -- | A fold batch, tampered, refused by both sides for @net-mint-mismatch@.
@@ -1695,11 +1745,11 @@ withBatch :: Value -> Receipt -> Receipt
 withBatch record receipt =
     receipt{receiptSteps = fmap (<> [record]) (receiptSteps receipt)}
 
--- | The same row's attribution receipt for CG11, carrying the given steps.
+-- | The same row's attribution receipt for empty-fold, carrying the given steps.
 emptyFoldWith :: [Value] -> Receipt
 emptyFoldWith steps =
     (attributionOf refusedLiveWithoutDetails)
-        { receiptRow = "CG11"
+        { receiptRow = "empty-fold"
         , receiptVerdict = HeldQ002
         , receiptSteps = Just steps
         , receiptReplayCorrespondence = Just fixtureCorrespondence
@@ -1794,31 +1844,44 @@ batchChecks = describe "Checking a batch the model's batch questions compared" $
     it
         "rejects compared requests on a row no program runs"
         $ loadRow
-            ((emptyFoldWith (concat (receiptSteps story))){receiptRow = "CG10"})
+            ( (emptyFoldWith (concat (receiptSteps story)))
+                { receiptRow = "fold-against-superseded-root"
+                }
+            )
             >>= (`shouldSatisfy` isLeft)
     it
-        "accepts CG09's unmet receipt carrying its recorded refund-position divergence"
+        "accepts reject-before-deadline-consumer-requirement's unmet receipt carrying its recorded refund-position divergence"
         $ loadRow
             ( (emptyFoldWith [divergenceRecord])
-                { receiptRow = "CG09"
+                { receiptRow = "reject-before-deadline-consumer-requirement"
                 , receiptVerdict = UnmetByRuling
                 }
             )
             `shouldReturn` Right 1
     it "rejects a batch step on a row no batch question compares" $
-        loadRow ((emptyFoldWith [refusedBatchRecord]){receiptRow = "CG10"})
+        loadRow
+            ( (emptyFoldWith [refusedBatchRecord])
+                { receiptRow = "fold-against-superseded-root"
+                }
+            )
             >>= (`shouldSatisfy` isLeft)
     it
         "renders a refused batch with the model's reason and its traced replay"
         $ renderBook
             []
-            [(withBatch refusedBatchRecord story){receiptRow = "CG21"}]
+            [ (withBatch refusedBatchRecord story)
+                { receiptRow = "register-active-key"
+                }
+            ]
             `shouldSatisfy` isInfixOf
                 "The fold of 2 requests in one transaction, tampered mint-on-first-key, was refused on chain (transaction `batch123`); the model's `foldBatch` refused it for `net-mint-mismatch`. The traced replay of the deployed script `abcdef` (traced build `traced-abcdef`) failed with `net-mint-mismatch`."
     it "counts a batch apart from the requests" $
         renderBook
             []
-            [(withBatch refusedBatchRecord story){receiptRow = "CG21"}]
+            [ (withBatch refusedBatchRecord story)
+                { receiptRow = "register-active-key"
+                }
+            ]
             `shouldSatisfy` isInfixOf
                 "Batches submitted in one transaction: 1, 0 accepted and 1 refused on chain."
 

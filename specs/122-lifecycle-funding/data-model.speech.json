@@ -1,25 +1,51 @@
 {
+  "data": [
+    {
+      "text": "Data.",
+      "pause": 500
+    },
+    {
+      "text": "Retroactive record, written 2026-09-15 from PR #122 merged at 6ab1093367e00290a4b74638f03f5ef44b3137e6.",
+      "pause": 400
+    }
+  ],
   "funding-requirement": [
     {
-      "text": "The requirement sums the actor outputs, one maximum-size fee allowance, and minimum change. The entity diagram shows outputs, allowance, change, deposits, and collateral. Everything derives from the live parameters.",
+      "text": "Funding requirement.",
+      "pause": 500
+    },
+    {
+      "text": "All amounts derive from the live protocol parameters read from the node. Reserved outputs are funds, not claimed fees.",
       "pause": 400
     }
   ],
   "provider-selection": [
     {
-      "text": "A selectable output is ada-only, carries no reference script, and is not reserved for a later step. Reference publications never fund.",
+      "text": "Provider selection.",
+      "pause": 500
+    },
+    {
+      "text": "A selectable UTxO is ada-only, carries no reference script, and is not in the reserved set passed by the caller (inputs a later lifecycle step needs). Reference publications are never funding.",
       "pause": 400
     }
   ],
   "execution-budget": [
     {
-      "text": "Per-purpose costs are measured by node evaluation and summed. The total must fit the live per-transaction limit in both memory and steps, and the refusal reports both numbers.",
+      "text": "Execution budget.",
+      "pause": 500
+    },
+    {
+      "text": "The aggregate must fit the live limit exactly or below; two individually legal purposes whose sum exceeds memory refuse, as does any step excess. The refusal reports the measured requirement beside the live limit.",
       "pause": 400
     }
   ],
   "path-selection": [
     {
-      "text": "Public external nodes select the lifecycle automatically; elsewhere an explicit flag does. Plain devnet runs keep every fixture and row.",
+      "text": "Path selection.",
+      "pause": 500
+    },
+    {
+      "text": "Public external nodes use the lifecycle automatically; any other network selects it with --lifecycle. Devnet magic 42 without the flag keeps every existing fixture and row.",
       "pause": 400
     }
   ],

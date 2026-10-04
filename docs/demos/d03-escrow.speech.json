@@ -1,20 +1,42 @@
 {
+  "name-your-address-preprod-stretch-30-october-target": [
+    {
+      "text": "Name Your Address preprod stretch — 30 October target.",
+      "pause": 500
+    },
+    {
+      "text": "As Bob, I want to lock funds against the ordered names Alice then Bob, so Alice can claim at her current destination after recovery and I can claim only after Alice's name ends permanently. This dated project card is not yet playable as a connected preprod journey.",
+      "pause": 400
+    },
+    {
+      "text": "Planned release tag: Singular v2.0.0 (naming and escrow milestone). This is a milestone target; the tag waits for the 30 October release gate, a built archive and connected preprod receipts. Candidate plays do not publish it.",
+      "pause": 400
+    }
+  ],
   "planned-play": [
     {
-      "text": "Bob's ordered escrow play has two connected runs. One lets Alice recover and claim at her current destination. The second requires Alice's completed retirement and a terminal witness before Bob claims. These are planned preprod observations, not results shown on this page. Singular version two point zero point zero remains a planned tag until the connected release gate.",
+      "text": "Planned play.",
       "pause": 500
+    },
+    {
+      "text": "The accepted Singular model at a6e5edbc2dafa82eb34116a1de2b6503f87c6692 supplies the registry edges and naming lifecycle. Their synthetic model address bytes are not a preprod wallet. The 23 October naming play is also awaiting connected kli, ckeri and Singular commands. There is no cast of an accepted preprod escrow payment here.",
+      "pause": 400
     }
   ],
   "presenter-path-1015-minutes-when-runnable": [
     {
-      "text": "A future presenter will show the release and manifest, both connected claims, then the early claim, wrong destination and missing witness refusals with transaction and script evidence.",
+      "text": "Presenter path: 10–15 minutes when runnable.",
       "pause": 500
     }
   ],
   "missing-interface-and-evidence": [
     {
-      "text": "The escrow validator, command line, completion repair and preprod journey must produce a runnable release script and node receipts. Until then, the connected journey is not playable.",
+      "text": "Missing interface and evidence.",
       "pause": 500
+    },
+    {
+      "text": "The escrow validator ticket, CLI ticket, preprod journey and completion repair must yield one connected runnable script from a downloaded release. This page has no release or preprod receipt, and the two claims and three refusals have not been observed here. No timeout, refund route or payer privilege is inferred.",
+      "pause": 400
     }
   ],
   "_source": {

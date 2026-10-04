@@ -1,0 +1,14 @@
+<div class="container">
+  <div class="terminal-nav">
+    <header class="terminal-logo">
+      <div id="mkdocs-terminal-site-name" class="logo terminal-prompt"><a href="{{ nav.homepage.url | url }}" class="no-style">{{ config.site_name }}</a></div>
+    </header>
+    <nav class="terminal-menu" aria-label="Site tools">
+      <ul>
+        {% include "partials/top-nav/search-button.html" %}
+        <li><button id="narration-speed" class="top-icon" type="button" hidden></button></li>
+        <li><button id="singular-palette-toggle" class="top-icon" type="button" hidden aria-label="Switch to dark mode"></button></li>
+      </ul>
+    </nav>
+  </div>
+</div>

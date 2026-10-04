@@ -1,28 +1,106 @@
 {
+  "model-repairs-spent-output-disappearance-and-payload-equality": [
+    {
+      "text": "Model repairs: spent-output disappearance and payload equality.",
+      "pause": 500
+    },
+    {
+      "text": "Two forward repairs of the open-datum application model, each approved by the operator on 29 September 2026 in the words quoted below. They correct the model and its statements. They change no transition, no valid application behaviour and no root registry source, and they grant no validator, builder, command, publication, signing or merge.",
+      "pause": 400
+    }
+  ],
   "a-terminated-output-disappears-from-a-consistent-world": [
     {
-      "text": "As a controller terminating an application output from a consistent world, I want that output gone while every recipient receives the full sum of their floors. The operator approved the consistency premise. An executed malformed world, whose next reference did not exceed a live output's, recreated the spent reference, so the old statement promised too much.",
+      "text": "A terminated output disappears from a consistent world.",
+      "pause": 500
+    },
+    {
+      "text": "As a controller terminating an application output from a consistent starting world, I want that spent output to disappear while every recipient receives the full sum of their payment floors.",
       "pause": 400
     },
     {
-      "text": "The payment statement keeps its name and needs no premise: the selected rows, the live spent outputs, each deposit to its own controller and the summed floors. The disappearance is the new statement fold spent disappears, which assumes a consistent world, never reachability.",
-      "pause": 400
+      "text": "Operator approval, verbatim: \"Approve the consistency premise (recommended)\".",
+      "pause": 300
+    },
+    {
+      "text": "Evidence: the settlement diagnostic at commit a039182ab2e8bb2fbf98810f64d78e0ccbbd98e8 (applications/open-datum/lean/SettlementDiagnostic.lean) executes the law in a malformed world whose next output reference is 0 while a live output already sits at reference 0. There, the fold's fresh output recreates reference 0, so the spent output is not gone. The connected valid lifecycle behaves as intended. The raw run output has SHA-256 3b6a7f628b05298a9594bedf99956f7db0bb015cb0cee9a2aa1ec27a74f1756f. This is model execution evidence only.",
+      "pause": 300
+    },
+    {
+      "text": "What was wrong: fold_settles_additively promised the disappearance over any world.",
+      "pause": 300
+    },
+    {
+      "text": "Ruling: the disappearance requires AppConsistent w, never reachability.",
+      "pause": 300
+    },
+    {
+      "text": "fold_settles_additively keeps its name and stays unconditional: the selected rows are exactly those selectRow chose, every spent output was live, each release is the spent output's own protected deposit to its own controller, and every recipient receives at least the sum of its floors.",
+      "pause": 300
+    },
+    {
+      "text": "The new fold_spent_disappears states, from a consistent world, that no output an accepted fold spends is live afterwards.",
+      "pause": 300
+    },
+    {
+      "text": "No payment floor is weakened, and the transitions are unchanged.",
+      "pause": 300
     }
   ],
   "an-updated-payload-replaces-its-output": [
     {
-      "text": "As a controller updating a payload, I want the old output replaced with every constructor and every update behaving as before. The operator approved the structural equality repair. The derived equality of the nested payload type was an opaque function no proof could unfold, so an update's removal of the old output could not be proved.",
+      "text": "An updated payload replaces its output.",
+      "pause": 500
+    },
+    {
+      "text": "As a controller updating a payload, I want the prior output to be replaced while all payload constructors and update behaviour remain available and unchanged.",
       "pause": 400
     },
     {
-      "text": "The payload now has a total structural equality, proved to be exactly equality, with the same laws for the types around it. Constructors, values, results and transitions are unchanged; no axiom, restriction or removal by reference is introduced. A fixed table of 1681 pairs gives the same answers under the old and new equality; the proved laws are the general claim.",
-      "pause": 400
+      "text": "Operator approval, verbatim: \"Approve the structural equality repair (recommended)\".",
+      "pause": 300
+    },
+    {
+      "text": "Evidence: at commit f4eda570acc8d11686d36c57ed90ddb00b257d61, PlutusData is a nested inductive type with a derived BEq. For a nested type, Lean 4.25.0 derives that equality as a partial function, which a proof cannot unfold. An update removes the replaced output with List.erase, so no proof could show the output was actually removed, and update_preserves_consistent could not be proved. This is a finding about what can be proved from the source, not an observed runtime counterexample: the compiled equality always compared the values structurally.",
+      "pause": 300
+    },
+    {
+      "text": "Ruling: the opaque equality is replaced by a total structural one, PlutusData.beq.",
+      "pause": 300
+    },
+    {
+      "text": "It is proved to be exactly propositional equality (PlutusData.beq_iff_eq, LawfulBEq), with the same laws for the envelope, control, state asset and application output that contain it.",
+      "pause": 300
+    },
+    {
+      "text": "All five constructors, every value and every equality result stay as they were. So do the update and fold transitions, the payload encoding, the envelope hash and the JSON codecs.",
+      "pause": 300
+    },
+    {
+      "text": "No axiom, admission, data restriction, or removal by reference instead of by value is introduced.",
+      "pause": 300
+    },
+    {
+      "text": "A differential run compares the old compiled equality and the new one over a fixed table of 1681 pairs, covering every constructor, map keys and values, constructor tags and children, list length and order, negative integers and bytes. Both give the same results. The table is a finite runtime sample; the proved laws are the universal claim.",
+      "pause": 300
     }
   ],
   "what-follows-for-the-model-and-its-consumers": [
     {
-      "text": "There are now thirty-three statements, and proof status comes only from captured kernel reports; recording it in the generated ledger is separate, unfinished work. The corpus replays with every outcome unchanged, and only reached releasing scenarios also cite the new statement. Issue 304, validators, builders, the command line and chain evidence remain open.",
-      "pause": 400
+      "text": "What follows for the model and its consumers.",
+      "pause": 500
+    },
+    {
+      "text": "The statements number 33. Proof status is established only by captured #print axioms reports. The generated theorem ledger lists fold_spent_disappears among the statements; recording proof status in that ledger is separate, unfinished work.",
+      "pause": 300
+    },
+    {
+      "text": "The corpus replays with every recorded outcome unchanged. Only the reached scenarios that release an output also cite fold_spent_disappears.",
+      "pause": 300
+    },
+    {
+      "text": "Issue 304's destination-output question, the application validators, builders, command line, artifact and public-chain evidence remain open and are not affected by these rulings.",
+      "pause": 300
     }
   ],
   "_source": {

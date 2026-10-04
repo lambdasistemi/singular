@@ -47,7 +47,7 @@ import Conformance.Mirror
     )
 
 -- ---------------------------------------------------------
--- Measurements (CL01 for these rows)
+-- Measurements (execution-units-and-transaction-size for these rows)
 -- ---------------------------------------------------------
 
 {- | Measure a fold's execution units: summed over the node's

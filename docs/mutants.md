@@ -24,7 +24,7 @@ stops compiling. Those are different events and only the first is evidence:
 The first run of this campaign killed all four at the effect lemmas. That was a
 near-tautological result and was discarded rather than reported.
 
-The campaign mutated `Model.lean` at sha256 `c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8`. The current `Model.lean` is `538b204c10ad8ac96bc90d88af83fd90195418dd2499e53bd4dde22bed672d9d`, and the campaign has not been rerun against it: the four rows below are evidence about the revision they name and nothing later.
+The campaign mutated `Model.lean` at sha256 `c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8`. The current `Model.lean` is `beec6567f46b7b0bb273ebe3e28cf7197bf56668bcdf8dfd4590c58ec6d29d97`, and the campaign has not been rerun against it: the four rows below are evidence about the revision they name and nothing later.
 A campaign is evidence about the exact definitions it broke, so a later model is
 a later campaign, not a carried-forward result.
 
@@ -32,10 +32,10 @@ a later campaign, not a carried-forward result.
 
 | id | mutation | must break | killed at | outcome |
 | --- | --- | --- | --- | --- |
-| M1 | `insertActive` mints a **second** active token for the key | W1, and S3 for the active kind | the active-supply conjunct of `step_ok_consistent`, `insertActive` branch | **KILLED** |
-| M2 | `insertActive` also mints an **absent** token for the key it just made active | W2 and W4 | the custody-census conjunct of `step_ok_consistent`, `insertActive` branch | **KILLED** |
-| M3 | the read drops its terminal requirement, so an **active** key can be attested | S1 | the terminality derivation in the `witnessTerminal` branch of `step_ok_consistent` | **KILLED** |
-| M4 | `updateActive` **keeps** the custody entry, leaving the absent token outstanding | S3 and W4 | the custody-census conjunct of `step_ok_consistent`, `updateActive` branch | **KILLED** |
+| mint-second-active-token | `insertActive` mints a **second** active token for the key | active-witness-unique, and supply-matches-leaf-state for the active kind | the active-supply conjunct of `step_ok_consistent`, `insertActive` branch | **KILLED** |
+| mint-absent-on-active-key | `insertActive` also mints an **absent** token for the key it just made active | absent-witness-unique and witness-kinds-exclude | the custody-census conjunct of `step_ok_consistent`, `insertActive` branch | **KILLED** |
+| attest-active-key | the read drops its terminal requirement, so an **active** key can be attested | terminal-attestation-sound | the terminality derivation in the `witnessTerminal` branch of `step_ok_consistent` | **KILLED** |
+| leave-absent-custody-on-activation | `updateActive` **keeps** the custody entry, leaving the absent token outstanding | supply-matches-leaf-state and witness-kinds-exclude | the custody-census conjunct of `step_ok_consistent`, `updateActive` branch | **KILLED** |
 
 Positive control: on the unmutated tree the statements prove, and the compiled
 axiom report carries no `sorryAx`.
@@ -43,18 +43,18 @@ axiom report carries no `sorryAx`.
 ## Why the kills land where they do
 
 Every promise in the interface is read off one invariant — `Consistent` — which
-`step_ok_consistent` proves survives each of the seven edges. W1 and W2 are its
-supply conjuncts read one state at a time, S3 is the same fact stated as a
-biconditional, W4 follows from the supply conjuncts plus a key having one leaf,
-and S1 is its terminal-holding conjunct. So a mutation that breaks a supply law
+`step_ok_consistent` proves survives each of the seven edges. active-witness-unique and absent-witness-unique are its
+supply conjuncts read one state at a time, supply-matches-leaf-state is the same fact stated as a
+biconditional, witness-kinds-exclude follows from the supply conjuncts plus a key having one leaf,
+and terminal-attestation-sound is its terminal-holding conjunct. So a mutation that breaks a supply law
 breaks the invariant's corresponding conjunct, and everything downstream of it
 fails with it.
 
-M3 is the one worth reading closely. Dropping the terminal requirement from the
+attest-active-key is the one worth reading closely. Dropping the terminal requirement from the
 read does not break arithmetic; it breaks a *derivation*. The `witnessTerminal`
 branch establishes that the attested key's leaf is terminal by reading it out of
 the verified read. With the mutation the read no longer carries that fact, so the
-attestation can no longer be shown sound — which is exactly S1 failing, and
+attestation can no longer be shown sound — which is exactly terminal-attestation-sound failing, and
 exactly the defect the mutation describes.
 
 ## Limits

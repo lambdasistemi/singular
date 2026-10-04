@@ -1,154 +1,112 @@
 {
+  "who-owns-a-state-validator-rule": [
+    {
+      "text": "Who owns a state validator rule.",
+      "pause": 500
+    },
+    {
+      "text": "A contributor changing how the registry's state validator decides — a new refusal in the fold, a different settlement of the lovelace a fold owes, a tighter custody spend — wants to open one Aiken module beside the rule it owns and have the review ask one question. Before this organization all of it lived in one 1502-line state.ak, where the trie walk, the custody path and the payee arithmetic sat side by side with nothing between them. Now the validator's dispatch stays in state.ak and each rule has one owner under onchain/validators/registry/. This page tells a contributor which owner a change belongs to, which way the dependencies run, what the move was not allowed to change, and where the evidence stops.",
+      "pause": 400
+    }
+  ],
   "the-story-this-serves": [
     {
-      "pause": 400,
-      "text": "A registry integrator keeps using the state validator already deployed."
+      "text": "The story this serves.",
+      "pause": 500
     },
     {
-      "pause": 500,
-      "text": "The story demands the same script hashes, acceptances, refusals, trace reasons and transaction effects after the source is divided into owners."
+      "text": "As a registry integrator, I keep using the state validator I already deployed; I want the same script hashes, the same acceptances, the same refusals with the same trace reasons, and the same transaction effects after its source is divided into owners, so nothing I pinned or built against moves. A contributor reorganizing that source owes me an unchanged compiled script.",
+      "pause": 400
     },
     {
-      "pause": 450,
-      "text": "The promise is checked by comparing all eleven validators of a fresh blueprint, field by field, with the blueprint from before the move."
-    },
-    {
-      "pause": 450,
-      "text": "And by comparing all three hundred sixty Aiken tests, three hundred forty of which report a cost, on status, memory and CPU cost, and traces, under the same property seed."
-    },
-    {
-      "pause": 500,
-      "text": "Both comparisons ran after each of the four moves, and again on the final tree, and found no difference."
+      "text": "What that promise is checked against: every validator in the freshly built blueprint — eleven entries — compared field by field with the blueprint of the revision before the move (compiled code, hash, title, parameters, datum, redeemer), and every Aiken test — three hundred sixty, three hundred forty of which report an execution cost — compared on its status, its memory and CPU cost, and its traces, under the same property-test seed. Both comparisons were run after each of the four moves, and again on the final tree after the documentation was corrected, and found no difference.",
+      "pause": 400
     }
   ],
   "one-owner-per-rule": [
     {
-      "pause": 500,
-      "text": "A diagram is shown here: the state module dispatches minting to genesis, custody spends to custody, and Modify spends to the modify owner."
+      "text": "One owner per rule.",
+      "pause": 500
     },
     {
-      "pause": 450,
-      "text": "The modify owner runs the fold, checks each duty through discharge, and settles lovelace through settlement. The fold collects duties and asks the trie owner for its refusals. Discharge and settlement read custody outputs."
+      "text": "Dependencies run one way, from the dispatch down. No owner imports state.ak, and registry/refusal, registry/duty, registry/trie and registry/genesis import no other owner, so a change inside a lower owner needs no edit above it to compile as long as the names and types it exports stay the same. registry/discharge, registry/settlement and registry/custody also import registry/refusal for the reasons they share; the diagram leaves those edges out to stay readable.",
+      "pause": 400
     },
     {
-      "pause": 450,
-      "text": "Dependencies run one way, from the dispatch down; no owner imports the state module, and refusal, duty, trie and genesis import no other owner. A change inside a lower owner needs no edit above it while its exported names and types stay the same."
-    },
-    {
-      "pause": 450,
-      "text": "Every moved declaration kept its body byte for byte, importing its names unqualified."
-    },
-    {
-      "pause": 500,
-      "text": "Aiken has no re-export, so two test modules now call the trie and retirement refusals in their owners directly, and every test's measured cost is unchanged. A forwarding function was not built or measured."
+      "text": "The move kept every declaration's body byte for byte: each owner imports the names it uses unqualified, so a function reads exactly as it did in the single file. Two Aiken test modules now read a refusal from its owner rather than from state — the retirement refusals from registry/trie and registry/discharge, the read refusals from registry/trie — and modifyRefusal, which the suite uses to ask for the one reason a fold is refused, stays in state.ak. Aiken has no re-export, so those callers were pointed at the owners directly; every test's measured cost is unchanged. A forwarding function in state.ak was not built or measured.",
+      "pause": 400
     }
   ],
   "how-a-fold-is-judged": [
     {
-      "pause": 400,
-      "text": "A diagram is shown here of the order in which a Modify is judged."
+      "text": "How a fold is judged.",
+      "pause": 500
     },
     {
-      "pause": 450,
-      "text": "First the continuation address, state token, no drain and preserved pins. Then the fold over every input: carriage, phase, edge, approval and trie move."
-    },
-    {
-      "pause": 450,
-      "text": "Then the batch checks: something consumed, no surplus action, the root, and the mint delta. Then each duty is discharged, and finally custody refunds, positional refunds and each payee's sum are settled."
-    },
-    {
-      "pause": 500,
-      "text": "The first failing check is the one reason traced, and that order is part of the contract."
+      "text": "registry/modify owns this order; the first failing check is the answer and the spend handler traces exactly that one reason. The fold's accumulator latches its first refusal and skips every later step, so a transaction that breaks several rules still reports one. The order is part of the contract: an integrator reading a trace relies on which rule is checked first, and the Aiken tests assert the reason each of their refusal rows produces.",
+      "pause": 400
     }
   ],
   "what-each-owner-holds": [
     {
-      "pause": 400,
-      "text": "A table is shown here with ten owners, each linked to its source."
-    },
-    {
-      "pause": 450,
-      "text": "The state module dispatches. Genesis mints the state token. Modify owns the judging order and the frame refusals such as continuation address, state drain, root and net mint mismatch."
-    },
-    {
-      "pause": 450,
-      "text": "The fold owns carriage, phase, edge admission and approval refusals. The trie owner names the leaf refusals such as key unknown, not booked and edge from terminal."
-    },
-    {
-      "pause": 500,
-      "text": "Duty only collects. Discharge refuses a wrong destination, absent custody, a missing burn and a missing token. Settlement refuses a short refund or a returned deposit. Custody refuses a custody spend outside its fold. Refusal reports."
+      "text": "What each owner holds.",
+      "pause": 500
     }
   ],
   "where-a-common-change-goes": [
     {
-      "pause": 400,
-      "text": "A table is shown here routing seven common changes to the owner to edit."
+      "text": "Where a common change goes.",
+      "pause": 500
     },
     {
-      "pause": 450,
-      "text": "A new request check goes to the fold; a new edge to the fold and duty; token destinations to discharge; lovelace payments to settlement; custody spending to custody; the check order to modify; booting to genesis."
-    },
-    {
-      "pause": 500,
-      "text": "Any change that moves a compiled script moves its hash, the manifest, the witness pin and every deployment on the old hash. That is a deployment decision, never a side effect of reorganizing source."
+      "text": "Any change that moves a compiled script moves its hash; the committed script identity manifest, the witness validator's pinned state hash and every deployment built on the old hash move with it. That is a compatibility and deployment decision, never a side effect of reorganizing source.",
+      "pause": 400
     }
   ],
   "documentation-in-the-aiken-source": [
     {
-      "pause": 500,
-      "text": "Each owner documents itself in Aiken doc comments: responsibility, dependencies, assumptions and invariants, plus a description on every public declaration and on the validator."
+      "text": "Documentation in the Aiken source.",
+      "pause": 500
     },
     {
-      "pause": 450,
-      "text": "The onchain flake check named aiken docs enforces this over an extent it discovers, on the source at any indentation the compiler accepts, and on the reference the pinned Aiken generates."
+      "text": "Each owner documents itself in Aiken's own doc comments: a module documentation with four sections — its responsibility, its dependencies in both directions, the assumptions it makes of its callers, and the invariants it keeps — and a description on every public declaration and on the validator. The onchain flake check aiken-docs enforces their presence over an extent it discovers at run time, state.ak plus every module under registry/, twice: on the source, where it finds a public declaration at any indentation the compiler accepts, and on the reference the pinned aiken docs generates from it. On the generated reference it reads each module's members off the page the compiler wrote and reconciles them with the source inventory both ways, so a member the source reading missed still fails if it has no description. The same check then plants each kind of gap in a copy — a deleted module documentation, a deleted description, an undocumented public function at the margin and indented, an undocumented module, an empty extent — and requires each layer to refuse it for that reason, accepts the indented function once it is documented, and shows the reconciliation refusing a page member the source inventory lacks and a source export the page lacks.",
+      "pause": 400
     },
     {
-      "pause": 450,
-      "text": "On the generated reference it reads each module's members off the page and reconciles them with the source inventory both ways, so a member the source reading missed still fails without a description."
-    },
-    {
-      "pause": 450,
-      "text": "It then plants each kind of gap in a copy, including an indented undocumented function, and requires each layer to refuse it for that reason; it accepts the same function once documented, and shows the reconciliation refusing a mismatch in either direction."
-    },
-    {
-      "pause": 500,
-      "text": "The check establishes presence, not truth; no doc comment is evidence of what the validator does."
+      "text": "The check establishes presence, not truth. Whether a sentence is true of the code is a review question; no doc comment is evidence of what the validator does.",
+      "pause": 400
     }
   ],
   "the-generated-reference": [
     {
-      "pause": 450,
-      "text": "The site publishes the reference the pinned Aiken docs command generates from these doc comments, built from the same revision as the rest of the site. Each owner's name in the table opens its generated page, and each member's view source link opens the lines it documents, at the commit the site was built from."
+      "text": "The generated reference.",
+      "pause": 500
     },
     {
-      "pause": 450,
-      "text": "The diagram follows the path: the doc comments become generated pages, their source links are bound to the built commit and the onchain directory, and a manifest records the digests the documentation check compares."
+      "text": "The site publishes the reference the pinned aiken docs generates from these doc comments: the generated Aiken reference for the validators, built by the onchain flake's aiken-reference package from the same revision as the rest of the site. Each owner's name in the table above opens its generated page; each member's \"view source\" link opens the lines it documents in the repository, at the commit the site was built from.",
+      "pause": 400
     },
     {
-      "pause": 450,
-      "text": "Every validators module that declares a public definition has a page. Test and property modules are not documented, and the open approval policy, the staking validator and the vector table declare nothing public, so their sources are the reference."
+      "text": "The reference covers every module under validators/ that declares a public definition, the state validator and all its owners among them. Test and property modules are not documented, and the three modules with no public definition — the open approval policy, the staking validator and the cage_vectors table — have no page; their sources are the reference.",
+      "pause": 400
     },
     {
-      "pause": 500,
-      "text": "The check refuses a missing reference, a page or source that no longer matches its recorded digest, a module without its page, a source link to another repository, revision or line, a script loaded from off the site, or this page no longer linking it. Each refusal is planted in a scratch copy on every run, and must be refused for that reason."
+      "text": "The documentation check refuses the published reference when it is absent, when a page or the source it was generated from no longer matches the digest its manifest records, when a module that declares a public definition has no page, when a source link names another repository, another revision or a line the source does not have, when a page loads a script from off the site, or when this page stops linking it. Each of those refusals is also planted in a scratch copy of the built site on every check run, and the check must refuse each for that reason.",
+      "pause": 400
     }
   ],
   "evidence-and-limits": [
     {
-      "pause": 450,
-      "text": "The identity and cost comparisons ran against the revision before the move, after each of the four moves and on the final tree, and found nothing changed."
+      "text": "Evidence and limits.",
+      "pause": 500
     },
     {
-      "pause": 450,
-      "text": "From here on, the continuous integration carriers keep the promise: the script identity manifest, the Aiken suite, the vectors, and devnet journeys on a fresh blueprint."
+      "text": "The compiled-identity and cost comparisons described in the story ran against the revision before the move with the pinned compiler, after each of the four moves and on the final tree, and found every validator field and every test's status, cost and traces unchanged. The continuous-integration carriers keep that promise from here on: the committed script-identity manifest compared with a fresh build, the Aiken suite, the cross-language vectors, and the devnet journeys run against a freshly built blueprint.",
+      "pause": 400
     },
     {
-      "pause": 450,
-      "text": "Limits: property tests report no cost, so their evidence is outcome, iterations and counterexample under the fixed seed; the comparison proves preservation, not correctness, which stays the Lean model's question."
-    },
-    {
-      "pause": 500,
-      "text": "The Aiken configuration that names the repository in the source links also sets the blueprint's description; correcting it changed that description and no validator's compiled code or hash, as the script identity check confirms. And the documentation check proves each description exists, not that it is accurate."
+      "text": "Limits are named rather than implied. Property tests report no execution cost, so their evidence is their outcome, iteration count and counterexample under the fixed seed, not a cost. The comparison proves the move preserved behavior; it proves nothing about whether that behavior is right, which remains the accepted Lean model's question. The Aiken configuration that names the repository in the reference's source links also sets the blueprint's description; correcting it changed that description and no validator's compiled code or hash, which the script-identity check confirms against the committed manifest. The documentation check proves that each description exists, not that it is accurate.",
+      "pause": 400
     }
   ],
   "_source": {

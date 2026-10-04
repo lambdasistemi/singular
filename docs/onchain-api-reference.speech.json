@@ -1,26 +1,128 @@
 {
+  "validator-api-reference": [
+    {
+      "text": "Validator API reference.",
+      "pause": 500
+    },
+    {
+      "text": "A contributor changing a registry validator — a refusal in the fold, the custody spend, a shared type — wants to click a module and land on its real interface: every public function, type and constant with the documentation its source carries, and a link to the lines that define it, for exactly the validators this repository ships. This page is the entry point of that reference: the pages the pinned aiken docs generates from the onchain/ Aiken project, rebuilt with the documentation site from the same source tree.",
+      "pause": 400
+    }
+  ],
   "what-this-reference-contains": [
     {
-      "pause": 450,
-      "text": "A contributor changing a registry validator wants to click a module and land on its real interface: every public function, type and constant, with its documentation and a link to the lines that define it. This page is the entry point of the reference the pinned Aiken docs command generates from the onchain project, rebuilt with the site from the same source tree."
+      "text": "What this reference contains.",
+      "pause": 500
     },
     {
-      "pause": 450,
-      "text": "On this site each link opens the generated page; read from the repository, it opens the source file. Inside a generated page, each member's view source link opens the lines it documents, at the commit the site was built from."
+      "text": "Every module listed below has a generated page; the reference's own index links them all and carries a search over their members. On this site each link opens the generated page; read from the repository, it opens the source file at the revision you are viewing. Inside a generated page, each member's \"view source\" link opens the lines it documents at the commit the site was built from.",
+      "pause": 400
     },
     {
-      "pause": 450,
-      "text": "The list starts with the state validator and its owners: genesis, modify, fold, trie, duty, discharge, settlement, custody and refusal. It includes the open-datum application envelope that protects controller, registry binding and deposit around an arbitrary payload. Then come the shared vocabulary and other validators: lib, types, shared, request, witness and cage. Last are the two fixture modules public to the tests."
+      "text": "The state validator and its owners — how each rule is divided and which way the dependencies run is on the state validator owners page:",
+      "pause": 400
+    },
+    {
+      "text": "state — the validator's dispatch and the one refusal reason the suite asks for",
+      "pause": 300
+    },
+    {
+      "text": "registry/genesis — minting a registry's state token",
+      "pause": 300
+    },
+    {
+      "text": "registry/modify — the Modify decision and the order of its checks",
+      "pause": 300
+    },
+    {
+      "text": "registry/fold — the per-input step over the transaction's requests",
+      "pause": 300
+    },
+    {
+      "text": "registry/trie — the refusals read off the trie itself",
+      "pause": 300
+    },
+    {
+      "text": "registry/duty — what an admitted request still owes the transaction",
+      "pause": 300
+    },
+    {
+      "text": "registry/discharge — checking each duty against the transaction",
+      "pause": 300
+    },
+    {
+      "text": "registry/settlement — settling the lovelace a fold owes its payees",
+      "pause": 300
+    },
+    {
+      "text": "registry/custody — the cage's custody of absent tokens",
+      "pause": 300
+    },
+    {
+      "text": "registry/refusal — how a refusal is reported, and the shared reasons",
+      "pause": 300
+    },
+    {
+      "text": "The open-datum application's protected envelope:",
+      "pause": 400
+    },
+    {
+      "text": "application/envelope — the controller, registry binding, deposit and arbitrary payload representation",
+      "pause": 300
+    },
+    {
+      "text": "The shared vocabulary and the other validators:",
+      "pause": 400
+    },
+    {
+      "text": "lib — the edge table, the approval name and the named refusal reasons",
+      "pause": 300
+    },
+    {
+      "text": "types — the datum, redeemer and request types",
+      "pause": 300
+    },
+    {
+      "text": "shared — reading state from inputs and the phase windows",
+      "pause": 300
+    },
+    {
+      "text": "request — the request validator and its retraction refusal",
+      "pause": 300
+    },
+    {
+      "text": "witness — the witness validator and its pinned state hash",
+      "pause": 300
+    },
+    {
+      "text": "cage — the phase predicates the property tests use",
+      "pause": 300
+    },
+    {
+      "text": "Test support, documented because it is public to the test modules:",
+      "pause": 400
+    },
+    {
+      "text": "cage_fixtures",
+      "pause": 300
+    },
+    {
+      "text": "registry_fixtures",
+      "pause": 300
     }
   ],
   "what-it-leaves-out": [
     {
-      "pause": 450,
-      "text": "A module gets a page when it declares a public definition. Test and property modules are not documented. The open approval policy, open-datum validator, staking validator and vector table declare nothing public, so their sources are their reference. The naming validators are a separate Aiken project with no generated reference on this site."
+      "text": "What it leaves out.",
+      "pause": 500
     },
     {
-      "pause": 500,
-      "text": "The documentation check fails when this list and the generated extent disagree, when a page or its source no longer matches the digest recorded at build time, and when a source link names another repository or revision."
+      "text": "A module gets a page when it declares a public definition. Test and property modules are not documented, and four modules declare nothing public — the open approval policy, open_datum validator, staking validator and cage_vectors table — so their sources are their reference. The naming application's validators under naming-onchain/ are a separate Aiken project and have no generated reference on this site. Members that belong to Aiken's standard library link to its own published documentation.",
+      "pause": 400
+    },
+    {
+      "text": "The documentation check fails when this list and the generated extent disagree in either direction, when a generated page or the source it was generated from no longer matches the digest recorded at build time, and when a source link names another repository or revision.",
+      "pause": 400
     }
   ],
   "_source": {

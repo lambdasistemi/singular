@@ -1,16 +1,20 @@
 {
   "new-interface-contracts": [
     {
-      "text": "Five protocol signatures, stated as signatures rather than implementation bodies. Ticket 221 binds their concrete model declarations and codecs before the migration in ticket 222 onwards. runSurface executes a scenario against a surface identity using the existing model law and observations, with a structured refusal kept distinct from an execution failure. loadScenario validates revision, digests and theorem bindings from a bound corpus, so no scenario is invented on the code side. observeBoundary reads actual outputs and queries over lookup-only identities and fails when an observation is missing or unallocated. compareBoundary covers the entire declared observable boundary, success and refusal, and every difference names its model field. executeScenario preserves connected state and identity history, checks each step, and records real evidence into an execution receipt.",
+      "text": "New interface contracts.",
+      "pause": 500
+    },
+    {
+      "text": "These are protocol signatures, not implementation bodies. #221 binds their concrete model declarations and codecs before the migration in #222 onwards.",
       "pause": 400
     },
     {
-      "text": "The existing theorem and clause type safety and the shared execution and rendering survive this migration, Haskell type variables stay short, and changed concrete signatures are recorded by the ticket owner before dependent implementation begins.",
+      "text": "Existing theorem/clause type safety and shared execution/rendering survive this migration. Haskell type variables stay 3–4 letters. Changed concrete signatures are recorded by the ticket owner before dependent implementation begins.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "a070dbe32645e59ab0d50fa40fd75c439161fd3a2fc20b43f1d29c3333f5f364"
+    "sha256": "1e7f7441abe7253b0e8b9790b503cc7500cf751d80fd96e44ff04d4a301239e4"
   }
 }

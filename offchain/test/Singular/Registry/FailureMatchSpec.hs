@@ -1,16 +1,16 @@
-{- | Unit tests for node-failure attribution (NOTE-023 item 2).
+{- | Unit tests for node-failure attribution.
 
-The journey's @requireRefusal@ matches the node's NAMED failed-witness
+The journey's @requireRefusal@ matches the node's named failed-witness
 field (@The script hash is:ScriptHash \"HEX\"@), never a substring
 anywhere in the context. These tests pin that matcher against compacted
-excerpts of REAL ledger refusal reasons (register exhibit, order and
+excerpts of actual ledger refusal reasons (register exhibit, order and
 format preserved; 4KB script bodies elided):
 
 - @consumerBudget@: the hook-crosswired refusal — consumer hash named,
   budget exhausted, state hash present later in context;
 - @stateSemantic@: the hook-omitted refusal — state hash named, plain
   predicate error, no budget language;
-- @extraneousWitness@: a ledger-level refusal naming a hash WITHOUT
+- @extraneousWitness@: a ledger-level refusal naming a hash without
   the named field (must not match anything).
 -}
 module Singular.Registry.FailureMatchSpec (spec) where
@@ -90,7 +90,7 @@ spec = describe "node-failure attribution" $ do
         isBudgetFailure stateSemantic `shouldBe` False
     it "matches nothing without the named field" $
         failedWitnessHash extraneousWitness `shouldBe` Nothing
-    it "parses the eval failure's named script field (NOTE-018)" $
+    it "parses the eval failure's named script field" $
         evalScriptHash forkEvalRefusal `shouldBe` Just forkEvalHash
     it "does not match node-refusal text as an eval field" $
         evalScriptHash consumerBudget `shouldBe` Nothing

@@ -1,31 +1,61 @@
 {
+  "plan": [
+    {
+      "text": "Plan.",
+      "pause": 500
+    },
+    {
+      "text": "Retroactive record, written 2026-09-15 from PR #109 merged at fc2ad9e5987b171ca33a430f5bbe170ab6423fd5.",
+      "pause": 400
+    }
+  ],
   "strategy": [
     {
-      "text": "Fix the tool's own defects without touching what it rewrites: widen the scan, derive the allowlist from the same grep the gate runs. The flowchart shows scan, rename, derived gate, and the test feeding docs checks.",
+      "text": "Strategy.",
+      "pause": 500
+    },
+    {
+      "text": "Fix the tool's two self-inflicted defects without touching what the rename rewrites: widen the scan to the file kinds a branch can carry, and replace the hand allowlist with a rule computed from the same grep the gate runs, so the gate can neither miss a file nor fail a clean tree.",
       "pause": 400
     }
   ],
   "what-the-diff-actually-built": [
     {
-      "text": "Shell and Python added to the scan, citation-line survival derived from grep output, a twice-run test with byte snapshots and a planted stray, wired into docs checks.",
+      "text": "What the diff actually built.",
+      "pause": 500
+    },
+    {
+      "text": "tools/rename-registry.sh scans *.sh and *.py alongside the existing kinds; its final gate keeps a file only when every one of its matches sits on a cardano-mpfs-onchain#100/#101 citation line, derived from the grep output rather than a hand list. The new tools/rename-registry.test.sh drives the script twice on a throwaway detached worktree cut from main — snapshotting index state plus every tracked file's bytes to prove the no-op — then plants a stray product line in a tracked .sh and requires --gate-only to fail naming that file. The justfile wires the test into just ci as rename-registry-test.",
       "pause": 400
     }
   ],
   "verification-as-shipped": [
     {
-      "text": "Docs checks green including the new test, pre-fix failure at run one, weakened derivation firing the control, gate green on clean main.",
+      "text": "Verification as shipped.",
+      "pause": 500
+    },
+    {
+      "text": "just ci green including the new test; the test fails at run 1 against the pre-fix script and its weakened-derivation control fires; the gate passes on a clean main.",
       "pause": 400
     }
   ],
   "file-fence-what-the-merge-touched": [
     {
-      "text": "Three files: the tool, its new test, and the justfile. No model, validator, runner, docs, workflow, or check-setting edits.",
+      "text": "File fence (what the merge touched).",
+      "pause": 500
+    },
+    {
+      "text": "Three files: tools/rename-registry.sh, tools/rename-registry.test.sh (new), justfile. No Lean, validator, runner, docs, workflow or CI-required-check edits.",
       "pause": 400
     }
   ],
   "slice": [
     {
-      "text": "One slice: the rename gate that scans shells and derives its allowlist, shipped as a single commit.",
+      "text": "Slice.",
+      "pause": 500
+    },
+    {
+      "text": "One slice: the rename gate that scans shells and derives its allowlist. One commit: fix(tools): scan sh/py files and derive the rename gate allowlist (#108).",
       "pause": 400
     }
   ],

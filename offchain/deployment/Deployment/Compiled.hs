@@ -9,7 +9,7 @@ cage by #173), and the deployment applies it three times — kinds 0, 1
 and 2 — to obtain the absent, active and terminal policies. Together
 with the naming application validator's own hash
 (@application.application@, from the NAMING blueprint) those are the four
-identities the eight-field state datum pins (D-BOOT). Every one of them
+identities the eight-field state datum pins (genesis-policy-pins). Every one of them
 is derived here from compiled code; none is a literal.
 
 'loadCompiled' reads @REGISTRY_BLUEPRINT@ for the state, request,

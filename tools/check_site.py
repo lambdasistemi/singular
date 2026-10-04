@@ -219,7 +219,11 @@ for path, page in pages.items():
                 f"{path}: missing anchor {href}"
             )
         links += 1
-    if path.name == "404.html" or path.is_relative_to(site / "simulator"):
+    # theme_version.html is the Terminal theme's own static template (its version
+    # stamp), not a reader-facing page, so it carries no speech companion.
+    if path.name in ("404.html", "theme_version.html") or path.is_relative_to(
+        site / "simulator"
+    ):
         continue
     # specs/26-live-links/ and specs/29-docs-links-recut/ are ticket-
     # orchestration records staged verbatim by tools/prepare_docs.py (which
@@ -257,10 +261,36 @@ for required in (
 ):
     assert (site / required).exists(), required
 home = (site / "index.html").read_text()
+# Light and dark palettes: the shipped dark palette stylesheet, the palette
+# controller that follows the device preference until the reader chooses, and
+# the toggle it drives.
 assert (
-    'data-md-color-scheme="default"' in home and 'data-md-color-scheme="slate"' in home
+    'id="singular-dark-palette"' in home
+    and "css/palettes/dark.css" in home
+    and 'id="singular-palette-toggle"' in home
+), "palette stylesheet or toggle missing"
+assert any(s.endswith("assets/palette.js") for s in pages[site / "index.html"].scripts)
+# Recorded narration: the page player, the per-page clip index, and every clip
+# it names, byte for byte from the repository (tools/narrate.py --check proves
+# the clips say the page text).
+assert any(
+    s.endswith("assets/narration.js") for s in pages[site / "index.html"].scripts
 )
-assert "assets/read-aloud.js" in home and 'rel="speech"' in home
+assert "window.singular" in home, "narration page identity missing"
+narration_index = json.loads((site / "docs/audio/index.json").read_text())
+narration_clips = [
+    clip["name"]
+    for sections in narration_index.values()
+    for clips in sections.values()
+    for clip in clips
+]
+assert narration_clips, "narration index is empty"
+for name in narration_clips:
+    served = site / "docs/audio/clips" / (name + ".mp3")
+    assert served.is_file() and served.stat().st_size > 0, (
+        f"narration clip missing: {name}"
+    )
+assert not (site / "docs/audio/manifest.json").exists(), "manifest must not ship"
 
 
 # ---------------------------------------------------------------------------

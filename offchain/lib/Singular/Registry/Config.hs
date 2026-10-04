@@ -61,24 +61,24 @@ data CageConfig = CageConfig
     , defaultTip :: !Coin
     -- ^ Default oracle tip for newly booted tokens
     , cfgApplicationPolicy :: !ShortByteString
-    {- ^ The application policy the registry pins (28 raw bytes, #157 C4,
-    D-BOOT): the hash of the application script the registry was booted
+    {- ^ The application policy the registry pins (28 raw bytes, #157 tree-edge-admission-by-approval,
+    genesis-policy-pins): the hash of the application script the registry was booted
     with, for the registry identity this boot creates — `open.open` as
     compiled, or `open_datum.open_datum` applied to that identity
     ("Singular.Registry.Config.Application" derives and re-derives it).
     It certifies every request that changes the trie. Never a literal.
     -}
     , cfgActivePolicy :: !ShortByteString
-    {- ^ The active-token policy (28 raw bytes, #157 C5/C7, D-BOOT): the
+    {- ^ The active-token policy (28 raw bytes, #157 C5/C7, genesis-policy-pins): the
     applied hash of `witness(1, registry)`. Renamed from the
     representative policy it became. Derived, never a literal.
     -}
     , cfgAbsentPolicy :: !ShortByteString
-    {- ^ The absent-token policy (28 raw bytes, D-BOOT): the applied hash
+    {- ^ The absent-token policy (28 raw bytes, genesis-policy-pins): the applied hash
     of `witness(0, registry)`. Derived, never a literal.
     -}
     , cfgTerminalPolicy :: !ShortByteString
-    {- ^ The terminal-token policy (28 raw bytes, D-BOOT): the applied hash
+    {- ^ The terminal-token policy (28 raw bytes, genesis-policy-pins): the applied hash
     of `witness(2, registry)`. Derived, never a literal.
     -}
     , cfgConsumerScript :: !ShortByteString
@@ -90,7 +90,7 @@ data CageConfig = CageConfig
     -- ^ Target network (Mainnet or Testnet)
     }
 
-{- | Initial `State` datum from a cage configuration (#157 C7, D-BOOT):
+{- | Initial `State` datum from a cage configuration (#157 state-datum-fields, genesis-policy-pins):
 empty trie root, configured economics, and the four pinned policies the
 eight-field datum carries. Each of the four comes from the config, which
 derives it from the two partitions' `script-identity.json` for the registry

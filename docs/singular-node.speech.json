@@ -1,168 +1,178 @@
 {
-  "the-settings-you-give": [
+  "connecting-singular-to-a-node": [
     {
-      "text": "You run the singular registry commands against a cardano node you already run, a public test network's node or a development network you started yourself. Each command reads the chain through it, signs with your key, submits, waits for the chain to carry what it submitted, and journals which chain state each transaction was built from. A missing, contradictory or wrong-network setting is refused before anything is read or submitted.",
+      "text": "Connecting singular to a node.",
       "pause": 500
     },
     {
-      "text": "The table lists the settings. The node socket and the network magic go to all eight commands: magic 1 is preprod, 2 is preview, 42 the factory development network, and mainnet's magic is refused for writes. The wallet signing key goes to the seven writes only; it funds and signs, is never printed, and inspect refuses it. On a preview a public wallet address takes the key's place for create, insert, update and terminate, and the command prints what it would submit without signing anything. The confirm timeout bounds how long each submission may take to appear on chain, ten minutes by default; past it the submission stays journalled as unconfirmed and is never resubmitted. The backend setting, node by default or indexer, decides where every command reads addresses from: the node itself, or an index the command builds by following the node's chain from its first block. Any other value is refused before anything runs. The registry directory and the compiled blueprint go to all eight commands. Create takes either a seed, the output of your wallet that fixes the new registry's identity, or the preview switch, which shows that identity without submitting. Insert, update and terminate also take the preview switch, which builds and measures what they would submit and prints it; a funding input, the wallet output that funds and collateralises the write; and a maximum outlay, past which a booking, an update, a fold, reclaim or reject is not signed, and past which a fold costing more than the booking left of it stops the command partial, its request pending. Fold, reclaim and reject take those two as well. Create and inspect refuse both of those. The key, given as text or with the hex setting as hex bytes, one to thirty-two bytes either way, names what insert, update, terminate and inspect act on. Insert and update take the key's payload, a datum in detailed-schema JSON, which a file that is not Plutus data fails: for insert before anything is read from the node, for update before anything is signed or submitted. Insert builds the rest of the key's envelope itself, from the registry, the key, the signing wallet and a deposit of at least two million lovelace, which is the client's own policy and not a chain floor. Insert and terminate take a fold switch, which also folds the request they booked; fold takes the pending request it expects to fold; reclaim requires the request it takes back. Inspect also takes the outputs-at setting, a public address whose outputs it lists with what each holds; every other command refuses it. Every command can also write the receipt it prints to a file.",
-      "pause": 500
-    },
-    {
-      "text": "The three node settings travel together on a write. One or two of them is refused as partially configured, and none at all is refused too, because singular never starts a node of its own: a registry on a chain that dies with the process could not be attached to again. Settings come from the command line only. The one exception is the test-harness hooks, described last on this page, which operators never set.",
-      "pause": 400
-    },
-    {
-      "text": "An example follows: an insert against a preprod node, naming its socket, magic one, and the payment key.",
+      "text": "You run the singular registry commands — create, insert, update, terminate, fold, reject and inspect — against a cardano node you already run: a public test network's node, or a development network you started yourself. You tell each command where the node is and which network it carries; the command reads the chain through that node, signs with your key, submits, waits for the chain to carry what it submitted, and leaves a journal entry that names exactly which chain state each transaction was built from. When a setting is missing, contradictory or points at the wrong network, the command refuses before it reads or submits anything.",
       "pause": 400
     }
   ],
-  "rejecting-expired-requests": [
+  "the-settings-you-give": [
     {
-      "text": "A request that nobody folds, and whose owner does not take it back, stays pending, and the registry's fold, which takes every pending request, is blocked behind it. Registry reject clears it. It is an ordinary command: it signs and funds with the wallet it is given and journals its own transactions. It rejects every pending request in one transaction, using the registry's published reference scripts, and the registry's root, its mirror and its saved state do not move.",
+      "text": "The settings you give.",
       "pause": 500
     },
     {
-      "text": "A request is rejected only once it is past both its windows: the processing window, in which the registry's fold may take it, and the retract window after it, in which its owner may take it back. That is judged from the ledger, not from the host's clock. The command converts the retract deadline to a slot in the same view it builds from, and builds only when that view's tip is at or past it. A deadline the view cannot place in a slot is taken as still open. Before anything is signed the command refuses, naming the reason: nothing pending; any pending request still inside a window, each named with when its retract window closes and the ledger's tip slot; the outlay past the maximum outlay; a funding output that is not the wallet's; and a built reject that does not carry each owner's whole refund in one designated output.",
-      "pause": 500
-    },
-    {
-      "text": "Each owner is refunded the request's value less the tip, in the one output designated for that request, and the wallet that runs the reject keeps the tip. The receipt names every rejected request, the value it actually locked, the tip, and where the refund went, and the command reads the result back from the chain before it journals the reject observed.",
-      "pause": 500
-    },
-    {
-      "text": "The check is exact on one shape. The chain pays a refund only when the designated output covers the owed amount by itself. A refund split across several outputs to the same owner is accepted by the model and refused by the chain, which is issue three hundred sixty-one, and reject never builds it. A reject that succeeds is that shape on this chain, not general reject-refund conformance.",
-      "pause": 500
+      "text": "The three node settings travel together on a write: naming one or two of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The settings are read from the command line only; the one exception is the test-harness hooks, which operators never set.",
+      "pause": 400
     }
   ],
   "booking-and-folding": [
     {
-      "text": "An insert or a terminate books a request and stops. The request waits at the registry. The command's receipt names it, the booking's transaction, and the fold deadline, which is the request's submission time plus the registry's processing time, as a POSIX time, and as a slot when the node converts it. Nothing is folded, and the registry's root, its mirror and its saved state do not move.",
+      "text": "Booking and folding.",
       "pause": 500
     },
     {
-      "text": "Registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. The registry directory is the shared state. The booking leaves there the envelope an insertion delivers, and the fold reads it back and checks it against the hash the request names before it builds anything.",
-      "pause": 500
+      "text": "An insert or a terminate books a request and stops. The request waits at the registry; the command's receipt names it, the booking's transaction, and the fold deadline — the request's submission time plus the registry's processing time — as a POSIX time, and as a slot when the node converts it. Nothing is folded, and the registry's root, its mirror and its saved state do not move.",
+      "pause": 400
     },
     {
-      "text": "The sequence diagram has four participants: the requester's wallet, the registry directory, the folder's wallet, and the node. The requester books an insert or a terminate through the node, and leaves an insertion's envelope in the directory. The node answers that the request is pending, with its fold deadline. The folder runs registry fold, which reads the pending request from the directory. It sends the fold, signed and funded by the folder, to the node, and the journal, the mirror and the saved state follow the fold.",
-      "pause": 500
+      "text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. The registry directory is the shared state: the booking leaves there the envelope an insertion delivers, and the fold reads it back and checks it against the hash the request names before it builds anything.",
+      "pause": 400
     },
     {
-      "text": "The registry's fold takes every pending request, so a fold is built only while exactly one is pending. Before anything is signed the command refuses, naming the reason: nothing pending; the request named is not the one pending; more than one pending, each named; an insertion whose envelope is not in the registry directory or is not the one the request names; an edge other than an insertion or a termination; the outlay past the maximum; a funding output that is not the wallet's; and a request whose processing deadline has passed or is within thirty seconds of passing, judged on the host clock. Run after its own booking by the fold switch, a fold that cannot be built or signed stops the command partial, naming the request that stays pending. That check is the fast refusal, not the proof: after the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock. It must be at or before the slot of the deadline when the node converts it, or begin at or before the deadline time when it does not; a bound the node cannot convert, or a clock that has come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
-      "pause": 500
+      "text": "The registry's fold takes every pending request, so a fold is built only while exactly one is pending. Before anything is signed the command refuses, naming the reason: nothing pending; the request named by --request is not the one pending; more than one pending, each named; an insertion whose envelope is not in the registry directory or is not the one the request names; an edge other than an insertion or a termination; the outlay past --max-outlay; a funding output that is not the wallet's; and a request whose processing deadline has passed or is within thirty seconds of passing, judged on the host's clock and named by its time, and by its slot when the node converts it. Run after its own booking by --fold, a fold that cannot be built or signed stops the command partial, naming the request that stays pending.",
+      "pause": 400
+    },
+    {
+      "text": "That check is the fast refusal, not the proof. After the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock: the bound must be at or before the slot of the deadline when the node converts it, or, when it does not, must begin at or before the deadline time; a bound the node cannot convert, or a clock that has meanwhile come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
+      "pause": 400
     },
     {
       "text": "The deadline the fold is judged against is the one the booking's receipt states. A fold refused for it submitted nothing, and its request stays pending.",
       "pause": 400
     }
   ],
+  "reclaiming-your-pending-request": [
+    {
+      "text": "Reclaiming your pending request.",
+      "pause": 500
+    },
+    {
+      "text": "As a requester, you can take back your own pending request after its processing deadline, while its retract window is still open. registry reclaim names the request and signs with the wallet you give it. It refuses before building when the request is not pending, belongs to another wallet, or names an edge that cannot be retracted.",
+      "pause": 400
+    },
+    {
+      "text": "The window is judged from the command's own view of the chain, exactly as reject judges it. The processing deadline must convert to a slot the tip has reached. The retract deadline stays open while its slot is ahead of the tip, or while it lies beyond what the node can convert. A reached retract deadline is closed, and the refusal points to registry reject. No host clock or estimated slot decides.",
+      "pause": 400
+    },
+    {
+      "text": "Inside the window, the retract pays the owner all of the request's locked lovelace in one output tied to that request, and the command checks that output and the transaction's validity bounds before signing.",
+      "pause": 500
+    }
+  ],
+  "rejecting-expired-requests": [
+    {
+      "text": "Rejecting expired requests.",
+      "pause": 500
+    },
+    {
+      "text": "A request that nobody folds and whose owner does not take it back stays pending, and the registry's fold, which takes every pending request, is blocked behind it. registry reject clears it. It is an ordinary command: it signs and funds with the wallet it is given and journals its own transactions. It rejects every pending request in one transaction, using the registry's published reference scripts, and the registry's root, its mirror and its saved state do not move.",
+      "pause": 400
+    },
+    {
+      "text": "A request is rejected only once it is past both its windows: the processing window, in which the registry's fold may take it, and the retract window after it, in which its owner may take it back. That is judged from the ledger, not from the host's clock. The command converts the retract deadline — the request's submission time plus the registry's processing time and retract time — to a slot in the same view it builds from, and builds only when that view's tip is at or past it. A deadline the view cannot place in a slot is taken as still open. Before anything is signed the command refuses, naming the reason: nothing pending; any pending request still inside a window, each named with when its retract window closes, as a time, as a slot when the node converts it, and the ledger's tip slot; the outlay past --max-outlay; a funding output that is not the wallet's; and a built reject that does not carry each owner's whole refund in one designated output.",
+      "pause": 400
+    },
+    {
+      "text": "Each owner is refunded the request's value less the tip, in the one output designated for that request; the wallet that runs the reject keeps the tip. The receipt names every rejected request, the value it actually locked (its lovelace and any other assets: a request holds only what was put into it, and one whose deposit never landed holds no deposit), the tip, and where the refund went: the output, its recipient and its amount, with the top-up when the minimum output required one. After the reject confirms the command reads back that every rejected request output is gone, that the root is where it was, and that each refund is live at its owner as built, before it journals the reject observed.",
+      "pause": 400
+    },
+    {
+      "text": "The check is exact on one shape. The chain pays a refund only when the designated output covers the owed amount by itself; a refund split across several outputs to the same owner is accepted by the model and refused by the chain (issue #361), and reject never builds it. A reject that succeeds is that shape on this chain, not general reject-refund conformance.",
+      "pause": 400
+    }
+  ],
   "one-path-to-every-node": [
     {
-      "text": "A development network and a public node are reached the same way. One composition step turns your settings into a connection and hands the command three things: a way to read the chain, a way to submit signed transactions, and a way to wait for a confirmation. Nothing else in the command knows which node it talks to, and a source check in CI refuses any other module that names the node backend.",
+      "text": "One path to every node.",
       "pause": 500
     },
     {
-      "text": "The diagram reads left to right. Your socket, magic and key are parsed once by the composition step, which opens one node connection. It hands the registry command the read interface, one view per transaction; the write, which takes signed transactions only; and the bounded confirmation wait. The command acquires and reads from your node and submits signed transactions to it. Development network and public test network both reach that node through the same socket and magic path.",
-      "pause": 500
+      "text": "A development network and a public test network's node are reached the same way. Each command is handed what it needs — a way to read the chain, a way to submit signed transactions, and a way to wait for a confirmation — by one composition step that turns the settings into a connection. Nothing else in the command knows which node it talks to, and a source check in CI refuses any other module that names the node backend.",
+      "pause": 400
     },
     {
-      "text": "Inspect takes only the socket and the magic: it gets the read interface and nothing that can sign or send. Besides the key, its receipt lists the registry's pending requests, each with its owner, key, edge, submission time and what it actually locks, and, given the outputs-at setting, the outputs at that address: the reads that check a write's receipt against the node, apart from the write.",
+      "text": "inspect takes only the socket and the magic: it gets the read interface and nothing that can sign or send. Besides the key, its receipt lists the registry's pending requests, each with its owner, key, edge, submission time and what it actually locks, and, given --outputs-at, the outputs at that address: the reads that check a write's receipt against the node, apart from the write.",
       "pause": 400
     }
   ],
   "what-a-write-does-with-the-node": [
     {
-      "text": "Each transaction a write submits is built from one view of the chain, one acquired ledger state with its network, era, slot and block hash, and the view is closed before the transaction is signed and sent. The journal line written before the send names that view's point, so a later reader knows which chain state the inputs, fees and validity were decided against.",
+      "text": "What a write does with the node.",
       "pause": 500
     },
     {
-      "text": "The sequence diagram has three participants: the write, the node, and the journal in the registry directory. The write acquires one view; the node answers with network, era, slot, block hash, parameters and outputs. The write builds the transaction from that view only and releases it. It journals prepared, with the inputs, the body hash and the view's point. It submits the signed transaction; the node accepts or refuses it with its reason, journalled as submitted or rejected. Then the write waits for the transaction's first output within its validity window, and journals confirmed or unconfirmed.",
-      "pause": 500
+      "text": "Each transaction a write submits is built from one view of the chain — one acquired ledger state, with its network, era, slot and block hash — and that view is closed before the transaction is signed and sent. The journal line written before the send names that view's point, so a later reader knows exactly which chain state the transaction's inputs, fees and validity were decided against.",
+      "pause": 400
     }
   ],
   "when-the-node-cannot-be-used": [
     {
-      "text": "The last table pairs each failure with what you see.",
-      "pause": 300
-    },
-    {
-      "text": "One or two of the three write settings: refused before anything runs, naming the missing one. No node settings on a write: refused, singular never starts a node. Mainnet's magic on a write: refused, the commands are for test networks only.",
-      "pause": 400
-    },
-    {
-      "text": "No node at the socket, or a node on another network: node unavailable, naming the magic it was asked for. A chain that has not made its first block: the command waits up to two minutes, then refuses, since no view of a chain at its origin can be acquired.",
-      "pause": 400
-    },
-    {
-      "text": "A signing key passed to inspect: refused, inspect only reads. A node lost after it accepted a submission: the command ends within the confirm timeout with the submission journalled as unresolved, and nothing is resubmitted.",
+      "text": "When the node cannot be used.",
       "pause": 500
     }
   ],
-  "_source": {
-    "file": "singular-node.md",
-    "sha256": "5984fa5311d55e6839a1a609fd5fde023a5f025110d073b204cd55498ab54372"
-  },
   "reading-through-an-index": [
     {
-      "text": "With the indexer backend a command still connects to the node you name and still submits through it, but every address read, your wallet, the registry state and its holdings, is answered from an index the command keeps in memory while it runs. The index follows the node's chain from its first block, so it holds every output a block ever carried. Protocol parameters, script registration, time and evaluation still come from the node.",
+      "text": "Reading through an index.",
       "pause": 500
     },
     {
-      "text": "Each read is answered at one chain point. The command acquires a view of the node, lets the index advance exactly to that block and holds it there until the view closes, so the index and the node describe the same block. If the index cannot be brought there, the command refuses rather than mix two chain states.",
-      "pause": 500
+      "text": "With --backend indexer a command still connects to the node you name and still submits through it, but it answers every address read — your wallet's outputs, the registry's state, its holdings — from an index it keeps in memory for as long as it runs. The index is built by following the node's chain from its first block, so it holds every output a block ever carried. Protocol parameters, script registration, time and evaluation still come from the node.",
+      "pause": 400
     },
     {
-      "text": "The diagram shows the follower inside the command applying the node's blocks to the in-memory index, the command reading addresses from the index at its view's block, and parameters, time, evaluation and submission going to the node.",
+      "text": "Each read is answered at one chain point. The command acquires a view of the node, lets the index advance exactly to that view's block and holds it there until the view closes, so the index's outputs and the node's answers always describe the same block. If the index cannot be brought to that point, the command refuses rather than mixing two chain states.",
       "pause": 400
     }
   ],
   "what-the-index-covers": [
     {
-      "text": "The index holds every output a transaction in a block created. Outputs that exist only in the genesis ledger state were never in a block, so the index does not hold them. When a write starts, the command compares, at one chain point, what the node and the index hold at your wallet's address; if the node holds outputs the index does not, it refuses with the coverage incomplete diagnostic, naming each of them, instead of reading the wallet as empty. Pay them into a block first, for example to yourself through the node backend, or keep the node backend for that wallet.",
+      "text": "What the index covers.",
       "pause": 500
     },
     {
-      "text": "A development network is followed in seconds. A public test network's index also starts from its first block, which takes far longer than the two minutes a command waits for its index to catch up, so there the command refuses as restoring and the node backend is the one to use.",
-      "pause": 500
+      "text": "The index holds every output created by a transaction in a block. Outputs that exist only in the network's genesis ledger state were never carried by a block, so the index does not hold them. When a write starts, the command compares, at one chain point, the outputs the node holds at your wallet's address with the ones the index holds; if the node holds any the index does not, the command refuses with the coverage-incomplete diagnostic naming each such output, instead of reading the wallet as empty. Pay those outputs into a block first — for example a payment to yourself through the node backend — or keep using the node backend for that wallet.",
+      "pause": 400
     },
     {
-      "text": "When it ends, each command under the indexer backend reports on standard error how many address reads the index answered and how many went to the node: at most one, a write's wallet check.",
+      "text": "A development network's chain is followed in seconds. On a public test network the index starts from the network's first block too, which takes far longer than the two minutes a command waits for its index to catch up with the node: there the command refuses as restoring, and the node backend is the one to use.",
+      "pause": 400
+    },
+    {
+      "text": "Each command under the indexer backend reports on standard error, when it ends, how many address reads the index answered and how many went to the node — at most one, a write's wallet check:",
       "pause": 400
     }
   ],
   "when-the-index-cannot-answer": [
     {
-      "text": "Every refusal is one line, indexer backend refused the read, with its class in brackets and the chain points or setting involved, and nothing is submitted after it. A refusal while the command opens its connection is reported as node unavailable. Later in a write it is a client refusal while the write has sent nothing, and partial, naming every transaction it sent, once it has: a write that already submitted never reports that nothing was submitted.",
+      "text": "When the index cannot answer.",
       "pause": 500
     },
     {
-      "text": "The table lists the classes. Coverage incomplete: your wallet holds outputs only the genesis state carries, named with the address, the chain point and each output. Restoring: the index has not caught up with the node within two minutes, with the processed and tip slots. Disconnected: the index lost its connection to the node. Lag: the index did not reach the view's block within ten seconds. Fork: the index holds another block at the view's slot. Unsupported: another network, or an era whose outputs the index cannot decode.",
-      "pause": 500
+      "text": "Every refusal is one line, indexer backend refused the read (CLASS): …, naming the chain points or setting involved. Nothing is submitted after it. A refusal while a command opens its connection is reported as node-unavailable. Later in a write it is client-refusal while the write has sent nothing, and partial, naming every transaction it sent, once it has: a write that already submitted never reports that nothing was submitted.",
+      "pause": 400
     }
   ],
   "test-harness-hooks": [
     {
-      "text": "You never set these. The released singular reads eleven environment variables whose only purpose is to let the project's own tests stop a command at an exact point, to inspect it, kill it, or make it meet no answer from the node. When none is set, as every operator runs it, they do nothing. The release verification checks this on every run.",
+      "text": "Test-harness hooks.",
       "pause": 500
     },
     {
-      "text": "A diagram shows a command reaching a hook point. With the variable unset it continues and nothing happens. With a hold variable naming a path, it writes that path with a waiting suffix and waits until the path exists. With a drop variable naming the step, it meets no answer from the node.",
+      "text": "You never set these. The released singular reads eleven environment variables whose only purpose is to let the project's own tests stop a command at an exact point — to inspect it there, kill it there, or make it meet no answer from the node — and check what it leaves behind. When none is set, which is how every operator runs it, they do nothing: no hold, no dropped send. The release verification checks this on every run: the processes it starts with no variable set, and the holds that fire only where a test asked for one.",
       "pause": 400
     },
     {
-      "text": "A table lists the variables. The hold points are: before a write takes the registry lock; after a submission is sent; after the node's acceptance is journalled; before a fold's local commit; after its mirror is saved; before its observation is journalled; and, in a rollback, before the mirror is rebuilt and before the saved state follows. The hold step variable names the one submission step the two submission holds stop at, and with it unset they stop nowhere. The two drop variables name a step whose send does not happen, or whose answer is discarded.",
-      "pause": 500
+      "text": "A hold variable names a path. When the command reaches its point it writes PATH.waiting and waits until PATH exists.",
+      "pause": 400
     }
   ],
-  "reclaiming-your-pending-request": [
-    {
-      "text": "As a requester, take back your pending insertion or terminal-witness request after the processing deadline and before the retract window closes. Reclaim requires the request reference and your wallet. Another wallet, a request no longer pending, and an update or deletion request are refused before building. The view must convert the processing deadline and its tip must reach that slot to prove opening. The retract deadline stays open while its slot is ahead of the tip, or while the view cannot convert it, exactly as reject reads it. An unconverted processing deadline is refused before the window, naming the opening time. A known reached retract deadline is closed and the refusal says registry reject clears expired requests. No host clock decides admission. A build failure is never credited as a reclaim.",
-      "pause": 500
-    },
-    {
-      "text": "The existing retract builder returns the whole locked lovelace through one output to the owner, whose inline datum names the consumed request. The command checks the built interval and return before signing. When the retract deadline has no slot, the built upper bound must still be placed in time by the same view and be no later than that deadline. Its receipt names the actual locked value, retract transaction, owner and exact return output and amount, including any minimum-output top-up, without assuming a deposit that never landed. After confirmation it reads back the consumed request, return output and unchanged root before journalling observed. The mirror and state file stay where they were, and the next request can be booked and folded.",
-      "pause": 400
-    }
-  ]
+  "_source": {
+    "file": "singular-node.md",
+    "sha256": "5984fa5311d55e6839a1a609fd5fde023a5f025110d073b204cd55498ab54372"
+  }
 }

@@ -1,42 +1,140 @@
 {
+  "see-why-the-chain-refused-beside-the-reason-lean-gives": [
+    {
+      "text": "See why the chain refused, beside the reason Lean gives.",
+      "pause": 500
+    },
+    {
+      "text": "As a reader of the conformance book, I want each refusal the live chain returns to show the reason the refusing validator actually reached, observed by running a traced build of the same validator source on the very transaction and ledger state the chain refused, so I can check it against the reason the Lean model gives instead of trusting a compiled test suite.",
+      "pause": 400
+    },
+    {
+      "text": "Today the book says only that a script refused: the deployed validators are built without traces, so a live phase-2 refusal carries no reason and the same-reason claim rests on the compiled Aiken suite (book limit \"Live refusal reason not observed\", issue #287).",
+      "pause": 400
+    }
+  ],
   "stories": [
     {
-      "text": "Three stories. The reason is observed and compared. The comparison can fail when Lean's reason is deliberately wrong. And a refusal whose reason cannot be observed says why, so the book keeps an honest limit.",
+      "text": "Stories.",
       "pause": 500
+    },
+    {
+      "text": "reason-observed-live-step-model-refuses-reason — reason observed. Given a live step the model refuses with a reason and the chain refuses, when the run replays the refused transaction with traced bytes, then the step shows the chain-side reason, both script hashes and the captured transaction, and agrees only if that reason equals Lean's.",
+      "pause": 300
+    },
+    {
+      "text": "comparison-can-fail-same-refused-step-lean — the comparison can fail. Given the same refused step with Lean's reason deliberately replaced by a different reason, the row fails and names both reasons; without the replacement the same row passes.",
+      "pause": 300
+    },
+    {
+      "text": "honest-limits-refusal-whose-replay-cannot-produce — honest limits. Given a refusal whose replay cannot produce an admitted reason, the step says so with the cause, and the book keeps a limit naming it; the book drops \"Live refusal reason not observed\" only when no such step remains among the rows it claims.",
+      "pause": 300
+    }
+  ],
+  "narrowed-acceptance-operator-rulings-2026-10-02": [
+    {
+      "text": "Narrowed acceptance (operator rulings 2026-10-02).",
+      "pause": 500
+    },
+    {
+      "text": "Settled for the final delivery, integrated with main 13f2b2e (#320's validators, #344's batch questions):",
+      "pause": 400
+    },
+    {
+      "text": "A traced chain reason is compared with Lean's for every refusal Lean models.",
+      "pause": 300
+    },
+    {
+      "text": "empty-fold (empty fold), request-value-and-refund-routing (crossed refunds, and its rejected-floor control) and the register-active-key two-key batch whose mint disagrees per key are compared through the driver's batch questions: foldBatch for a fold, rejectBatch judged on the refunds the transaction pays for a reject. reject-before-deadline-consumer-requirement's control, a reject paying its owner one lovelace short, is compared as the reject batch of that one request.",
+      "pause": 300
+    },
+    {
+      "text": "fold-against-superseded-root, surplus-fold-actions and wrong-redeemer-constructor-index have no counterpart in Lean. Each is published as an unmet model comparison beside its traced chain evidence or its absence: fold-against-superseded-root lambdasistemi/singular#346, surplus-fold-actions lambdasistemi/singular#345, wrong-redeemer-constructor-index lambdasistemi/singular#347. Their receipts carry the existing verdict unmet-by-ruling, naming those follow-ups, and stay in the non-passing debt report beside reject-before-deadline-consumer-requirement (ticket-owner decision operator answer (A-001) under this ruling). surplus-fold-actions is never narrated as agreeing with the model.",
+      "pause": 300
+    },
+    {
+      "text": "reject-before-deadline-consumer-requirement stays unmet-by-ruling (operator 2026-10-01): its reject is accepted by the chain (#320) and by the model, while the consumer requires it refused; its receipt, the book and CI keep it non-passing.",
+      "pause": 300
+    },
+    {
+      "text": "The book's \"live refusal reason not observed\" limit is dropped only where every claimed refusal has a traced replay receipt; wrong-redeemer-constructor-index's state and request scripts keep it.",
+      "pause": 300
+    },
+    {
+      "text": "A wrong-reason control that fails stays in CI.",
+      "pause": 300
+    },
+    {
+      "text": "Limit: the chain settles a reject's refunds by position (refundFault), the model by the sum of every output at the owner's key (settle). A reject paying its owner short in the refund's position and the rest in another output at the same key is refused by the chain and accepted by the model. Operator ruling 2026-10-02, \"Record now, fix later\": reject-before-deadline-consumer-requirement submits that shape on the devnet and its receipt records the disagreement, a known divergence and never a pass; the compared rejects keep every other output away from their owners' keys, so their agreement holds for that shape only. Reject-refund equivalence in general stays unmet: lambdasistemi/singular#361.",
+      "pause": 300
     }
   ],
   "requirements": [
     {
-      "text": "The run captures each refused transaction with the outputs it spends and the node's parameters. A test-owned build adds traces to the same validator source and toolchain, checked by rebuilding the deployed hashes. The traced script gets the deployed parameters and the very arguments the ledger built. The deployed bytes must reproduce the refusal first. One user trace is the chain-side reason; anything else is recorded as unobserved with its cause. Setup failures, budget exhaustion, timeouts and model-derived reasons earn nothing. A different reason fails the row after its evidence is written; an unobserved reason keeps the row and is published with its cause. A control with a wrong Lean reason must fail, an accepting control must pass and is checked in CI, and CI counts every refused step from the receipts. Every live refusal is classified against Lean itself: compared whenever the runner asked the model, which no label can undo, and published as a missing comparison otherwise. Nothing on chain, in Lean or in the constitution changes.",
+      "text": "Requirements.",
       "pause": 500
     }
   ],
   "success-criteria": [
     {
-      "text": "Every refused step CI compares with Lean shows a traced reason equal to Lean's, both hashes and a capture identity, and every other refusal shows its reason or cause and its class. The wrong-reason control fails and its restoration passes. The toolchain check and accepting control pass, and the deployed hashes are unchanged.",
+      "text": "Success criteria.",
       "pause": 500
+    },
+    {
+      "text": "observed-and-classified-refusals: every CI-run class-A refused step shows an admitted traced reason equal to Lean's, both hashes and a capture identity; every other refusal shows its reason or cause and its class (compare-observed-refusal-reasons, classify-refusal-comparison-extent, discovered-refusal-extent).",
+      "pause": 300
+    },
+    {
+      "text": "failing-and-restored-reason-control: the wrong-reason-control control fails for the stated reason and its restoration passes, both in CI at the pushed head.",
+      "pause": 300
+    },
+    {
+      "text": "correspondence-and-accepting-control: the toolchain-correspondence check and accepting-replay-control control pass; a deliberately mismatched toolchain or parameter set admits no replay.",
+      "pause": 300
+    },
+    {
+      "text": "full-local-and-remote-checks: root local CI and the conformance workflow commands pass at the head; onchain/script-identity.json hashes unchanged.",
+      "pause": 300
     }
   ],
   "clarifications": [
     {
-      "text": "A runner that only attributes a refusal does not put it outside Lean: it is classified, and a missing comparison is published. The operator chose one self-contained receipt, so the receipt grows by one optional object. For the phase-one reject the operator kept Lean and had the validator repaired; that repair has landed, the build correspondence is rebound to it, and the consumer requirement stays unmet by ruling. Texts outside the fence stay unchanged; a documentation follow-up is tracked separately. Open validity intervals stay a named non-goal.",
+      "text": "Clarifications.",
       "pause": 500
+    },
+    {
+      "text": "A refusal row whose runner only attributes is not thereby outside Lean: it is classified (classify-refusal-comparison-extent, extent.md), and its missing comparison is a published gap (operator note (NOTE-001) from the epic).",
+      "pause": 300
+    },
+    {
+      "text": "reject-before-deadline-consumer-requirement, ruled by the operator 2026-10-01, verbatim: \"Allow rejection before the retraction deadline: keep Lean's current rule and repair the validator.\" Lean stays; the validator repair landed separately (#320), and #287's traced/untraced correspondence is rebound to it by construction (toolchain-correspondence at the head). reject-before-deadline-consumer-requirement's reject is now accepted by both; the consumer requirement it carries stays unmet by ruling.",
+      "pause": 300
+    },
+    {
+      "text": "The receipt grows by one optional object (self-contained-replay-receipt), a narrow exception to the epic's receipt wire-format exclusion granted by the operator's ruling; the replay index and capsules remain supporting proof, not a substitute.",
+      "pause": 300
+    },
+    {
+      "text": "Constitution rows retract/settle, docs/theorems.md and a comment in onchain/validators/registry/refusal.ak state the limit or its premise. Ruled (operator answer (A-002)): the fence holds; after premise-run-on-retract-outside-window/run-retire-active-key-reject-retract evidence the ticket owner prepares the residual-after-evidence residual for the epic (stale wording, path, revision, reader claim, executed evidence, proposed repair, authority needed).",
+      "pause": 300
+    },
+    {
+      "text": "Open validity intervals stay a named non-goal; this ticket adds no model comparison.",
+      "pause": 300
     }
   ],
   "authority-and-evidence": [
     {
-      "text": "Issue 287 under epic 209, on base 3f04e50, joined with main 13f2b2e and constitution 1.12.0. Lean's reasons are the oracle. The replay is script execution on captured context, distinct from the chain's own execution, and the book says so.",
+      "text": "Authority and evidence.",
       "pause": 500
+    },
+    {
+      "text": "Issue #287 under epic #209; base 3f04e50, integrated with main 13f2b2e (constitution 1.12.0); Lean and corpus unchanged by this ticket. Lean's refusal names are the oracle; replay evidence is ledger-script execution evidence on captured context, distinct from the chain's own execution of the deployed bytes (constitution III), and the book says so.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "88b8af58c1d8433e0c2641eed3dfc6ba3e952f6fae890319c882c4a11a0745f6"
-  },
-  "narrowed-acceptance-operator-rulings-2026-10-02": [
-    {
-      "text": "The final delivery joins the latest main, with the repaired validators and the driver's two batch questions, and the operator narrowed what it must show. Every refusal the model describes is compared on its reason. The empty fold, the crossed refunds with their short-reject control, and the two-key batch whose mint lands on the wrong key are compared through the fold and reject batch questions, and so is the phase-one reject's short control. The stale-root fold, the surplus actions and the wrong constructor have nothing in the model to compare with, so each is published as unmet, with what its traced replay recorded and the issue that would add it. The phase-one reject stays unmet by ruling. The not-observed limit goes only where every refusal has its traced replay, and the failing wrong-reason control stays in CI. The three rows with no model counterpart carry the verdict unmet by ruling and stay in the debt report. The refund-position divergence is recorded on the devnet in the phase-one reject row, never as a pass, and tracked in issue 361.",
-      "pause": 500
-    }
-  ]
+    "sha256": "b52346a614485f7e12db1d8b315b74be5c5a8f9d3d071b8eedccb5b05be1a5cb"
+  }
 }

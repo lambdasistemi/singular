@@ -1,18 +1,56 @@
 {
+  "extract-active-command-responsibilities": [
+    {
+      "text": "Extract active command responsibilities.",
+      "pause": 500
+    },
+    {
+      "text": "As a contributor, I want one visible owner for each option, scenario step and deliberate control, so I can change a command without searching a thousand-line entry file or unintentionally changing another command's evidence.",
+      "pause": 400
+    }
+  ],
   "delivery": [
     {
-      "text": "First bind the base and original observations, then open the draft pull request and freeze the gate. The approved coder extracts four command families and ships documentation. The independent auditor reviews the exact candidate before the ticket owner hands the result to the epic owner.",
+      "text": "Delivery.",
       "pause": 500
+    },
+    {
+      "text": "Bind #270 and dependent issues, base/model, active workflow commands, command options and original CLI/JSON/narration/exit observations. Preserve the clean unrelated checkout. Open the draft PR before implementation.",
+      "pause": 300
+    },
+    {
+      "text": "Freeze a finite acceptance checks and execution budgets from the current workflow and its nested Nix commands. The approved GLM coder owns all implementation, tests, docs and commits; the approved Opus auditor independently reviews exact candidates. No other seat is commissioned.",
+      "pause": 300
+    },
+    {
+      "text": "Extract journey, insert-active, update-terminal and deployment in bounded command-local steps, preserving public entry paths and independent control ownership. Each moved declaration has one definition. Keep component source declarations and imports explicit. Do not migrate journey into the #202 driver.",
+      "pause": 300
+    },
+    {
+      "text": "Ship a contributor guide, module-purpose prose, diagrams, real caller/API links, navigation and speech with the code. Verify presentation and archive content as distinct claims.",
+      "pause": 300
+    },
+    {
+      "text": "Run the supported checkout journey and both extracted edge commands with positive and relevant refusal controls, capture before/after output and JSON shapes, run lint/component/focused/root CI and release checks, and obtain an exact-candidate audit. Handoff the draft PR to epic #272; do not merge or deploy.",
+      "pause": 300
     }
   ],
   "evidence-limits": [
     {
-      "text": "The checkout journey uses a fresh blueprint. The two edge commands run from extracted release archives. Each nested Nix invocation is accounted separately. A build or setup failure cannot stand for a ledger observation or refusal.",
+      "text": "Evidence limits.",
       "pause": 500
+    },
+    {
+      "text": "The current registry workflow runs nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint then REGISTRY_BLUEPRINT=\"$blueprint\" nix run --quiet .#journey from checkout. Its archive steps each run nix run --quiet .#release-artifacts -- \"$release_dir\", extract outside .git, then invoke .#insert-active or .#update-terminal with --observed; the release assembler additionally invokes two blueprint builds. Off-chain CI runs lint, component-build and cage-tests; root CI runs docs and presentation. Each invocation is charged separately in the runtime ledger.",
+      "pause": 400
+    },
+    {
+      "text": "The supported command evidence establishes the cases it actually executes. deployment-identity-check.sh invokes genesis-skey; deployment-attach-check.sh names genesis-skey and count, but its retained-runner blockage under #172/#283 is only source reachability. The intake and final CLI inventory must include all four dispatch branches and both flag spellings; opening Haddock and usage text mention only deploy/verify and do not define the whole parser. These receipts do not establish an archive-extracted journey (#214), #202's future narration hook, live production deployment or every Lean edge. A setup failure is not a refusal witness.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "a4ca8c9a6f0e2088246f82e6d5c69df17df73b70763cd7f1c44922f47e4ac1f3"
+    "sha256": "51d389b7657e09aaf2419e54de3570b9495dd64ad21694831800bb966bdb76c5"
   }
 }

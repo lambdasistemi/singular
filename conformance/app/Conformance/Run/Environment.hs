@@ -151,8 +151,8 @@ data Env = Env
     declares twice these, so the budget covers the error path
     -}
     , envCa :: Maybe CaWorld
-    {- ^ the CA session's world: the published canonical seed, the
-    boots' results, the canonical snapshot. Nothing in a CG session
+    {- ^ the registry-identity session's world: the published canonical seed, the
+    boots' results, the canonical snapshot. Nothing in a registry-operations session
     (the row validator keeps the two sessions apart).
     -}
     , envWorlds :: IORef (Map.Map String RowCage)
@@ -160,7 +160,7 @@ data Env = Env
     one row's odd state cannot poison another's
     -}
     , envKey2 :: IORef (Maybe (SignKeyDSIGN Ed25519DSIGN, Addr))
-    {- ^ a second funded wallet (CG19's second request owner),
+    {- ^ a second funded wallet (request-value-and-refund-routing's second request owner),
     split off the genesis wallet on first use
     -}
     , envHeld :: IORef [String]
@@ -202,10 +202,10 @@ data RowCage = RowCage
     -}
     }
 
-{- | The CA session's world (issue #69). The canonical seed's outRef
+{- | The registry-identity session's world (issue #69). The canonical seed's outRef
 is the publication a consumer derives the canonical name from; the
-IORefs carry what the rows produce in order (CA01's token id and
-snapshot, CA02's rival token id and measurements for CA03's
+IORefs carry what the rows produce in order (canonical-seed-identity's token id and
+snapshot, rival-seed-authentication's rival token id and measurements for policy-address-only-authentication-control's
 receipt).
 -}
 data CaWorld = CaWorld
@@ -213,28 +213,28 @@ data CaWorld = CaWorld
     -- ^ the canonical cage config (seed = the published canonical seed)
     , caSeedRef :: OnChainTxOutRef
     , caRawState :: SBS.ShortByteString
-    {- ^ this run's unapplied state code; CA04 hashes it against the
+    {- ^ this run's unapplied state code; applied-validator-identity hashes it against the
     pinned manifest entry before applying the declared parameters
     -}
     , caTidRef :: IORef (Maybe TokenId)
     , caSnapRef :: IORef (Maybe CaSnap)
     , caBootTxRef :: IORef (Maybe ConwayTx)
-    {- ^ CA01's unsigned boot tx: CA05's no-script detector must fire
+    {- ^ canonical-seed-identity's unsigned boot tx: tokenless-output-authentication's no-script detector must fire
     on it, proving the detector can detect a script witness
     -}
     , caBootMeasureRef
         :: IORef (Maybe (String, Integer, Integer, Integer))
-    -- ^ CA01's boot txid and measurements; CA04's receipt evidence
+    -- ^ canonical-seed-identity's boot txid and measurements; applied-validator-identity's receipt evidence
     , caRivalTidRef :: IORef (Maybe TokenId)
     , caRivalMeasure
         :: IORef (Maybe (String, Integer, Integer, Integer))
-    {- ^ rival txid, mem, cpu, size — CA02's accepted tx, reused as
-    CA03's receipt evidence
+    {- ^ rival txid, mem, cpu, size — rival-seed-authentication's accepted tx, reused as
+    policy-address-only-authentication-control's receipt evidence
     -}
     }
 
-{- | The canonical registry's chain identity at CA01 time: the exact
-UTxO, its value and its datum. CA02 proves the rival left it
+{- | The canonical registry's chain identity at canonical-seed-identity time: the exact
+UTxO, its value and its datum. rival-seed-authentication proves the rival left it
 untouched by comparing against this snapshot read back later.
 -}
 data CaSnap = CaSnap
@@ -270,7 +270,7 @@ loadCodes path = do
             failWith
                 "blueprint has no state.state/request.request code"
 
-{- | The naming partition's compiled code (#157 D-BOOT). The four pins
+{- | The naming partition's compiled code (#157 genesis-policy-pins). The four pins
 the eight-field boot datum carries are DERIVED from it for the registry
 identity each boot creates — never typed, never a placeholder — so the
 harness needs the code itself, not a recorded hash: the application
@@ -428,7 +428,7 @@ cageCfgWith stateBytes requestBytes namingCodes seed processMs retractMs =
     -- previous-policies list supplies List[] where the runtime
     -- expects a constructor (unConstrData failure at boot).
     let cfgScriptHashValue = computeScriptHash stateBytes
-        -- #157 D-BOOT: the four pins for THIS registry identity —
+        -- #157 genesis-policy-pins: the four pins for THIS registry identity —
         -- the state policy plus the token name the seed determines —
         -- derived from the naming partition's own compiled code.
         registryId =

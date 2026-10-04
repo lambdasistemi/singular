@@ -27,15 +27,15 @@ flowchart LR
    compatibility imports and unchanged Conformance consumers working.
 5. Publish contributor architecture/module documentation and speech; compare
    declaration map, run source/format checks, component build, focused suite,
-   fresh blueprint E2E, journey and archive workflow rows.
-6. Under epic answer A-001, generate Haddock for the affected off-chain
+   fresh blueprint end-to-end, journey and archive workflow rows.
+6. Under operator answer (A-001), generate Haddock for the affected off-chain
    library from the same candidate revision, include it in the built site,
    derive all library modules from Cabal (`exposed-modules` and
    `other-modules`) and make the existing `docs-check` job reject a missing
    module/source reference or content that differs from the candidate source.
    Run one disposable content-mismatch negative control at that exact command
    boundary.
-7. Under epic answer A-002, wire one local off-chain input into the root
+7. Under operator answer (A-002), wire one local off-chain input into the root
    docs build with existing upstream pins unchanged, check the generated
    reference against this candidate's off-chain source content, and make the
    existing `release-check` verify that the future documentation archive
@@ -48,20 +48,20 @@ component limits as passes.
 
 ## Gate and resource policy
 
-Gate S follows the verbatim active CI commands from `ci.yml` and
+acceptance checks follows the verbatim active CI commands from `ci.yml` and
 `registry.yml`; its runtime manifest binds the exact command list and source
 closure. Cheap invocations are local parser/format/compile probes without Nix
 or network; expensive invocations are Nix builds, Nix apps and devnet steps.
 The coder may use up to 40 cheap and 12 expensive invocations; the auditor may
 launch at most two CLI processes and does not run the product gate. Every
 invocation gets a separate receipt and is checked before launch. The ticket
-owner owns final exact-head Gate S and CI handback.
+owner owns final exact-head acceptance checks and CI handback.
 
-Gate S v2 adds the generated API requirement to the existing
+acceptance checks v2 adds the generated API requirement to the existing
 `nix run --quiet .#docs-check` and `nix run --quiet .#release-check` CI
 commands without changing its older rows.
 The documentation slice starts only after the source slice has a committed
-checkpoint, a revised Gate S binding and an independent auditor contract
+checkpoint, a revised acceptance checks binding and an independent auditor contract
 review. Authorized extra paths are limited to `nix/docs.nix`, root
 `flake.nix` and `flake.lock`, off-chain flake/project wiring if needed,
 `tools/prepare_docs.py`,

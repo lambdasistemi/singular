@@ -1,6 +1,72 @@
 {
+  "requirements-checklist-traced-refusal-reasons": [
+    {
+      "text": "Requirements checklist: traced refusal reasons.",
+      "pause": 500
+    },
+    {
+      "text": "[x] Every story has actor, action and observable outcome (reason-observed-live-step-model-refuses-reason–honest-limits-refusal-whose-replay-cannot-produce).",
+      "pause": 300
+    },
+    {
+      "text": "[x] Every requirement is observable and can fail (capture-refused-transaction–replay-change-boundary; gate root-checks–complete-refusal-extent).",
+      "pause": 300
+    },
+    {
+      "text": "[x] Evidence classes kept apart; non-evidence listed (separate-evidence-classes).",
+      "pause": 300
+    },
+    {
+      "text": "[x] The comparison has a wrong-reason control and a restored pass (wrong-reason-control, wrong-reason-failing-control).",
+      "pause": 300
+    },
+    {
+      "text": "[x] The extent is counted from receipts with a non-empty guard (discovered-refusal-extent, complete-refusal-extent).",
+      "pause": 300
+    },
+    {
+      "text": "[x] Unobserved reasons stay visible; the limit drops only under discovered-refusal-extent (book-states-observation-limits).",
+      "pause": 300
+    },
+    {
+      "text": "[x] Same transaction: no resubmission or rebuilt context; deployed replay links chain and traced run (matching-ledger-context, deployed-refusal-reproduction).",
+      "pause": 300
+    },
+    {
+      "text": "[x] Same source and toolchain proved by rebuild, not by prose (toolchain-correspondence).",
+      "pause": 300
+    },
+    {
+      "text": "[x] Fence: no edit to onchain, naming-onchain, applications, Lean, corpus, constitution, deployed bytes (replay-change-boundary).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Receipt fit ruled (operator question (Q-001)).",
+      "pause": 300
+    },
+    {
+      "text": "[x] Texts outside the fence that state the limit ruled (operator answer (A-002): fence holds; residual-after-evidence residual after evidence).",
+      "pause": 300
+    },
+    {
+      "text": "[x] Every live refusal in the denominator, classified against Lean (extent.md).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] reject-before-deadline-consumer-requirement phase-1 reject conflict ruled (operator question (Q-003); operator answer (A-003) holds it as comparison-unmet, comparison unmet).",
+      "pause": 300
+    },
+    {
+      "text": "[x] A differing or unobserved reason leaves durable evidence; the accepting control has a failing CI check (review 001).",
+      "pause": 300
+    },
+    {
+      "text": "[x] No implementation detail in the spec beyond named existing artifacts.",
+      "pause": 300
+    }
+  ],
   "_source": {
     "file": "requirements.md",
-    "sha256": "0b0f74dc49421b06a1d3e73da7cc6a23bccdeef3e01bd74f0a96f0009baff5d0"
+    "sha256": "e7d92f320e8271825b5eeb82e76c4583cc1565a75fa799c9ed31b0fd60537fe8"
   }
 }

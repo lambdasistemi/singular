@@ -1,31 +1,61 @@
 {
+  "plan": [
+    {
+      "text": "Plan.",
+      "pause": 500
+    },
+    {
+      "text": "Retroactive record, written 2026-09-15 from PR #106 merged at f558d0e8fc916eef494fffcef09cfe2ac5582b8e.",
+      "pause": 400
+    }
+  ],
   "strategy": [
     {
-      "text": "Separate identity from execution: publish and boot once into a manifest, attach every runner to it, keep devnet mode unchanged, carry the trie as a checked witness, and replace fixed sleeps with polling. The flowchart shows deployment, manifest, attach, counters, duplicate, and fresh control.",
+      "text": "Strategy.",
+      "pause": 500
+    },
+    {
+      "text": "Separate identity from execution: publish scripts and boot the registry once into a manifest, then make every runner capable of attaching to that manifest while devnet mode keeps booting and publishing exactly as before. Carry the writer's trie beside the manifest as a checked witness, never as an authority. Replace fixed sleeps with polling and tip-anchored validity so deployed windows hold on slow networks.",
       "pause": 400
     }
   ],
   "what-the-diff-actually-built": [
     {
-      "text": "A deployment command, a registry identity library, three attaching runners with exact spellings and credential reuse, an attach check with duplicate and counter control, tip-anchored retract, and the onboarding account.",
+      "text": "What the diff actually built.",
+      "pause": 500
+    },
+    {
+      "text": "A new deployment/Main.hs publishes the reference scripts and boots the registry once from the joiner wallet, writes the manifest, refuses a second run against it, and verifies a node against a manifest. A new Singular.Registry.Deployment library derives the registry token from the seed, compares compiled state identity, resolves live reference outputs by recorded hash, and locates the registry state by its quantity-one token. The three journey runners take --deployment, load the mirror, compare its root with the actual state output before using it, reuse registry and reference outputs, keep exact spellings, handle the duplicate rerun explicitly, reuse registered consumer and staking credentials, pick a large funding UTxO, and poll for confirmations. deployment-attach-check.sh deploys once on a shared devnet, exercises all three attached journeys plus the duplicate, and ends with a fresh-bootstrap counter control. Retract builds its lower bound from a fresh chain tip and waits against the deployed window. The onboarding doc gains the deployment account with its speech restamped.",
       "pause": 400
     }
   ],
   "verification-as-shipped": [
     {
-      "text": "Docs checks green, packaged builds pass, the attach gate exits zero with one state and five references stable, two states and nine references on the fresh control, both retracts accepted, and the faulty counter demonstrated before repair.",
+      "text": "Verification as shipped.",
+      "pause": 500
+    },
+    {
+      "text": "just ci green; packaged builds pass; the full shared-devnet attach gate exits 0 with 1 registry state and 5 reference outputs stable across all journeys plus the duplicate, 2 states and 9 references after the fresh control, and both support retracts accepted on live-tip bounds. The faulty counter is demonstrated before its repair within the same PR history.",
       "pause": 400
     }
   ],
   "file-fence-what-the-merge-touched": [
     {
-      "text": "Fifteen files, all offchain plus one docs page: the new command and library, three runners, the check, wiring, and the onboarding page. No Lean, validator, workflow, or check-setting edits.",
+      "text": "File fence (what the merge touched).",
+      "pause": 500
+    },
+    {
+      "text": "Fifteen files, all in offchain/ plus one docs page: the new deployment command and registry library; the three journey runners; the attach check; devnet, flake, lmlc, node, trie manager, retract builder and cabal wiring; docs/consumer-onboarding.md with its speech companion. No Lean, validator, workflow or CI-required-check edits.",
       "pause": 400
     }
   ],
   "slice": [
     {
-      "text": "One slice: persistent deployment with attached runners, shipped as eleven commits from manifest to reference counting.",
+      "text": "Slice.",
+      "pause": 500
+    },
+    {
+      "text": "One slice: persistent deployment with attached runners. Eleven commits, oldest first — manifest and commands, runner attach, devnet attach check, deployment docs, trie and chain for the check, retract window and credentials, window-end wait, rename carry-over, exact spellings, confirmation polling with credential reuse, reference counting at every publisher.",
       "pause": 400
     }
   ],

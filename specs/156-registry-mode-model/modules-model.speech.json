@@ -1,30 +1,70 @@
 {
+  "156-modules-model": [
+    {
+      "text": "#156 — modules model.",
+      "pause": 500
+    },
+    {
+      "text": "Responsibility and dependency direction only. No bodies, no algorithms.",
+      "pause": 400
+    }
+  ],
   "dependency-direction": [
     {
-      "text": "The model sits at the top, with lemmas, statements, the open application and naming below it. No naming identifier appears in the model, the lemmas or the statements, which is what makes the open application a proof that the guarantees are unconditional rather than a restatement.",
+      "text": "Dependency direction.",
+      "pause": 500
+    },
+    {
+      "text": "Nothing above depends on anything below it. No naming identifier appears in Model, Lemmas or Statements: the registry's guarantees are unconditional in the application, which is what makes the open application a proof of that fact rather than a restatement of it.",
+      "pause": 400
+    },
+    {
+      "text": "The slice-B arrow points into the frozen model-slice interface and never back out. The simulator reads the Lean; the Lean never accommodates the simulator.",
       "pause": 400
     }
   ],
   "changed-responsibilities": [
     {
-      "text": "The model gains the alphabet, the edges, the codec and the eight-field configuration and loses the old vocabulary; naming becomes an instance rather than a parallel model; the model checker is opened to new identities with its discipline intact; and the simulator transcribes the frozen interface.",
-      "pause": 400
+      "text": "Changed responsibilities.",
+      "pause": 500
     }
   ],
   "promotion": [
     {
-      "text": "The open application sits beside the naming layer rather than inside it, because a module that imported naming could not demonstrate what it exists to demonstrate. The leaf codec stays in the model, because it is part of what a leaf is.",
+      "text": "Promotion.",
+      "pause": 500
+    },
+    {
+      "text": "Singular.OpenApp sits beside the naming layer, not inside it: it exists to demonstrate that §6 holds for an application that proves nothing, and a module that imported naming could not demonstrate that.",
+      "pause": 400
+    },
+    {
+      "text": "The leaf codec stays in Singular.Model rather than a separate module. It is part of what a leaf is, and #157 and #152 consume it as one contract with the alphabet.",
       "pause": 400
     }
   ],
   "out-of-this-tickets-surface": [
     {
-      "text": "The cage, the naming on-chain code, conformance, the off-chain tree, the runner and release wiring, and every documentation page not named here. Touching any of them is a question to the epic owner, not a repair.",
+      "text": "Out of this ticket's surface.",
+      "pause": 500
+    },
+    {
+      "text": "onchain/**, naming-onchain/**, conformance/**, offchain/**, the #158 runner and release wiring, upstream MPFS, consumer.ak, cardano-keri, #152, and",
+      "pause": 400
+    }
+  ],
+  "159s-registry-interface-page-every-docs-page-not-named-above-touching-any": [
+    {
+      "text": "159's registry-interface page. Every docs/ page not named above. Touching any.",
+      "pause": 500
+    },
+    {
+      "text": "of them is a Q to the epic owner, not a repair.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "modules-model.md",
-    "sha256": "d6a9bcbec2bb1c1009899cf9cf067b12325b029f3896894190d66e22843d8096"
+    "sha256": "7b0c50ef21563253cd829d0403abc39a39fdcecbea17eae495d3dd1edeb643c1"
   }
 }

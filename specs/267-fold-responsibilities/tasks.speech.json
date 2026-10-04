@@ -1,6 +1,20 @@
 {
+  "fold-extraction-delivery": [
+    {
+      "text": "Fold extraction delivery.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I need an audited, reviewable transaction builder whose evidence states what actually ran.",
+      "pause": 400
+    },
+    {
+      "text": "These are implementation and documentation task stamps. The frozen final acceptance checks, independent exact-head audit, pushed-head CI and PR readiness remain separate acceptance receipts. The development ledger retains the 9/8 overrun and the bounded operator answer (A-001) repair through call 12. The operator answer (A-013) cheap cap breach and operator answer (A-017) prelaunch search deviation are separate historical records; no task stamp waives either one. The operator answer (A-023) development campaigns stopped at a compile failure and then a devnet assertion failure. operator answer (A-024)'s separate guarded campaign passed compilation and the submitted 23-example devnet run; those receipts do not replace the final exact-head gate or acceptance.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "a3c15422f34bc53a25ed57911568ac39a9187e81c8e7982ad6ed9a0ff56dba09"
+    "sha256": "f67b8c68cb5e684ad5b4f89dcb069b32c538542bf59519e09390a80e94042019"
   }
 }

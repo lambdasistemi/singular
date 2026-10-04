@@ -6,7 +6,8 @@
 # Build the documentation site with the staged generated references.
 build-docs:
     python3 tools/prepare_docs.py --api-site "$(nix build --quiet --no-link --print-out-paths .#docs)"
-    mkdocs build --strict
+    mkdocs build --strict || { chmod -R u+w site; exit 1; }
+    chmod -R u+w site
 
 serve-docs:
     python3 tools/prepare_docs.py --api-site "$(nix build --quiet --no-link --print-out-paths .#docs)"
@@ -15,6 +16,20 @@ serve-docs:
 # Stories, diagrams, no index labels, and speech bound to each page's hash.
 check-presentation:
     python3 tools/check_presentation_repo.py
+
+# Rewrite the speech companions from the pages, exactly as the pages read.
+
+# The extraction tool renders each page with this site's own Markdown settings.
+extract-speech:
+    mkdocs-speech --config mkdocs.yml docs
+    mkdocs-speech --config mkdocs.yml specs
+    dir="$(mktemp -d)" && cp README.md "$dir" && mkdocs-speech --config mkdocs.yml "$dir" && cp "$dir/README.speech.json" README.speech.json
+
+# Generate the narration clips the companions still lack (needs DEEPINFRA_API_KEY).
+
+# A segment that changed gets a new clip; the rest are kept.
+narrate:
+    python3 tools/narrate.py --generate
 
 # After editing PAGE.md and redoing PAGE.speech.json: just stamp-speech PAGE.md
 stamp-speech +pages:
@@ -97,7 +112,7 @@ inventory:
 inventory-controls:
     bash tools/code_inventory_controls.sh
 
-# #278 S2: apply the house Fourmolu configuration (fourmolu.yaml at the
+# #278 terminal-attestation-permanent: apply the house Fourmolu configuration (fourmolu.yaml at the
 # repository root) to every discovered Haskell source — offchain and
 # conformance, the formerly fenced verifier sources and the evaluation
 # spike included, no directory exclusions. Run within nix develop.
@@ -113,7 +128,7 @@ format:
 format-check:
     bash tools/format_haskell.sh check
 
-# Negative and positive controls for the Haskell format check (#278 S2):
+# Negative and positive controls for the Haskell format check (#278 terminal-attestation-permanent):
 # a source Fourmolu defaults accept but the house configuration rejects
 # must fail the check (proving the configuration is read) and its formatter
 # correction must pass it again; a tree without the configuration must

@@ -1,6 +1,44 @@
 {
+  "323-modules-model": [
+    {
+      "text": "#323 modules model.",
+      "pause": 500
+    },
+    {
+      "text": "Dependency direction: offchain/cli → offchain/lib → read interface (singular-registry-provider-offchain-node-internal-existing) ← adapters (node-adapter-offchain-node-internal-new-module, in-memory-adapter-offchain-node-internal-or). Composition (composition-offchain-cli-startup-module-s-node) is the only module set that names a backend.",
+      "pause": 400
+    },
+    {
+      "text": "singular-registry-provider-offchain-node-internal-existing Singular.Registry.Provider (offchain/node-internal, existing, refactored): owns the read interface, the view and the chain point (chainpoint-network-magic-era-name-slot-block–provider-read-interface-exactly-one-acquire-operation). Depends on ledger types only; names no backend, socket or mode.",
+      "pause": 300
+    },
+    {
+      "text": "node-adapter-offchain-node-internal-new-module node adapter (offchain/node-internal, new module, name the commit owner's): builds singular-registry-provider-offchain-node-internal-existing from the pinned node-clients N2C provider through withAcquired. Owns acquire, origin refusal and lost-connection classification for node views. Used by DevNet and external node alike.",
+      "pause": 300
+    },
+    {
+      "text": "in-memory-adapter-offchain-node-internal-or in-memory adapter (offchain/node-internal or offchain/lib, new module): builds singular-registry-provider-offchain-node-internal-existing from a deterministic mutable chain value (memory-chain-in-memory-adapter-state-chainpoint), snapshotting at acquire. Library code, not test-only, so #326's contract suite reuses it.",
+      "pause": 300
+    },
+    {
+      "text": "transaction-builders-offchain-lib-singular-registry-txbuilder transaction builders (offchain/lib/Singular/Registry/TxBuilder/**, Singular.Application.OpenDatum.Update, Singular.Registry.Driver, Singular.Registry.Deployment.Attach): consume a view, never a provider or a fresh parameter fetch.",
+      "pause": 300
+    },
+    {
+      "text": "composition-offchain-cli-startup-module-s-node composition (offchain/cli startup module(s) and node-internal session modules): resolves node configuration once, opens the node adapter and the signed-transaction submitter (signed-transaction-submitter-signed-transaction-type-constructible), and injects them. The allowlist of the source check (confinement-ci-source-check-passes-on-head) names exactly these modules plus fixture startup, each with a one-line reason.",
+      "pause": 300
+    },
+    {
+      "text": "cli-commands-offchain-cli-src-singular-cli CLI commands (offchain/cli/src/Singular/CLI/{Entry,Create,Inspect,Live,Command,Session,Registry}.hs): consume injected capabilities; each operation acquires one view.",
+      "pause": 300
+    },
+    {
+      "text": "Promotion: none upstream. The pinned node-clients already provides the acquire primitive; no upstream change is required.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "modules-model.md",
-    "sha256": "770ff42f00ca6b23685903dd41600cd20c719cc7c44423b016c4f453436112c4"
+    "sha256": "0399fec1ac4fef76d2b15c34e52e8d418fe16e746cafeb3de4faae9a6ac22963"
   }
 }

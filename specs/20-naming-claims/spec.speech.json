@@ -1,54 +1,114 @@
 {
   "who-this-is-for": [
     {
+      "text": "Who this is for.",
+      "pause": 500
+    },
+    {
       "text": "A reviewer who wants to play a naming claim in the docs, not read a proposed walkthrough.",
       "pause": 400
     }
   ],
   "what-you-can-do": [
     {
-      "text": "Choose the labelled first-release naming profile, claim alice, queue a competing claim, and fold each request. The first valid absent-key fold succeeds; the duplicate is refused because the key is occupied.",
+      "text": "What you can do.",
+      "pause": 500
+    },
+    {
+      "text": "Open the docs, choose the labelled first-release naming profile, claim the demo spelling alice, queue a second competing claim for the same spelling, and fold each request in turn. The first valid fold of an absent key succeeds. The competing fold is refused because that key is already occupied. Authenticated observation then shows alice as active, carrying the certified fixture fields.",
       "pause": 400
     }
   ],
   "what-you-see-when-it-is-refused": [
     {
-      "text": "Every refusal names its intended condition. Approval never occupies a spelling. Uniqueness is decided only when a certified Insert folds.",
+      "text": "What you see when it is refused.",
+      "pause": 500
+    },
+    {
+      "text": "Every refusal names its intended condition. A generic exception is a defect.",
+      "pause": 400
+    },
+    {
+      "text": "Approval never occupies a spelling. Two queued claims for alice may both sit pending. Uniqueness is decided only when a certified Insert folds.",
       "pause": 400
     }
   ],
   "first-release-naming-profile": [
     {
-      "text": "The playable surface is an explicit naming profile labelled as an unaccepted candidate. Certification proves allowed construction only. The spelling alice is a frozen demo fixture.",
+      "text": "First-release naming profile.",
+      "pause": 500
+    },
+    {
+      "text": "The playable surface is an explicit profile, labelled as first-release naming, and labelled as an unaccepted candidate. It is not the generic registry demo.",
+      "pause": 400
+    },
+    {
+      "text": "Certification proves allowed request and initial construction only. It does not prove person identity, entitlement to a spelling, or ownership of a payment destination.",
+      "pause": 400
+    },
+    {
+      "text": "The demo spelling alice is a frozen finite-model fixture, not a name normalization standard.",
       "pause": 400
     }
   ],
   "registry-uniqueness-at-fold": [
     {
-      "text": "The state diagram shows absent, pending, and active. The first valid fold of an absent key becomes active. A competing fold is refused.",
+      "text": "Registry uniqueness at fold.",
+      "pause": 500
+    },
+    {
+      "text": "A successful naming Insert of an absent certified key becomes Active and mints the representative into the certified application output. The output carries the fixture fields below, unchanged by the fold.",
       "pause": 400
     }
   ],
   "application-fixture-fields": [
     {
-      "text": "The initial application record has an optional payment destination, a control address, a next-control commitment, and a fixed retirement quorum. This slice stores them as structure only.",
+      "text": "Application fixture fields.",
+      "pause": 500
+    },
+    {
+      "text": "The initial application record has four separate fields. Values are finite-model fixtures, not product or economic policy.",
+      "pause": 400
+    },
+    {
+      "text": "This slice does not give those fields maintenance, recovery, or retirement semantics.",
       "pause": 400
     }
   ],
   "generic-profile-stays-generic": [
     {
-      "text": "A separate generic profile remains labelled generic and can still delete. It cannot silently become the naming profile.",
+      "text": "Generic profile stays generic.",
+      "pause": 500
+    },
+    {
+      "text": "A separate generic profile remains available and labelled generic. It can still perform generic Delete. It cannot silently become the naming profile, and the naming profile cannot be bypassed by switching engines without an explicit profile selection.",
       "pause": 400
     }
   ],
   "limits-of-this-slice": [
     {
-      "text": "Natural numbers, no ledger execution, and no maintenance, recovery, retirement, or consumer scenarios. Naming theorems are a new inventory. The preview states the candidate is unaccepted.",
+      "text": "Limits of this slice.",
+      "pause": 500
+    },
+    {
+      "text": "Finite model: keys, addresses and commitments are natural numbers; alice is a demo spelling. No ledger, validator, signature, wallet or refund-payment execution. No on-chain acceptance.",
+      "pause": 400
+    },
+    {
+      "text": "Not implemented here, and not faked: payment-destination maintenance, withdrawal of pending claims, recovery through the next-control commitment, owner-or-quorum retirement, consumer-contract scenarios, or a published release package.",
+      "pause": 400
+    },
+    {
+      "text": "The generic foundation of forty-one proved statements remains a separate inventory. Naming theorems are a new inventory.",
+      "pause": 400
+    },
+    {
+      "text": "The live preview is bound to the pull-request head and states that the candidate is unaccepted.",
       "pause": 400
     }
   ],
   "_source": {
-    "file": "specs/20-naming-claims/spec.md",
+    "file": "spec.md",
     "sha256": "be1d4750a95edea9fe5aed079f6a75dff33b5478855bd19a5b00e5049d67df08"
   }
 }

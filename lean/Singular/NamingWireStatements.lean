@@ -47,7 +47,7 @@ theorem payment_destination_zero_or_one :
   rfl
 
 -- **WR01** — the `insertAbsent` request wire is byte-exact and round-trips,
--- carrying the refund address the request names (R-ADA). Stated as the exact
+-- carrying the refund address the request names (custody-lovelace-refund). Stated as the exact
 -- bytes in both directions rather than as `decode ∘ encode = id`, so a codec
 -- that lost the refund address symmetrically could not satisfy it.
 set_option maxRecDepth 1000000 in

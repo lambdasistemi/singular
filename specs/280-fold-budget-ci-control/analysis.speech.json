@@ -1,30 +1,52 @@
 {
+  "cross-artifact-analysis": [
+    {
+      "text": "Cross-artifact analysis.",
+      "pause": 500
+    },
+    {
+      "text": "As the ticket owner, I want the spec, plan, models and tasks checked against each other before code, so no worker has to pick between two statements.",
+      "pause": 400
+    }
+  ],
   "coverage": [
     {
-      "text": "Every requirement maps to a plan step, a model element and at least one task.",
+      "text": "Coverage.",
       "pause": 500
+    },
+    {
+      "text": "Every requirement has a task, and every task names a requirement or covers all of them.",
+      "pause": 400
     }
   ],
   "consistency-findings": [
     {
-      "text": "The planning audit found that a mutant emptying only the final map is stopped by the runner's pre-submission check; the mutation now replaces the declaration itself, and no check is disabled. The coder's inventory question led to a recorder named as a shell script and raw logs, both classes the inventory already maps. The spec says runner where the brief says interpreter, for the same fold step. The fixture only sets the first fold's fallback, and the red is tied to that fold. Log size has a stop condition, and inventory and fixture-state checks run in root CI.",
+      "text": "Consistency findings.",
       "pause": 500
     }
   ],
   "constitution-alignment": [
     {
-      "text": "No Lean, expected-result or public page change. Execution units stay unobservable, and the evidence is ledger execution through the CI command.",
+      "text": "Constitution alignment.",
       "pause": 500
+    },
+    {
+      "text": "No Lean change, no expected-result change, no public conformance page change. Execution units stay unobservable in the model. The evidence type is ledger execution through the CI command, as the constitution requires for a ledger claim.",
+      "pause": 400
     }
   ],
   "result": [
     {
-      "text": "No blocking contradiction, no uncovered requirement and no open question, so planning is ready for the auditor.",
+      "text": "Result.",
       "pause": 500
+    },
+    {
+      "text": "No blocking contradiction, no uncovered requirement and no open question. Planning is ready for the auditor's checkpoint.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "analysis.md",
-    "sha256": "6b4c68e8daa545a09c9b4004c71df551efc2a9deef8fd15c35da80896bda46b2"
+    "sha256": "370ee61174ff1da024da06de1c873f4f819326f52a8b873c6fb5493742df80ed"
   }
 }

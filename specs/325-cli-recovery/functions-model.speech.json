@@ -1,6 +1,28 @@
 {
+  "325-functions-model": [
+    {
+      "text": "#325 functions model.",
+      "pause": 500
+    },
+    {
+      "text": "Signatures are binding in shape; auxiliary names and placement within the modules model are the commit owner's.",
+      "pause": 400
+    },
+    {
+      "text": "reconcile-registry reconcile :: registry-dir -> saved-registry -> View IO -> IO Reconciliation — classifies every unresolved journalled transaction (included, rolled back, excluded, still unknown), applies the repairs of next-ordinary-command-on-registry-any-write/transaction-whose-inclusion-was-journalled-but-whose and returns what it did and what remains. No submission capability in scope (reconciliation-module-under-offchain-cli-name-commit).",
+      "pause": 300
+    },
+    {
+      "text": "durable-file-replacement replaceDurably :: FilePath -> ByteString -> IO () — whole-file replacement that is atomic under crash, used by the mirror and state.json writers (crash-atomic-replacement-mirror-state-json-lives).",
+      "pause": 300
+    },
+    {
+      "text": "unresolved-write-refusal The write refusal over an unresolved transaction takes the reconciliation result and names the case (unknown, timeout, rolled-back) and transaction id (acknowledgement-unknown-outcome-inclusion-timeout-rollback-exclusion, next-ordinary-command-on-registry-any-write).",
+      "pause": 300
+    }
+  ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "e757478a4bb69c70bc9fc75b414b603bdc0f796c63b5c8d64fc4749874c1cd20"
+    "sha256": "3f012459561bda43ed513eafa193df8f0eef3278abb53ea66fb743f87f175b35"
   }
 }

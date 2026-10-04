@@ -1,18 +1,36 @@
 {
+  "small-entry-points-for-active-registry-commands": [
+    {
+      "text": "Small entry points for active registry commands.",
+      "pause": 500
+    },
+    {
+      "text": "As an operator, I run the existing journey, insert-active, update-terminal and deployment commands from the supported checkout or archive. I need the same options, exit status, narration, JSON and ledger effects after their large entry files are divided into named owners.",
+      "pause": 400
+    }
+  ],
   "requirements": [
     {
-      "text": "The four existing command names and entry paths remain. Their options, failure exits, narration, observed JSON and ledger effects remain stable. Each scenario and deliberate refusal control has one command-local owner, and contributor documentation explains the change points.",
+      "text": "Requirements.",
       "pause": 500
     }
   ],
   "authority-and-evidence": [
     {
-      "text": "The accepted Lean tree governs registry transitions and transaction effects. Concrete command output requires checkout and extracted archive executions. The journey archive gap and the separate driver migration remain open in their own issues.",
+      "text": "Authority and evidence.",
       "pause": 500
+    },
+    {
+      "text": "Accepted base b3cbe15e8cd7f9c1b701b9ff7d262c3a89fca8c8 carries Lean tree f1e6a0edcaf9edce7369fd42add8b3677ddabeb2. Singular.step, Singular.refusal, Singular.txOf and Singular.Statements govern registry transition outcomes and transactions. CLI flags, narration text and observation JSON are concrete command contracts and require command evidence; Lean does not spell those bytes. The constitution requires escalation for a model ambiguity or consumer conflict. No source equivalence or green build alone closes a ledger row.",
+      "pause": 400
+    },
+    {
+      "text": "The checkout journey uses a fresh registry blueprint. The two edge commands are invoked from extracted release archives. These are distinct claims. Journey-from-extracted-archive evidence remains with open #214; #202 owns its driver migration and narration-hook ruling. Conformance source/workflow, Lean, validators, naming, simulator, release publication, deployment actions and retained #172/#283 runners remain outside this ticket.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "57a0c8a92654324c5191b911785d35d2cce95d7e2da55f2df7429f0b6db50288"
+    "sha256": "7b463df2f9afd5fb685a0f81eea2e4e826832e3eda7bb5c794e2f045f879fadb"
   }
 }

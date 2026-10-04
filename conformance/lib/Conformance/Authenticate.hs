@@ -17,9 +17,9 @@ chain UTxOs at the derived address. Two decisions exist on purpose:
 
 * 'authenticate' — the consumer's check: exact policy, the derived
   name, quantity one.
-* 'authenticateWeak' — the CA03 control: policy only (the address
+* 'authenticateWeak' — the policy-address-only-authentication-control control: policy only (the address
   leg is the query itself). It is designed to accept a consistent
-  rival, which is what makes CA02's rejection attributable to the
+  rival, which is what makes rival-seed-authentication's rejection attributable to the
   name check and nothing else. A control that could not accept would
   prove nothing.
 -}
@@ -55,11 +55,11 @@ refusal matcher applies to node reasons.
 -}
 data AuthReject
     = {- | No asset at all under the canonical policy: whatever this
-      output is, it is not a registry (the CA05 forgery).
+      output is, it is not a registry (the tokenless-output-authentication forgery).
       -}
       PolicyAbsent
     | {- | The policy is present but the derived name is not: a rival
-      registry from another seed (the CA02 rival).
+      registry from another seed (the rival-seed-authentication rival).
       -}
       NameMismatch
     | -- | The canonical name with a quantity other than one.
@@ -77,10 +77,10 @@ authenticate policy name assets = case Map.lookup policy assets of
         Just 1 -> AuthAccept
         Just q -> AuthReject (QuantityNotOne q)
 
-{- | The CA03 control: policy only. The address leg is the query
+{- | The policy-address-only-authentication-control control: policy only. The address leg is the query
 itself (the runner reads UTxOs at the derived address), so the weak
 check is exactly @policy present@. It accepts a consistent rival by
-design — that acceptance is the observation that makes CA02's
+design — that acceptance is the observation that makes rival-seed-authentication's
 rejection attributable to the derived name.
 -}
 authenticateWeak :: ByteString -> Assets -> AuthDecision

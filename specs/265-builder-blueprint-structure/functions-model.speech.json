@@ -1,12 +1,26 @@
 {
+  "function-contracts": [
+    {
+      "text": "Function contracts.",
+      "pause": 500
+    },
+    {
+      "text": "As a contributor, I want each moved operation to retain its current callable contract while gaining one focused implementation owner.",
+      "pause": 400
+    }
+  ],
   "callable-contracts": [
     {
-      "text": "The listed public functions retain their signatures and observable results behind the same facades.",
+      "text": "Callable contracts.",
+      "pause": 500
+    },
+    {
+      "text": "The complete function-by-function before/after location map is a delivery artifact; this model does not add or change a public signature.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "0f16e09ad1027f93f6f22a76d5f2ddb0015659e4d41d02892138c8a6d0ac4848"
+    "sha256": "ee98917d76cbda542b8d06ee2b435c016f9e8a741bd53f26e1ce5de3b00607a7"
   }
 }

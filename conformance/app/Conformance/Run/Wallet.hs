@@ -102,7 +102,7 @@ largestWalletUtxo prov = do
 
 {- | The second wallet: a key derived from a fixed seed (like the
 genesis key), funded by a plain split of the largest genesis UTxO.
-CG19's second request is owned (and funded) by it.
+request-value-and-refund-routing's second request is owned (and funded) by it.
 -}
 secondWallet :: Env -> IO (SignKeyDSIGN Ed25519DSIGN, Addr)
 secondWallet env = do
@@ -209,9 +209,9 @@ collateralPotWithChange env = do
 consolidateFunding :: Env -> IO ()
 consolidateFunding env = consolidateWallet (envProv env) (envCaps env)
 
-{- | The sweep, before there is an `Env` to carry: a CA session designates
+{- | The sweep, before there is an `Env` to carry: a registry-identity session designates
 its canonical seed during construction, and a sweep after that would
-spend the very output CA01 boots from.
+spend the very output canonical-seed-identity boots from.
 -}
 consolidateWallet :: Cage.Provider IO -> Capabilities -> IO ()
 consolidateWallet prov submit = do

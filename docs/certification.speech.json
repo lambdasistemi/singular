@@ -1,39 +1,113 @@
 {
-  "policy-and-script-roles": [
+  "certification-and-identity-binding": [
     {
-      "text": "The diagram links five roles. The registry identity names the configured application policy as its parameter. That policy mints action tokens named by a hash of the action and its parameters into request UTxOs. Folding runs the representative policy, which places the representative into the application spending script's output; that script releases it into an exact terminal request.",
+      "text": "Certification and identity binding.",
+      "pause": 500
+    },
+    {
+      "text": "Status. This page records the original three-operation design: Insert, Update and Delete requests, an application-minted Withdraw, and the states Absent, Active and Over. The registry-mode model that the Lean proves, the simulator replays and the conformance suite compares against the deployed validators moves a key through seven edges and calls the terminal state Terminal; where the two differ, registry mode is current. How a name moves in the registry shows the seven edges, and the model ledger records what replaced each part of this design.",
       "pause": 400
     },
     {
-      "text": "Roles may share a script hash; nothing requires or forbids it. The interface target is one parameter, the application policy ID, not yet proved sufficient.",
+      "text": "Singular recognizes native requests. Applications decide whether the requested application behavior is authorized. Insert needs evidence of application approval because there is no existing representative NFT leaving an application UTxO. Update/Delete use the application's authorization of that NFT's transfer into the exact request.",
+      "pause": 400
+    }
+  ],
+  "policy-and-script-roles": [
+    {
+      "text": "Policy and script roles.",
+      "pause": 500
+    },
+    {
+      "text": "The configured application policy ID and an application spending script hash are different roles. One multipurpose script could implement both roles, but sharing a hash is neither required nor forbidden. The same distinction applies to the native policy roles. The eventual implementation must say which roles share code and parameters; this document does not assume separate hashes for all of them.",
+      "pause": 400
+    },
+    {
+      "text": "Writing a policy ID into a request is not enough to make it trusted. The accepted certifier must be authenticated and bound to the registry's rules, so an attacker cannot choose a self-issued certificate. The application policy ID is configured as a Singular parameter; the concrete configuration and binding mechanism remain open. No mandatory global allowlist is selected.",
+      "pause": 400
+    },
+    {
+      "text": "The interface target is one application-specific parameter: the application policy ID. Registry identity and native policy settings are separate protocol configuration. Insert initial state and application destination are approved per-request values, not additional fixed application parameters. This target is not yet proved sufficient for a concrete protocol.",
+      "pause": 400
+    },
+    {
+      "text": "Insert and Withdraw use tokens minted directly under this configured application policy. Singular checks the policy ID and recomputes the action-bound asset name. No second mandatory Singular request policy/token is selected for these actions. Update/Delete retain their NFT-based release authorization; any additional request token or issuer for them remains open.",
       "pause": 400
     }
   ],
   "what-insert-exposes-and-binds": [
     {
-      "text": "The proposal exposes registry, operation and key, the approving policy and its evidence, the initial state, the destination and the output requirements. None is substitutable after certification. The action name hashes a domain-separated action and its parameters; Insert and Withdraw carry different tags.",
+      "text": "What Insert exposes and binds.",
+      "pause": 500
+    },
+    {
+      "text": "The logical Insert proposal must expose enough information for certification and the native fold to agree on exactly what will be created:",
+      "pause": 400
+    },
+    {
+      "text": "The registry target, operation, key, initial state and destination must not be substitutable after certification. Native folding verifies that the created NFT output satisfies the certified requirements. These are explicit native output parameters: NFT identity/quantity, destination, datum and value constraints supported by the eventual schema. 'Required effects' is not an unspecified language of arbitrary transaction predicates. Applications needing fresh observations or additional effects at folding fall outside demonstrated precertification coverage unless the native contract explicitly supports them.",
+      "pause": 400
+    },
+    {
+      "text": "The action-token asset name is a hash of a canonical, domain-separated action and its necessary parameters:",
+      "pause": 400
+    },
+    {
+      "text": "The configured application policy approves minting. Singular checks the expected action-bound name. Separate tags prevent treating Insert approval as Withdraw approval. Withdrawal consumes the bound pending Insert without representative minting or a registry update.",
+      "pause": 400
+    },
+    {
+      "text": "Unambiguous canonical encoding and domain separation are required. The specific hash function, binary schema, datum representation, refund economics and token disposal remain open.",
       "pause": 400
     }
   ],
   "validation-without-mutable-registry-observation": [
     {
-      "text": "The sequence diagram shows three moments. At request creation the application policy validates facts, approval and construction without reading the registry root. At release the application spending script authorizes the transfer without reading it either. At consumption Singular's witnesses read the current state, recompute the certificate name and apply the operation.",
+      "text": "Validation without mutable registry observation.",
+      "pause": 500
+    },
+    {
+      "text": "The configured application minting policy validates application facts, approval and the required construction when it mints the Insert asset. Singular checks the resulting certificate and native conditions when it consumes a request. Native format alone cannot authorize Insert; otherwise arbitrary non-application datums could claim keys. It need not read the current registry root or promise that Insert will succeed. Singular checks the current key state when applying the operation.",
+      "pause": 400
+    },
+    {
+      "text": "For Update/Delete, the application spending validator approves the operation-specific transfer of the existing NFT. That spending validator must enforce the resulting request's required format, binding and custody in the release transaction. Singular rechecks its native conditions when consuming the request. Establishing the release need not read the mutable registry UTxO.",
+      "pause": 400
+    },
+    {
+      "text": "Authenticated registry configuration may still be needed. The design must bind the registry, request/representative policies, certifier and application destination without circular script-hash dependencies. No concrete configuration layout or hash-cycle solution has been selected.",
       "pause": 400
     }
   ],
   "which-script-actually-executes": [
     {
-      "text": "Sending an output to a script address does not run that script; it runs when the output is consumed. The table assigns an executing witness to each boundary: minting an action asset, releasing an NFT, folding a request, withdrawing a pending Insert, and any nonzero net change of an action asset.",
+      "text": "Which script actually executes.",
+      "pause": 500
+    },
+    {
+      "text": "Sending an output to a script address does not execute that receiving spending validator. It runs when the output is later consumed. A malformed outsider output can exist at the address without being a valid Singular request. Cardano validation",
       "pause": 400
     },
     {
-      "text": "The mint field records net quantities, so a Delete and Insert on the same asset could cancel; the fold witnesses must still enforce both transitions.",
+      "text": "The division among concrete Singular scripts remains an implementation decision; no extra creation-time request policy is assumed. Recognizing the configured issuer proves where approval came from. It does not prove that an arbitrary application's minting/spending scripts correctly implement their claimed semantics. End-to-end application properties are conditional on those contracts.",
+      "pause": 400
+    },
+    {
+      "text": "If folding has a nonzero net burn under an application action policy, that policy executes in the transaction. A cheap burn branch could avoid repeating expensive semantic checks, but disposal and that branch's contract are still open. Certification can move checks earlier; it does not establish zero application-policy execution or a speedup. Cardano minting policies",
+      "pause": 400
+    },
+    {
+      "text": "The mint field records net quantities per asset, not one ledger action per logical fold operation. If a future construction reuses a representative's asset identity and combines Delete with Insert, their negative/positive quantities could cancel. The fold/request witnesses must still enforce both logical transitions and custody; a mint policy alone cannot be assumed to run when its mint-field entries vanish. This is an inference for Singular's open construction, not a discovered implementation bug. CIP89 discusses net-zero beacon updates and spending-side enforcement. Moving an existing application action token likewise does not rerun its minting policy; token scope and custody must account for that.",
       "pause": 400
     }
   ],
   "decisions-still-required": [
     {
-      "text": "Seven decisions remain, each with a constraint already fixed: configuration authenticity, Update and Delete token construction, encoding and lifecycle, withdrawal and refunds, identity across Delete and reinsert, batching, and implementation and shared libraries.",
+      "text": "Decisions still required.",
+      "pause": 500
+    },
+    {
+      "text": "This is an adopted design with unresolved construction details. There is no implementation, completed proof, universal application language or mandatory general-purpose validation plugin in this repository.",
       "pause": 400
     }
   ],

@@ -2,10 +2,10 @@
 
 {- |
 Module      : Singular.Registry.TxBuilder.Request
-Description : Request transactions, one per C2 edge
+Description : Request transactions, one per seven-admitted-edges edge
 License     : Apache-2.0
 
-Builds the request transaction for one C2 edge (#183). No script
+Builds the request transaction for one seven-admitted-edges edge (#183). No script
 execution occurs -- the transaction simply pays to the per-cage
 request address with an inline 'RequestDatum' naming the edge.
 
@@ -64,7 +64,7 @@ import Singular.Registry.Types
     ( Edge
     )
 
-{- | Build the request transaction for one C2 edge (#183).
+{- | Build the request transaction for one seven-admitted-edges edge (#183).
 
 The edge is the whole shape of the request: it names the trie move and
 its leaf bytes, so no value travels here. The datum's deposit is the
@@ -80,7 +80,7 @@ requestEdgeImpl
     -> ByteString
     -- ^ Key the edge moves
     -> Edge
-    -- ^ The C2 row index (0-6)
+    -- ^ The seven-admitted-edges row index (0-6)
     -> Addr
     -> IO ConwayTx
 requestEdgeImpl cfg view (Coin mf) tid key edge addr = do

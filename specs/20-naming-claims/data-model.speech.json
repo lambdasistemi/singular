@@ -1,36 +1,64 @@
 {
   "naming-fixture": [
     {
-      "text": "Four separate fixture fields: optional payment destination, control address, next-control commitment, and retirement quorum. No economic policy.",
+      "text": "Naming fixture.",
+      "pause": 500
+    },
+    {
+      "text": "Values are fixtures. No price, bond, expiry, refund amount, or other economic policy is stored.",
       "pause": 400
     }
   ],
   "profile-registry": [
     {
-      "text": "identity.json lists generic and naming profiles. Existing generic file hashes stay byte-identical.",
+      "text": "Profile registry.",
+      "pause": 500
+    },
+    {
+      "text": "simulator/identity.json gains a profiles array. The discovered extent must be non-empty and must include:",
+      "pause": 400
+    },
+    {
+      "text": "Identity status remains SIMULATOR-CANDIDATE. Existing generic files hashes stay byte-identical.",
       "pause": 400
     }
   ],
   "claim-and-observation": [
     {
-      "text": "Two pending claims may share a spelling. Observation is unauthenticated, absent, active, or pending.",
+      "text": "Claim and observation.",
+      "pause": 500
+    },
+    {
+      "text": "A pending naming claim is a certified Insert request for a fixture spelling. Two pending claims may share a spelling. An active naming record is a registry Active entry plus the application output whose representative matches and whose fixture fields equal the certified initial record.",
+      "pause": 400
+    },
+    {
+      "text": "Observation results: unauthenticated, absent, active with fixture fields, or pending. This slice does not produce a completed Over through the naming profile.",
       "pause": 400
     }
   ],
   "demo-spelling": [
     {
-      "text": "alice maps to one frozen natural-number key as a demo fixture.",
+      "text": "Demo spelling.",
+      "pause": 500
+    },
+    {
+      "text": "alice maps to one frozen natural-number key. That mapping is a demo fixture, not a canonical encoding of names.",
       "pause": 400
     }
   ],
   "generic-preservation": [
     {
-      "text": "The generic theorem inventory, corpus, statements, and model files remain byte-identical.",
+      "text": "Generic preservation.",
+      "pause": 500
+    },
+    {
+      "text": "The generic theorem debt file remains exactly the frozen forty-one records. The generic Lean corpus file remains byte-identical. lean/Singular/Statements.lean and lean/Singular/Model.lean remain byte-identical.",
       "pause": 400
     }
   ],
   "_source": {
-    "file": "specs/20-naming-claims/data-model.md",
+    "file": "data-model.md",
     "sha256": "9b1c326ff4d94a21676ed9798eb57c3c605b2573ab38e71a0df21df7f18da67d"
   }
 }

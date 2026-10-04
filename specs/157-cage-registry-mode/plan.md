@@ -14,8 +14,8 @@ Order is fixed by dependency, not preference:
    `Request.destination`, `CageDatum.AbsentCustody`, the codec bytes — so the
    blueprint, the Haskell encodings and the conformance rows can be regenerated
    once and every later slice compiles against them.
-2. **The cage** — C2 admissibility, C3 read, C4 admission, C5 delta, C6
-   destinations and custody, C8 coverage; `consumer.ak` deleted in the same
+2. **The cage** — seven-admitted-edges admissibility, read-preserves-intermediate-root read, tree-edge-admission-by-approval admission, mint-matches-edge-deltas delta, token-destinations-and-refunds
+   destinations and custody, request-covers-tip coverage; `consumer.ak` deleted in the same
    commit as the withdrawal requirement, never one without the other.
 3. **The token policies** — `witness(kind, registry)`; `representative.ak`
    retired.
@@ -24,7 +24,7 @@ Order is fixed by dependency, not preference:
 5. **Conformance and docs** — re-baseline, then the naming pages.
 
 Nothing is pushed red to `main`; intermediate red heads on this draft branch are
-permitted (A-002). The PR is stacked on #156's branch and targets it; it is
+permitted (operator answer (A-002)). The PR is stacked on #156's branch and targets it; it is
 re-targeted to `main` when #156 merges.
 
 ## Staffing
@@ -67,32 +67,32 @@ named reason.
 
 | id | binds | Given / When / Then | Observation | Control |
 |---|---|---|---|---|
-| G1 | #156 C1–C3 | Given a request whose value bytes are not `0x00`/`0x01`/`0x02`; when folded; then refused `leaf-codec`. | Rows for `0x03`, empty, `6f766572`, a 32-byte spelling | A permissive decoder accepts `0x03`: the row must then fail |
-| G2 | #156 D2, R2 | Given each of the seven rows of C2 on its before-leaf; when folded with the matching mint; then accepted and the root advances (or, for `Read`, is unchanged). | One accepting test per row | Each row with its delta off by one refuses `delta-mismatch` |
-| G3 | #156 R3, D6 | Given each refused shape of C2; when folded; then refused with its own trace, before any proof is checked. | One refusing test per shape; traces pairwise distinct where R3 says the facts differ | Removing one guard turns its row accepting |
-| G4 | #156 D3 | Given `[Insert j, Read k 0x02, Insert l]`; when folded; then the read's proof verifies against the middle root and the final root equals the two inserts. | Accepting test with the proof built against the intermediate root | The same proof built against the initial root, and against the final root, each refuses |
-| G5 | interface §2 | Given a batch of only reads; when folded; then accepted with `root` unchanged. | Accepting test, two reads of one terminal key | Zero consumed requests refuses `empty-fold` (existing `prop_empty_modify_refuses`, kept) |
+| request-whose-value-bytes-not-x00-x01 | #156 leaf-codec-and-operations–read-preserves-intermediate-root | Given a request whose value bytes are not `0x00`/`0x01`/`0x02`; when folded; then refused `leaf-codec`. | Rows for `0x03`, empty, `6f766572`, a 32-byte spelling | A permissive decoder accepts `0x03`: the row must then fail |
+| seven-rows-on-its-before-leaf-folded | #156 singular-edge-singular-delta, seven-edges-interface | Given each of the seven rows of seven-admitted-edges on its before-leaf; when folded with the matching mint; then accepted and the root advances (or, for `Read`, is unchanged). | One accepting test per row | Each row with its delta off by one refuses `delta-mismatch` |
+| refused-shape-folded-refused-its-own-trace | #156 refused-combinations-as-complement, singular-step-refusal-reasons | Given each refused shape of seven-admitted-edges; when folded; then refused with its own trace, before any proof is checked. | One refusing test per shape; traces pairwise distinct where refused-combinations-as-complement says the facts differ | Removing one guard turns its row accepting |
+| insert-j-read-k-x02-insert-l | #156 singular-read-root-threading | Given `[Insert j, Read k 0x02, Insert l]`; when folded; then the read's proof verifies against the middle root and the final root equals the two inserts. | Accepting test with the proof built against the intermediate root | The same proof built against the initial root, and against the final root, each refuses |
+| batch-reads-folded-accepted-root-unchanged | interface §2 | Given a batch of only reads; when folded; then accepted with `root` unchanged. | Accepting test, two reads of one terminal key | Zero consumed requests refuses `empty-fold` (existing `prop_empty_modify_refuses`, kept) |
 
 ### Admission
 
 | id | binds | Given / When / Then | Observation | Control |
 |---|---|---|---|---|
-| A1 | #156 D4, I-P1 | Given a tree-edge request whose UTxO carries no asset under `application_policy`; when folded; then refused `no-approval`. | One refusing test per tree edge | The same request with the approval accepts |
-| A2 | D-APPROVAL | Given an approval whose name is not `blake2b_256(edge ‖ key ‖ owner ‖ destination)` of this request; when folded; then refused `approval-binding`. | Rows: wrong edge, wrong key, wrong owner, wrong destination | The correctly bound name accepts |
-| A3 | #156 D4 | Given a `Read` request with no approval; when folded; then accepted. | Accepting test | An approval under a foreign policy on a tree edge refuses `no-approval` |
-| A4 | #156 I-P1 | Given the eight pinned fields; when a `Modify` changes any of the seven non-root fields; then refused. | One refusing test per field | Preserving all seven accepts (existing `modify_altered_*` rows generalised) |
+| tree-change-needs-approval | #156 singular-admits-config-applicationpolicy, tree-change-requires-approval | Given a tree-edge request whose UTxO carries no asset under `application_policy`; when folded; then refused `no-approval`. | One refusing test per tree edge | The same request with the approval accepts |
+| approval-binds-request | approval-asset-binding | Given an approval whose name is not `blake2b_256(edge ‖ key ‖ owner ‖ destination)` of this request; when folded; then refused `approval-binding`. | Rows: wrong edge, wrong key, wrong owner, wrong destination | The correctly bound name accepts |
+| read-needs-no-approval | #156 singular-admits-config-applicationpolicy | Given a `Read` request with no approval; when folded; then accepted. | Accepting test | An approval under a foreign policy on a tree edge refuses `no-approval` |
+| configuration-pins-preserved | #156 tree-change-requires-approval | Given the eight pinned fields; when a `Modify` changes any of the seven non-root fields; then refused. | One refusing test per field | Preserving all seven accepts (existing `modify_altered_*` rows generalised) |
 
 ### Delta and mint
 
 | id | binds | Given / When / Then | Observation | Control |
 |---|---|---|---|---|
-| M1 | #156 D2, I-W1 | Given a fold of `Insert(0x01) k`; when the mint carries two active tokens for `k`, or one for `k` and one for `j`; then refused `delta-mismatch`. | Two refusing tests | Exactly one accepts |
-| M2 | #156 I-W2, I-W4 | Given a leaf `0x01` for `k`; when a fold mints an absent token for `k`; then refused — there is no C2 row for it. | Refusing test | `Insert(0x00)` on an unknown key accepts |
-| M3 | #156 I-S1 | Given a leaf `0x01` for `k`; when `Read(0x01) k` is folded; then refused `read-non-terminal`. | Refusing test | `Read(0x02)` on a `0x02` leaf accepts |
-| M4 | #156 I-S3, I-W4 | Given `Update(0x00, 0x01) k`; when the mint carries +1 active and no −1 absent; then refused `delta-mismatch`. | Refusing test | −1 absent, +1 active accepts |
-| M5 | #156 D2 | Given any fold; when any asset moves under a token policy that no consumed request entails; then refused `delta-mismatch`. | Refusing test with a stray terminal mint | — (M1 is the control) |
+| fold-insert-x01-k-mint-carries-two | #156 singular-edge-singular-delta, active-witness-unique | Given a fold of `Insert(0x01) k`; when the mint carries two active tokens for `k`, or one for `k` and one for `j`; then refused `delta-mismatch`. | Two refusing tests | Exactly one accepts |
+| leaf-x01-for-k-fold-mints-absent | #156 absent-witness-unique, witness-kinds-exclude | Given a leaf `0x01` for `k`; when a fold mints an absent token for `k`; then refused — there is no seven-admitted-edges row for it. | Refusing test | `Insert(0x00)` on an unknown key accepts |
+| leaf-x01-for-k-read-x01-k | #156 terminal-attestation-sound | Given a leaf `0x01` for `k`; when `Read(0x01) k` is folded; then refused `read-non-terminal`. | Refusing test | `Read(0x02)` on a `0x02` leaf accepts |
+| update-x00-x01-k-mint-carries-active | #156 supply-matches-leaf-state, witness-kinds-exclude | Given `Update(0x00, 0x01) k`; when the mint carries +1 active and no −1 absent; then refused `delta-mismatch`. | Refusing test | −1 absent, +1 active accepts |
+| any-fold-any-asset-moves-under-token | #156 singular-edge-singular-delta | Given any fold; when any asset moves under a token policy that no consumed request entails; then refused `delta-mismatch`. | Refusing test with a stray terminal mint | — (fold-insert-x01-k-mint-carries-two is the control) |
 
-M1–M4 are the four #154 mutants at Aiken level; the ledger records each as a
+fold-insert-x01-k-mint-carries-two–update-x00-x01-k-mint-carries-active are the four #154 mutants at Aiken level; the ledger records each as a
 refusing test with its accepting control. They are not "the mutated validator
 fails to compile".
 
@@ -100,49 +100,49 @@ fails to compile".
 
 | id | binds | Given / When / Then | Observation | Control |
 |---|---|---|---|---|
-| T1 | D-DEST | Given `Insert(0x01) k` naming destination `(addr, h)`; when the fold puts the active token at another address, or at `addr` with a datum of another hash, or in two outputs; then refused `destination`. | Three refusing tests | One output at `addr` with datum hashing to `h` accepts |
-| T2 | D-DEST | Given `Read(0x02) k` naming `(addr, h)`; when the terminal token lands elsewhere; then refused `destination`. | Refusing test | Named output accepts |
-| T3 | D-CUSTODY | Given `Insert(0x00) k` with refund `r`; when the absent token is not in exactly one output at the cage's address with inline `AbsentCustody { k, r }`; then refused `absent-custody`. | Rows: wallet output; cage output with wrong key; wrong refund; extra asset | The exact custody output accepts |
-| T4 | R-ADA, D-CUST | Given custody `AbsentCustody { k, r }` holding `L` lovelace; when `Update(0x00,0x01) k` or `Delete(0x00) k` is folded; then the custody UTxO is spent and an output at `r` receives at least `L`. | Two accepting tests with inserter ≠ booker | Paying `r` less than `L`, paying the booker's destination instead, or leaving custody unspent, each refuses `refund` |
-| T5 | D-CUSTODY | Given a custody UTxO; when spent in any transaction that is not a `Modify` consuming a request for its key with one of the two consuming operations; then refused. | Refusing tests: plain spend; `Modify` for another key; `Modify` with `Read` | T4 is the control |
+| active-token-requested-destination | request-destination-binding | Given `Insert(0x01) k` naming destination `(addr, h)`; when the fold puts the active token at another address, or at `addr` with a datum of another hash, or in two outputs; then refused `destination`. | Three refusing tests | One output at `addr` with datum hashing to `h` accepts |
+| terminal-token-requested-destination | request-destination-binding | Given `Read(0x02) k` naming `(addr, h)`; when the terminal token lands elsewhere; then refused `destination`. | Refusing test | Named output accepts |
+| absent-token-registry-custody | absent-custody-datum | Given `Insert(0x00) k` with refund `r`; when the absent token is not in exactly one output at the cage's address with inline `AbsentCustody { k, r }`; then refused `absent-custody`. | Rows: wallet output; cage output with wrong key; wrong refund; extra asset | The exact custody output accepts |
+| spent-custody-refunds-inserter | custody-lovelace-refund, absent-custody-datum | Given custody `AbsentCustody { k, r }` holding `L` lovelace; when `Update(0x00,0x01) k` or `Delete(0x00) k` is folded; then the custody UTxO is spent and an output at `r` receives at least `L`. | Two accepting tests with inserter ≠ booker | Paying `r` less than `L`, paying the booker's destination instead, or leaving custody unspent, each refuses `refund` |
+| custody-spend-requires-consuming-fold | absent-custody-datum | Given a custody UTxO; when spent in any transaction that is not a `Modify` consuming a request for its key with one of the two consuming operations; then refused. | Refusing tests: plain spend; `Modify` for another key; `Modify` with `Read` | spent-custody-refunds-inserter is the control |
 
 ### Coverage and retraction
 
 | id | binds | Given / When / Then | Observation | Control |
 |---|---|---|---|---|
-| V1 | C8 (was R1) | Given a consumed request carrying less lovelace than its tip; when folded; then refused `tip-coverage`. | Refusing test | Funded request accepts (ported from `r1_*`) |
-| V2 | C9 | Given a `Read` request in phase 2; when retracted by its owner; then accepted; by another signer, refused. | Accepting and refusing tests | An `Update` retract still refuses `withdraw-insert-only` |
+| request-covers-tip | request-covers-tip | Given a consumed request carrying less lovelace than its tip; when folded; then refused `tip-coverage`. | Refusing test | Funded request accepts (ported from `r1_*`) |
+| terminal-read-owner-retraction | owner-retraction | Given a `Read` request in phase 2; when retracted by its owner; then accepted; by another signer, refused. | Accepting and refusing tests | An `Update` retract still refuses `withdraw-insert-only` |
 
 ## Invariant rows — the token policies
 
 | id | binds | Given / When / Then | Observation | Control |
 |---|---|---|---|---|
-| P1 | interface §5 | Given `witness(kind, registry)` for each kind; when minted or burned in a transaction that does not spend the registry state token with `Modify`; then refused `no-fold`. | Three refusing tests | Inside a fold, in the cage's quantity, accepts |
-| P2 | I-W3 | Given a terminal token; when burned in a transaction with no fold at all; then accepted. | Accepting test | An active or absent burn outside a fold refuses `no-fold` |
-| P3 | D-ASSET | Given a fold that mints under a token policy an asset whose name is not the request's key; when validated; then the cage refuses `delta-mismatch`. | Refusing test | Key-named asset accepts |
+| witness-kind-registry-for-kind-minted-or | interface §5 | Given `witness(kind, registry)` for each kind; when minted or burned in a transaction that does not spend the registry state token with `Modify`; then refused `no-fold`. | Three refusing tests | Inside a fold, in the cage's quantity, accepts |
+| terminal-token-burned-in-transaction-no-fold | terminal-witnesses-plural | Given a terminal token; when burned in a transaction with no fold at all; then accepted. | Accepting test | An active or absent burn outside a fold refuses `no-fold` |
+| fold-that-mints-under-token-policy-asset | token-name-is-registry-key | Given a fold that mints under a token policy an asset whose name is not the request's key; when validated; then the cage refuses `delta-mismatch`. | Refusing test | Key-named asset accepts |
 
 ## Invariant rows — naming
 
 | id | binds | Given / When / Then | Observation | Control |
 |---|---|---|---|---|
-| N1 | R-NM4 `insertActive` | Given `Approve { insertActive, k, controller, (record addr, datum hash) }`; when minted with the controller's signature; then accepted; without it, refused `controller-signature`. | Accepting and refusing tests | Wrong datum hash in `destination` yields a different name: the fold then refuses A2 |
-| N2 | R-NM4 `updateActive` | As N1 on a `0x00` leaf. | Same pair | Same |
-| N3 | R-NM4 `insertAbsent` | Given `Approve { insertAbsent, k, refund, - }`; when minted with no signature; then accepted. | Accepting test | — (N4 is the negative) |
-| N4 | R-NM4 `deleteAbsent` | Given custody `AbsentCustody { k, r }` as a reference input; when `Approve { deleteAbsent, k, r', - }` is minted; then accepted iff `r' = r` and `r`'s payment key signs. | Accepting test; refusing: wrong `r'`; right `r'` unsigned; no reference input | — |
-| N5 | R-NM4 `deleteActive` | Given `Approve { deleteActive, .. }`; when minted under any signatures; then refused `never-certified`. | Refusing test | — |
-| N6 | D-TERMINATE | Given a `Retire` proving the committed recovery key (reveal + signature) or a distinct-member quorum (LT02); when the same transaction mints `Approve { updateTerminal, k, .. }` and creates the completion request carrying it; then accepted. Below quorum (LT03), refused. **The current control key alone: refused `retire-needs-recovery-key`** (R1). | Four tests: recovery-key accepts; quorum accepts; below quorum refuses; control key alone refuses | A terminate approval minted with no `Retire` in the transaction refuses `retire-required`; a wrong reveal refuses as in `lr02` |
-| T6 | C6 (R4) | Given a folded booking or read whose request carried value `V` and tip `t`; when the fold completes; then the destination output carries at least `V − t`. | Accepting test with the exact residual | A fold that keeps the residual for the folder, or under-funds the destination output, refuses `deposit-returned` |
-| N7 | N3 fold-created record | Given an `insertActive` fold; when the record output at the application address carries the bound datum and exactly the active token; then accepted (cage T1). Given a record with a second asset; refused `record-single-asset`. | Accepting and refusing tests | — |
-| N8 | N4 completion | Given completion-only custody holding the active token for `k` and its co-created `Update(0x01,0x02)` request; when folded; then custody is spent, the token burned, the leaf `0x02`. | Accepting test (LT rows ported) | A completion whose burn is not the held token refuses (existing `held_burned_exactly_once`) |
-| N9 | NM2 | Given a live record; when `Maintain` or `Recover` runs; then the registry state is not an input and the root is unchanged. | Existing LM/LR rows, re-run | A `Maintain` that spends the state refuses |
-| N10 | #156 T1 | Given a `0x02` leaf; when any **tree-changing** request for `k` is folded — `Insert`, `Update`, `Delete` with any value — then refused (C2, `edge-from-terminal`). `Read(0x02)` for `k` is **accepted** and mints `+1 terminal` (C2, C3, G5, M3): T1 is stated for every edge but `witnessTerminal`. | Rows for each tree-changing operation on `0x02`; one accepting `Read(0x02)` row | Admitting any tree-changing operation on `0x02` turns its row accepting; refusing the read turns G5 red |
+| controller-authorizes-active-insertion | naming-approval-rules `insertActive` | Given `Approve { insertActive, k, controller, (record addr, datum hash) }`; when minted with the controller's signature; then accepted; without it, refused `controller-signature`. | Accepting and refusing tests | Wrong datum hash in `destination` yields a different name: the fold then refuses approval-binds-request |
+| controller-authorizes-absent-to-active-update | naming-approval-rules `updateActive` | As controller-authorizes-active-insertion on a `0x00` leaf. | Same pair | Same |
+| absent-insertion-needs-no-signature | naming-approval-rules `insertAbsent` | Given `Approve { insertAbsent, k, refund, - }`; when minted with no signature; then accepted. | Accepting test | — (refund-owner-authorizes-absent-deletion is the negative) |
+| refund-owner-authorizes-absent-deletion | naming-approval-rules `deleteAbsent` | Given custody `AbsentCustody { k, r }` as a reference input; when `Approve { deleteAbsent, k, r', - }` is minted; then accepted iff `r' = r` and `r`'s payment key signs. | Accepting test; refusing: wrong `r'`; right `r'` unsigned; no reference input | — |
+| active-deletion-never-certified | naming-approval-rules `deleteActive` | Given `Approve { deleteActive, .. }`; when minted under any signatures; then refused `never-certified`. | Refusing test | — |
+| recovery-authorizes-retirement | recovery-authorizes-retirement | Given a `Retire` proving the committed recovery key (reveal + signature) or a distinct-member quorum (distinct-quorum control); when the same transaction mints `Approve { updateTerminal, k, .. }` and creates the completion request carrying it; then accepted. Below quorum (below-quorum control), refused. **The current control key alone: refused `retire-needs-recovery-key`** (the recovery authorization ruling). | Four tests: recovery-key accepts; quorum accepts; below quorum refuses; control key alone refuses | A terminate approval minted with no `Retire` in the transaction refuses `retire-required`; a wrong reveal refuses as in `lr02` |
+| request-deposit-returned | token-destinations-and-refunds | Given a folded booking or read whose request carried value `V` and tip `t`; when the fold completes; then the destination output carries at least `V − t`. | Accepting test with the exact residual | A fold that keeps the residual for the folder, or under-funds the destination output, refuses `deposit-returned` |
+| fold-created-record-holds-active-token | absent-insertion-needs-no-signature fold-created record | Given an `insertActive` fold; when the record output at the application address carries the bound datum and exactly the active token; then accepted (cage active-token-requested-destination). Given a record with a second asset; refused `record-single-asset`. | Accepting and refusing tests | — |
+| retirement-custody-burns-held-token | refund-owner-authorizes-absent-deletion completion | Given completion-only custody holding the active token for `k` and its co-created `Update(0x01,0x02)` request; when folded; then custody is spent, the token burned, the leaf `0x02`. | Accepting test (retirement cases ported) | A completion whose burn is not the held token refuses (existing `held_burned_exactly_once`) |
+| local-record-change-preserves-registry | local-record-update-preserves-registry | Given a live record; when `Maintain` or `Recover` runs; then the registry state is not an input and the root is unchanged. | Existing maintenance and recovery rows, re-run | A `Maintain` that spends the state refuses |
+| terminal-key-refuses-tree-change | #156 terminal-key-cannot-change | Given a `0x02` leaf; when any **tree-changing** request for `k` is folded — `Insert`, `Update`, `Delete` with any value — then refused (seven-admitted-edges, `edge-from-terminal`). `Read(0x02)` for `k` is **accepted** and mints `+1 terminal` (seven-admitted-edges, read-preserves-intermediate-root, batch-reads-folded-accepted-root-unchanged, leaf-x01-for-k-read-x01-k): terminal-key-cannot-change is stated for every edge but `witnessTerminal`. | Rows for each tree-changing operation on `0x02`; one accepting `Read(0x02)` row | Admitting any tree-changing operation on `0x02` turns its row accepting; refusing the read turns batch-reads-folded-accepted-root-unchanged red |
 
 ## Invariant rows — consumers and docs
 
 | id | Given / When / Then | Observation | Control |
 |---|---|---|---|
-| X1 | Given the new blueprint; when CS01, CS02, CS08 and the address rows run; then they pass against the eight-field datum, `Read`, `destination` and `AbsentCustody`, and the page lists old and new fields side by side as a contract change. | `blueprint-check`, `param-check`, the devnet rows | The six-field encoding demanded fails the run |
-| X2 | Given `docs/naming-lifecycle.md`, `docs/naming-demo.md`, `docs/recovery-retirement.md`; when read; then each carries the state table, the seven edges, the four laws, "no application script at fold time", and the retirement section states the two known weaknesses (the quorum is fixed for the life of the name; the quorum can retire while the controller is present) and that retirement needs the recovery key or the quorum; speech stamped. | `just check-presentation` exit 0 | An unstamped page fails |
+| compiled-wire-conformance | Given the new blueprint; when blueprint-encoding-round-trip, submitted-datum-byte-round-trip, state-fields-chain-round-trip and the address rows run; then they pass against the eight-field datum, `Read`, `destination` and `AbsentCustody`, and the page lists old and new fields side by side as a contract change. | `blueprint-check`, `param-check`, the devnet rows | The six-field encoding demanded fails the run |
+| published-naming-lifecycle | Given `docs/naming-lifecycle.md`, `docs/naming-demo.md`, `docs/recovery-retirement.md`; when read; then each carries the state table, the seven edges, the four laws, "no application script at fold time", and the retirement section states the two known weaknesses (the quorum is fixed for the life of the name; the quorum can retire while the controller is present) and that retirement needs the recovery key or the quorum; speech stamped. | `just check-presentation` exit 0 | An unstamped page fails |
 
 ## Trace-label table
 
@@ -152,7 +152,7 @@ cage can reach, and that no Aiken trace maps to two reasons.
 
 ## Gates
 
-**Gate S — this ticket, focused.** `just test` and `just script-identity` in
+**acceptance checks — this ticket, focused.** `just test` and `just script-identity` in
 both partitions; the Haskell encoding round-trips against the regenerated
 blueprint (`blueprint-check`); `consumer.ak` absent from the tree; the
 trace-label table total; `just check-presentation`; the diff inside
@@ -163,13 +163,13 @@ commit owner starts; blind-audited per `gate-script`.
 
 **Ticket gate.** `nix develop --quiet -c just ci` exit 0 on the head, green
 GitHub CI on the exact pushed head, fresh Opus `commit-auditor` report bound to
-candidate and base, mutants M1–M4 each recorded as refusing test plus control.
+candidate and base, mutants fold-insert-x01-k-mint-carries-two–update-x00-x01-k-mint-carries-active each recorded as refusing test plus control.
 
 ## Evidence required at acceptance
 
 - `just test` and `just script-identity` receipts in both partitions;
 - the regenerated `script-identity.json` hashes in the handback;
 - the trace-label table;
-- the mutant ledger (M1–M4) as refusing tests with controls;
+- the mutant ledger (fold-insert-x01-k-mint-carries-two–update-x00-x01-k-mint-carries-active) as refusing tests with controls;
 - the conformance re-baseline receipts and the contract-change section;
 - fresh independent audit report; green CI on the pushed head.

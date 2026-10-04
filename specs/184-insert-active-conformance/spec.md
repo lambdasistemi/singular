@@ -10,7 +10,7 @@ ruling rather than changing the model.
 ## Runnable story
 
 As cardano-keri, I run the conformance workflow's generic-row step on a
-registry booted with the parameterless open application. CG21 folds one
+registry booted with the parameterless open application. register-active-key folds one
 `insertActive` to a named wallet and emits one candidate-bound receipt that
 reports the fold, delivered asset, same-key refusal and keyed-mint refusal,
 including an accepting control for each refusal.
@@ -18,7 +18,7 @@ including an accepting control for each refusal.
 ```mermaid
 flowchart LR
   Boot[Open registry boot] --> Fold[Accepted insertActive fold]
-  Fold --> Receipt[CG21 candidate-bound receipt]
+  Fold --> Receipt[register-active-key candidate-bound receipt]
   Fold --> Duplicate[Same-key refusal plus fresh-key control]
   Fold --> Mint[Wrong keyed mint refusal plus correct control]
   Duplicate --> Receipt
@@ -30,27 +30,27 @@ flowchart LR
 
 | id | Lean identity | accepted meaning |
 |---|---|---|
-| L184-1 | `Singular.Statements.insert_active_transaction_row` | The accepted fold has the modeled inputs and outputs, exactly one `(activePolicy,key)` mint at the requested address and inline datum, no refunds or signers, a covered tip, non-root configuration preservation, and a root committed to the resulting trie. |
-| L184-2 | `Singular.Statements.fold_batch_claimed_mint_by_kind_key` | A reachable two-distinct-key batch whose claimed mint agrees per kind but disagrees per `(kind,key)` is refused `net-mint-mismatch`. |
-| L184-3 | `Singular.Statements.occupancy_free_key_succeeds` | A fresh admissible key accepts; this is the control distinguishing same-key occupancy from a generally unusable request path. |
-| L184-4 | `Singular.Statements.active_witness_unique` | The accepted result carries exactly one active witness for the inserted key. |
+| singular-statements-insert-active-transaction-row | `Singular.Statements.insert_active_transaction_row` | The accepted fold has the modeled inputs and outputs, exactly one `(activePolicy,key)` mint at the requested address and inline datum, no refunds or signers, a covered tip, non-root configuration preservation, and a root committed to the resulting trie. |
+| singular-statements-fold-batch-claimed-mint-by | `Singular.Statements.fold_batch_claimed_mint_by_kind_key` | A reachable two-distinct-key batch whose claimed mint agrees per kind but disagrees per `(kind,key)` is refused `net-mint-mismatch`. |
+| singular-statements-occupancy-free-key-succeeds | `Singular.Statements.occupancy_free_key_succeeds` | A fresh admissible key accepts; this is the control distinguishing same-key occupancy from a generally unusable request path. |
+| singular-statements-active-witness-unique | `Singular.Statements.active_witness_unique` | The accepted result carries exactly one active witness for the inserted key. |
 
 ## Acceptance lines
 
 | line | severity | observable result |
 |---|---|---|
-| A184-FOLD | BLOCKING | CG21 accepts one fold under the open policy and the receipt names the open policy and parameter count, fold transaction, active policy/key, minted assets, requested and observed destination, and exactly one delivered active asset. |
-| A184-CONJUNCTS | BLOCKING | The receipt asserts separately that refunds and signers are empty, destination datum bytes bind to the request, the request covers the tip, only the registry root changes, and that root commits the landed trie. |
-| A184-DUPLICATE | BLOCKING | A second insert at the same committed key is refused on chain with state-script attribution and a fresh-key transaction through the same builder accepts in the same run. The compiled validator suite owns the `key-exists` name because ledger logs may be empty. |
-| A184-KEYED-MINT | BLOCKING | Two distinct keys with claimed `2/0` and actual `1/1` distribution are refused on chain with state-script attribution, while the same keys with correct `1/1` distribution accept in the same run. The compiled validator suite owns the `net-mint-mismatch` name. |
-| A184-SEQUENCE | BLOCKING | Every accepted fold is committed into the manager trie before the next proof is built; no control or refusal is proved against the boot root after an earlier fold landed. |
-| A184-WIRING | BLOCKING | CG21 is in the generic-row invocation, expected receipt set, accounting and verdict assertions; the old #184 mapping comment is removed; the workflow step and root `just ci` both exit 0. |
-| A184-COPIES | ADVISORY, required | `rows.json`, workflow assertions, receipt schema and tests, consumer page and speech all describe the same executed row and honest trace limit. No residual is authorized for this acceptance line. |
+| open-registration-fold | BLOCKING | register-active-key accepts one fold under the open policy and the receipt names the open policy and parameter count, fold transaction, active policy/key, minted assets, requested and observed destination, and exactly one delivered active asset. |
+| registration-transaction-conjuncts | BLOCKING | The receipt asserts separately that refunds and signers are empty, destination datum bytes bind to the request, the request covers the tip, only the registry root changes, and that root commits the landed trie. |
+| duplicate-key-refusal-control | BLOCKING | A second insert at the same committed key is refused on chain with state-script attribution and a fresh-key transaction through the same builder accepts in the same run. The compiled validator suite owns the `key-exists` name because ledger logs may be empty. |
+| keyed-mint-distribution-control | BLOCKING | Two distinct keys with claimed `2/0` and actual `1/1` distribution are refused on chain with state-script attribution, while the same keys with correct `1/1` distribution accept in the same run. The compiled validator suite owns the `net-mint-mismatch` name. |
+| proofs-use-latest-committed-root | BLOCKING | Every accepted fold is committed into the manager trie before the next proof is built; no control or refusal is proved against the boot root after an earlier fold landed. |
+| runner-receipts-and-workflow-agree | BLOCKING | register-active-key is in the generic-row invocation, expected receipt set, accounting and verdict assertions; the old #184 mapping comment is removed; the workflow step and root `just ci` both exit 0. |
+| documentation-and-evidence-agree | ADVISORY, required | `rows.json`, workflow assertions, receipt schema and tests, consumer page and speech all describe the same executed row and honest trace limit. No residual is authorized for this acceptance line. |
 
 ## Receipt truth contract
 
 The optional edge field remains backward-compatible for other receipts, but
-it is mandatory and complete for CG21. The loader must reject a CG21 receipt
+it is mandatory and complete for register-active-key. The loader must reject a register-active-key receipt
 that omits the field, either refusal control, any identity/delivery field, or
 any fine-conjunct observation. A receipt reports observed transaction ids and
 chain values; it never invents a validator trace that the ledger did not
@@ -58,13 +58,13 @@ surface.
 
 ## Copies and non-goals
 
-Required copies are `conformance/rows.json` CG21 fields, the conformance
+Required copies are `conformance/rows.json` register-active-key fields, the conformance
 runner and receipt surface, the generic-row workflow invocation/accounting and
 verdict table, receipt-schema tests, and `docs/consumer-conformance.md` with its
 speech companion. `offchain/lib/Singular/Registry/Receipt.hs` changes only if
 the existing conformance receipt type cannot carry the required evidence.
 
-Forbidden: `lean/**`, `onchain/**`, `simulator/**`, request wire #183, NYA,
+Forbidden: `lean/**`, `onchain/**`, `simulator/**`, request wire #183, Naming Your Assets,
 and every other edge row. The existing limitation remains explicit:
 `key-exists` also covers malformed exclusion proofs, so that refusal alone does
 not prove occupancy.

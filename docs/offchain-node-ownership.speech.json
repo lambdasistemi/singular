@@ -1,98 +1,188 @@
 {
+  "node-module-ownership": [
+    {
+      "text": "Node module ownership.",
+      "pause": 500
+    },
+    {
+      "text": "A contributor changing how the registry's off-chain runner talks to a cardano node — a new mode, a different wallet, a longer confirmation window, a change to what a runner may leave behind when it fails — wants one obvious owner per concern, so the change is reviewed in one place and process state can never quietly exist twice. This page maps the node runtime to its owners: what each module is responsible for, where common changes land, the lifetimes a runner's process state keeps, and what the checks establish about the split.",
+      "pause": 400
+    }
+  ],
   "one-owner-per-runtime-concern": [
     {
-      "text": "A contributor changing how the runner talks to a cardano node wants one obvious owner per concern, so a change is reviewed in one place and process state can never quietly exist twice.",
+      "text": "One owner per runtime concern.",
+      "pause": 500
+    },
+    {
+      "text": "The ten owners and the two chain-facing types they read live in one package-private internal library: seven for the runner's session, and three for reading and writing the chain through one interface. The public module Singular.Registry.Node is a facade: it owns nothing, keeps the export list the library had before the split, adds only the five wait names, and every original caller — the focused node tests, the journey runner, the end-to-end suite, the shipped commands — keeps compiling against it unchanged.",
       "pause": 400
     },
     {
-      "text": "The diagram shows callers at the top importing the node facade unchanged. The facade owns nothing and re-exports the export list it had before the split, plus five wait names. Below it, the seven session owners of the ten in one package-private internal library: options for mode and environment, wallet for keys and addresses, indexer for the chain follower and indexed reads, funding for the pre-run floor, session for the connection lifecycle, confirmation for waits and deadlines, and wait for the bound every wait on a submitted transaction obeys. Ledger and provider sit beside them in the private library and feed the indexer and the funding check. Every arrow points downward: options depends on nothing local, session brackets the indexer and funding, confirmation reads session and indexer, indexer, session and confirmation all wait under the wait owner, which depends on nothing local, and nothing imports upward.",
-      "pause": 500
+      "text": "The dependency direction is acyclic and downward: options and the wait owner depend on nothing local, wallet reads options, the indexer and the funding check read wallet and options, the session brackets the indexer and the funding check, and confirmation reads the session and the indexer — all three wait under the wait owner's bound — never the other way. Ledger and provider sit beside the owners in the private library because the owners read them; the public library re-exports both under their original import paths, so a module that imported Singular.Registry.Ledger before the split still does.",
+      "pause": 400
     },
     {
-      "text": "A second diagram audience: the cage test observers. They depend on the session and the indexer through the same compiled instance the facade uses, and read the public names through the facade.",
+      "text": "The three chain owners sit behind one read interface and one write capability, and the singular command line reaches them through a single composition module of its own. Its commands are handed the read interface, the signed-only write and the confirmation wait; only the composition module, the public facade and the journey's lifecycle funding may name the node backend, which a source check over the off-chain command and library sources enforces in CI.",
+      "pause": 400
+    },
+    {
+      "text": "Each owner is package-private — not importable from the public library — so it has no page in the generated API reference: the reference documents the public library, and Haddock is not run over the owners on their own. Each owner's implementation is one source file, linked below on the default branch, and the generated public pages that re-export an owner's names link to its entry here:",
+      "pause": 400
+    },
+    {
+      "text": "Options — mode flags, environment precedence and the shared named-diagnostic helper — source.",
       "pause": 300
     },
     {
-      "text": "The table then names each owner's responsibility in one line, from mode parsing through key handling, following, funding, connection, confirmation and the wait bound, then the chain owners: the node adapter, where one view is one acquired state with its network, era, slot and block hash; the in-memory chain behind the same read interface; the write capability, which takes signed transactions only; and the phase log, the opt-in timestamped log of a command's phases, which also wraps the read interface to write one line for each view and each read.",
+      "text": "Wallet — keys, addresses and the funding identity — source.",
       "pause": 300
     },
     {
-      "text": "A second diagram shows how the singular commands reach those three. The commands are handed reads, the signed write and the confirmation by the command line's own composition module. Composition opens the session and wraps its submitter into the signed-only write; the session builds the node adapter's read interface. The provider's read interface is implemented by the node adapter and by the in-memory chain, and the transaction builders take one view of it. Only composition, the public facade and the journey's lifecycle funding may name the node backend, and a source check in CI enforces that.",
-      "pause": 500
+      "text": "Indexer — the chain follower, the funding sweep, the indexer adapter on a followed devnet, the node-read guard and the address-read counter — source.",
+      "pause": 300
     },
     {
-      "pause": 450,
-      "text": "The owners are package-private, so the generated API reference, which documents the public library, has no page for them. Each owner's entry links its one source file on the default branch, and the generated public pages that re-export an owner's names link to that entry."
+      "text": "IndexGate — the gate the follower writes the index through, the index's applied point, and holding the index for one view — source.",
+      "pause": 300
+    },
+    {
+      "text": "IndexerView — the indexer adapter: address reads from the index and node reads at one chain point, and its named refusals — source.",
+      "pause": 300
+    },
+    {
+      "text": "Funding — the pre-run funding floor and its refusal diagnostic — source.",
+      "pause": 300
+    },
+    {
+      "text": "Session — the connection lifecycle and the bracketed runner session — source.",
+      "pause": 300
+    },
+    {
+      "text": "Confirmation — confirmation waits, deadlines and windows — source.",
+      "pause": 300
+    },
+    {
+      "text": "Wait — the wait stages, the named wait failure, the whole-wait bound, the bounded submitter and the wait-aware catch — source.",
+      "pause": 300
+    },
+    {
+      "text": "View — the node adapter: one read view per acquired LocalStateQuery state — source.",
+      "pause": 300
+    },
+    {
+      "text": "Memory — the deterministic in-memory chain behind the same read interface — source.",
+      "pause": 300
+    },
+    {
+      "text": "PhaseLog — the opt-in, append-only, timestamped log of a command's phases, and the logged read interface that writes one line for each view acquisition and each read through it — source.",
+      "pause": 300
+    },
+    {
+      "text": "Submit — the write capability, which takes signed transactions only — source.",
+      "pause": 300
     }
   ],
   "where-common-changes-land": [
     {
-      "text": "Common changes each land in exactly one module. Mode flags and environment precedence: options. Wallet derivation, key handling and the funding identity: wallet. Connection setup, sockets and the session bracket: session. Following, the genesis funding sweep, indexed reads and the node-read guard: indexer. What a run must hold before starting and the refusal diagnostic: funding. Confirmation waits, deadlines and windows: confirmation. What a bounded wait is, how its failure reads, the submission bound, or which failures a classifier must let through: wait, and no other module adds a timeout of its own. A shared named failure the runner prints goes to the diagnostic helper in options, the one cross-owner utility. How a view is acquired from a node, its chain point, and the origin and lost-connection refusals: view; the same over the in-memory chain: memory. What may be sent to the node: submit. How the singular commands reach a node and which settings they read: the command line's composition module, the one allowed to name the backend; any other module that must name it is added to the confinement allowlist with its reason, or the check fails.",
+      "text": "Where common changes land.",
       "pause": 500
+    },
+    {
+      "text": "A mode flag, an environment variable or their precedence changes: Node.Options; the facade re-exports the result unchanged.",
+      "pause": 300
+    },
+    {
+      "text": "Wallet derivation, key handling or the funding identity changes: Node.Wallet. Key secrecy rules live there and nowhere else.",
+      "pause": 300
+    },
+    {
+      "text": "Connection setup, socket handling or the session bracket changes: Node.Session.",
+      "pause": 300
+    },
+    {
+      "text": "Following a chain, the genesis funding sweep, indexed reads or the node-read guard changes: Node.Indexer.",
+      "pause": 300
+    },
+    {
+      "text": "What a run must hold before it starts, or the refusal diagnostic when it cannot pay: Node.Funding.",
+      "pause": 300
+    },
+    {
+      "text": "A confirmation wait, deadline or window rule changes: Node.Confirmation.",
+      "pause": 300
+    },
+    {
+      "text": "What a bounded wait is, how its failure reads, the submission bound, or which failures a classifier must let through: Node.Wait. No other module adds a timeout of its own.",
+      "pause": 300
+    },
+    {
+      "text": "How a view is acquired from a node, its chain point, or the origin and lost-connection refusals: Node.View; the same behaviour over the in-memory chain: Node.Memory.",
+      "pause": 300
+    },
+    {
+      "text": "What may be sent to the node: Node.Submit.",
+      "pause": 300
+    },
+    {
+      "text": "How the singular commands reach a node, or which settings they read: Singular.CLI.Node, the one command-line module allowed to name the backend; a new module that needs to name it is added to tools/node-confinement.allow with its reason, or the check fails.",
+      "pause": 300
+    },
+    {
+      "text": "A shared named failure the runner prints: the diagnostic helper in Node.Options, the one cross-owner utility, at the graph's root.",
+      "pause": 300
     }
   ],
   "process-state-and-its-lifetimes": [
     {
-      "text": "The runner keeps six pieces of process state, each created once per process, owned by exactly one module, and installed and removed at the same points as before the split. The nesting is what a contributor must hold: the follower is the outer bracket and the open session the inner one, and the funding-read guard is set only on the devnet.",
+      "text": "Process state and its lifetimes.",
+      "pause": 500
+    },
+    {
+      "text": "The runner keeps six pieces of process state. Each is created once per process, owned by exactly one module, and installed and removed at the same points as before the split. The nesting is what a contributor must hold: the follower is the outer bracket and the open session the inner one, and the funding-read guard is set only on the devnet.",
       "pause": 400
     },
     {
-      "text": "The first diagram shows the two mode paths. On the devnet: the devnet node is spawned, the follower bracket is installed from the origin as the outermost bracket, the node client connects inside it, and the session then prepares — protocol parameters, the one funding read that sweeps the genesis wallet and sets the guard, the funding-floor check when a floor is given, and the announcement — before the open session is installed as the innermost bracket and the body runs inside it. Externally: the node client connects first, the follower bracket is installed from the tip, the session prepares with no sweep and no guard, the open session is installed, and the body runs.",
-      "pause": 600
+      "text": "On the devnet the follower bracket wraps the node client and the whole session; externally the node client is outermost and the follower wraps only the session. In both modes the session prepares before the open session is installed — protocol parameters first, then (devnet only) the one node address read that sweeps the funding wallet and sets the guard, then the funding-floor check when a floor is given, then the announcement — and the body runs inside the open-session bracket. When the body returns or throws, the brackets unwind from the inside out and the open session is removed first. What clears next depends on the mode: on the devnet the node client is cancelled, then the follower and guard clear together before the devnet itself is torn down; externally the follower clears and then the node client is cancelled. A later action never sees a torn-down runner.",
+      "pause": 400
     },
     {
-      "text": "The second diagram shows unwinding from the inside out, and the open session is removed first in both modes. What clears next depends on the mode: on the devnet the node client is cancelled, then the follower and guard clear together before the devnet itself is torn down; externally the follower clears and then the node client is cancelled.",
-      "pause": 500
-    },
-    {
-      "text": "The table gives each piece of state its owner and timing: the mode and the wallet are lazy constants; the open session is installed innermost, after the sweep, the funding check and the announcement, and removed first on unwind; the follower is installed by the follower bracket — outermost on the devnet, inside the node-client bracket externally — and removed after the open session; the guard is set only on the devnet by the followed provider once the genesis sweep is indexed, and cleared with the follower; and the address-read counter never resets, keeping the process total the public read exposes.",
-      "pause": 600
-    },
-    {
-      "text": "Because nothing duplicates them, the facade, the cleanup brackets and the cage test observers share one compiled instance. The focused cleanup suite proves each bracket installs and removes its state through the public readers, and that the funding-read guard refuses node reads while set and lets them through again after a failed body.",
-      "pause": 500
+      "text": "Because these live in the private library and nothing duplicates them, the facade, the cleanup brackets and the cage test observers share one compiled instance: a test that installs a session and a runner reader that answers from it are talking about the same memory. The focused cleanup suite proves each bracket both installs (the positive halves) and removes (after normal and exceptional bodies) its state through the public readers, and that the funding-read guard refuses node reads while set and lets them through again after the body fails.",
+      "pause": 400
     }
   ],
   "the-independent-evidence-boundary": [
     {
-      "text": "On the devnet the funding wallet's genesis outputs exist in the ledger's initial state, not in any block, so the indexer cannot see them. The follower makes one node address read, moves everything the indexer does not know into one block-carried output, and from then on address reads are answered by the indexer while node reads are refused. That refusal keeps a run's evidence independent of a single filtered view. The split changes none of it.",
+      "text": "The independent evidence boundary.",
       "pause": 500
     },
     {
-      "text": "What is deliberately not claimed: the external-node mode has no executable public-network coverage in this work and remains unverified there, exactly as before the split.",
+      "text": "On the devnet, the funding wallet's genesis outputs exist in the ledger's initial state, not in any block, so the indexer cannot see them. The follower therefore performs one node address read — the funding wallet — moves everything the indexer does not know into one block-carried output, and from then on address reads are answered by the indexer while node address reads are refused. That refusal is what keeps a run's evidence independent of a single filtered view. This split changes none of it: the guard, the counter and the sweep live in Node.Indexer, behavior-identical to before.",
+      "pause": 400
+    },
+    {
+      "text": "What is deliberately not claimed here: the external-node mode has no executable public-network coverage in this work, and remains unverified there, exactly as before the split.",
       "pause": 400
     }
   ],
   "facade-callers-and-the-private-boundary": [
     {
-      "text": "The split left the facade export list unchanged, token for token; the bounded waits then added five names, the wait stages, the wait failure, the submission bound, the bounded submitter and the wait-aware catch, which the facade re-exports from the wait owner. Modules that imported ledger or provider keep their import paths through the public library's re-exports. The ten owners are not importable from the public library: they live in the package's private internal library. By Cabal's own rule, a named library without public visibility can be depended on only by components of this same package. Two of them do: the public library, whose facade re-exports the owners, and the cage test component, whose own dependency binds its observers to the same compiled instance the facade re-exports from — one build, one memory, no second copy. Nothing outside the package can name the private library; a downstream reader keeps the facade and the two re-exported modules, exactly as before the split.",
+      "text": "Facade, callers and the private boundary.",
       "pause": 500
+    },
+    {
+      "text": "The split left the facade's export list unchanged, token for token; the bounded waits then added five names, which the facade re-exports from Node.Wait: WaitStage (..), WaitFailure (..), submissionBound, boundedSubmitter and tryOutcome. Modules that imported Singular.Registry.Ledger or Singular.Registry.Provider keep their import paths through the public library's re-exports. The ten owners themselves are not importable from the public library: they live in the package's private internal library. By Cabal's own rule a named library without public visibility can be depended on only by components of this same package. Two of them do: the public library, whose facade re-exports the owners, and the cage test component, whose own dependency binds its observers to the same compiled instance the facade re-exports from — one build, one memory, no second copy. Nothing outside the package can name the private library; a downstream reader keeps the facade and the two re-exported modules, exactly as before the split.",
+      "pause": 400
     }
   ],
   "decisions-this-split-recorded": [
     {
-      "text": "Three decisions, each with the alternative it rejected.",
-      "pause": 250
-    },
-    {
-      "text": "Where the new owners live: one package-private internal library holding the six owners plus the ledger and provider modules they read, re-exported under their original names. Rejected: exposing the owners as public modules, which would publish writable session and follower seams the library never had; and compiling the owners' sources a second time inside the test component, which a compiled trial showed drags the whole library into the test unit and produces a second, non-production copy of every piece of process state.",
-      "pause": 600
-    },
-    {
-      "text": "How the cleanup tests reach the private seams: the cage test component depends on the private library explicitly, binding bracket, observer and facade to one compiled instance; the positive installation halves fail if that identity ever breaks. Rejected: a test-local duplicate of the state, which would be green while testing nothing a runner executes.",
+      "text": "Decisions this split recorded.",
       "pause": 500
     },
     {
-      "text": "How existing callers keep working: the facade re-exports its exact original export list and ledger and provider keep their import paths. Rejected: rewriting callers to import the owners directly, import churn with no behavioral benefit that would widen the surface the split keeps closed.",
-      "pause": 500
-    },
-    {
-      "text": "The split is behavior-preserving by construction and by receipt. Five moved call sites now name the extracted helpers — the session installs the open session through the with-open-session helper, follow chain brackets the follower and the guard through the with-following helper, clearing the follower before the guard, the confirmation and followed-provider reads go through the current-follower reader, and the followed provider sets the guard through the mark-funding-indexed helper — each helper's body equal to the inline code it replaced. Index funding reads the wallet through its accessors instead of a record pattern, equivalent for the devnet wallet it loads, and every other moved declaration's body is equal to its base apart from whitespace.",
-      "pause": 600
-    },
-    {
-      "text": "At candidate revision seven-b-four-a-d-f-three the repository's exact-head checks passed — the full cage suite, the devnet end-to-end paths and the bounded journey — and the focused cleanup brackets' installation, exceptional-exit removal and guard controls are bound to the same code by metered receipts. The external-node mode keeps its limit: nothing here claims public-network behavior, before or after the split.",
-      "pause": 500
+      "text": "The split is behavior-preserving by construction and by receipt. Five moved call sites now name the extracted helpers — the session installs the open session through withOpenSession, followChain brackets the follower and the guard through withFollowing (clearing the follower before the guard), confirmOutputZero and followedProvider read the follower through currentFollower, and followedProvider sets the guard through markFundingIndexed — each helper's body equal to the inline code it replaced; indexFunding reads the wallet through its accessors instead of a record pattern, equivalent for the devnet wallet it loads. Every other moved declaration's body is equal to its base apart from whitespace. At candidate revision 7b4adf3 the repository's exact-head checks passed — the full cage suite, the devnet end-to-end paths and the bounded journey — and the focused cleanup brackets' installation, exceptional-exit removal and guard controls are bound to the same code by metered receipts. The external-node mode keeps its limit: nothing here claims public-network behavior, before or after the split.",
+      "pause": 400
     }
   ],
   "_source": {

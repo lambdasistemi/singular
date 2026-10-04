@@ -1,48 +1,92 @@
 {
   "unchanged-data": [
     {
-      "text": "No datum, redeemer, receipt or row changes shape. The repair changes which values are admitted, not how anything is encoded.",
+      "text": "Unchanged data.",
+      "pause": 500
+    },
+    {
+      "text": "The request datum (Request, onchain/validators/types.ak), the state datum (State), the redeemers (UpdateRedeemer, RequestAction), the receipt format and the consumer's rows keep their shape. No field is added, removed or reordered. The repair changes which values are admitted, not how they are encoded.",
       "pause": 400
     }
   ],
-  "d-01-a-rejects-admission": [
+  "reject-s-admission-a-rejects-admission": [
     {
-      "text": "A reject is admitted by the state for any validity range. The checks before and after it stay: tip coverage, deposit match, a missing action, the owner's refund floor of what the request holds minus the tip, and the modify judgement.",
+      "text": "reject-s-admission A reject's admission.",
+      "pause": 500
+    },
+    {
+      "text": "A Rejected action paired with a request input is admitted by the state purpose for every validity range. The refusals that remain apply before and after the action, unchanged: tip-coverage, deposit-mismatch, missing-action, then the payment rules (ReturnDeposit floor held − tip to the request owner, positionally and by payee), and the modify judgement (empty-fold, surplus-actions, state continuation).",
       "pause": 400
     }
   ],
-  "d-02-the-requests-matching-action": [
+  "request-s-matching-action-the-requests-matching-action": [
     {
-      "text": "A request spent by contribute is paired with one action of the state's fold, in input order. The request script admits the spend in the processing window, or when that matching action is a reject, in any window. Anything else is refused, so nothing the state does not fold is admitted outside the processing window.",
+      "text": "request-s-matching-action The request's matching action.",
+      "pause": 500
+    },
+    {
+      "text": "A request input spent by Contribute is folded by the state's Modify in transaction input order. A request is folded when it carries an inline request datum for this registry's token. Its matching action is the action that fold pairs with it. The request purpose admits the spend when:",
+      "pause": 400
+    },
+    {
+      "text": "the validity range lies entirely in the processing window (as today), or",
+      "pause": 300
+    },
+    {
+      "text": "the matching action is Rejected (new, any window).",
+      "pause": 300
+    },
+    {
+      "text": "It refuses otherwise. In particular it refuses a spend outside the processing window whose matching action is an update, and one with no matching action. Nothing the state does not fold is admitted outside the processing window. The admitted set therefore does not grow beyond the rejections Lean admits.",
       "pause": 400
     }
   ],
-  "d-03-windows": [
+  "windows-windows": [
     {
-      "text": "The window boundaries do not change. The processing window predicate stays for updates and the retraction window predicate stays for retractions. Only the after the windows or future dated predicate goes.",
+      "text": "windows Windows.",
+      "pause": 500
+    },
+    {
+      "text": "Window boundaries are unchanged: processing [submitted_at, submitted_at + process_time), retraction [submitted_at + process_time, submitted_at + process_time + retract_time), after both from the retraction deadline on. The repair keeps the processing-window predicate (updates) and the retraction-window predicate (retractions). It removes the after-both-or-future-dated predicate.",
       "pause": 400
     }
   ],
-  "d-04-reject-placement-in-the-story-language": [
+  "reject-placement-in-story-language-reject-placement-in-the-story-language": [
     {
-      "text": "In the story language every reject names its window: the processing window, the owner's retraction window, or after the windows. The interpreter checks the built transaction against that window before submitting, and a mismatch is a setup failure. The control that rendering is total covers every placement. Placements add no receipt field; the run log states each placement with the transaction's validity interval and the window.",
+      "text": "reject-placement-in-story-language Reject placement in the story language.",
+      "pause": 500
+    },
+    {
+      "text": "A reject in the story language carries one of three placements:",
+      "pause": 400
+    },
+    {
+      "text": "Every reject a story runs carries a placement, tampered or not. The story's validation, which runs before anything is submitted, refuses a story holding an unplaced reject, and the interpreter treats one as a setup failure. The exits stay Fold | Reject | Retract, so code outside this change that matches on them is untouched. A placement is a fact about the submitted transaction, not a tamper. The model's answer does not depend on it. The interpreter checks the built interval against the named window before submitting. A mismatch is a setup failure. The control that interpretation and rendering are total quantifies over every placement constructor. Placements add no receipt field. The run log states each placed reject as placement: <row> reject <placement> validity=[<lo>,<hi>) window=[<from>,<to>) tx=<id>, where <placement> is the first column above, and the transaction id in the receipt locates the same interval on chain.",
       "pause": 400
     }
   ],
-  "d-05-cg09s-result": [
+  "reject-before-deadline-consumer-requirement-s-result-reject-before-deadline-consumer-requirements-result": [
     {
-      "text": "CG09 keeps its row and its requirement. Its control comes first: the same reject one lovelace short, submitted through the existing helper that fails the run unless the refusal is attributed to the state script. Then the untampered reject, with full fold execution units, is accepted, and the verdict is unmet by ruling: Singular's model and the consumer's theorem disagree, the chain sides with Singular, and by operator ruling of the first of October 2026 the consumer requirement is kept unmet. The session records it apart from the held rows and still ends non-zero.",
+      "text": "reject-before-deadline-consumer-requirement-s-result reject-before-deadline-consumer-requirement's result.",
+      "pause": 500
+    },
+    {
+      "text": "The reject-before-deadline-consumer-requirement receipt keeps its row id and requirement. The chain outcome is now accepted. The verdict is unmet-by-ruling: Singular's Lean and the consumer's theorem disagree, the chain sides with Singular's Lean, and by operator ruling 2026-10-01 the consumer requirement (cardano-keri R9_reject_needs_rejectable, 0e638fad, blob d38e81c0) is kept unmet, with alignment in lambdasistemi/cardano-keri#468. The session records reject-before-deadline-consumer-requirement as its unmet row, apart from the held rows, and still ends non-zero. The row's control comes first: the same request's processing-window reject refunding the owner one lovelace short, refused and attributed to the state script, submitted through the existing submitExpectRefusedControl, which fails the run unless the refusal is attributed to the state script and logs control: reject-before-deadline-consumer-requirement control: REFUSED at submit, attributed to state (phase-2, marker 0x<hex>) — …. Then the untampered reject, built with full-fold execution units (the refusal-sized units would let a budget failure pass for a rule refusal). The after-window acceptance is reject-and-retract-refund-controls's and the e2e's.",
       "pause": 400
     }
   ],
-  "d-06-builder-selection": [
+  "builder-selection-builder-selection": [
     {
-      "text": "The builder selects every pending request of this registry and refuses to build when there is none. Its transaction has a finite validity interval starting at the current tip and bound to no deadline. Refunds and the state continuation are as today.",
+      "text": "builder-selection Builder selection.",
+      "pause": 500
+    },
+    {
+      "text": "The reject builder selects every request at this registry's request address that carries this registry's token and a request datum. It refuses to build when there is none (\"no pending requests\"). Its transaction carries a finite validity interval starting at the current tip, bound to no request's deadline. Refund outputs and the state continuation are as today.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "bb238df4c9eabc77ec051ec550a1df363d8549c3f1fcc72b67eb6c021a12c302"
+    "sha256": "3db5a5a4e0a67aa9acc0c8451e883240236a602c45d996f0868a1983720933d9"
   }
 }

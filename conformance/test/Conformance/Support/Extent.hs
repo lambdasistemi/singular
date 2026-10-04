@@ -30,14 +30,15 @@ spec = describe "the extent of a run's refusals" $ do
             committedClasses document
                 `shouldBe` Right
                     ( Map.fromList
-                        [ ("CG10", Listed ClassC ["key-exists"])
-                        , ("CG11", Listed ClassD ["empty-fold"])
-                        , ("CS04", Listed ClassC ["no-user-trace"])
-                        , ("CG05", Listed ClassB ["key-exists"])
+                        [ ("fold-against-superseded-root", Listed ClassC ["key-exists"])
+                        , ("empty-fold", Listed ClassD ["empty-fold"])
+                        , ("wrong-redeemer-constructor-index", Listed ClassC ["no-user-trace"])
+                        , ("insert-occupied-key", Listed ClassB ["key-exists"])
                         ]
                     )
         it "refuses a table that gives a row a class it cannot have" $
-            committedClasses (document <> "| CG99 | made up | x | y | A |\n")
+            committedClasses
+                (document <> "| unknown-requirement | made up | x | y | A |\n")
                 `shouldSatisfy` either (const True) (const False)
         it "refuses a document without the discovered table" $
             committedClasses "# Refusal extent\n\nNo table.\n"
@@ -100,7 +101,10 @@ spec = describe "the extent of a run's refusals" $ do
         it "refuses a step's model reason the index did not record" $
             extentProblems
                 table
-                (replaceEntry (attributionEntry "CG21" "tx-a") completeIndex)
+                ( replaceEntry
+                    (attributionEntry "register-active-key" "tx-a")
+                    completeIndex
+                )
                 completeReceipts
                 `shouldSatisfy` mentions "tx-a"
         it "refuses a refusal without a model reason labelled A" $
@@ -112,9 +116,9 @@ spec = describe "the extent of a run's refusals" $ do
         it "refuses an attribution refusal the table does not list" $
             extentProblems
                 table
-                (completeIndex <> [attributionEntry "CG77" "tx-x"])
+                (completeIndex <> [attributionEntry "unknown-requirement" "tx-x"])
                 completeReceipts
-                `shouldSatisfy` mentions "CG77"
+                `shouldSatisfy` mentions "unknown-requirement"
         it
             "refuses a listed row's refusal whose replay records what the table does not list"
             $ extentProblems
@@ -122,7 +126,7 @@ spec = describe "the extent of a run's refusals" $ do
                 ( replaceEntry
                     ( withClasses
                         [object ["admitted" .= ("surplus-actions" :: Text)]]
-                        (attributionEntry "CG10" "tx-c")
+                        (attributionEntry "fold-against-superseded-root" "tx-c")
                     )
                     completeIndex
                 )
@@ -132,7 +136,11 @@ spec = describe "the extent of a run's refusals" $ do
             extentProblems
                 table
                 ( replaceEntry
-                    (setKey "classes" Null (attributionEntry "CG10" "tx-c"))
+                    ( setKey
+                        "classes"
+                        Null
+                        (attributionEntry "fold-against-superseded-root" "tx-c")
+                    )
                     completeIndex
                 )
                 completeReceipts
@@ -149,8 +157,8 @@ spec = describe "the extent of a run's refusals" $ do
 table :: Map.Map Text Listed
 table =
     Map.fromList
-        [ ("CG10", Listed ClassC ["key-exists"])
-        , ("CS04", Listed ClassC ["no-user-trace"])
+        [ ("fold-against-superseded-root", Listed ClassC ["key-exists"])
+        , ("wrong-redeemer-constructor-index", Listed ClassC ["no-user-trace"])
         ]
 
 -- | The extent document's shape: a leads table first, then the discovered one.
@@ -163,37 +171,37 @@ document =
         , ""
         , "| Row | Refusal | Lean | Consumer | Class (lead) |"
         , "|---|---|---|---|---|"
-        , "| CG07 | retraction outside phase 2 | `not-phase2` | driver | A |"
+        , "| retract-outside-window | retraction outside phase 2 | `not-phase2` | driver | A |"
         , ""
         , "## Discovered table (T028)"
         , ""
         , "| Row | Refusal | Traced reason | Lean | Class |"
         , "|---|---|---|---|---|"
-        , "| CG05 | insert on a present key | `key-exists` | `key-exists` | B until then |"
-        , "| CG11 | empty fold | `empty-fold` | held | D (existing) |"
-        , "| CG10 | stale root | `key-exists` | not an input | C |"
-        , "| CS04 | wrong index | `no-user-trace` | below the model | C |"
+        , "| insert-occupied-key | insert on a present key | `key-exists` | `key-exists` | B until then |"
+        , "| empty-fold | empty fold | `empty-fold` | held | D (existing) |"
+        , "| fold-against-superseded-root | stale root | `key-exists` | not an input | C |"
+        , "| wrong-redeemer-constructor-index | wrong index | `no-user-trace` | below the model | C |"
         , ""
         , "Gaps stay in the denominator."
         ]
 
--- | Two class-A refusals of a story, one CG10 attribution, a control.
+-- | Two class-A refusals of a story, one fold-against-superseded-root attribution, a control.
 completeIndex :: [Value]
 completeIndex =
     [ driverEntry "tx-a" "key-exists" "agrees"
     , driverEntry "tx-b" "deposit-returned" "agrees"
-    , attributionEntry "CG10" "tx-c"
+    , attributionEntry "fold-against-superseded-root" "tx-c"
     , controlEntry
     ]
 
 completeReceipts :: [Receipt]
 completeReceipts =
     [ storyReceipt
-        "CG21"
+        "register-active-key"
         [ refusedStep "tx-a" "key-exists"
         , refusedStep "tx-b" "deposit-returned"
         ]
-    , attributionReceipt "CG10" "tx-c"
+    , attributionReceipt "fold-against-superseded-root" "tx-c"
     ]
 
 refusalEntry :: Text -> Text -> Value -> Text -> Value -> Value
@@ -211,7 +219,12 @@ refusalEntry row txid model extent comparison =
 
 driverEntry :: Text -> Text -> Text -> Value
 driverEntry txid reason comparison =
-    refusalEntry "CG21" txid (String reason) "A" (String comparison)
+    refusalEntry
+        "register-active-key"
+        txid
+        (String reason)
+        "A"
+        (String comparison)
 
 attributionEntry :: Text -> Text -> Value
 attributionEntry row txid = refusalEntry row txid Null "unclassified" Null

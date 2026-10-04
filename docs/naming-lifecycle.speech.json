@@ -1,60 +1,156 @@
 {
   "who-this-is-for": [
     {
-      "pause": 400,
-      "text": "This page is for somebody who wants to witness that a name is free and get their deposit back, somebody who wants to book one, and somebody holding a live name who wants to change where it receives payments, recover after losing the current control key, or end it permanently. Ending a name needs the committed recovery key or the retirement quorum, and the active witness moves into completion-only custody before it burns."
+      "text": "Who this is for.",
+      "pause": 500
+    },
+    {
+      "text": "Somebody who wants to witness that a name is free and get their deposit back, somebody who wants to book one, and somebody holding a live name who wants to change where it receives payments, recover after losing the current control key, or end it permanently. Ending a name needs the committed recovery key or the retirement quorum, and the active witness moves into completion-only custody before it burns.",
+      "pause": 400
+    },
+    {
+      "text": "This page accompanies the executable candidate. Open the simulator and switch the profile to Naming — the Over witness: the last panel replays the lifecycle, row by row, as the Lean computed it — moving a payment destination while the registry root stays put, revealing the committed recovery key, and ending a name through either authorization route with the refusals that guard them. It remains a design-time model, not an observed ledger execution.",
+      "pause": 400
+    }
+  ],
+  "how-a-name-moves-in-the-registry": [
+    {
+      "text": "How a name moves in the registry.",
+      "pause": 500
+    },
+    {
+      "text": "Naming is an instance of the registry, not a layer bolted beside it. A name is one key in the registry's authenticated map whose value is a single byte — Absent, Active or Terminal — and seven requests move a key, each one moving a witness token that is what a reader looks at, never the root. The naming walkthrough states the state table, the seven requests and the four witness laws once; this page uses them without repeating them.",
+      "pause": 400
+    },
+    {
+      "text": "Two things are naming's own. Ending a name needs the committed recovery key or the retirement quorum, and never the current control key alone. And no application script runs at fold time: the naming validator certifies an edge in advance by minting one approval whose asset name binds the edge, the key, the owner and the destination, and the registry recomputes that name from the request itself and refuses anything that does not match. A folder is permissionless and can therefore be anyone, which is exactly why the destination is bound: without it a folder could route your name to itself.",
+      "pause": 400
     }
   ],
   "change-the-payment-destination": [
     {
-      "text": "The controller may set, replace, or clear one optional payment destination. The destination is routing data, not authority. The sequence keeps the registry identity, key, representative, controller, next commitment, and quorum unchanged, and makes no registry request, mint, or burn. Wrong authority, multiple destinations, and control-field tampering are refused.",
+      "text": "Change the payment destination.",
+      "pause": 500
+    },
+    {
+      "text": "The active controller may set, replace, or clear the single optional payment destination. The destination is routing data, not an authority credential: it need not belong to the controller. A successful change preserves the registry identity, registry key, active witness, controller, next-control commitment, and retirement quorum.",
+      "pause": 400
+    },
+    {
+      "text": "The transition refuses a missing or wrong controller witness, more than one destination, and any attempt to alter the controller, committed next controller, quorum, registry binding, or active witness while presenting the action as destination maintenance.",
+      "pause": 400
+    }
+  ],
+  "book-a-name": [
+    {
+      "text": "Book a name.",
+      "pause": 500
+    },
+    {
+      "text": "A booking has no separate claim to stage first and no Withdraw edge to cancel one with. It is two things: an approval and a request, and the request waits until someone folds it.",
+      "pause": 400
+    },
+    {
+      "text": "Alice mints one approval under the naming policy. Its asset name binds the edge she is taking, the key she is taking it on, herself as the owner, and the destination — the application's own address together with the hash of the record datum her record will carry. Minting it needs her signature, and that signature is the only one anybody ever checks for this booking.",
+      "pause": 400
+    },
+    {
+      "text": "She attaches the approval to a registry request and lets go. Whoever folds the batch next creates her record: the fold mints the active witness, puts it in the one output her approval named, gives that output the datum whose hash she bound, and returns the deposit her request carried, less the folder's tip. The folder never had a choice about any of it.",
+      "pause": 400
+    },
+    {
+      "text": "An approval minted for a different edge, key, owner or destination has a different asset name, so the fold recomputes it and refuses. An approval under any other policy is not an approval at all. A request that changes the key and carries no approval is never folded.",
       "pause": 400
     }
   ],
   "recover-with-the-committed-next-controller": [
     {
-      "text": "Recovery reveals the complete next controller address, checks its canonical bytes against the domain-separated BLAKE two b two hundred and fifty six commitment, and requires its payment-key signer. The old controller need not sign. The successor keeps the representative, installs the revealed controller, and stores a fresh commitment. Only canonical base and enterprise payment-key addresses are supported.",
+      "text": "Recover with the committed next controller.",
+      "pause": 500
+    },
+    {
+      "text": "Recovery reveals the complete next controller address, proves that its canonical binary encoding matches the stored commitment, and requires the transaction signer for that address's payment-key credential. The current controller does not need to sign. The successor keeps the active witness, installs the revealed address as controller, and stores a fresh next commitment. The consumed commitment cannot be replayed, and the old controller is no longer authoritative.",
+      "pause": 400
+    },
+    {
+      "text": "The commitment is BLAKE2b-256(\"singular/naming/next-control/v1\" || 0x00 || canonical-address-bytes). It covers the whole binary Cardano address, including its header and network, rather than bech32 text or only a key digest. Only canonical base and enterprise addresses with payment-key credentials are supported; script payment credentials cannot authorize recovery. Positive, wrong-domain, wrong-address, and wrong-payment-key vectors belong to the executable contract.",
       "pause": 400
     }
   ],
   "retire-permanently": [
     {
-      "pause": 400,
-      "text": "Ending a name needs the committed recovery key or the retirement quorum, never the current control key alone. A thief who has taken the everyday control key and the holder themselves look identical to the chain, so if the current key could end a name the thief could end it, and recovery would arrive too late because there would be nothing left to recover. The recovery key is the one thing the thief does not have. The authorized transaction moves the active witness into completion-only custody, mints the terminating approval on the same proof, and creates the completion request beside it; anyone may then fold that request, and the name's byte becomes terminal forever. A terminal name is not a deleted name: its key stays in the map, and the one request it still admits is the read."
+      "text": "Retire permanently.",
+      "pause": 500
+    },
+    {
+      "text": "Ending a name needs the committed recovery key or the retirement quorum — never the current control key alone.",
+      "pause": 400
+    },
+    {
+      "text": "That is a deliberate change, and it is worth saying why. A thief who has taken Alice's everyday control key and Alice herself look identical to the chain: both hold the key, both can sign. If the current key could end the name, the thief could end it, and Alice's only remedy — recovering with the key she committed to in advance — would arrive too late, because there would be nothing left to recover. The recovery key is the one thing the thief does not have. So the thief can change where the name pays until Alice recovers, and that is all.",
+      "pause": 400
+    },
+    {
+      "text": "The authorized transaction moves the active witness into completion-only custody, mints the terminating approval on the same proof, and creates the completion request beside it. Anyone may then fold that request: the custody is spent, the witness it holds is exactly the burn the fold's own arithmetic demands, and the name's byte becomes Terminal, forever.",
+      "pause": 400
+    },
+    {
+      "text": "A terminal name is not a deleted name. Its key stays in the map at 0x02, and the one request it still admits is the read — which leaves the byte exactly where it is and mints a terminal witness the reader can keep. Every request that would move the key refuses.",
+      "pause": 400
+    },
+    {
+      "text": "Retirement prevents name-based resolution. It cannot prevent someone from sending directly to a previously saved raw Cardano address: the protocol cannot retract an address another person already knows.",
+      "pause": 400
+    }
+  ],
+  "witness-that-a-name-is-free": [
+    {
+      "text": "Witness that a name is free.",
+      "pause": 500
+    },
+    {
+      "text": "Carol does not want a name; she wants to say that nobody has one. She mints an absence approval — this edge needs no signature from anyone, because saying a name is unclaimed asserts no authority — names her own address as the refund, and submits a request with a deposit.",
+      "pause": 400
+    },
+    {
+      "text": "The fold puts the absent witness into the cage's own custody, with the key it witnesses and Carol's refund address recorded beside it. Whoever books the name afterwards spends that custody as part of their booking, and the fold pays Carol's deposit back to the address she named. If nobody books it, Carol takes her own witness back: the deletion edge is certified by the refund address the custody recorded, and by nobody else.",
+      "pause": 400
+    },
+    {
+      "text": "Carol's deposit comes back to Carol either way. It is recorded on chain, beside the token, at the moment she puts it up — not promised by whoever folds later.",
+      "pause": 400
     }
   ],
   "consumer-and-ledger-boundary": [
     {
-      "text": "The consumer contract is source-bound to a pinned cardano KERI commit. It uses Conway inline-datum and required-signer precedents without importing KERI schemas or claiming compiled-script interoperability. Singular publishes its own wire indices and field order, binds one registry identity per application, and rejects a rival initialization seed. The table separates what existing tooling constrains, what Singular publishes, and what remains outside the candidate.",
+      "text": "Consumer and ledger boundary.",
+      "pause": 500
+    },
+    {
+      "text": "The design-time consumer contract is source-bound to lambdasistemi/cardano-keri commit 14a64a4681d3e429fab5877062b5c476c2a4bfe2. It uses Conway inline-datum and required-signer precedents without importing KERI schemas or claiming compiled-script interoperability. Singular publishes explicit constructor indices and field order for its own datums, binds one canonical registry identity to an application, and must reject a second valid seed that tries to initialize a rival registry for the same application.",
+      "pause": 400
+    },
+    {
+      "text": "The historical Cage types are evidence about encodings and precedents, not an assumed integration. KERI pre-rotation commits to key digests; naming recovery deliberately commits to an entire canonical address.",
       "pause": 400
     }
   ],
   "evidence-and-release-status": [
     {
-      "text": "The browser drives pending-claim cancellation, maintenance, recovery, and both retirement routes with their refusals. Retirement is queued first, showing pending, and completed by a separate permissionless fold, showing retired or Over. The reconciliation binds all forty-three model and corpus identities to public controls and assertions. The downloadable archive carries raw model, contract, scenarios, replay sources, pinned tooling, and exact identities under one SHA two hundred and fifty six manifest. This is still an unaccepted design candidate, not a deployed validator or ledger observation.",
+      "text": "Evidence and release status.",
+      "pause": 500
+    },
+    {
+      "text": "The page replays maintenance, recovery and both ending routes, including their refusal cases, and each row carries the reason that caused it — an ending that met neither the recovery-key nor the quorum route is refused under the reason reserved for an uncertified retirement, not under the one reserved for delete. The downloadable documentation archive carries the model, contract, scenarios, replay code and instructions, pinned toolchain inputs, and exact identity ledgers under artifacts/ with a SHA-256 manifest.",
+      "pause": 400
+    },
+    {
+      "text": "This remains an unaccepted executable design candidate. Lean proof, finite replay, source-bound contract evidence, a built archive, and a live preview are distinct from a compiled Cardano validator or observed ledger execution.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "naming-lifecycle.md",
     "sha256": "dd0960a93ea4655ba1a70204e405460117b8178909bd7b2cd10900b907e1f049"
-  },
-  "how-a-name-moves-in-the-registry": [
-    {
-      "pause": 400,
-      "text": "Naming is an instance of the registry, not a layer bolted beside it. A name is one key in the registry's authenticated map whose value is a single byte — absent, active or terminal — and seven requests move a key, each one moving a witness token that is what a reader looks at, never the root. The naming walkthrough states the state table, the seven requests and the four witness laws once; this page uses them without repeating them. Two things are naming's own. Ending a name needs the committed recovery key or the retirement quorum, and never the current control key alone. And no application script runs at fold time: the naming validator certifies an edge in advance by minting one approval whose asset name binds the edge, the key, the owner and the destination, and the registry recomputes that name from the request itself and refuses anything that does not match. A folder can be anyone, which is exactly why the destination is bound: without it a folder could route your name to itself."
-    }
-  ],
-  "book-a-name": [
-    {
-      "pause": 400,
-      "text": "A booking has no separate claim to stage first and no Withdraw edge to cancel one with. It is two things, an approval and a request, and the request waits until someone folds it. Alice mints one approval whose asset name binds the edge, the key, herself as owner, and the destination — the application's own address with the hash of the datum her record will carry. Minting it needs her signature, and that is the only signature anybody ever checks for this booking. She attaches it to a registry request and lets go. Whoever folds the batch next creates her record at the address she bound, with the datum she bound, carrying the active witness and the deposit her request rode with, less the folder's tip."
-    }
-  ],
-  "witness-that-a-name-is-free": [
-    {
-      "pause": 400,
-      "text": "Carol does not want a name; she wants to say that nobody has one. She mints an absence approval, which needs no signature from anyone, names her own address as the refund, and submits a request with a deposit. The fold puts the absent witness into the cage's own custody with the key and Carol's refund address recorded beside it. Whoever books the name afterwards spends that custody, and the fold pays Carol's deposit back to the address she named. If nobody books it, Carol takes her own witness back: that deletion is certified by the refund address the custody recorded, and by nobody else."
-    }
-  ]
+  }
 }

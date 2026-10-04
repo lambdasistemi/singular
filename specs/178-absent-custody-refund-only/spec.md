@@ -21,12 +21,12 @@ Accepted model revision is the merge commit above. No Lean change is authorized.
 
 | ID | Observable truth and refusal |
 |---|---|
-| INV-178-WIRE | Custody's inline datum contains refund only, retaining constructor index 2; actual encoders, decoders, validator schema and builder agree. The old two-field payload cannot masquerade as the corrected wire. |
-| INV-178-ASSET | Identity comes from the complete discovered non-ADA asset set, corresponding to the model's assets list. Exactly one absent-policy asset of quantity one supplies its name as key. Zero assets, two assets, wrong policy or wrong quantity supply no custody identity. Datum and request supply no fallback. |
-| INV-178-EFFECTS | The admitted insertion holds the requested refund and deposit at custody, mints the model's absent asset, and preserves the transaction row's root, configuration, ownership, approval and destination relationships. Existing custody-consuming helpers must read the corrected representation without changing another edge's contract. |
-| INV-178-JUDGED | The executable conformance row is selected and its expected verdict/observations are asserted by CI. The unregistered-row control demonstrates the selection gap. Missing execution or observations cannot count as agreement. |
-| INV-178-COPIES | Final PR enumerates discovered declarations, consumers, mirrors, derived artifacts and evidence records with file, line and disposition. The external naming mirror is explicitly recorded as excluded under the published contract. |
-| INV-178-GATE | Full local root CI plus Conformance snapshot pass on the candidate; Registry and Conformance pass on the exact pushed head. Per-checkpoint approval and source-fence compliance are prerequisites for push. |
+| custody-s-inline-datum-contains-refund-retaining | Custody's inline datum contains refund only, retaining constructor index 2; actual encoders, decoders, validator schema and builder agree. The old two-field payload cannot masquerade as the corrected wire. |
+| identity-comes-from-complete-discovered-non-ada | Identity comes from the complete discovered non-ADA asset set, corresponding to the model's assets list. Exactly one absent-policy asset of quantity one supplies its name as key. Zero assets, two assets, wrong policy or wrong quantity supply no custody identity. Datum and request supply no fallback. |
+| admitted-insertion-holds-requested-refund-deposit-at | The admitted insertion holds the requested refund and deposit at custody, mints the model's absent asset, and preserves the transaction row's root, configuration, ownership, approval and destination relationships. Existing custody-consuming helpers must read the corrected representation without changing another edge's contract. |
+| executable-conformance-row-selected-its-expected-verdict | The executable conformance row is selected and its expected verdict/observations are asserted by CI. The unregistered-row control demonstrates the selection gap. Missing execution or observations cannot count as agreement. |
+| final-pr-enumerates-discovered-declarations-consumers-mirrors | Final PR enumerates discovered declarations, consumers, mirrors, derived artifacts and evidence records with file, line and disposition. The external naming mirror is explicitly recorded as excluded under the published contract. |
+| full-local-root-ci-plus-conformance-snapshot | Full local root CI plus Conformance snapshot pass on the candidate; Registry and Conformance pass on the exact pushed head. Per-checkpoint approval and source-fence compliance are prerequisites for push. |
 
 The first acceptance line requires executable singleton/zero/two-asset evidence
 at the implementation boundary, including a check observed to fail for the
@@ -49,10 +49,10 @@ that fails it. If none exercises it, state "no executing check covers this
 selection" in the PR and name the uncovered consumer. Do not create a bespoke
 check or claim deleteAbsent certification coverage.
 
-S1 is wire and consumer adaptation. S2 is the new conformance row and its
-registration, HELD until the parent reports the conformance DSL merge. No new
-conformance test-tree changes in S1. S2 remains mandatory for ticket acceptance;
-it may be deferred at the wall without undoing a separately verified S1.
+refund-custody-wire-and-consumers is wire and consumer adaptation. refund-custody-conformance is the new conformance row and its
+registration, HELD until the parent reports the conformance story language merge. No new
+conformance test-tree changes in refund-custody-wire-and-consumers. refund-custody-conformance remains mandatory for ticket acceptance;
+it may be deferred at the wall without undoing a separately verified refund-custody-wire-and-consumers.
 
 Simulator transaction replay remains a named gap. Coverage-check INCOMPLETE
 remains debt, not acceptance. No full-project conformance or release claim.

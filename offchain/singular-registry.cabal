@@ -227,7 +227,7 @@ executable cage-test-vectors
 -- The bounded journey runner (D-012): narrates the registry
 -- journey — boot a cage, submit a request, apply it, read the
 -- resulting state back — against a real devnet node, using the
--- same library code path as the E2E suite. Source lives in
+-- same library code path as the end-to-end suite. Source lives in
 -- journey/; every imported Haskell module stays untouched.
 executable journey
   import:           warnings

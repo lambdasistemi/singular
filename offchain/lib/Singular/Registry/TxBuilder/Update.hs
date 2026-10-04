@@ -21,7 +21,7 @@ fold's work is divided into (#267):
 - "Singular.Registry.TxBuilder.Update.Duties" — what the fold's
   requests owe (mints, destinations, custody, returns, signatures);
 - "Singular.Registry.TxBuilder.Update.Build" — the evaluation adapter
-  and the one transaction DSL program a fold submits.
+  and the one transaction story language program a fold submits.
 
 No algorithm lives here; each decision has exactly one owner above.
 -}
@@ -89,7 +89,7 @@ updateTokenImpl cfg view tm tid addr =
     updateTokenWithDuties cfg view tm tid addr emptyRegistryContext
 
 {- | Fold the pending requests, discharging every obligation the edges
-they take create (#157 C5, C6, T1-T6).
+they take create (#157 mint-matches-edge-deltas, token-destinations-and-refunds, T1-T6).
 -}
 updateTokenWithDuties
     :: CageConfig

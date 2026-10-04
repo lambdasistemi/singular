@@ -155,7 +155,7 @@ bootRegistry prov caps unbound txs processTime retractTime = do
                     , defaultProcessTime = processTime
                     , defaultRetractTime = retractTime
                     , defaultTip = Coin 1_000_000
-                    , -- #157 D-BOOT: the four pins the boot datum carries come
+                    , -- #157 genesis-policy-pins: the four pins the boot datum carries come
                       -- from the one derivation `partsOf` performs, so the
                       -- manifest, the config and the state datum cannot drift
                       -- apart.
