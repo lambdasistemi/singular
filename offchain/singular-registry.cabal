@@ -942,6 +942,7 @@ test-suite e2e-tests
     , cardano-crypto-class
     , cardano-strict-containers
     , cardano-ledger-api
+    , cardano-ledger-binary
     , cardano-ledger-alonzo
     , cardano-ledger-conway
     , cardano-ledger-core

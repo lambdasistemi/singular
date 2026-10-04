@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
 
 {- |
 Module      : Singular.Registry.E2E.ReplaySpec
@@ -16,7 +17,9 @@ are the ones it accepted. Nothing is typed in.
 
 The replay must rebuild, at every state output of that history, the trie
 whose root the chain holds there; refuse by name a history that does not
-chain from @create@ to the selection; and give, at every fold, proofs for
+chain from @create@ to the selection; leave out every transaction whose
+bytes say it failed its scripts (@isValid = false@), which spent only its
+collateral; and give, at every fold, proofs for
 every key of the history that verify against the chain's root under a
 verifier that never sees the trie.
 -}
@@ -39,9 +42,10 @@ import Test.Hspec
 
 import Cardano.Ledger.Address (getNetwork)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
+import Cardano.Ledger.Alonzo.Tx (IsValid (..))
 import Cardano.Ledger.Alonzo.TxWits (Redeemers (..))
 import Cardano.Ledger.Api.Scripts.Data (Data (..), getPlutusData)
-import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx, witsTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL, isValidTxL, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( feeTxBodyL
     , inputsTxBodyL
@@ -58,8 +62,10 @@ import Cardano.Ledger.Api.Tx.Out
     )
 import Cardano.Ledger.Api.Tx.Wits (rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes (TxIx (..))
+import Cardano.Ledger.Binary (decCBOR, decodeFullAnnotator, serialize)
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
+import Cardano.Ledger.Core (eraProtVerHigh)
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
@@ -230,6 +236,39 @@ replaySpec = do
                 root <- applyOnTop h (beforeMixed h) byBooking
                 root `shouldNotBe` pointRoot (mixedPoint h)
 
+            it
+                "reads the actions from the fold's own redeemer: reordered there, the fold is refused by name"
+                $ \h -> do
+                    let target = mixedPoint h
+                        tid = txIdTx (pointTx target)
+                    purpose <- stateSpendPurpose h (pointTx target)
+                    actions <- map snd <$> foldPairs h (pointTx target)
+                    let reordered = rotate 1 actions
+                    map isApplied reordered `shouldNotBe` map isApplied actions
+                    let tx =
+                            withRedeemers
+                                ( Map.adjust
+                                    (\(_, units) -> (Data (toPlcData (Modify reordered)), units))
+                                    purpose
+                                )
+                                (pointTx target)
+                    txIdTx tx `shouldBe` tid
+                    (result, _) <-
+                        replayAt
+                            h
+                            (historyResolved h)
+                            (swapTx tx (historyTxs h))
+                            (historyToken h)
+                            (lastPoint h)
+                    case result of
+                        Left
+                            (ReplayFailure tok named RootDoesNotChain{recordedRoot = recorded}) -> do
+                                tok `shouldBe` historyToken h
+                                named `shouldBe` tid
+                                recorded `shouldBe` pointRoot target
+                        other ->
+                            expectationFailure ("expected RootDoesNotChain, got " <> show other)
+
             it "spends another registry's request and references one of its own" $ \h -> do
                 let body = pointTx (mixedPoint h) ^. bodyTxL
                     m = historyMixed h
@@ -244,23 +283,25 @@ replaySpec = do
     describe
         "a history that does not chain from create is refused by name"
         $ do
-            it "rebuilds the same trie from the history in another order" $ \h -> do
-                let txs = historyTxs h
-                (inOrder, db0) <-
-                    replayAt h (historyResolved h) txs (historyToken h) (lastPoint h)
-                r0 <- rootOf db0
-                inOrder
-                    `shouldBe` Right
-                        ( Replayed
-                            (txIdTx (pointTx (historyCreate h)))
-                            (map (txIdTx . pointTx) (historyFolds h))
-                        )
-                r0 `shouldBe` pointRoot (lastPoint h)
-                forM_ [reverse txs, rotate 3 txs, rotate 7 (reverse txs)] $ \shuffled -> do
-                    (result, db) <-
-                        replayAt h (historyResolved h) shuffled (historyToken h) (lastPoint h)
-                    result `shouldBe` inOrder
-                    rootOf db >>= (`shouldBe` r0)
+            it
+                "rebuilds the same trie from the history newest first, as the provider lists it, and in other orders"
+                $ \h -> do
+                    let txs = historyTxs h
+                    (inOrder, db0) <-
+                        replayAt h (historyResolved h) txs (historyToken h) (lastPoint h)
+                    r0 <- rootOf db0
+                    inOrder
+                        `shouldBe` Right
+                            ( Replayed
+                                (txIdTx (pointTx (historyCreate h)))
+                                (map (txIdTx . pointTx) (historyFolds h))
+                            )
+                    r0 `shouldBe` pointRoot (lastPoint h)
+                    forM_ [reverse txs, rotate 3 txs, rotate 7 (reverse txs)] $ \shuffled -> do
+                        (result, db) <-
+                            replayAt h (historyResolved h) shuffled (historyToken h) (lastPoint h)
+                        result `shouldBe` inOrder
+                        rootOf db >>= (`shouldBe` r0)
 
             it "refuses a history with one fold dropped, naming it" $ \h -> do
                 let dropped = foldAt 1 h
@@ -351,6 +392,127 @@ replaySpec = do
                             (txIdTx stray)
                             (HistoryIncomplete OutsideLineage)
                         )
+
+            it
+                "rebuilds the same trie from every transaction served twice, as overlapping pages serve it"
+                $ \h -> do
+                    let txs = historyTxs h
+                    twice <- mapM viaCbor (txs <> reverse txs)
+                    (once, db0) <-
+                        replayAt h (historyResolved h) txs (historyToken h) (lastPoint h)
+                    (repeated, db) <-
+                        replayAt h (historyResolved h) twice (historyToken h) (lastPoint h)
+                    once `shouldSatisfy` isRight'
+                    repeated `shouldBe` once
+                    r0 <- rootOf db0
+                    rootOf db >>= (`shouldBe` r0)
+
+    describe
+        "a transaction that failed its scripts is not in the lineage"
+        $ do
+            it
+                "reads every transaction the chain accepted as valid, from its bytes"
+                $ \h -> do
+                    decoded <- mapM viaCbor (historyTxs h)
+                    [ (pointLabel p, tx ^. isValidTxL)
+                      | (p, tx) <- zip (points h) decoded
+                      ]
+                        `shouldBe` [(pointLabel p, IsValid True) | p <- points h]
+
+            it
+                "rebuilds, at every state output, the lineage and trie of the history without a failed copy of any of its transactions"
+                $ \h -> do
+                    -- One verdict per (selection, failed copy) pair: the
+                    -- failed copy of create and of each fold spends what
+                    -- the transaction it copies spends, under another
+                    -- identifier, and must change nothing. The expected
+                    -- lineage and root are the chain's.
+                    observed <- forM (zip [0 ..] (points h)) $ \(k, selected) -> do
+                        let lineage =
+                                Replayed
+                                    (txIdTx (pointTx (historyCreate h)))
+                                    (map (txIdTx . pointTx) (take k (historyFolds h)))
+                        forM (points h) $ \copied -> do
+                            bad <- failedCopy (pointTx copied)
+                            (result, db) <-
+                                replayAt
+                                    h
+                                    (historyResolved h)
+                                    (historyTxs h <> [bad])
+                                    (historyToken h)
+                                    selected
+                            rebuilt <- rootOf db
+                            pure
+                                ( pointLabel selected
+                                , "failed copy of " <> pointLabel copied
+                                , verdict h lineage (pointRoot selected) result rebuilt
+                                )
+                    concat observed
+                        `shouldBe` [ (pointLabel s, "failed copy of " <> pointLabel c, rebuiltChainRoot)
+                                   | s <- points h
+                                   , c <- points h
+                                   ]
+
+            it
+                "reads the same transaction as a second spend when it is marked valid"
+                $ \h -> do
+                    let spentFrom = foldAt 0 h
+                        copied = pointTx (foldAt 1 h)
+                    bad <- failedCopy copied
+                    good <- viaCbor (bad & isValidTxL .~ IsValid True)
+                    txIdTx good `shouldBe` txIdTx bad
+                    (without, _) <-
+                        replayAt
+                            h
+                            (historyResolved h)
+                            (historyTxs h)
+                            (historyToken h)
+                            (lastPoint h)
+                    outcomes <- forM [good, bad] $ \tx -> do
+                        (result, _) <-
+                            replayAt
+                                h
+                                (historyResolved h)
+                                (historyTxs h <> [tx])
+                                (historyToken h)
+                                (lastPoint h)
+                        pure (tx ^. isValidTxL, result)
+                    outcomes
+                        `shouldBe` [
+                                       ( IsValid True
+                                       , Left
+                                            ( ReplayFailure
+                                                (historyToken h)
+                                                (txIdTx good)
+                                                (HistoryIncomplete (ForkedStateOutput (pointOutput spentFrom)))
+                                            )
+                                       )
+                                   , (IsValid False, without)
+                                   ]
+
+            it
+                "never serves a failed transaction as the fold that made the selected state output"
+                $ \h -> do
+                    let newest = lastPoint h
+                    bad <- failedCopy (pointTx newest)
+                    let txs = bad : filter ((/= txIdTx (pointTx newest)) . txIdTx) (historyTxs h)
+                    (result, _) <-
+                        replayAt
+                            h
+                            (historyResolved h)
+                            txs
+                            (historyToken h)
+                            newest
+                                { pointTx = bad
+                                , pointOutput = TxIn (txIdTx bad) (TxIx 0)
+                                }
+                    result
+                        `shouldBe` Left
+                            ( ReplayFailure
+                                (historyToken h)
+                                (txIdTx bad)
+                                (HistoryIncomplete MissingTransaction)
+                            )
 
     describe
         "material the replay cannot read is refused by name, never guessed"
@@ -896,6 +1058,31 @@ isRight' = either (const False) (const True)
 
 setRequest :: OnChainRequest -> TxOut ConwayEra -> TxOut ConwayEra
 setRequest r o = o & datumTxOutL .~ mkInlineDatum (toPlcData (RequestDatum r))
+
+{- | A transaction as a provider serves it: written to its CBOR and read
+back, so the replay sees what the bytes carry, the validity flag included.
+-}
+viaCbor :: ConwayTx -> IO ConwayTx
+viaCbor tx =
+    either (fail . ("the transaction does not decode: " <>) . show) pure $
+        decodeFullAnnotator
+            (eraProtVerHigh @ConwayEra)
+            "transaction"
+            decCBOR
+            (serialize (eraProtVerHigh @ConwayEra) tx)
+
+{- | A failed copy of a transaction, from its bytes: another identifier, the
+same inputs, and @isValid = false@, so only its collateral was spent.
+-}
+failedCopy :: ConwayTx -> IO ConwayTx
+failedCopy tx = do
+    copy <- viaCbor (bumpFee tx & isValidTxL .~ IsValid False)
+    unless (copy ^. isValidTxL == IsValid False) $
+        fail "the failed copy does not read back as failed"
+    when (txIdTx copy == txIdTx tx) $
+        fail
+            "the failed copy kept the identifier of the transaction it copies"
+    pure copy
 
 -- | The same transaction with a different body: same inputs, another identifier.
 bumpFee :: ConwayTx -> ConwayTx
