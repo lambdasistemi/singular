@@ -3,11 +3,10 @@
 As a maintainer, I want runnable checkpoints that preserve the registry journey
 while its trie and local computation move behind common capabilities, before
 the node read path is replaced. Read the [stories](spec.md)
-first, then the [decisions awaiting intake acceptance](decisions.md).
-The frozen base is `872c0ecf3c7cf1a10293793523c8521d5ef9aae9`, the recovery
-head of [PR #382](https://github.com/lambdasistemi/singular/pull/382).
-This is a stacked intake against feat/362-recovery. Only this ticket's planning
-commits sit above that base; after its merge, retarget to main and rebase.
+first, then the [accepted decisions](decisions.md). The deletion inventory stays
+bound to recovery head `872c0ecf3c7cf1a10293793523c8521d5ef9aae9` of
+[PR #382](https://github.com/lambdasistemi/singular/pull/382).
+That recovery has merged; this implementation now targets main.
 
 ## Proposed capability types
 
@@ -232,15 +231,14 @@ answer A-001. Production live Koios HTTP is outside this ticket.
 
 Every call must have a captured request, response, source and hash, linked to
 the consumer's effect trace. A required call returning 404, a synthetic empty
-answer, or the facade reading terminal receipts fails the CI journey. This
-table establishes required coverage; the facade is not implemented and no
-runtime endpoint coverage is claimed at intake.
+answer, or the facade reading terminal receipts fails the CI journey.
+The facade remains unimplemented.
 
 ## Invariant-to-test map and controlled faults
 
 As a reviewer, I want each claimed guarantee to name the observation that
-would contradict it. These are planned checks. No row below has been executed
-on a new implementation. Behavioral red evidence must come from the subject
+would contradict it. These checks span the whole ticket; only the trie slice
+is reviewed so far. Behavioral red evidence must come from the subject
 running with a reachable fault, never a compiler or launcher failure.
 
 | Requirement in the user's words | Executable boundary and positive observation | Controlled fault that must turn it red |
@@ -273,18 +271,26 @@ recovery controls that must migrate rather than silently disappear.
 The implementation also adds this spec directory to the repository's
 presentation-check extent; this intake runs its existing checker explicitly.
 
-## Acceptance boundaries and phase stop
+## Accepted checkpoints and remaining delivery
 
-As the epic owner, I receive this draft intake before authorizing execution.
-The ticket owner writes planning and PR metadata only. No tests, production
-code, dependencies or gate implementations are changed by this intake.
-Each Markdown page has speech extracted by mkdocs-speech and stamped against
-its current bytes. The proposed per-page ceiling is 24 KiB and 300 lines;
-the machine-readable inventory is outside the prose budget.
+As a maintainer, I need to distinguish the checked trie migration from the
+provider replacement still to come. The seven scoped TrieState reviews are
+approved. Local evaluation and pinned time, provider replacement with deletion,
+and published evidence remain unfinished; their checks above remain planned.
 
-The next phase begins only after an inbox acceptance naming the intake SHA.
-Then the approved commit owner is Codex gpt-6.1-sol with high reasoning, and
-the mute auditor is Claude claude-opus-5-5 with high effort in its own detached
-audit worktree, both in this ticket's tmux window. No gate-author or draft
-seats are authorized. Conflicting generic staffing recipes do not add seats.
-The epic owner verifies final readiness and merges; this seat never merges.
+Focused trie checks passed 108 examples and the full suite passed 813, with
+no failures. Both packaged journeys and 628 recovery clauses passed. Execution
+before the checkpoint commits is bound by source-equivalence receipts; the
+journey's later formatting has no new exact-commit packaged run. These results
+establish application proofs and private-devnet recovery, not ledger verification.
+
+If the state input moves between selection and fold construction, even with
+the same root, the fold now refuses without submitting and can be retried.
+Insert preview reach rests on shared source and its untraced successful receipt;
+update and terminate previews also have traced selection and refusal evidence.
+
+Full CI remains held on docs-check for API narration. Draft pushes may name
+that gap; the operator's key holder supplies the audio. This is not full-CI
+or merge acceptance. Approved checkpoint ancestry is retained. The epic owner
+verifies final readiness and merges. Pages retain extracted speech; the prose
+ceiling is 24 KiB and 300 lines. No additional seats or gates are authorized.
