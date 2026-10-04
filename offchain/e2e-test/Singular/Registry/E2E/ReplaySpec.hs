@@ -28,6 +28,7 @@ import Data.IORef (IORef, newIORef, readIORef)
 import Data.List (nub)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
 import Lens.Micro ((&), (.~), (^.))
 import Test.Hspec
@@ -140,7 +141,7 @@ replaySpec = do
                 expectationFailure "no fold of the history rejects all its requests"
             unless
                 ( any
-                    (\f -> any (isRejected . snd) f && any (not . isRejected . snd) f)
+                    (\f -> any (isRejected . snd) f && any (isApplied . snd) f)
                     folds
                 )
                 $ expectationFailure
@@ -196,125 +197,130 @@ replaySpec = do
             root `shouldNotBe` pointRoot (mixedPoint h)
 
     describe
-        "actions pair with this registry's requests in ledger input order" $ do
-        it
-            "books the mixed fold's requests in an order that is not the ledger's" $ \h -> do
-            let booked = mixedBooked (historyMixed h)
-            length booked `shouldSatisfy` (> 1)
-            Set.toAscList (Set.fromList booked) `shouldNotBe` booked
+        "actions pair with this registry's requests in ledger input order"
+        $ do
+            it
+                "books the mixed fold's requests in an order that is not the ledger's"
+                $ \h -> do
+                    let booked = mixedBooked (historyMixed h)
+                    length booked `shouldSatisfy` (> 1)
+                    Set.toAscList (Set.fromList booked) `shouldNotBe` booked
 
-        it "differs from what pairing in booking order would give" $ \h -> do
-            let tx = pointTx (mixedPoint h)
-                actions = map snd (decodeFold h tx)
-                requests = Map.fromList (requestInputs h tx)
-                byBooking =
-                    [ r
-                    | (b, a) <- zip (mixedBooked (historyMixed h)) actions
-                    , not (isRejected a)
-                    , Just r <- [Map.lookup b requests]
-                    ]
-            length byBooking `shouldBe` 1
-            root <- applyOnTop h (beforeMixed h) byBooking
-            root `shouldNotBe` pointRoot (mixedPoint h)
+            it "differs from what pairing in booking order would give" $ \h -> do
+                let tx = pointTx (mixedPoint h)
+                    actions = map snd (decodeFold h tx)
+                    requests = Map.fromList (requestInputs h tx)
+                    byBooking =
+                        [ r
+                        | (b, a) <- zip (mixedBooked (historyMixed h)) actions
+                        , isApplied a
+                        , Just r <- [Map.lookup b requests]
+                        ]
+                length byBooking `shouldBe` 1
+                root <- applyOnTop h (beforeMixed h) byBooking
+                root `shouldNotBe` pointRoot (mixedPoint h)
 
-        it "spends another registry's request and references one of its own" $ \h -> do
-            let body = pointTx (mixedPoint h) ^. bodyTxL
-                m = historyMixed h
-            Set.member (mixedDecoySpent m) (body ^. inputsTxBodyL) `shouldBe` True
-            Set.member (mixedDecoyReferenced m) (body ^. referenceInputsTxBodyL)
-                `shouldBe` True
-            requestTokenAt h (mixedDecoySpent m)
-                `shouldSatisfy` maybe False (/= tokenBytes h)
-            requestTokenAt h (mixedDecoyReferenced m)
-                `shouldBe` Just (tokenBytes h)
-
-    describe
-        "a history that does not chain from create is refused by name" $ do
-        it "rebuilds the same trie from the history in another order" $ \h -> do
-            let txs = historyTxs h
-            (inOrder, db0) <-
-                replayAt h (historyResolved h) txs (historyToken h) (lastPoint h)
-            r0 <- rootOf db0
-            inOrder
-                `shouldBe` Right
-                    ( Replayed
-                        (txIdTx (pointTx (historyCreate h)))
-                        (map (txIdTx . pointTx) (historyFolds h))
-                    )
-            r0 `shouldBe` pointRoot (lastPoint h)
-            forM_ [reverse txs, rotate 3 txs, rotate 7 (reverse txs)] $ \shuffled -> do
-                (result, db) <-
-                    replayAt h (historyResolved h) shuffled (historyToken h) (lastPoint h)
-                result `shouldBe` inOrder
-                rootOf db >>= (`shouldBe` r0)
-
-        it "refuses a history with one fold dropped, naming it" $ \h -> do
-            let dropped = historyFolds h !! 4
-                txs = filter ((/= txIdTx (pointTx dropped)) . txIdTx) (historyTxs h)
-            (result, _) <-
-                replayAt h (historyResolved h) txs (historyToken h) (lastPoint h)
-            result
-                `shouldBe` Left
-                    ( ReplayFailure
-                        (historyToken h)
-                        (txIdTx (pointTx dropped))
-                        (HistoryIncomplete MissingTransaction)
-                    )
-
-        it "refuses a history without create, naming it" $ \h -> do
-            let createId = txIdTx (pointTx (historyCreate h))
-                txs = filter ((/= createId) . txIdTx) (historyTxs h)
-            (result, _) <-
-                replayAt h (historyResolved h) txs (historyToken h) (lastPoint h)
-            result
-                `shouldBe` Left
-                    ( ReplayFailure
-                        (historyToken h)
-                        createId
-                        (HistoryIncomplete MissingTransaction)
-                    )
-
-        it
-            "refuses a state output spent by two transactions, naming the second" $ \h -> do
-            let spentFrom = historyFolds h !! 2
-                forkedFrom = historyFolds h !! 3
-                fork = bumpFee (pointTx forkedFrom)
-            txIdTx fork `shouldNotBe` txIdTx (pointTx forkedFrom)
-            (result, _) <-
-                replayAt
-                    h
-                    (historyResolved h)
-                    (historyTxs h <> [fork])
-                    (historyToken h)
-                    (lastPoint h)
-            result
-                `shouldBe` Left
-                    ( ReplayFailure
-                        (historyToken h)
-                        (txIdTx fork)
-                        (HistoryIncomplete (ForkedStateOutput (pointOutput spentFrom)))
-                    )
-
-        it "refuses a transaction that touches the token outside the lineage" $ \h -> do
-            let stray = bumpFee (pointTx (historyCreate h))
-            (result, _) <-
-                replayAt
-                    h
-                    (historyResolved h)
-                    (stray : historyTxs h)
-                    (historyToken h)
-                    (lastPoint h)
-            result
-                `shouldBe` Left
-                    ( ReplayFailure
-                        (historyToken h)
-                        (txIdTx stray)
-                        (HistoryIncomplete OutsideLineage)
-                    )
+            it "spends another registry's request and references one of its own" $ \h -> do
+                let body = pointTx (mixedPoint h) ^. bodyTxL
+                    m = historyMixed h
+                Set.member (mixedDecoySpent m) (body ^. inputsTxBodyL) `shouldBe` True
+                Set.member (mixedDecoyReferenced m) (body ^. referenceInputsTxBodyL)
+                    `shouldBe` True
+                requestTokenAt h (mixedDecoySpent m)
+                    `shouldSatisfy` maybe False (/= tokenBytes h)
+                requestTokenAt h (mixedDecoyReferenced m)
+                    `shouldBe` Just (tokenBytes h)
 
     describe
-        "a selection the history does not reach is never an empty trie" $
-        it "refuses a selection newer than the history as incomplete" $ \h -> do
+        "a history that does not chain from create is refused by name"
+        $ do
+            it "rebuilds the same trie from the history in another order" $ \h -> do
+                let txs = historyTxs h
+                (inOrder, db0) <-
+                    replayAt h (historyResolved h) txs (historyToken h) (lastPoint h)
+                r0 <- rootOf db0
+                inOrder
+                    `shouldBe` Right
+                        ( Replayed
+                            (txIdTx (pointTx (historyCreate h)))
+                            (map (txIdTx . pointTx) (historyFolds h))
+                        )
+                r0 `shouldBe` pointRoot (lastPoint h)
+                forM_ [reverse txs, rotate 3 txs, rotate 7 (reverse txs)] $ \shuffled -> do
+                    (result, db) <-
+                        replayAt h (historyResolved h) shuffled (historyToken h) (lastPoint h)
+                    result `shouldBe` inOrder
+                    rootOf db >>= (`shouldBe` r0)
+
+            it "refuses a history with one fold dropped, naming it" $ \h -> do
+                let dropped = historyFolds h !! 4
+                    txs = filter ((/= txIdTx (pointTx dropped)) . txIdTx) (historyTxs h)
+                (result, _) <-
+                    replayAt h (historyResolved h) txs (historyToken h) (lastPoint h)
+                result
+                    `shouldBe` Left
+                        ( ReplayFailure
+                            (historyToken h)
+                            (txIdTx (pointTx dropped))
+                            (HistoryIncomplete MissingTransaction)
+                        )
+
+            it "refuses a history without create, naming it" $ \h -> do
+                let createId = txIdTx (pointTx (historyCreate h))
+                    txs = filter ((/= createId) . txIdTx) (historyTxs h)
+                (result, _) <-
+                    replayAt h (historyResolved h) txs (historyToken h) (lastPoint h)
+                result
+                    `shouldBe` Left
+                        ( ReplayFailure
+                            (historyToken h)
+                            createId
+                            (HistoryIncomplete MissingTransaction)
+                        )
+
+            it
+                "refuses a state output spent by two transactions, naming the second"
+                $ \h -> do
+                    let spentFrom = historyFolds h !! 2
+                        forkedFrom = historyFolds h !! 3
+                        fork = bumpFee (pointTx forkedFrom)
+                    txIdTx fork `shouldNotBe` txIdTx (pointTx forkedFrom)
+                    (result, _) <-
+                        replayAt
+                            h
+                            (historyResolved h)
+                            (historyTxs h <> [fork])
+                            (historyToken h)
+                            (lastPoint h)
+                    result
+                        `shouldBe` Left
+                            ( ReplayFailure
+                                (historyToken h)
+                                (txIdTx fork)
+                                (HistoryIncomplete (ForkedStateOutput (pointOutput spentFrom)))
+                            )
+
+            it "refuses a transaction that touches the token outside the lineage" $ \h -> do
+                let stray = bumpFee (pointTx (historyCreate h))
+                (result, _) <-
+                    replayAt
+                        h
+                        (historyResolved h)
+                        (stray : historyTxs h)
+                        (historyToken h)
+                        (lastPoint h)
+                result
+                    `shouldBe` Left
+                        ( ReplayFailure
+                            (historyToken h)
+                            (txIdTx stray)
+                            (HistoryIncomplete OutsideLineage)
+                        )
+
+    describe
+        "a selection the history does not reach is never an empty trie"
+        $ it "refuses a selection newer than the history as incomplete"
+        $ \h -> do
             let newest = lastPoint h
                 txs = filter ((/= txIdTx (pointTx newest)) . txIdTx) (historyTxs h)
             (result, _) <-
@@ -370,9 +376,10 @@ replaySpec = do
                         (WrongRegistry SeedNotSpent)
                     )
 
-    describe "a stale selection is refused" $
-        it
-            "refuses a selected root that is not the root at the selected output" $ \h -> do
+    describe "a stale selection is refused"
+        $ it
+            "refuses a selected root that is not the root at the selected output"
+        $ \h -> do
             let newest = lastPoint h
                 previous = last (init (points h))
             pointRoot previous `shouldNotBe` pointRoot newest
@@ -392,55 +399,54 @@ replaySpec = do
                     )
 
     describe
-        "proofs from the rebuilt trie verify against the chain's root" $ do
-        it "proves every key of the history at create and after every fold" $ \h ->
-            forM_ (points h) $ \p -> do
-                (result, db) <-
+        "proofs from the rebuilt trie verify against the chain's root"
+        $ do
+            it "proves every key of the history at create and after every fold" $ \h ->
+                forM_ (points h) $ \p -> do
+                    (result, db) <-
+                        replayAt h (historyResolved h) (historyTxs h) (historyToken h) p
+                    result `shouldSatisfy` isRight'
+                    forM_ (historyKeys h) $ \key -> do
+                        verdicts <- proofVerdicts db (pointRoot p) key
+                        (pointLabel p, key, length (filter id verdicts))
+                            `shouldBe` (pointLabel p, key, 1)
+
+            it "does not prove a fold's root from the previous fold's trie" $ \h ->
+                forM_ (zip (points h) (drop 1 (points h))) $ \(earlier, later) ->
+                    when (pointRoot earlier /= pointRoot later) $ do
+                        (_, db) <-
+                            replayAt h (historyResolved h) (historyTxs h) (historyToken h) earlier
+                        own <- forM (historyKeys h) (verifiedCount db (pointRoot earlier))
+                        (pointLabel earlier, all (== 1) own)
+                            `shouldBe` (pointLabel earlier, True)
+                        counts <- forM (historyKeys h) (verifiedCount db (pointRoot later))
+                        (pointLabel later, all (== 1) counts)
+                            `shouldBe` (pointLabel later, False)
+
+            it "does not verify a proof with one step corrupted" $ \h -> do
+                let p = lastPoint h
+                (_, db) <-
                     replayAt h (historyResolved h) (historyTxs h) (historyToken h) p
-                result `shouldSatisfy` isRight'
-                forM_ (historyKeys h) $ \key -> do
-                    verdicts <- proofVerdicts db (pointRoot p) key
-                    (pointLabel p, key, length (filter id verdicts))
-                        `shouldBe` (pointLabel p, key, 1)
-
-        it "does not prove a fold's root from the previous fold's trie" $ \h ->
-            forM_ (zip (points h) (drop 1 (points h))) $ \(earlier, later) ->
-                when (pointRoot earlier /= pointRoot later) $ do
-                    (_, db) <-
-                        replayAt h (historyResolved h) (historyTxs h) (historyToken h) earlier
-                    own <- forM (historyKeys h) $ \key ->
-                        length . filter id <$> proofVerdicts db (pointRoot earlier) key
-                    (pointLabel earlier, all (== 1) own)
-                        `shouldBe` (pointLabel earlier, True)
-                    counts <- forM (historyKeys h) $ \key ->
-                        length . filter id <$> proofVerdicts db (pointRoot later) key
-                    (pointLabel later, all (== 1) counts)
-                        `shouldBe` (pointLabel later, False)
-
-        it "does not verify a proof with one step corrupted" $ \h -> do
-            let p = lastPoint h
-            (_, db) <-
-                replayAt h (historyResolved h) (historyTxs h) (historyToken h) p
-            trie <- trieOf db
-            present <- fmap concat $ forM (historyKeys h) $ \key -> do
-                steps <- getProofSteps trie key
-                pure [(key, s) | Just s@(_ : _) <- [steps]]
-            case present of
-                [] -> expectationFailure "no key of the history has a non-empty proof"
-                (key, steps) : _ -> do
-                    leaf <- leafOf db (pointRoot p) key
-                    verifyAikenInclusionProof
-                        (unRoot (pointRoot p))
-                        key
-                        leaf
-                        (proofBytes steps)
-                        `shouldBe` True
-                    verifyAikenInclusionProof
-                        (unRoot (pointRoot p))
-                        key
-                        leaf
-                        (proofBytes (corruptFirst steps))
-                        `shouldBe` False
+                trie <- trieOf db
+                present <- fmap concat $ forM (historyKeys h) $ \key -> do
+                    steps <- getProofSteps trie key
+                    pure [(key, s) | Just s@(_ : _) <- [steps]]
+                case present of
+                    [] -> expectationFailure "no key of the history has a non-empty proof"
+                    (key, steps) : _ -> do
+                        leaf <- leafOf db (pointRoot p) key
+                        verifyAikenInclusionProof
+                            (unRoot (pointRoot p))
+                            key
+                            leaf
+                            (proofBytes steps)
+                            `shouldBe` True
+                        verifyAikenInclusionProof
+                            (unRoot (pointRoot p))
+                            key
+                            leaf
+                            (proofBytes (corruptFirst steps))
+                            `shouldBe` False
 
 -- ---------------------------------------------------------
 -- The history's shape
@@ -560,6 +566,9 @@ isRejected :: RequestAction -> Bool
 isRejected Rejected = True
 isRejected _ = False
 
+isApplied :: RequestAction -> Bool
+isApplied = not . isRejected
+
 isRight' :: Either a b -> Bool
 isRight' = either (const False) (const True)
 
@@ -663,6 +672,10 @@ proofVerdicts ref (Root root) key = do
         , asMember leafTerminal
         ]
 
+-- | How many of a key's answers verify against the root.
+verifiedCount :: IORef MPFInMemoryDB -> Root -> ByteString -> IO Int
+verifiedCount ref root key = length . filter id <$> proofVerdicts ref root key
+
 {- | The proof that a key is not in a trie: its proof in a copy of the trie
 with the key inserted, which is how a proof of absence reads on chain.
 -}
@@ -671,7 +684,7 @@ exclusionSteps ref key = do
     db <- readIORef ref
     copy <- mkPureTrieFromRef <$> newIORef db
     _ <- insert copy key leafActive
-    maybe [] id <$> getProofSteps copy key
+    fromMaybe [] <$> getProofSteps copy key
 
 leafOf :: IORef MPFInMemoryDB -> Root -> ByteString -> IO ByteString
 leafOf ref root key = do
@@ -683,8 +696,13 @@ leafOf ref root key = do
         [l] -> pure l
         _ -> fail "the key is not a member under one leaf"
 
--- | A proof in the encoding the validator reads.
+{- | A proof in the encoding the verifier reads: the steps as plutus data, in
+which a non-empty list is indefinite-length. The empty proof is written the
+same way, as an indefinite list closed at once, where plutus data would
+write a definite empty list the verifier's exact parser does not read.
+-}
 proofBytes :: [ProofStep] -> ByteString
+proofBytes [] = BS.pack [0x9f, 0xff]
 proofBytes steps = let BuiltinByteString b = serialiseData (toBuiltinData steps) in b
 
 -- | The first step with one hash byte flipped.
