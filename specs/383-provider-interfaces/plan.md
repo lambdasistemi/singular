@@ -1,8 +1,8 @@
-# Replace the command read path in one runnable slice
+# Preserve the journey while replacing its interfaces
 
-As a maintainer, I want a runnable first replacement that exercises the same
-registry journey through generic capabilities, so that deleting the node path
-does not leave the demonstration dependent on it. Read the [stories](spec.md)
+As a maintainer, I want runnable checkpoints that preserve the registry journey
+while its trie and local computation move behind common capabilities, before
+the node read path is replaced. Read the [stories](spec.md)
 first, then the [decisions awaiting intake acceptance](decisions.md).
 The frozen base is `872c0ecf3c7cf1a10293793523c8521d5ef9aae9`, the recovery
 head of [PR #382](https://github.com/lambdasistemi/singular/pull/382).
@@ -186,21 +186,24 @@ binary check does not establish that a removed mechanism is unreachable.
 
 ## Runnable vertical slices
 
-As a demonstration user, I must retain a working journey after the first
-implementation slice, rather than receive an isolated interface library.
-The replacement and deletion land together. There is no intermediate pushed
-candidate with both provider and node command routes.
+As a demonstration user, I retain a working journey at every checkpoint.
+The epic owner's accepted slicing amendment places the behavior-preserving trie
+and local-computation migrations before the provider switch. Neither adds a
+second command route. Provider replacement and deletion still land together.
 
 | Slice | Runnable outcome | Required observations |
 | --- | --- | --- |
-| Replace commands and their old reads | Packaged create/preview, insert, inspect, update, terminate, fold, reject, reclaim and recovery run on the pure and Koios-shaped devnet adapters; TrieState wraps the mirror with pure proof fixtures; common evaluation/time, receipts and bounded confirmation are active; old node/indexer routes are deleted. | Actual ledger journey, no node socket passed to singular, exact output visibility after booking, all facts Unverified, failures and parser removal controls. |
-| Demonstrate provider and local-computation preservation | Recorded read-only preprod and devnet responses run through the same adapter; generic history resolves bytes/dependencies; evaluation/time match recorded node results. | Fixture provenance, same-input differential results, pure effect trace, missing/malformed/history-pagination controls. |
+| TrieState first | Every command's trie reads, proofs, speculation and accepted folds use TrieState; the current mirror and a pure fixture instance supply it. Provider reads are unchanged. | Existing real devnet journey and recovery remain green; pure membership/non-membership and ordered-edge proofs, identity/root/coverage/refusal faults. |
+| Local evaluation and pinned time | Common services replace viewEvaluateTx and both time calls while provider reads stay unchanged. Reviewed network manifests are frozen with independent recorded node comparisons. | Identical transaction/input/parameter comparisons, slot/era boundaries and refusal controls, unchanged devnet journey. |
+| Switch the provider and delete old reads | Packaged create/preview, insert, inspect, update, terminate, fold, reject, reclaim and recovery run on pure and Koios-shaped adapters; CI facade, preprod fixtures and generic history are active; node/indexer command paths are deleted together. | Actual ledger journey without a socket passed to singular, exact output visibility, all facts Unverified, complete required call coverage and controlled failures. |
 | Publish evidence and prepare handoff | Public suite and current docs describe receipt-computed guarantees and missing boundaries; exact-head local gate, CI journey and auditor checkpoint trail are bound to the candidate. | Immutable receipts, controlled-fault red/green, no stale narration, clean committed range and exact-head CI. |
 
-The first slice may be large because runnable replacement is indivisible at
-the command boundary. Internal commits may build toward it but are not pushed
-as completed slices. Resource limits and immutable per-slice checks are frozen
-after intake acceptance, before child launch. No additional seats are inferred.
+Each slice is pushed only after its local gate is green and every persistent
+auditor checkpoint is approved. The third slice remains indivisible at the
+command boundary. If either earlier migration cannot be separated, ask the
+epic owner with evidence instead of silently folding it into the switch.
+Resource limits and immutable per-slice checks are frozen before child launch.
+No additional seats are inferred.
 
 ## Development-network provider and complete call coverage
 

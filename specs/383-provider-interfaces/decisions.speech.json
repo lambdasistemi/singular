@@ -109,6 +109,10 @@
       "pause": 500
     },
     {
+      "text": "The epic owner accepted intake head 34804370f8321f4a341a13e1a809ae1119f5aaa8 with a slicing amendment: TrieState first, local evaluation and pinned time second, the indivisible provider switch/deletion third, evidence and handoff last. Each earlier checkpoint preserves the journey and has local green gates and persistent auditor approval before push. A separation failure is a question, not permission to combine slices. The approved commit owner and mute persistent auditor are released; intake acceptance does not accept their implementation.",
+      "pause": 400
+    },
+    {
       "text": "The operator also adds TrieState m to this ticket. Every command's trie reads, leaf proofs and folds use that backend-neutral capability. Its identity comes from create; state selection/root and complete-or-refused coverage are explicit. The first adapter wraps the current local mirror, retaining its proof checks, file format, speculative behavior and accepted updates. A genuinely pure fixture trie exercises every edge's proof path. The name of the existing IORef-backed Trie.Pure module does not establish pure-monad execution.",
       "pause": 400
     },
@@ -131,6 +135,6 @@
   ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "2350e68b77cae4421c8d139787588e956c69869608fd22ca3d9db4569019fb50"
+    "sha256": "236bd7592642c3363c27badb824f8a8e32a4e7f5cf6d2fa85baa22fbb0625103"
   }
 }

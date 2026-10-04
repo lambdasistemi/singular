@@ -158,6 +158,14 @@ lane's Q-004-reject-model-hold without deciding the client's semantic contract.
 
 ## Intake release and subsequent evidence
 
+The epic owner accepted intake head 34804370f8321f4a341a13e1a809ae1119f5aaa8
+with a slicing amendment: TrieState first, local evaluation and pinned time
+second, the indivisible provider switch/deletion third, evidence and handoff
+last. Each earlier checkpoint preserves the journey and has local green gates
+and persistent auditor approval before push. A separation failure is a question,
+not permission to combine slices. The approved commit owner and mute persistent
+auditor are released; intake acceptance does not accept their implementation.
+
 The operator also adds TrieState m to this ticket. Every command's trie reads,
 leaf proofs and folds use that backend-neutral capability. Its identity comes
 from create; state selection/root and complete-or-refused coverage are explicit.

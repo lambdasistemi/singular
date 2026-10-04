@@ -1,11 +1,11 @@
 {
-  "replace-the-command-read-path-in-one-runnable-slice": [
+  "preserve-the-journey-while-replacing-its-interfaces": [
     {
-      "text": "Replace the command read path in one runnable slice.",
+      "text": "Preserve the journey while replacing its interfaces.",
       "pause": 500
     },
     {
-      "text": "As a maintainer, I want a runnable first replacement that exercises the same registry journey through generic capabilities, so that deleting the node path does not leave the demonstration dependent on it. Read the stories first, then the decisions awaiting intake acceptance. The frozen base is 872c0ecf3c7cf1a10293793523c8521d5ef9aae9, the recovery head of PR #382. This is a stacked intake against feat/362-recovery. Only this ticket's planning commits sit above that base; after its merge, retarget to main and rebase.",
+      "text": "As a maintainer, I want runnable checkpoints that preserve the registry journey while its trie and local computation move behind common capabilities, before the node read path is replaced. Read the stories first, then the decisions awaiting intake acceptance. The frozen base is 872c0ecf3c7cf1a10293793523c8521d5ef9aae9, the recovery head of PR #382. This is a stacked intake against feat/362-recovery. Only this ticket's planning commits sit above that base; after its merge, retarget to main and rebase.",
       "pause": 400
     }
   ],
@@ -81,11 +81,11 @@
       "pause": 500
     },
     {
-      "text": "As a demonstration user, I must retain a working journey after the first implementation slice, rather than receive an isolated interface library. The replacement and deletion land together. There is no intermediate pushed candidate with both provider and node command routes.",
+      "text": "As a demonstration user, I retain a working journey at every checkpoint. The epic owner's accepted slicing amendment places the behavior-preserving trie and local-computation migrations before the provider switch. Neither adds a second command route. Provider replacement and deletion still land together.",
       "pause": 400
     },
     {
-      "text": "The first slice may be large because runnable replacement is indivisible at the command boundary. Internal commits may build toward it but are not pushed as completed slices. Resource limits and immutable per-slice checks are frozen after intake acceptance, before child launch. No additional seats are inferred.",
+      "text": "Each slice is pushed only after its local gate is green and every persistent auditor checkpoint is approved. The third slice remains indivisible at the command boundary. If either earlier migration cannot be separated, ask the epic owner with evidence instead of silently folding it into the switch. Resource limits and immutable per-slice checks are frozen before child launch. No additional seats are inferred.",
       "pause": 400
     }
   ],
@@ -133,6 +133,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "adcb2ac711af263294c3203cb9d4cd88ab8133277e88ab88ecac4838da4f0911"
+    "sha256": "8bdd8ddf75fdaadf5003fb3372bf648e5b0548e3ccf459df3e23efe48a2f5d1a"
   }
 }
