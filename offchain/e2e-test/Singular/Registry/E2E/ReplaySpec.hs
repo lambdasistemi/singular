@@ -154,18 +154,20 @@ replaySpec = do
                 $ expectationFailure
                     "no fold of the history mixes applied and rejected requests"
 
-        it "replays to the chain's root at create and after every fold" $ \h ->
-            forM_ (zip [0 ..] (points h)) $ \(k, p) -> do
+        it "replays to the chain's root at create and after every fold" $ \h -> do
+            -- One verdict per state output, compared as one list: a failure
+            -- shows where the replay first parts from the chain and that
+            -- every state output before it still rebuilds the chain's root.
+            observed <- forM (zip [0 ..] (points h)) $ \(k, p) -> do
                 (result, db) <-
                     replayAt h (historyResolved h) (historyTxs h) (historyToken h) p
-                result
-                    `shouldBe` Right
-                        ( Replayed
+                rebuilt <- rootOf db
+                let lineage =
+                        Replayed
                             (txIdTx (pointTx (historyCreate h)))
                             (map (txIdTx . pointTx) (take k (historyFolds h)))
-                        )
-                rebuilt <- rootOf db
-                (pointLabel p, rebuilt) `shouldBe` (pointLabel p, pointRoot p)
+                pure (pointLabel p, verdict h lineage (pointRoot p) result rebuilt)
+            observed `shouldBe` [(pointLabel p, rebuiltChainRoot) | p <- points h]
 
         it "refuses, naming the fold, a request served with an altered edge" $ \h -> do
             let target = firstFold "insertActive" h
@@ -744,6 +746,32 @@ mixedPoint = lastPoint
 
 beforeMixed :: History -> StatePoint
 beforeMixed = last . init . points
+
+rebuiltChainRoot :: String
+rebuiltChainRoot = "rebuilt the chain's root"
+
+-- | What a replay to one state output did, in the words a failure report needs.
+verdict
+    :: History
+    -> Replayed
+    -> Root
+    -> Either ReplayFailure Replayed
+    -> Root
+    -> String
+verdict h lineage chainRoot result rebuilt = case result of
+    Right replayed
+        | replayed /= lineage -> "replayed another lineage"
+        | rebuilt /= chainRoot -> "rebuilt another root"
+        | otherwise -> rebuiltChainRoot
+    Left (ReplayFailure _ tid refusal) ->
+        "refused at "
+            <> maybe "a transaction outside the history" pointLabel (pointOf tid)
+            <> ": "
+            <> show refusal
+  where
+    pointOf tid = case filter ((== tid) . txIdTx . pointTx) (points h) of
+        p : _ -> Just p
+        [] -> Nothing
 
 -- | The fold at a position of the history, in the order it was submitted.
 foldAt :: Int -> History -> StatePoint
