@@ -176,12 +176,15 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
                         (leaf, missing, member) <- right answers
                         leaf `shouldBe` Right want
                         proofOfAbsence <- right missing
+                        (_, anotherRoot, _) <- produced token [("another-registry-root", 1)]
                         verifyNonMembership
                             proofOfAbsence
                             (trieSelectionRoot afterChosen)
                             "never-bound"
                             `shouldBe` True
                         verifyNonMembership proofOfAbsence (trieSelectionRoot afterChosen) key
+                            `shouldBe` False
+                        verifyNonMembership proofOfAbsence anotherRoot "never-bound"
                             `shouldBe` False
                         if want == Unknown
                             then member `shouldSatisfy` isLeft
@@ -198,6 +201,12 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
                                     "never-bound"
                                     (leafBytes want)
                                     (membershipBytes proof)
+                                    `shouldBe` False
+                                verifyAikenInclusionProof
+                                    (unRoot expectedRoot)
+                                    key
+                                    (leafBytes want)
+                                    (BS.cons 0xff (BS.drop 1 (membershipBytes proof)))
                                     `shouldBe` False
                                 verifyAikenInclusionProof
                                     (unRoot expectedRoot)
