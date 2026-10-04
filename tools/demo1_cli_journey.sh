@@ -61,8 +61,6 @@ mkdir -p "$work"
 receipts="$work/receipts"
 mkdir -p "$receipts"
 reg="$work/registry"
-export SINGULAR_HARNESS_TRIE_TRACE="$work/direct-processes.trie.jsonl"
-: >"$SINGULAR_HARNESS_TRIE_TRACE"
 : >"$work/trie-command-invocations"
 
 fail() {
@@ -209,8 +207,14 @@ run() {
   shift 3
   local status=0
   : >"$receipts/$name.trie.jsonl"
-  SINGULAR_HARNESS_TRIE_TRACE="$receipts/$name.trie.jsonl" \
-    "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
+  if [[ " $* " == *" --preview "* ]]; then
+    # Keep the release's existing all-harness-variables-unset preview controls.
+    env -u SINGULAR_HARNESS_TRIE_TRACE "$singular" "$@" \
+      >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
+  else
+    SINGULAR_HARNESS_TRIE_TRACE="$receipts/$name.trie.jsonl" \
+      "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
+  fi
   printf '%s\n' "$name" >>"$work/trie-command-invocations"
   local got
   got="$(jq -r '.outcome' "$receipts/$name.json" 2>/dev/null || echo none)"
@@ -262,6 +266,8 @@ trie_bound() {
       elif $r.fold? != null then
         any(.[]; .operation == "accept" and .rootAfter == $r.root
           and .output == ($r.fold + "#0"))
+        and any(.[]; .operation == "speculateEdges" and .rootAfter == $r.root
+          and .proofCount > 0 and (.proofs | type == "string"))
       elif $r.root? != null then any($selected[]; .root == $r.root)
       else true end)' "$trace" >/dev/null
 }
@@ -1293,6 +1299,17 @@ jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
   "$receipts/trie-equal-root-omitted.json" >/dev/null || fail "omitting equal-root records changed the proven read"
 [ "$(coverage_digest "$copy")" = "$before" ] || fail "the equal-root omission read changed the registry"
 say "TrieState content coverage: named faults refused; equal-root record omission preserves the actual proven leaf"
+
+# A real successful read with the harness entirely absent still returns the
+# same key/leaf/root. It is separate from the instrumented extent, and preserves
+# the release's existing proof that ordinary processes run without hooks.
+status=0
+env -u SINGULAR_HARNESS_TRIE_TRACE "$singular" registry inspect --key keyG \
+  "${common[@]}" "${node[@]}" >"$receipts/trie-plain-inspect.json" 2>"$receipts/trie-plain-inspect.err" || status=$?
+[ "$status" -eq 0 ] || fail "the ordinary untraced inspect did not succeed"
+jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
+  '.outcome == "success" and .key == $correct[0].key and .leaf == $correct[0].leaf and .root == $correct[0].root' \
+  "$receipts/trie-plain-inspect.json" >/dev/null || fail "the ordinary untraced inspect changed the actual proven read"
 
 # The pre-migration executable is a real caller that opens/proves the
 # mirror directly. When supplied by the owner, run it against this same

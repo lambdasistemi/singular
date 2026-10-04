@@ -235,6 +235,8 @@ trie_extent() {
           elif $r.fold? != null then
             any(.[]; .operation == "accept" and .rootAfter == $r.root
               and .output == ($r.fold + "#0"))
+            and any(.[]; .operation == "speculateEdges" and .rootAfter == $r.root
+              and .proofCount > 0 and (.proofs | type == "string"))
           elif $r.root? != null then any($selected[]; .root == $r.root)
           else true end)' "$trace" >/dev/null || return 1
       jq -c --slurpfile trace "$trace" \
