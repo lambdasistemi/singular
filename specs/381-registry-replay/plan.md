@@ -121,7 +121,10 @@ the [decisions](decisions.md#joining-a-registry-from-public-data). Then:
 1. Bob inspects his key, proving its absence, and books and folds its
    insertion. Alice's directory is hashed before and after, and never read.
 2. Alice inspects Bob's key and finds it active, from her own replay.
-3. Alice books a termination of Bob's key; Bob folds it, needing no envelope.
+3. Bob books the termination of his own key; Alice folds it, with the
+   membership proof from her own replay and no envelope. Alice books the
+   termination of her own key; Bob folds it likewise. Bob's update and
+   termination attempts on Alice's key stay refused as not the controller.
 4. Alice inserts and folds her own key; Bob's attempt to fold one of Alice's
    insertions is refused for the missing envelope, by name.
 5. Rejection and reclaim run across actors, as today.
@@ -139,12 +142,13 @@ and stacks on the provider ticket's published slices.
 
 | Slice | Runnable outcome | Starts after |
 | --- | --- | --- |
-| Commands run on the replay | The lineage backend replaces the mirror instance in the terminal. Mirror and saved-root files are no longer written or read. The journey's single shared directory passes on it. Root, drop, mixed-fold and proof checks are in CI. | The provider ticket's trie-state slice and its history representation are published |
-| Separate actors | The joining path, separate directories, cross-actor steps and history-based controls in the journey; superseded statements corrected. | The provider ticket's provider switch slice is published |
-| Every-edge coverage | The edge coverage the ruling sets, with evidence published in the public suite's language and the audited trail bound to the head. | The ruling in the decisions |
+| Pure replay and chain oracles | The replay over the ledger's own transactions, rebuilding into the trie interface `walkEdge` takes, with every named refusal. Development-network checks: root at every fold, mixed fold, input-order pairing, dropped and forked history, and proofs at every fold. | Intake acceptance; nothing unpublished is consumed |
+| Commands run on the replay | The lineage backend replaces the mirror instance in the terminal. Mirror and saved-root files are no longer written or read. The journey's single shared directory passes on it. | The provider ticket's provider switch slice is published, with `Session.history` |
+| Separate actors | The joining path, separate directories, cross-actor steps and history-based controls in the journey; superseded statements corrected. | The same publication |
+| Published evidence | The two-edge journey evidence published in the public suite's language, and the audited trail bound to the head. | Separate actors |
 
 Each slice deletes what it makes obsolete in the same diff: the mirror adapter
-and its file handling leave with the first slice; the pure fixture trie stays.
+and its file handling leave with the commands slice; the pure fixture trie stays.
 Internal commits may build toward a slice; only completed slices are pushed.
 
 ## Responsibilities and data flow

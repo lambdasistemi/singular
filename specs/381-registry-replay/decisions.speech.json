@@ -19,19 +19,21 @@
       "pause": 500
     },
     {
-      "text": "As Alice and Bob, we are promised that an actor starting with no other actor's files operates each of the seven edges from public data alone. At the base, registry books two edges. insert books insertActive and terminate books updateTerminal (offchain/cli/src/Singular/CLI/Plan.hs:138,195). registry fold refuses every other edge by name (CLI/FoldRules.hs:264-273). update changes an application payload; it moves no trie edge. No CLI path books insertAbsent, updateActive, deleteAbsent, deleteActive or witnessTerminal. Nor does any library builder make a fold that mixes applied and rejected requests: the connected fold applies all of them, and reject rejects all of them.",
+      "text": "As Alice and Bob, we operate the two edges the CLI books from public data alone: insert books insertActive and terminate books updateTerminal (offchain/cli/src/Singular/CLI/Plan.hs:138,195). registry fold refuses every other edge by name (CLI/FoldRules.hs:264-273). The intake asked which edges the acceptance must cover. The operator ruled on October 4: the CLI's two edges, plus the existing reject and reclaim. The other five edges are outside the Koios demonstration. There is no library-built seven-edge history and no CLI booking for them.",
       "pause": 400
     },
     {
-      "text": "The replay itself is edge-generic: it applies whatever edge a request datum names, through walkEdge. The open question is what operating an edge means for this ticket's acceptance. This is filed as question one to the epic owner, and the acceptance line stays held until the ruling.",
+      "text": "The replay stays edge-generic. It applies whatever edge a request datum names, through walkEdge, and claims no coverage for edges no test history contains. The mixed-fold and root-check tests are unchanged. A mixed fold still needs a test-only builder variant, because the connected fold applies every request and reject rejects every one.",
       "pause": 400
+    }
+  ],
+  "each-key-is-changed-only-by-its-controller": [
+    {
+      "text": "Each key is changed only by its controller.",
+      "pause": 500
     },
     {
-      "text": "A table with 3 rows is shown here.",
-      "pause": 400
-    },
-    {
-      "text": "The recommended option changes the wording of an accepted line, so it needs the operator's ruling under the constitution's acceptance principle.",
+      "text": "As a key's controller, I alone update and terminate it. The CLI refuses anyone else (Plan.hs:96-103), and the open-datum application requires the controller's signature for insertion, update and termination (onchain/validators/open_datum.ak:44,54,58,213-216). So the cross-actor step is the fold. Alice folds the termination of a key Bob created, with the membership proof from her own replay, and Bob folds Alice's likewise. Each actor inspects the other's keys from their own replay. The journey keeps its not-the-controller refusals. This is the operator-corrected acceptance wording of October 4.",
       "pause": 400
     }
   ],
@@ -59,7 +61,7 @@
       "pause": 500
     },
     {
-      "text": "As a registry owner, I keep the identity, my own journal and my own envelopes. The mirror file and the saved root commitment are retired with the mirror adapter in the first slice, and the slice receipt names every caller removed. No cache survives. A directory written by an earlier release still holds those files; they are not read. The lineage backend's accepted-fold call persists nothing, because the next selection replays from history.",
+      "text": "As a registry owner, I keep the identity, my own journal and my own envelopes. The mirror file and the saved root commitment are retired with the mirror adapter in the commands slice, and the slice receipt names every caller removed. No cache survives. A directory written by an earlier release still holds those files; they are not read. The lineage backend's accepted-fold call persists nothing, because the next selection replays from history.",
       "pause": 400
     },
     {
@@ -93,7 +95,7 @@
       "pause": 500
     },
     {
-      "text": "As this ticket's owner, I implement only against published code. The first slice starts when the provider ticket's trie-state slice and its history representation are pushed; the second when its provider switch slice is pushed. The epic owner forwards each as an inbox note. If the published contract does not fit lineage reconstruction, that is a question, not a change to the provider ticket.",
+      "text": "As this ticket's owner, I implement only against published code. Both slices that consume history start when the provider ticket's provider switch slice is pushed, since Session.history arrives with it. A preparation slice builds the pure replay and its chain oracles first, against nothing unpublished. The epic owner forwards each as an inbox note. If the published contract does not fit lineage reconstruction, that is a question, not a change to the provider ticket.",
       "pause": 400
     },
     {
@@ -103,6 +105,6 @@
   ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "119794e2f67111d744a9e9c60780bae3d68dce0dc44d52b5d2e70240e8c424c7"
+    "sha256": "69f24729101190fa4f60dc003361a6ed6adeaa8c6edf584d48cc5e7f957bf3aa"
   }
 }

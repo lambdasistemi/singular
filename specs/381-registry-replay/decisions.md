@@ -1,9 +1,9 @@
 # Decisions for rebuilding registry tries from history
 
 As the epic owner, I want the choices this intake makes separated from the
-rulings already in force, so that I can accept a concrete head or return one
-decision batch. One decision changes an acceptance line and needs a ruling;
-the others are proposed engineering choices.
+rulings already in force. The intake was accepted on October 4. The edge
+coverage and the cross-actor step were then ruled by the operator; the rest
+are engineering choices accepted with the intake.
 
 ## Rulings in force
 
@@ -19,31 +19,32 @@ As a registry user, I get the operator's rulings of October 2 to 4 unchanged.
 
 ## Which edges the two-actor journey covers
 
-As Alice and Bob, we are promised that an actor starting with no other actor's
-files operates each of the seven edges from public data alone. At the base,
-`registry` books two edges. `insert` books `insertActive` and `terminate` books
-`updateTerminal` (`offchain/cli/src/Singular/CLI/Plan.hs:138,195`). `registry
-fold` refuses every other edge by name (`CLI/FoldRules.hs:264-273`). `update`
-changes an application payload; it moves no trie edge. No CLI path books
-`insertAbsent`, `updateActive`, `deleteAbsent`, `deleteActive` or
-`witnessTerminal`. Nor does any library builder make a fold that mixes applied
-and rejected requests: the connected fold applies all of them, and reject
-rejects all of them.
+As Alice and Bob, we operate the two edges the CLI books from public data alone:
+`insert` books `insertActive` and `terminate` books `updateTerminal`
+(`offchain/cli/src/Singular/CLI/Plan.hs:138,195`). `registry fold` refuses every
+other edge by name (`CLI/FoldRules.hs:264-273`). The intake asked which edges
+the acceptance must cover. The operator ruled on October 4: the CLI's two edges,
+plus the existing reject and reclaim. The other five edges are outside the Koios
+demonstration. There is no library-built seven-edge history and no CLI booking
+for them.
 
-The replay itself is edge-generic: it applies whatever edge a request datum
-names, through `walkEdge`. The open question is what operating an edge means
-for this ticket's acceptance. This is filed as
-question one to the epic owner, and the acceptance line stays held until the
-ruling.
+The replay stays edge-generic. It applies whatever edge a request datum names,
+through `walkEdge`, and claims no coverage for edges no test history contains.
+The mixed-fold and root-check tests are unchanged. A mixed fold still needs a
+test-only builder variant, because the connected fold applies every request and
+reject rejects every one.
 
-| Option | What the journey and CI show | Cost |
-| --- | --- | --- |
-| Replay every edge; the CLI journey covers the CLI's edges (recommended) | A development-network history whose folds are built by the library's builders covers all seven edges. A fresh actor with an empty directory replays it and proves every key's state. The two-actor CLI journey covers the two booked edges, reject and reclaim | A separate ticket adds CLI booking for the five other edges |
-| Add the five missing CLI booking and fold paths here | The two-actor CLI journey books and folds all seven edges | Custody, approval and destination rules for five new commands enter a replay ticket |
-| Wait for a separate CLI-edges ticket | This ticket merges after that ticket, with the journey covering all seven | This ticket is blocked on new product work |
+## Each key is changed only by its controller
 
-The recommended option changes the wording of an accepted line, so it needs the
-operator's ruling under the constitution's acceptance principle.
+As a key's controller, I alone update and terminate it. The CLI refuses anyone
+else (`Plan.hs:96-103`), and the open-datum application requires the
+controller's signature for insertion, update and termination
+(`onchain/validators/open_datum.ak:44,54,58,213-216`). So the cross-actor step
+is the fold. Alice folds the termination of a key Bob created, with the
+membership proof from her own replay, and Bob folds Alice's likewise. Each
+actor inspects the other's keys from their own replay. The journey keeps its
+not-the-controller refusals. This is the operator-corrected acceptance wording
+of October 4.
 
 ## Joining a registry from public data
 
@@ -69,7 +70,7 @@ ordinary wallet outputs the creator may spend, so the scan cannot be complete.
 
 As a registry owner, I keep the identity, my own journal and my own envelopes.
 The mirror file and the saved root commitment are retired with the mirror
-adapter in the first slice, and the slice receipt names every caller removed.
+adapter in the commands slice, and the slice receipt names every caller removed.
 No cache survives. A directory written by an earlier release still holds those
 files; they are not read. The lineage backend's accepted-fold call persists
 nothing, because the next selection replays from history.
@@ -101,9 +102,10 @@ correspondence is claimed for mixed folds as one transaction.
 
 ## Sequencing and staffing
 
-As this ticket's owner, I implement only against published code. The first
-slice starts when the provider ticket's trie-state slice and its history
-representation are pushed; the second when its provider switch slice is pushed.
+As this ticket's owner, I implement only against published code. Both slices that
+consume history start when the provider ticket's provider switch slice is
+pushed, since `Session.history` arrives with it. A preparation slice builds
+the pure replay and its chain oracles first, against nothing unpublished.
 The epic owner forwards each as an inbox note. If the published contract does not
 fit lineage reconstruction, that is a question, not a change to the provider ticket.
 

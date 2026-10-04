@@ -17,8 +17,10 @@ identity, I prove that a key is absent and insert it. My `singular` rebuilds
 the registry's trie from the transactions that moved its state token since
 `create`. Alice's mirror, journal and envelopes are never read.
 
-As Alice, I terminate a key Bob created and inspect it. My proofs come from the
-trie my own `singular` rebuilds. I hold no copy of Bob's booking.
+As Alice, I fold the termination Bob booked for his own key, and inspect his
+keys. The membership proof my fold needs comes from the trie my own `singular`
+rebuilds. I hold no copy of Bob's booking. Each key is updated and terminated
+only by its controller, as the application requires.
 
 As either actor, when the provider's history does not rebuild to the root in
 the registry's state output, I get a refusal naming the registry and the fold
@@ -117,11 +119,16 @@ Each line is the issue's acceptance, with the check that would contradict it.
 - **Proofs verify.** At every fold of the journey's history, every journey key
   has a membership proof, or a non-membership proof if absent, that verifies
   against that fold's rebuilt root.
-- **Independent actors on every edge.** Alice and Bob run the
+- **Independent actors on the CLI's two edges.** An actor starting with no
+  other actor's files operates `insert` (`insertActive`) and `terminate`
+  (`updateTerminal`) from public data alone. Alice and Bob run the
   development-network journey with separate registry directories on one
-  registry. Bob proves absence and inserts a key Alice never saw locally.
-  Alice terminates a key Bob created. Which edges the CLI journey must cover
-  awaits the ruling described in the [decisions](decisions.md).
+  registry, covering both edges plus reject and reclaim. Bob proves absence and
+  inserts a key Alice never saw locally. Each key is updated and terminated only
+  by its controller; the cross-actor step is the fold: Alice folds the
+  termination of a key Bob created, with the membership proof from her own
+  replay, and Bob folds Alice's likewise. The other five edges are outside the
+  Koios demonstration, by the operator's ruling in the [decisions](decisions.md).
 - **Superseded statements corrected in the same change:** #324's plan item
   (`specs/324-indexer-view/plan.md:14`), `docs/consumer-onboarding.md:304-306`,
   `docs/singular-node.md:60-64` and `specs/362-separate-fold/spec.md:68`. Each
