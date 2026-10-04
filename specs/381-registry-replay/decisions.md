@@ -1,0 +1,114 @@
+# Decisions for rebuilding registry tries from history
+
+As the epic owner, I want the choices this intake makes separated from the
+rulings already in force, so that I can accept a concrete head or return one
+decision batch. One decision changes an acceptance line and needs a ruling;
+the others are proposed engineering choices.
+
+## Rulings in force
+
+As a registry user, I get the operator's rulings of October 2 to 4 unchanged.
+
+| Ruling | Consequence here |
+| --- | --- |
+| Demo 1 runs every actor against unverified Koios, with no node and no shared registry directory | Each actor rebuilds the trie from public history alone |
+| Trie-state interface first; full public lineage as its first backend; caching later | One lineage backend, slow and correct; no cache in this ticket |
+| `singular` is a Lockness terminal with the application role built in | The root check is the terminal's consistency check, not ledger verification |
+| No plugins or hooks; generic history only | The provider serves asset history; the terminal interprets it |
+| Public networks are read-only | No transaction, key or secret is touched; journeys run on the development network |
+
+## Which edges the two-actor journey covers
+
+As Alice and Bob, we are promised that an actor starting with no other actor's
+files operates each of the seven edges from public data alone. At the base,
+`registry` books two edges. `insert` books `insertActive` and `terminate` books
+`updateTerminal` (`offchain/cli/src/Singular/CLI/Plan.hs:138,195`). `registry
+fold` refuses every other edge by name (`CLI/FoldRules.hs:264-273`). `update`
+changes an application payload; it moves no trie edge. No CLI path books
+`insertAbsent`, `updateActive`, `deleteAbsent`, `deleteActive` or
+`witnessTerminal`. Nor does any library builder make a fold that mixes applied
+and rejected requests: the connected fold applies all of them, and reject
+rejects all of them.
+
+The replay itself is edge-generic: it applies whatever edge a request datum
+names, through `walkEdge`. The open question is what operating an edge means
+for this ticket's acceptance. This is filed as
+question one to the epic owner, and the acceptance line stays held until the
+ruling.
+
+| Option | What the journey and CI show | Cost |
+| --- | --- | --- |
+| Replay every edge; the CLI journey covers the CLI's edges (recommended) | A development-network history whose folds are built by the library's builders covers all seven edges. A fresh actor with an empty directory replays it and proves every key's state. The two-actor CLI journey covers the two booked edges, reject and reclaim | A separate ticket adds CLI booking for the five other edges |
+| Add the five missing CLI booking and fold paths here | The two-actor CLI journey books and folds all seven edges | Custody, approval and destination rules for five new commands enter a replay ticket |
+| Wait for a separate CLI-edges ticket | This ticket merges after that ticket, with the journey covering all seven | This ticket is blocked on new product work |
+
+The recommended option changes the wording of an accepted line, so it needs the
+operator's ruling under the constitution's acceptance principle.
+
+## Joining a registry from public data
+
+As Bob, I need a registry directory before any command will run, and today only
+`create` makes one. The saved identity, `registry.json`, is documented as public:
+network, pins and the deployment record, with no key
+(`offchain/cli/src/Singular/CLI/Registry.hs:11-15`). Its reference outputs sit
+at the creator's wallet and are not in the state token's history.
+
+Proposed: a read-only joining path takes the published identity record and the
+blueprint the actor brings. It checks the record against public data before
+writing anything: the create transaction found through the state token's
+history spends the seed, mints `assetName(seed)` and carries the pins; every
+reference output is live and holds the script whose hash the record names. It
+then writes a fresh directory holding that identity and an empty journal.
+A creator's mirror, journal and envelopes are never needed.
+
+Rejected alternative: deriving the identity from the seed and blueprint alone,
+then scanning the creator's address for reference outputs. Those outputs are
+ordinary wallet outputs the creator may spend, so the scan cannot be complete.
+
+## The directory keeps nothing the replay replaces
+
+As a registry owner, I keep the identity, my own journal and my own envelopes.
+The mirror file and the saved root commitment are retired with the mirror
+adapter in the first slice, and the slice receipt names every caller removed.
+No cache survives. A directory written by an earlier release still holds those
+files; they are not read. The lineage backend's accepted-fold call persists
+nothing, because the next selection replays from history.
+
+Rejected alternative: keeping the mirror as a cache checked against the replay.
+The operator places caching in a later backend, and two trie sources in one
+release would need a reconciliation rule no ticket specifies.
+
+## Only the booker folds an insertion
+
+As a folder, I can fold any request whose fold needs only public data. An
+insertion's request names the hash of its envelope, which the booker alone
+holds (`offchain/cli/src/Singular/CLI/Preimage.hs:9-14`). In the journey, each
+actor folds its own insertions. A cross-actor insertion fold is a control that
+must be refused by its existing name. A termination fold needs no envelope and
+runs across actors. Publishing envelopes, or a fold that takes an envelope file,
+is a separate change already named in the recovery ticket's limits.
+
+## Mixed folds are evidenced by the chain
+
+As a reviewer, I need a mixed fold's expected root to come from somewhere
+other than the replay. The model composes per-request exits, and a reject
+leaves the state unchanged (`lean/Singular/Model.lean:1068-1075`), but it has no
+single transaction mixing the two. The test's oracle is the state validator
+accepting the fold: on the development network, or under the ledger evaluator
+the provider ticket brings, over the compiled validator. Building such a fold
+needs a test-only builder variant; production builders are unchanged. No model
+correspondence is claimed for mixed folds as one transaction.
+
+## Sequencing and staffing
+
+As this ticket's owner, I implement only against published code. The first
+slice starts when the provider ticket's trie-state slice and its history
+representation are pushed; the second when its provider switch slice is pushed.
+The epic owner forwards each as an inbox note. If the published contract does not
+fit lineage reconstruction, that is a question, not a change to the provider ticket.
+
+After acceptance of the intake head, this window runs one commit owner, Claude
+claude-opus-5-5 with high effort, and one mute persistent auditor, Codex
+gpt-6.1-sol with high reasoning, in its own detached audit worktree. No gate
+authors or draft seats are authorised. Merge readiness is the auditor's
+approval of every checkpoint and exact-head CI green; the epic owner merges.

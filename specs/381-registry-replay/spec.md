@@ -1,0 +1,139 @@
+# Registry tries rebuilt from public history
+
+As Alice and Bob, each with our own machine, wallet and registry directory,
+we want to insert, terminate, fold and inspect keys of one registry through a
+hosted provider, so that neither of us needs the other's files, a node or a
+shared directory. This is the intake for
+[the reconstruction ticket](https://github.com/lambdasistemi/singular/issues/381),
+under [the Koios demonstration](https://github.com/lambdasistemi/singular/issues/371).
+It consumes the trie-state and history interfaces proposed by
+[the provider interface ticket](https://github.com/lambdasistemi/singular/issues/383).
+It is a proposal. No implementation or behavioral acceptance is claimed.
+
+## The user stories
+
+As Bob, starting with an empty registry directory and the registry's published
+identity, I prove that a key is absent and insert it. My `singular` rebuilds
+the registry's trie from the transactions that moved its state token since
+`create`. Alice's mirror, journal and envelopes are never read.
+
+As Alice, I terminate a key Bob created and inspect it. My proofs come from the
+trie my own `singular` rebuilds. I hold no copy of Bob's booking.
+
+As either actor, when the provider's history does not rebuild to the root in
+the registry's state output, I get a refusal naming the registry and the fold
+where the roots part. I never get an empty trie, a stale trie or a proof against
+a root the chain does not hold.
+
+As a maintainer, I add a faster backend later — a cache, a persistent index, a
+chain follower or a shared service — as another instance of the same trie-state
+interface. No command changes. Full lineage reconstruction is the first
+backend, and the slowest. It is correct first, then fast.
+
+## What the terminal rebuilds and why it can
+
+`singular` is a [Lockness terminal](https://github.com/lambdasistemi/lockness/blob/eeb378174b68ba31105a4fed776dc51e28fb9528/docs/concepts.md)
+with the application role built in. The ledger provider serves generic asset
+history as untrusted reconstruction material. The terminal interprets it as a
+registry. No provider knows what a registry is; there are no plugins or hooks.
+
+```mermaid
+flowchart TD
+  Provider[Ledger provider] -->|Asset history| Lineage[Lineage from create]
+  Lineage -->|One fold at a time| Replay[Replay applied actions]
+  Replay -->|Rebuilt root| Check{Equals the fold's state root?}
+  Check -->|Yes, every fold| Trie[Trie state for commands]
+  Check -->|No| Refuse[Registry refused by name]
+```
+
+Everything the trie holds is public. The `state` policy takes no parameters
+(`onchain/validators/state.ak:125`). Its mint redeemer is `Minting(seed)`
+(`state.ak:128`), and the token name is `assetName(seed)`
+(`onchain/validators/registry/genesis.ak:49`). The trie is empty at `create`
+(`genesis.ak:57`). Each request datum carries its key and edge
+(`onchain/validators/types.ak:320-374`), and the edge fixes the leaf bytes
+(`types.ak:247-262`). Each fold's redeemer is `Modify(List<RequestAction>)`,
+one action per own-token request in the transaction's input order. An action
+is `UpdateAction(proof)` or `Rejected` (`types.ak:137-142,180`;
+`onchain/validators/registry/fold.ak:129-238`).
+
+A rebuilt root that equals the state output's root is the terminal checking
+its own computation against provider data. It is not ledger verification, and
+Demo 1 ships no verifier. A provider can serve a consistent fiction. A
+transaction built from it is then refused by the ledger, which re-checks every
+input and application proof on submission. It cannot succeed wrongly.
+
+## Registry rules the replay must follow
+
+As a reader of a rebuilt trie, I need the replay to make exactly the chain's
+decisions, so that its root is the chain's root.
+
+| Chain rule (validator source) | What the replay does |
+| --- | --- |
+| The fold walks the transaction's inputs in ledger order (`onchain/validators/registry/modify.ak:91`) | Walks the spending inputs in ledger order. Reference inputs are not walked. |
+| Only an inline `RequestDatum` whose `requestToken` is this registry's token takes an action (`fold.ak:129-150`) | Applies the same predicate, read from the resolved spent output. Other inputs take no action. |
+| Each such request pops the next action (`fold.ak:181-186`) | Pairs actions with requests one to one, in that order. Any other count is refused. |
+| `Rejected` books a refund and leaves the trie (`fold.ak:197-206`) | Leaves the trie unchanged. |
+| `UpdateAction` applies the request datum's edge (`fold.ak:208-238,296-330`) | Applies that edge with the existing edge function, `walkEdge` (`offchain/lib/Singular/Registry/TxBuilder/Internal/Edges.hs:116`). The proof in the action is not read. |
+| The continuation is the first output, and its state datum root must equal the folded root (`modify.ak:68,115`) | Compares the rebuilt root with that datum root after every fold. |
+
+The model agrees. `Singular.exitStep` (`lean/Singular/Model.lean:1068`)
+leaves the state unchanged for a reject, and `Singular.step` applies an admitted
+edge's trie column (`Model.lean:167,592`). A fold is these exits composed in
+input order, the way `Singular.foldActions` composes steps (`Model.lean:651`).
+The model has no single transaction that mixes applied and rejected requests.
+The replay's evidence for mixed folds is the chain's own acceptance, never the
+model and never the replay's own output. This limit is stated, not claimed.
+
+A source reading of the MPFS indexer suggests it applies every consumed request
+of a fold that is not all rejections. That rule is wrong for mixed folds and is
+not copied. A dedicated mixed-fold test covers it.
+
+## What the registry directory keeps
+
+As a registry owner, my directory keeps only what I alone hold: the registry's
+identity, the journal of my own submissions and the envelopes my own
+insertions will deliver. The trie mirror and the saved root commitment are no
+longer written or read; the replay replaces both. No local trie copy survives
+as a cache in this ticket. A later cache is a further trie-state backend and
+never overrides a replay.
+
+An insertion's request names only its envelope's hash, so only the booker can
+fold it. A fold by anyone else is refused by its existing name. A termination
+needs no envelope: the holding it releases is public.
+
+## Acceptance
+
+Each line is the issue's acceptance, with the check that would contradict it.
+
+- **Rebuilt root is the chain's root at every fold.** A CI test maps one edge
+  wrongly and observes the refusal that names the registry and the fold.
+- **Mixed folds.** A fold that applies some requests and rejects others changes
+  the trie by the applied ones only. The test's fold is accepted by the state
+  validator, and applying a rejected request turns it red.
+- **Rollback-free by construction.** Replay consumes the history as served. A
+  history whose roots do not chain from `create` to the selected state output
+  is refused by name. A test drops one fold.
+- **Proofs verify.** At every fold of the journey's history, every journey key
+  has a membership proof, or a non-membership proof if absent, that verifies
+  against that fold's rebuilt root.
+- **Independent actors on every edge.** Alice and Bob run the
+  development-network journey with separate registry directories on one
+  registry. Bob proves absence and inserts a key Alice never saw locally.
+  Alice terminates a key Bob created. Which edges the CLI journey must cover
+  awaits the ruling described in the [decisions](decisions.md).
+- **Superseded statements corrected in the same change:** #324's plan item
+  (`specs/324-indexer-view/plan.md:14`), `docs/consumer-onboarding.md:304-306`,
+  `docs/singular-node.md:60-64` and `specs/362-separate-fold/spec.md:68`. Each
+  exists at the intake base.
+- This directory carries spec, plan and decisions, each page with a stamped
+  speech companion, from the first push.
+
+Proof: `nix develop --quiet -c just ci` and the two-actor development-network
+journey, green in CI on the exact PR head.
+
+## Not in this ticket
+
+Ledger verification, witnesses and anchors. A local index, cache or follower.
+Preprod transactions, keys and secrets. Changes to the provider interfaces,
+which are the provider ticket's to make. Read the [plan](plan.md) next.
