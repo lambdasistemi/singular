@@ -16,7 +16,7 @@ module Singular.Registry.TrieState.Mirror
     , checkedFoldRecord
     ) where
 
-import Control.Monad (foldM)
+import Control.Monad (foldM, when)
 import Data.ByteString (ByteString)
 import Data.Foldable (toList)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
@@ -202,9 +202,7 @@ checkedCreateRecord
     :: RegistryIdentity -> ConwayTx -> Either TrieFailure CreateRecord
 checkedCreateRecord who tx = do
     (_, root) <- stateOutput who tx
-    if root /= rootFromDb emptyMPFInMemoryDB
-        then Left RootDoesNotChain
-        else pure ()
+    when (root /= rootFromDb emptyMPFInMemoryDB) (Left RootDoesNotChain)
     let MultiAsset minted = tx ^. bodyTxL . mintTxBodyL
     if quantity who minted /= 1
         then Left WrongRegistry
@@ -223,7 +221,7 @@ checkedFoldRecord
     -> Either TrieFailure ObservedFold
 checkedFoldRecord sid who before after moves tx = do
     (output, root) <- stateOutput who tx
-    if root /= after then Left RootDoesNotChain else pure ()
+    when (root /= after) (Left RootDoesNotChain)
     let Redeemers redeemers = tx ^. witsTxL . rdmrsTxWitsL
         inputs = Set.toAscList (tx ^. bodyTxL . inputsTxBodyL)
         candidates =
@@ -263,7 +261,7 @@ holdsIdentity who out =
     in  quantity who assets == 1
 quantity
     :: RegistryIdentity
-    -> Map.Map (PolicyID) (Map.Map AssetName Integer)
+    -> Map.Map PolicyID (Map.Map AssetName Integer)
     -> Integer
 quantity (RegistryIdentity (StatePolicyId policy) name) assets =
     sum

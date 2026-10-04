@@ -55,6 +55,7 @@ module Singular.CLI.Live
     , applied
     ) where
 
+import Control.Monad (when)
 import Data.Aeson (Value, object, (.=))
 import Data.Aeson.Key qualified as Key
 import Data.ByteString (ByteString)
@@ -424,7 +425,7 @@ mirrorLeaf mirror key observed = do
         Right (cap, chosen) ->
             fmap
                 (>>= id)
-                (TS.withTrieState cap chosen (\snap -> TS.leafAt snap key))
+                (TS.withTrieState cap chosen (`TS.leafAt` key))
     case result of
         Right leaf -> pure (Right leaf)
         Left TS.RootDoesNotChain -> do
@@ -461,7 +462,7 @@ acceptMirrorFold mirror key edge beforeRoot afterRoot tx = do
                         ((key, edge) :| [])
                         tx
                     )
-            if from /= chosen then failTrie TS.StaleState else pure ()
+            when (from /= chosen) (failTrie TS.StaleState)
             TS.acceptObservedFold cap event >>= either failTrie pure
             writeIORef (mirrorSelected mirror) (Right (cap, after))
 

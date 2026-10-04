@@ -9,7 +9,7 @@ existing packaged journey and recovery carriers.
 module Singular.Registry.TrieStateContractSpec (spec) where
 
 import Control.Monad (foldM, forM_)
-import Control.Monad.State.Strict (runState)
+import Control.Monad.State.Strict (evalState, runState)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.List.NonEmpty (NonEmpty (..))
@@ -103,10 +103,9 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
             let entry (s, c, es, db) = (s, Just c, es, db)
                 fixture = fixtureStore [entry one, entry two]
                 readLeaf selected =
-                    fst $
-                        runState
-                            (withTrieState fixtureTrieState selected (\snap -> leafAt snap "first"))
-                            fixture
+                    evalState
+                        (withTrieState fixtureTrieState selected (`leafAt` "first"))
+                        fixture
             readLeaf chosen `shouldBe` Right (Right Active)
             let (otherChosen, _, _, _) = two
             readLeaf otherChosen `shouldBe` Right (Right Terminal)
@@ -221,14 +220,13 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
             (chosen, create, events, nodes) <-
                 history identity [("first", 1), ("first", 3), ("first", 6)]
             let query c es db =
-                    fst $
-                        runState
-                            ( withTrieState
-                                fixtureTrieState
-                                chosen
-                                (\snap -> pure (coverageTransitions (trieCoverage snap)))
-                            )
-                            (fixtureStore [(chosen, c, es, db)])
+                    evalState
+                        ( withTrieState
+                            fixtureTrieState
+                            chosen
+                            (pure . coverageTransitions . trieCoverage)
+                        )
+                        (fixtureStore [(chosen, c, es, db)])
             query (Just create) events nodes `shouldBe` Right 2
             query Nothing events nodes `shouldBe` Left HistoryIncomplete
             query
@@ -275,11 +273,9 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
             let fixture =
                     fixtureStore
                         [(chosen, Just create, events, nodes{mpfInMemoryKV = Map.empty})]
-            fst
-                ( runState
-                    (withTrieState fixtureTrieState chosen (\s -> leafAt s "first"))
-                    fixture
-                )
+            evalState
+                (withTrieState fixtureTrieState chosen (`leafAt` "first"))
+                fixture
                 `shouldBe` Right (Right Active)
     it
         "keeps an immutable snapshot when an accepted fold advances the store inside its callback"
@@ -290,7 +286,7 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
                     accepted <- acceptObservedFold fixtureTrieState (last events)
                     leaf <- leafAt snap "first"
                     pure (accepted, leaf, trieRoot snap)
-            fst (runState action (storeOf before))
+            evalState action (storeOf before)
                 `shouldBe` Right (Right (), Right Active, trieSelectionRoot chosen)
     it
         "applies a confirmed fold once, refuses conflicting repeats and keeps the next selection current"
@@ -307,22 +303,17 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
             repeated `shouldBe` Right ()
             fixtureFolds repeatedStore `shouldBe` fixtureFolds updated
             fixtureNodes repeatedStore `shouldBe` fixtureNodes updated
-            fst
-                ( runState
-                    (withTrieState fixtureTrieState chosen (\s -> leafAt s "first"))
-                    updated
-                )
+            evalState
+                (withTrieState fixtureTrieState chosen (`leafAt` "first"))
+                updated
                 `shouldSatisfy` isLeft
-            fst
-                ( runState
-                    (withTrieState fixtureTrieState afterChosen (\s -> leafAt s "first"))
-                    updated
-                )
+            evalState
+                (withTrieState fixtureTrieState afterChosen (`leafAt` "first"))
+                updated
                 `shouldBe` Right (Right Terminal)
             let ObservedFold from to _ = event
                 conflicting = ObservedFold from to (("first", 5) :| [])
-            fst
-                (runState (acceptObservedFold fixtureTrieState conflicting) updated)
+            evalState (acceptObservedFold fixtureTrieState conflicting) updated
                 `shouldSatisfy` isLeft
     it
         "refuses a missing source proof by name rather than returning an empty successful edge proof"
@@ -341,14 +332,13 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
         $ do
             empty@(chosen, _, _, _) <- history identity []
             let answer =
-                    fst $
-                        runState
-                            ( withTrieState
-                                fixtureTrieState
-                                chosen
-                                (\s -> nonMembership s "never-bound")
-                            )
-                            (storeOf empty)
+                    evalState
+                        ( withTrieState
+                            fixtureTrieState
+                            chosen
+                            (`nonMembership` "never-bound")
+                        )
+                        (storeOf empty)
             proof <- right answer >>= right
             verifyNonMembership proof (trieSelectionRoot chosen) "never-bound"
                 `shouldBe` True
@@ -362,7 +352,7 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
                 produced token [("neighbour", 1), ("first", 0), ("first", 2)]
             let fixture = storeOf before
                 action moves =
-                    withTrieState fixtureTrieState chosen (\s -> speculateEdges s moves)
+                    withTrieState fixtureTrieState chosen (`speculateEdges` moves)
                 (ordered, unchanged) = runState (action (("first", 0) :| [("first", 2)])) fixture
             walk <- right ordered >>= right
             walkRoot walk `shouldBe` expectedRoot

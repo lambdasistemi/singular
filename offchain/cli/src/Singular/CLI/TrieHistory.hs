@@ -7,7 +7,7 @@ import Control.Monad (forM)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.List.NonEmpty (NonEmpty (..))
-import Data.Maybe (listToMaybe)
+import Data.Maybe (isJust, listToMaybe)
 import Data.Text qualified as T
 import Singular.CLI.Receipt
     ( JournalEntry (..)
@@ -45,7 +45,7 @@ readTrieHistory dir sid who = do
     folds <- forM
         [ p
         | p <- accepted
-        , journalEdge p /= Nothing
+        , isJust (journalEdge p)
         , journalEdge p /= Just 6
         , journalRootBefore p /= journalRootAfter p
         ]

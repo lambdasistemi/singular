@@ -37,6 +37,7 @@ module Singular.Registry.TxBuilder.Update
     ) where
 
 import Cardano.Ledger.Api.Tx.Out (TxOut)
+import Control.Monad (when)
 import Data.List.NonEmpty qualified as NE
 import Data.Void (Void)
 
@@ -134,12 +135,12 @@ updateTokenWithTrieState cfg view snap tid@(TokenId name) addr ctx0 =
                 TS.RegistryIdentity
                     (TS.StatePolicyId (scriptHashBytes (cfgScriptHash cfg)))
                     name
-        if TS.trieIdentity snap /= expected
-            then error "TrieState WrongRegistry"
-            else pure ()
-        if TS.pointOutput (TS.triePoint snap) /= stateIn
-            then error "TrieState StaleState"
-            else pure ()
+        when
+            (TS.trieIdentity snap /= expected)
+            (error "TrieState WrongRegistry")
+        when
+            (TS.pointOutput (TS.triePoint snap) /= stateIn)
+            (error "TrieState StaleState")
         case extractCageDatum stateOut of
             Just (StateDatum state)
                 | unOnChainRoot (stateRoot state) == unRoot (TS.trieRoot snap) ->

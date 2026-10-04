@@ -206,7 +206,7 @@ stateTrie :: Trie (State MPFInMemoryDB)
 stateTrie =
     Trie
         { insert = \key value -> mutate (insertByteStringM key value)
-        , delete = \key -> mutate (deleteMPFM (hashKeyPath key))
+        , delete = mutate . deleteMPFM . hashKeyPath
         , lookup = \key -> gets $ \db ->
             case membershipFromDb db key of
                 Nothing -> Nothing

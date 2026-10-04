@@ -151,7 +151,7 @@ capabilityObserved fetch persist emit = TrieState select accept
                             then Right (MembershipProof bytes)
                             else Left MissingProof
                     )
-                    (\proof -> MemberProved entrySelection key leaf (membershipBytes proof))
+                    (MemberProved entrySelection key leaf . membershipBytes)
             , snapshotNonMembership = \key ->
                 recordResult
                     emit
