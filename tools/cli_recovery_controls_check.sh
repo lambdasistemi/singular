@@ -29,6 +29,6 @@ devnet="$(build .#devnet)/bin/devnet"
 blueprint="$(build ../onchain#plutus-blueprint)"
 
 status=0
-bash "$controls_sh" "$singular" "$devnet" "$blueprint" "$scratch/run" || status=$?
+bash "$controls_sh" "$singular" "$devnet" "$blueprint" "$scratch/run" "$root" || status=$?
 echo "cli-recovery-controls: receipts and registry in $scratch/run (exit $status)"
 exit "$status"

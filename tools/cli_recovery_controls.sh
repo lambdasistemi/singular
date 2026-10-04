@@ -3,7 +3,7 @@
 # does after a lost acknowledgement or an interrupted local commit, on one
 # generated development node, every command a separate process.
 #
-# usage: cli_recovery_controls.sh SINGULAR DEVNET BLUEPRINT WORKDIR
+# usage: cli_recovery_controls.sh SINGULAR DEVNET BLUEPRINT WORKDIR REPO-ROOT
 #
 #   accepting      an insert ends with both submissions included and
 #                  observed, and the local files at the ledger's root;
@@ -50,14 +50,15 @@
 # shellcheck disable=SC2016 # single-quoted jq programs name jq variables, never shell ones
 set -euo pipefail
 
-[ "$#" -eq 4 ] || {
-  echo "usage: $0 SINGULAR DEVNET BLUEPRINT WORKDIR" >&2
+[ "$#" -eq 5 ] || {
+  echo "usage: $0 SINGULAR DEVNET BLUEPRINT WORKDIR REPO-ROOT" >&2
   exit 2
 }
 singular="$1"
 devnet="$2"
 blueprint="$3"
 work="$4"
+root="$5"
 [ ! -e "$work" ] || {
   echo "recovery: $work exists; every run takes a fresh directory" >&2
   exit 2
@@ -96,12 +97,13 @@ clause() {
 
 hexkey() { od -An -tx1 -N32 /dev/urandom | tr -d ' \n'; }
 hexkey >"$work/alice.skey"
+hexkey >"$work/bob.skey"
 
 # ------------------------------------------------------------------
 # One development node
 # ------------------------------------------------------------------
 export TMPDIR="$work"
-"$devnet" --fund-skey "$work/alice.skey" --fund-outputs 10 --fund-lovelace 2000000000 \
+"$devnet" --fund-skey "$work/alice.skey" --fund-skey "$work/bob.skey" --fund-outputs 10 --fund-lovelace 2000000000 \
   >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
 trap 'kill "$devnet_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT
@@ -128,6 +130,7 @@ probe_ins() {
 }
 common=(--registry "$reg" --blueprint "$blueprint")
 alice=(--wallet-skey "$work/alice.skey")
+bob=(--wallet-skey "$work/bob.skey")
 
 # run NAME ARGS...: one singular process; its receipt and exit status kept.
 run() {
@@ -260,6 +263,34 @@ token="$(field create .token)"
 jq -n '{map:[{k:{bytes:"6e616d65"},v:{bytes:"616c696365"}}]}' >"$work/insert-payload.json"
 jq -n '{int: 42}' >"$work/payload.json"
 say "registry $token created"
+
+# Reuse the journey's CBOR reader for the signed bodies, rather than add
+# another decoder. Only the witness projection below is recovery-specific.
+copying=0
+while IFS= read -r line; do
+  if [ "$line" = "cat >\"\$work/cbor.jq\" <<'JQ'" ]; then
+    copying=1
+    continue
+  fi
+  if [ "$copying" = 1 ]; then
+    [ "$line" = JQ ] && break
+    printf '%s\n' "$line" >>"$work/cbor.jq"
+  fi
+done <"$root/tools/demo1_cli_journey.sh"
+[ -s "$work/cbor.jq" ] || setup_fail "the journey's CBOR reader was not found"
+signers_of() {
+  local key
+  while read -r key; do
+    [[ "$key" =~ ^[0-9a-f]{64}$ ]] || return 1
+    tr 'a-f' 'A-F' <<<"$key" | tr -d '\n' | basenc --base16 -d | b2sum -l 224 | cut -d' ' -f1
+  done < <(jq -R -r "$(cat "$work/cbor.jq")
+    decode | .[1] | mapget(0) | (if type == \"object\" then .value else . end) | .[][0]" \
+    "$(prepared_of "$1" | jq -r .journalBody)")
+}
+run bob-preview registry create --preview --registry "$work/bob-preview" --blueprint "$blueprint" \
+  "${node[@]}" "${bob[@]}"
+outcome_is bob-preview success || setup_fail "the folder wallet's preview did not succeed"
+bobkey="$(field bob-preview .walletKeyHash)"
 
 # ------------------------------------------------------------------
 # accepting
@@ -426,6 +457,187 @@ clause "inspect reads the killed insert's key active" is_equal "$(field inspect-
 clause "the journal was only appended to and no body changed" appended_only s5
 
 # ------------------------------------------------------------------
+# another wallet's fold at every hold supported by the fold path
+# ------------------------------------------------------------------
+# Discovery supplies executions, not a source-text verdict. Every discovered
+# call is reached on the node and has receipt/journal predicates below.
+fold_holds() {
+  local source line
+  for source in Session Fold; do
+    while IFS= read -r line; do
+      if [[ "$line" =~ harnessHoldAt[[:space:]]+\"(SINGULAR_HARNESS_HOLD_[A-Z_]+)\" ]]; then
+        printf '%s\n' "${BASH_REMATCH[1]}"
+      fi
+    done <"$root/offchain/cli/src/Singular/CLI/$source.hs"
+  done | sort -u
+}
+mapfile -t fold_points < <(fold_holds)
+[ "${#fold_points[@]}" -gt 0 ] || setup_fail "the fold path declares no hold points"
+printf '%s\n' "${fold_points[@]}" >"$work/fold-holds.list"
+cross_cases=("${fold_points[@]}")
+for point in "${fold_points[@]}"; do
+  if [ "$point" = SINGULAR_HARNESS_HOLD_AFTER_SEND ]; then cross_cases+=("$point:lost-answer"); fi
+done
+# Mutations change copies of real evidence, never the registry being reconciled.
+# Multiple mutations per clause discriminate its distinct conjuncts.
+cross_clause() {
+  local text="$1" predicate="$2" mutation status mutant red mutation_no=0
+  shift 2
+  clause "$text" jq -e "$predicate" "$cross_evidence"
+  for mutation in "$@"; do
+    mutation_no=$((mutation_no + 1))
+    mutant="$receipts/$cross-$cross_check-$mutation_no-tampered.json"
+    red="$receipts/$cross-$cross_check-$mutation_no-red"
+    jq "$mutation" "$cross_evidence" >"$mutant"
+    status=0
+    jq -e "$predicate" "$mutant" >"$red.out" 2>"$red.err" || status=$?
+    echo "$status" >"$red.exit"
+    say "$control: altered evidence for '$text' ($mutation_no): exit $status"
+    # jq's false verdict is 1. A parse/setup error cannot prove rejection.
+    clause "altered evidence $mutation_no is rejected: $text" is_equal "$status" 1
+    clause "alteration $mutation_no changed evidence: $text" bash -c '! cmp -s "$1" "$2"' _ "$cross_evidence" "$mutant"
+  done
+  cross_check=$((cross_check + 1))
+}
+cross_index=0
+for cross_case in "${cross_cases[@]}"; do
+  point="${cross_case%%:*}"
+  cross_index=$((cross_index + 1))
+  cross="cross-$cross_index"
+  control="another wallet's fold at $cross_case"
+  printf -v key '6d%02x' "$cross_index"
+  snap "$cross-before"
+  run "$cross-book" registry insert --key-hex "$key" --payload "$work/insert-payload.json" \
+    "${common[@]}" "${node[@]}" "${alice[@]}"
+  snap "$cross-booked"
+  reached=0
+  export SINGULAR_HARNESS_HOLD_STEP=fold
+  if [[ "$cross_case" == *:lost-answer ]]; then
+    # Hold at the send, witness the saved prepared body, release the process
+    # with its answer dropped, then let the next ordinary command reconcile.
+    export SINGULAR_HARNESS_DROP_ANSWER=fold
+    at_cross_send() { snap "$cross-sent"; }
+    paused "$cross-fold" "$point" at_cross_send registry fold \
+      --request "$(field "$cross-book" .request)" "${common[@]}" "${node[@]}" "${bob[@]}" || reached=1
+    unset SINGULAR_HARNESS_DROP_ANSWER
+  else
+    held "$cross-fold" "$point" registry fold --request "$(field "$cross-book" .request)" \
+      "${common[@]}" "${node[@]}" "${bob[@]}" || reached=1
+  fi
+  unset SINGULAR_HARNESS_HOLD_STEP
+  cross_fold="$(fold_since "$cross-booked")"
+  snap "$cross-held"
+  refusals_clean=0
+  for i in $(seq 1 40); do
+    snap "$cross-try-$i"
+    run "$cross-next" registry update --key-hex 6b0d --payload "$work/payload.json" \
+      "${common[@]}" "${node[@]}" "${alice[@]}"
+    outcome_is "$cross-next" partial || break
+    if ! journal_same "$cross-try-$i" || ! state_kept "$cross-try-$i" || ! mirror_kept "$cross-try-$i" \
+      || [ "$(field "$cross-next" .unresolved.tx)" != "$cross_fold" ]; then refusals_clean=1; fi
+    # Retain every refusal; the next run otherwise reuses the receipt name.
+    cp "$receipts/$cross-next.json" "$receipts/$cross-refused-$i.json"
+    sleep 2
+  done
+  snap "$cross-next"
+  run "$cross-inspect" registry inspect --key-hex "$key" "${common[@]}" "${node[@]}"
+  loss=null
+  if [[ "$cross_case" == *:lost-answer ]]; then loss="$(cat "$receipts/$cross-fold.json")"; fi
+  cross_evidence="$receipts/$cross-evidence.json"
+  jq -n --arg fold "$cross_fold" --arg key "$key" --arg point "$point" --argjson reached "$reached" \
+    --arg folder "$bobkey" --argjson signers "$(signers_of "$cross_fold" | jq -Rsc 'split("\n") | map(select(. != ""))')" \
+    --argjson clean "$refusals_clean" --argjson exit "$(cat "$receipts/$cross-next.exit")" --argjson loss "$loss" \
+    --slurpfile booking "$receipts/$cross-book.json" --slurpfile next "$receipts/$cross-next.json" \
+    --slurpfile inspect "$receipts/$cross-inspect.json" \
+    --slurpfile booked "$snaps/$cross-booked.jsonl" --slurpfile held "$snaps/$cross-held.jsonl" \
+    --slurpfile after "$snaps/$cross-next.jsonl" \
+    --arg beforeRoot "$(cat "$snaps/$cross-before.root")" --arg bookedRoot "$(cat "$snaps/$cross-booked.root")" \
+    --arg heldRoot "$(cat "$snaps/$cross-held.root")" --arg afterRoot "$(root_now)" \
+    --arg beforeMirror "$(cat "$snaps/$cross-before.mirror")" --arg bookedMirror "$(cat "$snaps/$cross-booked.mirror")" \
+    --arg heldMirror "$(cat "$snaps/$cross-held.mirror")" --arg afterMirror "$(mirror_now)" \
+    '{fold:$fold,key:$key,point:$point,reached:$reached,folder:$folder,signers:$signers,clean:$clean,exit:$exit,loss:$loss,
+      booking:$booking[0],next:$next[0],inspect:$inspect[0],booked:$booked,held:$held,after:$after,
+      roots:{before:$beforeRoot,booked:$bookedRoot,held:$heldRoot,after:$afterRoot},
+      mirrors:{before:$beforeMirror,booked:$bookedMirror,held:$heldMirror,after:$afterMirror}}' >"$cross_evidence"
+  cross_check=1
+  cross_clause "the requester booked only, leaving the root and mirror unchanged" \
+    '. as $e | .booking.outcome == "success" and .booking.request == (.booking.booking + "#0")
+      and ([.booked[] | select(.journalTxId == $e.booking.booking) | .journalEvent] == ["prepared","submitted","confirmed","observed"])
+      and .roots.before == .roots.booked and .mirrors.before == .mirrors.booked' \
+    '.roots.booked += "tampered"' '.mirrors.booked += "tampered"' '.booking.outcome = "partial"' \
+    '.booking.request += "tampered"' '.booked += .booked'
+  cross_clause "the fold's saved signed body carries the other wallet's payment key" \
+    '(.folder | test("^[0-9a-f]{56}$")) and (.booking.requester | test("^[0-9a-f]{56}$"))
+      and .signers == [.folder] and .folder != .booking.requester' \
+    '.signers = [.booking.requester]' '.signers = []' '.folder = .booking.requester | .signers = [.folder]'
+  cross_clause "the standalone fold reached its hold and had not been observed" \
+    '. as $e | .reached == 0 and (.fold | test("^[0-9a-f]{64}$"))
+      and ([.held[] | select(.journalTxId == $e.fold and .journalEvent == "observed")] | length) == 0
+      and ([.held[] | select(.journalTxId == $e.fold and .journalEvent == "prepared") | .journalCommand] == ["fold"])' \
+    '.reached = 1' '.fold = "not-a-transaction"' \
+    '. as $e | .held += [(.held[] | select(.journalTxId == $e.fold and .journalEvent == "prepared") | .journalEvent = "observed")]' \
+    '. as $e | .held |= map(if .journalTxId == $e.fold then .journalCommand = "insert" else . end)'
+  cross_clause "the fold spent the booked request on its insertion edge" \
+    '. as $e | [.held[] | select(.journalTxId == $e.fold and .journalEvent == "prepared")]
+      | length == 1 and (.[0] | .journalInputs | index($e.booking.request)) != null
+      and .[0].journalKey == $e.key and .[0].journalEdge == 1 and .[0].journalRootBefore == $e.roots.before
+      and .[0].journalRootAfter != .[0].journalRootBefore' \
+    '. as $e | .held |= map(if .journalTxId == $e.fold then .journalInputs = [] else . end)' \
+    '. as $e | .held |= map(if .journalTxId == $e.fold then .journalKey += "tampered" else . end)' \
+    '. as $e | .held |= map(if .journalTxId == $e.fold then .journalEdge = 3 else . end)' \
+    '. as $e | .held |= map(if .journalTxId == $e.fold then .journalRootBefore += "tampered" else . end)' \
+    '. as $e | .held |= map(if .journalTxId == $e.fold then .journalRootAfter = .journalRootBefore else . end)'
+  cross_clause "the next ordinary write proceeds, and any pending refusals name the fold and move nothing" \
+    '.exit == 0 and .next.outcome == "success" and .clean == 0' \
+    '.next.outcome = "partial"' '.exit = 15' '.clean = 1'
+  cross_clause "reconciliation applies the edge exactly when the killed command had not saved it" \
+    '.next.reconciled.applied == (if .mirrors.held == .mirrors.booked then [.fold] else [] end)
+      and .next.reconciled.stateFollowed == (.roots.held == .roots.before)
+      and (if .mirrors.held == .mirrors.booked then .mirrors.after != .mirrors.held else .mirrors.after == .mirrors.held end)' \
+    '.next.reconciled.applied += [.fold]' '.next.reconciled.stateFollowed |= not' \
+    '.mirrors.after = (if .mirrors.held == .mirrors.booked then .mirrors.held else "tampered" end)'
+  cross_clause "the fold is confirmed and observed exactly once, by the requester's next write when needed" \
+    '. as $e | .next.reconciled.observed == [.fold]
+      and ([.after[] | select(.journalTxId == $e.fold and .journalEvent == "confirmed")] | length) == 1
+      and ([.after[] | select(.journalTxId == $e.fold and .journalEvent == "observed") | .journalCommand] == ["update"])
+      and (if ([.held[] | select(.journalTxId == $e.fold and .journalEvent == "confirmed")] | length) == 0
+           then [.after[] | select(.journalTxId == $e.fold and .journalEvent == "confirmed") | .journalCommand] == ["update"] else true end)' \
+    '.next.reconciled.observed += [.fold]' \
+    '. as $e | .after += [.after[] | select(.journalTxId == $e.fold and .journalEvent == "confirmed")]' \
+    '. as $e | .after += [.after[] | select(.journalTxId == $e.fold and .journalEvent == "observed")]'
+  cross_clause "there is no second preparation or submission of the fold or its request" \
+    '. as $e | ([.after[] | select(.journalTxId == $e.fold and .journalEvent == "prepared")] | length) == 1
+      and ([.after[] | select(.journalTxId == $e.fold and .journalEvent == "submitted")] | length)
+        == ([.held[] | select(.journalTxId == $e.fold and .journalEvent == "submitted")] | length)
+      and ([.after[] | select(.journalStep == "fold" and .journalEvent == "prepared" and (.journalInputs | index($e.booking.request)) != null)] | length) == 1' \
+    '. as $e | .after += [.after[] | select(.journalTxId == $e.fold and .journalEvent == "prepared")]' \
+    '. as $e | .after += [(.after[] | select(.journalTxId == $e.fold and .journalEvent == "prepared") | .journalEvent = "submitted")]' \
+    '. as $e | .after += [(.after[] | select(.journalTxId == $e.fold and .journalEvent == "prepared") | .journalTxId = "second-fold")]'
+  cross_clause "the ledger and local files agree at the folded key and root" \
+    '. as $e | [.held[] | select(.journalTxId == $e.fold and .journalEvent == "prepared")][0] as $p
+      | .inspect.outcome == "success" and .inspect.leaf == "active"
+      and .inspect.root == $p.journalRootAfter and .roots.after == .inspect.root' \
+    '.inspect.outcome = "partial"' '.inspect.leaf = "unknown"' '.inspect.root += "tampered"' '.roots.after += "tampered"'
+  if [[ "$cross_case" == *:lost-answer ]]; then
+    cross_clause "the dropped answer's receipt names the unknown fold" \
+      '. as $e | .loss.outcome == "partial" and [.loss.submissions[] | select(.step == "fold") | [.tx,.case]] == [[$e.fold,"unknown"]]' \
+      '.loss.outcome = "success"' '.loss.submissions = []' \
+      '.loss.submissions |= map(if .step == "fold" then .case = "included" else . end)'
+    clause "at the send the bound body and prepared phase were already saved" \
+      is_equal "$(jq -sr --arg t "$cross_fold" '[.[] | select(.journalTxId == $t) | .journalEvent] | join(",")' "$snaps/$cross-sent.jsonl")" prepared
+  fi
+  clause "the saved signed body is bound to its prepared line" body_bound "$cross_fold"
+  clause "the journal was only appended to and no saved body changed" appended_only "$cross-before"
+done
+control="fold hold-point coverage"
+jq -s --rawfile declared "$work/fold-holds.list" \
+  '{declared:($declared | split("\n") | map(select(. != "")) | sort),
+    executed:[.[] | select(.reached == 0) | .point] | unique | sort}' "$receipts"/cross-*-evidence.json >"$receipts/fold-hold-coverage.json"
+cross=fold-holds cross_check=1 cross_evidence="$receipts/fold-hold-coverage.json"
+cross_clause "every discovered fold hold point was reached" \
+  '(.declared | length) > 0 and .declared == .executed' '.executed = .executed[1:]' '.declared = [] | .executed = []'
+
+# ------------------------------------------------------------------
 # never sent
 # ------------------------------------------------------------------
 control="never sent, past its upper bound"
@@ -438,11 +650,22 @@ unsent="$(submission_tx insert-f fold)"
 clause "the insert stops partial naming its fold unknown" is_equal "$(field insert-f .outcome)/$(submission_case insert-f fold)" partial/unknown
 clause "the unsent fold names a transaction" is_txid "$unsent"
 mapfile -t unsent_ins < <(prepared_of "$unsent" | jq -r '.journalInputs[]')
-# A fold carries a validity upper bound; on this node it is a few seconds
-# past the slot it was built at. Once the tip has passed it, the fold can
-# never be included.
-sleep 10
-unsent_live="$(probe_ins "${unsent_ins[@]}")"
+# The fallback bound can be 30 seconds, so a fixed sleep does not establish
+# that this fold has expired. Read its actual exclusive bound from the saved
+# body with the same CBOR reader, and wait for the node's own tip to reach it.
+unsent_upper="$(jq -R -r "$(cat "$work/cbor.jq") decode | .[0] | mapget(3)" \
+  "$(prepared_of "$unsent" | jq -r .journalBody)")"
+for i in $(seq 1 120); do
+  unsent_live="$(probe_ins "${unsent_ins[@]}")"
+  printf '%s\n' "$unsent_live" >"$receipts/unsent-probe-$i.json"
+  if jq -e --argjson upper "$unsent_upper" '($upper | type == "number") and .tip.slot >= $upper' \
+    <<<"$unsent_live" >/dev/null; then break; fi
+  sleep 1
+done
+clause "the node's tip has reached the unsent fold's actual exclusive upper bound" \
+  jq -e --argjson upper "$unsent_upper" '($upper | type == "number") and .tip.slot >= $upper' \
+  "$receipts/unsent-probe-$i.json"
+say "$control: node tip $(jq -r .tip.slot <<<"$unsent_live"), exclusive bound $unsent_upper"
 clause "the node reports the unsent fold's inputs unspent" \
   jq -n -e --argjson p "$unsent_live" '($p.live | length) > 0 and ($p.spent == [])'
 snap s4-excluded
