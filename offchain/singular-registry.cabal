@@ -691,6 +691,8 @@ test-suite cage-tests
     Singular.CLI.Outlay
     Singular.CLI.RejectRules
     Singular.CLI.RejectSpec
+    Singular.CLI.ReclaimRules
+    Singular.CLI.ReclaimSpec
     Singular.CLI.RequestWindow
     Singular.CLI.Node
     Singular.CLI.Preimage
@@ -976,6 +978,8 @@ executable singular
     Singular.CLI.Recovery
     Singular.CLI.Registry
     Singular.CLI.Reject
+    Singular.CLI.Reclaim
+    Singular.CLI.ReclaimRules
     Singular.CLI.RejectRules
     Singular.CLI.RequestWindow
     Singular.CLI.Session

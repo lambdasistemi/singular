@@ -11,6 +11,7 @@
 #
 #   create -> insert -> fold -> inspect -> update -> inspect
 #          -> terminate -> fold -> inspect -> reject -> insert -> fold
+#          -> reclaim -> insert -> fold
 #
 # An insert or a terminate books and leaves its request pending; `registry
 # fold` folds it, signed by a wallet other than the booking's. The combined
@@ -19,7 +20,10 @@
 # processing deadline pass: the late fold is refused by the client, by name,
 # before anything is signed. That request is then rejected once its retract
 # window has closed, refused by name while it is still open, and a new request
-# is folded afterwards.
+# is folded afterwards. Another pending insertion is reclaimed by its owner
+# inside its retract window: its whole return is bound to the consumed request
+# and checked against independent reads before and after. Early attempts and
+# another wallet are refused; after reclaim a new request folds.
 #
 # Each process leaves one JSON receipt. Assertions read those receipts,
 # the target directory's own journal and files, and nothing else. A
@@ -346,13 +350,13 @@ holds_envelope() {
 # The command surface
 # ------------------------------------------------------------------
 "$singular" --help >"$work/help.txt"
-for c in create insert update terminate fold reject inspect; do
+for c in create insert update terminate fold reclaim reject inspect; do
   grep -q "singular registry $c" "$work/help.txt" || fail "help does not name registry $c"
 done
 status=0
 "$singular" registry inspect --key-hex 00 "${common[@]}" "${node[@]}" "${alice[@]}" >/dev/null 2>&1 || status=$?
 [ "$status" -eq 2 ] || fail "inspect accepted a signing key (exit $status)"
-say "help names the seven commands; a signing key on inspect is refused"
+say "help names the eight commands; a signing key on inspect is refused"
 
 # ------------------------------------------------------------------
 # 1. create
@@ -491,6 +495,18 @@ jq -e --slurpfile i "$receipts/insert.json" '. == $i[0].envelope' "$stored" >/de
   || fail "the kept envelope is not the one inserted"
 run inspect-pending success -- registry inspect --key "$key" "${common[@]}" "${node[@]}"
 [ "$(field inspect-pending .leaf)" = unknown ] || fail "inspect after a booking alone does not read the key unknown to the registry"
+
+# A-001: an unconverted processing deadline cannot prove opening and is
+# refused before the window, naming when it opens.
+refused reclaim-early client-refusal -- registry reclaim --request "$(field insert .request)" \
+  "${common[@]}" "${node[@]}" "${alice[@]}"
+jq -e --slurpfile b "$receipts/insert.json" '
+    .request == $b[0].request and (.reason | contains("before the window") and contains("retract window opens at") and contains($b[0].foldDeadline.posixMs | tostring))' \
+  "$receipts/reclaim-early.json" >/dev/null || fail "the early reclaim did not name when the window opens"
+refused reclaim-not-owner client-refusal -- registry reclaim --request "$(field insert .request)" \
+  "${common[@]}" "${node[@]}" "${bob[@]}"
+jq -e '.reason | contains("retract-owner") and contains("not the request\u0027s owner")' \
+  "$receipts/reclaim-not-owner.json" >/dev/null || fail "another wallet's reclaim did not name the ownership refusal"
 
 # The fold is bob's: another wallet folds alice's request, and the receipt
 # names the same deadline, the same request, and a validity bound at it.
@@ -901,6 +917,10 @@ fi
 root_before="$(field inspect-late .root)"
 before="$(journal_lines "$reg")"
 files_before="$(local_files)"
+refused reclaim-closed client-refusal -- registry reclaim --request "$(field late-insert .request)" \
+  "${common[@]}" "${node[@]}" "${alice[@]}"
+jq -e '.reason | contains("closed") and contains("registry reject")' \
+  "$receipts/reclaim-closed.json" >/dev/null || fail "a reclaim after its window did not name its closure and reject"
 # A funding output the rejecting wallet does not hold is refused by name, before
 # anything is signed.
 refused reject-bad-funding client-refusal -- registry reject --fund-input "$(printf '%064d' 0)#0" \
@@ -1046,6 +1066,92 @@ fold_ok fold-after-insert insert-after-reject insertActive
 run inspect-after-reject success -- registry inspect --key keyE "${common[@]}" "${node[@]}"
 [ "$(field inspect-after-reject .leaf)" = active ] || fail "the fold after the reject did not make its key active"
 say "a reject past both windows: refunded to the owner, root unmoved, and a new request folds"
+
+# ------------------------------------------------------------------
+# 7d. reclaim: the owner takes a pending insertion back in its window
+# ------------------------------------------------------------------
+run insert-to-reclaim success -- registry insert --key keyF --payload "$work/payload-insert.json" \
+  "${common[@]}" "${node[@]}" "${alice[@]}"
+booked insert-to-reclaim
+deadline_ms="$(field insert-to-reclaim .foldDeadline.posixMs)"
+wait_ms=$((deadline_ms + 3000 - $(date +%s%3N)))
+if [ "$wait_ms" -gt 0 ]; then
+  say "waiting $((wait_ms / 1000 + 1)) s to attempt the owner's reclaim; the command judges the window from its own view"
+  sleep $((wait_ms / 1000 + 1))
+fi
+refused fold-before-reclaim client-refusal -- registry fold --request "$(field insert-to-reclaim .request)" \
+  "${common[@]}" "${node[@]}" "${bob[@]}"
+jq -e '.reason | contains("processing deadline") and contains("has passed")' \
+  "$receipts/fold-before-reclaim.json" >/dev/null || fail "the fold before reclaim was not refused for its deadline"
+run inspect-before-reclaim success -- registry inspect --key keyF "${common[@]}" "${node[@]}"
+root_before="$(field inspect-before-reclaim .root)"
+files_before="$(local_files)"
+before="$(journal_lines "$reg")"
+# A build failure, an unconverted window or a ledger refusal fails this success
+# assertion. None can stand in for a reclaim or for a named refusal control.
+run reclaim success -- registry reclaim --request "$(field insert-to-reclaim .request)" \
+  "${common[@]}" "${node[@]}" "${alice[@]}"
+[ "$(local_files)" = "$files_before" ] || fail "the reclaim moved the mirror or state.json"
+tail -n +"$((before + 1))" "$reg/journal.jsonl" \
+  | jq -s -e --arg t "$(field reclaim .retract)" '
+      map(.journalEvent) == ["prepared", "submitted", "confirmed", "observed"]
+      and (map(.journalStep) | unique == ["reclaim"])
+      and (map(.journalTxId) | unique == [$t])' >/dev/null \
+  || fail "reclaim did not leave exactly its four journal phases"
+run inspect-after-reclaim success -- registry inspect --key keyF --outputs-at "$alice_addr" "${common[@]}" "${node[@]}"
+retract_tx="$(field reclaim .retract)"
+booking_tx="$(field insert-to-reclaim .booking)"
+body_bound "$retract_tx" "$reg/submissions/$retract_tx.cbor.hex" || fail "the retract body is not the transaction claimed"
+body_bound "$booking_tx" "$reg/submissions/$booking_tx.cbor.hex" || fail "the reclaimed booking body is not the transaction claimed"
+retract_outs="$(tx_outputs_of "$retract_tx")"
+booking_outs="$(tx_outputs_of "$booking_tx")"
+node_pending="$(jq -c --arg r "$(field insert-to-reclaim .request)" '[.pendingRequests[] | select(.request == $r)]' "$receipts/inspect-before-reclaim.json")"
+node_returns="$(jq -c '.outputsAt.outputs' "$receipts/inspect-after-reclaim.json")"
+reclaim_bound() {
+  jq -e --argjson bo "$booking_outs" --argjson ro "$retract_outs" --argjson np "$2" --argjson nr "$3" \
+    --arg owner "$alicekey" --arg addr "$alice_addr" --arg tx "$retract_tx" --arg booking "$booking_tx" '
+      . as $r | $bo[0] as $req | $ro[0] as $return
+      | ($np | length == 1) and $r.request == $np[0].request and $r.locked == $np[0].locked
+      and $r.locked.lovelace == $req.coin and $r.locked.assets == $req.assets
+      and $r.retract == $tx and $r.owner == $owner
+      and $r.returned.index == 0 and $r.returned.output == ($tx + "#0")
+      and $r.returned.recipient == $addr and $return.address == ("60" + $owner)
+      and $r.returned.lovelace == $return.coin and $return.coin >= $req.coin
+      and $r.returned.value == {lovelace:$return.coin, assets:$return.assets}
+      and $r.returned.request == $r.request and $return.datum.value == [$booking, 0]
+      and ([$nr[] | select(.output == $r.returned.output and .locked == $r.returned.value)] | length == 1)
+      and $r.topUp == ($return.coin - $req.coin)
+      and .processingEndsSlot <= .tipSlot
+      and (.retractEndsSlot == null or .tipSlot < .retractEndsSlot)' "$1" >/dev/null
+}
+reclaim_bound "$receipts/reclaim.json" "$node_pending" "$node_returns" \
+  || fail "the reclaim receipt differs from its signed body or the independent before/after node reads"
+for edit in '.locked.lovelace += 1' '.locked.assets += [{policy:"00",name:"00",quantity:1}]' '.returned.lovelace += 1' '.returned.index += 1' '.returned.output |= sub("#0$"; "#9")' '.returned.request |= sub("#0$"; "#9")' '.returned.recipient = "another address"' '.topUp += 1'; do
+  jq "$edit" "$receipts/reclaim.json" >"$receipts/reclaim-tampered.json"
+  if reclaim_bound "$receipts/reclaim-tampered.json" "$node_pending" "$node_returns"; then
+    fail "a reclaim receipt edited by $edit passed the independent bindings"
+  fi
+done
+if reclaim_bound "$receipts/reclaim.json" "$(jq -c '.[0].locked.lovelace += 1' <<<"$node_pending")" "$node_returns"; then
+  fail "another locked value read by the node passed the reclaim bindings"
+fi
+if reclaim_bound "$receipts/reclaim.json" "$node_pending" "$(jq -c --arg o "$retract_tx#0" 'map(if .output == $o then .locked.lovelace += 1 else . end)' <<<"$node_returns")"; then
+  fail "another return amount read by the node passed the reclaim bindings"
+fi
+[ "$(field inspect-after-reclaim .root)" = "$root_before" ] || fail "the reclaim moved the root"
+[ "$(field inspect-after-reclaim .leaf)" = unknown ] || fail "the reclaimed key became registered"
+refused reclaim-not-pending client-refusal -- registry reclaim --request "$(field insert-to-reclaim .request)" \
+  "${common[@]}" "${node[@]}" "${alice[@]}"
+jq -e '.reason | contains("not pending")' "$receipts/reclaim-not-pending.json" >/dev/null || fail "a consumed request was not refused as not pending"
+run insert-after-reclaim success -- registry insert --key keyG --payload "$work/payload-insert.json" \
+  "${common[@]}" "${node[@]}" "${alice[@]}"
+booked insert-after-reclaim
+run fold-after-reclaim success -- registry fold --request "$(field insert-after-reclaim .request)" \
+  "${common[@]}" "${node[@]}" "${bob[@]}"
+fold_ok fold-after-reclaim insert-after-reclaim insertActive
+run inspect-after-reclaim-fold success -- registry inspect --key keyG "${common[@]}" "${node[@]}"
+[ "$(field inspect-after-reclaim-fold .leaf)" = active ] || fail "a new request did not fold after reclaim"
+say "the owner's reclaim: whole bound return checked independently, root unchanged, and a new request folds"
 
 # ------------------------------------------------------------------
 # 8. the node lost after an accepted submission (last: the node dies)

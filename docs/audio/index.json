@@ -7982,6 +7982,36 @@
     "v": "5051069fe9ee"
    }
   ],
+  "reclaiming-your-pending-request": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/reclaiming-your-pending-request-00",
+    "pause_ms": 500,
+    "text": "Reclaiming your pending request.",
+    "v": "b171b2831de2"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/reclaiming-your-pending-request-01",
+    "pause_ms": 400,
+    "text": "As a requester, you can take back your own pending request after its processing deadline, while its retract window is still open. registry reclaim names the request and signs with the wallet you give it. It refuses before building when the request is not pending, belongs to another wallet, or names an edge that cannot be retracted.",
+    "v": "025d91019d34"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/reclaiming-your-pending-request-02",
+    "pause_ms": 400,
+    "text": "The window is judged from the command's own view of the chain, exactly as reject judges it. The processing deadline must convert to a slot the tip has reached. The retract deadline stays open while its slot is ahead of the tip, or while it lies beyond what the node can convert. A reached retract deadline is closed, and the refusal points to registry reject. No host clock or estimated slot decides.",
+    "v": "a70b734312f3"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/reclaiming-your-pending-request-03",
+    "pause_ms": 500,
+    "text": "Inside the window, the retract pays the owner all of the request's locked lovelace in one output tied to that request, and the command checks that output and the transaction's validity bounds before signing.",
+    "v": "d682017c73c9"
+   }
+  ],
   "rejecting-expired-requests": [
    {
     "index": 0,

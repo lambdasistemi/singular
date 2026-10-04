@@ -17,6 +17,8 @@ below happens before anything is read or submitted.
   also folds it in the same command;
 * @registry fold@ folds the one pending request, signed and funded by
   the wallet that runs it;
+* @registry reclaim@ takes back the wallet's named pending insertion or
+  terminal-witness request inside its retract window;
 * @registry reject@ rejects every pending request, once each is past both
   its windows, signed and funded by the wallet that runs it;
 * @registry inspect@ reads the registry and one key back, and accepts
@@ -39,6 +41,7 @@ module Singular.CLI.Command
     , InspectArgs (..)
     , NodeSettings (..)
     , RejectArgs (..)
+    , ReclaimArgs (..)
     , WriteSettings (..)
     , Key (..)
 
@@ -183,6 +186,22 @@ data RejectArgs = RejectArgs
     }
     deriving stock (Eq, Show)
 
+-- | @registry reclaim@: take back this wallet's own pending request.
+data ReclaimArgs = ReclaimArgs
+    { reclaimRegistry :: FilePath
+    , reclaimBlueprint :: FilePath
+    , reclaimWrite :: WriteSettings
+    , reclaimRequest :: TxIn
+    -- ^ The pending request to take back; required, never chosen implicitly
+    , reclaimFund :: Maybe TxIn
+    -- ^ The wallet output that funds and collateralises the reclaim
+    , reclaimMaxOutlay :: Maybe Integer
+    -- ^ The maximum fee outlay; the return pays the caller's own wallet
+    , reclaimReceipt :: Maybe FilePath
+    -- ^ Also retain the printed receipt at this path
+    }
+    deriving stock (Eq, Show)
+
 -- | @registry inspect@: node settings only, never a wallet.
 data InspectArgs = InspectArgs
     { inspectRegistry :: FilePath
@@ -206,6 +225,7 @@ data Command
     | Terminate EntryArgs
     | Fold FoldArgs
     | Reject RejectArgs
+    | Reclaim ReclaimArgs
     | Inspect InspectArgs
     deriving stock (Eq, Show)
 
@@ -261,6 +281,7 @@ parseCommand args = do
                         >> (Terminate <$> entryArgs True Nothing flags)
                 ["registry", "fold"] -> Fold <$> foldArgs flags
                 ["registry", "reject"] -> Reject <$> rejectArgs flags
+                ["registry", "reclaim"] -> Reclaim <$> reclaimArgs flags
                 ["registry", "inspect"] ->
                     refuseSpendingFlags "inspect" flags
                         >> refuseRequest flags
@@ -287,14 +308,14 @@ parseCommand args = do
                     "--outputs-at"
                     "is a registry inspect flag: only inspect reads another address's outputs"
                 )
-    -- @--request@ names what @registry fold@ folds; @--fold@ belongs to the
+    -- @--request@ names what @registry fold@ folds or reclaim takes back; @--fold@ belongs to the
     -- two commands that book. Any other command refuses either by name.
     refuseRequest flags =
         when (isJust (lookup "--request" flags)) $
             Left
                 ( BadValue
                     "--request"
-                    "names the pending request @registry fold@ folds; this command takes none"
+                    "names the pending request @registry fold@ folds or @registry reclaim@ takes back; this command takes none"
                 )
     refuseFold flags =
         when (isJust (lookup "--fold" flags)) $
@@ -443,6 +464,35 @@ parseCommand args = do
                 , rejectFund = fund
                 , rejectMaxOutlay = outlay
                 , rejectReceipt = optional "--receipt" flags
+                }
+    reclaimArgs flags = do
+        dir <- required "--registry" flags
+        bp <- required "--blueprint" flags
+        forM_
+            (map fst keyFlags <> ["--deposit", "--payload", "--preview", "--fold"])
+            $ \flag ->
+                when (isJust (lookup flag flags)) $
+                    Left
+                        ( BadValue
+                            flag
+                            "is not accepted by registry reclaim: it takes back the named pending request"
+                        )
+        when (isJust (lookup "--wallet-address" flags)) $
+            Left addressNeedsPreview
+        settings <- writeSettings flags
+        named <- required "--request" flags
+        request <- first (BadValue "--request") (parseOutRef (T.pack named))
+        fund <- fundFrom flags
+        outlay <- outlayFrom flags
+        pure
+            ReclaimArgs
+                { reclaimRegistry = dir
+                , reclaimBlueprint = bp
+                , reclaimWrite = settings
+                , reclaimRequest = request
+                , reclaimFund = fund
+                , reclaimMaxOutlay = outlay
+                , reclaimReceipt = optional "--receipt" flags
                 }
     fundFrom flags = case optional "--fund-input" flags of
         Nothing -> Right Nothing
@@ -630,7 +680,7 @@ renderCLIError = \case
         flag
             <> " is not accepted by `registry "
             <> command
-            <> "`: only insert, update, terminate, fold and reject enforce it, and a constraint the command does not enforce is refused, never ignored"
+            <> "`: only insert, update, terminate, fold, reclaim and reject enforce it, and a constraint the command does not enforce is refused, never ignored"
 
 -- | The supported commands.
 usage :: String
@@ -668,6 +718,9 @@ usage =
         , "  singular registry fold --registry DIR --blueprint PLUTUS_JSON"
         , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "  singular registry reclaim --registry DIR --blueprint PLUTUS_JSON --request TXID#IX"
+        , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry reject --registry DIR --blueprint PLUTUS_JSON"
         , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
@@ -683,14 +736,21 @@ usage =
         , "fold is its own command, registry fold, run by whichever wallet folds, before"
         , "the processing deadline the booking's receipt names. Given the fold switch,"
         , "either also folds, in the same command, once its booking confirms."
+        , "reclaim takes back the owner's pending insertion or terminal-witness request,"
+        , "inside its retract window: the view's tip must reach the converted processing"
+        , "deadline; a converted retract deadline must still be ahead of the tip. An"
+        , "unconverted retract deadline stays open; an unconverted processing deadline"
+        , "does not prove opening. No host clock decides the window. The locked lovelace"
+        , "returns to the owner in one request-bound output; the root does not move."
+        , "An early refusal names when it opens; once closed, registry reject clears it."
         , "reject clears the registry's pending requests, all or none: it is built only"
         , "once every pending request is past both its windows, the processing window and"
         , "the retract window after it, and until then it is refused, naming each request"
         , "and when its retract window closes. Each owner is refunded the request's value"
         , "less the tip in the one output designated for it; the wallet that runs it keeps"
         , "the tip, and the registry's root does not move."
-        , "insert, update, terminate, fold and reject fund and collateralise from the funding"
-        , "input named, and hold to the maximum outlay stated: a booking, an update, a reject or a"
+        , "insert, update, terminate, fold, reclaim and reject fund and collateralise from the funding"
+        , "input named, and hold to the maximum outlay stated: a booking, update, reclaim, reject or"
         , "fold past it is not signed, and a combined insert or terminate whose fold,"
         , "built after its booking confirms, costs more than the booking left of it stops"
         , "partial, its request pending, with the fold unsigned. create and inspect"
