@@ -1,0 +1,80 @@
+# Live Koios client: decisions
+
+As the epic owner, I rule on the choices below before implementation starts.
+Each is written as the story it serves, with a recommendation. The
+[plan](plan.md) carries the details.
+
+## Decisions for the epic owner
+
+### One Koios client for recorded and live answers
+
+As a provider author on
+[#383](https://github.com/lambdasistemi/singular/issues/383), I want one Koios
+client in the tree. Recommendation: #383 slice 3 builds its recorded Koios
+instance on `Singular.Provider.Koios.Client` over the recorded transport, and
+its CI loopback facade over the HTTP transport. The alternative, #383 writing
+its own decoders or loopback client, leaves two decoders and two HTTP clients
+that can disagree.
+
+### The shared part lands first
+
+As #383's slice 3, I can only import what is on main. Recommendation: the
+first slice of this ticket merges on its own pull request, marked as part of
+#389, before #383 slice 3 begins its Koios work. The second slice closes #389
+in a second pull request once #383 slice 3 has merged. The alternative, one
+pull request held until #383 slice 3 merges, forces #383 to write the
+decoders itself or to wait.
+
+### HTTP stays out of the main library
+
+As a maintainer of the main library, I keep it free of network dependencies.
+Recommendation: the HTTP transport and the recorder live in a new public
+sublibrary, `koios-http`. Only commands that select Koios link it.
+
+### Option names
+
+As a user, I name the service and the token file. Recommendation:
+`--koios-url` and `--koios-token-file`, with no preprod default URL. The
+option parsing belongs to the second slice, since #383 slice 3 owns the
+provider switch in the command line.
+
+## Engineering choices recorded here
+
+### Failure model
+
+As a user, I want a short, closed list of reasons a call stops. The list is
+unreachable, timed out, rate limited, server failing, refused by the server,
+incomplete page, unknown fact, undecodable, and an unreadable token file. #383
+maps them into its read, history and acquisition failures. This ticket adds no
+interface type.
+
+### Retry defaults
+
+As a user on the public endpoint, I want slow answers to recover and broken
+ones to stop. Defaults: a 20-second request timeout; five attempts; delays
+doubling from a quarter second up to eight seconds, with jitter; a 429's
+requested wait honoured up to 30 seconds; a 60-second ceiling per call,
+including retries. All are configuration values, so tests run fast.
+
+### Registration lookup
+
+As a deployment operator, I need unknown kept apart from false. Koios's
+`account_info` answers the status of a stake address. The script credential's
+reward address is queried. "registered" and "not registered" decode to true
+and false. Anything else, or an absent row, is the unknown-fact failure.
+The mapping is demonstrated with a recorded preprod answer for one registered
+and one unregistered script credential.
+
+### Schema revision
+
+As a fixture reader, I want to know which Koios schema produced a fixture.
+The revision is the `info.version` of the OpenAPI document Koios serves at its
+base URL. It is stored with every fixture, and a fixture whose revision
+differs from the recorded set's revision fails its test.
+
+### Fake server
+
+As a CI reviewer, I need failures on demand. The fake server is a small
+Haskell test server on loopback, using `warp`, added only to the test suite.
+`warp` is not yet in the build plan; the alternative is a raw socket server
+using the `network` package already present, at the cost of more test code.
