@@ -241,8 +241,12 @@ loadFixtureSet dir =
   where
     load name = do
         let path = dir </> name
-        bytes <- BSL.readFile path
-        pure $ case decodeFixture bytes of
+        read' <- try (BSL.readFile path)
+        pure $ case read' of
+            Left e -> Left (FixtureUnreadable path (T.pack (show (e :: IOException))))
+            Right bytes -> fixtureAt path bytes
+    fixtureAt path bytes =
+        case decodeFixture bytes of
             Left e -> Left (FixtureUnreadable path e)
             Right f
                 | bodySha256 (answerBody (fixtureAnswer f)) /= fixtureSha256 f ->

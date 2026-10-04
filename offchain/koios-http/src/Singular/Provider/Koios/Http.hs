@@ -13,8 +13,9 @@ Transient failures — unreachable, timed out, a cut-off body, a server
 error and a rate-limit answer — are retried up to the attempt bound,
 with delays doubling from the base delay up to the delay cap, with
 jitter. A rate-limit answer's requested wait is honoured when it is
-within the wait ceiling, and ends the retries when it is not. No retry
-starts that would end past the per-call ceiling. Any other refusal is
+within the wait ceiling, and ends the retries when it is not. The per-call
+ceiling bounds the elapsed time: no retry starts past it, and each
+attempt's timeout is cut to what remains of it. Any other refusal is
 returned at once. A request marked
 'Singular.Provider.Koios.Client.RetryUnanswered', as submission is, is
 retried only when no answer arrived: unreachable or timed out.
@@ -23,13 +24,19 @@ The transport returns the last raw answer and the attempt count; it
 neither pages nor decodes. The token is read once, before any request:
 a missing, unreadable or empty file is
 'Singular.Provider.Koios.Client.TokenFileUnreadable'. The token is sent
-only in the request header; failures are built from the exception's
-content, never from the request, so it appears in no failure.
+only in the request header. Failures are built from the exception's
+content, never from the request, and the token is replaced wherever an
+answer or a failure carries it — a server that echoes it back cannot put
+it into a failure, a log or a recorded fixture.
 -}
 module Singular.Provider.Koios.Http
     ( HttpConfig (..)
     , defaultHttpConfig
     , newHttpTransport
+    , HttpClient
+    , newHttpClient
+    , transportOf
+    , fetchDocument
     ) where
 
 import Control.Concurrent (threadDelay)
@@ -114,16 +121,50 @@ defaultHttpConfig baseUrl =
         , httpCallCeiling = 60
         }
 
--- | Read the token, if any, and build the transport.
-newHttpTransport
-    :: HttpConfig -> IO (Either FailureReason (Transport IO))
-newHttpTransport cfg = do
+-- | A live connection: the configuration, a connection manager and the token.
+data HttpClient = HttpClient
+    { clientConfig :: HttpConfig
+    , clientManager :: Manager
+    , clientBearer :: Maybe BS.ByteString
+    }
+
+{- | Read the token, if any, before anything is sent, and open the
+connection manager.
+-}
+newHttpClient :: HttpConfig -> IO (Either FailureReason HttpClient)
+newHttpClient cfg = do
     token <- traverse readToken (httpTokenFile cfg)
     case sequence token of
         Left failure -> pure (Left failure)
         Right bearer -> do
             manager <- newTlsManager
-            pure (Right (Transport (send cfg manager bearer)))
+            pure (Right (HttpClient cfg manager bearer))
+
+-- | Read the token, if any, and build the transport.
+newHttpTransport
+    :: HttpConfig -> IO (Either FailureReason (Transport IO))
+newHttpTransport cfg = fmap transportOf <$> newHttpClient cfg
+
+-- | The transport of a live connection: requests below the base URL.
+transportOf :: HttpClient -> Transport IO
+transportOf client = Transport $ \raw ->
+    retrying client (rawRetry raw) $ \limit ->
+        attempt
+            client
+            limit
+            (httpBaseUrl (clientConfig client) <> rawPath raw)
+            (rawMethod raw)
+            (rawQuery raw)
+            (rawHeaders raw)
+            (rawBody raw)
+
+{- | GET a document at an absolute URL — such as the schema document at
+the service's origin — under the same token, timeout and retry bounds.
+-}
+fetchDocument :: HttpClient -> Text -> IO Exchange
+fetchDocument client url =
+    retrying client RetryTransient $ \limit ->
+        attempt client limit url Get [] [] NoBody
 
 -- | The token in a file, without surrounding white space.
 readToken :: FilePath -> IO (Either FailureReason BS.ByteString)
@@ -147,37 +188,45 @@ data Next
     | -- | Retry after the server's requested wait
       Wait NominalDiffTime
 
--- | Send a request, retrying within the configured bounds.
-send
-    :: HttpConfig
-    -> Manager
-    -> Maybe BS.ByteString
-    -> RawRequest
+{- | Run attempts within the configured bounds. Each attempt is given the
+smaller of the attempt timeout and what remains of the call ceiling, so
+the ceiling bounds the elapsed time, not only the delays. Every result is
+cleared of the token before it is returned.
+-}
+retrying
+    :: HttpClient
+    -> Retry
+    -> (NominalDiffTime -> IO (Either NoAnswer Answer))
     -> IO Exchange
-send cfg manager bearer raw = do
+retrying client retry action = do
     start <- getCurrentTime
-    let loop attempt = do
-            result <- once cfg manager bearer raw
-            let done = pure Exchange{exchangeAttempts = attempt, exchangeResult = result}
-            case next cfg raw result of
+    let cfg = clientConfig client
+        loop n = do
+            now <- getCurrentTime
+            let remaining = httpCallCeiling cfg - diffUTCTime now start
+            result <-
+                redact (clientBearer client)
+                    <$> action (min (httpTimeout cfg) remaining)
+            let done = pure Exchange{exchangeAttempts = n, exchangeResult = result}
+            case next cfg retry result of
                 Done -> done
                 step
-                    | attempt >= httpAttempts cfg -> done
+                    | n >= httpAttempts cfg -> done
                     | otherwise -> do
                         delay <- case step of
                             Wait w -> pure w
-                            _ -> backoff cfg attempt
-                        now <- getCurrentTime
-                        if diffUTCTime now start + delay > httpCallCeiling cfg
+                            _ -> backoff cfg n
+                        later <- getCurrentTime
+                        if diffUTCTime later start + delay >= httpCallCeiling cfg
                             then done
                             else do
                                 sleep delay
-                                loop (attempt + 1)
+                                loop (n + 1)
     loop 1
 
 -- | Whether an attempt's result may be retried, and after which wait.
-next :: HttpConfig -> RawRequest -> Either NoAnswer Answer -> Next
-next cfg raw = \case
+next :: HttpConfig -> Retry -> Either NoAnswer Answer -> Next
+next cfg retry = \case
     Left (NoConnection _) -> Backoff
     Left NoAnswerInTime -> Backoff
     Left (BodyCutOff _) -> transient Backoff
@@ -193,9 +242,38 @@ next cfg raw = \case
       where
         status = answerStatus a
   where
-    transient step = case rawRetry raw of
+    transient step = case retry of
         RetryTransient -> step
         RetryUnanswered -> Done
+
+{- | Replace the token wherever an answer or a failure carries it: a body
+or header the server echoes, or an exception's text. The token then
+reaches no failure, log or fixture through anything the server sends.
+-}
+redact
+    :: Maybe BS.ByteString
+    -> Either NoAnswer Answer
+    -> Either NoAnswer Answer
+redact Nothing result = result
+redact (Just token) result = case result of
+    Left none -> Left $ case none of
+        NoConnection t -> NoConnection (text t)
+        BodyCutOff t -> BodyCutOff (text t)
+        NoRecording t -> NoRecording (text t)
+        NoAnswerInTime -> NoAnswerInTime
+    Right a ->
+        Right
+            a
+                { answerHeaders = [(k, text v) | (k, v) <- answerHeaders a]
+                , answerBody = bytes (answerBody a)
+                }
+  where
+    text = T.replace (TE.decodeUtf8Lenient token) "<token>"
+    bytes b = case BS.breakSubstring token b of
+        (before, rest)
+            | BS.null rest -> before
+            | otherwise ->
+                before <> "<token>" <> bytes (BS.drop (BS.length token) rest)
 
 -- | A 429's requested wait, in whole seconds.
 retryAfter :: Answer -> Maybe NominalDiffTime
@@ -209,8 +287,8 @@ retryAfter a = do
 times, capped, with jitter in its upper half.
 -}
 backoff :: HttpConfig -> Int -> IO NominalDiffTime
-backoff cfg attempt = do
-    let full = min (httpMaxDelay cfg) (httpBaseDelay cfg * 2 ^ (attempt - 1))
+backoff cfg n = do
+    let full = min (httpMaxDelay cfg) (httpBaseDelay cfg * 2 ^ (n - 1))
     jitter <- randomRIO (0.5, 1 :: Double)
     pure (full * realToFrac jitter)
 
@@ -220,62 +298,62 @@ sleep d = threadDelay (micros d)
 micros :: NominalDiffTime -> Int
 micros d = max 0 (round (nominalDiffTimeToSeconds d * 1000000))
 
--- | One attempt.
-once
-    :: HttpConfig
-    -> Manager
-    -> Maybe BS.ByteString
-    -> RawRequest
+-- | One attempt, given at most this long.
+attempt
+    :: HttpClient
+    -> NominalDiffTime
+    -> Text
+    -> Method
+    -> [(Text, Text)]
+    -> [(Text, Text)]
+    -> Body
     -> IO (Either NoAnswer Answer)
-once cfg manager bearer raw =
-    try (parseRequest (T.unpack (httpBaseUrl cfg <> rawPath raw))) >>= \case
-        Left e -> pure (Left (noAnswerOf e))
-        Right base -> do
-            let req =
-                    setQueryString
-                        [(TE.encodeUtf8 k, Just (TE.encodeUtf8 v)) | (k, v) <- rawQuery raw]
-                        base
-                            { method = case rawMethod raw of
-                                Get -> "GET"
-                                Post -> "POST"
-                            , requestHeaders =
-                                [ (CI.mk (TE.encodeUtf8 k), TE.encodeUtf8 v)
-                                | (k, v) <- rawHeaders raw
-                                ]
-                                    <> [ ("Authorization", "Bearer " <> token)
-                                       | Just token <- [bearer]
-                                       ]
-                            , requestBody = case rawBody raw of
-                                NoBody -> RequestBodyBS ""
-                                JsonBody v -> RequestBodyLBS (encode v)
-                                CborBody b -> RequestBodyBS b
-                            , responseTimeout = responseTimeoutNone
-                            }
-            outcome <-
-                timeout (micros (httpTimeout cfg)) (try (httpLbs req manager))
-            pure $ case outcome of
-                Nothing -> Left NoAnswerInTime
-                Just (Left e) -> Left (noAnswerOf e)
-                Just (Right response) ->
-                    Right
-                        Answer
-                            { answerStatus = statusCode (responseStatus response)
-                            , answerHeaders =
-                                [ ( T.toLower (TE.decodeUtf8Lenient (CI.original k))
-                                  , TE.decodeUtf8Lenient v
-                                  )
-                                | (k, v) <- responseHeaders response
-                                ]
-                            , answerBody = BSL.toStrict (responseBody response)
-                            }
+attempt client limit url verb query headers body
+    | limit <= 0 = pure (Left NoAnswerInTime)
+    | otherwise =
+        try (parseRequest (T.unpack url)) >>= \case
+            Left e -> pure (Left (noAnswerOf e))
+            Right base -> do
+                let req =
+                        setQueryString
+                            [(TE.encodeUtf8 k, Just (TE.encodeUtf8 v)) | (k, v) <- query]
+                            base
+                                { method = case verb of
+                                    Get -> "GET"
+                                    Post -> "POST"
+                                , requestHeaders =
+                                    [ (CI.mk (TE.encodeUtf8 k), TE.encodeUtf8 v)
+                                    | (k, v) <- headers
+                                    ]
+                                        <> [ ("Authorization", "Bearer " <> token)
+                                           | Just token <- [clientBearer client]
+                                           ]
+                                , requestBody = case body of
+                                    NoBody -> RequestBodyBS ""
+                                    JsonBody v -> RequestBodyLBS (encode v)
+                                    CborBody b -> RequestBodyBS b
+                                , responseTimeout = responseTimeoutNone
+                                }
+                outcome <-
+                    timeout (micros limit) (try (httpLbs req (clientManager client)))
+                pure $ case outcome of
+                    Nothing -> Left NoAnswerInTime
+                    Just (Left e) -> Left (noAnswerOf e)
+                    Just (Right response) ->
+                        Right
+                            Answer
+                                { answerStatus = statusCode (responseStatus response)
+                                , answerHeaders =
+                                    [ ( T.toLower (TE.decodeUtf8Lenient (CI.original k))
+                                      , TE.decodeUtf8Lenient v
+                                      )
+                                    | (k, v) <- responseHeaders response
+                                    ]
+                                , answerBody = BSL.toStrict (responseBody response)
+                                }
   where
     -- a failure names what went wrong on the connection, never the
-    -- request; the token is scrubbed from it all the same
-    scrub t =
-        maybe
-            t
-            (\token -> T.replace (TE.decodeUtf8Lenient token) "<token>" t)
-            bearer
+    -- request; 'redact' clears the token from it all the same
     noAnswerOf = \case
         HttpExceptionRequest _ content -> case content of
             ResponseTimeout -> NoAnswerInTime
@@ -287,7 +365,6 @@ once cfg manager bearer raw =
                         <> " bytes, got "
                         <> T.pack (show got)
                     )
-            other -> NoConnection (scrub (T.pack (show other)))
-        InvalidUrlException url reason ->
-            NoConnection
-                (scrub (T.pack ("invalid URL " <> url <> ": " <> reason)))
+            other -> NoConnection (T.pack (show other))
+        InvalidUrlException u reason ->
+            NoConnection (T.pack ("invalid URL " <> u <> ": " <> reason))

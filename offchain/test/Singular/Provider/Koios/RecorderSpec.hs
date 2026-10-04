@@ -18,6 +18,7 @@ module Singular.Provider.Koios.RecorderSpec (spec) where
 import Control.Monad (forM_)
 import Data.ByteString qualified as BS
 import Data.List (isSuffixOf)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -45,6 +46,7 @@ spec :: Spec
 spec = describe "Koios fixture recorder" $ do
     requestSpec
     recordSpec
+    refusalSpec
 
 requestSpec :: Spec
 requestSpec = describe "read requests" $ do
@@ -207,3 +209,92 @@ recordSpec = describe "recording"
             recordedTxs <- assetTxs viaRecorded policy (AssetName "")
             fmap length recordedTxs `shouldBe` Right 5
             recordedTxs `shouldBe` liveTxs
+
+-- | A recorder configuration over a base URL, recording into a directory.
+recorderAt :: Text -> FilePath -> Maybe FilePath -> RecorderConfig
+recorderAt base out tokenFile =
+    RecorderConfig
+        { recorderHttp =
+            (defaultHttpConfig base)
+                { httpTokenFile = tokenFile
+                , httpAttempts = 3
+                , httpBaseDelay = 0.02
+                , httpMaxDelay = 0.1
+                }
+        , recorderClient = ClientConfig{pageSize = 2, pageCeiling = 10}
+        , recorderDirectory = out
+        }
+
+refusalSpec :: Spec
+refusalSpec = describe "refusals before and while recording" $ do
+    it
+        "reads the token file before any request, the schema document included"
+        $ withSystemTempDirectory "koios-record"
+        $ \dir ->
+            withServer $ \base logOf -> do
+                written <-
+                    recordFixtures
+                        (recorderAt base (dir </> "out") (Just (dir </> "no-such-token")))
+                        [TipOf]
+                case written of
+                    Left (RecordTransport (TokenFileUnreadable _ _)) -> pure ()
+                    other -> expectationFailure (show other)
+                map seenPath <$> logOf `shouldReturn` []
+
+    it "fetches the schema document under the configured retry bounds" $
+        withSystemTempDirectory "koios-record" $ \dir ->
+            withFakeKoios
+                ( \s n -> case seenPath s of
+                    "/koiosapi.yaml"
+                        | n == 0 -> respond 503 [] "busy"
+                        | otherwise -> respond 200 [] schemaDocument
+                    _ -> scene s n
+                )
+                $ \base logOf -> do
+                    written <-
+                        recordFixtures (recorderAt base (dir </> "out") Nothing) [TipOf]
+                    written `shouldSatisfy` either (const False) ((== 1) . length)
+                    countAt "/koiosapi.yaml" <$> logOf `shouldReturn` 2
+
+    it "records no echoed token" $
+        withSystemTempDirectory "koios-record" $ \dir -> do
+            let file = dir </> "token"
+                out = dir </> "out"
+            writeFile file (T.unpack token)
+            withFakeKoios
+                ( \s n -> case seenPath s of
+                    "/koiosapi.yaml" -> respond 200 [] schemaDocument
+                    _ ->
+                        let bearer = fromMaybe "" (lookup "authorization" (seenHeaders s))
+                        in  if n == 0
+                                then
+                                    respond
+                                        200
+                                        [("x-echo", bearer)]
+                                        ("[{\"hash\": \"" <> TE.encodeUtf8 bearer <> "\"}]")
+                                else respond 200 [] tipBody
+                )
+                $ \base logOf -> do
+                    _ <- recordFixtures (recorderAt base out (Just file)) [TipOf]
+                    seen <- logOf
+                    -- the token did travel, so an echo was possible
+                    filter
+                        ((== Just ("Bearer " <> token)) . lookup "authorization" . seenHeaders)
+                        seen
+                        `shouldSatisfy` (not . null)
+                    names <- filter (".json" `isSuffixOf`) <$> listDirectory out
+                    names `shouldSatisfy` (not . null)
+                    forM_ names $ \name -> do
+                        bytes <- BS.readFile (out </> name)
+                        TE.encodeUtf8 token `BS.isInfixOf` bytes `shouldBe` False
+
+    it "names a fixture directory it cannot create" $
+        withSystemTempDirectory "koios-record" $ \dir ->
+            withServer $ \base _ -> do
+                let blocker = dir </> "a-file"
+                writeFile blocker "not a directory"
+                written <-
+                    recordFixtures (recorderAt base (blocker </> "out") Nothing) [TipOf]
+                case written of
+                    Left (RecordWrite path _) -> path `shouldBe` blocker </> "out"
+                    other -> expectationFailure (show other)

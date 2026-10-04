@@ -14,11 +14,14 @@ The timings are configuration values, so the suite runs in seconds.
 module Singular.Provider.Koios.HttpSpec (spec) where
 
 import Control.Exception (bracket)
+import Control.Monad (forM)
 import Data.Aeson (Value, encode)
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as BSL
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
 import Data.Time (diffUTCTime, getCurrentTime)
 import Network.Socket
     ( AddrInfo (..)
@@ -90,6 +93,7 @@ spec = describe "Koios HTTP transport" $ do
     retrySpec
     pageSpec
     tokenSpec
+    echoSpec
     submitSpec
 
 retrySpec :: Spec
@@ -155,6 +159,24 @@ retrySpec = describe "retries" $ do
             case gaps of
                 [g1, _, g3] -> g3 `shouldSatisfy` (> g1)
                 _ -> expectationFailure ("gaps: " <> show gaps)
+
+    it
+        "bounds the elapsed time of a call by its ceiling, attempts included"
+        $ withFakeKoios (\_ _ -> respondAfter 3 200 [] tipBody)
+        $ \base _ -> do
+            k <-
+                clientFor
+                    (fast base)
+                        { httpTimeout = 1
+                        , httpAttempts = 5
+                        , httpCallCeiling = 1.5
+                        }
+            start <- getCurrentTime
+            result <- tip k
+            end <- getCurrentTime
+            reasonOf result
+                `shouldSatisfy` (\case Just (_, TimedOut) -> True; _ -> False)
+            diffUTCTime end start `shouldSatisfy` (< 1.8)
 
     it "starts no retry that would end past the per-call ceiling" $
         withFakeKoios (\_ _ -> respond 503 [] "busy") $ \base logOf -> do
@@ -296,6 +318,39 @@ tokenSpec = describe "bearer token" $ do
             map (either (const True) (const False)) failures
                 `shouldBe` [True, True, True]
             filter (T.isInfixOf token . T.pack . show) failures `shouldBe` []
+
+-- | A server that echoes the bearer value back in a header and in the body.
+echoing :: Int -> Seen -> Int -> IO Response
+echoing code s _ =
+    let bearer = fromMaybe "" (lookup "authorization" (seenHeaders s))
+    in  respond
+            code
+            [("x-echo", bearer)]
+            ("[{\"echo\": \"" <> TE.encodeUtf8 bearer <> "\"}]")
+
+echoSpec :: Spec
+echoSpec = describe "a server echoing the token" $
+    it "gets it into no failure, refusal or answer the transport returns" $
+        withSystemTempDirectory "koios-token" $ \dir -> do
+            let file = dir </> "token"
+            writeFile file (T.unpack token)
+            results <- forM [200, 401, 503, 400] $ \code ->
+                withFakeKoios (echoing code) $ \base logOf -> do
+                    k <-
+                        clientFor (fast base){httpTokenFile = Just file, httpAttempts = 1}
+                    a <- show <$> tip k
+                    b <- show <$> submitTx k "tx"
+                    c <- show <$> txStatus k [txIdOfByte 1]
+                    seen <- logOf
+                    -- the server did receive the token, so the echo is real
+                    map (lookup "authorization" . seenHeaders) seen
+                        `shouldSatisfy` all (== Just ("Bearer " <> token))
+                    pure [a, b, c]
+            let shown = concat results
+            length shown `shouldBe` 12
+            filter (T.isInfixOf token . T.pack) shown `shouldBe` []
+  where
+    token = "echoed-token-5d1e"
 
 submitSpec :: Spec
 submitSpec = describe "submission" $ do

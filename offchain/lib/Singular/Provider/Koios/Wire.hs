@@ -24,10 +24,11 @@ A decoder that fails names the position that failed, as a JSON path
 into the answer. Outputs keep everything the ledger keeps: the
 address, the value with every policy and asset name, an inline datum's
 bytes or else a datum hash, and a reference script's bytes, checked
-against the script hash Koios names. Koios reports a @datum_hash@ for an
-inline datum too; the inline datum wins. Transaction bytes are decoded
-as a Conway transaction and checked against the transaction id Koios
-names.
+against the script hash Koios names. A native reference script is
+refused by name: Koios gives no bytes for it, only a summary. Koios
+reports a @datum_hash@ for an inline datum too; the inline datum wins.
+Transaction bytes are decoded as a Conway transaction and checked
+against the transaction id Koios names.
 
 A transaction's validity — false for a transaction recorded as a
 phase-2 failure, whose collateral alone was spent — is read from the
@@ -618,6 +619,12 @@ datumHashOf v = DatumHash . unsafeMakeSafeHash <$> (parseJSON v >>= hashOf)
 scriptOf :: Value -> Parser (Script ConwayEra)
 scriptOf = withObject "reference_script" $ \s -> do
     kind <- s .: "type"
+    when (kind `elem` ["timelock", "multisig"]) $
+        fail
+            ( "a native ("
+                <> T.unpack kind
+                <> ") reference script: Koios gives no bytes for it, only a summary"
+            )
     bytes <- s .: "bytes" >>= hexAny
     expected <- s .: "hash" >>= fmap ScriptHash . hashOf
     script <- case kind :: Text of

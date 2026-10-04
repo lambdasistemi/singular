@@ -14,10 +14,12 @@ The request type has no submission case: 'ReadCall' enumerates every
 call a 'ReadRequest' can make, and none is @submittx@. The recorder runs
 the same typed calls the probe does, over the live transport, and
 writes every exchange they make — page by page — with its request, the
-Koios schema revision, the time and the SHA-256 of the body. Headers are
-not recorded, so a bearer token never reaches a fixture. The recording
-transport also refuses, without sending it, any submission handed to
-it.
+Koios schema revision, the time and the SHA-256 of the body. Request
+headers are not recorded, and the live transport replaces the token in
+every answer, so a bearer token never reaches a fixture, even from a
+server that echoes it. The token file is read before anything is sent.
+The recording transport also refuses, without sending it, any submission
+handed to it.
 -}
 module Singular.Provider.Koios.Recorder
     ( -- * Read requests
@@ -39,26 +41,18 @@ module Singular.Provider.Koios.Recorder
     , recordFixtures
     ) where
 
-import Control.Exception (SomeException, try)
+import Control.Exception (IOException, try)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
-import Data.IORef (modifyIORef', newIORef, readIORef)
+import Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Data.Time (getCurrentTime)
 import Lens.Micro ((^.))
-import Network.HTTP.Client
-    ( httpLbs
-    , parseRequest
-    , responseBody
-    , responseStatus
-    )
-import Network.HTTP.Client.TLS (newTlsManager)
-import Network.HTTP.Types (statusCode)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath ((</>))
 
@@ -94,8 +88,11 @@ import Singular.Provider.Koios.Client
     , txStatus
     )
 import Singular.Provider.Koios.Http
-    ( HttpConfig (..)
-    , newHttpTransport
+    ( HttpClient
+    , HttpConfig (..)
+    , fetchDocument
+    , newHttpClient
+    , transportOf
     )
 import Singular.Provider.Koios.Recorded
     ( Fixture (..)
@@ -313,13 +310,14 @@ data RecorderConfig = RecorderConfig
 
 -- | Why recording stopped.
 data RecordFailure
-    = -- | The live transport could not be built
+    = -- | The live transport could not be built; nothing was sent
       RecordTransport FailureReason
     | -- | The schema document could not be read or carries no revision
       RecordSchema Text
-    | {- | A request's call failed for any reason but an unknown fact,
-      whose answer is recorded like any other; fixtures written so far are
-      kept
+    | -- | The fixture directory or a fixture file could not be written
+      RecordWrite FilePath Text
+    | {- | A request's call failed for a reason other than its answer's
+      content; fixtures written so far are kept
       -}
       RecordCall ReadRequest ClientFailure
     deriving stock (Show)
@@ -350,76 +348,92 @@ parseSchemaRevision document =
                     _ -> Left "the info block names no version"
         [] -> Left "the document has no info block"
 
--- | Fetch the schema revision the base URL's origin publishes.
-fetchSchemaRevision :: Text -> IO (Either Text Text)
-fetchSchemaRevision base = do
-    outcome <- try $ do
-        manager <- newTlsManager
-        req <- parseRequest (T.unpack (schemaUrlOf base))
-        httpLbs req manager
-    pure $ case outcome of
-        Left e -> Left (T.pack (show (e :: SomeException)))
-        Right response
-            | statusCode (responseStatus response) /= 200 ->
-                Left ("status " <> tshow (statusCode (responseStatus response)))
-            | otherwise ->
-                parseSchemaRevision (BSL.toStrict (responseBody response))
+{- | The schema revision the base URL's origin publishes, fetched through
+the recording connection: its token, timeout and retry bounds.
+-}
+fetchSchemaRevision :: HttpClient -> Text -> IO (Either Text Text)
+fetchSchemaRevision client base = do
+    let url = schemaUrlOf base
+    ex <- fetchDocument client url
+    pure $ case exchangeResult ex of
+        Left none -> Left (url <> ": " <> tshow none)
+        Right a
+            | answerStatus a /= 200 ->
+                Left (url <> ": status " <> tshow (answerStatus a))
+            | otherwise -> parseSchemaRevision (answerBody a)
 
 {- | Record every exchange the requests make into the directory, and
-return the files written.
+return the files written. The token file is read before anything is
+sent, the schema document first among them. An answer whose content
+the client refuses — an absent fact, an answer that does not decode — is
+recorded and recording goes on: the recording is the evidence, and the
+tests judge it.
 -}
 recordFixtures
     :: RecorderConfig
     -> [ReadRequest]
     -> IO (Either RecordFailure [FilePath])
 recordFixtures cfg requests =
-    fetchSchemaRevision (httpBaseUrl (recorderHttp cfg)) >>= \case
-        Left e -> pure (Left (RecordSchema e))
-        Right revision ->
-            newHttpTransport (recorderHttp cfg) >>= \case
-                Left e -> pure (Left (RecordTransport e))
-                Right live -> do
-                    createDirectoryIfMissing True (recorderDirectory cfg)
-                    written <- newIORef []
-                    let recording = Transport $ \raw ->
-                            if rawCall raw == CallSubmitTx
-                                then
-                                    pure
-                                        Exchange
-                                            { exchangeAttempts = 0
-                                            , exchangeResult =
-                                                Left (NoConnection "the recorder does not submit")
-                                            }
-                                else do
-                                    ex <- exchange live raw
-                                    case exchangeResult ex of
-                                        Right answer -> do
-                                            path <- write revision raw answer
-                                            modifyIORef' written (<> [path])
-                                        Left _ -> pure ()
-                                    pure ex
-                        k = Koios (recorderClient cfg) recording
-                        run = \case
-                            [] -> Right <$> readIORef written
-                            r : rs ->
-                                probe k r >>= \case
-                                    -- an absent fact is a complete, recorded answer
-                                    Left ClientFailure{failureReason = UnknownFact _} -> run rs
-                                    Left f -> pure (Left (RecordCall r f))
-                                    Right _ -> run rs
-                    run requests
+    newHttpClient (recorderHttp cfg) >>= \case
+        Left e -> pure (Left (RecordTransport e))
+        Right client ->
+            fetchSchemaRevision client (httpBaseUrl (recorderHttp cfg)) >>= \case
+                Left e -> pure (Left (RecordSchema e))
+                Right revision ->
+                    try (createDirectoryIfMissing True dir) >>= \case
+                        Left e -> pure (Left (RecordWrite dir (ioText e)))
+                        Right () -> record client revision
   where
+    dir = recorderDirectory cfg
+    ioText e = T.pack (show (e :: IOException))
+    record client revision = do
+        written <- newIORef []
+        broken <- newIORef Nothing
+        let live = transportOf client
+            recording = Transport $ \raw ->
+                if rawCall raw == CallSubmitTx
+                    then
+                        pure
+                            Exchange
+                                { exchangeAttempts = 0
+                                , exchangeResult =
+                                    Left (NoConnection "the recorder does not submit")
+                                }
+                    else do
+                        ex <- exchange live raw
+                        case exchangeResult ex of
+                            Right answer ->
+                                write revision raw answer >>= \case
+                                    Right path -> modifyIORef' written (<> [path])
+                                    Left failure -> writeIORef broken (Just failure)
+                            Left _ -> pure ()
+                        pure ex
+            k = Koios (recorderClient cfg) recording
+            run = \case
+                [] -> Right <$> readIORef written
+                r : rs -> do
+                    outcome <- probe k r
+                    readIORef broken >>= \case
+                        Just failure -> pure (Left failure)
+                        Nothing -> case outcome of
+                            Left ClientFailure{failureReason = UnknownFact _} -> run rs
+                            Left ClientFailure{failureReason = Undecodable _} -> run rs
+                            Left f -> pure (Left (RecordCall r f))
+                            Right _ -> run rs
+        run requests
     write revision raw answer = do
         now <- getCurrentTime
         let request = fixtureRequestOf raw
-            path = recorderDirectory cfg </> fixtureFileName request
-        BSL.writeFile path $
-            encodeFixture
-                Fixture
-                    { fixtureRequest = request
-                    , fixtureRevision = revision
-                    , fixtureRecordedAt = now
-                    , fixtureSha256 = bodySha256 (answerBody answer)
-                    , fixtureAnswer = answer
-                    }
-        pure path
+            path = dir </> fixtureFileName request
+            bytes =
+                encodeFixture
+                    Fixture
+                        { fixtureRequest = request
+                        , fixtureRevision = revision
+                        , fixtureRecordedAt = now
+                        , fixtureSha256 = bodySha256 (answerBody answer)
+                        , fixtureAnswer = answer
+                        }
+        try (BSL.writeFile path bytes) >>= \case
+            Left e -> pure (Left (RecordWrite path (ioText e)))
+            Right () -> pure (Right path)

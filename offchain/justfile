@@ -112,6 +112,7 @@ koios-fixtures:
     cage=8ac9562f5fb6be9b9b913ae2ad2cc1d9e038f7f7039256f1ac9f7a62.bb41081f54d9c2cad883dbefe690affb0db49cff800e7574822fd1f57d76e778
     unknown=a8a5d4ad3c8a3c43c2ab28b5c36ff94a3e0bf3d0b8f2b1fd4a0f1ecb.
     fold=c8c5be03023b828cffd1dc623b345c3ef061f73b0d7ddb1b8b4d924d2a1c57a3
+    native=31cdc475b235445842377aa64e323ad70cacb2dd3c4c2aabf88e89b31ac66258
     absent=0000000000000000000000000000000000000000000000000000000000000000
     koios() { nix develop --quiet --command cabal run -O0 -v0 exe:singular-koios -- "$@" --koios-url "$url" --page-size 20; }
     jq() { nix run --quiet --inputs-from . nixpkgs#jq -- "$@"; }
@@ -121,7 +122,7 @@ koios-fixtures:
         tip "epoch_params:$epoch" cli_protocol_params \
         "address_utxos:$reference" "address_utxos:$hashed" "address_utxos:$empty" \
         "asset_utxos:$cage" "asset_txs:$cage" "asset_txs:$unknown" \
-        "tx_info:$fold" "tx_info:$fold,$absent" "tx_cbor:$absent" \
+        "tx_info:$fold" "tx_info:$fold,$absent" "tx_info:$native" "tx_cbor:$absent" \
         "tx_status:$fold,$absent" \
         account_info:stake_test17zy7ujlley7twgsnlqmpkue5338vgkqucz2uky864020czgktxcpl \
         account_info:stake_test17r5ar06gltlpcvvtuv7e7p06x9cn0mqaqsazsllqgwu32jss2sprr \

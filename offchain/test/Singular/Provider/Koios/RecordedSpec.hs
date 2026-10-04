@@ -45,7 +45,7 @@ import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Data.Word (Word16)
 import Lens.Micro ((&), (.~), (^.))
-import System.Directory (copyFile, listDirectory)
+import System.Directory (copyFile, createDirectory, listDirectory)
 import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
@@ -153,6 +153,12 @@ foldTx =
     txIdFromHex
         "c8c5be03023b828cffd1dc623b345c3ef061f73b0d7ddb1b8b4d924d2a1c57a3"
 
+-- | A transaction whose first output holds a native (timelock) reference script.
+nativeScriptTx :: TxId
+nativeScriptTx =
+    txIdFromHex
+        "31cdc475b235445842377aa64e323ad70cacb2dd3c4c2aabf88e89b31ac66258"
+
 -- | A transaction id no chain holds.
 absentTx :: TxId
 absentTx = txIdFromHex (T.replicate 64 "0")
@@ -238,6 +244,16 @@ setSpec = describe "the fixture set" $ do
         $ loadFixtureSet
             >=> \case
                 Left (FixtureHashMismatch _) -> pure ()
+                other -> expectationFailure (show (fmap setRevision other))
+
+    it "names a fixture file it cannot read" $
+        withSystemTempDirectory "koios-unreadable" $ \dir -> do
+            files <- filter (".json" `isSuffixOf`) <$> listDirectory fixtureDir
+            forM_ files $ \f -> copyFile (fixtureDir </> f) (dir </> f)
+            let unreadable = dir </> "zz-unreadable.json"
+            createDirectory unreadable
+            loadFixtureSet dir >>= \case
+                Left (FixtureUnreadable path _) -> path `shouldBe` unreadable
                 other -> expectationFailure (show (fmap setRevision other))
 
     it "refuses an empty directory" $
@@ -415,6 +431,30 @@ decodeSpec = describe "decoded answers" $ do
             failureReason
                 <$> errorOf (accountRegistered k (account absentAccount))
                 `shouldReturn` UnknownFact (UnknownRegistration absentAccount Nothing)
+
+    it
+        "refuses a native reference script by name, since Koios gives no bytes for it"
+        $ do
+            set <- loadSet
+            -- the recorded answer holds a native reference script with no bytes
+            body <-
+                maybe (fail "no recorded tx_info for the native script output") pure $
+                    case [ answerBody (fixtureAnswer f)
+                         | f <- setFixtures set
+                         , fixtureRequest f
+                            == fixtureRequestOf (rawRequest (txInfoRequest [nativeScriptTx]))
+                         ] of
+                        b : _ -> Just b
+                        [] -> Nothing
+            TE.encodeUtf8 "\"type\": \"timelock\"" `BS.isInfixOf` body
+                `shouldBe` True
+            k <- recorded
+            failure <- failureReason <$> errorOf (txInfo k [nativeScriptTx])
+            case failure of
+                Undecodable f -> do
+                    T.unpack (decodePosition f) `shouldContain` "reference_script"
+                    T.unpack (decodeReason f) `shouldContain` "native"
+                other -> expectationFailure (show other)
 
     it "names a request with no recording" $ do
         k <- recorded
