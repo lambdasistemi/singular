@@ -372,6 +372,21 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
             let (bad, afterBad) = runState (action (("first", 99) :| [])) fixture
             bad `shouldBe` Right (Left UndecodableRequest)
             fixtureNodes afterBad `shouldBe` fixtureNodes fixture
+            after@(afterChosen, _, _, _) <-
+                history identity [("neighbour", 1), ("first", 0), ("first", 2)]
+            let accepted = ObservedFold chosen afterChosen (("first", 0) :| [("first", 2)])
+                (acceptedAnswer, committed) = runState (acceptObservedFold fixtureTrieState accepted) fixture
+                (repeatAnswer, repeated) = runState (acceptObservedFold fixtureTrieState accepted) committed
+            acceptedAnswer `shouldBe` Right ()
+            fixtureNodes committed `shouldBe` fixtureNodes (storeOf after)
+            repeatAnswer `shouldBe` Right ()
+            fixtureNodes repeated `shouldBe` fixtureNodes committed
+            fixtureFolds repeated `shouldBe` fixtureFolds committed
+            let reordered = ObservedFold chosen afterChosen (("first", 2) :| [("first", 0)])
+                (reorderedAnswer, refused) = runState (acceptObservedFold fixtureTrieState reordered) fixture
+            reorderedAnswer `shouldBe` Left MissingProof
+            fixtureNodes refused `shouldBe` fixtureNodes fixture
+            fixtureFolds refused `shouldBe` fixtureFolds fixture
 
 isLeft :: Either a b -> Bool
 isLeft (Left _) = True
