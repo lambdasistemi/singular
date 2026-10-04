@@ -12,13 +12,15 @@ token since @create@, so a reader needs nobody's local copy.
 
 The lineage is chained by spends, never by the order the transactions are
 given in: @create@ mints the token under @Minting(seed)@, and each fold
-spends the previous state output. Every fold applies its requests the way
-the state validator does (@onchain\/validators\/registry\/fold.ak@): the
-spending inputs in ledger order, an inline 'RequestDatum' naming this
-registry's token takes the next action of the state input's @Modify@
-redeemer, 'Rejected' leaves the trie as it is and 'Update' walks the
-request's edge with 'walkEdge'. After every fold the rebuilt root must
-equal the root in that fold's state datum.
+spends the previous state output. A transaction whose bytes say it failed
+its scripts (@isValid = false@) spent only its collateral and is never in
+the lineage, whatever its body's inputs name. Every fold applies its
+requests the way the state validator does
+(@onchain\/validators\/registry\/fold.ak@): the spending inputs in ledger
+order, an inline 'RequestDatum' naming this registry's token takes the
+next action of the state input's @Modify@ redeemer, 'Rejected' leaves the
+trie as it is and 'Update' walks the request's edge with 'walkEdge'. After
+every fold the rebuilt root must equal the root in that fold's state datum.
 
 The answer is the trie rebuilt into the caller's 'Trie', or one named
 'Refusal'. On a refusal the caller's trie holds a partial replay and must
@@ -51,9 +53,10 @@ import Lens.Micro ((^.))
 
 import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
+import Cardano.Ledger.Alonzo.Tx (IsValid (..))
 import Cardano.Ledger.Alonzo.TxWits (Redeemers (..))
 import Cardano.Ledger.Api.Scripts.Data (getPlutusData)
-import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx, witsTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL, isValidTxL, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( inputsTxBodyL
     , mintTxBodyL
@@ -192,9 +195,11 @@ data Mismatch
 {- | Rebuild the registry's trie into the given trie, from the history of its
 state token up to the selected state output.
 
-The history is the ledger's own transactions, in any order; the map resolves
-every input they spend or reference. The selection is a state output and the
-root the caller expects there.
+The history is the ledger's own transactions, in any order; a transaction
+whose bytes say it failed its scripts (@isValid = false@) is left out before
+anything else reads the history, since it spent only its collateral. The
+map resolves every input they spend or reference. The selection is a state
+output and the root the caller expects there.
 -}
 replayLineage
     :: (Monad m)
@@ -248,7 +253,7 @@ lineageOf
     -> [ConwayTx]
     -> Either ReplayFailure Lineage
 lineageOf token selected@(TxIn selectedId selectedIx) selection resolved history = do
-    byId <- distinct token history
+    byId <- distinct token (filter passedScripts history)
     let refuse = failWith token
         produced i@(TxIn tid ix) =
             Map.lookup tid byId >>= \tx -> outputAt tx ix >>= \o -> Just (i, o)
@@ -467,6 +472,13 @@ pairing token resolve Fold{foldId, foldTx, foldStateInput} = do
 -- ---------------------------------------------------------
 -- Reading transactions
 -- ---------------------------------------------------------
+
+{- | Whether the transaction's own bytes say its scripts passed. One with
+@isValid = false@ spent only its collateral: the inputs its body names,
+a state output among them, were not spent, so it is not in the lineage.
+-}
+passedScripts :: ConwayTx -> Bool
+passedScripts tx = tx ^. isValidTxL == IsValid True
 
 failWith :: RegistryToken -> TxId -> Refusal -> Either ReplayFailure a
 failWith token tid = Left . ReplayFailure token tid
