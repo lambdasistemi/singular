@@ -38,9 +38,12 @@ import Data.Foldable (toList)
 import Data.List (isSuffixOf, nub, sort)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (mapMaybe)
+import Data.Scientific (toBoundedInteger)
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
+import Data.Word (Word16)
 import Lens.Micro ((&), (.~), (^.))
 import System.Directory (copyFile, listDirectory)
 import System.FilePath ((</>))
@@ -51,7 +54,12 @@ import Cardano.Crypto.Hash.Class (hashFromBytes)
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Alonzo.Tx (IsValid (..))
 import Cardano.Ledger.Api.Tx (bodyTxL, isValidTxL)
-import Cardano.Ledger.Api.Tx.Body (mintTxBodyL, outputsTxBodyL)
+import Cardano.Ledger.Api.Tx.Body
+    ( inputsTxBodyL
+    , mintTxBodyL
+    , outputsTxBodyL
+    , referenceInputsTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , datumTxOutL
@@ -188,6 +196,28 @@ setSpec = describe "the fixture set" $ do
         sort calls
             `shouldBe` filter (/= CallSubmitTx) [minBound .. maxBound]
 
+    it "asks for the whole history on every recorded asset_txs request" $ do
+        set <- loadSet
+        let histories =
+                [ lookup "_history" (fixtureQuery (fixtureRequest f))
+                | f <- setFixtures set
+                , fixtureCall (fixtureRequest f) == CallAssetTxs
+                ]
+        histories `shouldSatisfy` (not . null)
+        histories `shouldSatisfy` all (== Just "true")
+
+    it "holds an exact total on every recorded page of every paged call" $ do
+        set <- loadSet
+        let paged =
+                [ (fixtureCall (fixtureRequest f), totalOf (fixtureAnswer f))
+                | f <- setFixtures set
+                , fixtureCall (fixtureRequest f)
+                    `elem` [CallAddressUtxos, CallAssetUtxos, CallAssetTxs]
+                ]
+        nub (map fst paged)
+            `shouldMatchList` [CallAddressUtxos, CallAssetUtxos, CallAssetTxs]
+        filter ((== Nothing) . snd) paged `shouldBe` []
+
     it "refuses a set with a fixture under another schema revision"
         $ withTamperedCopy
             (\f -> f{fixtureRevision = fixtureRevision f <> "-other"})
@@ -246,6 +276,18 @@ decodeSpec = describe "decoded answers" $ do
         many <- ok (addressUtxos k [addr referenceAddress])
         hashed <- ok (addressUtxos k [addr datumHashAddress])
         held <- ok (assetUtxos k [cageAsset])
+        -- the extent comes from the recorded rows, not from the decoder:
+        -- a dropped or an added output fails here
+        set <- loadSet
+        forM_
+            [ (CallAddressUtxos, addressBody referenceAddress, many)
+            , (CallAddressUtxos, addressBody datumHashAddress, hashed)
+            , (CallAssetUtxos, requestBody (assetUtxosRequest [cageAsset]), held)
+            ]
+            $ \(call, body, decoded) -> do
+                let recordedRefs = rowReferences set call body
+                recordedRefs `shouldSatisfy` (not . null)
+                sort (map fst decoded) `shouldBe` sort recordedRefs
         let outputs = many <> hashed <> held
         forM_ outputs (matchesProducer k)
         -- the comparison ranges over every shape the decoder handles
@@ -277,7 +319,24 @@ decodeSpec = describe "decoded answers" $ do
             k <- recorded
             [info] <- ok (txInfo k [foldTx])
             txInfoId info `shouldBe` foldTx
-            length (txInfoReferenceInputs info) `shouldSatisfy` (> 0)
+            -- the extent comes from the transaction itself: its inputs, its
+            -- reference inputs, and an output reference per output it creates
+            [c] <- ok (txCbor k [foldTx])
+            let body = txCborTx c ^. bodyTxL
+                created = length (toList (body ^. outputsTxBodyL))
+                refsOf = map fst
+            Set.toList (body ^. inputsTxBodyL) `shouldSatisfy` (not . null)
+            Set.toList (body ^. referenceInputsTxBodyL)
+                `shouldSatisfy` (not . null)
+            created `shouldSatisfy` (> 0)
+            sort (refsOf (txInfoInputs info))
+                `shouldBe` Set.toList (body ^. inputsTxBodyL)
+            sort (refsOf (txInfoReferenceInputs info))
+                `shouldBe` Set.toList (body ^. referenceInputsTxBodyL)
+            sort (refsOf (txInfoOutputs info))
+                `shouldBe` [ TxIn foldTx (TxIx (fromIntegral i))
+                           | i <- [0 .. created - 1]
+                           ]
             forM_
                 (txInfoInputs info <> txInfoReferenceInputs info <> txInfoOutputs info)
                 (matchesProducer k)
@@ -415,6 +474,22 @@ movesAsset (policy, name) tx =
 addressBody :: Text -> Body
 addressBody a = requestBody (addressUtxosRequest [addr a])
 
+{- | The output references of every recorded page of a request, read from
+the raw answer rows, not through the decoder.
+-}
+rowReferences :: FixtureSet -> Call -> Body -> [TxIn]
+rowReferences set call body =
+    [ TxIn (txIdFromHex h) (TxIx (fromIntegral i))
+    | f <- setFixtures set
+    , fixtureCall (fixtureRequest f) == call
+    , fixtureBody (fixtureRequest f) == body
+    , Just (Array rows) <- [decodeStrict' (answerBody (fixtureAnswer f))]
+    , Object row <- toList rows
+    , Just (String h) <- [KM.lookup "tx_hash" row]
+    , Just (Number n) <- [KM.lookup "tx_index" row]
+    , Just i <- [toBoundedInteger n :: Maybe Word16]
+    ]
+
 -- | The exact total of a recorded page's range header.
 totalOf :: Answer -> Maybe Integer
 totalOf a = do
@@ -479,33 +554,36 @@ validityBody set =
 validitySpec :: Spec
 validitySpec = describe "transaction validity" $ do
     it
-        "returns a transaction whose own flag says invalid, as invalid, without dropping it" $ do
-        k <- recorded
-        [c] <- ok (txCbor k [foldTx])
-        txCborValid c `shouldBe` True
-        k' <- serving (cborAnswer foldTx (cleared (txCborTx c)) Nothing)
-        [c'] <- ok (txCbor k' [foldTx])
-        txCborId c' `shouldBe` foldTx
-        txCborValid c' `shouldBe` False
+        "returns a transaction whose own flag says invalid, as invalid, without dropping it"
+        $ do
+            k <- recorded
+            [c] <- ok (txCbor k [foldTx])
+            txCborValid c `shouldBe` True
+            k' <- serving (cborAnswer foldTx (cleared (txCborTx c)) Nothing)
+            [c'] <- ok (txCbor k' [foldTx])
+            txCborId c' `shouldBe` foldTx
+            txCborValid c' `shouldBe` False
 
     it
-        "refuses a valid_contract that disagrees with the transaction's own flag" $ do
-        k <- recorded
-        [c] <- ok (txCbor k [foldTx])
-        k' <- serving (cborAnswer foldTx (cleared (txCborTx c)) (Just True))
-        failure <- failureReason <$> errorOf (txCbor k' [foldTx])
-        case failure of
-            Undecodable f -> T.unpack (decodePosition f) `shouldContain` "valid_contract"
-            other -> expectationFailure (show other)
+        "refuses a valid_contract that disagrees with the transaction's own flag"
+        $ do
+            k <- recorded
+            [c] <- ok (txCbor k [foldTx])
+            k' <- serving (cborAnswer foldTx (cleared (txCborTx c)) (Just True))
+            failure <- failureReason <$> errorOf (txCbor k' [foldTx])
+            case failure of
+                Undecodable f -> T.unpack (decodePosition f) `shouldContain` "valid_contract"
+                other -> expectationFailure (show other)
 
     it
-        "reads tx_info validity from its scripts when no top-level flag is given" $ do
-        set <- loadSet
-        body <- maybe (fail "no recorded tx_info") pure (validityBody set)
-        k <- serving body
-        map txInfoValid <$> ok (txInfo k [foldTx]) `shouldReturn` [True]
-        k' <- serving (invalidateFirstContract body)
-        map txInfoValid <$> ok (txInfo k' [foldTx]) `shouldReturn` [False]
+        "reads tx_info validity from its scripts when no top-level flag is given"
+        $ do
+            set <- loadSet
+            body <- maybe (fail "no recorded tx_info") pure (validityBody set)
+            k <- serving body
+            map txInfoValid <$> ok (txInfo k [foldTx]) `shouldReturn` [True]
+            k' <- serving (invalidateFirstContract body)
+            map txInfoValid <$> ok (txInfo k' [foldTx]) `shouldReturn` [False]
 
 -- | The body with its first script marked as a failed contract.
 invalidateFirstContract :: BS.ByteString -> BS.ByteString

@@ -172,6 +172,8 @@ pagingSpec = describe "paging" $ do
                         requests
                         === True
                     , all ((/= Nothing) . queryParam "order") requests === True
+                    , all ((== Just "true") . queryParam "_history") requests
+                        === True
                     , all
                         (elem ("prefer", "count=exact") . lowerHeaders)
                         requests
