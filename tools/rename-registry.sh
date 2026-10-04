@@ -67,6 +67,9 @@
 # to the excluded docs/prior-art.md page hash. Renaming one without the
 # other corrupts the narration binding that check_presentation enforces, so
 # the script excludes the pair and reports the companion as a known residual.
+# The narration manifest and index record the page text of the excluded
+# prior-art page beside each clip's digest, so they are excluded for the same
+# reason: rewriting them would break the binding between a clip and its text.
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
@@ -84,6 +87,7 @@ scan_files() {
     '*.json' '*.ak' '*.yml' '*.yaml' '*.toml' '*justfile' '*.sh' '*.py' \
     '*.lean' '*.html' \
     ':!PROVENANCE.md' ':!docs/prior-art.md' ':!docs/prior-art.speech.json' \
+    ':!docs/audio/manifest.json' ':!docs/audio/index.json' \
     ':!CHANGELOG.md' ':!site' ':!.docs-source' \
     ':!conformance/coverage/evaluation/evidence' \
     ':!tools/rename-registry.sh' ':!tools/rename-registry.test.sh'
@@ -297,6 +301,7 @@ step7_gate() {
   echo "step 7: final gate"
   residual="$(git grep -iw mpfs -- \
     ':!PROVENANCE.md' ':!docs/prior-art.md' ':!docs/prior-art.speech.json' \
+    ':!docs/audio/manifest.json' ':!docs/audio/index.json' \
     ':!CHANGELOG.md' ':!site' ':!.docs-source' \
     ':!tools/rename-registry.sh' ':!tools/rename-registry.test.sh' || true)"
   if [ -z "$residual" ]; then

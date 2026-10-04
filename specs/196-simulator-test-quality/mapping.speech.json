@@ -1,26 +1,160 @@
 {
+  "196-simulator-test-quality-control-mapping-and-verification-record": [
+    {
+      "text": "#196 — Simulator test quality: control mapping and verification record.",
+      "pause": 500
+    },
+    {
+      "text": "Story: as a simulator contributor, I run its checks and observe a failure when mint or refund effects are wrong, with coverage that identifies what was actually exercised.",
+      "pause": 400
+    },
+    {
+      "text": "Model binding (implementation intake, base ba788d0fd19ed3d2388335436594d3318ff9c80d, review baseline e19ca5efacb23acdbef51110f003dddc35ad592c):",
+      "pause": 400
+    },
+    {
+      "text": "lean/corpus.json modelSha256 343f7e23a13c05f814a66c9d3d55fe2486a23ce0c4f8cb842b0e96626bcde853, statementsSha256 b0f8867e…22acab, theoremManifestSha256 bbc2cdf9…9aef6c.",
+      "pause": 300
+    },
+    {
+      "text": "The observable result of an admitted transition is the whole Singular.Result {state, mint, paid}: Singular.applyEdge returns mint := assetDelta a (the edge-delta delta of the edge) and paid := [(c.refundAddress, c.value)] for updateActive / deleteAbsent over the request key's custody entry (custody-lovelace-refund); step is refusal or applyEdge. The gate now compares all three observables.",
+      "pause": 300
+    },
+    {
+      "text": "Keyed mint evidence rows are exports of Singular.Statements.fold_batch_claimed_mint_by_kind_key; the transcription predicate they are inspected with is core.mjs assetSame (transcription of Singular.assetSame).",
+      "pause": 300
+    },
+    {
+      "text": "No Lean file, corpus export, or expected result was changed by this slice.",
+      "pause": 300
+    }
+  ],
   "beforeafter-mapping-of-the-checks": [
     {
-      "text": "The table maps every simulator control from what it observed before this slice to what it observes now. The new rows close the silent holes: an admitted case must show the modeled mint delta and the custody refund in both destination and amount, a guard fails if the corpus stops observing refunds at all, and every exported corpus section must be classified as behavior, evidence or uncovered. The replaced rows report honestly: theorem tables separate applicable, vacuous, held and exercised; receipts say inspected, never replayed; and naming rows are validated against the supply biconditional. Everything listed as preserved keeps its previous observation unchanged.",
+      "text": "Before/after mapping of the checks.",
+      "pause": 500
+    },
+    {
+      "text": "Preserved unchanged: identity/manifest checks, refusal-vocabulary coverage, edge-table complement, empty-batch and keyed fold controls, stories, boundary refusals, page build identity, the Over witness journey (behavior), lifecycle by-id rows and retirement-reason checks. The handwritten fold controls remain behavioral controls, not a coverage catalogue; no second catalogue was added.",
       "pause": 400
     }
   ],
   "prepublication-repair-2026-09-21-full-unconditional-laws-and-unconditional-laws": [
     {
-      "text": "Two defects in the initial implementation were caught by prepublication owner checks and repaired against the Lean model. First, resolve rows could pass while contradicting the supply law, because the checker required one witness for the matching leaf but omitted the requirement for zero witnesses otherwise. It now requires both directions for active and absent witnesses, while still allowing plural terminal attestations. Second, the law gated itself on its own output, letting a violating state hide as an inactive hypothesis. The unconditional laws now apply to all ten accepted rows. On the preserved witness-dropping mutant, the report shows nine rows holding and one violating the supply and active-witness laws; the old report omitted that violation as vacuous.",
+      "text": "Prepublication repair (2026-09-21): full unconditional-laws and unconditional laws.",
+      "pause": 500
+    },
+    {
+      "text": "Prepublication owner checks found two original-criteria failures against the candidate; both repaired against clear Lean, no operator ruling needed.",
+      "pause": 400
+    },
+    {
+      "text": "Resolve rows accepted a contradictory observation. The checker encoded only the one-iff half of Singular.Statements.biconditional_supply_sync: NRP03-resolve-active mutated to leaf {known:{s:'terminal'}} with active:2, absent:0, terminal:0 passed all 24 rows, though unconditional-laws also claims zero active supply whenever the leaf is not active (and zero absent whenever it is not absent). RED: the mutation was accepted. GREEN: the checker now requires all four conjuncts — (active===1)===leaf active, (active===0)===leaf not active, and the same pair for absent — so absence and wrong-multiplicity rows are rejected by name. Plural terminal witnesses stay allowed on a terminal leaf (terminal-witnesses-plural); NRP05 with terminal:2 passes as a positive control. Kind exclusion, previously its own branch, is no longer checked separately: with the zero halves in place a positive count pins the leaf and one leaf cannot be two states, so every exclusion-failing row fails the biconditional or the terminal check first — the branch could never fire again and was deleted rather than left unable to fail.",
+      "pause": 300
+    },
+    {
+      "text": "biconditional_supply_sync.applies gated the law on its own output. active+absent>0 made a state with leaf active and no witnesses report applies:false while law:false — the violation hid as an inactive hypothesis. Lean's law is unconditional over reachable states; output witness presence is its consequence, never its hypothesis. applies for active-witness-unique, absent-witness-unique, witness-kinds-exclude and unconditional-laws is now constant; law is the exact full consequent (active-witness-unique/absent-witness-unique gain their iff conjuncts; unconditional-laws gains both zero halves). terminal-attestation-sound's applies follows its own quantifier: any terminal attestation in held, not only the action's key. Termination and occupancy keep their real hypotheses. Corpus coverage moved (unconditional-laws/active-witness-unique/absent-witness-unique/witness-kinds-exclude: applicable 10, vacuous 0; terminal-attestation-sound stays 2/2/8); no check was weakened — the repaired law layer run against a preserved witness-dropping mutant flags biconditional_supply_sync 9/10 and active_witness_unique 9/10 where the old one reported 3 held / 7 vacuous.",
+      "pause": 300
+    },
+    {
+      "text": "Representation/evidence boundary: these checks observe one replayed row at a bound key through witnesses(after, action.key) (the output-witness view over held/custody) and trieGet on the replayed after-state. The Lean statements quantify over all reachable states and all keys; a finite corpus row is an example of the law's consequent, never its quantifier — the quantifier remains Lean's proof. applicable now means rows where the statement's own declared hypotheses hold (all accepted rows for the unconditional laws); vacuous is meaningful only for termination, occupancy and terminal-attestation-sound; exercised requires applicable>0 with held===applicable, i.e. every applicable row's consequent evaluated and held. A defect that drops or duplicates a witness on any accepted row now lands in held<applicable and fails the gate as law violated on a corpus row: <name>.",
+      "pause": 400
+    },
+    {
+      "text": "Selftest: 13 → 16 legs (terminal-leaf witness-hiding resolve row; plural terminal positive control; witnessless supply violation stays applicable and reads as violated).",
+      "pause": 400
+    },
+    {
+      "text": "Verification of this repair: focused node controls (RED before, GREEN after) for both defects including the wrong-multiplicity and four-healthy-leaf shapes of unconditional-laws; node simulator/{mirror-check.mjs,build.mjs --check,gate.mjs,gate.mjs --selftest} all exit 0; then the one remaining budgeted nix run --quiet .#simulator-check exit 0 (suite now 3/3 spent; browser-check remained 3/3 spent, not rerun; page rebuilt, index.html sha256 4fbf030800f009bda07fd5bcbf317bee1813c521316b6ef9ee902b3b86e50b15).",
       "pause": 400
     }
   ],
   "verification-record": [
     {
-      "text": "The record lists the commands and their results. The initial simulator baseline and candidate checks passed, and the prepublication repair used the final permitted simulator invocation successfully. The browser check used all three local invocations, failing once on a redundant label assertion and passing after the exact inspected wording was pinned. Red controls planted dropped mints, zeroed refunds and fabricated rows into the old checks and watched them survive. The strengthened gate rejects those defects by name, while page-build identity checks still pass because they observe identity rather than behavior. The report counts thirty-eight corpus cases, seven controlled laws with applicable examples, and twenty-four naming and twenty-one lifecycle rows inspected rather than executed.",
+      "text": "Verification record.",
+      "pause": 500
+    },
+    {
+      "text": "Commands and results (all run from the worktree root):",
       "pause": 400
+    },
+    {
+      "text": "nix run --quiet .#simulator-check — baseline exit 0; candidate exit 0 (mirror PASS, build identity PASS, gate PASS, selftest PASS with the new legs). Two of the three permitted invocations used; no repair run needed.",
+      "pause": 300
+    },
+    {
+      "text": "nix run --quiet .#browser-check — baseline exit 0 (25 checks); candidate failed once on my own redundant negative label assertion (\"replayed\" matched inside \"not replayed\"); repaired by pinning the exact inspected wording; repair run exit 0 (26 checks). All three permitted invocations used.",
+      "pause": 300
+    },
+    {
+      "text": "RED controls (base ba788d0, temporary copies, node-level):",
+      "pause": 300
+    },
+    {
+      "text": "return {accepted:true,value:{...value,mint:[]}} in step — build, build --check, gate, gate --selftest all exit 0 (defect survived).",
+      "pause": 300
+    },
+    {
+      "text": "value:entry.value → value:0 (both refund sites) — same, all exit 0.",
+      "pause": 300
+    },
+    {
+      "text": "six fabricated {id} rows — naming checker accepted all six, 30/30 \"executed\".",
+      "pause": 300
+    },
+    {
+      "text": "theoremReport — termination exhibited=10 while only 2 of 10 accepted rows have a terminal before-leaf (8 vacuous passes counted as exhibited).",
+      "pause": 300
+    },
+    {
+      "text": "GREEN controls (candidate, temporary copies):",
+      "pause": 300
+    },
+    {
+      "text": "dropped-mint mutant — node simulator/gate.mjs exit 1, corpus mint/GA01-insert-absent-accepted.",
+      "pause": 300
+    },
+    {
+      "text": "zeroed-refund mutant — exit 1, corpus refund/GA03-update-active-accepted.",
+      "pause": 300
+    },
+    {
+      "text": "build/build --check still exit 0 on both mutants: expected and honest, they check page-build identity, not behavior. The gate is the detector.",
+      "pause": 300
+    },
+    {
+      "text": "fabricated id-only, duplicate, missing-observation, contradictory-verdict and contradictory-resolve rows — all rejected; the 24 valid exported rows pass with executed: 0, boundary: 'evidence'.",
+      "pause": 300
+    },
+    {
+      "text": "Report on the candidate: 38 corpus cases (4 observing refunds), 7 codec, 2 ada, 28 complement pairs (21 refused), 20 story steps, 7 controlled laws (each applicable>0, held===applicable), sections classified ada/cases/codec: behavior, folds/keyedMintRows/transactions: evidence, 24 naming + 21 lifecycle rows inspected, model 343f7e23a13c.",
+      "pause": 300
     }
   ],
   "limits": [
     {
-      "text": "Refund coverage rests on the four accepted cases that pay, with the ada rows adding a destination-named control. The gate fails if the corpus stops exporting a refund case. Mint expectations come from the transcription's delta table, supported by end-state and evidence checks rather than re-proved here. Fold, keyed-mint and transaction rows are inspected as exported evidence rather than executed, and transaction wire bytes are not re-derived. The implementation handoff was local-only; publication and acceptance are separate steps.",
-      "pause": 400
+      "text": "Limits.",
+      "pause": 500
+    },
+    {
+      "text": "The corpus-level refund observation rests on the 4 accepted cases that pay; the ada rows add the destination-named control. If the Lean corpus ever stops exporting a refund case, no corpus case observes a refund at all fails rather than passing quietly.",
+      "pause": 300
+    },
+    {
+      "text": "Mint expectations are derived from the transcription's edge-delta delta table; the table itself is anchored to Lean through the accepted cases' end states, the keyed evidence rows, and the fold controls — not re-proved here.",
+      "pause": 300
+    },
+    {
+      "text": "folds/keyedMintRows/transactions are inspected as exported evidence; the gate does not claim to execute them, and the report says so.",
+      "pause": 300
+    },
+    {
+      "text": "Transaction evidence checks cover the mint/claim identity and named-refusal fields; they do not re-derive the wire bytes.",
+      "pause": 300
+    },
+    {
+      "text": "Local candidate only: no push, PR, audit, or acceptance claim. Parent owns publication and further staffing.",
+      "pause": 300
     }
   ],
   "_source": {

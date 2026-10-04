@@ -1,11 +1,21 @@
 {
-  "signature-families": [
+  "node-callable-contracts": [
     {
-      "text": "Existing callers retain every public Node function, constructor and effect through the original facade. Each function family has one focused implementation owner and no new public session API.",
-      "pause": 400
+      "text": "Node callable contracts.",
+      "pause": 500
     },
     {
-      "text": "The diagram follows an existing caller through the original Node API to one focused implementation.",
+      "text": "As a caller, I want the same Node operations and diagnostics after their definitions move.",
+      "pause": 400
+    }
+  ],
+  "signature-families": [
+    {
+      "text": "Signature families.",
+      "pause": 500
+    },
+    {
+      "text": "These are existing signatures and effects, not permission to add a new public API. The complete before and after declaration map is a delivery receipt.",
       "pause": 400
     }
   ],

@@ -5,8 +5,16 @@
       "pause": 500
     },
     {
-      "text": "The Lean-first slice is accepted. The current work is the compact mandate and slicing audit, with no open blocker.",
-      "pause": 400
+      "text": "Completed: Lean-first slice accepted and pushed at 854f56f; submission-2 delta audit PASS, six of six rows, no findings.",
+      "pause": 300
+    },
+    {
+      "text": "Current: compact mandate and slicing audit.",
+      "pause": 300
+    },
+    {
+      "text": "Blockers: none. operator answer (A-006) fixes duplicate refusal as key-exists; the separate keyed-mint control remains net-mint-mismatch.",
+      "pause": 300
     }
   ],
   "vertical-cut": [
@@ -15,7 +23,11 @@
       "pause": 500
     },
     {
-      "text": "There is one remaining implementation task and one runnable: insert-active from the released archive across every required layer.",
+      "text": "There is one remaining implementation task and one runnable: the released archive's insert-active command. It crosses validator, identity, builder, conformance, devnet, journey, documentation and packaging in the same owner run. There is no validator-only, builder-only or documentation-only task.",
+      "pause": 400
+    },
+    {
+      "text": "The already accepted Lean commit is a prerequisite design slice, not a second implementation interpretation. The implementation must follow its constructed transaction and refusal order.",
       "pause": 400
     }
   ],
@@ -25,7 +37,7 @@
       "pause": 500
     },
     {
-      "text": "The map binds Lean authority, this edge's on-chain request and behavior, off-chain builders, conformance, product packaging and every derived copy, while preserving update, delete and read G three rows.",
+      "text": "Anything outside this map is a planning challenge, not an implicit widening.",
       "pause": 400
     }
   ],
@@ -35,7 +47,31 @@
       "pause": 500
     },
     {
-      "text": "One Opus owner commits the red bundle, then boot and approvals, the edge and refusals, the packaged command and copies, with one decision record at every acceptance line.",
+      "text": "One Opus commit owner receives only the frozen spec, task, Lean rows, acceptance checks and source fence. It works inside one four-hour run:",
+      "pause": 400
+    },
+    {
+      "text": "Commit the RED bundle for boot-pins-open-registry-identities through updated-encoding-consumers, using only existing CI job commands later frozen in acceptance checks. This is the first decision-review checkpoint.",
+      "pause": 300
+    },
+    {
+      "text": "Plant the open/witness/request substrate and its boot builders, then make boot-pins-open-registry-identities and open-approval-binding-and-burn-controls green as separate committed checkpoints.",
+      "pause": 300
+    },
+    {
+      "text": "Implement the cage edge with request/fold builders and make active-insertion-delivers-requested-token then duplicate-key-and-keyed-mint-controls green as separate committed checkpoints.",
+      "pause": 300
+    },
+    {
+      "text": "Add the packaged command and drive it through end-to-end, journey, conformance, docs and archive assembly; make released-command-runs-without-checkout and updated-encoding-consumers green as separate committed checkpoints.",
+      "pause": 300
+    },
+    {
+      "text": "Regenerate only the enumerated identity/blueprint/coverage/page/speech consumers, preserving every update/delete/read on-chain-edge-case row and verdict, and create the pre-push decision record.",
+      "pause": 300
+    },
+    {
+      "text": "Each checkpoint records the invariant, the owner's single gate result, the approach and rejected alternative, reliance on existing code, assumptions, shortcuts and what the gate does not cover. The owner continues without waiting.",
       "pause": 400
     }
   ],
@@ -45,7 +81,19 @@
       "pause": 500
     },
     {
-      "text": "Grok and Codex author the C I table. A mute persistent senior vets decisions without rerunning gates, may add existing C I rows, and may escalate a wrong requirement. Push waits for every approval and one ticket-owner acceptance checks run.",
+      "text": "After the slicing audit, two independent 15-minute authors—Grok and Codex—map every acceptance line and touched workflow row to verbatim existing CI commands and expected exits. The ticket owner synthesizes their workflow-cited union as acceptance checks; no bespoke checker, mutant, self-test or separate gate audit is created. A missing CI command is a question, not a local substitute.",
+      "pause": 400
+    },
+    {
+      "text": "The commit owner and one mute persistent senior auditor launch together. The senior reads the frozen invariants, Lean rows, commits and decision records, but not the owner's transcript or prose brief. It does not rerun gates or controls; it approves, blocks, or escalates the requirement itself from code evidence. Traffic is mediated by the ticket owner. The owner never waits, but push waits for every acceptance line to have an approval bound to an ancestor SHA.",
+      "pause": 400
+    },
+    {
+      "text": "The senior may add an uncovered invariant only as a new acceptance checks row mapped to an existing CI command. Settled rows remain byte-identical and ordered. During an escalation it may suggest a row replacement/removal or requirement restatement, but only the ruling creates a new gate version.",
+      "pause": 400
+    },
+    {
+      "text": "Before push, the ticket owner checks the whole approval trail and runs the latest frozen acceptance checks once on the head. Remote CI must then be green on that exact head. No end-of-slice inspector or duplicate verdict execution follows.",
       "pause": 400
     }
   ],
@@ -55,7 +103,11 @@
       "pause": 500
     },
     {
-      "text": "Day zero is version zero point seven point zero. The epic owner tags the edge release after merge. Every enumerated copy remains inside the four-hour estimate; at the wall an incomplete task stays unchecked and unpushed, and only unrelated new work may become a remainder.",
+      "text": "The first release was named before work: 0.7.0. After this ticket merges, the epic owner owns the edge-scoped pre-release/tag that publishes the archive with insert-active; this ticket only proves the archive bytes and command locally and in CI.",
+      "pause": 400
+    },
+    {
+      "text": "The estimate is one four-hour owner run after excluding retirement of other-edge on-chain-edge-case rows. updated-encoding-consumers is inside that estimate and cannot be deferred as polish. If the wall is reached before every accepted line and enumerated copy is green, insert-active-from-released-archive-in-one remains unchecked and unpushed; only unrelated newly discovered work may be listed as a remainder. If the edge still does not fit, re-slice the edge story through a new ruling rather than parking documentation or consumer contracts.",
       "pause": 400
     }
   ],

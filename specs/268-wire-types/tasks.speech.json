@@ -1,8 +1,22 @@
 {
+  "wire-extraction-delivery": [
+    {
+      "text": "Wire extraction delivery.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I need a reviewable PR whose task stamps name implementation work and whose gate, audit and CI receipts remain separate acceptance evidence.",
+      "pause": 400
+    }
+  ],
   "work-items": [
     {
-      "text": "The six work items cover intake, module ownership, wire controls, fresh-blueprint consumers, contributor documentation, and a clean candidate with a truthful unchanged Conformance fence. Exact-head gate, audit and CI results remain separate acceptance receipts rather than task stamps.",
-      "pause": 350
+      "text": "Work items.",
+      "pause": 500
+    },
+    {
+      "text": "Exact-head gate, independent audit, pushed-head CI and epic acceptance are separate from these implementation stamps. A task is marked done only when its named evidence exists; no stamp turns a gap into a pass.",
+      "pause": 400
     }
   ],
   "_source": {

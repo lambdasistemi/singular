@@ -1,59 +1,129 @@
 {
-  "where-the-representative-is-at-every-moment": [
+  "requests-folding-and-nft-custody": [
     {
-      "text": "The custody state diagram starts with no representative. Minting the Insert action token creates a pending Insert that holds no NFT. A Withdraw returns it to nothing. A fold on an absent key mints the representative into application custody, where application updates move it between successor UTxOs. The application releases it into a pending Update or Delete, which holds the only NFT there is, and only a valid fold burns it.",
+      "text": "Requests, folding and NFT custody.",
+      "pause": 500
+    },
+    {
+      "text": "Status. This page records the original three-operation design: Insert, Update and Delete requests, an application-minted Withdraw, and the states Absent, Active and Over. The registry-mode model that the Lean proves, the simulator replays and the conformance suite compares against the deployed validators moves a key through seven edges and calls the terminal state Terminal; where the two differ, registry mode is current. How a name moves in the registry shows the seven edges, and the model ledger records what replaced each part of this design.",
       "pause": 400
     },
     {
-      "text": "A pending Insert holds no NFT; a pending Update or Delete holds the only one. Nothing but a valid fold moves a representative out of a terminal request.",
+      "text": "Request creation and folding are separate transactions. Each has its own atomic effects; there is an explicit pending interval between them. Creating a valid request does not guarantee that someone will fold it.",
+      "pause": 400
+    }
+  ],
+  "where-the-representative-is-at-every-moment": [
+    {
+      "text": "Where the representative is at every moment.",
+      "pause": 500
+    },
+    {
+      "text": "A pending Insert holds no NFT; a pending Update or Delete holds the only one there is. Nothing but a valid fold moves the representative out of a terminal request.",
       "pause": 400
     }
   ],
   "mint-move-and-burn": [
     {
-      "text": "The table gives, for each transaction, what happens to the request token and to the representative: Insert creation mints an action token and no NFT; folding Insert mints the representative; an application update moves it; creating Update or Delete moves it into the request; folding them burns it; Withdraw mints a Withdraw action token and nothing else.",
+      "text": "Mint, move and burn.",
+      "pause": 500
+    },
+    {
+      "text": "The Insert/Withdraw action token certifies the exact action under the configured application policy. The representative NFT carries the identity's unique authority. They are not the same asset.",
       "pause": 400
     }
   ],
   "insert-certify-first-check-absence-when-folded": [
     {
-      "text": "The sequence diagram runs from the user's proposal, through the application policy approving it and minting an Insert action token whose name hashes the proposal, to a pending request with no NFT, then to any folder proving absence, the registry recomputing the action name, minting the representative into the certified output and consuming the request. The key moves from absent to Active.",
+      "text": "Insert: certify first, check absence when folded.",
+      "pause": 500
+    },
+    {
+      "text": "The application prepares a proposal identifying the registry, key, initial application state and destination application script/address. The configured application policy approves that exact proposal. The application minting policy must establish approval and enforce the required request format, binding and custody in that minting transaction. A correctly formatted Insert without accepted application approval is invalid; it cannot be used to register an arbitrary non-application datum. The application constructs the transaction. Its configured policy mints the Insert action token directly. When consuming the request, Singular recomputes the expected asset name from the Insert tag and necessary proposal parameters and recognizes it under that policy ID. No second mandatory native request policy/token is introduced.",
       "pause": 400
     },
     {
-      "text": "Certification approves the proposed creation, not a claim the key will stay absent. Two pending Inserts can target the same key; the one that sees absence at folding succeeds.",
+      "text": "The pending Insert request contains its Insert action token but no representative NFT. Request creation need not observe the mutable registry state. Certification approves the proposed creation, not a claim that the key will remain absent.",
+      "pause": 400
+    },
+    {
+      "text": "When folded successfully, Insert checks that the key is absent, changes it to Active, and mints its representative NFT into the output required by the certified proposal. The native checks must match that output's NFT, destination and initial state to the request. These effects occur together in the folding transaction.",
+      "pause": 400
+    },
+    {
+      "text": "Two Insert requests can target the same key while pending. An Insert whose key is occupied cannot succeed at that point. The design does not yet select whether a batch builder omits such requests or how failure is presented; it does not assume a skip rule inside the validator.",
       "pause": 400
     }
   ],
   "withdrawing-a-pending-insert": [
     {
-      "text": "The sequence diagram shows the user asking to cancel one exact pending Insert, the application policy minting a Withdraw action token whose name commits to that UTxO and the refund terms, and Singular's spending witness checking the policy, recomputing the name and consuming the request with nothing minted and the registry unchanged.",
+      "text": "Withdrawing a pending Insert.",
+      "pause": 500
+    },
+    {
+      "text": "An Insert can be withdrawn without changing the registry or creating a representative. The configured application policy must approve a separate Withdraw action token whose asset name commits to the Withdraw tag, registry, exact pending Insert UTxO and required refund terms/effects. Singular checks that action binding when consuming the pending Insert. Original Insert approval alone cannot authorize cancellation.",
       "pause": 400
     },
     {
-      "text": "Original Insert approval alone cannot cancel. Refund economics and disposal remain open.",
+      "text": "Token disposal, refund economics and the application's conditions for approving withdrawal remain to be specified. They must protect deposits and avoid assuming arbitrary outsiders may repeatedly cancel valid registration attempts.",
       "pause": 400
     }
   ],
   "application-evolution-keep-the-same-representative": [
     {
-      "text": "The sequence diagram shows the application spending script consuming its UTxO and creating a successor carrying the same NFT and a new state, with no registry request, mint or burn. The key stays Active.",
+      "text": "Application evolution: keep the same representative.",
+      "pause": 500
+    },
+    {
+      "text": "While the NFT is in application custody, the application spending validator governs its movement and state changes. An application update can spend one application UTxO and produce its successor with the same NFT. This need not change the registry.",
+      "pause": 400
+    },
+    {
+      "text": "The application can observe its own inputs and transaction context. Avoiding observation of the mutable registry UTxO does not prohibit those checks or the use of authenticated registry configuration.",
       "pause": 400
     }
   ],
   "update-and-delete-transfer-authority-into-a-pending-request": [
     {
-      "text": "The sequence diagram shows the application spending script authorizing one exact release, moving the existing representative into the request, the request holding it with no withdrawal or sweep possible, a folder proving the existing value, and the registry consuming the request and burning the representative: Update sets Over, Delete sets absent.",
+      "text": "Update and Delete: transfer authority into a pending request.",
+      "pause": 500
+    },
+    {
+      "text": "To request retirement or removal, the application constructs a transaction that spends its NFT UTxO and places the existing representative into the Singular request output. Any additional Update/Delete request token and its issuer remain a construction detail; the existing NFT and exact authorized request binding are the adopted authority path.",
       "pause": 400
     },
     {
-      "text": "Merely being able to spend the NFT does not authorize every operation. Terminal requests are completion-only.",
+      "text": "The application validator must authorize that exact release: the chosen Update or Delete operation, registry/key binding and request destination. Merely being able to spend the NFT does not establish authorization for every operation. The releasing application validator enforces the request format, binding and custody at creation. Singular checks the native conditions at consumption; receiving the output alone does not execute Singular. No second application attestation token is required merely to repeat the approved release.",
+      "pause": 400
+    },
+    {
+      "text": "These checks need no observation of the mutable registry state when the request is created. The registry remains Active during the pending interval, and the NFT remains outstanding in the request. It cannot continue rotating as an application UTxO while held there.",
+      "pause": 400
+    },
+    {
+      "text": "Update/Delete requests are completion-only. There is no ordinary withdrawal, rejection or sweep that releases their representative. Valid folding consumes the request, burns the representative and applies exactly one of these transitions:",
+      "pause": 400
+    },
+    {
+      "text": "The representative stays in request custody until that completion. Exact request-token disposal is still to be specified; it must not allow a completed request to be accepted again.",
       "pause": 400
     }
   ],
   "what-batching-establishes": [
     {
-      "text": "A fold applies operations to successive map states; absence and old-value checks belong to the native mechanics. One representative cannot sit in two pending terminal requests, and a consumed request cannot be consumed again. Replay across Delete and reinsert is not settled here.",
+      "text": "What batching establishes.",
+      "pause": 500
+    },
+    {
+      "text": "A fold traverses requests and applies their operations to the successive authenticated map states. Insert absence and Update/Delete old-value checks belong to those native mechanics. Certification and request recognition aim to keep the fold's own checks to explicit native obligations. A nonzero net burn of an application action token during folding still invokes its minting policy; whether that branch repeats expensive checks depends on the disposal contract. This is a design objective, not a measured performance result or a guarantee that every application fits.",
+      "pause": 400
+    },
+    {
+      "text": "One authentic representative cannot be held in two simultaneously pending Update/Delete requests for the same key. Consuming a request UTxO prevents consuming that UTxO again. These facts do not settle authorization replay across Delete followed by a fresh Insert, or all possible conflicts between different keys.",
+      "pause": 400
+    },
+    {
+      "text": "See certification and the remaining decisions.",
       "pause": 400
     }
   ],

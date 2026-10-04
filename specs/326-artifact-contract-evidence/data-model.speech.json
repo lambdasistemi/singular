@@ -1,4 +1,26 @@
 {
+  "326-data-model": [
+    {
+      "text": "#326 data model.",
+      "pause": 500
+    },
+    {
+      "text": "contract-case-name-kind-success-refusal-consistency Contract case: name, kind (success, refusal, consistency), and per adapter one result: passed, failed, or not-supported with its reason. Evidence class per run: test-adapter or devnet (generated or external leg); public-chain never appears.",
+      "pause": 300
+    },
+    {
+      "text": "confinement-allowlist-entry-file-reason-it-composition Confinement allowlist entry: file and the reason it is a composition root or fixture startup. No entry names a consumer of journeys-deployment-insert-active-update-terminal-runners.",
+      "pause": 300
+    },
+    {
+      "text": "release-model-revision-application-model-commit-release Release model revision: the application model commit the release maps to, carried in the archive and equal to the conformance evidence's model revision.",
+      "pause": 300
+    },
+    {
+      "text": "evidence-state-per-requirement-executed-or-partial Evidence state per requirement: executed or partial (from a receipt for the current base), or uncovered, bound elsewhere, out of scope (from the plan, shown with requirement text). A state is never written by hand in the page.",
+      "pause": 300
+    }
+  ],
   "_source": {
     "file": "data-model.md",
     "sha256": "472c55d9425d01726e4edee7a61357f28b2aa85b9574e8f9736e0c40151ace4b"

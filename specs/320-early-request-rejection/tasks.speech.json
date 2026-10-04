@@ -1,32 +1,138 @@
 {
+  "tasks": [
+    {
+      "text": "Tasks.",
+      "pause": 500
+    },
+    {
+      "text": "Stable IDs. A task is checked when its own evidence exists at an exact commit, with that evidence and its limits stated beside it. A checked task is not whole-ticket acceptance: the exact-head gate (the whole generic-rows session included), the full root CI and the held questions remain open.",
+      "pause": 400
+    }
+  ],
   "planning": [
     {
-      "text": "Planning is done: the authority is bound, the baseline recorded, callers and pins inventoried, the specification written, the planning commits independently reviewed, and the first slice's runtime gate derived from the gate page and versioned forward with every version kept. A checked task carries its own evidence and limits; it is not acceptance of the whole ticket.",
-      "pause": 400
+      "text": "Planning.",
+      "pause": 500
+    },
+    {
+      "text": "[x] bind-issue-ruling-lean-blob-base-read Bind the issue, ruling, Lean blob and base; read the constitution, contributor instructions and pull request template.",
+      "pause": 300
+    },
+    {
+      "text": "[x] record-root-ci-baseline-at-base-classify Record the root CI baseline at the base and classify its failure (research).",
+      "pause": 300
+    },
+    {
+      "text": "[x] inventory-caller-old-rule-identity-pin-it Inventory every caller of the old rule and every identity pin it moves (research).",
+      "pause": 300
+    },
+    {
+      "text": "[x] write-specification-plan-module-data-function-models Write the specification, plan, module, data and function models, quickstart and checklist.",
+      "pause": 300
+    },
+    {
+      "text": "[x] independent-review-planning-commits-first-review-blocked Independent review of the planning commits: the first review blocked on per-invocation counts, fixed forward; the later reviews approved the final planning head 9462beb.",
+      "pause": 300
+    },
+    {
+      "text": "[x] row-scope-answered-one-new-singular-sourced Row scope answered: one new Singular-sourced row and reject-and-retract-refund-controls's timing words (gate page, The rows change).",
+      "pause": 300
+    },
+    {
+      "text": "[x] runtime-gate-derived-from-gate-page-sha256 The validators-identities-reject-before-deadline-consumer-requirement runtime gate is derived from the gate page (sha256 dde548c8…) and versioned forward, with every version kept: the first, then a raised cap and a candidate-bound reject-before-deadline-consumer-requirement receipt, then the two doc speech companions in the fence, then a cap for the update-timing-preserved-state-refuses-update-outside state witness.",
+      "pause": 300
     }
   ],
   "validators-identities-reject-before-deadline-consumer-requirement-validators-identities-and-reject-before-deadline-consumer-requirement": [
     {
-      "text": "The first slice is done with its evidence: RED on the base, where the state and refund floor tests fail with the old guard's trace and the request tests fail on the request script's timing expectation; both purposes repaired; the pairing rule held by two mutations; the old predicate removed; both manifests and every pin regenerated, with a derived envelope digest caught and fixed forward; the naming comparison seen failing on a stale pin; reject-before-deadline-consumer-requirement accepted and held behind its refused control; the public reject-before-deadline-consumer-requirement text in words; and the state side of the update timing named by its own refusal, with a guard removal mutant that fails the four new refusal tests and one existing update test while the in-window twin still passes. Its limits are stated with each task: the update timing is outside the model, the naming check reads byte presence, units are not per purpose ledger figures, and the whole generic session has not run.",
-      "pause": 400
+      "text": "validators-identities-reject-before-deadline-consumer-requirement validators, identities and reject-before-deadline-consumer-requirement.",
+      "pause": 500
+    },
+    {
+      "text": "[x] red-early-rejection-tests-for-state-request RED: early-rejection tests for the state and request purposes, and early refund-floor refusals, seen failing on the base for the stated reason (state-purpose-admits-rejected-in-processing-window, request-purpose-admits-contribute-whose-matching-state, refund-floor-held-in-early-windows-short). Commit 89d0ec9: aiken-suite-properties-format-registry-identity fails on the unchanged validators. The state-purpose and refund-floor tests fail with the not-rejectable guard trace in both windows. The request-purpose tests, in both action orders, fail on the request script's timing expectation. No setup or decoding failure.",
+      "pause": 300
+    },
+    {
+      "text": "[x] remove-timing-rule-from-state-s-reject Remove the timing rule from the state's reject (state-purpose-admits-rejected-in-processing-window, reject-continues-state-unchanged-mints-nothing). Commit db9354b; aiken-suite-properties-format-registry-identity green at 4d8772d. Compiled evidence only for the windows; the live early reject is reject-before-deadline-consumer-requirement's (reject-before-deadline-consumer-requirement-records-chain).",
+      "pause": 300
+    },
+    {
+      "text": "[x] request-purpose-admits-its-matching-reject-in Request purpose admits its matching reject in any window; update timing kept (request-purpose-admits-contribute-whose-matching-state, update-timing-preserved-state-refuses-update-outside). Commit db9354b; aiken-suite-properties-format-registry-identity green at 4d8772d. Two mutations (admit on any reject, admit on the first action) each fail the two-request request-purpose test with identity consistent. Commit d4e2eea adds the state-side witness: an update outside the processing window is refused with not-phase1 as the first reason, its in-window twin accepted, and a mutant without the guard fails the four out-of-window refusal tests and the existing modify_in_phase2, and nothing else. The in-window twin still passes. The update-timing rule is current validator behaviour outside Lean, under the fold-correspondence hold. Outside the processing window an unpaired request is refused; inside it, admission is as before.",
+      "pause": 300
+    },
+    {
+      "text": "[x] remove-rejectability-predicate-wrapper-restate-properties-tests Remove the rejectability predicate and wrapper. Restate the properties and tests that encoded the old rule (no-dead-guard-old-rejectability-predicate-gone). Commit db9354b; aiken-suite-properties-format-registry-identity green at 4d8772d.",
+      "pause": 300
+    },
+    {
+      "text": "[x] read-new-state-hash-from-built-registry Read the new state hash from the built registry blueprint, set the witness and envelope pins to it, then regenerate the registry manifest. The witness pin moves the witness and open-datum hashes, so the regeneration comes after it (identity-moved-hash-equals-its-regenerated-manifest). Commits 1441883, cf923bd, 14ee6d6 (a derived envelope-digest pin first missed, caught by aiken-suite-properties-format-registry-identity, repaired forward). aiken-suite-properties-format-registry-identity and deployed-identity-both-ways-naming-scripts-embedded green at 4d8772d.",
+      "pause": 300
+    },
+    {
+      "text": "[x] update-naming-state-pin-regenerate-update-retirement Update the naming state pin, regenerate, update the retirement-custody pins, regenerate again (identity-moved-hash-equals-its-regenerated-manifest). Commits fcae162, 58740e1, 024231f; naming-suite-identity and blueprint-nix-build-quiet-no-link-print green.",
+      "pause": 300
+    },
+    {
+      "text": "[x] record-compiled-sizes-execution-units-both-purposes Record compiled sizes and the execution units of both purposes on a processing-window reject, before and after (compiled-sizes-state-request-scripts-execution-units). Base sizes come from cached base blueprints matched to the base manifest in both directions. Units come from the compiled test run and the reject-before-deadline-consumer-requirement receipt, not ledger-evaluated per purpose.",
+      "pause": 300
+    },
+    {
+      "text": "[x] reject-before-deadline-consumer-requirement-records-chain reject-before-deadline-consumer-requirement records the chain's acceptance as held, after its refused one-lovelace-short control on the same request, with full-fold units. The body-generic-rows-reject-before-deadline-consumer step body and docs/consumer-conformance.md state it. The consumer requirement text is unchanged (reject-before-deadline-consumer-requirement-consumer-requirement, workflow-carries-acceptance-checks-step-bodies-byte). Commit e9102fb; the reject-before-deadline-consumer-requirement row alone at 4d8772d, on a clean tree: accepted and held, never agreement, with its short refund refused and attributed to the state script. The whole generic-rows session (body-generic-rows-reject-before-deadline-consumer) has not run.",
+      "pause": 300
+    },
+    {
+      "text": "[x] drop-not-rejectable-from-onchain-validator-owners Drop not-rejectable from docs/onchain-validator-owners.md, the validator doc comments and the conformance comments that state the old rule as fact. reject-before-deadline-consumer-requirement's public text states the requirement in words (acfd508); the presentation check and nix-build-quiet-build-gate-root pass at acfd508.",
+      "pause": 300
+    },
+    {
+      "text": "[x] deployed-identity-check-compares-naming-scripts-compiled The deployed identity check compares the naming scripts' compiled code with the registry's current state hash and the current retirement-custody hash. It is seen failing on the stale naming pin before update-naming-state-pin-regenerate-update-retirement (identity-moved-hash-equals-its-regenerated-manifest). Commit a060e07; deployed-identity-both-ways-naming-scripts-embedded refused at the stale pin before any devnet, then green at 4d8772d. Limit: it checks that the hash bytes are present in the compiled code, not how the constant is used.",
+      "pause": 300
     }
   ],
   "product-builder-product-builder": [
     {
-      "text": "The second slice is done with its evidence: the builder selects every pending request and carries a finite validity from the current slot, the off-chain lint, build and unit suite pass, and a devnet run rejects through the builder inside the processing window and inside the retraction window, reading the refund and the unchanged state back from the ledger, with the phase three case unchanged. Its limits: the vectors check did not run, no live run used the old builder, and one unprocessable request now blocks every builder reject.",
-      "pause": 400
+      "text": "product-builder product builder.",
+      "pause": 500
+    },
+    {
+      "text": "[x] reject-builder-drops-its-timing-selection-deadline The reject builder drops its timing selection and deadline-bound validity (product-reject-builder-s-transaction-accepted-on). Commit 6b22215: every pending request of the registry is selected; validity is finite from the current slot and bound to no deadline. Off-chain lint, component build and unit suite pass at 6640f4a. The vectors check was not run in this slice, so off-chain-lint-build-unit-vectors is not claimed as a whole. One unprocessable request now blocks every builder reject, in any window.",
+      "pause": 300
+    },
+    {
+      "text": "[x] devnet-e2e-processing-retraction-window-rejects-through Devnet e2e: processing- and retraction-window rejects through the builder, each interval asserted inside its window, refund and unchanged state read back from the ledger. \"rejects a phase-3 request\" keeps its name (reject-continues-state-unchanged-mints-nothing, product-reject-builder-s-transaction-accepted-on). Commit 6640f4a; product-builder-on-devnet at 6640f4a: 25 examples, 0 failures, both built intervals inside their windows, the phase-3 case unchanged. No live run against the old builder was made. The processing-window case reaches the request script's processing-window arm; the matching-action path runs live in the retraction-window and phase-3 cases.",
+      "pause": 300
+    },
+    {
+      "text": "[x] restate-requestphase-s-documentation-as-resuming-client Restate requestPhase's documentation as a resuming client's choice of exit. Commit 6b22215, documentation only; the classifier is unchanged.",
+      "pause": 300
     }
   ],
   "evidence-in-story-language-evidence-in-the-story-language": [
     {
-      "text": "The third slice is done with its evidence: every reject in the story language names its window, the interpreter checks it before submitting, the book renders all three and runs six chapters, reject-and-retract-refund-controls keeps its check byte for byte, and reject-inside-processing-and-retraction-windows runs its six steps with every comparison agreeing and three placements inside each window. Its limits: refusal reasons are attributed by script hash rather than observed, and the whole generic session and root CI have not run.",
-      "pause": 400
+      "text": "evidence-in-story-language evidence in the story language.",
+      "pause": 500
+    },
+    {
+      "text": "[x] reject-in-story-language-carries-placement-interpreter Every reject in the story language carries a placement. The interpreter realizes it and refuses a mismatch as setup failure. The book renders every placement, with a totality control over all of them (reject-placement-in-story-language). Commit fb63107: story validation refuses an unplaced reject, the interpreter checks the built interval before submitting and logs each placement, and the book renders all three placements. conformance-unit-suite-running-book at ada8d8f: unit suite and running book, six chapters, 0 failures.",
+      "pause": 300
+    },
+    {
+      "text": "[x] reject-retract-refund-controls-places-its-rejects reject-and-retract-refund-controls places its rejects after the windows. Its CI assertion is byte-identical (reject-retract-refund-controls-keeps-its-evidence). Commit fb63107; body-reject-retract-refund-controls-unchanged at ada8d8f runs the reviewed reject-and-retract-refund-controls step and passes; the workflow's reject-and-retract-refund-controls step is unchanged from the base.",
+      "pause": 300
+    },
+    {
+      "text": "[x] reject-inside-processing-retraction-windows-untampered-rejects reject-inside-processing-and-retraction-windows: untampered rejects in the processing and retraction windows accepted by both; tampered short and other-address refunds refused by both; the exact rows change; the dispatcher, book chapters, row count and published counts; the body-reject-inside-processing-retraction-windows-early step body (model-bound-early-rejections-agree-lean-untampered, workflow-carries-acceptance-checks-step-bodies-byte). Commit fb63107 (format-only follow-up ada8d8f); body-reject-inside-processing-retraction-windows-early at ada8d8f: six steps in order, every comparison agrees, three placements inside each window, refusals attributed to the state script by hash. The workflow's reject-inside-processing-and-retraction-windows step equals the gate page's body. Live refusal reasons are not observed on chain; the compiled tests name them. The whole generic-rows session (body-generic-rows-reject-before-deadline-consumer) and root CI have not run.",
+      "pause": 300
     }
   ],
   "acceptance": [
     {
-      "text": "Acceptance: the exact head gate green, every checkpoint approved, and the limits written into the pull request.",
-      "pause": 400
+      "text": "Acceptance.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] exact-head-gate-green-checkpoint-approved-by Exact-head gate once–nix-develop-quiet-c-just-ci-standard green, every checkpoint approved by the auditor, limits written into the pull request.",
+      "pause": 300
     }
   ],
   "_source": {

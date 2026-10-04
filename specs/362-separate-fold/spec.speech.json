@@ -1,32 +1,226 @@
 {
+  "booking-and-folding-as-separate-commands": [
+    {
+      "text": "Booking and folding as separate commands.",
+      "pause": 500
+    },
+    {
+      "text": "As a requester, I book an insertion or a termination with my own wallet. The receipt names my pending request and the time by which it must be folded.",
+      "pause": 400
+    },
+    {
+      "text": "As the registry's folder, I fold that pending request with my own wallet, in a separate command.",
+      "pause": 400
+    },
+    {
+      "text": "As a requester whose request nobody folded in time, I take my request back. Once its windows have closed, anyone can clear it.",
+      "pause": 400
+    },
+    {
+      "text": "Each of these is an ordinary singular command. Each signs with the wallet given to it and journals its own transactions.",
+      "pause": 400
+    }
+  ],
   "why-one-command-was-not-enough": [
     {
-      "text": "Insert and terminate used to book and fold in one process. A failed fold left the requester's command partial, holding a fold they never meant to run, and on preprod that fold expired before it reached the node.",
-      "pause": 350
+      "text": "Why one command was not enough.",
+      "pause": 500
+    },
+    {
+      "text": "singular registry insert and singular registry terminate used to book and then fold in the same process. A fold failure left the requester's command partial, with a live booking and a fold they never meant to run. On preprod that fold expired before it reached the node (OutsideValidityIntervalUTxO, #363). The two-player demonstration (#359) needs a termination booked and left pending, then a short fold refused, and then an honest fold by someone else.",
+      "pause": 400
     }
   ],
   "what-the-commands-do": [
     {
-      "text": "Insert and terminate now only book. Fold folds the one pending request with the folder's own wallet. The fold flag keeps the combined form on request. Reclaim returns a requester's own request inside its retract window, and reject clears requests past both windows.",
-      "pause": 350
+      "text": "What the commands do.",
+      "pause": 500
     }
   ],
   "refusals-before-anything-is-signed": [
     {
-      "text": "Each command refuses by name before signing: nothing pending, the wrong request, several pending, a missing or altered envelope, too little of the window left, a built bound that could land after the deadline, someone else's request, or a window not yet open or already closed.",
-      "pause": 350
+      "text": "Refusals before anything is signed.",
+      "pause": 500
+    },
+    {
+      "text": "Every refusal names its reason. The node is never asked to judge something the client already knows is wrong.",
+      "pause": 400
+    },
+    {
+      "text": "Fold:",
+      "pause": 300
+    },
+    {
+      "text": "nothing is pending;",
+      "pause": 300
+    },
+    {
+      "text": "the named request is not pending;",
+      "pause": 300
+    },
+    {
+      "text": "more than one request is pending, named in full;",
+      "pause": 300
+    },
+    {
+      "text": "the envelope for an insertion is missing, or does not hash to what the request names;",
+      "pause": 300
+    },
+    {
+      "text": "the request's edge is not supported;",
+      "pause": 300
+    },
+    {
+      "text": "the funding output is not the wallet's;",
+      "pause": 300
+    },
+    {
+      "text": "the outlay is past --max-outlay;",
+      "pause": 300
+    },
+    {
+      "text": "too little of the processing window remains;",
+      "pause": 300
+    },
+    {
+      "text": "the built transaction could be included at or after the deadline.",
+      "pause": 300
+    },
+    {
+      "text": "Reclaim:",
+      "pause": 300
+    },
+    {
+      "text": "the caller does not own the request;",
+      "pause": 300
+    },
+    {
+      "text": "the request is not pending;",
+      "pause": 300
+    },
+    {
+      "text": "the time is outside the retract window.",
+      "pause": 300
+    },
+    {
+      "text": "Reject:",
+      "pause": 300
+    },
+    {
+      "text": "nothing is pending;",
+      "pause": 300
+    },
+    {
+      "text": "a pending request is still inside one of its windows.",
+      "pause": 300
     }
   ],
   "guarantees": [
     {
-      "text": "A booking moves nothing. There is one fold routine. The delivered envelope is the one the request names. No fold is signed that could land at or after its deadline, checked again on the built transaction. Every command signs with its own wallet, and the reject's money matches what the node reads.",
-      "pause": 350
+      "text": "Guarantees.",
+      "pause": 500
+    },
+    {
+      "text": "A booking-only command submits exactly one transaction and never moves the mirror, the root or the saved state.",
+      "pause": 300
+    },
+    {
+      "text": "There is one fold routine. registry fold and the combined form both run it.",
+      "pause": 300
+    },
+    {
+      "text": "An insertion's fold delivers exactly the envelope whose hash the request names. A missing or altered envelope is refused before any build.",
+      "pause": 300
+    },
+    {
+      "text": "A fold spends exactly the request it names, or the single pending one. Any other request input is refused before signing.",
+      "pause": 300
+    },
+    {
+      "text": "Deadline guard. A fold is never signed if it could land at or after the request's deadline, which is the request's submission time plus the registry's processing time.",
+      "pause": 300
+    },
+    {
+      "text": "A fast guard refuses when less than thirty seconds remain on the host clock.",
+      "pause": 300
+    },
+    {
+      "text": "After the transaction is built and before it is signed, its validity upper bound is read from the body and checked again. The bound is exclusive. When the node converts the deadline to a slot, the bound must be at or before that slot. Otherwise the bound's own time must be at or before the deadline.",
+      "pause": 300
+    },
+    {
+      "text": "A bound that cannot be converted is refused unsigned.",
+      "pause": 300
+    },
+    {
+      "text": "Booking, fold, reclaim and reject each sign with the wallet given to that command.",
+      "pause": 300
+    },
+    {
+      "text": "Reject:",
+      "pause": 300
+    },
+    {
+      "text": "It judges the windows on the node's own view, the tip slot against each converted deadline, never on the host clock.",
+      "pause": 300
+    },
+    {
+      "text": "A deadline the node cannot convert counts as still open.",
+      "pause": 300
+    },
+    {
+      "text": "Every amount on its receipt equals what the node reads before and after.",
+      "pause": 300
+    },
+    {
+      "text": "Reclaim: judges its window the same way.",
+      "pause": 300
+    },
+    {
+      "text": "The next ordinary command reconciles a fold interrupted after submission, whichever wallet and command ran it.",
+      "pause": 300
     }
   ],
   "limits": [
     {
-      "text": "One request per fold. The folder must share the registry directory. On the development network the built-bound check is proved by unit tests, and the converted-slot equality is still to be shown on the authorized preprod run. Preparation speed is not solved here. Refunds take one shape, an early reject is refused only by the client, and an interrupted reject is not yet covered.",
-      "pause": 350
+      "text": "Limits.",
+      "pause": 500
+    },
+    {
+      "text": "One request per fold. A fold takes one pending request. A second pending request is refused by name. A fold of several requests in one transaction is a separate change.",
+      "pause": 300
+    },
+    {
+      "text": "Shared registry directory. The folder finds an insertion's envelope only when it shares the requester's registry directory. A folder elsewhere would need fold --envelope FILE, which is a separate change.",
+      "pause": 300
+    },
+    {
+      "text": "Post-build check on the development network. That network cannot build a fold near its deadline at all, because the library's fallback times fall past the node's conversion horizon (#370). There, the journey shows the fast guard's refusal. The post-build check is proved by unit tests over a built bound with a controlled clock and converter.",
+      "pause": 300
+    },
+    {
+      "text": "Converted-deadline equality. On the development network the deadline lies beyond the node's conversion horizon, so its slot is reported as unavailable. That the built bound equals the converted deadline is still to be shown, on the authorized preprod run. No run has shown it yet, and CI does not claim it.",
+      "pause": 300
+    },
+    {
+      "text": "Preparation speed. It is not solved here. This change reports and enforces the deadline. The persistent indexer (epic #371) is what addresses preparation time.",
+      "pause": 300
+    },
+    {
+      "text": "Refund shape. A reject builds the refund only as the whole owed amount in the designated output. The model also admits a split refund that the chain refuses (#361). A green reject is this shape on this chain.",
+      "pause": 300
+    },
+    {
+      "text": "Early rejects on chain. The chain admits a reject in every window. Refusing an early reject is the client's policy.",
+      "pause": 300
+    },
+    {
+      "text": "Interrupted reject. No control covers a reject interrupted after the node accepted it.",
+      "pause": 300
+    },
+    {
+      "text": "Attach take coverage. The demonstration's attach take covers 5 of its 32 approved cases by design. Its reclaim step can fail intermittently on the development network (#370).",
+      "pause": 300
     }
   ],
   "_source": {

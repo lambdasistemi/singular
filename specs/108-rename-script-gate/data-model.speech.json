@@ -1,19 +1,37 @@
 {
+  "data": [
+    {
+      "text": "Data.",
+      "pause": 500
+    },
+    {
+      "text": "Retroactive record, written 2026-09-15 from PR #109 merged at fc2ad9e5987b171ca33a430f5bbe170ab6423fd5.",
+      "pause": 400
+    }
+  ],
   "scan-universe": [
     {
-      "text": "All tracked text files including shells and Python. The entity diagram shows files to scan to hits to citation-only survival. Both citation spacings match.",
-      "pause": 400
+      "text": "Scan universe.",
+      "pause": 500
     }
   ],
   "exemptions": [
     {
-      "text": "Tool and test are exempt from scan and gate; they must keep naming the product they rename.",
+      "text": "Exemptions.",
+      "pause": 500
+    },
+    {
+      "text": "The rename tool and its test are exempt from both scan and gate: they must keep naming the product they rename.",
       "pause": 400
     }
   ],
   "test-states": [
     {
-      "text": "First run completes with the gate passing, second run changes nothing with the gate passing, and a planted stray fails the gate alone naming the file.",
+      "text": "Test states.",
+      "pause": 500
+    },
+    {
+      "text": "First run completes with the gate passing on a clean main; second run leaves index state and every tracked file's bytes unchanged with the gate passing again; a planted stray product line in a tracked .sh makes --gate-only fail naming that file.",
       "pause": 400
     }
   ],

@@ -1,4 +1,34 @@
 {
+  "324-modules-model": [
+    {
+      "text": "#324 modules model.",
+      "pause": 500
+    },
+    {
+      "text": "Dependency direction: composition → indexer adapter (indexer-adapter-new-module-under-singular-registry) → read interface (#323 Singular.Registry.Provider) and node adapter (#323 Singular.Registry.Node.View); indexer-adapter-new-module-under-singular-registry → pinned lib-utxo-indexer handle and follower.",
+      "pause": 400
+    },
+    {
+      "text": "singular-registry-node-indexer-existing-offchain-node Singular.Registry.Node.Indexer (existing, offchain/node-internal): keeps follower ownership, confirmation waits and followedProvider. followChain hands the follower a write path Singular controls (gated-index-inside-or-its-own-module). indexedReads is removed; followedProvider returns indexer-adapter-new-module-under-singular-registry's provider.",
+      "pause": 300
+    },
+    {
+      "text": "indexer-adapter-new-module-under-singular-registry indexer adapter (new module under Singular.Registry.Node, name the commit owner's): builds a Provider IO from a node provider plus a gated index (gated-index-pinned-indexerhandle-whose-mutations-view) and follower readiness. Owns point agreement, the named failure classes (indexer-view-failure-one-named-class-per) and the bounded wait. Library code, so #326's contract suite reuses it.",
+      "pause": 300
+    },
+    {
+      "text": "gated-index-inside-or-its-own-module gated index (inside indexer-adapter-new-module-under-singular-registry or its own module): wraps the pinned IndexerHandle so writes and view-holding exclude each other and the index's applied point is known without a separate upstream read.",
+      "pause": 300
+    },
+    {
+      "text": "composition-offchain-cli-startup-selects-node-or composition (offchain/cli startup, cli-selection-devnet-journey-on-main-after only): selects node or indexer backend from configuration once.",
+      "pause": 300
+    },
+    {
+      "text": "Promotion: none. A future upstream read view over the index (gap upstream-node-read-view, node-clients) would replace gated-index-inside-or-its-own-module; record the dependency, do not build it here.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "modules-model.md",
     "sha256": "e3f72212ba3ce974e45c175e2ee1b834236c412032c190d4d710a6450d4538dd"

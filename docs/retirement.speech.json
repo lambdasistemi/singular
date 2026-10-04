@@ -1,43 +1,111 @@
 {
   "who-this-is-for": [
     {
-      "text": "You hold a Singular name and you want it over, permanently and publicly. This page covers one move: retirement, the edge the registry calls update terminal. It burns the active witness and leaves the key where no edge can move it again. That is the registry edge on its own; the naming instance puts a rule of its own in front of it, stated below.",
+      "text": "Who this is for.",
+      "pause": 500
+    },
+    {
+      "text": "You hold a Singular name. You booked it, the registry handed you a token that says so, and now you want it over — permanently, publicly, and in a way nobody can undo, including you.",
+      "pause": 400
+    },
+    {
+      "text": "This page is about that one move: retirement. It is the edge the registry calls updateTerminal: it burns the active witness and leaves the key where no edge can move it again. This is the registry edge on its own; the naming instance puts a rule of its own in front of it, stated below.",
       "pause": 400
     }
   ],
   "what-you-can-do": [
     {
-      "text": "Retire a name you hold. The registry takes the token out of your wallet and burns it, and the entry for that name becomes Terminal, its last state. Three things must be true: the entry reads Active, the transaction carries your own token as an input for the burn to destroy, and nothing else moves under the registry's three token policies.",
+      "text": "What you can do.",
+      "pause": 500
+    },
+    {
+      "text": "Retire a name you hold. The registry takes the token back out of your wallet and burns it, and the name's entry becomes Terminal — the last state it will ever have.",
       "pause": 400
     },
     {
-      "text": "Afterwards exactly one token is destroyed, named by your key, and no output anywhere carries it. The entry reads Terminal. There is no refund, no new token, and no application signature at the fold. The fold asks no application to sign a retirement: the registry decides from the entry and the token, and nothing else. What an application can do is decide who may build the request in the first place. The naming instance does exactly that: ending a name needs the committed recovery key or the retirement quorum, never the current control key alone, and the naming validator refuses any other request before it exists to be folded. The recovery and retirement walkthrough shows that rule enforced on a real ledger.",
+      "text": "What has to be true for it to go through:",
+      "pause": 400
+    },
+    {
+      "text": "the registry's entry for your key reads Active;",
+      "pause": 300
+    },
+    {
+      "text": "the transaction carries your token — the one the booking delivered — as an input for the burn to destroy;",
+      "pause": 300
+    },
+    {
+      "text": "nothing else moves under the registry's three token policies.",
+      "pause": 300
+    },
+    {
+      "text": "What comes out:",
+      "pause": 400
+    },
+    {
+      "text": "exactly one token destroyed, the one named by your key, and no output anywhere carries it afterwards;",
+      "pause": 300
+    },
+    {
+      "text": "the entry reads Terminal;",
+      "pause": 300
+    },
+    {
+      "text": "no refund, no new token, and no signature from any application at the fold.",
+      "pause": 300
+    },
+    {
+      "text": "The last point is worth stating plainly: the fold asks no application to sign a retirement. The registry decides, from the entry and the token, and nothing else. What an application can do is decide who may build the request in the first place. The naming instance does exactly that: ending a name needs the committed recovery key or the retirement quorum, never the current control key alone, and the naming validator refuses any other request before it exists to be folded. Recover control and retire names on a real ledger shows that rule enforced on chain.",
       "pause": 400
     }
   ],
   "why-it-cannot-be-undone": [
     {
-      "text": "Terminal is the end of the line by construction. A second retirement at the same key produces no transaction at all, refused terminal immutable. No edge leaves Terminal in the registry's table, so no sequence of folds returns the name to circulation. The token is destroyed rather than parked because while a token exists someone holds it, and who holds it is a question with consequences. After a retirement there is nothing to hold.",
+      "text": "Why it cannot be undone.",
+      "pause": 500
+    },
+    {
+      "text": "Terminal is the end of the line by construction. A second retirement at the same key does not produce a smaller effect or a no-op — it produces no transaction at all, refused terminal-immutable. There is no edge out of Terminal in the registry's table, so no sequence of folds returns the name to circulation.",
+      "pause": 400
+    },
+    {
+      "text": "That is also why the token is destroyed rather than parked somewhere: while a token exists, someone holds it, and \"who holds it\" is a question with consequences. After a retirement there is nothing to hold.",
       "pause": 400
     }
   ],
   "when-it-is-refused-and-why-the-reason-matters": [
     {
-      "text": "Three situations look identical from outside: the retirement did not happen. The registry keeps them apart because the repair differs. A key it has never heard of is refused key unknown; book it first or check the key. A key only witnessed absent is refused not booked; somebody recorded that the name was free, but nobody took it. A key already Terminal is refused terminal immutable, and there is nothing to do.",
+      "text": "When it is refused, and why the reason matters.",
+      "pause": 500
+    },
+    {
+      "text": "Three different situations look the same from outside — \"the retirement did not happen\" — and the registry keeps them apart, because the repair is different in each case:",
       "pause": 400
     },
     {
-      "text": "A fourth case is an Active key whose token is not in the transaction, refused token missing. Every one of these is decided against the registry's own entry, never against what the request claims. A request saying this key is active does not make it so, and a retirement built on that claim is refused by name rather than dying inside a proof. The last case is unreachable under the registry's laws, where an Active entry and exactly one outstanding token are the same fact. It stays a guard because a guard never reached is cheap, and because being wrong about it would destroy nothing while claiming to.",
+      "text": "Each of these is decided against the registry's own entry, not against what the request claims about it. A request that says \"this key is active\" does not make it so, and a retirement built on that claim is refused by name rather than dying inside a proof.",
+      "pause": 400
+    },
+    {
+      "text": "The last row is different from the other three: under the registry's laws, an Active entry and exactly one outstanding token are the same fact, so a caller cannot actually reach that situation. It stays a guard because a guard that is never reached is cheap, and because being wrong about it would destroy nothing while claiming to.",
       "pause": 400
     }
   ],
   "seeing-it-happen": [
     {
-      "text": "The release archive ships a command that performs the whole story against a throwaway network, from a fresh extraction with no source checkout. It boots a registry, books a name to a wallet, retires it, and writes what it saw to a file you name: the two transaction ids, the three registry roots, the token count going from one to zero, the exact burn, the input it came from, and the final entry.",
+      "text": "Seeing it happen.",
+      "pause": 500
+    },
+    {
+      "text": "The release archive ships a command that performs the whole story against a throwaway network, from a fresh extraction with no source checkout:",
       "pause": 400
     },
     {
-      "text": "The two refusals are in that file too, each beside a retirement that did work, because it was refused only means something when you can see the same machinery succeed on the next line. Every value is read back from the network or from the compiled contract. None of it is written by the command to make itself look right.",
+      "text": "It boots a registry, books a name to a wallet, retires it, and writes what it saw to the file you name: the two transaction ids, the three registry roots, the token count going from one to zero, the exact burn, the input it came from, and the final entry. The two refusals are in there too, each beside a retirement that did work — because \"it was refused\" only means something when you can see the same machinery succeed on the next line.",
+      "pause": 400
+    },
+    {
+      "text": "Every value in that file is read back from the network or from the compiled contract. None of it is written by the command to make itself look right.",
       "pause": 400
     }
   ],

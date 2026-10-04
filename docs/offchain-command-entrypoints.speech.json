@@ -1,142 +1,116 @@
 {
-  "the-story-this-serves": [
+  "who-owns-a-registry-command": [
     {
-      "text": "As an operator, I run the registry journey from a checkout, the two archive commands, insert active and update terminal, from an extracted release archive, and the deployment command against a node.",
-      "pause": 300
+      "text": "Who owns a registry command.",
+      "pause": 500
     },
     {
-      "text": "After their entry files are divided into owners, I need the same options, the same narration in the same order, the same observation JSON, the same refusals, and the same exit status, so the CI steps and release pages that read those outputs keep meaning what they meant.",
+      "text": "A contributor changing what one of the registry commands does — a flag, a narrated step, a field of the observation JSON, a deliberate refusal — wants to open the one module that owns that concern and have the review ask one question. Before this division, each command was a single entry file of up to 1417 lines, and a change to the journey's negative cases was reviewed beside its identity manifest parser and its proof checks. Now each command's Main.hs holds only its outer failure handler, and named command-local modules own the options, the steps, the deliberate controls and the observation. This page says which module to open, which way the dependencies run, what may never change while the code moves, who calls each command, and what the evidence does and does not show.",
+      "pause": 400
+    }
+  ],
+  "the-story-this-serves": [
+    {
+      "text": "The story this serves.",
+      "pause": 500
+    },
+    {
+      "text": "As an operator, I run the registry journey from a checkout, the two archive commands insert-active and update-terminal from an extracted release archive, and deployment against a node. I need the same options, the same narration in the same order, the same observation JSON, the same refusals and the same exit status after their entry files are divided into owners, so the CI steps and release pages that read those outputs keep meaning what they meant.",
       "pause": 400
     },
     {
-      "text": "As a contributor, I want one visible owner for each option, scenario step and deliberate control, so I can change a command without searching a thousand-line file.",
-      "pause": 500
+      "text": "As a contributor, I want one visible owner for each option, scenario step and deliberate control, so I can change a command without searching a thousand-line file or accidentally changing another command's evidence.",
+      "pause": 400
     }
   ],
   "who-calls-each-command": [
     {
-      "text": "A table of the four commands, their entry files, their real callers, and what each caller reads.",
-      "pause": 300
-    },
-    {
-      "text": "The journey is run by the registry workflow from the checkout, after a fresh blueprint build; its caller reads the narration and the exit status.",
-      "pause": 250
-    },
-    {
-      "text": "Insert active and update terminal are run by the registry workflow from an extracted release archive, and each has a run page in that archive; their callers assert the observed JSON with jq, and read the narration and exit status.",
-      "pause": 250
-    },
-    {
-      "text": "Deployment is run by the supported identity check that CI executes, and by operators deploying and verifying a persistent registry.",
-      "pause": 300
-    },
-    {
-      "text": "The release check requires both archive commands' entry files in the archive, and the archive carries every tracked file under offchain, so the new modules travel with the entry files they serve.",
+      "text": "Who calls each command.",
       "pause": 500
+    },
+    {
+      "text": "The release check requires both archive commands' Main.hs paths in the on-chain archive, and the archive carries every tracked file under offchain/, so the new modules travel with the entry files they serve. The executable names and entry paths are unchanged.",
+      "pause": 400
     }
   ],
   "which-way-dependencies-run": [
     {
-      "text": "A diagram of one command's shape. Main keeps the outer failure handler and reads flags through Options. It calls the Scenario, which reads the options, runs the Steps and the Controls, and builds the observation or narration. Controls use Steps. Steps and Controls call the registry library for builders, the node session and the trie.",
+      "text": "Which way dependencies run.",
       "pause": 500
     },
     {
-      "text": "No module imports its command's Main, and no command imports another command's modules. Where two commands carry the same small helper, each keeps its own copy, because a shared owner across executables would be a library change.",
+      "text": "Every command follows this shape; no module imports its command's Main, and no command imports another command's modules. Where two commands carry the same small helper — the genesis submission, the registry configuration for a seed, the wallet read — each keeps its own copy: a shared owner across executables would be a library change, which this division does not make. The library remains the owner of every transaction the commands build, and its generated interface is the off-chain API reference; the command modules are executables, documented here with source links rather than in that reference.",
       "pause": 400
-    },
-    {
-      "text": "The library owns every transaction the commands build and is documented in the off-chain API reference; the command modules are documented here with source links.",
-      "pause": 500
     }
   ],
   "the-journey-step-by-step": [
     {
-      "text": "A sequence diagram of the journey. The scenario asks Identity to print the pinned identities; Steps to boot and publish references, then to book the insert as the request step; Proofs to verify the key absent; Steps to fold it as the apply step; Identity to check the derived applied identities; Proofs to verify the key present and reject a false claim; Steps to read back; and Controls to submit three refused transactions and then check the state is unchanged.",
+      "text": "The journey, step by step.",
       "pause": 500
     },
     {
-      "text": "A table names each journey module and what it owns: options for the two environment variables; identity for the manifest and the derivation check; steps for boot, booking, folding and read-back; proofs for the proof checks and the false claim; controls and malformations for the refused transactions; chain and narration for the shared plumbing.",
+      "text": "Booking and folding stay two narrated steps. This division introduces no narration hook and does not move the journey onto the driver; that decision belongs to issue #202 and remains open.",
       "pause": 400
-    },
-    {
-      "text": "Booking and folding stay two narrated steps. No narration hook is introduced and the journey does not move onto the driver; that decision belongs to issue 202 and remains open.",
-      "pause": 500
     }
   ],
   "the-two-archive-commands": [
     {
-      "text": "A sequence diagram shared by the two archive commands: publish the state validator and boot; book and fold the story's key; read the wallet, roots and holdings back; run the accepting control, then the refusal it controls; write the observed JSON from the executed results; and end with an exit status that repeats the observation's verdict.",
+      "text": "The two archive commands.",
       "pause": 500
     },
     {
-      "text": "Insert active folds one insert at a wallet, reads exactly one active token there, folds a fresh key as the accepting control, and then requires a second booking of the same key to be refused. The control runs first, because a refused request is never consumed and would poison the fold after it.",
+      "text": "insert-active books and folds one insertActive at a wallet, reads exactly one active token there, folds a fresh key as the accepting control, then requires a second booking of the same key to be refused. The control runs first because a refused request is never consumed and would poison the fold after it. Its owners are InsertActive.Options, InsertActive.Steps, InsertActive.Controls, InsertActive.Observation and InsertActive.Scenario.",
       "pause": 400
     },
     {
-      "text": "Update terminal boots two registries before any fold. In the first it inserts and retires the story's key, burning the witness from the wallet input that held it, and then requires a key bound absent to be refused retirement. In the second it retires an active control key, then requires a key the trie never bound to be refused. Each refusal needs its own registry because a refused fold leaves its request pending.",
+      "text": "update-terminal boots two registries in one session before any fold. In the first it inserts the story's key, retires it — burning the witness from the wallet input that held it and committing a Terminal leaf — and then requires a key bound absent to be refused retirement, the story's retirement being that refusal's control. In the second it retires an active control key, then requires a key the trie never bound to be refused. Each refusal needs a registry of its own because a refused fold leaves its request pending. Its owners are UpdateTerminal.Registry (session, boots, bookings, mirrored and deliberately inadmissible folds, roots), UpdateTerminal.Steps, UpdateTerminal.Controls, UpdateTerminal.Observation, UpdateTerminal.Scenario and the matching Options and Narration.",
       "pause": 400
     },
     {
-      "text": "Every value in both observation documents comes from what the steps and controls executed or read back.",
-      "pause": 500
+      "text": "Every value in both observation documents is passed in from what the steps and controls executed or read back; the observation modules type no expected value.",
+      "pause": 400
     }
   ],
   "the-deployment-verbs": [
     {
-      "text": "A diagram of deployment routing. The first argument that is not a flag selects deploy, verify, count or genesis skey; anything else is the usage refusal. Deploy and verify use the node module; deploy, verify and count read the manifest through the library's deployment facade.",
+      "text": "The deployment verbs.",
       "pause": 500
     },
     {
-      "text": "Every verb reads its flags through the options module, which accepts both the space and the equals spelling and refuses each missing required flag by name. The usage text still names deploy and verify only, as it always did, while the router accepts all four verbs.",
-      "pause": 500
+      "text": "Main keeps the outer handler and the router. Every verb reads its flags through Deployment.Options, which accepts --name value and --name=value alike and refuses each verb's missing required flag by name. The release's compiled halves and the one pin derivation are Deployment.Compiled; node operations are Deployment.Node; each verb is its own module under offchain/deployment/Deployment/. The usage text still names deploy and verify only, as it always did; the router accepts all four verbs. The manifest itself stays with the library facade described in Deployment record ownership.",
+      "pause": 400
     }
   ],
   "what-may-not-change": [
     {
-      "text": "A table of the surfaces held unchanged: the four executable names and entry paths; every option, environment variable and refusal, in the same order; the failure prefixes and exit status one, including the archive commands' second failed line after a named refusal; every narration line in order; every observation key and how each value is derived; and the same transactions, built by the same library builders, in the same order.",
+      "text": "What may not change.",
       "pause": 500
     }
   ],
   "where-to-make-a-change": [
     {
-      "text": "A table of change points. A flag belongs to the command's options module. What a step submits or reads belongs to its steps module. A deliberate refusal belongs to its controls module. A JSON field belongs to its observation module, with the value produced where it is executed. The order of steps belongs to the scenario. A deployment verb has its own module. A transaction's shape or a model rule belongs to the library, never to a command module.",
+      "text": "Where to make a change.",
       "pause": 500
     }
   ],
   "decisions": [
     {
-      "text": "A table of decisions, each with the alternative it rejected.",
-      "pause": 250
-    },
-    {
-      "text": "Command-local modules were chosen over one shared directory for all four commands, because sharing across executables would be a new cross-command owner.",
-      "pause": 250
-    },
-    {
-      "text": "The journey's false claim stays beside the proof checks rather than among the controls, because it is the verifier's own negative case.",
-      "pause": 250
-    },
-    {
-      "text": "Deployment verbs receive the arguments the router read, rather than reading them again, which makes each verb's input explicit.",
-      "pause": 250
-    },
-    {
-      "text": "Count still judges its what flag after the node session opens, because checking it earlier would change when an unknown value is refused.",
+      "text": "Decisions.",
       "pause": 500
     }
   ],
   "evidence-and-limits": [
     {
-      "text": "The lint app formats every command module, and runs HLint over all of them, the journey and update terminal directories included, with no directory exclusions. The component build compiles all four commands.",
+      "text": "Evidence and limits.",
+      "pause": 500
+    },
+    {
+      "text": "The checks that run on every pull request cover different claims. The off-chain lint app formats every command module and runs HLint over all of them, journey and update-terminal included, with no directory exclusions (see Checking off-chain code). The component build compiles all four commands. The registry workflow runs the journey from the checkout with a freshly built blueprint, and runs each archive command from an extracted release archive with its jq assertion over the observation. The supported deployment identity check runs genesis-skey, deploy and verify on a local devnet, refuses a manifest whose representative policy was changed, and now also checks the verb router's refusals without a node, that --out=FILE writes the same key as --out FILE, and that count finds one registry output and exactly the reference outputs the manifest records.",
       "pause": 400
     },
     {
-      "text": "The registry workflow runs the journey from the checkout with a fresh blueprint, and each archive command from an extracted archive with its jq assertion. The deployment identity check deploys and verifies on a local devnet, refuses a changed representative policy, and now also checks the router's refusals, both flag spellings, and that count finds one registry output and exactly the recorded reference outputs.",
+      "text": "Named limits: the journey is exercised from the checkout only — running it from an extracted archive is issue #214 and is not shown here. No earlier observation of a successful count exists to compare against; its first executed evidence is this change's. The commands' narration, flags and JSON are command contracts that command runs establish; the registry transitions they submit are governed by the accepted Lean model through the library builders, and a green command run is not a proof of any model theorem. A build or a fixture does not establish an archive or live-chain claim.",
       "pause": 400
-    },
-    {
-      "text": "Named limits. The journey is exercised from the checkout only; running it from an archive is issue 214. No earlier successful count observation exists to compare against. Narration, flags and JSON are command contracts that command runs establish; the transitions are governed by the Lean model through the library, and a green command run is not a proof of any model theorem.",
-      "pause": 600
     }
   ],
   "_source": {

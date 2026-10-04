@@ -1,37 +1,95 @@
 {
+  "release-pages-with-version-changes-and-archive-instructions": [
+    {
+      "text": "Release pages with version changes and archive instructions.",
+      "pause": 500
+    },
+    {
+      "text": "Retroactive record, written 2026-09-15 from PR #121 merged at 454aec3858f0aa029d93928f09b5c4447bf49894.",
+      "pause": 400
+    }
+  ],
   "who-this-is-for": [
     {
-      "text": "A Singular user choosing a version and running it, who wants the release page to say what changed and how to use the archive.",
+      "text": "Who this is for.",
+      "pause": 500
+    },
+    {
+      "text": "A Singular user choosing a version and running it — who wants the release page to say what changed and how to use the archive, without interpreting internal project terminology.",
       "pause": 400
     }
   ],
   "what-you-can-do": [
     {
-      "text": "Open any release from 0.6.1 on: first that version's own changelog section, then a short introduction and archive instructions. The sequence diagram shows extraction, composition, and verified upload.",
+      "text": "What you can do.",
+      "pause": 500
+    },
+    {
+      "text": "Open any release from 0.6.1 on and read, first, that version's own changelog section, then a short introduction to Singular and archive usage: download, checksum verification, identity verification, the devnet README, the onboarding runbook for your own node, and the deployed-registry guide once it exists.",
+      "pause": 400
+    },
+    {
+      "text": "The publisher composes the body from the version's own ## [X.Y.Z] section followed by the stable text, using the existing shell, and fails loudly when the section is missing or empty — before any upload. The archive checker verifies the shipped instructions equal the source instead of requiring internal boilerplate.",
       "pause": 400
     }
   ],
   "what-stops-publication": [
     {
-      "text": "A missing or empty changelog section, internal wording in the stable text, shipped instructions differing from the source, and the three negative controls all stop publication.",
-      "pause": 400
+      "text": "What stops publication.",
+      "pause": 500
     }
   ],
   "acceptance-from-the-shipped-issue-and-pr-body": [
     {
-      "text": "Docs checks green but not running the publisher. Binding evidence: double-backed release-check cases, verified archives with checksums and identities, packaged shell checks, and refused negative controls with a passing restored candidate.",
-      "pause": 400
+      "text": "Acceptance (from the shipped issue and PR body).",
+      "pause": 500
+    },
+    {
+      "text": "nix develop --quiet -c just ci green on the docs record; it does not run the publisher, so the release behaviour below is bound by the release checks, not by just ci.",
+      "pause": 300
+    },
+    {
+      "text": "nix run --quiet .#release-check: the real publisher Bash runs against isolated Git and GitHub doubles — the actual manifest version's section, adjacent versions, a section at end of file, missing and empty sections, and the packaged notes override.",
+      "pause": 300
+    },
+    {
+      "text": "nix run --quiet .#release-artifacts -- /tmp/singular-release: both archives, checksums and validator identities verified from the assembled artifact.",
+      "pause": 300
+    },
+    {
+      "text": "nix build --quiet .#checks.x86_64-linux.release --no-link: includes the packaged publisher's shell checks.",
+      "pause": 300
+    },
+    {
+      "text": "Negative controls reject each forbidden phrase, the original publisher, and a publisher changed back to a stable-only release body; the restored candidate passes.",
+      "pause": 300
     }
   ],
   "deviations": [
     {
-      "text": "All four ticket items implemented. The sibling archive checker carries the same wording rules, recorded not hidden. The deployed-registry guide is referenced conditionally until it exists. No question raised.",
+      "text": "Deviations.",
+      "pause": 500
+    },
+    {
+      "text": "The mandate is issue #120 (four frozen acceptance items, one fix(release): PR, merge through merge-guard, authority operator note (NOTE-003), no Lean or contract behaviour change). The diff implements all four items. Two notes, neither a user-visible disagreement. No question raised.",
       "pause": 400
+    },
+    {
+      "text": "The ticket names tools/check_publish.py for the extended assertions; the merge also rewrites the sibling tools/check_release.py, replacing the old internal-ceremony phrase requirements with the same forbidden-wording list plus an exact-equality check between shipped and source instructions. Same acceptance, both files. Recorded, not hidden.",
+      "pause": 300
+    },
+    {
+      "text": "The stable text refers to the deployed-registry guide conditionally: docs/preprod.md is not present at this base, so the reference waits until that guide is published.",
+      "pause": 300
     }
   ],
   "limits-of-this-slice": [
     {
-      "text": "The doubles never create a real release, and old published bodies stay as edited. Only the version-to-section-to-body mapping changes; no model or contract behaviour.",
+      "text": "Limits of this slice.",
+      "pause": 500
+    },
+    {
+      "text": "The publisher tests use isolated doubles; they do not create a GitHub release. Existing published bodies remain as the operator edited them. No Lean definitions, validators, transaction builders, authorization, state transitions or token behaviour change — the changed mapping is release manifest version to changelog section to release body.",
       "pause": 400
     }
   ],

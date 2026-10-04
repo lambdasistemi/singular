@@ -1,29 +1,45 @@
 {
   "who-carries-the-work": [
     {
-      "text": "The existing author and independent auditor carry this child, coordinated by the epic owner beside ticket 299. No new seat, tool, model launch or budget renewal is added.",
+      "text": "Who carries the work.",
+      "pause": 500
+    },
+    {
+      "text": "Use the existing approved Opus/high author and persistent Sol/high independent auditor; the epic owner coordinates this child alongside299. No additional seat, draft tool, model launch or automatic command-budget renewal.",
       "pause": 400
     }
   ],
   "the-build-boundary": [
     {
-      "text": "An isolated Lean project in applications open-datum imports the unchanged root model, and root ci gains only the application-model recipe. Existing Lean sources, corpora, mirrors and registry semantics stay as they are, and the package boundary never excuses skipping compilation or corpus checks.",
+      "text": "The build boundary.",
+      "pause": 500
+    },
+    {
+      "text": "An isolated local Lean project in applications/open-datum imports the unchanged root Singular model. Add only the application-model recipe and its call from root ci. Keep existing lean/ source, corpus envelopes, simulator mirrors, root lake setup and registry semantics unchanged. Record protected-control/payload encoding, authority at approval booking, permissionless fold, unchanged MPFS root on payload updates, atomic termination and additive refunds explicitly. An isolated package is a build boundary, not an excuse to omit compilation or observation/corpus checks.",
       "pause": 400
     }
   ],
   "order-of-delivery": [
     {
-      "text": "First come the executable law, the JSON driver, reachable witnesses, intended statements, inversions and finite ledgers, read by the independent auditor at an exact commit before any proof or implementation. Compilation, intended statements, proved statements and ledger enforcement stay separate claims.",
+      "text": "Order of delivery.",
+      "pause": 500
+    },
+    {
+      "text": "First deliver the executable law, JSON boundary/driver, reachable accepting/refusing witnesses, intended statements, public inversions and finite theorem/semantic-atom ledgers. The independent auditor reads the committed candidate, actual types/dependencies and captured receipts before proofs or implementation. Readback in this existing persistent seat is non-blind and must be labeled accordingly. Model compilation, intended statements, proved statements and ledger enforcement remain separate claims.",
       "pause": 400
     },
     {
-      "text": "Only after the statements are reviewed and frozen come proofs, then validators, encoding, builders and connected controls under a new fence and gate. Tickets 299 and 300 consume the accepted results; issue 304 is not part of this work.",
+      "text": "After independent statement/model disposition, freeze statement hashes before proofs. Proofs must preserve them and report qualified axioms/holes. Only then commission the application policy/spending validator, concrete encoding/compiled identities, production transaction primitives and connected controls under a separately revised source fence and gate.299 consumes the accepted interface;300 consumes exact accepted artifacts for separately authorized preprod/indexer evidence. #304 is not part of this child's work.",
       "pause": 400
     }
   ],
   "gate-and-spend": [
     {
-      "text": "The root gate is git diff check plus the root ci, with a clean baseline recorded before edits. Spend is counted from the invocation receipts, three unbooked probes included, and the model phase went two cheap commands over its first reservation.",
+      "text": "Gate and spend.",
+      "pause": 500
+    },
+    {
+      "text": "Root gate is git diff --check plus nix develop --quiet -c just ci. Clean502 baseline038 passed before edits. New recipe/model checks need actual candidate receipts. Governing shared spend is counted from the invocation receipts (schedules v4–v5): 32 cheap and 5 expensive before the clean baseline 038, and 41 cheap and 9 expensive when the first model checkpoint was reviewed, out of 60/16. Three probes are included as not-prebooked reconciliations. The model phase reservation is 14 cheap and 5 expensive, after owner reallocations from later phases; its original 6-cheap reservation was exceeded by 2. All attempts are booked before launch and retained; unscheduled work returns concrete need before execution. Auditor executes no subject commands and retains its existing single launch.",
       "pause": 400
     }
   ],

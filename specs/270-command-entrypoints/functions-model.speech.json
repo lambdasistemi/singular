@@ -1,12 +1,26 @@
 {
+  "command-function-boundaries": [
+    {
+      "text": "Command function boundaries.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want each entry to delegate to one orchestration function while keeping the old outer error and exit behavior.",
+      "pause": 400
+    }
+  ],
+  "signatures": [
+    {
+      "text": "Signatures.",
+      "pause": 500
+    },
+    {
+      "text": "New helper names and types may be chosen by the coder inside these owners only when each responsibility has one definition, dependency direction stays acyclic and the CLI/ledger observations remain unchanged. A placement or signature conflict returns to this mandate before implementation continues.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "functions-model.md",
     "sha256": "aa200ba8baa43bf1b836a0622a6d0b315f8523724d310ee522d7191c310c3c78"
-  },
-  "signatures": [
-    {
-      "text": "The four main functions keep their existing exception and exit behavior. Journey, insert-active, update-terminal and deployment orchestration retain their public command boundaries while new helpers gain explicit local owners.",
-      "pause": 500
-    }
-  ]
+  }
 }

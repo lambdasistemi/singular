@@ -1,48 +1,286 @@
 {
-  "_source": {
-    "file": "offchain-api-reference.md",
-    "sha256": "a5c50eb33cd7b025dc84d853b2e76dc6fcfa282155668fed92bdabce85d60493"
-  },
-  "how-the-reference-stays-honest": [
+  "off-chain-api-reference": [
     {
-      "pause": 400,
-      "text": "The reference cannot drift from the code it claims to document. The site build derives a manifest from the same off-chain source input Haddock ran on: for every module it records the digest of the Haskell source file and the digest of the actual generated source page. The site check then redoes both halves independently from this repository's own source tree — the manifest's module extent must equal the Cabal library extent, each recorded source digest must match the repository's file, and each generated page in the shipped site must match its recorded digest. A reference generated from any other source, however its label reads, fails that comparison; a page edited after generation fails its own digest."
+      "text": "Off-chain API reference.",
+      "pause": 500
     },
     {
-      "pause": 400,
-      "text": "Every link inside the generated pages is inspected too. A reference from one module of this library to another — a type, a function, a module, however the tool that generated it spelled it — must resolve to a page of this reference and, where it names an anchor, to an anchor that exists. The check prints how many same-library links it resolved, and the reference's own index and guide links are checked by the site's ordinary link inventory."
-    },
-    {
-      "pause": 400,
-      "text": "Dependency documentation is a different matter. The library is built against a large Cardano and Plutus dependency closure, and none of those packages' Haddock pages are bundled into this site: a type such as a ledger address or a Plutus core data value appears in the generated pages as a visible label, but it is not a link — following it would leave this site for documentation that is not shipped with it. Neutralizing those labels is decided from the build's own package database, which positively names every module each dependency owns, so a label is only unlinked when it provably belongs to a dependency; a dead or store-path link that reappears fails the site check, and a same-library reference may never be treated as a dependency label to hide a broken link."
-    },
-    {
-      "pause": 400,
-      "text": "One further generator class is unlinked by structure. Haddock renders instance method names in each instance's Methods list as same-page links, but emits no matching anchors for them — every instance of a class lists the same method names, so the anchor would have to be duplicated. Those method labels stay visible as plain text inside the instance lists, and the site check both counts them separately and still requires every fragment link outside that exact structure to resolve."
-    },
-    {
-      "pause": 400,
-      "text": "The release archive check extends the same discipline to what gets shipped: the staged documentation archive must carry the generated reference member for member and byte for byte before the ordinary release checks run."
-    }
-  ],
-  "what-the-reference-does-not-claim": [
-    {
-      "pause": 400,
-      "text": "This reference covers the off-chain registry library only. The four registry commands, the journey, insert active, update terminal and deployment, are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference, the Conformance API reference, generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain public library's, with the six private node runtime owners staying outside it in the node module ownership guide, and the conformance reference's extent is the conformance library's. The package-private node-internal library, the executables and the on-chain Aiken validators remain outside the generated references; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages."
+      "text": "A contributor reading the builder and blueprint guide wants to click a module of this library and land on its real interface — signatures, documentation, and the highlighted source — for exactly the code this repository ships. This page is the entry point of that reference for the off-chain registry library: a generated Haddock reference, rebuilt with the documentation site from this same source tree, so what you read here documents exactly the code this candidate was built from — and, as the extent below states, a few of its modules are documented for the contributor without being importable by a caller. One boundary on that promise is named below: identifiers and modules that belong to other packages are visible in the generated pages but are not clickable, because their documentation is not bundled with this site.",
+      "pause": 400
     }
   ],
   "what-this-reference-contains": [
     {
-      "pause": 400,
-      "text": "A contributor reading the builder and blueprint guide wants to click a module of this library and land on its real interface — signatures, documentation, and the highlighted source. This page opens that generated reference for the off-chain registry library: it documents exactly the code this candidate was built from, and, as the extent states, a few of its modules are documented for the contributor without being importable by a caller."
+      "text": "What this reference contains.",
+      "pause": 500
     },
     {
-      "pause": 350,
-      "text": "Every module of the off-chain registry library is listed here. Each entry links two pages of the generated reference: the module page — exports, types, and documented declarations — and the hyperlinked source page."
+      "text": "Every module of the off-chain registry library is listed below. Each entry links two pages of the generated reference: the module page — exports, types, and documented declarations — and the hyperlinked source page with the rendered, highlighted Haskell this candidate was built from. On this site the links open the generated pages; read from the repository, the same links open the source files themselves at the revision you are viewing.",
+      "pause": 400
     },
     {
-      "pause": 600,
-      "text": "The complete extent is 54 modules in three kinds. 41 explicitly exposed modules and two re-exported modules are what a caller imports. The three fold owners behind the Update facade, the five wire owners behind the Types facade and the three deployment owners behind the Deployment facade are package-internal other-modules: they have generated pages here for contributors reading the facades, but no caller import path. Ledger and Provider are the re-exports: their implementations moved into the private ownership core while their public import paths remain. The open-datum envelope codec is an exposed module, and so are its builders: the envelope builder with its key, deposit and payload readers, the booking certifications, the controller's payload update, the release a fold spends, the choice of application a registry pins, and the registry configuration derived from that choice. The node runtime owners in that private core stay outside this reference and are documented in the node ownership guide. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike."
+      "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 54 modules in three kinds: 41 explicitly exposed modules and two re-exported modules are what a caller imports; the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations moved into the package's private ownership core (offchain/node-internal/) and the public library re-exports them, so their import paths and their entries in this reference are unchanged. The six node runtime owners in that private core are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+      "pause": 400
+    },
+    {
+      "text": "Singular.Application.OpenDatum.Book — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Application.OpenDatum.Build — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Application.OpenDatum.Envelope — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Application.OpenDatum.Release — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Application.OpenDatum.Script — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Application.OpenDatum.Update — source",
+      "pause": 300
+    },
+    {
+      "text": "Naming.Datum — source",
+      "pause": 300
+    },
+    {
+      "text": "Naming.Register — source",
+      "pause": 300
+    },
+    {
+      "text": "Naming.Request — source",
+      "pause": 300
+    },
+    {
+      "text": "Naming.Verify — source",
+      "pause": 300
+    },
+    {
+      "text": "Naming.Wire — source",
+      "pause": 300
+    },
+    {
+      "text": "Naming.Wire.Vectors — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.AssetName — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Blueprint — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Blueprint.Load — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Blueprint.Params — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Blueprint.Schema — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Candidate — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Config — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Config.Application — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Deployment — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Deployment.Attach — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Deployment.Manifest — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Deployment.Mirror — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Driver — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Ledger — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Lifecycle — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Node — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Proof — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Provider — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Trie — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Trie.Pure — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Trie.PureManager — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.TxBuilder.Boot — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.TxBuilder.ConnectedFold — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.TxBuilder.Edges — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.TxBuilder.Internal — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.TxBuilder.Internal.Edges — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.TxBuilder.Internal.Identity — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.TxBuilder.Internal.Lookup — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.TxBuilder.Register — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.TxBuilder.Reject — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.TxBuilder.Request — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.TxBuilder.Retract — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.TxBuilder.Update — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.TxBuilder.Update.Build — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.TxBuilder.Update.Context — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.TxBuilder.Update.Duties — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Types — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Wire.Primitive — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Wire.Proof — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Wire.Redeemer — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Wire.Request — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Wire.State — source",
+      "pause": 300
+    },
+    {
+      "text": "The facades and owners of the registry builder and blueprint extraction are described module by module in the builder and blueprint modules guide, and the registry wire's five owners behind the Types facade in Who owns the registry wire.",
+      "pause": 400
     }
-  ]
+  ],
+  "how-the-reference-stays-honest": [
+    {
+      "text": "How the reference stays honest.",
+      "pause": 500
+    },
+    {
+      "text": "The reference cannot drift from the code it claims to document. The site build derives a manifest from the same off-chain source input Haddock ran on: for every module it records the digest of the Haskell source file and the digest of the actual generated source page. The site check then redoes both halves independently from this repository's own source tree — the manifest's module extent must equal the Cabal library extent, each recorded source digest must match the repository's file, and each generated page in the shipped site must match its recorded digest. A reference generated from any other source, however its label reads, fails that comparison; a page edited after generation fails its own digest.",
+      "pause": 400
+    },
+    {
+      "text": "Every link inside the generated pages is inspected too. A reference from one module of this library to another — a type, a function, a module, however the tool that generated it spelled it — must resolve to a page of this reference and, where it names an anchor, to an anchor that exists. The check prints how many same-library links it resolved, and the reference's own index and guide links are checked by the site's ordinary link inventory.",
+      "pause": 400
+    },
+    {
+      "text": "Dependency documentation is a different matter. The library is built against a large Cardano and Plutus dependency closure, and none of those packages' Haddock pages are bundled into this site: a type such as a ledger address or a Plutus core data value appears in the generated pages as a visible label, but it is not a link — following it would leave this site for documentation that is not shipped with it. Neutralizing those labels is decided from the build's own package database, which positively names every module each dependency owns, so a label is only unlinked when it provably belongs to a dependency; a dead or store-path link that reappears fails the site check, and a same-library reference may never be treated as a dependency label to hide a broken link.",
+      "pause": 400
+    },
+    {
+      "text": "One further generator class is unlinked by structure. Haddock renders instance method names in each instance's Methods list as same-page links, but emits no matching anchors for them — every instance of a class lists the same method names, so the anchor would have to be duplicated. Those method labels stay visible as plain text inside the instance lists, and the site check both counts them separately and still requires every fragment link outside that exact structure to resolve.",
+      "pause": 400
+    },
+    {
+      "text": "The release archive check extends the same discipline to what gets shipped: the staged documentation archive must carry the generated reference member for member and byte for byte before the ordinary release checks run.",
+      "pause": 400
+    }
+  ],
+  "what-the-reference-does-not-claim": [
+    {
+      "text": "What the reference does not claim.",
+      "pause": 500
+    },
+    {
+      "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain public library's, with the six private node runtime owners staying outside it in Node module ownership, and the conformance reference's extent is the conformance library's. The package-private node-internal library, the executables and the on-chain Aiken validators remain outside the generated references; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "offchain-api-reference.md",
+    "sha256": "a5c50eb33cd7b025dc84d853b2e76dc6fcfa282155668fed92bdabce85d60493"
+  }
 }

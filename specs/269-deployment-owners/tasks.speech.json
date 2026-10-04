@@ -1,8 +1,22 @@
 {
+  "delivery-ledger-for-deployment-owners": [
+    {
+      "text": "Delivery ledger for deployment owners.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I need the PR's task stamps to point to source and receipts rather than imply that a green build proves attachment behavior.",
+      "pause": 400
+    }
+  ],
   "work-items": [
     {
-      "text": "The six tasks cover intake, extraction, persistence evidence, a focused execution of attach plus a supported script identity check wired into CI, contributor documentation and candidate preparation. Stamps happen before the final gate. Audit, pushed-head CI closure, merge and release have separate receipts.",
+      "text": "Work items.",
       "pause": 500
+    },
+    {
+      "text": "Task stamps report implementation and integration work completed before the final gate. The exact-head gate, independent audit, pushed-head CI closure of MISSING-CI-JOB, ticket acceptance, epic merge and release are separate receipts; no task stamp can turn an unexecuted CI job into a pass.",
+      "pause": 400
     }
   ],
   "_source": {

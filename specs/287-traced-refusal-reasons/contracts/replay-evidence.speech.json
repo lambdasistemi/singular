@@ -1,38 +1,84 @@
 {
+  "contract-replay-evidence-files": [
+    {
+      "text": "Contract: replay evidence files.",
+      "pause": 500
+    },
+    {
+      "text": "Written by Conformance.Run.Replay beside a run's receipts; uploaded with the conformance-receipts artifact. Harness evidence: the book cites it in its appendix, never in its body.",
+      "pause": 400
+    }
+  ],
   "layout": [
     {
-      "text": "An index and one directory per rejected transaction.",
+      "text": "Layout.",
       "pause": 500
     }
   ],
   "outcomejson": [
     {
-      "text": "Each purpose records both hashes, both runs with their logs, and the class.",
+      "text": "outcome.json.",
       "pause": 500
+    },
+    {
+      "text": "logs holds each run's log lines verbatim, bounded; the deployed run's logs are kept for premise-run-on-retract-outside-window's premise evidence.",
+      "pause": 400
     }
   ],
   "indexjson": [
     {
-      "text": "One entry per rejection and per accepting control, written before the runner acts on the comparison. CI requires every refusal exactly once and an accepting control for every role that refused.",
+      "text": "index.json.",
       "pause": 500
+    },
+    {
+      "text": "One entry per node rejection and per accepting control, in the order the run met them: { \"kind\": \"refusal\" | \"accepting-control\", \"rejectedTxId\" | \"acceptedTxId\", \"captureId\", \"row\", \"step\" | null, \"role\", \"classes\": [...], \"extentClass\" (A written by the runner exactly when \"modelReason\" is present; B, C or D read fromextent.md's committed table; otherwise \"unclassified\"), \"modelReason\" | null, \"comparison\": \"agrees\" | \"differs\" | \"uncompared\" | null }. The entry is written, with its comparison, before the runner acts on the comparison, so a failing row keeps it. The CI extent (complete-refusal-extent) counts refusals from receipts and index together and requires each exactly once, and requires, for every role that refused, one accepting-control entry whose deployed and traced runs both succeeded.",
+      "pause": 400
     }
   ],
   "offline-correction": [
     {
-      "text": "A capsule replayed offline writes its outcome beside the original, with the recomputed capture identity, never over it.",
+      "text": "Offline correction.",
       "pause": 500
+    },
+    {
+      "text": "A capsule replayed offline (replay-capsule, witness-route-witness-witness-replayed-captured) writes replay-offline/<rejectedTxId>/outcome.json beside the receipts it came from, with the recomputed captureId, the blueprints used and the command; the original replay/<rejectedTxId>/outcome.json stays byte-identical.",
+      "pause": 400
     }
   ],
   "offline-compiler-diagnostic-wrong-redeemer-constructor-index-offline-compiler": [
     {
-      "text": "For a purpose that printed no user trace, an offline replay with all compiler traces may record a compiler diagnostic beside the original outcome. It is never a reason, never compared with Lean, and never enters a receipt or the index.",
+      "text": "Offline compiler diagnostic (wrong-redeemer-constructor-index-offline-compiler).",
       "pause": 500
+    },
+    {
+      "text": "replay-diagnostic/<rejectedTxId>/outcome.json, written only by replay-capsule --diagnostic: per purpose left no-user-trace, { purpose, deployedHash, diagnosticHash, outcome, logs } and kind: \"compiler-diagnostic\", with the diagnostic build's provenance. It has no reason or admitted key, is never read by admission, comparison, the receipt or the index, and never overwrites replay-offline.",
+      "pause": 400
     }
   ],
   "obligations": [
     {
-      "text": "The capture identity is recomputed and must match; files are never rewritten; missing files make the rejection incomplete; and in CI a failing row still uploads its replay directory.",
+      "text": "Obligations.",
       "pause": 500
+    },
+    {
+      "text": "captureId is recomputed by the loader and must match.",
+      "pause": 300
+    },
+    {
+      "text": "A file is never rewritten after captureId is computed.",
+      "pause": 300
+    },
+    {
+      "text": "Missing capsule files make every class of that rejection capture-incomplete.",
+      "pause": 300
+    },
+    {
+      "text": "In CI, every step that runs a row publishes its receipts path to the always-run artifact upload before the row runs, so a failing row's replay/ directory is uploaded with the original failure preserved (retention-at-ci-boundary-e209-note-recut).",
+      "pause": 300
+    },
+    {
+      "text": "The receipt itself names both hashes, the reason or cause and the capture identity (data-model \"Receipt replay object\"); these files are its supporting proof and are joined to it by captureId and the rejected transaction id.",
+      "pause": 300
     }
   ],
   "_source": {

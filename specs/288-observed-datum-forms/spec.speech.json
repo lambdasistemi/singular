@@ -1,18 +1,36 @@
 {
-  "_source": {
-    "file": "spec.md",
-    "sha256": "e49d8c812d4c2e279c4555ce3c21180aeff48cd0fc80d5a5ac66ec163921674e"
-  },
+  "read-the-datum-form-the-ledger-holds": [
+    {
+      "text": "Read the datum form the ledger holds.",
+      "pause": 500
+    },
+    {
+      "text": "As a conformance reader, I want each reported input and destination datum form to come from the actual transaction or spent output, so a missing or hashed datum cannot be reported as inline.",
+      "pause": 400
+    }
+  ],
   "required-behavior": [
     {
-      "text": "Read the actual datum form for every affected input and destination. Preserve all three forms, keep observations independent of Lean expectations, fail on mismatches, and stay within the Conformance repair boundary.",
-      "pause": 350
+      "text": "Required behavior.",
+      "pause": 500
     }
   ],
   "model-and-evidence": [
     {
-      "text": "The accepted Lean revision stays fixed. Exercise the actual observer and comparator. Distinguish synthetic ledger values from live transactions, and retain all existing coverage gaps.",
-      "pause": 350
+      "text": "Model and evidence.",
+      "pause": 500
+    },
+    {
+      "text": "Bind main c4bad7cc9e079db03f962ecb89df2c24223439dc, Lean tree b5bd27105eed6bd71fffdb796b7bbad22aeecb7b, constitution 1.10.1. From the first binding b3cbe15e8cd7f9c1b701b9ff7d262c3a89fca8c8 only a Lean lint script moved; lean/Singular/Model.lean and lean/driver-corpus.json are byte-identical. Relevant definitions are Singular.DatumForm, registryDatumForm, TxInput, TxOutput, txBurnInputs, txStateOutput, txDestinationOutput and the driver's transaction serialization. Lean's expected inline form stays fixed; the implementation observation must read the actual form independently. A newly exposed model conflict requires a concrete user-story escalation.",
+      "pause": 400
+    },
+    {
+      "text": "The regression must execute the affected observer and comparator, including each relevant role and the absent/hashed/inline distinctions; source grep is not a control. Distinguish synthetic ledger-value tests from an actual devnet execution. No new on-chain coverage claim or hand-written book state follows from this harness repair. Existing model and coverage debt stays visible.",
+      "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "e49d8c812d4c2e279c4555ce3c21180aeff48cd0fc80d5a5ac66ec163921674e"
+  }
 }

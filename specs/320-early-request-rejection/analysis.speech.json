@@ -1,36 +1,48 @@
 {
   "coverage": [
     {
-      "text": "Every requirement maps to at least one invariant, task and gate row, and every invariant appears in a task.",
+      "text": "Coverage.",
+      "pause": 500
+    },
+    {
+      "text": "Every functional requirement has at least one invariant, one task and one gate row. Every invariant appears in a task.",
       "pause": 400
     }
   ],
   "terminology": [
     {
-      "text": "The model's words are used throughout. Windows are named the way the constitution's retraction row names them, and phase numbers appear only where existing code uses them.",
+      "text": "Terminology.",
+      "pause": 500
+    },
+    {
+      "text": "The model's words are used throughout: reject, retract, fold, deposit, tip, obligations. Window names follow the constitution's retraction row: processing window, retraction window, after the windows. \"Phase 1/2/3\" appears only where existing code and tests use it.",
       "pause": 400
     }
   ],
   "contradictions-found-and-how-they-are-carried": [
     {
-      "text": "Four findings: the update timing rule outside the model, a separate ticket's repair, kept unchanged here with its claim held; the consumer's forbids-early-rejection-singular-s-lean-allows conflict, kept unmet by operator ruling; reject-and-retract-refund-controls's stale timing words, restated; and the builder's phase three documentation, restated with the change.",
-      "pause": 400
+      "text": "Contradictions found and how they are carried.",
+      "pause": 500
+    }
+  ],
+  "residuals-and-their-dispositions": [
+    {
+      "text": "Residuals and their dispositions.",
+      "pause": 500
     }
   ],
   "ambiguities-left-open": [
     {
-      "text": "One remains: whether the consumer conflict holds this repair's merge or only the consumer integration claim. The parent decides it.",
-      "pause": 400
+      "text": "Ambiguities left open.",
+      "pause": 500
+    },
+    {
+      "text": "Whether merging this repair is itself held by the consumer conflict, or only the consumer-integration claim is. The constitution holds the affected claim; the parent decides which.",
+      "pause": 300
     }
   ],
   "_source": {
     "file": "analysis.md",
     "sha256": "da1eeb5ca96b4067c1d845bef627b0fa234f3eace2e2eae5df77ffc3f9c75818"
-  },
-  "residuals-and-their-dispositions": [
-    {
-      "text": "Four residuals, each with its evidence and limit. The builder now rejects every pending request, and one unprocessable request still blocks it: a named limit. Old wording in an off-chain test name and a journey message stays, outside the fence. A request whose datum is a hash can be spent in its processing window without being folded, an exit the model does not have; it is unchanged here, shown only from source, and raised to the parent as its own story. The update timing rule outside the model has its own ticket.",
-      "pause": 400
-    }
-  ]
+  }
 }

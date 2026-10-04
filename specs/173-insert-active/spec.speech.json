@@ -1,11 +1,29 @@
 {
+  "173-insertactive-on-the-open-registry-from-the-released-archive": [
+    {
+      "text": "#173 — insertActive on the open registry, from the released archive.",
+      "pause": 500
+    },
+    {
+      "text": "Authority: the registry interface §§0, 2, 3, 5 and 8; issue #173; rulings operator answer (A-001) through operator answer (A-006); and accepted Lean revision 854f56fd3e2765ef19270b3a40398d53092748f2. Where prose or existing code disagrees with that Lean revision, Lean wins and the affected line stops for a ruling. Constitution: .specify/memory/constitution.md v1.0.0.",
+      "pause": 400
+    },
+    {
+      "text": "Day-0 release is 0.7.0. This ticket adds the first edge-scoped pre-release artifact; the epic owner owns its tag after merge.",
+      "pause": 400
+    }
+  ],
   "the-runnable-story": [
     {
       "text": "The runnable story.",
       "pause": 500
     },
     {
-      "text": "From the released archive, insert-active boots the parameterless open registry, folds one insertActive to the named wallet, and refuses a repeat with key-exists. A separate two-key wrong-mint batch refuses net-mint-mismatch.",
+      "text": "As a reviewer with the released archive and no checkout, I follow its page and run its packaged insert-active command against a devnet. The command boots a registry whose parameterless open application and three witness policies come from the archive's onchain/script-identity.json, folds one certified insertActive, and shows the active token at the requested wallet output. A repeat for the same key is refused key-exists.",
+      "pause": 400
+    },
+    {
+      "text": "The separate mint-guard story uses two distinct keys: the folded edges require one active token per key, while the transaction claims the same total under the wrong key distribution. It is refused net-mint-mismatch even though its per-kind total agrees.",
       "pause": 400
     }
   ],
@@ -13,20 +31,12 @@
     {
       "text": "Accepted behavioral authority.",
       "pause": 500
-    },
-    {
-      "text": "The accepted Lean revision constructs the full transaction, proves the reachable keyed-mint witness, fixes the open policy as parameterless, and distinguishes duplicate key-exists from the wrong-key mint refusal.",
-      "pause": 400
     }
   ],
   "implementation-contract": [
     {
       "text": "Implementation contract.",
       "pause": 500
-    },
-    {
-      "text": "The contract adds open dot A K, moves the witness policy home, updates this edge's request wire shape, preserves the other edge G three rows, implements the cage edge and builders, and packages one checkout-free command.",
-      "pause": 400
     }
   ],
   "acceptance-lines": [
@@ -35,7 +45,7 @@
       "pause": 500
     },
     {
-      "text": "Boot, approval, edge, refusals, command and copies are the six decision-review checkpoints.",
+      "text": "These are the implementation owner's decision-review checkpoints.",
       "pause": 400
     }
   ],
@@ -45,7 +55,31 @@
       "pause": 500
     },
     {
-      "text": "Every Lean, Aiken, off-chain, conformance, workflow, coverage, identity, archive and documentation encoding is enumerated. The published contracts are the open policy, approval name, witness hashes and wire encodings.",
+      "text": "The implementation and PR body enumerate every encoding of this decision:",
+      "pause": 400
+    },
+    {
+      "text": "Lean row identities and generated corpora; simulator/formal mirrors and derived simulator output; coverage record.json and base-record.json;",
+      "pause": 300
+    },
+    {
+      "text": "Aiken validators/tests, both script-identity manifests and compiled blueprints;",
+      "pause": 300
+    },
+    {
+      "text": "off-chain boot/request/fold builders, devnet end-to-end, journey and packaged verb;",
+      "pause": 300
+    },
+    {
+      "text": "conformance/rows.json, blueprint-encoding-round-trip/submitted-datum-byte-round-trip/wrong-redeemer-constructor-index/proof-step-constructor-witnesses/state-fields-chain-round-trip and the edge fold/refusal rows, plus .github/workflows/{registry,conformance}.yml assertions;",
+      "pause": 300
+    },
+    {
+      "text": "docs/consumer-conformance.md, the command page, archive manifest and their speech companions.",
+      "pause": 300
+    },
+    {
+      "text": "Published contracts are the parameterless open.ak policy ID, approvalName(edge,key,owner,destination), the three witnesses' new onchain/ home and applied hashes, and the edge-tagged request/eight-field datum encodings.",
       "pause": 400
     }
   ],
@@ -55,7 +89,11 @@
       "pause": 500
     },
     {
-      "text": "No other edge, custody, naming payload, escrow or tag is in scope. Every enumerated copy is mandatory. Lean conflicts, naming dependencies and missing C I commands stop the affected line for a ruling, and an incomplete task remains unchecked and unpushed at the owner wall.",
+      "text": "No other edge arm or row is changed: #177 updateTerminal, #158 witnessTerminal, #178 insertAbsent, #179 updateActive, both delete edges, custody, NYA/application record preimages, escrow, or a release tag. Cross-registry separation is not promised by the parameterless open policy. updated-encoding-consumers is a mandatory part of this runnable, not optional documentation polish; no candidate is ready until every enumerated copy is synchronized.",
+      "pause": 400
+    },
+    {
+      "text": "If an implementation choice contradicts the accepted Lean rows, invents a naming dependency, or needs a CI command that does not exist, stop that line and raise a question. At the four-hour owner wall, an incomplete insert-active-from-released-archive-in-one remains unchecked and unpushed. Only unrelated newly discovered work may be returned as a remainder; the accepted edge story and updated-encoding-consumers may not be split.",
       "pause": 400
     }
   ],

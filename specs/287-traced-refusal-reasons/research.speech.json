@@ -1,44 +1,134 @@
 {
+  "research-traced-refusal-reasons": [
+    {
+      "text": "Research: traced refusal reasons.",
+      "pause": 500
+    },
+    {
+      "text": "Facts at base 3f04e50, read from source; \"lead\" marks an unexecuted reading. Source reading is planning evidence only, never refusal evidence.",
+      "pause": 400
+    }
+  ],
   "where-live-refusals-arise": [
     {
-      "text": "Driver-compared steps are submitted in the live runner, which records the node's text and the failing script hashes, and compares refusals without comparing reasons. The step's trace field is a substring search of node text, empty with untraced scripts. Attribution rows record a validator-branch field that is always empty today.",
+      "text": "Where live refusals arise.",
       "pause": 500
+    },
+    {
+      "text": "Driver-compared steps: conformance/app/Conformance/Run/Live.hs:768 submits; node text lands in Rejected at :823; the refusing script is chosen by exit (:826-830); StepRejection is built at :831-842.",
+      "pause": 300
+    },
+    {
+      "text": "The step record's chain.refusal is rejectionJson (Live.hs:2725-2740): trace, hashes, kind (validator or budget), rejection, budget fields, plus scripts. When both sides refuse, comparison is agrees with no reason comparison (Live.hs:2519-2525).",
+      "pause": 300
+    },
+    {
+      "text": "Today's trace is storyRefusalTag (Step.hs:77-84), a substring search of node text for three names; with untraced scripts it is empty.",
+      "pause": 300
+    },
+    {
+      "text": "Attribution rows write RefusalInfo (conformance/lib/Conformance/Receipt.hs:109-138) through attributeRefusalReceipt (conformance/lib/Conformance/Refusal.hs) with branch = Nothing and a fixed limit; callers Run/Submit.hs:65,133, Run/CgRows.hs:1424.",
+      "pause": 300
+    },
+    {
+      "text": "Receipt bounds: maxReceiptBytes = 16384, maxLiveStepReasonChars = 300; CI holds reject-and-retract-refund-controls and retract-outside-window receipts at 14745 bytes.",
+      "pause": 300
     }
   ],
   "refused-steps-ci-produces-today": [
     {
-      "text": "CI asserts about seventeen refused steps across the retirement, exit, retraction window and generic rows, plus attribution refusals in the generic and serialization sessions. The ticket counts them from receipts rather than trusting this list.",
+      "text": "Refused steps CI produces today.",
       "pause": 500
+    },
+    {
+      "text": "From .github/workflows/conformance.yml assertions: retire-active-key four (not-booked, key-unknown, two deposit-returned); reject-and-retract-refund-controls eight (reject and retract tampers: deposit-returned, retract-state-spent, withdraw-insert-only, retract-owner); retract-outside-window two (not-phase2); register-active-key three (key-exists, destination, deposit-returned). Attribution refusals run in the generic (insert-occupied-key, reject-before-deadline-consumer-requirement, fold-against-superseded-root, request-value-and-refund-routing) and serialization (wrong-redeemer-constructor-index) sessions. This list is a lead: the ticket's denominator is counted from receipts (discovered-refusal-extent).",
+      "pause": 400
     }
   ],
   "reason-vocabulary-on-chain": [
     {
-      "text": "The validators build Lean's refusal names verbatim and report a named refusal by one user trace and then false. Several arms fail with no reason at all, and such refusals can only be unobserved.",
+      "text": "Reason vocabulary on chain.",
       "pause": 500
+    },
+    {
+      "text": "The validators construct the Lean refusal names verbatim (onchain/validators/request.ak:119-151, registry/trie.ak, registry/discharge.ak, registry/refusal.ak:40-54, lib.ak) and report a named refusal by one user-defined trace then False (registry/refusal.ak:36-44, request.ak:36). Genesis, End, Migrating, Burning, unmatched arms and malformed continuations fail without a reason (state.ak:86-92): such refusals can only be \"unobserved\".",
+      "pause": 400
     }
   ],
   "builds": [
     {
-      "text": "The deployed blueprint is a bare aiken build with pinned hashes. The harness already builds the naming blueprint with user traces, a precedent for a traced registry build, which also needs the Merkle Patricia Forestry package staged. The three flake locks pin the same nixpkgs; a check turns that into evidence. A byte search could not tell whether the deployed bytes carry traces, because the reason names are data values; a replay with logs will settle it.",
+      "text": "Builds.",
       "pause": 500
+    },
+    {
+      "text": "Deployed: onchain/flake.nix plutus-blueprint runs bare aiken build; hashes pinned in onchain/script-identity.json (compiler v1.1.21+unknown). Lead: Aiken's build defaults to silent traces, matching the issue's evidence (run 36043950326: ten of ten refusals, CekError, no logs). The comment at onchain/validators/registry/refusal.ak:26-28 says the published blueprint keeps user traces; premise-run-on-retract-outside-window settles this by evaluating the deployed bytes with logs on a captured refusal (operator question (Q-002)). A byte search is not discriminating: the deployed compiled code contains deposit-returned, not-phase2, key-exists and retract-owner because the reasons are data values the validators compute, whatever the trace level (planning observation, runtime receipts/premise-001/findings.txt).",
+      "pause": 300
+    },
+    {
+      "text": "Precedent: conformance/flake.nix:93-137 already builds the naming blueprint with --trace-filter user-defined --trace-level verbose from ../naming-onchain. The registry source also needs merkle-patricia-forestry staged (onchain/flake.nix:74-100).",
+      "pause": 300
+    },
+    {
+      "text": "onchain/flake.lock, conformance/flake.lock and offchain/flake.lock pin identical nixpkgs revisions, so the conformance flake's pkgs.aiken is expected to be the deployed compiler. toolchain-correspondence turns that expectation into a check.",
+      "pause": 300
+    },
+    {
+      "text": "The runner gets the deployed blueprint through REGISTRY_BLUEPRINT; the conformance app wrapper sets NAMING_BLUEPRINT by --set-default (conformance/flake.nix:289,307), a carrier pattern for a traced blueprint.",
+      "pause": 300
+    },
+    {
+      "text": "Parameters are applied by offchain/lib/Singular/Registry/Blueprint/Params.hs.",
+      "pause": 300
     }
   ],
   "evaluation-seam": [
     {
-      "text": "The provider's evaluation keeps failures only as text today. The pinned node-client library is expected to expose the ledger's script-with-arguments value on a failure, which is the seam for running other bytes on the same arguments. The first task verifies this at the pin.",
+      "text": "Evaluation seam.",
       "pause": 500
+    },
+    {
+      "text": "measurePurposeUnits (Run/Units.hs:58-70) calls Cage.evaluateTx and keeps a failure only as text; the provider returns per-purpose Either TransactionScriptFailure ExUnits (offchain/node-internal/Singular/Registry/Provider.hs:44-49,63-65).",
+      "pause": 300
+    },
+    {
+      "text": "Lead (unverified at pin 0e73121d of cardano-node-clients): evaluation is the ledger's evalTxExUnits over the node's UTxO, system start and era history, and a validation failure carries the ledger's script-with-context value — the exact script and arguments for the purpose. read-pinned-cardano-node-clients-offchain verifies this at the pin.",
+      "pause": 300
     }
   ],
   "alternatives-rejected": [
     {
-      "text": "Resubmitting with traced scripts changes hashes and so the context. Placing traced code in the ledger's lookup still runs the deployed bytes. Reasons from the model or the test suite are not chain evidence. Tracing everything would bury the one user trace.",
+      "text": "Alternatives rejected.",
       "pause": 500
+    },
+    {
+      "text": "Resubmitting a transaction witnessed by traced scripts: the traced hash differs, so addresses, policy ids and redeemer pointers change and the context is no longer the refused one.",
+      "pause": 300
+    },
+    {
+      "text": "Ledger re-evaluation with the traced script placed in the UTxO: ledger lookup is by hash and would still run the deployed bytes or fail to find the script.",
+      "pause": 300
+    },
+    {
+      "text": "Reading reasons from the model or from the Aiken test suite: not chain evidence (separate-evidence-classes).",
+      "pause": 300
+    },
+    {
+      "text": "--trace-filter all: adds compiler expect traces, so \"exactly one user-defined trace\" would no longer identify the refusal.",
+      "pause": 300
     }
   ],
   "book-and-published-limit": [
     {
-      "text": "The book's limit sentence is written by its generator and asserted by a usage test. The same limit appears in the theorems page and two constitution rows, outside this ticket's fence.",
+      "text": "Book and published limit.",
       "pause": 500
+    },
+    {
+      "text": "Limit text: conformance/lib/Conformance/Book.hs:51; committed render conformance/BOOK.md:343; asserted by conformance/test/Conformance/Story/Usage.hs:83.",
+      "pause": 300
+    },
+    {
+      "text": "Also stated in docs/theorems.md:133-136 and constitution rows retract, settle (.specify/memory/constitution.md:421,429): outside the fence (operator question (Q-002)).",
+      "pause": 300
     }
   ],
   "_source": {

@@ -1,4 +1,30 @@
 {
+  "324-data-model": [
+    {
+      "text": "#324 data model.",
+      "pause": 500
+    },
+    {
+      "text": "indexed-point-slot-block-hash-last-block Indexed point: slot and block hash of the last block the index applied; none before the first block. Network identity comes from the follower configuration.",
+      "pause": 300
+    },
+    {
+      "text": "gated-index-pinned-indexerhandle-whose-mutations-view Gated index: a pinned IndexerHandle whose mutations and view holds exclude each other, plus its indexed point (indexed-point-slot-block-hash-last-block), its coverage (followed from origin or from a tip; interest set all or filtered) and a readiness source (processed slot, tip slot, upstream status).",
+      "pause": 300
+    },
+    {
+      "text": "indexer-view-failure-one-named-class-per Indexer view failure: one named class per explicit-failures-named-outcome-class-carrying-points case — lag (node point, indexed point, bound), fork (slot, both hashes), coverage incomplete (start, filter), restoring (processed slot, tip slot), disconnected (upstream status), unsupported (capability name). An exception distinct from #323's ViewFailure.",
+      "pause": 300
+    },
+    {
+      "text": "backend-selection-node-or-indexer-resolved-once Backend selection (cli-selection-devnet-journey-on-main-after): node or indexer, resolved once at startup from CLI configuration.",
+      "pause": 300
+    },
+    {
+      "text": "Relationships: one view → one node view point = one indexed point; an address read in that view → the gated index at that point.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "data-model.md",
     "sha256": "a4058b03ba375b76b18f10061e5a174e240e2bd2f8c442d0dc235110fbbca48c"

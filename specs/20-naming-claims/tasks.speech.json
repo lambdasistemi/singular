@@ -1,12 +1,58 @@
 {
+  "tasks": [
+    {
+      "text": "Tasks.",
+      "pause": 500
+    },
+    {
+      "text": "One slice: first-release naming claims.",
+      "pause": 400
+    },
+    {
+      "text": "[ ] T-lean-layer: Naming Lean module with fixtures, well-formed Insert, namingStep / namingResolve, and naming-no-delete.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T-lean-statements: Naming statements in a separate module and inventory; generic forty-one records unchanged.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T-lean-proofs: Every naming statement PROVED from standard axioms; naming corpus exported without changing the generic corpus bytes.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T-sim-engine: simulator/naming.mjs transcribes the frozen naming layer; identity lists both labelled profiles.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T-sim-journey: Headless replay queues two alice claims, folds the first to Active, refuses the second with occupied-key.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T-sim-delete: Crafted generic Delete against namingStep refuses with naming-no-delete; generic profile still Deletes.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T-docs-page: docs/naming-demo.md is the playable entry, with diagrams, implemented-versus-pending labels, finite-model limits, and an unaccepted-candidate statement. Speech restamped. Reserved files untouched.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T-preview: Candidate-bound preview identity via existing preview job; served bytes include the naming profile.",
+      "pause": 300
+    }
+  ],
   "slice": [
     {
-      "text": "One owner slice. Untracked gate.sh. Final subject: make first-release naming claims playable in the docs.",
+      "text": "Slice.",
+      "pause": 500
+    },
+    {
+      "text": "S-naming-claims — OWNER. Gate: untracked ./gate.sh. Final subject: feat: make first-release naming claims playable in the docs.",
       "pause": 400
     }
   ],
   "_source": {
-    "file": "specs/20-naming-claims/tasks.md",
+    "file": "tasks.md",
     "sha256": "688b910f0a6b4f86e2bc62b9720f4c06a5a1fc1e9fa3c44abb0c86a5ec548c78"
   }
 }

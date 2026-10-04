@@ -1,11 +1,21 @@
 {
-  "state-contracts": [
+  "node-state-and-lifetime": [
     {
-      "text": "Process mode and process wallet keep their one-time initialization. Open session, chain follower and funding guard are installed for their existing bracketed lifetimes and cleared on normal return or exception. The address-read counter remains one process total.",
-      "pause": 400
+      "text": "Node state and lifetime.",
+      "pause": 500
     },
     {
-      "text": "The diagram traces process mode into wallet and session, session into follower, and both runtime resources into cleanup.",
+      "text": "As an operator, I need one live session and follower to remain the source of connection and confirmation state while a runner acts.",
+      "pause": 400
+    }
+  ],
+  "state-contracts": [
+    {
+      "text": "State contracts.",
+      "pause": 500
+    },
+    {
+      "text": "NodeSession, NodeMode, ExternalNode, Wallet and FundingFloor retain their constructors, fields and old facade path. No explicit session API or replacement for unsafePerformIO is introduced. The devnet node is bracketed and torn down with the session; an external node remains owned by its operator.",
       "pause": 400
     }
   ],

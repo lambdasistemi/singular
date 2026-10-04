@@ -1,7 +1,36 @@
 {
   "contract": [
     {
-      "text": "Delivery begins with the wire correction and minimal adaptations of its existing consumers. The new conformance row comes last and stays held until the parent announces the story language merge. Both remain required for ticket acceptance. The commit owner records executable failure evidence, implements the correction, and requests checkpoint reviews. The persistent auditor reviews committed decisions through the ticket owner. Push requires every checkpoint approval, local root checks and the coverage snapshot. Review readiness additionally requires the exact pushed head's Registry and Conformance jobs to pass. The ticket has a four-hour wall, assessed halfway; missing work remains explicit."
+      "text": "Contract.",
+      "pause": 500
+    },
+    {
+      "text": "Base d92f35bf722120369c386ce09e6c7a40d321182f. Two ordered behavioral slices after a planning-only commit. No production edits by the ticket owner.",
+      "pause": 400
+    },
+    {
+      "text": "refund-custody-wire-and-consumers corrects shared custody representation, real validator/library consumers, minimal existing consumer adaptations and edge documentation. refund-custody-conformance adds the bound conformance row, registration and coverage metadata. refund-custody-conformance is held until the parent reports the story language merge, and remains required for full acceptance. No new conformance test-tree additions in refund-custody-wire-and-consumers. Preserve existing edge semantics.",
+      "pause": 400
+    },
+    {
+      "text": "Before implementation: model base and source citations are verified; commit the six mandate files and open a draft PR after required local checks. Freeze Opus's acceptance checks against the acceptance lines. Missing CI coverage is an explicit parent question; an existing Conformance selection and verdict assertion may be extended as the ticket's authorized CI change.",
+      "pause": 400
+    },
+    {
+      "text": "The approved Sol owner records RED before production, then GREEN checkpoints for each acceptance line and pre-push. It continues work while Opus reads only commits and mechanical receipts/decision records. Every checkpoint is forwarded immediately; every verdict is approved review or blocked review with a review field. One repair per checkpoint, second block goes upward. No final audit seat.",
+      "pause": 400
+    },
+    {
+      "text": "ticket owner acceptance checks the complete approval trail, exact final tree, task stamp and frozen gate on the final head. Root CI runs from repository root. Snapshot command runs from conformance/. Exact-head remote Registry and Conformance are separate readiness conditions. No merge or release authority is implied.",
+      "pause": 400
+    },
+    {
+      "text": "Budget: four hours wall from ticket START, halfway assessment at two hours. One full gate per candidate; inspect and fix only for concrete new failures or deltas. Integrate an independently green checkpoint and split remaining work when the authorized scope cannot fit; never label an incomplete wire accepted. Gate author phase: 15 minutes, zero builds or controls, one approved Opus seat. Artifact ceiling: each mandate file <= 5 KiB and <= 90 lines; six files together <= 18 KiB/300 lines. Worker packet <= 12 KiB/180 lines. Measured bytes/lines go in runtime measurements; provider tokens unavailable unless reported.",
+      "pause": 400
+    },
+    {
+      "text": "Publication boundary: naming-onchain's independent mirror remains outside this ticket and epic. Record its exact location and incompatibility honestly. #211 owns the new command; simulator transaction replay is also outside this slice.",
+      "pause": 400
     }
   ],
   "_source": {

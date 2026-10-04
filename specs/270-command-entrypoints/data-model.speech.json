@@ -1,12 +1,26 @@
 {
+  "command-data-boundaries": [
+    {
+      "text": "Command data boundaries.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I need moved records to keep the same serialized and ledger-facing representation while their owners change.",
+      "pause": 400
+    }
+  ],
+  "boundaries": [
+    {
+      "text": "Boundaries.",
+      "pause": 500
+    },
+    {
+      "text": "No schema or wire migration is authorized. Existing types and instances move together if their owner changes. The accepted Lean tree governs registry state and transaction effects; command-specific serialization and narration require separate execution evidence.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "data-model.md",
     "sha256": "6ec4388213175fbc187d97a796bb6002b1b7af9570ace3497d845fb99e2d2dc3"
-  },
-  "boundaries": [
-    {
-      "text": "Journey identity and proof data, insert-active token observations, update-terminal holder and burn data, and deployment manifest values keep their present representations. No schema or wire migration is authorized.",
-      "pause": 500
-    }
-  ]
+  }
 }

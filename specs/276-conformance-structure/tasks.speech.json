@@ -1,4 +1,42 @@
 {
+  "ticket-tasks": [
+    {
+      "text": "Ticket tasks.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] inventory-responsibilities-dependencies-record-bounded-choice Inventory responsibilities and dependencies; record bounded choice.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] extract-assetentry-its-two-json-instances-in Extract AssetEntry and its two JSON instances in one small commit with preserved bodies and caller map.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] add-generated-conformance-library-haddock-carrier-in Add generated Conformance library Haddock carrier in its own commit.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] integrate-same-revision-api-generation-provenance-navigation Integrate same-revision API generation, provenance, navigation and link checks.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] explain-architecture-boundaries-source-links-common-edits Explain architecture, boundaries, source links and common edits; sync speech.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] compare-fresh-base-head-receipts-row-states Compare fresh base/head receipts, row states and generated public claims.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] bind-actual-test-component-run-required-ci Bind actual test component run and all required CI checks to final head.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] complete-one-final-audit-guarded-merge-durable Complete the one final audit, guarded merge and durable handback.",
+      "pause": 300
+    }
+  ],
   "_source": {
     "file": "tasks.md",
     "sha256": "283f62d5c3b98b8689b05ae9995e87912ababeede0030d0a4a7681e0d26b559d"

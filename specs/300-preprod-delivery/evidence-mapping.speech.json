@@ -1,29 +1,65 @@
 {
   "the-story": [
     {
-      "text": "A reviewer wants each requirement of issue three hundred tied to the model statement it rests on, the code that carries it, and the kind of evidence that will establish it, so that proved claims, development-node claims and claims that wait for the public network stay apart. No Lean, statement, corpus, validator or conformance ledger file changes in this work.",
+      "text": "The story.",
+      "pause": 500
+    },
+    {
+      "text": "As a reviewer, I want each requirement of issue 300 tied to the model statement it rests on, the code that carries it and the kind of evidence that will establish it, so that I can see which claims are proved, which are executed on a development node, and which wait for the public network.",
+      "pause": 400
+    },
+    {
+      "text": "The application model is read at de34300540223ccedf1ca85216b131fd09a148b4 under constitution 1.11.0. No Lean, statement, corpus, validator or conformance-ledger file changes in this work.",
       "pause": 400
     }
   ],
   "the-collateral-correction-with-its-evidence": [
     {
-      "text": "Earlier notes said folds and updates put the wallet's largest output up as collateral with no return. The builder's balancer fills the total collateral and the return in cases. It refuses an input that cannot cover the required total, and when what remains is zero or under the minimum output it takes the whole input as the collateral and states no return; otherwise it states one and a half times the fee and returns the rest. Twelve bodies from one development run show the ordinary case for the folds, updates and boot, and that the two bookings name a collateral input but state neither field. The other two cases are read from the source. The measured booking refuses the no-return case, so it never collateralises a whole funding output.",
+      "text": "The collateral correction, with its evidence.",
+      "pause": 500
+    },
+    {
+      "text": "Earlier preparation notes said that folds and updates put the wallet's largest output up as collateral with no return. The source and the retained bodies say otherwise for folds and updates, and confirm it for the booking.",
       "pause": 400
     },
     {
-      "text": "Whether the retract builder declares collateral is a hypothesis that the new accounting checks will settle before any repair.",
+      "text": "The transaction builder the folds and updates use is Cardano.Tx.Build at cardano-tx-tools revision 7bfe95bf5ef3bfa846e62bcae94cf377b66ad0d0. Its balancer, balanceTxWith in src-tx-build/Cardano/Tx/Balance.hs, fills the total collateral and the collateral return when the transaction has a redeemer and a collateral input, and it does so by cases. It computes the required total as the fee times the collateral percentage, rounded up. If the input cannot cover that total it refuses the transaction. If what remains after the required total is zero or under the minimum output, it takes the entire input as the total collateral and states no return. Otherwise it states the required total and returns the rest. The booking is assembled by hand in Singular.Registry.TxBuilder.Edges with a fixed fee and did not go through that balancer; the measured booking now does, and refuses the no-return case so that it never collateralises a whole funding output.",
+      "pause": 400
+    },
+    {
+      "text": "The twelve bodies below show the ordinary case the balancer produces and the booking's absence of the two fields; they do not show the two other cases, which are read from its source. The following table decodes the body map of twelve transactions submitted by one development run of the ordinary commands, reading the fee, the collateral inputs, the total collateral and the collateral return. Fee 696101 gives 1044152, the fee times one and a half rounded up.",
+      "pause": 400
+    },
+    {
+      "text": "The five publication transactions of the create command use no collateral. The twelve body files, the decoder and its output are retained with their digests by the author; the decoding reads body-map keys 2, 13, 16 and 17 and needs only a CBOR reader.",
+      "pause": 400
+    },
+    {
+      "text": "The retract builder assembles its transaction by hand and balances it with the shared balancer. Whether it declares collateral fields is a hypothesis the new accounting checks will settle before any repair.",
+      "pause": 400
+    },
+    {
+      "text": "Each requirement below is established by the first form that can establish it; a later form is not implied by an earlier one.",
       "pause": 400
     }
   ],
   "requirements-and-their-evidence": [
     {
-      "text": "Each requirement is listed with the model statement or contract it rests on, its entry points and the form of evidence. A row is not covered until its receipts exist. Development-node journeys establish the lifecycle and the four refusals; confirmed public receipts follow only after the operator's decision. Each requirement is established by the first form of evidence that can establish it; a later form is not implied by an earlier one.",
+      "text": "Requirements and their evidence.",
+      "pause": 500
+    },
+    {
+      "text": "Each row states the requirement of issue 300, the model statement or contract it rests on, the entry points, and the form of evidence that will establish it. A row is not covered until its receipts exist.",
       "pause": 400
     }
   ],
   "the-duplicated-token-carrier": [
     {
-      "text": "The duplicated carrier case of the update statement stays a non-live case with its model and validator tests and its conditional argument. It is distinct from the same-key duplicate insertion and the post-Terminal insertion, which are required and run against the registry.",
+      "text": "The duplicated token carrier.",
+      "pause": 500
+    },
+    {
+      "text": "The duplicated-carrier case of the update statement stays a non-live case with its model and validator tests and its conditional argument. It is distinct from the same-key duplicate insertion and the post-Terminal insertion above, which are required and run against the registry.",
       "pause": 400
     }
   ],

@@ -1,24 +1,58 @@
 {
-  "_source": {
-    "file": "plan.md",
-    "sha256": "304cd96636f27be5a488a2e3542a0dfa959a6a2c9dd133666d78825e5ae73d8f"
-  },
+  "repair-datum-observation-without-moving-responsibilities": [
+    {
+      "text": "Repair datum observation without moving responsibilities.",
+      "pause": 500
+    },
+    {
+      "text": "As a contributor, I want one bounded repair that preserves the registry interface and existing evidence pipeline.",
+      "pause": 400
+    }
+  ],
   "delivery": [
     {
-      "text": "Actual transaction and spent output evidence flows through the existing observer into the comparator. The fixed Lean driver independently supplies expectations. One coder repairs the code while a separate reviewer checks committed milestones. The custody case uses a delivering fold. The witness, and the destination of a fold that delivers nothing, wait on the open model ruling; a delivered output booked without a datum is reported as it is, and holds acceptance until ruled.",
-      "pause": 350
+      "text": "Delivery.",
+      "pause": 500
+    },
+    {
+      "text": "Keep observation in its existing Conformance responsibility. Bind distinct datum values at the observer's actual input boundary, retain behavioral RED evidence, repair the observed values, then verify connected cases and current CI. Keep model-derived expectations separate from observed facts.",
+      "pause": 400
+    },
+    {
+      "text": "One implementation slice, with RED, GREEN and pre-push checkpoints. The ticket owner freezes CI commands; the coder owns tests, code and local commits; an independent reviewer checks committed checkpoints. No extra seats. One task produces one final implementation commit after its evidence is retained.",
+      "pause": 400
+    },
+    {
+      "text": "The retained state input is bound through the data contract. The custody case uses a delivering fold, so its physical carrier exists. The witness is spent only by folds that deliver nothing, so its GREEN and every destination row of a fold delivering nothing wait on the ruling in #304; the observer neither reports an invented datum there nor drops the row. A delivered output the builder books without a datum differs from Lean's inline form; that difference is reported, not hidden, and holds acceptance until it is ruled.",
+      "pause": 400
     }
   ],
   "boundary": [
     {
-      "text": "Keep the repair in the existing live observation modules and their tests. Do not move modules or edit offchain, validators, Lean, shared configuration, or generated books.",
-      "pause": 350
+      "text": "Boundary.",
+      "pause": 500
+    },
+    {
+      "text": "Production writes are limited to conformance/app/Conformance/Run/Live.hs and, only if necessary for the existing observation responsibility, conformance/app/Conformance/Run/Observe.hs. Tests stay under conformance/test/; conformance/conformance.cabal may only wire those tests and existing observation modules. No module moves or new observation framework. Any needed extension is returned before editing.",
+      "pause": 400
+    },
+    {
+      "text": "Do not edit offchain/onchain, Lean, root gates/workflows, shared docs or generated books. Those surfaces can overlap independent work. This slice does not remove the constitution's broader named limit by hand. Parent rechecks overlap at dispatch and integration and serializes any affected work.",
+      "pause": 400
     }
   ],
   "verification-limits": [
     {
-      "text": "Run existing tests and connected devnet cases. A fixture demonstrates observation behavior, not live validator acceptance.",
-      "pause": 350
+      "text": "Verification limits.",
+      "pause": 500
+    },
+    {
+      "text": "Use existing conformance tests, existing connected devnet cases, root Build Gate and exact-head CI. Unit fixtures establish observation behavior, not acceptance of a malformed transaction by deployed scripts. Record failures and uncovered cases without changing expected results.",
+      "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "304cd96636f27be5a488a2e3542a0dfa959a6a2c9dd133666d78825e5ae73d8f"
+  }
 }

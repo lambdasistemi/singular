@@ -1,8 +1,22 @@
 {
+  "wire-callable-contracts": [
+    {
+      "text": "Wire callable contracts.",
+      "pause": 500
+    },
+    {
+      "text": "As an existing caller, I need the same functions at the Singular.Registry.Types import path even when their definitions move.",
+      "pause": 400
+    }
+  ],
   "public-callables": [
     {
-      "text": "Existing callers keep the seven edge constants, edge names, request phase classification and four state policy-byte accessors through the Types facade. Each callable keeps its argument and result contract.",
-      "pause": 350
+      "text": "Public callables.",
+      "pause": 500
+    },
+    {
+      "text": "ToData, FromData and UnsafeFromData are mapped per type in data-model.md. Each instance stays beside its type in the owning module. Shared conversion helpers are internal and have no new public API. No constructor, record selector or visible import path may be dropped from the Types facade.",
+      "pause": 400
     }
   ],
   "_source": {

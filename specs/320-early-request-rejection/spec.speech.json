@@ -1,43 +1,95 @@
 {
   "the-folders-story": [
     {
-      "text": "A folder can turn away a pending request while it is still in its processing window, or in its owner's retraction window. The owner gets the deposit back, the registry stays exactly as it was, and every payment and signer rule still holds. The model already allows this. The deployed state and request scripts refuse it until the retraction window closes, so this ticket repairs the code, not the model.",
+      "text": "The folder's story.",
+      "pause": 500
+    },
+    {
+      "text": "As a folder, I turn away a pending request while it is still inside its processing window, or inside its owner's retraction window. The owner gets the deposit back (what the request holds minus the tip), the registry is left exactly as it was, and every existing payment, signer and token rule still applies.",
+      "pause": 400
+    },
+    {
+      "text": "The model already says this. Singular.exitStep with Exit.reject carries no admission. Singular.exitAdmission gives a reject none, and Singular.obligations .reject owes the owner the deposit. The deployed validators say otherwise. The state script refuses a reject until the retraction window has closed (not-rejectable). The request script admits its own spend only in the processing window or once rejectable. So a phase-2 reject stays refused even if only the state script is repaired. This ticket repairs the code to match the model. The model does not change.",
       "pause": 400
     }
   ],
   "authority-and-model-binding": [
     {
-      "text": "The operator ruled on the first of October 2026 to allow rejection before the retraction deadline, keeping Singular's Lean and repairing the validator. The binding is the Lean model at the named blob and base commit: the reject exit carries no admission, and it owes the owner the deposit. The constitution already says a reject carries no admission, so it does not change.",
-      "pause": 400
+      "text": "Authority and model binding.",
+      "pause": 500
+    },
+    {
+      "text": "Operator ruling, 2026-10-01: allow rejection before the retraction deadline; keep Singular's Lean and repair the validator. Issue 320, parent 209.",
+      "pause": 300
+    },
+    {
+      "text": "Lean at lean/Singular/Model.lean blob 9c75b37380d5e6f56691345bcc50b60d3faf184b, base commit 3f04e50d293b80360a3234ebf3114abc8172d851. Definitions: Exit (:965), obligations (:989), settle (:1038), exitStep (:1068), txOfExit (:1110), exitAdmission (:1201), admittedExitStep (:1208), admittedTxOfExit (:1216). Statements: admitted_exit_is_the_exit (:1713), built_transaction_settles (:1602), no_exit_strands_the_deposit (:1552), only_retract_owes_the_tip (:1564).",
+      "pause": 300
+    },
+    {
+      "text": "The constitution's reject row already reads \"It carries no admission\". No constitution change is needed.",
+      "pause": 300
     }
   ],
   "what-changes-for-the-user": [
     {
-      "text": "Eight requirements. The state script accepts a reject in any window. The request script accepts when the state rejects that same request. Refund floors are refused in every window. The state is unchanged and nothing is minted. The product's builder can build an early reject. The suite shows early rejects compared with the model in a new row, reject-inside-processing-and-retraction-windows, sourced from Singular's model, and reject-and-retract-refund-controls loses only its old timing words. The consumer row that forbids early rejection stays visible and unmet. Every moved script identity is regenerated and checked both ways.",
-      "pause": 400
+      "text": "What changes for the user.",
+      "pause": 500
     }
   ],
   "what-stays-exactly-as-it-is": [
     {
-      "text": "An update can still be folded only in the processing window, both scripts keep refusing it outside that window, and that rule has no counterpart in Lean today. Retraction is unchanged. Every other rule is unchanged. The model, the constitution, the consumer's rows and the locks are not touched. The receipt format gains one verdict value, unmet by ruling, for reject-before-deadline-consumer-requirement.",
-      "pause": 400
+      "text": "What stays exactly as it is.",
+      "pause": 500
     }
   ],
   "invariants": [
     {
-      "text": "Fourteen invariants, each with one check at the layer where it could fail. Where the base violates one, in the processing and retraction windows, for the builder and for the model compared rows, RED means seen failing on the unrepaired code for the stated reason. The rest are preservation or identity checks, green at the base and able to fail as their row says, and the size and cost measurement is checked at acceptance. A setup or decoding failure never counts as RED. The request's matching action is pinned by two requests in either order and two mutations seen failing.",
+      "text": "Invariants.",
+      "pause": 500
+    },
+    {
+      "text": "Each invariant has one executable check at the layer where it could fail. Where the base violates an invariant (state-purpose-admits-rejected-in-processing-window and request-purpose-admits-contribute-whose-matching-state in the processing and retraction windows, refund-floor-held-in-early-windows-short in those windows, product-reject-builder-s-transaction-accepted-on, model-bound-early-rejections-agree-lean-untampered), RED means the check was seen failing on the unrepaired code for the stated reason. The others are preservation or identity checks: green at the base, and able to fail in the way their row names. A setup or decoding failure is never RED.",
       "pause": 400
     }
   ],
   "holds-and-limits": [
     {
-      "text": "The consumer's promise that no reject happens early becomes unmet, and by operator ruling of the first of October 2026 it is kept as a visible unmet requirement, with alignment tracked in cardano-keri issue four sixty-eight. The update timing rule is a separate discrepancy between the code and the model, owned by its own ticket; here it stays unchanged, labeled current validator behaviour outside Lean, and any claim that it conforms stays held. The builder now rejects every pending request, fresh ones too, and one unprocessable request still blocks it. The published book is not hand-edited. Refusal reasons are not observed on chain, so each is established by a compiled test that names it. Ticket 287 is rebound afterwards.",
-      "pause": 400
+      "text": "Holds and limits.",
+      "pause": 500
+    },
+    {
+      "text": "Consumer conflict. Cardano KERI at 0e638fadc987f0cd98f839edd3e3ecd5a09a1b91 (RegistryGoals.lean blob d38e81c0b5d8f1137853439b83ff99281d5fa99f) promises R9_reject_needs_rejectable: no early rejection. After this repair that promise is unmet. Operator ruling 2026-10-01: the promise is kept as a visible unmet consumer requirement; reject-before-deadline-consumer-requirement carries the verdict unmet-by-ruling, and alignment is lambdasistemi/cardano-keri#468. This repair never changes reject-before-deadline-consumer-requirement's requirement or counts it as passing.",
+      "pause": 300
+    },
+    {
+      "text": "Fold timing outside Lean. Lean admits a fold in every window. The validator admits an update only in the processing window. That is a separate discrepancy between the code and the model, to be repaired by its own ticket. This repair keeps the update rule unchanged in its bounded diff. A phase-2 update appears only as a compiled refusal labeled current validator behaviour outside Lean, never as a model-compared step, because the model would accept it. Any claim that fold timing conforms to Lean stays held.",
+      "pause": 300
+    },
+    {
+      "text": "Builder selection. The reject builder rejects every pending request of its registry, now including fresh ones. One unprocessable request (a deposit that does not match) makes any builder reject refuse deposit-mismatch, as it already did for expired requests. Choosing a subset is out of scope.",
+      "pause": 300
+    },
+    {
+      "text": "Published book. conformance/BOOK.md states the code revision it was generated at. This repair does not hand-edit it.",
+      "pause": 300
+    },
+    {
+      "text": "Refusal reasons on chain are not observed live: the deployed validators carry no traces. Each refusal's reason is established by the compiled Aiken tests that name it. Live refusals are attributed by script hash.",
+      "pause": 300
+    },
+    {
+      "text": "Follow-up. Ticket 287 is rebound to the landed source afterwards. No receipt from before the repair proves the repaired scripts.",
+      "pause": 300
     }
   ],
   "success": [
     {
-      "text": "A folder builds, with the product's builder, a rejection of a request booked moments earlier, and the chain accepts it: the owner is paid and the registry is unchanged. The suite publishes that compared with the model, next to refused tampered refunds, and the consumer row that forbade it stays visible as unmet.",
+      "text": "Success.",
+      "pause": 500
+    },
+    {
+      "text": "A folder can build, with the product's own builder, a rejection of a request booked moments earlier, submit it, and see it accepted. The owner is paid the deposit and the registry state is unchanged. The suite publishes that, compared with the model, beside refused tampered refunds. The consumer row that forbade it stays visible as unmet.",
       "pause": 400
     }
   ],

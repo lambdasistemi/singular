@@ -1,4 +1,34 @@
 {
+  "323-data-model": [
+    {
+      "text": "#323 data model.",
+      "pause": 500
+    },
+    {
+      "text": "chainpoint-network-magic-era-name-slot-block ChainPoint: network magic, era name, slot, block header hash. Origin is not a ChainPoint. Equality is on all four fields.",
+      "pause": 300
+    },
+    {
+      "text": "view-one-acquired-ledger-state-fields-its View: one acquired ledger state. Fields: its ChainPoint; protocol parameters as a value captured once at acquire; UTxOs at an address; UTxOs by input (for reference and collateral inputs) when a builder needs them; whether a script credential has a registered reward account; POSIX ms to slot (floor and ceiling); script evaluation of a transaction. Valid only inside the acquire scope (scope-closed-view-used-after-its-scope). Carries no submission.",
+      "pause": 300
+    },
+    {
+      "text": "provider-read-interface-exactly-one-acquire-operation Provider (read interface): exactly one acquire operation from a view-consuming action to its result. No query is reachable except through a view.",
+      "pause": 300
+    },
+    {
+      "text": "signed-transaction-submitter-signed-transaction-type-constructible Signed transaction and submitter: a signed-transaction type constructible only by the signing function; the write capability accepts only that type and returns the node's acknowledgement or rejection unchanged. Separate from provider-read-interface-exactly-one-acquire-operation.",
+      "pause": 300
+    },
+    {
+      "text": "memory-chain-in-memory-adapter-state-chainpoint Memory chain (in-memory adapter state): ChainPoint, protocol parameters, UTxO set, registered script credentials, slot/time configuration. Mutations advance the point; acquire snapshots the whole value.",
+      "pause": 300
+    },
+    {
+      "text": "Relationships: one operation → one View → one ChainPoint; a write journal entry → the ChainPoint of the View its body was built from.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "data-model.md",
     "sha256": "c1d75a778a63e1e15ff9a71fdcd9dbea60b78d8a3ad47796ed1e3acf66ab870f"

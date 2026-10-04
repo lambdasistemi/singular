@@ -1,25 +1,37 @@
 {
   "changed-responsibilities": [
     {
-      "text": "The runner executes register-active-key, the receipt library validates it, the workflow asserts it and the consumer page describes what ran.",
-      "pause": 400
+      "text": "Changed responsibilities.",
+      "pause": 500
     }
   ],
   "dependency-direction": [
     {
-      "text": "Lean governs the runner; chain observations feed the receipt; the workflow consumes the receipt; documentation describes the workflow result.",
+      "text": "Dependency direction.",
+      "pause": 500
+    },
+    {
+      "text": "The accepted Lean statements govern register-active-key. The runner observes the chain and constructs receipt evidence; the receipt library validates that evidence; the workflow consumes it; documentation describes the workflow result. No downstream copy defines behavior for an upstream layer.",
       "pause": 400
     }
   ],
   "promotion": [
     {
-      "text": "Execution remains in the existing runner and shared evidence remains in the receipt library. No new cross-edge framework is introduced.",
+      "text": "Promotion.",
+      "pause": 500
+    },
+    {
+      "text": "register-active-key-specific execution remains in the existing runner. Shared receipt structures remain in the receipt library because the workflow and loader both consume them. No new abstraction or cross-edge framework is introduced.",
       "pause": 400
     }
   ],
   "outside-this-ticket": [
     {
-      "text": "Lean, validators, the request encoding, the simulator and other edges retain their existing owners.",
+      "text": "Outside this ticket.",
+      "pause": 500
+    },
+    {
+      "text": "Lean, validator behavior, request encoding, simulator behavior and other edge rows retain their existing owners. A need to change one is a ticket-owner question, not an implicit dependency.",
       "pause": 400
     }
   ],

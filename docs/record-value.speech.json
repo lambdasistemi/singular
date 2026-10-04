@@ -1,25 +1,57 @@
 {
   "for-a-names-controller": [
     {
-      "text": "Wallet change must not disable recovery or retirement. A record created by an insert fold contains exactly ADA and its representative. Maintain and recover preserve every token policy, name and quantity. ADA may increase but not decrease. The diagram follows a clean record through maintenance, recovery and custody, with an extra token causing refusal.",
+      "text": "For a name's controller.",
+      "pause": 500
+    },
+    {
+      "text": "An unrelated token in wallet change must not disable recovery or retirement. Naming records created by an insert fold contain exactly ADA and their representative. Maintain and recover require identical non-ADA policies, asset names and quantities in the continuation. ADA can increase, but cannot decrease.",
       "pause": 400
     }
   ],
   "when-a-value-is-refused": [
     {
-      "text": "Record value preservation means a continuation changed its tokens or reduced ADA. Keep wallet change separate. Record single asset identifies an invalid input shape or insert-fold output. The compiled validator retains these diagnostic names, and the runners inspect every policy. Existing polluted records remain maintainable only with unchanged tokens; under this rule they cannot be repaired, recovered or retired. An arbitrary transfer to the script address is not a registration.",
+      "text": "When a value is refused.",
+      "pause": 500
+    },
+    {
+      "text": "record-value-preservation means a maintain or recover continuation changed its non-ADA value, or reduced its ADA. Keep wallet change in a separate output. record-single-asset means recovery or retirement encountered an input with zero or multiple non-ADA assets, or an insert fold tried to create a record without exactly its representative. These names are retained in compiled validator traces. The recovery and retirement runners also inspect all asset policies when reading a record, so they cannot hide an unrelated token.",
+      "pause": 400
+    },
+    {
+      "text": "An already polluted record can still be maintained if its entire non-ADA value is preserved. It cannot be repaired, recovered or retired under this rule. An arbitrary transfer to the script address is not a genuine naming registration.",
       "pause": 400
     }
   ],
   "deployment-compatibility": [
     {
-      "text": "With this rule the application validator hash begins one two three nine f three. Before it, the hash began eight nine four zero nine eight, and that is the one the preprod record carries, because that deployment predates the rule. Spending and minting purposes share the identity, and the script identity manifest is regenerated from the pinned Aiken build. Other unapplied hashes stay the same, but the next deployment must derive addresses and applied policies from the new blueprint. The rule does not migrate records at an old script address, change an existing deployment manifest, or deploy to preprod.",
+      "text": "Deployment compatibility.",
+      "pause": 500
+    },
+    {
+      "text": "With this rule the application validator hash is 1239f396899f80b7ec377fe181e2014b7bc54da0a4c4ab0d9df3fdc5. Before it, the hash was 89409890d5a89debf410d6d31695fc9030fcf2b754b06206d7291370, which is the one the preprod record carries, because that deployment predates the rule. Its spend and mint purposes share that identity. The committed naming-onchain/script-identity.json is regenerated from the pinned Aiken build, which retains user-defined traces. Other unapplied validator hashes stay the same.",
+      "pause": 400
+    },
+    {
+      "text": "The next deployment must derive its addresses and applied policies from the new blueprint. The representative policy's application-hash parameter changes with that deployment. The rule does not migrate records at an old script address, change an existing deployment manifest, or deploy to preprod.",
       "pause": 400
     }
   ],
   "checks-and-model-boundary": [
     {
-      "text": "Run the record value test recipe from offchain for a positive maintenance control and named refusals against the production blueprint. These are component fixtures, not submitted transactions. Naming flake checks cover Aiken and identity; root CI covers model, simulator, browser and documentation. Lean is unchanged, and the correspondence table records the single-representative refinement.",
+      "text": "Checks and model boundary.",
+      "pause": 500
+    },
+    {
+      "text": "Run just record-value-test from offchain/ to execute the production blueprint against an accepted maintain and named extra-asset refusals. The contexts are component fixtures, not submitted ledger transactions or a connected lifecycle. The same check runs in the naming validator CI job. The Aiken suite has the three issue reproductions and controls for added, removed, replaced and increased assets, ADA top-up, and insert-fold pollution.",
+      "pause": 400
+    },
+    {
+      "text": "Run nix flake check from naming-onchain/ for the Aiken suite and compiled identity checks. Root nix develop --quiet -c just ci covers the model, simulator, browser and documentation; it does not execute the offchain suites.",
+      "pause": 400
+    },
+    {
+      "text": "Lean is unchanged at repository revision 41861a66b72a840042f2e633ce33a607e817d6c6. Its Singular.Output models one representative plus scalar value. The implementation checks discharge that representation boundary for genuine insert-fold records and their continuations; the mapping is recorded in offchain/naming-correspondence.md.",
       "pause": 400
     }
   ],

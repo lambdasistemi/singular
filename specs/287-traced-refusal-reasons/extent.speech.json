@@ -1,30 +1,68 @@
 {
+  "refusal-extent-against-the-model": [
+    {
+      "text": "Refusal extent against the model.",
+      "pause": 500
+    },
+    {
+      "text": "Every live refusal the conformance runs produce belongs to the issue's denominator. Each is classified against Lean's semantics and against the executing consumer, separately. A runner that only attributes a refusal is not a scope ruling. This table is a planning lead from source at base 3f04e50 (Lean lean/Singular/Model.lean blob 9c75b37380d5); from-receipts-replay-index-discover-complete replaces it with the extent discovered from executed receipts.",
+      "pause": 400
+    }
+  ],
   "classes": [
     {
-      "text": "Four classes: modeled with a consumer, modeled without one, outside the model, and in conflict. The first is not a label: any refusal whose step carries an executed model reason belongs to it and must be compared, and a refusal the committed table does not list fails as unclassified. Only the first is compared; the others stay in the denominator as published gaps, and the last two are escalated.",
+      "text": "Classes.",
       "pause": 500
+    },
+    {
+      "text": "Class A is not a label anyone assigns. A refusal is class A exactly when its step record carries an executed model question with a refused outcome and a reason; the runner writes that fact into the index, and every such refusal must agree or be uncompared with a named cause. B, C and D apply only to refusals without an executed model reason, and come from the committed table below, keyed by row and refusal; a refusal with a model reason can never carry them, and a refusal without one that the table does not list fails the extent check as unclassified.",
+      "pause": 400
     }
   ],
   "leads": [
     {
-      "text": "From source: the retraction window, duplicate insert, retirement and exit tampers are compared by the driver. The present-key insert and the batch mint mismatch are modeled without a consumer. The stale-root fold and the wrong constructor are outside the model. The phase-one reject and the crossed refund allocation are conflicts.",
+      "text": "Leads.",
       "pause": 500
     }
   ],
   "discovered-table-from-receipts-replay-index-discover-complete": [
     {
-      "text": "Rebound to main 13f2b2e under the narrowed acceptance. Every refusal with an executed model reason is class A, compared with the reason its traced replay admits: the story rows, the empty fold and the two-key batch through the fold batch question, and the crossed refunds with the two short-reject controls through the reject batch question. The phase-one reject itself is accepted, so it is no refusal; its consumer requirement stays unmet by ruling. Three refusals have nothing in the model to compare with: the stale-root fold, the surplus and missing actions, and the wrong constructor. Each is published as an unmet model comparison with its traced evidence and the issue that would add the vocabulary. By the rulings of the second of October, those three receipts carry the verdict unmet by ruling, and the phase-one reject row also runs the refund-position divergence on purpose: the chain refuses it, the model accepts it, and it is listed here as class D, never a pass.",
+      "text": "Discovered table (from-receipts-replay-index-discover-complete).",
       "pause": 500
+    },
+    {
+      "text": "Rebound 2026-10-02 to main 13f2b2e (#320's validators, #344's batch questions) under the operator's narrowed acceptance. Class A is not listed: it is every refusal whose step or batch carries an executed model reason, recorded by the runner — the story rows' refused steps (insert-occupied-key, retract-outside-window, register-active-key, retire-active-key, reject-and-retract-refund-controls, reject-inside-processing-and-retraction-windows), the fold batches (empty-fold's empty fold, register-active-key's two-key batch whose mint is moved onto its first key) and the reject batches (request-value-and-refund-routing's crossed refunds and its rejected-floor control, reject-before-deadline-consumer-requirement's short reject control), each compared with the reason the traced replay admits for the state script. reject-before-deadline-consumer-requirement's row transaction is accepted by the chain and by the model, so it is no refusal; its consumer requirement stays unmet by ruling (operator 2026-10-01).",
+      "pause": 400
+    },
+    {
+      "text": "Every other discovered refusal is listed below. fold-against-superseded-root, surplus-fold-actions and wrong-redeemer-constructor-index have no counterpart in the model: their receipts carry the verdict unmet-by-ruling (operator ruling 2026-10-02), and their model comparison is published as unmet, beside the traced chain evidence or its absence, tracked by the issue that would give the model the vocabulary. reject-before-deadline-consumer-requirement's divergence control is the one refusal Lean answers otherwise (class D):",
+      "pause": 400
+    },
+    {
+      "text": "The earlier leads \"register-active-key two-key batch net-mint-mismatch\" and \"empty-fold, request-value-and-refund-routing held by operator question (Q-002) with no batch question\" are now compared (class A); whether empty-fold, surplus-fold-actions and request-value-and-refund-routing meet the consuming project's requirements stays held, a consumer question separate from the model comparison; surplus-fold-actions is unmet by ruling.",
+      "pause": 400
+    },
+    {
+      "text": "Gaps C stay in the denominator and in the book's limits. A reason comparison over class A is never called completion of the issue's every-row claim while a C row remains.",
+      "pause": 400
+    }
+  ],
+  "a-conflict-the-compared-rejects-avoid": [
+    {
+      "text": "A conflict the compared rejects avoid.",
+      "pause": 500
+    },
+    {
+      "text": "The reject comparisons (reject-before-deadline-consumer-requirement's control, request-value-and-refund-routing's crossed refunds and its rejected-floor control, and the story chapters' one-lovelace-short rejects) agree only for the shape their fixtures give the transaction: every output at a request owner's key is that owner's refund. The chain and the model read an owner's payment differently, and a transaction of another shape separates them. Operator ruling 2026-10-02, \"Record now, fix later\": reject-before-deadline-consumer-requirement submits that shape on the devnet and records the disagreement in its receipt (the class D row above), never as a pass; reject-refund equivalence in general stays unmet, lambdasistemi/singular#361.",
+      "pause": 400
+    },
+    {
+      "text": "Main's reject-before-deadline-consumer-requirement control before this delivery had that shape: its request was owned by the genesis wallet, refunding one lovelace short, while the fold returned its change to the same wallet. The chain refused it; the model, asked on those outputs, would have accepted. The compared rows now book their owners from wallets that receive no change, and the story tampers move every other output at the owner's key elsewhere.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "extent.md",
     "sha256": "9f5906bfdaf202636108dcea67be2e55945110ed2a7f224e1fdbffa14749979c"
-  },
-  "a-conflict-the-compared-rejects-avoid": [
-    {
-      "text": "The reject comparisons agree only for the shape their fixtures give the transaction: every output at an owner's key is that owner's refund. The chain checks each refund by its position; the model adds up every output at the owner's key. Under the operator's ruling, record now and fix later, the phase-one reject row submits the shape that separates them, and its receipt records the chain refusing and the model accepting. Reject-refund equivalence in general stays open, in issue 361.",
-      "pause": 500
-    }
-  ]
+  }
 }

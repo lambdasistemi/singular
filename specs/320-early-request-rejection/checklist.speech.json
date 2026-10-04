@@ -1,20 +1,84 @@
 {
   "specification-quality": [
     {
-      "text": "The specification names the actor and outcome, cites the model for each requirement or marks it as outside the model, covers success and refusal, names each invariant's layer, lists what stays unchanged, and preserves the consumer conflict. No requirement depends on an open decision: the early reject row is settled as reject-inside-processing-and-retraction-windows with reject-and-retract-refund-controls's two timing sentences.",
-      "pause": 400
+      "text": "Specification quality.",
+      "pause": 500
+    },
+    {
+      "text": "[x] The story names the actor, the action and the observable outcome.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Every requirement cites the Lean definition it follows, or is marked as a validator rule outside Lean.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Success and refusal are both specified, including who signs and who is paid.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Each invariant names the layer where it can fail and what failing looks like.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Unchanged behaviour is listed explicitly, not implied.",
+      "pause": 300
+    },
+    {
+      "text": "[x] The consumer conflict is preserved as unmet, with its exact source revision.",
+      "pause": 300
+    },
+    {
+      "text": "[x] No requirement depends on a decision that is still open. The early-reject row scope is settled: the new row reject-inside-processing-and-retraction-windows and reject-and-retract-refund-controls's two timing sentences.",
+      "pause": 300
     }
   ],
   "evidence-quality": [
     {
-      "text": "RED is behavioural and on the base. Live claims rest on ledger transactions and refusal reasons on compiled tests. Model comparison uses the existing story language. Gate rows are CI commands, with every nix and devnet run counted.",
-      "pause": 400
+      "text": "Evidence quality.",
+      "pause": 500
+    },
+    {
+      "text": "[x] RED is behavioural and on the base. Setup and decoding failures are excluded.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Each live claim has a ledger transaction behind it. Each refusal reason has a compiled test that names it.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Model comparison goes through the existing story language, not a per-theorem projection.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Every gate row is a verbatim CI command, with its workflow line.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Every nested nix invocation and devnet boot is counted.",
+      "pause": 300
     }
   ],
   "scope": [
     {
-      "text": "Every old rule caller and every moved pin has an owner, forbidden paths are listed, and history is not rewritten.",
-      "pause": 400
+      "text": "Scope.",
+      "pause": 500
+    },
+    {
+      "text": "[x] Every caller of the old rule has a disposition.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Every identity pin the repair moves has an owner and a generator.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Forbidden paths are listed.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Historical receipts and the published book are not rewritten.",
+      "pause": 300
     }
   ],
   "_source": {

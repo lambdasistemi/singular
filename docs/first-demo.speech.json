@@ -1,14 +1,44 @@
 {
+  "first-demo-registry-handoff-on-preprod": [
+    {
+      "text": "First demo: registry handoff on preprod.",
+      "pause": 500
+    },
+    {
+      "text": "As a Cardano KERI integrator, I want to see a released Singular registry handle a real identity's registration, retirement and custody, so that I can evaluate the interface that Cardano KERI will consume.",
+      "pause": 400
+    },
+    {
+      "text": "Planned release tag: Singular v1.0.0 (registry handoff milestone). This is the first demo release target, conditional on the built archive and connected preprod replay; no future tag is published by this plan.",
+      "pause": 400
+    },
+    {
+      "text": "8 October 2026 is a target, not an observed result. The project story requires a connected Cardano preprod play. The accepted Singular Lean model defines expected transitions; the deployed script, released operator command and fresh node readbacks must establish each claimed outcome.",
+      "pause": 400
+    },
+    {
+      "text": "The planned identity read path is the Cardano KERI follower store: use ckeri writes with --store PATH and status with explicit --backend local --store PATH, recording its chain point and freshness. The Singular registry readback needs the persistent indexed proof path tracked by #107; the current preprod session follower confirms new transactions, while a node provider handles older outputs. The older Koios-backed V1 cast is a checkpoint baseline only; it cannot stand in for this joined result.",
+      "pause": 400
+    }
+  ],
   "preprod-play-to-record": [
     {
-      "text": "The October target is a Cardano preprod handoff. Keripy creates and exports the signed identity event. Cardano KERI registers that identity, while a released Singular interface must supply the registry custody, booking and retirement transactions. The target is Singular version one point zero point zero; the Cardano KERI follower and a persistent Singular registry read path must establish fresh indexed state.",
+      "text": "Preprod play to record.",
+      "pause": 500
+    },
+    {
+      "text": "The registry operation names above describe the user story. They are not asserted to be commands available in the current release. The registry epic #154 must supply the released Singular interface and connected preprod receipts. The Cardano KERI consumer mapping #324 must bind the two accepted models before the joined sequence is an accepted integration.",
       "pause": 400
     }
   ],
   "recording-gate": [
     {
-      "text": "A cast will be attached after the released keripy, Cardano KERI and Singular commands complete on preprod and their transaction IDs and fresh readbacks are verified. The planned sequence is not a completed demo.",
+      "text": "Recording gate.",
       "pause": 500
+    },
+    {
+      "text": "Record an asciicast only after the exact kli, ckeri and Singular preprod commands complete. The cast must show their real output, transaction IDs, script and policy identities and fresh readbacks. A fictional name may label a freshly generated identity or asset, but its actual identifiers and ledger effects must come from the run. No preprod cast is attached yet.",
+      "pause": 400
     }
   ],
   "_source": {
