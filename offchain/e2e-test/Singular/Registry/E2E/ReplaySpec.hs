@@ -70,7 +70,7 @@ import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
     , MultiAsset (..)
-    , PolicyID
+    , PolicyID (..)
     )
 import Cardano.Ledger.Plutus.ExUnits (ExUnits)
 import Cardano.Ledger.TxIn (TxIn (..))
@@ -90,18 +90,19 @@ import PlutusTx.Builtins.Internal
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (Blueprint, extractCompiledCode)
 import Singular.Registry.Ledger (ConwayEra, Root (..))
-import Singular.Registry.Replay
-    ( Incomplete (..)
-    , Mismatch (..)
-    , Refusal (..)
-    , RegistryToken (..)
-    , ReplayFailure (..)
-    , Replayed (..)
-    , Undecodable (..)
-    , replayLineage
-    )
+import Singular.Registry.Replay (Replayed (..), replayLineage)
 import Singular.Registry.Trie (Trie (..))
 import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
+import Singular.Registry.TrieState
+    ( Incomplete (..)
+    , Mismatch (..)
+    , RegistryIdentity (..)
+    , Staleness (..)
+    , StatePolicyId (..)
+    , TrieFailure (..)
+    , Undecodable (..)
+    , failureTransaction
+    )
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , extractCageDatum
@@ -109,6 +110,7 @@ import Singular.Registry.TxBuilder.Internal
     , leafActive
     , leafTerminal
     , mkInlineDatum
+    , scriptHashBytes
     , toPlcData
     , txInToRef
     , walkEdge
@@ -192,7 +194,7 @@ replaySpec = do
             (result, _) <-
                 replayAt h altered (historyTxs h) (historyToken h) (lastPoint h)
             case result of
-                Left (ReplayFailure tok tx RootDoesNotChain{recordedRoot = recorded}) -> do
+                Left (RootDoesNotChain tok (Just tx) _ recorded) -> do
                     tok `shouldBe` historyToken h
                     tx `shouldBe` fid
                     recorded `shouldBe` pointRoot target
@@ -262,7 +264,7 @@ replaySpec = do
                             (lastPoint h)
                     case result of
                         Left
-                            (ReplayFailure tok named RootDoesNotChain{recordedRoot = recorded}) -> do
+                            (RootDoesNotChain tok (Just named) _ recorded) -> do
                                 tok `shouldBe` historyToken h
                                 named `shouldBe` tid
                                 recorded `shouldBe` pointRoot target
@@ -310,10 +312,10 @@ replaySpec = do
                     replayAt h (historyResolved h) txs (historyToken h) (lastPoint h)
                 result
                     `shouldBe` Left
-                        ( ReplayFailure
+                        ( HistoryIncomplete
                             (historyToken h)
-                            (txIdTx (pointTx dropped))
-                            (HistoryIncomplete MissingTransaction)
+                            (Just (txIdTx (pointTx dropped)))
+                            MissingTransaction
                         )
 
             it "refuses a history without create, naming it" $ \h -> do
@@ -323,10 +325,10 @@ replaySpec = do
                     replayAt h (historyResolved h) txs (historyToken h) (lastPoint h)
                 result
                     `shouldBe` Left
-                        ( ReplayFailure
+                        ( HistoryIncomplete
                             (historyToken h)
-                            createId
-                            (HistoryIncomplete MissingTransaction)
+                            (Just createId)
+                            MissingTransaction
                         )
 
             it
@@ -345,10 +347,10 @@ replaySpec = do
                             (lastPoint h)
                     result
                         `shouldBe` Left
-                            ( ReplayFailure
+                            ( HistoryIncomplete
                                 (historyToken h)
-                                (txIdTx fork)
-                                (HistoryIncomplete (ForkedStateOutput (pointOutput spentFrom)))
+                                (Just (txIdTx fork))
+                                (ForkedStateOutput (pointOutput spentFrom))
                             )
 
             it
@@ -370,10 +372,10 @@ replaySpec = do
                             selection
                     result
                         `shouldBe` Left
-                            ( ReplayFailure
+                            ( HistoryIncomplete
                                 (historyToken h)
-                                named
-                                (HistoryIncomplete (ForkedStateOutput (pointOutput spentFrom)))
+                                (Just named)
+                                (ForkedStateOutput (pointOutput spentFrom))
                             )
 
             it "refuses a transaction that touches the token outside the lineage" $ \h -> do
@@ -387,10 +389,10 @@ replaySpec = do
                         (lastPoint h)
                 result
                     `shouldBe` Left
-                        ( ReplayFailure
+                        ( HistoryIncomplete
                             (historyToken h)
-                            (txIdTx stray)
-                            (HistoryIncomplete OutsideLineage)
+                            (Just (txIdTx stray))
+                            OutsideLineage
                         )
 
             it
@@ -481,10 +483,10 @@ replaySpec = do
                         `shouldBe` [
                                        ( IsValid True
                                        , Left
-                                            ( ReplayFailure
+                                            ( HistoryIncomplete
                                                 (historyToken h)
-                                                (txIdTx good)
-                                                (HistoryIncomplete (ForkedStateOutput (pointOutput spentFrom)))
+                                                (Just (txIdTx good))
+                                                (ForkedStateOutput (pointOutput spentFrom))
                                             )
                                        )
                                    , (IsValid False, without)
@@ -508,10 +510,10 @@ replaySpec = do
                                 }
                     result
                         `shouldBe` Left
-                            ( ReplayFailure
+                            ( HistoryIncomplete
                                 (historyToken h)
-                                (txIdTx bad)
-                                (HistoryIncomplete MissingTransaction)
+                                (Just (txIdTx bad))
+                                MissingTransaction
                             )
 
     describe
@@ -533,10 +535,10 @@ replaySpec = do
                             (lastPoint h)
                     result
                         `shouldBe` Left
-                            ( ReplayFailure
+                            ( HistoryIncomplete
                                 (historyToken h)
-                                (txIdTx (pointTx target))
-                                (HistoryIncomplete (UnresolvedInput reqIn))
+                                (Just (txIdTx (pointTx target)))
+                                (UnresolvedInput reqIn)
                             )
 
             it
@@ -549,10 +551,10 @@ replaySpec = do
                         replayAt h altered (historyTxs h) (historyToken h) (lastPoint h)
                     result
                         `shouldBe` Left
-                            ( ReplayFailure
+                            ( HistoryIncomplete
                                 (historyToken h)
-                                (txIdTx (pointTx target))
-                                (HistoryIncomplete (ConflictingResolution stateIn))
+                                (Just (txIdTx (pointTx target)))
+                                (ConflictingResolution stateIn)
                             )
 
             it "refuses two different transactions under one identifier" $ \h -> do
@@ -567,10 +569,10 @@ replaySpec = do
                         (lastPoint h)
                 result
                     `shouldBe` Left
-                        ( ReplayFailure
+                        ( HistoryIncomplete
                             (historyToken h)
-                            (txIdTx create)
-                            (HistoryIncomplete ConflictingCopies)
+                            (Just (txIdTx create))
+                            ConflictingCopies
                         )
 
             it
@@ -591,7 +593,7 @@ replaySpec = do
                                     (lastPoint h)
                             result
                                 `shouldBe` Left
-                                    (ReplayFailure (historyToken h) tid (UndecodableRequest expected))
+                                    (UndecodableRequest (historyToken h) (Just tid) expected)
                     refusedWith
                         ( Map.adjust
                             ( \(_, units) ->
@@ -622,10 +624,10 @@ replaySpec = do
                         (lastPoint h)
                 result
                     `shouldBe` Left
-                        ( ReplayFailure
+                        ( UndecodableRequest
                             (historyToken h)
-                            tid
-                            (UndecodableRequest (ActionCount 0 1))
+                            (Just tid)
+                            (ActionCount 0 1)
                         )
 
             it "refuses a fold with one action more than its requests" $ \h -> do
@@ -651,10 +653,10 @@ replaySpec = do
                         (lastPoint h)
                 result
                     `shouldBe` Left
-                        ( ReplayFailure
+                        ( UndecodableRequest
                             (historyToken h)
-                            tid
-                            (UndecodableRequest (ActionCount 2 1))
+                            (Just tid)
+                            (ActionCount 2 1)
                         )
 
             it "refuses a fold whose first output carries no state datum" $ \h -> do
@@ -666,10 +668,10 @@ replaySpec = do
                 (result, _) <- replayEdited h newest edited
                 result
                     `shouldBe` Left
-                        ( ReplayFailure
+                        ( UndecodableRequest
                             (historyToken h)
-                            (txIdTx edited)
-                            (UndecodableRequest UndecodableStateOutput)
+                            (Just (txIdTx edited))
+                            UndecodableStateOutput
                         )
 
             it "refuses a fold that spends no state output" $ \h -> do
@@ -679,10 +681,10 @@ replaySpec = do
                 (result, _) <- replayEdited h newest edited
                 result
                     `shouldBe` Left
-                        ( ReplayFailure
+                        ( HistoryIncomplete
                             (historyToken h)
-                            (txIdTx edited)
-                            (HistoryIncomplete NoStateInput)
+                            (Just (txIdTx edited))
+                            NoStateInput
                         )
 
             it "refuses a create whose seed does not name the token" $ \h -> do
@@ -695,10 +697,10 @@ replaySpec = do
                 (result, _) <- replayCreate h edited
                 result
                     `shouldBe` Left
-                        ( ReplayFailure
+                        ( WrongRegistry
                             (historyToken h)
-                            (txIdTx edited)
-                            (WrongRegistry SeedName)
+                            (Just (txIdTx edited))
+                            SeedName
                         )
 
             it "refuses a create whose first output is not the state address" $ \h -> do
@@ -714,10 +716,10 @@ replaySpec = do
                 (result, _) <- replayCreate h edited
                 result
                     `shouldBe` Left
-                        ( ReplayFailure
+                        ( WrongRegistry
                             (historyToken h)
-                            (txIdTx edited)
-                            (WrongRegistry CreateOutput)
+                            (Just (txIdTx edited))
+                            CreateOutput
                         )
 
             it "refuses a create whose mint redeemer is not Minting" $ \h -> do
@@ -735,10 +737,10 @@ replaySpec = do
                         (lastPoint h)
                 result
                     `shouldBe` Left
-                        ( ReplayFailure
+                        ( WrongRegistry
                             (historyToken h)
-                            (txIdTx create)
-                            (WrongRegistry CreateMint)
+                            (Just (txIdTx create))
+                            CreateMint
                         )
 
             it "refuses a trie that is not empty at create, naming create" $ \h -> do
@@ -756,10 +758,11 @@ replaySpec = do
                         (historyTxs h)
                 result
                     `shouldBe` Left
-                        ( ReplayFailure
+                        ( RootDoesNotChain
                             (historyToken h)
-                            (txIdTx (pointTx (historyCreate h)))
-                            (RootDoesNotChain stale (pointRoot (historyCreate h)))
+                            (Just (txIdTx (pointTx (historyCreate h))))
+                            stale
+                            (pointRoot (historyCreate h))
                         )
 
     describe
@@ -772,10 +775,10 @@ replaySpec = do
                 replayAt h (historyResolved h) txs (historyToken h) newest
             result
                 `shouldBe` Left
-                    ( ReplayFailure
+                    ( HistoryIncomplete
                         (historyToken h)
-                        (txIdTx (pointTx newest))
-                        (HistoryIncomplete MissingTransaction)
+                        (Just (txIdTx (pointTx newest)))
+                        MissingTransaction
                     )
 
     describe "the registry's identity comes from create" $ do
@@ -783,27 +786,29 @@ replaySpec = do
             let other =
                     AssetName
                         (SBS.toShort (deriveAssetName (txInToRef (historyStranger h))))
-                tok = (historyToken h){tokenName = other}
+                RegistryIdentity policy _ = historyToken h
+                tok = RegistryIdentity policy other
             (result, _) <-
                 replayAt h (historyResolved h) (historyTxs h) tok (lastPoint h)
             result
                 `shouldBe` Left
-                    ( ReplayFailure
+                    ( WrongRegistry
                         tok
-                        (txIdTx (pointTx (lastPoint h)))
-                        (WrongRegistry SelectionNotState)
+                        (Just (txIdTx (pointTx (lastPoint h))))
+                        SelectionNotState
                     )
 
         it "refuses a selection naming another policy" $ \h -> do
-            let tok = (historyToken h){tokenPolicy = otherPolicy h}
+            let RegistryIdentity _ name = historyToken h
+                tok = RegistryIdentity (otherPolicy h) name
             (result, _) <-
                 replayAt h (historyResolved h) (historyTxs h) tok (lastPoint h)
             result
                 `shouldBe` Left
-                    ( ReplayFailure
+                    ( WrongRegistry
                         tok
-                        (txIdTx (pointTx (lastPoint h)))
-                        (WrongRegistry SelectionNotState)
+                        (Just (txIdTx (pointTx (lastPoint h))))
+                        SelectionNotState
                     )
 
         it "refuses a create minting under another seed" $ \h -> do
@@ -815,10 +820,10 @@ replaySpec = do
                 replayAt h (historyResolved h) txs (historyToken h) (lastPoint h)
             result
                 `shouldBe` Left
-                    ( ReplayFailure
+                    ( WrongRegistry
                         (historyToken h)
-                        (txIdTx create)
-                        (WrongRegistry SeedNotSpent)
+                        (Just (txIdTx create))
+                        SeedNotSpent
                     )
 
     describe "a stale selection is refused"
@@ -837,9 +842,9 @@ replaySpec = do
                     newest{pointRoot = pointRoot previous}
             result
                 `shouldBe` Left
-                    ( ReplayFailure
+                    ( StaleState
                         (historyToken h)
-                        (txIdTx (pointTx newest))
+                        (Just (txIdTx (pointTx newest)))
                         (StaleRoot (pointRoot previous) (pointRoot newest))
                     )
 
@@ -917,7 +922,7 @@ verdict
     :: History
     -> Replayed
     -> Root
-    -> Either ReplayFailure Replayed
+    -> Either TrieFailure Replayed
     -> Root
     -> String
 verdict h lineage chainRoot result rebuilt = case result of
@@ -925,9 +930,12 @@ verdict h lineage chainRoot result rebuilt = case result of
         | replayed /= lineage -> "replayed another lineage"
         | rebuilt /= chainRoot -> "rebuilt another root"
         | otherwise -> rebuiltChainRoot
-    Left (ReplayFailure _ tid refusal) ->
+    Left refusal ->
         "refused at "
-            <> maybe "a transaction outside the history" pointLabel (pointOf tid)
+            <> maybe
+                "a transaction outside the history"
+                pointLabel
+                (failureTransaction refusal >>= pointOf)
             <> ": "
             <> show refusal
   where
@@ -951,14 +959,18 @@ historyTxs :: History -> [ConwayTx]
 historyTxs = map pointTx . points
 
 tokenBytes :: History -> ByteString
-tokenBytes h = let AssetName n = tokenName (historyToken h) in SBS.fromShort n
+tokenBytes h =
+    let RegistryIdentity _ (AssetName n) = historyToken h
+    in  SBS.fromShort n
 
 -- | A real policy that is not the state policy: the one the decoy's spent input pays no heed to.
-otherPolicy :: History -> PolicyID
+otherPolicy :: History -> StatePolicyId
 otherPolicy h =
     case [ p
-         | p <- Map.keys (mintOf (pointTx (firstFold "insertActive" h)))
-         , p /= tokenPolicy (historyToken h)
+         | PolicyID s <- Map.keys (mintOf (pointTx (firstFold "insertActive" h)))
+         , let p = StatePolicyId (scriptHashBytes s)
+         , let RegistryIdentity own _ = historyToken h
+         , p /= own
          ] of
         p : _ -> p
         [] -> error "the insertActive fold mints under no other policy"
@@ -1031,8 +1043,13 @@ modifyActions h tx =
 holdsToken :: History -> TxOut ConwayEra -> Bool
 holdsToken h o =
     let MaryValue _ (MultiAsset m) = o ^. valueTxOutL
-        RegistryToken policy name = historyToken h
-    in  maybe 0 (Map.findWithDefault 0 name) (Map.lookup policy m) == 1
+        RegistryIdentity (StatePolicyId policy) name = historyToken h
+    in  sum
+            [ Map.findWithDefault 0 name names
+            | (PolicyID s, names) <- Map.toList m
+            , scriptHashBytes s == policy
+            ]
+            == 1
 
 requestTokenAt :: History -> TxIn -> Maybe ByteString
 requestTokenAt h i = case Map.lookup i (historyResolved h) >>= extractCageDatum of
@@ -1115,7 +1132,7 @@ replayEdited
     :: History
     -> ConwayTx
     -> ConwayTx
-    -> IO (Either ReplayFailure Replayed, IORef MPFInMemoryDB)
+    -> IO (Either TrieFailure Replayed, IORef MPFInMemoryDB)
 replayEdited h original edited =
     replayAt
         h
@@ -1131,7 +1148,7 @@ replayEdited h original edited =
 replayCreate
     :: History
     -> ConwayTx
-    -> IO (Either ReplayFailure Replayed, IORef MPFInMemoryDB)
+    -> IO (Either TrieFailure Replayed, IORef MPFInMemoryDB)
 replayCreate h edited =
     replayAt
         h
@@ -1202,9 +1219,9 @@ replayAt
     :: History
     -> Map TxIn (TxOut ConwayEra)
     -> [ConwayTx]
-    -> RegistryToken
+    -> RegistryIdentity
     -> StatePoint
-    -> IO (Either ReplayFailure Replayed, IORef MPFInMemoryDB)
+    -> IO (Either TrieFailure Replayed, IORef MPFInMemoryDB)
 replayAt _ resolved txs tok p = do
     ref <- newIORef emptyMPFInMemoryDB
     result <-

@@ -23,23 +23,12 @@ trie as it is and 'Update' walks the request's edge with 'walkEdge'. After
 every fold the rebuilt root must equal the root in that fold's state datum.
 
 The answer is the trie rebuilt into the caller's 'Trie', or one named
-'Refusal'. On a refusal the caller's trie holds a partial replay and must
+'TrieFailure'. On a refusal the caller's trie holds a partial replay and must
 be discarded.
 -}
 module Singular.Registry.Replay
-    ( -- * The registry and its selected state
-      RegistryToken (..)
-
-      -- * Replay
-    , replayLineage
+    ( replayLineage
     , Replayed (..)
-
-      -- * Refusals
-    , ReplayFailure (..)
-    , Refusal (..)
-    , Incomplete (..)
-    , Undecodable (..)
-    , Mismatch (..)
     ) where
 
 import Control.Monad (foldM, forM_, unless, void, when)
@@ -84,9 +73,19 @@ import PlutusTx.Builtins.Internal
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Ledger (ConwayEra, Root (..))
 import Singular.Registry.Trie (Trie (..))
+import Singular.Registry.TrieState
+    ( Incomplete (..)
+    , Mismatch (..)
+    , RegistryIdentity (..)
+    , Staleness (..)
+    , StatePolicyId (..)
+    , TrieFailure (..)
+    , Undecodable (..)
+    )
 import Singular.Registry.TxBuilder.Internal
     ( emptyRoot
     , extractCageDatum
+    , scriptHashBytes
     , txInToRef
     , walkEdge
     )
@@ -101,13 +100,6 @@ import Singular.Registry.Types
     , UpdateRedeemer (..)
     )
 
--- | A registry, named by its state token: the state policy and the token's name.
-data RegistryToken = RegistryToken
-    { tokenPolicy :: PolicyID
-    , tokenName :: AssetName
-    }
-    deriving stock (Eq, Show)
-
 -- | A replay that reached the selected state output from @create@.
 data Replayed = Replayed
     { replayedCreate :: TxId
@@ -115,81 +107,6 @@ data Replayed = Replayed
     , replayedFolds :: [TxId]
     -- ^ Every fold from @create@ to the selected output, in chain order
     }
-    deriving stock (Eq, Show)
-
--- | A refusal, naming the registry and the transaction it is about.
-data ReplayFailure = ReplayFailure
-    { failedRegistry :: RegistryToken
-    , failedTransaction :: TxId
-    , failedRefusal :: Refusal
-    }
-    deriving stock (Eq, Show)
-
--- | Why a history does not rebuild the registry's trie.
-data Refusal
-    = -- | The history does not reach the selection from @create@.
-      HistoryIncomplete Incomplete
-    | -- | A fold's rebuilt root differs from its state datum's root.
-      RootDoesNotChain
-        { rebuiltRoot :: Root
-        , recordedRoot :: Root
-        }
-    | -- | A fold's redeemer, actions or state output cannot be read.
-      UndecodableRequest Undecodable
-    | -- | The lineage is another registry's.
-      WrongRegistry Mismatch
-    | -- | The selection's root is not the root at the selected output.
-      StaleRoot
-        { selectedRoot :: Root
-        , outputRoot :: Root
-        }
-    deriving stock (Eq, Show)
-
--- | How a history falls short of the lineage.
-data Incomplete
-    = -- | A transaction the lineage spends through is not in the history.
-      MissingTransaction
-    | -- | A spent input is resolved neither by the history nor by the map.
-      UnresolvedInput TxIn
-    | -- | The map resolves an input differently from the transaction that made it.
-      ConflictingResolution TxIn
-    | -- | Two different transactions share one identifier.
-      ConflictingCopies
-    | -- | A transaction holds the token but spends no state output and mints none.
-      NoStateInput
-    | -- | A state output is spent by two different transactions.
-      ForkedStateOutput TxIn
-    | -- | A transaction touches the token outside the lineage.
-      OutsideLineage
-    deriving stock (Eq, Show)
-
--- | What of a fold cannot be read.
-data Undecodable
-    = -- | The state output carries no inline state datum, or is not first.
-      UndecodableStateOutput
-    | -- | The state input's spend carries no redeemer.
-      MissingRedeemer
-    | -- | The state input's redeemer is not @Modify@.
-      NotModify
-    | -- | Actions and matching requests differ in number.
-      ActionCount
-        { actionsGiven :: Int
-        , requestsFound :: Int
-        }
-    deriving stock (Eq, Show)
-
--- | How the lineage differs from the selected registry.
-data Mismatch
-    = -- | The selected output does not hold exactly the registry's token.
-      SelectionNotState
-    | -- | @create@ does not mint exactly one token under @Minting(seed)@.
-      CreateMint
-    | -- | @create@ does not spend its seed.
-      SeedNotSpent
-    | -- | The token's name is not @assetName(seed)@.
-      SeedName
-    | -- | @create@'s first output is not the state address holding the token.
-      CreateOutput
     deriving stock (Eq, Show)
 
 {- | Rebuild the registry's trie into the given trie, from the history of its
@@ -205,7 +122,7 @@ replayLineage
     :: (Monad m)
     => Trie m
     -- ^ An empty trie the replay fills
-    -> RegistryToken
+    -> RegistryIdentity
     -> TxIn
     -- ^ The selected state output
     -> Root
@@ -214,7 +131,7 @@ replayLineage
     -- ^ Resolved spent and reference outputs
     -> [ConwayTx]
     -- ^ The state token's history
-    -> m (Either ReplayFailure Replayed)
+    -> m (Either TrieFailure Replayed)
 replayLineage trie token selected selection resolved history =
     case lineageOf token selected selection resolved history of
         Left failure -> pure (Left failure)
@@ -246,12 +163,12 @@ then refuse a history that forks a state output, touches the token outside
 the lineage, or a selection whose root is not the one at its output.
 -}
 lineageOf
-    :: RegistryToken
+    :: RegistryIdentity
     -> TxIn
     -> Root
     -> Map TxIn (TxOut ConwayEra)
     -> [ConwayTx]
-    -> Either ReplayFailure Lineage
+    -> Either TrieFailure Lineage
 lineageOf token selected@(TxIn selectedId selectedIx) selection resolved history = do
     byId <- distinct token (filter passedScripts history)
     let refuse = failWith token
@@ -271,7 +188,11 @@ lineageOf token selected@(TxIn selectedId selectedIx) selection resolved history
             | otherwise = do
                 spent <-
                     traverse
-                        ( \i -> either (refuse tid . HistoryIncomplete) (pure . (i,)) (resolve i)
+                        ( \i ->
+                            either
+                                (refuse tid . because HistoryIncomplete)
+                                (pure . (i,))
+                                (resolve i)
                         )
                         (spendingInputs tx)
                 root <- stateRootOf token tid tx
@@ -279,23 +200,23 @@ lineageOf token selected@(TxIn selectedId selectedIx) selection resolved history
                     [stateIn@(TxIn previousId _)] -> do
                         previous <-
                             maybe
-                                (refuse previousId (HistoryIncomplete MissingTransaction))
+                                (refuse previousId (because HistoryIncomplete MissingTransaction))
                                 pure
                                 (Map.lookup previousId byId)
                         unless (stateIn == firstOutput previousId) $
-                            refuse previousId (UndecodableRequest UndecodableStateOutput)
+                            refuse previousId (because UndecodableRequest UndecodableStateOutput)
                         walk previous previousId (Fold tid tx stateIn root : folds)
-                    _ -> refuse tid (HistoryIncomplete NoStateInput)
+                    _ -> refuse tid (because HistoryIncomplete NoStateInput)
     selectedTx <-
         maybe
-            (refuse selectedId (HistoryIncomplete MissingTransaction))
+            (refuse selectedId (because HistoryIncomplete MissingTransaction))
             pure
             (Map.lookup selectedId byId)
     let selectsState =
             selectedIx == TxIx 0
                 && maybe False holds (outputAt selectedTx selectedIx)
     unless selectsState $
-        refuse selectedId (WrongRegistry SelectionNotState)
+        refuse selectedId (because WrongRegistry SelectionNotState)
     (createId, createRoot, folds) <- walk selectedTx selectedId []
     let chain = createId : map foldId folds
         spenders = spentBy byId
@@ -304,7 +225,8 @@ lineageOf token selected@(TxIn selectedId selectedIx) selection resolved history
     forM_ (zip stateOutputs (drop 1 chain)) $ \(output, next) ->
         case filter (/= next) (Map.findWithDefault [] output spenders) of
             [] -> pure ()
-            other : _ -> refuse other (HistoryIncomplete (ForkedStateOutput output))
+            other : _ ->
+                refuse other (because HistoryIncomplete (ForkedStateOutput output))
     -- Past the selection, the history may run ahead along one chain.
     ahead <- descendants refuse spenders byId token selected
     let known = Set.fromList (chain <> ahead)
@@ -316,10 +238,10 @@ lineageOf token selected@(TxIn selectedId selectedIx) selection resolved history
                    )
     case [tid | (tid, tx) <- Map.toAscList byId, touching tid tx] of
         [] -> pure ()
-        stray : _ -> refuse stray (HistoryIncomplete OutsideLineage)
+        stray : _ -> refuse stray (because HistoryIncomplete OutsideLineage)
     recorded <- stateRootOf token selectedId selectedTx
     when (recorded /= selection) $
-        refuse selectedId (StaleRoot selection recorded)
+        refuse selectedId (because StaleState (StaleRoot selection recorded))
     pure
         Lineage
             { lineageCreate = createId
@@ -330,9 +252,9 @@ lineageOf token selected@(TxIn selectedId selectedIx) selection resolved history
 
 -- | The history by transaction identifier; two different transactions under one identifier refuse.
 distinct
-    :: RegistryToken
+    :: RegistryIdentity
     -> [ConwayTx]
-    -> Either ReplayFailure (Map TxId ConwayTx)
+    -> Either TrieFailure (Map TxId ConwayTx)
 distinct token = foldM add Map.empty
   where
     add acc tx =
@@ -340,7 +262,7 @@ distinct token = foldM add Map.empty
         in  case Map.lookup tid acc of
                 Just seen
                     | seen /= tx ->
-                        failWith token tid (HistoryIncomplete ConflictingCopies)
+                        failWith token tid (because HistoryIncomplete ConflictingCopies)
                 _ -> Right (Map.insert tid tx acc)
 
 {- | The transactions that continue the chain past the selected output: each
@@ -348,12 +270,12 @@ spends the previous state output, one at a time. Two spenders of one output
 there refuse, naming the larger identifier: neither is on the lineage.
 -}
 descendants
-    :: (TxId -> Refusal -> Either ReplayFailure [TxId])
+    :: (TxId -> Refuse -> Either TrieFailure [TxId])
     -> Map TxIn [TxId]
     -> Map TxId ConwayTx
-    -> RegistryToken
+    -> RegistryIdentity
     -> TxIn
-    -> Either ReplayFailure [TxId]
+    -> Either TrieFailure [TxId]
 descendants refuse spenders byId token = go
   where
     go output = case Map.findWithDefault [] output spenders of
@@ -363,7 +285,8 @@ descendants refuse spenders byId token = go
                 | maybe False (holdsToken token) (outputAt tx (TxIx 0)) ->
                     (next :) <$> go (firstOutput next)
             _ -> pure [next]
-        _ : other : _ -> refuse other (HistoryIncomplete (ForkedStateOutput output))
+        _ : other : _ ->
+            refuse other (because HistoryIncomplete (ForkedStateOutput output))
 
 -- | Which transactions of the history spend each output.
 spentBy :: Map TxId ConwayTx -> Map TxIn [TxId]
@@ -377,12 +300,12 @@ the seed, names the token @assetName(seed)@, and its first output is the
 state address holding the token. Answers the root its state datum records.
 -}
 checkCreate
-    :: RegistryToken -> TxId -> ConwayTx -> Either ReplayFailure Root
-checkCreate token@RegistryToken{tokenPolicy, tokenName = AssetName name} tid tx = do
-    let refuse = failWith token tid . WrongRegistry
+    :: RegistryIdentity -> TxId -> ConwayTx -> Either TrieFailure Root
+checkCreate token@(RegistryIdentity _ (AssetName name)) tid tx = do
+    let refuse = failWith token tid . because WrongRegistry
         MultiAsset minted = tx ^. bodyTxL . mintTxBodyL
     unless (quantityIn token minted == 1) $ refuse CreateMint
-    seed <- case List.elemIndex tokenPolicy (Map.keys minted) of
+    seed <- case List.findIndex (isPolicyOf token) (Map.keys minted) of
         Just ix
             | Just (Minting seed) <-
                 redeemerAt (ConwayMinting (AsIx (fromIntegral ix))) tx ->
@@ -395,7 +318,7 @@ checkCreate token@RegistryToken{tokenPolicy, tokenName = AssetName name} tid tx 
         Just o
             | holdsToken token o
             , Addr _ (ScriptHashObj h) _ <- o ^. addrTxOutL
-            , PolicyID h == tokenPolicy ->
+            , isPolicyOf token (PolicyID h) ->
                 pure ()
         _ -> refuse CreateOutput
     stateRootOf token tid tx
@@ -410,9 +333,9 @@ actions in chain order and check its root. The first mismatch refuses.
 replayFolds
     :: (Monad m)
     => Trie m
-    -> RegistryToken
+    -> RegistryIdentity
     -> Lineage
-    -> m (Either ReplayFailure Replayed)
+    -> m (Either TrieFailure Replayed)
 replayFolds trie token Lineage{..} = do
     start <- getRoot trie
     if start /= emptyTrieRoot || lineageCreateRoot /= emptyTrieRoot
@@ -421,7 +344,7 @@ replayFolds trie token Lineage{..} = do
                 failWith
                     token
                     lineageCreate
-                    (RootDoesNotChain start lineageCreateRoot)
+                    (chained start lineageCreateRoot)
         else go lineageFolds
   where
     go [] = pure (Right (Replayed lineageCreate (map foldId lineageFolds)))
@@ -432,7 +355,7 @@ replayFolds trie token Lineage{..} = do
                 mapM_ (uncurry apply) pairs
                 rebuilt <- getRoot trie
                 if rebuilt /= foldRoot
-                    then pure (failWith token foldId (RootDoesNotChain rebuilt foldRoot))
+                    then pure (failWith token foldId (chained rebuilt foldRoot))
                     else go rest
     apply OnChainRequest{requestKey, requestEdge} = \case
         Update _ -> void (walkEdge trie requestKey requestEdge)
@@ -443,21 +366,23 @@ the state input's @Modify@ redeemer, and every spending input in ledger
 order whose inline datum is a request naming this registry's token.
 -}
 pairing
-    :: RegistryToken
+    :: RegistryIdentity
     -> (TxIn -> Either Incomplete (TxOut ConwayEra))
     -> Fold
-    -> Either ReplayFailure [(OnChainRequest, RequestAction)]
+    -> Either TrieFailure [(OnChainRequest, RequestAction)]
 pairing token resolve Fold{foldId, foldTx, foldStateInput} = do
     let refuse = failWith token foldId
         inputs = spendingInputs foldTx
     actions <- case List.elemIndex foldStateInput inputs of
-        Nothing -> refuse (HistoryIncomplete NoStateInput)
+        Nothing -> refuse (because HistoryIncomplete NoStateInput)
         Just ix -> case redeemerAt (ConwaySpending (AsIx (fromIntegral ix))) foldTx of
-            Nothing -> refuse (UndecodableRequest MissingRedeemer)
+            Nothing -> refuse (because UndecodableRequest MissingRedeemer)
             Just (Modify actions) -> pure actions
-            Just _ -> refuse (UndecodableRequest NotModify)
+            Just _ -> refuse (because UndecodableRequest NotModify)
     resolvedInputs <-
-        traverse (either (refuse . HistoryIncomplete) pure . resolve) inputs
+        traverse
+            (either (refuse . because HistoryIncomplete) pure . resolve)
+            inputs
     let requests =
             [ request
             | o <- resolvedInputs
@@ -466,7 +391,10 @@ pairing token resolve Fold{foldId, foldTx, foldStateInput} = do
             ]
     unless (length requests == length actions) $
         refuse
-            (UndecodableRequest (ActionCount (length actions) (length requests)))
+            ( because
+                UndecodableRequest
+                (ActionCount (length actions) (length requests))
+            )
     pure (zip requests actions)
 
 -- ---------------------------------------------------------
@@ -480,8 +408,20 @@ a state output among them, were not spent, so it is not in the lineage.
 passedScripts :: ConwayTx -> Bool
 passedScripts tx = tx ^. isValidTxL == IsValid True
 
-failWith :: RegistryToken -> TxId -> Refusal -> Either ReplayFailure a
-failWith token tid = Left . ReplayFailure token tid
+-- | A refusal about one transaction of the registry's history.
+type Refuse = RegistryIdentity -> Maybe TxId -> TrieFailure
+
+failWith :: RegistryIdentity -> TxId -> Refuse -> Either TrieFailure a
+failWith token tid refusal = Left (refusal token (Just tid))
+
+-- | A refusal of the given class, for the given reason.
+because
+    :: (RegistryIdentity -> Maybe TxId -> r -> TrieFailure) -> r -> Refuse
+because refusal why token tid = refusal token tid why
+
+-- | A rebuilt root that is not the recorded one: rebuilt, recorded.
+chained :: Root -> Root -> Refuse
+chained rebuilt recorded token tid = RootDoesNotChain token tid rebuilt recorded
 
 -- | The spending inputs in ledger order.
 spendingInputs :: ConwayTx -> [TxIn]
@@ -500,35 +440,42 @@ firstOutput tid = TxIn tid (TxIx 0)
 
 -- | The root in the transaction's first output's inline state datum, which must hold the token.
 stateRootOf
-    :: RegistryToken -> TxId -> ConwayTx -> Either ReplayFailure Root
+    :: RegistryIdentity -> TxId -> ConwayTx -> Either TrieFailure Root
 stateRootOf token tid tx = case outputAt tx (TxIx 0) of
     Just o
         | holdsToken token o
         , Just (StateDatum state) <- extractCageDatum o ->
             pure (Root (unOnChainRoot (stateRoot state)))
-    _ -> failWith token tid (UndecodableRequest UndecodableStateOutput)
+    _ ->
+        failWith token tid (because UndecodableRequest UndecodableStateOutput)
 
-holdsToken :: RegistryToken -> TxOut ConwayEra -> Bool
+holdsToken :: RegistryIdentity -> TxOut ConwayEra -> Bool
 holdsToken token o =
     let MaryValue _ (MultiAsset assets) = o ^. valueTxOutL
     in  quantityIn token assets == 1
 
-mintsToken :: RegistryToken -> ConwayTx -> Bool
+mintsToken :: RegistryIdentity -> ConwayTx -> Bool
 mintsToken token tx =
     let MultiAsset minted = tx ^. bodyTxL . mintTxBodyL
     in  quantityIn token minted /= 0
 
 quantityIn
-    :: RegistryToken -> Map PolicyID (Map AssetName Integer) -> Integer
-quantityIn RegistryToken{tokenPolicy, tokenName} assets =
-    maybe
-        0
-        (Map.findWithDefault 0 tokenName)
-        (Map.lookup tokenPolicy assets)
+    :: RegistryIdentity -> Map PolicyID (Map AssetName Integer) -> Integer
+quantityIn token@(RegistryIdentity _ name) assets =
+    sum
+        [ Map.findWithDefault 0 name names
+        | (policy, names) <- Map.toList assets
+        , isPolicyOf token policy
+        ]
+
+-- | Whether a policy is the registry's state policy.
+isPolicyOf :: RegistryIdentity -> PolicyID -> Bool
+isPolicyOf (RegistryIdentity (StatePolicyId policy) _) (PolicyID h) =
+    scriptHashBytes h == policy
 
 -- | Whether a request names this registry's token, as the validator compares it.
-requestNames :: RegistryToken -> OnChainRequest -> Bool
-requestNames RegistryToken{tokenName = AssetName name} request =
+requestNames :: RegistryIdentity -> OnChainRequest -> Bool
+requestNames (RegistryIdentity _ (AssetName name)) request =
     let OnChainTokenId (BuiltinByteString named) = requestToken request
     in  named == SBS.fromShort name
 

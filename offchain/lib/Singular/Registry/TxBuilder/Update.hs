@@ -135,23 +135,48 @@ updateTokenWithTrieState cfg view snap tid@(TokenId name) addr ctx0 =
                 TS.RegistryIdentity
                     (TS.StatePolicyId (scriptHashBytes (cfgScriptHash cfg)))
                     name
-        when
-            (TS.trieIdentity snap /= expected)
-            (error "TrieState WrongRegistry")
-        when
-            (TS.pointOutput (TS.triePoint snap) /= stateIn)
-            (error "TrieState StaleState")
+        let refuse why = error ("TrieState " <> show why)
+        when (TS.trieIdentity snap /= expected) $
+            refuse
+                ( TS.WrongRegistry
+                    expected
+                    Nothing
+                    (TS.OtherRegistry (TS.trieIdentity snap))
+                )
+        when (TS.pointOutput (TS.triePoint snap) /= stateIn) $
+            refuse
+                ( TS.StaleState
+                    expected
+                    Nothing
+                    (TS.StaleOutput (TS.pointOutput (TS.triePoint snap)) stateIn)
+                )
         case extractCageDatum stateOut of
             Just (StateDatum state)
                 | unOnChainRoot (stateRoot state) == unRoot (TS.trieRoot snap) ->
                     pure ()
-            _ -> error "TrieState StaleState"
+                | otherwise ->
+                    refuse
+                        ( TS.StaleState
+                            expected
+                            Nothing
+                            ( TS.StaleRoot
+                                (TS.trieRoot snap)
+                                (Root (unOnChainRoot (stateRoot state)))
+                            )
+                        )
+            _ ->
+                refuse
+                    (TS.UndecodableRequest expected Nothing TS.UndecodableStateOutput)
         moves <- case traverse requestEdgeOf requests >>= NE.nonEmpty of
-            Nothing -> error "TrieState UndecodableRequest"
+            Nothing ->
+                refuse
+                    ( TS.UndecodableRequest
+                        expected
+                        Nothing
+                        (TS.UnreadableRecord "the fold's requests name no edge")
+                    )
             Just ordered -> pure ordered
-        walked <-
-            TS.speculateEdges snap moves
-                >>= either (error . ("TrieState " <>) . show) pure
+        walked <- TS.speculateEdges snap moves >>= either refuse pure
         pure (TS.walkProofs walked, TS.walkRoot walked)
   where
     requestEdgeOf (_, out) = case extractCageDatum out of

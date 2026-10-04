@@ -37,11 +37,11 @@ readTrieHistory dir sid who = do
             , submissionCase entries (journalTxId p) == Just CaseIncluded
             ]
     create <- case listToMaybe [p | p <- accepted, journalStep p == "boot"] of
-        Nothing -> pure (Left HistoryIncomplete)
+        Nothing -> pure (Left missing)
         Just p -> do
             (_, body) <- boundBody entries (journalTxId p)
             pure $
-                either (const (Left HistoryIncomplete)) (checkedCreateRecord who) body
+                either (const (Left missing)) (checkedCreateRecord who) body
     folds <- forM
         [ p
         | p <- accepted
@@ -52,25 +52,31 @@ readTrieHistory dir sid who = do
         $ \p -> do
             (_, body) <- boundBody entries (journalTxId p)
             pure $ do
-                tx <- either (const (Left HistoryIncomplete)) Right body
+                tx <- either (const (Left missing)) Right body
                 before <- rootField (journalRootBefore p)
                 after <- rootField (journalRootAfter p)
                 key <- case journalKey p of
-                    Nothing -> Left UndecodableRequest
+                    Nothing -> Left (unreadable "an accepted fold names no key")
                     Just text ->
                         either
-                            (const (Left UndecodableRequest))
+                            (const (Left (unreadable "an accepted fold's key is not hex")))
                             Right
                             (B16.decode (BC.pack (T.unpack text)))
-                edge <- maybe (Left UndecodableRequest) Right (journalEdge p)
+                edge <-
+                    maybe
+                        (Left (unreadable "an accepted fold names no edge"))
+                        Right
+                        (journalEdge p)
                 checkedFoldRecord sid who before after ((key, edge) :| []) tx
     pure ((,) <$> create <*> sequence folds)
   where
-    rootField Nothing = Left HistoryIncomplete
+    missing = HistoryIncomplete who Nothing MissingTransaction
+    unreadable = UndecodableRequest who Nothing . UnreadableRecord
+    rootField Nothing = Left missing
     rootField (Just text) =
         Root
             <$> either
-                (const (Left RootDoesNotChain))
+                (const (Left (unreadable "an accepted fold's root is not hex")))
                 Right
                 (B16.decode (BC.pack (T.unpack text)))
 

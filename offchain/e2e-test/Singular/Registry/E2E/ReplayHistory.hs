@@ -71,6 +71,7 @@ import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
     , MultiAsset (..)
+    , PolicyID (..)
     )
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Node.Client.E2E.Setup (genesisAddr)
@@ -87,7 +88,10 @@ import Singular.Registry.Driver qualified as Driver
 import Singular.Registry.Ledger (ConwayEra, Root (..), TokenId (..))
 import Singular.Registry.Node (Capabilities (..))
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Replay (RegistryToken (..))
+import Singular.Registry.TrieState
+    ( RegistryIdentity (..)
+    , StatePolicyId (..)
+    )
 import Singular.Registry.TxBuilder.Edges qualified as Edges
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
@@ -96,6 +100,7 @@ import Singular.Registry.TxBuilder.Internal
     , extractCageDatum
     , findStateUtxo
     , mkInlineDatum
+    , scriptHashBytes
     , toPlcData
     , txInToRef
     )
@@ -139,7 +144,7 @@ data MixedFold = MixedFold
 
 -- | One registry's history, as a ledger provider would serve it.
 data History = History
-    { historyToken :: RegistryToken
+    { historyToken :: RegistryIdentity
     , historyCreate :: StatePoint
     , historyFolds :: [StatePoint]
     -- ^ In the order they were submitted
@@ -172,7 +177,11 @@ recordHistory stateBytes requestBytes =
         reg <- Driver.bootRegistry cfg codes prov submit genesisAddr tm
         let tid = Driver.registryTokenId reg
             refs = Driver.registryRefs reg
-            token = RegistryToken (cagePolicyIdFromCfg cfg) (unTokenId tid)
+            PolicyID policy = cagePolicyIdFromCfg cfg
+            token =
+                RegistryIdentity
+                    (StatePolicyId (scriptHashBytes policy))
+                    (unTokenId tid)
         create <- statePoint cfg prov tid (Driver.registryBootTx reg) "create"
         let single label key edge dest = do
                 outcome <- Driver.foldEdgeTo reg key edge dest

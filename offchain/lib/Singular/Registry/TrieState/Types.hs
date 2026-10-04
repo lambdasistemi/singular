@@ -16,6 +16,11 @@ module Singular.Registry.TrieState.Types
     , leafName
     , leafBytes
     , TrieFailure (..)
+    , Incomplete (..)
+    , Undecodable (..)
+    , Mismatch (..)
+    , Staleness (..)
+    , Missing (..)
     , CompleteFromCreate (..)
     , MembershipProof (..)
     , NonMembershipProof (..)
@@ -31,7 +36,7 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
 import MPF.Hashes (MPFHash)
 import MPF.Proof.Exclusion (MPFExclusionProof)
-import Singular.Registry.Ledger (AssetName, Root, TxIn)
+import Singular.Registry.Ledger (AssetName, Root, TxId, TxIn)
 import Singular.Registry.Types (ProofStep)
 
 newtype StatePolicyId = StatePolicyId ByteString
@@ -88,14 +93,97 @@ leafBytes Absent = BS.singleton 0
 leafBytes Active = BS.singleton 1
 leafBytes Terminal = BS.singleton 2
 
+{- | Why a registry's trie cannot be served, naming what a person needs to
+act on it: the registry, the transaction where one is known, and the
+reason. A backend passes what it knows and never invents the rest.
+-}
 data TrieFailure
-    = HistoryIncomplete
-    | RootDoesNotChain
-    | UndecodableRequest
-    | WrongRegistry
-    | StaleState
-    | MissingProof
+    = -- | The history does not reach the selection from @create@.
+      HistoryIncomplete RegistryIdentity (Maybe TxId) Incomplete
+    | -- | A rebuilt root differs from the root recorded on chain: rebuilt, recorded.
+      RootDoesNotChain RegistryIdentity (Maybe TxId) Root Root
+    | -- | A fold's redeemer, actions, state output or edges cannot be read.
+      UndecodableRequest RegistryIdentity (Maybe TxId) Undecodable
+    | -- | The material is another registry's, or not this registry's state.
+      WrongRegistry RegistryIdentity (Maybe TxId) Mismatch
+    | -- | The selection is not the state the trie is served at.
+      StaleState RegistryIdentity (Maybe TxId) Staleness
+    | -- | No proof can be given.
+      MissingProof RegistryIdentity Missing
     deriving stock (Eq, Show)
+
+-- | How a history falls short of the lineage.
+data Incomplete
+    = -- | A transaction the lineage spends through is not in the history.
+      MissingTransaction
+    | -- | A spent input is resolved neither by the history nor by the map.
+      UnresolvedInput TxIn
+    | -- | The map resolves an input differently from the transaction that made it.
+      ConflictingResolution TxIn
+    | -- | Two different transactions share one identifier.
+      ConflictingCopies
+    | -- | A transaction holds the token but spends no state output and mints none.
+      NoStateInput
+    | -- | A state output is spent by two different transactions.
+      ForkedStateOutput TxIn
+    | -- | A transaction touches the token outside the lineage.
+      OutsideLineage
+    deriving stock (Eq, Show)
+
+-- | What of a fold cannot be read.
+data Undecodable
+    = -- | The state output carries no inline state datum, or is not first.
+      UndecodableStateOutput
+    | -- | The state input's spend carries no redeemer.
+      MissingRedeemer
+    | -- | The state input's redeemer is not @Modify@.
+      NotModify
+    | -- | Actions given and matching requests found differ in number.
+      ActionCount Int Int
+    | -- | An edge outside the seven the registry defines.
+      EdgeOutOfRange Integer
+    | -- | A local record the history is read from cannot be read; the text says what.
+      UnreadableRecord Text
+    deriving stock (Eq, Show)
+
+-- | How the material differs from the selected registry.
+data Mismatch
+    = -- | The output read as the state does not hold exactly the registry's token.
+      SelectionNotState
+    | -- | @create@ does not mint exactly one token under @Minting(seed)@.
+      CreateMint
+    | -- | @create@ does not spend its seed.
+      SeedNotSpent
+    | -- | The token's name is not @assetName(seed)@.
+      SeedName
+    | -- | @create@'s first output is not the state address holding the token.
+      CreateOutput
+    | -- | The material names this other registry.
+      OtherRegistry RegistryIdentity
+    | -- | Nothing is held for the registry.
+      UnknownRegistry
+    deriving stock (Eq, Show)
+
+-- | How the selection differs from the state the trie is served at.
+data Staleness
+    = -- | The selection's root is not the root at its output: selected, at the output.
+      StaleRoot Root Root
+    | -- | The selection is not the one held: selected, held.
+      StaleSelection TrieSelection TrieSelection
+    | -- | The selected output is not the output the history makes: selected, made.
+      StaleOutput TxIn TxIn
+    | -- | No selection has been made, or the live state could not be read.
+      NoSelection
+    deriving stock (Eq, Show)
+
+-- | What no proof can be given for.
+data Missing
+    = -- | The key no proof binds under the selected root.
+      NoProofFor ByteString
+    | -- | No local trie is held for the registry.
+      NoLocalTrie
+    deriving stock (Eq, Show)
+
 newtype CompleteFromCreate = CompleteFromCreate {coverageTransitions :: Int}
     deriving stock (Eq, Show)
 newtype MembershipProof = MembershipProof {membershipBytes :: ByteString}

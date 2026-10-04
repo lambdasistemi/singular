@@ -756,6 +756,7 @@ test-suite cage-tests
     Singular.CLI.Attached
     Singular.CLI.FoldRules
     Singular.CLI.FoldSpec
+    Singular.CLI.TrieRefusalSpec
     Singular.CLI.InsertEnvelope
     Singular.CLI.OutlaySpec
     Singular.CLI.Outlay
