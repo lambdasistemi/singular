@@ -68,6 +68,9 @@ work="$(cd "$work" && pwd)"
 receipts="$work/receipts"
 snaps="$work/snapshots"
 mkdir -p "$receipts" "$snaps"
+export SINGULAR_HARNESS_TRIE_TRACE="$work/direct-processes.trie.jsonl"
+: >"$SINGULAR_HARNESS_TRIE_TRACE"
+: >"$work/trie-command-invocations"
 reg="$work/registry"
 journal="$reg/journal.jsonl"
 verdicts="$work/verdicts.md"
@@ -137,7 +140,10 @@ run() {
   local name="$1"
   shift
   local status=0
-  "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
+  : >"$receipts/$name.trie.jsonl"
+  SINGULAR_HARNESS_TRIE_TRACE="$receipts/$name.trie.jsonl" \
+    "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
+  printf '%s\n' "$name" >>"$work/trie-command-invocations"
   echo "$status" >"$receipts/$name.exit"
   say "$name: $(jq -r .outcome "$receipts/$name.json" 2>/dev/null || echo none) (exit $status)"
 }
@@ -149,7 +155,10 @@ held() {
   shift 2
   local go="$work/$name.go"
   rm -f "$go" "$go.waiting"
-  env "$var=$go" "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" &
+  : >"$receipts/$name.trie.jsonl"
+  printf '%s\n' "$name" >>"$work/trie-command-invocations"
+  env "SINGULAR_HARNESS_TRIE_TRACE=$receipts/$name.trie.jsonl" "$var=$go" \
+    "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" &
   local victim=$!
   for _ in $(seq 1 1800); do
     [ -e "$go.waiting" ] && break
@@ -175,7 +184,10 @@ paused() {
   shift 3
   local go="$work/$name.go"
   rm -f "$go" "$go.waiting"
-  env "$var=$go" "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" &
+  : >"$receipts/$name.trie.jsonl"
+  printf '%s\n' "$name" >>"$work/trie-command-invocations"
+  env "SINGULAR_HARNESS_TRIE_TRACE=$receipts/$name.trie.jsonl" "$var=$go" \
+    "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" &
   local victim=$!
   for _ in $(seq 1 1800); do
     [ -e "$go.waiting" ] && break
@@ -197,6 +209,42 @@ paused() {
 field() { jq -r "$2" "$receipts/$1.json"; }
 outcome_is() { [ "$(field "$1" .outcome)" = "$2" ]; }
 exit_is() { [ "$(cat "$receipts/$1.exit")" = "$2" ]; }
+
+# Content bound to actual completed commands, including their recovered
+# folds. Held/killed processes keep their raw operation traces alongside
+# the existing hold-point evidence; no synthetic receipt is supplied.
+trie_extent() {
+  local name receipt trace
+  : >"$work/trie-command-extent.jsonl"
+  while IFS= read -r name; do
+    receipt="$receipts/$name.json"
+    trace="$receipts/$name.trie.jsonl"
+    if jq -e '.outcome == "success" and .preview != true' "$receipt" >/dev/null 2>&1; then
+      jq -s -e --slurpfile r "$receipt" '
+        $r[0] as $r
+        | [.[] | select(.operation == "select" or .operation == "create")] as $selected
+        | ($selected | length > 0)
+          and ($selected | all(
+            (.identity.policy | test("^[0-9a-f]{56}$"))
+            and (.identity.name | test("^[0-9a-f]+$"))
+            and (.output | test("^[0-9a-f]{64}#[0-9]+$"))
+            and (.root | test("^[0-9a-f]{64}$"))))
+          and (if $r.command == "inspect" then
+            any(.[]; .operation == "leafAt" and .key == $r.key
+              and .root == $r.root and .leaf == $r.leaf)
+          elif $r.fold? != null then
+            any(.[]; .operation == "accept" and .rootAfter == $r.root
+              and .output == ($r.fold + "#0"))
+          elif $r.root? != null then any($selected[]; .root == $r.root)
+          else true end)' "$trace" >/dev/null || return 1
+      jq -c --slurpfile trace "$trace" \
+        '{command, key, root, operations: ($trace | map(.operation)), executions: ($trace | length)}' \
+        "$receipt" >>"$work/trie-command-extent.jsonl"
+    fi
+  done <"$work/trie-command-invocations"
+  jq -s -e 'length > 1 and all(.executions > 0)
+    and (map(.command) | unique | length > 1)' "$work/trie-command-extent.jsonl" >/dev/null
+}
 
 # The registry's local files, as a later clause compares them.
 snap() {
@@ -975,6 +1023,9 @@ clause "at the end too, the adoption record covers every block the node forged" 
   forged_pair "$(forged_adopted_after "$snap_mark")"
 say "$control: $(chained_after "$mark" | wc -l) block(s) chained by the restored node"
 jq -r '.journalEvent' "$journal" | sort | uniq -c
+
+control="trie capability"
+clause "completed real recovery commands have nonempty trie evidence bound to their key, leaf and root" trie_extent
 
 cat "$verdicts"
 if [ "$failed" -ne 0 ]; then

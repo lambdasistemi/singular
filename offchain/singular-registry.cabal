@@ -57,6 +57,7 @@ library
     , filepath
     , memory
     , microlens
+    , mtl
     , mts:mpf-write
     , plutus-core
     , plutus-ledger-api
@@ -728,6 +729,8 @@ test-suite cage-tests
     Singular.Registry.StubView
     Singular.Registry.LifecycleSpec
     Singular.Registry.TypesSpec
+    Singular.Registry.TrieStateSpec
+    Singular.Registry.TrieStateContractSpec
     Naming.CompleteVerifySpec
     Naming.RegisterSpec
     Naming.RetireVerifySpec
@@ -762,6 +765,7 @@ test-suite cage-tests
     , aeson-pretty
     , hspec
     , microlens
+    , mtl
     , mts:mpf-write
     , ouroboros-network:api
     , ouroboros-consensus
