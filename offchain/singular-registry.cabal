@@ -690,6 +690,14 @@ test-suite cage-tests
     Singular.CLI.InsertEnvelopeSpec
     Singular.CLISpec
     Singular.CLI.Command
+    Singular.CLI.TrieTrace
+    Singular.CLI.TrieHistory
+    Singular.CLI.ReceiptBody
+    Singular.CLI.Reconcile
+    Singular.CLI.Plan
+    Singular.CLI.Live
+    Singular.CLI.Fold
+    Singular.CLI.Attached
     Singular.CLI.FoldRules
     Singular.CLI.FoldSpec
     Singular.CLI.InsertEnvelope

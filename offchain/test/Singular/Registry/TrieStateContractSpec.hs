@@ -329,14 +329,13 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
         $ do
             before@(chosen, _, _, _) <- history identity [("neighbour", 1)]
             let fixture = storeOf before
-                action = withTrieState fixtureTrieState chosen $ \snap ->
-                    speculateEdges snap (("never-bound", 6) :| [])
-                (answer, unchanged) = runState action fixture
-            case answer of
-                Right (Left MissingProof) -> pure ()
-                _ ->
-                    expectationFailure "an unbound witness key must refuse MissingProof"
-            fixtureNodes unchanged `shouldBe` fixtureNodes fixture
+            forM_ [2 .. 6] $ \edge -> do
+                let action = withTrieState fixtureTrieState chosen $ \snap ->
+                        speculateEdges snap (("never-bound", edge) :| [])
+                    (answer, unchanged) = runState action fixture
+                answer `shouldBe` Right (Left MissingProof)
+                fixtureNodes unchanged `shouldBe` fixtureNodes fixture
+                fixtureFolds unchanged `shouldBe` fixtureFolds fixture
     it
         "never treats an invalid trusted root as the empty root for an exclusion proof"
         $ do

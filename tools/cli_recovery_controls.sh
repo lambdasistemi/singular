@@ -314,6 +314,29 @@ jq -n '{map:[{k:{bytes:"6e616d65"},v:{bytes:"616c696365"}}]}' >"$work/insert-pay
 jq -n '{int: 42}' >"$work/payload.json"
 say "registry $token created"
 
+# An absent application source is refused by the ordinary write and shared
+# preview planner, before a request or transaction can be left pending.
+control="absent source"
+absent_before="$(find "$reg" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
+for command in update terminate; do
+  extra=()
+  [ "$command" != update ] || extra=(--payload "$work/payload.json")
+  run "$command-absent" registry "$command" --key-hex 6d697373696e672d6b6579 \
+    "${extra[@]}" "${common[@]}" "${node[@]}" "${alice[@]}"
+  clause "$command of an absent key is refused before signing" exit_is "$command-absent" 10
+  clause "$command names the absent source holding" is_equal \
+    "$(field "$command-absent" '.outcome + "/" + .reason')" \
+    'client-refusal/no live output holds key 0x6d697373696e672d6b6579'
+  run "$command-absent-preview" registry "$command" --preview --key-hex 6d697373696e672d6b6579 \
+    "${extra[@]}" "${common[@]}" "${node[@]}" --wallet-address "$(field preview .wallet)"
+  clause "$command preview names the same absent source holding" is_equal \
+    "$(field "$command-absent-preview" '.outcome + "/" + .reason')" \
+    'client-refusal/no live output holds key 0x6d697373696e672d6b6579'
+  clause "$command preview is refused" exit_is "$command-absent-preview" 10
+done
+clause "absent-source write and preview refusals leave every registry file unchanged" is_equal \
+  "$(find "$reg" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)" "$absent_before"
+
 # Reuse the journey's CBOR reader for the signed bodies, rather than add
 # another decoder. Only the witness projection below is recovery-specific.
 copying=0
@@ -364,6 +387,44 @@ run inspect-a registry inspect --key-hex 6b0a "${common[@]}" "${node[@]}"
 clause "inspect reads the key active at that root" \
   is_equal "$(field inspect-a '.outcome + "/" + .leaf + "/" + .root')" "success/active/$(root_after_of "$fold")"
 clause "the journal was only appended to and no body changed" appended_only s0
+
+# Preview deliberately stays untraced in the release journey's ordinary
+# process control. Here its separate actual trace binds the selected root to
+# the measured receipt, and a missing checked create must refuse the same read.
+control="preview trie access"
+preview_before="$(find "$reg" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
+for command in update terminate; do
+  extra=()
+  [ "$command" != update ] || extra=(--payload "$work/payload.json")
+  name="$command-active-preview"
+  run "$name" registry "$command" --preview --key-hex 6b0a \
+    "${extra[@]}" "${common[@]}" "${node[@]}" --wallet-address "$(field preview .wallet)"
+  clause "$command preview succeeds on the active source" outcome_is "$name" success
+  clause "$command preview consumes the capability selection at its reported root" \
+    jq -s -e --slurpfile r "$receipts/$name.json" --arg root "$(root_after_of "$fold")" '
+      $r[0].preview == true and $r[0].stateRoot == $root
+      and any(.[]; .operation == "select" and .root == $root
+        and (.identity.policy | test("^[0-9a-f]{56}$"))
+        and (.identity.name | test("^[0-9a-f]+$"))
+        and (.output | test("^[0-9a-f]{64}#[0-9]+$")))
+    ' "$receipts/$name.trie.jsonl"
+done
+preview_copy="$work/preview-incomplete"
+cp -a "$reg" "$preview_copy"
+boot_ids="$(jq -sc '[.[] | select(.journalStep == "boot") | .journalTxId] | unique' "$journal")"
+jq -c --argjson ids "$boot_ids" 'select(.journalTxId as $id | $ids | index($id) | not)' \
+  "$preview_copy/journal.jsonl" >"$work/preview-incomplete-journal"
+mv "$work/preview-incomplete-journal" "$preview_copy/journal.jsonl"
+preview_copy_before="$(find "$preview_copy" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
+run preview-incomplete registry update --preview --key-hex 6b0a --payload "$work/payload.json" \
+  --registry "$preview_copy" --blueprint "$blueprint" "${node[@]}" --wallet-address "$(field preview .wallet)"
+clause "preview refuses missing create rather than trusting the matching root" exit_is preview-incomplete 14
+clause "preview names HistoryIncomplete" is_equal \
+  "$(field preview-incomplete '.outcome + "/" + .reason')" 'stale-state/TrieState HistoryIncomplete'
+clause "preview leaves its incomplete copy unchanged" is_equal \
+  "$(find "$preview_copy" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)" "$preview_copy_before"
+clause "successful previews leave every original registry file unchanged" is_equal \
+  "$(find "$reg" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)" "$preview_before"
 
 # ------------------------------------------------------------------
 # lost answer
