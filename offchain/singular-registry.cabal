@@ -93,6 +93,7 @@ library
     Singular.Registry.Trie.PureManager
     Singular.Registry.TrieState
     Singular.Registry.TrieState.Fixture
+    Singular.Registry.TrieState.Mirror
     Singular.Registry.TxBuilder.Boot
     Singular.Registry.TxBuilder.Edges
     Singular.Registry.TxBuilder.Internal
@@ -983,6 +984,9 @@ executable singular
     Singular.CLI.Proof
     Singular.CLI.Receipt
     Singular.CLI.Reconcile
+    Singular.CLI.ReceiptBody
+    Singular.CLI.TrieHistory
+    Singular.CLI.TrieTrace
     Singular.CLI.Recovery
     Singular.CLI.Registry
     Singular.CLI.Reject

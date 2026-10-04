@@ -150,6 +150,7 @@ runPreview kind a (NodeSettings sock magic) addrText = do
                     <> ": stale, concurrent or altered local state is refused, \
                        \never repaired"
                 )
+        requireMirrorSelection saved live mirror
         prepared <- case kind of
             KInsert -> do
                 envelope <-

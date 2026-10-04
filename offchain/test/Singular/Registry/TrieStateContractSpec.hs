@@ -302,6 +302,37 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
                 (runState (acceptObservedFold fixtureTrieState conflicting) updated)
                 `shouldSatisfy` isLeft
     it
+        "refuses a missing source proof by name rather than returning an empty successful edge proof"
+        $ do
+            before@(chosen, _, _, _) <- history identity [("neighbour", 1)]
+            let fixture = storeOf before
+                action = withTrieState fixtureTrieState chosen $ \snap ->
+                    speculateEdges snap (("never-bound", 6) :| [])
+                (answer, unchanged) = runState action fixture
+            case answer of
+                Right (Left MissingProof) -> pure ()
+                _ ->
+                    expectationFailure "an unbound witness key must refuse MissingProof"
+            fixtureNodes unchanged `shouldBe` fixtureNodes fixture
+    it
+        "never treats an invalid trusted root as the empty root for an exclusion proof"
+        $ do
+            empty@(chosen, _, _, _) <- history identity []
+            let answer =
+                    fst $
+                        runState
+                            ( withTrieState
+                                fixtureTrieState
+                                chosen
+                                (\s -> nonMembership s "never-bound")
+                            )
+                            (storeOf empty)
+            proof <- right answer >>= right
+            verifyNonMembership proof (trieSelectionRoot chosen) "never-bound"
+                `shouldBe` True
+            verifyNonMembership proof (Root "invalid width") "never-bound"
+                `shouldBe` False
+    it
         "uses the supplied edge order, returns every intermediate proof and refuses undecodable edges without mutation"
         $ do
             before@(chosen, _, _, _) <- history identity [("neighbour", 1)]

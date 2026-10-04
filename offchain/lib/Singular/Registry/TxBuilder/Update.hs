@@ -28,6 +28,7 @@ No algorithm lives here; each decision has exactly one owner above.
 module Singular.Registry.TxBuilder.Update
     ( updateTokenImpl
     , updateTokenWithDuties
+    , updateTokenWithTrieState
     , emptyRegistryContext
     , RegistryDuties (..)
     , RegistryContext (..)
@@ -35,6 +36,8 @@ module Singular.Registry.TxBuilder.Update
     , registryDuties
     ) where
 
+import Cardano.Ledger.Api.Tx.Out (TxOut)
+import Data.List.NonEmpty qualified as NE
 import Data.Void (Void)
 
 import Cardano.Ledger.Address (Addr)
@@ -45,7 +48,10 @@ import Singular.Registry.Config
     ( CageConfig (..)
     )
 import Singular.Registry.Ledger
-    ( TokenId
+    ( ConwayEra
+    , Root (..)
+    , TokenId (..)
+    , TxIn
     )
 import Singular.Registry.Provider
     ( View (..)
@@ -53,6 +59,7 @@ import Singular.Registry.Provider
 import Singular.Registry.Trie
     ( TrieManager (..)
     )
+import Singular.Registry.TrieState qualified as TS
 import Singular.Registry.TxBuilder.ConnectedFold
     ( ConnectedSpend (..)
     )
@@ -75,6 +82,13 @@ import Singular.Registry.TxBuilder.Update.Context
 import Singular.Registry.TxBuilder.Update.Duties
     ( RegistryDuties (..)
     , registryDuties
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRequest (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
+    , ProofStep
     )
 
 -- | Build an update-token transaction (fair fee).
@@ -99,12 +113,67 @@ updateTokenWithDuties
     -> Addr
     -> RegistryContext
     -> IO ConwayTx
-updateTokenWithDuties cfg view tm tid addr ctx0 = do
+updateTokenWithDuties cfg view tm tid addr ctx0 =
+    updateTokenUsing cfg view tid addr ctx0 (const (computeProofs tm tid))
+
+{- | The current command path obtains its consumed proof bytes and new root
+from the selected capability snapshot. Transaction duties and provider reads
+remain in the same shared builder as the retained lower-level adapters.
+-}
+updateTokenWithTrieState
+    :: CageConfig
+    -> View IO
+    -> TS.TrieSnapshot IO
+    -> TokenId
+    -> Addr
+    -> RegistryContext
+    -> IO ConwayTx
+updateTokenWithTrieState cfg view snap tid@(TokenId name) addr ctx0 =
+    updateTokenUsing cfg view tid addr ctx0 $ \(stateIn, stateOut) requests -> do
+        let expected =
+                TS.RegistryIdentity
+                    (TS.StatePolicyId (scriptHashBytes (cfgScriptHash cfg)))
+                    name
+        if TS.trieIdentity snap /= expected
+            then error "TrieState WrongRegistry"
+            else pure ()
+        if TS.pointOutput (TS.triePoint snap) /= stateIn
+            then error "TrieState StaleState"
+            else pure ()
+        case extractCageDatum stateOut of
+            Just (StateDatum state)
+                | unOnChainRoot (stateRoot state) == unRoot (TS.trieRoot snap) ->
+                    pure ()
+            _ -> error "TrieState StaleState"
+        moves <- case traverse requestEdgeOf requests >>= NE.nonEmpty of
+            Nothing -> error "TrieState UndecodableRequest"
+            Just ordered -> pure ordered
+        walked <-
+            TS.speculateEdges snap moves
+                >>= either (error . ("TrieState " <>) . show) pure
+        pure (TS.walkProofs walked, TS.walkRoot walked)
+  where
+    requestEdgeOf (_, out) = case extractCageDatum out of
+        Just (RequestDatum request) -> Just (requestKey request, requestEdge request)
+        _ -> Nothing
+
+updateTokenUsing
+    :: CageConfig
+    -> View IO
+    -> TokenId
+    -> Addr
+    -> RegistryContext
+    -> ( (TxIn, TxOut ConwayEra)
+         -> [(TxIn, TxOut ConwayEra)]
+         -> IO ([[ProofStep]], Root)
+       )
+    -> IO ConwayTx
+updateTokenUsing cfg view tid addr ctx0 makeProofs = do
     (stateUtxo, reqUtxos, feeUtxo, pp) <-
         queryContext cfg view tid addr
     let (stateIn, stateOut) = stateUtxo
     (proofs, newRoot) <-
-        computeProofs tm tid reqUtxos
+        makeProofs stateUtxo reqUtxos
     let (oldState, newStateOut, script) =
             prepareState
                 cfg

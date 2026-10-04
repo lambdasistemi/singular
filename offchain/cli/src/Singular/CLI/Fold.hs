@@ -56,10 +56,11 @@ import Control.Exception
     , throwIO
     , try
     )
-import Control.Monad (forM_, unless, void, when)
+import Control.Monad (forM_, unless, when)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.ByteString (ByteString)
 import Data.List (isPrefixOf)
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -111,15 +112,14 @@ import Singular.Registry.Ledger
     )
 import Singular.Registry.Node (Wallet (..))
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Trie (Trie (getRoot), TrieManager (..))
+import Singular.Registry.TrieState qualified as TS
 import Singular.Registry.TxBuilder.Edges (registryContextFor)
 import Singular.Registry.TxBuilder.Internal
     ( currentPosixMs
     , extractCageDatum
     , requestAddrFromCfg
-    , walkEdge
     )
-import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
+import Singular.Registry.TxBuilder.Update (updateTokenWithTrieState)
 import Singular.Registry.Types
     ( CageDatum (..)
     , Edge
@@ -300,12 +300,11 @@ foldPending at FoldSpec{..} = do
     let s = savedOf at
         cfg = savedCfg s
         wc = atWrite at
-        tm = mirrorTries (atMirror at)
         addr = walletAddr (wcWallet wc)
         named = case fsOrigin of
             Combined booking -> Just (TxIn (txIdTx booking) (TxIx 0))
             Standalone -> fsRequest
-    rootBefore <- mirrorRoot s (atMirror at)
+    rootBefore <- selectedMirrorRoot (atMirror at)
     (fold, plan) <-
         submitBuilt
             wc
@@ -406,9 +405,14 @@ foldPending at FoldSpec{..} = do
                                 pure
                                 (liveOutputFor s key outs)
                         pure (Nothing, Just h)
-                Root rootAfter <-
-                    withSpeculativeTrie tm (savedToken s) $ \t ->
-                        walkEdge t key (requestEdge req) >> getRoot t
+                requireMirrorSelection s live (atMirror at)
+                Root rootAfter <- withMirror (atMirror at) $ \snap -> do
+                    walked <-
+                        TS.speculateEdges snap ((key, requestEdge req) :| [])
+                            >>= either
+                                (\why -> stop' ClientRefusal ("TrieState " <> show why) [])
+                                pure
+                    pure (TS.walkRoot walked)
                 ctx0 <-
                     registryContextFor cfg (savedCodes s) v (liveRefs (atLive at))
                 ctx <-
@@ -431,13 +435,8 @@ foldPending at FoldSpec{..} = do
                             pure
                 built <-
                     try
-                        ( updateTokenWithDuties
-                            cfg
-                            funded
-                            tm
-                            (savedToken s)
-                            addr
-                            ctx
+                        ( withMirror (atMirror at) $ \snap ->
+                            updateTokenWithTrieState cfg funded snap (savedToken s) addr ctx
                         )
                 unsigned <- case built of
                     Right tx -> pure tx
@@ -533,12 +532,17 @@ foldPending at FoldSpec{..} = do
     let key = plKey plan
         edge = plEdge plan
     harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_COMMIT" Nothing
-    withTrie tm (savedToken s) $ \t -> void (walkEdge t key edge)
-    saveOpenMirror s (atMirror at)
+    acceptMirrorFold
+        (atMirror at)
+        key
+        edge
+        rootBefore
+        (plRootAfter plan)
+        fold
     harnessHoldAt "SINGULAR_HARNESS_HOLD_AFTER_MIRROR" Nothing
     afterFold <- reading at (`attachLive` s)
     onChain <- either (failWith Partial) pure (observedRoot afterFold)
-    local <- mirrorRoot s (atMirror at)
+    local <- selectedMirrorRoot (atMirror at)
     unless (onChain == local) $
         failWith
             StaleState

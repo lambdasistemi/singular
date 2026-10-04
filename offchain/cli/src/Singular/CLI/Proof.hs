@@ -40,6 +40,7 @@ import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.Pure (provesAbsent, provesMember)
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TrieState (Leaf (..), leafName)
+import Singular.Registry.TrieState qualified as TrieState
 import Singular.Registry.TxBuilder.Internal
     ( leafAbsent
     , leafActive
@@ -51,6 +52,7 @@ data AuthError
     = -- | Local root, observed root
       RootMismatch ByteString ByteString
     | ProofInconsistent ByteString
+    | TrieRefusal TrieState.TrieFailure
     deriving stock (Eq, Show)
 
 renderAuthError :: AuthError -> String
@@ -66,6 +68,7 @@ renderAuthError = \case
         "no leaf at 0x"
             <> hexS key
             <> " makes the saved trie commit to its own root"
+    TrieRefusal why -> "TrieState " <> show why
   where
     hexS = BC.unpack . B16.encode
 

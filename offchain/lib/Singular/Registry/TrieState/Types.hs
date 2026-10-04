@@ -22,6 +22,7 @@ module Singular.Registry.TrieState.Types
     , SpeculativeWalk (..)
     , CreateRecord (..)
     , ObservedFold (..)
+    , TrieObservation (..)
     ) where
 
 import Data.ByteString (ByteString)
@@ -60,16 +61,16 @@ data TrieState m = TrieState
     , acceptObservedFold :: ObservedFold -> m (Either TrieFailure ())
     }
 data TrieSnapshot m = TrieSnapshot
-    { trieIdentity :: RegistryIdentity
-    , triePoint :: StatePoint
-    , trieRoot :: Root
-    , trieCoverage :: CompleteFromCreate
-    , leafAt :: ByteString -> m (Either TrieFailure Leaf)
-    , membership
+    { snapshotTrieIdentity :: RegistryIdentity
+    , snapshotTriePoint :: StatePoint
+    , snapshotTrieRoot :: Root
+    , snapshotTrieCoverage :: CompleteFromCreate
+    , snapshotLeafAt :: ByteString -> m (Either TrieFailure Leaf)
+    , snapshotMembership
         :: ByteString -> Leaf -> m (Either TrieFailure MembershipProof)
-    , nonMembership
+    , snapshotNonMembership
         :: ByteString -> m (Either TrieFailure NonMembershipProof)
-    , speculateEdges
+    , snapshotSpeculateEdges
         :: NonEmpty (ByteString, Integer)
         -> m (Either TrieFailure SpeculativeWalk)
     }
@@ -110,4 +111,17 @@ data ObservedFold
         TrieSelection
         TrieSelection
         (NonEmpty (ByteString, Integer))
+    deriving stock (Eq, Show)
+
+{- | Completed operations, emitted by the same engine that returned their
+values or persisted their accepted nodes.
+-}
+data TrieObservation
+    = Created TrieSelection
+    | Selected TrieSelection
+    | LeafRead TrieSelection ByteString Leaf
+    | MemberProved TrieSelection ByteString Leaf ByteString
+    | AbsenceProved TrieSelection ByteString
+    | Speculated TrieSelection SpeculativeWalk
+    | FoldAccepted TrieSelection TrieSelection
     deriving stock (Eq, Show)

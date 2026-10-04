@@ -1,7 +1,14 @@
 {- | The common node/proof engine. Backend effects only fetch and persist a
 registry entry. Snapshot reads and speculation use captured immutable nodes.
 -}
-module Singular.Registry.TrieState.Core (TrieEntry (..), capability, checkedCoverage, walkNodes, provenLeaf) where
+module Singular.Registry.TrieState.Core
+    ( TrieEntry (..)
+    , capability
+    , capabilityObserved
+    , checkedCoverage
+    , walkNodes
+    , provenLeaf
+    ) where
 
 import Control.Monad (foldM)
 import Control.Monad.State.Strict (runState)
@@ -36,12 +43,19 @@ walkNodes
 walkNodes db moves
     | any (\(_, edge) -> edge < 0 || edge > 6) moves =
         Left UndecodableRequest
-    | otherwise =
-        let (proofs, changed) =
-                runState
-                    (traverse (uncurry (walkEdge stateTrie)) (NE.toList moves))
-                    db
-        in  Right (changed, SpeculativeWalk (rootFromDb changed) proofs)
+    | otherwise = do
+        (changed, reversed) <- foldM step (db, []) (NE.toList moves)
+        Right
+            (changed, SpeculativeWalk (rootFromDb changed) (reverse reversed))
+  where
+    step (before, proofs) (key, edge) = do
+        let (proof, after) = runState (walkEdge stateTrie key edge) before
+            proofNodes = if edge < 2 then after else before
+        -- A singleton's legitimate proof has zero steps. Check the actual
+        -- producer's Maybe instead of treating every empty list as missing.
+        case membershipFromDb proofNodes key of
+            Nothing -> Left MissingProof
+            Just _ -> Right (after, proof : proofs)
 
 provenLeaf
     :: MPFInMemoryDB -> Root -> ByteString -> Either TrieFailure Leaf
@@ -89,52 +103,84 @@ capability
     => (RegistryIdentity -> m (Either TrieFailure TrieEntry))
     -> (TrieEntry -> m ())
     -> TrieState m
-capability fetch persist = TrieState select accept
+capability fetch persist = capabilityObserved fetch persist (const (pure ()))
+
+-- The observer is optional evidence, after the actual computation. State
+-- supplies no effects; the IO mirror supplies only its bounded harness writer.
+capabilityObserved
+    :: (Monad m)
+    => (RegistryIdentity -> m (Either TrieFailure TrieEntry))
+    -> (TrieEntry -> m ())
+    -> (TrieObservation -> m ())
+    -> TrieState m
+capabilityObserved fetch persist emit = TrieState select accept
   where
     select chosen use = do
         found <- fetch (trieSelectionIdentity chosen)
         case found >>= validate chosen of
             Left why -> pure (Left why)
-            Right (entry, coverage) -> Right <$> use (snapshot entry coverage)
+            Right (entry, coverage) -> do
+                emit (Selected (entrySelection entry))
+                Right <$> use (snapshot entry coverage)
     validate chosen entry
         | chosen /= entrySelection entry = Left StaleState
         | otherwise = (entry,) <$> checkedCoverage entry
     snapshot TrieEntry{..} coverage =
         TrieSnapshot
-            { trieIdentity = trieSelectionIdentity entrySelection
-            , triePoint = trieSelectionPoint entrySelection
-            , trieRoot = trieSelectionRoot entrySelection
-            , trieCoverage = coverage
-            , leafAt =
-                pure . provenLeaf entryNodes (trieSelectionRoot entrySelection)
-            , membership = \key leaf -> pure $ do
-                bytes <-
-                    maybe (Left MissingProof) Right (membershipFromDb entryNodes key)
-                if leaf /= Unknown
-                    && verifyAikenInclusionProof
-                        (unRoot (trieSelectionRoot entrySelection))
-                        key
-                        (leafBytes leaf)
-                        bytes
-                    then Right (MembershipProof bytes)
-                    else Left MissingProof
-            , nonMembership = \key -> pure $ do
-                if provesAbsent
-                    entryNodes
-                    (unRoot (trieSelectionRoot entrySelection))
-                    key
-                    then
-                        NonMembershipProof key
-                            <$> maybe (Left MissingProof) Right (exclusionFromDb entryNodes key)
-                    else Left MissingProof
-            , speculateEdges = pure . fmap snd . walkNodes entryNodes
+            { snapshotTrieIdentity = trieSelectionIdentity entrySelection
+            , snapshotTriePoint = trieSelectionPoint entrySelection
+            , snapshotTrieRoot = trieSelectionRoot entrySelection
+            , snapshotTrieCoverage = coverage
+            , snapshotLeafAt = \key ->
+                recordResult
+                    emit
+                    (provenLeaf entryNodes (trieSelectionRoot entrySelection) key)
+                    (LeafRead entrySelection key)
+            , snapshotMembership = \key leaf ->
+                recordResult
+                    emit
+                    ( do
+                        bytes <-
+                            maybe (Left MissingProof) Right (membershipFromDb entryNodes key)
+                        if leaf /= Unknown
+                            && verifyAikenInclusionProof
+                                (unRoot (trieSelectionRoot entrySelection))
+                                key
+                                (leafBytes leaf)
+                                bytes
+                            then Right (MembershipProof bytes)
+                            else Left MissingProof
+                    )
+                    (\proof -> MemberProved entrySelection key leaf (membershipBytes proof))
+            , snapshotNonMembership = \key ->
+                recordResult
+                    emit
+                    ( do
+                        if provesAbsent
+                            entryNodes
+                            (unRoot (trieSelectionRoot entrySelection))
+                            key
+                            then
+                                NonMembershipProof key
+                                    <$> maybe (Left MissingProof) Right (exclusionFromDb entryNodes key)
+                            else Left MissingProof
+                    )
+                    (const (AbsenceProved entrySelection key))
+            , snapshotSpeculateEdges = \moves ->
+                recordResult
+                    emit
+                    (fmap snd (walkNodes entryNodes moves))
+                    (Speculated entrySelection)
             }
     accept event@(ObservedFold from to edges) = do
         found <- fetch (trieSelectionIdentity from)
         case found >>= advance event from to edges of
             Left why -> pure (Left why)
-            Right Nothing -> pure (Right ())
-            Right (Just changed) -> persist changed >> pure (Right ())
+            Right Nothing -> emit (FoldAccepted from to) >> pure (Right ())
+            Right (Just changed) -> do
+                persist changed
+                emit (FoldAccepted from (entrySelection changed))
+                pure (Right ())
     advance event from to edges entry
         | trieSelectionIdentity from /= trieSelectionIdentity to =
             Left WrongRegistry
@@ -155,3 +201,15 @@ capability fetch persist = TrieState select accept
                                 , entryFolds = entryFolds entry <> [event]
                                 }
                         )
+
+recordResult
+    :: (Monad m)
+    => (TrieObservation -> m ())
+    -> Either TrieFailure a
+    -> (a -> TrieObservation)
+    -> m (Either TrieFailure a)
+recordResult emit result describe = do
+    case result of
+        Left _ -> pure ()
+        Right value -> emit (describe value)
+    pure result

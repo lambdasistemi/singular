@@ -187,11 +187,12 @@ exclusionFromDb db key = fst (runMPFPure db (exclusionMPFM (hashKeyPath key)))
 
 -- | Check an exclusion proof against its key and the caller's selected root.
 verifyExclusion :: MPFExclusionProof MPFHash -> ByteString -> Bool
-verifyExclusion proof trusted = verifyMPFExclusionProof mpfHashing trustedRoot proof
-  where
-    trustedRoot
-        | trusted == renderMPFHash nullHash = Nothing
-        | otherwise = parseMPFHash trusted
+verifyExclusion proof trusted
+    | trusted == renderMPFHash nullHash =
+        verifyMPFExclusionProof mpfHashing Nothing proof
+    | otherwise = case parseMPFHash trusted of
+        Nothing -> False
+        Just rootHash -> verifyMPFExclusionProof mpfHashing (Just rootHash) proof
 
 -- | The pure root computation shared with the existing IO facade.
 rootFromDb :: MPFInMemoryDB -> Root

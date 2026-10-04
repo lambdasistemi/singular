@@ -113,6 +113,7 @@ attached dir blueprint ws command body = do
                     <> ": stale, concurrent or altered local state is refused, \
                        \never repaired"
                 )
+        requireMirrorSelection saved live mirror
         printed <-
             body Attached{atWrite = wc, atLive = live, atMirror = mirror}
         pure $ case printed of

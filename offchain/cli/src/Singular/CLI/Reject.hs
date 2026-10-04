@@ -139,7 +139,7 @@ rejectPending at a = do
         wc = atWrite at
         addr = walletAddr (wcWallet wc)
         requestAddr = requestAddrFromCfg cfg (savedToken s) Testnet
-    rootBefore <- mirrorRoot s (atMirror at)
+    rootBefore <- selectedMirrorRoot (atMirror at)
     (tx, plan) <-
         submitBuilt
             wc
@@ -286,7 +286,7 @@ rejectPending at a = do
     onChain <- either (failWith Partial) pure (observedRoot afterLive)
     unless (onChain == plRootBefore plan) $
         failWith StaleState "the registry's root moved during a reject"
-    local <- mirrorRoot s (atMirror at)
+    local <- selectedMirrorRoot (atMirror at)
     unless (onChain == local) $
         failWith
             StaleState

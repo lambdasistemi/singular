@@ -1210,6 +1210,90 @@ run inspect-after-reclaim-fold success -- registry inspect --key keyG "${common[
 [ "$(field inspect-after-reclaim-fold .leaf)" = active ] || fail "a new request did not fold after reclaim"
 say "the owner's reclaim: whole bound return checked independently, root unchanged, and a new request folds"
 
+# Coverage controls keep the real mirror and independently observed live state
+# unchanged. Only copies of already-produced journal records are altered. The
+# signed bodies remain the actual bodies the journey submitted and bound.
+changing_tx="$(jq -sr '[.[] | select(.journalEvent == "prepared" and .journalEdge != null and .journalRootBefore != .journalRootAfter)] | last | .journalTxId' "$reg/journal.jsonl")"
+boot_tx="$(jq -sr '[.[] | select(.journalEvent == "prepared" and .journalStep == "boot")] | first | .journalTxId' "$reg/journal.jsonl")"
+[ "$changing_tx" != null ] && [ "$boot_tx" != null ] || setup_fail "coverage controls have no actual create and changing fold"
+coverage_digest() {
+  (cd "$1" && sha256sum registry.json state.json registry.mirror.json journal.jsonl)
+}
+coverage_refused() {
+  local name="$1" expected="$2" copy="$3" before
+  before="$(coverage_digest "$copy")"
+  run "$name" proof-inconsistent -- registry inspect --key keyG --registry "$copy" \
+    --blueprint "$blueprint" "${node[@]}"
+  jq -e --arg why "TrieState $expected" '.refusal == $why' "$receipts/$name.json" >/dev/null \
+    || fail "$name: coverage refused for another reason than $expected"
+  [ "$(coverage_digest "$copy")" = "$before" ] || fail "$name: a coverage refusal changed the saved registry"
+  # A reachable old caller still proves the same live leaf from these nodes;
+  # journal coverage is therefore the content-dependent difference.
+  if [ -n "${SINGULAR_TRIESTATE_BYPASS_BIN:-}" ]; then
+    local status=0
+    "$SINGULAR_TRIESTATE_BYPASS_BIN" registry inspect --key keyG --registry "$copy" \
+      --blueprint "$blueprint" "${node[@]}" \
+      >"$receipts/$name-old.json" 2>"$receipts/$name-old.err" || status=$?
+    [ "$status" -eq 0 ] || fail "$name: the real pre-capability caller did not reach the faulty coverage"
+    jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
+      '.outcome == "success" and .key == $correct[0].key and .leaf == $correct[0].leaf and .root == $correct[0].root' \
+      "$receipts/$name-old.json" >/dev/null || fail "$name: the old caller has no matching live witness"
+    say "$name: old caller reached the matching live leaf; missing or altered coverage KILLED"
+  fi
+}
+for fault in missing-create missing-change broken-before wrong-after undecodable-edge; do
+  copy="$work/coverage-$fault"
+  cp -a "$reg" "$copy"
+  case "$fault" in
+    missing-create)
+      jq -c --arg tx "$boot_tx" 'select(.journalTxId != $tx)' "$reg/journal.jsonl" >"$copy/journal.jsonl"
+      expected=HistoryIncomplete ;;
+    missing-change)
+      jq -c --arg tx "$changing_tx" 'select(.journalTxId != $tx)' "$reg/journal.jsonl" >"$copy/journal.jsonl"
+      expected=HistoryIncomplete ;;
+    broken-before)
+      jq -c --arg tx "$changing_tx" 'if .journalEvent == "prepared" and .journalTxId == $tx then .journalRootBefore = .journalRootAfter else . end' \
+        "$reg/journal.jsonl" >"$copy/journal.jsonl"
+      # Making the last change appear equal-root cannot establish the selected
+      # root; it is ignored as required by the content-coverage ruling.
+      expected=HistoryIncomplete ;;
+    wrong-after)
+      jq -c --arg tx "$changing_tx" --arg root "$(field create .root)" \
+        'if .journalEvent == "prepared" and .journalTxId == $tx then .journalRootAfter = $root else . end' \
+        "$reg/journal.jsonl" >"$copy/journal.jsonl"
+      expected=RootDoesNotChain ;;
+    undecodable-edge)
+      jq -c --arg tx "$changing_tx" 'if .journalEvent == "prepared" and .journalTxId == $tx then .journalEdge = 99 else . end' \
+        "$reg/journal.jsonl" >"$copy/journal.jsonl"
+      expected=UndecodableRequest ;;
+  esac
+  coverage_refused "trie-$fault" "$expected" "$copy"
+done
+# The race created another real registry on this same ledger. Substitute its
+# checked create records, rather than forging a body or a successful submission.
+copy="$work/coverage-wrong-create"
+cp -a "$reg" "$copy"
+jq -c --arg tx "$boot_tx" 'select(.journalTxId != $tx)' "$reg/journal.jsonl" >"$copy/journal.jsonl"
+other_boot="$(jq -sr '[.[] | select(.journalEvent == "prepared" and .journalStep == "boot")] | first | .journalTxId' "$work/race/raced/journal.jsonl")"
+[ "$other_boot" != null ] && [ "$other_boot" != "$boot_tx" ] || setup_fail "wrong-create control has no other actual checked create"
+jq -c --arg tx "$other_boot" 'select(.journalTxId == $tx)' "$work/race/raced/journal.jsonl" >>"$copy/journal.jsonl"
+coverage_refused trie-wrong-create WrongRegistry "$copy"
+
+# Equal-root records neither contribute to coverage nor have to be present.
+copy="$work/coverage-without-equal-root"
+cp -a "$reg" "$copy"
+equal_ids="$(jq -sc '[.[] | select(.journalEvent == "prepared" and (.journalStep == "reject" or .journalStep == "reclaim") and .journalRootBefore == .journalRootAfter) | .journalTxId] | unique' "$reg/journal.jsonl")"
+[ "$(jq length <<<"$equal_ids")" -gt 0 ] || setup_fail "the journey produced no equal-root record to omit"
+jq -c --argjson ids "$equal_ids" '.journalTxId as $tx | select($ids | index($tx) | not)' "$reg/journal.jsonl" >"$copy/journal.jsonl"
+before="$(coverage_digest "$copy")"
+run trie-equal-root-omitted success -- registry inspect --key keyG --registry "$copy" \
+  --blueprint "$blueprint" "${node[@]}"
+jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
+  '.key == $correct[0].key and .leaf == $correct[0].leaf and .root == $correct[0].root' \
+  "$receipts/trie-equal-root-omitted.json" >/dev/null || fail "omitting equal-root records changed the proven read"
+[ "$(coverage_digest "$copy")" = "$before" ] || fail "the equal-root omission read changed the registry"
+say "TrieState content coverage: named faults refused; equal-root record omission preserves the actual proven leaf"
+
 # The pre-migration executable is a real caller that opens/proves the
 # mirror directly. When supplied by the owner, run it against this same
 # settled registry before the final node-loss control. Its successful
