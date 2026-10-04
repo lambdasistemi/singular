@@ -270,7 +270,9 @@ refusalSpec = describe "refusals before and while recording" $ do
                                 then
                                     respond
                                         200
-                                        [("x-echo", bearer)]
+                                        [ ("x-echo", bearer)
+                                        , (fromMaybe bearer (T.stripPrefix "Bearer " bearer), "1")
+                                        ]
                                         ("[{\"hash\": \"" <> TE.encodeUtf8 bearer <> "\"}]")
                                 else respond 200 [] tipBody
                 )

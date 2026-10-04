@@ -264,11 +264,13 @@ redact (Just token) result = case result of
     Right a ->
         Right
             a
-                { answerHeaders = [(k, text v) | (k, v) <- answerHeaders a]
+                { answerHeaders = [(name k, text v) | (k, v) <- answerHeaders a]
                 , answerBody = bytes (answerBody a)
                 }
   where
     text = T.replace (TE.decodeUtf8Lenient token) "<token>"
+    -- header names arrive lower-cased, so the token is matched lower-cased
+    name = T.replace (T.toLower (TE.decodeUtf8Lenient token)) "<token>"
     bytes b = case BS.breakSubstring token b of
         (before, rest)
             | BS.null rest -> before

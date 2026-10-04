@@ -52,6 +52,7 @@ import Data.Aeson.KeyMap qualified as KM
 import Data.Aeson.Types (Parser, parseEither)
 import Data.ByteArray.Encoding (Base (Base16), convertToBase)
 import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Lazy qualified as BSL
 import Data.List (find, isSuffixOf, nub, sort)
@@ -241,7 +242,8 @@ loadFixtureSet dir =
   where
     load name = do
         let path = dir </> name
-        read' <- try (BSL.readFile path)
+        -- read strictly inside the catch, so a failure after opening is caught
+        read' <- try (BSL.fromStrict <$> BS.readFile path)
         pure $ case read' of
             Left e -> Left (FixtureUnreadable path (T.pack (show (e :: IOException))))
             Right bytes -> fixtureAt path bytes

@@ -49,6 +49,7 @@ import Singular.Provider.Koios.Scripted
     , scriptHashOfByte
     , txIdOfByte
     )
+import Singular.Provider.Koios.Wire (tipRequest)
 
 import Cardano.Ledger.Mary.Value (AssetName (..), PolicyID (..))
 
@@ -323,9 +324,12 @@ tokenSpec = describe "bearer token" $ do
 echoing :: Int -> Seen -> Int -> IO Response
 echoing code s _ =
     let bearer = fromMaybe "" (lookup "authorization" (seenHeaders s))
+        bare = fromMaybe bearer (T.stripPrefix "Bearer " bearer)
     in  respond
             code
-            [("x-echo", bearer)]
+            ( [("x-echo", bearer)]
+                <> [(bare, "named-after-the-token") | not (T.null bare)]
+            )
             ("[{\"echo\": \"" <> TE.encodeUtf8 bearer <> "\"}]")
 
 echoSpec :: Spec
@@ -341,16 +345,24 @@ echoSpec = describe "a server echoing the token" $
                     a <- show <$> tip k
                     b <- show <$> submitTx k "tx"
                     c <- show <$> txStatus k [txIdOfByte 1]
+                    -- the raw answer itself, header names and values and body
+                    transport <-
+                        newHttpTransport
+                            (fast base){httpTokenFile = Just file, httpAttempts = 1}
+                            >>= either (fail . show) pure
+                    d <- show <$> exchange transport (rawRequest tipRequest)
                     seen <- logOf
                     -- the server did receive the token, so the echo is real
                     map (lookup "authorization" . seenHeaders) seen
                         `shouldSatisfy` all (== Just ("Bearer " <> token))
-                    pure [a, b, c]
+                    pure [a, b, c, d]
             let shown = concat results
-            length shown `shouldBe` 12
-            filter (T.isInfixOf token . T.pack) shown `shouldBe` []
+            length shown `shouldBe` 16
+            -- in any byte and in any letter case: header names arrive lower-cased
+            filter (T.isInfixOf (T.toLower token) . T.toLower . T.pack) shown
+                `shouldBe` []
   where
-    token = "echoed-token-5d1e"
+    token = "Echoed-Token-5d1E"
 
 submitSpec :: Spec
 submitSpec = describe "submission" $ do
